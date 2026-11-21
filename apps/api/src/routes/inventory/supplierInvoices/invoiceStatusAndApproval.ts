@@ -5,6 +5,8 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.
 import { db } from "../../../db/client.js";
 import {
 	inventoryItems,
+	inventorySupplierInvoices,
+	inventorySupplierInvoiceItems,
 	inventoryTransactions,
 	stockBatches,
 } from "../../../db/schema.js";
@@ -16,6 +18,8 @@ import {
 import {
 	normalizeInventoryUnit,
 	INVENTORY_UNITS_METADATA,
+	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { acceptanceWaybillBodySchema } from "../types.js";
 
@@ -55,22 +59,20 @@ export const handleAcceptanceWaybillRequest = async (
 			// Идемпотентность складских операций (Мандаты 8e, 8n, 8s):
 			// Защита от дублирования при повторном клике по кнопке проведения
 			if (data.waybillNumber && data.supplierName) {
-				const existingTransactions = await tx
-					.select({
-						id: inventoryTransactions.id,
-						notes: inventoryTransactions.notes,
-					})
-					.from(inventoryTransactions)
+				const existingInvoice = await tx
+					.select()
+					.from(inventorySupplierInvoices)
 					.where(
 						and(
-							eq(inventoryTransactions.organizationId, targetOrgId),
-							eq(inventoryTransactions.transactionType, "receipt"),
-							sql`${inventoryTransactions.notes} LIKE ${`%накладной №${data.waybillNumber} от ${data.supplierName}%`}`,
+							eq(inventorySupplierInvoices.organizationId, targetOrgId),
+							eq(inventorySupplierInvoices.invoiceNumber, data.waybillNumber),
+							eq(inventorySupplierInvoices.supplierName, data.supplierName),
 						),
 					)
 					.limit(1);
 
-				if (existingTransactions.length > 0) {
+				if (existingInvoice.length > 0) {
+					const inv = existingInvoice[0]!;
 					return {
 						success: true,
 						alreadyProcessed: true,
@@ -82,9 +84,9 @@ export const handleAcceptanceWaybillRequest = async (
 						warehouseName: data.warehouseName ?? "Основной склад",
 						totalPositions: data.items.length,
 						totalQuantity: data.items.reduce((acc, it) => acc + it.quantity, 0),
-						totalCostKopecks: 0,
-						totalVatKopecks: 0,
-						totalCostRubles: 0,
+						totalCostKopecks: Number(inv.totalAmountKopecks),
+						totalVatKopecks: Number(inv.vatAmountKopecks),
+						totalCostRubles: kopecksToRubles(Number(inv.totalAmountKopecks)),
 						overdraftResolvedCount: 0,
 						items: [],
 						message: `Накладная №${data.waybillNumber} от ${data.supplierName} уже была проведена ранее (идемпотентный ответ)`,
@@ -176,16 +178,12 @@ export const handleAcceptanceWaybillRequest = async (
 				const multiplier = item.packageMultiplier ?? detectPackageMultiplier(item.name, item.unit);
 				const effectiveReceivedQty = Math.round(item.quantity * multiplier);
 				totalQuantity += item.quantity;
-				const pricePerUnitRub =
-					item.purchasePricePerUnit != null
-						? item.purchasePricePerUnit
-						: item.purchasePriceKopecks != null
-							? item.purchasePriceKopecks / 100
-							: 0;
-				const priceKopecks =
-					item.purchasePriceKopecks != null
-						? item.purchasePriceKopecks
-						: Math.round(pricePerUnitRub * 100);
+				const unitPriceKopecks =
+					item.unitPriceKopecks ??
+					item.purchasePriceKopecks ??
+					(item.purchasePricePerUnit != null ? rublesToKopecks(item.purchasePricePerUnit) : 0);
+				const priceKopecks = unitPriceKopecks;
+				const pricePerUnitRub = kopecksToRubles(priceKopecks);
 
 				const itemSubtotalKopecks = Math.round(item.quantity * priceKopecks);
 				const vatRate = item.vatRate ?? 0;
@@ -354,6 +352,50 @@ export const handleAcceptanceWaybillRequest = async (
 				});
 			}
 
+			const [createdInvoice] = await tx
+				.insert(inventorySupplierInvoices)
+				.values({
+					organizationId: targetOrgId,
+					invoiceNumber: data.waybillNumber,
+					supplierName: data.supplierName,
+					supplierInn: data.supplierInn ?? null,
+					invoiceDate: data.receiptDate,
+					status: "posted",
+					warehouseId: data.warehouseId ?? null,
+					totalAmountKopecks: totalCostKopecks,
+					vatAmountKopecks: totalVatKopecks,
+					notes: `Приходная накладная №${data.waybillNumber} от ${data.supplierName}`,
+					createdBy: effectiveUserId,
+				})
+				.returning();
+
+			if (createdInvoice) {
+				const invoiceItemInserts = data.items.map((it, idx) => {
+					const processed = processedItems[idx];
+					const unitKopecks =
+						it.unitPriceKopecks ??
+						it.purchasePriceKopecks ??
+						(it.purchasePricePerUnit != null ? rublesToKopecks(it.purchasePricePerUnit) : 0);
+					const lineCost = Math.round((it.quantity || 1) * unitKopecks);
+					return {
+						invoiceId: createdInvoice.id,
+						inventoryItemId: processed?.inventoryItemId ?? null,
+						itemName: it.name,
+						category: it.category ?? null,
+						unit: it.unit || "шт",
+						quantity: String(it.quantity || 1),
+						unitPriceKopecks: unitKopecks,
+						vatRate: it.vatRate || 0,
+						lineTotalKopecks: lineCost,
+						batchNumber: processed?.batchNumber ?? it.batchNumber ?? null,
+						expirationDate: processed?.expirationDate ?? it.expirationDate ?? null,
+					};
+				});
+				if (invoiceItemInserts.length > 0) {
+					await tx.insert(inventorySupplierInvoiceItems).values(invoiceItemInserts);
+				}
+			}
+
 			return {
 				success: true,
 				waybillNumber: data.waybillNumber,
@@ -366,7 +408,7 @@ export const handleAcceptanceWaybillRequest = async (
 				totalQuantity,
 				totalCostKopecks,
 				totalVatKopecks,
-				totalCostRubles: Number((totalCostKopecks / 100).toFixed(2)),
+				totalCostRubles: kopecksToRubles(totalCostKopecks),
 				overdraftResolvedCount,
 				items: processedItems,
 			};

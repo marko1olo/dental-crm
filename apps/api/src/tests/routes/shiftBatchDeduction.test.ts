@@ -118,24 +118,28 @@ describe("Shift Batch Auto-Deduction & Soft Overdraft (Mandates 8e, 8n)", () => 
 					fullName: "Пациент Тестовой Смены",
 				});
 
-				await tx.insert(visits).values({
-					id: VISIT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					status: "signed",
-				});
+				for (let i = 1; i <= 8; i++) {
+					const vId = fixtureUuid(NAMESPACE, 60 + i);
+					const tId = fixtureUuid(NAMESPACE, 70 + i);
+					await tx.insert(visits).values({
+						id: vId,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						status: "signed",
+					});
 
-				await tx.insert(treatmentItems).values({
-					id: TREATMENT_ITEM_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					visitId: VISIT_ID,
-					title: "Лечение кариеса",
-					quantity: "1",
-					priceRub: 4500,
-					unitPriceRub: 4500,
-					status: "completed",
-				});
+					await tx.insert(treatmentItems).values({
+						id: tId,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						visitId: vId,
+						title: "Лечение кариеса",
+						quantity: "1",
+						priceRub: 4500,
+						unitPriceRub: 4500,
+						status: "completed",
+					});
+				}
 			});
 		}
 

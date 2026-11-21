@@ -40,6 +40,8 @@ export interface ExecuteShiftBatchDeductionParams {
 	userId?: string | null | undefined;
 	items?: Array<{ itemId: string; qty: number; name?: string | undefined }> | undefined;
 	notes?: string | null | undefined;
+	idempotencyKey?: string | null | undefined;
+	clientMutationId?: string | null | undefined;
 }
 
 export interface ExecuteShiftBatchDeductionResult {

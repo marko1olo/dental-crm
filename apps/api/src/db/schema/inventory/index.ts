@@ -8,3 +8,4 @@ export * from "./inventoryItemsTable.js";
 export * from "./inventoryTransactionsTable.js";
 export * from "./inventoryTechCardsTable.js";
 export * from "./inventorySterilizationTable.js";
+export * from "./inventorySupplierInvoicesTable.js";

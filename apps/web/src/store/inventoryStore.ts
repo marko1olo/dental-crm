@@ -7,6 +7,7 @@
  */
 
 import { create } from "zustand";
+import { kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "../components/GlobalToast";
 
@@ -101,7 +102,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 					const item = typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {};
 					const quantity = Number(item.stockQuantity ?? item.quantity ?? 0);
 					const threshold = Number(item.criticalThreshold ?? item.minStock ?? 5);
-					const unitCost = Number(item.unitCostRub ?? (typeof item.purchasePriceKopecks === "number" ? item.purchasePriceKopecks / 100 : 0));
+					const unitCost = Number(item.unitCostRub ?? (typeof item.purchasePriceKopecks === "number" ? kopecksToRubles(item.purchasePriceKopecks) : 0));
 					return {
 						id: String(item.id || item.inventoryItemId || ""),
 						name: String(item.name || item.title || "Материал"),

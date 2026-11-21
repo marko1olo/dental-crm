@@ -106,7 +106,16 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		if (!targetOrgId) return;
 		const body = request.body ?? {};
 		const effectiveUserId = getRequestIdentity(request).userId ?? request.user?.id ?? null;
-		return withTenantCtx(targetOrgId, async (tx) => {
+
+		const rawIdemKey =
+			request.headers["idempotency-key"] ??
+			request.headers["x-idempotency-key"] ??
+			(body as { idempotencyKey?: unknown }).idempotencyKey;
+		const idemKeyStr = Array.isArray(rawIdemKey) ? rawIdemKey[0] : rawIdemKey;
+		const idemKey = typeof idemKeyStr === "string" && idemKeyStr.trim() ? idemKeyStr.trim() : undefined;
+		const effectiveMutationId = idemKey || body.clientMutationId || undefined;
+
+		const result = await withTenantCtx(targetOrgId, async (tx) => {
 			if (Array.isArray(body.services) && body.services.length > 0) {
 				return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
 					organizationId: targetOrgId,
@@ -115,7 +124,7 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 					userId: effectiveUserId,
 					notes: body.notes,
 					allowOverdraft: true,
-					clientMutationId: body.clientMutationId,
+					clientMutationId: effectiveMutationId,
 				});
 			}
 			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
@@ -124,8 +133,15 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 				userId: effectiveUserId,
 				items: body.items,
 				notes: body.notes ?? undefined,
+				idempotencyKey: idemKey,
+				clientMutationId: effectiveMutationId,
 			});
 		});
+
+		if (idemKey) {
+			reply.header("X-Idempotency-Key", idemKey);
+		}
+		return result;
 	};
 	[
 		"/:organizationId/shift-batch-deduct",

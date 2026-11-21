@@ -1,4 +1,4 @@
-import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
+import { kopecksToRubles, multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 import React, { useMemo, useState } from "react";
 import type { InventoryItem } from "./inventoryDataMappers.js";
 
@@ -55,7 +55,7 @@ export function useInventoryFiltering({
 				return multiplyKopecks(unitCostKopecks, quantity);
 			}),
 		);
-		return totalKopecks / 100;
+		return kopecksToRubles(totalKopecks);
 	}, [items]);
 
 	return {

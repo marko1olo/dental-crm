@@ -2,7 +2,8 @@
  * shiftBatchExecution.ts — Layer 3: 1-click execution of shift batch consumables deduction.
  */
 
-import { sql } from "drizzle-orm";
+import { and, eq, like, or, sql } from "drizzle-orm";
+import { inventoryTransactions } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
 import { executeUnifiedStockDeduction } from "../unifiedStockDeductionEngine.js";
 import { getShiftConsumablesSummary } from "./shiftSummaryQueries.js";
@@ -25,13 +26,48 @@ export async function executeShiftBatchDeduction(
 	tx: DbExecutor,
 	params: ExecuteShiftBatchDeductionParams,
 ): Promise<ExecuteShiftBatchDeductionResult> {
-	const { organizationId, date, userId, items, notes } = params;
+	const { organizationId, date, userId, items, notes, idempotencyKey, clientMutationId } = params;
 	const now = new Date();
 	const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : now.toISOString().slice(0, 10);
 
 	await tx.execute(
 		sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':shift_deduct:' || ${effectiveDate}))`,
 	);
+
+	const effectiveKey = idempotencyKey || clientMutationId;
+	if (effectiveKey) {
+		const existingTx = await tx
+			.select()
+			.from(inventoryTransactions)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					or(
+						like(inventoryTransactions.notes, `%[idempotencyKey:${effectiveKey}]%`),
+						like(inventoryTransactions.notes, `%[mutation:${effectiveKey}]%`),
+					),
+				),
+			)
+			.limit(50);
+
+		if (existingTx.length > 0) {
+			return {
+				success: true,
+				isOverdraft: existingTx.some((t) => t.isOverdraft),
+				date: effectiveDate,
+				deductedItems: existingTx.map((t) => ({
+					itemId: t.itemId ?? t.inventoryItemId ?? "unknown",
+					itemName: t.notes?.split("(")[0]?.trim() || "Списанный материал",
+					quantity: Math.abs(Number(t.quantityChanged ?? t.qty ?? 0)),
+					unit: "шт.",
+					remainingStock: 0,
+					isOverdraft: Boolean(t.isOverdraft),
+				})),
+				warnings: [],
+				message: `Повторный запрос пакетного списания за смену ${effectiveDate} (ключ ${effectiveKey}). Операция дедуплицирована.`,
+			};
+		}
+	}
 
 	let targets: ShiftBatchTargetItem[] = items ?? [];
 	if (targets.length === 0) {
@@ -60,12 +96,16 @@ export async function executeShiftBatchDeduction(
 		};
 	});
 
+	const tag = effectiveKey ? ` [idempotencyKey:${effectiveKey}]` : "";
+	const defaultNote = `Пакетное списание расходников за смену ${effectiveDate} (пакетное списание)`;
+	const effectiveNotes = notes ? `${notes}${tag}` : `${defaultNote}${tag}`;
+
 	const res = await executeUnifiedStockDeduction(tx, {
 		organizationId,
 		items: unifiedItems,
 		transactionType: "shift_batch_deduction",
 		userId,
-		notes: notes || `Пакетное списание расходников за смену ${effectiveDate} (пакетное списание)`,
+		notes: effectiveNotes,
 		reasonPrefix: `Списание под смену ${effectiveDate}`,
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Расходники за смену ${effectiveDate} списаны пакетом в 1 клик (${count} поз., мягкий овердрафт: ${hasOverdraft ? "активен" : "нет"}).`,

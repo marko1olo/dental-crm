@@ -1,6 +1,6 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
-import type { AutoVisitBomDeductionResult } from "@dental/shared";
+import { type AutoVisitBomDeductionResult, kopecksToRubles } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
 import type { DeductionValidationSummary } from "./bomDeductionValidator.js";
 
@@ -36,7 +36,7 @@ export function syncAutoBomDeduction(
 					reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
 					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
 					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,
-					unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+					unitCostRub: kopecksToRubles(i.unitCostPriceKopecks),
 				};
 			}),
 			{
@@ -77,7 +77,7 @@ export function syncAutoBomDeduction(
 					id: i.inventoryItemId,
 					name: i.itemName,
 					quantity: i.deductedQty,
-					unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+					unitCostRub: kopecksToRubles(i.unitCostPriceKopecks),
 					reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
 					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
 					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,

@@ -1,8 +1,15 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { inventoryItems, inventoryTransactions, stockBatches } from "../../../db/schema.js";
+import {
+	inventoryItems,
+	inventorySupplierInvoices,
+	inventorySupplierInvoiceItems,
+	inventoryTransactions,
+	stockBatches,
+} from "../../../db/schema.js";
 
 export const registerSupplierInvoiceQueries = (server: FastifyInstance): void => {
 	// =========================================================================
@@ -26,7 +33,154 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			// Получаем приходные транзакции ТМЦ
+			// 1. Реляционные приходные накладные из SSOT-таблицы inventory_supplier_invoices
+			const relationalRows = await db
+				.select({
+					invoiceId: inventorySupplierInvoices.id,
+					invoiceNumber: inventorySupplierInvoices.invoiceNumber,
+					supplierName: inventorySupplierInvoices.supplierName,
+					supplierInn: inventorySupplierInvoices.supplierInn,
+					invoiceDate: inventorySupplierInvoices.invoiceDate,
+					createdAt: inventorySupplierInvoices.createdAt,
+					totalAmountKopecks: inventorySupplierInvoices.totalAmountKopecks,
+					vatAmountKopecks: inventorySupplierInvoices.vatAmountKopecks,
+					itemId: inventorySupplierInvoiceItems.id,
+					inventoryItemId: inventorySupplierInvoiceItems.inventoryItemId,
+					itemName: inventorySupplierInvoiceItems.itemName,
+					category: inventorySupplierInvoiceItems.category,
+					unit: inventorySupplierInvoiceItems.unit,
+					quantity: inventorySupplierInvoiceItems.quantity,
+					unitPriceKopecks: inventorySupplierInvoiceItems.unitPriceKopecks,
+					vatRate: inventorySupplierInvoiceItems.vatRate,
+					lineTotalKopecks: inventorySupplierInvoiceItems.lineTotalKopecks,
+					batchNumber: inventorySupplierInvoiceItems.batchNumber,
+					expirationDate: inventorySupplierInvoiceItems.expirationDate,
+				})
+				.from(inventorySupplierInvoices)
+				.leftJoin(
+					inventorySupplierInvoiceItems,
+					eq(inventorySupplierInvoices.id, inventorySupplierInvoiceItems.invoiceId),
+				)
+				.where(eq(inventorySupplierInvoices.organizationId, targetOrgId))
+				.orderBy(sql`${inventorySupplierInvoices.createdAt} DESC`)
+				.limit(200);
+
+			if (relationalRows.length > 0) {
+				const map = new Map<
+					string,
+					{
+						id: string;
+						waybillNumber: string;
+						receiptDate: string;
+						supplier: { id: string; name: string; inn: string | null };
+						warehouseName: string;
+						status: "posted";
+						items: Array<{
+							id: string;
+							inventoryItemId?: string | undefined;
+							name: string;
+							category: string;
+							unit: string;
+							batchNumber: string;
+							expirationDate: string;
+							quantity: number;
+							unitPriceKopecks: number;
+							vatRate: number;
+							lineSubtotalKopecks: number;
+							vatKopecks: number;
+							lineTotalKopecks: number;
+						}>;
+						totalAmountKopecks: number;
+						vatAmountKopecks: number;
+						postedAt: string;
+					}
+				>();
+
+				for (const r of relationalRows) {
+					if (!map.has(r.invoiceId)) {
+						map.set(r.invoiceId, {
+							id: r.invoiceId,
+							waybillNumber: r.invoiceNumber,
+							receiptDate: r.invoiceDate,
+							supplier: {
+								id: `sup-${r.supplierName}`,
+								name: r.supplierName,
+								inn: r.supplierInn ?? null,
+							},
+							warehouseName: "Основной склад",
+							status: "posted",
+							items: [],
+							totalAmountKopecks: Number(r.totalAmountKopecks || 0),
+							vatAmountKopecks: Number(r.vatAmountKopecks || 0),
+							postedAt: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
+						});
+					}
+
+					if (r.itemId) {
+						const doc = map.get(r.invoiceId)!;
+						const qty = Math.abs(Number(r.quantity) || 1);
+						const unitPriceKopecks = Number(r.unitPriceKopecks) || 0;
+						const lineTotal = Number(r.lineTotalKopecks) || Math.round(qty * unitPriceKopecks);
+
+						doc.items.push({
+							id: r.itemId,
+							...(r.inventoryItemId ? { inventoryItemId: r.inventoryItemId } : {}),
+							name: r.itemName || "Материал стоматологический",
+							category: r.category || "material",
+							unit: r.unit || "шт",
+							batchNumber: r.batchNumber || "ПАРТИЯ-01",
+							expirationDate: r.expirationDate || "2027-12-31",
+							quantity: qty,
+							unitPriceKopecks,
+							vatRate: r.vatRate || 0,
+							lineSubtotalKopecks: lineTotal,
+							vatKopecks: 0,
+							lineTotalKopecks: lineTotal,
+						});
+					}
+				}
+
+				const waybills = Array.from(map.values()).map((wb) => {
+					let totalQuantity = 0;
+					let subtotalKopecks = 0;
+					for (const it of wb.items) {
+						totalQuantity += it.quantity;
+						subtotalKopecks += it.lineTotalKopecks;
+					}
+					const finalCost = wb.totalAmountKopecks > 0 ? wb.totalAmountKopecks : subtotalKopecks;
+
+					return {
+						id: wb.id,
+						waybillNumber: wb.waybillNumber,
+						receiptDate: wb.receiptDate,
+						supplier: wb.supplier,
+						warehouseName: wb.warehouseName,
+						status: wb.status,
+						items: wb.items,
+						totals: {
+							totalPositions: wb.items.length,
+							totalQuantity: Number(totalQuantity.toFixed(3)),
+							subtotalKopecks: finalCost,
+							totalVatKopecks: wb.vatAmountKopecks,
+							totalCostKopecks: finalCost,
+							subtotalRubles: kopecksToRubles(finalCost),
+							totalVatRubles: kopecksToRubles(wb.vatAmountKopecks),
+							totalCostRubles: kopecksToRubles(finalCost),
+						},
+						receiverFullName: "Ответственный за снабжение",
+						receiverPosition: "Ответственный за снабжение",
+						postedAt: wb.postedAt,
+					};
+				});
+
+				return reply.send({
+					success: true,
+					total: waybills.length,
+					waybills,
+				});
+			}
+
+			// 2. Обратная совместимость: если таблица пуста, читаем исторические транзакции
 			const receipts = await db
 				.select({
 					transactionId: inventoryTransactions.id,
@@ -136,7 +290,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 				const group = waybillsMap.get(groupKey)!;
 				const qty = Math.abs(Number(r.quantity) || 1);
 				const costRub = Number(r.unitCostRub) || 0;
-				const unitPriceKopecks = Math.round(costRub * 100);
+				const unitPriceKopecks = rublesToKopecks(costRub);
 				const subtotalKopecks = Math.round(qty * unitPriceKopecks);
 
 				group.items.push({
@@ -187,9 +341,9 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 						subtotalKopecks,
 						totalVatKopecks: 0,
 						totalCostKopecks,
-						subtotalRubles: Number((subtotalKopecks / 100).toFixed(2)),
+						subtotalRubles: kopecksToRubles(subtotalKopecks),
 						totalVatRubles: 0,
-						totalCostRubles: Number((totalCostKopecks / 100).toFixed(2)),
+						totalCostRubles: kopecksToRubles(totalCostKopecks),
 					},
 					receiverFullName: "Ответственный за снабжение",
 					receiverPosition: "Ответственный за снабжение",

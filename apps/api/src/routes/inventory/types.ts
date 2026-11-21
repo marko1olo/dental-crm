@@ -96,6 +96,7 @@ export const acceptanceWaybillItemSchema = z.object({
 	manufactureDate: z.string().nullable().optional(),
 	quantity: z.number().finite().positive("Количество должно быть больше нуля"),
 	purchasePriceKopecks: z.number().int().nonnegative().optional(),
+	unitPriceKopecks: z.number().int().nonnegative().optional(),
 	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
 	vatRate: z.number().finite().default(0),
 	barcode: z.string().nullable().optional(),

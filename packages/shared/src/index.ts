@@ -143,7 +143,21 @@ export * from "./emr/index.js";
 export * from "./egisz/index.js";
 export * from "./types/surgery.js";
 export * from "./dicom/index.js";
-export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
+export {
+	consumableUnitSchema,
+	type ConsumableUnit,
+	TREATMENT_CONSUMABLE_NOTE_MAX_LENGTH,
+	treatmentConsumableLinkCreateSchema,
+	treatmentConsumableLinkUpdateSchema,
+	treatmentConsumableLinkResponseSchema,
+	treatmentConsumableLinkDetailedSchema,
+	listTreatmentConsumablesQuerySchema,
+	treatmentDeductionItemSchema,
+	treatmentConsumableDeductionRequestSchema,
+	treatmentConsumableDeductionRecordSchema,
+	treatmentConsumableDeductionWarningSchema,
+	treatmentConsumableDeductionResponseSchema,
+} from "./inventory/index.js";
 export {
 	type ToothState, type CanonicalToothState, type ToothStatus, type ToothClinicalState, type CrmToothState,
 	type TimelineCategory, type TimelineCategory as ClinicalTimelineCategory, CLINICAL_TIMELINE_CATEGORIES, TIMELINE_CATEGORY_LABELS_RU,

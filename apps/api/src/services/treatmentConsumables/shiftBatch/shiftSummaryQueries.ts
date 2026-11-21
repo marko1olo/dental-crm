@@ -1,10 +1,15 @@
 /**
  * shiftSummaryQueries.ts — Layer 2: Queries and calculates shift consumable breakdown.
+ * Mandate 8v / 8aa: Real per-visit dynamic calculation & BOM resolution.
  */
 
 import { and, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
 import { inventoryItems, inventoryTransactions, treatmentItems, visits } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
+import {
+	resolveRequiredMaterialsForServices,
+	resolveServicesMetadata,
+} from "../stockDeductionModules/serviceBomRulesMatcher.js";
 import { STANDARD_SHIFT_CONSUMABLE_PRESETS } from "./shiftBatchPresets.js";
 import type { ShiftConsumablesSummaryResult, ShiftConsumableSummaryItem, ShiftSummaryProcedure } from "./shiftBatchTypes.js";
 
@@ -80,33 +85,96 @@ export async function getShiftConsumablesSummary(
 		};
 	}
 
+	const visitsCount = todaysVisits.length;
 	const allOrgItems = await tx.select().from(inventoryItems).where(eq(inventoryItems.organizationId, organizationId));
+
+	// Resolve procedure BOM rules for all procedures rendered during the shift
+	const services = todaysTreatmentItems.map((it) => ({
+		serviceToken: it.serviceId || it.title || "service",
+		quantity: Math.max(1, Number(it.quantity ?? 1)),
+	}));
+	const serviceMetadataMap = await resolveServicesMetadata(
+		tx,
+		organizationId,
+		services.map((s) => s.serviceToken),
+	);
+	const bomMaterials = await resolveRequiredMaterialsForServices(
+		tx,
+		organizationId,
+		services,
+		serviceMetadataMap,
+	);
+
+	const bomMaterialsByKey = new Map<string, number>();
+	for (const mat of bomMaterials) {
+		const k = mat.key.toLowerCase();
+		bomMaterialsByKey.set(k, (bomMaterialsByKey.get(k) ?? 0) + mat.quantity);
+		if (mat.name) {
+			const nameKey = mat.name.toLowerCase();
+			bomMaterialsByKey.set(nameKey, (bomMaterialsByKey.get(nameKey) ?? 0) + mat.quantity);
+		}
+	}
+
 	const consumablesSummary: ShiftConsumableSummaryItem[] = [];
 
 	for (const preset of STANDARD_SHIFT_CONSUMABLE_PRESETS) {
-		const matched = allOrgItems.find((inv) => preset.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())));
+		const matched = allOrgItems.find((inv) =>
+			preset.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
+		);
+
+		let matchedBomQty = 0;
+		for (const [bomKey, qty] of bomMaterialsByKey.entries()) {
+			if (
+				(matched && (bomKey === matched.id.toLowerCase() || matched.name.toLowerCase().includes(bomKey))) ||
+				preset.patterns.some((p) => bomKey.includes(p.toLowerCase())) ||
+				preset.defaultName.toLowerCase().includes(bomKey)
+			) {
+				matchedBomQty += qty;
+			}
+		}
+
+		// Dynamic calculation: max of procedure BOM requirement or per-visit baseline norm
+		const perVisitNorm = (preset.perVisitQty ?? 1) * visitsCount;
+		const effectiveQty = Math.max(matchedBomQty, perVisitNorm);
+		const qtyToDeduct = Number(effectiveQty.toFixed(2));
+
 		if (matched) {
 			const currentStock = Number(matched.stockQuantity ?? matched.currentQty ?? 0);
-			const projectedStock = Number((currentStock - preset.qty).toFixed(2));
+			const projectedStock = Number((currentStock - qtyToDeduct).toFixed(2));
 			const isOverdraft = projectedStock < 0;
 			consumablesSummary.push({
-				itemId: matched.id, itemName: matched.name, category: matched.category ?? preset.category,
-				unit: matched.unit ?? preset.unit, qtyToDeduct: preset.qty, currentStock, projectedStock,
-				isOverdraft, deficit: isOverdraft ? Math.abs(projectedStock) : 0, defaultCostRub: matched.unitCostRub ?? preset.defaultCost,
+				itemId: matched.id,
+				itemName: matched.name,
+				category: matched.category ?? preset.category,
+				unit: matched.unit ?? preset.unit,
+				qtyToDeduct,
+				currentStock,
+				projectedStock,
+				isOverdraft,
+				deficit: isOverdraft ? Math.abs(projectedStock) : 0,
+				defaultCostRub: matched.unitCostRub ?? preset.defaultCost,
 			});
 		} else {
 			consumablesSummary.push({
-				itemId: "", itemName: preset.defaultName, category: preset.category,
-				unit: preset.unit, qtyToDeduct: preset.qty, currentStock: 0, projectedStock: -preset.qty,
-				isOverdraft: true, deficit: preset.qty, defaultCostRub: preset.defaultCost,
+				itemId: "",
+				itemName: preset.defaultName,
+				category: preset.category,
+				unit: preset.unit,
+				qtyToDeduct,
+				currentStock: 0,
+				projectedStock: -qtyToDeduct,
+				isOverdraft: true,
+				deficit: qtyToDeduct,
+				defaultCostRub: preset.defaultCost,
 			});
 		}
 	}
 
 	return {
 		date: effectiveDate,
-		shiftStats: { completedVisitsCount: todaysVisits.length, totalProceduresCount: todaysTreatmentItems.length, breakdown },
-		consumablesSummary, totalItemsCount: consumablesSummary.length,
+		shiftStats: { completedVisitsCount: visitsCount, totalProceduresCount: todaysTreatmentItems.length, breakdown },
+		consumablesSummary,
+		totalItemsCount: consumablesSummary.length,
 		overdraftItemsCount: consumablesSummary.filter((c) => c.isOverdraft).length,
 		isAlreadyDeducted,
 	};

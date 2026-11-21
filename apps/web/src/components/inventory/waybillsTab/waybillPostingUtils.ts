@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders.js";
 import type { AcceptanceWaybillDocument } from "../acceptanceWaybillsEngine.js";
 import { reconcileOverdraftOnReceipt } from "../acceptanceWaybillsEngine.js";
@@ -53,7 +54,8 @@ export async function postWaybillToApi(waybill: AcceptanceWaybillDocument, organ
 				batchNumber: it.batchNumber || `LOT-${new Date().getFullYear()}`,
 				expirationDate: it.expirationDate || "2029-12-31",
 				quantity: Number(it.quantity) || 1,
-				purchasePricePerUnit: it.unitPriceKopecks ? it.unitPriceKopecks / 100 : 0,
+				purchasePricePerUnit: it.unitPriceKopecks ? kopecksToRubles(it.unitPriceKopecks) : 0,
+				purchasePriceKopecks: it.unitPriceKopecks ?? undefined,
 			})),
 		};
 		await fetch(`/api/inventory/${organizationId}/acceptance-waybill`, {
