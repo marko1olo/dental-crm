@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { calculateNextDate, createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
@@ -47,6 +48,14 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 		async (request, reply) => {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
 			const { patientId } = patientParamsSchema.parse(request.params);
 			const body = issueAlignerSetSchema.parse(request.body);
@@ -95,6 +104,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				serviceCode: "A16.07.046",
 				defaultServiceName: `Ортодонтическая коррекция с применением элайнеров (выдача сета №${fromAligner}–${toAligner})`,
 				fallbackPriceRub: 3000,
+				logger: request.log,
 			});
 
 			const billing = await db.transaction(async (tx) => {

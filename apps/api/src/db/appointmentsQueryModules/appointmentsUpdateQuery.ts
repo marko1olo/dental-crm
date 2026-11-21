@@ -200,7 +200,11 @@ export async function updateAppointmentInDb(
 		if (input.clinicalStage !== undefined) updateData.clinicalStage = input.clinicalStage;
 		if (input.toothNumber !== undefined) updateData.toothNumber = input.toothNumber;
 		if (input.diagnosisMkb10 !== undefined) updateData.diagnosisMkb10 = input.diagnosisMkb10;
-		if (input.allowOverbooking || isEmergencyOverrideOverall) updateData.isOverbooking = true;
+		if (input.allowOverbooking !== undefined || input.allowEmergencyOverride !== undefined) {
+			updateData.isOverbooking = Boolean(input.allowOverbooking || isEmergencyOverrideOverall);
+		} else if (!isEmergencyOverrideOverall && (input.startsAt !== undefined || input.chairId !== undefined || input.doctorUserId !== undefined)) {
+			updateData.isOverbooking = false;
+		}
 
 		if (Object.keys(updateData).length === 0) {
 			return existing;

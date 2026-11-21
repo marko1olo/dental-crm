@@ -247,7 +247,7 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 								const val = Math.max(1, parseInt(e.target.value, 10) || 1);
 								onChange((prev) => ({ ...prev, issuedSetsCount: val }));
 							}}
-							className="w-14 text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded px-1.5 py-0.5 text-center"
+							className="ortho-issued-sets-input w-14 text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded px-1.5 py-0.5 text-center"
 						/>
 						<span className="text-xs text-[var(--ink-muted)] font-medium">компл.</span>
 					</div>

@@ -1,5 +1,6 @@
+import type { FastifyBaseLogger } from "fastify";
 import { and, eq, ilike, or } from "drizzle-orm";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { inventoryItems, serviceCatalogItems } from "../../db/schema.js";
 
@@ -21,8 +22,9 @@ export async function resolveOrthoServicePrice(params: {
 	serviceCode: string;
 	defaultServiceName: string;
 	fallbackPriceRub: number;
+	logger?: FastifyBaseLogger | undefined;
 }): Promise<ResolvedOrthoServicePrice> {
-	const { organizationId, serviceCode, defaultServiceName, fallbackPriceRub } = params;
+	const { organizationId, serviceCode, defaultServiceName, fallbackPriceRub, logger } = params;
 
 	try {
 		const [found] = await db
@@ -61,7 +63,9 @@ export async function resolveOrthoServicePrice(params: {
 			};
 		}
 	} catch (err) {
-		console.warn("[OrthoPricelistResolver] Warning searching service catalog:", err);
+		if (logger) {
+			logger.warn({ err, organizationId, serviceCode }, "[OrthoPricelistResolver] Warning searching service catalog");
+		}
 	}
 
 	const priceKopecks = BigInt(rublesToKopecks(fallbackPriceRub));
@@ -88,8 +92,9 @@ export async function resolveOrthoMaterialCost(params: {
 	organizationId: string;
 	itemNamePattern: string;
 	fallbackCostRub: number;
+	logger?: FastifyBaseLogger | undefined;
 }): Promise<ResolvedOrthoMaterialCost> {
-	const { organizationId, itemNamePattern, fallbackCostRub } = params;
+	const { organizationId, itemNamePattern, fallbackCostRub, logger } = params;
 
 	try {
 		const [found] = await db
@@ -118,7 +123,9 @@ export async function resolveOrthoMaterialCost(params: {
 			}
 		}
 	} catch (err) {
-		console.warn("[OrthoPricelistResolver] Warning searching inventory cost:", err);
+		if (logger) {
+			logger.warn({ err, organizationId, itemNamePattern }, "[OrthoPricelistResolver] Warning searching inventory cost");
+		}
 	}
 
 	return {

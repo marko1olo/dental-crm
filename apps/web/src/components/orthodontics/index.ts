@@ -11,7 +11,6 @@ export {
 } from "./OrthodonticsStudioModal";
 
 export { DirectOrthodonticsLauncher } from "./DirectOrthodonticsLauncher";
-export { AlignerTrackingCard } from "./AlignerTrackingCard";
 export {
 	AlignerCaseTracker,
 	type AlignerCaseTrackerProps,
@@ -23,11 +22,12 @@ export {
 	type BiteClassificationCardProps,
 } from "./BiteClassificationCard";
 export { OrthodonticTimeline } from "./OrthodonticTimeline";
-export { CephalometricCanvas } from "./CephalometricCanvas";
 export {
-	CephTracingCanvas,
-	type CephTracingCanvasProps,
-} from "./CephTracingCanvas";
+	CephalometricCanvas,
+	type CephalometricCanvasProps,
+	type PointCoord,
+	type XrayFilterMode,
+} from "./CephalometricCanvas";
 export {
 	CephAnalysisModal,
 	CephalometricAnalysisModal,

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
@@ -13,21 +14,43 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/deduct-materials`, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const { patientId } = patientParamsSchema.parse(request.params);
 		const body = deductOrthoMaterialsSchema.parse(request.body);
 		const patient = await getPatientByIdFromDb(orgId, patientId);
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
 		const resolved = await resolveMaterialParams(body, orgId);
-		const deduction = await deductOrthoMaterialSafely({
-			organizationId: orgId, patientId, itemNamePattern: resolved.pattern, defaultItemName: resolved.defaultName,
-			category: resolved.category, quantity: body.quantity, unit: resolved.unit,
-			unitCostKopecks: resolved.unitCostKopecks, unitCostRub: resolved.unitCostRub,
-			visitId: body.visitId ?? null, notes: body.notes || `Ортодонтическое списание [${body.action}]`,
+		const deduction = await db.transaction(async (tx) => {
+			return await deductOrthoMaterialSafely({
+				organizationId: orgId,
+				patientId,
+				itemNamePattern: resolved.pattern,
+				defaultItemName: resolved.defaultName,
+				category: resolved.category,
+				quantity: body.quantity,
+				unit: resolved.unit,
+				unitCostKopecks: resolved.unitCostKopecks,
+				unitCostRub: resolved.unitCostRub,
+				visitId: body.visitId ?? null,
+				notes: body.notes || `Ортодонтическое списание [${body.action}]`,
+				tx,
+				logger: request.log,
+			});
 		});
 
 		return reply.send({
-			success: true, action: body.action, deduction,
+			success: true,
+			action: body.action,
+			deduction,
 			message: `Материал «${deduction.itemName || resolved.defaultName}» успешно списан со склада (мягкий овердрафт).`,
 		});
 	});
@@ -35,6 +58,15 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/stages/advance`, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const { patientId } = patientParamsSchema.parse(request.params);
 		const body = stageAdvanceSchema.parse(request.body);
 		const patient = await getPatientByIdFromDb(orgId, patientId);
@@ -55,14 +87,26 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			lastActionSummary: actionSummary,
 		};
 
-		// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
+		// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при обновлении профиля пациента
+		await db.transaction(async () => {
+			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
+		});
+
 		return reply.send({ success: true, currentStage: body.nextStage, actionSummary, progress: updatedProgress });
 	});
 
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/rebracket`, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const { patientId } = patientParamsSchema.parse(request.params);
 		const body = rebracketSchema.parse(request.body ?? {});
 		const patient = await getPatientByIdFromDb(orgId, patientId);
@@ -81,6 +125,7 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			organizationId: orgId,
 			itemNamePattern: "брекет",
 			fallbackCostRub: 1200,
+			logger: request.log,
 		});
 
 		const deduction = await db.transaction(async (tx) => {

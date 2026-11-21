@@ -14,11 +14,9 @@ import {
 	TRG_ANGLES_NORMS_SSOT, ORTHO_PATIENT_MEMO_SECTIONS, evaluateTrgAngleStatus,
 	type ArchwireAlloy, type ArchwireSection, type OrthoProtocolState,
 } from "./orthodonticsCatalogData";
-import { AlignerTrackingCard } from "./AlignerTrackingCard";
 import { AlignerCaseTracker } from "./AlignerCaseTracker";
 import { BiteClassificationCard } from "./BiteClassificationCard";
-import { CephTracingCanvas } from "./CephTracingCanvas";
-import { SAMPLE_TRG_CEPHALOGRAM_URL, type PointCoord } from "./CephalometricCanvas";
+import { CephalometricCanvas, SAMPLE_TRG_CEPHALOGRAM_URL, type PointCoord } from "./CephalometricCanvas";
 import { OrthodonticTimeline } from "./OrthodonticTimeline";
 
 export interface OrthodonticsTabsContentProps {
@@ -302,7 +300,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 							</button>
 						</div>
 						{showTracingPreview && (
-							<CephTracingCanvas
+							<CephalometricCanvas
 								imageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
 								landmarks={sampleCephLandmarks}
 								onLandmarkChange={(id, pt) => {

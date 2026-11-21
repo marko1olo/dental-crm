@@ -67,7 +67,7 @@ export function useAppointmentTrackController(
           undefined;
         const slotDuration = data.durationMinutes || 30;
         const { startIso: targetStartIso, endIso: targetEndIso } =
-          safeBuildSlotIso(dateKey, quantizedHour, slotDuration);
+          safeBuildSlotIso(dateKey, quantizedHour, slotDuration, timezone);
         const isSourceCito = isCitoAppointment(sourceAppt);
 
         const collisionCheck = checkAppointmentResourceCollision(
@@ -181,7 +181,7 @@ export function useAppointmentTrackController(
           undefined;
         const slotDuration = waitlistItem.durationMinutes || 30;
         const { startIso: targetStartIso, endIso: targetEndIso } =
-          safeBuildSlotIso(dateKey, hour, slotDuration);
+          safeBuildSlotIso(dateKey, hour, slotDuration, timezone);
 
         const collisionCheck = checkAppointmentResourceCollision(
           {

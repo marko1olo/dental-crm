@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db, type TenantDb } from "../../db/client.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
@@ -23,13 +23,14 @@ export interface OrthoBillingResult {
 	serviceName: string;
 	priceRub: number;
 	priceKopecks: number;
+	amountKopecks?: bigint | undefined;
 	error?: string | undefined;
 }
 
 /**
  * DEF-ORTHO-05 / Red Team Досье: Связка ортодонтических активаций с прейскурантом и кассовым чеком.
  * DEF-ORTHO-API-01: priceKopecks — единственный источник правды (SSOT); priceRub рассчитывается автоматически из priceKopecks.
- * Мандат 8bm: Сложение сметы счёта ведётся строго в целочисленных копейках (BigInt / Zero Float Drift).
+ * Мандат 8bm: Сложение сметы счёта ведётся строго в целочисленных копейках (amountKopecks: bigint / Zero Float Drift).
  * Если передан visitId, автоматически добавляет медицинскую услугу активации в черновик счета пациента.
  */
 export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingParams): Promise<OrthoBillingResult> {
@@ -44,6 +45,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceName,
 			priceRub,
 			priceKopecks: Number(itemKopecks),
+			amountKopecks: itemKopecks,
 		};
 	}
 
@@ -71,8 +73,13 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					.returning();
 				invoice = created;
 			} else {
-				// Мандат 8bm: Zero-Float Drift — сложение строго в целочисленных копейках
-				const existingKopecks = BigInt(rublesToKopecks(Number(invoice.totalAmountRub ?? invoice.totalRub ?? 0)));
+				// Мандат 8bm: Zero-Float Drift — сложение строго в целочисленных копейках без Math.round((prevTotalRub + addedRub) * 100) / 100
+				const rawAmount = invoice.totalAmountRub ?? invoice.totalRub ?? 0;
+				const existingKopecks = BigInt(
+					typeof rawAmount === "number"
+						? rublesToKopecks(rawAmount)
+						: rublesToKopecks(Number(rawAmount) || 0),
+				);
 				const newTotalKopecks = existingKopecks + itemKopecks;
 				const newTotalRub = kopecksToRubles(Number(newTotalKopecks));
 				await tx
@@ -104,13 +111,23 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 				serviceName,
 				priceRub,
 				priceKopecks: Number(itemKopecks),
+				amountKopecks: itemKopecks,
 			};
 		};
 
 		return params.tx ? await runWithTx(params.tx) : await db.transaction(runWithTx);
 	} catch (err) {
 		if (params.logger) {
-			params.logger.warn({ err, organizationId, patientId, visitId }, "[OrthoBilling] Error adding service to invoice");
+			params.logger.warn(
+				{
+					err,
+					organizationId,
+					patientId,
+					visitId,
+					priceFormatted: formatKopecksToRub(itemKopecks),
+				},
+				"[OrthoBilling] Error adding service to invoice",
+			);
 		}
 		return {
 			serviceAdded: false,
@@ -118,6 +135,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceName,
 			priceRub,
 			priceKopecks: Number(itemKopecks),
+			amountKopecks: itemKopecks,
 			error: err instanceof Error ? err.message : String(err),
 		};
 	}

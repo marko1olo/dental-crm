@@ -2,6 +2,7 @@
  * @dental/web/components/orthodontics/orthodonticsStudioPersistence.ts
  *
  * Сохранение протокола ортодонтической студии, фиксация этапов в ЭМК и серверные API.
+ * Соответствует Мандатам 8e (Автономия врача), 8bo (Идемпотентность транзакций) и 8zr (Ноль проглатывания ошибок).
  */
 
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
@@ -15,6 +16,34 @@ export interface SaveOrthoProtocolOptions {
 	readonly patientId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly onSaveProtocol?: ((protocol: OrthoProtocolState, summarySoap: string) => void | Promise<void>) | undefined;
+}
+
+async function postOrthoEndpoint(url: string, payload: unknown, idempotencyKey: string): Promise<Response> {
+	const res = await fetch(url, {
+		method: "POST",
+		headers: denteAdminSecretRequestHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": idempotencyKey,
+		}),
+		body: JSON.stringify(payload),
+	});
+
+	if (!res.ok) {
+		let message = `Ошибка сервера (${res.status})`;
+		try {
+			const errJson = (await res.json()) as { message?: string; error?: string };
+			if (errJson?.message) {
+				message = errJson.message;
+			} else if (errJson?.error) {
+				message = errJson.error;
+			}
+		} catch {
+			// не-JSON ответ
+		}
+		throw new Error(message);
+	}
+
+	return res;
 }
 
 export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOptions): Promise<boolean> {
@@ -33,6 +62,10 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 		return true;
 	}
 
+	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+		? crypto.randomUUID()
+		: `ortho-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
 	try {
 		if (protocol.applianceCategory === "aligners") {
 			// DEF-ORTHO-08: Количество выдаваемых кап берется строго из issuedSetsCount (пар на руки), а не из currentStep
@@ -40,38 +73,30 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				? protocol.alignerTracking.issuedSetsCount
 				: 1;
 
-			await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					alignerCount,
-					wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
-					totalAligners: protocol.alignerTracking.totalSteps || 24,
-					note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
-					visitId,
-					soapSummary,
-					applianceId: protocol.applianceId,
-					applianceName: protocol.applianceName,
-					selectedElasticId: protocol.selectedElasticId,
-					selectedActionIds: protocol.selectedActionIds,
-				}),
-			});
+			await postOrthoEndpoint(`/api/orthodontics/${patientId}/aligners/issue-set`, {
+				alignerCount,
+				wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
+				totalAligners: protocol.alignerTracking.totalSteps || 24,
+				note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
+				visitId,
+				soapSummary,
+				applianceId: protocol.applianceId,
+				applianceName: protocol.applianceName,
+				selectedElasticId: protocol.selectedElasticId,
+				selectedActionIds: protocol.selectedActionIds,
+			}, idempotencyKey);
 		} else if (protocol.applianceCategory === "plate") {
-			await fetch(`/api/orthodontics/${patientId}/stages/advance`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					nextStage: Math.max(1, protocol.currentMonth || 1),
-					stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
-					note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
-					visitId,
-					soapSummary,
-					applianceId: protocol.applianceId,
-					applianceName: protocol.applianceName,
-					selectedElasticId: protocol.selectedElasticId,
-					selectedActionIds: protocol.selectedActionIds,
-				}),
-			});
+			await postOrthoEndpoint(`/api/orthodontics/${patientId}/stages/advance`, {
+				nextStage: Math.max(1, protocol.currentMonth || 1),
+				stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
+				note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
+				visitId,
+				soapSummary,
+				applianceId: protocol.applianceId,
+				applianceName: protocol.applianceName,
+				selectedElasticId: protocol.selectedElasticId,
+				selectedActionIds: protocol.selectedActionIds,
+			}, idempotencyKey);
 		} else {
 			const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
 				niti: "NiTi",
@@ -87,83 +112,71 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 			const lowerMat = materialMap[protocol.lowerAlloy] || "CuNiTi";
 
 			if (upperMat === lowerMat && protocol.upperSection === protocol.lowerSection) {
-				await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({
-						material: upperMat,
-						section: protocol.upperSection,
-						arch: "both",
-						applianceCategory: "brackets",
-						isWireChange: true,
-						note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
-						visitId,
-						soapSummary,
-						applianceId: protocol.applianceId,
-						applianceName: protocol.applianceName,
-						selectedElasticId: protocol.selectedElasticId,
-						selectedActionIds: protocol.selectedActionIds,
-					}),
-				});
-			} else {
-				// Сохраняем параметры обеих дуг: ВЧ и НЧ раздельно без взаимного затирания
-				await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({
-						material: upperMat,
-						section: protocol.upperSection,
-						arch: "upper",
-						applianceCategory: "brackets",
-						isWireChange: true,
-						note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
-						visitId,
-						soapSummary,
-						applianceId: protocol.applianceId,
-						applianceName: protocol.applianceName,
-						selectedElasticId: protocol.selectedElasticId,
-						selectedActionIds: protocol.selectedActionIds,
-					}),
-				});
-				await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({
-						material: lowerMat,
-						section: protocol.lowerSection,
-						arch: "lower",
-						applianceCategory: "brackets",
-						isWireChange: true,
-						note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
-						visitId,
-						soapSummary,
-						applianceId: protocol.applianceId,
-						applianceName: protocol.applianceName,
-						selectedElasticId: protocol.selectedElasticId,
-						selectedActionIds: protocol.selectedActionIds,
-					}),
-				});
-			}
-
-			await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					powerChain: protocol.selectedActionIds.includes("power_chain"),
+				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
+					material: upperMat,
+					section: protocol.upperSection,
+					arch: "both",
 					applianceCategory: "brackets",
-					note: "Активация лигатур",
+					isWireChange: true,
+					note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
 					visitId,
 					soapSummary,
-				}),
-			});
+					applianceId: protocol.applianceId,
+					applianceName: protocol.applianceName,
+					selectedElasticId: protocol.selectedElasticId,
+					selectedActionIds: protocol.selectedActionIds,
+				}, `${idempotencyKey}-wire-both`);
+			} else {
+				// Сохраняем параметры обеих дуг: ВЧ и НЧ раздельно без взаимного затирания
+				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
+					material: upperMat,
+					section: protocol.upperSection,
+					arch: "upper",
+					applianceCategory: "brackets",
+					isWireChange: true,
+					note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
+					visitId,
+					soapSummary,
+					applianceId: protocol.applianceId,
+					applianceName: protocol.applianceName,
+					selectedElasticId: protocol.selectedElasticId,
+					selectedActionIds: protocol.selectedActionIds,
+				}, `${idempotencyKey}-wire-upper`);
+
+				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
+					material: lowerMat,
+					section: protocol.lowerSection,
+					arch: "lower",
+					applianceCategory: "brackets",
+					isWireChange: true,
+					note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
+					visitId,
+					soapSummary,
+					applianceId: protocol.applianceId,
+					applianceName: protocol.applianceName,
+					selectedElasticId: protocol.selectedElasticId,
+					selectedActionIds: protocol.selectedActionIds,
+				}, `${idempotencyKey}-wire-lower`);
+			}
+
+			await postOrthoEndpoint(`/api/orthodontics/${patientId}/ligatures-activate`, {
+				powerChain: protocol.selectedActionIds.includes("power_chain"),
+				applianceCategory: "brackets",
+				note: "Активация лигатур",
+				visitId,
+				soapSummary,
+			}, `${idempotencyKey}-ligatures`);
 		}
 
 		// DEF-ORTHO-04: Сохранение протокола в ЭМК через API визита
 		if (visitId) {
 			try {
-				await fetch(`/api/visits/${visitId}/draft/autosave`, {
+				const autoSaveRes = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 					method: "PUT",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": `${idempotencyKey}-autosave`,
+					}),
 					body: JSON.stringify({
 						visitId,
 						patientId,
@@ -178,6 +191,9 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 						},
 					}),
 				});
+				if (!autoSaveRes.ok) {
+					console.warn("[saveOrthodonticProtocolToApi] Autosave draft HTTP status:", autoSaveRes.status);
+				}
 			} catch (vErr) {
 				console.warn("[saveOrthodonticProtocolToApi] Autosave visit draft error:", vErr);
 			}
@@ -211,8 +227,9 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 		showToast("✓ Активация этапа успешно зафиксирована в ЭМК", "success");
 		return true;
 	} catch (err) {
+		const errorMessage = err instanceof Error ? err.message : String(err);
 		console.warn("[saveOrthodonticProtocolToApi] Save error:", err);
-		showToast("Сетевой сбой при фиксации этапа. Данные сохранены локально.", "warning");
+		showToast(`Сбой при фиксации этапа: ${errorMessage}`, "error");
 		return false;
 	}
 }

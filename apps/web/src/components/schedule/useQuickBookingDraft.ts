@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { safeLocalStorageSetJson, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
-import { showToast } from "../GlobalToast";
+import { safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 import type { useQuickBookingPatientSearch } from "./useQuickBookingPatientSearch";
@@ -20,8 +19,8 @@ export interface UseQuickBookingDraftParams {
 }
 
 export function useQuickBookingDraft({
-  comment, reason, initialSlot, patientSearch, appointmentType,
-  doctorUserId, assistantUserId, chairId, startsAtLocal, durationMinutes, onClose,
+  comment, reason, initialSlot, patientSearch,
+  onClose,
 }: UseQuickBookingDraftParams) {
   const isDirty = useMemo(() => {
     if (comment.trim().length > 0) return true;
@@ -33,29 +32,44 @@ export function useQuickBookingDraft({
     return reason.trim() !== initialReason.trim();
   }, [comment, patientSearch.newPatientFullName, patientSearch.newPatientPhone, patientSearch.patientId, patientSearch.searchQuery, initialSlot, reason]);
 
-  const handleSaveDraftAndClose = useCallback(() => {
-    try {
-      const draftData = {
-        appointmentType, patientId: patientSearch.patientId, selectedPatient: patientSearch.selectedPatient,
-        doctorUserId, assistantUserId, chairId, startsAtLocal, durationMinutes, reason, comment, savedAt: new Date().toISOString(),
-      };
-      safeLocalStorageSetJson("dente_quick_booking_draft", draftData, true);
-      showToast("Черновик записи сохранен", "info");
-    } catch (err: unknown) {
-      console.warn("[useQuickBookingDraft] Failed to save quick booking draft:", err);
-    }
-    onClose();
-  }, [appointmentType, patientSearch.patientId, patientSearch.selectedPatient, doctorUserId, assistantUserId, chairId, startsAtLocal, durationMinutes, reason, comment, onClose]);
-
+  // Mandate 8bn / 8zq (Zero-Leak Draft & Stale Draft Purge):
+  // При закрытии шторки по Escape/Отмена/Backdrop — обязательный сброс локального черновика,
+  // предотвращающий утечку данных прошлого пациента следующему.
   const handleDiscardDraftAndClose = useCallback(() => {
     safeLocalStorageRemoveItem("dente_quick_booking_draft");
+    try {
+      if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+        globalThis.localStorage.removeItem("dente_quick_booking_draft");
+      }
+    } catch (err: unknown) {
+      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
+    }
+    onClose();
+  }, [onClose]);
+
+  const handleSaveDraftAndClose = useCallback(() => {
+    safeLocalStorageRemoveItem("dente_quick_booking_draft");
+    try {
+      if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+        globalThis.localStorage.removeItem("dente_quick_booking_draft");
+      }
+    } catch (err: unknown) {
+      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
+    }
     onClose();
   }, [onClose]);
 
   const handleRequestClose = useCallback(() => {
-    if (isDirty) handleSaveDraftAndClose();
-    else onClose();
-  }, [isDirty, handleSaveDraftAndClose, onClose]);
+    safeLocalStorageRemoveItem("dente_quick_booking_draft");
+    try {
+      if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+        globalThis.localStorage.removeItem("dente_quick_booking_draft");
+      }
+    } catch (err: unknown) {
+      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
+    }
+    onClose();
+  }, [onClose]);
 
   return { isDirty, handleSaveDraftAndClose, handleDiscardDraftAndClose, handleRequestClose };
 }

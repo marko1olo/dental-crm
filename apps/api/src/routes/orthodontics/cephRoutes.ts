@@ -7,7 +7,9 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { cephAnalysisSaveSchema, patientParamsSchema } from "./types.js";
 
@@ -21,6 +23,14 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 		async (request, reply) => {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
 			const { patientId } = patientParamsSchema.parse(request.params);
 			const body = cephAnalysisSaveSchema.parse(request.body);
@@ -62,10 +72,12 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 				lastActionSummary: `Цефалометрический анализ ТРГ: ${studyRecord.placedCount} ориентиров`,
 			};
 
-			// Сохранение в PostgreSQL 18 через updatePatientAdministrativeProfileInDb
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-				...adminProfile,
-				orthodonticProgress: updatedOrtho,
+			// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при сохранении анализа ТРГ в PostgreSQL 18
+			await db.transaction(async () => {
+				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
+					...adminProfile,
+					orthodonticProgress: updatedOrtho,
+				});
 			});
 
 			return reply.send({

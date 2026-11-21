@@ -1,4 +1,5 @@
 import type { Appointment } from "@dental/shared";
+import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 
 export function extractTeethList(appointment: Appointment): string[] {
   if (!appointment) return [];
@@ -52,6 +53,7 @@ export function safeBuildSlotIso(
   dateKey: string,
   hour: string,
   durationMinutes = 30,
+  timezone?: string | null,
 ): { startIso: string; endIso: string } {
   const cleanDate = dateKey
     ? dateKey.slice(0, 10)
@@ -79,9 +81,18 @@ export function safeBuildSlotIso(
     }
   }
 
-  const candidateStartIso = `${cleanDate}T${cleanHour}.000Z`;
-  const parsedMs = Date.parse(candidateStartIso);
-  const startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
+  const localDateTimeStr = `${cleanDate}T${cleanHour.slice(0, 5)}`;
+  let startMs: number;
+  if (timezone) {
+    const zonedIso = fromDateTimeLocalValue(localDateTimeStr, timezone);
+    const parsedMs = Date.parse(zonedIso);
+    startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
+  } else {
+    const candidateStartIso = `${cleanDate}T${cleanHour}.000Z`;
+    const parsedMs = Date.parse(candidateStartIso);
+    startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
+  }
+
   const startIso = new Date(startMs).toISOString();
   const endIso = new Date(startMs + dur * 60_000).toISOString();
 

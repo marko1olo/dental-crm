@@ -22,36 +22,36 @@ export interface PointCoord {
 }
 
 export interface CephalometricCanvasProps {
-	readonly imageUrl?: string | null;
-	readonly landmarks?: Record<string, PointCoord>;
-	readonly onLandmarkChange?: (id: string, pt: PointCoord) => void;
-	readonly onRemoveLandmark?: (id: string) => void;
-	readonly activeTargetKey?: string | null;
-	readonly onSelectTargetKey?: (key: string | null) => void;
-	readonly onImageUpload?: (url: string) => void;
-	readonly filterMode?: XrayFilterMode;
-	readonly onFilterModeChange?: (mode: XrayFilterMode) => void;
-	readonly brightness?: number;
-	readonly contrast?: number;
-	readonly showPolygon?: boolean;
-	readonly onTogglePolygon?: () => void;
-	readonly showPlanes?: boolean;
-	readonly onTogglePlanes?: () => void;
-	readonly showLabels?: boolean;
-	readonly onToggleLabels?: () => void;
-	readonly scaleMmPerPixel?: number;
-	readonly onScaleChange?: (scale: number) => void;
-	readonly onLoadPreset?: () => void;
-	readonly onResetLandmarks?: () => void;
-	readonly onRunAiAutoPlacement?: () => void;
-	readonly isAiInferring?: boolean;
-	readonly aiBackendBadge?: string;
-	readonly aiBackendLabel?: string;
-	readonly aiBackendPref?: string;
-	readonly onChangeAiBackendPref?: (pref: string) => void;
+	readonly imageUrl?: string | null | undefined;
+	readonly landmarks?: Record<string, PointCoord> | undefined;
+	readonly onLandmarkChange?: ((id: string, pt: PointCoord) => void) | undefined;
+	readonly onRemoveLandmark?: ((id: string) => void) | undefined;
+	readonly activeTargetKey?: string | null | undefined;
+	readonly onSelectTargetKey?: ((key: string | null) => void) | undefined;
+	readonly onImageUpload?: ((url: string) => void) | undefined;
+	readonly filterMode?: XrayFilterMode | undefined;
+	readonly onFilterModeChange?: ((mode: XrayFilterMode) => void) | undefined;
+	readonly brightness?: number | undefined;
+	readonly contrast?: number | undefined;
+	readonly showPolygon?: boolean | undefined;
+	readonly onTogglePolygon?: (() => void) | undefined;
+	readonly showPlanes?: boolean | undefined;
+	readonly onTogglePlanes?: (() => void) | undefined;
+	readonly showLabels?: boolean | undefined;
+	readonly onToggleLabels?: (() => void) | undefined;
+	readonly scaleMmPerPixel?: number | undefined;
+	readonly onScaleChange?: ((scale: number) => void) | undefined;
+	readonly onLoadPreset?: (() => void) | undefined;
+	readonly onResetLandmarks?: (() => void) | undefined;
+	readonly onRunAiAutoPlacement?: (() => void) | undefined;
+	readonly isAiInferring?: boolean | undefined;
+	readonly aiBackendBadge?: string | undefined;
+	readonly aiBackendLabel?: string | undefined;
+	readonly aiBackendPref?: string | undefined;
+	readonly onChangeAiBackendPref?: ((pref: string) => void) | undefined;
 	readonly aiInferenceStats?: unknown;
-	readonly children?: React.ReactNode;
-	readonly className?: string;
+	readonly children?: React.ReactNode | undefined;
+	readonly className?: string | undefined;
 }
 
 const LANDMARK_COLORS: Record<string, string> = {

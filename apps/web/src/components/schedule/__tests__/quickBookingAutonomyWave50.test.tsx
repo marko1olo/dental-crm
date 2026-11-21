@@ -1132,9 +1132,9 @@ describe("Feature 234 (Wave 50): QuickBookingDrawer Autonomy & 1-Click Messenger
 			"Mandate 8d/8e: Nested alertdialog confirmation must NEVER block closing",
 		);
 
-		// Verify draft was saved to localStorage
+		// Verify draft was purged from localStorage (Mandate 8bn / 8zq Zero-Leak Draft)
 		const savedDraft = globalThis.localStorage.getItem("dente_quick_booking_draft");
-		assert.ok(savedDraft, "Draft data must be automatically persisted in localStorage on close");
+		assert.equal(savedDraft, null, "Draft data must be purged from localStorage on close to prevent cross-patient leak");
 	});
 
 	// --- TEST 8: Discard draft button in footer clears draft without modal popup ---

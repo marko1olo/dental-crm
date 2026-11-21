@@ -27,6 +27,7 @@ import { StaffActionAuditService } from "../../../services/audit/staffActionAudi
 import { type ScheduleStore, useScheduleStore } from "../../../store/scheduleStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { emptyAppointmentScheduleDraft } from "../../../utils/draftDefaults";
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
 
@@ -320,7 +321,7 @@ export function useAppointmentMutations({
 					startTime: draft.startsAt,
 					endTime: draft.endsAt,
 					status: toOfflineAppointmentStatus(draft.status || sourceAppointment?.status),
-					notes: draft.reason,
+					notes: draft.reason ?? undefined,
 					organizationId:
 						dashboard?.clinicSettings?.profile?.organizationId ?? undefined,
 					createdAt: new Date().toISOString(),
@@ -572,7 +573,7 @@ export function useAppointmentMutations({
 					startTime: activeNewDraft.startsAt,
 					endTime: activeNewDraft.endsAt,
 					status: "planned",
-					notes: activeNewDraft.reason,
+					notes: activeNewDraft.reason ?? undefined,
 					organizationId: resolvedOrgId,
 					createdAt: new Date().toISOString(),
 					isOfflineCreated: true,
@@ -639,6 +640,7 @@ export function useAppointmentMutations({
 			setSlotConflict(null);
 			return;
 		}
+		const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
 		if (appointmentId) {
 			const draft = appointmentScheduleDraftsRef.current[appointmentId];
@@ -647,14 +649,13 @@ export function useAppointmentMutations({
 				const origEnd = draft.endsAt ? Date.parse(draft.endsAt) : origStart + 30 * 60_000;
 				const durationMs = origEnd > origStart ? origEnd - origStart : 30 * 60_000;
 
-				const d = new Date(origStart);
-				if (draft.startsAt.endsWith("Z")) {
-					d.setUTCHours(hh, mm, 0, 0);
-				} else {
-					d.setHours(hh, mm, 0, 0);
-				}
-				const newStartIso = d.toISOString();
-				const newEndIso = new Date(d.getTime() + durationMs).toISOString();
+				const localDateStr = toDateTimeLocalValue(draft.startsAt, timezone).slice(0, 10);
+				const targetLocalStr = `${localDateStr}T${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+				const targetStartIso = fromDateTimeLocalValue(targetLocalStr, timezone);
+				const parsedStartMs = Date.parse(targetStartIso);
+				const safeStartMs = Number.isFinite(parsedStartMs) ? parsedStartMs : Date.now();
+				const newStartIso = new Date(safeStartMs).toISOString();
+				const newEndIso = new Date(safeStartMs + durationMs).toISOString();
 
 				const sourceAppointment = dashboard?.appointments?.find(
 					(appointment) => appointment.id === appointmentId,
@@ -691,14 +692,13 @@ export function useAppointmentMutations({
 				: origStart + 30 * 60_000;
 			const durationMs = origEnd > origStart ? origEnd - origStart : 30 * 60_000;
 
-			const d = new Date(origStart);
-			if (newAppointmentDraft.startsAt.endsWith("Z")) {
-				d.setUTCHours(hh, mm, 0, 0);
-			} else {
-				d.setHours(hh, mm, 0, 0);
-			}
-			const newStartIso = d.toISOString();
-			const newEndIso = new Date(d.getTime() + durationMs).toISOString();
+			const localDateStr = toDateTimeLocalValue(newAppointmentDraft.startsAt, timezone).slice(0, 10);
+			const targetLocalStr = `${localDateStr}T${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+			const targetStartIso = fromDateTimeLocalValue(targetLocalStr, timezone);
+			const parsedStartMs = Date.parse(targetStartIso);
+			const safeStartMs = Number.isFinite(parsedStartMs) ? parsedStartMs : Date.now();
+			const newStartIso = new Date(safeStartMs).toISOString();
+			const newEndIso = new Date(safeStartMs + durationMs).toISOString();
 
 			newAppointmentDraftUserEditedRef.current = true;
 			setNewAppointmentDraft((current: AppointmentScheduleDraft): AppointmentScheduleDraft => ({

@@ -40,7 +40,7 @@ export function vectorLength(v: Point2D): number {
 export function angleBetweenVectors(v1: Point2D, v2: Point2D): number {
 	const l1 = vectorLength(v1);
 	const l2 = vectorLength(v2);
-	if (l1 === 0 || l2 === 0) return 0;
+	if (l1 <= 1e-6 || l2 <= 1e-6) return 0;
 	const cosVal = Math.max(-1, Math.min(1, dotProduct(v1, v2) / (l1 * l2)));
 	return (Math.acos(cosVal) * 180) / Math.PI;
 }
@@ -61,7 +61,7 @@ export function projectPointOntoLine(p: Point2D, a: Point2D, b: Point2D): Point2
 	const ab = vector(a, b);
 	const ap = vector(a, p);
 	const abLenSq = ab.x * ab.x + ab.y * ab.y;
-	if (abLenSq === 0) return { ...a };
+	if (abLenSq <= 1e-12) return { ...a };
 	const t = dotProduct(ap, ab) / abLenSq;
 	return { x: a.x + t * ab.x, y: a.y + t * ab.y };
 }
@@ -187,20 +187,31 @@ export function calculateCephalometrics(
 	if (A && B && U1t && L1t) {
 		const opMid = { x: (U1t.x + L1t.x) / 2, y: (U1t.y + L1t.y) / 2 };
 		const opDir = vector(opMid, { x: opMid.x + 100, y: opMid.y });
-		const opP2 = { x: opMid.x + opDir.x, y: opMid.y + opDir.y };
-		const aProj = projectPointOntoLine(A, opMid, opP2);
-		const bProj = projectPointOntoLine(B, opMid, opP2);
-		const distPixels = aProj.x - bProj.x;
-		witsVal = Math.round(distPixels * scaleMmPerPixel * 10) / 10;
-		if (witsVal > 2) {
-			witsInterp = "Скелетный класс II по Wits (выраженное сагиттальное расхождение)";
-			witsStatus = "deviation_high";
-		} else if (witsVal < -2) {
-			witsInterp = "Скелетный класс III по Wits (мезиальный сдвиг базиса НЧ)";
-			witsStatus = "deviation_low";
+		const dirLen = vectorLength(opDir);
+		if (dirLen < 1e-6 || !Number.isFinite(scaleMmPerPixel) || scaleMmPerPixel <= 0) {
+			witsVal = 0;
+			witsInterp = "Окклюзионная плоскость вырождена (Wits не определен)";
+			witsStatus = "unmeasured";
 		} else {
-			witsInterp = "Скелетный класс I по Wits (гармоничное соотношение базисов)";
-			witsStatus = "normal";
+			const opP2 = { x: opMid.x + opDir.x, y: opMid.y + opDir.y };
+			const aProj = projectPointOntoLine(A, opMid, opP2);
+			const bProj = projectPointOntoLine(B, opMid, opP2);
+			const distPixels = aProj.x - bProj.x;
+			witsVal = Math.round(distPixels * scaleMmPerPixel * 10) / 10;
+			if (Number.isNaN(witsVal) || !Number.isFinite(witsVal)) {
+				witsVal = 0;
+				witsInterp = "Ошибка расчета Wits appraisal";
+				witsStatus = "unmeasured";
+			} else if (witsVal > 2) {
+				witsInterp = "Скелетный класс II по Wits (выраженное сагиттальное расхождение)";
+				witsStatus = "deviation_high";
+			} else if (witsVal < -2) {
+				witsInterp = "Скелетный класс III по Wits (мезиальный сдвиг базиса НЧ)";
+				witsStatus = "deviation_low";
+			} else {
+				witsInterp = "Скелетный класс I по Wits (гармоничное соотношение базисов)";
+				witsStatus = "normal";
+			}
 		}
 	}
 	measurements.push({

@@ -286,9 +286,10 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 
 	it("17. Verifies interactive controls in OrthodonticsTabsContent (IPR, attachments, date, sets)", () => {
 		const tabsPath = path.join(orthoDir, "OrthodonticsTabsContent.tsx");
-		const alignerCardPath = path.join(orthoDir, "AlignerTrackingCard.tsx");
+		const alignerCardPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
 		assert.ok(fs.existsSync(tabsPath), "OrthodonticsTabsContent.tsx must exist");
-		const content = fs.readFileSync(tabsPath, "utf-8") + (fs.existsSync(alignerCardPath) ? fs.readFileSync(alignerCardPath, "utf-8") : "");
+		assert.ok(fs.existsSync(alignerCardPath), "AlignerCaseTracker.tsx must exist");
+		const content = fs.readFileSync(tabsPath, "utf-8") + fs.readFileSync(alignerCardPath, "utf-8");
 
 		assert.ok(content.includes('data-testid="toggle-ipr-btn"'), "Must have interactive IPR toggle");
 		assert.ok(content.includes('data-testid="toggle-attachments-btn"'), "Must have interactive attachments toggle");
@@ -335,14 +336,19 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 	});
 
-	it("20. Verifies AlignerTrackingCard eliminates Potemkin 240 000 ₽ installment hardcode and shows honest empty state", () => {
-		const cardPath = path.join(orthoDir, "AlignerTrackingCard.tsx");
-		const content = fs.readFileSync(cardPath, "utf-8");
+	it("20. Verifies AlignerCaseTracker eliminates Potemkin 240 000 ₽ installment hardcode and shows honest empty state", () => {
+		const deadClonePath = path.join(orthoDir, "AlignerTrackingCard.tsx");
+		assert.ok(!fs.existsSync(deadClonePath), "Dead clone AlignerTrackingCard.tsx must be purged (git rm)");
+
+		const trackerPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
+		assert.ok(fs.existsSync(trackerPath), "AlignerCaseTracker.tsx must exist");
+		const content = fs.readFileSync(trackerPath, "utf-8");
 
 		assert.ok(!content.includes("240 000 ₽"), "Must NOT contain hardcoded 240,000 ₽ total price");
 		assert.ok(!content.includes("60 000 ₽"), "Must NOT contain 4 fixed 60,000 ₽ tranches");
 		assert.ok(!content.includes("15.02.2024"), "Must NOT contain hardcoded 2024 installment dates");
 		assert.ok(
+			content.includes("График платежей формируется на основе утвержденного плана лечения и сметы сетапа") ||
 			content.includes("График платежей формируется на основе плана лечения и выставленных счетов"),
 			"Must render honest clinical empty state for installment schedule",
 		);
@@ -408,9 +414,12 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(content.includes('data-testid="bite-classification-card"'), "Must have data-testid for integration verification");
 	});
 
-	it("26. Verifies CephTracingCanvas provides 16 anatomical landmarks and cranial planes", () => {
-		const cephPath = path.join(orthoDir, "CephTracingCanvas.tsx");
-		assert.ok(fs.existsSync(cephPath), "CephTracingCanvas.tsx must exist");
+	it("26. Verifies CephalometricCanvas provides 16 anatomical landmarks and cranial planes", () => {
+		const deadCephPath = path.join(orthoDir, "CephTracingCanvas.tsx");
+		assert.ok(!fs.existsSync(deadCephPath), "Duplicate CephTracingCanvas.tsx must be purged (git rm)");
+
+		const cephPath = path.join(orthoDir, "CephalometricCanvas.tsx");
+		assert.ok(fs.existsSync(cephPath), "CephalometricCanvas.tsx must exist");
 		const content = fs.readFileSync(cephPath, "utf-8");
 
 		assert.ok(content.includes("LANDMARK_COLORS"), "Must define landmark colors");
