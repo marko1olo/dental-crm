@@ -171,7 +171,7 @@ export function usePatientInstallmentsApi(options: {
 			patientId: string;
 			totalAmountRub: number;
 			downPaymentRub: number;
-			monthsCount: 3 | 6 | 12 | 24;
+			monthsCount: 3 | 6 | 10 | 12 | 18 | 24;
 			notes?: string;
 		}): Promise<InstallmentPlan | null> => {
 			if (!isUuid(params.patientId)) return null;

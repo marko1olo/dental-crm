@@ -146,7 +146,11 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			assert.equal(Number(contract.totalAmountRub), 100000);
 			assert.equal(Number(contract.downPaymentRub), 30000);
 			assert.equal(Number(contract.remainingAmountRub), 70000);
-			assert.equal(tranches.length, 3);
+			assert.equal(tranches.length, 4, "Должно быть 4 транша: №0 (первоначальный взнос) + 3 ежемесячных");
+			const tranche0 = tranches.find((t: { trancheNumber: number }) => t.trancheNumber === 0);
+			assert.ok(tranche0, "Транш №0 (первоначальный взнос) должен быть сохранен");
+			assert.equal(tranche0.isPaid, true);
+			assert.equal(Number(tranche0.amountRub), 30000);
 
 			// Проверяем, что первый взнос 30 000 ₽ попал в таблицу payments!
 			const downPaymentRow = await withFixtureTenant(orgId, async (tx) => {
@@ -189,8 +193,8 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			assert.equal(fiscalDownReceipt.status, "pending_print");
 
 			// 5. ТЕСТ 2 & 3: Погашение первого транша рассрочки и валидация Idempotency-Key
-			const firstTranche = tranches[0];
-			assert.ok(firstTranche, "Первый транш должен существовать");
+			const firstTranche = tranches.find((t: { trancheNumber: number }) => t.trancheNumber === 1);
+			assert.ok(firstTranche, "Первый ежемесячный транш (№1) должен существовать");
 
 			// 5.1. Попытка оплаты без Idempotency-Key -> 400
 			const payNoIdempRes = await app.inject({
@@ -289,6 +293,67 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 				.from(cashBoxShifts)
 				.where(and(eq(cashBoxShifts.id, shiftId), eq(cashBoxShifts.organizationId, orgId)));
 			assert.equal(Number(shiftAfterReplay.incomeTotalRub), expectedShiftIncome, "Выручка смены не должна повторно увеличиваться");
+
+			// 5.5. ТЕСТ 3b: Частичная оплата транша №2 (проверка, что amountRub не затирается)
+			const secondTranche = tranches.find((t: { trancheNumber: number }) => t.trancheNumber === 2);
+			assert.ok(secondTranche, "Второй ежемесячный транш должен существовать");
+			const originalNominalRub = Number(secondTranche.amountRub);
+
+			const partialPayIdemp = randomUUID();
+			const partialPayRes = await app.inject({
+				method: "POST",
+				url: `/api/installments/tranches/${secondTranche.id}/pay`,
+				headers: {
+					...headers,
+					"idempotency-key": partialPayIdemp,
+				},
+				payload: {
+					cashBoxId: mainBox.id,
+					operatorId: userId,
+					amountPaidKopecks: 1000000, // 10 000.00 ₽
+				},
+			});
+			assert.equal(partialPayRes.statusCode, 200);
+			const partialPayJson = partialPayRes.json();
+			assert.equal(partialPayJson.success, true);
+			assert.equal(partialPayJson.isFullyPaid, false);
+			// Номинал транша НЕ затерт!
+			assert.equal(Number(partialPayJson.tranche.amountRub), originalNominalRub, "Номинал транша amountRub не должен затираться остатком!");
+			assert.equal(Number(partialPayJson.tranche.paidAmountKopecks), 1000000);
+			assert.equal(partialPayJson.tranche.status, "partially_paid");
+
+			// 5.6. ТЕСТ 3c: Создание договоров на 10 и 18 месяцев (проверка расширения Zod-схемы)
+			const create10MonthRes = await app.inject({
+				method: "POST",
+				url: "/api/installments/contracts",
+				headers,
+				payload: {
+					patientId,
+					totalAmountRub: 360000,
+					downPaymentRub: 108000,
+					monthsCount: 10,
+					notes: "Рассрочка на элайнеры 10 мес",
+				},
+			});
+			assert.equal(create10MonthRes.statusCode, 201, "Рассрочка на 10 месяцев должна создаваться с 201 Created");
+			const json10 = create10MonthRes.json();
+			assert.equal(json10.tranches.length, 11); // 1 аванс + 10 траншей
+
+			const create18MonthRes = await app.inject({
+				method: "POST",
+				url: "/api/installments/contracts",
+				headers,
+				payload: {
+					patientId,
+					totalAmountRub: 540000,
+					downPaymentRub: 0,
+					monthsCount: 18,
+					notes: "Рассрочка на 18 мес без аванса",
+				},
+			});
+			assert.equal(create18MonthRes.statusCode, 201, "Рассрочка на 18 месяцев должна создаваться с 201 Created");
+			const json18 = create18MonthRes.json();
+			assert.equal(json18.tranches.length, 18); // 18 траншей (без аванса)
 
 			// 6. ТЕСТ 4: Детальный раздельный баланс пациента (PatientBalanceService)
 			const getBalanceRes = await app.inject({

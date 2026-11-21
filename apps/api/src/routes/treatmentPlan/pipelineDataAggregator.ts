@@ -14,7 +14,25 @@ function safeNum(val: unknown): number {
 	return Number.isFinite(n) ? n : 0;
 }
 
-function classifyStage(status: string, budgetStatus: string | null | undefined, hasFuture: boolean, daysInactive: number): PipelineStage {
+const VALID_PIPELINE_STAGES = new Set<PipelineStage>([
+	"requires_budget",
+	"awaiting_decision",
+	"no_appointment",
+	"in_progress_abandoned",
+	"completed",
+]);
+
+function classifyStage(
+	curatorFunnelStage: string | null | undefined,
+	status: string,
+	budgetStatus: string | null | undefined,
+	hasFuture: boolean,
+	daysInactive: number,
+): PipelineStage {
+	// Безусловный приоритет сохраненного этапа куратора воронки (предотвращает самовольный откат карточек)
+	if (curatorFunnelStage && VALID_PIPELINE_STAGES.has(curatorFunnelStage as PipelineStage)) {
+		return curatorFunnelStage as PipelineStage;
+	}
 	if (status === "Completed") return "completed";
 	if (status === "Approved" || budgetStatus === "accepted") return hasFuture ? "awaiting_decision" : "no_appointment";
 	if (budgetStatus === "sent" || budgetStatus === "viewed") return "awaiting_decision";
@@ -32,7 +50,8 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 
 	const plans = await db.select({
 		id: treatmentPlans.id, name: treatmentPlans.name, title: treatmentPlans.title,
-		status: treatmentPlans.status, totalPrice: treatmentPlans.totalPrice, totalPriceRub: treatmentPlans.totalPriceRub,
+		status: treatmentPlans.status, curatorFunnelStage: treatmentPlans.curatorFunnelStage,
+		totalPrice: treatmentPlans.totalPrice, totalPriceRub: treatmentPlans.totalPriceRub,
 		planDiscountRub: treatmentPlans.planDiscountRub, patientId: treatmentPlans.patientId, doctorId: treatmentPlans.doctorId,
 		createdAt: treatmentPlans.createdAt, updatedAt: treatmentPlans.updatedAt, approvedAt: treatmentPlans.approvedAt,
 		patientName: patients.fullName, patientPhone: patients.phone, doctorName: users.fullName,
@@ -120,7 +139,7 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 		const totalRub = safeNum(p.totalPriceRub) || safeNum(p.totalPrice);
 		const discRub = safeNum(p.planDiscountRub);
 		const netRub = Math.max(0, totalRub - discRub);
-		const stage = classifyStage(p.status, budget?.status, hasFuture, daysInactive);
+		const stage = classifyStage(p.curatorFunnelStage, p.status, budget?.status, hasFuture, daysInactive);
 
 		// Анти-отвал: план согласован или в работе, но без записи >= 14 дней
 		const isDropoutRisk = (p.status === "Approved" || p.status === "Active" || budget?.status === "accepted") && !hasFuture && daysInactive >= 14;

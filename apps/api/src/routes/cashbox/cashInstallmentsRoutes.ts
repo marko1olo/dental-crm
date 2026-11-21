@@ -87,7 +87,16 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			visitId: z.string().uuid().optional().nullable(),
 			totalAmountRub: positiveMoneyRubSchema,
 			downPaymentRub: nonNegativeMoneyRubSchema.default(0),
-			monthsCount: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24)]).default(6),
+			monthsCount: z
+				.union([
+					z.literal(3),
+					z.literal(6),
+					z.literal(10),
+					z.literal(12),
+					z.literal(18),
+					z.literal(24),
+				])
+				.default(6),
 			notes: z.string().trim().max(1000).optional().nullable(),
 			startDateIso: z.string().optional(),
 			cashBoxId: z.string().uuid().optional(),
@@ -204,6 +213,10 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				})
 				.returning();
 
+			if (!contract) {
+				throw new Error("Не удалось создать договор рассрочки");
+			}
+
 			// Если передан invoiceId, связываем и отмечаем инвойс как закрытый рассрочкой
 			if (invoiceId) {
 				await tx
@@ -216,16 +229,37 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			}
 
 			// Создаем записи траншей с точными копеечными суммами
-			const tranchesToInsert = schedule.map((item) => ({
-				contractId: contract!.id,
-				organizationId: orgId,
-				trancheNumber: item.monthIndex,
-				amountRub: kopecksToRubles(item.amountKopecks),
-				amountKopecks: item.amountKopecks,
-				dueDate: new Date(item.paymentDateIso),
-				isPaid: false,
-				status: "pending",
-			}));
+			const tranchesToInsert: Array<typeof installmentTranches.$inferInsert> = [];
+
+			// Транш №0: первоначальный взнос (при наличии)
+			if (downPaymentKop > 0) {
+				tranchesToInsert.push({
+					contractId: contract.id,
+					organizationId: orgId,
+					trancheNumber: 0,
+					amountRub: downPaymentRub,
+					amountKopecks: downPaymentKop,
+					paidAmountKopecks: downPaymentKop,
+					dueDate: now,
+					paidAt: now,
+					isPaid: true,
+					status: "paid",
+				});
+			}
+
+			tranchesToInsert.push(
+				...schedule.map((item) => ({
+					contractId: contract.id,
+					organizationId: orgId,
+					trancheNumber: item.monthIndex,
+					amountRub: kopecksToRubles(item.amountKopecks),
+					amountKopecks: item.amountKopecks,
+					paidAmountKopecks: 0,
+					dueDate: new Date(item.paymentDateIso),
+					isPaid: false,
+					status: "pending",
+				})),
+			);
 
 			const createdTranches = await tx
 				.insert(installmentTranches)
@@ -322,7 +356,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 							patientId,
 							operatorId: operatorId ?? null,
 							metadata: {
-								contractId: contract!.id,
+								contractId: contract.id,
 								type: "down_payment",
 							},
 						})
@@ -339,8 +373,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 							amountRub: downPaymentRub,
 							method: paymentMethodCode,
 							status: "paid",
-							documentId: contract!.id,
-							clientMutationId: `downpay-${contract!.id}`,
+							documentId: contract.id,
+							clientMutationId: `downpay-${contract.id}`,
 							note: reasonText,
 							paidAt: now,
 						})
@@ -355,7 +389,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 							receiptType: "income",
 							status: "pending_print",
 							payloadJson: {
-								clientMutationId: `downpay-${contract!.id}`,
+								clientMutationId: `downpay-${contract.id}`,
 								amountRub: downPaymentRub,
 								amountKopecks: downPaymentKop,
 								method: paymentMethodCode,
@@ -375,9 +409,26 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				}
 			}
 
+			if (downPaymentOperation && downPaymentKop > 0) {
+				await tx
+					.update(installmentTranches)
+					.set({ cashOperationId: downPaymentOperation.id })
+					.where(
+						and(
+							eq(installmentTranches.contractId, contract.id),
+							eq(installmentTranches.organizationId, orgId),
+							eq(installmentTranches.trancheNumber, 0),
+						),
+					);
+				const tr0 = createdTranches.find((t) => t.trancheNumber === 0);
+				if (tr0) {
+					tr0.cashOperationId = downPaymentOperation.id;
+				}
+			}
+
 			return {
 				kind: "ok" as const,
-				contract: contract!,
+				contract: contract,
 				tranches: createdTranches,
 				downPaymentOperation,
 				downPaymentPayment,
@@ -490,24 +541,30 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					.where(and(eq(installmentTranches.id, id), eq(installmentTranches.organizationId, orgId)))
 					.limit(1);
 
-				const [currentContract] = currentTranche
-					? await tx
-							.select()
-							.from(installmentContracts)
-							.where(and(eq(installmentContracts.id, currentTranche.contractId), eq(installmentContracts.organizationId, orgId)))
-							.limit(1)
-					: [undefined];
+				if (!currentTranche) {
+					return { kind: "tranche_not_found" as const };
+				}
+
+				const [currentContract] = await tx
+					.select()
+					.from(installmentContracts)
+					.where(and(eq(installmentContracts.id, currentTranche.contractId), eq(installmentContracts.organizationId, orgId)))
+					.limit(1);
+
+				if (!currentContract) {
+					return { kind: "contract_not_found" as const };
+				}
 
 				const replayAmountRub = existingPayment?.amountRub ?? existingOp?.amountRub ?? 0;
 
 				return {
 					kind: "ok" as const,
-					tranche: currentTranche!,
-					contract: currentContract!,
+					tranche: currentTranche,
+					contract: currentContract,
 					cashOperation: existingOp,
 					payment: existingPayment,
 					paymentRub: replayAmountRub,
-					isTrancheFullyPaid: currentTranche?.isPaid ?? true,
+					isTrancheFullyPaid: currentTranche.isPaid,
 					isReplay: true,
 				};
 			}
@@ -528,7 +585,18 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				return { kind: "already_paid" as const };
 			}
 
-			const trancheRemainingKop = rublesToKopecks(tranche.amountRub);
+			const trancheNominalKop =
+				tranche.amountKopecks !== null && tranche.amountKopecks !== undefined
+					? Number(tranche.amountKopecks)
+					: rublesToKopecks(tranche.amountRub);
+			const currentPaidKop =
+				tranche.paidAmountKopecks !== null && tranche.paidAmountKopecks !== undefined
+					? Number(tranche.paidAmountKopecks)
+					: tranche.isPaid
+						? trancheNominalKop
+						: 0;
+
+			const trancheRemainingKop = Math.max(0, trancheNominalKop - currentPaidKop);
 			if (trancheRemainingKop <= 0) {
 				return { kind: "already_paid" as const };
 			}
@@ -538,7 +606,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			const paymentKop = requestedKop !== null ? Math.min(trancheRemainingKop, requestedKop) : trancheRemainingKop;
 			const paymentRub = kopecksToRubles(paymentKop);
 
-			const remainingTrancheKop = Math.max(0, trancheRemainingKop - paymentKop);
+			const newPaidKop = currentPaidKop + paymentKop;
+			const remainingTrancheKop = Math.max(0, trancheNominalKop - newPaidKop);
 			const isTrancheFullyPaid = remainingTrancheKop === 0;
 
 			// Блокируем договор рассрочки
@@ -660,6 +729,10 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				})
 				.returning();
 
+			if (!operation) {
+				throw new Error("Не удалось создать кассовую операцию оплаты транша");
+			}
+
 			// 4. ОБЯЗАТЕЛЬНОЕ создание записи в payments (Ловушка №2 ликвидирована)
 			const paymentMethodCode = targetBox.type === "main" ? "cash" : "card";
 			const [paymentRecord] = await tx
@@ -706,19 +779,24 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				retryCount: 0,
 			});
 
-			// 6. Обновляем транш рассрочки
+			// 6. Обновляем транш рассрочки БЕЗ затирания исходного номинала (amountRub)
 			const [updatedTranche] = await tx
 				.update(installmentTranches)
 				.set({
-					amountRub: isTrancheFullyPaid ? tranche.amountRub : kopecksToRubles(remainingTrancheKop),
-					amountKopecks: isTrancheFullyPaid ? Number(tranche.amountKopecks ?? rublesToKopecks(tranche.amountRub)) : remainingTrancheKop,
+					amountRub: tranche.amountRub,
+					amountKopecks: trancheNominalKop,
+					paidAmountKopecks: newPaidKop,
 					isPaid: isTrancheFullyPaid,
 					paidAt: now,
 					status: isTrancheFullyPaid ? "paid" : "partially_paid",
-					cashOperationId: operation!.id,
+					cashOperationId: operation.id,
 				})
 				.where(and(eq(installmentTranches.id, tranche.id), eq(installmentTranches.organizationId, orgId)))
 				.returning();
+
+			if (!updatedTranche) {
+				throw new Error("Не удалось обновить статус транша рассрочки");
+			}
 
 			// 7. Обновляем баланс договора рассрочки в целых копейках
 			const newPaidAmount = kopecksToRubles(rublesToKopecks(contract.paidAmountRub) + paymentKop);
@@ -737,11 +815,15 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				.where(and(eq(installmentContracts.id, contract.id), eq(installmentContracts.organizationId, orgId)))
 				.returning();
 
+			if (!updatedContract) {
+				throw new Error("Не удалось обновить баланс договора рассрочки");
+			}
+
 			return {
 				kind: "ok" as const,
-				tranche: updatedTranche!,
-				contract: updatedContract!,
-				cashOperation: operation!,
+				tranche: updatedTranche,
+				contract: updatedContract,
+				cashOperation: operation,
 				payment: paymentRecord,
 				paymentRub,
 				isTrancheFullyPaid,
@@ -778,11 +860,19 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			reply.header("idempotency-replayed", "true");
 		}
 
+		const remainingTrancheDebtRub = kopecksToRubles(
+			Math.max(
+				0,
+				Number(result.tranche.amountKopecks ?? rublesToKopecks(result.tranche.amountRub)) -
+					Number(result.tranche.paidAmountKopecks ?? 0),
+			),
+		);
+
 		return reply.send({
 			success: true,
 			message: result.isTrancheFullyPaid
 				? `Платеж по рассрочке на сумму ${result.paymentRub} ₽ успешно проведен.`
-				: `Частичный платеж на сумму ${result.paymentRub} ₽ принят. Остаток долга по взносу: ${result.tranche.amountRub} ₽.`,
+				: `Частичный платеж на сумму ${result.paymentRub} ₽ принят. Остаток долга по взносу: ${remainingTrancheDebtRub} ₽.`,
 			tranche: result.tranche,
 			contract: result.contract,
 			cashOperation: result.cashOperation,

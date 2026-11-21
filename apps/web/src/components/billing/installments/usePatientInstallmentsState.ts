@@ -9,9 +9,7 @@ import { useState, useEffect } from "react";
 import {
 	type InstallmentPlan, type FiscalReceipt54FzResult, type TreatmentPresetType,
 	createDefaultInternalInstallmentsPreset, generateInstallmentReminder,
-	generateInstallmentSchedule, evaluateInstallmentStatus,
-	generateInstallmentContractNumber, recordInstallmentPayment,
-	TREATMENT_INSTALLMENT_PRESETS,
+	recordInstallmentPayment, TREATMENT_INSTALLMENT_PRESETS,
 } from "../installmentsEngine.js";
 import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
@@ -19,11 +17,13 @@ import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext.js
 import { usePatientInstallmentsApi, isUuid } from "../usePatientInstallmentsApi.js";
 import type { PatientInstallmentsModalProps, InstallmentsSubView } from "./installmentsTypes.js";
 
-function toInstallmentMonths(months: number): 3 | 6 | 12 | 24 {
-	if (months === 3 || months === 6 || months === 12 || months === 24) return months;
+function toInstallmentMonths(months: number): 3 | 6 | 10 | 12 | 18 | 24 {
+	if (months === 3 || months === 6 || months === 10 || months === 12 || months === 18 || months === 24) return months;
 	if (months <= 4) return 3;
 	if (months <= 8) return 6;
-	if (months <= 18) return 12;
+	if (months <= 11) return 10;
+	if (months <= 15) return 12;
+	if (months <= 20) return 18;
 	return 24;
 }
 
@@ -102,7 +102,12 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		const validMonths = toInstallmentMonths(newMonthsCount);
 		const presetCfg = TREATMENT_INSTALLMENT_PRESETS[selectedPreset];
 
-		if (isUuid(patientId)) {
+		if (!isUuid(patientId)) {
+			showToast("Не выбран пациент для оформления договора рассрочки", "error");
+			return;
+		}
+
+		try {
 			const serverPlan = await installmentsApi.createContract({
 				patientId,
 				totalAmountRub: newTotalRubles,
@@ -110,21 +115,18 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 				monthsCount: validMonths,
 				notes: presetCfg.notes,
 			});
-			if (serverPlan) { setPlan(serverPlan); onPlanUpdate?.(serverPlan); setActiveSubView("schedule"); showToast(`Договор рассрочки ${serverPlan.contractNumber} оформлен!`, "success"); return; }
+			if (serverPlan) {
+				setPlan(serverPlan);
+				onPlanUpdate?.(serverPlan);
+				setActiveSubView("schedule");
+				showToast(`Договор рассрочки ${serverPlan.contractNumber} оформлен!`, "success");
+				return;
+			}
+			showToast("Ошибка сохранения договора рассрочки на сервере", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка сохранения договора рассрочки";
+			showToast(msg, "error");
 		}
-
-		const schedule = generateInstallmentSchedule({ totalAmountKopecks: totalKop, downPaymentKopecks: downPaymentKop, monthsCount: newMonthsCount, startDateIso: new Date().toISOString(), dueDayOfMonth: 15 });
-		const evalResult = evaluateInstallmentStatus(schedule, new Date().toISOString());
-		const newPlan: InstallmentPlan = {
-			id: `inst-plan-${selectedPreset}-${patientId}-${Date.now()}`, contractNumber: generateInstallmentContractNumber(patientId, new Date().toISOString(), 1),
-			patientId, patientName, patientPhone, doctorName: "Лечащий врач", treatmentTitle: presetCfg.title,
-			totalAmountKopecks: totalKop, downPaymentKopecks: downPaymentKop, monthsCount: newMonthsCount,
-			monthlyPaymentKopecks: schedule[1]?.amountKopecks ?? 0, startDateIso: new Date().toISOString(),
-			schedule: evalResult.updatedSchedule, paidAmountKopecks: evalResult.paidAmountKopecks, remainingDebtKopecks: evalResult.remainingDebtKopecks,
-			overdueDebtKopecks: evalResult.overdueDebtKopecks, status: evalResult.status, nextPaymentDueItem: evalResult.nextPaymentDueItem,
-			daysUntilNextPayment: evalResult.daysUntilNextPayment, createdAtIso: new Date().toISOString(), notes: presetCfg.notes,
-		};
-		setPlan(newPlan); onPlanUpdate?.(newPlan); setActiveSubView("schedule"); showToast(`Договор рассрочки ${newPlan.contractNumber} оформлен!`, "success");
 	};
 
 	return {

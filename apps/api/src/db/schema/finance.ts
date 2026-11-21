@@ -289,6 +289,7 @@ export const installmentTranches = pgTable(
 		trancheNumber: integer("tranche_number").notNull(),
 		amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
 		amountKopecks: bigint("amount_kopecks", { mode: "number" }),
+		paidAmountKopecks: bigint("paid_amount_kopecks", { mode: "number" }).default(0),
 		dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
 		paidAt: timestamp("paid_at", { withTimezone: true }),
 		isPaid: boolean("is_paid").notNull().default(false),

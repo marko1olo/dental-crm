@@ -117,7 +117,7 @@ export function calculatePatientDebtSummary(
  */
 export function generate0PercentInstallmentSchedule(
 	totalKopecks: Kopecks,
-	monthsCount: 3 | 6 | 12 | 24,
+	monthsCount: 3 | 6 | 10 | 12 | 18 | 24,
 	startDateIso: string = new Date().toISOString(),
 ): InstallmentMonthSchedule[] {
 	if (monthsCount <= 0 || totalKopecks <= 0) {

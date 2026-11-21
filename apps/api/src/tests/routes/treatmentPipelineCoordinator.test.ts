@@ -262,11 +262,47 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 
 		const [planInDb2] = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ status: treatmentPlans.status })
+				.select({ status: treatmentPlans.status, curatorFunnelStage: treatmentPlans.curatorFunnelStage })
 				.from(treatmentPlans)
 				.where(eq(treatmentPlans.id, PLAN_2_ID)),
 		);
 		assert.equal(planInDb2?.status, "Completed");
+		assert.equal(planInDb2?.curatorFunnelStage, "completed");
+
+		// Transition to in_progress_abandoned (проверка ликвидации отката карточки куратора)
+		const res3 = await app.inject({
+			method: "POST",
+			url: `/api/v1/treatment-plans/${PLAN_2_ID}/transition-stage`,
+			headers: { "x-organization-id": ORG_ID },
+			payload: {
+				targetStage: "in_progress_abandoned",
+				reason: "Пациент перестал выходить на связь",
+			},
+		});
+		assert.equal(res3.statusCode, 200);
+		const b3 = JSON.parse(res3.payload);
+		assert.equal(b3.newStage, "in_progress_abandoned");
+
+		const [planInDb3] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ status: treatmentPlans.status, curatorFunnelStage: treatmentPlans.curatorFunnelStage })
+				.from(treatmentPlans)
+				.where(eq(treatmentPlans.id, PLAN_2_ID)),
+		);
+		assert.equal(planInDb3?.curatorFunnelStage, "in_progress_abandoned");
+
+		// Проверка, что воронка pipeline кладет план строго в in_progress_abandoned (без самовольного отката)
+		const pipelineRes = await app.inject({
+			method: "GET",
+			url: "/api/v1/treatment-plans/pipeline",
+			headers: { "x-organization-id": ORG_ID },
+		});
+		assert.equal(pipelineRes.statusCode, 200);
+		const pipelineBody = JSON.parse(pipelineRes.payload);
+		const abandonedCards = pipelineBody.pipeline.in_progress_abandoned;
+		const foundPlan = abandonedCards.find((c: { id: string }) => c.id === PLAN_2_ID);
+		assert.ok(foundPlan, "Карточка должна оставаться в колонке in_progress_abandoned без отката назад");
+		assert.equal(foundPlan.stage, "in_progress_abandoned");
 	});
 
 	test("7. POST /api/v1/treatment-plans/dropout-prevention/run — batch generation of curator recall tasks", async () => {

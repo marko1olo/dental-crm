@@ -32,6 +32,14 @@ export async function handleStageTransition(
 	reply: FastifyReply,
 	organizationId: string,
 ) {
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined);
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const { id } = request.params;
 	const parsed = stageTransitionSchema.safeParse(request.body);
 	if (!parsed.success) {
@@ -44,62 +52,63 @@ export async function handleStageTransition(
 
 	const { targetStage, status, reason } = parsed.data;
 
-	const [existing] = await db
-		.select()
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
-
-	if (!existing) {
-		return reply.code(404).send({
-			error: "TreatmentPlanNotFound",
-			message: "План лечения не найден.",
-		});
-	}
-
 	const VALID_STATUSES = ["Draft", "Active", "Approved", "Completed", "Rejected"] as const;
 	type TreatmentPlanStatus = (typeof VALID_STATUSES)[number];
 	function isValidStatus(val: string): val is TreatmentPlanStatus {
 		return (VALID_STATUSES as readonly string[]).includes(val);
 	}
 
-	let targetStatus: TreatmentPlanStatus;
-	if (status && isValidStatus(status)) {
-		targetStatus = status;
-	} else if (targetStage) {
-		switch (targetStage) {
-			case "requires_budget":
-				targetStatus = "Draft";
-				break;
-			case "awaiting_decision":
-				targetStatus = "Active";
-				break;
-			case "no_appointment":
-				targetStatus = "Approved";
-				break;
-			case "in_progress_abandoned":
-				targetStatus = "Active";
-				break;
-			case "completed":
-				targetStatus = "Completed";
-				break;
-			default:
-				targetStatus = "Active";
-		}
-	} else {
-		targetStatus = isValidStatus(existing.status) ? existing.status : "Active";
-	}
-
-	const now = new Date();
-	const updatePayload: Partial<typeof treatmentPlans.$inferInsert> = {
-		status: targetStatus,
-		updatedAt: now,
-	};
-	if (targetStatus === "Approved" && !existing.approvedAt) {
-		updatePayload.approvedAt = now;
-	}
-
 	const result = await withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.limit(1);
+
+		if (!existing) {
+			return { kind: "not_found" as const };
+		}
+
+		let targetStatus: TreatmentPlanStatus;
+		if (status && isValidStatus(status)) {
+			targetStatus = status;
+		} else if (targetStage) {
+			switch (targetStage) {
+				case "requires_budget":
+					targetStatus = "Draft";
+					break;
+				case "awaiting_decision":
+					targetStatus = "Active";
+					break;
+				case "no_appointment":
+					targetStatus = "Approved";
+					break;
+				case "in_progress_abandoned":
+					targetStatus = "Active";
+					break;
+				case "completed":
+					targetStatus = "Completed";
+					break;
+				default:
+					targetStatus = "Active";
+			}
+		} else {
+			targetStatus = isValidStatus(existing.status) ? existing.status : "Active";
+		}
+
+		const now = new Date();
+		const updatePayload: Partial<typeof treatmentPlans.$inferInsert> = {
+			status: targetStatus,
+			updatedAt: now,
+		};
+		// Явное сохранение этапа воронки координатора (ликвидация самопроизвольного отката)
+		if (targetStage) {
+			updatePayload.curatorFunnelStage = targetStage;
+		}
+		if (targetStatus === "Approved" && !existing.approvedAt) {
+			updatePayload.approvedAt = now;
+		}
+
 		const [plan] = await tx
 			.update(treatmentPlans)
 			.set(updatePayload)
@@ -161,18 +170,24 @@ export async function handleStageTransition(
 			reason: `План лечения «${plan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
 		});
 
-		return { plan, invoice };
+		return { plan, invoice, targetStatus, now, patientId: existing.patientId };
 	});
 
-	if (!result || !result.plan) {
+	if (result && "kind" in result && result.kind === "not_found") {
+		return reply.code(404).send({
+			error: "TreatmentPlanNotFound",
+			message: "План лечения не найден.",
+		});
+	}
+
+	if (!result || !("plan" in result) || !result.plan) {
 		return reply.code(500).send({
 			error: "UpdateFailed",
 			message: "Не удалось переместить план лечения",
 		});
 	}
 
-	const updatedPlan = result.plan;
-	const createdInvoice = result.invoice;
+	const { plan: updatedPlan, invoice: createdInvoice, targetStatus, now, patientId } = result;
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "TREATMENT_PLAN_UPDATED",
@@ -191,7 +206,7 @@ export async function handleStageTransition(
 				payload: {
 					invoiceId: createdInvoice.id,
 					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId: existing.patientId,
+					patientId,
 					patientName: createdInvoice.patientName,
 					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",

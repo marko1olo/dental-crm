@@ -23,7 +23,7 @@ import {
 	periodontogramSnapshots,
 	users,
 } from "../db/schema.js";
-import { registerCashInstallmentsRoutes } from "../routes/cashInstallmentsRoutes.js";
+import { registerCashInstallmentsRoutes } from "../routes/cashbox/cashInstallmentsRoutes.js";
 import { registerDocumentTemplateRoutes } from "../routes/documentTemplates.js";
 import { registerPeriodontogramRoutes } from "../routes/periodontogram/index.js";
 import { authTokenSecret } from "../security/authSecret.js";
