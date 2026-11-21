@@ -48,10 +48,9 @@ export function formatAnamnesisStrings(p: SyncAnamnesisParams) {
 export interface AnamnesisPatientSyncRecord {
 	id?: string | undefined;
 	fullName?: string | undefined;
-	allergies?: string | string[] | undefined;
-	somaticNotes?: string | undefined;
-	concomitantDiseases?: string | undefined;
-	[key: string]: unknown;
+	allergies?: string | string[] | null | undefined;
+	somaticNotes?: string | null | undefined;
+	concomitantDiseases?: string | null | undefined;
 }
 
 export interface AnamnesisAutosaveContext {

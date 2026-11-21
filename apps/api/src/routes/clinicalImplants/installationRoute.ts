@@ -1,9 +1,20 @@
-import { ImplantStabilityCalculator, createImplantInstallationSchema } from "@dental/shared";
+import {
+	ImplantStabilityCalculator,
+	createImplantInstallationSchema,
+	computePayloadHash,
+} from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { implantIsqMeasurements, patientImplantInstallations, patients, visits } from "../../db/schema.js";
+import { withTenantCtx } from "../../db/rls.js";
+import {
+	implantIsqMeasurements,
+	patientImplantInstallations,
+	patients,
+	visits,
+} from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -28,6 +39,48 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			});
 		}
 
+		// Дедупликация и проверка Idempotency-Key (Мандаты 8d, 8bo, 8zp)
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotence-key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+				: undefined);
+
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: null;
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+			const existingRecord = await withTenantCtx(orgId, async (tx) => {
+				const [rec] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+				return rec ?? null;
+			});
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция регистрации имплантата с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		// Нормализация наименования бренда для устойчивости к пробелам и регистрам
 		const rawBody: Record<string, unknown> =
 			typeof request.body === "object" && request.body !== null
@@ -35,6 +88,29 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				: {};
 		if (typeof rawBody.implantBrand === "string") {
 			rawBody.implantBrand = rawBody.implantBrand.trim().toLowerCase().replace(/[\s-]+/g, "_");
+		}
+
+		// Поддержка множественной имплантации (All-on-4 / пакетная установка)
+		const targetTeeth: number[] = [];
+		if (Array.isArray(rawBody.teeth)) {
+			for (const t of rawBody.teeth) {
+				if (typeof t === "number" && !targetTeeth.includes(t)) {
+					targetTeeth.push(t);
+				}
+			}
+		}
+		if (typeof rawBody.toothNumberFdi === "number" && !targetTeeth.includes(rawBody.toothNumberFdi)) {
+			targetTeeth.push(rawBody.toothNumberFdi);
+		}
+
+		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
+		for (const toothNum of targetTeeth) {
+			if (toothNum >= 51 && toothNum <= 85) {
+				return reply.code(422).send({
+					error: "DeciduousToothImplantForbidden",
+					message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
+				});
+			}
 		}
 
 		const parsed = createImplantInstallationSchema.safeParse(rawBody);
@@ -79,42 +155,144 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			effectiveInput.finalInsertionTorqueNcm >= 35 &&
 			effectiveInput.finalInsertionTorqueNcm <= 55;
 
-		const result = await db.transaction(async (tx) => {
-			const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, effectiveInput);
-			const { deductedMaterials, consumablesCostTotal } = await deductConsumables(tx, orgId, identity.userId ?? null, effectiveInput);
-			const allDeductions = [{ name: screw.invItem.name, lotNumber: screw.effectiveLotNumber, unitCostRub: screw.implantUnitCostRub, quantity: 1, isOverdraft: screw.isOverdraft }, ...deductedMaterials];
-			const financials = await linkBillingAndOdontogram(tx, orgId, effectiveInput, screw.implantUnitCostRub, consumablesCostTotal, screw.effectiveLotNumber, isqMean, protocol);
+		const teethToProcess = targetTeeth.length > 0 ? targetTeeth : [effectiveInput.toothNumberFdi];
 
-			const [installation] = await tx.insert(patientImplantInstallations).values({
-				organizationId: orgId,
-				patientId: effectiveInput.patientId,
-				surgeonDoctorId: identity.userId ?? null,
-				visitId: effectiveInput.visitId ?? null,
-				catalogItemId: null,
-				toothNumberFdi: effectiveInput.toothNumberFdi,
-				implantBrand: effectiveInput.implantBrand,
-				implantDiameterMm: String(effectiveInput.implantDiameterMm),
-				implantLengthMm: String(effectiveInput.implantLengthMm),
-				lotNumber: screw.effectiveLotNumber,
-				serialNumber: screw.effectiveSerialNumber,
-				boneDensityClass: effectiveInput.boneDensityClass,
-				averageHounsfieldUnits: effectiveInput.averageHounsfieldUnits ? String(effectiveInput.averageHounsfieldUnits) : null,
-				finalInsertionTorqueNcm: String(effectiveInput.finalInsertionTorqueNcm),
-				baselineIsq: isqMean !== null ? Math.round(isqMean) : null,
-				initialProtocol: protocol,
-				corticalTapUsed: effectiveInput.corticalTapUsed,
-				underdrillingUsed: effectiveInput.underdrillingUsed,
-				boneGraftMaterial: effectiveInput.boneGraftMaterial ?? null,
-				membraneUsed: effectiveInput.membraneUsed ?? null,
-				torqueCurveSamplesJson: JSON.stringify(effectiveInput.torqueCurveSamples || []),
-				notes: JSON.stringify({ userNotes: effectiveInput.notes ?? null, connectionType: effectiveInput.connectionType ?? effectiveInput.implantConnectionType ?? "internal_hex", expirationDate: screw.invItem.expirationDate ?? effectiveInput.expirationDate, sku: screw.invItem.sku, financials, deductedMaterials: allDeductions, isImmediateLoadingFeasible }),
-			}).returning();
+		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const installationResults: unknown[] = [];
+			const allDeductions: unknown[] = [];
+			let primaryFinancials: unknown = null;
+			let firstInstallationRecord: typeof patientImplantInstallations.$inferSelect | null = null;
+			let firstInventoryDeduction: unknown = null;
 
-			if (!installation) throw new Error("Не удалось сохранить протокол установки имплантата.");
+			for (const toothNum of teethToProcess) {
+				const toothLot =
+					teethToProcess.length > 1
+						? `${effectiveInput.lotNumber || "LOT"}-T${toothNum}`
+						: effectiveInput.lotNumber;
+				const currentItemInput = {
+					...effectiveInput,
+					toothNumberFdi: toothNum,
+					lotNumber: toothLot,
+				};
 
-			if (effectiveInput.baselineIsqMesiodistal != null && effectiveInput.baselineIsqBuccolingual != null && isqMean != null) {
-				await tx.insert(implantIsqMeasurements).values({
-					organizationId: orgId, installationId: installation.id, measuredByDoctorId: identity.userId ?? null, visitId: effectiveInput.visitId ?? null, daysPostOp: 0, isqMesiodistal: effectiveInput.baselineIsqMesiodistal, isqBuccolingual: effectiveInput.baselineIsqBuccolingual, isqDistopalatal: effectiveInput.baselineIsqDistopalatal ?? null, isqMean: String(isqMean), isqAnisotropyDelta: isqAnisotropyDelta ?? 0, stabilityStatus: "primary_mechanical_high", recommendedLoadingDecision: decisionRationale, isBiologicalDipDetected: false,
+				const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, currentItemInput);
+				const { deductedMaterials, consumablesCostTotal } = await deductConsumables(
+					tx,
+					orgId,
+					identity.userId ?? null,
+					currentItemInput,
+				);
+				const itemDeductions = [
+					{
+						name: screw.invItem.name,
+						lotNumber: screw.effectiveLotNumber,
+						unitCostRub: screw.implantUnitCostRub,
+						quantity: 1,
+						isOverdraft: screw.isOverdraft,
+					},
+					...deductedMaterials,
+				];
+				allDeductions.push(...itemDeductions);
+
+				const financials = await linkBillingAndOdontogram(
+					tx,
+					orgId,
+					currentItemInput,
+					screw.implantUnitCostRub,
+					consumablesCostTotal,
+					screw.effectiveLotNumber,
+					isqMean,
+					protocol,
+				);
+				if (!primaryFinancials) {
+					primaryFinancials = financials;
+				}
+
+				const [installation] = await tx
+					.insert(patientImplantInstallations)
+					.values({
+						organizationId: orgId,
+						patientId: currentItemInput.patientId,
+						surgeonDoctorId: identity.userId ?? null,
+						visitId: currentItemInput.visitId ?? null,
+						catalogItemId: null,
+						toothNumberFdi: toothNum,
+						implantBrand: currentItemInput.implantBrand,
+						implantDiameterMm: String(currentItemInput.implantDiameterMm),
+						implantLengthMm: String(currentItemInput.implantLengthMm),
+						lotNumber: screw.effectiveLotNumber,
+						serialNumber: screw.effectiveSerialNumber,
+						boneDensityClass: currentItemInput.boneDensityClass,
+						averageHounsfieldUnits: currentItemInput.averageHounsfieldUnits
+							? String(currentItemInput.averageHounsfieldUnits)
+							: null,
+						finalInsertionTorqueNcm: String(currentItemInput.finalInsertionTorqueNcm),
+						baselineIsq: isqMean !== null ? Math.round(isqMean) : null,
+						initialProtocol: protocol,
+						corticalTapUsed: currentItemInput.corticalTapUsed,
+						underdrillingUsed: currentItemInput.underdrillingUsed,
+						boneGraftMaterial: currentItemInput.boneGraftMaterial ?? null,
+						membraneUsed: currentItemInput.membraneUsed ?? null,
+						torqueCurveSamplesJson: JSON.stringify(currentItemInput.torqueCurveSamples || []),
+						notes: JSON.stringify({
+							userNotes: currentItemInput.notes ?? null,
+							connectionType:
+								currentItemInput.connectionType ??
+								currentItemInput.implantConnectionType ??
+								"internal_hex",
+							expirationDate: screw.invItem.expirationDate ?? currentItemInput.expirationDate,
+							sku: screw.invItem.sku,
+							financials,
+							deductedMaterials: itemDeductions,
+							isImmediateLoadingFeasible,
+						}),
+					})
+					.returning();
+
+				if (!installation) throw new Error("Не удалось сохранить протокол установки имплантата.");
+				if (!firstInstallationRecord) firstInstallationRecord = installation;
+
+				if (
+					currentItemInput.baselineIsqMesiodistal != null &&
+					currentItemInput.baselineIsqBuccolingual != null &&
+					isqMean != null
+				) {
+					await tx.insert(implantIsqMeasurements).values({
+						organizationId: orgId,
+						installationId: installation.id,
+						measuredByDoctorId: identity.userId ?? null,
+						visitId: currentItemInput.visitId ?? null,
+						daysPostOp: 0,
+						isqMesiodistal: currentItemInput.baselineIsqMesiodistal,
+						isqBuccolingual: currentItemInput.baselineIsqBuccolingual,
+						isqDistopalatal: currentItemInput.baselineIsqDistopalatal ?? null,
+						isqMean: String(isqMean),
+						isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
+						stabilityStatus: "primary_mechanical_high",
+						recommendedLoadingDecision: decisionRationale,
+						isBiologicalDipDetected: false,
+					});
+				}
+
+				const deductionSummary = {
+					transactionId: screw.implantTx?.id ?? "",
+					itemId: screw.invItem.id,
+					itemName: screw.invItem.name,
+					previousStock: screw.currentStock,
+					newStock: screw.newStock,
+					unitCostRub: String(screw.implantUnitCostRub),
+					unitCostKopecks: screw.implantUnitCostKopecks,
+					isOverdraft: screw.isOverdraft,
+				};
+				if (!firstInventoryDeduction) firstInventoryDeduction = deductionSummary;
+
+				installationResults.push({
+					...installation,
+					inventoryDeduction: deductionSummary,
+					deductedMaterials: itemDeductions,
+					financials,
+					isImmediateLoadingFeasible,
 				});
 			}
 
@@ -138,7 +316,10 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					.limit(1);
 				if (visit) {
 					const existingObj = visit.objectiveStatus || "";
-					const soapNote = effectiveInput.notes || `[ПРОТОКОЛ ИМПЛАНТАЦИИ: Зуб FDI #${effectiveInput.toothNumberFdi}]\nУстановлен имплантат ${effectiveInput.implantBrand} Ø${effectiveInput.implantDiameterMm}×${effectiveInput.implantLengthMm} мм (LOT: ${screw.effectiveLotNumber}). Торк: ${effectiveInput.finalInsertionTorqueNcm} Н·см${isqMean !== null ? `, ISQ: ${Math.round(isqMean)}` : ""}. Протокол: ${protocol}.`;
+					const teethLabel = teethToProcess.join(", #");
+					const soapNote =
+						effectiveInput.notes ||
+						`[ПРОТОКОЛ ИМПЛАНТАЦИИ: Зубы FDI #${teethLabel}]\nУстановлено имплантатов: ${teethToProcess.length} шт. Бренд: ${effectiveInput.implantBrand} Ø${effectiveInput.implantDiameterMm}×${effectiveInput.implantLengthMm} мм. Торк: ${effectiveInput.finalInsertionTorqueNcm} Н·см${isqMean !== null ? `, ISQ: ${Math.round(isqMean)}` : ""}. Протокол: ${protocol}.`;
 					const updatedObj = existingObj ? `${existingObj}\n\n${soapNote}` : soapNote;
 					await tx
 						.update(visits)
@@ -148,18 +329,68 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			}
 
 			return {
-				...installation,
-				inventoryDeduction: { transactionId: screw.implantTx?.id ?? "", itemId: screw.invItem.id, itemName: screw.invItem.name, previousStock: screw.currentStock, newStock: screw.newStock, unitCostRub: String(screw.implantUnitCostRub), unitCostKopecks: screw.implantUnitCostKopecks, isOverdraft: screw.isOverdraft },
-				deductedMaterials: allDeductions,
-				financials,
-				isImmediateLoadingFeasible,
+				firstInstallationRecord,
+				firstInventoryDeduction,
+				installationResults,
+				allDeductions,
+				primaryFinancials,
 			};
 		});
 
-		wsBroker.broadcastToOrganization(orgId, { type: "UPDATE_IMPLANT_RECORD", payload: { patientId: effectiveInput.patientId, toothNumberFdi: effectiveInput.toothNumberFdi, installationId: result.id, inventoryDeduction: result.inventoryDeduction, financials: result.financials } });
+		const primaryInstallation = txResult.installationResults[0] ?? txResult.firstInstallationRecord;
 
-		return reply.code(201).send({ success: true, installation: result, inventoryDeduction: result.inventoryDeduction, inventoryDeductions: result.deductedMaterials, financials: result.financials, isImmediateLoadingFeasible: result.isImmediateLoadingFeasible, evaluatedProtocol: protocol, decisionRationale });
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "UPDATE_IMPLANT_RECORD",
+			payload: {
+				patientId: effectiveInput.patientId,
+				toothNumberFdi: effectiveInput.toothNumberFdi,
+				teeth: teethToProcess,
+				installationId: txResult.firstInstallationRecord?.id ?? "",
+				inventoryDeduction: txResult.firstInventoryDeduction,
+				financials: txResult.primaryFinancials,
+			},
+		});
+
+		const responsePayload: Record<string, unknown> = {
+			success: true,
+			count: txResult.installationResults.length,
+			installation: primaryInstallation,
+			installations: txResult.installationResults,
+			inventoryDeduction: txResult.firstInventoryDeduction,
+			inventoryDeductions: txResult.allDeductions,
+			financials: txResult.primaryFinancials,
+			isImmediateLoadingFeasible,
+			evaluatedProtocol: protocol,
+			decisionRationale,
+		};
+
+		// Запись в таблицу idempotencyKeys для атомарного кэширования
+		if (idempotencyKey) {
+			await withTenantCtx(orgId, async (tx) => {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 201,
+						},
+					});
+			});
+		}
+
+		return reply.code(201).send(responsePayload);
 	};
 
 	app.post("/api/clinical/implants/installations", handleInstallation);
+	app.post("/api/clinical/implants/installations/batch", handleInstallation);
 }

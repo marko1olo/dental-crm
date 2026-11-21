@@ -27,7 +27,7 @@ import {
 	type FnsPatientInfo,
 	type FnsPersonInfo,
 	type FnsTaxPayload,
-} from "../fns/fnsKnd1151156Builder.js";
+} from "@dental/shared";
 import {
 	FamilyWalletError,
 	type FnsTaxCertificateSummary,
@@ -187,7 +187,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 				serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
 				amountRub: kopecksToRubles(amtKop),
 				taxCode: isExpensive ? ("2" as const) : ("1" as const),
-				isRefund: p.status === "refunded" || amtKop < 0,
+				status: p.status === "refunded" ? ("refunded" as const) : ("paid" as const),
+				isRefund: amtKop < 0,
 			};
 		});
 
@@ -264,8 +265,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 						memberBirthYear !== null &&
 						!Number.isNaN(memberBirthYear) &&
 						new Date().getFullYear() - memberBirthYear < 24;
-					kinshipCode = isChild ? "4" : "2";
-					kinshipNameRu = isChild ? "Ребенок" : "Супруг(а)";
+					kinshipCode = isChild ? "4" : "1";
+					kinshipNameRu = isChild ? "Ребенок" : "Лично";
 				}
 			} else {
 				const memberBirthYear = member.birthDate ? new Date(member.birthDate).getFullYear() : null;
@@ -277,8 +278,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 					kinshipCode = "4";
 					kinshipNameRu = "Ребенок";
 				} else {
-					kinshipCode = "2";
-					kinshipNameRu = "Супруг(а)";
+					kinshipCode = "1";
+					kinshipNameRu = "Лично";
 				}
 			}
 		}

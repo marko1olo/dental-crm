@@ -7,6 +7,7 @@
 
 import {
 	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../../../lib/safeLocalStorage";
 import type { PregnancyTrimester } from "./types";
@@ -75,5 +76,14 @@ export function saveAnamnesisDraft(
 		safeLocalStorageSetItem(storageKey, JSON.stringify(toSave));
 	} catch {
 		// Silent safety: QuotaExceeded or disabled localStorage
+	}
+}
+
+export function clearAnamnesisDraft(patientId?: string | null): void {
+	try {
+		const key = getAnamnesisStorageKey(patientId);
+		safeLocalStorageRemoveItem(key);
+	} catch {
+		// Silent safety
 	}
 }

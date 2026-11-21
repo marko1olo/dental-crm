@@ -39,6 +39,7 @@ import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reason
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../loyaltyModules/bonusBalanceService.js";
+import { deductMaterialsForVisit } from "../../services/inventory/materialDeduction.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
 export type CashboxPaymentOutcome =
@@ -534,6 +535,7 @@ export async function processCashboxPayment(
 					.update(familyGroups)
 					.set({
 						balance: newBalanceStr,
+						balanceKopecks: Number(topupNewBalKop),
 						updatedAt: new Date(),
 					})
 					.where(and(eq(familyGroups.id, fg.id), eq(familyGroups.organizationId, orgId)));
@@ -774,8 +776,17 @@ export async function processCashboxPayment(
 
 			// Если осталась сумма для списания, списываем из семейного баланса familyGroups
 			if (remainingToDeductKop > 0n && lockedFamilyGroup) {
-				const walletOwnerId = lockedFamilyGroup.headPatientId || lockedFamilyGroup.primaryPatientId;
-				if (walletOwnerId && resolvedPatientId !== walletOwnerId) {
+				const walletOwnerId =
+					lockedFamilyGroup.headPatientId ||
+					lockedFamilyGroup.primaryPatientId ||
+					(patientRow?.familyGroupId === lockedFamilyGroup.id ? resolvedPatientId : null);
+				if (!walletOwnerId) {
+					return {
+						kind: "unauthorized_family_spend" as const,
+						reason: "У семейной группы не назначен владелец счета (headPatientId). Списание семейного депозита заблокировано.",
+					};
+				}
+				if (resolvedPatientId !== walletOwnerId) {
 					// DEF-FAM-01: Проверка полномочий списания семейного депозита (BOLA guard)
 					const [rel] = await tx
 						.select()
@@ -827,6 +838,7 @@ export async function processCashboxPayment(
 					.update(familyGroups)
 					.set({
 						balance: kopecksToNumericString(Number(newFamilyBalKop)),
+						balanceKopecks: Number(newFamilyBalKop),
 						updatedAt: new Date(),
 					})
 					.where(
@@ -1606,6 +1618,23 @@ export async function processCashboxPayment(
 						);
 				}
 
+				// Автоматическое списание расходных материалов по техкартам процедур (BOM) визита (Мандаты 8e, 8v)
+				const cashierUserId = body.cashierUserId || body.operatorId || null;
+				try {
+					await deductMaterialsForVisit(tx, {
+						organizationId: orgId,
+						visitId: effectiveVisitId,
+						userId: cashierUserId,
+						transactionType: "auto_deduct",
+					});
+				} catch (deductErr) {
+					// Soft Negative Stock: ошибка списания никогда не блокирует кассовый расчет визита
+					logger?.warn(
+						{ err: deductErr, visitId: effectiveVisitId, orgId },
+						"BOM materials auto-deduction completed with warning",
+					);
+				}
+
 				await tx
 					.update(treatmentItems)
 					.set({ status: "completed" })
@@ -2224,7 +2253,7 @@ export async function processCashboxPayment(
 			statusCode: 400,
 			body: {
 				error: "ShiftExpiredError",
-				message: `Кассовая смена №${result.shiftNumber} длится более 24 часов (п. 1 ст. 4.3 54-ФЗ). Закройте смену и снимите Z-отчёт перед проведением новых платежей.`,
+				message: `Кассовая смена №${result.shiftNumber} длится более 24 часов. Закройте смену и снимите Z-отчёт перед проведением новых платежей.`,
 			},
 		};
 	}

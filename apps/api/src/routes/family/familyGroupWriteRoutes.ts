@@ -121,7 +121,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 
 		const family = await db.transaction(async (tx) => {
 			const [created] = await tx.insert(familyGroups).values({
-				organizationId, name: data.name, headPatientId: data.headPatientId || null, balance: kopecksToNumericString(0),
+				organizationId,
+				name: data.name,
+				headPatientId: data.headPatientId || null,
+				balance: kopecksToNumericString(0),
+				balanceKopecks: 0,
 			}).returning();
 
 			if (data.headPatientId && created) {

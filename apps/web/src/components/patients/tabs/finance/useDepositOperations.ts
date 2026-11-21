@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import type { DepositOperationRecord, OperationMode, PaymentMethod, TargetWallet } from "./types";
@@ -85,7 +86,7 @@ export function useDepositOperations(
 						type: isTopup ? "family_share" : isRefund ? "charge" : "charge",
 						typeLabelRu: isTopup ? "Семейный аванс (+)" : isRefund ? "Возврат аванса (-)" : "Списание аванса (-)",
 						amountRub: amtRub,
-						amountKopecks: Math.round(amtRub * 100),
+						amountKopecks: rublesToKopecks(amtRub),
 						method: item.method === "pool" ? "family_wallet" : item.method || "card",
 						methodLabelRu: mapMethodToLabel(item.method),
 						status: "completed",
@@ -120,7 +121,7 @@ export function useDepositOperations(
 					type: isTopup ? "deposit" : "charge",
 					typeLabelRu: isTopup ? "Внесение аванса (+)" : "Списание аванса (-)",
 					amountRub: amtRub,
-					amountKopecks: Math.round(amtRub * 100),
+					amountKopecks: rublesToKopecks(amtRub),
 					method: p.method as PaymentMethod,
 					methodLabelRu: mapMethodToLabel(p.method),
 					status: "completed",
@@ -159,14 +160,18 @@ export function useDepositOperations(
 			const mutationId = `dep-${Date.now()}-${crypto.randomUUID()}`;
 			const isTopup = mode === "topup";
 			const delta = isTopup ? amount : -amount;
-			const amountKopecks = Math.round(amount * 100);
+			const amountKopecks = rublesToKopecks(amount);
 
 			try {
 				if (target === "family" && patient?.familyGroupId) {
 					const endpoint = isTopup ? "/api/finance/family/topup" : "/api/finance/family/pay";
 					const resp = await fetch(endpoint, {
 						method: "POST",
-						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": mutationId,
+							...denteAdminSecretRequestHeaders(),
+						},
 						body: JSON.stringify({
 							familyGroupId: patient.familyGroupId,
 							patientId: patient.id,
@@ -185,7 +190,11 @@ export function useDepositOperations(
 						// Пополнение личного аванса (входящий приходный платёж)
 						const resp = await fetch("/api/finance/payments", {
 							method: "POST",
-							headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+							headers: {
+								"Content-Type": "application/json",
+								"Idempotency-Key": mutationId,
+								...denteAdminSecretRequestHeaders(),
+							},
 							body: JSON.stringify({
 								patientId: patient.id,
 								amountRub: amount,
@@ -202,7 +211,11 @@ export function useDepositOperations(
 						// Списание личного аванса (канонический возврат / расходная операция через кассу 54-ФЗ)
 						const refundResp = await fetch("/api/cashbox/refund", {
 							method: "POST",
-							headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+							headers: {
+								"Content-Type": "application/json",
+								"Idempotency-Key": mutationId,
+								...denteAdminSecretRequestHeaders(),
+							},
 							body: JSON.stringify({
 								amountRub: amount,
 								reasonText: `Списание аванса с лицевого счёта: ${patient.fullName || "Пациент"}`,

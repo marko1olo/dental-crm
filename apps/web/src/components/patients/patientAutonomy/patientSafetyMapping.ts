@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	type PatientClinicalSafetyProfile,
@@ -94,7 +95,7 @@ export function mapPatientToGeneralInfo(raw: RawPatientInput | null | undefined)
 		dmsInsuranceCompany: raw.dmsInsuranceCompany ?? admin.dmsInsuranceCompany ?? "",
 		dmsPolicyNumber: raw.dmsPolicyNumber ?? admin.dmsPolicyNumber ?? "",
 		dmsGuaranteeLetterNumber: raw.dmsGuaranteeLetterNumber ?? admin.dmsGuaranteeLetterNumber ?? "",
-		dmsCoverageLimitRub: raw.dmsCoverageLimitRub ?? admin.dmsCoverageLimitRub ?? (admin.dmsCoverageLimitKopecks ? Number(admin.dmsCoverageLimitKopecks) / 100 : undefined),
+		dmsCoverageLimitRub: raw.dmsCoverageLimitRub ?? admin.dmsCoverageLimitRub ?? (admin.dmsCoverageLimitKopecks ? kopecksToRubles(admin.dmsCoverageLimitKopecks) : undefined),
 		dmsCoverageLimitKopecks: raw.dmsCoverageLimitKopecks ?? admin.dmsCoverageLimitKopecks ?? undefined,
 		registrationAddress: raw.registrationAddress ?? admin.registrationAddress ?? "",
 		residentialAddress: raw.residentialAddress ?? admin.residentialAddress ?? "",

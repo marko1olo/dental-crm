@@ -34,8 +34,14 @@ export interface ExtractedSafetyProfile {
 	pregnancyTrimester?: PregnancyTrimester | undefined;
 }
 
+export interface PatientSafetyExtractInput {
+	allergies?: string | string[] | null | undefined;
+	somaticNotes?: string | null | undefined;
+	concomitantDiseases?: string | null | undefined;
+}
+
 export function extractPatientSafetyDefaults(
-	activePat: { allergies?: string | string[] | undefined; somaticNotes?: string | undefined; concomitantDiseases?: string | undefined; [key: string]: unknown } | null | undefined,
+	activePat: PatientSafetyExtractInput | null | undefined,
 ): ExtractedSafetyProfile {
 	const allergies: Record<string, string> = {};
 	const risks: string[] = [];

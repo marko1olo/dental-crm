@@ -18,8 +18,17 @@ import { useAnamnesisActions } from "./useAnamnesisActions";
 export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 	const { onAppendAnamnesis, onAppendComorbidities } = props;
 	const appLogic = useAppLogicContext();
-	const activePat = (appLogic as AnamnesisAutosaveContext | null)?.activePatient;
+	const activePat = appLogic?.activePatient;
 	const storageKey = getAnamnesisStorageKey(activePat?.id);
+
+	const autosaveContext: AnamnesisAutosaveContext | undefined = useMemo(() => {
+		if (!appLogic) return undefined;
+		return {
+			...(appLogic.activePatient ? { activePatient: appLogic.activePatient } : {}),
+			...(appLogic.dashboard?.patients ? { dashboard: { patients: appLogic.dashboard.patients } } : {}),
+			...(typeof appLogic.updateVisitNoteField === "function" ? { updateVisitNoteField: appLogic.updateVisitNoteField } : {}),
+		};
+	}, [appLogic?.activePatient, appLogic?.dashboard?.patients, appLogic?.updateVisitNoteField]);
 
 	const allergies = useAnamnesisAllergies({});
 	const risks = useAnamnesisRisks([]);
@@ -44,9 +53,14 @@ export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 			return;
 		}
 		const def = extractPatientSafetyDefaults(activePat);
-		if (Object.keys(def.allergies).length > 0) allergies.setSelectedAllergies(def.allergies);
-		if (def.risks.length > 0) risks.setSelectedRisks(def.risks);
-		if (def.pregnancyTrimester) risks.setPregnancyTrimester(def.pregnancyTrimester);
+		allergies.setSelectedAllergies(def.allergies ?? {});
+		risks.setSelectedRisks(def.risks ?? []);
+		risks.setAnticoagulantName("");
+		risks.setBisphosphonateName("");
+		risks.setPregnancyTrimester(def.pregnancyTrimester ?? "trimester_2");
+		setSelectedHistory([]);
+		setSelectedComplaints([]);
+		setCustomNotes("");
 	}, [storageKey, activePat]);
 
 	const currentPayload = useMemo(() => ({
@@ -60,7 +74,7 @@ export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 		customNotes,
 	}), [allergies.selectedAllergies, risks.selectedRisks, risks.anticoagulantName, risks.bisphosphonateName, risks.pregnancyTrimester, selectedHistory, selectedComplaints, customNotes]);
 
-	const { syncWithPatient } = useAnamnesisAutosave(storageKey, currentPayload, appLogic);
+	const { syncWithPatient } = useAnamnesisAutosave(storageKey, currentPayload, autosaveContext);
 
 	const toggleHistory = useCallback((lbl: string) => {
 		setSelectedHistory((prev) => (prev.includes(lbl) ? prev.filter((x) => x !== lbl) : [...prev, lbl]));
@@ -81,7 +95,7 @@ export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 		setCustomNotes,
 		syncWithPatient,
 		currentPayload,
-		appLogic,
+		appLogic: appLogic ? { updateVisitNoteField: appLogic.updateVisitNoteField } : undefined,
 		onAppendAnamnesis,
 		onAppendComorbidities,
 	});

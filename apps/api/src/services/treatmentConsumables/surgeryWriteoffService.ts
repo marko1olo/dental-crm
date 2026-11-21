@@ -50,10 +50,10 @@ export async function quickWriteoffSurgery(tx: DbExecutor, params: QuickWriteoff
 		visitId,
 		userId,
 		notes,
-		reasonPrefix: `Хирургическая операция «${opTitle}»${toothSuffix} (1 клик, без комиссии)`,
+		reasonPrefix: `Списание материалов хирургического протокола «${opTitle}»${toothSuffix}`,
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Материалы операции «${opTitle}»${toothSuffix} (${count} поз.) успешно списаны со склада${
-				hasOverdraft ? " в мягкий овердрафт без комиссии" : ""
+				hasOverdraft ? " (мягкий овердрафт)" : ""
 			}.`,
 	});
 }

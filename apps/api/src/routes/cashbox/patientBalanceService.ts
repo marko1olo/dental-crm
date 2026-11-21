@@ -544,6 +544,7 @@ export class PatientBalanceService {
 				.update(familyGroups)
 				.set({
 					balance: kopecksToNumericString(newFamilyBalKop),
+					balanceKopecks: newFamilyBalKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId)));

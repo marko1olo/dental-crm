@@ -380,7 +380,11 @@ export async function applyProcedureConsumablesDeduction(
 
 			const ruleUnit = req.unit || item.unit || "pcs";
 			const invUnit = item.unit || "pcs";
-			const convertedRequestedQty = convertInventoryUnit(req.quantity, ruleUnit, invUnit);
+			const packageMultiplier = item.packageMultiplier ? Number(item.packageMultiplier) : undefined;
+			const convertedRequestedQty = convertInventoryUnit(req.quantity, ruleUnit, invUnit, {
+				packageMultiplier,
+				carpulesPerPack: packageMultiplier,
+			});
 			if (convertedRequestedQty <= 0) continue;
 
 			const currentQty = Number(item.currentQty ?? item.stockQuantity ?? 0);

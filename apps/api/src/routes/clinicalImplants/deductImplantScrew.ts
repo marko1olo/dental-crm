@@ -1,5 +1,5 @@
 import { and, eq, ilike } from "drizzle-orm";
-import type { createImplantInstallationSchema } from "@dental/shared";
+import { type createImplantInstallationSchema, rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
@@ -88,7 +88,7 @@ export async function deductImplantScrew(
 	}
 
 	if (!invItem) {
-		const matchingSeed =
+		const exactBrandSeed =
 			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => {
 				const brandMatch = matchesImplantBrand(s.name, input.implantBrand);
 				const lowerName = s.name.toLowerCase();
@@ -96,22 +96,23 @@ export async function deductImplantScrew(
 				const lenMatch = lowerName.includes(String(input.implantLengthMm));
 				return brandMatch && (diamMatch || lenMatch);
 			}) ||
-			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => matchesImplantBrand(s.name, input.implantBrand)) ||
-			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => s.category === "Имплантология");
+			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => matchesImplantBrand(s.name, input.implantBrand));
 
-		const defaultCostRub = matchingSeed?.unitCostRub ?? "0.00";
-		const defaultLot = input.lotNumber || matchingSeed?.lotNumber || "";
-		const defaultExp = input.expirationDate || matchingSeed?.expirationDate || null;
-		const defaultSku = matchingSeed && "sku" in matchingSeed ? (matchingSeed.sku as string) : null;
-		const defaultBarcode = matchingSeed && "barcode" in matchingSeed ? (matchingSeed.barcode as string) : null;
+		const fallbackSeed = CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => s.category === "Имплантология");
+		const fallbackName = `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм`;
+		const itemName = exactBrandSeed ? exactBrandSeed.name : fallbackName;
+
+		const defaultCostRub = exactBrandSeed?.unitCostRub ?? fallbackSeed?.unitCostRub ?? "0.00";
+		const defaultLot = input.lotNumber || exactBrandSeed?.lotNumber || "";
+		const defaultExp = input.expirationDate || exactBrandSeed?.expirationDate || null;
+		const defaultSku = exactBrandSeed && "sku" in exactBrandSeed ? (exactBrandSeed.sku as string) : null;
+		const defaultBarcode = exactBrandSeed && "barcode" in exactBrandSeed ? (exactBrandSeed.barcode as string) : null;
 
 		const [created] = await tx
 			.insert(inventoryItems)
 			.values({
 				organizationId: orgId,
-				name: matchingSeed
-					? matchingSeed.name
-					: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм`,
+				name: itemName,
 				category: "Имплантология",
 				unit: "шт.",
 				stockQuantity: "0",
@@ -137,7 +138,7 @@ export async function deductImplantScrew(
 	const newStock = Number((currentStock - 1).toFixed(4));
 	const isOverdraft = newStock < 0;
 	const implantUnitCostRub = Number(invItem.unitCostRub ?? invItem.pricePerUnit ?? 0);
-	const implantUnitCostKopecks = BigInt(Math.round(implantUnitCostRub * 100));
+	const implantUnitCostKopecks = BigInt(rublesToKopecks(implantUnitCostRub));
 
 	await tx
 		.update(inventoryItems)

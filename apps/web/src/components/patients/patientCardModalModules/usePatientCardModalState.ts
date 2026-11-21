@@ -59,8 +59,9 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	useEffect(() => {
 		if (initP || initPAlias) {
 			const n = initP ?? initPAlias;
-			setPatientData((prev) => ({ ...prev, ...mapPatientToGeneralInfo(n) }));
+			setPatientData(mapPatientToGeneralInfo(n));
 			setSafetyProfile(resolveInitialSafetyProfile(n, effS));
+			setIsDirty(false);
 		}
 	}, [initP, initPAlias, effS]);
 

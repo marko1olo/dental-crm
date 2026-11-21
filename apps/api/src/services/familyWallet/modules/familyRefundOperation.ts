@@ -61,7 +61,15 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		const newBalanceKop = new Decimal(currentBalanceKop).minus(refundKopecks).toNumber();
 		const newBalanceStr = kopecksToNumericString(newBalanceKop);
 
-		const [updatedFamily] = await tx.update(familyGroups).set({ balance: newBalanceStr, updatedAt: new Date() }).where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).returning();
+		const [updatedFamily] = await tx
+			.update(familyGroups)
+			.set({
+				balance: newBalanceStr,
+				balanceKopecks: newBalanceKop,
+				updatedAt: new Date(),
+			})
+			.where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId)))
+			.returning();
 		if (!updatedFamily) throw new FamilyWalletError("Не удалось обновить баланс семейной группы", 500, "UPDATE_FAILED");
 
 		let cashOp: typeof cashOperations.$inferSelect | undefined;

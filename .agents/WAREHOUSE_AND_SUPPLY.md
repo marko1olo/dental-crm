@@ -439,6 +439,78 @@
   * Тесты `@dental/shared` — 100% PASS (Exit Code 0).
   * Компилятор `tsc` в затронутых модулях API и Web — 0 ошибок (Exit Code 0).
 
+---
+
+## 🛡️ 19. Red Team Fixer Surgeon: Ликвидация 6 дефектов Склада и BOM (УЛИКА 1 — УЛИКА 6) (Мандаты 8e, 8n, 8v, 8aa, 8bo, 8be, 8az)
+
+* **УЛИКА 1: Синхронизация двойных колонок в `inventory_items` (`itemCatalogMutations.ts`)**:
+  * В `handleCreateInventoryItem`, `handleUpdateInventoryItem`, `handlePatchInventoryItem` гарантирована строгая консистентность полей: `stockQuantity` и `currentQty` записываются синхронно одинаковыми значениями, ликвидируя рассинхрон остатков и ложный овердрафт (`item.currentQty ?? item.stockQuantity`). Аналогично синхронизированы `minQty`/`criticalThreshold` и `pricePerUnit`/`unitCostRub`.
+* **УЛИКА 2: Устранение 404 и восстановление контракта `/api/inventory/shift-summary` (`writeOffBatchDeduction.ts`)**:
+  * В `writeOffBatchDeduction.ts` зарегистрированы канонические маршруты `GET /:organizationId/shift-summary` и `GET /shift-summary`, вызывающие `TreatmentConsumablesService.getShiftConsumablesSummary(...)`. В `writeOffAuditTrail.ts` убран конфликтный дубликат роута. Фронтенд `useConsumablesBatchWriteoff.ts` получает реальные данные расходников за смену без 404.
+* **УЛИКА 3: Физический снос фантомного файла `procedureBomDbResolver.ts` (`git rm`)**:
+  * Устранен служебный подлог в документации: файл `apps/api/src/services/treatmentConsumables/stockDeductionModules/procedureBomDbResolver.ts` удален из репозитория (`git rm`).
+  * В `apps/api/src/services/inventory/fefoModules/procedureBomResolver.ts` объединены все 3 эшелона поиска техкарт (`procedure_tech_cards`, `treatment_consumables`, `procedure_material_rules`) в единый канонический SSOT `findDbProcedureItems`. В `serviceBomRulesMatcher.ts` импорт переведен на единый SSOT.
+* **УЛИКА 4: Защита от взаимных блокировок PostgreSQL 40P01 (`writeOffFefoExecution.ts`)**:
+  * В `writeOffFefoExecution.ts` перед выполнением транзакционного цикла FEFO-списания внедрена детерминированная лексикографическая сортировка массива номенклатур по `inventoryItemId || id || itemId || name || itemName`. Исключен риск дедлока при одновременных списаниях.
+* **УЛИКА 5: Искоренение микро-симуляторов ватных валиков и перчаток из SSOT (`materialsAutoDeductionSsot.ts`)**:
+  * Из `packages/shared/src/inventory/materialsAutoDeductionSsot.ts` вычищены псевдо-клинические рецепты ватных валиков, салфеток, перчаток и слюноотсосов. Сохранены строго реальные клинические материалы (анестетики, композиты, кость, мембраны, NiTi файлы, адгезивы, шовный материал).
+* **УЛИКА 6: Физический снос файла-клона `warehouse/materialsAutoDeductionSsot.ts` (`git rm`)**:
+  * Удален дубликат размером 31 КБ: `git rm packages/shared/src/warehouse/materialsAutoDeductionSsot.ts`.
+  * В `packages/shared/src/warehouse/index.ts` и `packages/shared/src/inventory/index.ts` настроен единый канонический экспорт из `packages/shared/src/inventory/materialsAutoDeductionSsot.js`.
+* **Машинные гейты и двойной счётчик**:
+  * `npm run typecheck -w @dental/shared`: 0 ошибок (Exit Code 0).
+  * `npm run typecheck -w @dental/api`: 0 ошибок (Exit Code 0).
+  * Все тесты инвентаря и BOM: 100% PASS (`inventoryIntegrityAndDeadlockDefense.test.ts`, `inventoryBatchWriteoffAndPatch.test.ts`, `inventoryAutoDeduct.test.ts`, `inventoryRedTeamBOMAndInvoices.test.ts`, `materialsAutoDeductionAndUnitsSsot.test.ts`, `inventoryMaterialsSsot.test.ts`).
+
+---
+
+## 🛡️ 20. Fixer Surgeon: Транзакционный каталог, упаковочные множители, копеечные DTO и ликвидация клона inventoryUnitsSsot (Мандаты 8e, 8n, 8v, 8aa, 8bo, 8bm, 8bf)
+
+* **Транзакционные мутации каталога номенклатуры (`itemCatalogMutations.ts`)**:
+  * В `handleCreateInventoryItem`, `handleUpdateInventoryItem`, `handlePatchInventoryItem` реализована сквозная поддержка клинических единиц измерения (`unit`: `мл`, `шт`, `упак`), категорий (`category`), примечаний (`notes`), упаковочных множителей (`packageMultiplier`) и копеечных закупочных цен (`purchasePriceKopecks` / `unitPriceKopecks`).
+  * Для БД выполняется строгое преобразование между целочисленными копейками и рублями через канонические функции `@dental/shared` (`rublesToKopecks`, `kopecksToRubles`), исключая ошибки округления float.
+* **Тихое списание по FEFO и Soft Negative Stock (`fefoStockService.ts`, `writeOffBatchDeduction.ts`)**:
+  * Обеспечено тихое списание по алгоритму FEFO (партии с наименьшим сроком годности расходуются первыми).
+  * При нехватке физического остатка (`quantity < 0`) транзакция не абортируется и не выбрасывает 422 ошибку: остаток уходит в мягкий овердрафт (`emergency_overdraft`, `isOverdraft: true`), возвращая статус `200 OK` с мягким предупреждением бэк-офиса без блокировки врача у кресла (Мандаты 8e, 8n, 8v, 8aa).
+* **Искоренение дубликата `warehouse/inventoryUnitsSsot.ts` (Мандат 8bf)**:
+  * Устранена коллизия TS2308 в `packages/shared/src/index.ts`. Файл `packages/shared/src/warehouse/inventoryUnitsSsot.ts` переведен в канонический ре-экспорт из `../inventory/inventoryUnitsSsot.js`.
+  * `packages/shared/src/inventory/inventoryUnitsSsot.ts` закреплен как единственный канонический SSOT единиц измерения и конвертации упаковок.
+* **Машинные гейты и верификация**:
+  * `npx tsc -p packages/shared/tsconfig.json --noEmit`: 0 ошибок (Exit Code 0).
+  * `npx tsc -p apps/api/tsconfig.json --noEmit`: 0 ошибок по модулям склада, FEFO и номенклатуры.
+  * Тесты: `materialsAutoDeductionAndUnitsSsot.test.ts` (9/9 PASS), `fefoStockService.test.ts` (4/4 PASS), `warehouseSoftOverdraftAndTechCardInquisitor.test.ts` (6/6 PASS), `inventoryBatchWriteoffAndPatch.test.ts` (7/7 PASS) — 100% PASS (Exit Code 0).
+  * `npm run check:encoding`: проверено 20 043 файлов, 0 ошибок (Exit Code 0).
+  * Личный осмотр скриншотов через `read_file`: 4-State Proof (`inventory_stock_pc_light_1440x900.png`, `inventory_stock_pc_dark_1440x900.png`, `inventory_stock_mobile_light_390x844.png`, `inventory_stock_mobile_dark_390x844.png`) в `docs/proofs/inventory/` и `docs/proofs/warehouse/` — 0px клиппинга, Apple HIG Bottom Sheet, Natural Thumb Zone, Soft Negative Stock бейдж овердрафта.
+
+---
+
+## 🛡️ 21. Red Team Fixer Surgeon: Ликвидация 6 дефектов списания имплантатов, BOM и Soft Negative Stock (Мандаты 8e, 8n, 8v, 8aa, 8bm, 8bo, 8az)
+
+* **ДЕФЕКТ №1: Устранение ложного фоллбэка и подмены бренда имплантата на Nobel Biocare (`deductImplantScrew.ts`)**:
+  * В `deductImplantScrew.ts` разделен поиск точного совпадения бренда от общего фоллбэка категории.
+  * Если конкретный бренд отсутствует в `CANONICAL_IMPLANT_WAREHOUSE_SEEDS`, код честно формирует наименование: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм`, исключая фальсификацию бренда Straumann, Dentium или Osstem в складском учете и гарантийном паспорте пациента.
+* **ДЕФЕКТ №2: Списание биоматериалов через FEFO и честный мягкий овердрафт с транзакциями (`deductConsumables.ts`)**:
+  * Костный графт, коллагеновая мембрана и шовный материал переведены со слепого `UPDATE inventory_items` на канонический сервис `fefoStockService.deductFefo(tx, ...)`.
+  * При отсутствии карточки материала в клинике она автоматически создается со `stockQuantity: "0"` на основе `CANONICAL_BIOMATERIAL_SEEDS`, а списание проводится в мягкий овердрафт (`-1.000`) с обязательной проводкой в `inventory_transactions`.
+* **ДЕФЕКТ №3: Восстановление неразрывной цепочки списания BOM при кассовом расчете (`cashboxPaymentProcessor.ts`, `cashboxSchemas.ts`)**:
+  * В схему `cashboxPaymentRequestSchema` добавлены опциональные поля `cashierUserId` и `operatorId`.
+  * В транзакцию кассового сеттлмента перед переводом `treatmentItems` в `completed` встроен вызов `deductMaterialsForVisit(tx, { organizationId: orgId, visitId: effectiveVisitId, userId: cashierUserId, transactionType: "auto_deduct" })`. Исключен разрыв цепочки списания расходников визита.
+* **ДЕФЕКТ №4: Корректная передача упаковочного множителя `packageMultiplier` при автосписании BOM (`applyProcedureConsumablesDeduction.ts`)**:
+  * В вызов `convertInventoryUnit` передан `packageMultiplier: item.packageMultiplier ? Number(item.packageMultiplier) : undefined`, предотвращающий искажение норм расхода (карпулы анестезии 50 шт./пачка, штучные изделия).
+* **ДЕФЕКТ №5: Тотальная очистка дев-жаргона и спек-дампинга в примечаниях списаний (`bundleWriteoffService.ts`, `quickWriteoffService.ts`, `surgeryWriteoffService.ts`)**:
+  * Вычищены формулировки «...без комиссии из 3 человек», «1 клик, без комиссии», «в мягкий овердрафт без комиссии».
+  * Примечания переведены на профессиональный медицинский язык: «Списание стандартного комплекта смены», «Списание клинического набора», «Списание анестезии (СанПиН 3.3686-21)», «(мягкий овердрафт)».
+* **ДЕФЕКТ №6: Защита multi-tenant RLS в протоколе имплантации (`installationRoute.ts`, `installationBillingAndOdontogram.ts`)**:
+  * Вся неделимая транзакция регистрации имплантатов пакета All-on-4 / одиночной установки переведена на `withTenantCtx(orgId, async (tx) => { ... })`. Тип `tx` расширен до `DbExecutor` для совместимости с `TenantDb` в режиме `exactOptionalPropertyTypes: true`.
+* **Машинные гейты и верификация**:
+  * Все тесты склада, имплантации и FEFO: 100% PASS (Exit Code 0).
+  * `npm run check:diff`: 0 костылей, 0 нарушений.
+  * `npm run check:encoding`: 20 037 файлов проверено, 0 нарушений.
+  * `npm run check:doors`: 100% защита SSOT и API-дверей.
+  * `npm run check:ratchet`: 0 новых any, авто-храповик закручен на -14 float-делений.
+  * `tsc --noEmit` в затронутых модулях: 0 ошибок компилятора.
+
+
 
 
 

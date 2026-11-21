@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import type { createImplantInstallationSchema } from "@dental/shared";
+import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
+import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import {
 	invoiceItems,
 	patientInvoices,
@@ -12,10 +13,9 @@ import {
 } from "../../db/schema.js";
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export async function linkBillingAndOdontogram(
-	tx: DatabaseTransaction,
+	tx: DbExecutor,
 	orgId: string,
 	input: InstallationInput,
 	implantCost: number,
@@ -62,16 +62,16 @@ export async function linkBillingAndOdontogram(
 	}
 
 	const operationPriceRub = resolvedPriceRub ?? 0;
-	const operationPriceKopecks = BigInt(Math.round(operationPriceRub * 100));
-	const implantCostKopecks = BigInt(Math.round(implantCost * 100));
-	const consumablesCostKopecks = BigInt(Math.round(consumablesCost * 100));
+	const operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
+	const implantCostKopecks = BigInt(rublesToKopecks(implantCost));
+	const consumablesCostKopecks = BigInt(rublesToKopecks(consumablesCost));
 	const totalMaterialsCostKopecks = implantCostKopecks + consumablesCostKopecks;
 	const doctorGrossMarginKopecks = operationPriceKopecks - totalMaterialsCostKopecks;
 	const netDoctorIncomeKopecks = doctorGrossMarginKopecks > 0n ? doctorGrossMarginKopecks : 0n;
 
-	const totalMaterialsCostRub = Number(totalMaterialsCostKopecks) / 100;
-	const doctorGrossMarginRub = Number(doctorGrossMarginKopecks) / 100;
-	const netDoctorIncomeRub = Number(netDoctorIncomeKopecks) / 100;
+	const totalMaterialsCostRub = kopecksToRubles(totalMaterialsCostKopecks);
+	const doctorGrossMarginRub = kopecksToRubles(doctorGrossMarginKopecks);
+	const netDoctorIncomeRub = kopecksToRubles(netDoctorIncomeKopecks);
 
 	let linkedInvoiceId: string | null = null;
 
@@ -90,9 +90,9 @@ export async function linkBillingAndOdontogram(
 
 		if (existingInvoice) {
 			linkedInvoiceId = existingInvoice.id;
-			const currentTotalKopecks = BigInt(Math.round(Number(existingInvoice.totalAmountRub || 0) * 100));
+			const currentTotalKopecks = BigInt(rublesToKopecks(Number(existingInvoice.totalAmountRub || 0)));
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
-			const updatedTotalRub = Number(newTotalKopecks) / 100;
+			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
 				.update(patientInvoices)
 				.set({
@@ -123,9 +123,9 @@ export async function linkBillingAndOdontogram(
 
 		if (existing) {
 			linkedInvoiceId = existing.id;
-			const currentTotalKopecks = BigInt(Math.round(Number(existing.totalAmountRub || 0) * 100));
+			const currentTotalKopecks = BigInt(rublesToKopecks(Number(existing.totalAmountRub || 0)));
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
-			const updatedTotalRub = Number(newTotalKopecks) / 100;
+			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
 				.update(patientInvoices)
 				.set({
@@ -142,7 +142,7 @@ export async function linkBillingAndOdontogram(
 	}
 
 	if (!linkedInvoiceId) {
-		const invoiceTotalRub = Number(operationPriceKopecks) / 100;
+		const invoiceTotalRub = kopecksToRubles(operationPriceKopecks);
 		const [newInvoice] = await tx
 			.insert(patientInvoices)
 			.values({
@@ -182,8 +182,8 @@ export async function linkBillingAndOdontogram(
 		invoiceId: linkedInvoiceId,
 		toothCode: String(input.toothNumberFdi),
 		title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
-		priceRub: Number(operationPriceKopecks) / 100,
-		unitPriceRub: Number(operationPriceKopecks) / 100,
+		priceRub: kopecksToRubles(operationPriceKopecks),
+		unitPriceRub: kopecksToRubles(operationPriceKopecks),
 		quantity: "1",
 		status: "completed",
 		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см.${isqMean !== null ? ` ISQ: ${Math.round(isqMean)}.` : ""}`,

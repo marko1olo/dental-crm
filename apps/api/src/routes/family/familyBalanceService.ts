@@ -1,7 +1,29 @@
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
+
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbOrTx = DatabaseTransaction | typeof db;
+
+export async function updateFamilyBalance(
+	tx: DbOrTx,
+	familyGroupId: string,
+	organizationId: string,
+	deltaKopecks: number,
+) {
+	const deltaRubStr = (deltaKopecks / 100).toFixed(2);
+	const [updated] = await tx
+		.update(familyGroups)
+		.set({
+			balance: sql`${familyGroups.balance} + ${deltaRubStr}::numeric`,
+			balanceKopecks: sql`${familyGroups.balanceKopecks} + ${deltaKopecks}::bigint`,
+			updatedAt: new Date(),
+		})
+		.where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId)))
+		.returning();
+	return updated ?? null;
+}
 
 export async function familyGroupForOrganization(
 	familyGroupId: string,

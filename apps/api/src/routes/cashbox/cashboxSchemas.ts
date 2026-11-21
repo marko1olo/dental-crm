@@ -192,6 +192,8 @@ export const cashboxPaymentRequestSchema = z.object({
 	taxCategory: z.enum(["1", "2", "01", "02"]).optional(),
 	taxDeductionCode: z.enum(["1", "2", "01", "02"]).optional(),
 	cashierFullName: z.string().trim().max(256).optional(),
+	cashierUserId: z.string().uuid().optional(),
+	operatorId: z.string().uuid().optional(),
 	note: z.string().trim().max(500).optional(),
 	isElectronicReceiptOnly: z.boolean().optional(),
 	customerContact: z.string().trim().max(128).optional(),

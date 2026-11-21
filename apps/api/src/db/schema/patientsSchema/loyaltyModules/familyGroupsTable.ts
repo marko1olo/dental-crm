@@ -48,6 +48,9 @@ export const familyGroups = pgTable(
 		balance: numeric("balance", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0.00"),
+		balanceKopecks: bigint("balance_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

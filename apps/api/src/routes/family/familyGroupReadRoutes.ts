@@ -27,6 +27,7 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 				id: familyGroups.id,
 				name: familyGroups.name,
 				balance: familyGroups.balance,
+				balanceKopecks: familyGroups.balanceKopecks,
 				headPatientId: familyGroups.headPatientId,
 				organizationId: familyGroups.organizationId,
 				createdAt: familyGroups.createdAt,

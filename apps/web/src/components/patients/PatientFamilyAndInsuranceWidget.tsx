@@ -31,7 +31,7 @@ export function PatientFamilyAndInsuranceWidget({
 		>
 			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2 flex-wrap">
 				<div className="flex items-center gap-2">
-					<CreditCard size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<CreditCard size={15} className="text-[var(--primary)] shrink-0" />
 					<span className="font-semibold text-xs text-[var(--ink)]">
 						Финансы, семейный счёт и страхование ДМС/ОМС
 					</span>
@@ -43,7 +43,7 @@ export function PatientFamilyAndInsuranceWidget({
 					data-testid="patient-card-finance-btn"
 					title="Перейти к счетам и кассе"
 				>
-					<Receipt size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<Receipt size={13} className="text-[var(--success-ink)] shrink-0" />
 					<span>Касса / Оплата</span>
 					<span
 						data-testid="patient-quick-balance-btn"

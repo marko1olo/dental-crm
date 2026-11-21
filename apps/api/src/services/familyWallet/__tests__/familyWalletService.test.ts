@@ -29,7 +29,7 @@ import {
 import {
 	buildFnsKnd1151156Xml,
 	type FnsTaxPayload,
-} from "../../fns/fnsKnd1151156Builder.js";
+} from "@dental/shared";
 import { familyWalletService } from "../FamilyWalletService.js";
 
 describe("Domain 3: Family Wallet ACID Engine & FNS Tax Deduction (КНД 1151156)", () => {
@@ -289,6 +289,7 @@ describe("Domain 3: Family Wallet ACID Engine & FNS Tax Deduction (КНД 115115
 			documentDate: new Date(),
 			taxYear: "2026",
 			certificateKind: "1",
+			filePrefix: "UT_SVOPLMEDUSL",
 			clinic: {
 				inn: "7701234567",
 				kpp: "770101001",

@@ -33,7 +33,15 @@ export async function verifyFamilySpendAuthorization(params: {
 	readonly debitKopecks: number;
 }): Promise<void> {
 	const { tx, organizationId, family, patientId, debitKopecks } = params;
-	let walletOwnerId = family.headPatientId || family.primaryPatientId;
+	const walletOwnerId = family.headPatientId || family.primaryPatientId;
+
+	if (!walletOwnerId) {
+		throw new FamilyWalletError(
+			"Не определен владелец семейного счета (headPatientId)",
+			403,
+			"UNAUTHORIZED_FAMILY_SPEND",
+		);
+	}
 
 	const currentBalKop = parseKopecks(family.balance);
 	if (currentBalKop < debitKopecks) {
@@ -45,7 +53,7 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// Case 1: Wallet owner is spending for themselves
-	if (walletOwnerId && patientId === walletOwnerId) {
+	if (patientId === walletOwnerId) {
 		return;
 	}
 
@@ -58,26 +66,6 @@ export async function verifyFamilySpendAuthorization(params: {
 	const isDirectFamilyMember = Boolean(
 		patientRow?.familyGroupId && family.id && patientRow.familyGroupId === family.id,
 	);
-
-	// Fallback: If family wallet has no explicit headPatientId, fallback to current patient / payer
-	if (!walletOwnerId && isDirectFamilyMember) {
-		walletOwnerId = patientId;
-	}
-	if (!walletOwnerId) {
-		walletOwnerId = params.payerPatientId || patientId;
-	}
-
-	if (!walletOwnerId) {
-		throw new FamilyWalletError(
-			"Семейный кошелек не имеет назначенного владельца (headPatientId)",
-			400,
-			"MISSING_WALLET_OWNER",
-		);
-	}
-
-	if (patientId === walletOwnerId) {
-		return;
-	}
 
 	const [rel] = await tx
 		.select()

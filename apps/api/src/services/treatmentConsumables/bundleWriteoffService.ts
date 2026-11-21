@@ -39,9 +39,9 @@ export async function quickWriteoffShiftBundle(
 		userId: params.userId,
 		visitId: params.visitId,
 		notes: params.notes,
-		reasonPrefix: `Стандартный расход смены «${bundleNameRu}» медсестрой (1 клик, без комиссии)`,
+		reasonPrefix: `Списание стандартного комплекта смены «${bundleNameRu}»`,
 		successMessageTemplate: (count) =>
-			`Стандартный расход смены «${bundleNameRu}» успешно списан (${count} позиций без комиссии).`,
+			`Списание стандартного комплекта смены «${bundleNameRu}» выполнено (${count} поз.).`,
 	});
 }
 
@@ -66,9 +66,9 @@ export async function quickWriteoffVisitBundle(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
-		reasonPrefix: `1-клик списание набора «${visitNameRu}» (без комиссии)`,
+		reasonPrefix: `Списание клинического набора «${visitNameRu}»`,
 		successMessageTemplate: (count) =>
-			`Набор «${visitNameRu}» успешно списан (${count} позиций без комиссии).`,
+			`Клинический набор «${visitNameRu}» успешно списан (${count} поз.).`,
 	});
 }
 
@@ -97,7 +97,7 @@ export async function quickWriteoffOrthopedicProtocol(
 	const toothSuffix = toothNumber ? ` (зуб ${toothNumber})` : "";
 	const combinedNotes = notes
 		? `${notes}${toothSuffix}`
-		: `1-клик списание материалов по ортопедическому протоколу [${protocolId}]${toothSuffix}`;
+		: `Списание материалов по ортопедическому протоколу [${protocolId}]${toothSuffix}`;
 
 	return quickWriteoffVisitBundle(tx, {
 		organizationId: params.organizationId,

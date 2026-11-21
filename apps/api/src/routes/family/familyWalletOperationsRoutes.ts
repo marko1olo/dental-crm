@@ -1,4 +1,4 @@
-import { kopecksToNumericString, rubToKopecks } from "@dental/shared";
+import { kopecksToNumericString, rublesToKopecks } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
@@ -40,7 +40,11 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 			});
 			return {
 				payment: result.payment,
-				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				newBalance: kopecksToNumericString(
+					result.newBalanceKopecks !== undefined
+						? Number(result.newBalanceKopecks)
+						: rublesToKopecks(result.newBalanceRub),
+				),
 				duplicate: result.duplicate,
 			};
 		} catch (err: unknown) {
@@ -82,7 +86,11 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 			});
 			return {
 				payment: result.payment,
-				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				newBalance: kopecksToNumericString(
+					result.newBalanceKopecks !== undefined
+						? Number(result.newBalanceKopecks)
+						: rublesToKopecks(result.newBalanceRub),
+				),
 				refundedRub: result.refundedRub,
 				duplicate: result.duplicate,
 				cashOperation: result.cashOperation,

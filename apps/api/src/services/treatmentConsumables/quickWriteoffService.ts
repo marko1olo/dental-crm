@@ -28,7 +28,7 @@ export async function quickWriteoffStandardKit(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
-		reasonPrefix: "Списание базового набора приёма медсестрой (1 клик)",
+		reasonPrefix: "Списание базового набора приёма",
 		successMessageTemplate: () =>
 			"Базовый набор приёма списан (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.).",
 	});
@@ -67,11 +67,11 @@ export async function quickWriteoffCarpules(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
-		reasonPrefix: "Списание анестезии медсестрой в 1 клик (СанПиН 3.3686-21)",
+		reasonPrefix: "Списание анестезии (СанПиН 3.3686-21)",
 		successMessageTemplate: () =>
 			needleQty > 0
-				? `Списано пустых карпул анестетика: ${count} шт., карпульных игл: ${needleQty} шт. (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек).`
-				: `Списано пустых карпул анестетика: ${count} шт. (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек).`,
+				? `Списано пустых карпул анестетика: ${count} шт., карпульных игл: ${needleQty} шт. (СанПиН 3.3686-21, Класс Б).`
+				: `Списано пустых карпул анестетика: ${count} шт. (СанПиН 3.3686-21, Класс Б).`,
 	});
 }
 
