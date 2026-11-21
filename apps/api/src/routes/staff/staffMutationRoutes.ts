@@ -2,6 +2,8 @@ import {
 	canEditManagementNotes,
 	canManageStaffAuthority,
 	checkStaffDuplicates,
+	kopecksToRubles,
+	rublesToKopecks,
 	type StaffMemberSearchCandidate,
 	updateStaffProfileExtendedSchema,
 	validateMedicalBook,
@@ -303,14 +305,14 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				data.baseSalaryRub !== undefined
 					? data.baseSalaryRub
 					: data.baseSalaryKopecks !== undefined
-						? Math.round(data.baseSalaryKopecks / 100)
+						? kopecksToRubles(data.baseSalaryKopecks)
 						: (existingHr.baseSalaryRub || 0),
 			baseSalaryKopecks:
 				data.baseSalaryKopecks !== undefined
 					? data.baseSalaryKopecks
 					: data.baseSalaryRub !== undefined
-						? Math.round(data.baseSalaryRub * 100)
-						: (existingHr.baseSalaryKopecks || Math.round((existingHr.baseSalaryRub || 0) * 100)),
+						? rublesToKopecks(data.baseSalaryRub)
+						: (existingHr.baseSalaryKopecks || rublesToKopecks(existingHr.baseSalaryRub || 0)),
 			passwordEntropyBits:
 				data.passwordEntropyBits !== undefined
 					? data.passwordEntropyBits

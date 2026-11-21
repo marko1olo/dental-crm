@@ -36,7 +36,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	} = vm;
 
 	React.useEffect(() => {
-		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap, DEF-DOC-06: чистый канонический dental_medical_card)
+		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap, DEF-DOC-06: чистый канонический dental_medical_card_043u)
 		const isOutpatientRedirectNeeded =
 			(selectedDocumentKind as string) === OUTPATIENT_MEDICAL_CARD_KIND ||
 			(selectedDocumentKind as string) === "outpatient_medical_card_025u" ||

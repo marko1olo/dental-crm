@@ -11,6 +11,7 @@
  */
 
 import { and, desc, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import { kopecksToNumericString, kopecksToRub, kopecksToRubles, normalizePaymentMethod, rubToKopecks, rublesToKopecks, sumKopecks, validateLuhn16Certificate } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -83,6 +84,7 @@ export async function processCashboxPayment(
 	orgId: string,
 	rawBody: unknown,
 	headerIdemp?: string,
+	logger?: FastifyBaseLogger,
 ): Promise<CashboxPaymentOutcome> {
 	const parsed = cashboxPaymentRequestSchema.safeParse(rawBody || {});
 	if (!parsed.success) {
@@ -108,10 +110,13 @@ export async function processCashboxPayment(
 	const isWarrantyPayment =
 		body.method === "warranty" ||
 		body.isWarranty === true ||
-		Boolean(
-			body.note &&
-				/(гаранти|передел|скидк.*100|100%|безвозмездн|warranty)/i.test(body.note),
-		);
+		(body.method !== "family_wallet" &&
+			body.method !== "deposit" &&
+			Boolean(
+				body.note &&
+					/(гаранти|передел|скидк.*100%?|безвозмездн|warranty)/i.test(body.note) &&
+					!/(оплат|депозит|предоплат|аванс|счет|счёт)/i.test(body.note),
+			));
 
 	let totalKopecks = 0n;
 	if (body.amountKopecks !== undefined) {
@@ -360,26 +365,40 @@ export async function processCashboxPayment(
 		}
 
 		// Проверка идемпотентности
-		const [existingPayment] = await tx
+		const matchedExistingPayments = await tx
 			.select()
 			.from(payments)
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(payments.clientMutationId, effectiveMutationId),
+					or(
+						eq(payments.clientMutationId, effectiveMutationId),
+						eq(payments.clientMutationId, `${effectiveMutationId}:card`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:electronic`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:cash`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:deposit`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:bonus`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:certificate`),
+						eq(payments.clientMutationId, `${effectiveMutationId}:dms`),
+					),
 				),
-			)
-			.limit(1);
+			);
 
-		if (existingPayment) {
+		if (matchedExistingPayments.length > 0) {
+			const existingPayment = matchedExistingPayments[0]!;
+			const isSplitReplay = matchedExistingPayments.length > 1;
+			const totalExistingRub = isSplitReplay
+				? matchedExistingPayments.reduce((acc, p) => acc + Number(p.amountRub), 0)
+				: Number(existingPayment.amountRub);
+
 			return {
 				id: existingPayment.id,
-				amountKopecks: rublesToKopecks(Number(existingPayment.amountRub)),
-				amountRub: Number(existingPayment.amountRub),
-				method: existingPayment.method,
+				amountKopecks: rublesToKopecks(totalExistingRub),
+				amountRub: totalExistingRub,
+				method: isSplitReplay ? "split" : existingPayment.method,
 				status: existingPayment.status,
 				fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
-				clientMutationId: existingPayment.clientMutationId,
+				clientMutationId: effectiveMutationId,
 				isReplay: true,
 			};
 		}
@@ -569,6 +588,7 @@ export async function processCashboxPayment(
 					kind: "insufficient_deposit" as const,
 					availableRub,
 					requiredRub,
+					isFamilyWallet: Boolean(body.method === "family_wallet" || (lockedFamilyGroup && personalAvailableKop === 0n)),
 				};
 			}
 
@@ -633,9 +653,21 @@ export async function processCashboxPayment(
 						)
 						.limit(1);
 
-					// DEF-FAM-01: Проверка полномочий списания семейного депозита (BOLA guard [LOY-05])
-					// Списание со счета владельца требует подтвержденного флага canSpendFamilyWallet === true или статуса законного представителя
-					if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
+					const isDirectFamilyMember = Boolean(
+						patientRow?.familyGroupId && lockedFamilyGroup.id && patientRow.familyGroupId === lockedFamilyGroup.id,
+					);
+
+					// Явный запрет в patient_relationships (canSpendFamilyWallet === false) блокирует списание
+					if (rel && rel.canSpendFamilyWallet === false) {
+						return {
+							kind: "unauthorized_family_spend" as const,
+							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
+						};
+					}
+
+					// Члены подтверждённой семейной группы имеют право на списание по умолчанию (Мандаты 8e и 8n).
+					// Если пациент не входит в семейную группу напрямую, требуется подтверждение связи в patient_relationships.
+					if (!isDirectFamilyMember && (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true))) {
 						return {
 							kind: "unauthorized_family_spend" as const,
 							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
@@ -714,8 +746,9 @@ export async function processCashboxPayment(
 			}
 
 			lockedBonusBalance = bonusBalance ?? null;
-			pointsToDeduct = kopecksToRubles(Number(requiredBonusKopecks));
-			newActiveBonusPoints = Math.max(0, Number((currentActivePoints - pointsToDeduct).toFixed(2)));
+			pointsToDeduct = kopecksToRubles(requiredBonusKopecks);
+			const newActiveBonusKop = currentActiveKop >= requiredBonusKopecks ? currentActiveKop - requiredBonusKopecks : 0n;
+			newActiveBonusPoints = kopecksToRubles(newActiveBonusKop);
 		}
 
 		// [FIN-07] Проверка и блокировка списания подарочного сертификата
@@ -939,33 +972,223 @@ export async function processCashboxPayment(
 		const receiptNumber = null;
 		const issuedAt = null;
 
-		// 1. Фиксация платежа в таблице payments с обязательным visitId и documentId
-		const [newPayment] = await tx
-			.insert(payments)
-			.values({
-				organizationId: orgId,
-				patientId: resolvedPatientId,
-				visitId: effectiveVisitId,
-				documentId: body.invoiceId || null,
-				clientMutationId: effectiveMutationId,
-				amountRub: amountRubNumber,
-				method: normalizePaymentMethod(body.method),
-				status: "paid",
-				paidAt: new Date(),
-				fiscalReceiptNumber: receiptNumber,
-				fiscalReceiptIssuedAt: issuedAt,
-				payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-				payerInn: body.buyerInn || null,
-				note:
-					body.note ||
-					(isWarrantyPayment
-						? "Гарантийный расчёт (скидка 100%)"
-						: `Оплата через кассу (${body.method || "card"})`),
-			})
-			.returning();
+		let resolvedCashKop = 0;
+		let resolvedElecKop = 0;
 
-		if (!newPayment) {
-			throw new Error("Не удалось зафиксировать платёж в базе данных");
+		if (body.splitTenders && body.splitTenders.length > 0) {
+			for (const tender of body.splitTenders) {
+				const tk = tender.amountKopecks ?? rublesToKopecks(tender.amountRub ?? 0);
+				const norm = normalizePaymentMethod(tender.method);
+				if (norm === "cash") {
+					resolvedCashKop += tk;
+				} else if (["card", "sbp", "online"].includes(norm)) {
+					resolvedElecKop += tk;
+				}
+			}
+		} else {
+			resolvedCashKop =
+				body.cashAmountKopecks ??
+				(body.cashAmountRub !== undefined ? rublesToKopecks(body.cashAmountRub) : undefined) ??
+				(body.method === "cash" ? Number(totalKopecks) : 0);
+			resolvedElecKop =
+				body.electronicAmountKopecks ??
+				(body.electronicAmountRub !== undefined ? rublesToKopecks(body.electronicAmountRub) : undefined) ??
+				(["card", "sbp", "online"].includes(body.method || "")
+					? Number(totalKopecks)
+					: 0);
+		}
+
+		// 1. Фиксация платежа в таблице payments с обязательным visitId и documentId
+		let newPayment: typeof payments.$inferSelect;
+
+		const splitTenderCount =
+			(resolvedCashKop > 0 ? 1 : 0) +
+			(resolvedElecKop > 0 ? 1 : 0) +
+			(requiredDepositKopecks > 0n ? 1 : 0) +
+			(requiredBonusKopecks > 0n ? 1 : 0) +
+			(requiredCertificateKopecks > 0n ? 1 : 0) +
+			(requiredDmsKopecks > 0n ? 1 : 0);
+
+		if (splitTenderCount > 1 && !isWarrantyPayment) {
+			let elecPayment: typeof payments.$inferSelect | undefined;
+			let cashPayment: typeof payments.$inferSelect | undefined;
+			let depositPayment: typeof payments.$inferSelect | undefined;
+			let bonusPayment: typeof payments.$inferSelect | undefined;
+			let certPayment: typeof payments.$inferSelect | undefined;
+			let dmsPayment: typeof payments.$inferSelect | undefined;
+
+			if (resolvedElecKop > 0) {
+				const [ep] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:card` : null,
+						amountRub: kopecksToRubles(resolvedElecKop),
+						method: "card",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (безналичные)` : "Сплит-оплата (безналичные)",
+					})
+					.returning();
+				elecPayment = ep;
+			}
+
+			if (resolvedCashKop > 0) {
+				const [cp] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:cash` : null,
+						amountRub: kopecksToRubles(resolvedCashKop),
+						method: "cash",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (наличные)` : "Сплит-оплата (наличные)",
+					})
+					.returning();
+				cashPayment = cp;
+			}
+
+			if (requiredDepositKopecks > 0n) {
+				const [dp] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:deposit` : null,
+						amountRub: kopecksToRubles(Number(requiredDepositKopecks)),
+						method: "family_wallet",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (депозит)` : "Сплит-оплата (депозит)",
+					})
+					.returning();
+				depositPayment = dp;
+			}
+
+			if (requiredBonusKopecks > 0n) {
+				const [bp] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:bonus` : null,
+						amountRub: kopecksToRubles(Number(requiredBonusKopecks)),
+						method: "other",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (бонусы)` : "Сплит-оплата (бонусы)",
+					})
+					.returning();
+				bonusPayment = bp;
+			}
+
+			if (requiredCertificateKopecks > 0n) {
+				const [certP] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:certificate` : null,
+						amountRub: kopecksToRubles(Number(requiredCertificateKopecks)),
+						method: "certificate",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (сертификат)` : "Сплит-оплата (сертификат)",
+					})
+					.returning();
+				certPayment = certP;
+			}
+
+			if (requiredDmsKopecks > 0n) {
+				const [dmsp] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: resolvedPatientId,
+						visitId: effectiveVisitId,
+						documentId: body.invoiceId || null,
+						clientMutationId: effectiveMutationId ? `${effectiveMutationId}:dms` : null,
+						amountRub: kopecksToRubles(Number(requiredDmsKopecks)),
+						method: "insurance",
+						status: "paid",
+						paidAt: new Date(),
+						fiscalReceiptNumber: receiptNumber,
+						fiscalReceiptIssuedAt: issuedAt,
+						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+						payerInn: body.buyerInn || null,
+						note: body.note ? `${body.note} (ДМС)` : "Сплит-оплата (ДМС)",
+					})
+					.returning();
+				dmsPayment = dmsp;
+			}
+
+			const primaryCandidate = elecPayment || cashPayment || depositPayment || bonusPayment || certPayment || dmsPayment;
+			if (!primaryCandidate) {
+				throw new Error("Не удалось зафиксировать сплит-платёж в базе данных");
+			}
+			newPayment = primaryCandidate;
+		} else {
+			const [np] = await tx
+				.insert(payments)
+				.values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					visitId: effectiveVisitId,
+					documentId: body.invoiceId || null,
+					clientMutationId: effectiveMutationId,
+					amountRub: amountRubNumber,
+					method: normalizePaymentMethod(body.method),
+					status: "paid",
+					paidAt: new Date(),
+					fiscalReceiptNumber: receiptNumber,
+					fiscalReceiptIssuedAt: issuedAt,
+					payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+					payerInn: body.buyerInn || null,
+					note:
+						body.note ||
+						(isWarrantyPayment
+							? "Гарантийный расчёт (скидка 100%)"
+							: `Оплата через кассу (${body.method || "card"})`),
+				})
+				.returning();
+
+			if (!np) {
+				throw new Error("Не удалось зафиксировать платёж в базе данных");
+			}
+			newPayment = np;
 		}
 
 		// 2. Списание счетов и визита в статус paid_warranty при гарантийном закрытии
@@ -1223,9 +1446,9 @@ export async function processCashboxPayment(
 						transactionType: "auto_deduct",
 					});
 				} catch (deductErr) {
-					console.warn(
-						`[cashboxPaymentProcessor] Автоматическое списание материалов по визиту ${effectiveVisitId} завершилось с предупреждением:`,
-						deductErr,
+					logger?.warn(
+						{ err: deductErr, visitId: effectiveVisitId, orgId },
+						"[cashboxPaymentProcessor] Автоматическое списание материалов по визиту завершилось с предупреждением",
 					);
 				}
 			} else {
@@ -1238,8 +1461,9 @@ export async function processCashboxPayment(
 
 		// 2.1. Списание бонусов лояльности (FIFO)
 		if (requiredBonusKopecks > 0n && lockedBonusBalance) {
-			const currentSpent = Number(lockedBonusBalance.lifetimeSpentPoints ?? 0);
-			const newLifetimeSpent = Number((currentSpent + pointsToDeduct).toFixed(2));
+			const currentSpentKop = BigInt(rublesToKopecks(Number(lockedBonusBalance.lifetimeSpentPoints ?? 0)));
+			const newLifetimeSpentKop = currentSpentKop + requiredBonusKopecks;
+			const newLifetimeSpent = kopecksToRubles(newLifetimeSpentKop);
 
 			await tx
 				.update(patientBonusBalances)
@@ -1327,32 +1551,6 @@ export async function processCashboxPayment(
 			cashlessBox;
 
 		// 4. Кассовые проводки в cashOperations
-		let resolvedCashKop = 0;
-		let resolvedElecKop = 0;
-
-		if (body.splitTenders && body.splitTenders.length > 0) {
-			for (const tender of body.splitTenders) {
-				const tk = tender.amountKopecks ?? rublesToKopecks(tender.amountRub ?? 0);
-				const norm = normalizePaymentMethod(tender.method);
-				if (norm === "cash") {
-					resolvedCashKop += tk;
-				} else if (["card", "sbp", "online"].includes(norm)) {
-					resolvedElecKop += tk;
-				}
-			}
-		} else {
-			resolvedCashKop =
-				body.cashAmountKopecks ??
-				(body.cashAmountRub !== undefined ? rublesToKopecks(body.cashAmountRub) : undefined) ??
-				(body.method === "cash" ? Number(totalKopecks) : 0);
-			resolvedElecKop =
-				body.electronicAmountKopecks ??
-				(body.electronicAmountRub !== undefined ? rublesToKopecks(body.electronicAmountRub) : undefined) ??
-				(["card", "sbp", "online"].includes(body.method || "")
-					? Number(totalKopecks)
-					: 0);
-		}
-
 		if (resolvedCashKop > 0 && cashDeskBox) {
 			const curBalKop =
 				cashDeskBox.balanceKopecks !== undefined && cashDeskBox.balanceKopecks !== null
@@ -1505,12 +1703,19 @@ export async function processCashboxPayment(
 						amountKopecks: Number(totalKopecks),
 						method: normalizePaymentMethod(body.method),
 						cashRub: kopecksToRub(resolvedCashKop),
+						cashKopecks: resolvedCashKop,
 						electronicRub: kopecksToRub(resolvedElecKop),
+						electronicKopecks: resolvedElecKop,
 						advanceOffsetRub: kopecksToRub(Number(totalAdvanceOffsetKop)),
+						advanceOffsetKopecks: Number(totalAdvanceOffsetKop),
+						depositKopecks: Number(requiredDepositKopecks),
 						certificateOffsetRub: kopecksToRub(Number(requiredCertificateKopecks)),
+						certificateKopecks: Number(requiredCertificateKopecks),
 						certificateNumber: certificateNumber || null,
 						bonusOffsetRub: kopecksToRub(Number(requiredBonusKopecks)),
+						bonusKopecks: Number(requiredBonusKopecks),
 						dmsOffsetRub: kopecksToRub(Number(requiredDmsKopecks)),
+						dmsKopecks: Number(requiredDmsKopecks),
 						guaranteeLetterNumber: lockedDmsLetter?.letterNumber || (isEmergencyLetterAlias ? "ЭКСТРЕННО (досылка)" : null),
 						guaranteeLetterId: lockedDmsLetter?.id || (isEmergencyLetterAlias ? guaranteeLetterId : null),
 						fiscalReceiptNumber: receiptNumber,
@@ -1588,11 +1793,14 @@ export async function processCashboxPayment(
 	}
 
 	if ("kind" in result && result.kind === "insufficient_deposit") {
+		const isFamily = Boolean(result.isFamilyWallet);
 		return {
 			statusCode: 400,
 			body: {
-				error: "InsufficientDepositBalance",
-				message: `Недостаточно средств на депозите пациента. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
+				error: isFamily ? "InsufficientFamilyBalance" : "InsufficientDepositBalance",
+				message: isFamily
+					? `Недостаточно средств на семейном кошельке. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`
+					: `Недостаточно средств на депозите пациента. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
 			},
 		};
 	}
