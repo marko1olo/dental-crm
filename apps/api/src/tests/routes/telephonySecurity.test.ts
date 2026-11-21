@@ -196,9 +196,9 @@ describe("Mango Office PBX Signature Verification", () => {
 });
 
 describe("Telephony Webhook Replay Protection", () => {
-	test("rejects timestamps older than 300 seconds", () => {
+	test("rejects timestamps older than 300 seconds for ringing/in-flight calls", () => {
 		const oldTimestamp = Math.floor(Date.now() / 1000) - 350;
-		const result = checkReplayTimestamp({ timestamp: oldTimestamp });
+		const result = checkReplayTimestamp({ timestamp: oldTimestamp, event: "ringing" });
 		assert.equal(result.valid, false);
 		assert.match(result.reason || "", /drift window exceeded/i);
 	});
@@ -207,5 +207,25 @@ describe("Telephony Webhook Replay Protection", () => {
 		const freshTimestamp = Math.floor(Date.now() / 1000) - 5;
 		const result = checkReplayTimestamp({ timestamp: freshTimestamp });
 		assert.equal(result.valid, true);
+	});
+
+	test("allows drift window up to 3600s for ended/CDR calls with long call duration (>300s)", () => {
+		const pastTimestamp = Math.floor(Date.now() / 1000) - 600; // 10 minutes ago
+		const result = checkReplayTimestamp({
+			timestamp: pastTimestamp,
+			event: "ended",
+			duration: 600,
+		});
+		assert.equal(result.valid, true);
+	});
+
+	test("rejects ended call timestamp older than 3600s (>1 hour)", () => {
+		const ancientTimestamp = Math.floor(Date.now() / 1000) - 3700;
+		const result = checkReplayTimestamp({
+			timestamp: ancientTimestamp,
+			event: "ended",
+		});
+		assert.equal(result.valid, false);
+		assert.match(result.reason || "", /drift window exceeded/i);
 	});
 });

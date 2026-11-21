@@ -20,16 +20,12 @@ export * from "./audioPlayer";
  */
 export function CallAudioPlayer({
 	recordingUrl,
+	eventId,
 	durationSeconds = 0,
 	seed,
 	transcript,
 }: CallAudioPlayerProps): React.JSX.Element {
-	const p = useCallAudioPlayerState(
-		recordingUrl,
-		durationSeconds,
-		seed,
-		transcript,
-	);
+	const p = useCallAudioPlayerState(recordingUrl, durationSeconds, seed, transcript);
 
 	// Explicit cleanup on component unmount (prevents audio leaks and dangling DOM streams)
 	useEffect(() => {
@@ -46,45 +42,38 @@ export function CallAudioPlayer({
 
 	const [blobAudioSrc, setBlobAudioSrc] = useState<string>("");
 
-	const effectiveAudioSrc = useMemo(() => {
+	// Resolve canonical protected stream endpoint without leaking tokens into query params
+	const streamEndpoint = useMemo(() => {
+		if (eventId && /^[0-9a-fA-F-]{36}$/.test(eventId.trim())) {
+			return `/api/telephony/recordings/${eventId.trim()}/stream`;
+		}
 		if (!recordingUrl || recordingUrl.trim() === "") return "";
 		const trimmed = recordingUrl.trim();
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
-		const params = new URLSearchParams();
-		if (clinicToken) params.set("token", clinicToken);
-		if (staffToken) params.set("staffToken", staffToken);
-		const qs = params.toString() ? `?${params.toString()}` : "";
+		if (/^[0-9a-fA-F-]{36}$/.test(trimmed)) return `/api/telephony/recordings/${trimmed}/stream`;
+		if (trimmed.startsWith("/api/telephony/recordings/")) return trimmed.split("?")[0];
+		if (trimmed.startsWith("blob:")) return trimmed;
+		const uuidMatch = trimmed.match(/[0-9a-fA-F-]{36}/);
+		return uuidMatch ? `/api/telephony/recordings/${uuidMatch[0]}/stream` : "";
+	}, [recordingUrl, eventId]);
 
-		if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("blob:")) {
-			return trimmed;
-		}
-		if (trimmed.startsWith("/")) {
-			return `${trimmed}${trimmed.includes("?") ? (qs ? `&${params.toString()}` : "") : qs}`;
-		}
-		if (/^[0-9a-fA-F-]{36}$/.test(trimmed)) {
-			return `/api/telephony/recordings/${trimmed}/stream${qs}`;
-		}
-		return trimmed;
-	}, [recordingUrl]);
-
-	// Pre-load audio via authorized fetch into blob URL to bypass HTML5 media headers limitation
+	// Authorized fetch to create local secure blob URL — prevents CORS and IP leaks
 	useEffect(() => {
 		if (!recordingUrl || recordingUrl.trim() === "") {
 			setBlobAudioSrc("");
 			return;
 		}
 		const trimmed = recordingUrl.trim();
-		if (trimmed.startsWith("blob:") || trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+		if (trimmed.startsWith("blob:")) {
 			setBlobAudioSrc(trimmed);
+			return;
+		}
+		if (!streamEndpoint) {
+			p.setPlaybackError(true);
+			setBlobAudioSrc("");
 			return;
 		}
 
 		let active = true;
-		const streamPath = /^[0-9a-fA-F-]{36}$/.test(trimmed)
-			? `/api/telephony/recordings/${trimmed}/stream`
-			: trimmed;
-
 		const clinicToken = readDenteClinicToken();
 		const staffToken = readDenteStaffToken();
 		const headers: Record<string, string> = {
@@ -93,17 +82,19 @@ export function CallAudioPlayer({
 			...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
 		};
 
-		fetch(streamPath, { headers })
+		fetch(streamEndpoint, { headers })
 			.then((res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return res.blob();
 			})
 			.then((blob) => {
-				if (!active) return;
-				setBlobAudioSrc(URL.createObjectURL(blob));
+				if (active) setBlobAudioSrc(URL.createObjectURL(blob));
 			})
 			.catch(() => {
-				if (active) setBlobAudioSrc(effectiveAudioSrc);
+				if (active) {
+					p.setPlaybackError(true);
+					setBlobAudioSrc("");
+				}
 			});
 
 		return () => {
@@ -112,7 +103,7 @@ export function CallAudioPlayer({
 				try { URL.revokeObjectURL(blobAudioSrc); } catch {}
 			}
 		};
-	}, [recordingUrl, effectiveAudioSrc]);
+	}, [recordingUrl, streamEndpoint]);
 
 	if (!recordingUrl || recordingUrl.trim() === "") {
 		return (
@@ -135,7 +126,7 @@ export function CallAudioPlayer({
 		>
 			<audio
 				ref={p.audioRef}
-				src={blobAudioSrc || effectiveAudioSrc}
+				src={blobAudioSrc}
 				onTimeUpdate={p.handleTimeUpdate}
 				onLoadedMetadata={p.handleTimeUpdate}
 				onEnded={() => p.setIsPlaying(false)}
@@ -150,7 +141,7 @@ export function CallAudioPlayer({
 			{p.playbackError && (
 				<div
 					data-testid="call-audio-playback-error"
-					className="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold"
+					className="px-2.5 py-1.5 rounded-xl bg-[var(--danger-soft,rgba(239,68,68,0.1))] border border-[var(--danger-soft,rgba(239,68,68,0.2))] text-[var(--danger,#ef4444)] text-xs font-semibold"
 				>
 					Запись временно недоступна или поток повреждён (404/ошибка сети)
 				</div>

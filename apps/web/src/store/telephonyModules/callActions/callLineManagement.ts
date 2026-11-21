@@ -6,10 +6,22 @@ import {
 	type CallHistoryItem,
 	type IncomingCallPayload,
 	type TelephonyStore,
+	initialLine1,
+	initialLine2,
 	initialTransferState,
 } from "../telephonyStoreTypes";
 
 let telephonyCallSeq = 0;
+const ringingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+export function clearRingingTimer(callId: string | null | undefined): void {
+	if (!callId) return;
+	const timer = ringingTimers.get(callId);
+	if (timer) {
+		clearTimeout(timer);
+		ringingTimers.delete(callId);
+	}
+}
 
 export type SetState = StoreApi<TelephonyStore>["setState"];
 export type GetState = StoreApi<TelephonyStore>["getState"];
@@ -190,6 +202,47 @@ export function createCallLineManagementActions(set: SetState, get: GetState) {
 				callHistory: [historyItem, ...state.callHistory.slice(0, 49)],
 				transferState: initialTransferState,
 			});
+
+			// Авто-перевод звонка в missed/idle при отсутствии серверных событий дольше 90с
+			clearRingingTimer(id);
+			if (typeof window !== "undefined") {
+				const timer = setTimeout(() => {
+					ringingTimers.delete(id);
+					const current = get();
+					const isStillRinging =
+						(current.activeCall && (current.activeCall.id === id || current.activeCall.callId === id) && current.activeCall.status === "ringing") ||
+						(current.line1.call && (current.line1.call.id === id || current.line1.call.callId === id) && current.line1.state === "ringing") ||
+						(current.line2.call && (current.line2.call.id === id || current.line2.call.callId === id) && current.line2.state === "ringing");
+
+					if (isStillRinging) {
+						const updatedHistory = current.callHistory.map((item) =>
+							item.id === id || item.callId === id
+								? { ...item, status: "missed" as const, actionTaken: "missed" as const }
+								: item,
+						);
+						const nextL1 =
+							current.line1.call && (current.line1.call.id === id || current.line1.call.callId === id)
+								? initialLine1
+								: current.line1;
+						const nextL2 =
+							current.line2.call && (current.line2.call.id === id || current.line2.call.callId === id)
+								? initialLine2
+								: current.line2;
+
+						set({
+							activeCall:
+								current.activeCall && (current.activeCall.id === id || current.activeCall.callId === id)
+									? null
+									: current.activeCall,
+							line1: nextL1,
+							line2: nextL2,
+							callHistory: updatedHistory,
+							transferState: initialTransferState,
+						});
+					}
+				}, 90_000);
+				ringingTimers.set(id, timer);
+			}
 		},
 
 		startOutboundCall: (call: IncomingCallPayload) => {

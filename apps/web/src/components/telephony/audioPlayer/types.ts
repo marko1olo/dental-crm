@@ -6,6 +6,7 @@ export const CALL_AUDIO_PLAYBACK_SPEEDS: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
 export interface CallAudioPlayerProps {
 	recordingUrl?: string | null | undefined;
+	eventId?: string | null | undefined;
 	durationSeconds?: number | undefined;
 	seed?: string | undefined;
 	transcript?: SpeechTranscriptUtterance[] | undefined;

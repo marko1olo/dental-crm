@@ -159,6 +159,14 @@
   * 📱 **Mobile Light (390x844)**: [`03_telephony_incoming_call_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_incoming_call_mobile_light_390x844.png) (144 КБ)
   * 📱 **Mobile Dark (390x844)**: [`04_telephony_incoming_call_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_incoming_call_mobile_dark_390x844.png) (143 КБ)
   * Ликвидированы сироты: `scripts/TelephonyFloatingWidget.original.tsx` и `apps/web/src/appHelpers/telephonyHelpers.ts` (`git rm`).
+* **DEF-TEL-07 [ЗАКРЫТО]**: Добавлены реляционные колонки `provider_call_id` и `provider_name` в `communication_events` с уникальным индексом `(organization_id, provider_call_id)`. В `telephonyWebhookEndedService.ts` слепой `ilike` заменен на атомарный UPSERT (`onConflictDoUpdate`), исключающий дубликаты записей звонков при параллельных запросах.
+* **DEF-TEL-08 [ЗАКРЫТО]**: В `telephonyEngine.ts` расширено окно проверки дрифта таймстампа с 300с до 3600с для завершенных звонков (`ended`/`missed`), что предотвратило ложное отбрасывание длительных разговоров (>5 минут).
+* **DEF-TEL-09 [ЗАКРЫТО]**: Внедрен механизм авто-дропа зависших входящих звонков: на клиенте софтфона таймер переводит звонок в `missed`/`idle` через 90 секунд при отсутствии серверных событий; на бэкенде эндпоинт `/calls/cleanup-stale` закрывает вызовы в статусе `ringing`/`queued` старше 300 секунд.
+* **DEF-TEL-10 [ЗАКРЫТО]**: В `CallAudioPlayer.tsx` и `telephonyRecordingStreamHandler.ts` исключен прямой рендер внешних URL в `<audio src>` и удалена передача токенов в GET query string (`?token=...`). Все записи стримятся через защищенный эндпоинт `/api/telephony/recordings/:eventId/stream` через blob URL с заголовком Bearer-авторизации и проверкой SSRF.
+* **DEF-TEL-11 [ЗАКРЫТО]**: В `telephonyCallUpdateHandler.ts` устранен опасный фолбэк (бывшие строки 143-159), перезаписывавший последний звонок по номеру телефона при несовпадении ID. Обеспечена строгая изоляция клинических заметок регистратора.
+* **DEF-TEL-12 [ЗАКРЫТО]**: В `callerLookupService.ts` реализован сквозной CTI-поиск по E.164, последним 10 цифрам и городским 7-значным номерам для таблиц `patients` и `crmLeads`.
+* **DEF-TEL-13 [ЗАКРЫТО]**: В `telephonyWebhookHandler.ts` внедрено обязательное маскирование номеров телефонов в логах (`maskPhoneDisplay`) согласно требованиям 152-ФЗ.
+
 
 
 

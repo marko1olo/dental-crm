@@ -493,4 +493,144 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 			}
 		}
 	});
+
+	test("ATOMIC UPSERT: Repeated webhook ended events with same call_id do not duplicate communicationEvents", async () => {
+		const prevSecret = process.env.TELEPHONY_WEBHOOK_SECRET;
+		process.env.TELEPHONY_WEBHOOK_SECRET = "test-telephony-secret";
+		const testOrgId = DEMO_SHOWCASE_ORG_ID;
+
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		try {
+			const callId = `atomic-upsert-${Date.now()}`;
+			const callerPhone = "+79161239988";
+
+			// First webhook ended event
+			const res1 = await app.inject({
+				method: "POST",
+				url: `/${testOrgId}/webhook`,
+				headers: { "x-dente-webhook-secret": "test-telephony-secret" },
+				payload: {
+					event: "ended",
+					call_id: callId,
+					from: callerPhone,
+					to: "+74951112233",
+					duration: 35,
+					recording_url: `https://cloud-pbx.example.com/rec1-${callId}.mp3`,
+				},
+			});
+			assert.equal(res1.statusCode, 200);
+
+			// Second webhook ended event for the same call_id (e.g. PBX retry with transcription)
+			const res2 = await app.inject({
+				method: "POST",
+				url: `/${testOrgId}/webhook`,
+				headers: { "x-dente-webhook-secret": "test-telephony-secret" },
+				payload: {
+					event: "ended",
+					call_id: callId,
+					from: callerPhone,
+					to: "+74951112233",
+					duration: 38,
+					recording_url: `https://cloud-pbx.example.com/rec2-${callId}.mp3`,
+				},
+			});
+			assert.equal(res2.statusCode, 200);
+
+			const rows = await db
+				.select()
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, testOrgId),
+						eq(communicationEvents.providerCallId, callId),
+					),
+				);
+
+			assert.equal(rows.length, 1, "Must contain exactly 1 event via atomic onConflictDoUpdate");
+			assert.equal(rows[0]?.durationSeconds, 38, "Must update durationSeconds to 38");
+			assert.equal(rows[0]?.recordingUrl, `https://cloud-pbx.example.com/rec2-${callId}.mp3`);
+		} finally {
+			await app.close();
+			if (prevSecret !== undefined) process.env.TELEPHONY_WEBHOOK_SECRET = prevSecret;
+			else delete process.env.TELEPHONY_WEBHOOK_SECRET;
+		}
+	});
+
+	test("NOTE CORRUPTION PREVENTION: Updating note for unknown callId creates new record without overwriting past calls", async () => {
+		const testOrgId = DEMO_SHOWCASE_ORG_ID;
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		try {
+			const sharedPhone = "+79037778899";
+
+			// 1. Existing historical call with note A
+			const [oldCall] = await db
+				.insert(communicationEvents)
+				.values({
+					organizationId: testOrgId,
+					providerCallId: `historic-call-${Date.now()}`,
+					providerName: "telephony",
+					callerPhone: sharedPhone,
+					channel: "phone",
+					direction: "inbound",
+					status: "completed",
+					message: "Исторический разговор: Заметка прошлого месяца [call_id: old-call-1]",
+					durationSeconds: 120,
+				})
+				.returning();
+
+			assert.ok(oldCall);
+
+			// 2. Client sends note update with a NEW unknown callId
+			const newCallId = `new-call-session-${Date.now()}`;
+			const res = await app.inject({
+				method: "PATCH",
+				url: `/calls/${newCallId}`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+				},
+				payload: {
+					callerPhone: sharedPhone,
+					note: "Свежая заметка: Пациент хочет записаться завтра",
+				},
+			});
+
+			assert.equal(res.statusCode, 200);
+			const json = res.json();
+			assert.equal(json.success, true);
+
+			// 3. Verify OLD call was NOT overwritten!
+			const [recheckedOldCall] = await db
+				.select()
+				.from(communicationEvents)
+				.where(eq(communicationEvents.id, oldCall.id));
+
+			assert.ok(
+				recheckedOldCall?.message.includes("Исторический разговор: Заметка прошлого месяца"),
+				"Old call message must NOT be corrupted by new note!",
+			);
+
+			// 4. Verify NEW call record was created with newCallId
+			const [createdNewCall] = await db
+				.select()
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, testOrgId),
+						eq(communicationEvents.providerCallId, newCallId),
+					),
+				);
+
+			assert.ok(createdNewCall, "New call record must be created for the new callId");
+			assert.ok(createdNewCall?.message.includes("Свежая заметка: Пациент хочет записаться завтра"));
+		} finally {
+			await app.close();
+		}
+	});
 });

@@ -1,5 +1,6 @@
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { maskPhoneDisplay } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { crmLeads, patients } from "../../db/schema.js";
@@ -143,7 +144,7 @@ export async function telephonyWebhookHandler(
 			const isShortSpam = waitSec !== undefined && !Number.isNaN(waitSec) && waitSec > 0 && waitSec < 5;
 
 			if (isShortSpam) {
-				request.log.info({ callerPhone: callerPhone.e164, waitSec }, "[Telephony] Suppressing spam lead for short dropped call (<5s)");
+				request.log.info({ callerPhone: maskPhoneDisplay(callerPhone.e164), waitSec }, "[Telephony] Suppressing spam lead for short dropped call (<5s)");
 				return { success: true, event: "missed", skippedSpam: true };
 			}
 

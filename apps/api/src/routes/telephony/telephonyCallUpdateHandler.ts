@@ -125,41 +125,30 @@ export async function telephonyCallUpdateHandler(
 		const callerPhone = body.callerPhone ?? body.phone ?? null;
 
 		updatedCall = await withTenantCtx(orgId, async () => {
-			// 1. Try to find existing event mentioning this provider callId
+			// 1. Точный поиск события звонка по providerCallId или маркеру callId в сообщении
 			const matchedEvents = await db
 				.select({ id: communicationEvents.id })
 				.from(communicationEvents)
 				.where(
 					and(
 						eq(communicationEvents.organizationId, orgId),
-						ilike(communicationEvents.message, `%${callId}%`),
+						or(
+							eq(communicationEvents.providerCallId, callId),
+							ilike(communicationEvents.message, `%${callId}%`),
+						),
 					),
 				)
 				.orderBy(desc(communicationEvents.createdAt))
 				.limit(1);
 
-			let targetEventId: string | null = matchedEvents[0]?.id ?? null;
+			const targetEventId: string | null = matchedEvents[0]?.id ?? null;
 
-			// 2. If not found by callId and phone is provided, match latest call with this phone
-			if (!targetEventId && callerPhone) {
-				const matchedByPhone = await db
-					.select({ id: communicationEvents.id })
-					.from(communicationEvents)
-					.where(
-						and(
-							eq(communicationEvents.organizationId, orgId),
-							eq(communicationEvents.callerPhone, callerPhone),
-						),
-					)
-					.orderBy(desc(communicationEvents.createdAt))
-					.limit(1);
-
-				targetEventId = matchedByPhone[0]?.id ?? null;
-			}
+			// Опасный фолбэк с перезаписью последнего исторического звонка по номеру телефона удалён:
+			// перезапись чужого разговора недопустима!
 
 			if (targetEventId) {
 				const existing = await db
-					.select({ message: communicationEvents.message })
+					.select({ message: communicationEvents.message, providerCallId: communicationEvents.providerCallId })
 					.from(communicationEvents)
 					.where(
 						and(
@@ -175,6 +164,7 @@ export async function telephonyCallUpdateHandler(
 					.update(communicationEvents)
 					.set({
 						message: updatedMessage,
+						providerCallId: existing[0]?.providerCallId || callId,
 					})
 					.where(
 						and(
@@ -194,11 +184,13 @@ export async function telephonyCallUpdateHandler(
 				return res[0] ?? null;
 			}
 
-			// 3. If no communicationEvent exists yet for this in-flight call, physically create it
+			// 2. Если звонок ещё не сохранён в БД (in-flight), создаём новую запись с привязкой providerCallId
 			const [created] = await db
 				.insert(communicationEvents)
 				.values({
 					organizationId: orgId,
+					providerCallId: callId,
+					providerName: "telephony",
 					callerPhone,
 					patientId: body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null,
 					channel: "phone",

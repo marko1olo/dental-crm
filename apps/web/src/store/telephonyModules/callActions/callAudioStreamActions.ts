@@ -4,6 +4,7 @@ import {
 	readDenteStaffToken,
 } from "../../../lib/safeLocalStorage";
 import { getSharedTelephonyAudioStreamManager } from "../telephonyAudioStreamManager";
+import { clearRingingTimer } from "./callLineManagement";
 import {
 	type TelephonyStore,
 	initialLine1,
@@ -25,6 +26,7 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			if (!activeCall) return;
 
 			const updatedCallId = activeCall.id || activeCall.callId;
+			clearRingingTimer(updatedCallId);
 			const updatedHistory = callHistory.map((item) =>
 				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 				item.phone === activeCall.phone
@@ -66,6 +68,7 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			if (!activeCall) return;
 
 			const updatedCallId = activeCall.id || activeCall.callId;
+			clearRingingTimer(updatedCallId);
 			const updatedHistory = callHistory.map((item) =>
 				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 				item.phone === activeCall.phone
@@ -87,6 +90,7 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			if (!activeCall) return;
 
 			const updatedCallId = activeCall.id || activeCall.callId;
+			clearRingingTimer(updatedCallId);
 			const updatedHistory = callHistory.map((item) =>
 				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 				item.phone === activeCall.phone
@@ -108,6 +112,7 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			if (!activeCall) return;
 
 			const updatedCallId = activeCall.id || activeCall.callId;
+			clearRingingTimer(updatedCallId);
 			const updatedHistory = callHistory.map((item) =>
 				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 				item.phone === activeCall.phone
@@ -135,6 +140,7 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			if (!activeCall) return;
 
 			const updatedCallId = activeCall.id || activeCall.callId;
+			clearRingingTimer(updatedCallId);
 			const updatedHistory = callHistory.map((item) =>
 				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 				item.phone === activeCall.phone

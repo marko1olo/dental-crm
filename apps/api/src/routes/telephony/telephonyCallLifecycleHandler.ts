@@ -226,6 +226,8 @@ export async function handleEndCall(
 			} else {
 				await tx.insert(communicationEvents).values({
 					organizationId: orgId,
+					providerCallId: callId,
+					providerName: "telephony",
 					patientId: targetPatientId || null,
 					callerPhone: callerPhone.isValid ? callerPhone.e164 : (body.phone || null),
 					channel: "phone",
@@ -301,6 +303,75 @@ export async function handleEndCall(
 	});
 }
 
+export async function cleanupStaleRingingCalls(
+	organizationId?: string,
+	timeoutSeconds = 300,
+): Promise<{ cleanedCount: number }> {
+	const cutoff = new Date(Date.now() - timeoutSeconds * 1000);
+	const conditions = [
+		eq(communicationEvents.channel, "phone"),
+		or(
+			eq(communicationEvents.status, "needs_call"),
+			eq(communicationEvents.status, "queued"),
+		),
+		sql`${communicationEvents.createdAt} < ${cutoff}`,
+		sql`(${communicationEvents.durationSeconds} IS NULL OR ${communicationEvents.durationSeconds} = 0)`,
+	];
+	if (organizationId && UUID_REGEX.test(organizationId)) {
+		conditions.push(eq(communicationEvents.organizationId, organizationId));
+	}
+
+	const stale = await db
+		.select({
+			id: communicationEvents.id,
+			organizationId: communicationEvents.organizationId,
+			callerPhone: communicationEvents.callerPhone,
+			providerCallId: communicationEvents.providerCallId,
+		})
+		.from(communicationEvents)
+		.where(and(...conditions))
+		.limit(100);
+
+	if (stale.length === 0) {
+		return { cleanedCount: 0 };
+	}
+
+	await db.transaction(async (tx) => {
+		for (const row of stale) {
+			await tx
+				.update(communicationEvents)
+				.set({
+					status: "failed",
+					message: sql`coalesce(${communicationEvents.message}, '') || ' [Авто-завершение: таймаут звонка >300с]'`,
+				})
+				.where(eq(communicationEvents.id, row.id));
+
+			wsBroker.broadcastToOrganization(row.organizationId, {
+				type: "TELEPHONY_CALL_ENDED",
+				payload: {
+					callId: row.providerCallId || row.id,
+					phone: row.callerPhone || "",
+					durationSeconds: 0,
+					timestamp: new Date().toISOString(),
+				},
+			});
+		}
+	});
+
+	return { cleanedCount: stale.length };
+}
+
+export async function handleCleanupStaleCalls(
+	request: FastifyRequest<{ Params: { organizationId?: string } }>,
+	reply: FastifyReply,
+) {
+	const context = await requireClinicalMutationContext(request, reply, "cleanup stale calls");
+	if (!context) return;
+	const orgId = context.organizationId;
+	const result = await cleanupStaleRingingCalls(orgId, 300);
+	return reply.status(200).send({ success: true, ...result });
+}
+
 export const telephonyCallLifecycleRoutes: FastifyPluginAsync = async (server) => {
 	server.post<{ Params: { organizationId: string }; Body: AnswerCallBody }>(
 		"/:organizationId/calls/answer",
@@ -318,5 +389,14 @@ export const telephonyCallLifecycleRoutes: FastifyPluginAsync = async (server) =
 	server.post<{ Params: { organizationId?: string }; Body: EndCallBody }>(
 		"/calls/end",
 		handleEndCall,
+	);
+
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/calls/cleanup-stale",
+		handleCleanupStaleCalls,
+	);
+	server.post<{ Params: { organizationId?: string } }>(
+		"/calls/cleanup-stale",
+		handleCleanupStaleCalls,
 	);
 };

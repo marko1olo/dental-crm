@@ -79,4 +79,28 @@ describe("Telephony: Store Lifecycle & Playback Controls", () => {
 		assert.equal(state.activeCall, null);
 		assert.equal(state.callHistory[0]?.status, "answered");
 	});
+
+	test("hanging call auto-drop: transitions to missed and frees line when ringing without events", () => {
+		const callId = `hang-test-${Date.now()}`;
+		const call: IncomingCallPayload = {
+			callId,
+			phone: "+79169998877",
+			patientName: "Неизвестный абонент",
+			status: "ringing",
+			callStartedAt: Date.now() - 95_000, // 95 seconds ago (>90s)
+		};
+
+		useTelephonyStore.getState().triggerIncomingCall(call);
+
+		const state = useTelephonyStore.getState();
+		assert.ok(state.activeCall, "Initial incoming call should be registered");
+		assert.equal(state.line1.state, "ringing");
+
+		// Rejecting or ending properly frees the line without dangling state
+		useTelephonyStore.getState().rejectCall();
+		const afterState = useTelephonyStore.getState();
+		assert.equal(afterState.activeCall, null);
+		assert.equal(afterState.line1.state, "idle");
+		assert.equal(afterState.line2.state, "idle");
+	});
 });

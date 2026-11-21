@@ -1,5 +1,7 @@
+import * as fs from "node:fs";
 import * as http from "node:http";
 import * as https from "node:https";
+import * as path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import {
@@ -27,22 +29,21 @@ export type StreamRecordingRouteGeneric = {
 	};
 };
 
+export function getAudioCacheDir(): string {
+	const base = process.cwd().includes("apps/api") ? ".data" : "apps/api/.data";
+	return path.resolve(process.cwd(), base, "audio-cache");
+}
+
+export function getAudioCachePath(orgId: string, eventId: string): string {
+	return path.join(getAudioCacheDir(), orgId, `${eventId}.audio`);
+}
+
 export async function handleStreamRecording(
 	request: FastifyRequest<StreamRecordingRouteGeneric>,
 	reply: FastifyReply,
 ) {
-	// Поддержка авторизации через query-параметры для HTML5 <audio> и <video> тегов
-	const queryToken = request.query?.token || request.query?.clinicToken;
-	if (queryToken && !request.headers["x-dente-clinic-token"]) {
-		request.headers["x-dente-clinic-token"] = queryToken;
-	}
-	if (request.query?.staffToken && !request.headers["x-dente-staff-token"]) {
-		request.headers["x-dente-staff-token"] = request.query.staffToken;
-	}
-	if (request.query?.adminSecret && !request.headers["x-dente-admin-secret"]) {
-		request.headers["x-dente-admin-secret"] = request.query.adminSecret;
-	}
-
+	// Авторизация передается строго через HTTP-заголовки (x-dente-clinic-token, x-dente-staff-token, x-dente-admin-secret, Authorization).
+	// Передача adminSecret и токенов в открытом GET query запрещена в целях безопасности ПДн и предотвращения утечки в логах.
 	if (!(await requireClinicalReadAccess(request, reply, "stream call recording"))) return;
 	const orgId = await requireResolvedOrganizationId(request, reply, "stream call recording");
 	if (!orgId) return;
@@ -65,6 +66,93 @@ export async function handleStreamRecording(
 		return reply.status(404).send({ error: "NotFound", message: "Audio recording not found or inaccessible" });
 	}
 
+	const cacheFilePath = getAudioCachePath(orgId, eventId);
+	let cacheStat: fs.Stats | null = null;
+	try {
+		cacheStat = await fs.promises.stat(cacheFilePath);
+	} catch {
+		cacheStat = null;
+	}
+
+	const contentType = eventRow.audioFormat || "audio/mpeg";
+
+	// 1. Потоковая отдача из локального дискового кэша с поддержкой HTTP Range (206 Partial Content)
+	if (cacheStat && cacheStat.size > 0) {
+		const totalSize = cacheStat.size;
+		const etag = `W/"${eventId}-${totalSize}-${Math.floor(cacheStat.mtimeMs)}"`;
+
+		if (request.headers["if-none-match"] === etag) {
+			reply.raw.writeHead(304, {
+				ETag: etag,
+				"Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
+				"X-Audio-Cache": "HIT",
+			});
+			reply.raw.end();
+			return;
+		}
+
+		const rangeHeader = request.headers.range;
+		if (rangeHeader) {
+			const rangeMatch = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+			if (rangeMatch) {
+				const rawStart = rangeMatch[1];
+				const rawEnd = rangeMatch[2];
+				const start = rawStart ? Number.parseInt(rawStart, 10) : 0;
+				let end = rawEnd ? Number.parseInt(rawEnd, 10) : totalSize - 1;
+
+				if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= totalSize) {
+					reply.raw.writeHead(416, {
+						"Content-Range": `bytes */${totalSize}`,
+						"Accept-Ranges": "bytes",
+						"Cache-Control": "private, max-age=86400",
+						"X-Audio-Cache": "HIT",
+					});
+					reply.raw.end();
+					return;
+				}
+
+				end = Math.min(end, totalSize - 1);
+				const chunkSize = end - start + 1;
+
+				reply.raw.writeHead(206, {
+					"Content-Range": `bytes ${start}-${end}/${totalSize}`,
+					"Accept-Ranges": "bytes",
+					"Content-Length": String(chunkSize),
+					"Content-Type": contentType,
+					"Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
+					ETag: etag,
+					"X-Content-Type-Options": "nosniff",
+					"X-Audio-Cache": "HIT",
+				});
+
+				return new Promise<void>((resolve) => {
+					const stream = fs.createReadStream(cacheFilePath, { start, end });
+					stream.pipe(reply.raw);
+					stream.on("end", () => resolve());
+					stream.on("error", () => resolve());
+				});
+			}
+		}
+
+		reply.raw.writeHead(200, {
+			"Content-Length": String(totalSize),
+			"Content-Type": contentType,
+			"Accept-Ranges": "bytes",
+			"Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
+			ETag: etag,
+			"X-Content-Type-Options": "nosniff",
+			"X-Audio-Cache": "HIT",
+		});
+
+		return new Promise<void>((resolve) => {
+			const stream = fs.createReadStream(cacheFilePath);
+			stream.pipe(reply.raw);
+			stream.on("end", () => resolve());
+			stream.on("error", () => resolve());
+		});
+	}
+
+	// 2. Проксирование и прогрев кэша из удалённой АТС с защитой SSRF
 	const ssrf = await validateSsrfSafeRecordingUrl(eventRow.recordingUrl);
 	if (!ssrf.valid || !ssrf.parsedUrl) {
 		request.log.error({ eventId, url: eventRow.recordingUrl, reason: ssrf.error }, "[TelephonyStream] SSRF check rejected");
@@ -80,19 +168,32 @@ export async function handleStreamRecording(
 		if (request.headers.range) {
 			reqHeaders.range = request.headers.range;
 		}
+		if (request.headers["if-none-match"]) {
+			reqHeaders["If-None-Match"] = request.headers["if-none-match"];
+		}
 
-		const proxyReq = client.get(targetUrl.href, { timeout: 10000, headers: reqHeaders }, (proxyRes) => {
+		const proxyReq = client.get(targetUrl.href, { timeout: 10000, headers: reqHeaders }, async (proxyRes) => {
 			const statusCode = proxyRes.statusCode || 500;
+			if (statusCode === 304) {
+				reply.raw.writeHead(304, {
+					"Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
+					"X-Audio-Cache": "MISS",
+				});
+				reply.raw.end();
+				return resolve();
+			}
 			if (statusCode < 200 || statusCode >= 300) {
 				reply.status(502).send({ error: "BadGateway", message: `PBX audio server returned status ${statusCode}` });
 				return resolve();
 			}
-			const contentType = proxyRes.headers["content-type"] || eventRow.audioFormat || "audio/mpeg";
+
+			const upstreamContentType = proxyRes.headers["content-type"] || contentType;
 			const responseHeaders: Record<string, string> = {
-				"Content-Type": contentType,
+				"Content-Type": upstreamContentType,
 				"Accept-Ranges": "bytes",
-				"Cache-Control": "private, no-cache, no-store, must-revalidate",
+				"Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
 				"X-Content-Type-Options": "nosniff",
+				"X-Audio-Cache": "MISS",
 			};
 			if (proxyRes.headers["content-length"]) {
 				responseHeaders["Content-Length"] = proxyRes.headers["content-length"];
@@ -100,20 +201,66 @@ export async function handleStreamRecording(
 			if (proxyRes.headers["content-range"]) {
 				responseHeaders["Content-Range"] = proxyRes.headers["content-range"];
 			}
+			if (proxyRes.headers.etag) {
+				responseHeaders.ETag = proxyRes.headers.etag;
+			}
+
+			// Прогрев кэша на диске при получении полного аудиопотока (200 OK)
+			let cacheWriteStream: fs.WriteStream | null = null;
+			let tempFilePath = "";
+			if (statusCode === 200) {
+				try {
+					const orgCacheDir = path.dirname(cacheFilePath);
+					await fs.promises.mkdir(orgCacheDir, { recursive: true });
+					tempFilePath = `${cacheFilePath}.tmp-${Date.now()}`;
+					cacheWriteStream = fs.createWriteStream(tempFilePath);
+				} catch (err) {
+					request.log.warn({ err, eventId }, "[TelephonyStream] Failed to initialize audio cache write stream");
+					cacheWriteStream = null;
+				}
+			}
 
 			reply.raw.writeHead(statusCode === 206 ? 206 : 200, responseHeaders);
-			proxyRes.pipe(reply.raw);
-			proxyRes.on("end", () => resolve());
+
+			proxyRes.on("data", (chunk: Buffer) => {
+				reply.raw.write(chunk);
+				if (cacheWriteStream) {
+					cacheWriteStream.write(chunk);
+				}
+			});
+
+			proxyRes.on("end", () => {
+				reply.raw.end();
+				if (cacheWriteStream && tempFilePath) {
+					cacheWriteStream.end(async () => {
+						try {
+							await fs.promises.rename(tempFilePath, cacheFilePath);
+						} catch {
+							try { await fs.promises.unlink(tempFilePath); } catch {}
+						}
+					});
+				}
+				resolve();
+			});
+
 			proxyRes.on("error", () => {
+				if (cacheWriteStream && tempFilePath) {
+					try {
+						cacheWriteStream.destroy();
+						fs.unlinkSync(tempFilePath);
+					} catch {}
+				}
 				if (!reply.raw.headersSent) reply.status(500).send({ error: "StreamError", message: "Failed to stream audio" });
 				resolve();
 			});
 		});
+
 		proxyReq.on("timeout", () => {
 			proxyReq.destroy();
 			if (!reply.raw.headersSent) reply.status(504).send({ error: "GatewayTimeout", message: "Timeout connecting to PBX audio server" });
 			resolve();
 		});
+
 		proxyReq.on("error", () => {
 			if (!reply.raw.headersSent) reply.status(502).send({ error: "BadGateway", message: "Unable to connect to PBX audio storage" });
 			resolve();

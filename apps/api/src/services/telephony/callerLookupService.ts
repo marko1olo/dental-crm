@@ -131,13 +131,28 @@ export class CallerLookupService {
 
 		if (normalized && normalized.isValid) {
 			searchConditions.push(eq(patients.phone, normalized.e164));
-			if (normalized.national10.length >= 7) {
-				searchConditions.push(ilike(patients.phone, `%${normalized.national10}%`));
+
+			// Поиск по последним 10 цифрам (E.164 / мобильный федеральный формат)
+			if (normalized.cleanDigits.length >= 10) {
+				const digits10 = normalized.cleanDigits.slice(-10);
+				searchConditions.push(ilike(patients.phone, `%${digits10}%`));
 				searchConditions.push(
-					sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${normalized.national10}%`}`,
+					sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${digits10}%`}`,
 				);
 				searchConditions.push(
-					sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${normalized.national10}%`}`,
+					sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${digits10}%`}`,
+				);
+			}
+
+			// Поиск по последним 7 цифрам (городские и прямые номера)
+			if (normalized.cleanDigits.length >= 7) {
+				const digits7 = normalized.cleanDigits.slice(-7);
+				searchConditions.push(ilike(patients.phone, `%${digits7}%`));
+				searchConditions.push(
+					sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${digits7}%`}`,
+				);
+				searchConditions.push(
+					sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${digits7}%`}`,
 				);
 			}
 		}
@@ -164,16 +179,31 @@ export class CallerLookupService {
 		if (!matchedPatient) {
 			let matchedLead: typeof crmLeads.$inferSelect | null = null;
 			if (normalized && normalized.isValid) {
+				const leadConditions: SQL<unknown>[] = [
+					eq(crmLeads.phone, normalized.e164),
+				];
+				if (normalized.cleanDigits.length >= 10) {
+					const d10 = normalized.cleanDigits.slice(-10);
+					leadConditions.push(ilike(crmLeads.phone, `%${d10}%`));
+					leadConditions.push(
+						sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${d10}%`}`,
+					);
+				}
+				if (normalized.cleanDigits.length >= 7) {
+					const d7 = normalized.cleanDigits.slice(-7);
+					leadConditions.push(ilike(crmLeads.phone, `%${d7}%`));
+					leadConditions.push(
+						sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${d7}%`}`,
+					);
+				}
+
 				const leadMatches = await db
 					.select()
 					.from(crmLeads)
 					.where(
 						and(
 							eq(crmLeads.organizationId, organizationId),
-							or(
-								eq(crmLeads.phone, normalized.e164),
-								ilike(crmLeads.phone, `%${normalized.national10}%`),
-							),
+							or(...leadConditions),
 						),
 					)
 					.limit(1);

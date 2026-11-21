@@ -213,4 +213,23 @@ describe("CTI Telephony /api/telephony/lookup and CallerLookupService", () => {
 		assert.equal(json.found, false, "Tenant B must NOT see Tenant A's patient");
 		assert.equal(json.patient, null);
 	});
+
+	test("5. Resolves caller by 7-digit local phone number suffix (E.164 and urban numbers)", async () => {
+		if (!databaseReady) return;
+
+		// Patient phone is +79998881122. Incoming call is 7-digit urban suffix 8881122
+		const response = await app.inject({
+			method: "GET",
+			url: `/api/telephony/${ORG_A_ID}/lookup?phone=8881122`,
+			headers: {
+				"x-dente-staff-token": staffTokenA,
+			},
+		});
+
+		assert.equal(response.statusCode, 200);
+		const json = JSON.parse(response.body);
+		assert.equal(json.found, true, "Must match patient by 7-digit suffix");
+		assert.equal(json.patient.id, PATIENT_A_ID);
+		assert.equal(json.patient.fullName, "Кузнецов Алексей Петрович");
+	});
 });

@@ -81,6 +81,10 @@ export async function resolveWebhookOrgId(
 export function checkReplayTimestamp(
 	data: TelephonyWebhookPayload,
 ): { valid: boolean; reason?: string } {
+	const event = parseTelephonyCallEvent(data);
+	const isEndedOrCdr = event === "ended" || event === "missed";
+	const maxDriftSec = isEndedOrCdr ? 3600 : 300;
+
 	let rawTs = data.timestamp || data.call_end;
 	if (rawTs == null && data.call_start != null) {
 		const startNum =
@@ -112,8 +116,8 @@ export function checkReplayTimestamp(
 
 	const msgTsSec = numTs > 1e11 ? Math.floor(numTs / 1000) : numTs;
 	const nowSec = Math.floor(Date.now() / 1000);
-	if (Math.abs(nowSec - msgTsSec) > 300) {
-		return { valid: false, reason: "Timestamp drift window exceeded (>300s)" };
+	if (Math.abs(nowSec - msgTsSec) > maxDriftSec) {
+		return { valid: false, reason: `Timestamp drift window exceeded (>${maxDriftSec}s)` };
 	}
 	return { valid: true };
 }
