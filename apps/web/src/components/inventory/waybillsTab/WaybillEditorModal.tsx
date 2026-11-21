@@ -34,7 +34,7 @@ export const WaybillEditorModal: React.FC<WaybillEditorModalProps> = ({
 				<button
 					type="button"
 					onClick={onCancel}
-					className="secondary-button h-7 px-2.5 text-xs font-medium"
+					className="secondary-button h-8 px-2.5 text-xs font-medium"
 				>
 					Отмена
 				</button>
@@ -61,7 +61,7 @@ export const WaybillEditorModal: React.FC<WaybillEditorModalProps> = ({
 			<div className="p-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between shrink-0 text-xs">
 				<div>
 					<span>Итого с НДС: </span>
-					<strong className="text-sm font-bold text-teal-700 dark:text-teal-300">
+					<strong className="text-sm font-bold text-[var(--primary)]">
 						{money(kopecksToRubles(draftWaybill.totals.totalCostKopecks))}
 					</strong>
 					<span className="text-[11px] text-[var(--muted)] ml-2">

@@ -82,6 +82,7 @@ export const THERAPY_RESTORATION_BOM_SEED: DefaultBomProcedureSeed = {
 			unit: "шт.",
 			quantityToDeduct: 1,
 			defaultUnitCostRub: 12.5,
+			defaultUnitCostKopecks: 1250,
 			defaultStockQty: 300,
 			criticalThreshold: 30,
 		},

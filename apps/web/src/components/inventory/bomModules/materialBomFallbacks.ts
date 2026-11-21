@@ -1,6 +1,7 @@
 import {
 	CANONICAL_PROCEDURE_RECIPES,
 	formatInventoryUnitRu,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { ProcedureMaterialRuleViewItem } from "./materialBomTypes.js";
 
@@ -25,7 +26,7 @@ export function buildCanonicalFallbackBomRules(): ProcedureMaterialRuleViewItem[
 				unit: formatInventoryUnitRu(item.unit),
 				stockQuantity: 25,
 				criticalThreshold: 5,
-				unitCostRub: String(Math.round(item.estimatedUnitCostKopecks / 100)),
+				unitCostRub: String(kopecksToRubles(item.estimatedUnitCostKopecks)),
 				quantityToDeduct: item.standardQuantity,
 			});
 		}

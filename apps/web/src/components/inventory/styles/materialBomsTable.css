@@ -18,7 +18,6 @@
 	color: var(--muted);
 	font-weight: 600;
 	font-size: 12px;
-	text-transform: uppercase;
 	border-bottom: 1px solid var(--line);
 }
 

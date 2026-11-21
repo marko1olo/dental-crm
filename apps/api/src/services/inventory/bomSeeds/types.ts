@@ -8,8 +8,9 @@ export interface DefaultBomMaterialSeed {
 	readonly category: string;
 	readonly unit: string;
 	readonly quantityToDeduct: number;
-	readonly requiredQty?: number;
+	readonly requiredQty?: number | undefined;
 	readonly defaultUnitCostRub: number;
+	readonly defaultUnitCostKopecks?: number | undefined;
 	readonly defaultStockQty: number;
 	readonly criticalThreshold: number;
 }

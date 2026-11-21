@@ -135,7 +135,6 @@
 	.acceptance-card-field label {
 		font-size: 10px;
 		font-weight: 600;
-		text-transform: uppercase;
 		color: var(--muted);
 	}
 

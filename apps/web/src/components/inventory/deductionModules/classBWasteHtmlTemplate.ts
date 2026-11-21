@@ -1,6 +1,6 @@
 export const CLASS_B_HTML_STYLES = `
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #000; margin: 20px; line-height: 1.4; }
-  .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+  .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
   .subtitle { text-align: center; font-size: 11px; margin-bottom: 16px; color: #333; }
   .meta-grid { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
   .meta-grid td { padding: 4px 6px; font-size: 12px; vertical-align: top; }

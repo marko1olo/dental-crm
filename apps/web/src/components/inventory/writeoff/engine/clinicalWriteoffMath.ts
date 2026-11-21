@@ -1,4 +1,4 @@
-import { type Kopecks, multiplyKopecks } from "@dental/shared";
+import { type Kopecks, multiplyKopecks, kopecksToRubles as sharedKopecksToRubles } from "@dental/shared";
 
 export function calculateLineCostKopecks(
 	unitCostKopecks: Kopecks,
@@ -12,7 +12,7 @@ export function calculateLineCostKopecks(
 }
 
 export function kopecksToRubles(kopecks: Kopecks): number {
-	return Math.round(kopecks) / 100;
+	return sharedKopecksToRubles(kopecks);
 }
 
 export function getDaysUntilExpiration(

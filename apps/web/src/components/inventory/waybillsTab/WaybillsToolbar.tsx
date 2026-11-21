@@ -17,7 +17,7 @@ export const WaybillsToolbar: React.FC<WaybillsToolbarProps> = ({
 	return (
 		<div className="min-h-[36px] h-auto py-1 px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex flex-wrap items-center justify-between gap-2 shrink-0">
 			<div className="flex items-center gap-2 min-w-0">
-				<div className="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+				<div className="w-7 h-7 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center shrink-0">
 					<Truck size={14} />
 				</div>
 				<h3 className="text-xs font-bold text-[var(--ink)] leading-tight truncate">
@@ -55,7 +55,7 @@ export const WaybillsToolbar: React.FC<WaybillsToolbarProps> = ({
 					data-testid="btn-express-waybill"
 					title="Быстрое оприходование накладной по 4 параметрам: Поставщик, Номер, Дата, Сумма"
 				>
-					<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+					<Zap size={13} className="text-[var(--primary)] shrink-0" />
 					<span>Экспресс-приход</span>
 				</button>
 

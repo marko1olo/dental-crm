@@ -32,7 +32,6 @@
 	font-size: 10px;
 	color: var(--muted, #64748b);
 	font-weight: 600;
-	text-transform: uppercase;
 }
 .acceptance-summary-value {
 	font-weight: 700;

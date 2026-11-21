@@ -1,3 +1,4 @@
+import { formatKopecksRu, formatKopecksToRubles } from "../../money.js";
 import {
 	generatePurchaseOrderId,
 	generatePurchaseOrderNumber,
@@ -84,10 +85,7 @@ export function generateSupplierPurchaseOrder(params: {
 				suggestedOrderQuantity: suggested,
 				estimatedUnitCostKopecks: unitCostKopecks,
 				totalCostKopecks,
-				totalCostFormattedRu: `${(totalCostKopecks / 100).toLocaleString("ru-RU", {
-					minimumFractionDigits: 2,
-					maximumFractionDigits: 2,
-				})} ₽`,
+				totalCostFormattedRu: formatKopecksRu(totalCostKopecks),
 			});
 		}
 	}
@@ -129,10 +127,7 @@ export function generateSupplierPurchaseOrder(params: {
 				suggestedOrderQuantity: suggested,
 				estimatedUnitCostKopecks: unitCostKopecks,
 				totalCostKopecks,
-				totalCostFormattedRu: `${(totalCostKopecks / 100).toLocaleString("ru-RU", {
-					minimumFractionDigits: 2,
-					maximumFractionDigits: 2,
-				})} ₽`,
+				totalCostFormattedRu: formatKopecksRu(totalCostKopecks),
 			});
 		}
 	}
@@ -157,10 +152,7 @@ export function generateSupplierPurchaseOrder(params: {
 		items,
 		totalItemsCount: items.length,
 		totalOrderCostKopecks,
-		totalOrderCostFormattedRu: `${(totalOrderCostKopecks / 100).toLocaleString("ru-RU", {
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2,
-		})} ₽`,
+		totalOrderCostFormattedRu: formatKopecksRu(totalOrderCostKopecks),
 		status: "draft",
 	};
 }
@@ -193,7 +185,7 @@ export function formatSupplierPurchaseOrderText(order: SupplierPurchaseOrder): s
 			`${idx + 1}. [${item.sku}] ${item.nameRu}`,
 			`   Категория: ${item.category} | Ед. изм.: ${item.unitOfMeasure}`,
 			`   Текущий остаток: ${item.currentStock} | Порог нормы: ${item.minThreshold} | Дефицит: ${item.shortfallQuantity}`,
-			`   Рекомендуемый заказ: ${item.suggestedOrderQuantity} ${item.unitOfMeasure} × ${(item.estimatedUnitCostKopecks / 100).toFixed(2)} ₽ = ${item.totalCostFormattedRu}`,
+			`   Рекомендуемый заказ: ${item.suggestedOrderQuantity} ${item.unitOfMeasure} × ${formatKopecksToRubles(item.estimatedUnitCostKopecks)} ₽ = ${item.totalCostFormattedRu}`,
 			`--------------------------------------------------------------------------------`,
 		);
 	});
@@ -224,7 +216,7 @@ export function generateSupplierPurchaseOrderHtml(order: SupplierPurchaseOrder):
 			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right;">${item.currentStock}</td>
 			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; color: #b91c1c; font-weight: bold;">${item.shortfallQuantity > 0 ? item.shortfallQuantity : "—"}</td>
 			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-weight: bold; background-color: #f0fdf4;">${item.suggestedOrderQuantity}</td>
-			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right;">${(item.estimatedUnitCostKopecks / 100).toFixed(2)} ₽</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right;">${formatKopecksToRubles(item.estimatedUnitCostKopecks)} ₽</td>
 			<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-weight: bold;">${item.totalCostFormattedRu}</td>
 		</tr>`,
 		)
@@ -237,7 +229,7 @@ export function generateSupplierPurchaseOrderHtml(order: SupplierPurchaseOrder):
 	<title>Заказ поставщику ${order.orderNumber}</title>
 	<style>
 		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #0f172a; font-size: 13px; line-height: 1.4; }
-		h1 { font-size: 18px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+		h1 { font-size: 18px; margin: 0 0 4px; letter-spacing: 0.5px; }
 		.meta-box { border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; }
 		table { width: 100%; border-collapse: collapse; margin-top: 12px; }
 		th { background-color: #f1f5f9; border: 1px solid #94a3b8; padding: 8px; font-size: 12px; font-weight: 600; text-align: left; }

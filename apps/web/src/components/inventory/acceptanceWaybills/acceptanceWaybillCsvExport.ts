@@ -1,3 +1,4 @@
+import { formatKopecksToRubles } from "@dental/shared";
 import type { AcceptanceWaybillDocument } from "../acceptanceWaybillsTypes.js";
 
 /**
@@ -30,11 +31,11 @@ export function exportWaybillToCsv(waybill: AcceptanceWaybillDocument): string {
 		`"${item.batchNumber.replace(/"/g, '""')}"`,
 		item.expirationDate,
 		item.quantity,
-		(item.unitPriceKopecks / 100).toFixed(2),
-		(item.lineSubtotalKopecks / 100).toFixed(2),
+		formatKopecksToRubles(item.unitPriceKopecks),
+		formatKopecksToRubles(item.lineSubtotalKopecks),
 		`${item.vatRate}%`,
-		(item.vatKopecks / 100).toFixed(2),
-		(item.lineTotalKopecks / 100).toFixed(2),
+		formatKopecksToRubles(item.vatKopecks),
+		formatKopecksToRubles(item.lineTotalKopecks),
 		item.fefoStatus,
 		item.daysUntilExpiration,
 		item.barcode || "",

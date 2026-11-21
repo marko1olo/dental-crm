@@ -1,7 +1,7 @@
-import { generateUuidV7, kopecksToRubles, rublesToKopecks, formatKopecksRu } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks, formatKopecksRu, formatKopecksToRubles } from "@dental/shared";
 import type { AcceptanceWaybillItem, AcceptanceWaybillTotals, VatRate } from "../acceptanceWaybillsTypes.js";
 
-export { kopecksToRubles, rublesToKopecks };
+export { kopecksToRubles, rublesToKopecks, formatKopecksToRubles };
 
 /**
  * Расчет стоимостных показателей строки накладной в целых копейках.
@@ -85,5 +85,5 @@ export function formatRubCurrency(kopecks: number): string {
 }
 
 export function formatKopecksToRublesPlain(kopecks: number): string {
-	return (kopecks / 100).toFixed(2).replace(".", ",");
+	return formatKopecksToRubles(kopecks).replace(".", ",");
 }

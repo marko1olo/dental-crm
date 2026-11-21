@@ -1,17 +1,17 @@
-import { formatCurrencyRu, formatKopecksRu, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-export { kopecksToRubles, rublesToKopecks };
+import { formatCurrencyRu, formatKopecksRu, formatKopecksToRubles, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+export { formatKopecksToRubles, kopecksToRubles, rublesToKopecks };
 
 export function formatRubCurrency(rublesOrKopecks: number, isKopecks = false): string {
 	return isKopecks ? formatKopecksRu(Math.round(rublesOrKopecks)) : formatCurrencyRu(rublesOrKopecks);
 }
 
 export function formatKopecksToRublesPlain(kopecks: number): string {
-	return (Math.round(kopecks) / 100).toFixed(2);
+	return formatKopecksToRubles(kopecks);
 }
 
 export function numberToRussianWordsKopecks(kopecks: number): string {
 	const absKopecks = Math.abs(Math.round(kopecks));
-	const rubles = Math.floor(absKopecks / 100);
+	const rubles = Math.floor(kopecksToRubles(absKopecks));
 	const kop = absKopecks % 100;
 
 	if (rubles === 0) {

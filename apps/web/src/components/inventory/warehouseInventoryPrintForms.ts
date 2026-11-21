@@ -24,7 +24,7 @@ export function generateWarehouseWriteoffActHtml(act: WarehouseTorg16WriteoffAct
       <td style="text-align: center;">${it.batchNumber}</td>
       <td style="text-align: center;">${it.expiryDate}</td>
       <td style="text-align: center;">${it.unitRu}</td>
-      <td style="text-align: right;">${(it.unitCostKopecks / 100).toFixed(2)}</td>
+      <td style="text-align: right;">${kopecksToRubles(it.unitCostKopecks).toFixed(2)}</td>
       <td style="text-align: right; font-weight: bold;">${it.quantity}</td>
       <td style="text-align: right; font-weight: bold;">${it.totalCostRubles.toFixed(2)}</td>
       <td>${it.defectDescriptionRu || act.reasonRu || "Истек срок годности"}</td>

@@ -10,6 +10,7 @@ import {
 	getTopPopularMaterials,
 	searchClinicalMaterials,
 	findClinicalMaterialById,
+	rublesToKopecks,
 } from "@dental/shared";
 import {
 	type MaterialOptionGroup,
@@ -25,7 +26,7 @@ export function convertMarketMaterialToBomLink(
 	serviceTitle: string,
 	quantity = 1,
 ): ConsumableItemLink {
-	const costPriceKopecks = Math.round(material.approximatePriceRub * 100);
+	const costPriceKopecks = rublesToKopecks(material.approximatePriceRub);
 
 	let category: ConsumableItemLink["category"] = "other";
 	if (

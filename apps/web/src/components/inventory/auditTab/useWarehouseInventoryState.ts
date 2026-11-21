@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import {
@@ -20,7 +21,7 @@ export function useWarehouseInventoryState(
 			batchNumber: it.lotNumber || `ПАРТИЯ-${it.id.slice(0, 6)}`, expiryDate: it.expirationDate || "2028-12-31",
 			storageLocationRu: "Основной стеллаж", bookQuantity: Number(it.stockQuantity) || 0,
 			actualQuantity: Number(it.stockQuantity) || 0,
-			unitCostKopecks: Math.round((Number.parseFloat(it.unitCostRub || "0") || 0) * 100),
+			unitCostKopecks: rublesToKopecks(Number.parseFloat(it.unitCostRub || "0") || 0),
 		}, todayDate)),
 	);
 
@@ -32,7 +33,7 @@ export function useWarehouseInventoryState(
 				batchNumber: it.lotNumber || `ПАРТИЯ-${it.id.slice(0, 6)}`, expiryDate: it.expirationDate || "2028-12-31",
 				storageLocationRu: "Основной стеллаж", bookQuantity: Number(it.stockQuantity) || 0,
 				actualQuantity: Number(it.stockQuantity) || 0,
-				unitCostKopecks: Math.round((Number.parseFloat(it.unitCostRub || "0") || 0) * 100),
+				unitCostKopecks: rublesToKopecks(Number.parseFloat(it.unitCostRub || "0") || 0),
 			}, todayDate)));
 		}
 	}, [items, todayDate, auditLines.length]);

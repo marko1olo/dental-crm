@@ -26,6 +26,7 @@
  */
 
 import { z } from "zod";
+import { kopecksToRubles, rublesToKopecks } from "../money.js";
 
 // ─── 1. STATUTORY & ALGORITHMIC CONSTANTS ─────────────────────────────────────
 
@@ -672,10 +673,10 @@ export function computeInventoryReorderSuggestion(
 		coverDays,
 	);
 
-	const unitPriceRub = Number(input.unitPriceRub.toFixed(2));
-	const unitPriceKopecks = Math.round(unitPriceRub * 100);
+	const unitPriceKopecks = rublesToKopecks(input.unitPriceRub);
+	const unitPriceRub = kopecksToRubles(unitPriceKopecks);
 	const estimatedCostKopecks = Math.round(suggestedQuantity * unitPriceKopecks);
-	const estimatedCostRub = Number((estimatedCostKopecks / 100).toFixed(2));
+	const estimatedCostRub = kopecksToRubles(estimatedCostKopecks);
 
 	return {
 		inventoryItemId: input.inventoryItemId,
@@ -741,9 +742,7 @@ export function computeReorderSuggestions(
 		return a.itemName.localeCompare(b.itemName, "ru");
 	});
 
-	const totalEstimatedCostRub = Number(
-		(totalEstimatedCostKopecks / 100).toFixed(2),
-	);
+	const totalEstimatedCostRub = kopecksToRubles(totalEstimatedCostKopecks);
 
 	return {
 		summary: {

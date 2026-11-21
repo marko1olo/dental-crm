@@ -1,3 +1,4 @@
+import { formatKopecksToRubles } from "@dental/shared";
 import type { AcceptanceWaybillDocument } from "../acceptanceWaybillsTypes.js";
 
 /**
@@ -12,10 +13,10 @@ export function generateAcceptanceWaybillHtml(
 	const clinicInn = clinicInfo?.inn || "7701987654";
 
 	const rows = waybill.items.map((item, idx) => {
-		const subtotalRub = (item.lineSubtotalKopecks / 100).toFixed(2);
-		const vatRub = (item.vatKopecks / 100).toFixed(2);
-		const totalRub = (item.lineTotalKopecks / 100).toFixed(2);
-		const unitPriceRub = (item.unitPriceKopecks / 100).toFixed(2);
+		const subtotalRub = formatKopecksToRubles(item.lineSubtotalKopecks);
+		const vatRub = formatKopecksToRubles(item.vatKopecks);
+		const totalRub = formatKopecksToRubles(item.lineTotalKopecks);
+		const unitPriceRub = formatKopecksToRubles(item.unitPriceKopecks);
 
 		return `
 		<tr>
@@ -66,9 +67,9 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 <tr style="font-weight:bold; background:#fafafa;">
 <td colspan="3" style="text-align:right; padding:6px; border:1px solid #000;">ИТОГО:</td>
 <td style="text-align:right; padding:6px; border:1px solid #000;">${waybill.totals.totalQuantity}</td>
-<td style="border:1px solid #000;"></td><td style="text-align:right; padding:6px; border:1px solid #000;">${(waybill.totals.subtotalKopecks / 100).toFixed(2)}</td>
-<td style="border:1px solid #000;"></td><td style="text-align:right; padding:6px; border:1px solid #000;">${(waybill.totals.totalVatKopecks / 100).toFixed(2)}</td>
-<td style="text-align:right; padding:6px; border:1px solid #000;">${(waybill.totals.totalCostKopecks / 100).toFixed(2)}</td>
+<td style="border:1px solid #000;"></td><td style="text-align:right; padding:6px; border:1px solid #000;">${formatKopecksToRubles(waybill.totals.subtotalKopecks)}</td>
+<td style="border:1px solid #000;"></td><td style="text-align:right; padding:6px; border:1px solid #000;">${formatKopecksToRubles(waybill.totals.totalVatKopecks)}</td>
+<td style="text-align:right; padding:6px; border:1px solid #000;">${formatKopecksToRubles(waybill.totals.totalCostKopecks)}</td>
 </tr></tbody></table>
 <table class="signatures"><tr>
 <td style="width:50%;"><strong>Отпустил (Поставщик):</strong><br><br>_________________ / _________________ /<br><span style="font-size:8pt; color:#666;">подпись, расшифровка</span></td>

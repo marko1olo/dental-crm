@@ -21,11 +21,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "carpule_quick"}
-			className="btn-writeoff-anesthetic-carpule h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-anesthetic-carpule h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-anesthetic-carpule"
 			title="Списание использованных карпул анестетика"
 		>
-			<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<Syringe className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "carpule_quick" ? "Списание..." : "Списать анестетик"}
 			</span>
@@ -40,11 +40,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "sterilization_kit"}
-			className="btn-writeoff-sterilization-kit h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-sterilization-kit h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-sterilization-kit"
 			title="Списание набора стерилизации: 1 лоток + перчатки"
 		>
-			<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<PackageCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "sterilization_kit" ? "Списание..." : "Набор стерилизации"}
 			</span>
@@ -59,11 +59,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "anesthesia"}
-			className="btn-writeoff-anesthesia-packet h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-anesthesia-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-anesthesia-packet"
 			title="Списание пакета: Артикаин 1.7 мл + карпульная игла 30G + расходники"
 		>
-			<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<Syringe className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "anesthesia" ? "Списание..." : "Стандартная анестезия"}
 			</span>
@@ -78,11 +78,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "hygiene"}
-			className="btn-writeoff-hygiene-packet h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-hygiene-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-hygiene-packet"
 			title="Списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка"
 		>
-			<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<PackageCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "hygiene" ? "Списание..." : "Профгигиена"}
 			</span>
@@ -97,11 +97,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "filling"}
-			className="btn-writeoff-filling-packet h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-filling-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-filling-packet"
 			title="Списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
 		>
-			<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<Sparkles className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "filling" ? "Списание..." : "Пломба световая"}
 			</span>
@@ -116,11 +116,11 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "surgery"}
-			className="btn-writeoff-surgery-packet h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
+			className="btn-writeoff-surgery-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-surgery-packet"
 			title="Списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
 		>
-			<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+			<ShieldCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 			<span className="truncate min-w-0">
 				{submittingPackageId === "surgery" ? "Списание..." : "Хирургический пакет"}
 			</span>

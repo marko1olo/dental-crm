@@ -76,7 +76,7 @@
 	flex-direction: column;
 	gap: 6px;
 }
-.material-boms-stat-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.material-boms-stat-label { font-size: 12px; font-weight: 600; color: var(--muted); }
 .material-boms-stat-value { font-size: 22px; font-weight: 700; color: var(--ink); }
 .material-boms-stat-desc { font-size: 12px; color: var(--muted); }
 

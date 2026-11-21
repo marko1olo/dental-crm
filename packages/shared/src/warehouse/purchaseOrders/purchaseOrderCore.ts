@@ -13,6 +13,7 @@
  * 6. Clean Statutory Print Summaries & Form M-7 (Mandate 8d, zero emojis).
  */
 
+import { formatKopecksRu } from "../../money.js";
 import type {
 	PurchaseOrderStatus,
 	VatRate,
@@ -335,12 +336,7 @@ export function applyPurchaseReceipt(
  */
 function formatKopecksToRublesRu(kopecks: number): string {
 	if (!Number.isFinite(kopecks)) return "0,00 ₽";
-	const rubles = Math.floor(Math.abs(kopecks) / 100);
-	const remKopecks = Math.round(Math.abs(kopecks) % 100);
-	const rublesStr = rubles.toLocaleString("ru-RU");
-	const kopecksStr = String(remKopecks).padStart(2, "0");
-	const sign = kopecks < 0 ? "-" : "";
-	return `${sign}${rublesStr},${kopecksStr} ₽`;
+	return formatKopecksRu(Math.round(kopecks));
 }
 
 /**

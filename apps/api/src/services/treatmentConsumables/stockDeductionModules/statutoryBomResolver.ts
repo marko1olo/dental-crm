@@ -62,7 +62,10 @@ export function resolveStatutoryBomForService(
 				name: mat.name,
 				quantity: mat.quantityToDeduct * srvQty,
 				unit: mat.unit,
-				defaultCostRub: mat.defaultUnitCostRub,
+				defaultCostRub:
+					mat.defaultUnitCostKopecks != null
+						? kopecksToRubles(mat.defaultUnitCostKopecks)
+						: mat.defaultUnitCostRub,
 			});
 		}
 		return materials;

@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod";
+import { formatKopecksRu, kopecksToRubles } from "../money.js";
 import {
 	type CanonicalInventoryUnit,
 	canonicalInventoryUnitSchema,
@@ -344,10 +345,8 @@ export function calculateProcedureDeductionSummary(
 		}
 	});
 
-	const totalCostRub = Math.round((totalCostKopecks / 100) * 100) / 100;
-	const rublePart = Math.floor(totalCostKopecks / 100);
-	const kopeckPart = totalCostKopecks % 100;
-	const totalCostRuFormatted = `${rublePart.toLocaleString("ru-RU")},${kopeckPart.toString().padStart(2, "0")} ₽`;
+	const totalCostRub = kopecksToRubles(totalCostKopecks);
+	const totalCostRuFormatted = formatKopecksRu(totalCostKopecks);
 
 	let softWarningMessageRu: string | undefined;
 	if (hasOverdraft) {

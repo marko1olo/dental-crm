@@ -1,3 +1,5 @@
+import { kopecksToRubles } from "@dental/shared";
+
 export interface InventoryItem {
 	id: string;
 	name: string;
@@ -74,7 +76,7 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 				: row.price_per_unit !== null && row.price_per_unit !== undefined
 				? String(row.price_per_unit)
 				: row.unitCostKopecks !== null && row.unitCostKopecks !== undefined
-				? String(Number(row.unitCostKopecks) / 100)
+				? String(kopecksToRubles(Number(row.unitCostKopecks)))
 				: "0",
 		updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
 		...(unit ? { unit } : {}),

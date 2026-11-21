@@ -10,6 +10,11 @@
  * - Zero mocks, zero dead-ends.
  */
 
+import {
+	formatKopecksToRubles,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "../../money.js";
 import type {
 	PurchaseOrderRecord,
 	PurchaseOrderLine,
@@ -91,7 +96,7 @@ export function validateThreeWayMatching(
 				expectedValue: poLine.unitPriceKopecks,
 				actualValue: invLine.unitPriceKopecks,
 				difference: priceDiffKopecks,
-				message: `Расхождение цены по "${itemName}": заказано по ${(poLine.unitPriceKopecks / 100).toFixed(2)} руб., выставлено по ${(invLine.unitPriceKopecks / 100).toFixed(2)} руб.`,
+				message: `Расхождение цены по "${itemName}": заказано по ${formatKopecksToRubles(poLine.unitPriceKopecks)} руб., выставлено по ${formatKopecksToRubles(invLine.unitPriceKopecks)} руб.`,
 			});
 		}
 
@@ -178,11 +183,11 @@ export function convertForeignPriceToRubKopecks(
 ): number {
 	if (!Number.isFinite(amountInCurrency) || amountInCurrency <= 0) return 0;
 	if (currency === "RUB") {
-		return Math.round(amountInCurrency * 100);
+		return rublesToKopecks(amountInCurrency);
 	}
 	const validRate = Number.isFinite(exchangeRateToRub) && exchangeRateToRub > 0 ? exchangeRateToRub : 1.0;
 	const rubValue = amountInCurrency * validRate;
-	return Math.round(rubValue * 100);
+	return rublesToKopecks(rubValue);
 }
 
 /**
@@ -208,7 +213,7 @@ export function compareSupplierQuotes(
 	// Calculate normalized price in kopecks for each quote
 	const normalizedQuotes = quotes.map((q) => {
 		const normPrice = q.currency && q.currency !== "RUB" && q.exchangeRateToRub
-			? convertForeignPriceToRubKopecks(q.priceKopecks / 100, q.currency, q.exchangeRateToRub)
+			? convertForeignPriceToRubKopecks(kopecksToRubles(q.priceKopecks), q.currency, q.exchangeRateToRub)
 			: q.priceKopecks;
 		return { ...q, priceKopecks: normPrice };
 	});
