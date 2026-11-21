@@ -35,13 +35,16 @@ export async function handleDeductVisitRequest(organizationId: string, rawBody: 
 		);
 		return reply.send({ success: true, ...result, is_overdraft: Boolean(result.isOverdraft) });
 	} catch (err: unknown) {
-		request.log.warn(err, "Visit inventory deduction overdraft fallback");
-		return reply.status(200).send({
-			success: true,
-			isOverdraft: true,
-			is_overdraft: true,
-			warning: "Мягкий овердрафт склада: расходники визита списаны, приём проведён без блокировки.",
-			deductions: [],
+		request.log.error(
+			{ err, organizationId, visitId: parsedBody.data.visitId },
+			"Failed to execute visit inventory deduction",
+		);
+		return reply.status(500).send({
+			error: "InventoryDeductionFailed",
+			message:
+				err instanceof Error
+					? err.message
+					: "Не удалось выполнить списание материалов по визиту",
 		});
 	}
 }
@@ -63,15 +66,4 @@ export async function registerAuditTrailRoutes(server: FastifyInstance): Promise
 	registerVisit("/auto-bom-deduct");
 	registerVisit("/:organizationId/deduct/visit");
 	registerVisit("/deduct/visit");
-
-	const handleShiftSummary = async (request: FastifyRequest<{ Params?: { organizationId?: string }; Querystring: { date?: string; organizationId?: string } }>, reply: FastifyReply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "inventory shift summary");
-		if (!resolvedOrgId) return;
-		const targetOrgId = request.params?.organizationId || request.query.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
-		return withTenantCtx(targetOrgId, async (tx) => TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, request.query.date));
-	};
-
-	server.get("/:organizationId/shift-summary", handleShiftSummary);
-	server.get("/shift-summary", handleShiftSummary);
 }

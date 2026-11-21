@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventorySupplierInvoices,
@@ -53,13 +54,39 @@ export const handleAcceptanceWaybillRequest = async (
 	const identity = getRequestIdentity(request);
 	const userContext = request.user as { id?: string } | undefined;
 	const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+	const rawIdempotencyHeader = request.headers["idempotency-key"];
+	const idempotencyKey =
+		(typeof rawIdempotencyHeader === "string" && rawIdempotencyHeader.trim().length > 0
+			? rawIdempotencyHeader.trim()
+			: null) ||
+		(data.idempotencyKey && data.idempotencyKey.trim().length > 0
+			? data.idempotencyKey.trim()
+			: null) ||
+		(data.clientMutationId && data.clientMutationId.trim().length > 0
+			? data.clientMutationId.trim()
+			: null);
 
 	try {
-		const result = await db.transaction(async (tx) => {
-			// Идемпотентность складских операций (Мандаты 8e, 8n, 8s):
-			// Защита от дублирования при повторном клике по кнопке проведения
-			if (data.waybillNumber && data.supplierName) {
-				const existingInvoice = await tx
+		const result = await withTenantCtx(targetOrgId, async (tx) => {
+			// Идемпотентность складских операций (Мандаты 8e, 8n, 8s, 8bo):
+			// Строгий Idempotency-Key или номер накладной + поставщик
+			let existingInvoice: Array<typeof inventorySupplierInvoices.$inferSelect> = [];
+
+			if (idempotencyKey) {
+				existingInvoice = await tx
+					.select()
+					.from(inventorySupplierInvoices)
+					.where(
+						and(
+							eq(inventorySupplierInvoices.organizationId, targetOrgId),
+							sql`${inventorySupplierInvoices.notes} LIKE ${`%[idempotency:${idempotencyKey}]%`}`,
+						),
+					)
+					.limit(1);
+			}
+
+			if (existingInvoice.length === 0 && data.waybillNumber && data.supplierName) {
+				existingInvoice = await tx
 					.select()
 					.from(inventorySupplierInvoices)
 					.where(
@@ -70,28 +97,28 @@ export const handleAcceptanceWaybillRequest = async (
 						),
 					)
 					.limit(1);
+			}
 
-				if (existingInvoice.length > 0) {
-					const inv = existingInvoice[0]!;
-					return {
-						success: true,
-						alreadyProcessed: true,
-						waybillNumber: data.waybillNumber,
-						supplierName: data.supplierName,
-						supplierInn: data.supplierInn ?? null,
-						receiptDate: data.receiptDate,
-						warehouseId: data.warehouseId ?? null,
-						warehouseName: data.warehouseName ?? "Основной склад",
-						totalPositions: data.items.length,
-						totalQuantity: data.items.reduce((acc, it) => acc + it.quantity, 0),
-						totalCostKopecks: Number(inv.totalAmountKopecks),
-						totalVatKopecks: Number(inv.vatAmountKopecks),
-						totalCostRubles: kopecksToRubles(Number(inv.totalAmountKopecks)),
-						overdraftResolvedCount: 0,
-						items: [],
-						message: `Накладная №${data.waybillNumber} от ${data.supplierName} уже была проведена ранее (идемпотентный ответ)`,
-					};
-				}
+			if (existingInvoice.length > 0) {
+				const inv = existingInvoice[0]!;
+				return {
+					success: true,
+					alreadyProcessed: true,
+					waybillNumber: inv.invoiceNumber,
+					supplierName: inv.supplierName,
+					supplierInn: inv.supplierInn ?? null,
+					receiptDate: inv.invoiceDate,
+					warehouseId: inv.warehouseId ?? null,
+					warehouseName: data.warehouseName ?? "Основной склад",
+					totalPositions: data.items.length,
+					totalQuantity: data.items.reduce((acc, it) => acc + it.quantity, 0),
+					totalCostKopecks: Number(inv.totalAmountKopecks),
+					totalVatKopecks: Number(inv.vatAmountKopecks),
+					totalCostRubles: kopecksToRubles(Number(inv.totalAmountKopecks)),
+					overdraftResolvedCount: 0,
+					items: [],
+					message: `Накладная №${inv.invoiceNumber} от ${inv.supplierName} уже была проведена ранее (идемпотентный ответ)`,
+				};
 			}
 
 			const processedItems: Array<{
@@ -189,7 +216,9 @@ export const handleAcceptanceWaybillRequest = async (
 				const vatRate = item.vatRate ?? 0;
 				const itemVatKopecks = Math.round((itemSubtotalKopecks * vatRate) / 100);
 				const itemTotalKopecks = itemSubtotalKopecks + itemVatKopecks;
-				const effectivePricePerUnit = Number((pricePerUnitRub / multiplier).toFixed(2));
+				const effectiveUnitPriceKopecks =
+					multiplier > 0 ? Math.round(unitPriceKopecks / multiplier) : unitPriceKopecks;
+				const effectivePricePerUnitRub = kopecksToRubles(effectiveUnitPriceKopecks);
 
 				totalCostKopecks += itemTotalKopecks;
 				totalVatKopecks += itemVatKopecks;
@@ -218,8 +247,8 @@ export const handleAcceptanceWaybillRequest = async (
 							stockQuantity: "0",
 							currentQty: "0",
 							criticalThreshold: "5",
-							unitCostRub: String(effectivePricePerUnit),
-							pricePerUnit: String(effectivePricePerUnit),
+							unitCostRub: String(effectivePricePerUnitRub),
+							pricePerUnit: String(effectivePricePerUnitRub),
 							lotNumber: item.batchNumber || item.lotNumber || null,
 							expirationDate:
 								normalizeDateToIso(item.expirationDate) ||
@@ -272,7 +301,7 @@ export const handleAcceptanceWaybillRequest = async (
 						manufactureDate: manufactureDate ?? null,
 						initialQty: String(effectiveReceivedQty),
 						remainingQty: String(remainingInBatch),
-						purchasePricePerUnit: String(effectivePricePerUnit),
+						purchasePricePerUnit: String(effectivePricePerUnitRub),
 						status: isDepletedByDeficit ? "depleted" : "active",
 						barcode: item.barcode?.trim() || null,
 					})
@@ -293,8 +322,8 @@ export const handleAcceptanceWaybillRequest = async (
 						stockQuantity: String(newStock),
 						currentQty: String(newStock),
 						packageMultiplier: String(multiplier),
-						unitCostRub: String(effectivePricePerUnit),
-						pricePerUnit: String(effectivePricePerUnit),
+						unitCostRub: String(effectivePricePerUnitRub),
+						pricePerUnit: String(effectivePricePerUnitRub),
 						...(shouldUpdateCardDate ? { expirationDate } : {}),
 						...(item.barcode ? { barcode: item.barcode.trim() } : {}),
 						...(item.sku ? { sku: item.sku.trim() } : {}),
@@ -317,11 +346,12 @@ export const handleAcceptanceWaybillRequest = async (
 					warehouseId: data.warehouseId ?? null,
 					quantityChanged: String(effectiveReceivedQty),
 					qty: String(effectiveReceivedQty),
-					unitCostRub: String(effectivePricePerUnit),
+					unitCostRub: String(effectivePricePerUnitRub),
 					transactionType: "receipt",
 					isOverdraft: false,
 					notes: `Накладная №${data.waybillNumber} от ${data.supplierName}${data.supplierInn ? ` (ИНН ${data.supplierInn})` : ""} • Партия ${batchNumber} [FEFO]`,
 					metadata: {
+						idempotencyKey: idempotencyKey ?? null,
 						waybillNumber: data.waybillNumber,
 						supplierName: data.supplierName,
 						supplierInn: data.supplierInn ?? null,
@@ -364,7 +394,7 @@ export const handleAcceptanceWaybillRequest = async (
 					warehouseId: data.warehouseId ?? null,
 					totalAmountKopecks: totalCostKopecks,
 					vatAmountKopecks: totalVatKopecks,
-					notes: `Приходная накладная №${data.waybillNumber} от ${data.supplierName}`,
+					notes: `Приходная накладная №${data.waybillNumber} от ${data.supplierName}${idempotencyKey ? ` [idempotency:${idempotencyKey}]` : ""}`,
 					createdBy: effectiveUserId,
 				})
 				.returning();

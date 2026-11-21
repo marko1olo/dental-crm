@@ -43,6 +43,8 @@ export async function executeShiftBatchDeduction(
 				and(
 					eq(inventoryTransactions.organizationId, organizationId),
 					or(
+						sql`(${inventoryTransactions.metadata}->>'idempotencyKey') = ${effectiveKey}`,
+						sql`(${inventoryTransactions.metadata}->>'clientMutationId') = ${effectiveKey}`,
 						like(inventoryTransactions.notes, `%[idempotencyKey:${effectiveKey}]%`),
 						like(inventoryTransactions.notes, `%[mutation:${effectiveKey}]%`),
 					),
@@ -107,6 +109,7 @@ export async function executeShiftBatchDeduction(
 		userId,
 		notes: effectiveNotes,
 		reasonPrefix: `Списание под смену ${effectiveDate}`,
+		metadata: effectiveKey ? { idempotencyKey: effectiveKey, clientMutationId: effectiveKey } : undefined,
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Расходники за смену ${effectiveDate} списаны пакетом в 1 клик (${count} поз., мягкий овердрафт: ${hasOverdraft ? "активен" : "нет"}).`,
 	});

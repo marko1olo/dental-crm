@@ -29,7 +29,7 @@ export function renderClassBMetaTable(
     <tr><td class="label">Номер пломбы-стяжки:</td><td><strong>${sealNumber}</strong></td></tr>
     <tr><td class="label">Штрихкод упаковки / контейнера:</td><td><code>${barcode}</code></td></tr>
     <tr><td class="label">Вид тары и упаковки:</td><td>Желтый непрокалываемый контейнер для колюще-режущих отходов / желтый пакет Класса Б</td></tr>
-    <tr><td class="label">Ответственное лицо (1 лицо):</td><td>${staffPosition} — <strong>${staffName}</strong> (без комиссии из 3 человек)</td></tr>
+    <tr><td class="label">Ответственное лицо:</td><td>${staffPosition} — <strong>${staffName}</strong></td></tr>
     <tr><td class="label">Регламент дезинфекции (СанПиН):</td><td>${disinfectionProtocol}</td></tr>
   </table>`;
 }

@@ -31,7 +31,8 @@ describe("4. SanPiN Class B Carpule Disposal Act (СанПиН 2.1.3684-21 / 3.3
 		assert.ok(html.includes("Разбитые стеклянные карпулы анестетиков (бой при установке"));
 		assert.ok(html.includes("Не полностью израсходованные карпулы анестетика с остатками раствора"));
 		assert.ok(html.includes("Химическая дезинфекция 3% Аламинол (замачивание 60 мин)"));
-		assert.ok(html.includes("без комиссии из 3 человек"));
+		assert.ok(html.includes("Ответственное лицо:"));
+		assert.ok(!html.includes("комиссии из 3 человек"));
 		assert.ok(html.includes("Кабинет: cab-3 (Кресло chair-1)"));
 	});
 });

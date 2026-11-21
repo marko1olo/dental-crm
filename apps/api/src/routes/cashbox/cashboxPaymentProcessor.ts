@@ -37,7 +37,6 @@ import {
 import { buildPatientLedger, chargeLineKopecks, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
-import { deductMaterialsForVisit } from "../../services/inventory/materialDeduction.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../loyaltyModules/bonusBalanceService.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
@@ -52,6 +51,14 @@ export type CashboxPaymentOutcome =
 	  }
 	| {
 			statusCode: 400;
+			body: {
+				error: string;
+				message: string;
+				details?: unknown;
+			};
+	  }
+	| {
+			statusCode: 402;
 			body: {
 				error: string;
 				message: string;
@@ -1592,21 +1599,6 @@ export async function processCashboxPayment(
 								eq(appointments.organizationId, orgId),
 							),
 						);
-				}
-
-				// Автоматическое списание расходных материалов со склада по техкартам процедур (BOM - Мандат 8v)
-				try {
-					await deductMaterialsForVisit(tx, {
-						organizationId: orgId,
-						visitId: effectiveVisitId,
-						userId: body.cashierFullName || null,
-						transactionType: "auto_deduct",
-					});
-				} catch (deductErr) {
-					logger?.warn(
-						{ err: deductErr, visitId: effectiveVisitId, orgId },
-						"[cashboxPaymentProcessor] Автоматическое списание материалов по визиту завершилось с предупреждением",
-					);
 				}
 
 				await tx

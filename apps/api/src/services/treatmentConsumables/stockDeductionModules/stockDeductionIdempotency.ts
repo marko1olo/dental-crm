@@ -2,7 +2,7 @@
  * stockDeductionIdempotency.ts — Idempotency guards against duplicate stock deductions on network retry.
  */
 
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import { inventoryTransactions } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
 import type { StockDeductionResult } from "./stockDeductionTypes.js";
@@ -42,7 +42,11 @@ export async function checkIdempotentVisitDeduction(
 			and(
 				eq(inventoryTransactions.organizationId, organizationId),
 				eq(inventoryTransactions.visitId, safeVisitId),
-				like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+				or(
+					sql`(${inventoryTransactions.metadata}->>'idempotencyKey') = ${clientMutationId}`,
+					sql`(${inventoryTransactions.metadata}->>'clientMutationId') = ${clientMutationId}`,
+					like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+				),
 			),
 		);
 		if (rows.length > 0) {
@@ -77,7 +81,11 @@ export async function checkIdempotentToothDeduction(
 		const rows = await tx.select().from(inventoryTransactions).where(
 			and(
 				eq(inventoryTransactions.organizationId, organizationId),
-				like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+				or(
+					sql`(${inventoryTransactions.metadata}->>'idempotencyKey') = ${clientMutationId}`,
+					sql`(${inventoryTransactions.metadata}->>'clientMutationId') = ${clientMutationId}`,
+					like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+				),
 			),
 		);
 		if (rows.length > 0) {

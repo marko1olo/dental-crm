@@ -17,8 +17,6 @@
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
-import { performAutoVisitBomDeduction } from "../../inventory/autoBomDeductionEngine";
-import { useInventoryStore } from "../../../store/inventoryStore";
 import type { AutoVisitBomDeductionResult, Dashboard } from "@dental/shared";
 import {
 	useVisitStore,
@@ -99,55 +97,14 @@ const isUuid = (id: string): boolean =>
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 
 /**
- * 1. Фоновое списание расходных материалов BOM
+ * 1. Списание расходных материалов BOM выполняется строго 1 раз на сервере
+ * в visitCompletionEffects.ts внутри транзакции с RLS при закрытии визита (Мандаты 8e, 8v).
  */
 export async function executeBomDeduction(
-	ctx: VisitPostCompletionContext,
+	_ctx: VisitPostCompletionContext,
 ): Promise<AutoVisitBomDeductionResult | undefined> {
-	try {
-		return await performAutoVisitBomDeduction({
-			visitId: ctx.effectiveVisitId,
-			patientId: ctx.effectivePatientId,
-			patientFullName: ctx.effectivePatientName,
-			doctorId: ctx.effectiveDoctorName,
-			doctorFullName: ctx.effectiveDoctorName,
-			renderedServices: ctx.result.items,
-			allowOverdraft: true, // Мягкий овердрафт: дефицит склада никогда не блокирует приём (Мандат 8e, 8n)
-			includeStandardPpe: true,
-			organizationId:
-				ctx.activeVisit?.organizationId ||
-				ctx.dashboard?.clinicSettings?.profile?.organizationId ||
-				"org-default",
-			warehouseItems: useInventoryStore.getState().items.map((it) => {
-				const item = {
-					id: it.id,
-					name: it.name,
-					stockQuantity: it.stockQuantity,
-					criticalThreshold: it.criticalThreshold,
-					unitCostRub: String(it.unitCostRub),
-					updatedAt: new Date().toISOString(),
-				} as import("../../inventory/inventoryDataMappers").InventoryItem & {
-					cabinetId?: string;
-					chairId?: string;
-					locationId?: string;
-				};
-				if (it.unit) item.unit = it.unit;
-				if (it.sku) item.sku = it.sku;
-				if (it.barcode) item.barcode = it.barcode;
-				if (it.expirationDate) item.expirationDate = it.expirationDate;
-				if (it.lotNumber) item.lotNumber = it.lotNumber;
-				if (it.category) item.category = it.category;
-				return item;
-			}),
-			fetchFn: (input, init) => fetchWithHandling(String(input), init),
-		});
-	} catch (deductionErr) {
-		logger.warn(
-			"[visitCompletionPipeline] Фоновое списание материалов выполнено в локальном режиме:",
-			deductionErr,
-		);
-		return undefined;
-	}
+	// Делегировано серверному эндпоинту завершения визита (устранение тройного списания)
+	return undefined;
 }
 
 /**
@@ -563,13 +520,11 @@ export async function executeOdontogramToothHistorySync(
 export async function executeVisitPostCompletionPipeline(
 	ctx: VisitPostCompletionContext,
 ): Promise<AutoVisitBomDeductionResult | undefined> {
-	// 1. Списание материалов и сохранение черновика выполняются ДО закрытия наряда (исключает гонку 409 VISIT_CLOSED)
-	const [deduction] = await Promise.all([
-		executeBomDeduction(ctx),
-		executeDraftAutosave(ctx),
-	]);
+	// 1. Сохранение черновика приёма выполняется ДО закрытия наряда
+	await executeDraftAutosave(ctx);
 
-	// 2. Завершение визита в API/БД, закрытие позиций плана лечения и синхронизация одонтограммы
+	// 2. Завершение визита в API/БД (где сервер выполняет каноническое BOM-списание 1 раз в транзакции RLS),
+	// закрытие позиций плана лечения и синхронизация одонтограммы
 	Promise.allSettled([
 		executeVisitCompletionEndpoint(ctx),
 		executeTreatmentPlanItemCompletion(ctx),
@@ -581,5 +536,5 @@ export async function executeVisitPostCompletionPipeline(
 		);
 	});
 
-	return deduction;
+	return undefined;
 }

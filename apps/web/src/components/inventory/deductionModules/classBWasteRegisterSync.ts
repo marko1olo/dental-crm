@@ -37,7 +37,7 @@ export async function syncMedicalWasteRegister(
 				disinfectionMethod: "chemical_soaking",
 				disinfectantName: "Аламинол 3% (60 мин)",
 				responsibleStaffName: params.responsibleStaffName,
-				notes: `Акт ${params.actNumber}, пломба ${params.sealNumber}, СанПиН 2.1.3684-21 и СанПиН 3.3686-21 (без комиссии из 3 человек)`,
+				notes: `Акт ${params.actNumber}, пломба ${params.sealNumber}, СанПиН 2.1.3684-21 и СанПиН 3.3686-21`,
 			}),
 		});
 	} catch {

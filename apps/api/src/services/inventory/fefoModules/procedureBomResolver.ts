@@ -1,21 +1,24 @@
 /**
  * @file procedureBomResolver.ts
- * Единый резолвер расходных материалов для стоматологической процедуры (Мандат 8b).
+ * Единый резолвер расходных материалов для стоматологической процедуры (Мандаты 8b, 8v, 8bf).
  * Canonical SSOT: procedure_tech_cards и procedure_tech_card_items.
+ * Ликвидирован Split-Brain каскад устаревших таблиц.
  */
 
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import {
-	procedureMaterialRules,
 	procedureTechCardItems,
 	procedureTechCards,
 } from "../../../db/schema/inventory.js";
 import { serviceCatalogItems } from "../../../db/schema/clinical.js";
+import type { db } from "../../../db/client.js";
 import type { DbTransaction } from "./types.js";
 import { resolveDefaultFallbackItems } from "./procedureBomDefaultFallback.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export type DbTxOrClient = DbTransaction | typeof db;
 
 export interface ServiceMeta {
 	readonly serviceCode: string;
@@ -23,8 +26,16 @@ export interface ServiceMeta {
 	readonly order804nCode: string;
 }
 
+export interface DbProcedureItem {
+	inventoryItemId: string;
+	quantity: number;
+	unit?: string | undefined;
+	name?: string | undefined;
+	isMdlpRequired?: boolean | undefined;
+}
+
 export async function resolveServiceMeta(
-	tx: DbTransaction,
+	tx: DbTxOrClient,
 	organizationId: string,
 	serviceId: string,
 ): Promise<ServiceMeta> {
@@ -58,21 +69,23 @@ export async function resolveServiceMeta(
 }
 
 export async function findDbProcedureItems(
-	tx: DbTransaction,
+	tx: DbTxOrClient,
 	organizationId: string,
 	serviceId: string,
 	meta: ServiceMeta,
 	serviceQuantity: number,
-): Promise<Array<{ inventoryItemId: string; quantity: number }>> {
+): Promise<DbProcedureItem[]> {
 	const isUuid = UUID_REGEX.test(serviceId);
+	const candidateCodes = Array.from(
+		new Set([serviceId, meta.serviceCode, meta.order804nCode].filter(Boolean) as string[]),
+	);
+
 	const techCardCond = isUuid
 		? and(
 				eq(procedureTechCards.organizationId, organizationId),
 				or(
 					eq(procedureTechCards.serviceId, serviceId),
-					eq(procedureTechCards.serviceCode, serviceId),
-					...(meta.serviceCode !== serviceId ? [eq(procedureTechCards.serviceCode, meta.serviceCode)] : []),
-					...(meta.order804nCode ? [eq(procedureTechCards.serviceCode, meta.order804nCode)] : []),
+					...candidateCodes.map((c) => eq(procedureTechCards.serviceCode, c)),
 				),
 				eq(procedureTechCards.status, "active"),
 			)
@@ -93,35 +106,16 @@ export async function findDbProcedureItems(
 		return cardItems.map((ci) => ({
 			inventoryItemId: ci.inventoryItemId,
 			quantity: Number(ci.quantity) * serviceQuantity,
+			unit: ci.unit ?? "pcs",
+			isMdlpRequired: Boolean(ci.isMdlpRequired),
 		}));
 	}
 
-	const ruleCond = isUuid
-		? and(
-				or(
-					eq(procedureMaterialRules.serviceId, serviceId),
-					eq(procedureMaterialRules.serviceCode, serviceId),
-					...(meta.serviceCode !== serviceId ? [eq(procedureMaterialRules.serviceCode, meta.serviceCode)] : []),
-					...(meta.order804nCode ? [eq(procedureMaterialRules.serviceCode, meta.order804nCode)] : []),
-				),
-				or(eq(procedureMaterialRules.organizationId, organizationId), isNull(procedureMaterialRules.organizationId)),
-			)
-		: and(
-				eq(procedureMaterialRules.serviceCode, serviceId),
-				or(eq(procedureMaterialRules.organizationId, organizationId), isNull(procedureMaterialRules.organizationId)),
-			);
-
-	const rules = await tx.select().from(procedureMaterialRules).where(ruleCond);
-	return rules
-		.filter((r) => r.inventoryItemId || r.materialItemId)
-		.map((r) => ({
-			inventoryItemId: (r.inventoryItemId ?? r.materialItemId)!,
-			quantity: Number(r.quantityToDeduct ?? r.requiredQty ?? 1) * serviceQuantity,
-		}));
+	return [];
 }
 
 export async function resolveItemsToDeductForProcedure(
-	tx: DbTransaction,
+	tx: DbTxOrClient,
 	organizationId: string,
 	serviceId: string,
 	serviceQuantity: number,

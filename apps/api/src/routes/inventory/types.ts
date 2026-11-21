@@ -114,6 +114,8 @@ export const acceptanceWaybillBodySchema = z.object({
 	items: z.array(acceptanceWaybillItemSchema).min(1, "Накладная должна содержать хотя бы одну позицию"),
 	notes: z.string().nullable().optional(),
 	organizationId: z.string().optional(),
+	clientMutationId: z.string().nullable().optional(),
+	idempotencyKey: z.string().nullable().optional(),
 });
 
 export const inventoryDeductItemSchema = z.object({

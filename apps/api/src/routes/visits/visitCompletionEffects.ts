@@ -30,17 +30,37 @@ export async function executeVisitCompletionSideEffects({
 	doctorId,
 	log,
 }: VisitCompletionPayload): Promise<void> {
-	if (visit.appointmentId) {
-		await database
-			.update(appointments)
-			.set({ status: "completed" })
-			.where(
-				and(
-					eq(appointments.id, visit.appointmentId),
-					eq(appointments.organizationId, orgId),
-				),
-			);
+	try {
+		await withTenantCtx(orgId, async (tx) => {
+			if (visit.appointmentId) {
+				await tx
+					.update(appointments)
+					.set({ status: "completed" })
+					.where(
+						and(
+							eq(appointments.id, visit.appointmentId),
+							eq(appointments.organizationId, orgId),
+						),
+					);
+			}
 
+			// Каноническое списание расходных материалов по техкартам (BOM - Мандаты 8e, 8v, 8bo)
+			// Списание происходит строго 1 раз на сервере в транзакции с RLS
+			await executeAutoBomWriteoff(tx, {
+				organizationId: orgId,
+				visitId: visit.id,
+				userId: doctorId ?? null,
+				allowOverdraft: true,
+			});
+		});
+	} catch (bomErr) {
+		log.warn(
+			{ error: bomErr, visitId: visit.id },
+			"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
+		);
+	}
+
+	if (visit.appointmentId) {
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "APPOINTMENT_UPDATED",
 			payload: {
@@ -49,20 +69,6 @@ export async function executeVisitCompletionSideEffects({
 				status: "completed",
 			},
 		});
-	}
-
-	try {
-		await executeAutoBomWriteoff(database, {
-			organizationId: orgId,
-			visitId: visit.id,
-			userId: doctorId ?? null,
-			allowOverdraft: true,
-		});
-	} catch (bomErr) {
-		log.warn(
-			{ error: bomErr, visitId: visit.id },
-			"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
-		);
 	}
 
 	wsBroker.broadcastToOrganization(orgId, {

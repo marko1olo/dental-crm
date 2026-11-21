@@ -40,7 +40,8 @@ describe("BOM Deduction: Shift Close Class B Disposal", () => {
 
 		assert.ok(result.actHtml.includes("АКТ НАКОПЛЕНИЯ И ПЕРЕДАЧИ МЕДИЦИНСКИХ ОТХОДОВ КЛАССА Б"));
 		assert.ok(result.actHtml.includes("СанПиН 2.1.3684-21"));
-		assert.ok(result.actHtml.includes("без комиссии из 3 человек"));
+		assert.ok(result.actHtml.includes("Ответственное лицо:"));
+		assert.ok(!result.actHtml.includes("комиссии из 3 человек"));
 		assert.ok(!EMOJI_REGEX.test(result.actHtml));
 
 		assert.ok(postedPayload !== null);

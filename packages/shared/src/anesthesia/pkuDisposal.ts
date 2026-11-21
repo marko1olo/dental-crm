@@ -7,3 +7,8 @@
 
 export const CARPULE_DISPOSAL_NO_COMMISSION = true;
 
+export const CLASS_B_WEIGHT_ESTIMATES = {
+	carpuleGlassKg: 0.005,
+	sharpsNeedleKg: 0.002,
+} as const;
+

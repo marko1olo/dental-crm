@@ -25,6 +25,7 @@ export async function executeUnifiedStockDeduction(
 		userId = null,
 		notes = null,
 		reasonPrefix = "Списание со склада",
+		metadata,
 		successMessageTemplate,
 	} = params;
 
@@ -80,6 +81,7 @@ export async function executeUnifiedStockDeduction(
 			isOverdraft,
 			userId,
 			notes: txNote,
+			metadata: metadata ?? null,
 		});
 
 		if (isOverdraft) {
