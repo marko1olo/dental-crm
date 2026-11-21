@@ -34,10 +34,15 @@ import {
 	UUID_REGEX,
 } from "./telephonySecurity.js";
 import {
+	kopecksToRubles,
+	type Kopecks,
 	resolvePatientCategory,
 	resolvePatientLastVisit,
 	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
+	rublesToKopecks,
+	sumKopecks,
+	toExactKopecks,
 	type PatientActiveTreatmentPlanSummary,
 	type PatientFinancialSummary,
 	type PatientLastVisitSummary,
@@ -331,9 +336,13 @@ export class CallerLookupService {
 					)
 					.orderBy(treatmentPlanStages.stageOrder);
 
-				let totalCostRub = Number(plan.totalPriceRub || plan.totalPrice || 0);
+				let totalCostKopecks: Kopecks = plan.totalPriceRub
+					? rublesToKopecks(Number(plan.totalPriceRub))
+					: plan.totalPrice
+						? rublesToKopecks(Number(plan.totalPrice))
+						: toExactKopecks(0);
 
-				if (totalCostRub === 0) {
+				if (totalCostKopecks === 0) {
 					const items = await db
 						.select({
 							price: treatmentPlanItemsNew.price,
@@ -349,14 +358,18 @@ export class CallerLookupService {
 						);
 
 					if (items.length > 0) {
-						totalCostRub = items.reduce((sum, it) => {
-							const price = Number(it.price || 0);
-							const qty = Number(it.quantity || 1);
-							const disc = Number(it.discount || 0);
-							return sum + Math.max(0, price * qty - disc);
-						}, 0);
+						const itemCostsKopecks = items.map((it) => {
+							const priceKop = rublesToKopecks(Number(it.price || 0));
+							const qty = Math.max(1, Number(it.quantity || 1));
+							const discKop = rublesToKopecks(Number(it.discount || 0));
+							const costKop = Math.max(0, priceKop * qty - discKop);
+							return toExactKopecks(costKop);
+						});
+						totalCostKopecks = sumKopecks(itemCostsKopecks);
 					}
 				}
+
+				const totalCostRub = kopecksToRubles(totalCostKopecks);
 
 				const itemsCount = stages.length > 0 ? stages.length : 1;
 				const completedCount = stages.filter(

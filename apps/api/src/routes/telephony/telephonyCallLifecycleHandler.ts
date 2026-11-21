@@ -1,6 +1,6 @@
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
@@ -36,13 +36,15 @@ export async function handleAnswerCall(
 	reply: FastifyReply,
 ) {
 	const rawOrgId = request.params.organizationId;
-	let resolvedOrgId: string | null = null;
-	if (rawOrgId && UUID_REGEX.test(rawOrgId)) {
-		resolvedOrgId = rawOrgId;
-	} else {
-		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "answer call");
+	const context = await requireClinicalMutationContext(request, reply, "answer call");
+	if (!context) return;
+	const resolvedOrgId = context.organizationId;
+	if (rawOrgId && rawOrgId !== resolvedOrgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации",
+		});
 	}
-	if (!resolvedOrgId) return;
 
 	const body = request.body || ({} as AnswerCallBody);
 	const callerPhone = normalizePhoneNumber(body.phone);
@@ -127,13 +129,15 @@ export async function handleEndCall(
 	reply: FastifyReply,
 ) {
 	const rawOrgId = request.params.organizationId;
-	let resolvedOrgId: string | null = null;
-	if (rawOrgId && UUID_REGEX.test(rawOrgId)) {
-		resolvedOrgId = rawOrgId;
-	} else {
-		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "end call");
+	const context = await requireClinicalMutationContext(request, reply, "end call");
+	if (!context) return;
+	const resolvedOrgId = context.organizationId;
+	if (rawOrgId && rawOrgId !== resolvedOrgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации",
+		});
 	}
-	if (!resolvedOrgId) return;
 	const orgId = resolvedOrgId;
 
 	const body = request.body || ({} as EndCallBody);
@@ -168,62 +172,64 @@ export async function handleEndCall(
 			}
 		}
 
-		// Всегда производим запись в communicationEvents (Мандат 8ap, [TEL-04])
-		await db.insert(communicationEvents).values({
-			organizationId: orgId,
-			patientId: targetPatientId || null,
-			callerPhone: callerPhone.isValid ? callerPhone.e164 : (body.phone || null),
-			channel: "phone",
-			direction: body.direction === "outbound" ? "outbound" : "inbound",
-			status: isCompleted ? "completed" : "needs_call",
-			message: body.notes
-				? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
-				: `Звонок (${phoneStr}) [call_id: ${callId}]`,
-			recordingUrl: body.recordingUrl || null,
-			durationSeconds,
-		});
+		// Всегда производим запись в communicationEvents и синхронизируем crmLeads в единой ACID транзакции
+		await db.transaction(async (tx) => {
+			await tx.insert(communicationEvents).values({
+				organizationId: orgId,
+				patientId: targetPatientId || null,
+				callerPhone: callerPhone.isValid ? callerPhone.e164 : (body.phone || null),
+				channel: "phone",
+				direction: body.direction === "outbound" ? "outbound" : "inbound",
+				status: isCompleted ? "completed" : "needs_call",
+				message: body.notes
+					? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
+					: `Звонок (${phoneStr}) [call_id: ${callId}]`,
+				recordingUrl: body.recordingUrl || null,
+				durationSeconds,
+			});
 
-		// Если пациент не найден и телефон валиден — параллельно обновляем или создаем crmLeads
-		if (!targetPatientId && callerPhone.isValid) {
-			try {
-				const existing = await db
-					.select({ id: crmLeads.id })
-					.from(crmLeads)
-					.where(
-						and(
-							eq(crmLeads.organizationId, orgId),
-							or(
-								eq(crmLeads.phone, callerPhone.e164),
-								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+			// Если пациент не найден и телефон валиден — параллельно обновляем или создаем crmLeads
+			if (!targetPatientId && callerPhone.isValid) {
+				try {
+					const existing = await tx
+						.select({ id: crmLeads.id })
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, orgId),
+								or(
+									eq(crmLeads.phone, callerPhone.e164),
+									ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+								),
 							),
-						),
-					)
-					.limit(1);
+						)
+						.limit(1);
 
-				if (existing.length > 0 && existing[0]?.id) {
-					await db
-						.update(crmLeads)
-						.set({
+					if (existing.length > 0 && existing[0]?.id) {
+						await tx
+							.update(crmLeads)
+							.set({
+								lastContactedAt: new Date(),
+								...(body.notes ? { notes: body.notes } : {}),
+							})
+							.where(eq(crmLeads.id, existing[0].id));
+					} else {
+						await tx.insert(crmLeads).values({
+							organizationId: orgId,
+							phone: callerPhone.e164,
+							patientName: "Новый лид",
+							name: "Новый лид",
+							source: "telephony",
+							status: "new",
 							lastContactedAt: new Date(),
 							...(body.notes ? { notes: body.notes } : {}),
-						})
-						.where(eq(crmLeads.id, existing[0].id));
-				} else {
-					await db.insert(crmLeads).values({
-						organizationId: orgId,
-						phone: callerPhone.e164,
-						patientName: "Новый лид",
-						name: "Новый лид",
-						source: "telephony",
-						status: "new",
-						lastContactedAt: new Date(),
-						...(body.notes ? { notes: body.notes } : {}),
-					});
+						});
+					}
+				} catch (err) {
+					request.log.warn({ err }, "[Telephony] Lead creation error in tx");
 				}
-			} catch (err) {
-				request.log.warn({ err }, "[Telephony] Lead creation error");
 			}
-		}
+		});
 	});
 
 	wsBroker.broadcastToOrganization(orgId, {

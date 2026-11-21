@@ -26,6 +26,11 @@ import {
 	patients,
 } from "../db/schema.js";
 import {
+	detectTelephonyProvider,
+	parseTelephonyCallEvent,
+	resolveWebhookOrgId,
+} from "../routes/telephony/telephonyEngine.js";
+import {
 	persistentOutboxService,
 	type OutboxItem,
 	PersistentOutboxService,
@@ -33,8 +38,10 @@ import {
 import { MissedCallService } from "./telephony/missedCallService.js";
 import {
 	authenticatePbxWebhook,
+	detectMarketingAttribution,
 	normalizePhoneNumber,
 	type NormalizedPhone,
+	type TelephonyWebhookPayload,
 	UUID_REGEX,
 	validateSsrfSafeRecordingUrl,
 } from "./telephony/telephonySecurity.js";
@@ -141,35 +148,11 @@ export class TelephonyOutboxService {
 			(typeof data.event === "string" && data.event) ||
 			(typeof data.notification_name === "string" && data.notification_name) ||
 			(typeof data.event_type === "string" && data.event_type) ||
+			(typeof data.cmd === "string" && data.cmd) ||
 			"ringing"
 		).toLowerCase();
 
-		let event: "ringing" | "answered" | "ended" | "missed" = "ringing";
-		if (
-			rawEvent.includes("miss") ||
-			rawEvent.includes("no-answer") ||
-			rawEvent.includes("no_answer") ||
-			rawEvent.includes("lost") ||
-			rawEvent.includes("busy") ||
-			rawEvent.includes("cancel")
-		) {
-			event = "missed";
-		} else if (
-			rawEvent.includes("ring") ||
-			rawEvent.includes("start") ||
-			rawEvent.includes("dial-in")
-		) {
-			event = "ringing";
-		} else if (rawEvent.includes("answer") || rawEvent.includes("connect")) {
-			event = "answered";
-		} else if (
-			rawEvent.includes("end") ||
-			rawEvent.includes("hangup") ||
-			rawEvent.includes("cdr") ||
-			rawEvent.includes("record")
-		) {
-			event = "ended";
-		}
+		const event = parseTelephonyCallEvent(data as TelephonyWebhookPayload);
 
 		const callerRaw = String(
 			data.from ||
@@ -199,31 +182,11 @@ export class TelephonyOutboxService {
 			);
 		}
 
-		// Resolve tenant organization
-		let resolvedOrgId: string | null = null;
-		if (
-			params.routeOrganizationId &&
-			UUID_REGEX.test(params.routeOrganizationId)
-		) {
-			resolvedOrgId = params.routeOrganizationId;
-		} else if (targetPhone.isValid) {
-			const matchedClinic = await withSuperuserBypass(async (tx) => {
-				return tx
-					.select({ organizationId: clinics.organizationId })
-					.from(clinics)
-					.where(
-						or(
-							eq(clinics.phone, targetPhone.e164),
-							ilike(clinics.phone, `%${targetPhone.national10}%`),
-							sql`regexp_replace(coalesce(${clinics.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${targetPhone.national10}%`}`,
-						),
-					)
-					.limit(1);
-			});
-			if (matchedClinic[0]?.organizationId) {
-				resolvedOrgId = matchedClinic[0].organizationId;
-			}
-		}
+		// Resolve tenant organization via canonical resolver
+		const resolvedOrgId = await resolveWebhookOrgId(
+			params.routeOrganizationId,
+			targetPhone,
+		);
 
 		if (!resolvedOrgId) {
 			throw createWebhookError(
@@ -270,47 +233,20 @@ export class TelephonyOutboxService {
 				? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0)
 				: 0;
 
-		const detectedProvider =
-			data.vpbx_api_key || data.sign || rawEvent.includes("mango")
-				? "mango"
-				: data.call_session_id ||
-						data.from_number ||
-						data.notification_name
-					? "uis"
-					: data.CallerIdNum || data.uniqueid || data.CalledIdNum
-						? "asterisk"
-						: data.signature || data.caller_id
-							? "zadarma"
-							: "mango";
+		const detectedProvider = detectTelephonyProvider(
+			data as TelephonyWebhookPayload,
+			rawEvent,
+		);
 
-		// Channel attribution
-		let detectedMarketingChannel = "telephony";
-		let detectedChannelLabel = "Прямой звонок / ВАТС";
-		const utmRaw = `${data.utm_source || ""} ${data.utm_campaign || ""} ${data.utm_medium || ""}`
-			.trim()
-			.toLowerCase();
-
-		if (utmRaw) {
-			if (/yandex|direct|директ|рся|rsya/i.test(utmRaw)) {
-				detectedMarketingChannel = "yandex_direct";
-				detectedChannelLabel = "Яндекс.Директ";
-			} else if (/2gis|gis|2гис|дубльгис/i.test(utmRaw)) {
-				detectedMarketingChannel = "gis_2";
-				detectedChannelLabel = "2ГИС Карты";
-			} else if (/prodoctorov|продокторов/i.test(utmRaw)) {
-				detectedMarketingChannel = "prodoctorov";
-				detectedChannelLabel = "ПроДокторов";
-			} else if (/napopravku|напоправку/i.test(utmRaw)) {
-				detectedMarketingChannel = "napopravku";
-				detectedChannelLabel = "НаПоправку";
-			} else if (/site|сайт|seo|сео|органика|organic|google/i.test(utmRaw)) {
-				detectedMarketingChannel = "site_seo";
-				detectedChannelLabel = "Сайт / SEO";
-			} else if (/vk|vkontakte|telegram|tg|вк|инста|instagram/i.test(utmRaw)) {
-				detectedMarketingChannel = "social_media";
-				detectedChannelLabel = "Соцсети (VK / TG)";
-			}
-		}
+		const attribution = detectMarketingAttribution({
+			utm_source: typeof data.utm_source === "string" ? data.utm_source : undefined,
+			utm_campaign: typeof data.utm_campaign === "string" ? data.utm_campaign : undefined,
+			utm_medium: typeof data.utm_medium === "string" ? data.utm_medium : undefined,
+			advertising_channel: typeof data.advertising_channel === "string" ? data.advertising_channel : undefined,
+			targetRaw,
+		});
+		const detectedMarketingChannel = attribution.channel;
+		const detectedChannelLabel = attribution.channelLabel;
 
 		const virtualTrunkNumber = targetPhone.e164 || targetRaw;
 
@@ -374,31 +310,10 @@ export class TelephonyOutboxService {
 		reply: FastifyReply,
 	): Promise<void> {
 		try {
-			let resolvedOrgId: string | null = null;
-			const routeOrgId = request.params.organizationId;
-			if (routeOrgId && UUID_REGEX.test(routeOrgId)) {
-				resolvedOrgId = routeOrgId;
-			} else {
-				const body = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
-				const targetRaw = String(body.to || body.called_did || body.called_number || body.CalledIdNum || body.to_number || "");
-				const targetPhone = normalizePhoneNumber(targetRaw);
-				if (targetPhone.isValid) {
-					const matchedClinic = await withSuperuserBypass(async (tx) => {
-						return tx
-							.select({ organizationId: clinics.organizationId })
-							.from(clinics)
-							.where(
-								or(
-									eq(clinics.phone, targetPhone.e164),
-									ilike(clinics.phone, `%${targetPhone.national10}%`),
-									sql`regexp_replace(coalesce(${clinics.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${targetPhone.national10}%`}`,
-								),
-							)
-							.limit(1);
-					});
-					resolvedOrgId = matchedClinic[0]?.organizationId || null;
-				}
-			}
+			const body = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
+			const targetRaw = String(body.to || body.called_did || body.called_number || body.CalledIdNum || body.to_number || "");
+			const targetPhone = normalizePhoneNumber(targetRaw);
+			const resolvedOrgId = await resolveWebhookOrgId(request.params.organizationId, targetPhone);
 
 			if (!resolvedOrgId) {
 				return reply.code(404).send({
@@ -628,25 +543,65 @@ export class TelephonyOutboxService {
 					}
 				}
 
-				await db.insert(communicationEvents).values({
-					organizationId,
-					patientId: matchedPatient?.id || null,
-					callerPhone: callerPhone.e164,
-					channel: "phone",
-					direction: "inbound",
-					status: "completed",
-					message: callId
-						? `Звонок завершён (call_id: ${callId}${!matchedPatient ? ", первичный звонок" : ""})`
-						: `Звонок завершён (запись приложена${!matchedPatient ? ", первичный звонок" : ""})`,
-					recordingUrl: verifiedRecUrl,
-					durationSeconds: durationSeconds > 0 ? durationSeconds : null,
-				});
+				await db.transaction(async (tx) => {
+					await tx.insert(communicationEvents).values({
+						organizationId,
+						patientId: matchedPatient?.id || null,
+						callerPhone: callerPhone.e164,
+						channel: "phone",
+						direction: "inbound",
+						status: "completed",
+						message: callId
+							? `Звонок завершён (call_id: ${callId}${!matchedPatient ? ", первичный звонок" : ""})`
+							: `Звонок завершён (запись приложена${!matchedPatient ? ", первичный звонок" : ""})`,
+						recordingUrl: verifiedRecUrl,
+						durationSeconds: durationSeconds > 0 ? durationSeconds : null,
+					});
 
-				if (!matchedPatient && callerPhone.national10.length >= 7) {
-					try {
-						const existingLead = await db
-							.select({ id: crmLeads.id })
-							.from(crmLeads)
+					if (!matchedPatient && callerPhone.national10.length >= 7) {
+						try {
+							const existingLead = await tx
+								.select({ id: crmLeads.id })
+								.from(crmLeads)
+								.where(
+									and(
+										eq(crmLeads.organizationId, organizationId),
+										or(
+											eq(crmLeads.phone, callerPhone.e164),
+											ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										),
+									),
+								)
+								.limit(1);
+
+							if (existingLead.length === 0) {
+								await tx.insert(crmLeads).values({
+									organizationId,
+									name: `Входящий звонок ${callerPhone.e164}`,
+									patientName: `Первичный звонок ${callerPhone.e164}`,
+									phone: callerPhone.e164,
+									source: detectedMarketingChannel || "telephony",
+									status: "new",
+									notes: `Автоматический лид из входящего звонка телефонии (${detectedProvider}). ${callId ? `call_id: ${callId}.` : ""}${durationSeconds > 0 ? ` Длительность: ${durationSeconds}с.` : ""}`,
+									audioRecordUrl: verifiedRecUrl || null,
+									transcriptionSnippet: transcriptionSnippet || null,
+									stageEnteredAt: new Date(),
+									priority: "normal",
+								});
+							}
+						} catch (leadErr) {
+							console.warn("[TelephonyOutbox] Auto lead creation warning:", leadErr);
+						}
+					}
+
+					if (verifiedRecUrl || transcriptionSnippet) {
+						await tx
+							.update(crmLeads)
+							.set({
+								...(verifiedRecUrl ? { audioRecordUrl: verifiedRecUrl } : {}),
+								...(transcriptionSnippet ? { transcriptionSnippet } : {}),
+								lastContactedAt: new Date(),
+							})
 							.where(
 								and(
 									eq(crmLeads.organizationId, organizationId),
@@ -655,47 +610,9 @@ export class TelephonyOutboxService {
 										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
 									),
 								),
-							)
-							.limit(1);
-
-						if (existingLead.length === 0) {
-							await db.insert(crmLeads).values({
-								organizationId,
-								name: `Входящий звонок ${callerPhone.e164}`,
-								patientName: `Первичный звонок ${callerPhone.e164}`,
-								phone: callerPhone.e164,
-								source: detectedMarketingChannel || "telephony",
-								status: "new",
-								notes: `Автоматический лид из входящего звонка телефонии (${detectedProvider}). ${callId ? `call_id: ${callId}.` : ""}${durationSeconds > 0 ? ` Длительность: ${durationSeconds}с.` : ""}`,
-								audioRecordUrl: verifiedRecUrl || null,
-								transcriptionSnippet: transcriptionSnippet || null,
-								stageEnteredAt: new Date(),
-								priority: "normal",
-							});
-						}
-					} catch (leadErr) {
-						console.warn("[TelephonyOutbox] Auto lead creation warning:", leadErr);
+							);
 					}
-				}
-
-				if (verifiedRecUrl || transcriptionSnippet) {
-					await db
-						.update(crmLeads)
-						.set({
-							...(verifiedRecUrl ? { audioRecordUrl: verifiedRecUrl } : {}),
-							...(transcriptionSnippet ? { transcriptionSnippet } : {}),
-							lastContactedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(crmLeads.organizationId, organizationId),
-								or(
-									eq(crmLeads.phone, callerPhone.e164),
-									ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-								),
-							),
-						);
-				}
+				});
 			}
 		});
 	}

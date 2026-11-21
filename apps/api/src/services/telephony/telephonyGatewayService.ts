@@ -16,6 +16,7 @@ import { createHash, createHmac, randomBytes } from "node:crypto";
 import * as net from "node:net";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
 
@@ -264,32 +265,36 @@ export class TelephonyGatewayService {
 
 		if (event === "ringing") {
 			if (!patient && national10.length >= 7) {
-				await db.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext('telephony:lead:asterisk:' || ${organizationId} || ':' || ${national10}));`,
-				);
-				const existingLead = await db
-					.select({ id: crmLeads.id })
-					.from(crmLeads)
-					.where(
-						and(
-							eq(crmLeads.organizationId, organizationId),
-							or(
-								eq(crmLeads.phone, e164),
-								ilike(crmLeads.phone, `%${national10}%`),
-							),
-						),
-					)
-					.limit(1);
+				await withTenantCtx(organizationId, async () => {
+					await db.transaction(async (tx) => {
+						await tx.execute(
+							sql`SELECT pg_advisory_xact_lock(hashtext('telephony:lead:asterisk:' || ${organizationId} || ':' || ${national10}));`,
+						);
+						const existingLead = await tx
+							.select({ id: crmLeads.id })
+							.from(crmLeads)
+							.where(
+								and(
+									eq(crmLeads.organizationId, organizationId),
+									or(
+										eq(crmLeads.phone, e164),
+										ilike(crmLeads.phone, `%${national10}%`),
+									),
+								),
+							)
+							.limit(1);
 
-				if (existingLead.length === 0) {
-					await db.insert(crmLeads).values({
-						organizationId,
-						phone: e164,
-						name: `Лид Asterisk ${e164}`,
-						source: "telephony_asterisk",
-						status: "new",
+						if (existingLead.length === 0) {
+							await tx.insert(crmLeads).values({
+								organizationId,
+								phone: e164,
+								name: `Лид Asterisk ${e164}`,
+								source: "telephony_asterisk",
+								status: "new",
+							});
+						}
 					});
-				}
+				});
 			}
 
 			wsBroker.broadcastToOrganization(organizationId, {
@@ -306,35 +311,37 @@ export class TelephonyGatewayService {
 		} else if (event === "ended") {
 			const callId = payload.uniqueid || payload.channel || null;
 			let isDuplicate = false;
-			if (callId) {
-				const existing = await db
-					.select({ id: communicationEvents.id })
-					.from(communicationEvents)
-					.where(
-						and(
-							eq(communicationEvents.organizationId, organizationId),
-							ilike(communicationEvents.message, `%ID: ${callId}%`),
-						),
-					)
-					.limit(1);
-				if (existing.length > 0) isDuplicate = true;
-			}
+			await withTenantCtx(organizationId, async () => {
+				if (callId) {
+					const existing = await db
+						.select({ id: communicationEvents.id })
+						.from(communicationEvents)
+						.where(
+							and(
+								eq(communicationEvents.organizationId, organizationId),
+								ilike(communicationEvents.message, `%ID: ${callId}%`),
+							),
+						)
+						.limit(1);
+					if (existing.length > 0) isDuplicate = true;
+				}
 
-			if (!isDuplicate) {
-				const duration = typeof payload.billsec === "number" ? payload.billsec : Number.parseInt(String(payload.billsec || "0"), 10) || 0;
+				if (!isDuplicate) {
+					const duration = typeof payload.billsec === "number" ? payload.billsec : Number.parseInt(String(payload.billsec || "0"), 10) || 0;
 
-				await db.insert(communicationEvents).values({
-					organizationId,
-					patientId: patient?.id || null,
-					callerPhone: e164,
-					channel: "phone",
-					direction: "inbound",
-					status: "completed",
-					message: `Локальный звонок Asterisk завершён (${callId ? `ID: ${callId}` : "прямой вызов"}${!patient ? ", первичный абонент" : ""})`,
-					durationSeconds: duration > 0 ? duration : null,
-					recordingUrl: payload.recordingUrl || null,
-				});
-			}
+					await db.insert(communicationEvents).values({
+						organizationId,
+						patientId: patient?.id || null,
+						callerPhone: e164,
+						channel: "phone",
+						direction: "inbound",
+						status: "completed",
+						message: `Локальный звонок Asterisk завершён (${callId ? `ID: ${callId}` : "прямой вызов"}${!patient ? ", первичный абонент" : ""})`,
+						durationSeconds: duration > 0 ? duration : null,
+						recordingUrl: payload.recordingUrl || null,
+					});
+				}
+			});
 		}
 
 		return {

@@ -63,26 +63,86 @@ export async function telephonySmsWebhookHandler(
 		}
 	}
 
-	return withTenantCtx(resolvedOrgId, async () => {
+	const orgId = resolvedOrgId;
+	return withTenantCtx(orgId, async () => {
 		const smsId = (data.sms_id || data.call_id || data.id || "").trim();
 		if (smsId) {
-			const existing = await db.select({ id: communicationEvents.id }).from(communicationEvents).where(and(eq(communicationEvents.organizationId, resolvedOrgId!), ilike(communicationEvents.message, `%${smsId}%`))).limit(1);
+			const existing = await db
+				.select({ id: communicationEvents.id })
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						ilike(communicationEvents.message, `%${smsId}%`),
+					),
+				)
+				.limit(1);
 			if (existing.length > 0) return { success: true, duplicate: true };
 		}
 
-		const searchPatient = await db.select().from(patients).where(and(eq(patients.organizationId, resolvedOrgId!), or(eq(patients.phone, callerPhone.e164), ilike(patients.phone, `%${callerPhone.national10}%`), sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`))).limit(1);
-		let patient = searchPatient[0] || null;
-		if (!patient) {
-			const inserted = await db.insert(patients).values({ organizationId: resolvedOrgId!, fullName: `SMS User ${callerPhone.e164}`, phone: callerPhone.e164, notes: "Лид из входящего SMS", status: "active" }).returning();
-			patient = inserted[0] || null;
+		const searchPatient = await db
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					or(
+						eq(patients.phone, callerPhone.e164),
+						ilike(patients.phone, `%${callerPhone.national10}%`),
+						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+					),
+				),
+			)
+			.limit(1);
+		const existingPatient = searchPatient[0] || null;
+
+		let patientId: string;
+		try {
+			patientId = await db.transaction(async (tx) => {
+				let currentPatient = existingPatient;
+				if (!currentPatient) {
+					const inserted = await tx
+						.insert(patients)
+						.values({
+							organizationId: orgId,
+							fullName: `SMS User ${callerPhone.e164}`,
+							phone: callerPhone.e164,
+							notes: "Лид из входящего SMS",
+							status: "active",
+						})
+						.returning();
+					currentPatient = inserted[0] || null;
+				}
+				if (!currentPatient) {
+					throw new Error("Failed to persist patient");
+				}
+
+				await tx.insert(communicationEvents).values({
+					organizationId: orgId,
+					patientId: currentPatient.id,
+					channel: "sms",
+					direction: "inbound",
+					status: "delivered",
+					message: smsId ? `${messageText} [sms_id: ${smsId}]` : messageText,
+				});
+
+				return currentPatient.id;
+			});
+		} catch (err) {
+			request.log.error(
+				{ err, orgId },
+				"[TelephonySms] Failed to persist SMS patient and event in transaction",
+			);
+			return reply.status(500).send({
+				error: "PatientPersistenceError",
+				message: "Failed to persist patient and communication event",
+			});
 		}
-		if (!patient) return reply.status(500).send({ error: "PatientPersistenceError", message: "Failed to persist patient" });
 
-		await db.insert(communicationEvents).values({
-			organizationId: resolvedOrgId!, patientId: patient.id, channel: "sms", direction: "inbound", status: "delivered", message: smsId ? `${messageText} [sms_id: ${smsId}]` : messageText,
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: { channel: "sms", patientId, text: messageText },
 		});
-
-		wsBroker.broadcastToOrganization(resolvedOrgId!, { type: "INBOX_NEW_MESSAGE", payload: { channel: "sms", patientId: patient.id, text: messageText } });
 		return { success: true };
 	});
 }

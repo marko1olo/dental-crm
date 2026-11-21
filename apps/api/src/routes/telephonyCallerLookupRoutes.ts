@@ -7,10 +7,9 @@
  */
 
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
+import { requireClinicalReadContext } from "../accessGuard.js";
 import { withTenantCtx } from "../db/rls.js";
 import { CallerLookupService } from "../services/telephony/callerLookupService.js";
-import { UUID_REGEX } from "../services/telephony/telephonySecurity.js";
 
 export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) => {
 	const handleLookupCaller = async (
@@ -20,15 +19,16 @@ export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) =>
 		}>,
 		reply: FastifyReply,
 	) => {
-		let orgId: string | null = null;
-		if (request.params.organizationId && UUID_REGEX.test(request.params.organizationId)) {
-			orgId = request.params.organizationId;
-		} else {
-			orgId = await requireResolvedOrganizationId(request, reply, "lookup caller");
-		}
+		const context = await requireClinicalReadContext(request, reply, "lookup caller");
+		if (!context) return;
+		const resolvedOrgId = context.organizationId;
 
-		if (!orgId) return;
-		const resolvedOrgId = orgId;
+		if (request.params.organizationId && request.params.organizationId !== resolvedOrgId) {
+			return reply.status(403).send({
+				error: "OrganizationMismatch",
+				message: "Несовпадение идентификатора организации",
+			});
+		}
 
 		const phone = request.query.phone;
 		const patientId = request.query.patientId;

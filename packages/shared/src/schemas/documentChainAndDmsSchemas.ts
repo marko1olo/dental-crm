@@ -559,6 +559,8 @@ export const dmsSplitCalculationItemSchema = z.object({
 	priceRub: nonNegativeMoneyRubSchema,
 	quantity: z.number().int().min(1).default(1),
 	discountRub: nonNegativeMoneyRubSchema.optional().default(0),
+	unitPriceKopecks: z.number().int().optional(),
+	discountKopecks: z.number().int().optional(),
 	isExcluded: z.boolean().optional(),
 	isExplicitlyApproved: z.boolean().optional(),
 });

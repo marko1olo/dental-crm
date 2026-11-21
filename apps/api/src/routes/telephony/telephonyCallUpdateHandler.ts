@@ -7,7 +7,7 @@
 
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
@@ -31,13 +31,15 @@ export async function telephonyCallUpdateHandler(
 	reply: FastifyReply,
 ) {
 	const rawOrgId = request.params.organizationId;
-	let resolvedOrgId: string | null = null;
-	if (rawOrgId && UUID_REGEX.test(rawOrgId)) {
-		resolvedOrgId = rawOrgId;
-	} else {
-		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "update call note");
+	const context = await requireClinicalMutationContext(request, reply, "update call note");
+	if (!context) return;
+	const resolvedOrgId = context.organizationId;
+	if (rawOrgId && rawOrgId !== resolvedOrgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации",
+		});
 	}
-	if (!resolvedOrgId) return;
 	const orgId = resolvedOrgId;
 
 	const callId = request.params.id;

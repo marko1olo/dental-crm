@@ -87,6 +87,8 @@ import {
 } from "../../services/telephonyOutboxService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -599,6 +601,12 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			const response = await app.inject({
 				method: "PATCH",
 				url: `/api/telephony/${ORG_A_ID}/calls/${providerCallId}`,
+				headers: {
+					"x-dente-staff-token": signToken(
+						{ organizationId: ORG_A_ID, userId: STAFF_A_ID, role: "admin" },
+						authTokenSecret(),
+					),
+				},
 				payload: {
 					note: noteText,
 					callerPhone: "+79161112233",

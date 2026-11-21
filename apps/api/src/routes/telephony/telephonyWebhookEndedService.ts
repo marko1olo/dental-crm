@@ -47,25 +47,25 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 		}
 	}
 
-	await db.insert(communicationEvents).values({
-		organizationId: p.resolvedOrgId,
-		patientId: p.matchedPatient?.id || null,
-		callerPhone: p.callerPhone.e164,
-		channel: "phone",
-		direction: "inbound",
-		status: "completed",
-		message: p.callId
-			? `Звонок завершён (call_id: ${p.callId}${!p.matchedPatient ? ", первичный звонок" : ""})`
-			: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
-		recordingUrl: verifiedRecUrl,
-		durationSeconds: Number.isFinite(p.durationSeconds) && p.durationSeconds > 0
-			? Math.min(Math.floor(p.durationSeconds), 86400 * 7)
-			: null,
-	});
+	await db.transaction(async (tx) => {
+		await tx.insert(communicationEvents).values({
+			organizationId: p.resolvedOrgId,
+			patientId: p.matchedPatient?.id || null,
+			callerPhone: p.callerPhone.e164,
+			channel: "phone",
+			direction: "inbound",
+			status: "completed",
+			message: p.callId
+				? `Звонок завершён (call_id: ${p.callId}${!p.matchedPatient ? ", первичный звонок" : ""})`
+				: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
+			recordingUrl: verifiedRecUrl,
+			durationSeconds: Number.isFinite(p.durationSeconds) && p.durationSeconds > 0
+				? Math.min(Math.floor(p.durationSeconds), 86400 * 7)
+				: null,
+		});
 
-	if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
-		try {
-			const existingLead = await db
+		if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
+			const existingLead = await tx
 				.select({ id: crmLeads.id })
 				.from(crmLeads)
 				.where(
@@ -80,7 +80,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 				.limit(1);
 
 			if (existingLead.length === 0) {
-				await db.insert(crmLeads).values({
+				await tx.insert(crmLeads).values({
 					organizationId: p.resolvedOrgId,
 					name: `Входящий звонок ${p.callerPhone.e164}`,
 					patientName: `Первичный звонок ${p.callerPhone.e164}`,
@@ -94,14 +94,10 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 					priority: "normal",
 				});
 			}
-		} catch (leadErr) {
-			p.request.log.warn({ leadErr, orgId: p.resolvedOrgId }, "[Telephony] Auto lead creation warning");
 		}
-	}
 
-	if (verifiedRecUrl || p.transcriptionSnippet) {
-		try {
-			await db
+		if (verifiedRecUrl || p.transcriptionSnippet) {
+			await tx
 				.update(crmLeads)
 				.set({
 					...(verifiedRecUrl ? { audioRecordUrl: verifiedRecUrl } : {}),
@@ -117,10 +113,8 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 						),
 					),
 				);
-		} catch (updateErr) {
-			p.request.log.warn({ updateErr, orgId: p.resolvedOrgId }, "[Telephony] Lead recording update warning");
 		}
-	}
+	});
 
 	wsBroker.broadcastToOrganization(p.resolvedOrgId, {
 		type: "TELEPHONY_CALL_ENDED",
