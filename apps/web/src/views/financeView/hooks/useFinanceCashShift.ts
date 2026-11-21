@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, Payment } from "@dental/shared";
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	safeLocalStorageGetItem,
@@ -8,6 +8,13 @@ import {
 	safeLocalStorageRemoveItem,
 } from "../../../lib/safeLocalStorage";
 import { localDayKey, summarizeCashDay } from "../../../components/finance/cashDaySummary";
+
+interface ServerCashBoxItem {
+	readonly id: string;
+	readonly type: string;
+	readonly balanceRub?: number | string | null | undefined;
+	readonly balanceKopecks?: number | string | bigint | null | undefined;
+}
 
 export interface UseFinanceCashShiftParams {
 	readonly activePayments: Payment[];
@@ -17,7 +24,7 @@ export interface UseFinanceCashShiftParams {
 	readonly onCashOut?: ((amountRub: number, basis: string, recipientFio?: string, typeAlias?: string) => void | Promise<void>) | undefined;
 	readonly onCloseShift?: (() => void | Promise<void>) | undefined;
 	readonly onOpenShift?: (() => void | Promise<void>) | undefined;
-	readonly loadDashboard?: (() => Promise<any> | void) | undefined;
+	readonly loadDashboard?: (() => Promise<unknown> | void) | undefined;
 }
 
 /**
@@ -46,8 +53,42 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 	});
 	const [manualCashDeltaRub, setManualCashDeltaRub] = useState<number>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_delta");
-		return saved ? Number.parseFloat(saved) || 0 : 0;
+		return saved ? kopecksToRubles(rublesToKopecks(Number(saved) || 0)) : 0;
 	});
+	const [serverCashBoxBalanceRub, setServerCashBoxBalanceRub] = useState<number | null>(null);
+
+	const fetchServerCashBoxBalance = useCallback(async () => {
+		try {
+			const res = await fetch("/api/cash/cash-box", {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (res.ok) {
+				const json = await res.json();
+				const rawList = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+				const boxes = rawList as readonly ServerCashBoxItem[];
+				const deskBox = boxes.find((b) => b.type === "main" || b.type === "cash_desk");
+				if (deskBox && deskBox.balanceRub !== undefined && deskBox.balanceRub !== null) {
+					const parsed = Number(deskBox.balanceRub);
+					if (Number.isFinite(parsed)) {
+						setServerCashBoxBalanceRub(parsed);
+					}
+				}
+			}
+		} catch {
+			// fallback to local calculation
+		}
+	}, []);
+
+	useEffect(() => {
+		void fetchServerCashBoxBalance();
+		const handleRefresh = () => {
+			void fetchServerCashBoxBalance();
+		};
+		window.addEventListener("dente-cashbox-refresh", handleRefresh);
+		return () => {
+			window.removeEventListener("dente-cashbox-refresh", handleRefresh);
+		};
+	}, [fetchServerCashBoxBalance]);
 
 	const todayKey = useMemo(() => localDayKey(new Date()) ?? "", []);
 	const cashDayTotals = useMemo(() => {
@@ -58,10 +99,15 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		return summarizeCashDay(sourcePayments, todayKey);
 	}, [dashboard?.payments, activePayments, todayKey]);
 
-	const cashInDrawerRub = Math.max(
-		0,
-		(Math.round((cashDayTotals?.cashRub ?? 0) * 100) + Math.round(manualCashDeltaRub * 100)) / 100,
-	);
+	const cashInDrawerRub = useMemo(() => {
+		if (serverCashBoxBalanceRub !== null && Number.isFinite(serverCashBoxBalanceRub)) {
+			return Math.max(0, serverCashBoxBalanceRub);
+		}
+		return Math.max(
+			0,
+			kopecksToRubles(rublesToKopecks(cashDayTotals?.cashRub ?? 0) + rublesToKopecks(manualCashDeltaRub)),
+		);
+	}, [serverCashBoxBalanceRub, cashDayTotals?.cashRub, manualCashDeltaRub]);
 	const cardSumRub = cashDayTotals?.cardRub ?? 0;
 	const sbpSumRub = cashDayTotals?.sbpRub ?? 0;
 	const advanceOffsetRub = cashDayTotals?.advanceRub ?? 0;
@@ -88,7 +134,8 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		setShiftNumber(nextShift);
 		safeLocalStorageSetItem("dente_cash_shift_number", String(nextShift));
 		void loadDashboard?.();
-	}, [propsOnOpenShift, paymentFiscalCashierName, shiftNumber, loadDashboard]);
+		void fetchServerCashBoxBalance();
+	}, [propsOnOpenShift, paymentFiscalCashierName, shiftNumber, loadDashboard, fetchServerCashBoxBalance]);
 
 	const handleCloseShift = useCallback(async () => {
 		if (propsOnCloseShift) {
@@ -112,9 +159,11 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		setIsShiftOpen(false);
 		safeLocalStorageSetItem("dente_cash_shift_open", "false");
 		setManualCashDeltaRub(0);
+		setServerCashBoxBalanceRub(0);
 		safeLocalStorageRemoveItem("dente_cash_shift_delta");
 		void loadDashboard?.();
-	}, [propsOnCloseShift, paymentFiscalCashierName, shiftNumber, loadDashboard]);
+		void fetchServerCashBoxBalance();
+	}, [propsOnCloseShift, paymentFiscalCashierName, shiftNumber, loadDashboard, fetchServerCashBoxBalance]);
 
 	const handleCashIn = useCallback(
 		async (amountRub: number, basis: string, typeAlias?: string) => {
@@ -136,14 +185,15 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 				});
 			}
 			setManualCashDeltaRub((prev) => {
-				const nextKop = Math.round(prev * 100) + Math.round(amountRub * 100);
-				const next = nextKop / 100;
-				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
+				const nextKop = rublesToKopecks(prev) + rublesToKopecks(amountRub);
+				const next = kopecksToRubles(nextKop);
+				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
 				return next;
 			});
 			void loadDashboard?.();
+			void fetchServerCashBoxBalance();
 		},
-		[propsOnCashIn, paymentFiscalCashierName, loadDashboard],
+		[propsOnCashIn, paymentFiscalCashierName, loadDashboard, fetchServerCashBoxBalance],
 	);
 
 	const handleCashOut = useCallback(
@@ -176,14 +226,15 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 				});
 			}
 			setManualCashDeltaRub((prev) => {
-				const nextKop = Math.round(prev * 100) - Math.round(amountRub * 100);
-				const next = nextKop / 100;
-				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
+				const nextKop = rublesToKopecks(prev) - rublesToKopecks(amountRub);
+				const next = kopecksToRubles(nextKop);
+				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
 				return next;
 			});
 			void loadDashboard?.();
+			void fetchServerCashBoxBalance();
 		},
-		[propsOnCashOut, paymentFiscalCashierName, loadDashboard],
+		[propsOnCashOut, paymentFiscalCashierName, loadDashboard, fetchServerCashBoxBalance],
 	);
 
 	const handlePrintXReport = useCallback(async () => {

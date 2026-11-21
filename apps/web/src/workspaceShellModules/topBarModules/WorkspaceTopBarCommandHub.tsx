@@ -10,6 +10,7 @@ import { Mic, Search } from "lucide-react";
 import { workspaceTopbarLabels } from "../../workspaceUiLabels";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { useAppStore } from "../../store/appStore";
+import type { AppView } from "../../utils/routeUtils";
 
 export function WorkspaceTopBarCommandHub() {
 	const handleOpenCommandHud = useCallback((initialQuery?: string) => {
@@ -27,7 +28,7 @@ export function WorkspaceTopBarCommandHub() {
 		const text = rawText.trim().toLowerCase();
 		if (!text) return;
 
-		const navMap: Record<string, string> = {
+		const navMap: Record<string, AppView> = {
 			"касса": "finance",
 			"кассу": "finance",
 			"оплата": "finance",
@@ -64,7 +65,7 @@ export function WorkspaceTopBarCommandHub() {
 
 		for (const [trigger, view] of Object.entries(navMap)) {
 			if (text.includes(trigger)) {
-				useAppStore.getState().setCurrentView(view as any);
+				useAppStore.getState().setCurrentView(view);
 				if (typeof window !== "undefined") {
 					window.location.hash = view;
 				}

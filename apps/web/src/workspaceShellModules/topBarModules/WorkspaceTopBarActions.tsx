@@ -132,8 +132,11 @@ export function WorkspaceTopBarActions({
 				title={workspaceTopbarLabels.copilot.title}
 				onClick={() => {
 					if (typeof window !== "undefined") {
-						if ((window as any).__denteCopilot) {
-							(window as any).__denteCopilot.toggle();
+						const win = window as Window & {
+							readonly __denteCopilot?: { readonly toggle: () => void } | undefined;
+						};
+						if (win.__denteCopilot) {
+							win.__denteCopilot.toggle();
 						} else {
 							window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
 						}

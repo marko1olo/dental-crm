@@ -23,29 +23,11 @@
 8. **8z/8wy (Запрет моков):** В боевом режиме — 100% реальный PG18 на 127.0.0.1:5432. Демо строго за `isDemoShowcaseMode()`.
 9. **8ze/8al (Apple HIG):** Тач >=44x44px, Natural Thumb Zone, Bottom Sheets, 0px скролла. Обязательный 4-state proof (PC Light/Dark + Mobile Light/Dark).
 10. **8d/8al/8am (Геометрия кнопок, типографика и выравнивание):**
-    - **Каноническая матрица кнопок (запрет карнавала высот и паддингов):**
-      * Desktop Standard (тулбары, формы): строго `h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0`.
-      * Desktop Compact (таблицы, микро-действия): строго `h-8 px-2.5 rounded-md text-xs font-medium gap-1.5 inline-flex items-center justify-center`.
-      * Mobile Touch (Apple HIG): строго `min-h-[44px] h-11 px-4 rounded-xl text-base font-medium`.
-      * Mobile Sticky Bottom CTA: строго `min-h-[52px] w-full rounded-xl text-base font-semibold shadow-md`.
-      * Иконки в кнопках: строго `w-4 h-4 shrink-0` (standard/mobile) или `w-3.5 h-3.5 shrink-0` (compact), `currentColor`. Запрещен разнобой иконок (12px рядом с 20px)!
-    - **Иерархия 3 типов кнопок (ровно 1 Primary на видимый экран):**
-      * Primary CTA: `bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm`.
-      * Secondary: `bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]`. В Dark Mode — `rgba(255,255,255,0.05)` с рамкой `var(--line)`. Ноль синих хардкодных рамок (`#334155`)!
-      * Ghost: `bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]`.
-      * Destructive: `text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-[var(--danger-soft)]`.
-    - **Типографика и запрет капслока (UPPERCASE BAN):**
-      * Запрещен `uppercase` на кнопках, табах, чипах! Строго Sentence case: «Сохранить карту», «Новый приём», «Добавить зуб».
-      * Иерархия: H1 `text-xl font-semibold tracking-tight`, H2 `text-base font-semibold`, Body `text-sm font-normal leading-normal`, Meta `text-xs text-[var(--ink-muted)]`.
-      * Деньги и числа: строго `font-mono tracking-tight font-medium`. В таблицах числа всегда `text-right tabular-nums`.
-    - **Сетка и выравнивание модалок (Zero-Drift Layout):**
-      * Шапка `h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0`.
-      * Тело `p-6 overflow-y-auto space-y-4`.
-      * Футер `h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0`.
-      * Порядок кнопок: «Отмена» (Secondary) ВСЕГДА слева от Primary CTA («Сохранить»). Ноль перепутанных или летающих кнопок.
-    - **Инпуты и контролы форм (Form Control Parity):**
-      * Инпуты зеркалят высоту кнопок: Desktop строго `h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none`. Mobile строго `min-h-[44px] h-11 px-3.5 text-base rounded-xl`. Ноль разбоя высот (инпут 32px рядом с кнопкой 36px запрещен)!
-    - **Бейджи и Segmented Control:** Бейджи строго `h-6 px-2 text-xs font-medium rounded-full inline-flex gap-1 shrink-0` (семантические токены `var(--success-soft)`, `var(--warning-soft)`, `var(--danger-soft)`). Apple Segmented: контейнер `p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]`, активный таб `bg-[var(--paper)] text-[var(--ink)] shadow-xs rounded-lg font-medium`. Ноль наездов!
+    - **Матрица кнопок (запрет карнавала высот):** Desktop Standard `h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0`; Compact `h-8 px-2.5 rounded-md text-xs font-medium gap-1.5`; Mobile Touch `min-h-[44px] h-11 px-4 rounded-xl text-base font-medium`; Mobile Sticky CTA `min-h-[52px] w-full rounded-xl text-base font-semibold shadow-md`. Иконки в кнопках: строго `w-4 h-4 shrink-0` (compact `w-3.5 h-3.5`), `currentColor`. Ноль разнобоя иконок (12px рядом с 20px запрещены)!
+    - **Иерархия кнопок (ровно 1 Primary на видимый экран):** Primary CTA `bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm`; Secondary `bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]` (в Dark Mode `rgba(255,255,255,0.05)` с рамкой `var(--line)`, ноль синих рамок `#334155`); Ghost `bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]`; Destructive `text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-[var(--danger-soft)]`.
+    - **Типографика и UPPERCASE BAN:** Запрещен `uppercase` на кнопках, табах, чипах (строго Sentence case). H1 `text-xl font-semibold tracking-tight`, H2 `text-base font-semibold`, Body `text-sm`, Meta `text-xs text-[var(--ink-muted)]`. Деньги и числа: строго `font-mono tracking-tight font-medium text-right tabular-nums`.
+    - **Сетка модалок (Zero-Drift Layout):** Шапка `h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0`, тело `p-6 overflow-y-auto space-y-4`, футер `h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0` (кнопка «Отмена» ВСЕГДА слева от Primary CTA).
+    - **Инпуты, бейджи и Apple Segmented:** Инпуты зеркалят высоту кнопок (Desktop `h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)]`, Mobile `min-h-[44px] h-11 px-3.5 text-base rounded-xl`). Бейджи: `h-6 px-2 text-xs font-medium rounded-full inline-flex gap-1 shrink-0` (мягкие токены `var(--success-soft)`). Apple Segmented: контейнер `p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]`, активный таб `bg-[var(--paper)] text-[var(--ink)] shadow-xs rounded-lg font-medium`.
     - **Скролл-дрифт, Zero-CLS и честный Empty State:** Корневые контейнеры модалок строго `overflow-x: clip; max-width: 100vw;`. CLS = 0 (скелетоны `animate-pulse bg-[var(--paper-soft)]`). Empty State: блок `py-12 flex flex-col items-center text-center gap-2.5` с иконкой `w-10 h-10` и действием (ноль белых дыр).
 11. **8zg (Без дев-жаргона):** Ноль утечек терминов («modeFit»). Запрет «1 клик» на кнопках (пишем: «Физиологическая норма», «Интактные зубы», «Готовые комплексы»).
 12. **8b/8zi (Размер файлов):** 200–300 строк, сложные до 400–500 строк. Запрет микро-шредера. Декомпозиция монолитов по 6 гейтам `/decomposer`.
@@ -80,14 +62,10 @@
     - *Инвариант exactOptionalPropertyTypes:* В `tsconfig.base.json` включен strict-режим `exactOptionalPropertyTypes: true`. Если свойство интерфейса или React-пропса может принимать явный `undefined`, оно ОБЯЗАНО объявляться как `prop?: Type | undefined;` (а не просто `prop?: Type;`, запрещающий передачу `{ prop: undefined }`). Запрещено глушить TS2379/TS2322 кастом к `any`!
     - *Как фиксить:* интерфейсы FastifyRequest, discriminated unions, `z.infer` и `safeParse`, безопасный доступ `arr[0]?.prop ?? fallback` или `if (!item) return`, guard-clauses `if (!user) throw/reply(401)` вместо `req.user!.id`. Запрет бестиповых аккумуляторов `const arr = [];` (`never[]`). Нулевой допуск к ошибкам TypeScript — `npm run typecheck` Exit Code 0 во ВСЕХ пакетах (`shared`, `api`, `web`)!
 36. **8bk (Методология Разминирования, Двойной Счётчик и Ревизия Псевдофиксов):**
-    - **Тотальный запрет накрутки статистики в тестах:** Разминирование проводится **СТРОГО в боевом коде** (`apps/web/src`, `apps/api/src`, `packages/shared/src`), а не в моках `*.test.tsx` / `*TestHelpers.ts`.
-    - **Закон двойного счётчика:** При сносе `any` ОБЯЗАТЕЛЕН замер `npm run typecheck -w @dental/web` ДО и ПОСЛЕ. Рост или стагнация числа ошибок `tsc` при падении `any` = БРАК И САБОТАЖ. Запрещено оставлять сломанный контракт под снятым any!
-    - **Ревизия старых псевдофиксов:** Все прошлые батчи демайнинга (10–18: расписание, визиты, прайс-лист, документы, снимки) с брошенными ошибками `tsc` подлежат обязательной доработке до полного сокращения ошибок компилятора.
-    - **Протокол запуска компилятора веб-пакета (без OOM):**
-      * Каноническая команда: `npm run typecheck -w @dental/web` (содержит `--max-old-space-size=8192`).
-      * Точечная проверка модуля: `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "путь/к/файлу"`.
-      * Incremental-кэш: `tsconfig.base.json` содержит `"incremental": true`.
-    - **Запрет слепой зоны Vite:** Vite и tsx стрипают типы без проверки. Гейт сапёра — `tsc --noEmit` с 0 ошибок по затронутым модулям.
+    - Разминирование **СТРОГО в боевом коде** (`apps/web/src`, `apps/api/src`, `packages/shared/src`), а не в моках тестов.
+    - **Закон двойного счётчика:** замер `npm run typecheck -w @dental/web` ДО и ПОСЛЕ сноса `any`. Рост или стагнация ошибок `tsc` при падении `any` = БРАК И САБОТАЖ. Запрещено оставлять сломанный контракт под снятым any!
+    - **Ревизия псевдофиксов:** старые фиксы с брошенными ошибками `tsc` подлежат обязательной доработке до полного сокращения ошибок компилятора.
+    - **Компилятор веб-пакета (без OOM):** канонически `npm run typecheck -w @dental/web` (`--max-old-space-size=8192`), точечно `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "путь"`. Запрет слепой зоны Vite: гейт сапёра — `tsc --noEmit` с 0 ошибок.
 37. **8bf (Единый SSOT, Анти-Дубликат и Истребление Сирот):** Строжайший запрет на параллельные реализации (строго 1 касса 54-ФЗ, 1 каталог терапии, 1 каталог имплантов, 1 модуль `money.ts`). Старая ветка НЕМЕДЛЕННО удаляется (`git rm`). Компоненты смонтированы в дереве импортов `App.tsx`.
 38. **8bg (Синхронизация Схемы и DDL-миграций Postgres 18):** Любое объявление `pgTable` в `apps/api/src/db/schema/` обязано иметь физическую DDL-миграцию в `apps/api/drizzle/`. Запрещены коммиты при падающем `npm run check:migration-drift`.
 39. **8bh (Инварианты Хуков React 19 и Кнопок HIG):**
@@ -104,11 +82,15 @@
     - Изоляция по ключу: модалки и шторки монтируются строго с ключом сущности: `<PatientStudioModal key={patientId} patientId={patientId} ... />`. Смена ID чисто перемонтирует дерево React.
     - Очистка черновика на `onClose`: `useDraftStore.getState().resetDraft()`. Ноль утечек данных прошлого пациента следующему!
 45. **8bo (Сквозной Idempotency-Key и Неделимость ACID):** Все мутации несут заголовок `Idempotency-Key` (UUIDv7). Мутации 2+ таблиц строго в `await db.transaction(async tx => ...)`. Запрещен глобальный `db` внутри транзакции!
-46. **8bq (Санитарный Храповик, Закон Замка и Кубик):** `npm run check:ratchet` (лимит any/float/супрессий), `npm run check:doors` (0 клонов модалок и 100% Zod-защита дверей API), `npm run audit:dice` (Монте-Карло сэмплирование). Рост техдолга = Exit Code 1.
+46. **8bq (Санитарный Храповик, Закон Замка, Кубик и Нейросетевой Red Team):**
+    - `npm run check:ratchet` — авто-храповик санитарных порогов (лимиты any/float/супрессий монотонно снижаются при улучшениях).
+    - `npm run check:doors` — страж Единых Дверей SSOT (0 клонов модалок, 100% Zod-защита дверей API).
+    - `npm run audit:dice` — Монте-Карло сэмплирование (случайная выборка 20–30 файлов на 6 инвариантов).
+    - **Регулярный Нейросетевой Red Team аудит:** периодически (перед закрытием этапов, релизом доменов и контролем качества) натравливать независимого субагента-инквизитора (`TypeName: "self"`, `Model: "inherit"`) на случайную выборку файлов боевого контура. Инквизитор с презумпцией 100% брака ищет скрытые семантические язвы: задвоения денег и смен кассы, утечки данных между пациентами, split-brain канбана, гонки транзакций и слепые delete. Запрещено полагаться только на скрипты!
 
 ## 🛠️ МАШИННЫЕ ГЕЙТЫ ПРИЁМКИ (DEFINITION OF DONE)
 Перед сдачей любой задачи подтверди прохождение 14 гейтов (Exit Code 0):
-1. **UTF-8:** `check:encoding` | 2. **Храповик & SSOT:** `check:ratchet` и `check:doors` | 3. **Кубик:** `audit:dice` | 4. **Стабы:** `check:stub-overrides`
+1. **UTF-8:** `check:encoding` | 2. **Храповик & SSOT:** `check:ratchet` и `check:doors` | 3. **Кубик:** `audit:dice` (машинный + периодический Red Team) | 4. **Стабы:** `check:stub-overrides`
 5. **Fetch:** `check:fetch-response` | 6. **Импорты:** `check:dynamic-imports` | 7. **React 19:** `check:react-hooks` | 8. **Кнопки/CSS:** `check:buttons` и `check:css-tokens`
 9. **Миграции:** `check:migration-drift` | 10. **TypeScript:** `typecheck` во ВСЕХ пакетах | 11. **Тесты:** затронутые тесты (<=10с)
 12. **4-State Proof:** скриншоты >=20KB в `docs/proofs/`, личный осмотр через `read_file` (PC/Mobile x Light/Dark)

@@ -29,12 +29,17 @@ export function isCitoAppointment(
 		| undefined,
 ): boolean {
 	if (!appt) return false;
-	const anyAppt = appt as any;
-	const reason = (appt.reason ?? "").toLowerCase();
+	const candidate = appt as {
+		readonly reason?: string | null | undefined;
+		readonly isCito?: boolean | undefined;
+		readonly cito?: boolean | undefined;
+		readonly isEmergency?: boolean | undefined;
+	};
+	const reason = (candidate.reason ?? "").toLowerCase();
 	return Boolean(
-		anyAppt.isCito ||
-			anyAppt.cito ||
-			anyAppt.isEmergency ||
+		candidate.isCito ||
+			candidate.cito ||
+			candidate.isEmergency ||
 			reason.includes("cito") ||
 			reason.includes("острая боль") ||
 			reason.includes("срочн"),
@@ -293,7 +298,7 @@ export function checkAppointmentResourceCollision(
 	const isDraftCito = Boolean(
 		options.isCito ||
 			options.allowCitoOverbooking ||
-			isCitoAppointment(draft as any),
+			isCitoAppointment(draft),
 	);
 
 	if (appointments && appointments.length > 0) {
