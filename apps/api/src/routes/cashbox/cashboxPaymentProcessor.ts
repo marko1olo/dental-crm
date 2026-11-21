@@ -2132,11 +2132,11 @@ export async function processCashboxPayment(
 	if ("kind" in result && result.kind === "insufficient_deposit") {
 		const isFamily = Boolean(result.isFamilyWallet);
 		return {
-			statusCode: 400,
+			statusCode: isFamily ? 402 : 400,
 			body: {
 				error: isFamily ? "InsufficientFamilyBalance" : "InsufficientDepositBalance",
 				message: isFamily
-					? `Недостаточно средств на семейном кошельке. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`
+					? `Недостаточно средств на семейном балансе. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`
 					: `Недостаточно средств на депозите пациента. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
 			},
 		};

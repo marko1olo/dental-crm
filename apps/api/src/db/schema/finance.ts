@@ -170,6 +170,7 @@ export const cashOperations = pgTable(
 		shiftId: uuid("shift_id").references(() => cashBoxShifts.id),
 		operationType: text("operation_type").notNull(), // "income" | "expense" | "introduction" | "withdrawal" | "transfer"
 		amountRub: numeric("amount_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
+		amountKopecks: bigint("amount_kopecks", { mode: "number" }),
 		balanceBeforeRub: numeric("balance_before_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
 		balanceAfterRub: numeric("balance_after_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
 		reasonId: uuid("reason_id").references(() => cashExpenseReasons.id),
@@ -287,6 +288,7 @@ export const installmentTranches = pgTable(
 			.references(() => organizations.id),
 		trancheNumber: integer("tranche_number").notNull(),
 		amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+		amountKopecks: bigint("amount_kopecks", { mode: "number" }),
 		dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
 		paidAt: timestamp("paid_at", { withTimezone: true }),
 		isPaid: boolean("is_paid").notNull().default(false),

@@ -149,7 +149,7 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			let dispatchedHeaders: any = null;
 
 			globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-				if (String(url).includes("/api/billing/fiscalize-receipt")) {
+				if (String(url).includes("/api/cashbox/payments")) {
 					dispatchedPayload = JSON.parse(String(init?.body));
 					dispatchedHeaders = init?.headers;
 					return new Response(

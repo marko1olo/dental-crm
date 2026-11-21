@@ -5,6 +5,5 @@
 
 export * from "./types.js";
 export * from "./bankGatewaySecurity.js";
-export * from "./fiscalReceiptService.js";
 export * from "./sbpPaymentService.js";
 export * from "./sbpRouteHandlers.js";

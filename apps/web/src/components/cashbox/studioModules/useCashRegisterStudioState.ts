@@ -479,6 +479,69 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			}
 		}
 
+		// Интеграция внутренней рассрочки клиники (Мандат 8e, 8bm, 8bo): оформление договора и графика траншей
+		if (method === "installment" && !isWarrantyCaseFinal) {
+			if (isRetailSale || !props.patientId) {
+				setIsSubmitting(false);
+				showToast("Оформление рассрочки возможно только для зарегистрированного пациента клиники.", "error");
+				return;
+			}
+
+			try {
+				const headers = denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": clientMutationId,
+				});
+				const res = await fetch("/api/installments", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						patientId: props.patientId,
+						invoiceId: props.invoiceId || undefined,
+						visitId: effectiveVisitId,
+						totalAmountRub: effectiveTotalRub,
+						downPaymentRub: 0,
+						monthsCount: installmentMonths,
+						notes: `Внутренняя рассрочка клиники 0% на ${installmentMonths} мес. (счёт ${props.invoiceId || "б/н"})`,
+					}),
+				});
+
+				if (!res.ok) {
+					const errorJson = (await res.json().catch(() => null)) as Record<string, string> | null;
+					throw new Error(errorJson?.message || `Ошибка оформления рассрочки (код ${res.status})`);
+				}
+
+				const json = (await res.json().catch(() => null)) as { contract?: { contractNumber?: string } } | null;
+				const contract = json?.contract;
+				showToast(
+					`Договор рассрочки ${contract?.contractNumber || ""} на ${installmentMonths} мес. успешно оформлен`,
+					"success",
+				);
+
+				const paymentResult = {
+					success: true,
+					effectiveTotalRub,
+					method: "installment",
+					clientMutationId,
+					visitId: effectiveVisitId,
+					contract,
+				};
+
+				if (props.onSuccess) props.onSuccess(paymentResult);
+				if (props.onPaymentComplete) props.onPaymentComplete();
+				if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
+				onClose();
+				return;
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Не удалось оформить договор рассрочки";
+				setErrorMessage(msg);
+				showToast(msg, "error");
+				return;
+			} finally {
+				setIsSubmitting(false);
+			}
+		}
+
 		try {
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",

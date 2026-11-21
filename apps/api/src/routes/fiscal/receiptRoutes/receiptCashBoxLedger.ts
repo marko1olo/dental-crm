@@ -8,7 +8,7 @@
  */
 
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, like, or, sql } from "drizzle-orm";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -39,7 +39,10 @@ export async function applyCashBoxFiscalReceipt(
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(payments.clientMutationId, mutationId),
+					or(
+						eq(payments.clientMutationId, mutationId),
+						like(payments.clientMutationId, `${mutationId}:%`),
+					),
 				),
 			)
 			.limit(1);
