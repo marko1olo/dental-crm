@@ -2,7 +2,7 @@
  * marketingAttributionCalculator.ts — Расчет сквозной атрибуции пациентов, ROMI и CAC по каналам.
  */
 
-import { formatInitialsOnly, maskRussianPhone } from "@dental/shared";
+import { formatInitialsOnly, maskRussianPhone, rublesToKopecks } from "@dental/shared";
 import type {
 	ChannelStats,
 	MarketingAttributionResponse,
@@ -38,6 +38,7 @@ export interface RawPaymentData {
 	id: string;
 	patientId: string;
 	amountRub?: string | number | null;
+	amountKopecks?: string | number | bigint | null;
 	status?: string | null;
 }
 
@@ -135,7 +136,10 @@ export function calculateMarketingAttributionReport(params: {
 	const patientRevenueKop = new Map<string, number>();
 	for (const pay of allPayments) {
 		const cur = patientRevenueKop.get(pay.patientId) || 0;
-		patientRevenueKop.set(pay.patientId, cur + Math.round(Number(pay.amountRub || 0) * 100));
+		const kopecks = pay.amountKopecks != null
+			? Number(pay.amountKopecks)
+			: (pay.amountRub != null ? rublesToKopecks(Number(pay.amountRub)) : 0);
+		patientRevenueKop.set(pay.patientId, cur + kopecks);
 	}
 
 	// Channel spend map
@@ -154,7 +158,7 @@ export function calculateMarketingAttributionReport(params: {
 	};
 	for (const row of allMarketingExpenses) {
 		const meta = row.metadata as { channelKey?: string } | null;
-		const spendKop = Math.round(Number(row.amountRub || 0) * 100);
+		const spendKop = row.amountRub != null ? rublesToKopecks(Number(row.amountRub)) : 0;
 		const chKey = meta?.channelKey;
 		const targetKey = normalizeChannelKey(chKey);
 		channelSpendMap[targetKey] = (channelSpendMap[targetKey] ?? 0) + spendKop;
@@ -197,8 +201,8 @@ export function calculateMarketingAttributionReport(params: {
 		const spentKopecks = channelSpendMap[def.key] || 0;
 		const rawRomi = spentKopecks > 0 ? ((revenueKopecks - spentKopecks) / spentKopecks) * 100 : 0;
 		const romiPercent = Number.isFinite(rawRomi) && !Number.isNaN(rawRomi) ? Math.round(rawRomi) : 0;
-		const rawCac = paidPatientsCount > 0 ? spentKopecks / paidPatientsCount : 0;
-		const cacKopecks = Number.isFinite(rawCac) && !Number.isNaN(rawCac) ? Math.round(rawCac) : 0;
+		const rawCac = paidPatientsCount > 0 ? Math.round(spentKopecks / paidPatientsCount) : 0;
+		const cacKopecks = Number.isFinite(rawCac) && !Number.isNaN(rawCac) ? rawCac : 0;
 
 		return {
 			key: def.key,

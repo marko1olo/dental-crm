@@ -14,6 +14,7 @@ export const leadSchema = z.object({
 	phone: z.string().optional().nullable(),
 	source: z.string().optional().nullable(),
 	expectedRevenue: z.string().optional().nullable(),
+	status: leadStatusEnum.optional(),
 	notes: z.string().optional().nullable(),
 	dropReason: z.string().optional().nullable(),
 	assignedDoctorId: z.string().uuid().optional().nullable(),

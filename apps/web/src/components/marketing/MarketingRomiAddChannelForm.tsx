@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import type { AdvertisingChannelInput } from "@dental/shared";
+import { type AdvertisingChannelInput, rublesToKopecks } from "@dental/shared";
 import type { QuickChannelPreset } from "./marketingRomiPresets.js";
 import { MarketingRomiQuickPresets } from "./MarketingRomiQuickPresets.js";
 
@@ -33,11 +33,11 @@ export function MarketingRomiAddChannelForm({
 			channelKey: preset.channelKey,
 			nameRu: preset.nameRu,
 			categoryRu: preset.categoryRu,
-			spentKopecks: Math.round(preset.spentRub * 100),
+			spentKopecks: rublesToKopecks(preset.spentRub),
 			leadsCount: preset.leadsCount,
 			primaryPatientsCount: preset.patients,
 			repeatVisitsCount: preset.repeatVisits,
-			revenueKopecks: Math.round(preset.revenueRub * 100),
+			revenueKopecks: rublesToKopecks(preset.revenueRub),
 		});
 	};
 
@@ -55,11 +55,11 @@ export function MarketingRomiAddChannelForm({
 			channelKey: `custom_${Date.now()}`,
 			nameRu: name.trim(),
 			categoryRu: category.trim() || "Реклама",
-			spentKopecks: Math.round(spentVal * 100),
+			spentKopecks: rublesToKopecks(spentVal),
 			leadsCount: leadVal,
 			primaryPatientsCount: patVal,
 			repeatVisitsCount: repVal,
-			revenueKopecks: Math.round(revVal * 100),
+			revenueKopecks: rublesToKopecks(revVal),
 		});
 	};
 

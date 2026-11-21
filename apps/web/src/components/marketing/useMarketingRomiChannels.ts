@@ -11,7 +11,10 @@ import {
 	buildAdvertisingChannelMetric,
 	calculateMarketingRomiSummary,
 	aggregateCrmMarketingMetrics,
+	rublesToKopecks,
+	formatKopecksToRub,
 } from "@dental/shared";
+import { logger } from "../../utils/logger.js";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { DEFAULT_DENTE_CHANNELS } from "./marketingRomiPresets.js";
@@ -30,11 +33,11 @@ export function useMarketingRomiChannels() {
 			fetch("/api/marketing/campaigns", { method: "POST", headers, body: JSON.stringify({ channels: updated, campaigns: updated }) })
 				.then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
 				.catch((err) => {
-					console.error("[useMarketingRomiChannels] Save channels error:", err);
+					logger.error("[useMarketingRomiChannels] Save channels error:", err);
 					showToast("Не удалось сохранить рекламные каналы", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated) });
 				});
 		} catch (err) {
-			console.error("[useMarketingRomiChannels] Send error:", err);
+			logger.error("[useMarketingRomiChannels] Send error:", err);
 			showToast("Сбой сохранения рекламных каналов", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated) });
 		}
 	}, []);
@@ -46,10 +49,10 @@ export function useMarketingRomiChannels() {
 		const num = Math.max(0, parseFloat(rawValue) || 0);
 		const updated = channels.map((ch) => {
 			if (ch.id !== channelId) return ch;
-			if (field === "spentRub") return { ...ch, spentKopecks: Math.round(num * 100) };
+			if (field === "spentRub") return { ...ch, spentKopecks: rublesToKopecks(num) };
 			if (field === "leads") return { ...ch, leadsCount: Math.round(num) };
 			if (field === "patients") return { ...ch, primaryPatientsCount: Math.round(num) };
-			if (field === "revenueRub") return { ...ch, revenueKopecks: Math.round(num * 100) };
+			if (field === "revenueRub") return { ...ch, revenueKopecks: rublesToKopecks(num) };
 			if (field === "repeatVisits") return { ...ch, repeatVisitsCount: Math.round(num) };
 			return ch;
 		});
@@ -85,12 +88,12 @@ export function useMarketingRomiChannels() {
 		fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() })
 			.then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
 			.catch((err) => {
-				console.error("[useMarketingRomiChannels] Sync error:", err);
+				logger.error("[useMarketingRomiChannels] Sync error:", err);
 				showToast("Не удалось синхронизировать метрики ROMI", "error", 6000, { label: "Повторить", onAction: handleSyncWithCrm });
 			});
 		const totalPatients = aggregated.reduce((acc, c) => acc + (c.primaryPatientsCount || 0), 0);
-		const totalRevRub = Math.round(aggregated.reduce((acc, c) => acc + (c.revenueKopecks || 0), 0) / 100).toLocaleString("ru-RU");
-		setSyncMessage(`Синхронизировано с CRM: учтено ${patients.length} пациентов (${totalPatients} первичных), ${appointments.length} приемов, ${payments.length} оплат (выручка ${totalRevRub} ₽)`);
+		const totalRevKopecks = aggregated.reduce((acc, c) => acc + (c.revenueKopecks || 0), 0);
+		setSyncMessage(`Синхронизировано с CRM: учтено ${patients.length} пациентов (${totalPatients} первичных), ${appointments.length} приемов, ${payments.length} оплат (выручка ${formatKopecksToRub(totalRevKopecks)})`);
 	}, [appLogic, channels, persistChannels]);
 
 	const handleSaveNewChannel = useCallback((newEntry: AdvertisingChannelInput) => persistChannels([...channels, newEntry]), [channels, persistChannels]);
@@ -104,7 +107,7 @@ export function useMarketingRomiChannels() {
 				.then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
 				.then((d) => { if (d?.channels?.length) setChannels(d.channels); })
 				.catch((err) => {
-					console.error("[useMarketingRomiChannels] Load error:", err);
+					logger.error("[useMarketingRomiChannels] Load error:", err);
 					showToast("Не удалось загрузить данные ROMI", "error", 6000, {
 						label: "Повторить",
 						onAction: () => { void fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() }).then((r) => r.ok ? r.json() : null).then((d) => { if (d?.channels?.length) setChannels(d.channels); }).catch(() => {}); },

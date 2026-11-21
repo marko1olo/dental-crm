@@ -19,6 +19,10 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import {
+	extractIdempotencyKey,
+	isValidUuid,
+} from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import {
 	patientFieldRequirementsSchema,
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 } from "./marketingSchemas.js";
@@ -60,6 +64,7 @@ export async function updatePatientFieldRequirementsInDb(
 			.select({ flags: organizations.workspaceFeatureFlags })
 			.from(organizations)
 			.where(eq(organizations.id, orgId))
+			.for("update")
 			.limit(1);
 
 		const existingFlags = (org?.flags as Record<string, unknown>) || {};
@@ -122,6 +127,14 @@ export async function handlePutPatientFieldRequirements(
 	const orgId = await requireResolvedOrganizationId(request, reply, "update patient field requirements");
 	if (!orgId) return;
 
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+		});
+	}
+
 	const parsed = patientFieldRequirementsSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -152,6 +165,9 @@ export async function handleGetMarketingReports(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
+	const readAllowed = await requireClinicalReadAccess(request, reply, "marketing reports");
+	if (!readAllowed) return;
+
 	const orgId = await requireResolvedOrganizationId(request, reply, "marketing reports");
 	if (!orgId) return;
 

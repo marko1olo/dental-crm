@@ -536,13 +536,60 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			? normalizePhone(data.phone) ?? data.phone.trim()
 			: null;
 
-		const [lead] = await db
-			.update(crmLeads)
-			.set({ ...data, phone: cleanPhone })
-			.where(
-				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-			)
-			.returning();
+		const [lead] = await db.transaction(async (tx) => {
+			const [current] = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!current) return [];
+
+			const now = new Date();
+			const updatePayload: Partial<typeof crmLeads.$inferInsert> = {
+				...data,
+				phone: cleanPhone,
+			};
+
+			if (data.status && data.status !== current.status) {
+				const fromStage = current.status;
+				const stageStart = current.stageEnteredAt || current.createdAt;
+				const durationSeconds = Math.max(
+					0,
+					Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+				);
+
+				const identity = getRequestIdentity(req);
+				const changedByUserId =
+					identity?.userId &&
+					z.string().uuid().safeParse(identity.userId).success
+						? identity.userId
+						: null;
+
+				await tx.insert(crmLeadStageHistory).values({
+					organizationId,
+					leadId: current.id,
+					fromStage,
+					toStage: data.status,
+					changedByUserId,
+					durationSeconds,
+					createdAt: now,
+				});
+
+				updatePayload.stageEnteredAt = now;
+			}
+
+			return await tx
+				.update(crmLeads)
+				.set(updatePayload)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.returning();
+		});
 		if (!lead) return reply.code(404).send({ error: "LeadNotFound" });
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_UPDATED",

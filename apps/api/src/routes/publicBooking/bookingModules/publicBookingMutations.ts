@@ -44,6 +44,7 @@ export interface CreateLeadFromIntakeParams {
 	organizationId: string;
 	patientName: string;
 	patientPhone: string;
+	patientId?: string | undefined;
 	source?: string | undefined;
 	receiptStatus: string;
 	comment?: string | undefined;
@@ -62,6 +63,7 @@ export async function createCrmLeadFromPublicIntake(
 		organizationId,
 		patientName,
 		patientPhone,
+		patientId,
 		source,
 		receiptStatus,
 		comment,
@@ -77,6 +79,7 @@ export async function createCrmLeadFromPublicIntake(
 			organizationId,
 			name: patientName,
 			patientName,
+			patientId: patientId ?? null,
 			phone: patientPhone,
 			source: leadSource,
 			status: receiptStatus === "CONFIRMED" ? "consult_booked" : "new",
@@ -391,8 +394,9 @@ export async function handleBookAppointment(
 					organizationId,
 					patientName,
 					patientPhone,
+					patientId: ("appointment" in bookingResult && bookingResult.appointment?.patientId) || ("patientId" in bookingResult ? bookingResult.patientId : undefined),
 					source: effectiveSource,
-					receiptStatus: isConfirmed ? "CONFIRMED" : "PRELIMINARY",
+					receiptStatus: isConfirmed || Boolean("appointment" in bookingResult && bookingResult.appointment) ? "CONFIRMED" : "PRELIMINARY",
 					comment: comment
 						? `Приём врача: ${comment}${isConfirmed ? "" : " [Предварительная / Требует звонка]"}`
 						: isConfirmed

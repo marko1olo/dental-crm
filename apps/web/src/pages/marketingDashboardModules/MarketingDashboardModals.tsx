@@ -7,6 +7,7 @@
 
 import React, { lazy, Suspense } from "react";
 import { showToast } from "../../components/GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { MarketingNewPromoModal } from "../../components/marketing/MarketingNewPromoModal";
 import type { FunnelLead } from "../../components/leads/leadsFunnelEngine";
 
@@ -65,8 +66,27 @@ export function MarketingDashboardModals({
 			<MarketingNewPromoModal
 				isOpen={isNewPromoModalOpen}
 				onClose={onCloseNewPromoModal}
-				onSave={(newPromo) => {
-					showToast(`Акция «${newPromo.title}» сохранена`, "success");
+				onSave={async (newPromo) => {
+					try {
+						const res = await fetch("/api/marketing/promos", {
+							method: "POST",
+							headers: {
+								...denteAdminSecretRequestHeaders(),
+								"Content-Type": "application/json",
+								"Idempotency-Key": crypto.randomUUID(),
+							},
+							body: JSON.stringify(newPromo),
+						});
+						if (!res.ok) {
+							const err = await res.json().catch(() => ({}));
+							showToast(err.message || "Не удалось сохранить акцию", "error");
+							return;
+						}
+						showToast(`Акция «${newPromo.title}» сохранена`, "success");
+					} catch (err) {
+						console.error("[Marketing] Failed to persist promo:", err);
+						showToast("Сетевая ошибка при сохранении акции", "error");
+					}
 				}}
 			/>
 		</>

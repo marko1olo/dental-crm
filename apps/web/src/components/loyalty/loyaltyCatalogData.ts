@@ -4,6 +4,28 @@
  * Целочисленный расчет в копейках, RFC 4180 UTF-8 BOM, zero-mocks, deterministic.
  */
 
+import {
+	generateLuhn16Certificate,
+	validateLuhn16Certificate,
+	generateLuhn16Certificate as generateGiftCertificateSerial,
+	validateLuhn16Certificate as validateGiftCertificateSerial,
+	kopecksToRubles,
+	rublesToKopecks,
+	kopecksToNumericString,
+	formatKopecksToRubles as formatKopecksToRublesShared,
+	formatKopecksRu,
+} from "@dental/shared";
+
+export {
+	generateLuhn16Certificate,
+	validateLuhn16Certificate,
+	generateGiftCertificateSerial,
+	validateGiftCertificateSerial,
+	kopecksToRubles,
+	rublesToKopecks,
+	kopecksToNumericString,
+};
+
 export type LoyaltyTierId = "basic" | "silver" | "gold" | "platinum" | "family" | "standard";
 
 export interface LoyaltyTierDefinition {
@@ -46,7 +68,7 @@ export function getTierDefinition(tierId: string): LoyaltyTierDefinition {
 }
 
 export function formatKopecksToRubles(kopecks: number): string {
-	const rub = Math.floor(Math.max(0, kopecks) / 100);
+	const rub = Math.floor(kopecksToRubles(Math.max(0, kopecks)));
 	return `${rub.toLocaleString("ru-RU")} ₽`;
 }
 
@@ -57,20 +79,20 @@ export interface TierProgressionResult {
 export function calculateTierProgression(lifetimeSpentKop: number, isFamilyGroup = false): TierProgressionResult {
 	if (isFamilyGroup) {
 		const familyTier = getTierDefinition("family");
-		return { currentTier: familyTier, nextTier: getTierDefinition("platinum"), lifetimeSpentKop, lifetimeSpentRub: lifetimeSpentKop / 100, progressPercent: Math.min(100, Math.round((lifetimeSpentKop / 40000000) * 100)), remainingToNextTierKop: Math.max(0, 40000000 - lifetimeSpentKop), remainingToNextTierRub: Math.max(0, 40000000 - lifetimeSpentKop) / 100 };
+		return { currentTier: familyTier, nextTier: getTierDefinition("platinum"), lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: Math.min(100, Math.round((lifetimeSpentKop / 40000000) * 100)), remainingToNextTierKop: Math.max(0, 40000000 - lifetimeSpentKop), remainingToNextTierRub: kopecksToRubles(Math.max(0, 40000000 - lifetimeSpentKop)) };
 	}
 	const [silver, gold, platinum] = [getTierDefinition("silver"), getTierDefinition("gold"), getTierDefinition("platinum")];
 	if (lifetimeSpentKop >= platinum.minLifetimeSpentKop) {
-		return { currentTier: platinum, nextTier: null, lifetimeSpentKop, lifetimeSpentRub: lifetimeSpentKop / 100, progressPercent: 100, remainingToNextTierKop: 0, remainingToNextTierRub: 0 };
+		return { currentTier: platinum, nextTier: null, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: 100, remainingToNextTierKop: 0, remainingToNextTierRub: 0 };
 	}
 	if (lifetimeSpentKop >= gold.minLifetimeSpentKop) {
 		const span = platinum.minLifetimeSpentKop - gold.minLifetimeSpentKop;
 		const pct = Math.min(100, Math.round(((lifetimeSpentKop - gold.minLifetimeSpentKop) / span) * 100));
-		return { currentTier: gold, nextTier: platinum, lifetimeSpentKop, lifetimeSpentRub: lifetimeSpentKop / 100, progressPercent: pct, remainingToNextTierKop: platinum.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: (platinum.minLifetimeSpentKop - lifetimeSpentKop) / 100 };
+		return { currentTier: gold, nextTier: platinum, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: pct, remainingToNextTierKop: platinum.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: kopecksToRubles(platinum.minLifetimeSpentKop - lifetimeSpentKop) };
 	}
 	const span = gold.minLifetimeSpentKop;
 	const pct = span > 0 ? Math.min(100, Math.round((lifetimeSpentKop / span) * 100)) : 100;
-	return { currentTier: silver, nextTier: gold, lifetimeSpentKop, lifetimeSpentRub: lifetimeSpentKop / 100, progressPercent: pct, remainingToNextTierKop: gold.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: (gold.minLifetimeSpentKop - lifetimeSpentKop) / 100 };
+	return { currentTier: silver, nextTier: gold, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: pct, remainingToNextTierKop: gold.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: kopecksToRubles(gold.minLifetimeSpentKop - lifetimeSpentKop) };
 }
 
 export interface CashboxFiscalSplitResult {
@@ -91,7 +113,7 @@ export function calculateLoyaltyAccrual(input: LoyaltyAccrualInput): LoyaltyAccr
 	const paidOutOfPocketKop = Math.max(0, input.grossInvoiceKop - totalDeductionsKop), eligibleBaseKop = Math.max(0, paidOutOfPocketKop - excludedKop);
 	const tier = getTierDefinition(input.tierId), cashbackPercent = input.customCashbackPercent ?? tier.cashbackPercent;
 	const accruedPointsKop = Math.round((eligibleBaseKop * cashbackPercent) / 100);
-	return { grossInvoiceKop: input.grossInvoiceKop, totalDeductionsKop, paidOutOfPocketKop, excludedFromAccrualKop: excludedKop, eligibleBaseKop, cashbackPercent, accruedPointsKop, accruedPointsRub: Math.round(accruedPointsKop / 100), tierId: tier.id, tierNameRu: tier.nameRu };
+	return { grossInvoiceKop: input.grossInvoiceKop, totalDeductionsKop, paidOutOfPocketKop, excludedFromAccrualKop: excludedKop, eligibleBaseKop, cashbackPercent, accruedPointsKop, accruedPointsRub: Math.round(kopecksToRubles(accruedPointsKop)), tierId: tier.id, tierNameRu: tier.nameRu };
 }
 
 export interface LoyaltyRedemptionInput {
@@ -106,13 +128,13 @@ export function calculateLoyaltyRedemption(input: LoyaltyRedemptionInput): Loyal
 	const discountKop = Math.max(0, input.discountKop ?? 0), excludedKop = Math.max(0, input.excludedFromRedemptionKop ?? 0);
 	const totalAfterDiscountKop = Math.max(0, input.grossInvoiceKop - discountKop), redeemableBaseKop = Math.max(0, totalAfterDiscountKop - excludedKop);
 	const tier = getTierDefinition(input.tierId), maxCoveragePercent = input.isDoctorOverride ? 100 : (input.customMaxCoveragePercent ?? tier.maxInvoiceCoveragePercent);
-	const maxAllowedRedemptionKop = Math.min(redeemableBaseKop, Math.round((redeemableBaseKop * maxCoveragePercent) / 100)), maxAllowedRedemptionRub = Math.floor(maxAllowedRedemptionKop / 100);
-	const availablePointsKop = Math.max(0, Math.round(input.availablePointsBalanceRub * 100)), requestedPointsKop = Math.max(0, Math.round(input.requestedPointsRub * 100));
-	const actualRedeemedPointsKop = Math.min(availablePointsKop, requestedPointsKop, maxAllowedRedemptionKop), actualRedeemedPointsRub = actualRedeemedPointsKop / 100;
+	const maxAllowedRedemptionKop = Math.min(redeemableBaseKop, Math.round((redeemableBaseKop * maxCoveragePercent) / 100)), maxAllowedRedemptionRub = Math.floor(kopecksToRubles(maxAllowedRedemptionKop));
+	const availablePointsKop = Math.max(0, rublesToKopecks(input.availablePointsBalanceRub)), requestedPointsKop = Math.max(0, rublesToKopecks(input.requestedPointsRub));
+	const actualRedeemedPointsKop = Math.min(availablePointsKop, requestedPointsKop, maxAllowedRedemptionKop), actualRedeemedPointsRub = kopecksToRubles(actualRedeemedPointsKop);
 	const remainingPointsBalanceRub = Math.max(0, input.availablePointsBalanceRub - actualRedeemedPointsRub), remainingPayableKop = Math.max(0, totalAfterDiscountKop - actualRedeemedPointsKop);
 	const fiscal54FzSplit: CashboxFiscalSplitResult = { tag1031CashKop: 0, tag1081ElectronicCardKop: remainingPayableKop, tag1215AdvancePrepaymentBonusKop: actualRedeemedPointsKop, tag1043DiscountKop: discountKop, totalGrossKop: input.grossInvoiceKop, totalNetPayableKop: remainingPayableKop };
 	return {
-		grossInvoiceKop: input.grossInvoiceKop, discountKop, excludedFromRedemptionKop: excludedKop, redeemableBaseKop, maxCoveragePercent, maxAllowedRedemptionKop, maxAllowedRedemptionRub, requestedPointsRub: input.requestedPointsRub, requestedPointsKop, actualRedeemedPointsRub, actualRedeemedPointsKop, remainingPointsBalanceRub, remainingPayableKop, remainingPayableRub: remainingPayableKop / 100, isMaxLimitReached: requestedPointsKop > actualRedeemedPointsKop && actualRedeemedPointsKop === maxAllowedRedemptionKop, isDoctorOverride: input.isDoctorOverride, isExcludedItemsPresent: excludedKop > 0, fiscal54FzSplit,
+		grossInvoiceKop: input.grossInvoiceKop, discountKop, excludedFromRedemptionKop: excludedKop, redeemableBaseKop, maxCoveragePercent, maxAllowedRedemptionKop, maxAllowedRedemptionRub, requestedPointsRub: input.requestedPointsRub, requestedPointsKop, actualRedeemedPointsRub, actualRedeemedPointsKop, remainingPointsBalanceRub, remainingPayableKop, remainingPayableRub: kopecksToRubles(remainingPayableKop), isMaxLimitReached: requestedPointsKop > actualRedeemedPointsKop && actualRedeemedPointsKop === maxAllowedRedemptionKop, isDoctorOverride: input.isDoctorOverride, isExcludedItemsPresent: excludedKop > 0, fiscal54FzSplit,
 	};
 }
 
@@ -128,7 +150,7 @@ export function calculateFamilyPoolBalance(familyGroupId: string, familyName: st
 	let totalPooledPoints = 0, totalFamilyLifetimeSpentKop = 0;
 	for (const m of members) { totalPooledPoints += m.individualPointsBalance; totalFamilyLifetimeSpentKop += m.lifetimeSpentKop; }
 	const effectiveTier = totalFamilyLifetimeSpentKop >= 40000000 ? getTierDefinition("platinum") : getTierDefinition("family");
-	return { familyGroupId, familyName, memberCount: members.length, totalPooledPoints, totalFamilyLifetimeSpentKop, totalFamilyLifetimeSpentRub: totalFamilyLifetimeSpentKop / 100, effectiveTier, members };
+	return { familyGroupId, familyName, memberCount: members.length, totalPooledPoints, totalFamilyLifetimeSpentKop, totalFamilyLifetimeSpentRub: kopecksToRubles(totalFamilyLifetimeSpentKop), effectiveTier, members };
 }
 
 export interface DebitFamilySharedBalanceInput {
@@ -139,18 +161,18 @@ export interface DebitFamilySharedBalanceResult {
 }
 
 export function debitFamilySharedBalance(input: DebitFamilySharedBalanceInput): DebitFamilySharedBalanceResult {
-	const invoiceAmountKop = Math.max(0, input.invoiceAmountKop), invoiceAmountRub = invoiceAmountKop / 100, availablePointsRub = Math.max(0, input.availableFamilyPointsRub);
+	const invoiceAmountKop = Math.max(0, input.invoiceAmountKop), invoiceAmountRub = kopecksToRubles(invoiceAmountKop), availablePointsRub = Math.max(0, input.availableFamilyPointsRub);
 	const coveragePercent = input.allowFullCoverage ? 100 : (input.maxCoveragePercent ?? 30), maxCoverageRub = Math.floor((invoiceAmountRub * coveragePercent) / 100);
 	const maxAllowedRedemptionRub = Math.min(availablePointsRub, maxCoverageRub), requestedRub = input.requestedPointsRub !== undefined ? Math.max(0, input.requestedPointsRub) : maxAllowedRedemptionRub;
-	const debitedPointsRub = Math.min(requestedRub, maxAllowedRedemptionRub), debitedPointsKop = Math.round(debitedPointsRub * 100);
+	const debitedPointsRub = Math.min(requestedRub, maxAllowedRedemptionRub), debitedPointsKop = rublesToKopecks(debitedPointsRub);
 	const remainingFamilyBalanceRub = Math.max(0, availablePointsRub - debitedPointsRub), remainingInvoiceDueKop = Math.max(0, invoiceAmountKop - debitedPointsKop);
 	const timestampIso = input.timestampIso ?? new Date().toLocaleString("ru-RU");
 	const fiscal54FzSplit: CashboxFiscalSplitResult = { tag1031CashKop: 0, tag1081ElectronicCardKop: remainingInvoiceDueKop, tag1215AdvancePrepaymentBonusKop: debitedPointsKop, tag1043DiscountKop: 0, totalGrossKop: invoiceAmountKop, totalNetPayableKop: remainingInvoiceDueKop };
 	const ledgerEntry: LoyaltyLedgerEntry = {
 		id: `fam-tx-${Date.now().toString().slice(-4)}`, timestampIso, patientId: input.targetPatientId, patientName: input.targetPatientName, medicalCardNumber: "", operationType: "redemption", operationTypeRu: "Оплата с семейного баланса", invoiceAmountKop, pointsDeltaRub: -debitedPointsRub, balanceAfterRub: remainingFamilyBalanceRub, paymentMethodRu: "Семейный баланс (1 кошелек)", staffNameRu: input.staffNameRu ?? "Администратор / Касса", noteRu: `Оплата лечения за: ${input.targetPatientName} (${input.targetRoleRu}) из семейного кошелька «${input.familyName}» (Плательщик: ${input.sponsorFullName})`,
 	};
-	const messageRu = debitedPointsRub > 0 ? `Списано ${debitedPointsRub} бонусов с семейного баланса за пациента «${input.targetPatientName}». К доплате: ${(remainingInvoiceDueKop / 100).toLocaleString("ru-RU")} ₽` : `Семейный баланс не списан (доступно 0 ₽ или счет оплачен).`;
-	return { success: debitedPointsRub > 0 || invoiceAmountKop === 0, familyGroupId: input.familyGroupId, sponsorPatientId: input.sponsorPatientId, sponsorFullName: input.sponsorFullName, targetPatientId: input.targetPatientId, targetPatientName: input.targetPatientName, targetRoleRu: input.targetRoleRu, invoiceAmountKop, invoiceAmountRub, maxAllowedRedemptionRub, debitedPointsRub, debitedPointsKop, remainingFamilyBalanceRub, remainingInvoiceDueKop, remainingInvoiceDueRub: remainingInvoiceDueKop / 100, isOneWalletTransferFree: true, fiscal54FzSplit, ledgerEntry, messageRu };
+	const messageRu = debitedPointsRub > 0 ? `Списано ${debitedPointsRub} бонусов с семейного баланса за пациента «${input.targetPatientName}». К доплате: ${(kopecksToRubles(remainingInvoiceDueKop)).toLocaleString("ru-RU")} ₽` : `Семейный баланс не списан (доступно 0 ₽ или счет оплачен).`;
+	return { success: debitedPointsRub > 0 || invoiceAmountKop === 0, familyGroupId: input.familyGroupId, sponsorPatientId: input.sponsorPatientId, sponsorFullName: input.sponsorFullName, targetPatientId: input.targetPatientId, targetPatientName: input.targetPatientName, targetRoleRu: input.targetRoleRu, invoiceAmountKop, invoiceAmountRub, maxAllowedRedemptionRub, debitedPointsRub, debitedPointsKop, remainingFamilyBalanceRub, remainingInvoiceDueKop, remainingInvoiceDueRub: kopecksToRubles(remainingInvoiceDueKop), isOneWalletTransferFree: true, fiscal54FzSplit, ledgerEntry, messageRu };
 }
 
 export interface CreditFamilySharedBalanceInput {
@@ -183,20 +205,6 @@ export const GIFT_CERTIFICATE_CATALOG: readonly GiftCertificatePreset[] = [
 	{ id: "cert_50k", nominalKop: 5000000, nominalRub: 50000, titleRu: "Подарочный сертификат 50 000 ₽", validityDays: 365, isCustomNominal: false, badgeRu: "VIP / Комплекс", descriptionRu: "Для дентальной имплантации и элайнеров." },
 	{ id: "cert_custom", nominalKop: 0, nominalRub: 0, titleRu: "Сертификат со свободным номиналом", validityDays: 365, isCustomNominal: true, badgeRu: "Индивидуальный", descriptionRu: "Сумма сертификата указывается на кассе." },
 ];
-
-import {
-	generateLuhn16Certificate,
-	validateLuhn16Certificate,
-	generateLuhn16Certificate as generateGiftCertificateSerial,
-	validateLuhn16Certificate as validateGiftCertificateSerial,
-} from "@dental/shared";
-
-export {
-	generateLuhn16Certificate,
-	validateLuhn16Certificate,
-	generateGiftCertificateSerial,
-	validateGiftCertificateSerial,
-};
 
 export interface GiftCertificateRedemptionResult {
 	readonly success: boolean; readonly certificateId: string; readonly serialNumber: string; readonly previousBalanceKop: number; readonly redeemedAmountKop: number; readonly newBalanceKop: number; readonly coveredInvoiceAmountKop: number; readonly remainingInvoiceAmountKop: number; readonly newStatus: "active" | "depleted" | "expired" | "cancelled"; readonly errorMessageRu?: string;
@@ -235,11 +243,11 @@ export function calculateReferralReward(inputOrKop: { friendInvoicePaidKop: numb
 	const friendInvoicePaidKop = typeof inputOrKop === "number" ? inputOrKop : inputOrKop.friendInvoicePaidKop;
 	const preset = presetOverride ?? DEFAULT_REFERRAL_PRESET, minSpend = typeof inputOrKop === "object" && inputOrKop.minSpendKop !== undefined ? inputOrKop.minSpendKop : preset.minFriendSpendKop;
 	const referrerRewardKop = typeof inputOrKop === "object" && inputOrKop.customRewardKop !== undefined ? inputOrKop.customRewardKop : preset.referrerRewardKop;
-	const invitedDiscountKop = preset.referredFriendDiscountKop, referrerBonusRub = Math.round(referrerRewardKop / 100), invitedDiscountRub = Math.round(invitedDiscountKop / 100);
+	const invitedDiscountKop = preset.referredFriendDiscountKop, referrerBonusRub = Math.round(kopecksToRubles(referrerRewardKop)), invitedDiscountRub = Math.round(kopecksToRubles(invitedDiscountKop));
 
 	if (friendInvoicePaidKop < minSpend) {
 		const missingSpendKop = minSpend - friendInvoicePaidKop;
-		const explanationRu = `Сумма первого чека друга (${Math.round(friendInvoicePaidKop / 100)} ₽) не достигла порога (${Math.round(minSpend / 100)} ₽). Не хватает ${Math.round(missingSpendKop / 100)} ₽.`;
+		const explanationRu = `Сумма первого чека друга (${Math.round(kopecksToRubles(friendInvoicePaidKop))} ₽) не достигла порога (${Math.round(kopecksToRubles(minSpend))} ₽). Не хватает ${Math.round(kopecksToRubles(missingSpendKop))} ₽.`;
 		return { isEligible: false, rewardKop: 0, rewardRub: 0, referrerBonusKop: 0, referrerBonusRub: 0, invitedDiscountKop: 0, invitedDiscountRub: 0, missingSpendKop, explanationRu, messageRu: explanationRu };
 	}
 	const explanationRu = `Условия рекомендации выполнены: начислено ${referrerBonusRub} ₽ бонусов рекомендателю и ${invitedDiscountRub} ₽ скидки другу.`;
@@ -269,17 +277,24 @@ export const PROMO_CODE_PRESETS: readonly PromoCodePreset[] = [
 	{ code: "IMPLANT5000", titleRu: "Имплантация Nobel/Osstem (-5 000 ₽)", discountType: "fixed_rub", value: 5000, minInvoiceAmountKop: 4500000, applicableCategories: ["surgery", "implantology"], excludedServiceCodes: [], descriptionRu: "Фиксированная скидка 5 000 ₽ при установке дентального имплантата.", validityLabelRu: "При установке от 1 имплантата" },
 ];
 
-export function evaluatePromoCode(code: string, invoiceAmountKop: number, serviceCategories: readonly string[] = ["therapy"], serviceCodes: readonly string[] = []) {
-	const normalizedCode = code.trim().toUpperCase(), preset = PROMO_CODE_PRESETS.find((p) => p.code.toUpperCase() === normalizedCode);
+export function evaluatePromoCode(
+	code: string,
+	invoiceAmountKop: number,
+	serviceCategories: readonly string[] = ["therapy"],
+	serviceCodes: readonly string[] = [],
+	customPresets: readonly PromoCodePreset[] = PROMO_CODE_PRESETS,
+) {
+	const normalizedCode = code.trim().toUpperCase(),
+		preset = customPresets.find((p) => p.code.toUpperCase() === normalizedCode);
 	if (!preset) return { isValid: false, code: normalizedCode, titleRu: "Промокод не найден", discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: "Указанный промокод не зарегистрирован в маркетинговой системе клиники." };
-	if (invoiceAmountKop < preset.minInvoiceAmountKop) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: `Минимальная сумма чека для применения акции: ${(preset.minInvoiceAmountKop / 100).toLocaleString("ru-RU")} ₽.`, promoCodePreset: preset };
+	if (invoiceAmountKop < preset.minInvoiceAmountKop) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: `Минимальная сумма чека для применения акции: ${(kopecksToRubles(preset.minInvoiceAmountKop)).toLocaleString("ru-RU")} ₽.`, promoCodePreset: preset };
 	if (!preset.applicableCategories.includes("all") && !preset.applicableCategories.some((c) => serviceCategories.includes(c))) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: `Промокод «${preset.code}» применим только к услугам категорий: ${preset.applicableCategories.join(", ")}.`, promoCodePreset: preset };
 	if (preset.excludedServiceCodes.some((ex) => serviceCodes.includes(ex))) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: "В счете присутствуют позиции, исключенные из данной маркетинговой акции.", promoCodePreset: preset };
 	let discountKop = 0, bonusPointsToAddRub = 0;
 	if (preset.discountType === "percentage") discountKop = Math.round((invoiceAmountKop * preset.value) / 100);
-	else if (preset.discountType === "fixed_rub") discountKop = Math.min(invoiceAmountKop, preset.value * 100);
+	else if (preset.discountType === "fixed_rub") discountKop = Math.min(invoiceAmountKop, rublesToKopecks(preset.value));
 	else if (preset.discountType === "welcome_bonus_points") bonusPointsToAddRub = preset.value;
-	return { isValid: true, code: preset.code, titleRu: preset.titleRu, discountKop, discountRub: discountKop / 100, bonusPointsToAddRub, finalPayableKop: Math.max(0, invoiceAmountKop - discountKop), messageRu: preset.descriptionRu, promoCodePreset: preset };
+	return { isValid: true, code: preset.code, titleRu: preset.titleRu, discountKop, discountRub: kopecksToRubles(discountKop), bonusPointsToAddRub, finalPayableKop: Math.max(0, invoiceAmountKop - discountKop), messageRu: preset.descriptionRu, promoCodePreset: preset };
 }
 
 export interface LoyaltyExclusionRule {
@@ -307,7 +322,7 @@ export function exportLoyaltyLedgerToCsv(entries: readonly LoyaltyLedgerEntry[])
 	}
 	const rows: string[] = [headers.map((h) => `"${h}"`).join(";")];
 	for (const entry of entries) {
-		const invoiceRub = (entry.invoiceAmountKop / 100).toFixed(2), deltaStr = entry.pointsDeltaRub > 0 ? `+${entry.pointsDeltaRub}` : `${entry.pointsDeltaRub}`;
+		const invoiceRub = kopecksToNumericString(entry.invoiceAmountKop), deltaStr = entry.pointsDeltaRub > 0 ? `+${entry.pointsDeltaRub}` : `${entry.pointsDeltaRub}`;
 		rows.push([escapeCsv(entry.id), escapeCsv(entry.timestampIso), escapeCsv(entry.patientName), escapeCsv(entry.medicalCardNumber), escapeCsv(entry.operationTypeRu), escapeCsv(invoiceRub), escapeCsv(deltaStr), escapeCsv(entry.balanceAfterRub.toFixed(0)), escapeCsv(entry.paymentMethodRu), escapeCsv(entry.fiscalReceiptNumber ?? "—"), escapeCsv(entry.staffNameRu), escapeCsv(entry.noteRu)].join(";"));
 	}
 	return BOM + rows.join("\r\n");

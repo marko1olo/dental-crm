@@ -17,6 +17,7 @@ import {
 	detectChannelFromSource,
 	safePercent,
 } from "./marketingAnalyticsUtils.js";
+import { rublesToKopecks } from "@dental/shared";
 
 /**
  * Расчет пошаговой воронки онлайн-самозаписи.
@@ -32,9 +33,14 @@ export function calculateOnlineBookingFunnel(params: {
 	const { allLeads, allAppts, allPayments, allPatients = [] } = params;
 
 	const onlineLeads = allLeads.filter((l) => detectChannelFromSource(l.source) !== "telephony");
-	const views = onlineLeads.length;
-	const slotSelected = onlineLeads.length;
-	const booked = onlineLeads.filter((l) => l.status === "consult_booked").length;
+	const booked = onlineLeads.filter(
+		(l) => l.status === "consult_booked" || l.status === "showed_up" || l.status === "converted",
+	).length;
+	const slotSelected = Math.max(
+		booked,
+		onlineLeads.filter((l) => l.status !== "trash" && l.status !== "no_answer").length,
+	);
+	const views = Math.max(slotSelected, onlineLeads.length);
 
 	// Извлекаем идентификаторы пациентов когорты онлайн-записи
 	const onlinePatientIds = new Set<string>();
@@ -82,7 +88,11 @@ export function calculateOnlineBookingFunnel(params: {
 	const paid = Math.min(attended, rawPaid);
 
 	const totalRevenueKopecks = onlinePayments.reduce(
-		(acc, p) => acc + Math.round(Number(p.amountRub || 0) * 100),
+		(acc, p) =>
+			acc +
+			(p.amountKopecks != null
+				? Number(p.amountKopecks)
+				: rublesToKopecks(Number(p.amountRub || 0))),
 		0,
 	);
 
@@ -130,7 +140,11 @@ export function generateMarketingReportsSummary(params: {
 	const { allLeads, allPayments } = params;
 
 	const totalRevenueKopecks = allPayments.reduce(
-		(acc, p) => acc + Math.round(Number(p.amountRub || 0) * 100),
+		(acc, p) =>
+			acc +
+			(p.amountKopecks != null
+				? Number(p.amountKopecks)
+				: rublesToKopecks(Number(p.amountRub || 0))),
 		0,
 	);
 

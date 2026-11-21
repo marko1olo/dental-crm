@@ -1,5 +1,31 @@
 import { z } from "zod";
 import { DENTE_MARKETING_SOURCES, type MarketingSourceItem } from "../../patients/tagsModules/marketingSources.js";
+import { rublesToKopecks } from "../../money.js";
+
+/**
+ * Транспортные каналы связи для отправки сообщений пациентам (SMS, мессенджеры).
+ */
+export type CommunicationDeliveryChannel = "sms" | "whatsapp" | "telegram" | "email" | "vk";
+
+/**
+ * Маркетинговые каналы привлечения и атрибуции пациентов (ROMI, рекламные источники).
+ */
+export type MarketingAttributionChannelKey =
+	| "yandex_direct"
+	| "yandex_maps"
+	| "gis_2"
+	| "gis2"
+	| "word_of_mouth"
+	| "prodoctorov"
+	| "sberhealth"
+	| "vk_ads"
+	| "vk"
+	| "outdoor_sign"
+	| "outdoor"
+	| "website"
+	| "instagram"
+	| "flyers"
+	| "other";
 
 export type RomiPerformanceStatus = "super_profitable" | "profitable" | "break_even" | "loss" | "organic";
 
@@ -90,7 +116,7 @@ export function buildDenteDefaultAdvertisingChannels(): AdvertisingChannelInput[
 		channelKey: source.channelKey,
 		nameRu: source.nameRu,
 		categoryRu: source.categoryRu,
-		spentKopecks: source.defaultSpendRub * 100,
+		spentKopecks: rublesToKopecks(source.defaultSpendRub),
 		leadsCount: 0,
 		primaryPatientsCount: 0,
 		revenueKopecks: 0,

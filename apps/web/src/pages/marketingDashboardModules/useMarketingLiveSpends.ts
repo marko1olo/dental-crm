@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
@@ -45,7 +46,7 @@ export function useMarketingLiveSpends() {
 				const liveSpends: Partial<ChannelSpendMap> = {};
 				if (Array.isArray(data.selfBookingChannels)) {
 					for (const ch of data.selfBookingChannels) {
-						const rub = Math.round((ch.spentKopecks || 0) / 100);
+						const rub = Math.round(kopecksToRubles(ch.spentKopecks || 0));
 						if (ch.key === "gis_2") liveSpends.gis_2 = rub;
 						else if (ch.key === "prodoctorov") liveSpends.prodoctorov = rub;
 						else if (ch.key === "yandex_maps") {
@@ -60,7 +61,7 @@ export function useMarketingLiveSpends() {
 				}
 				if (data.telephonyAdminFunnel) {
 					liveSpends.other = Math.round(
-						(data.telephonyAdminFunnel.spentKopecks || 0) / 100,
+						kopecksToRubles(data.telephonyAdminFunnel.spentKopecks || 0),
 					);
 				}
 

@@ -13,6 +13,10 @@ import {
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
 import {
+	extractIdempotencyKey,
+	isValidUuid,
+} from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import {
 	type AdvertisingChannelInput,
 	advertisingChannelInputSchema,
 	buildDenteDefaultAdvertisingChannels,
@@ -67,6 +71,14 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "create marketing promo");
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = marketingPromoSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -77,17 +89,29 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const { flags, promos } = await readOrSeedOrganizationPromos(orgId);
-			const nextPromos = [parsed.data, ...promos.filter((p) => p.id !== parsed.data.id)];
-			const updatedFlags = {
-				...flags,
-				marketingPromos: nextPromos,
-			};
+			const { nextPromos } = await db.transaction(async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.for("update");
+				const flags = (org?.workspaceFeatureFlags as Record<string, unknown>) || {};
+				const existingPromos = Array.isArray(flags.marketingPromos)
+					? (flags.marketingPromos as StoredMarketingPromo[])
+					: [...DEFAULT_SERVER_MARKETING_PROMOS];
+				const nextPromos = [parsed.data, ...existingPromos.filter((p) => p.id !== parsed.data.id)];
+				const updatedFlags = {
+					...flags,
+					marketingPromos: nextPromos,
+				};
 
-			await db
-				.update(organizations)
-				.set({ workspaceFeatureFlags: updatedFlags })
-				.where(eq(organizations.id, orgId));
+				await tx
+					.update(organizations)
+					.set({ workspaceFeatureFlags: updatedFlags })
+					.where(eq(organizations.id, orgId));
+
+				return { nextPromos };
+			});
 
 			return reply.code(201).send({
 				success: true,
@@ -118,38 +142,54 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const body = (request.body as { status?: "active" | "archived" | "paused" } | null) || {};
 
 		try {
-			const { flags, promos } = await readOrSeedOrganizationPromos(orgId);
-			let updatedPromo: StoredMarketingPromo | null = null;
+			const result = await db.transaction(async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.for("update");
+				const flags = (org?.workspaceFeatureFlags as Record<string, unknown>) || {};
+				const existingPromos = Array.isArray(flags.marketingPromos)
+					? (flags.marketingPromos as StoredMarketingPromo[])
+					: [...DEFAULT_SERVER_MARKETING_PROMOS];
 
-			const nextPromos = promos.map((p) => {
-				if (p.id !== id) return p;
-				const nextStatus: StoredMarketingPromo["status"] =
-					body.status ?? (p.status === "active" ? "archived" : "active");
-				updatedPromo = { ...p, status: nextStatus };
-				return updatedPromo;
+				let updatedPromo: StoredMarketingPromo | null = null;
+				const nextPromos = existingPromos.map((p) => {
+					if (p.id !== id) return p;
+					const nextStatus: StoredMarketingPromo["status"] =
+						body.status ?? (p.status === "active" ? "archived" : "active");
+					updatedPromo = { ...p, status: nextStatus };
+					return updatedPromo;
+				});
+
+				if (!updatedPromo) {
+					return null;
+				}
+
+				const updatedFlags = {
+					...flags,
+					marketingPromos: nextPromos,
+				};
+
+				await tx
+					.update(organizations)
+					.set({ workspaceFeatureFlags: updatedFlags })
+					.where(eq(organizations.id, orgId));
+
+				return { updatedPromo, nextPromos };
 			});
 
-			if (!updatedPromo) {
+			if (!result) {
 				return reply.code(404).send({
 					error: "PromoNotFound",
 					message: "Акция не найдена",
 				});
 			}
 
-			const updatedFlags = {
-				...flags,
-				marketingPromos: nextPromos,
-			};
-
-			await db
-				.update(organizations)
-				.set({ workspaceFeatureFlags: updatedFlags })
-				.where(eq(organizations.id, orgId));
-
 			return reply.code(200).send({
 				success: true,
-				promo: updatedPromo,
-				promos: nextPromos,
+				promo: result.updatedPromo,
+				promos: result.nextPromos,
 			});
 		} catch (err) {
 			request.log.error({ err }, "[Marketing] Failed to toggle promo status in DB");
@@ -230,6 +270,14 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing campaigns");
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
 		const rawList = Array.isArray(body)
 			? body
@@ -258,28 +306,40 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const { flags, channels: existing } = await readOrSeedOrganizationRomiChannels(orgId);
+			const finalCampaigns = await db.transaction(async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.for("update");
+				const flags = (org?.workspaceFeatureFlags as Record<string, unknown>) || {};
+				const existing = Array.isArray(flags.marketingRomiChannels)
+					? (flags.marketingRomiChannels as AdvertisingChannelInput[])
+					: buildDenteDefaultAdvertisingChannels();
 
-			const mergedMap = new Map<string, AdvertisingChannelInput>();
-			for (const ch of existing) {
-				mergedMap.set(ch.channelKey || ch.id, ch);
-			}
-			for (const updated of parsed.data) {
-				const key = updated.channelKey || updated.id;
-				const prev = mergedMap.get(key);
-				mergedMap.set(key, { ...prev, ...updated });
-			}
-			const finalCampaigns = Array.from(mergedMap.values());
+				const mergedMap = new Map<string, AdvertisingChannelInput>();
+				for (const ch of existing) {
+					mergedMap.set(ch.channelKey || ch.id, ch);
+				}
+				for (const updated of parsed.data) {
+					const key = updated.channelKey || updated.id;
+					const prev = mergedMap.get(key);
+					mergedMap.set(key, { ...prev, ...updated });
+				}
+				const final = Array.from(mergedMap.values());
 
-			const updatedFlags = {
-				...flags,
-				marketingRomiChannels: finalCampaigns,
-			};
+				const updatedFlags = {
+					...flags,
+					marketingRomiChannels: final,
+				};
 
-			await db
-				.update(organizations)
-				.set({ workspaceFeatureFlags: updatedFlags })
-				.where(eq(organizations.id, orgId));
+				await tx
+					.update(organizations)
+					.set({ workspaceFeatureFlags: updatedFlags })
+					.where(eq(organizations.id, orgId));
+
+				return final;
+			});
 
 			return reply.code(200).send({
 				success: true,
@@ -307,6 +367,14 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing romi channels");
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
 		const rawList = Array.isArray(body)
 			? body
@@ -331,16 +399,23 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const { flags } = await readOrSeedOrganizationRomiChannels(orgId);
-			const updatedFlags = {
-				...flags,
-				marketingRomiChannels: parsed.data,
-			};
+			await db.transaction(async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.for("update");
+				const flags = (org?.workspaceFeatureFlags as Record<string, unknown>) || {};
+				const updatedFlags = {
+					...flags,
+					marketingRomiChannels: parsed.data,
+				};
 
-			await db
-				.update(organizations)
-				.set({ workspaceFeatureFlags: updatedFlags })
-				.where(eq(organizations.id, orgId));
+				await tx
+					.update(organizations)
+					.set({ workspaceFeatureFlags: updatedFlags })
+					.where(eq(organizations.id, orgId));
+			});
 
 			return reply.code(200).send({
 				success: true,
@@ -368,23 +443,25 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const [org] = await db
-				.select({ flags: organizations.workspaceFeatureFlags })
-				.from(organizations)
-				.where(eq(organizations.id, orgId))
-				.limit(1);
-
-			const existingFlags = (org?.flags as Record<string, unknown>) || {};
 			const resetChannels = buildDenteDefaultAdvertisingChannels();
-			const updatedFlags = {
-				...existingFlags,
-				marketingRomiChannels: resetChannels,
-			};
+			await db.transaction(async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.for("update");
 
-			await db
-				.update(organizations)
-				.set({ workspaceFeatureFlags: updatedFlags })
-				.where(eq(organizations.id, orgId));
+				const existingFlags = (org?.workspaceFeatureFlags as Record<string, unknown>) || {};
+				const updatedFlags = {
+					...existingFlags,
+					marketingRomiChannels: resetChannels,
+				};
+
+				await tx
+					.update(organizations)
+					.set({ workspaceFeatureFlags: updatedFlags })
+					.where(eq(organizations.id, orgId));
+			});
 
 			return reply.code(200).send({
 				success: true,

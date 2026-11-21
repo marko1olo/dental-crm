@@ -1,4 +1,5 @@
 import { DENTE_MARKETING_SOURCES } from "../../patients/tagsModules/marketingSources.js";
+import { rublesToKopecks } from "../../money.js";
 import type { AdvertisingChannelInput } from "./romiTypes.js";
 
 export type AttributionModelType = "first_touch" | "last_touch" | "linear";
@@ -74,8 +75,8 @@ export function aggregateCrmMarketingMetrics(params: {
 	for (const p of params.payments) {
 		const st = (p.status || "").toLowerCase();
 		if (!["refunded", "failed", "cancelled"].includes(st)) {
-			const raw = p.amount ?? p.amountRub ?? (p.amountKopecks ? p.amountKopecks / 100 : 0);
-			paymentsByPatient.set(p.patientId, (paymentsByPatient.get(p.patientId) ?? 0) + Math.round(Number(raw || 0) * 100));
+			const kopecks = p.amountKopecks != null ? Number(p.amountKopecks) : rublesToKopecks(Number(p.amount ?? p.amountRub ?? 0));
+			paymentsByPatient.set(p.patientId, (paymentsByPatient.get(p.patientId) ?? 0) + kopecks);
 		}
 	}
 	const stats = new Map<string, { leads: number; primary: number; repeat: number; rev: number }>();
@@ -100,7 +101,7 @@ export function aggregateCrmMarketingMetrics(params: {
 		const custom = params.customBudgetsKopecks?.[src.channelKey] ?? params.customBudgetsKopecks?.[`ch_dente_${src.channelKey}`];
 		return {
 			id: `ch_dente_${src.channelKey}`, channelKey: src.channelKey, nameRu: src.nameRu, categoryRu: src.categoryRu,
-			spentKopecks: custom !== undefined ? custom : (src.defaultSpendRub * 100),
+			spentKopecks: custom !== undefined ? custom : rublesToKopecks(src.defaultSpendRub),
 			leadsCount: Math.max(st.leads, st.primary), primaryPatientsCount: st.primary, repeatVisitsCount: st.repeat,
 			revenueKopecks: st.rev, totalLtvRevenueKopecks: st.rev, notes: src.descriptionRu,
 		};

@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Trash2 } from "lucide-react";
-import type { AdvertisingChannelMetric } from "@dental/shared";
+import { type AdvertisingChannelMetric, kopecksToRubles } from "@dental/shared";
 
 export type RomiFieldKey = "spentRub" | "leads" | "patients" | "revenueRub" | "repeatVisits";
 
@@ -24,8 +24,8 @@ export function MarketingRomiTableRow({
 	onInputBlur,
 	onRemoveChannel,
 }: MarketingRomiTableRowProps) {
-	const spentRub = (metric.spentKopecks / 100).toString();
-	const revenueRub = (metric.revenueKopecks / 100).toString();
+	const spentRub = kopecksToRubles(metric.spentKopecks).toString();
+	const revenueRub = kopecksToRubles(metric.revenueKopecks).toString();
 	const badgeCls =
 		metric.romiStatus === "organic"
 			? "organic"

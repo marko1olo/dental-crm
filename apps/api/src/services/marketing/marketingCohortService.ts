@@ -9,6 +9,7 @@
  */
 
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { parseKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { appointments, patients, payments } from "../../db/schema.js";
 
@@ -164,8 +165,7 @@ export async function calculateRealMarketingCohorts(
 		const futureAppts = Number(r.futureCount || 0);
 		const visits12m = Number(r.visitsPast12m || 0);
 		const totalVisits = Number(r.totalCompletedVisits || 0);
-		const revenueRub = parseFloat(r.revenuePast12mRub || "0");
-		const revenueKop = Math.round(revenueRub * 100);
+		const revenueKop = parseKopecks(r.revenuePast12mRub || "0");
 
 		if (revenueKop > 0) {
 			totalRevenueKop += revenueKop;
@@ -205,7 +205,7 @@ export async function calculateRealMarketingCohorts(
 		// 3D RFM Matrix Classification
 		if (totalVisits === 0) {
 			noVisitsCount++;
-		} else if (daysSinceLastVisit !== null && daysSinceLastVisit <= 90 && visits12m >= 3 && revenueRub >= 50000) {
+		} else if (daysSinceLastVisit !== null && daysSinceLastVisit <= 90 && visits12m >= 3 && revenueKop >= 5000000) {
 			vipCount++;
 		} else if (daysSinceLastVisit !== null && daysSinceLastVisit <= 180 && visits12m >= 2) {
 			loyalCount++;

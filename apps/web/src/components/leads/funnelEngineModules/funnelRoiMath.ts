@@ -3,6 +3,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8s (Modular Architecture)
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import {
 	type CanonicalMarketingChannelKey,
 	type FunnelLead,
@@ -78,17 +79,7 @@ export function extractLeadRevenueRub(lead: FunnelLead): number {
 		typeof lead.paidAmountKopecks === "number" &&
 		lead.paidAmountKopecks > 0
 	) {
-		return Math.round(lead.paidAmountKopecks / 100);
-	}
-	if (
-		(lead.status === "converted" || lead.status === "showed_up" || (lead as { isConverted?: boolean }).isConverted) &&
-		lead.expectedRevenue !== null &&
-		lead.expectedRevenue !== undefined
-	) {
-		const val = Number(lead.expectedRevenue);
-		if (Number.isFinite(val) && val > 0) {
-			return Math.round(val);
-		}
+		return Math.round(kopecksToRubles(lead.paidAmountKopecks));
 	}
 	return 0;
 }

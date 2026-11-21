@@ -6,15 +6,15 @@
 
 import React from "react";
 import { Users, CreditCard, TrendingUp, Sparkles } from "lucide-react";
-import type { AdvertisingChannelMetric } from "@dental/shared";
+import { type AdvertisingChannelMetric, kopecksToRubles } from "@dental/shared";
 
 export interface MarketingSourceCardProps {
 	readonly metric: AdvertisingChannelMetric;
 }
 
 export function MarketingSourceCard({ metric }: MarketingSourceCardProps) {
-	const revRub = Math.round(metric.revenueKopecks / 100).toLocaleString("ru-RU");
-	const spentRub = Math.round(metric.spentKopecks / 100).toLocaleString("ru-RU");
+	const revRub = Math.round(kopecksToRubles(metric.revenueKopecks)).toLocaleString("ru-RU");
+	const spentRub = Math.round(kopecksToRubles(metric.spentKopecks)).toLocaleString("ru-RU");
 
 	const badgeCls =
 		metric.romiStatus === "organic"

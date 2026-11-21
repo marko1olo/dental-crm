@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import type { AdvertisingChannelMetric } from "@dental/shared";
+import { type AdvertisingChannelMetric, kopecksToRubles } from "@dental/shared";
 import type { RomiFieldKey } from "./MarketingRomiTableRow.js";
 
 export interface MarketingRomiMobileCardProps {
@@ -22,9 +22,9 @@ export function MarketingRomiMobileCard({
 	onInputBlur,
 	onRemoveChannel,
 }: MarketingRomiMobileCardProps) {
-	const spentVal = getInputValue(metric.id, "spentRub", (metric.spentKopecks / 100).toString());
+	const spentVal = getInputValue(metric.id, "spentRub", kopecksToRubles(metric.spentKopecks).toString());
 	const patientsVal = getInputValue(metric.id, "patients", metric.primaryPatientsCount.toString());
-	const revVal = getInputValue(metric.id, "revenueRub", (metric.revenueKopecks / 100).toString());
+	const revVal = getInputValue(metric.id, "revenueRub", kopecksToRubles(metric.revenueKopecks).toString());
 
 	const badgeCls =
 		metric.romiStatus === "organic"
