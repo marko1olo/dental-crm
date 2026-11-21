@@ -772,7 +772,37 @@
 
 ## 📌 ЧАСТЬ I-B. АРХИТЕКТУРНЫЕ СПЕЦИФИКАЦИИ ДОЛГОВЫХ КАНОНИЧЕСКИХ ФИЧ (DEBT BACKLOG: ФИЧИ 17 И 54, СТАТУС ИНТЕГРАЦИЙ ДМС)
 
-### 17. `интеграции::продокторов_выгрузка_прейскуранта_и_запись` [НЕТ] / [DEBT] -> MUST-HAVE
+### 17. `интеграции::продокторов_выгрузка_прейскуранта_и_запись` [ЕСТЬ] (100% Реализовано, Drizzle/PostgreSQL 18 схема medflex_*, Fastify роуты XML/слоты/вебхуки с HMAC-SHA256 и анти-овербукингом executeBookingTransaction, панель MedflexSettingsTab, 4-State Proof, 10/10 тестов PASS)
+- **Статус выполнения**: **[РЕАЛИЗОВАНО В ПОЛНОМ ОБЪЕМЕ / ЗАКРЫТО]**
+- **Клинико-техническая реализация**:
+  1. **Схема БД PostgreSQL 18 & Drizzle (`apps/api/src/db/schema/integrations/medflexSchema.ts`, `apps/api/drizzle/0266_medflex_prodoctorov_tables.sql`)**:
+     - Таблица `medflex_integrations`: настройки клиники (`clinicExternalId`, `apiKey`, `webhookSecret`, `autoConfirmBookings`, `defaultChairId`), RLS tenant_isolation;
+     - Таблица `medflex_doctor_mappings`: сопоставление `staffId` клиники с `externalDoctorId` ПроДокторов/МедФлекс;
+     - Таблица `medflex_webhook_logs`: дедупликация и аудит входящих вебхуков (`deliveryId`, `eventType`, `status`, `payload`, `errorMessage`).
+     - Гейт `npm run check:migration-drift` подтверждает 100% паритет Drizzle и DDL (214 таблиц, 2930 колонок, 0 drift).
+  2. **Fastify API Эндпоинты (`apps/api/src/routes/integrations/prodoctorov/`)**:
+     - `GET /api/integrations/medflex/:clinicExternalId/pricelist.xml`: валидный YML/XML прейскурант медицинских услуг по Номенклатуре 804н, форматирование копеек через `formatKopecksToRub` из `@dental/shared/src/money.ts` (Мандат 8bm);
+     - `GET /api/integrations/medflex/:clinicExternalId/slots`: генерация интервалов приема врачей клиники с учетом смен, фильтрацией существующих записей и пауз СанПиН (10-15 мин), поддержка соло-практики (Мандат 8n);
+     - `POST /api/integrations/medflex/:clinicExternalId/webhook/booking`: прием онлайн-записи с валидацией криптографической HMAC-SHA256 подписи (`X-Medflex-Signature`), проверкой идемпотентности по `delivery_id` и атомарной блокировкой ресурсов через `executeBookingTransaction` из `bookingMutationService.ts` (`FOR UPDATE` на кресло, врача и пациента), гарантирующей 0% овербукинга при параллельных запросах;
+     - CRUD эндпоинты управления настройками клиники (`/settings`, `/settings/generate-secret`, `/doctor-mappings`, `/webhook-logs`).
+  3. **Веб-интерфейс настроек React 19 (`apps/web/src/components/settings/integrations/MedflexSettingsTab.tsx`)**:
+     - Параметры подключения клиники с автогенерацией секрета;
+     - Ссылки для вставки в кабинет агрегатора с копированием в буфер обмена;
+     - Сопоставление специалистов клиники с внешними ID (десктопная таблица + адаптивные мобильные карточки по Apple HIG);
+     - Журнал входящих событий со статусами доставки («Обработано», «Конфликт», «Ошибка»);
+     - Ровно 1 Primary CTA noble teal (`bg-[var(--primary)] text-white`), Sentence case без капслока (Мандат 8am);
+     - Смонтирован в `SettingsOperationsTabContent.tsx`, `SettingsSourcesTab.tsx` и `administrativeLaunchersRegistry.tsx` (`#medflex`).
+  4. **4-State Visual Proofs (`docs/proofs/integrations/`)**:
+     - `01_medflex_settings_pc_light_1440x900.png` (139.8 KB, PC Light 1440×900, полноразмерная студия);
+     - `02_medflex_settings_pc_dark_1440x900.png` (140.1 KB, PC Dark 1440×900, глубокая тёмная тема без белых вспышек);
+     - `03_medflex_settings_mobile_light_390x844.png` (359.4 KB, Mobile Light 390×844, Apple HIG touch-карточки);
+     - `04_medflex_settings_mobile_dark_390x844.png` (359.4 KB, Mobile Dark 390×844, тёмная мобильная тема).
+  5. **Тестовое покрытие и верификация**:
+     - 6/6 тестов PASS в `apps/api/src/routes/integrations/prodoctorov/__tests__/medflexIntegration.test.ts` (изоляция тенантов, HMAC-валидация, идемпотентность `delivery_id`, предотвращение овербукинга `SlotAlreadyBooked`, экспорт прейскуранта 804н);
+     - 4/4 тестов PASS в `apps/api/src/tests/prodoctorovDecomposition.test.ts`;
+     - `npm run check:migration-drift` — Exit Code 0;
+     - `npm run check:buttons` — Exit Code 0;
+     - `npm run check:encoding` — Exit Code 0.
 - **Бизнес-задача & Проблема**:
   В современных российских стоматологиях ключевым внешним источником первичных пациентов являются медицинские агрегаторы: **ПроДокторов** (крупнейший портал отзывов и врачей в РФ) и платформа **МедФлекс (MedFlex)**, объединяющая ПроДокторов, СберЗдоровье и другие витрины записи.
   Отсутствие автоматической выгрузки прейскуранта и двусторонней синхронизации слотов расписания приводит к:

@@ -144,6 +144,7 @@ export interface ProdoctorovSlotItem {
 
 export interface ProdoctorovDoctorSlots {
 	doctorId: string;
+	externalDoctorId?: string | null;
 	doctorName: string;
 	specialties: string[];
 	availableSlotsCount: number;

@@ -7,4 +7,5 @@ export * from "./types.js";
 export * from "./hmacSignatureAuth.js";
 export * from "./prodoctorovSlotsSync.js";
 export * from "./prodoctorovBookingService.js";
+export * from "./medflexIntegrationService.js";
 export * from "./prodoctorovRouteHandlers.js";

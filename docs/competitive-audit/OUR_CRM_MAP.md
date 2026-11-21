@@ -404,8 +404,8 @@
 
 ### 2.9.1. Интеграции и кадровые правила (Закалено в Волне 307: Фичи 17 и 54)
 - **Фича 17: `интеграции::продокторов_выгрузка_прейскуранта_и_запись` [ДА] / [ПРОВЕРЕНО]**:
-  - *Текущий статус в кодовой базе*: Боевой модуль интеграции с агрегаторами ПроДокторов и МедФлекс (`apps/api/src/routes/integrations/prodoctorov.ts`, `webhookAuth.ts`). Выгрузка XML/YML прейскуранта с фильтрацией строго по 804н, трансляция свободных слотов расписания с учетом пауз дезинфекции СанПиН 10–15 минут, валидация HMAC-SHA256 подписи вебхуков, бронирование без требования ассистента для соло-врача (Мандаты 8e, 8n);
-  - *Статус*: Проверено и закрыто в Волне 307 (`18ca6c5a0`).
+  - *Текущий статус в кодовой базе*: Боевой модуль интеграции с агрегаторами ПроДокторов и МедФлекс (`apps/api/src/routes/integrations/prodoctorov/`, `medflexSchema.ts`, DDL миграция `0266_medflex_prodoctorov_tables.sql`). Выгрузка XML/YML прейскуранта с фильтрацией строго по 804н и форматированием копеек через `money.ts`, трансляция свободных слотов расписания с учетом пауз дезинфекции СанПиН 10–15 минут, валидация HMAC-SHA256 подписи вебхуков, дедупликация `deliveryId`, атомарная защита от овербукинга через `executeBookingTransaction` с каскадными блокировками `FOR UPDATE` (Кресло -> Врач -> Пациент), бронирование без требования ассистента для соло-врача (Мандаты 8e, 8n); веб-панель `MedflexSettingsTab.tsx` смонтирована в `SettingsOperationsTabContent.tsx`, `SettingsSourcesTab.tsx` и `administrativeLaunchersRegistry.tsx`; 4-State Proofs зафиксированы в `docs/proofs/integrations/` (01 PC Light 139.8 KB, 02 PC Dark 140.1 KB, 03 Mobile Light 359.4 KB, 04 Mobile Dark 359.4 KB); 10/10 тестов PASS;
+  - *Статус*: 100% Реализовано, покрыто тестами и 4-State Proofs.
 - **Фича 54: `кадры::справедливое_распределение_конверсии_повторной_записи` [ДА] / [ПРОВЕРЕНО]**:
   - *Текущий статус в кодовой базе*: Кадровое правило справедливой атрибуции конверсии повторной записи по 15-минутному окну ($\Delta t \le 15$ мин -> Врач, $\Delta t > 15$ мин -> Администратор). Внедрен режим соло-врача (Мандат 8n): 100% авто-атрибуция врачу. Аналитический виджет `RebookingConversionRulesWidget` (`AnalyticsDashboardView.tsx`) и эндпоинты `/api/analytics/rebooking-conversion` с защитой от деления на ноль;
   - *Статус*: Проверено и закрыто в Волне 307 (`4bff69b29`).
@@ -3495,7 +3495,7 @@
   4. *Аудит складских дубликатов `inventory/` vs `warehouse/`*:
      - Детальная ревизия структуры `@dental/shared`:
        * Пересечения: расчет точки перезаказа (`inventory/reorderEngine.ts` vs `warehouse/inventoryReorderEngine.ts`), заказы поставщикам (`inventory/purchaseOrdersEngine.ts` vs `warehouse/purchaseOrderEngine.ts`), списание расходников (`inventory/consumables.ts` vs `warehouse/treatmentConsumablesEngine.ts`);
-       * Уникальные модули: межскладское перемещение по форме М-11 (`warehouse/transferM11Engine.ts`), парсер маркировки Честный Знак / GS1 DataMatrix (`inventory/gs1DataMatrixParser.ts`), BOM-спецификации технологических карт (`inventory/procedureBomEngine.ts`), рейтинг поставщиков (`inventory/supplierRatingsEngine.ts`);
+       * Уникальные модули: межскладское перемещение по форме М-11 (`warehouse/transferM11Engine.ts`), парсер маркировки Честный Знак / GS1 DataMatrix (`warehouse/gs1DataMatrixParser.ts`), BOM-спецификации технологических карт (`inventory/procedureBomEngine.ts`), рейтинг поставщиков (`inventory/supplierRatingsEngine.ts`);
      - Подготовлена архитектурная дорожная карта объединения в единый SSOT в Волне 183.
 - **Файлы**: `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/implants/implantCatalog.ts`, `packages/shared/src/inventory/*`, `packages/shared/src/warehouse/*`, `docs/competitive-audit/FEATURES_REGISTRY.md`, `docs/competitive-audit/BACKLOG.md`, `docs/competitive-audit/OUR_CRM_MAP.md`.
 - **Тесты**: `check:encoding` 0 ошибок (UTF-8), Single-Compiler Gate защищен (Мандат 8t), 326/326 фичей со статусом [ДА] (100% паритет).

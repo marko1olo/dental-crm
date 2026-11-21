@@ -25,3 +25,5 @@ export * from "./idempotency.js";
 export * from "./warranties.js";
 export * from "./dentalLabOrders.js";
 export * from "./intraoralScans.js";
+export * from "./hardware.js";
+export * from "./integrations/medflexSchema.js";

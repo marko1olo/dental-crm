@@ -22,6 +22,7 @@ import { OmnichannelOperatorDesk } from "../../../chat/OmnichannelOperatorDesk";
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectUkepSigningLauncher } from "../../../documents/ukep/DirectUkepSigningLauncher";
+import { PatientCabinetModal } from "../../../portal/patientCabinet/PatientCabinetModal";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
@@ -36,6 +37,7 @@ import { DirectTomorrowRemindersLauncher } from "../../../schedule/DirectTomorro
 import { HardwareSettingsTab } from "../../../settings/HardwareSettingsTab";
 import { SettingsAccessTab } from "../../../settings/SettingsAccessTab";
 import { SettingsStaffTab } from "../../../settings/SettingsStaffTab";
+import { MedflexSettingsTab } from "../../../settings/integrations/MedflexSettingsTab";
 import { type StaffProfileExtended, staffProfileExtendedSchema } from "@dental/shared";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
@@ -184,6 +186,23 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			hashPrefixes: ["#booking?", "#booking/", "#online-booking?", "#public-booking?"],
 		},
 		render: () => <DirectPublicBookingLauncher />,
+	},
+	// 3b. Личный кабинет пациента (Портал)
+	{
+		id: "patient-cabinet",
+		title: "Личный кабинет пациента",
+		criteria: {
+			tokens: ["portal", "patient-cabinet", "patient_cabinet", "cabinet"],
+			searchIncludes: ["portal=1", "patient_cabinet=1", "patient-cabinet=1", "standalone=portal"],
+			exactHashes: ["#portal", "#patient-cabinet", "#patient_cabinet"],
+			hashPrefixes: ["#portal?", "#portal/", "#patient-cabinet?", "#patient_cabinet?"],
+		},
+		render: () => (
+			<PatientCabinetModal
+				isOpen={true}
+				onClose={() => clearUrlTokens(["portal", "patient-cabinet", "patient_cabinet", "cabinet"])}
+			/>
+		),
 	},
 	// 4. Зуботехническая лаборатория и наряды
 	{
@@ -478,6 +497,24 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		render: () => (
 			<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6" data-testid="settings-staff-standalone-view">
 				<SettingsStaffTab props={{ dashboard: { clinicSettings: { staff: DEMO_STAFF_MEMBERS, name: "Клиника ДЕНТЕ" } } }} />
+			</div>
+		),
+	},
+	// 25. Интеграция с агрегаторами МедФлекс и ПроДокторов
+	{
+		id: "settings-medflex-studio",
+		title: "Интеграция с агрегаторами МедФлекс и ПроДокторов",
+		criteria: {
+			tokens: ["medflex", "prodoctorov", "settings-medflex"],
+			searchIncludes: ["medflex=1", "standalone=medflex", "prodoctorov=1"],
+			exactHashes: ["#medflex", "#prodoctorov", "#settings/medflex", "#settings/prodoctorov"],
+			hashPrefixes: ["#medflex?", "#prodoctorov?", "#settings/medflex?"],
+		},
+		render: () => (
+			<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6" data-testid="settings-medflex-standalone-view">
+				<div className="max-w-5xl mx-auto">
+					<MedflexSettingsTab />
+				</div>
 			</div>
 		),
 	},

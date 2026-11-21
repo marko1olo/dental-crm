@@ -57,3 +57,57 @@ export function verifyProdoctorovWebhookAuth(
 		],
 	});
 }
+
+/**
+ * Валидация криптографической подписи HMAC-SHA256 входящего вебхука МедФлекс
+ * по секрету интеграции конкретной клиники (Мандат 8e, изоляция тенантов).
+ */
+export function verifyClinicMedflexSignature(
+	req: FastifyRequest,
+	webhookSecret: string,
+): boolean {
+	if (!webhookSecret || !webhookSecret.trim()) {
+		return false;
+	}
+
+	const headers = req.headers;
+	const signature = (
+		headers["x-medflex-signature"] ||
+		headers["x-prodoctorov-signature"] ||
+		headers["x-hub-signature-256"] ||
+		headers["x-signature"]
+	);
+
+	const directSecret = (
+		headers["x-medflex-secret"] ||
+		headers["x-webhook-secret"]
+	);
+
+	const reqWithRaw = req as FastifyRequest & { rawBody?: string | Buffer };
+	let rawPayload: string | Buffer;
+	if (reqWithRaw.rawBody !== undefined && reqWithRaw.rawBody !== null) {
+		rawPayload = reqWithRaw.rawBody;
+	} else if (typeof req.body === "string" || Buffer.isBuffer(req.body)) {
+		rawPayload = req.body;
+	} else {
+		rawPayload = JSON.stringify(req.body ?? {});
+	}
+
+	if (typeof signature === "string" && signature.trim()) {
+		return verifyHmacSha256Signature(webhookSecret, rawPayload, signature.trim());
+	}
+
+	if (typeof directSecret === "string" && directSecret.trim()) {
+		try {
+			const expected = Buffer.from(webhookSecret.trim());
+			const actual = Buffer.from(directSecret.trim());
+			if (expected.length === actual.length && timingSafeEqual(expected, actual)) {
+				return true;
+			}
+		} catch {
+			return false;
+		}
+	}
+
+	return false;
+}

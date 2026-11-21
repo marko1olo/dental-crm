@@ -5,11 +5,13 @@
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
+import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db, type TenantDb } from "../../../db/client.js";
 import {
 	appointments,
 	chairs,
 	clinics,
+	medflexDoctorMappings,
 	organizations,
 	prodoctorovSyncExports,
 	scheduleTimeReservations,
@@ -24,6 +26,7 @@ import {
 	type ProdoctorovSyncStatusUpdate,
 	type SlotsQueryParams,
 } from "./types.js";
+import { findIntegrationByClinicExternalId } from "./medflexIntegrationService.js";
 
 /**
  * Фильтр внутренних технических позиций клиники (расходные материалы, технические этапы лаборатории,
@@ -132,17 +135,21 @@ export async function resolveOrganizationId(
 	if (typeof headerOrg === "string" && headerOrg.trim()) {
 		return headerOrg.trim();
 	}
-	// Fallback к первой организации (для Solo Doctor / 1 кресло по Мандату 8n)
-	try {
-		const [firstOrg] = await db
-			.select({ id: organizations.id })
-			.from(organizations)
-			.limit(1);
-		if (firstOrg?.id) return firstOrg.id;
-	} catch {
-		// Ignore
+	const params = request.params as Record<string, unknown> | undefined;
+	if (typeof params?.organizationId === "string" && params.organizationId.trim()) {
+		return params.organizationId.trim();
 	}
-	return "00000000-0000-0000-0000-000000000001";
+	if (typeof params?.clinicExternalId === "string" && params.clinicExternalId.trim()) {
+		const integration = await findIntegrationByClinicExternalId(db, params.clinicExternalId.trim());
+		if (integration?.organizationId) {
+			return integration.organizationId;
+		}
+	}
+
+	const error = new Error("Отсутствует обязательный контекст организации (organizationId или clinicExternalId). Укажите идентификатор клиники в параметрах или заголовках.");
+	(error as Error & { statusCode?: number; code?: string }).statusCode = 400;
+	(error as Error & { statusCode?: number; code?: string }).code = "MissingOrganizationContext";
+	throw error;
 }
 
 export async function syncProdoctorovExportStatus(
@@ -241,15 +248,11 @@ export async function generatePricelistXml(
 		if (!targetCategory) continue;
 
 		const priceNum = Number(item.priceRub ?? item.basePriceRub ?? 0);
-		const priceKopecks = Math.round(priceNum * 100);
-		// Исключаем бесплатные/нулевые внутренние технические заглушки
+		const priceKopecks = rublesToKopecks(priceNum);
+		// Исключаем бесплатные/нулевые внутренние технические заглушки (Мандат 8bm: цены через formatKopecksToRubles)
 		if (priceKopecks <= 0) continue;
 
-		// Целочисленные рубли (например "1500") либо рубли с 2 знаками ("1500.50")
-		const formattedPrice =
-			priceKopecks % 100 === 0
-				? (priceKopecks / 100).toString()
-				: (priceKopecks / 100).toFixed(2);
+		const formattedPrice = formatKopecksToRubles(priceKopecks);
 
 		const code804n = item.order804nCode || item.code;
 		const specialtyRu =
@@ -309,13 +312,32 @@ export async function calculateAvailableSlots(
 		durationMinutes,
 	} = query;
 
+	// 0. Загрузка маппингов внешних ID врачей МедФлекс / ПроДокторов
+	const mappings = await tx
+		.select()
+		.from(medflexDoctorMappings)
+		.where(eq(medflexDoctorMappings.organizationId, organizationId));
+
+	const mappingByStaffId = new Map<string, string>();
+	const staffIdByExternalId = new Map<string, string>();
+	for (const m of mappings) {
+		if (m.isSyncEnabled) {
+			mappingByStaffId.set(m.staffId, m.externalDoctorId);
+			staffIdByExternalId.set(m.externalDoctorId, m.staffId);
+		}
+	}
+
+	const resolvedDoctorId = doctorId
+		? (staffIdByExternalId.get(doctorId) ?? doctorId)
+		: undefined;
+
 	// 1. Поиск врачей
 	const doctorConditions = [
 		eq(users.organizationId, organizationId),
 		eq(users.isActive, true),
 	];
-	if (doctorId) {
-		doctorConditions.push(eq(users.id, doctorId));
+	if (resolvedDoctorId) {
+		doctorConditions.push(eq(users.id, resolvedDoctorId));
 	}
 
 	let activeDoctors = await tx
@@ -497,18 +519,7 @@ export async function calculateAvailableSlots(
 					);
 					if (docBusy) continue;
 
-					// Проверка технологической блокировки
-					const resBusy = reservations.some((r) => {
-						const rStart = Date.parse(r.startTime);
-						const rEnd = Date.parse(r.endTime);
-						if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {
-							return rStart < slotEnd.getTime() && rEnd > slotStart.getTime();
-						}
-						return false;
-					});
-					if (resBusy) continue;
-
-					// Проверка доступности хотя бы одного кресла
+					// Проверка доступности хотя бы одного кресла с учетом занятости и технологических резерваций (DEF-PD-03)
 					let availableChairId: string | null = null;
 					let availableChairName: string | null = null;
 
@@ -520,14 +531,46 @@ export async function calculateAvailableSlots(
 									a.startsAt < slotEnd &&
 									a.endsAt > slotStart,
 							);
-							return !chairBusy;
+							if (chairBusy) return false;
+
+							const chairReserved = reservations.some((r) => {
+								const matchesChair =
+									!r.chairName ||
+									r.chairName === "*" ||
+									r.chairName.toUpperCase() === "ALL" ||
+									r.chairName.trim().toLowerCase() === ch.name.trim().toLowerCase() ||
+									(r as { chairId?: string }).chairId === ch.id;
+
+								if (!matchesChair) return false;
+
+								const rStart = Date.parse(r.startTime);
+								const rEnd = Date.parse(r.endTime);
+								if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {
+									return rStart < slotEnd.getTime() && rEnd > slotStart.getTime();
+								}
+								return false;
+							});
+
+							return !chairReserved;
 						});
+
 						if (!foundChair) {
-							// Все кресла заняты в этот слот
+							// Все кресла заняты или закрыты на санобработку в этот слот
 							continue;
 						}
 						availableChairId = foundChair.id;
 						availableChairName = foundChair.name;
+					} else {
+						// Если в клинике нет кресел в базе (соло-практика), проверяем только общие технологические блокировки
+						const generalResBusy = reservations.some((r) => {
+							const rStart = Date.parse(r.startTime);
+							const rEnd = Date.parse(r.endTime);
+							if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {
+								return rStart < slotEnd.getTime() && rEnd > slotStart.getTime();
+							}
+							return false;
+						});
+						if (generalResBusy) continue;
 					}
 
 					doctorSlots.push({
@@ -546,6 +589,7 @@ export async function calculateAvailableSlots(
 		totalAvailableSlots += doctorSlots.length;
 		doctorsWithSlots.push({
 			doctorId: doctor.id,
+			externalDoctorId: mappingByStaffId.get(doctor.id) ?? null,
 			doctorName: doctor.fullName,
 			specialties: Array.isArray(doctor.specialties)
 				? (doctor.specialties as string[])

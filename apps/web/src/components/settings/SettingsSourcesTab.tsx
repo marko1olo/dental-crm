@@ -20,6 +20,7 @@ import { DicomServerConfigPanel } from "./sources/dicomCapability/DicomServerCon
 import { SourcesConnectorGrid } from "./sources/SourcesConnectorGrid";
 import { SourcesDicomCapability } from "./sources/SourcesDicomCapability";
 import { SourcesIntegrationPresets } from "./sources/SourcesIntegrationPresets";
+import { MedflexSettingsTab } from "./integrations/MedflexSettingsTab";
 
 export function SettingsSourcesTab() {
 	const appLogic = useAppLogicContext() as {
@@ -39,6 +40,9 @@ export function SettingsSourcesTab() {
 				<div className="[&>div]:!my-0">
 					<EgiszBlankPermissionsWidget />
 				</div>
+			</div>
+			<div className="mb-6">
+				<MedflexSettingsTab />
 			</div>
 			<SourcesConnectorGrid />
 			<SourcesDicomCapability />

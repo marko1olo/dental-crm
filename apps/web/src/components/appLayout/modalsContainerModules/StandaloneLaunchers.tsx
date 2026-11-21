@@ -78,6 +78,8 @@ export function renderStandaloneLaunchers(
 			window.location.search.includes("hardware") ||
 			window.location.hash.includes("reminders") ||
 			window.location.search.includes("reminders") ||
+			window.location.hash.includes("medflex") ||
+			window.location.search.includes("medflex") ||
 			window.location.hash.includes("waitlist") ||
 			window.location.search.includes("waitlist"));
 

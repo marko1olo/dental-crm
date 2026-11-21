@@ -18,6 +18,7 @@ import { SettingsMarketingTab } from "../../../components/settings/SettingsMarke
 import { SettingsModulesTab } from "../../../components/settings/SettingsModulesTab";
 import { SettingsReportingTab } from "../../../components/settings/SettingsReportingTab";
 import { SettingsSourcesTab } from "../../../components/settings/SettingsSourcesTab";
+import { MedflexSettingsTab } from "../../../components/settings/integrations/MedflexSettingsTab";
 
 import type { SettingsViewFeatureFlags } from "../types.js";
 
@@ -33,6 +34,7 @@ export const SettingsOperationsTabContent: React.FC<SettingsOperationsTabContent
 	flags,
 }) => {
 	if (settingsTab === "sources") return <SettingsSourcesTab />;
+	if (settingsTab === "medflex" || settingsTab === "prodoctorov") return <MedflexSettingsTab />;
 	if (settingsTab === "ai") return <SettingsAiTab />;
 
 	if (settingsTab === "modules") {
@@ -40,6 +42,7 @@ export const SettingsOperationsTabContent: React.FC<SettingsOperationsTabContent
 			<div className="space-y-6">
 				<SettingsModulesTab />
 				<YandexCalendarSyncsWidget />
+				<MedflexSettingsTab />
 			</div>
 		);
 	}

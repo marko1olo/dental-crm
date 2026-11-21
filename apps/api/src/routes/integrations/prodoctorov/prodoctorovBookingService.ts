@@ -1,21 +1,26 @@
 /**
  * routes/integrations/prodoctorov/prodoctorovBookingService.ts
  * Layer 2: Сервис обработки бронирований ПроДокторов / МедФлекс (создание, перенос, отмена, CRM-лиды).
+ * Использует канонический транзакционный шлюз executeBookingTransaction с каскадной блокировкой ресурсов.
  */
 
-import { and, eq, ilike, lt, ne, sql } from "drizzle-orm";
+import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import type { TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
-	chairs,
 	crmLeadStageHistory,
 	crmLeads,
 	externalScheduleActionLogs,
-	patients,
+	medflexDoctorMappings,
 	users,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { executeBookingTransaction } from "../../publicBooking/bookingMutationService.js";
+import {
+	isWebhookDeliveryProcessed,
+	recordMedflexWebhookLog,
+} from "./medflexIntegrationService.js";
 import type { BookingResponseData, WebhookPayload } from "./types.js";
 
 export async function processProdoctorovBookingWebhook(
@@ -23,34 +28,66 @@ export async function processProdoctorovBookingWebhook(
 	req: FastifyRequest,
 	payload: WebhookPayload,
 	organizationId: string,
+	options?: {
+		autoConfirmBookings?: boolean;
+		defaultChairId?: string | null;
+	},
 ): Promise<BookingResponseData> {
-	const bookingId = payload.bookingId || payload.deliveryId || "";
+	const bookingId = payload.bookingId || payload.deliveryId || payload.delivery_id || "";
+	const deliveryId =
+		payload.deliveryId ||
+		payload.delivery_id ||
+		payload.bookingId ||
+		payload.booking_id ||
+		bookingId ||
+		`gen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 	const patientFullName =
 		payload.patient?.fullName ||
+		payload.patient?.full_name ||
 		payload.patient?.name ||
 		payload.patientName ||
+		payload.patient_name ||
 		"Пациент с ПроДокторов";
-	const patientPhone = payload.patient?.phone || payload.patientPhone || null;
-	const patientBirthDate =
-		payload.patient?.birthDate || payload.patientBirthDate || null;
-	const patientEmail = payload.patient?.email || payload.patientEmail || null;
-
+	const patientPhone =
+		payload.patient?.phone ||
+		payload.patientPhone ||
+		payload.patient_phone ||
+		null;
 	const doctorUserId =
 		payload.appointment?.doctorId ||
+		payload.appointment?.doctor_id ||
 		payload.appointment?.doctorUserId ||
+		payload.appointment?.doctor_user_id ||
 		payload.doctorId ||
+		payload.doctor_id ||
 		payload.doctorUserId ||
+		payload.doctor_user_id ||
 		null;
-	const chairId = payload.appointment?.chairId || payload.chairId || null;
-	const rawStartsAt = payload.appointment?.startsAt || payload.startsAt || null;
-	const rawEndsAt = payload.appointment?.endsAt || payload.endsAt || null;
+	const rawStartsAt =
+		payload.appointment?.startsAt ||
+		payload.appointment?.starts_at ||
+		payload.startsAt ||
+		payload.starts_at ||
+		null;
+	const rawEndsAt =
+		payload.appointment?.endsAt ||
+		payload.appointment?.ends_at ||
+		payload.endsAt ||
+		payload.ends_at ||
+		null;
 	const durationMinutes =
-		payload.appointment?.durationMinutes || payload.durationMinutes || 30;
+		payload.appointment?.durationMinutes ||
+		payload.appointment?.duration_minutes ||
+		payload.durationMinutes ||
+		payload.duration_minutes ||
+		30;
 	const reason =
 		payload.appointment?.reason ||
 		payload.reason ||
 		"Запись через ПроДокторов / МедФлекс";
-	const comment = payload.appointment?.comment || payload.comment || "";
+	const comment =
+		payload.appointment?.comment || payload.comment || "";
 
 	const isCancel =
 		payload.event === "booking_cancelled" ||
@@ -76,7 +113,11 @@ export async function processProdoctorovBookingWebhook(
 				.where(
 					and(
 						eq(appointments.organizationId, organizationId),
-						ilike(appointments.comment, `%${bookingId}%`),
+						or(
+							ilike(appointments.comment, `%[ПроДокторов ID: ${bookingId}]%`),
+							ilike(appointments.comment, `%[MedFlex ID: ${bookingId}]%`),
+							ilike(appointments.comment, `%ID: ${bookingId}]%`),
+						),
 					),
 				)
 				.limit(1);
@@ -128,6 +169,15 @@ export async function processProdoctorovBookingWebhook(
 				status: "success",
 			});
 
+			await recordMedflexWebhookLog(
+				tx,
+				organizationId,
+				"booking_cancelled",
+				deliveryId,
+				payload,
+				"processed",
+			);
+
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "APPOINTMENT_CANCELLED",
 				payload: {
@@ -147,6 +197,16 @@ export async function processProdoctorovBookingWebhook(
 			};
 		}
 
+		await recordMedflexWebhookLog(
+			tx,
+			organizationId,
+			"booking_cancelled",
+			deliveryId,
+			payload,
+			"ignored",
+			"Запись для отмены не найдена",
+		);
+
 		return {
 			statusCode: 200,
 			body: {
@@ -159,7 +219,32 @@ export async function processProdoctorovBookingWebhook(
 
 	// ─── СЦЕНАРИЙ СОЗДАНИЯ БРОНИРОВАНИЯ (BOOKING CREATED) ───────────
 
-	// 1. Идемпотентность: проверка повторного вебхука
+	// 1. Идемпотентность: проверка повторного вебхука по deliveryId в medflexWebhookLogs
+	if (deliveryId) {
+		const alreadyProcessed = await isWebhookDeliveryProcessed(
+			tx,
+			organizationId,
+			deliveryId,
+		);
+		if (alreadyProcessed) {
+			req.log.info(
+				{ deliveryId, organizationId },
+				"MedFlex webhook delivery already processed (idempotent replay skipped)",
+			);
+			return {
+				statusCode: 200,
+				body: {
+					success: true,
+					duplicate: true,
+					deliveryId,
+					message:
+						"Бронирование уже зарегистрировано ранее (идемпотентный ответ)",
+				},
+			};
+		}
+	}
+
+	// Дополнительная проверка по ID бронирования в комментариях визитов
 	if (bookingId) {
 		const [existing] = await tx
 			.select({ id: appointments.id })
@@ -167,7 +252,11 @@ export async function processProdoctorovBookingWebhook(
 			.where(
 				and(
 					eq(appointments.organizationId, organizationId),
-					ilike(appointments.comment, `%${bookingId}%`),
+					or(
+						ilike(appointments.comment, `%[ПроДокторов ID: ${bookingId}]%`),
+						ilike(appointments.comment, `%[MedFlex ID: ${bookingId}]%`),
+						ilike(appointments.comment, `%ID: ${bookingId}]%`),
+					),
 				),
 			)
 			.limit(1);
@@ -175,7 +264,7 @@ export async function processProdoctorovBookingWebhook(
 		if (existing) {
 			req.log.info(
 				{ bookingId, organizationId },
-				"ProDoctorov booking already processed (replay skipped)",
+				"ProDoctorov booking already processed in appointments (replay skipped)",
 			);
 			return {
 				statusCode: 200,
@@ -190,54 +279,45 @@ export async function processProdoctorovBookingWebhook(
 		}
 	}
 
-	// 2. Поиск или создание пациента (с нормализацией номера до 10 цифр)
-	let patientId: string | null = null;
-	if (patientPhone) {
-		const digits = patientPhone.replace(/\D/g, "");
-		const suffix = digits.length >= 10 ? digits.slice(-10) : null;
-		const phoneCondition = suffix
-			? sql`right(regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g'), 10) = ${suffix}`
-			: eq(patients.phone, patientPhone);
-
-		const [foundPatient] = await tx
-			.select({ id: patients.id })
-			.from(patients)
+	// 2. Определение врача (с учетом medflexDoctorMappings и Мандата 8n: поддержка соло-врача)
+	let resolvedDoctorId: string | null = null;
+	if (doctorUserId) {
+		// Проверяем, не является ли переданный ID внешним идентификатором МедФлекс
+		const [mapping] = await tx
+			.select({ staffId: medflexDoctorMappings.staffId })
+			.from(medflexDoctorMappings)
 			.where(
 				and(
-					eq(patients.organizationId, organizationId),
-					phoneCondition,
+					eq(medflexDoctorMappings.organizationId, organizationId),
+					eq(medflexDoctorMappings.externalDoctorId, doctorUserId),
+					eq(medflexDoctorMappings.isSyncEnabled, true),
 				),
 			)
 			.limit(1);
-		if (foundPatient) {
-			patientId = foundPatient.id;
+
+		if (mapping) {
+			resolvedDoctorId = mapping.staffId;
+		} else {
+			// Проверяем существование пользователя по внутреннему ID
+			const [existingUser] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, organizationId),
+						eq(users.id, doctorUserId),
+						eq(users.isActive, true),
+					),
+				)
+				.limit(1);
+			if (existingUser) {
+				resolvedDoctorId = existingUser.id;
+			}
 		}
 	}
 
-	if (!patientId) {
-		const [newPatient] = await tx
-			.insert(patients)
-			.values({
-				organizationId,
-				fullName: patientFullName,
-				phone: patientPhone || null,
-				birthDate: patientBirthDate || null,
-				email: patientEmail || null,
-				status: "active",
-				notes: "Первичный пациент из агрегатора ПроДокторов / МедФлекс",
-			})
-			.returning({ id: patients.id });
-		if (!newPatient) {
-			throw new Error("Не удалось создать запись пациента в базе данных");
-		}
-		patientId = newPatient.id;
-	}
-
-	// 3. Определение врача (Мандат 8n: поддержка соло-врача)
-	let resolvedDoctorId: string;
-	if (doctorUserId) {
-		resolvedDoctorId = doctorUserId;
-	} else {
+	// Fallback для соло-врача / практики из 1-2 кресел (Мандат 8n)
+	if (!resolvedDoctorId) {
 		const [firstDoc] = await tx
 			.select({ id: users.id })
 			.from(users)
@@ -265,6 +345,15 @@ export async function processProdoctorovBookingWebhook(
 			if (anyUser) {
 				resolvedDoctorId = anyUser.id;
 			} else {
+				await recordMedflexWebhookLog(
+					tx,
+					organizationId,
+					"booking_created",
+					deliveryId,
+					payload,
+					"error",
+					"DoctorNotFound",
+				);
 				return {
 					statusCode: 400,
 					body: {
@@ -277,26 +366,17 @@ export async function processProdoctorovBookingWebhook(
 		}
 	}
 
-	// 4. Определение кресла (опционально)
-	let resolvedChairId = chairId;
-	if (!resolvedChairId) {
-		const [firstChair] = await tx
-			.select({ id: chairs.id })
-			.from(chairs)
-			.where(
-				and(
-					eq(chairs.organizationId, organizationId),
-					eq(chairs.isActive, true),
-				),
-			)
-			.limit(1);
-		if (firstChair) {
-			resolvedChairId = firstChair.id;
-		}
-	}
-
-	// 5. Валидация временных меток
+	// 3. Валидация временных меток
 	if (!rawStartsAt) {
+		await recordMedflexWebhookLog(
+			tx,
+			organizationId,
+			"booking_created",
+			deliveryId,
+			payload,
+			"error",
+			"MissingStartsAt",
+		);
 		return {
 			statusCode: 400,
 			body: {
@@ -307,6 +387,15 @@ export async function processProdoctorovBookingWebhook(
 	}
 	const candidateStarts = new Date(rawStartsAt);
 	if (Number.isNaN(candidateStarts.getTime())) {
+		await recordMedflexWebhookLog(
+			tx,
+			organizationId,
+			"booking_created",
+			deliveryId,
+			payload,
+			"error",
+			"InvalidStartsAt",
+		);
 		return {
 			statusCode: 400,
 			body: {
@@ -324,6 +413,15 @@ export async function processProdoctorovBookingWebhook(
 		Number.isNaN(candidateEnds.getTime()) ||
 		candidateEnds <= candidateStarts
 	) {
+		await recordMedflexWebhookLog(
+			tx,
+			organizationId,
+			"booking_created",
+			deliveryId,
+			payload,
+			"error",
+			"InvalidEndsAt",
+		);
 		return {
 			statusCode: 400,
 			body: {
@@ -333,23 +431,41 @@ export async function processProdoctorovBookingWebhook(
 		};
 	}
 
-	// 6. Защита от овербукинга: проверка пересечений у врача
-	const [overlappingAppt] = await tx
-		.select({ id: appointments.id })
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, organizationId),
-				eq(appointments.doctorUserId, resolvedDoctorId),
-				ne(appointments.status, "cancelled"),
-				ne(appointments.status, "no_show"),
-				lt(appointments.startsAt, candidateEnds),
-				sql`${appointments.endsAt} > ${candidateStarts}`,
-			),
-		)
-		.limit(1);
+	// 4. Вызов атомарного шлюза executeBookingTransaction с блокировкой ресурсов FOR UPDATE (Мандаты 8d, 8e)
+	const bookingComment = [
+		bookingId ? `[ПроДокторов ID: ${bookingId}]` : "[ПроДокторов / МедФлекс]",
+		reason,
+		comment,
+	]
+		.filter(Boolean)
+		.join(" ");
 
-	if (overlappingAppt) {
+	const isAutoConfirm = options?.autoConfirmBookings !== false;
+
+	const bookingResult = await executeBookingTransaction(tx, {
+		organizationId,
+		doctorId: resolvedDoctorId,
+		startDate: candidateStarts,
+		endDate: candidateEnds,
+		patientName: patientFullName,
+		patientPhone: patientPhone || "+79000000000",
+		comment: bookingComment,
+		source: "prodoctorov_medflex",
+		status: isAutoConfirm ? "confirmed" : "planned",
+		idempotencyKey: deliveryId || bookingId || undefined,
+	});
+
+	// Обработка конфликта овербукинга
+	if (bookingResult.conflict) {
+		await recordMedflexWebhookLog(
+			tx,
+			organizationId,
+			"booking_created",
+			deliveryId,
+			payload,
+			"conflict",
+			"SlotAlreadyBooked",
+		);
 		return {
 			statusCode: 409,
 			body: {
@@ -360,35 +476,39 @@ export async function processProdoctorovBookingWebhook(
 		};
 	}
 
-	// 7. Создание приема (Мандаты 8e & 8n: assistantUserId равен null)
-	const fullComment = [
-		bookingId ? `[ПроДокторов ID: ${bookingId}]` : "[ПроДокторов]",
-		comment,
-	]
-		.filter(Boolean)
-		.join(" ");
-
-	const [createdAppointment] = await tx
-		.insert(appointments)
-		.values({
+	// Обработка блокировки (черный список / архив)
+	if (bookingResult.blocked) {
+		await recordMedflexWebhookLog(
+			tx,
 			organizationId,
-			patientId,
-			doctorUserId: resolvedDoctorId,
-			assistantUserId: null, // МАНДАТ 8e/8n: без обязательного ассистента!
-			chairId: resolvedChairId || null,
-			status: "planned",
-			startsAt: candidateStarts,
-			endsAt: candidateEnds,
-			reason: reason || "Запись через ПроДокторов / МедФлекс",
-			comment: fullComment,
-		})
-		.returning();
-
-	if (!createdAppointment) {
-		throw new Error("Не удалось создать запись на приём в базе данных");
+			"booking_created",
+			deliveryId,
+			payload,
+			"ignored",
+			bookingResult.message,
+		);
+		return {
+			statusCode: bookingResult.status,
+			body: {
+				error: bookingResult.error,
+				message: bookingResult.message,
+			},
+		};
 	}
 
-	// 8. Фиксация в аудит-логе внешних интеграций
+	const createdAppointment = bookingResult.appointment;
+	const resolvedPatientId = bookingResult.patientId;
+
+	// 5. Успешная фиксация в medflex_webhook_logs и аудит-логе
+	await recordMedflexWebhookLog(
+		tx,
+		organizationId,
+		"booking_created",
+		deliveryId,
+		payload,
+		"processed",
+	);
+
 	await tx.insert(externalScheduleActionLogs).values({
 		organizationId,
 		externalProvider: "prodoctorov_medflex",
@@ -398,7 +518,7 @@ export async function processProdoctorovBookingWebhook(
 		status: "success",
 	});
 
-	// 8a. Автоматическая фиксация лида в CRM-конвейере клиники (Мандат 8e/8n)
+	// 6. Автоматическая фиксация лида в CRM-конвейере клиники (Мандат 8e/8n)
 	try {
 		const now = new Date();
 		const [createdLead] = await tx
@@ -440,13 +560,13 @@ export async function processProdoctorovBookingWebhook(
 		);
 	}
 
-	// 9. Оповещение через WebSocket в реальном времени
+	// 7. Оповещение через WebSocket в реальном времени
 	try {
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "APPOINTMENT_CREATED",
 			payload: {
 				appointmentId: createdAppointment.id,
-				patientId,
+				patientId: resolvedPatientId,
 				patientName: patientFullName,
 				doctorUserId: resolvedDoctorId,
 				startsAt: candidateStarts.toISOString(),
@@ -466,7 +586,7 @@ export async function processProdoctorovBookingWebhook(
 		body: {
 			success: true,
 			appointmentId: createdAppointment.id,
-			patientId,
+			patientId: resolvedPatientId,
 			doctorUserId: resolvedDoctorId,
 			startsAt: candidateStarts.toISOString(),
 			endsAt: candidateEnds.toISOString(),
