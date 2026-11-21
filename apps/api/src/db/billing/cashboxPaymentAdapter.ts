@@ -3,6 +3,7 @@
  * Eliminates duplicate legacy payment pipelines (Mandate 8bf, Mandate 8e).
  */
 
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import {
 	type CreatePaymentInput,
@@ -23,19 +24,20 @@ export async function createPaymentInDb(
 	input: CreatePaymentInput,
 ): Promise<PaymentWithReplay> {
 	validateAndResolvePaymentSplit(input);
-	const effectiveMutationId = input.clientMutationId?.trim();
+	const effectiveMutationId = input.clientMutationId?.trim() || `pay-mut-${crypto.randomUUID()}`;
 	const inputWithInvoice = input as CreatePaymentInput & { invoiceId?: string };
 	const outcome = await processCashboxPayment(
 		organizationId,
 		{
 			...input,
+			clientMutationId: effectiveMutationId,
 			invoiceId: input.documentId ?? inputWithInvoice.invoiceId,
 		},
 		effectiveMutationId,
 	);
 
 	if (outcome.statusCode !== 200) {
-		const errBody = outcome.body as { message?: string; error?: string };
+		const errBody = (outcome.body || {}) as { message?: string; error?: string };
 		throw new Error(errBody.message || errBody.error || "Ошибка проведения платежа в кассе");
 	}
 

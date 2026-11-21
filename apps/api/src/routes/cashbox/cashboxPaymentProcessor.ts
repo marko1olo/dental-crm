@@ -1553,10 +1553,11 @@ export async function processCashboxPayment(
 			.for("update");
 
 		if (boxes.length === 0) {
+			const txObj = tx as unknown as Record<string, unknown>;
 			const isRealTransaction =
-				typeof (tx as any).rollback === "function" ||
-				typeof (tx as any).query === "object" ||
-				Boolean((tx as any)._?.session);
+				typeof txObj["rollback"] === "function" ||
+				typeof txObj["query"] === "object" ||
+				Boolean(txObj["_"]);
 			if (isRealTransaction) {
 				try {
 					const seeded = await ensureOrganizationCashBoxes(tx, orgId);

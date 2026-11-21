@@ -6,6 +6,10 @@ import { auditEvents, patients, treatmentItems, treatmentPlans } from "../../../
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
 import { cancelRejectedPlanTierLedgerItems } from "../handlers/mutations/planLedgerSync.js";
+import {
+	createInvoiceForApprovedPlan,
+	type CreatedInvoiceSummary,
+} from "../handlers/mutations/statusTreatmentPlanHandler.js";
 import { handleOtpRequest, verifyOtpCode } from "./pepOtpService.js";
 import { activeOtpCache, signTreatmentPlanPepSchema } from "./pepTypes.js";
 import { isValidUuid } from "@dental/shared";
@@ -87,7 +91,8 @@ export async function handleSignTreatmentPlanPep(
 	};
 
 	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-	const signedPlan = await db.transaction(async (tx) => {
+	const { signedPlan, createdInvoice } = await db.transaction(
+		async (tx): Promise<{ signedPlan: typeof treatmentPlans.$inferSelect | undefined; createdInvoice: CreatedInvoiceSummary | null }> => {
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
@@ -99,6 +104,7 @@ export async function handleSignTreatmentPlanPep(
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
 			.returning();
 
+		let invoice: CreatedInvoiceSummary | null = null;
 		if (updated) {
 			await tx
 				.update(treatmentItems)
@@ -122,9 +128,25 @@ export async function handleSignTreatmentPlanPep(
 				approvedPlanId: planId,
 				planGroupId: plan.planGroupId,
 			});
+
+			// DEF-PLAN-01 / ПЭП: Создаем счет/наряд в кассе при подписании плана через ПЭП
+			invoice = await createInvoiceForApprovedPlan(tx, {
+				organizationId,
+				patientId: plan.patientId,
+				planId,
+				planName: updated.name || plan.name || "Комплексный план лечения",
+				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice || plan.totalPriceRub || plan.totalPrice,
+				discountMode: updated.discountMode || plan.discountMode,
+				planDiscountPercent: updated.planDiscountPercent
+					? Number(updated.planDiscountPercent)
+					: (plan.planDiscountPercent ? Number(plan.planDiscountPercent) : 0),
+				planDiscountRub: updated.planDiscountRub
+					? Number(updated.planDiscountRub)
+					: (plan.planDiscountRub ? Number(plan.planDiscountRub) : 0),
+			});
 		}
 
-		return updated;
+		return { signedPlan: updated, createdInvoice: invoice };
 	});
 
 	try {
@@ -146,11 +168,31 @@ export async function handleSignTreatmentPlanPep(
 		payload: { planId, patientId: plan.patientId, signature: pepRecord },
 	});
 
+	if (createdInvoice) {
+		try {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "INVOICE_CREATED",
+				payload: {
+					invoiceId: createdInvoice.id,
+					invoiceNumber: createdInvoice.invoiceNumber,
+					patientId: plan.patientId,
+					patientName: createdInvoice.patientName,
+					totalAmountRub: createdInvoice.totalAmountRub,
+					status: "draft",
+				},
+			});
+		} catch (wsErr) {
+			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan PEP signing");
+		}
+	}
+
 	return reply.code(200).send({
 		success: true,
 		signed: true,
 		treatmentPlan: signedPlan,
 		signature: pepRecord,
 		documentHash,
+		invoice: createdInvoice,
+		createdInvoice,
 	});
 }
