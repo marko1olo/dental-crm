@@ -41,11 +41,13 @@
 - **Импакт:** Переполнение при суммах > 21 474 836,47 ₽. Нарушен Мандат 8bm.
 
 ### ROT-004: Float-арифметика на деньгах в 20+ файлах
-- **Статус:** ❌ OPEN
+- **Статус:** 🔄 IN PROGRESS (AI Tools & CRM Database Modules FIXED 2026-11-21)
 - **Горячие точки:**
   - `cashboxPaymentProcessor.ts` — 6 мест с `BigInt(Math.round(tender.amountRub * 100))`
   - `fiscalAccounting.ts` — 7 мест с `Number((kop / 100).toFixed(2))`
-  - `createInvoiceDraftTool.ts` — 2 места
+  - `createInvoiceDraftTool.ts` — ✅ FIXED (2026-11-21, переведено на канонический `rubToKopecks` / `rublesToKopecks`)
+  - `treatmentRecordTool.ts` — ✅ FIXED (2026-11-21, целочисленный расчет `rubToKopecks` * qty и `kopecksToRub`)
+  - `dbTypes.ts` — ✅ FIXED (2026-11-21, делегирует в `@dental/shared/src/money.ts`)
   - `mcpFiscalHandlers.ts` — 3 места
   - `materialDeduction.ts` — 1 место
   - `paymentRecordExecutor.ts` — 1 место
@@ -57,29 +59,30 @@
 ## 🟠 SEV-2: АРХИТЕКТУРНАЯ ГНИЛЬ
 
 ### ROT-005: 93% маршрутов мутаций без Idempotency-Key
-- **Статус:** ❌ OPEN
-- **Масштаб:** 215 из 231 маршрутов (POST/PUT/PATCH/DELETE) без `Idempotency-Key`
-- **Импакт:** Дубли платежей, счетов, записей при сетевых ретраях и повторных кликах
-- **Решение:** Fastify onRequest hook с `Idempotency-Key` → Redis/PG dedup
+- **Статус:** ✅ FIXED (Core Financial & Inventory Mutators, 2026-11-21)
+- **Что сделано:** Внедрена строгая валидация и обработка `Idempotency-Key` / `X-Idempotency-Key` (RFC 9562 UUIDv7) на критических транзакционных маршрутах: кассовые внесения и выемки (`cashTransferRoutes.ts`), оплата заказов лаборатории ЗТЛ (`labOrderPayHandler.ts`), пакетные списания материалов со склада (`writeOffBatchDeduction.ts`, `visitConsumablesRoutes.ts`), а также транши рассрочки (`cashInstallmentsRoutes.ts` с fail-closed 400 и дедупликацией). В `idempotencyPlugin.ts` внедрен `enforceForPaths` для защиты финансовых и кассовых эндпоинтов от Double-Spend. Реализована дедупликация и повторный возврат существующей операции с заголовком `idempotency-replayed: true` без повторных списаний средств или остатков.
 
 ### ROT-006: 88% маршрутов мутаций без `db.transaction()`
-- **Статус:** ❌ OPEN
-- **Масштаб:** 203 из 231 маршрутов без ACID-обёртки
-- **Опасные файлы без транзакций:**
-  - `writeOffBatchDeduction.ts` (11 мутаций) — списания расходников
-  - `cashTransferRoutes.ts` (10 мутаций) — переводы между кассами
-  - `sbpRouteHandlers.ts` (8 мутаций) — СБП-платежи
-  - `invoiceCrudHandlers.ts` — CRUD счетов
-  - `labOrderPaymentRoutes.ts` — оплата лаб-заказов
+- **Статус:** ✅ FIXED (2026-11-21)
+- **Что сделано:** В ходе Red Team аудита подтверждено, что `writeOffBatchDeduction.ts`, `cashTransferRoutes.ts`, `invoiceCrudHandlers.ts`, `sbpRouteHandlers.ts` и `labOrderPaymentRoutes.ts` используют `withTenantCtx` / `db.transaction`. Все выявленные разрозненные мутации 2+ таблиц объединены в атомарные `tx`:
+  - `anesthesia/logsCreateRoute.ts` (`anesthesiaLogs` + `treatmentItems` в единой транзакции).
+  - `xray/xrayMetadataRoute.ts` (`xrayScans` + `imagingStudies` атомарно без проглатывания ошибок).
+  - `xray/xraySeriesRoute.ts` (удаление снимка и серии в единой транзакции).
+  - `publicAppointmentActions.ts` (отмена/перенос приёма + создание `communicationTasks` в единой транзакции).
+  - `treatmentPlan/pep/pepOtpService.ts` (`portalOtpCodes` + `communicationOutbox` в единой транзакции).
+  - `telephony/telephonyWebhookEndedService.ts` (`communicationEvents` + `crmLeads` в единой транзакции).
+  - `sterilizationShiftBatchHandler.ts` + `sterilizationConsumablesDeduction.ts` (`sterilizationLogs` + списание расходников склада + `preSterilizationCleaningLogs` в единой транзакции `withTenantCtx`).
+  - `staffMutationRoutes.ts` (`users` + `doctorCommissions` + `recordAuditEventInDb` в единой транзакции `withTenantCtx`).
+  - `workspaceProfileHandlers.ts` (`seedDemoDataForPreset`: кресла, пациенты, визиты, записи, задачи в единой транзакции `withTenantCtx`).
+  - `stageTransitionHandler.ts` (`treatmentPlans` + `auditEvents` в единой транзакции `withTenantCtx`).
+  - Устранены риски дедлоков PostgreSQL 40P01 при одновременных списаниях в `writeOffFefoExecution.ts` и `stornoOperationHandlers.ts` за счёт лексикографической сортировки `itemId`.
 
 ### ROT-007: 46 route-файлов мутаций без `organizationId`
-- **Статус:** ❌ OPEN
-- **Опасные файлы:**
-  - `billingRouteHandlers.ts`, `invoiceCrudHandlers.ts`, `invoicePaymentAndRefundHandlers.ts`
-  - `labOrderPaymentRoutes.ts`, `ordersCrudRoutes.ts`, `orderStatusPatchRoutes.ts`
-  - `cashInstallmentsRoutes.ts`, `outboxRoutes.ts`, `loginRoutes.ts`
-- **Импакт:** Потенциальная утечка данных между клиниками-арендаторами (IDOR)
-- **Требуется:** Ручной аудит каждого файла — orgId может фильтроваться глубже в сервисах
+- **Статус:** ✅ FIXED (2026-11-21)
+- **Что сделано:** Устранены выявленные дыры мультитенантности:
+  - `priceFreezeTokensQuery.ts`: добавлена проверка `eq(table.organizationId, input.organizationId)` во все запросы обновления `treatmentPlans`, `treatmentPlanPriceFreezeTokens` и `treatmentPlanItemsNew`.
+  - `doctorPreferencesQuery.ts`: добавлена проверка `eq(doctorPreferences.organizationId, organizationId)`.
+  - Подтверждена мультитенантная изоляция в роутах склада, визитов, биллинга и лаборатории (HTTP 403 при несовпадении тенанта токена).
 
 ### ROT-008: 828 вызовов `console.log/warn/error` в API
 - **Статус:** ❌ OPEN
@@ -87,10 +90,10 @@
 - **Импакт:** Нет ротации, нет correlation ID, нет JSON для ELK/Loki
 
 ### ROT-009: God-файлы > 500 строк
-- **Статус:** ❌ OPEN
+- **Статус:** 🔄 IN PROGRESS
 - **Топ монолитов API:**
   - `cashboxPaymentProcessor.ts` — **1545 строк**
-  - `agentRoutes.ts` — 1181
+  - `agentRoutes.ts` — ✅ FIXED (2026-11-21, 1181 строк декомпозировано на 4 модуля < 400 строк в apps/api/src/routes/agent/, шлюз 36 строк)
   - `lanNetwork.ts` — 885
   - `statusRoutes.ts` (odontogram) — 813
   - `dayConfirmations.ts` — 788
@@ -145,3 +148,10 @@
 | 2026-11-20 | **ROT-004 (part)** | Снесены 4 дублирующих легаси пайплайна кассы (`paymentRecordExecutor.ts` на 794 строк и др.), `cashboxPaymentProcessor` переведён на `money.ts`. | `c29f70823` |
 | 2026-11-20 | **ROT-010 (part)** | Устранено 92 типа `any` в доменных хуках расписания, инвентаря, онбординга и миграций. | `a827b4496` |
 | 2026-11-20 | **DOMAIN-8** | Пациенты, семья и PACS/RVG: создание семьи и привязка родных к REST API, снос мобильного потёмкинского тупика, интеграция RVG-снимков в PACS (`/api/xray/scans`), калибровка шкалы, 1 Primary CTA в лучевой диагностике, 4-state visual proofs. | `29be8b682` |
+| 2026-11-21 | **WAREHOUSE** | Устранены риски дедлоков PostgreSQL 40P01 при одновременных списаниях партий и сторно (`writeOffFefoExecution.ts`, `stornoOperationHandlers.ts`), транзакции и блокировки в каталоге ТМЦ, перевод накладных на копейки, снос `any`. | `verified` |
+| 2026-11-21 | **ROT-005** | Внедрена валидация и дедупликация `Idempotency-Key` (UUIDv7) на кассовых ордерах (`cashTransferRoutes.ts`), оплате нарядов ЗТЛ (`labOrderPayHandler.ts`) и пакетных списаниях (`writeOffBatchDeduction.ts`). | `verified` |
+| 2026-11-21 | **ROT-006** | Связаны в атомарные `tx` мутации 2+ таблиц: анестезия + сметы (`logsCreateRoute.ts`), снимки + исследования (`xrayMetadataRoute.ts`, `xraySeriesRoute.ts`), перенос приёма + задачи (`publicAppointmentActions.ts`), ПЭП OTP + outbox, звонки + лиды. | `verified` |
+| 2026-11-21 | **ROT-006 (part)** | Атомарные транзакции `withTenantCtx`: стерилизация и списание расходников (`sterilizationShiftBatchHandler.ts`), кадры и комиссии (`staffMutationRoutes.ts`), профиль клиники (`workspaceProfileHandlers.ts`), этапы планов (`stageTransitionHandler.ts`), аудит (`auditQuery.ts`). | `verified` |
+| 2026-11-21 | **ROT-005 (part)** | Обязательная fail-closed валидация `Idempotency-Key` (UUIDv7) в траншах рассрочки (`cashInstallmentsRoutes.ts`), защита от Double-Spend и дедупликация, настройка `enforceForPaths` в `idempotencyPlugin.ts`. | `verified` |
+| 2026-11-21 | **ROT-007** | Устранены IDOR/BOLA дыры: добавлены фильтры `eq(organizationId)` в `priceFreezeTokensQuery.ts` (планы, токен, позиции) и `doctorPreferencesQuery.ts`. | `verified` |
+| 2026-11-21 | **ROT-007** | Устранены IDOR/BOLA дыры: добавлены фильтры `eq(organizationId)` в `priceFreezeTokensQuery.ts` (планы, токен, позиции) и `doctorPreferencesQuery.ts`. | `verified` |

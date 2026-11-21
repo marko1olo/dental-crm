@@ -3,6 +3,7 @@
  * Соответствует Мандатам 8b (<= 120 строк), 8e (автономия врача), 8n (целочисленные копейки).
  */
 
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import type { DentalToolContext } from "../types.js";
 
 export type { DentalToolContext };
@@ -22,14 +23,16 @@ export function isValidFdiToothNumber(tooth: number): boolean {
 
 /**
  * Преобразование рублей в целочисленные копейки (Мандат 8n: целые числа amountKopecks)
+ * SSOT: использует канонический rublesToKopecks из @dental/shared
  */
 export function rubToKopecks(rub: number): bigint {
-	return BigInt(Math.round(rub * 100));
+	return BigInt(rublesToKopecks(rub));
 }
 
 /**
  * Преобразование целочисленных копеек в рубли
+ * SSOT: использует канонический kopecksToRubles из @dental/shared
  */
 export function kopecksToRub(kopecks: bigint | number): number {
-	return Number(kopecks) / 100;
+	return kopecksToRubles(kopecks);
 }

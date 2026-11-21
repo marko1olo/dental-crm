@@ -11,6 +11,8 @@ export interface IdempotencyPluginOptions {
 	retryAfterSeconds?: number;
 	/** Global disable switch. */
 	disabled?: boolean;
+	/** Paths or patterns where Idempotency-Key is strictly required (Fail-Closed 400). */
+	enforceForPaths?: Array<string | RegExp>;
 }
 
 export interface IdempotencyContext {

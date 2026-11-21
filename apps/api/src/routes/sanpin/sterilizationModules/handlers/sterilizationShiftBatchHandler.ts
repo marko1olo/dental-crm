@@ -9,7 +9,7 @@ import type { SterilizationPackagingType } from "@dental/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -29,73 +29,74 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 	const itemsDescription = body.itemsDescription || "Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)";
 	const now = new Date();
 
-	const existingToday = await db
-		.select({ cycleNumber: sterilizationLogs.cycleNumber })
-		.from(sterilizationLogs)
-		.where(and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, new Date(now.getFullYear(), now.getMonth(), now.getDate()))))
-		.orderBy(desc(sterilizationLogs.cycleNumber))
-		.limit(1);
+	const { inserted } = await withTenantCtx(organizationId, async (tx) => {
+		const existingToday = await tx
+			.select({ cycleNumber: sterilizationLogs.cycleNumber })
+			.from(sterilizationLogs)
+			.where(and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, new Date(now.getFullYear(), now.getMonth(), now.getDate()))))
+			.orderBy(desc(sterilizationLogs.cycleNumber))
+			.limit(1);
 
-	const startCycle = (existingToday[0]?.cycleNumber ?? 0) + 1;
-	const expiresAt = computeSterilizationExpiration(packagingType, now, "passed");
-	const logsToInsert: Array<typeof sterilizationLogs.$inferInsert> = [];
+		const startCycle = (existingToday[0]?.cycleNumber ?? 0) + 1;
+		const expiresAt = computeSterilizationExpiration(packagingType, now, "passed");
+		const logsToInsert: Array<typeof sterilizationLogs.$inferInsert> = [];
 
-	for (let i = 0; i < cyclesCount; i++) {
-		const cycleNumber = startCycle + i;
-		const generatedBarcode = generateSterilizationBarcode(cycleNumber, now);
+		for (let i = 0; i < cyclesCount; i++) {
+			const cycleNumber = startCycle + i;
+			const generatedBarcode = generateSterilizationBarcode(cycleNumber, now);
 
-		logsToInsert.push({
+			logsToInsert.push({
+				organizationId,
+				deviceName,
+				autoclaveId: body.autoclaveId || "АК-01",
+				cycleNumber,
+				itemsDescription: `${itemsDescription} (Партия ${cycleNumber})`,
+				packagingType,
+				temperatureCelsius: "134.0",
+				pressureBar: "2.15",
+				durationMin: 5,
+				indicatorType: "class5_integrating",
+				cycleMode: "B",
+				temperatureSet: "134.0",
+				pressureSet: "2.15",
+				passedIndicator: true,
+				status: "passed" as const,
+				barcode: generatedBarcode,
+				expiresAt,
+				operatorId,
+				timestamp: new Date(now.getTime() + i * 60000),
+			});
+		}
+
+		const insertedLogs = await tx.insert(sterilizationLogs).values(logsToInsert).returning();
+
+		await executeSterilizationConsumablesDeduction({
 			organizationId,
-			deviceName,
-			autoclaveId: body.autoclaveId || "АК-01",
-			cycleNumber,
-			itemsDescription: `${itemsDescription} (Партия ${cycleNumber})`,
+			userId: operatorId,
+			count: cyclesCount * 20,
 			packagingType,
-			temperatureCelsius: "134.0",
-			pressureBar: "2.15",
-			durationMin: 5,
 			indicatorType: "class5_integrating",
-			cycleMode: "B",
-			temperatureSet: "134.0",
-			pressureSet: "2.15",
-			passedIndicator: true,
-			status: "passed" as const,
-			barcode: generatedBarcode,
-			expiresAt,
-			operatorId,
-			timestamp: new Date(now.getTime() + i * 60000),
-		});
-	}
+		}, tx);
 
-	const inserted = await db.insert(sterilizationLogs).values(logsToInsert).returning();
+		await tx
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount: cyclesCount * 20,
+				testedSampleCount: Math.max(3, Math.ceil(cyclesCount * 20 * 0.01)),
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand: "Биолот 0.5% + Аламинол 1%",
+				rejectionReason: null,
+				operatorId,
+				notes: `[Предстерилизационная очистка] Очистка партии смены (${cyclesCount} циклов, ${cyclesCount * 20} лотков): азопирам и фенолфталеин отрицательные, норма. Допущено.`,
+				timestamp: now,
+			});
 
-	void executeSterilizationConsumablesDeduction({
-		organizationId,
-		userId: operatorId,
-		count: cyclesCount * 20,
-		packagingType,
-		indicatorType: "class5_integrating",
+		return { inserted: insertedLogs };
 	});
-
-	await db
-		.insert(preSterilizationCleaningLogs)
-		.values({
-			organizationId,
-			testType: "both",
-			batchItemCount: cyclesCount * 20,
-			testedSampleCount: Math.max(3, Math.ceil(cyclesCount * 20 * 0.01)),
-			isAzopyramNegative: true,
-			isPhenolphthaleinNegative: true,
-			isBatchApproved: true,
-			detergentBrand: "Биолот 0.5% + Аламинол 1%",
-			rejectionReason: null,
-			operatorId,
-			notes: `[Предстерилизационная очистка] Очистка партии смены (${cyclesCount} циклов, ${cyclesCount * 20} лотков): азопирам и фенолфталеин отрицательные, норма. Допущено.`,
-			timestamp: now,
-		})
-		.catch((err) => {
-			req.log.warn({ err }, "Non-blocking: could not record shift batch PSO test");
-		});
 
 	for (const insertedLog of inserted) {
 		wsBroker.broadcastToOrganization(organizationId, { type: "SANPIN_STERILIZATION_ADDED", payload: insertedLog });

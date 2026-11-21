@@ -18,7 +18,7 @@ import type {
 } from "@dental/shared";
 import { createAiRecognitionJobSchema } from "@dental/shared";
 import { persistMutableState } from "./stateNotifier.js";
-import { speechProviders } from "./speechProviders.js";
+import { speechProviders } from "../speech/providers.js";
 
 const aiRecognitionJobs: AiRecognitionJob[] = [];
 const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];

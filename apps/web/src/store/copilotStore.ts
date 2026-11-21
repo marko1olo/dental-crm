@@ -110,6 +110,7 @@ export interface CopilotStoreState {
 	setThreadSearchQuery: (query: string) => void;
 	saveThreadMessages: (threadId: string, messages: CopilotMessage[]) => void;
 	hydrateSessionsFromBackend: () => Promise<void>;
+	loadRemoteSettings: () => Promise<void>;
 	loadThreadMessages: (threadId: string) => Promise<CopilotMessage[]>;
 	addToolLog: (log: Omit<ToolExecutionLog, "id" | "timestamp">) => void;
 	setActiveDiff: (diff: ActiveDiff | null) => void;
@@ -322,18 +323,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		} catch (err) {
 			console.info("[copilotStore] Offline fallback for memory facts:", err);
 		}
-		try {
-			const remoteSettings = await fetchRemoteSettings();
-			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
-				set((state) => {
-					const merged = { ...state.settings, ...remoteSettings };
-					safeLocalStorageSetJson("dente_copilot_settings", merged);
-					return { settings: merged };
-				});
-			}
-		} catch (err) {
-			console.info("[copilotStore] Offline fallback for remote settings:", err);
-		}
+		await get().loadRemoteSettings();
 		try {
 			const remote = await fetchRemoteSessions();
 			if (!remote || remote.length === 0) return;
@@ -356,6 +346,16 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		} catch (err) {
 			console.info("[copilotStore] Offline fallback for remote sessions:", err);
 		}
+	},
+
+	loadRemoteSettings: async () => {
+		if (isDemoShowcaseMode()) return;
+		try {
+			const remoteSettings = await fetchRemoteSettings();
+			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
+				set((state) => { const merged = { ...state.settings, ...remoteSettings }; safeLocalStorageSetJson("dente_copilot_settings", merged); return { settings: merged }; });
+			}
+		} catch (err) { console.info("[copilotStore] Offline fallback for remote settings:", err); }
 	},
 
 	loadThreadMessages: async (threadId: string): Promise<CopilotMessage[]> => {
@@ -432,7 +432,10 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 }));
 
 if (typeof window !== "undefined") {
-	setTimeout(() => { void useCopilotStore.getState().hydrateSessionsFromBackend(); }, 50);
+	setTimeout(() => {
+		void useCopilotStore.getState().hydrateSessionsFromBackend();
+		void useCopilotStore.getState().loadRemoteSettings();
+	}, 50);
 	let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	window.addEventListener("resize", () => {
 		if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);

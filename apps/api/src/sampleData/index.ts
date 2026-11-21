@@ -29,7 +29,7 @@ export * from "./clinicalRules.js";
 export * from "./billing.js";
 export * from "./communications.js";
 export * from "./imaging.js";
-export * from "./speechProviders.js";
+export { speechProviders } from "../speech/providers.js";
 export * from "./speechRecognition.js";
 export * from "./audit.js";
 export * from "./integrationPresets.js";

@@ -19,6 +19,7 @@ export { type SterilizationDeductionParams, type SterilizationDeductionResult };
 
 export async function executeSterilizationConsumablesDeduction(
 	params: SterilizationDeductionParams,
+	externalTx?: TenantDb,
 ): Promise<SterilizationDeductionResult> {
 	const count = Math.max(1, params.count ?? 1);
 	const orgId = params.organizationId;
@@ -30,81 +31,94 @@ export async function executeSterilizationConsumablesDeduction(
 		remainingStock: number;
 	}> = [];
 
-	try {
-		await withTenantCtx(orgId, async (tx: TenantDb) => {
-			for (const spec of itemsToDeduct) {
-				const [existing] = await tx
-					.select()
-					.from(inventoryItems)
-					.where(and(eq(inventoryItems.organizationId, orgId), or(eq(inventoryItems.name, spec.name), ilike(inventoryItems.name, `%${spec.name.slice(0, 15)}%`))))
-					.limit(1)
-					.for("update");
+	const runDeduction = async (tx: TenantDb) => {
+		for (const spec of itemsToDeduct) {
+			const [existing] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(and(eq(inventoryItems.organizationId, orgId), or(eq(inventoryItems.name, spec.name), ilike(inventoryItems.name, `%${spec.name.slice(0, 15)}%`))))
+				.limit(1)
+				.for("update");
 
-				let item = existing;
-				if (!item) {
-					const [created] = await tx
-						.insert(inventoryItems)
-						.values({
-							organizationId: orgId,
-							name: spec.name,
-							category: spec.category,
-							unit: spec.unit,
-							currentQty: "0",
-							stockQuantity: "0",
-							minQty: "20",
-							criticalThreshold: "20",
-							notes: "Авто-создано системой учета стерилизации",
-						})
-						.returning();
-					item = created;
-				}
-				if (!item) continue;
-
-				const currentStock = Number(item.currentQty || item.stockQuantity || 0);
-				const nextStock = currentStock - spec.qty;
-				const isOverdraft = nextStock < 0;
-
-				await tx
-					.update(inventoryItems)
-					.set({ currentQty: String(nextStock), stockQuantity: String(nextStock), updatedAt: new Date() })
-					.where(and(eq(inventoryItems.id, item.id), eq(inventoryItems.organizationId, orgId)));
-
-				const note = `[Журнал автоклавирования] Списание расходников цикла автоклава${params.cycleNumber ? ` №${params.cycleNumber}` : ""}${params.barcode ? ` (${params.barcode})` : ""}`;
-
-				await tx.insert(inventoryTransactions).values({
-					organizationId: orgId,
-					itemId: item.id,
-					inventoryItemId: item.id,
-					transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
-					qty: String(spec.qty),
-					quantityChanged: String(-spec.qty),
-					isOverdraft,
-					userId: params.userId ?? null,
-					notes: note,
-				});
-
-				// Пакетное списание из активной партии stock_batches
-				const [batch] = await tx
-					.select()
-					.from(stockBatches)
-					.where(and(eq(stockBatches.inventoryItemId, item.id), eq(stockBatches.organizationId, orgId), eq(stockBatches.status, "active")))
-					.limit(1)
-					.for("update");
-				if (batch) {
-					const rem = Math.max(0, Number(batch.remainingQty || 0) - spec.qty);
-					await tx
-						.update(stockBatches)
-						.set({ remainingQty: String(rem), status: rem <= 0 ? "depleted" : "active", updatedAt: new Date() })
-						.where(eq(stockBatches.id, batch.id));
-				}
-
-				deductedSummary.push({ itemName: item.name, quantityDeducted: spec.qty, isOverdraft, remainingStock: nextStock });
+			let item = existing;
+			if (!item) {
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						organizationId: orgId,
+						name: spec.name,
+						category: spec.category,
+						unit: spec.unit,
+						currentQty: "0",
+						stockQuantity: "0",
+						minQty: "20",
+						criticalThreshold: "20",
+						notes: "Авто-создано системой учета стерилизации",
+					})
+					.returning();
+				item = created;
 			}
-		});
+			if (!item) continue;
+
+			const currentStock = Number(item.currentQty || item.stockQuantity || 0);
+			const nextStock = currentStock - spec.qty;
+			const isOverdraft = nextStock < 0;
+
+			await tx
+				.update(inventoryItems)
+				.set({ currentQty: String(nextStock), stockQuantity: String(nextStock), updatedAt: new Date() })
+				.where(and(eq(inventoryItems.id, item.id), eq(inventoryItems.organizationId, orgId)));
+
+			const note = `[Журнал автоклавирования] Списание расходников цикла автоклава${params.cycleNumber ? ` №${params.cycleNumber}` : ""}${params.barcode ? ` (${params.barcode})` : ""}`;
+
+			await tx.insert(inventoryTransactions).values({
+				organizationId: orgId,
+				itemId: item.id,
+				inventoryItemId: item.id,
+				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
+				qty: String(spec.qty),
+				quantityChanged: String(-spec.qty),
+				isOverdraft,
+				userId: params.userId ?? null,
+				notes: note,
+			});
+
+			// Пакетное списание из активной партии stock_batches
+			const [batch] = await tx
+				.select()
+				.from(stockBatches)
+				.where(and(eq(stockBatches.inventoryItemId, item.id), eq(stockBatches.organizationId, orgId), eq(stockBatches.status, "active")))
+				.limit(1)
+				.for("update");
+			if (batch) {
+				const rem = Math.max(0, Number(batch.remainingQty || 0) - spec.qty);
+				await tx
+					.update(stockBatches)
+					.set({ remainingQty: String(rem), status: rem <= 0 ? "depleted" : "active", updatedAt: new Date() })
+					.where(eq(stockBatches.id, batch.id));
+			}
+
+			deductedSummary.push({ itemName: item.name, quantityDeducted: spec.qty, isOverdraft, remainingStock: nextStock });
+		}
+	};
+
+	try {
+		if (externalTx) {
+			await runDeduction(externalTx);
+		} else {
+			await withTenantCtx(orgId, runDeduction);
+		}
 
 		return { success: true, deductedItems: deductedSummary };
 	} catch (err) {
-		console.warn("[SanPiN Sterilization Stock Deduction] Soft fallback on stock deduction error:", err);
+		const log = params.logger ?? params.log;
+		log?.warn(
+			{ err, orgId: params.organizationId, cycleNumber: params.cycleNumber },
+			"[SanPiN Sterilization Stock Deduction] Soft fallback on stock deduction error",
+		);
+		if (externalTx) {
+			throw err;
+		}
 		return { success: false, deductedItems: [] };
 	}
 }

@@ -11,7 +11,7 @@ import { importBatches, auditEvents } from "./audit.js";
 import { clinicTodayIso } from "./scheduleTimeHelpers.js";
 import { visitCloseChecklistFactsFor, buildBillingSummary } from "./billing.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
-import { speechProviders } from "./speechProviders.js";
+import { speechProviders } from "../speech/providers.js";
 import { inMemoryDomainState } from "./domainState.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
 

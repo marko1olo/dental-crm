@@ -69,7 +69,7 @@ import {
 	aiRecognitionJobs,
 	speechTranscriptionChunks,
 } from "./speechRecognition.js";
-import { speechProviders } from "./speechProviders.js";
+import { speechProviders } from "../speech/providers.js";
 import { auditEvents, importBatches } from "./audit.js";
 import { integrationPresets, modeHints, workspaceProfiles } from "./integrationPresets.js";
 import { replaceCollection } from "./types.js";

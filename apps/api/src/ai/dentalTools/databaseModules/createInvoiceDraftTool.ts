@@ -60,7 +60,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 			? BigInt(item.priceKopecks)
 			: item.unitKopecks !== undefined
 			? BigInt(item.unitKopecks)
-			: BigInt(Math.round((item.priceRub ?? 0) * 100));
+			: rubToKopecks(item.priceRub ?? 0);
 		const lineKopecks = item.lineKopecks !== undefined
 			? BigInt(item.lineKopecks)
 			: unitKopecks * qty;
@@ -77,7 +77,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 
 	const discountKopecks = args.discountKopecks !== undefined && args.discountKopecks > 0
 		? BigInt(args.discountKopecks)
-		: BigInt(Math.round((args.discountRub ?? 0) * 100));
+		: rubToKopecks(args.discountRub ?? 0);
 	const totalKopecks = subtotalKopecks > discountKopecks ? subtotalKopecks - discountKopecks : 0n;
 
 	const subtotalRub = kopecksToRub(subtotalKopecks);

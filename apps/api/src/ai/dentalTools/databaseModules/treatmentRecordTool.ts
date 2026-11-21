@@ -7,7 +7,7 @@ import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
 import { treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { rubToKopecks } from "./dbTypes.js";
+import { rubToKopecks, kopecksToRub } from "./dbTypes.js";
 
 export const treatmentRecordSchema = z.object({
 	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
@@ -38,8 +38,9 @@ export async function handleTreatmentRecord(args: TreatmentRecordInput, context:
 	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const qty = args.quantity ?? 1;
-	const totalPrice = args.priceRub * qty;
-	const kopecks = rubToKopecks(totalPrice);
+	const unitKopecks = rubToKopecks(args.priceRub);
+	const kopecks = unitKopecks * BigInt(qty);
+	const totalPrice = kopecksToRub(kopecks);
 
 	// 2-Phase Confirmation Guard (Мандат 8e)
 	if (args.confirmed === false || (context.requireConfirmation && args.confirmed !== true)) {

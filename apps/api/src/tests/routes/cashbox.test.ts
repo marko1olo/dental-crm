@@ -5,6 +5,7 @@
  */
 
 import { strict as assert } from "node:assert";
+import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { db } from "../../db/client.js";
 import {
@@ -187,12 +188,28 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			assert.equal(instJson.contract.totalAmountRub, 60000);
 			assert.equal(instJson.tranches.length, 6);
 
-			// 9. POST /api/installments/tranches/:id/pay -> pay 1st tranche
+			// 9. POST /api/installments/tranches/:id/pay -> 400 Bad Request without Idempotency-Key
 			const firstTranche = instJson.tranches[0];
-			const payTrancheRes = await app.inject({
+			const payWithoutKeyRes = await app.inject({
 				method: "POST",
 				url: `/api/installments/tranches/${firstTranche.id}/pay`,
 				headers,
+				payload: {
+					cashBoxId: cashlessBox.id,
+				},
+			});
+			assert.equal(payWithoutKeyRes.statusCode, 400);
+			assert.equal(payWithoutKeyRes.json().error, "IdempotencyKeyRequired");
+
+			// 9a. Pay 1st tranche with Idempotency-Key -> 200 OK
+			const trancheIdempotencyKey = randomUUID();
+			const payTrancheRes = await app.inject({
+				method: "POST",
+				url: `/api/installments/tranches/${firstTranche.id}/pay`,
+				headers: {
+					...headers,
+					"Idempotency-Key": trancheIdempotencyKey,
+				},
 				payload: {
 					cashBoxId: cashlessBox.id,
 				},
@@ -201,6 +218,21 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const payTrancheJson = payTrancheRes.json();
 			assert.equal(payTrancheJson.tranche.isPaid, true);
 			assert.equal(payTrancheJson.contract.paidAmountRub, firstTranche.amountRub);
+
+			// 9b. Replay identical request with same Idempotency-Key -> returns cached 200 without double spend
+			const replayPayRes = await app.inject({
+				method: "POST",
+				url: `/api/installments/tranches/${firstTranche.id}/pay`,
+				headers: {
+					...headers,
+					"Idempotency-Key": trancheIdempotencyKey,
+				},
+				payload: {
+					cashBoxId: cashlessBox.id,
+				},
+			});
+			assert.equal(replayPayRes.statusCode, 200);
+			assert.equal(replayPayRes.headers["idempotency-replayed"], "true");
 
 			// 10. Lab Order Pay via Article 11 & Mark Installed Lock
 			await withFixtureTenant(orgId, async (tx) => {

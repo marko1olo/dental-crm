@@ -73,6 +73,13 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		(options.methods ?? ["POST", "PUT", "PATCH"]).map((m) => m.toUpperCase()),
 	);
 	const retryAfter = options.retryAfterSeconds ?? 1;
+	const enforceForPaths = options.enforceForPaths ?? [
+		/^\/api\/cash\/(?:cash-introduction|cash-withdrawal|transfer)/,
+		/^\/api\/cashbox\/transfers/,
+		/^\/api\/installments\/tranches\/[^/]+\/pay/,
+		/^\/api\/installment-payments\/[^/]+\/pay/,
+		/^\/api\/lab\/orders\/[^/]+\/pay/,
+	];
 
 	// 1. PRE-HANDLER HOOK
 	fastify.addHook(
@@ -82,9 +89,30 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 				return;
 			}
 
+			const url = request.url.split("?")[0] || request.url;
+			const isEnforced = enforceForPaths.some((p) =>
+				typeof p === "string" ? url.startsWith(p) : p.test(url),
+			);
+
 			const idempotencyKey = extractIdempotencyKey(request, headerName);
 			if (!idempotencyKey) {
+				if (isEnforced) {
+					reply.code(400);
+					return reply.send({
+						error: "IdempotencyKeyRequired",
+						message:
+							"Для финансовых и складских операций обязателен заголовок Idempotency-Key (UUIDv7).",
+					});
+				}
 				return;
+			}
+
+			if (isEnforced && !isValidUuid(idempotencyKey)) {
+				reply.code(400);
+				return reply.send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
 			}
 
 			const payloadHash = computePayloadHash(request.body ?? {});

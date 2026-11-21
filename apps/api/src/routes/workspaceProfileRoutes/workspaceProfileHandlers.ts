@@ -10,6 +10,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -40,166 +41,168 @@ export async function seedDemoDataForPreset(
 	preset: PresetName,
 	numberOfChairs?: number,
 ): Promise<void> {
-	// Safety: only seed if no patients exist yet for this org
-	const existing = await db
-		.select({ id: schema.patients.id })
-		.from(schema.patients)
-		.where(eq(schema.patients.organizationId, organizationId))
-		.limit(1);
-	if (existing.length > 0) return; // don't double-seed
-
-	const existingChairs = await db
-		.select({ id: schema.chairs.id })
-		.from(schema.chairs)
-		.where(eq(schema.chairs.organizationId, organizationId))
-		.limit(1);
-	if (existingChairs.length === 0) {
-		const flags = WORKSPACE_PRESETS[preset as Exclude<PresetName, "custom">];
-		const chairCount = numberOfChairs
-			? numberOfChairs
-			: flags?.hasMultipleChairs
-				? 4
-				: 1;
-		const [clinic] = await db
-			.select({ id: schema.clinics.id })
-			.from(schema.clinics)
-			.where(eq(schema.clinics.organizationId, organizationId))
+	await withTenantCtx(organizationId, async (tx) => {
+		// Safety: only seed if no patients exist yet for this org
+		const existing = await tx
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
+			.where(eq(schema.patients.organizationId, organizationId))
 			.limit(1);
-		if (clinic) {
-			const chairsToInsert = Array.from({ length: chairCount }).map((_, i) => ({
-				organizationId,
-				clinicId: clinic.id,
-				name: chairCount === 1 ? "Главный кабинет" : `Кресло ${i + 1}`,
-				isActive: true,
-			}));
-			if (chairsToInsert.length > 0) {
-				await db.insert(schema.chairs).values(chairsToInsert);
+		if (existing.length > 0) return; // don't double-seed
+
+		const existingChairs = await tx
+			.select({ id: schema.chairs.id })
+			.from(schema.chairs)
+			.where(eq(schema.chairs.organizationId, organizationId))
+			.limit(1);
+		if (existingChairs.length === 0) {
+			const flags = WORKSPACE_PRESETS[preset as Exclude<PresetName, "custom">];
+			const chairCount = numberOfChairs
+				? numberOfChairs
+				: flags?.hasMultipleChairs
+					? 4
+					: 1;
+			const [clinic] = await tx
+				.select({ id: schema.clinics.id })
+				.from(schema.clinics)
+				.where(eq(schema.clinics.organizationId, organizationId))
+				.limit(1);
+			if (clinic) {
+				const chairsToInsert = Array.from({ length: chairCount }).map((_, i) => ({
+					organizationId,
+					clinicId: clinic.id,
+					name: chairCount === 1 ? "Главный кабинет" : `Кресло ${i + 1}`,
+					isActive: true,
+				}));
+				if (chairsToInsert.length > 0) {
+					await tx.insert(schema.chairs).values(chairsToInsert);
+				}
 			}
 		}
-	}
 
-	if (preset === "solo_therapist") {
-		const patientDefs = [
-			{
-				fullName: "Анна Петровна Соколова",
-				birthDate: "1985-03-12",
-				phone: "+79101234567",
-			},
-			{
-				fullName: "Игорь Васильевич Ким",
-				birthDate: "1978-07-22",
-				phone: "+79201112233",
-			},
-			{
-				fullName: "Ольга Сергеевна Шаль",
-				birthDate: "1992-11-05",
-				phone: "+79305556677",
-			},
-		];
-		const patientsToInsert = patientDefs.map((p) => ({
-			organizationId,
-			fullName: p.fullName,
-			birthDate: p.birthDate,
-			phone: p.phone,
-			isSynced: false,
-			version: 1,
-		}));
-
-		const patients = await db
-			.insert(schema.patients)
-			.values(patientsToInsert)
-			.returning({ id: schema.patients.id });
-
-		if (patients.length > 0) {
-			const visitsToInsert = patients.map((patient) => ({
+		if (preset === "solo_therapist") {
+			const patientDefs = [
+				{
+					fullName: "Анна Петровна Соколова",
+					birthDate: "1985-03-12",
+					phone: "+79101234567",
+				},
+				{
+					fullName: "Игорь Васильевич Ким",
+					birthDate: "1978-07-22",
+					phone: "+79201112233",
+				},
+				{
+					fullName: "Ольга Сергеевна Шаль",
+					birthDate: "1992-11-05",
+					phone: "+79305556677",
+				},
+			];
+			const patientsToInsert = patientDefs.map((p) => ({
 				organizationId,
-				patientId: patient.id,
-				status: "signed" as const,
-				complaint: "Боль в нижней правой челюсти на холодное",
-				diagnosis: "Средний кариес 46 зуба",
-				treatmentPlan:
-					"Анестезия, препарирование, пломба светового отверждения (композит).",
-				doctorSummary:
-					"Проведено лечение среднего кариеса 46 зуба по протоколу.",
+				fullName: p.fullName,
+				birthDate: p.birthDate,
+				phone: p.phone,
+				isSynced: false,
+				version: 1,
 			}));
-			await db.insert(schema.visits).values(visitsToInsert);
 
-			const appointmentsToInsert = patients.map((patient) => ({
-				organizationId,
-				patientId: patient.id,
-				status: "planned" as const,
-				startsAt: new Date(Date.now() + 86400000),
-				endsAt: new Date(Date.now() + 86400000 + 3600000),
-				reason: "Лечение кариеса 47 зуба",
-			}));
-			await db.insert(schema.appointments).values(appointmentsToInsert);
+			const patients = await tx
+				.insert(schema.patients)
+				.values(patientsToInsert)
+				.returning({ id: schema.patients.id });
+
+			if (patients.length > 0) {
+				const visitsToInsert = patients.map((patient) => ({
+					organizationId,
+					patientId: patient.id,
+					status: "signed" as const,
+					complaint: "Боль в нижней правой челюсти на холодное",
+					diagnosis: "Средний кариес 46 зуба",
+					treatmentPlan:
+						"Анестезия, препарирование, пломба светового отверждения (композит).",
+					doctorSummary:
+						"Проведено лечение среднего кариеса 46 зуба по протоколу.",
+				}));
+				await tx.insert(schema.visits).values(visitsToInsert);
+
+				const appointmentsToInsert = patients.map((patient) => ({
+					organizationId,
+					patientId: patient.id,
+					status: "planned" as const,
+					startsAt: new Date(Date.now() + 86400000),
+					endsAt: new Date(Date.now() + 86400000 + 3600000),
+					reason: "Лечение кариеса 47 зуба",
+				}));
+				await tx.insert(schema.appointments).values(appointmentsToInsert);
+			}
 		}
-	}
 
-	if (preset === "prosthodontist") {
-		const patientDefs = [
-			{
-				fullName: "Виктор Михайлович Азаров",
-				birthDate: "1960-05-18",
-				phone: "+79401234567",
-			},
-			{
-				fullName: "Наталья Ивановна Громова",
-				birthDate: "1955-09-30",
-				phone: "+79509876543",
-			},
-		];
-		const patientsToInsert = patientDefs.map((p) => ({
-			organizationId,
-			fullName: p.fullName,
-			birthDate: p.birthDate,
-			phone: p.phone,
-		}));
-
-		const patients = await db
-			.insert(schema.patients)
-			.values(patientsToInsert)
-			.returning({ id: schema.patients.id });
-
-		if (patients.length > 0) {
-			const visitsToInsert = patients.map((patient) => ({
+		if (preset === "prosthodontist") {
+			const patientDefs = [
+				{
+					fullName: "Виктор Михайлович Азаров",
+					birthDate: "1960-05-18",
+					phone: "+79401234567",
+				},
+				{
+					fullName: "Наталья Ивановна Громова",
+					birthDate: "1955-09-30",
+					phone: "+79509876543",
+				},
+			];
+			const patientsToInsert = patientDefs.map((p) => ({
 				organizationId,
-				patientId: patient.id,
-				status: "draft" as const,
-				complaint: "Отсутствует зуб, эстетический дефект",
-				diagnosis: "Частичная вторичная адентия 24 зуба",
-				treatmentPlan:
-					"Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
+				fullName: p.fullName,
+				birthDate: p.birthDate,
+				phone: p.phone,
 			}));
-			await db.insert(schema.visits).values(visitsToInsert);
 
-			const communicationTasksToInsert = patients.map((patient) => ({
-				organizationId,
-				patientId: patient.id,
-				assignedRole: "doctor" as const,
-				channel: "in_person" as const,
-				intent: "general" as const,
-				status: "queued" as const,
-				priority: "normal" as const,
-				dueAt: new Date(Date.now() + 86400000 * 5),
-				title: "Изготовление циркониевой коронки",
-				body: "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
-			}));
-			await db
-				.insert(schema.communicationTasks)
-				.values(communicationTasksToInsert);
+			const patients = await tx
+				.insert(schema.patients)
+				.values(patientsToInsert)
+				.returning({ id: schema.patients.id });
 
-			const appointmentsToInsert = patients.map((patient) => ({
-				organizationId,
-				patientId: patient.id,
-				status: "planned" as const,
-				startsAt: new Date(Date.now() + 86400000 * 2),
-				endsAt: new Date(Date.now() + 86400000 * 2 + 3600000),
-				reason: "Примерка каркаса",
-			}));
-			await db.insert(schema.appointments).values(appointmentsToInsert);
+			if (patients.length > 0) {
+				const visitsToInsert = patients.map((patient) => ({
+					organizationId,
+					patientId: patient.id,
+					status: "draft" as const,
+					complaint: "Отсутствует зуб, эстетический дефект",
+					diagnosis: "Частичная вторичная адентия 24 зуба",
+					treatmentPlan:
+						"Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
+				}));
+				await tx.insert(schema.visits).values(visitsToInsert);
+
+				const communicationTasksToInsert = patients.map((patient) => ({
+					organizationId,
+					patientId: patient.id,
+					assignedRole: "doctor" as const,
+					channel: "in_person" as const,
+					intent: "general" as const,
+					status: "queued" as const,
+					priority: "normal" as const,
+					dueAt: new Date(Date.now() + 86400000 * 5),
+					title: "Изготовление циркониевой коронки",
+					body: "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
+				}));
+				await tx
+					.insert(schema.communicationTasks)
+					.values(communicationTasksToInsert);
+
+				const appointmentsToInsert = patients.map((patient) => ({
+					organizationId,
+					patientId: patient.id,
+					status: "planned" as const,
+					startsAt: new Date(Date.now() + 86400000 * 2),
+					endsAt: new Date(Date.now() + 86400000 * 2 + 3600000),
+					reason: "Примерка каркаса",
+				}));
+				await tx.insert(schema.appointments).values(appointmentsToInsert);
+			}
 		}
-	}
+	});
 }
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -234,7 +237,7 @@ export async function getWorkspaceProfileHandler(
 
 		return reply.send(workspaceFlagsFromStorage(organization?.flags));
 	} catch (error) {
-		console.error("[GET /api/workspace/profile] Error:", error);
+		req.log.error({ err: error }, "Failed to get workspace profile");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
 }
@@ -259,7 +262,7 @@ export async function getWorkspaceChairsHandler(
 
 		return reply.send({ success: true, data: chairs });
 	} catch (error) {
-		console.error("[GET /api/workspace/chairs] Error:", error);
+		req.log.error({ err: error }, "Failed to get workspace chairs");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
 }
@@ -355,7 +358,7 @@ export async function updateWorkspaceProfileHandler(
 		// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
 		return reply.send({ ok: true, ...merged });
 	} catch (error) {
-		console.error("[POST /api/workspace/profile] Error:", error);
+		req.log.error({ err: error }, "Failed to update workspace profile");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
 }
@@ -455,12 +458,12 @@ export async function applyWorkspacePresetHandler(
 			organizationId,
 			presetName,
 			parsedBody.data.numberOfChairs,
-		).catch((e) => console.error("[workspace preset] seeding error:", e));
+		).catch((e) => req.log.error({ err: e }, "Workspace preset demo seeding failed"));
 
 		// Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
 		return reply.send({ ok: true, preset: presetName, flags: savedFlags });
 	} catch (error) {
-		console.error("[POST /api/workspace/preset/:name] Error:", error);
+		req.log.error({ err: error }, "Failed to apply workspace preset");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
 }

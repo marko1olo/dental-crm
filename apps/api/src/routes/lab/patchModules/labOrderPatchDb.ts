@@ -46,10 +46,9 @@ export async function executeLabOrderPatch(
 			!targetStatus &&
 			!body.stage &&
 			!body.dueDate &&
-			(body.clinicalNotes !== undefined ||
-				body.labComments !== undefined ||
-				body.notes !== undefined ||
-				body.attachedImageUrl !== undefined);
+			body.clinicalNotes !== undefined &&
+			body.notes === undefined &&
+			body.labComments === undefined;
 
 		if (currentOrder.isLockedInstalled && !isWarrantyRequest && !isClinicalNotesOnly) {
 			return { kind: "locked_installed" };

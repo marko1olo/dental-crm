@@ -12,6 +12,7 @@ import { and, eq, ne } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import type { ExtendedHrProfileStorage } from "./types.js";
@@ -75,8 +76,9 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			if (snilsValidation.isValid && snilsValidation.formatted) {
 				snilsToSave = snilsValidation.formatted;
 			} else {
-				console.warn(
-					`[Кадры: СНИЛС] СНИЛС сотрудника ${params.staffId} сохранён с предупреждением: ${snilsValidation.error || "контрольная сумма не совпадает"}.`,
+				request.log.warn(
+					{ staffId: params.staffId, error: snilsValidation.error || "контрольная сумма не совпадает" },
+					"Staff SNILS saved with warning",
 				);
 			}
 		}
@@ -88,8 +90,9 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			if (innValidation.isValid && innValidation.formatted) {
 				innToSave = innValidation.formatted;
 			} else {
-				console.warn(
-					`[Кадры: ИНН] ИНН сотрудника ${params.staffId} сохранён с предупреждением: ${innValidation.error || "неверный формат"}.`,
+				request.log.warn(
+					{ staffId: params.staffId, error: innValidation.error || "неверный формат" },
+					"Staff INN saved with warning",
 				);
 			}
 		}
@@ -102,8 +105,9 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			);
 			if (medBookCheck.status === "expired") {
 				// We allow saving but keep status logged
-				console.warn(
-					`[Кадры: СанПиН] Медкнижка сотрудника ${params.staffId} просрочена.`,
+				request.log.warn(
+					{ staffId: params.staffId },
+					"Staff medical book expired",
 				);
 			}
 		}
@@ -335,175 +339,179 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (data.canManageImports !== undefined)
 			userUpdates.canManageImports = data.canManageImports;
 
-		await db
-			.update(schema.users)
-			.set(userUpdates)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			);
-
-		// Загрузка существующей комиссии врача для расчета дельт и аудита
-		const [existingComm] = await db
-			.select()
-			.from(schema.doctorCommissions)
-			.where(
-				and(
-					eq(schema.doctorCommissions.organizationId, auth.orgId),
-					eq(schema.doctorCommissions.userId, params.staffId),
-				),
-			)
-			.limit(1);
-
-		// 9. Обновление комиссии врача в `doctorCommissions`
-		if (
-			data.commissionPct !== undefined ||
-			data.materialCostDeductionPct !== undefined ||
-			data.labCostDeductionPct !== undefined
-		) {
-			const commUpdates: Partial<typeof schema.doctorCommissions.$inferInsert> = {};
-			if (data.commissionPct !== undefined) {
-				commUpdates.commissionPct = String(data.commissionPct);
-				commUpdates.commissionPercent = String(data.commissionPct);
-			}
-			if (data.materialCostDeductionPct !== undefined) {
-				commUpdates.materialCostDeductionPct = String(
-					data.materialCostDeductionPct,
+		const { updatedUser, comm } = await withTenantCtx(auth.orgId, async (tx) => {
+			await tx
+				.update(schema.users)
+				.set(userUpdates)
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
 				);
-			}
-			if (data.labCostDeductionPct !== undefined) {
-				commUpdates.labCostDeductionPct = String(data.labCostDeductionPct);
-			}
 
-			if (existingComm) {
-				await db
-					.update(schema.doctorCommissions)
-					.set(commUpdates)
-					.where(
-						and(
-							eq(schema.doctorCommissions.organizationId, auth.orgId),
-							eq(schema.doctorCommissions.userId, params.staffId),
-						),
+			// Загрузка существующей комиссии врача для расчета дельт и аудита
+			const [existingComm] = await tx
+				.select()
+				.from(schema.doctorCommissions)
+				.where(
+					and(
+						eq(schema.doctorCommissions.organizationId, auth.orgId),
+						eq(schema.doctorCommissions.userId, params.staffId),
+					),
+				)
+				.limit(1);
+
+			// 9. Обновление комиссии врача в `doctorCommissions`
+			if (
+				data.commissionPct !== undefined ||
+				data.materialCostDeductionPct !== undefined ||
+				data.labCostDeductionPct !== undefined
+			) {
+				const commUpdates: Partial<typeof schema.doctorCommissions.$inferInsert> = {};
+				if (data.commissionPct !== undefined) {
+					commUpdates.commissionPct = String(data.commissionPct);
+					commUpdates.commissionPercent = String(data.commissionPct);
+				}
+				if (data.materialCostDeductionPct !== undefined) {
+					commUpdates.materialCostDeductionPct = String(
+						data.materialCostDeductionPct,
 					);
-			} else {
-				await db.insert(schema.doctorCommissions).values({
-					organizationId: auth.orgId,
-					userId: params.staffId,
-					doctorId: params.staffId,
-					commissionPct: String(data.commissionPct ?? 25),
-					commissionPercent: String(data.commissionPct ?? 25),
-					materialCostDeductionPct: String(data.materialCostDeductionPct ?? 0),
-					labCostDeductionPct: String(data.labCostDeductionPct ?? 0),
-					isActive: true,
-				});
+				}
+				if (data.labCostDeductionPct !== undefined) {
+					commUpdates.labCostDeductionPct = String(data.labCostDeductionPct);
+				}
+
+				if (existingComm) {
+					await tx
+						.update(schema.doctorCommissions)
+						.set(commUpdates)
+						.where(
+							and(
+								eq(schema.doctorCommissions.organizationId, auth.orgId),
+								eq(schema.doctorCommissions.userId, params.staffId),
+							),
+						);
+				} else {
+					await tx.insert(schema.doctorCommissions).values({
+						organizationId: auth.orgId,
+						userId: params.staffId,
+						doctorId: params.staffId,
+						commissionPct: String(data.commissionPct ?? 25),
+						commissionPercent: String(data.commissionPct ?? 25),
+						materialCostDeductionPct: String(data.materialCostDeductionPct ?? 0),
+						labCostDeductionPct: String(data.labCostDeductionPct ?? 0),
+						isActive: true,
+					});
+				}
 			}
-		}
 
-		// 9.1. Обязательная запись в неизменяемый журнал audit_events [SEC-07]
-		const isRoleChanged = data.role !== undefined && data.role !== existingUser.role;
-		const isSalaryOrCommissionChanged =
-			(data.baseSalaryRub !== undefined && data.baseSalaryRub !== (existingHr.baseSalaryRub || 0)) ||
-			(data.commissionPct !== undefined && String(data.commissionPct) !== String(existingComm?.commissionPct ?? "")) ||
-			(data.materialCostDeductionPct !== undefined && String(data.materialCostDeductionPct) !== String(existingComm?.materialCostDeductionPct ?? "")) ||
-			(data.labCostDeductionPct !== undefined && String(data.labCostDeductionPct) !== String(existingComm?.labCostDeductionPct ?? ""));
-		const isAuthorityChanged =
-			(data.canSignMedicalRecords !== undefined && Boolean(data.canSignMedicalRecords) !== Boolean(existingUser.canSignMedicalRecords)) ||
-			(data.canManageMoney !== undefined && Boolean(data.canManageMoney) !== Boolean(existingUser.canManageMoney)) ||
-			(data.canManageImports !== undefined && Boolean(data.canManageImports) !== Boolean(existingUser.canManageImports));
+			// 9.1. Обязательная запись в неизменяемый журнал audit_events [SEC-07]
+			const isRoleChanged = data.role !== undefined && data.role !== existingUser.role;
+			const isSalaryOrCommissionChanged =
+				(data.baseSalaryRub !== undefined && data.baseSalaryRub !== (existingHr.baseSalaryRub || 0)) ||
+				(data.commissionPct !== undefined && String(data.commissionPct) !== String(existingComm?.commissionPct ?? "")) ||
+				(data.materialCostDeductionPct !== undefined && String(data.materialCostDeductionPct) !== String(existingComm?.materialCostDeductionPct ?? "")) ||
+				(data.labCostDeductionPct !== undefined && String(data.labCostDeductionPct) !== String(existingComm?.labCostDeductionPct ?? ""));
+			const isAuthorityChanged =
+				(data.canSignMedicalRecords !== undefined && Boolean(data.canSignMedicalRecords) !== Boolean(existingUser.canSignMedicalRecords)) ||
+				(data.canManageMoney !== undefined && Boolean(data.canManageMoney) !== Boolean(existingUser.canManageMoney)) ||
+				(data.canManageImports !== undefined && Boolean(data.canManageImports) !== Boolean(existingUser.canManageImports));
 
-		if (isRoleChanged) {
-			await recordAuditEventInDb(auth.orgId, {
-				entityType: "user",
-				entityId: params.staffId,
-				action: "STAFF_ROLE_CHANGE",
-				actorUserId: auth.callerUserId,
-				reason: JSON.stringify({
-					field: "role",
-					oldValue: existingUser.role,
-					newValue: data.role,
-					targetStaffId: params.staffId,
-					ip: request.ip,
-					timestamp: new Date().toISOString(),
-				}),
-			});
-		}
+			if (isRoleChanged) {
+				await recordAuditEventInDb(auth.orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_ROLE_CHANGE",
+					actorUserId: auth.callerUserId,
+					reason: JSON.stringify({
+						field: "role",
+						oldValue: existingUser.role,
+						newValue: data.role,
+						targetStaffId: params.staffId,
+						ip: request.ip,
+						timestamp: new Date().toISOString(),
+					}),
+				}, tx);
+			}
 
-		if (isSalaryOrCommissionChanged) {
-			await recordAuditEventInDb(auth.orgId, {
-				entityType: "user",
-				entityId: params.staffId,
-				action: "STAFF_SALARY_CHANGE",
-				actorUserId: auth.callerUserId,
-				reason: JSON.stringify({
-					field: "salary_and_rates",
-					oldValues: {
-						baseSalaryRub: existingHr.baseSalaryRub || 0,
-						commissionPct: existingComm?.commissionPct ?? null,
-						materialCostDeductionPct: existingComm?.materialCostDeductionPct ?? null,
-						labCostDeductionPct: existingComm?.labCostDeductionPct ?? null,
-					},
-					newValues: {
-						baseSalaryRub: data.baseSalaryRub !== undefined ? data.baseSalaryRub : (existingHr.baseSalaryRub || 0),
-						commissionPct: data.commissionPct !== undefined ? data.commissionPct : (existingComm?.commissionPct ?? null),
-						materialCostDeductionPct: data.materialCostDeductionPct !== undefined ? data.materialCostDeductionPct : (existingComm?.materialCostDeductionPct ?? null),
-						labCostDeductionPct: data.labCostDeductionPct !== undefined ? data.labCostDeductionPct : (existingComm?.labCostDeductionPct ?? null),
-					},
-					targetStaffId: params.staffId,
-					ip: request.ip,
-					timestamp: new Date().toISOString(),
-				}),
-			});
-		}
+			if (isSalaryOrCommissionChanged) {
+				await recordAuditEventInDb(auth.orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_SALARY_CHANGE",
+					actorUserId: auth.callerUserId,
+					reason: JSON.stringify({
+						field: "salary_and_rates",
+						oldValues: {
+							baseSalaryRub: existingHr.baseSalaryRub || 0,
+							commissionPct: existingComm?.commissionPct ?? null,
+							materialCostDeductionPct: existingComm?.materialCostDeductionPct ?? null,
+							labCostDeductionPct: existingComm?.labCostDeductionPct ?? null,
+						},
+						newValues: {
+							baseSalaryRub: data.baseSalaryRub !== undefined ? data.baseSalaryRub : (existingHr.baseSalaryRub || 0),
+							commissionPct: data.commissionPct !== undefined ? data.commissionPct : (existingComm?.commissionPct ?? null),
+							materialCostDeductionPct: data.materialCostDeductionPct !== undefined ? data.materialCostDeductionPct : (existingComm?.materialCostDeductionPct ?? null),
+							labCostDeductionPct: data.labCostDeductionPct !== undefined ? data.labCostDeductionPct : (existingComm?.labCostDeductionPct ?? null),
+						},
+						targetStaffId: params.staffId,
+						ip: request.ip,
+						timestamp: new Date().toISOString(),
+					}),
+				}, tx);
+			}
 
-		if (isAuthorityChanged) {
-			await recordAuditEventInDb(auth.orgId, {
-				entityType: "user",
-				entityId: params.staffId,
-				action: "STAFF_AUTHORITY_CHANGE",
-				actorUserId: auth.callerUserId,
-				reason: JSON.stringify({
-					field: "authorities",
-					oldValues: {
-						canSignMedicalRecords: existingUser.canSignMedicalRecords,
-						canManageMoney: existingUser.canManageMoney,
-						canManageImports: existingUser.canManageImports,
-					},
-					newValues: {
-						canSignMedicalRecords: data.canSignMedicalRecords !== undefined ? data.canSignMedicalRecords : existingUser.canSignMedicalRecords,
-						canManageMoney: data.canManageMoney !== undefined ? data.canManageMoney : existingUser.canManageMoney,
-						canManageImports: data.canManageImports !== undefined ? data.canManageImports : existingUser.canManageImports,
-					},
-					targetStaffId: params.staffId,
-					ip: request.ip,
-					timestamp: new Date().toISOString(),
-				}),
-			});
-		}
+			if (isAuthorityChanged) {
+				await recordAuditEventInDb(auth.orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_AUTHORITY_CHANGE",
+					actorUserId: auth.callerUserId,
+					reason: JSON.stringify({
+						field: "authorities",
+						oldValues: {
+							canSignMedicalRecords: existingUser.canSignMedicalRecords,
+							canManageMoney: existingUser.canManageMoney,
+							canManageImports: existingUser.canManageImports,
+						},
+						newValues: {
+							canSignMedicalRecords: data.canSignMedicalRecords !== undefined ? data.canSignMedicalRecords : existingUser.canSignMedicalRecords,
+							canManageMoney: data.canManageMoney !== undefined ? data.canManageMoney : existingUser.canManageMoney,
+							canManageImports: data.canManageImports !== undefined ? data.canManageImports : existingUser.canManageImports,
+						},
+						targetStaffId: params.staffId,
+						ip: request.ip,
+						timestamp: new Date().toISOString(),
+					}),
+				}, tx);
+			}
 
-		// 10. Перечитывание и ответ
-		const [updatedUser] = await db
-			.select()
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			)
-			.limit(1);
+			// 10. Перечитывание и ответ
+			const [freshUser] = await tx
+				.select()
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
+				)
+				.limit(1);
 
-		const [comm] = await db
-			.select()
-			.from(schema.doctorCommissions)
-			.where(
-				and(
-					eq(schema.doctorCommissions.organizationId, auth.orgId),
-					eq(schema.doctorCommissions.userId, params.staffId),
-				),
-			)
-			.limit(1);
+			const [freshComm] = await tx
+				.select()
+				.from(schema.doctorCommissions)
+				.where(
+					and(
+						eq(schema.doctorCommissions.organizationId, auth.orgId),
+						eq(schema.doctorCommissions.userId, params.staffId),
+					),
+				)
+				.limit(1);
+
+			return { updatedUser: freshUser, comm: freshComm };
+		});
 
 		if (!updatedUser) {
 			reply.code(404);
@@ -568,22 +576,24 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			};
 		}
 
-		await db
-			.update(schema.users)
-			.set({ isActive: false })
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			);
+		await withTenantCtx(auth.orgId, async (tx) => {
+			await tx
+				.update(schema.users)
+				.set({ isActive: false })
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
+				);
 
-		await recordAuditEventInDb(auth.orgId, {
-			entityType: "user",
-			entityId: params.staffId,
-			action: "STAFF_DEACTIVATE",
-			actorUserId: auth.callerUserId,
-			reason: `Деактивация сотрудника ${user.fullName} (${user.role})`,
+			await recordAuditEventInDb(auth.orgId, {
+				entityType: "user",
+				entityId: params.staffId,
+				action: "STAFF_DEACTIVATE",
+				actorUserId: auth.callerUserId,
+				reason: `Деактивация сотрудника ${user.fullName} (${user.role})`,
+			}, tx);
 		});
 
 		return {
@@ -634,22 +644,24 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
 			};
 		}
-		await db
-			.update(schema.users)
-			.set({ currentSessionId: null })
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			);
+		await withTenantCtx(auth.orgId, async (tx) => {
+			await tx
+				.update(schema.users)
+				.set({ currentSessionId: null })
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
+				);
 
-		await recordAuditEventInDb(auth.orgId, {
-			entityType: "user",
-			entityId: params.staffId,
-			action: "STAFF_SESSION_TERMINATE",
-			actorUserId: auth.callerUserId,
-			reason: `Принудительное завершение активной сессии сотрудника (IP: ${request.ip})`,
+			await recordAuditEventInDb(auth.orgId, {
+				entityType: "user",
+				entityId: params.staffId,
+				action: "STAFF_SESSION_TERMINATE",
+				actorUserId: auth.callerUserId,
+				reason: `Принудительное завершение активной сессии сотрудника (IP: ${request.ip})`,
+			}, tx);
 		});
 
 		return {

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AuditEvent } from "@dental/shared";
 import { db } from "./client.js";
+import type { TenantDb } from "./rls.js";
 import { auditEvents } from "./schema.js";
 
 /**
@@ -30,6 +31,7 @@ export async function recordAuditEventInDb(
 		reason?: string | null | undefined;
 		actorUserId?: string | null | undefined;
 	},
+	tx?: TenantDb,
 ): Promise<AuditEvent> {
 	const emergencyRecord = () =>
 		JSON.stringify({
@@ -42,9 +44,10 @@ export async function recordAuditEventInDb(
 			occurredAt: new Date().toISOString(),
 		});
 
+	const executor = tx ?? db;
 	let event: typeof auditEvents.$inferSelect | undefined;
 	try {
-		[event] = await db
+		[event] = await executor
 			.insert(auditEvents)
 			.values({
 				id: randomUUID(),

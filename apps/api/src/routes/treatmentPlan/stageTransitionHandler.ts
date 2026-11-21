@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, treatmentPlans } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import type { PipelineStage } from "./pipelineTypes.js";
@@ -92,30 +93,34 @@ export async function handleStageTransition(
 		updatePayload.approvedAt = now;
 	}
 
-	const [updatedPlan] = await db
-		.update(treatmentPlans)
-		.set(updatePayload)
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.returning();
+	const updatedPlan = await withTenantCtx(organizationId, async (tx) => {
+		const [plan] = await tx
+			.update(treatmentPlans)
+			.set(updatePayload)
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.returning();
+
+		if (!plan) {
+			return null;
+		}
+
+		await tx.insert(auditEvents).values({
+			organizationId,
+			actorUserId: null,
+			entityType: "treatment_plan",
+			entityId: id,
+			action: "TREATMENT_PLAN_STAGE_TRANSITION",
+			reason: `План лечения «${plan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
+		});
+
+		return plan;
+	});
 
 	if (!updatedPlan) {
 		return reply.code(500).send({
 			error: "UpdateFailed",
 			message: "Не удалось переместить план лечения",
 		});
-	}
-
-	try {
-		await db.insert(auditEvents).values({
-			organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: id,
-			action: "TREATMENT_PLAN_STAGE_TRANSITION",
-			reason: `План лечения «${updatedPlan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
-		});
-	} catch (auditErr) {
-		request.log.warn({ err: auditErr }, "Не удалось записать аудит смены этапа плана");
 	}
 
 	wsBroker.broadcastToOrganization(organizationId, {

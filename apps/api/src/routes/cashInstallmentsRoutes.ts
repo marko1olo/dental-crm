@@ -14,7 +14,7 @@ import {
 	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { randomInt } from "node:crypto";
 import { z } from "zod";
@@ -31,6 +31,7 @@ import {
 	patients,
 } from "../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../db/seeds/seed_cash_and_reasons.js";
+import { isValidUuid } from "../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
 export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 	/**
@@ -158,12 +159,19 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 
 				if (targetBox) {
 					const balanceBefore = targetBox.balanceRub;
-					const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + rubToKopecks(downPaymentRub));
+					const beforeKop =
+						targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+							? Number(targetBox.balanceKopecks)
+							: rubToKopecks(balanceBefore);
+					const addKop = rubToKopecks(downPaymentRub);
+					const afterKop = beforeKop + addKop;
+					const balanceAfter = kopecksToRub(afterKop);
 
 					await tx
 						.update(cashBoxes)
 						.set({
 							balanceRub: balanceAfter,
+							balanceKopecks: afterKop,
 							updatedAt: now,
 						})
 						.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -235,6 +243,21 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		}
 		const { id } = paramsParsed.data;
 
+		const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
+		if (!idempotencyKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message: "Для проведения оплаты транша рассрочки обязателен заголовок Idempotency-Key (UUIDv7).",
+			});
+		}
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
 			operatorId: z.string().uuid().optional(),
@@ -245,6 +268,44 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		const payData = parsed.success ? parsed.data : {};
 
 		const result = await withTenantCtx(orgId, async (tx) => {
+			// Дедупликация повторного запроса с тем же Idempotency-Key
+			const [existingOp] = await tx
+				.select()
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+					),
+				)
+				.limit(1);
+
+			if (existingOp) {
+				const [currentTranche] = await tx
+					.select()
+					.from(installmentTranches)
+					.where(and(eq(installmentTranches.id, id), eq(installmentTranches.organizationId, orgId)))
+					.limit(1);
+
+				const [currentContract] = currentTranche
+					? await tx
+							.select()
+							.from(installmentContracts)
+							.where(and(eq(installmentContracts.id, currentTranche.contractId), eq(installmentContracts.organizationId, orgId)))
+							.limit(1)
+					: [undefined];
+
+				return {
+					kind: "ok" as const,
+					tranche: currentTranche!,
+					contract: currentContract!,
+					cashOperation: existingOp,
+					paymentRub: existingOp.amountRub,
+					isTrancheFullyPaid: currentTranche?.isPaid ?? true,
+					isReplay: true,
+				};
+			}
+
 			const [tranche] = await tx
 				.select()
 				.from(installmentTranches)
@@ -321,13 +382,19 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			}
 
 			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + paymentKop);
+			const beforeKop =
+				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+					? Number(targetBox.balanceKopecks)
+					: rubToKopecks(balanceBefore);
+			const afterKop = beforeKop + paymentKop;
+			const balanceAfter = kopecksToRub(afterKop);
 
 			// Обновляем кассу на фактически поступившую сумму
 			await tx
 				.update(cashBoxes)
 				.set({
 					balanceRub: balanceAfter,
+					balanceKopecks: afterKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -350,6 +417,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					patientId: contract.patientId,
 					installmentTrancheId: tranche.id,
 					operatorId: payData.operatorId ?? null,
+					metadata: { idempotencyKey },
 				})
 				.returning();
 
@@ -419,6 +487,10 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				error: "NoCashBox",
 				message: "Кассовые счета организации не найдены.",
 			});
+		}
+
+		if (result.isReplay) {
+			reply.header("idempotency-replayed", "true");
 		}
 
 		return reply.send({

@@ -1,0 +1,108 @@
+/**
+ * agentMemoryContract.test.ts — Unit & Integration Test Suite for Copilot Memory Contract
+ *
+ * Verifies:
+ * 1. PUT /api/agent/memory accepts string array
+ * 2. PUT /api/agent/memory accepts AiMemoryFact object array (fixes HTTP 400 in web client)
+ * 3. GET /api/agent/memory returns persisted memory facts
+ */
+
+import assert from "node:assert/strict";
+import { describe, it, before, after } from "node:test";
+import Fastify, { type FastifyInstance } from "fastify";
+import { registerAgentRoutes } from "../../routes/agentRoutes.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+
+describe("Agent Memory Contract & Schema Resilience", () => {
+	let server: FastifyInstance;
+	const orgId = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
+	let token: string;
+
+	before(async () => {
+		server = Fastify({ logger: false });
+		await server.register(registerAgentRoutes);
+		await server.ready();
+
+		token = signToken({ organizationId: orgId, role: "clinic", userId: "8356141b-7cfa-4221-95f7-70f47e7344b1" }, authTokenSecret(), 3600);
+	});
+
+	after(async () => {
+		await server.close();
+	});
+
+	it("1. Rejects unauthenticated requests to /api/agent/memory", async () => {
+		const res = await server.inject({
+			method: "GET",
+			url: "/api/agent/memory",
+		});
+		assert.strictEqual(res.statusCode, 401);
+	});
+
+	it("2. Accepts legacy string array without HTTP 400", async () => {
+		const res = await server.inject({
+			method: "PUT",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: token,
+				"content-type": "application/json",
+			},
+			payload: {
+				memoryFacts: ["Пациент предпочитает седацию", "Аллергия на пенициллиновый ряд"],
+			},
+		});
+		assert.strictEqual(res.statusCode, 200);
+		const data = JSON.parse(res.payload);
+		assert.strictEqual(data.success, true);
+		assert.strictEqual(data.memoryFacts.length, 2);
+	});
+
+	it("3. Accepts structured AiMemoryFact objects from web client (Fixes DEF-COP HTTP 400)", async () => {
+		const facts = [
+			{
+				id: "fact-1",
+				category: "materials",
+				fact: "Предпочитает композиты Ceram.X SphereTEC one",
+				createdAt: "2026-11-21T10:00:00.000Z",
+			},
+			{
+				id: "fact-2",
+				category: "anesthesia",
+				fact: "Непереносимость вазоконстрикторов (только мепивакаин 3% без адреналина)",
+				createdAt: "2026-11-21T10:05:00.000Z",
+			},
+		];
+
+		const res = await server.inject({
+			method: "PUT",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: token,
+				"content-type": "application/json",
+			},
+			payload: {
+				memoryFacts: facts,
+			},
+		});
+		assert.strictEqual(res.statusCode, 200, `Expected 200 OK, got ${res.statusCode}: ${res.payload}`);
+		const data = JSON.parse(res.payload);
+		assert.strictEqual(data.success, true);
+		assert.strictEqual(data.memoryFacts.length, 2);
+		assert.strictEqual(data.memoryFacts[0].category, "materials");
+	});
+
+	it("4. Retrieves persisted memory facts via GET /api/agent/memory", async () => {
+		const res = await server.inject({
+			method: "GET",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: token,
+			},
+		});
+		assert.strictEqual(res.statusCode, 200);
+		const data = JSON.parse(res.payload);
+		assert.ok(Array.isArray(data.memoryFacts));
+		assert.strictEqual(data.memoryFacts.length, 2);
+	});
+});

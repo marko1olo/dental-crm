@@ -5,6 +5,8 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import type { FastifyBaseLogger } from "fastify";
+
 export interface SterilizationDeductionParams {
 	readonly organizationId: string;
 	readonly userId?: string | null;
@@ -13,6 +15,8 @@ export interface SterilizationDeductionParams {
 	readonly indicatorType?: string | null;
 	readonly cycleNumber?: number;
 	readonly barcode?: string | null;
+	readonly logger?: FastifyBaseLogger | undefined;
+	readonly log?: FastifyBaseLogger | undefined;
 }
 
 export interface SterilizationDeductionResult {
