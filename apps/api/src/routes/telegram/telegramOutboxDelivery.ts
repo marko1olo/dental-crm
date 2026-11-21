@@ -475,6 +475,28 @@ export async function executeTelegramOutboxSend(
 			warnings,
 			blockedReason: failureBlockedReason,
 		});
+
+		// При получении 429 от Telegram API обновляем время выполнения задачи dueAt = NOW() + retryAfterSeconds
+		if (retryAfterSeconds && retryAfterSeconds > 0 && prepared.item.taskId) {
+			const targetTaskId = prepared.item.taskId;
+			const newDueAt = new Date(Date.now() + retryAfterSeconds * 1000);
+			const targetOrgId = runtimeResult.runtime.context.organizationId;
+			if (targetTaskId && targetOrgId) {
+				try {
+					await db
+						.update(communicationTasks)
+						.set({ dueAt: newDueAt, lastEventAt: new Date() })
+						.where(
+							and(
+								eq(communicationTasks.id, targetTaskId),
+								eq(communicationTasks.organizationId, targetOrgId),
+							),
+						);
+				} catch {
+					// Изоляция отката при отсутствии соединения с БД
+				}
+			}
+		}
 		return {
 			statusCode: 502,
 			body: denteTelegramOutboxSendResponseSchema.parse({

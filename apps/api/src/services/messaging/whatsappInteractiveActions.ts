@@ -8,7 +8,7 @@
  * - Preventative recall quick booking (recall_book_<id> / recall_snooze_<id>)
  */
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -221,16 +221,17 @@ export async function findTargetAppointment(
 				eq(appointments.organizationId, organizationId),
 				eq(appointments.patientId, patientId),
 				eq(appointments.status, "planned"),
+				gte(appointments.startsAt, new Date()),
 			),
 		)
-		.orderBy(desc(appointments.startsAt))
+		.orderBy(asc(appointments.startsAt))
 		.limit(1);
 
 	return nextAppt ?? null;
 }
 
 /**
- * Executes appointment confirmation, updates database, and dispatches confirmation receipt.
+ * Executes appointment confirmation, updates database in ACID transaction, and dispatches confirmation receipt.
  */
 export async function processAppointmentConfirmation(
 	organizationId: string,
@@ -245,18 +246,6 @@ export async function processAppointmentConfirmation(
 	);
 
 	if (targetAppt) {
-		await db
-			.update(appointments)
-			.set({
-				status: "confirmed",
-			})
-			.where(
-				and(
-					eq(appointments.id, targetAppt.id),
-					eq(appointments.organizationId, organizationId),
-				),
-			);
-
 		// Format formatted appointment time
 		const dateStr = new Date(targetAppt.startsAt).toLocaleString("ru-RU", {
 			day: "numeric",
@@ -266,6 +255,30 @@ export async function processAppointmentConfirmation(
 		});
 
 		const receiptText = `Спасибо, ${patient.fullName}! Ваша запись на ${dateStr} успешно подтверждена. Ждём вас в клинике ДЕНТЕ!`;
+
+		// Атомарная транзакция обновления статуса визита и фиксации события коммуникации
+		await db.transaction(async (tx) => {
+			await tx
+				.update(appointments)
+				.set({
+					status: "confirmed",
+				})
+				.where(
+					and(
+						eq(appointments.id, targetAppt.id),
+						eq(appointments.organizationId, organizationId),
+					),
+				);
+
+			await tx.insert(communicationEvents).values({
+				organizationId,
+				patientId: patient.id,
+				channel: "whatsapp",
+				direction: "outbound",
+				status: "sent",
+				message: receiptText,
+			});
+		});
 
 		// Dispatch confirmation message via WhatsApp if credentials exist
 		if (config && patient.phone) {
@@ -280,17 +293,18 @@ export async function processAppointmentConfirmation(
 			}
 		}
 
-		// Log communication events
-		await db.insert(communicationEvents).values({
-			organizationId,
-			patientId: patient.id,
-			channel: "whatsapp",
-			direction: "outbound",
-			status: "sent",
-			message: receiptText,
+		// Broadcast to reception via WebSocket (канонический контракт APPOINTMENT_UPDATED + обратная совместимость)
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "APPOINTMENT_UPDATED",
+			payload: {
+				id: targetAppt.id,
+				appointmentId: targetAppt.id,
+				patientId: patient.id,
+				status: "confirmed",
+				source: "messenger_callback",
+			},
 		});
 
-		// Broadcast to reception via WebSocket
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "APPOINTMENT_CONFIRMED",
 			payload: {
@@ -317,7 +331,7 @@ export async function processAppointmentConfirmation(
 }
 
 /**
- * Executes appointment cancellation, updates database, and notifies clinic reception.
+ * Executes appointment cancellation, updates database in ACID transaction, and notifies clinic reception.
  */
 export async function processAppointmentCancellation(
 	organizationId: string,
@@ -332,20 +346,32 @@ export async function processAppointmentCancellation(
 	);
 
 	if (targetAppt) {
-		await db
-			.update(appointments)
-			.set({
-				status: "cancelled",
-				comment: sql`COALESCE(comment, '') || ' [Отменено пациентом через WhatsApp]'`,
-			})
-			.where(
-				and(
-					eq(appointments.id, targetAppt.id),
-					eq(appointments.organizationId, organizationId),
-				),
-			);
-
 		const receiptText = `Ваша запись была отменена. Если вы хотите подобрать другое время, позвоните нам или напишите в этот чат.`;
+
+		// Атомарная транзакция отмены записи
+		await db.transaction(async (tx) => {
+			await tx
+				.update(appointments)
+				.set({
+					status: "cancelled",
+					comment: sql`COALESCE(comment, '') || ' [Отменено пациентом через WhatsApp]'`,
+				})
+				.where(
+					and(
+						eq(appointments.id, targetAppt.id),
+						eq(appointments.organizationId, organizationId),
+					),
+				);
+
+			await tx.insert(communicationEvents).values({
+				organizationId,
+				patientId: patient.id,
+				channel: "whatsapp",
+				direction: "outbound",
+				status: "sent",
+				message: receiptText,
+			});
+		});
 
 		if (config && patient.phone) {
 			const creds = readWhatsappCredentials(config);
@@ -359,13 +385,16 @@ export async function processAppointmentCancellation(
 			}
 		}
 
-		await db.insert(communicationEvents).values({
-			organizationId,
-			patientId: patient.id,
-			channel: "whatsapp",
-			direction: "outbound",
-			status: "sent",
-			message: receiptText,
+		// Broadcast to reception via WebSocket (канонический APPOINTMENT_UPDATED + APPOINTMENT_CANCELLED)
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "APPOINTMENT_UPDATED",
+			payload: {
+				id: targetAppt.id,
+				appointmentId: targetAppt.id,
+				patientId: patient.id,
+				status: "cancelled",
+				source: "messenger_callback",
+			},
 		});
 
 		wsBroker.broadcastToOrganization(organizationId, {

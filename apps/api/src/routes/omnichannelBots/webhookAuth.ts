@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { denteVkBotConfigs } from "../../db/schema.js";
+import { denteVkBotConfigs, denteWhatsappBotConfigs } from "../../db/schema.js";
+import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 /**
  * Получение кода подтверждения Callback API для сообщества ВКонтакте.
@@ -27,10 +28,30 @@ export async function handleWebhookGetHandshake(
 ): Promise<{ handled: boolean; statusCode: number; payload: string }> {
 	// WhatsApp Webhook Challenge
 	if (channel === "whatsapp" && query["hub.mode"] === "subscribe") {
-		const challenge = query["hub.challenge"];
-		if (challenge) {
-			return { handled: true, statusCode: 200, payload: challenge };
+		const [waConfig] = await db
+			.select({ webhookVerifyToken: denteWhatsappBotConfigs.webhookVerifyToken })
+			.from(denteWhatsappBotConfigs)
+			.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
+			.limit(1);
+
+		const expectedToken =
+			waConfig?.webhookVerifyToken ||
+			process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ||
+			null;
+		const incomingToken = query["hub.verify_token"] || null;
+
+		if (expectedToken && timingSafeSecretEqual(incomingToken, expectedToken)) {
+			const challenge = query["hub.challenge"];
+			if (challenge) {
+				return { handled: true, statusCode: 200, payload: challenge };
+			}
 		}
+
+		return {
+			handled: true,
+			statusCode: 403,
+			payload: "Forbidden: invalid hub.verify_token",
+		};
 	}
 
 	// VK Callback API GET fallback

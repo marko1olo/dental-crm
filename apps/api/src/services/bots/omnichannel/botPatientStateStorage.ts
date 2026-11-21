@@ -30,16 +30,25 @@ export class BotPatientStateStorage {
 
 		try {
 			await withTenantCtx(msg.organizationId, async (tx) => {
-				// 1. Unified inbound log
-				await tx.insert(messengerInboundEvents).values({
-					organizationId: msg.organizationId,
-					channel: msg.channel === "max" ? "max" : msg.channel,
-					externalId: msg.messageId || null,
-					externalChatId: msg.senderId,
-					messageText: msg.text || (msg.payload ? `[Кнопка: ${msg.payload}]` : null),
-					eventKind: "message",
-					rawPayload: msg.rawEvent || {},
-				});
+				// 1. Unified inbound log with deduplication
+				const inserted = await tx
+					.insert(messengerInboundEvents)
+					.values({
+						organizationId: msg.organizationId,
+						channel: msg.channel === "max" ? "max" : msg.channel,
+						externalId: msg.messageId || null,
+						externalChatId: msg.senderId,
+						messageText: msg.text || (msg.payload ? `[Кнопка: ${msg.payload}]` : null),
+						eventKind: "message",
+						rawPayload: msg.rawEvent || {},
+					})
+					.onConflictDoNothing()
+					.returning({ id: messengerInboundEvents.id });
+
+				// Если событие с таким externalId уже было зарегистрировано (retry вебхука), не плодим дубликаты
+				if (msg.messageId && inserted.length === 0) {
+					return;
+				}
 
 				// 2. Связка с пациентом клиники
 				const phoneDigits = msg.senderId.replace(/\D/g, "");

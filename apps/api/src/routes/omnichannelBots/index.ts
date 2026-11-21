@@ -112,7 +112,12 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		}
 
 		if (channel === "telegram") {
-			const res = await handleTelegramWebhook(body, organizationId);
+			const headerSecret = request.headers["x-telegram-bot-api-secret-token"];
+			const secretToken = typeof headerSecret === "string" ? headerSecret : null;
+			const res = await handleTelegramWebhook(body, organizationId, secretToken);
+			if (!res.ok && res.statusCode) {
+				return reply.code(res.statusCode).send(res);
+			}
 			return reply.code(200).send(res);
 		}
 

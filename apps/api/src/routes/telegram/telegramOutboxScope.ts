@@ -1,4 +1,8 @@
+import { eq } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { denteTelegramBotConfigs } from "../../db/schema.js";
 import type { DenteTelegramOutboxRuntimeScope } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { resolveTelegramRuntimeContext } from "./telegramRuntimeResolver.js";
 import type { TelegramRuntimeContext } from "./types.js";
 import { parseTelegramOutboxRuntimeScopeQuery } from "./telegramUtils.js";
@@ -43,4 +47,70 @@ export function resolveTelegramOutboxRuntimeScopeFromQuery(
 		ok: true,
 		runtime: denteTelegramResolvedOutboxRuntime(runtimeResult.context),
 	};
+}
+
+/**
+ * Мультитенантное обнаружение всех активных ботов клиник для Outbox-воркера.
+ * Предотвращает голодание (Tenant Starvation) клиник кроме дефолтной.
+ */
+export async function resolveAllTelegramOutboxRuntimes(): Promise<
+	TelegramResolvedOutboxRuntime[]
+> {
+	const runtimes: TelegramResolvedOutboxRuntime[] = [];
+	const seenKeys = new Set<string>();
+
+	// 1. Из физической БД: все активные конфигурации ботов
+	try {
+		const configs = await db
+			.select({
+				organizationId: denteTelegramBotConfigs.organizationId,
+				botConfigId: denteTelegramBotConfigs.botConfigId,
+				mode: denteTelegramBotConfigs.mode,
+			})
+			.from(denteTelegramBotConfigs)
+			.where(eq(denteTelegramBotConfigs.isActive, true));
+
+		for (const cfg of configs) {
+			if (cfg.mode === "disabled") continue;
+			const key = `${cfg.organizationId}:${cfg.botConfigId}`;
+			if (seenKeys.has(key)) continue;
+			seenKeys.add(key);
+
+			const resolved = resolveTelegramRuntimeContext(
+				cfg.organizationId,
+				cfg.botConfigId,
+			);
+			if (resolved.ok) {
+				runtimes.push(denteTelegramResolvedOutboxRuntime(resolved.context));
+			}
+		}
+	} catch {
+		// Fallback при отсутствии БД
+	}
+
+	// 2. Из Multi-Tenant Supervisor (динамически зарегистрированные боты)
+	const supervisorBots = telegramMultiTenantSupervisor.listBots();
+	for (const bot of supervisorBots) {
+		const key = `${bot.organizationId}:${bot.botConfigId}`;
+		if (seenKeys.has(key)) continue;
+		seenKeys.add(key);
+
+		const resolved = resolveTelegramRuntimeContext(
+			bot.organizationId,
+			bot.botConfigId,
+		);
+		if (resolved.ok) {
+			runtimes.push(denteTelegramResolvedOutboxRuntime(resolved.context));
+		}
+	}
+
+	// 3. Fallback к дефолтной конфигурации (для изоляции тестов)
+	if (runtimes.length === 0) {
+		const defaultResult = resolveTelegramOutboxRuntimeScopeFromQuery({});
+		if (defaultResult.ok) {
+			runtimes.push(defaultResult.runtime);
+		}
+	}
+
+	return runtimes;
 }

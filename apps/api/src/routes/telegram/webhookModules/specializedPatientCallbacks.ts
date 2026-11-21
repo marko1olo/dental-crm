@@ -502,7 +502,11 @@ export async function handleAppointmentCallback(
 			);
 			wsBroker.broadcastToOrganization(runtime.organizationId, {
 				type: "APPOINTMENT_UPDATED",
-				payload: { id: appointmentId, status: shouldBroadcastStatus },
+				payload: {
+					id: appointmentId,
+					status: shouldBroadcastStatus,
+					source: "messenger_callback",
+				},
 			});
 		} catch (mutationErr) {
 			request.log.error(

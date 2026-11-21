@@ -9,6 +9,7 @@ import {
 	text,
 	timestamp,
 	unique,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import {
@@ -41,6 +42,8 @@ export const communicationEvents = pgTable(
 		recordingUrl: text("recording_url"),
 		durationSeconds: integer("duration_seconds"),
 		audioFormat: text("audio_format").default("audio/mpeg"),
+		providerCallId: text("provider_call_id"),
+		providerName: text("provider_name"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -56,6 +59,9 @@ export const communicationEvents = pgTable(
 		actorUserIdIdx: index("communication_events_actor_user_id_idx").on(
 			t.actorUserId,
 		),
+		providerCallIdUniqueIdx: uniqueIndex(
+			"communication_events_org_provider_call_id_idx",
+		).on(t.organizationId, t.providerCallId),
 	}),
 );
 
@@ -311,5 +317,8 @@ export const messengerInboundEvents = pgTable(
 		organizationIdIdx: index("messenger_inbound_events_organizationId_idx").on(
 			t.organizationId,
 		),
+		orgChannelExternalIdUniq: uniqueIndex(
+			"messenger_inbound_events_org_channel_ext_id_uniq",
+		).on(t.organizationId, t.channel, t.externalId),
 	}),
 );

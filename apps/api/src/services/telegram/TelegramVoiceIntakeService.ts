@@ -286,11 +286,61 @@ export class TelegramVoiceIntakeService {
 			};
 		}
 
+		// Защита от переполнения памяти и DoS: ограничение размера голосового файла до 25 МБ
+		const MAX_VOICE_FILE_SIZE = 25 * 1024 * 1024;
+		if (fileInfo.fileSize && fileInfo.fileSize > MAX_VOICE_FILE_SIZE) {
+			return {
+				ok: false,
+				symptoms: { categories: [], keywordsFound: [], hasSymptomSignal: false },
+				redFlags: {
+					hasRedFlags: false,
+					flags: [],
+					highestSeverity: null,
+					patientEmergencyAdvice: "",
+					doctorAlertSummary: "",
+				},
+				isEmergency: false,
+				responseScreen: {
+					text: "Голосовое сообщение превышает допустимый размер (25 МБ). Пожалуйста, запишите более короткое сообщение или напишите нам текстом.",
+					replyMarkup: {
+						inline_keyboard: [
+							[{ text: "📞 Позвонить администратору", callback_data: "triage:human_request" }],
+							[{ text: "🏠 Главное меню", callback_data: "dente:start" }],
+						],
+					},
+				},
+			};
+		}
+
 		// 2. Скачиваем аудиофайл
 		const downloadResult = await downloadTelegramFile({
 			botToken,
 			filePath: fileInfo.filePath,
 		});
+
+		if (downloadResult.ok && downloadResult.buffer.length > MAX_VOICE_FILE_SIZE) {
+			return {
+				ok: false,
+				symptoms: { categories: [], keywordsFound: [], hasSymptomSignal: false },
+				redFlags: {
+					hasRedFlags: false,
+					flags: [],
+					highestSeverity: null,
+					patientEmergencyAdvice: "",
+					doctorAlertSummary: "",
+				},
+				isEmergency: false,
+				responseScreen: {
+					text: "Голосовое сообщение превышает допустимый размер (25 МБ). Пожалуйста, запишите более короткое сообщение или напишите нам текстом.",
+					replyMarkup: {
+						inline_keyboard: [
+							[{ text: "📞 Позвонить администратору", callback_data: "triage:human_request" }],
+							[{ text: "🏠 Главное меню", callback_data: "dente:start" }],
+						],
+					},
+				},
+			};
+		}
 
 		let savedLocalPath: string | undefined;
 		if (downloadResult.ok) {
@@ -298,9 +348,7 @@ export class TelegramVoiceIntakeService {
 				const uploadsBase =
 					storageDir ||
 					path.resolve(process.cwd(), "apps/api/uploads/telegram_voice");
-				if (!fs.existsSync(uploadsBase)) {
-					fs.mkdirSync(uploadsBase, { recursive: true });
-				}
+				await fs.promises.mkdir(uploadsBase, { recursive: true });
 
 				const ext = path.extname(fileInfo.filePath) || ".ogg";
 				const fileHash = createHash("sha256")
@@ -309,9 +357,9 @@ export class TelegramVoiceIntakeService {
 					.slice(0, 16);
 				const fileName = `voice_${Date.now()}_${fileHash}${ext}`;
 				savedLocalPath = path.join(uploadsBase, fileName);
-				fs.writeFileSync(savedLocalPath, downloadResult.buffer);
+				await fs.promises.writeFile(savedLocalPath, downloadResult.buffer);
 			} catch (writeErr) {
-				console.warn("[TelegramVoiceIntake] Ошибка записи аудиофайла на диск:", writeErr);
+				console.warn("[TelegramVoiceIntake] Ошибка асинхронной записи аудиофайла на диск:", writeErr);
 			}
 		}
 

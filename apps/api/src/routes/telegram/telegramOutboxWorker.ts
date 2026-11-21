@@ -20,6 +20,8 @@ import {
 	telegramOutboxScheduleState,
 	telegramOutboxScheduleUnreadableWarning,
 } from "./telegramOutboxDelivery.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { resolveAllTelegramOutboxRuntimes } from "./telegramOutboxScope.js";
 import {
 	resolveTelegramOutboxRuntimeScopeFromQuery,
 } from "./telegramRuntimeContext.js";
@@ -265,24 +267,62 @@ export function startDenteTelegramOutboxDueWorker(
 			}
 			inFlight = true;
 			try {
-				const response = await executeDenteTelegramOutboxDueBatch({
-					dryRun,
-					limit,
-				});
-				const retryDelayMs = retryAfterDelayMs(response);
+				const runtimes = await resolveAllTelegramOutboxRuntimes();
+				let aggregatedResponse: DenteTelegramOutboxSendDueResponse | null = null;
+				let maxRetryDelayMs: number | null = null;
+
+				for (const currentRuntime of runtimes) {
+					const orgId = currentRuntime.context.organizationId;
+					const response = await withTenantCtx(orgId, async () => {
+						return await executeDenteTelegramOutboxDueBatch(
+							{ dryRun, limit },
+							currentRuntime,
+						);
+					});
+
+					const retryDelayMs = retryAfterDelayMs(response);
+					if (retryDelayMs !== null) {
+						maxRetryDelayMs = Math.max(maxRetryDelayMs ?? 0, retryDelayMs);
+					}
+
+					if (!aggregatedResponse) {
+						aggregatedResponse = {
+							...response,
+							results: [...response.results],
+						};
+					} else {
+						aggregatedResponse.dueCount += response.dueCount;
+						aggregatedResponse.notDueCount += response.notDueCount;
+						aggregatedResponse.attemptedCount += response.attemptedCount;
+						aggregatedResponse.sentCount += response.sentCount;
+						aggregatedResponse.dryRunCount += response.dryRunCount;
+						aggregatedResponse.blockedCount += response.blockedCount;
+						aggregatedResponse.failedCount += response.failedCount;
+						aggregatedResponse.results.push(...response.results);
+						if (!response.ok) {
+							aggregatedResponse.ok = false;
+						}
+					}
+				}
+
+				if (!aggregatedResponse) {
+					schedule(intervalMs);
+					return null;
+				}
+
 				logger?.info?.(
 					{
-						attemptedCount: response.attemptedCount,
-						sentCount: response.sentCount,
-						dryRunCount: response.dryRunCount,
-						blockedCount: response.blockedCount,
-						failedCount: response.failedCount,
-						retryDelayMs,
+						attemptedCount: aggregatedResponse.attemptedCount,
+						sentCount: aggregatedResponse.sentCount,
+						dryRunCount: aggregatedResponse.dryRunCount,
+						blockedCount: aggregatedResponse.blockedCount,
+						failedCount: aggregatedResponse.failedCount,
+						retryDelayMs: maxRetryDelayMs,
 					},
 					"DENTE Telegram due worker tick completed",
 				);
-				schedule(retryDelayMs ?? intervalMs);
-				return response;
+				schedule(maxRetryDelayMs ?? intervalMs);
+				return aggregatedResponse;
 			} catch (error) {
 				logger?.error?.({ error }, "DENTE Telegram due worker tick failed");
 				schedule(intervalMs);
