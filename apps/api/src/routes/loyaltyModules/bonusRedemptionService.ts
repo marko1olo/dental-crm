@@ -17,6 +17,35 @@ export interface ExecuteRedeemParams {
 
 export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 	return db.transaction(async (tx) => {
+		if (p.clientMutationId) {
+			const [existingTx] = await tx
+				.select()
+				.from(bonusTransactions)
+				.where(
+					and(
+						eq(bonusTransactions.organizationId, p.orgId),
+						eq(bonusTransactions.clientMutationId, p.clientMutationId),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (existingTx) {
+				const redeemedPts = Math.abs(Number(existingTx.amountPoints));
+				return {
+					success: true as const,
+					replayed: true as const,
+					redeemedPoints: redeemedPts,
+					discountRub: redeemedPts,
+					remainingInvoicePaymentRub: 0,
+					newActivePoints: Number(existingTx.balanceAfterPoints),
+					paymentId: existingTx.relatedPaymentId,
+					invoiceStatusUpdated: false,
+					transactionId: existingTx.id,
+				};
+			}
+		}
+
 		const [patient] = await tx.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
 		if (!patient) return { notFound: true as const };
 
@@ -64,6 +93,7 @@ export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 		const newActivePointsStr = kopecksToNumericString(newActivePointsKop);
 		const newLifetimeSpentStr = kopecksToNumericString(newLifetimeSpentKop);
 		const newActivePoints = Number(newActivePointsStr);
+		const redeemedAmountRubExact = Number(kopecksToNumericString(pointsToRedeemKop));
 
 		await tx.update(patientBonusBalances).set({ activePoints: newActivePointsStr, lifetimeSpentPoints: newLifetimeSpentStr, updatedAt: new Date() }).where(and(eq(patientBonusBalances.organizationId, p.orgId), eq(patientBonusBalances.patientId, p.patientId)));
 
@@ -74,7 +104,17 @@ export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 		let invoiceStatusUpdated = false;
 
 		if (p.invoiceId) {
-			const [payment] = await tx.insert(payments).values({ organizationId: p.orgId, patientId: p.patientId, documentId: p.invoiceId, amountRub: p.pointsToRedeem, method: "other", status: "paid", paidAt: new Date(), note: `Оплата баллами (${p.pointsToRedeem} б.)` }).returning({ id: payments.id });
+			const [payment] = await tx.insert(payments).values({
+				organizationId: p.orgId,
+				patientId: p.patientId,
+				documentId: p.invoiceId,
+				amountRub: redeemedAmountRubExact,
+				method: "other",
+				status: "paid",
+				paidAt: new Date(),
+				note: `Оплата баллами (${redeemedAmountRubExact} б.)`,
+				clientMutationId: p.clientMutationId || null,
+			}).returning({ id: payments.id });
 			paymentId = payment?.id ?? null;
 
 			const existingPayments = await tx.select({ amountRub: payments.amountRub }).from(payments).where(and(eq(payments.organizationId, p.orgId), eq(payments.documentId, p.invoiceId), eq(payments.status, "paid")));
@@ -86,14 +126,24 @@ export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 			}
 		}
 
-		const [txRecord] = await tx.insert(bonusTransactions).values({ organizationId: p.orgId, patientId: p.patientId, amountPoints: String(-p.pointsToRedeem), balanceAfterPoints: newActivePointsStr, type: "redemption_payment", relatedPaymentId: paymentId || null, relatedInvoiceId: p.invoiceId || null, clientMutationId: p.clientMutationId || null, description: p.description }).returning();
+		const [txRecord] = await tx.insert(bonusTransactions).values({
+			organizationId: p.orgId,
+			patientId: p.patientId,
+			amountPoints: kopecksToNumericString(-pointsToRedeemKop),
+			balanceAfterPoints: newActivePointsStr,
+			type: "redemption_payment",
+			relatedPaymentId: paymentId || null,
+			relatedInvoiceId: p.invoiceId || null,
+			clientMutationId: p.clientMutationId || null,
+			description: p.description,
+		}).returning();
 
 		const effectiveInvoiceKop = parseKopecks(effectiveInvoiceAmountRub);
 		const remainingInvoicePaymentKop = Math.max(0, effectiveInvoiceKop - pointsToRedeemKop);
 		const remainingInvoicePaymentRub = Number(kopecksToNumericString(remainingInvoicePaymentKop));
 
 		return {
-			success: true as const, redeemedPoints: p.pointsToRedeem, discountRub: p.pointsToRedeem, remainingInvoicePaymentRub, newActivePoints, paymentId, invoiceStatusUpdated, transactionId: txRecord?.id || "redemption",
+			success: true as const, redeemedPoints: redeemedAmountRubExact, discountRub: redeemedAmountRubExact, remainingInvoicePaymentRub, newActivePoints, paymentId, invoiceStatusUpdated, transactionId: txRecord?.id || "redemption",
 		};
 	});
 }
@@ -111,6 +161,37 @@ export interface ExecuteHoldParams {
 
 export async function executeBonusHold(p: ExecuteHoldParams) {
 	return db.transaction(async (tx) => {
+		if (p.clientMutationId) {
+			const [existingHold] = await tx
+				.select()
+				.from(bonusTransactions)
+				.where(
+					and(
+						eq(bonusTransactions.organizationId, p.orgId),
+						eq(bonusTransactions.clientMutationId, p.clientMutationId),
+						eq(bonusTransactions.type, "hold_payment"),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (existingHold) {
+				const [currBal] = await tx
+					.select()
+					.from(patientBonusBalances)
+					.where(and(eq(patientBonusBalances.organizationId, p.orgId), eq(patientBonusBalances.patientId, p.patientId)))
+					.limit(1);
+				return {
+					success: true as const,
+					replayed: true as const,
+					holdId: existingHold.id,
+					heldPoints: Math.abs(Number(existingHold.amountPoints)),
+					newActivePoints: Number(existingHold.balanceAfterPoints),
+					newPendingPoints: Number(currBal?.pendingPoints ?? 0),
+				};
+			}
+		}
+
 		const [patient] = await tx.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
 		if (!patient) return { notFound: true as const };
 
@@ -159,6 +240,7 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 		const newPendingPointsStr = kopecksToNumericString(newPendingPointsKop);
 		const newActivePoints = Number(newActivePointsStr);
 		const newPendingPoints = Number(newPendingPointsStr);
+		const heldPointsExact = Number(kopecksToNumericString(pointsToHoldKop));
 
 		await tx.update(patientBonusBalances).set({
 			activePoints: newActivePointsStr,
@@ -169,7 +251,7 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 		const [txRecord] = await tx.insert(bonusTransactions).values({
 			organizationId: p.orgId,
 			patientId: p.patientId,
-			amountPoints: String(-p.pointsToHold),
+			amountPoints: kopecksToNumericString(-pointsToHoldKop),
 			balanceAfterPoints: newActivePointsStr,
 			type: "hold_payment",
 			relatedInvoiceId: p.invoiceId || null,
@@ -184,7 +266,7 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 		return {
 			success: true as const,
 			holdId: txRecord.id,
-			heldPoints: p.pointsToHold,
+			heldPoints: heldPointsExact,
 			newActivePoints,
 			newPendingPoints,
 		};

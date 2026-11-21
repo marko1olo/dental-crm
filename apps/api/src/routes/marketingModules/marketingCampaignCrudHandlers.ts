@@ -173,8 +173,16 @@ export async function handleGetMarketingReports(
 
 	try {
 		const [allLeads, allPayments] = await Promise.all([
-			db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-			db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+			db.select({
+				id: crmLeads.id,
+				source: crmLeads.source,
+			}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+			db.select({
+				id: payments.id,
+				patientId: payments.patientId,
+				amountRub: payments.amountRub,
+				status: payments.status,
+			}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
 		]);
 
 		const { totalRevenueKopecks, channelCounts } = generateMarketingReportsSummary({

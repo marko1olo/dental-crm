@@ -14,36 +14,38 @@ export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise
 	flags: Record<string, unknown>;
 	channels: AdvertisingChannelInput[];
 }> {
-	const [org] = await db
-		.select({ flags: organizations.workspaceFeatureFlags })
-		.from(organizations)
-		.where(eq(organizations.id, orgId))
-		.limit(1);
+	return db.transaction(async (tx) => {
+		const [org] = await tx
+			.select({ flags: organizations.workspaceFeatureFlags })
+			.from(organizations)
+			.where(eq(organizations.id, orgId))
+			.for("update");
 
-	const existingFlags = (org?.flags as Record<string, unknown>) || {};
-	const rawChannels = existingFlags.marketingRomiChannels;
+		const existingFlags = (org?.flags as Record<string, unknown>) || {};
+		const rawChannels = existingFlags.marketingRomiChannels;
 
-	if (Array.isArray(rawChannels) && rawChannels.length > 0) {
-		return {
-			flags: existingFlags,
-			channels: rawChannels as AdvertisingChannelInput[],
+		if (Array.isArray(rawChannels) && rawChannels.length > 0) {
+			return {
+				flags: existingFlags,
+				channels: rawChannels as AdvertisingChannelInput[],
+			};
+		}
+
+		// Первичное авто-сидирование канонических каналов DENTE в PostgreSQL 18
+		const seeded = buildDenteDefaultAdvertisingChannels();
+		const updatedFlags = {
+			...existingFlags,
+			marketingRomiChannels: seeded,
 		};
-	}
 
-	// Первичное авто-сидирование канонических каналов DENTE в PostgreSQL 18
-	const seeded = buildDenteDefaultAdvertisingChannels();
-	const updatedFlags = {
-		...existingFlags,
-		marketingRomiChannels: seeded,
-	};
+		await tx
+			.update(organizations)
+			.set({ workspaceFeatureFlags: updatedFlags })
+			.where(eq(organizations.id, orgId));
 
-	await db
-		.update(organizations)
-		.set({ workspaceFeatureFlags: updatedFlags })
-		.where(eq(organizations.id, orgId));
-
-	return {
-		flags: updatedFlags,
-		channels: seeded,
-	};
+		return {
+			flags: updatedFlags,
+			channels: seeded,
+		};
+	});
 }

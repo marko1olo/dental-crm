@@ -348,7 +348,7 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		const data = res.json();
 
 		assert.ok(Array.isArray(data.selfBookingChannels));
-		const gisChannel = data.selfBookingChannels.find((c: any) => c.key === "gis_2");
+		const gisChannel = data.selfBookingChannels.find((c: any) => c.key === "gis2" || c.key === "gis_2");
 		assert.ok(gisChannel, "Канал 2ГИС должен присутствовать в отчете");
 
 		// Затраты 15 000 руб = 1 500 000 коп

@@ -144,12 +144,14 @@ export function calculateMarketingAttributionReport(params: {
 
 	// Channel spend map
 	const channelSpendMap: Record<string, number> = {
+		word_of_mouth: 0,
 		referral: 0,
 		partner: 0,
 		maps: 0,
 		website: 0,
 		website_widget: 0,
 		yandex_maps: 0,
+		gis2: 0,
 		gis_2: 0,
 		prodoctorov: 0,
 		tg_bot: 0,

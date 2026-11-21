@@ -146,6 +146,24 @@ function formatInTimeZone(
  * строки в состоянии `queued`: ничего отправленного это не затрагивает, а
  * ценность записи о неотправленном и уже неверном напоминании нулевая.
  */
+function logStructured(
+	level: "info" | "warn" | "error",
+	data: Record<string, unknown>,
+	msg: string,
+) {
+	const payload = {
+		level,
+		time: new Date().toISOString(),
+		...data,
+		msg,
+	};
+	if (level === "error") {
+		process.stderr.write(JSON.stringify(payload) + "\n");
+	} else {
+		process.stdout.write(JSON.stringify(payload) + "\n");
+	}
+}
+
 export async function invalidateAppointmentReminders(
 	organizationId: string,
 	appointmentId: string,
@@ -180,7 +198,9 @@ export async function invalidateAppointmentReminders(
 
 	if (removed.length > 0) {
 		// Причина остаётся в журнале сервера: в самой строке её уже не сохранить.
-		console.info(
+		logStructured(
+			"info",
+			{ removedCount: removed.length, appointmentId, reason },
 			`[reminders] снято напоминаний: ${removed.length}, приём ${appointmentId}, причина: ${reason}`,
 		);
 	}
@@ -278,7 +298,9 @@ export async function scheduleAppointmentReminders(
 			 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
 			 * именно идентификатор.
 			 */
-			console.error(
+			logStructured(
+				"error",
+				{ organizationId, detail, error: detail },
 				`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`,
 			);
 			report.problems.push(`Напоминания поставить не удалось: ${detail}`);
@@ -341,7 +363,9 @@ async function scheduleForOrganization(
 		 * кодом, а ставятся в очередь, и прежняя фраза описывала не то, что здесь
 		 * произошло. Сказано то, что администратору нужно сделать.
 		 */
-		console.error(
+		logStructured(
+			"error",
+			{ organizationId },
 			`[reminders] нет активного шаблона «Подтверждение приёма», организация ${organizationId}`,
 		);
 		report.problems.push(

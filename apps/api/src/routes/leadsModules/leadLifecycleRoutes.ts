@@ -10,6 +10,10 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
+import {
+	extractIdempotencyKey,
+	isValidUuid,
+} from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { db } from "../../db/client.js";
 import {
 	crmLeads,
@@ -121,6 +125,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			"lead create",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
 
 		const parsed = leadSchema.safeParse(req.body);
 		if (!parsed.success) {

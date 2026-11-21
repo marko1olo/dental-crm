@@ -191,7 +191,14 @@ export function parseVariables(raw: string): string[] {
 			? parsed.filter((value): value is string => typeof value === "string")
 			: [];
 	} catch (err) {
-		console.error("[Dente] parseVariables failed:", err);
+		process.stderr.write(
+			JSON.stringify({
+				level: "warn",
+				time: new Date().toISOString(),
+				msg: "[Outbox] parseVariables failed, returning empty array",
+				error: err instanceof Error ? err.message : String(err),
+			}) + "\n",
+		);
 		return [];
 	}
 }

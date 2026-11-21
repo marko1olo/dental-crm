@@ -9,6 +9,7 @@ import {
 	generateLuhn16Certificate,
 	parseKopecks,
 	kopecksToRubles,
+	rublesToKopecks,
 	type IssueCertificateBody,
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
@@ -33,7 +34,13 @@ export async function executeIssueGiftCertificate(
 	data: IssueCertificateBody,
 	clientMutationId?: string | null,
 ): Promise<FormattedCertificateDto | null> {
-	const nominalRub = data.nominalRub ?? (data.nominalKopecks ? kopecksToRubles(data.nominalKopecks) : 0);
+	const nominalKopExact = data.nominalKopecks != null
+		? parseKopecks(data.nominalKopecks)
+		: data.nominalRub != null
+			? rublesToKopecks(data.nominalRub)
+			: parseKopecks(0);
+	const nominalRub = kopecksToRubles(nominalKopExact);
+	const nominalRubNum = Number(nominalRub);
 	const expiresInDays = data.expiresInDays ?? 365;
 	const {
 		purchaserPatientId,
@@ -81,9 +88,9 @@ export async function executeIssueGiftCertificate(
 						nominalRub: Number(existingCert.nominalRub),
 						initialBalanceRub: Number(existingCert.initialBalanceRub),
 						currentBalanceRub: Number(existingCert.currentBalanceRub),
-						nominalKop: parseKopecks(existingCert.nominalRub),
-						initialBalanceKop: parseKopecks(existingCert.initialBalanceRub),
-						currentBalanceKop: parseKopecks(existingCert.currentBalanceRub),
+						nominalKop: Number(parseKopecks(existingCert.nominalRub)),
+						initialBalanceKop: Number(parseKopecks(existingCert.initialBalanceRub)),
+						currentBalanceKop: Number(parseKopecks(existingCert.currentBalanceRub)),
 						purchaserPatientId: existingCert.purchaserPatientId,
 						purchaserName: existingCert.purchaserName,
 						recipientPatientId: existingCert.recipientPatientId,
@@ -109,38 +116,11 @@ export async function executeIssueGiftCertificate(
 			if (p) resolvedPurchaserName = p.fullName;
 		}
 
-		// Разрешение эффективного ID пациента для фискализации 54-ФЗ
-		let effectivePurchaserId = purchaserPatientId ?? null;
-		if (!effectivePurchaserId) {
-			// Розничная продажа физлицу без заведения медицинской карты (ст. 1.2, 4.7 54-ФЗ)
-			const [existingRetail] = await tx
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.organizationId, orgId),
-						eq(patients.fullName, resolvedPurchaserName || "Розничный покупатель"),
-					),
-				)
-				.limit(1);
-
-			if (existingRetail) {
-				effectivePurchaserId = existingRetail.id;
-				if (!resolvedPurchaserName) resolvedPurchaserName = existingRetail.fullName || "Розничный покупатель";
-			} else {
-				const [createdRetail] = await tx
-					.insert(patients)
-					.values({
-						organizationId: orgId,
-						fullName: resolvedPurchaserName || "Розничный покупатель",
-						phone: "+70000000000",
-						notes: "Системный профиль для розничных расчетов у стойки администратора без медицинской карты (ст. 1.2, 4.7 54-ФЗ)",
-					})
-					.returning({ id: patients.id, fullName: patients.fullName });
-				effectivePurchaserId = createdRetail?.id ?? null;
-				if (!resolvedPurchaserName) resolvedPurchaserName = createdRetail?.fullName || "Розничный покупатель";
-			}
-		}
+		// Разрешение покупателя: если передан purchaserPatientId — привязываем к карте.
+		// Если розничная продажа без заведения карты (ст. 1.2, 4.7 54-ФЗ) — purchaserPatientId: null,
+		// без создания мусорных фейковых записей с +70000000000 в клинической таблице patients.
+		const effectivePurchaserId = purchaserPatientId ?? null;
+		const displayName = resolvedPurchaserName || (effectivePurchaserId ? "Пациент" : "Розничный покупатель");
 
 		let paymentId: string | null = null;
 		if (effectivePurchaserId) {
@@ -149,7 +129,7 @@ export async function executeIssueGiftCertificate(
 				.values({
 					organizationId: orgId,
 					patientId: effectivePurchaserId,
-					amountRub: nominalRub,
+					amountRub: nominalRubNum,
 					method: "card",
 					status: "paid",
 					paidAt: new Date(),
@@ -158,70 +138,69 @@ export async function executeIssueGiftCertificate(
 				})
 				.returning({ id: payments.id });
 			paymentId = payment?.id ?? null;
+		}
 
-			// Проводка продажи сертификата в кассовый журнал
-			const [cashDeskBox] = await tx
-				.select()
-				.from(cashBoxes)
-				.where(eq(cashBoxes.organizationId, orgId))
-				.limit(1);
+		// Проводка продажи сертификата в кассовый журнал
+		const [cashDeskBox] = await tx
+			.select()
+			.from(cashBoxes)
+			.where(eq(cashBoxes.organizationId, orgId))
+			.limit(1);
 
-			if (cashDeskBox) {
-				await tx.insert(cashOperations).values({
-					organizationId: orgId,
-					cashBoxId: cashDeskBox.id,
-					operationType: "income",
-					amountRub: nominalRub,
-					balanceBeforeRub: cashDeskBox.balanceRub || 0,
-					balanceAfterRub: cashDeskBox.balanceRub || 0,
-					patientId: effectivePurchaserId,
-					kkmDocNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
-					reasonText: `Продажа подарочного сертификата №${serialNumber} (тег 1214: Аванс, предмет расчета 1212 = 10)`,
-					operatorName: "Администратор",
-				});
-			}
-
-			// Фискализация чека продажи 54-ФЗ (тег 1214: аванс, тег 1212 = 10)
-			const nominalKop = parseKopecks(nominalRub);
-			await tx.insert(fiscalReceiptQueue).values({
+		if (cashDeskBox) {
+			await tx.insert(cashOperations).values({
 				organizationId: orgId,
-				paymentId: paymentId ?? undefined,
-				receiptType: "income",
-				status: "pending_print",
-				payloadJson: {
-					amountRub: nominalRub,
-					amountKopecks: Number(nominalKop),
-					method: "card",
-					calculationSubjectTag1212: 10,
-					calculationMethodTag1214: 3,
-					subjectType: 10,
-					advancePaymentRub: nominalRub,
-					certificateNumber: serialNumber,
-					fiscalReceiptNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
-					patientId: effectivePurchaserId,
-					patientName: resolvedPurchaserName || "Розничный покупатель",
-					note: `Продажа подарочного сертификата ${serialNumber} (тег 1214: Аванс, тег 1212: 10)`,
-				},
-				retryCount: 0,
+				cashBoxId: cashDeskBox.id,
+				operationType: "income",
+				amountRub: nominalRubNum,
+				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceAfterRub: cashDeskBox.balanceRub || 0,
+				patientId: effectivePurchaserId,
+				kkmDocNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
+				reasonText: `Продажа подарочного сертификата №${serialNumber} (тег 1214: Аванс, предмет расчета 1212 = 10)`,
+				operatorName: "Администратор",
 			});
 		}
+
+		// Фискализация чека продажи 54-ФЗ (тег 1214: аванс, тег 1212 = 10)
+		await tx.insert(fiscalReceiptQueue).values({
+			organizationId: orgId,
+			paymentId: paymentId ?? undefined,
+			receiptType: "income",
+			status: "pending_print",
+			payloadJson: {
+				amountRub: nominalRubNum,
+				amountKopecks: Number(nominalKopExact),
+				method: "card",
+				calculationSubjectTag1212: 10,
+				calculationMethodTag1214: 3,
+				subjectType: 10,
+				advancePaymentRub: nominalRubNum,
+				certificateNumber: serialNumber,
+				fiscalReceiptNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
+				patientId: effectivePurchaserId,
+				patientName: displayName,
+				note: `Продажа подарочного сертификата ${serialNumber} (тег 1214: Аванс, тег 1212: 10)`,
+			},
+			retryCount: 0,
+		});
 
 		const [created] = await tx
 			.insert(giftCertificates)
 			.values({
 				organizationId: orgId,
 				serialNumber,
-				nominalRub: String(nominalRub),
-				initialBalanceRub: String(nominalRub),
-				currentBalanceRub: String(nominalRub),
-				purchaserPatientId: purchaserPatientId || null,
-				purchaserName: resolvedPurchaserName || null,
+				nominalRub: String(nominalRubNum),
+				initialBalanceRub: String(nominalRubNum),
+				currentBalanceRub: String(nominalRubNum),
+				purchaserPatientId: effectivePurchaserId,
+				purchaserName: resolvedPurchaserName || displayName,
 				recipientPatientId: recipientPatientId || null,
 				recipientName: recipientName || null,
 				recipientPhone: recipientPhone || null,
 				status: "active",
 				expiresAt,
-				notes: notes || `Подарочный сертификат на сумму ${nominalRub.toLocaleString("ru-RU")} ₽`,
+				notes: notes || `Подарочный сертификат на сумму ${nominalRubNum.toLocaleString("ru-RU")} ₽`,
 				relatedPaymentId: paymentId || null,
 			})
 			.returning();
@@ -234,9 +213,9 @@ export async function executeIssueGiftCertificate(
 			nominalRub: Number(created.nominalRub),
 			initialBalanceRub: Number(created.initialBalanceRub),
 			currentBalanceRub: Number(created.currentBalanceRub),
-			nominalKop: parseKopecks(created.nominalRub),
-			initialBalanceKop: parseKopecks(created.initialBalanceRub),
-			currentBalanceKop: parseKopecks(created.currentBalanceRub),
+			nominalKop: Number(parseKopecks(created.nominalRub)),
+			initialBalanceKop: Number(parseKopecks(created.initialBalanceRub)),
+			currentBalanceKop: Number(parseKopecks(created.currentBalanceRub)),
 			purchaserPatientId: created.purchaserPatientId,
 			purchaserName: created.purchaserName,
 			recipientPatientId: created.recipientPatientId,

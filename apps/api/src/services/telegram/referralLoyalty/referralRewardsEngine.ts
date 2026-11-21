@@ -10,13 +10,12 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
-	bonusTransactions,
 	denteTelegramChatLinks,
-	patientBonusBalances,
 	patientReferralCodes,
 	patientReferrals,
 	patients,
 } from "../../../db/schema.js";
+import { executeBonusAccrual } from "../../../routes/loyaltyModules/bonusBalanceService.js";
 import { wsBroker } from "../../websocketBroker.js";
 import {
 	DEFAULT_REFERRAL_CONFIG,
@@ -26,6 +25,7 @@ import {
 
 /**
  * Начисление бонусных баллов пациенту с фиксацией транзакции в журнале.
+ * Делегирует в канонический SSOT executeBonusAccrual с расчетом unspentPoints, expiresAt и целочисленных копеек.
  */
 export async function awardBonusPoints(
 	organizationId: string,
@@ -35,60 +35,24 @@ export async function awardBonusPoints(
 	transactionType = "accrual",
 	dbClient: TenantDb | typeof db = db,
 ): Promise<number> {
-	const execute = async (tx: TenantDb) => {
-		const [balance] = await tx
-			.select()
-			.from(patientBonusBalances)
-			.where(
-				and(
-					eq(patientBonusBalances.organizationId, organizationId),
-					eq(patientBonusBalances.patientId, patientId),
-				),
-			)
-			.for("update")
-			.limit(1);
-
-		const currentActive = balance ? Number(balance.activePoints || 0) : 0;
-		const currentLifetime = balance ? Number(balance.lifetimeEarnedPoints || 0) : 0;
-		const newActive = currentActive + amountPoints;
-		const newLifetime = currentLifetime + amountPoints;
-
-		if (balance) {
-			await tx
-				.update(patientBonusBalances)
-				.set({
-					activePoints: String(newActive),
-					lifetimeEarnedPoints: String(newLifetime),
-					updatedAt: new Date(),
-				})
-				.where(eq(patientBonusBalances.id, balance.id));
-		} else {
-			await tx.insert(patientBonusBalances).values({
-				organizationId,
-				patientId,
-				activePoints: String(newActive),
-				lifetimeEarnedPoints: String(newLifetime),
-			});
-		}
-
-		await tx.insert(bonusTransactions).values({
-			organizationId,
+	const txClient = dbClient !== db ? (dbClient as TenantDb) : undefined;
+	const res = await executeBonusAccrual(
+		{
+			orgId: organizationId,
 			patientId,
-			type: "accrual",
-			amountPoints: String(amountPoints),
-			balanceAfterPoints: String(newActive),
+			amountPoints,
 			description,
-		});
+			txType: transactionType,
+			expiresInDays: 180,
+		},
+		txClient,
+	);
 
-		return newActive;
-	};
-
-	if (dbClient !== db) {
-		return await execute(dbClient as TenantDb);
+	if ("notFound" in res) {
+		throw new Error(`Пациент ${patientId} не найден для начисления бонусов`);
 	}
-	return withTenantCtx(organizationId, async () => {
-		return await db.transaction(execute);
-	});
+
+	return res.activePoints;
 }
 
 /**
@@ -311,7 +275,7 @@ export async function processReferralStart(
 						refereeId,
 						config.refereeWelcomeBonusRub,
 						`Приветственный бонус по приглашению от ${referrerPatient.fullName}`,
-						"welcome_bonus",
+						"accrual",
 						tx,
 					);
 
@@ -321,7 +285,7 @@ export async function processReferralStart(
 						referrerId,
 						config.referrerBonusRub,
 						`Кэшбэк за приглашение друга (${refereePatient.fullName})`,
-						"referral_reward",
+						"accrual",
 						tx,
 					);
 

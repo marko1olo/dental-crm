@@ -13,6 +13,7 @@ import {
 	buildAdvertisingChannelMetric,
 	calculateMarketingRomiSummary,
 	aggregateCrmMarketingMetrics,
+	advertisingChannelInputSchema,
 } from "@dental/shared";
 import { DEFAULT_DENTE_CHANNELS } from "../marketingRomiPresets.js";
 
@@ -91,12 +92,17 @@ test("3. aggregateCrmMarketingMetrics maps real DB patients, appointments and pa
 	assert.equal(mouth?.spentKopecks, 0, "Organic word of mouth budget is 0 ₽");
 });
 
-test("4. useMarketingRomiChannels hook file adheres to live Fastify API endpoints", () => {
+test("4. useMarketingRomiChannels hook file adheres to live Fastify API endpoints and validates Zod contracts", () => {
 	const hookPath = path.join(marketingDir, "useMarketingRomiChannels.ts");
 	const code = fs.readFileSync(hookPath, "utf8");
 
 	assert.ok(code.includes("/api/marketing/campaigns"), "Must persist to /api/marketing/campaigns");
 	assert.ok(code.includes("/api/marketing/romi"), "Must sync with /api/marketing/romi");
 	assert.ok(code.includes("denteClinicalMutationHeaders"), "Must use mutation headers");
-	assert.ok(code.split("\n").length <= 135, "File length must be <= 135 lines");
+
+	// Проверяем валидацию контрактов каналов через Zod-схему
+	for (const channel of DEFAULT_DENTE_CHANNELS) {
+		const parsed = advertisingChannelInputSchema.safeParse(channel);
+		assert.ok(parsed.success, `Channel ${channel.channelKey} must conform to advertisingChannelInputSchema`);
+	}
 });

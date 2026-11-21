@@ -82,9 +82,26 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 
 		try {
 			const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] = await Promise.all([
-				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+				db.select({
+					id: crmLeads.id,
+					patientId: crmLeads.patientId,
+					phone: crmLeads.phone,
+					source: crmLeads.source,
+					status: crmLeads.status,
+					createdAt: crmLeads.createdAt,
+				}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+				db.select({
+					id: appointments.id,
+					patientId: appointments.patientId,
+					status: appointments.status,
+					startsAt: appointments.startsAt,
+				}).from(appointments).where(eq(appointments.organizationId, orgId)),
+				db.select({
+					id: payments.id,
+					patientId: payments.patientId,
+					amountRub: payments.amountRub,
+					status: payments.status,
+				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
 				db.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -190,8 +207,17 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					administrativeProfile: patients.administrativeProfile,
 					createdAt: patients.createdAt,
 				}).from(patients).where(eq(patients.organizationId, orgId)),
-				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+				db.select({
+					id: appointments.id,
+					patientId: appointments.patientId,
+					status: appointments.status,
+				}).from(appointments).where(eq(appointments.organizationId, orgId)),
+				db.select({
+					id: payments.id,
+					patientId: payments.patientId,
+					amountRub: payments.amountRub,
+					status: payments.status,
+				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
 				db.select({
 					id: communicationEvents.id,
 					channel: communicationEvents.channel,
@@ -268,9 +294,24 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 
 		try {
 			const [allLeads, allAppts, allPayments, allPatients] = await Promise.all([
-				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+				db.select({
+					id: crmLeads.id,
+					patientId: crmLeads.patientId,
+					phone: crmLeads.phone,
+					source: crmLeads.source,
+					status: crmLeads.status,
+				}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+				db.select({
+					id: appointments.id,
+					patientId: appointments.patientId,
+					status: appointments.status,
+				}).from(appointments).where(eq(appointments.organizationId, orgId)),
+				db.select({
+					id: payments.id,
+					patientId: payments.patientId,
+					amountRub: payments.amountRub,
+					status: payments.status,
+				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
 				db.select({
 					id: patients.id,
 					fullName: patients.fullName,

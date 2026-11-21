@@ -7,6 +7,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import { bonusTransactions, patientReferrals, patientReferralCodes, patients, payments } from "../../db/schema.js";
 import { referralRegisterBodySchema } from "@dental/shared";
 import { executeBonusAccrual } from "./bonusBalanceService.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
 const creditReferralSchema = z.object({
 	referrerPatientId: z.string().uuid(),
@@ -85,55 +86,80 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	app.post("/api/loyalty/referrals/register", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = referralRegisterBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры рекомендации", errors: parsed.error.format() });
 
 		const { referrerPatientId, invitedPatientName, rewardRub, note } = parsed.data;
 
 		return withTenantCtx(orgId, async () => {
-			const [referrer] = await db
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
-				.where(and(eq(patients.organizationId, orgId), eq(patients.id, referrerPatientId)))
-				.limit(1);
+			const res = await db.transaction(async (tx) => {
+				const [referrer] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.id, referrerPatientId)))
+					.limit(1)
+					.for("update");
 
-			if (!referrer) {
+				if (!referrer) {
+					return { notFound: true as const };
+				}
+
+				// Ensure referral code exists for referrer
+				let [refCodeRecord] = await tx
+					.select()
+					.from(patientReferralCodes)
+					.where(
+						and(
+							eq(patientReferralCodes.organizationId, orgId),
+							eq(patientReferralCodes.patientId, referrerPatientId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				if (!refCodeRecord) {
+					const code = `DENTE-${referrer.fullName.slice(0, 4).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+					const token = Buffer.from(`${referrerPatientId}-${Date.now()}`).toString("base64url");
+					[refCodeRecord] = await tx
+						.insert(patientReferralCodes)
+						.values({
+							organizationId: orgId,
+							patientId: referrerPatientId,
+							referralCode: code,
+							referralToken: token,
+						})
+						.returning();
+				}
+
+				return {
+					referralCode: refCodeRecord?.referralCode || "DENTE-REF",
+				};
+			});
+
+			if ("notFound" in res) {
 				return reply.status(404).send({ message: "Приглашающий пациент не найден" });
 			}
 
-			// Ensure referral code exists for referrer
-			let [refCodeRecord] = await db
-				.select()
-				.from(patientReferralCodes)
-				.where(
-					and(
-						eq(patientReferralCodes.organizationId, orgId),
-						eq(patientReferralCodes.patientId, referrerPatientId),
-					),
-				)
-				.limit(1);
-
-			if (!refCodeRecord) {
-				const code = `DENTE-${referrer.fullName.slice(0, 4).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-				const token = Buffer.from(`${referrerPatientId}-${Date.now()}`).toString("base64url");
-				[refCodeRecord] = await db
-					.insert(patientReferralCodes)
-					.values({
-						organizationId: orgId,
-						patientId: referrerPatientId,
-						referralCode: code,
-						referralToken: token,
-					})
-					.returning();
+			if (idempotencyKey) {
+				reply.header("idempotency-key", idempotencyKey);
 			}
 
 			return reply.status(201).send({
 				success: true,
-				referralCode: refCodeRecord?.referralCode || "DENTE-REF",
+				referralCode: res.referralCode,
 				invitedPatientName,
 				rewardRub,
 				note: note || undefined,
-				message: `Рекомендация для «${invitedPatientName}» зарегистрирована с кодом ${refCodeRecord?.referralCode}`,
+				message: `Рекомендация для «${invitedPatientName}» зарегистрирована с кодом ${res.referralCode}`,
 			});
 		});
 	});
@@ -145,70 +171,105 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	app.post("/api/loyalty/referrals/credit", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = creditReferralSchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры начисления", errors: parsed.error.format() });
 
 		const { referrerPatientId, paymentId, rewardRub } = parsed.data;
 
 		return withTenantCtx(orgId, async () => {
-			// [LOY-07] Verify payment reality in database
-			const [verifiedPayment] = await db
-				.select()
-				.from(payments)
-				.where(
-					and(
-						eq(payments.id, paymentId),
-						eq(payments.organizationId, orgId),
-						eq(payments.status, "paid"),
-					),
-				)
-				.limit(1);
+			const res = await db.transaction(async (tx) => {
+				// [LOY-07] Verify payment reality in database
+				const [verifiedPayment] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.id, paymentId),
+							eq(payments.organizationId, orgId),
+							eq(payments.status, "paid"),
+						),
+					)
+					.limit(1)
+					.for("update");
 
-			if (!verifiedPayment) {
+				if (!verifiedPayment) {
+					return { paymentNotFound: true as const };
+				}
+
+				// [LOY-08] Replay bonus exploit defense: reject if already credited for this payment
+				const [alreadyCredited] = await tx
+					.select({ id: bonusTransactions.id })
+					.from(bonusTransactions)
+					.where(
+						and(
+							eq(bonusTransactions.organizationId, orgId),
+							eq(bonusTransactions.relatedPaymentId, paymentId),
+							eq(bonusTransactions.type, "accrual_referral"),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				if (alreadyCredited) {
+					return { alreadyCredited: true as const };
+				}
+
+				const accrualRes = await executeBonusAccrual(
+					{
+						orgId,
+						patientId: referrerPatientId,
+						amountPoints: rewardRub,
+						description: `Бонус за рекомендацию по чеку №${verifiedPayment.fiscalReceiptNumber || verifiedPayment.id.slice(0, 8)}`,
+						txType: "accrual_referral",
+						expiresInDays: 365,
+						relatedPaymentId: paymentId,
+						clientMutationId: idempotencyKey,
+					},
+					tx,
+				);
+
+				if ("notFound" in accrualRes) return { referrerNotFound: true as const };
+				if ("duplicate" in accrualRes) return { alreadyCredited: true as const };
+
+				return {
+					success: true as const,
+					paymentId: verifiedPayment.id,
+				};
+			});
+
+			if ("paymentNotFound" in res) {
 				return reply.status(404).send({
 					message: "Оплаченный платеж не найден в базе данных клиники",
 				});
 			}
 
-			// [LOY-08] Replay bonus exploit defense: reject if already credited for this payment
-			const [alreadyCredited] = await db
-				.select({ id: bonusTransactions.id })
-				.from(bonusTransactions)
-				.where(
-					and(
-						eq(bonusTransactions.organizationId, orgId),
-						eq(bonusTransactions.relatedPaymentId, paymentId),
-						eq(bonusTransactions.type, "accrual_referral"),
-					),
-				)
-				.limit(1);
-
-			if (alreadyCredited) {
+			if ("alreadyCredited" in res) {
 				return reply.status(409).send({
 					message: "Бонусы по данному чеку уже были начислены ранее",
 				});
 			}
 
-			const res = await executeBonusAccrual({
-				orgId,
-				patientId: referrerPatientId,
-				amountPoints: rewardRub,
-				description: `Бонус за рекомендацию по чеку №${verifiedPayment.fiscalReceiptNumber || verifiedPayment.id.slice(0, 8)}`,
-				txType: "accrual_referral",
-				expiresInDays: 365,
-				relatedPaymentId: paymentId,
-			});
-
-			if ("notFound" in res) return reply.status(404).send({ message: "Реферер не найден" });
-			if ("duplicate" in res) {
-				return reply.status(409).send({
-					message: "Бонусы по данному чеку уже были начислены ранее",
-				});
+			if ("referrerNotFound" in res) {
+				return reply.status(404).send({ message: "Реферер не найден" });
 			}
+
+			if (idempotencyKey) {
+				reply.header("idempotency-key", idempotencyKey);
+			}
+
 			return reply.status(200).send({
 				success: true,
 				creditedRub: rewardRub,
-				paymentId: verifiedPayment.id,
+				paymentId: res.paymentId,
 				message: `Начислено ${rewardRub} ₽ бонусов за подтвержденную оплату рекомендателя`,
 			});
 		});

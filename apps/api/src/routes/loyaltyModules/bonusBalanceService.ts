@@ -19,7 +19,7 @@ export interface AccruePointsParams {
 	readonly clientMutationId?: string | null | undefined;
 }
 
-export async function executeBonusAccrual(params: AccruePointsParams) {
+export async function executeBonusAccrual(params: AccruePointsParams, txClient?: DatabaseTransaction) {
 	const {
 		orgId,
 		patientId,
@@ -41,10 +41,54 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 		expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 	}
 
-	return db.transaction(async (tx) => {
+	const execute = async (tx: DatabaseTransaction) => {
+		if (clientMutationId) {
+			const [existingByMutation] = await tx
+				.select({
+					id: bonusTransactions.id,
+					amountPoints: bonusTransactions.amountPoints,
+					balanceAfterPoints: bonusTransactions.balanceAfterPoints,
+					description: bonusTransactions.description,
+					expiresAt: bonusTransactions.expiresAt,
+				})
+				.from(bonusTransactions)
+				.where(
+					and(
+						eq(bonusTransactions.organizationId, orgId),
+						eq(bonusTransactions.clientMutationId, clientMutationId),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (existingByMutation) {
+				const existingPoints = Math.abs(Number(existingByMutation.amountPoints || 0));
+				const currentActive = Number(existingByMutation.balanceAfterPoints || 0);
+				return {
+					success: true as const,
+					duplicate: true as const,
+					replayed: true as const,
+					existingTransactionId: existingByMutation.id,
+					accruedPoints: existingPoints,
+					activePoints: currentActive,
+					transaction: {
+						id: existingByMutation.id,
+						amountPoints: existingPoints,
+						balanceAfterPoints: currentActive,
+						description: existingByMutation.description,
+						expiresAt: existingByMutation.expiresAt?.toISOString() || expiresAt.toISOString(),
+					},
+				};
+			}
+		}
+
 		if (relatedPaymentId) {
 			const [existingAccrual] = await tx
-				.select({ id: bonusTransactions.id })
+				.select({
+					id: bonusTransactions.id,
+					amountPoints: bonusTransactions.amountPoints,
+					balanceAfterPoints: bonusTransactions.balanceAfterPoints,
+				})
 				.from(bonusTransactions)
 				.where(
 					and(
@@ -57,7 +101,15 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 				.for("update");
 
 			if (existingAccrual) {
-				return { duplicate: true as const, existingTransactionId: existingAccrual.id };
+				const activeKop = Number(existingAccrual.balanceAfterPoints || 0);
+				return {
+					success: true as const,
+					duplicate: true as const,
+					replayed: true as const,
+					existingTransactionId: existingAccrual.id,
+					accruedPoints: Math.abs(Number(existingAccrual.amountPoints || 0)),
+					activePoints: activeKop,
+				};
 			}
 		}
 
@@ -137,7 +189,12 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 				expiresAt: expiresAt.toISOString(),
 			},
 		};
-	});
+	};
+
+	if (txClient) {
+		return await execute(txClient);
+	}
+	return db.transaction(execute);
 }
 
 /**

@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import type { MarketingPromo, MessageChannel, PatientSegmentOption } from "./marketingTypes";
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { useCampaignSegments } from "./useCampaignSegments";
 import { launchMarketingCampaign } from "./launchCampaignService";
 import { MarketingCampaignHeader } from "./MarketingCampaignHeader";
@@ -62,7 +63,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const handleTestSend = async () => {
 		setTestSent(true);
 		try {
-			const headers = { "Content-Type": "application/json", ...(appLogic?.auth?.denteClinicalMutationHeaders ?? {}) };
+			const headers = { "Content-Type": "application/json", ...denteClinicalMutationHeaders() };
 			await fetch("/api/communications/outbox", {
 				method: "POST",
 				headers,
@@ -79,7 +80,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const handleLaunchCampaign = async () => {
 		setIsSending(true);
 		try {
-			const mutationHeaders = (appLogic?.auth?.denteClinicalMutationHeaders ?? {}) as Record<string, string>;
+			const mutationHeaders = denteClinicalMutationHeaders();
 			const result = await launchMarketingCampaign({
 				promo,
 				channel,

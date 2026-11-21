@@ -36,12 +36,14 @@ export type RelationalMarketingChannel = z.infer<typeof relationalMarketingChann
 /** Допустимые идентификаторы каналов привлечения */
 export const marketingChannelKeySchema = z.enum([
 	"referral",
+	"word_of_mouth",
 	"maps",
 	"website",
 	"telephony",
 	"partner",
 	"website_widget",
 	"yandex_maps",
+	"gis2",
 	"gis_2",
 	"prodoctorov",
 	"tg_bot",

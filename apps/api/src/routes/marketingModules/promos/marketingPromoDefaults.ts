@@ -5,7 +5,10 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { organizations } from "../../../db/schema.js";
-import type { StoredMarketingPromo } from "./marketingPromoSchemas.js";
+import {
+	marketingPromoSchema,
+	type StoredMarketingPromo,
+} from "./marketingPromoSchemas.js";
 
 export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 	{
@@ -18,6 +21,7 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 		promoCode: "HYGIENE3500",
 		validUntil: "31.10.2026",
 		minInvoiceRub: 3500,
+		minInvoiceKopecks: 350000,
 		description:
 			"Ультразвуковое снятие твердых зубных отложений + щадящая полировка Air-Flow порошком на основе глицина и реминерализующая терапия.",
 		conditions: [
@@ -33,6 +37,8 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 			conversionPercent: 0,
 			revenueRub: 0,
 			budgetSpentRub: 0,
+			revenueKopecks: 0,
+			budgetSpentKopecks: 0,
 			romiPercent: 0,
 		},
 		templates: {
@@ -55,6 +61,7 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 		promoCode: "BIRTHDAY10",
 		validUntil: "Бессрочно (за 7 дней до ДР)",
 		minInvoiceRub: 2000,
+		minInvoiceKopecks: 200000,
 		description:
 			"Автоматическое персональное поздравление именинников с начислением скидки 10% на любые терапевтические приемы и эстетические реставрации.",
 		conditions: [
@@ -69,6 +76,8 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 			conversionPercent: 0,
 			revenueRub: 0,
 			budgetSpentRub: 0,
+			revenueKopecks: 0,
+			budgetSpentKopecks: 0,
 			romiPercent: 0,
 		},
 		templates: {
@@ -91,6 +100,7 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 		promoCode: "FAMILY5000",
 		validUntil: "15.12.2026",
 		minInvoiceRub: 15000,
+		minInvoiceKopecks: 1500000,
 		description:
 			"Бонусный сертификат на 5 000 ₽ при совместном лечении двух и более членов семьи (детский прием + терапия или гигиена родителей).",
 		conditions: [
@@ -105,6 +115,8 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 			conversionPercent: 0,
 			revenueRub: 0,
 			budgetSpentRub: 0,
+			revenueKopecks: 0,
+			budgetSpentKopecks: 0,
 			romiPercent: 0,
 		},
 		templates: {
@@ -123,36 +135,42 @@ export async function readOrSeedOrganizationPromos(orgId: string): Promise<{
 	flags: Record<string, unknown>;
 	promos: StoredMarketingPromo[];
 }> {
-	const [org] = await db
-		.select({ flags: organizations.workspaceFeatureFlags })
-		.from(organizations)
-		.where(eq(organizations.id, orgId))
-		.limit(1);
+	return db.transaction(async (tx) => {
+		const [org] = await tx
+			.select({ flags: organizations.workspaceFeatureFlags })
+			.from(organizations)
+			.where(eq(organizations.id, orgId))
+			.for("update");
 
-	const existingFlags = (org?.flags as Record<string, unknown>) || {};
-	const rawPromos = existingFlags.marketingPromos;
+		const existingFlags = (org?.flags as Record<string, unknown>) || {};
+		const rawPromos = existingFlags.marketingPromos;
 
-	if (Array.isArray(rawPromos) && rawPromos.length > 0) {
-		return {
-			flags: existingFlags,
-			promos: rawPromos as StoredMarketingPromo[],
+		if (Array.isArray(rawPromos) && rawPromos.length > 0) {
+			const validatedPromos = rawPromos.map((p) => {
+				const res = marketingPromoSchema.safeParse(p);
+				return res.success ? res.data : (p as StoredMarketingPromo);
+			});
+			return {
+				flags: existingFlags,
+				promos: validatedPromos,
+			};
+		}
+
+		// Первичное авто-сидирование в PostgreSQL 18
+		const seeded = [...DEFAULT_SERVER_MARKETING_PROMOS];
+		const updatedFlags = {
+			...existingFlags,
+			marketingPromos: seeded,
 		};
-	}
 
-	// Первичное авто-сидирование в PostgreSQL 18
-	const seeded = [...DEFAULT_SERVER_MARKETING_PROMOS];
-	const updatedFlags = {
-		...existingFlags,
-		marketingPromos: seeded,
-	};
+		await tx
+			.update(organizations)
+			.set({ workspaceFeatureFlags: updatedFlags })
+			.where(eq(organizations.id, orgId));
 
-	await db
-		.update(organizations)
-		.set({ workspaceFeatureFlags: updatedFlags })
-		.where(eq(organizations.id, orgId));
-
-	return {
-		flags: updatedFlags,
-		promos: seeded,
-	};
+		return {
+			flags: updatedFlags,
+			promos: seeded,
+		};
+	});
 }

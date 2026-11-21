@@ -8,6 +8,7 @@ import type { FastifyInstance } from "fastify";
 import { requireOrganizationId } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { executeBonusAccrual, getPatientBonusBalance, processExpiredBonuses } from "./bonusBalanceService.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
 export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 	app.get("/api/loyalty/balance/:patientId", async (request, reply) => {
@@ -25,13 +26,34 @@ export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 	app.post("/api/loyalty/accrue", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = manualAccrueBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры начисления", errors: parsed.error.format() });
 
 		const { patientId, amountPoints, description, expiresInDays } = parsed.data;
 		return withTenantCtx(orgId, async () => {
-			const res = await executeBonusAccrual({ orgId, patientId, amountPoints, description, txType: "accrual_manual_admin", expiresInDays });
+			const res = await executeBonusAccrual({
+				orgId,
+				patientId,
+				amountPoints,
+				description,
+				txType: "accrual_manual_admin",
+				expiresInDays,
+				clientMutationId: idempotencyKey,
+			});
 			if ("notFound" in res) return reply.status(404).send({ message: "Пациент не найден" });
+			if ("replayed" in res && res.replayed) {
+				reply.header("idempotency-replayed", "true");
+				return reply.status(200).send(res);
+			}
 			return reply.status(201).send(res);
 		});
 	});
@@ -39,6 +61,15 @@ export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 	app.post("/api/loyalty/accrue-cashback", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = accrueCashbackBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры кэшбэка", errors: parsed.error.format() });
 
@@ -47,8 +78,22 @@ export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 		if (pointsToAccrue <= 0) return reply.send({ success: true, accruedPoints: 0, message: "Сумма кэшбэка равна 0" });
 
 		return withTenantCtx(orgId, async () => {
-			const res = await executeBonusAccrual({ orgId, patientId, amountPoints: pointsToAccrue, description: description || "Кэшбэк за оплату услуг", txType: "accrual_cashback", expiresInDays, relatedPaymentId: paymentId, relatedInvoiceId: invoiceId });
+			const res = await executeBonusAccrual({
+				orgId,
+				patientId,
+				amountPoints: pointsToAccrue,
+				description: description || "Кэшбэк за оплату услуг",
+				txType: "accrual_cashback",
+				expiresInDays,
+				relatedPaymentId: paymentId,
+				relatedInvoiceId: invoiceId,
+				clientMutationId: idempotencyKey,
+			});
 			if ("notFound" in res) return reply.status(404).send({ message: "Пациент не найден" });
+			if ("replayed" in res && res.replayed) {
+				reply.header("idempotency-replayed", "true");
+				return reply.status(200).send(res);
+			}
 			return reply.status(201).send(res);
 		});
 	});

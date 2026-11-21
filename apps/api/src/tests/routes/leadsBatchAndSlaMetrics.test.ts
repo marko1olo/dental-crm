@@ -496,4 +496,71 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 			});
 		},
 	);
+
+	it(
+		"6. Idempotency-Key (UUIDv7) validation & expectedRevenue safe parsing (Mandates 8bo & 8bm)",
+		async () => {
+			// 6a. Invalid Idempotency-Key on POST /api/leads returns 400
+			const badLeadRes = await app.inject({
+				method: "POST",
+				url: "/api/leads",
+				headers: {
+					"content-type": "application/json",
+					"idempotency-key": "not-a-valid-uuid",
+					[CLINIC_TOKEN_HEADER]: clinicToken1,
+					[STAFF_TOKEN_HEADER]: staffToken1,
+				},
+				payload: {
+					name: "Тестовый Пациент Идемпотентность",
+					phone: "+79998887766",
+				},
+			});
+			assert.strictEqual(badLeadRes.statusCode, 400);
+			const badLeadBody = JSON.parse(badLeadRes.body);
+			assert.strictEqual(badLeadBody.error, "ValidationError");
+			assert.ok(badLeadBody.message.includes("Idempotency-Key"));
+
+			// 6b. Invalid Idempotency-Key on POST /api/leads/batch-stage returns 400
+			const badBatchRes = await app.inject({
+				method: "POST",
+				url: "/api/leads/batch-stage",
+				headers: {
+					"content-type": "application/json",
+					"idempotency-key": "invalid-uuid-format-here",
+					[CLINIC_TOKEN_HEADER]: clinicToken1,
+					[STAFF_TOKEN_HEADER]: staffToken1,
+				},
+				payload: {
+					leadIds: [LEAD_1_ID],
+					toStage: "consult_booked",
+				},
+			});
+			assert.strictEqual(badBatchRes.statusCode, 400);
+			const badBatchBody = JSON.parse(badBatchRes.body);
+			assert.strictEqual(badBatchBody.error, "ValidationError");
+			assert.ok(badBatchBody.message.includes("Idempotency-Key"));
+
+			// 6c. Valid Idempotency-Key + expectedRevenue parsed via money.ts without float arithmetic
+			const validUuid = "01934e8f-7c1a-7b3b-8fa4-123456789abc";
+			const goodLeadRes = await app.inject({
+				method: "POST",
+				url: "/api/leads",
+				headers: {
+					"content-type": "application/json",
+					"idempotency-key": validUuid,
+					[CLINIC_TOKEN_HEADER]: clinicToken1,
+					[STAFF_TOKEN_HEADER]: staffToken1,
+				},
+				payload: {
+					name: "Прецизионный Пациент Выручки",
+					phone: "+79991112233",
+					expectedRevenue: " 45 000,50 ",
+				},
+			});
+			assert.strictEqual(goodLeadRes.statusCode, 200);
+			const createdLead = JSON.parse(goodLeadRes.body);
+			assert.ok(createdLead.expectedRevenue === "45000.50" || createdLead.expectedRevenue === "45000.5");
+			assert.strictEqual(Number(createdLead.expectedRevenue), 45000.5);
+		},
+	);
 });
