@@ -36,6 +36,7 @@ import {
 import { getReceiptByOutboxId, getReceiptByVisitId } from "./receiptManager.js";
 import { syncPendingStatuses } from "./statusSyncer.js";
 import { processLegacyPendingLogs } from "./legacyLogsProcessor.js";
+import { resolveN3HealthConfig } from "../../../routes/egisz/n3/n3Config.js";
 
 export class EgiszOutboxDispatcher {
 	private readonly client: OiisGatewayClient;
@@ -45,6 +46,30 @@ export class EgiszOutboxDispatcher {
 	}
 
 	public getClient(): OiisGatewayClient {
+		return this.client;
+	}
+
+	/**
+	 * Резолвит OiisGatewayClient с учетом настроек клиники из БД (workspaceFeatureFlags.n3HealthVipnetConfig)
+	 * DEF-EG-02: считывание настроек ViPNet конкретной организации.
+	 */
+	public async resolveClientForOrg(organizationId?: string): Promise<OiisGatewayClient> {
+		if (!organizationId) return this.client;
+		try {
+			const n3Res = await resolveN3HealthConfig(organizationId);
+			if (n3Res?.config) {
+				return new OiisGatewayClient({
+					baseUrl: n3Res.config.emkServiceUrl,
+					guid: n3Res.config.authGuid,
+					lpuId: n3Res.config.idLpu,
+					clinicOid: n3Res.config.clinicOid,
+					apiKey: n3Res.config.eventLogToken,
+					timeoutMs: n3Res.config.timeoutMs,
+				});
+			}
+		} catch {
+			// Fallback к дефолтному клиенту
+		}
 		return this.client;
 	}
 
@@ -408,6 +433,8 @@ export class EgiszOutboxDispatcher {
 					continue;
 				}
 
+				const activeClient = await this.resolveClientForOrg(row.organizationId);
+
 				const pkg: EgiszRemdPackage = {
 					documentId: row.visitId,
 					documentVersion: 1,
@@ -432,12 +459,12 @@ export class EgiszOutboxDispatcher {
 						: {}),
 					metadata: {
 						patientSnils: snils || "",
-						clinicOid: this.client.getConfig().clinicOid,
+						clinicOid: activeClient.getConfig().clinicOid,
 						docTypeNsiCode: row.docTypeNsiCode || "108",
 					},
 				};
 
-				const submissionRes = await this.client.sendRemdDocument(pkg);
+				const submissionRes = await activeClient.sendRemdDocument(pkg);
 
 				if (submissionRes.success) {
 					const isRegistered = submissionRes.status === "Registered";
@@ -460,12 +487,12 @@ export class EgiszOutboxDispatcher {
 							visitId: row.visitId,
 							documentId: row.documentId,
 							docTypeNsiCode: row.docTypeNsiCode,
-							clinicOid: this.client.getConfig().clinicOid,
+							clinicOid: activeClient.getConfig().clinicOid,
 							payloadHashSha256: row.payloadHashSha256,
 							doctorCertSerial: row.doctorCertSerial,
 							doctorCertSubject: row.doctorCertSubject,
 							moCertSerial: row.moCertSerial,
-							serviceEndpoint: this.client.getConfig().baseUrl,
+							serviceEndpoint: activeClient.getConfig().baseUrl,
 						});
 					}
 
@@ -737,7 +764,8 @@ export class EgiszOutboxDispatcher {
 		organizationId: string,
 		outboxId: string,
 	): Promise<EgiszRemdRegistrationReceipt | null> {
-		return getReceiptByOutboxId(this.client, organizationId, outboxId);
+		const activeClient = await this.resolveClientForOrg(organizationId);
+		return getReceiptByOutboxId(activeClient, organizationId, outboxId);
 	}
 
 	/**
@@ -747,7 +775,8 @@ export class EgiszOutboxDispatcher {
 		organizationId: string,
 		visitId: string,
 	): Promise<EgiszRemdRegistrationReceipt | null> {
-		return getReceiptByVisitId(this.client, organizationId, visitId);
+		const activeClient = await this.resolveClientForOrg(organizationId);
+		return getReceiptByVisitId(activeClient, organizationId, visitId);
 	}
 }
 

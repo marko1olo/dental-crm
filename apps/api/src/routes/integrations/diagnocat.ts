@@ -2,27 +2,67 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { diagnocatReports, patients } from "../../db/schema.js";
+import { patients, radiologyAiReports } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
+import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
 	const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const isAuthorized = verifyWebhookSecret(request, reply, {
+			channel: "diagnocat",
+			secretEnvNames: [
+				"DIAGNOCAT_WEBHOOK_SECRET",
+				"CLINICAL_AI_WEBHOOK_SECRET",
+				"DENTE_WEBHOOK_SECRET",
+			],
+			extraHeaderNames: [
+				"x-diagnocat-api-key",
+				"x-diagnocat-secret",
+				"x-clinical-ai-api-key",
+				"x-api-key",
+			],
+		});
+		if (!isAuthorized) return;
+
 		const body = request.body as {
 			patientId?: string;
 			reportUrl?: string;
 			odontogramData?: unknown;
+			organizationId?: string;
 		};
 		if (!body.patientId || !body.reportUrl || !body.odontogramData) {
 			return reply.status(400).send({ error: "Missing required fields" });
 		}
 
-		const organizationId = await requireOrganizationContext(request, reply);
-		if (!organizationId) return;
+		const query = request.query as Record<string, unknown> | undefined;
+		const headerOrg = request.headers["x-organization-id"];
+		let organizationId =
+			(typeof body.organizationId === "string" && body.organizationId.trim() ? body.organizationId.trim() : null) ||
+			(typeof query?.organizationId === "string" && query.organizationId.trim() ? query.organizationId.trim() : null) ||
+			(typeof headerOrg === "string" && headerOrg.trim() ? headerOrg.trim() : null);
+
+		if (!organizationId && body.patientId) {
+			const [patient] = await db
+				.select({ organizationId: patients.organizationId })
+				.from(patients)
+				.where(eq(patients.id, body.patientId))
+				.limit(1);
+			if (patient?.organizationId) {
+				organizationId = patient.organizationId;
+			}
+		}
+
+		if (!organizationId) {
+			return reply.status(400).send({
+				error: "MissingOrganizationContext",
+				message: "Не удалось определить организацию для входящего отчета Diagnocat",
+			});
+		}
 
 		const inserted = await db
-			.insert(diagnocatReports)
+			.insert(radiologyAiReports)
 			.values({
 				organizationId,
 				patientId: body.patientId,
@@ -77,14 +117,14 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 
 		const reports = await db
 			.select()
-			.from(diagnocatReports)
+			.from(radiologyAiReports)
 			.where(
 				and(
-					eq(diagnocatReports.patientId, patientId),
-					eq(diagnocatReports.organizationId, organizationId),
+					eq(radiologyAiReports.patientId, patientId),
+					eq(radiologyAiReports.organizationId, organizationId),
 				),
 			)
-			.orderBy(diagnocatReports.createdAt);
+			.orderBy(radiologyAiReports.createdAt);
 
 		await auditMedicalAccessFromRequest(request, {
 			organizationId,

@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import {
+	namedDevelopmentModeActive,
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+} from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -272,6 +276,12 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 				return reply.status(422).send({ error: "CdaGenerationFailed", message: "Ошибка схемы CDA.", details: cdaRes.error.issues });
 			}
 			const canonicalXml = cdaRes.xml;
+			if (!namedDevelopmentModeActive()) {
+				return reply.status(422).send({
+					error: "MissingDoctorSignature",
+					message: "Документ не подписан УКЭП врача. Отправка неподписанного СЭМД в ЕГИСЗ запрещена (63-ФЗ, 323-ФЗ).",
+				});
+			}
 			const doctorFullName = `${doctorRes.doctorName.last} ${doctorRes.doctorName.first}`.trim() || "Врач-стоматолог";
 			const docSig = createDemonstrationGostSignature({
 				doctorName: doctorFullName,

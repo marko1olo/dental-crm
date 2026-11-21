@@ -6,6 +6,7 @@ import type {
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	index,
 	integer,
 	jsonb,
@@ -84,7 +85,7 @@ export const imagingStudies = pgTable(
 		sliceCount: integer("slice_count"),
 		dimensions: text("dimensions"),
 		voxelSpacing: text("voxel_spacing"),
-		fileSizeBytes: integer("file_size_bytes"),
+		fileSizeBytes: bigint("file_size_bytes", { mode: "number" }),
 		bindingStatus: text("binding_status").notNull().default("unassigned"),
 		bindingConfidence: integer("binding_confidence").notNull().default(0),
 		dicomPatientName: text("dicom_patient_name"),
@@ -223,7 +224,7 @@ export const imagingInstances = pgTable(
 		sopClassUid: text("sop_class_uid"),
 		storagePath: text("storage_path").notNull(),
 		storageKey: text("storage_key"),
-		fileSizeBytes: integer("file_size_bytes"),
+		fileSizeBytes: bigint("file_size_bytes", { mode: "number" }),
 		sliceLocation: real("slice_location"),
 		windowCenter: real("window_center"),
 		windowWidth: real("window_width"),
@@ -315,7 +316,7 @@ export const xrayScans = pgTable(
 		imageDataUri: text("image_data_uri"), // base64 data URI (for legacy backward compatibility only)
 		storagePath: text("storage_path"), // path on disk for the image
 		fileUrl: text("file_url"), // direct stream URL (/api/xray/scans/:id/file)
-		fileSizeBytes: integer("file_size_bytes"),
+		fileSizeBytes: bigint("file_size_bytes", { mode: "number" }),
 		sha256: text("sha256"),
 		originalFilename: text("original_filename"),
 		mimeType: text("mime_type").notNull().default("image/jpeg"),
@@ -565,8 +566,8 @@ export const radiologyAiFindings = pgTable(
 		),
 	}),
 );
-export const diagnocatAiFindings = radiologyAiFindings;
 export const clinicalAiFindings = radiologyAiFindings;
+export const diagnocatAiFindings = radiologyAiFindings;
 
 // Clinical AI diagnostic reports & automated odontogram pathology interpretations
 export const radiologyAiReports = pgTable(
@@ -589,8 +590,8 @@ export const radiologyAiReports = pgTable(
 		),
 	}),
 );
-export const diagnocatReports = radiologyAiReports;
 export const clinicalAiReports = radiologyAiReports;
+export const diagnocatReports = radiologyAiReports;
 
 // Intraoral 3D Scan Sessions
 export * from "./intraoralScans.js";

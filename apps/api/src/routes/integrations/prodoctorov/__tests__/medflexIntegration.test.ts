@@ -149,6 +149,11 @@ describe("MedFlex & ProDoctorov Integration Suite (Mandates 8e, 8n, Red Team)", 
 	});
 
 	it("2. HMAC-SHA256 валидация: неверная подпись дает 401 Unauthorized, верная пропускает", async () => {
+		// Проверка DEF-PD-01: пустой секрет обязан возвращать false (Fail-Closed)
+		const dummyReq = { headers: {}, body: {} } as Parameters<typeof verifyClinicMedflexSignature>[0];
+		assert.equal(verifyClinicMedflexSignature(dummyReq, ""), false);
+		assert.equal(verifyClinicMedflexSignature(dummyReq, "   "), false);
+
 		const payload = {
 			event: "booking_created",
 			deliveryId: `del-hmac-${Date.now()}`,
@@ -351,5 +356,13 @@ describe("MedFlex & ProDoctorov Integration Suite (Mandates 8e, 8n, Red Team)", 
 		const found = mappings.find((m) => m.staffId === testDoctorId);
 		assert.ok(found);
 		assert.equal(found.externalDoctorId, "doc-pd-777");
+	});
+
+	it("7. Изоляция тенантов (DEF-PD-05): отсутствие контекста организации возвращает 400 Bad Request", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/integrations/prodoctorov/slots",
+		});
+		assert.equal(res.statusCode, 400);
 	});
 });
