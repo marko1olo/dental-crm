@@ -286,74 +286,80 @@ export async function register(app: FastifyInstance) {
 			origin: `http://${request.headers.host ?? "127.0.0.1:4100"}`,
 		};
 
-		// Если документ в статусе черновика — переводим его в issued с сохранением подписи
-		if (existing.status === "draft") {
-			const issuedDocumentCandidate = {
-				...existing,
-				status: "issued" as const,
-				issuedAt: effectiveSignedAt,
-				signatureAttestation,
-				signatureSvg,
-			};
-			const issuedHtml = renderDocumentHtml(
-				issuedDocumentCandidate,
-				patient,
-				renderContext,
-			);
-
-			await issueGeneratedDocumentInDb(orgId, id, {
-				issuedByUserId: null,
-				issuedAt: effectiveSignedAt,
-				snapshotHtml: issuedHtml,
-				signatureAttestation,
-				signatureSvg,
-			});
-		} else {
-			// Документ уже был выдан — обновляем векторную подпись в базе данных PostgreSQL 18
-			await db
-				.update(schema.generatedDocuments)
-				.set({
-					signatureSvg,
+		// Неделимая ACID транзакция (Мандат 8bo): атомарное сохранение подписи документа,
+		// вставка в documentSignatures и синхронизация согласия в patientConsents
+		await db.transaction(async (tx) => {
+			// Если документ в статусе черновика — переводим его в issued с сохранением подписи
+			if (existing.status === "draft") {
+				const issuedDocumentCandidate = {
+					...existing,
+					status: "issued" as const,
+					issuedAt: effectiveSignedAt,
 					signatureAttestation,
-				})
-				.where(
-					and(
-						eq(schema.generatedDocuments.organizationId, orgId),
-						eq(schema.generatedDocuments.id, id),
-					),
+					signatureSvg,
+				};
+				const issuedHtml = renderDocumentHtml(
+					issuedDocumentCandidate,
+					patient,
+					renderContext,
 				);
 
-			// Фиксация в реестре электронных подписей document_signatures для аудита и 63-ФЗ
-			const docSha256 =
-				existing.issuedSnapshotSha256 ||
-				crypto
-					.createHash("sha256")
-					.update(
-						`${existing.id}:${existing.issuedAt ? new Date(existing.issuedAt).toISOString() : effectiveSignedAt}`,
-					)
-					.digest("hex");
+				await issueGeneratedDocumentInDb(orgId, id, {
+					issuedByUserId: null,
+					issuedAt: effectiveSignedAt,
+					snapshotHtml: issuedHtml,
+					signatureAttestation,
+					signatureSvg,
+					tx,
+				});
+			} else {
+				// Документ уже был выдан — обновляем векторную подпись в базе данных PostgreSQL 18
+				await tx
+					.update(schema.generatedDocuments)
+					.set({
+						signatureSvg,
+						signatureAttestation,
+					})
+					.where(
+						and(
+							eq(schema.generatedDocuments.organizationId, orgId),
+							eq(schema.generatedDocuments.id, id),
+						),
+					);
 
-			await db.insert(schema.documentSignatures).values({
-				organizationId: orgId,
-				documentId: existing.id,
-				patientId: existing.patientId,
-				signerRole: recipientRole || "patient",
-				signerName: effectiveRecipientName || "Пациент (ПЭП 63-ФЗ)",
-				signatureType: signatureSvg ? "pep_canvas" : "pep_sms",
-				signatureSvg: signatureSvg ?? null,
-				documentSha256: docSha256,
-				signedAt: new Date(effectiveSignedAt),
-			});
-		}
+				// Фиксация в реестре электронных подписей document_signatures для аудита и 63-ФЗ
+				const docSha256 =
+					existing.issuedSnapshotSha256 ||
+					crypto
+						.createHash("sha256")
+						.update(
+							`${existing.id}:${existing.issuedAt ? new Date(existing.issuedAt).toISOString() : effectiveSignedAt}`,
+						)
+						.digest("hex");
 
-		// [DOC-03] Синхронизируем подпись в таблицу patient_consents
-		await syncDocumentToPatientConsent(
-			orgId,
-			existing.patientId,
-			existing.kind,
-			existing.id,
-			new Date(effectiveSignedAt),
-		);
+				await tx.insert(schema.documentSignatures).values({
+					organizationId: orgId,
+					documentId: existing.id,
+					patientId: existing.patientId,
+					signerRole: recipientRole || "patient",
+					signerName: effectiveRecipientName || "Пациент (ПЭП 63-ФЗ)",
+					signatureType: signatureSvg ? "pep_canvas" : "pep_sms",
+					signatureSvg: signatureSvg ?? null,
+					documentSha256: docSha256,
+					signedAt: new Date(effectiveSignedAt),
+				});
+			}
+
+			// [DOC-03] Синхронизируем подпись в таблицу patient_consents
+			await syncDocumentToPatientConsent(
+				orgId,
+				existing.patientId,
+				existing.kind,
+				existing.id,
+				new Date(effectiveSignedAt),
+				tx,
+			);
+		});
 
 		// [DOC-04] Юридически значимый след по 63-ФЗ в audit_events
 		await recordAuditEvent({

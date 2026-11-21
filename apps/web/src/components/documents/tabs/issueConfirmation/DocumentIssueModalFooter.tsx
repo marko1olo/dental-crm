@@ -17,7 +17,7 @@ export const DocumentIssueModalFooter: React.FC<DocumentIssueModalFooterProps> =
 						if (saving) return;
 						onClose();
 					}}
-					className="min-h-[38px] px-3.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs hover:border-[var(--teal)] transition-colors cursor-pointer"
+					className="inline-flex items-center justify-center min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 text-sm font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 				>
 					Вернуться
 				</button>
@@ -29,9 +29,9 @@ export const DocumentIssueModalFooter: React.FC<DocumentIssueModalFooterProps> =
 						onConfirm();
 					}}
 					data-testid="btn-confirm-issue-primary"
-					className="min-h-[38px] px-4 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:bg-[var(--teal-hover,var(--teal))] transition-colors inline-flex items-center gap-1.5 cursor-pointer border-none"
+					className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-4 text-sm font-medium rounded-lg bg-[var(--primary)] text-white shadow-xs hover:bg-[var(--primary-hover)] transition-colors cursor-pointer shrink-0 border-none"
 				>
-					<CheckCircle2 className="w-4 h-4" />
+					<CheckCircle2 className="w-4 h-4 shrink-0" />
 					<span>{saving ? "Выдаю документ..." : "Выдать / Подтвердить"}</span>
 				</button>
 			</div>

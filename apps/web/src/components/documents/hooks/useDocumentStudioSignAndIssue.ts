@@ -252,7 +252,10 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 		});
 
 		if (options.effectivePatientId) {
-			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+			});
 			try {
 				await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
 					method: "POST",
@@ -406,18 +409,26 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 				}
 
 				try {
+					const createHeaders = denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": crypto.randomUUID(),
+					});
 					const res = await fetch("/api/documents", {
 						method: "POST",
-						headers,
+						headers: createHeaders,
 						body: JSON.stringify(createPayload),
 					});
 					if (res.ok) {
 						const createdDoc: unknown = await res.json();
 						const docObj = (createdDoc && typeof createdDoc === "object") ? (createdDoc as { id?: string }) : undefined;
 						if (docObj?.id) {
+							const issueHeaders = denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+								"Idempotency-Key": crypto.randomUUID(),
+							});
 							await fetch(`/api/documents/${encodeURIComponent(docObj.id)}/issue`, {
 								method: "POST",
-								headers,
+								headers: issueHeaders,
 								body: JSON.stringify({
 									signatureAttestation: {
 										staffFullName: options.effectiveDoctorName || "Врач-стоматолог",
@@ -448,9 +459,13 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 				};
 
 				try {
+					const consentHeaders = denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": crypto.randomUUID(),
+					});
 					await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
 						method: "POST",
-						headers,
+						headers: consentHeaders,
 						body: JSON.stringify(consentPayload),
 					});
 				} catch {

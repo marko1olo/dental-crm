@@ -4,6 +4,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
 import {
 	getDocumentById,
 	voidGeneratedDocumentInDb,
@@ -128,36 +129,46 @@ export async function register(app: FastifyInstance) {
 		// отказ Postgres 22P02. Аннулирование — юридическое действие, поэтому
 		// сотрудник берётся из подписанного staff-токена, а при его отсутствии
 		// остаётся null вместо выдуманного подписанта.
-		const document = await voidGeneratedDocumentInDb(orgId, id, {
-			voidedByUserId: getRequestIdentity(request).userId,
-			voidedAt,
-			voidAttestation: {
-				...voidAttestationInput,
+		// Неделимая ACID транзакция (Мандат 8bo): атомарное аннулирование документа
+		// и возвращение покрытых возвратом платежей обратно в кассу.
+		const document = await db.transaction(async (tx) => {
+			const voidedDoc = await voidGeneratedDocumentInDb(orgId, id, {
+				voidedByUserId: getRequestIdentity(request).userId,
 				voidedAt,
-			},
+				voidAttestation: {
+					...voidAttestationInput,
+					voidedAt,
+				},
+				tx,
+			});
+			if (!voidedDoc) {
+				return null;
+			}
+
+			// ОБРАТНЫЙ ХОД ТОГО ЖЕ ШВА. Учёт возвратов ведётся только по ВЫДАННЫМ
+			// заявлениям (documents/guards.ts: alreadyRefundedKopecksForPayment), поэтому
+			// аннулирование заявления обнуляет учтённый возврат по чеку.
+			if (voidedDoc.kind === "payment_refund_correction_request") {
+				const settlement = await settleRefundedPaymentsForPatient(
+					orgId,
+					voidedDoc.patientId,
+					tx,
+				);
+				request.log.info(
+					{ documentId: voidedDoc.id, restoredPaymentIds: settlement.restored },
+					"аннулирование заявления на возврат сведено с кассой",
+				);
+			}
+
+			return voidedDoc;
 		});
+
 		if (!document) {
 			return reply
 				.code(409)
 				.send(apiError("Статус документа нельзя изменить."));
 		}
 
-		// ОБРАТНЫЙ ХОД ТОГО ЖЕ ШВА. Учёт возвратов ведётся только по ВЫДАННЫМ
-		// заявлениям (documents/guards.ts: alreadyRefundedKopecksForPayment), поэтому
-		// аннулирование заявления обнуляет учтённый возврат по чеку. Без этого вызова
-		// платёж навсегда остался бы "refunded" при нулевом учтённом возврате: деньги
-		// пропали бы из выручки без действующего основания, а новый возврат по тому же
-		// чеку упирался бы в отказ «уже выполнен полный возврат средств».
-		if (document.kind === "payment_refund_correction_request") {
-			const settlement = await settleRefundedPaymentsForPatient(
-				orgId,
-				document.patientId,
-			);
-			request.log.info(
-				{ documentId: document.id, restoredPaymentIds: settlement.restored },
-				"аннулирование заявления на возврат сведено с кассой",
-			);
-		}
 		return reply.send(publicGeneratedDocumentSchema.parse(document));
 	});
 }

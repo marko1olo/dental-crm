@@ -10,7 +10,7 @@ export interface DocumentAuditModalFooterProps {
 	onDownloadPdf: (id: string) => Promise<void> | void;
 }
 
-const btnBaseClass = "inline-flex items-center gap-1.5 min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs hover:border-[var(--teal)] hover:text-[var(--teal)] transition-colors cursor-pointer";
+const btnBaseClass = "inline-flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 text-sm font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0";
 
 export const DocumentAuditModalFooter: React.FC<DocumentAuditModalFooterProps> = React.memo(
 	function DocumentAuditModalFooter({
@@ -29,13 +29,13 @@ export const DocumentAuditModalFooter: React.FC<DocumentAuditModalFooterProps> =
 				<div className="flex items-center gap-2">
 					{documentId && (
 						<button type="button" onClick={() => void onOpenHtml(documentId)} className={btnBaseClass}>
-							<FileText className="w-3.5 h-3.5" />
+							<FileText className="w-4 h-4 shrink-0" />
 							<span>Открыть бланк</span>
 						</button>
 					)}
 					{hasHtmlDownloadUrl && documentId && (
 						<button type="button" onClick={() => void onDownloadHtml(documentId)} className={btnBaseClass}>
-							<Download className="w-3.5 h-3.5" />
+							<Download className="w-4 h-4 shrink-0" />
 							<span>Скачать копию</span>
 						</button>
 					)}
@@ -43,9 +43,9 @@ export const DocumentAuditModalFooter: React.FC<DocumentAuditModalFooterProps> =
 						<button
 							type="button"
 							onClick={() => void onDownloadPdf(documentId)}
-							className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:bg-[var(--teal-hover,var(--teal))] transition-colors cursor-pointer border-none"
+							className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-4 text-sm font-medium rounded-lg bg-[var(--primary)] text-white shadow-xs hover:bg-[var(--primary-hover)] transition-colors cursor-pointer shrink-0 border-none"
 						>
-							<Printer className="w-3.5 h-3.5" />
+							<Printer className="w-4 h-4 shrink-0" />
 							<span>Печать / PDF</span>
 						</button>
 					)}

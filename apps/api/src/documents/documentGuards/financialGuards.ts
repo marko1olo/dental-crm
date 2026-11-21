@@ -135,7 +135,7 @@ export function plannedFactsTotalMismatchReason(
 ): string | null {
 	if (
 		facts.plannedAmountRub > 0 &&
-		payloadTotalRub !== facts.plannedAmountRub
+		!moneyRubEquals(parseKopecks(payloadTotalRub), facts.plannedAmountRub)
 	) {
 		return `${documentLabel}: сумма ${moneyRubText(payloadTotalRub)} руб. не совпадает с актуальным планом лечения ${moneyRubText(facts.plannedAmountRub)} руб.`;
 	}
@@ -147,7 +147,10 @@ export function paidFactsTotalMismatchReason(
 	facts: DocumentCreationFacts,
 	documentLabel: string,
 ): string | null {
-	if (facts.paidAmountRub > 0 && payloadTotalRub !== facts.paidAmountRub) {
+	if (
+		facts.paidAmountRub > 0 &&
+		!moneyRubEquals(parseKopecks(payloadTotalRub), facts.paidAmountRub)
+	) {
 		return `${documentLabel}: сумма ${moneyRubText(payloadTotalRub)} руб. не совпадает с реально оплаченным контекстом ${moneyRubText(facts.paidAmountRub)} руб.`;
 	}
 	return null;
@@ -350,6 +353,13 @@ export function documentPayloadConsistencyReason(
 	return null;
 }
 
+function sumPaymentsRub(paymentsList: Payment[]): number {
+	const totalKopecks = sumKopecks(
+		paymentsList.map((payment) => parseKopecks(payment.amountRub)),
+	);
+	return Number(kopecksToNumericString(totalKopecks));
+}
+
 export function paidAmountRubForDocument(
 	kind: DocumentKind,
 	input: CreateDocumentInput,
@@ -384,28 +394,26 @@ export function paidAmountRubForDocument(
 	if (taxPaidDocumentRequiresPaymentSelection(kind)) {
 		const selectedIds = new Set(selectedTaxPaymentIds(input));
 		if (selectedIds.size > 0) {
-			return payments
-				.filter(
-					(payment) =>
-						selectedIds.has(payment.id) &&
-						paymentMatchesTaxDocumentScope(payment, input),
-				)
-				.reduce((total, payment) => total + payment.amountRub, 0);
+			const matched = payments.filter(
+				(payment) =>
+					selectedIds.has(payment.id) &&
+					paymentMatchesTaxDocumentScope(payment, input),
+			);
+			return sumPaymentsRub(matched);
 		}
 	}
 	if (kind === "payment_receipt" && input.payload?.paymentReceipt) {
 		const selectedIds = new Set(selectedPaymentReceiptIds(input));
 		if (!selectedIds.size) return 0;
-		return payments
-			.filter(
-				(payment) =>
-					selectedIds.has(payment.id) &&
-					payment.patientId === input.patientId &&
-					payment.status === "paid" &&
-					payment.amountRub > 0 &&
-					(!input.visitId || payment.visitId === input.visitId),
-			)
-			.reduce((total, payment) => total + payment.amountRub, 0);
+		const matched = payments.filter(
+			(payment) =>
+				selectedIds.has(payment.id) &&
+				payment.patientId === input.patientId &&
+				payment.status === "paid" &&
+				payment.amountRub > 0 &&
+				(!input.visitId || payment.visitId === input.visitId),
+		);
+		return sumPaymentsRub(matched);
 	}
 	if (
 		kind === "payment_refund_correction_request" &&
@@ -413,19 +421,18 @@ export function paidAmountRubForDocument(
 	) {
 		const selectedIds = new Set(selectedPaymentRefundCorrectionIds(input));
 		if (!selectedIds.size) return 0;
-		return payments
-			.filter(
-				(payment) =>
-					selectedIds.has(payment.id) &&
-					payment.patientId === input.patientId &&
-					payment.status === "paid" &&
-					payment.amountRub > 0 &&
-					(!input.visitId || payment.visitId === input.visitId),
-			)
-			.reduce((total, payment) => total + payment.amountRub, 0);
+		const matched = payments.filter(
+			(payment) =>
+				selectedIds.has(payment.id) &&
+				payment.patientId === input.patientId &&
+				payment.status === "paid" &&
+				payment.amountRub > 0 &&
+				(!input.visitId || payment.visitId === input.visitId),
+		);
+		return sumPaymentsRub(matched);
 	}
 
-	return payments
+	const matched = payments
 		.filter(
 			(payment) =>
 				payment.patientId === input.patientId && payment.status === "paid",
@@ -438,8 +445,8 @@ export function paidAmountRubForDocument(
 							paymentMatchesTaxPayer(payment, input.taxPayerInn),
 					)
 				: !input.visitId || payment.visitId === input.visitId,
-		)
-		.reduce((total, payment) => total + payment.amountRub, 0);
+		);
+	return sumPaymentsRub(matched);
 }
 
 /**

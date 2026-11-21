@@ -345,6 +345,37 @@ graph LR
 
 ---
 
+15. **Red Team Фиксер-Хирург Домена 13: Ликвидация системных дефектов документооборота, ACID-транзакции и защита копеек (DEF-DOC13-01...06, Мандаты 8e, 8n, 8am, 8bm, 8bo, 8zp, 8zr):**
+    * **DEF-DOC13-01 (Точный расчет копеек в справке 13% НДФЛ — Мандат 8bm):**
+      В `apps/web/src/components/documents/taxCertificateEngine.ts:611-623` ликвидирован целочисленный срез копеек через BigInt-деление `/ 100n` (отбрасывавший дробные суммы, например, 50 копеек). Внедрен точный перевод: `Number(code01KopecksBi) / 100`, `Number(code02KopecksBi) / 100`, `Number(totalKopecksBi) / 100`, `Number(eligibleCode01KopecksBi) / 100`, `Number(estimatedRefund13KopecksBi) / 100`. Копеечная точность покрыта тестом `redTeamDomain13TaxAndButtonsProof.test.ts` (PASS).
+    * **DEF-DOC13-02 (Ликвидация float reduce и строгого неравенства в финансовых гвардах сервера — Мандат 8bm):**
+      В `apps/api/src/documents/documentGuards/financialGuards.ts:356-445` функция `paidAmountRubForDocument` переведена со сложения чисел с плавающей точкой `.reduce((total, p) => total + p.amountRub, 0)` на точное целочисленное сложение копеек `sumPaymentsRub` через `sumKopecks` и `parseKopecks` из `@dental/shared`. В строках 131-155 строгие проверки `payloadTotalRub !== facts.plannedAmountRub` заменены на сравнение в копейках `!moneyRubEquals(parseKopecks(payloadTotalRub), facts.plannedAmountRub)`, что исключило отказ в выдаче документов из-за погрешностей IEEE-754.
+    * **DEF-DOC13-03 (Неделимость ACID: объединение цепочек мутаций в транзакции — Мандат 8bo):**
+      - `apps/api/src/routes/documents/issue.ts:245-316`: выдача документа (`issueGeneratedDocumentInDb`), погашение возвратов (`settleRefundedPaymentsForPatient`) и синхронизация согласия (`syncDocumentToPatientConsent`) объединены в единую атомарную транзакцию `await db.transaction(async (tx) => { ... })`.
+      - `apps/api/src/routes/documents/void.ts:131-160`: аннулирование документа (`voidGeneratedDocumentInDb`) и возврат платежей в кассу (`settleRefundedPaymentsForPatient`) объединены в транзакцию `tx`.
+      - `apps/api/src/routes/documents/signature.ts:290-376`: сохранение подписи документа, вставка в `documentSignatures` и обновление `patientConsents` объединены в неделимую транзакцию `tx`.
+      - `apps/api/src/db/documentQuery.ts`: функции `issueGeneratedDocumentInDb` и `voidGeneratedDocumentInDb` принимают опциональный `tx` в `options`.
+      - `apps/api/src/db/billing/refundSettlements.ts`: `applyPaymentRefundSettlementsInDb` принимает `tx`.
+      - `apps/api/src/routes/consents/queries.ts`: `syncDocumentToPatientConsent` принимает `tx`.
+    * **DEF-DOC13-04 (Защита от дублей и сквозная идемпотентность — Мандат 8zp):**
+      В `apps/api/src/plugins/idempotencyPlugin.ts:77` добавлен канонический маршрут `/^\/api\/documents(?:\/[^/]+\/(?:issue|void|signature|sign-ukep))?$/` в `enforceForPaths`. В `apps/web/src/components/documents/hooks/useDocumentStudioSignAndIssue.ts:254-455` клиент передает обязательный заголовок `Idempotency-Key` (UUID) при создании и выдаче документов и согласий.
+    * **DEF-DOC13-05 (Матрица кнопок и токены Мандата 8am):**
+      - `DocumentIssueModalFooter.tsx`: кнопки стандартизированы под Desktop Standard `h-9 px-3.5 rounded-lg text-sm font-medium`, Mobile `min-h-[44px] h-11 px-4 rounded-xl`, Primary CTA `bg-[var(--primary)] text-white`.
+      - `DocumentVoidModalFooter.tsx`: удалены инлайновые `minHeight: 44px`, кнопка аннулирования оформлена как семантический Destructive (`border border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]`).
+      - `DocumentAuditModalFooter.tsx`: устранена микро-кнопка, внедрены токены `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5` и Primary CTA `bg-[var(--primary)]`.
+      - `DocumentUkepSignButton.tsx`: устранена задержка высот, хардкодные цвета заменены на семантические токены `var(--danger)`, `var(--ink-muted)`, Primary CTA `bg-[var(--primary)] text-white`.
+    * **DEF-DOC13-06 (Сохранение дробных клинических доз — Мандат 8e):**
+      В `apps/api/src/db/documentQuery.ts:667` ликвидирован `Math.round`: `quantity: Number(item.quantity) || 1`. Дробные дозы (1.5 карпулы артикаина или 0.5 челюсти) больше не округляются до целых.
+    * **Машинные гейты (Machine Gates):**
+      - `node --import tsx --test apps/api/src/documents/*.test.ts`: **78/78 тестов PASS (Exit Code 0)**.
+      - `node --import tsx --test apps/api/src/documents/redTeamDomain13FixerProof.test.ts`: **4/4 теста PASS (Exit Code 0)**.
+      - `npx vitest run apps/web/src/components/documents/__tests__/redTeamDomain13TaxAndButtonsProof.test.ts`: **1/1 тест PASS (Exit Code 0)**.
+      - `npx vitest run apps/web/src/components/documents/__tests__/`: **33/33 теста PASS (Exit Code 0)**.
+      - `npx tsc -p apps/api/tsconfig.json --noEmit` и `npx tsc -p apps/web/tsconfig.json --noEmit`: **0 ошибок компилятора**.
+      - `npm run check:encoding` и `npm run check:buttons`: **Exit Code 0**.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

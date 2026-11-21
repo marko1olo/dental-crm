@@ -69,6 +69,7 @@ import { withTenantCtx } from "../db/rls.js";
 export async function settleRefundedPaymentsForPatient(
 	organizationId: string,
 	patientId: string,
+	tx?: any,
 ): Promise<RefundSettlementOutcome> {
 	return withTenantCtx(organizationId, async () => {
 		const [payments, documents] = await Promise.all([
@@ -82,6 +83,7 @@ export async function settleRefundedPaymentsForPatient(
 		const applied = await applyPaymentRefundSettlementsInDb(
 			organizationId,
 			settlements,
+			tx,
 		);
 		return {
 			refunded: applied.refunded,

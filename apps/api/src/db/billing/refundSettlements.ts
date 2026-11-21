@@ -31,7 +31,9 @@ import type {
 export async function applyPaymentRefundSettlementsInDb(
 	organizationId: string,
 	settlements: readonly PaymentRefundSettlementItem[],
+	tx?: any,
 ): Promise<PaymentRefundSettlementResult> {
+	const client = (tx ?? db) as typeof db;
 	const toRefund = settlements
 		.filter((item) => item.fullyRefunded)
 		.map((item) => item.paymentId);
@@ -45,7 +47,7 @@ export async function applyPaymentRefundSettlementsInDb(
 		to: "paid" | "refunded",
 	): Promise<string[]> {
 		if (paymentIds.length === 0) return [];
-		const changed = await db
+		const changed = await client
 			.update(schema.payments)
 			.set({ status: to, updatedAt: new Date() })
 			.where(

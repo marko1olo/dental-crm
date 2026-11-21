@@ -608,19 +608,19 @@ export function buildTaxCertificateDocumentData(
 	const code02KopecksBi = BigInt(Math.max(0, Math.trunc(code02Kopecks)));
 	const totalKopecksBi = BigInt(Math.max(0, Math.trunc(totalKopecks)));
 
-	const code01Rub = Number(code01KopecksBi / 100n);
-	const code02Rub = Number(code02KopecksBi / 100n);
-	const totalNetRub = Number(totalKopecksBi / 100n);
+	const code01Rub = Number(code01KopecksBi) / 100;
+	const code02Rub = Number(code02KopecksBi) / 100;
+	const totalNetRub = Number(totalKopecksBi) / 100;
 
 	const statutoryLimitKopecksBi = BigInt(params.taxYear >= 2024 ? 150000 : 120000) * 100n;
 	const eligibleCode01KopecksBi = code01KopecksBi < statutoryLimitKopecksBi ? code01KopecksBi : statutoryLimitKopecksBi;
-	const eligibleCode01Rub = Number(eligibleCode01KopecksBi / 100n);
+	const eligibleCode01Rub = Number(eligibleCode01KopecksBi) / 100;
 	const eligibleCode01Kopecks = Number(eligibleCode01KopecksBi);
 
 	// 13% НДФЛ рассчитывается строго целочисленно: (копейки * 13n) / 100n
 	const estimatedRefund13KopecksBi = (eligibleCode01KopecksBi * 13n) / 100n + (code02KopecksBi * 13n) / 100n;
 	const estimatedRefund13Kopecks = Number(estimatedRefund13KopecksBi);
-	const estimatedRefund13Rub = Number(estimatedRefund13KopecksBi / 100n);
+	const estimatedRefund13Rub = Number(estimatedRefund13KopecksBi) / 100;
 
 	const isDemo = isDemoShowcaseMode();
 	const parsePassport = (raw: string | undefined): { series: string; number: string } => {

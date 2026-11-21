@@ -53,16 +53,16 @@ export function DocumentUkepSignButton({
 					<strong className="block mb-1 font-semibold">Хранилище сертификатов не прочитано:</strong>
 					{logic.certificatesFailureDetail && <p className="mb-1 leading-relaxed">{logic.certificatesFailureDetail}</p>}
 					<p className="mb-2 text-slate-600 dark:text-slate-400">{CERTIFICATE_STORE_ADVICE}</p>
-					<button type="button" onClick={() => void logic.loadCertificates()} className="secondary-button h-8 px-3 text-xs rounded-lg inline-flex items-center gap-1.5">
+					<button type="button" onClick={() => void logic.loadCertificates()} className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 text-xs font-medium rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer">
 						<RefreshCw size={13} />
 						<span>Проверить снова</span>
 					</button>
 				</div>
 			) : logic.certificates.length === 0 ? (
-				<div className="text-xs p-3 border border-dashed border-slate-300 dark:border-slate-700 rounded mb-3 text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-950/50" role="status">
-					<strong className="block mb-1 font-semibold text-[var(--ink,#0f172a)]">Личных сертификатов в хранилище не найдено.</strong>
-					<p className="mb-2 text-slate-500">{CERTIFICATE_STORE_ADVICE}</p>
-					<button type="button" onClick={() => void logic.loadCertificates()} className="secondary-button h-8 px-3 text-xs rounded-lg inline-flex items-center gap-1.5">
+				<div className="text-xs p-3 border border-dashed border-[var(--line)] rounded mb-3 text-[var(--ink-muted)] bg-[var(--paper-soft)]" role="status">
+					<strong className="block mb-1 font-semibold text-[var(--ink)]">Личных сертификатов в хранилище не найдено.</strong>
+					<p className="mb-2 text-[var(--ink-muted)]">{CERTIFICATE_STORE_ADVICE}</p>
+					<button type="button" onClick={() => void logic.loadCertificates()} className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 text-xs font-medium rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer">
 						<RefreshCw size={13} />
 						<span>Проверить снова</span>
 					</button>
@@ -80,7 +80,7 @@ export function DocumentUkepSignButton({
 			)}
 
 			{logic.signFailure && (
-				<p className="text-xs p-2.5 border border-red-200 dark:border-red-900/30 rounded mb-3 text-red-800 dark:text-red-300 bg-red-50/50 dark:bg-red-950/20 leading-relaxed" role="status">
+				<p className="text-xs p-2.5 border border-[var(--danger)]/30 rounded mb-3 text-[var(--danger)] bg-[var(--danger-soft)] leading-relaxed" role="status">
 					{logic.signFailure}
 				</p>
 			)}
@@ -92,16 +92,16 @@ export function DocumentUkepSignButton({
 					logic.handleSign();
 				}}
 				aria-busy={logic.isSigning || undefined}
-				className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 w-full px-3 text-[13px] font-semibold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer"
+				className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 w-full px-4 text-sm font-medium rounded-lg bg-[var(--primary)] text-white shadow-xs hover:bg-[var(--primary-hover)] transition-colors cursor-pointer border-none"
 			>
 				{logic.isSigning ? (
 					<>
-						<Loader2 className="dente-icon-spin" size={15} />
+						<Loader2 className="dente-icon-spin w-4 h-4 shrink-0" />
 						<span>Идет подписание... Введите PIN на токене</span>
 					</>
 				) : (
 					<>
-						<FileSignature size={15} />
+						<FileSignature className="w-4 h-4 shrink-0" />
 						<span>Подписать УКЭП (КриптоПро)</span>
 					</>
 				)}

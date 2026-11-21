@@ -351,6 +351,7 @@ export async function issueGeneratedDocumentInDb(
 		taxPaymentSnapshot?: TaxPaymentSnapshot | null;
 		taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
 		totalAmountRub?: number | null;
+		tx?: any;
 	},
 ): Promise<GeneratedDocument | null> {
 	if (useInMemory()) {
@@ -393,11 +394,12 @@ export async function issueGeneratedDocumentInDb(
 		return inMemoryDocument;
 	}
 
+	const client = (options.tx ?? db) as typeof db;
 	const issuedByUserId = signerUserIdForColumn(
 		options.issuedByUserId,
 		"issued_by_user_id",
 	);
-	const [existing] = await db
+	const [existing] = await client
 		.select()
 		.from(schema.generatedDocuments)
 		.where(
@@ -414,7 +416,7 @@ export async function issueGeneratedDocumentInDb(
 		? writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml)
 		: null;
 
-	const [updated] = await db
+	const [updated] = await client
 		.update(schema.generatedDocuments)
 		.set({
 			status: "issued",
@@ -448,7 +450,7 @@ export async function issueGeneratedDocumentInDb(
 	if (!updated) return null;
 
 	if (options.signatureAttestation || options.signatureSvg) {
-		await db.insert(schema.documentSignatures).values({
+		await client.insert(schema.documentSignatures).values({
 			organizationId,
 			documentId: updated.id,
 			patientId: updated.patientId,
@@ -490,6 +492,7 @@ export async function voidGeneratedDocumentInDb(
 		voidedByUserId: string | null;
 		voidedAt?: string;
 		voidAttestation?: DocumentVoidAttestation;
+		tx?: any;
 	},
 ): Promise<GeneratedDocument | null> {
 	if (useInMemory()) {
@@ -517,11 +520,12 @@ export async function voidGeneratedDocumentInDb(
 		return inMemoryDocument;
 	}
 
+	const client = (options.tx ?? db) as typeof db;
 	const voidedByUserId = signerUserIdForColumn(
 		options.voidedByUserId,
 		"voided_by_user_id",
 	);
-	const [existing] = await db
+	const [existing] = await client
 		.select()
 		.from(schema.generatedDocuments)
 		.where(
@@ -534,7 +538,7 @@ export async function voidGeneratedDocumentInDb(
 	if (!existing) return null;
 	if (existing.status === "voided") return mapDocument(existing);
 
-	const [updated] = await db
+	const [updated] = await client
 		.update(schema.generatedDocuments)
 		.set({
 			status: "voided",
@@ -664,7 +668,7 @@ export async function getDocumentRenderContextFromDb(
 				snapshotServiceName: item.title,
 				snapshotServiceCategory: null,
 				toothCode: item.toothCode ?? null,
-				quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+				quantity: Number(item.quantity) || 1,
 				unitPriceRub: Math.max(0, item.unitPriceRub),
 				discountRub: Math.max(0, item.discountRub),
 				status: item.status,

@@ -249,9 +249,11 @@ export async function syncDocumentToPatientConsent(
 	kind: string,
 	docId: string,
 	grantedAtDate?: Date,
+	tx?: any,
 ) {
+	const client = (tx ?? db) as typeof db;
 	const now = grantedAtDate ?? new Date();
-	const existing = await db
+	const existing = await client
 		.select({ id: patientConsents.id })
 		.from(patientConsents)
 		.where(
@@ -264,7 +266,7 @@ export async function syncDocumentToPatientConsent(
 		.limit(1);
 
 	if (existing.length > 0 && existing[0]) {
-		await db
+		await client
 			.update(patientConsents)
 			.set({ grantedAt: now, revokedAt: null, documentId: docId })
 			.where(
@@ -274,7 +276,7 @@ export async function syncDocumentToPatientConsent(
 				),
 			);
 	} else {
-		await db.insert(patientConsents).values({
+		await client.insert(patientConsents).values({
 			organizationId: orgId,
 			patientId,
 			kind,

@@ -4,6 +4,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
 import {
 	getDocumentById,
 	issueGeneratedDocumentInDb,
@@ -11,6 +12,7 @@ import {
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { paymentRefundCorrectionSelectionErrorForDocument } from "../../documents/guards.js";
 import { settleRefundedPaymentsForPatient } from "../../documents/refundSettlement.js";
+import { syncDocumentToPatientConsent } from "../consents/queries.js";
 import {
 	documentIssueBlockReason,
 	renderDocumentHtml,
@@ -242,77 +244,72 @@ export async function register(app: FastifyInstance) {
 		// сотрудник берётся из подписанного staff-токена; если авторизованного
 		// человека в запросе нет, пишем null — «подписант не установлен», а не
 		// подставляем чужой идентификатор.
-		const document = await issueGeneratedDocumentInDb(orgId, id, {
-			issuedByUserId: getRequestIdentity(request).userId,
-			issuedAt,
-			releaseJournalEntry,
-			snapshotHtml: issuedHtml,
-			signatureAttestation,
-			signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
-			taxPaymentSnapshot,
-			taxXmlSourceSnapshot,
-			totalAmountRub: issueCandidate.totalAmountRub,
+		// Неделимая ACID транзакция (Мандат 8bo): атомарная выдача документа,
+		// погашение возвратов и синхронизация выданных медицинских согласий.
+		const document = await db.transaction(async (tx) => {
+			const issuedDoc = await issueGeneratedDocumentInDb(orgId, id, {
+				issuedByUserId: getRequestIdentity(request).userId,
+				issuedAt,
+				releaseJournalEntry,
+				snapshotHtml: issuedHtml,
+				signatureAttestation,
+				signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
+				taxPaymentSnapshot,
+				taxXmlSourceSnapshot,
+				totalAmountRub: issueCandidate.totalAmountRub,
+				tx,
+			});
+			if (!issuedDoc) {
+				return null;
+			}
+
+			// ВЫДАЧА ЗАЯВЛЕНИЯ НА ВОЗВРАТ — ЭТО МОМЕНТ, КОГДА ДЕНЬГИ ПОКИДАЮТ КАССУ.
+			if (issuedDoc.kind === "payment_refund_correction_request") {
+				const settlement = await settleRefundedPaymentsForPatient(
+					orgId,
+					issuedDoc.patientId,
+					tx,
+				);
+				request.log.info(
+					{
+						documentId: issuedDoc.id,
+						refundedPaymentIds: settlement.refunded,
+						partiallyRefundedPaymentIds: settlement.partiallyRefunded.map(
+							(item) => item.paymentId,
+						),
+					},
+					"возврат сведён с кассой при выдаче заявления",
+				);
+			}
+
+			// Синхронизация выданных медицинских согласий в таблицу patient_consents (Мандат 8e и 8n)
+			const consentKinds = new Set([
+				"informed_consent",
+				"procedure_specific_consent_packet",
+				"anesthesia_consent_log",
+				"personal_data_processing_consent",
+				"minor_legal_representative_consent",
+				"photo_video_consent",
+				"medical_intervention_refusal",
+			]);
+			if (consentKinds.has(issuedDoc.kind)) {
+				await syncDocumentToPatientConsent(
+					orgId,
+					issuedDoc.patientId,
+					issuedDoc.kind,
+					issuedDoc.id,
+					new Date(issuedAt),
+					tx,
+				);
+			}
+
+			return issuedDoc;
 		});
+
 		if (!document) {
 			return reply
 				.code(409)
 				.send(apiError("Статус документа нельзя изменить."));
-		}
-
-		// ВЫДАЧА ЗАЯВЛЕНИЯ НА ВОЗВРАТ — ЭТО МОМЕНТ, КОГДА ДЕНЬГИ ПОКИДАЮТ КАССУ.
-		// БЫЛО: заявление выдавалось (HTTP 200), а payments.status оставался "paid",
-		// поэтому выручка `sum(amount_rub) where status = 'paid'` считала
-		// возвращённые пациенту деньги полученными. Полный разбор решения, включая
-		// то, почему частичный возврат существующими столбцами не выражается, —
-		// documents/refundSettlement.ts.
-		if (document.kind === "payment_refund_correction_request") {
-			const settlement = await settleRefundedPaymentsForPatient(
-				orgId,
-				document.patientId,
-			);
-			request.log.info(
-				{
-					documentId: document.id,
-					refundedPaymentIds: settlement.refunded,
-					partiallyRefundedPaymentIds: settlement.partiallyRefunded.map(
-						(item) => item.paymentId,
-					),
-				},
-				"возврат сведён с кассой при выдаче заявления",
-			);
-		}
-
-		// Синхронизация выданных медицинских согласий в таблицу patient_consents (Мандат 8e и 8n)
-		const consentKinds = new Set([
-			"informed_consent",
-			"procedure_specific_consent_packet",
-			"anesthesia_consent_log",
-			"personal_data_processing_consent",
-			"minor_legal_representative_consent",
-			"photo_video_consent",
-			"medical_intervention_refusal",
-		]);
-		if (consentKinds.has(document.kind)) {
-			import("../consents/queries.js")
-				.then((m) =>
-					m.syncDocumentToPatientConsent(
-						orgId,
-						document.patientId,
-						document.kind,
-						document.id,
-						new Date(issuedAt),
-					),
-				)
-				.catch((err: unknown) => {
-					// Выдача документа уже подтверждена пациенту — сбой фоновой
-					// синхронизации не отменяет её и не должен выглядеть как пустой
-					// успех: без журнала расхождение реестра согласий с выданными
-					// документами никто не заметит.
-					request.log.error(
-						{ err, documentId: document.id, kind: document.kind },
-						"[Documents] Сбой синхронизации выданного согласия с реестром согласий пациента",
-					);
-				});
 		}
 
 		return reply.send(publicGeneratedDocumentSchema.parse(document));
