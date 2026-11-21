@@ -141,7 +141,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				warnings,
 			});
 		} catch (err: unknown) {
-			console.error("[Imaging AI Analysis] Error:", err);
+			request.log.error({ err }, "Imaging AI analysis failed");
 			const message = err instanceof Error ? err.message : "Ошибка обработки снимка";
 			return reply.code(500).send({ error: message });
 		}

@@ -77,7 +77,7 @@ export function ImagingCbctActiveCard({
 
 				{/* 1-Click Native Tomography Hardware Launch Bar (Planmeca, Vatech, Sirona, 3Shape) */}
 				<NativeTomographyLaunchBar
-					selectedImagingStudy={selectedImagingStudy}
+					selectedImagingStudy={selectedImagingStudy ?? null}
 					onOpenCbctStudio={onOpenCbctStudio}
 				/>
 			</div>

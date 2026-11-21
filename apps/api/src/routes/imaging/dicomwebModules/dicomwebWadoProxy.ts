@@ -229,8 +229,7 @@ export async function isSafeTarget(urlString: string): Promise<TargetSafety> {
 	let url: URL;
 	try {
 		url = new URL(urlString);
-	} catch (err) {
-		console.error("[Dente] fixed bare catch:", err);
+	} catch (_err) {
 		return { ok: false, reason: "адрес архива снимков не разбирается как URL" };
 	}
 

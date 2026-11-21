@@ -93,8 +93,7 @@ export async function organizeLocalImagingSources(
 				try {
 					await access(root);
 					return root;
-				} catch (err) {
-					console.error("[Dente] Failed to access root path:", err);
+				} catch (_err) {
 					return null;
 				}
 			}),

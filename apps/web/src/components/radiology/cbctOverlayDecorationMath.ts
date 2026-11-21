@@ -13,7 +13,7 @@ import {
 export { CRISP_OVERLAY_PAD_BG, drawMeasurementDeleteButton, drawMandibularNerveBadge };
 
 
-export const ROMEXIS_COLORS = {
+export const MPR_PLANE_COLORS = {
 	axial: "#06b6d4", // Cyan / Blue (Horizontal / Z-plane / B in RGB)
 	axialRgba: (alpha = 1) => `rgba(6, 182, 212, ${alpha})`,
 	coronal: "#10b981", // Emerald Green (Frontal / Y-plane / G in RGB)
@@ -31,6 +31,12 @@ export const ROMEXIS_COLORS = {
 	compassBg: "rgba(9, 9, 11, 0.85)",
 	compassBorder: "rgba(39, 39, 42, 0.9)",
 } as const;
+
+/**
+ * Canonical MPR color palette (formerly ROMEXIS_COLORS).
+ * Maintained as an alias for backwards compatibility.
+ */
+export const ROMEXIS_COLORS = MPR_PLANE_COLORS;
 
 export type CbctViewportType = MprPlane | "panoramic" | "cross_section";
 
@@ -393,7 +399,7 @@ export interface SlabCorridorParams {
  * Draws two parallel dashed bounding lines and a subtle fill corridor on intersecting planes
  * when slab thickness > 1 mm. Supports WCAG AAA dark halo underlay on invert LUT.
  */
-export function drawRomexisSlabCorridor(
+export function drawMprSlabCorridor(
 	ctx: CanvasRenderingContext2D,
 	params: SlabCorridorParams,
 ): void {
@@ -457,6 +463,8 @@ export function drawRomexisSlabCorridor(
 
 	ctx.restore();
 }
+
+export const drawRomexisSlabCorridor = drawMprSlabCorridor;
 
 /**
  * Translates HU value to Russian anatomical tissue label per clinical radiological norms (DEF-C08).

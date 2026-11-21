@@ -26,7 +26,7 @@ export const HotFolderIntakeHeader: React.FC<HotFolderIntakeHeaderProps> = ({
 							data-testid="hfi-non-conflicting-badge"
 						>
 							<Wifi className="w-3 h-3 text-emerald-400" />
-							<span>Бесконфликтный автозахват (EzDent-i / Romexis)</span>
+							<span>Бесконфликтный автозахват (Hot Folder)</span>
 						</span>
 					</div>
 					<p className="hfi-header-subtitle">

@@ -275,7 +275,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 				<footer className="px-4 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex items-center justify-between text-xs text-[var(--muted)]">
 					<div className="flex items-center gap-1.5 truncate">
 						<ShieldCheck size={14} className="text-teal-400 shrink-0" />
-						<span className="truncate">Бесконфликтный захват: совместим с EzDent-i, Romexis, Sidexis, CS Imaging</span>
+						<span className="truncate">Бесконфликтный захват: совместим с внешними программами и Hot Folder</span>
 					</div>
 					<button
 						type="button"

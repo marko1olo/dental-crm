@@ -131,10 +131,10 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 				{/* Non-conflicting coexistence hint */}
 				<div
 					className="text-[11px] text-teal-600/90 dark:text-teal-400/90 font-medium px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 whitespace-nowrap hidden lg:block"
-					title="Работает параллельно с ПО оборудования: Параллельно с EzDent-i / Romexis (без конфликта за USB)"
+					title="Работает параллельно с ПО оборудования: Горячая папка захвата (Hot Folder) / Внешние программы захвата (без конфликта за USB)"
 					data-testid="rvg-coexistence-hint"
 				>
-					Параллельно с EzDent-i / Romexis (без конфликта за USB)
+					Параллельно с внешними программами захвата (без конфликта за USB)
 				</div>
 
 				{/* Discreet sensor model select dropdown */}

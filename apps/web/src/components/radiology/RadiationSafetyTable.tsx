@@ -1,5 +1,6 @@
 import { dentalRadiologyStudyLabels } from "@dental/shared";
 import type React from "react";
+import { ShieldCheck } from "lucide-react";
 import type { RadiationSafetyRecord } from "./radiationSafetyTypes.js";
 
 export const RadiationSafetyTable: React.FC<{
@@ -7,8 +8,14 @@ export const RadiationSafetyTable: React.FC<{
 }> = ({ records }) => {
 	if (records.length === 0) {
 		return (
-			<div className="text-center py-10 text-[var(--muted)] text-xs">
-				Записи о лучевой нагрузке отсутствуют.
+			<div className="py-12 flex flex-col items-center text-center gap-2.5" data-testid="dose-records-empty">
+				<ShieldCheck className="w-10 h-10 text-[var(--ink-muted)] stroke-1" />
+				<div className="text-sm font-medium text-[var(--ink)]">
+					Записи о лучевой нагрузке отсутствуют
+				</div>
+				<div className="text-xs text-[var(--ink-muted)] max-w-sm">
+					При регистрации прицельных снимков и КЛКТ дозиметрия рассчитывается автоматически по нормам СанПиН.
+				</div>
 			</div>
 		);
 	}

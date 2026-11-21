@@ -184,7 +184,7 @@ export function calculatePolygonPerimeterMm(
  */
 export function formatHumanStudyDate(dateStr?: string | null): string {
 	if (!dateStr || dateStr.trim() === "" || dateStr === "—") {
-		return "01.10.2026 10:14";
+		return "—";
 	}
 	const trimmed = dateStr.trim();
 	// If already in DD.MM.YYYY format
@@ -213,8 +213,8 @@ export function formatPatientAge(
 	birthDateStr?: string | null,
 	ageFallback?: string | number | null,
 ): { formattedAge: string; formattedBirthDate: string } {
-	let formattedBirthDate = "01.01.1968";
-	let formattedAge = "58 лет (58Y)";
+	let formattedBirthDate = "—";
+	let formattedAge = "—";
 
 	if (ageFallback !== undefined && ageFallback !== null && String(ageFallback).trim() !== "" && ageFallback !== "—") {
 		const strAge = String(ageFallback).trim();

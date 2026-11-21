@@ -96,11 +96,13 @@ export const DirectRvgToothAssigner: React.FC<DirectRvgToothAssignerProps> = ({
 						{boneAssessment.mischClass} · {boneHU} HU
 					</span>
 				</div>
-				<div className="flex items-center justify-between text-xs text-[var(--muted,#94a3b8)] bg-[var(--paper-strong,#0f172a)] p-2 rounded-lg border border-[var(--line,#1e293b)]">
-					<span className="truncate pr-2">{boneAssessment.classNameRu}</span>
-					<span className="font-mono text-[11px] text-[var(--ink,#e2e8f0)] font-semibold shrink-0">
+				<div className="flex flex-col gap-1 text-xs text-[var(--muted,#94a3b8)] bg-[var(--paper-strong,#0f172a)] p-2 rounded-lg border border-[var(--line,#1e293b)]">
+					<div className="flex items-center justify-between">
+						<span className="font-medium text-[var(--ink,#e2e8f0)]">{boneAssessment.classNameRu}</span>
+					</div>
+					<div className="text-[11px] leading-tight text-[var(--muted,#94a3b8)]">
 						{boneAssessment.anatomicalLocationRu}
-					</span>
+					</div>
 				</div>
 			</div>
 

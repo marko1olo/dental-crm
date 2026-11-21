@@ -164,8 +164,7 @@ export async function discoverLocalDicomFolders(
 			try {
 				await stat(root);
 				return true;
-			} catch (err) {
-				console.error("[Dente] Failed to stat root path:", err);
+			} catch (_err) {
 				return false;
 			}
 		}),

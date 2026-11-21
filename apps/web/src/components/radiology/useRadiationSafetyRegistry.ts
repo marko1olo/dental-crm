@@ -6,24 +6,11 @@ import {
 import { useMemo, useState } from "react";
 import type { RadiationSafetyRecord } from "./radiationSafetyTypes.js";
 
-const DEFAULT_RECORD: RadiationSafetyRecord = {
-	id: "rec-1",
-	studyDate: new Date().toISOString().slice(0, 10),
-	studyType: "intraoral_radiovisiography",
-	anatomicalArea: "Зуб 16",
-	apparatusName: "Vatech EzSensor Soft",
-	effectiveDoseMsv: 0.002,
-	effectiveDoseMicrosv: 2.0,
-	doctorName: "Лечащий врач",
-};
-
 export function useRadiationSafetyRegistry(
 	initialRecords: RadiationSafetyRecord[] = [],
 ) {
 	const currentYear = new Date().getFullYear();
-	const [records, setRecords] = useState<RadiationSafetyRecord[]>(() =>
-		initialRecords.length > 0 ? initialRecords : [DEFAULT_RECORD],
-	);
+	const [records, setRecords] = useState<RadiationSafetyRecord[]>(() => initialRecords);
 	const doseAssessment = useMemo(
 		() => calculateAnnualRadiationDose(records, currentYear),
 		[records, currentYear],

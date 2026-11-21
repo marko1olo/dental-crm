@@ -5,7 +5,7 @@ import { showToast } from "../../components/GlobalToast";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 export interface NativeTomographyLaunchBarProps {
-	selectedImagingStudy: ImagingStudy | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
 	onOpenCbctStudio: () => void;
 }
 

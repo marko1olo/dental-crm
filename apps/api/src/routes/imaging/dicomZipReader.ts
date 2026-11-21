@@ -62,8 +62,7 @@ export async function readZipCentralDirectoryDetailed(
 	let stats: Stats;
 	try {
 		stats = await stat(filePath);
-	} catch (err) {
-		console.error("[Dente] Failed to stat ZIP file:", err);
+	} catch (_err) {
 		return {
 			entries: [],
 			warnings: [
@@ -307,8 +306,7 @@ export async function inflateZipEntryPrefix(
 				budgetRemaining -= chunkLength;
 				try {
 					if (!inflater.write(chunk.buffer)) await once(inflater, "drain");
-				} catch (err) {
-					console.error("[Dente] Failed to write to inflater:", err);
+				} catch (_err) {
 					if (!settled)
 						finish({
 							buffer: null,

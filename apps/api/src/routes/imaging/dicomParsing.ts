@@ -78,8 +78,7 @@ export function hasDicomMagic(filePath: string): boolean {
 		} finally {
 			closeSync(handle);
 		}
-	} catch (err) {
-		console.error("[Dente] Failed to read DICOM header:", err);
+	} catch (_err) {
 		return false;
 	}
 }
