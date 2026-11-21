@@ -3,6 +3,8 @@ import {
 	DEFAULT_CLINIC_PROFILE,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
+	kopecksToRubles,
+	rublesToKopecks,
 	type DmsRegistryClinicInfo,
 	type DmsRegistryData,
 	type DmsRegistryInsuranceCompanyInfo,
@@ -285,9 +287,9 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 			const quantity = Math.max(1, Math.round(Number(tr.quantity) || 1));
 			const unitPriceRub = Number(tr.unitPriceRub) || Number(tr.priceRub) || 0;
-			const totalPriceRub = Math.round(unitPriceRub * quantity * 100) / 100;
-			const unitPriceKop = Math.round(unitPriceRub * 100);
-			const totalGrossKop = Math.round(totalPriceRub * 100);
+			const unitPriceKop = rublesToKopecks(unitPriceRub);
+			const totalGrossKop = unitPriceKop * quantity;
+			const totalPriceRub = kopecksToRubles(totalGrossKop);
 
 			const code804n = tr.catalogOrder804nCode || tr.catalogCode || "A16.07.002.001";
 			const serviceName = tr.title || tr.catalogTitle || "Медицинская услуга стоматологическая";
@@ -304,12 +306,12 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				patientPaidKop = totalGrossKop;
 				insurerClaimKop = 0;
 			} else if (franchisePct > 0) {
-				patientPaidKop = Math.round(totalGrossKop * (franchisePct / 100));
+				patientPaidKop = Math.round((totalGrossKop * franchisePct) / 100);
 				insurerClaimKop = totalGrossKop - patientPaidKop;
 			}
 
-			const patientPaidRub = patientPaidKop / 100;
-			const dmsCoveredRub = insurerClaimKop / 100;
+			const patientPaidRub = kopecksToRubles(patientPaidKop);
+			const dmsCoveredRub = kopecksToRubles(insurerClaimKop);
 
 			const genderVal: "M" | "F" | "М" | "Ж" = adminProfile?.gender === "female" ? "Ж" : "М";
 
@@ -397,14 +399,14 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			}
 
 			const unitPriceRub = usedAmount;
-			const totalPriceRub = usedAmount;
-			const unitPriceKop = Math.round(unitPriceRub * 100);
-			const totalGrossKop = Math.round(totalPriceRub * 100);
+			const unitPriceKop = rublesToKopecks(unitPriceRub);
+			const totalGrossKop = unitPriceKop;
+			const totalPriceRub = kopecksToRubles(totalGrossKop);
 			const franchisePct = Number(letter.franchisePct) || 0;
-			const patientPaidKop = franchisePct > 0 ? Math.round(totalGrossKop * (franchisePct / 100)) : 0;
+			const patientPaidKop = franchisePct > 0 ? Math.round((totalGrossKop * franchisePct) / 100) : 0;
 			const insurerClaimKop = totalGrossKop - patientPaidKop;
-			const patientPaidRub = patientPaidKop / 100;
-			const dmsCoveredRub = insurerClaimKop / 100;
+			const patientPaidRub = kopecksToRubles(patientPaidKop);
+			const dmsCoveredRub = kopecksToRubles(insurerClaimKop);
 
 			const code804n = (letter.approvedServiceCodes as string[])?.[0] || "A16.07.002.001";
 			const serviceName = letter.notes?.trim() || "Оказание стоматологической помощи по гарантийному письму";

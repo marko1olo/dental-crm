@@ -62,22 +62,25 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 		// Clamp all coverage values to [0, 100]
 		const clamp = (v: number) => Math.min(100, Math.max(0, v));
 
-		const [created] = await db
-			.insert(insuranceContracts)
-			.values({
-				organizationId: orgId,
-				companyName: companyName.trim(),
-				policyNumberMask: policyNumberMask?.trim() ?? null,
-				coverageTherapyPct: clamp(coverageTherapyPct),
-				coverageSurgeryPct: clamp(coverageSurgeryPct),
-				coverageOrthoPct: clamp(coverageOrthoPct),
-				coverageHygienePct: clamp(coverageHygienePct),
-				annualLimitRub: annualLimitRub ?? null,
-				patientFranchisePct: clamp(patientFranchisePct),
-				requiresGuaranteeLetter,
-				isActive: true,
-			})
-			.returning();
+		const created = await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(insuranceContracts)
+				.values({
+					organizationId: orgId,
+					companyName: companyName.trim(),
+					policyNumberMask: policyNumberMask?.trim() ?? null,
+					coverageTherapyPct: clamp(coverageTherapyPct),
+					coverageSurgeryPct: clamp(coverageSurgeryPct),
+					coverageOrthoPct: clamp(coverageOrthoPct),
+					coverageHygienePct: clamp(coverageHygienePct),
+					annualLimitRub: annualLimitRub ?? null,
+					patientFranchisePct: clamp(patientFranchisePct),
+					requiresGuaranteeLetter,
+					isActive: true,
+				})
+				.returning();
+			return inserted;
+		});
 
 		if (!created)
 			return reply.code(500).send({
@@ -112,22 +115,6 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { contractId } = request.params;
-		const [existing] = await db
-			.select({ id: insuranceContracts.id })
-			.from(insuranceContracts)
-			.where(
-				and(
-					eq(insuranceContracts.id, contractId),
-					eq(insuranceContracts.organizationId, orgId),
-				),
-			)
-			.limit(1);
-
-		if (!existing)
-			return reply.code(404).send({
-				error: "ContractNotFound",
-				message: INSURANCE_CONTRACT_NOT_FOUND,
-			});
 
 		const parsedUpdate = insuranceUpdateBodySchema.safeParse(request.body);
 		if (!parsedUpdate.success) {
@@ -158,49 +145,78 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 
 		const clamp = (v: number) => Math.min(100, Math.max(0, v));
 
-		const [updated] = await db
-			.update(insuranceContracts)
-			.set({
-				...(companyName !== undefined && { companyName: companyName.trim() }),
-				...(policyNumberMask !== undefined && {
-					policyNumberMask: policyNumberMask.trim() || null,
-				}),
-				...(coverageTherapyPct !== undefined && {
-					coverageTherapyPct: clamp(coverageTherapyPct),
-				}),
-				...(coverageSurgeryPct !== undefined && {
-					coverageSurgeryPct: clamp(coverageSurgeryPct),
-				}),
-				...(coverageOrthoPct !== undefined && {
-					coverageOrthoPct: clamp(coverageOrthoPct),
-				}),
-				...(coverageHygienePct !== undefined && {
-					coverageHygienePct: clamp(coverageHygienePct),
-				}),
-				...(annualLimitRub !== undefined && { annualLimitRub }),
-				...(patientFranchisePct !== undefined && {
-					patientFranchisePct: clamp(patientFranchisePct),
-				}),
-				...(requiresGuaranteeLetter !== undefined && {
-					requiresGuaranteeLetter,
-				}),
-				...(isActive !== undefined && { isActive }),
-			})
-			.where(
-				and(
-					eq(insuranceContracts.id, contractId),
-					eq(insuranceContracts.organizationId, orgId),
-				),
-			)
-			.returning();
+		const txResult = await db.transaction(async (tx) => {
+			const [existing] = await tx
+				.select({ id: insuranceContracts.id })
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.id, contractId),
+						eq(insuranceContracts.organizationId, orgId),
+					),
+				)
+				.for("update")
+				.limit(1);
 
-		if (!updated)
-			return reply.code(500).send({
-				error: "ContractNotSaved",
-				message:
-					"Изменения договора ДМС не сохранены: сервер не подтвердил запись. Введённое осталось на экране — не закрывайте окно, повторите сохранение, а если снова не выйдет, сообщите администратору клиники.",
-			});
-		return updated;
+			if (!existing) {
+				return { status: 404, error: { error: "ContractNotFound", message: INSURANCE_CONTRACT_NOT_FOUND } };
+			}
+
+			const [updated] = await tx
+				.update(insuranceContracts)
+				.set({
+					...(companyName !== undefined && { companyName: companyName.trim() }),
+					...(policyNumberMask !== undefined && {
+						policyNumberMask: policyNumberMask.trim() || null,
+					}),
+					...(coverageTherapyPct !== undefined && {
+						coverageTherapyPct: clamp(coverageTherapyPct),
+					}),
+					...(coverageSurgeryPct !== undefined && {
+						coverageSurgeryPct: clamp(coverageSurgeryPct),
+					}),
+					...(coverageOrthoPct !== undefined && {
+						coverageOrthoPct: clamp(coverageOrthoPct),
+					}),
+					...(coverageHygienePct !== undefined && {
+						coverageHygienePct: clamp(coverageHygienePct),
+					}),
+					...(annualLimitRub !== undefined && { annualLimitRub }),
+					...(patientFranchisePct !== undefined && {
+						patientFranchisePct: clamp(patientFranchisePct),
+					}),
+					...(requiresGuaranteeLetter !== undefined && {
+						requiresGuaranteeLetter,
+					}),
+					...(isActive !== undefined && { isActive }),
+				})
+				.where(
+					and(
+						eq(insuranceContracts.id, contractId),
+						eq(insuranceContracts.organizationId, orgId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return {
+					status: 500,
+					error: {
+						error: "ContractNotSaved",
+						message:
+							"Изменения договора ДМС не сохранены: сервер не подтвердил запись. Введённое осталось на экране — не закрывайте окно, повторите сохранение, а если снова не выйдет, сообщите администратору клиники.",
+					},
+				};
+			}
+
+			return { status: 200, data: updated };
+		});
+
+		if (txResult.status !== 200 || !txResult.data) {
+			return reply.code(txResult.status).send(txResult.error);
+		}
+
+		return txResult.data;
 	});
 
 	// DELETE (soft-delete / deactivate) an insurance contract
@@ -215,39 +231,44 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { contractId } = request.params;
-			const [existing] = await db
-				.select({ id: insuranceContracts.id })
-				.from(insuranceContracts)
-				.where(
-					and(
-						eq(insuranceContracts.id, contractId),
-						eq(insuranceContracts.organizationId, orgId),
-					),
-				)
-				.limit(1);
 
-			if (!existing)
-				return reply.code(404).send({
-					error: "ContractNotFound",
-					message: INSURANCE_CONTRACT_NOT_FOUND,
-				});
+			const deleteResult = await db.transaction(async (tx) => {
+				const [existing] = await tx
+					.select({ id: insuranceContracts.id })
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.id, contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
 
-			const [deactivated] = await db
-				.update(insuranceContracts)
-				.set({ isActive: false })
-				.where(
-					and(
-						eq(insuranceContracts.id, contractId),
-						eq(insuranceContracts.organizationId, orgId),
-					),
-				)
-				.returning({ id: insuranceContracts.id });
+				if (!existing) {
+					return { status: 404, error: { error: "ContractNotFound", message: INSURANCE_CONTRACT_NOT_FOUND } };
+				}
 
-			if (!deactivated) {
-				return reply.code(404).send({
-					error: "ContractNotFound",
-					message: INSURANCE_CONTRACT_NOT_FOUND,
-				});
+				const [deactivated] = await tx
+					.update(insuranceContracts)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(insuranceContracts.id, contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.returning({ id: insuranceContracts.id });
+
+				if (!deactivated) {
+					return { status: 404, error: { error: "ContractNotFound", message: INSURANCE_CONTRACT_NOT_FOUND } };
+				}
+
+				return { status: 200, data: { success: true } };
+			});
+
+			if (deleteResult.status !== 200) {
+				return reply.code(deleteResult.status).send(deleteResult.error);
 			}
 
 			return { success: true };
@@ -293,37 +314,40 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			? `ЭКСТРЕННО-${Date.now().toString().slice(-6)}`
 			: `ДМС-${Date.now().toString().slice(-6)}`;
 
-		const [created] = await db
-			.insert(dmsGuaranteeLetters)
-			.values({
-				organizationId: orgId,
-				patientId: body.patientId,
-				patientFullName: body.patientFullName || "Пациент ДМС",
-				patientBirthDate: body.patientBirthDate || null,
-				policyNumber: body.policyNumber.trim(),
-				insurerKey: body.insurerKey,
-				insurerName,
-				letterNumber,
-				issueDate: todayIso,
-				validFrom: todayIso,
-				validUntil: oneYearLaterIso,
-				maxCoverageRub: maxCoverage,
-				usedAmountRub: 0,
-				franchisePct: 0,
-				franchiseType: "percent",
-				franchiseFixedRub: 0,
-				programExclusions: [],
-				approvedServiceCodes: [],
-				approvedTeethFdi: [],
-				approvedDiagnosisCodes: [],
-				curatorFullName: null,
-				curatorPhone: null,
-				notes: body.isEmergency
-					? "Экстренный приём (острая боль). Требуется досылка гарантийного письма ДМС."
-					: "Экспресс-прикрепление полиса ДМС",
-				status: "active",
-			})
-			.returning();
+		const created = await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(dmsGuaranteeLetters)
+				.values({
+					organizationId: orgId,
+					patientId: body.patientId,
+					patientFullName: body.patientFullName || "Пациент ДМС",
+					patientBirthDate: body.patientBirthDate || null,
+					policyNumber: body.policyNumber.trim(),
+					insurerKey: body.insurerKey,
+					insurerName,
+					letterNumber,
+					issueDate: todayIso,
+					validFrom: todayIso,
+					validUntil: oneYearLaterIso,
+					maxCoverageRub: maxCoverage,
+					usedAmountRub: 0,
+					franchisePct: 0,
+					franchiseType: "percent",
+					franchiseFixedRub: 0,
+					programExclusions: [],
+					approvedServiceCodes: [],
+					approvedTeethFdi: [],
+					approvedDiagnosisCodes: [],
+					curatorFullName: null,
+					curatorPhone: null,
+					notes: body.isEmergency
+						? "Экстренный приём (острая боль). Требуется досылка гарантийного письма ДМС."
+						: "Экспресс-прикрепление полиса ДМС",
+					status: "active",
+				})
+				.returning();
+			return inserted;
+		});
 
 		return reply.code(201).send({
 			success: true,

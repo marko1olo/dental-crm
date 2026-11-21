@@ -5,7 +5,9 @@
  */
 
 import { useState, useEffect } from "react";
+import { kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { logger } from "../../../utils/logger.js";
 
 export interface ActiveDmsLetterInfo {
 	id: string;
@@ -59,11 +61,11 @@ export function useVisitBillingDms({
 			if (attached && attached.patientId === patientId) {
 				let available = 0;
 				if (typeof attached.remainingLimitKopecks === "number") {
-					available = Math.max(0, attached.remainingLimitKopecks / 100);
+					available = Math.max(0, kopecksToRubles(attached.remainingLimitKopecks));
 				} else if (typeof attached.limitKopecks === "number") {
 					const limit = attached.limitKopecks;
 					const used = typeof attached.usedKopecks === "number" ? attached.usedKopecks : 0;
-					available = Math.max(0, (limit - used) / 100);
+					available = Math.max(0, kopecksToRubles(limit - used));
 				} else {
 					const maxCov = Number(attached.maxCoverageRub || 0);
 					const used = Number(attached.usedAmountRub || 0);
@@ -99,11 +101,11 @@ export function useVisitBillingDms({
 				if (active && active.id && active.letterNumber && active.insurerName) {
 					let available = 0;
 					if (typeof active.remainingLimitKopecks === "number") {
-						available = Math.max(0, active.remainingLimitKopecks / 100);
+						available = Math.max(0, kopecksToRubles(active.remainingLimitKopecks));
 					} else if (typeof active.limitKopecks === "number") {
 						const limit = active.limitKopecks;
 						const used = typeof active.usedKopecks === "number" ? active.usedKopecks : 0;
-						available = Math.max(0, (limit - used) / 100);
+						available = Math.max(0, kopecksToRubles(limit - used));
 					} else {
 						const maxCov = Number(active.maxCoverageRub || 0);
 						const used = Number(active.usedAmountRub || 0);
@@ -118,7 +120,7 @@ export function useVisitBillingDms({
 				}
 			})
 			.catch((err) => {
-				console.warn("[useVisitBillingDms] Failed to fetch guarantee letters:", err);
+				logger.warn("[useVisitBillingDms] Failed to fetch guarantee letters:", err);
 			});
 		return () => { isMounted = false; };
 	}, [patientId, availableDmsCoverageRub, isDemo]);

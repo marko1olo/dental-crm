@@ -31,6 +31,8 @@ export const recordUsageBodySchema = z.object({
 	isEmergency: z.boolean().optional(),
 	hasAcutePain: z.boolean().optional(),
 	allowOverdraft: z.boolean().optional(),
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
 });
 
 export type RecordUsageBody = z.infer<typeof recordUsageBodySchema>;

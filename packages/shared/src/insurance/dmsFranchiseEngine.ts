@@ -15,7 +15,7 @@
 
 import { z } from "zod";
 import type { Kopecks } from "../utils/money.js";
-import { formatKopecksRu } from "../utils/money.js";
+import { formatKopecksRu, kopecksToRubles, rublesToKopecks } from "../utils/money.js";
 import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "./guaranteeModules/guaranteeMatcher.js";
 
 /**
@@ -385,7 +385,7 @@ export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
  */
 export function formatCurrencyKopecks(kopecks: number | null | undefined): string {
 	if (kopecks == null || !Number.isFinite(kopecks)) return "0 ₽";
-	return `${Math.round(kopecks / 100).toLocaleString("ru-RU")} ₽`;
+	return `${Math.round(kopecksToRubles(kopecks)).toLocaleString("ru-RU")} ₽`;
 }
 
 export interface DmsCoPaymentSplitItemResult {
@@ -457,14 +457,14 @@ export function calculateDmsCoPaymentSplit(
 			letter.maxCoverageKopecks ??
 			letter.limitKopecks ??
 			(letter.maxCoverageRub !== undefined
-				? Math.round(letter.maxCoverageRub * 100)
+				? rublesToKopecks(letter.maxCoverageRub)
 				: Number.POSITIVE_INFINITY))
 		: Number.POSITIVE_INFINITY;
 	const used =
 		options.previouslyUsedLetterAmountKopecks ??
 		(letter?.usedAmountKopecks ??
 			letter?.usedKopecks ??
-			(letter?.usedAmountRub ? Math.round(letter.usedAmountRub * 100) : 0));
+			(letter?.usedAmountRub !== undefined ? rublesToKopecks(letter.usedAmountRub) : 0));
 	let remainingLimitKopecks = Math.max(0, letterLimit - used);
 	const franchisePct = Math.max(
 		0,
@@ -481,7 +481,9 @@ export function calculateDmsCoPaymentSplit(
 	let hasExcludedServices = false;
 
 	for (const item of lineItems) {
-		const unitPriceKop = Math.round(item.unitPriceKopecks ?? ((item.unitPriceRub || 0) * 100));
+		const unitPriceKop = Math.round(
+			item.unitPriceKopecks ?? (item.unitPriceRub !== undefined ? rublesToKopecks(item.unitPriceRub) : 0),
+		);
 		const qty = Math.max(1, item.quantity || 1);
 		const totalKopNum = unitPriceKop * qty;
 
@@ -542,8 +544,8 @@ export function calculateDmsCoPaymentSplit(
 			coveredByDmsKopecks: dmsKop,
 			patientOutOfPocketKopecks: patientKop,
 			patientTotalKopecks: patientKop,
-			insuranceCoveredRubles: Math.round(dmsKop) / 100,
-			patientOutOfPocketRubles: Math.round(patientKop) / 100,
+			insuranceCoveredRubles: kopecksToRubles(dmsKop),
+			patientOutOfPocketRubles: kopecksToRubles(patientKop),
 			status,
 			splitReason,
 			isApprovedByLetter: !isExcluded,
@@ -568,19 +570,19 @@ export function calculateDmsCoPaymentSplit(
 		totalKopecks: totalKop,
 		totalAmountKopecks: totalKop,
 		totalBillKopecks: totalKop,
-		totalBillRubles: totalKop / 100,
+		totalBillRubles: kopecksToRubles(totalKop),
 		insuranceCoveredKopecks: totalDmsKop,
 		totalCoveredByDmsKopecks: totalDmsKop,
 		totalInsuranceCoveredKopecks: totalDmsKop,
 		dmsCoveredKopecks: totalDmsKop,
-		insuranceCoveredRubles: totalDmsKop / 100,
-		totalInsuranceCoveredRubles: totalDmsKop / 100,
+		insuranceCoveredRubles: kopecksToRubles(totalDmsKop),
+		totalInsuranceCoveredRubles: kopecksToRubles(totalDmsKop),
 		patientOutOfPocketKopecks: totalPatientKop,
 		totalPatientOutOfPocketKopecks: totalPatientKop,
 		totalPatientCoPayKopecks: totalPatientKop,
 		patientTotalKopecks: totalPatientKop,
-		patientOutOfPocketRubles: totalPatientKop / 100,
-		totalPatientOutOfPocketRubles: totalPatientKop / 100,
+		patientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
+		totalPatientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
 		isFullyCovered: totalPatientKop === 0,
 		hasExcludedServices,
 		remainingLetterLimitKopecks: Number.isFinite(remainingLimitKopecks)

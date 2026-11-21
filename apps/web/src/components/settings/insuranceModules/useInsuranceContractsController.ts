@@ -176,7 +176,7 @@ export function useInsuranceContractsController() {
 			if (editingContract) {
 				res = await fetch(`/api/insurance/contracts/${editingContract.id}`, {
 					method: "PUT",
-					headers: auth.denteClinicalReadHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(payload),
@@ -184,7 +184,7 @@ export function useInsuranceContractsController() {
 			} else {
 				res = await fetch("/api/insurance/contracts", {
 					method: "POST",
-					headers: auth.denteClinicalReadHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(payload),
@@ -217,7 +217,7 @@ export function useInsuranceContractsController() {
 		try {
 			const res = await fetch(`/api/insurance/contracts/${contract.id}`, {
 				method: "DELETE",
-				headers: auth.denteClinicalReadHeaders(),
+				headers: auth.denteClinicalMutationHeaders(),
 			});
 			if (!res.ok) {
 				logger.error("[договоры ДМС] не убран из работы, ответ", res.status);
