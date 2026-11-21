@@ -60,8 +60,9 @@ export function resolvePlanSuggestions(
 			return rule.keywords.some((keyword) => title.includes(normalizeTitle(keyword)));
 		});
 
-		if (matches.length === 1) {
-			const service = matches[0]!;
+		const singleMatch = matches[0];
+		if (matches.length === 1 && singleMatch) {
+			const service = singleMatch;
 			rows.push({
 				toothNumber: suggestion.toothNumber,
 				state: suggestion.state,

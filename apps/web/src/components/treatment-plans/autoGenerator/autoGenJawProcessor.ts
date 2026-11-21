@@ -39,13 +39,22 @@ export function processJawMissingTeeth(
 	const handledTeeth = new Set<number>();
 	let i = 0;
 	while (i < jawTeethSeq.length) {
-		const tNum = jawTeethSeq[i]!;
+		const tNum = jawTeethSeq[i];
+		if (tNum === undefined) {
+			i++;
+			continue;
+		}
 		if (missingSet.has(tNum) && !handledTeeth.has(tNum)) {
 			const currentSpan: number[] = [tNum];
 			let j = i + 1;
-			while (j < jawTeethSeq.length && missingSet.has(jawTeethSeq[j]!) && !handledTeeth.has(jawTeethSeq[j]!)) {
-				currentSpan.push(jawTeethSeq[j]!);
-				j++;
+			while (j < jawTeethSeq.length) {
+				const nextNum = jawTeethSeq[j];
+				if (nextNum !== undefined && missingSet.has(nextNum) && !handledTeeth.has(nextNum)) {
+					currentSpan.push(nextNum);
+					j++;
+				} else {
+					break;
+				}
 			}
 
 			for (const t of currentSpan) handledTeeth.add(t);

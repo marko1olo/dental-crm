@@ -56,8 +56,9 @@ export function createBundlePlanItems(
 		let isDraft = false;
 		let requiresManualPricing = false;
 
-		if (customPriceMap && customPriceMap[item.id] !== undefined) {
-			finalPriceRub = Math.max(0, customPriceMap[item.id]!);
+		const customPrice = customPriceMap?.[item.id];
+		if (typeof customPrice === "number") {
+			finalPriceRub = Math.max(0, customPrice);
 			priceId = `custom-${bundle.id}-${item.id}`;
 			fromCatalog = false;
 		} else if (catalogPricelist && catalogPricelist.length > 0) {

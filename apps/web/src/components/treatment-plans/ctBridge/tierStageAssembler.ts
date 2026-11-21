@@ -41,8 +41,9 @@ export function assembleTierStages(
 
 	if (findings.implants && findings.implants.length > 0) {
 		for (const imp of findings.implants) {
-			const effectiveImp: CbctImplantFinding = findings.tierBrands?.[tierId]
-				? { ...imp, brand: findings.tierBrands[tierId], implantSpec: imp.implantSpec ? { ...imp.implantSpec, brand: findings.tierBrands[tierId]! } : undefined }
+			const tierBrand = findings.tierBrands?.[tierId];
+			const effectiveImp: CbctImplantFinding = tierBrand
+				? { ...imp, brand: tierBrand, implantSpec: imp.implantSpec ? { ...imp.implantSpec, brand: tierBrand } : undefined }
 				: imp;
 			s3.push(...buildImplantSurgicalPackageItems(effectiveImp, tierId, catalog));
 

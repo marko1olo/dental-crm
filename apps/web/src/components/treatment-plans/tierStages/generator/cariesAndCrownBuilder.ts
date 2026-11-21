@@ -3,9 +3,9 @@ import { createPlanItem } from "../../treatmentPlanItemFactory";
 import type { TierGeneratorContext } from "./types";
 
 export function handleCariesTooth(num: number, ctx: TierGeneratorContext): void {
-	const { tierId, catalog, validDiscountPct, isDemo, stage1Items, stage3Items } = ctx;
+	const { tierId, catalog, validDiscountPct, isDemo, stage1Items } = ctx;
 	if (tierId === "economy") {
-		const defCarEco = SERVICES_CATALOG_DICTIONARY.CariesTherapyEconomy!;
+		const defCarEco = SERVICES_CATALOG_DICTIONARY.CariesTherapyEconomy;
 		stage1Items.push(
 			createPlanItem(
 				"s1-caries-eco-" + num,
@@ -22,37 +22,37 @@ export function handleCariesTooth(num: number, ctx: TierGeneratorContext): void 
 			),
 		);
 	} else if (tierId === "optimum") {
-		// optimum: керамическая вкладка / накладка IPS e.max CAD в этап 3 (ортопедия)
-		const defInlay = SERVICES_CATALOG_DICTIONARY.InlayOnlay!;
-		stage3Items.push(
+		// Оптимум: высокоэстетичный нанокомпозит светового отверждения в этап 1 (терапия)
+		const defCar = SERVICES_CATALOG_DICTIONARY.CariesTherapy;
+		stage1Items.push(
 			createPlanItem(
-				"s3-inlay-opt-" + num,
-				3,
-				"stage_3_orthopedics",
-				defInlay,
+				"s1-caries-opt-" + num,
+				1,
+				"stage_1_therapy",
+				defCar,
 				num,
 				catalog,
 				validDiscountPct,
 				{
-					customTitle: "Керамическая вкладка / накладка IPS e.max CAD на зуб №" + num,
+					customTitle: "Лечение кариеса зуба №" + num + " нанокомпозитом Estelite / Filtek с анатомической стратификацией",
 					isDemoMode: isDemo,
 				},
 			),
 		);
 	} else {
-		// premium: анатомическая микрофрезерованная вкладка Multi-Layer диоксид циркония Katana в этап 3 (ортопедия)
-		const defInlay = SERVICES_CATALOG_DICTIONARY.InlayOnlay!;
-		stage3Items.push(
+		// Премиум: художественная реставрация под микроскопом премиальным нанокомпозитом в этап 1 (терапия)
+		const defCar = SERVICES_CATALOG_DICTIONARY.CariesTherapy;
+		stage1Items.push(
 			createPlanItem(
-				"s3-inlay-prem-" + num,
-				3,
-				"stage_3_orthopedics",
-				defInlay,
+				"s1-caries-prem-" + num,
+				1,
+				"stage_1_therapy",
+				defCar,
 				num,
 				catalog,
 				validDiscountPct,
 				{
-					customTitle: "Анатомическая микрофрезерованная вкладка Multi-Layer диоксид циркония Katana на зуб №" + num + " (расширенная гарантия 10 лет)",
+					customTitle: "Художественная реставрация зуба №" + num + " под микроскопом премиальным нанокомпозитом (Enamel Plus / Asteria)",
 					isDemoMode: isDemo,
 				},
 			),
@@ -63,14 +63,14 @@ export function handleCariesTooth(num: number, ctx: TierGeneratorContext): void 
 export function handleCrownTooth(num: number, ctx: TierGeneratorContext): void {
 	const { tierId, catalog, validDiscountPct, isDemo, stage3Items } = ctx;
 	if (tierId === "economy") {
-		const defMK = SERVICES_CATALOG_DICTIONARY.CrownMetalCeramic!;
+		const defMK = SERVICES_CATALOG_DICTIONARY.CrownMetalCeramic;
 		stage3Items.push(createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defMK, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 	} else if (tierId === "optimum") {
-		const defEmax = SERVICES_CATALOG_DICTIONARY.CrownEmaxCeramic!;
+		const defEmax = SERVICES_CATALOG_DICTIONARY.CrownEmaxCeramic;
 		stage3Items.push(createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defEmax, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 	} else {
-		// premium: коронка из многослойного диоксида циркония Katana Zirconia с расширенной гарантией 10 лет
-		const defZirc = SERVICES_CATALOG_DICTIONARY.CrownZirconia!;
+		// Премиум: коронка из многослойного диоксида циркония Katana Zirconia с расширенной гарантией 10 лет
+		const defZirc = SERVICES_CATALOG_DICTIONARY.CrownZirconia;
 		stage3Items.push(
 			createPlanItem(
 				"s3-crown-prem-" + num,

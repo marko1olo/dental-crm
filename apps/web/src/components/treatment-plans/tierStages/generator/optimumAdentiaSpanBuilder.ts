@@ -26,7 +26,7 @@ export function handleOptimumAdentiaSpan(
 		markHasImplants();
 		handled.add(missingT);
 
-		const defGuide = SERVICES_CATALOG_DICTIONARY.SurgicalNavigationGuide!;
+		const defGuide = SERVICES_CATALOG_DICTIONARY.SurgicalNavigationGuide;
 		stage2Items.push(
 			createPlanItem(
 				(isPremium ? "s2-guide-prem-" : "s2-guide-opt-") + missingT,
@@ -41,7 +41,7 @@ export function handleOptimumAdentiaSpan(
 		);
 
 		if (isPremium) {
-			const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium!;
+			const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium;
 			stage2Items.push(
 				createPlanItem(
 					"s2-imp-prem-" + missingT,
@@ -58,7 +58,7 @@ export function handleOptimumAdentiaSpan(
 				),
 			);
 
-			const defImpCrownPrem = SERVICES_CATALOG_DICTIONARY.ImplantCrownPremium!;
+			const defImpCrownPrem = SERVICES_CATALOG_DICTIONARY.ImplantCrownPremium;
 			stage3Items.push(
 				createPlanItem(
 					"s3-imp-crown-prem-" + missingT,
@@ -75,7 +75,7 @@ export function handleOptimumAdentiaSpan(
 				),
 			);
 		} else {
-			const defImp = SERVICES_CATALOG_DICTIONARY.DentalImplantation!;
+			const defImp = SERVICES_CATALOG_DICTIONARY.DentalImplantation;
 			stage2Items.push(
 				createPlanItem(
 					"s2-imp-opt-" + missingT,
@@ -92,7 +92,7 @@ export function handleOptimumAdentiaSpan(
 				),
 			);
 
-			const defImpCrown = SERVICES_CATALOG_DICTIONARY.ImplantCrownProsthetics!;
+			const defImpCrown = SERVICES_CATALOG_DICTIONARY.ImplantCrownProsthetics;
 			stage3Items.push(
 				createPlanItem(
 					"s3-imp-crown-opt-" + missingT,

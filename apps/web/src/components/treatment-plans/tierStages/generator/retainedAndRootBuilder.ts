@@ -9,7 +9,7 @@ export function handleRootTooth(
 	missingLower: number[],
 ): void {
 	const { catalog, validDiscountPct, isDemo, stage2Items } = ctx;
-	const defExt = SERVICES_CATALOG_DICTIONARY.SimpleExtraction!;
+	const defExt = SERVICES_CATALOG_DICTIONARY.SimpleExtraction;
 	stage2Items.push(
 		createPlanItem(
 			"s2-root-" + num,
@@ -35,8 +35,8 @@ export function handleRetainedTooth(
 	ctx: TierGeneratorContext,
 ): void {
 	const { tierId, catalog, validDiscountPct, isDemo, stage2Items } = ctx;
-	const defComplexExt = SERVICES_CATALOG_DICTIONARY.ComplexExtraction!;
-	if (tierId === "optimum") {
+	const defComplexExt = SERVICES_CATALOG_DICTIONARY.ComplexExtraction;
+	if (tierId === "optimum" || tierId === "premium") {
 		stage2Items.push(
 			createPlanItem(
 				"s2-impacted-" + num,
@@ -53,7 +53,7 @@ export function handleRetainedTooth(
 				},
 			),
 		);
-		const defBoneGraft = SERVICES_CATALOG_DICTIONARY.BoneGraftingSinusLift!;
+		const defBoneGraft = SERVICES_CATALOG_DICTIONARY.BoneGraftingSinusLift;
 		stage2Items.push(
 			createPlanItem(
 				"s2-bonegraft-" + num,

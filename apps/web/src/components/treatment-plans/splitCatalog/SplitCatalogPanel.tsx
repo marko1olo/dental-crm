@@ -49,7 +49,7 @@ export const SplitCatalogPanel: React.FC<SplitCatalogPanelProps> = ({
 			if (!map[cat]) map[cat] = [];
 			map[cat].push(it);
 		});
-		return Object.keys(map).sort().map((cat) => ({ categoryName: cat, services: map[cat]! }));
+		return Object.keys(map).sort().map((cat) => ({ categoryName: cat, services: map[cat] ?? [] }));
 	}, [effectiveCatalog, searchQuery, categoryFilter]);
 
 	return (

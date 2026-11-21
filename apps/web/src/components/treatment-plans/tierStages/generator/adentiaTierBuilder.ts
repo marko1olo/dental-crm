@@ -20,13 +20,22 @@ export function processTierMissingTeeth(
 	const handled = new Set<number>();
 	let i = 0;
 	while (i < jawSeq.length) {
-		const tNum = jawSeq[i]!;
+		const tNum = jawSeq[i];
+		if (tNum === undefined) {
+			i++;
+			continue;
+		}
 		if (missingSet.has(tNum) && !handled.has(tNum)) {
 			const currentSpan: number[] = [tNum];
 			let j = i + 1;
-			while (j < jawSeq.length && missingSet.has(jawSeq[j]!) && !handled.has(jawSeq[j]!)) {
-				currentSpan.push(jawSeq[j]!);
-				j++;
+			while (j < jawSeq.length) {
+				const nextNum = jawSeq[j];
+				if (nextNum !== undefined && missingSet.has(nextNum) && !handled.has(nextNum)) {
+					currentSpan.push(nextNum);
+					j++;
+				} else {
+					break;
+				}
 			}
 
 			if (ctx.tierId === "economy") {

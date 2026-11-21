@@ -289,7 +289,17 @@ export function useStudioPlanLifecycle({
 
 	// 2. Активный выбранный вариант
 	const activeTier = useMemo(() => {
-		return computedTiers.find((t) => t.tierId === selectedTierId) || computedTiers.find((t) => t.tierId === "optimum") || computedTiers[0]!;
+		return (
+			computedTiers.find((t) => t.tierId === selectedTierId) ||
+			computedTiers.find((t) => t.tierId === "optimum") ||
+			computedTiers[0] || {
+				tierId: "optimum" as const,
+				title: "Оптимум",
+				totalRub: 0,
+				totalKopecks: 0,
+				stages: [],
+			}
+		);
 	}, [computedTiers, selectedTierId]);
 
 	const sanitizedActiveTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");

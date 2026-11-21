@@ -11,12 +11,12 @@ export function buildOptimum3ToothBridge(
 	const { catalog, validDiscountPct, isDemo, stage2Items, stage3Items, markHasImplants } = ctx;
 	markHasImplants();
 
-	const defGuide = SERVICES_CATALOG_DICTIONARY.SurgicalNavigationGuide!;
+	const defGuide = SERVICES_CATALOG_DICTIONARY.SurgicalNavigationGuide;
 	stage2Items.push(
 		createPlanItem("s2-guide-" + tooth1, 2, "stage_2_surgery", defGuide, tooth1, catalog, validDiscountPct, { isDemoMode: isDemo }),
 	);
 
-	const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium!;
+	const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium;
 	stage2Items.push(
 		createPlanItem(
 			"s2-imp-opt-" + tooth1,
@@ -48,7 +48,7 @@ export function buildOptimum3ToothBridge(
 		),
 	);
 
-	const defBridge = SERVICES_CATALOG_DICTIONARY.BridgeProsthesis!;
+	const defBridge = SERVICES_CATALOG_DICTIONARY.BridgeProsthesis;
 	stage3Items.push(
 		createPlanItem(
 			"s3-bridge-opt-" + tooth1 + "-" + tooth3,

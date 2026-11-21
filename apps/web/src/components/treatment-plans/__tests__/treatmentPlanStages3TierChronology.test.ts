@@ -39,34 +39,34 @@ describe("treatmentPlanStagesEngine: 3-Option Comparison (Эконом, Стан
 		const tiers = generate3TierPlanComparison(teeth, undefined, 0, 0, { isDemoMode: true });
 		assert.equal(tiers.length, 3);
 
-		const [econ, std, opt] = tiers;
-		assert.ok(econ && std && opt);
+		const [econ, opt, prem] = tiers;
+		assert.ok(econ && opt && prem);
 
 		assert.equal(econ.tierId, "economy");
-		assert.equal(std.tierId, "standard");
 		assert.equal(opt.tierId, "optimum");
+		assert.equal(prem.tierId, "premium");
 
 		assert.equal(opt.isRecommended, true);
-		assert.equal(std.isRecommended, false);
+		assert.equal(prem.isRecommended, false);
 		assert.equal(econ.isRecommended, false);
 
-		assert.ok(econ.totalRub < std.totalRub, "Эконом должен быть < Стандарт");
-		assert.ok(std.totalRub < opt.totalRub, "Стандарт должен быть < Оптимальный");
+		assert.ok(econ.totalRub < opt.totalRub, "Эконом должен быть < Оптимум");
+		assert.ok(opt.totalRub < prem.totalRub, "Оптимум должен быть < Премиум");
 
 		assert.equal(econ.warrantyYears, 1);
-		assert.equal(std.warrantyYears, 2);
+		assert.equal(opt.warrantyYears, 3);
 
 		assert.ok(econ.materialsList && econ.materialsList.length >= 3);
-		assert.ok(std.materialsList && std.materialsList.length >= 3);
 		assert.ok(opt.materialsList && opt.materialsList.length >= 3);
+		assert.ok(prem.materialsList && prem.materialsList.length >= 3);
 		assert.ok(opt.keyAdvantages && opt.keyAdvantages.length >= 3);
 
 		assert.ok((econ.monthlyInstallment12Rub ?? 0) > 0);
-		assert.ok((std.monthlyInstallment12Rub ?? 0) > 0);
 		assert.ok((opt.monthlyInstallment12Rub ?? 0) > 0);
+		assert.ok((prem.monthlyInstallment12Rub ?? 0) > 0);
 
 		assert.ok((econ.ndflRefundRub ?? 0) > 0);
-		assert.ok((std.ndflRefundRub ?? 0) > 0);
 		assert.ok((opt.ndflRefundRub ?? 0) > 0);
+		assert.ok((prem.ndflRefundRub ?? 0) > 0);
 	});
 });

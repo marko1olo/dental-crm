@@ -3,8 +3,6 @@
    Multi-Theme, Touch-First, Order 804n / FDI & A4 Contract Appendix #1
    ========================================================================== */
 
-@import "./styles/presenterShell.css";
-@import "./styles/presenterHeaderNav.css";
 @import "./styles/mobileTierSwitcher.css";
 @import "./styles/comparativeGrid.css";
 @import "./styles/mobileDrawerOverrides.css";

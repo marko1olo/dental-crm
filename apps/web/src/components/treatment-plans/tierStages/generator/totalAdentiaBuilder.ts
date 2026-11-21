@@ -9,7 +9,7 @@ export function handleTotalAdentia(
 	const { tierId, catalog, validDiscountPct, isDemo, stage2Items, stage3Items, markHasImplants } = ctx;
 
 	if (tierId === "economy") {
-		const defClasp = SERVICES_CATALOG_DICTIONARY.ClaspProsthesisEconomy!;
+		const defClasp = SERVICES_CATALOG_DICTIONARY.ClaspProsthesisEconomy;
 		stage3Items.push(
 			createPlanItem(
 				"s3-full-clasp-" + jawLabel,
@@ -29,7 +29,7 @@ export function handleTotalAdentia(
 	}
 
 	markHasImplants();
-	const defGuide = SERVICES_CATALOG_DICTIONARY.AllOn4SurgicalGuide!;
+	const defGuide = SERVICES_CATALOG_DICTIONARY.AllOn4SurgicalGuide;
 	stage2Items.push(
 		createPlanItem(
 			"s2-allon6-guide-" + jawLabel,
@@ -46,7 +46,7 @@ export function handleTotalAdentia(
 		),
 	);
 
-	const defAllOn6 = SERVICES_CATALOG_DICTIONARY.AllOn6Implantation!;
+	const defAllOn6 = SERVICES_CATALOG_DICTIONARY.AllOn6Implantation;
 	stage2Items.push(
 		createPlanItem(
 			"s2-allon6-implants-" + jawLabel,
@@ -63,7 +63,7 @@ export function handleTotalAdentia(
 		),
 	);
 
-	const defMultiUnit = SERVICES_CATALOG_DICTIONARY.MultiUnitAbutment!;
+	const defMultiUnit = SERVICES_CATALOG_DICTIONARY.MultiUnitAbutment;
 	stage2Items.push(
 		createPlanItem(
 			"s2-allon6-multiunit-" + jawLabel,
@@ -81,7 +81,7 @@ export function handleTotalAdentia(
 		),
 	);
 
-	const defAllOn6Prosth = SERVICES_CATALOG_DICTIONARY.AllOn6Prosthesis!;
+	const defAllOn6Prosth = SERVICES_CATALOG_DICTIONARY.AllOn6Prosthesis;
 	stage3Items.push(
 		createPlanItem(
 			"s3-allon6-prosthesis-" + jawLabel,

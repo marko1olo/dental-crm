@@ -28,7 +28,7 @@ export const DoctorPieceRateWalletView: React.FC<DoctorPieceRateWalletViewProps>
 	doctorId = "doc-1",
 	doctorName = "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
-	shiftDateIso = new Date().toISOString().split("T")[0]!,
+	shiftDateIso = new Date().toISOString().split("T")[0] ?? "",
 	onClose,
 	onPrintPayslip,
 }) => {

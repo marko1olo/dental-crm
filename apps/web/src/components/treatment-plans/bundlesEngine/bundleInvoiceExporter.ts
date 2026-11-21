@@ -29,9 +29,10 @@ export function createBundleInvoiceItems(
 	const now = Date.now();
 
 	return breakdown.selectedItems.map((item, idx) => {
+		const customPrice = customPriceMap?.[item.id];
 		const priceRub =
-			customPriceMap && customPriceMap[item.id] !== undefined
-				? Math.max(0, customPriceMap[item.id]!)
+			typeof customPrice === "number"
+				? Math.max(0, customPrice)
 				: item.defaultPriceRub;
 
 		const toothPrefix = effectiveTooth ? `[Зуб ${effectiveTooth}] ` : "";

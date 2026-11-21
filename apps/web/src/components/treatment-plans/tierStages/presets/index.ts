@@ -4,6 +4,7 @@ import { isDemoShowcaseMode } from "../../treatmentPlanAutoGenerator";
 import { getEconomyPresetStages } from "./economyPreset";
 import { getStandardPresetStages } from "./standardPreset";
 import { getOptimumPresetStages } from "./optimumPreset";
+import { getPremiumPresetStages } from "./premiumPreset";
 
 export function getDefaultClinicalPresetStages(
 	tierId: TreatmentPlanTierId,
@@ -22,7 +23,11 @@ export function getDefaultClinicalPresetStages(
 		return getStandardPresetStages(catalog, validDiscountPct, isDemo);
 	}
 
+	if (tierId === "premium") {
+		return getPremiumPresetStages(catalog, validDiscountPct, isDemo);
+	}
+
 	return getOptimumPresetStages(catalog, validDiscountPct, isDemo);
 }
 
-export { getEconomyPresetStages, getStandardPresetStages, getOptimumPresetStages };
+export { getEconomyPresetStages, getStandardPresetStages, getOptimumPresetStages, getPremiumPresetStages };

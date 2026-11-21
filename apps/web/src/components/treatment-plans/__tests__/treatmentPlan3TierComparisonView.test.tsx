@@ -32,7 +32,7 @@ describe("TreatmentPlan3TierComparison — View & Mobile Segmented Control", () 
 		assert.ok(html.includes("Утвердить план"));
 		assert.ok(html.includes("sticky bottom-0"));
 		assert.ok(html.includes("tier-card-optimum"));
-		assert.ok(html.includes("tier-card-standard"));
+		assert.ok(html.includes("tier-card-premium"));
 		assert.ok(html.includes("tier-card-economy"));
 	});
 
@@ -42,13 +42,13 @@ describe("TreatmentPlan3TierComparison — View & Mobile Segmented Control", () 
 		assert.ok(html.includes("treatment-3tier-segmented-control"));
 		assert.ok(html.includes("sm:hidden"));
 		assert.ok(html.includes("segmented-tab-optimum"));
-		assert.ok(html.includes("segmented-tab-standard"));
+		assert.ok(html.includes("segmented-tab-premium"));
 		assert.ok(html.includes("segmented-tab-economy"));
 		assert.ok(html.includes("tier-card-mobile-optimum"));
 	});
 
 	it("renders 3-tier materials headline, service life, and messenger copy buttons", () => {
-		const html = renderToString(<TreatmentPlan3TierComparison {...baseProps} selectedTierId={"standard" as TreatmentPlanTierId} />);
+		const html = renderToString(<TreatmentPlan3TierComparison {...baseProps} selectedTierId={"premium" as TreatmentPlanTierId} />);
 
 		assert.ok(html.includes("Эконом"));
 		assert.ok(html.includes("Оптимум"));
@@ -62,13 +62,13 @@ describe("TreatmentPlan3TierComparison — View & Mobile Segmented Control", () 
 		const emptyTiers = generate3TierPlanComparison([]);
 		assert.equal(emptyTiers.length, 3);
 		assert.equal(emptyTiers[0]?.totalRub, 45000);
-		assert.equal(emptyTiers[1]?.totalRub, 145000);
-		assert.equal(emptyTiers[2]?.totalRub, 380000);
+		assert.equal(emptyTiers[1]?.totalRub, 380000);
+		assert.equal(emptyTiers[2]?.totalRub, 556000);
 
 		const html = renderToString(<TreatmentPlan3TierComparison {...baseProps} tiers={emptyTiers} />);
 		assert.ok(html.includes("45 000"));
-		assert.ok(html.includes("145 000"));
 		assert.ok(html.includes("380 000"));
+		assert.ok(html.includes("556 000"));
 		assert.equal(html.includes("0 ₽/мес"), false);
 	});
 

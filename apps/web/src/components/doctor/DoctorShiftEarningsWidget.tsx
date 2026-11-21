@@ -27,7 +27,7 @@ export interface DoctorShiftEarningsWidgetProps {
 export const DoctorShiftEarningsWidget: React.FC<DoctorShiftEarningsWidgetProps> = ({
 	doctorId = "doc-1",
 	doctorName = "Д-р Смирнов Алексей Петрович",
-	shiftDateIso = new Date().toISOString().split("T")[0]!,
+	shiftDateIso = new Date().toISOString().split("T")[0] ?? "",
 	commissionPercent = 25,
 	appointments,
 	compact = false,

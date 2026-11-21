@@ -101,7 +101,8 @@ export function duplicateStageItem(
 		const idx = st.items.findIndex((it) => it.id === itemId);
 		if (idx === -1) return st;
 
-		const original = st.items[idx]!;
+		const original = st.items[idx];
+		if (!original) return st;
 		const copy: TreatmentPlanItem = {
 			...original,
 			id: `${original.id}-copy-${Date.now()}`,

@@ -13,7 +13,7 @@ export function handleEconomyAdentiaSpan(
 		handled.add(missingT);
 		// PLN-06 [SEV-2]: Зуб со статусом "Missing" (адентия) уже отсутствует.
 		// Запрещено начислять платное удаление разрушенного корня. Формируем только металлокерамический мостовидный протез.
-		const defEcoBridge = SERVICES_CATALOG_DICTIONARY.BridgeProsthesisEconomy!;
+		const defEcoBridge = SERVICES_CATALOG_DICTIONARY.BridgeProsthesisEconomy;
 		stage3Items.push(
 			createPlanItem(
 				"s3-eco-bridge-" + missingT,

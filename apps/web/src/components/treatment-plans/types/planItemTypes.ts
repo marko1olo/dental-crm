@@ -46,6 +46,7 @@ export interface TreatmentPlanItem {
 		readonly economy?: number | undefined;
 		readonly optimum?: number | undefined;
 		readonly premium?: number | undefined;
+		readonly [key: string]: number | undefined;
 	} | undefined;
 	readonly discountRub: number;
 	readonly quantity: number;

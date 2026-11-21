@@ -206,7 +206,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 				status: it.status || (it.isCompleted ? "completed" : "proposed"),
 				doctorName: it.doctorName || null,
 				doctorSpecialty: it.doctorSpecialty || null,
-				tierPrices: (it as unknown as { tierPrices?: Record<string, number> }).tierPrices,
+				tierPrices: it.tierPrices,
 			};
 			return itemRecord;
 		});

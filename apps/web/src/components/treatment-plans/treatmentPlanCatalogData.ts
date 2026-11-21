@@ -203,11 +203,11 @@ export function resolveTierService(
 	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
 
 	// 1. Проверяем наличие индивидуальных цен по тарифам в tierPrices (из номенклатуры PostgreSQL 18)
-	const itemTierPrices = (item as unknown as { tierPrices?: Record<string, number> | null }).tierPrices;
-	if (itemTierPrices && typeof itemTierPrices[tierId] === "number" && itemTierPrices[tierId]! > 0) {
+	const tierPrice = item.tierPrices?.[tierId];
+	if (typeof tierPrice === "number" && tierPrice > 0) {
 		return {
 			name: item.name,
-			priceRub: itemTierPrices[tierId]!,
+			priceRub: tierPrice,
 		};
 	}
 

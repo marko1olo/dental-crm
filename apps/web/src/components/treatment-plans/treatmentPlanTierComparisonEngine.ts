@@ -1,8 +1,8 @@
 /**
  * treatmentPlanTierComparisonEngine.ts — движок сравнения 3 сценариев плана лечения
- * («Эконом», «Стандарт», «Оптимальный») для презентации пациенту.
+ * («Эконом», «Оптимум», «Премиум») для презентации пациенту.
  *
- * Включает расчет 13% налогового вычета НДФЛ и рассрочки 0% в целых копейках (Мандат 8k).
+ * Включает расчет 13% налогового вычета НДФЛ и рассрочки 0% в целых копейках (Мандат 8k, 8bm).
  */
 
 import type { ToothData } from "../odontogram/ToothChart.js";
@@ -12,12 +12,11 @@ import { DEMO_SHOWCASE_TEETH, isDemoShowcaseMode } from "./treatmentPlanAutoGene
 import { generateTierPlanStages } from "./treatmentPlanTierStagesGenerator.js";
 import {
 	ECONOMY_TIER_META,
-	STANDARD_TIER_META,
 	OPTIMUM_TIER_META,
-} from "./tierComparison/tierMetadataPresets.js";
-import { assembleTierFromPreset } from "./tierComparison/makeTierHelper.js";
+	PREMIUM_TIER_META,
+	assembleTierFromPreset,
+} from "./tierComparison/makeTierHelper.js";
 
-export * from "./tierComparison/tierMetadataPresets.js";
 export * from "./tierComparison/makeTierHelper.js";
 
 export function generate3TierPlanComparison(
@@ -43,14 +42,14 @@ export function generate3TierPlanComparison(
 			: teeth;
 
 	const economyStages = generateTierPlanStages("economy", effectiveTeeth, catalog, validLoyaltyPct, options);
-	const standardStages = generateTierPlanStages("standard", effectiveTeeth, catalog, validLoyaltyPct, options);
 	const optimumStages = generateTierPlanStages("optimum", effectiveTeeth, catalog, validLoyaltyPct, options);
+	const premiumStages = generateTierPlanStages("premium", effectiveTeeth, catalog, validLoyaltyPct, options);
 
 	const economyTier = assembleTierFromPreset("economy", ECONOMY_TIER_META, economyStages);
-	const standardTier = assembleTierFromPreset("standard", STANDARD_TIER_META, standardStages);
 	const optimumTier = assembleTierFromPreset("optimum", OPTIMUM_TIER_META, optimumStages);
+	const premiumTier = assembleTierFromPreset("premium", PREMIUM_TIER_META, premiumStages);
 
-	return [economyTier, standardTier, optimumTier];
+	return [economyTier, optimumTier, premiumTier];
 }
 
 export const generate3TierTreatmentPlanOptions = generate3TierPlanComparison;

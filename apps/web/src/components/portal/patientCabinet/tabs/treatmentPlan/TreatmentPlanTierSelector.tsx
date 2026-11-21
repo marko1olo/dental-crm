@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2, Sparkles } from "lucide-react";
-import type { PatientPersonalCabinetData } from "../../patientCabinetEngine.js";
+import type { PatientPersonalCabinetData, TreatmentPlanTier } from "../../patientCabinetEngine.js";
 import { formatRubles } from "../../patientCabinetEngine.js";
 
 interface TreatmentPlanTierSelectorProps {
@@ -14,16 +14,18 @@ export const TreatmentPlanTierSelector: React.FC<TreatmentPlanTierSelectorProps>
 	selectedTier,
 	onSelectTier,
 }) => {
-	const getTier = (key: "basic" | "standard" | "premium"): any => {
+	const getTier = (key: "basic" | "standard" | "premium"): TreatmentPlanTier | undefined => {
 		if (Array.isArray(threeTierModel.tiers)) {
-			return threeTierModel.tiers.find((t: any) => t.tierId === key || t.id === key);
+			return threeTierModel.tiers.find(
+				(t) => t.tierId === key || ("id" in t && (t as { id?: string }).id === key),
+			);
 		}
-		return (threeTierModel.tiers as any)?.[key];
+		return undefined;
 	};
 
 	const currentTierObj = getTier(selectedTier);
-	const benefitsList: string[] = currentTierObj?.advantagesRu || currentTierObj?.benefits || [];
-	const summaryText: string = currentTierObj?.summaryRu || currentTierObj?.subtitleRu || "";
+	const benefitsList: readonly string[] = currentTierObj?.advantagesRu ?? currentTierObj?.benefits ?? [];
+	const summaryText: string = currentTierObj?.summaryRu ?? currentTierObj?.subtitleRu ?? "";
 
 	return (
 		<div className="pc-card pc-tier-selector-card" data-testid="pc-3tier-selector">

@@ -84,7 +84,7 @@ export interface EarningsDataState {
 	readonly period: {
 		readonly from: string;
 		readonly to: string;
-		readonly date?: string;
+		readonly date?: string | undefined;
 	};
 	readonly summary: {
 		readonly totalGrossRevenueRub: number;

@@ -16,7 +16,7 @@ export function handleEndoTooth(
 ): void {
 	const { tierId, catalog, validDiscountPct, isDemo, stage1Items, stage3Items } = ctx;
 
-	const defCofferdam = SERVICES_CATALOG_DICTIONARY.CofferdamIsolation!;
+	const defCofferdam = SERVICES_CATALOG_DICTIONARY.CofferdamIsolation;
 	stage1Items.push(createPlanItem("s1-cofferdam-" + num, 1, "stage_1_therapy", defCofferdam, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 
 	const canalCount = extractCanalCount(tooth);
@@ -32,9 +32,11 @@ export function handleEndoTooth(
 			validDiscountPct,
 			{
 				customTitle:
-					tierId === "optimum"
-						? "Обработка корневых каналов зуба №" + num + " под микроскопом Zeiss (" + canalCount + " кан.)"
-						: "Инструментальная обработка каналов зуба №" + num + " (" + canalCount + " кан.)",
+					tierId === "premium"
+						? "Сложная эндодонтия зуба №" + num + " под операционным микроскопом (" + canalCount + " кан.)"
+						: tierId === "optimum"
+							? "Обработка корневых каналов зуба №" + num + " под микроскопом Zeiss (" + canalCount + " кан.)"
+							: "Инструментальная обработка каналов зуба №" + num + " (" + canalCount + " кан.)",
 				isDemoMode: isDemo,
 			},
 		),
@@ -57,12 +59,12 @@ export function handleEndoTooth(
 		),
 	);
 
-	const defBuildup = SERVICES_CATALOG_DICTIONARY.BuildupFiberPost!;
+	const defBuildup = SERVICES_CATALOG_DICTIONARY.BuildupFiberPost;
 	stage1Items.push(createPlanItem("s1-buildup-" + num, 1, "stage_1_therapy", defBuildup, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 
 	if (isMolarOrPremolar(num)) {
 		if (tierId === "economy") {
-			const defMKK = SERVICES_CATALOG_DICTIONARY.CrownMetalCeramic!;
+			const defMKK = SERVICES_CATALOG_DICTIONARY.CrownMetalCeramic;
 			stage3Items.push(
 				createPlanItem(
 					"s3-crown-mk-" + num,
@@ -78,8 +80,25 @@ export function handleEndoTooth(
 					},
 				),
 			);
+		} else if (tierId === "premium") {
+			const defZirc = SERVICES_CATALOG_DICTIONARY.CrownZirconia;
+			stage3Items.push(
+				createPlanItem(
+					"s3-crown-prem-" + num,
+					3,
+					"stage_3_orthopedics",
+					defZirc,
+					num,
+					catalog,
+					validDiscountPct,
+					{
+						customTitle: "Анатомическая коронка Multi-Layer диоксид циркония Katana на зуб №" + num + " (гарантия 10 лет)",
+						isDemoMode: isDemo,
+					},
+				),
+			);
 		} else {
-			const defEmax = SERVICES_CATALOG_DICTIONARY.CrownEmaxCeramic!;
+			const defEmax = SERVICES_CATALOG_DICTIONARY.CrownEmaxCeramic;
 			stage3Items.push(
 				createPlanItem(
 					"s3-crown-emax-" + num,

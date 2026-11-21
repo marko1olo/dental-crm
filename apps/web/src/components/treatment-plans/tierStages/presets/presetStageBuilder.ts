@@ -12,6 +12,14 @@ export function buildPresetStage(
 	estimatedVisits: number,
 	estimatedWeeks: number,
 ): TreatmentPlanStage {
+	// DEF-06: Динамически пересчитываем totalRub и totalKopecks как честную сумму входящих в этап элементов items
+	const calculatedItemsTotalRub = items.reduce(
+		(acc, it) => acc + (it.priceRub ?? 0) * (it.quantity || 1),
+		0,
+	);
+	const effectiveTotalRub = calculatedItemsTotalRub > 0 ? calculatedItemsTotalRub : totalRub;
+	const effectiveTotalKopecks = Math.round(effectiveTotalRub * 100) as Kopecks;
+
 	return {
 		stageNumber,
 		stageKind,
@@ -19,8 +27,8 @@ export function buildPresetStage(
 		subtitle,
 		clinicalGoal,
 		items,
-		totalRub,
-		totalKopecks: (totalRub * 100) as Kopecks,
+		totalRub: effectiveTotalRub,
+		totalKopecks: effectiveTotalKopecks,
 		estimatedVisits,
 		estimatedWeeks,
 		serviceCatalogCodes: Array.from(new Set(items.map((i) => i.code804n))),

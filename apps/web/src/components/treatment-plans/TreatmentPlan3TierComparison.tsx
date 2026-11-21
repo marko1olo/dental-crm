@@ -31,6 +31,7 @@ export interface TreatmentPlan3TierComparisonProps {
 	readonly onOpenPriceValidatorStudio?: (() => void) | undefined;
 	readonly onOpenInstallment?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly hideMobileThumbBar?: boolean | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -46,7 +47,21 @@ export function getTierShortLabel(tier: TreatmentPlanTier): string {
 }
 
 export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparisonProps> = (props) => {
-	const { tiers, selectedTierId = "optimum", planAgeDays, planCreatedAtIso, onSelectTier, onApproveAndSign, onOpenComparatorStudio, onOpenStagePaymentStudio, onOpenPriceValidatorStudio, onOpenInstallment, onPrintContract, className = "" } = props;
+	const {
+		tiers,
+		selectedTierId = "optimum",
+		planAgeDays,
+		planCreatedAtIso,
+		onSelectTier,
+		onApproveAndSign,
+		onOpenComparatorStudio,
+		onOpenStagePaymentStudio,
+		onOpenPriceValidatorStudio,
+		onOpenInstallment,
+		onPrintContract,
+		hideMobileThumbBar = false,
+		className = "",
+	} = props;
 	const [activeTierId, setActiveTierId] = useState<TreatmentPlanTierId>(selectedTierId);
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
 	const [showNdflBreakdown, setShowNdflBreakdown] = useState<boolean>(true);
@@ -80,27 +95,31 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	if (!tiers || tiers.length === 0) return null;
 	if (tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0)) {
 		return (
-			<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-44 sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
+			<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full ${hideMobileThumbBar ? "pb-4" : "pb-44"} sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
 				<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
 				<TreatmentPlan3TierEmptyState />
 			</div>
 		);
 	}
 
-	const activeTier = tiers.find((t) => t.tierId === activeTierId) ?? tiers[0]!;
+	const firstTier = tiers[0];
+	if (!firstTier) return null;
+	const activeTier = tiers.find((t) => t.tierId === activeTierId) ?? firstTier;
 	const renderSingleTierCard = (tier: TreatmentPlanTier, isMobile: boolean) => (
 		<TreatmentPlanTierCard key={tier.tierId} tier={tier} isSelected={activeTierId === tier.tierId} isMobile={isMobile} activePaymentMode={activePaymentMode} installmentMonths={installmentMonths} showNdflBreakdown={showNdflBreakdown} isExpandedStages={expandedStagesTierId === tier.tierId} copiedMessengerTierId={copiedMessengerTierId} onCardClick={handleCardClick} onSignClick={handleSignClick} onInstallmentClick={handleInstallmentClick} onCopyMessengerClick={handleCopyEstimateToMessenger} onPrintClick={onPrintContract ? handlePrintClick : undefined} onToggleStagesExpand={toggleStagesExpand} />
 	);
 
 	return (
-		<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-44 sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
+		<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full ${hideMobileThumbBar ? "pb-4" : "pb-44"} sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
 			<TreatmentPlan3TierAgeWarning effectivePlanAgeDays={effectivePlanAgeDays} />
 			<TreatmentPlan3TierToolbar activePaymentMode={activePaymentMode} onPaymentModeChange={setActivePaymentMode} installmentMonths={installmentMonths} onInstallmentMonthsChange={setInstallmentMonths} showNdflBreakdown={showNdflBreakdown} onToggleNdflBreakdown={() => setShowNdflBreakdown((p) => !p)} activeTier={activeTier} copiedMessengerTierId={copiedMessengerTierId} onCopyEstimateToMessenger={handleCopyEstimateToMessenger} onOpenComparatorStudio={onOpenComparatorStudio} onOpenStagePaymentStudio={onOpenStagePaymentStudio} onOpenPriceValidatorStudio={onOpenPriceValidatorStudio} />
 			<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
 			<div className="sm:hidden flex flex-col w-full min-w-0">{renderSingleTierCard(activeTier, true)}</div>
 			<div className="hidden sm:grid sm:grid-cols-3 gap-3 sm:gap-4 items-stretch min-h-[460px]">{tiers.map((t) => renderSingleTierCard(t, false))}</div>
 			<TreatmentPlanRoadmapGrid activeTier={activeTier} />
-			<TreatmentPlan3TierMobileThumbBar activeTier={activeTier} activePaymentMode={activePaymentMode} installmentMonths={installmentMonths} getTierShortLabel={getTierShortLabel} onSignClick={handleSignClick} />
+			{!hideMobileThumbBar && (
+				<TreatmentPlan3TierMobileThumbBar activeTier={activeTier} activePaymentMode={activePaymentMode} installmentMonths={installmentMonths} getTierShortLabel={getTierShortLabel} onSignClick={handleSignClick} />
+			)}
 		</div>
 	);
 };

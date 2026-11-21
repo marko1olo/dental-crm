@@ -30,8 +30,7 @@ export const ManipulationsTableView: React.FC<ManipulationsTableViewProps> = ({
 				<tbody>
 					{appointments.flatMap((apt) =>
 						apt.services.map((srv, srvIdx) => {
-							const matchedLab =
-								apt.labOrders.length > 0 ? apt.labOrders[0] : null;
+							const matchedLab = apt.labOrders[0] ?? null;
 							return (
 								<tr key={`${apt.appointmentId}-${srv.id}-${srvIdx}`}>
 									<td>

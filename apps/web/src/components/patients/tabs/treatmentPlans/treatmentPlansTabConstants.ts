@@ -3,7 +3,7 @@
  * Мандаты 8b, 8zi: Декомпозиция монолита TreatmentPlansTab.tsx по протоколу /decomposer.
  */
 
-import type { TreatmentPlanItem } from "@dental/shared";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 
 export type TierCategory = "economy" | "optimum" | "premium";
 
@@ -27,17 +27,23 @@ export interface PatientTreatmentPlanStageDto {
 
 export interface PatientTreatmentPlanItemDto {
 	id: string;
-	toothNumber?: number | null;
-	priceId?: string;
-	name?: string;
-	quantity?: number;
-	price?: number;
-	discount?: number;
-	phase?: number;
-	status?: string;
-	isCompleted?: boolean;
-	doctorName?: string | null;
-	doctorSpecialty?: string | null;
+	toothNumber?: number | null | undefined;
+	priceId?: string | undefined;
+	name?: string | undefined;
+	quantity?: number | undefined;
+	price?: number | undefined;
+	discount?: number | undefined;
+	phase?: number | undefined;
+	status?: string | undefined;
+	isCompleted?: boolean | undefined;
+	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
+	tierPrices?: {
+		readonly economy?: number | undefined;
+		readonly optimum?: number | undefined;
+		readonly premium?: number | undefined;
+		readonly [key: string]: number | undefined;
+	} | undefined;
 }
 
 export interface PatientTreatmentPlanDto {

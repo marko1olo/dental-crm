@@ -61,15 +61,18 @@ export function generateTierPlanStages(
 		markHasImplants: () => { hasImplants = true; },
 	};
 
-	const defCT = SERVICES_CATALOG_DICTIONARY.DiagnosticsCT!;
+	const defCT = SERVICES_CATALOG_DICTIONARY.DiagnosticsCT;
 	stage1Items.push(createPlanItem("s1-ct-diag", 1, "stage_1_therapy", defCT, undefined, catalog, validDiscountPct, { isDemoMode: isDemo }));
 
-	const defHygiene = SERVICES_CATALOG_DICTIONARY.HygieneComplex!;
+	const defHygiene = SERVICES_CATALOG_DICTIONARY.HygieneComplex;
 	stage1Items.push(
 		createPlanItem("s1-hygiene", 1, "stage_1_therapy", defHygiene, undefined, catalog, validDiscountPct, {
-			customTitle: tierId === "optimum"
-				? "Премиальная гигиена Air-Flow Plus с глицином + фторирование Clinpro"
-				: "Базовая профессиональная гигиена и снятие зубного камня",
+			customTitle:
+				tierId === "premium"
+					? "VIP-комплекс гигиены Air-Flow Plus с глицином + фторирование Clinpro + ремотерапия"
+					: tierId === "optimum"
+						? "Комплексная гигиена Air-Flow + УЗ-скейлинг + полировка и фторирование"
+						: "Базовая профессиональная гигиена и снятие зубных отложений",
 			isDemoMode: isDemo,
 		}),
 	);
@@ -112,7 +115,7 @@ export function generateTierPlanStages(
 	processTierMissingTeeth(LOWER_ARCH_TEETH, missingLower, "нижней", ctx);
 
 	if (stage3Items.length > 0) {
-		const defScan = SERVICES_CATALOG_DICTIONARY.IntraoralScanning3D!;
+		const defScan = SERVICES_CATALOG_DICTIONARY.IntraoralScanning3D;
 		stage3Items.unshift(createPlanItem("s3-scan", 3, "stage_3_orthopedics", defScan, undefined, catalog, validDiscountPct, { isDemoMode: isDemo }));
 	}
 

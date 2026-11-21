@@ -58,7 +58,21 @@ export function createPlanItem(
 	};
 
 	let matched: MatchCatalogServiceResult;
-	if (typeof overrides?.customPriceRub === "number") {
+	// DEF-07: Если передан каталог клиники, сначала ищем совпадение по коду 804н / ключевым словам
+	const candidate = catalog && catalog.length > 0
+		? matchCatalogService(
+			catalog,
+			safeDef.category,
+			safeDef.keywords,
+			overrides?.customPriceRub ?? safeDef.defaultPriceRub,
+			safeDef.code,
+			overrides?.isDemoMode !== undefined ? { isDemoMode: overrides.isDemoMode } : undefined,
+		)
+		: null;
+
+	if (candidate && candidate.fromCatalog && candidate.priceId) {
+		matched = candidate;
+	} else if (typeof overrides?.customPriceRub === "number") {
 		matched = {
 			priceRub: overrides.customPriceRub,
 			unitPriceRub: overrides.customPriceRub,
@@ -69,7 +83,7 @@ export function createPlanItem(
 			requiresManualPricing: false,
 		};
 	} else {
-		matched = matchCatalogService(
+		matched = candidate ?? matchCatalogService(
 			catalog,
 			safeDef.category,
 			safeDef.keywords,

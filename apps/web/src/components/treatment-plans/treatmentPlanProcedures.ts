@@ -10,7 +10,7 @@ import type { ClinicalProcedureDefinition, Order804nProcedureDefinition } from "
 export * from "./catalogPredicates";
 export type { ClinicalProcedureDefinition, Order804nProcedureDefinition };
 
-export const DENTAL_SERVICES_CATALOG: Record<string, ClinicalProcedureDefinition> = {
+export const DENTAL_SERVICES_CATALOG = {
 	// Диагностика и профилактика
 	DiagnosticsCT: {
 		code: "A06.07.004",
@@ -583,9 +583,10 @@ export const DENTAL_SERVICES_CATALOG: Record<string, ClinicalProcedureDefinition
 		uetNurse: 5.0,
 	},
 };
+export const DENTAL_SERVICES_CATALOG_RECORD: Record<string, ClinicalProcedureDefinition> = DENTAL_SERVICES_CATALOG;
 
 export const SERVICES_CATALOG_DICTIONARY = DENTAL_SERVICES_CATALOG;
-export const NOMENCLATURE_SERVICES_DICTIONARY = DENTAL_SERVICES_CATALOG;
-export const ORDER_804N_DICTIONARY = DENTAL_SERVICES_CATALOG;
+export const NOMENCLATURE_SERVICES_DICTIONARY: Record<string, ClinicalProcedureDefinition | undefined> = DENTAL_SERVICES_CATALOG;
+export const ORDER_804N_DICTIONARY: Record<string, ClinicalProcedureDefinition | undefined> = DENTAL_SERVICES_CATALOG;
 
 export default DENTAL_SERVICES_CATALOG;
