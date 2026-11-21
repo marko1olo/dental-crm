@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { organizations, visitTemplates } from "../db/schema.js";
+import { organizations, protocolTemplates } from "../db/schema.js";
 
 const BUILT_IN_TEMPLATES: Array<{
 	title: string;
@@ -454,8 +454,8 @@ export async function ensureClinicalTemplatesSeeded(
 ): Promise<void> {
 	const existing = await db
 		.select()
-		.from(visitTemplates)
-		.where(eq(visitTemplates.organizationId, organizationId));
+		.from(protocolTemplates)
+		.where(eq(protocolTemplates.organizationId, organizationId));
 	const existingTitles = new Set(existing.map((t) => t.title));
 
 	const toInsert = BUILT_IN_TEMPLATES.filter(
@@ -467,10 +467,20 @@ export async function ensureClinicalTemplatesSeeded(
 	}
 
 	for (const template of toInsert) {
-		await db.insert(visitTemplates).values({
-			...template,
+		await db.insert(protocolTemplates).values({
 			organizationId,
-			isBuiltIn: true,
+			title: template.title,
+			specialty: (template.specialty as any) || "therapist",
+			visitReason: template.category || "",
+			complaintPrompt: template.prefilledAnamnesis || "",
+			objectiveTemplate: template.prefilledObjective || "",
+			treatmentPlanTemplate: template.prefilledTreatment || "",
+			diagnosisHints: template.defaultIcd10 ? [template.defaultIcd10] : [],
+			defaultDurationMinutes: 30,
+			requiredDocuments: [],
+			suggestedImaging: [],
+			safetyWarnings: [],
+			updatedAt: new Date(),
 		});
 	}
 	console.log(

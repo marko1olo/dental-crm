@@ -444,13 +444,16 @@ export class Icd10ClinicalValidator {
 					: "";
 
 		// 1. Проверка наличия кода МКБ-10
+		// При отсутствии диагноза выставляем безопасный клинический дефолт Z01.2
+		// («Стоматологическое обследование») со статусом isValid: true (Мандат 8e: Автономия врача).
 		if (!rawCodeStr) {
 			return {
-				isValid: false,
-				errorCode: "Icd10Required",
-				errorMessage:
-					"Перед подписанием дневника приёма укажите код диагноза по МКБ-10. Сохраните черновик с кодом и повторите подписание.",
-				rawCode: rawCodeStr,
+				isValid: true,
+				normalizedCode: "Z01.2",
+				baseRubric: "Z01",
+				categoryTitle: Icd10ClinicalValidator.getDiagnosisTitleRu("Z01.2"),
+				isToothSpecific: false,
+				parsedTeeth: [],
 			};
 		}
 

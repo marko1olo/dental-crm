@@ -170,6 +170,13 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 			assert.deepEqual(healthyRes.parsedTeeth, []);
 		}
 
+		// Автоподстановка безопасного клинического дефолта Z01.2 при отсутствии диагноза (Мандат 8e: Автономия врача)
+		const emptyDiagnosisRes = DiarySigningCeremonyService.validateClinicalProtocol("");
+		assert.equal(emptyDiagnosisRes.isValid, true);
+		if (emptyDiagnosisRes.isValid) {
+			assert.equal(emptyDiagnosisRes.normalizedCode, "Z01.2");
+		}
+
 		// Валидация протокола для общего осмотра (Z00.0) и скрининга (Z13.84)
 		const routineRes = DiarySigningCeremonyService.validateClinicalProtocol("Z00.0");
 		assert.equal(routineRes.isValid, true);

@@ -6,10 +6,34 @@ import {
 	requireClinicalReadAccess,
 	resolveOrganizationId,
 } from "../accessGuard.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { db } from "../db/client.js";
-import { visitTemplates } from "../db/schema.js";
+import { protocolTemplates } from "../db/schema.js";
 import { ensureClinicalTemplatesSeeded } from "../scripts/seedTemplates.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
+
+function mapProtocolTemplateToLegacy(row: typeof protocolTemplates.$inferSelect) {
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		title: row.title,
+		category: row.visitReason || "Общий",
+		specialty: row.specialty,
+		prefilledAnamnesis: row.complaintPrompt,
+		prefilledObjective: row.objectiveTemplate,
+		prefilledTreatment: row.treatmentPlanTemplate,
+		defaultIcd10:
+			Array.isArray(row.diagnosisHints) && typeof row.diagnosisHints[0] === "string"
+				? row.diagnosisHints[0]
+				: "",
+		defaultIcd10Label: row.title,
+		suggestedProcedureIds: [],
+		isBuiltIn: false,
+		createdAt: row.createdAt.toISOString(),
+		updatedAt: row.updatedAt ? row.updatedAt.toISOString() : row.createdAt.toISOString(),
+	};
+}
 
 /**
  * ПРОТОКОЛЫ ПРИЁМА ОТКАЗЫВАЛИ КОДОМ, А НЕ ПРИЧИНОЙ.
@@ -105,6 +129,21 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 	app.get("/api/templates", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read templates")))
 			return;
+
+		const identity = getRequestIdentity(req);
+		const staffRole = identity.role ?? req.user?.role ?? null;
+		if (staffRole) {
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.templates.read",
+					role: staffRole,
+					message: `Отказ в доступе к клиническим протоколам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+		}
+
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
 			return reply.code(403).send({
@@ -115,50 +154,27 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 		// Auto-seed built-in templates if none exist
 		const existing = await db
 			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
-		/*
-		 * ЧТО БЫЛО СЛОМАНО. Провал установки встроенных протоколов приёма
-		 * записывался в журнал сервера и наружу уходил безусловный
-		 * `200 {"templates":[]}`. Для врача «протоколов в этой клинике нет» и
-		 * «протоколы не поставились» выглядели одинаково — пустым выпадающим
-		 * списком «Клинический шаблон», — а разница между ними это разница между
-		 * «набираю дневник руками» и «звоню администратору». Отказа не было
-		 * вообще: человек не знал, что что-то сломалось, и делал вывод, что
-		 * готовых протоколов в его клинике не бывает. Дневник приёма заполняется
-		 * на каждом приёме, поэтому вывод закреплялся навсегда.
-		 *
-		 * Ошибка запоминается, а не гасится: ответ решается ПОСЛЕ повторного
-		 * чтения списка. Посев идёт вставками в цикле без транзакции
-		 * (scripts/seedTemplates.ts), поэтому сбой посередине оставляет часть
-		 * протоколов в базе — и отказ вместо них отнял бы у врача то, что уже
-		 * годится к работе.
-		 */
+			.from(protocolTemplates)
+			.where(eq(protocolTemplates.organizationId, orgId));
+
 		let seedFailure: unknown = null;
 		if (existing.length === 0) {
 			try {
 				await ensureClinicalTemplatesSeeded(orgId);
 			} catch (err) {
 				seedFailure = err;
-				// error, а не warn: пустой список протоколов у клиники — это поломка
-				// установки, и в журнале она обязана лежать как поломка.
 				app.log.error(
 					`[Templates] Установка встроенных протоколов провалилась для организации ${orgId}: ${String(err)}`,
 				);
 			}
 		}
 
-		const templates = await db
+		const templates = (await db
 			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
+			.from(protocolTemplates)
+			.where(eq(protocolTemplates.organizationId, orgId))).map(mapProtocolTemplateToLegacy);
 
 		if (seedFailure && templates.length === 0) {
-			// 503, а не 200: список пуст не потому, что протоколов нет, а потому
-			// что их не удалось установить. Причина у сервера установлена только
-			// такая — сама установка не прошла; ЧТО именно отказало (база, права,
-			// связь), сервер здесь не знает и не сочиняет: подробности ушли в
-			// журнал строкой выше.
 			return reply.code(503).send({
 				error: "ClinicalTemplatesSeedFailed",
 				message:
@@ -171,6 +187,21 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 
 	app.get("/api/templates/:id", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read template"))) return;
+
+		const identity = getRequestIdentity(req);
+		const staffRole = identity.role ?? req.user?.role ?? null;
+		if (staffRole) {
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.templates.read",
+					role: staffRole,
+					message: `Отказ в доступе к клиническому протоколу (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+		}
+
 		const { id } = req.params as { id: string };
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
@@ -179,21 +210,21 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 				message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
 			});
 
-		const [template] = await db
+		const [templateRow] = await db
 			.select()
-			.from(visitTemplates)
+			.from(protocolTemplates)
 			.where(
 				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
+					eq(protocolTemplates.id, id),
+					eq(protocolTemplates.organizationId, orgId),
 				),
 			);
 
-		if (!template)
+		if (!templateRow)
 			return reply
 				.code(404)
 				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-		return reply.send({ template });
+		return reply.send({ template: mapProtocolTemplateToLegacy(templateRow) });
 	});
 
 	app.post("/api/templates", async (req, reply) => {
@@ -223,29 +254,31 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 		}
 		const str = (v: unknown): string | undefined =>
 			typeof v === "string" ? v : undefined;
-		const suggestedRaw = parsedBody.data.suggestedProcedureIds;
-		const suggestedProcedureIds = Array.isArray(suggestedRaw)
-			? suggestedRaw.filter((x): x is string => typeof x === "string")
-			: [];
 
 		const [inserted] = await db
-			.insert(visitTemplates)
+			.insert(protocolTemplates)
 			.values({
 				organizationId: orgId,
 				title,
-				category: str(parsedBody.data.category),
-				specialty: str(parsedBody.data.specialty),
-				prefilledAnamnesis: str(parsedBody.data.prefilledAnamnesis),
-				prefilledObjective: str(parsedBody.data.prefilledObjective),
-				prefilledTreatment: str(parsedBody.data.prefilledTreatment),
-				defaultIcd10: str(parsedBody.data.defaultIcd10),
-				defaultIcd10Label: str(parsedBody.data.defaultIcd10Label),
-				suggestedProcedureIds,
-				isBuiltIn: false,
+				visitReason: str(parsedBody.data.category) || "",
+				specialty: (str(parsedBody.data.specialty) as any) || "universal",
+				complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
+				objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
+				treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",
+				diagnosisHints: parsedBody.data.defaultIcd10 ? [String(parsedBody.data.defaultIcd10)] : [],
+				defaultDurationMinutes: 30,
+				requiredDocuments: [],
+				suggestedImaging: [],
+				safetyWarnings: [],
+				updatedAt: new Date(),
 			})
 			.returning();
 
-		return reply.code(201).send({ template: inserted });
+		if (!inserted) {
+			return reply.code(500).send({ error: "FailedToInsertTemplate" });
+		}
+
+		return reply.code(201).send({ template: mapProtocolTemplateToLegacy(inserted) });
 	});
 
 	app.delete("/api/templates/:id", async (req, reply) => {
@@ -261,11 +294,11 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 
 		const [template] = await db
 			.select()
-			.from(visitTemplates)
+			.from(protocolTemplates)
 			.where(
 				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
+					eq(protocolTemplates.id, id),
+					eq(protocolTemplates.organizationId, orgId),
 				),
 			);
 
@@ -273,18 +306,13 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 			return reply
 				.code(404)
 				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-		if (template.isBuiltIn)
-			return reply.code(403).send({
-				error: "CannotDeleteBuiltIn",
-				message: TEMPLATE_BUILT_IN_MESSAGE,
-			});
 
 		await db
-			.delete(visitTemplates)
+			.delete(protocolTemplates)
 			.where(
 				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
+					eq(protocolTemplates.id, id),
+					eq(protocolTemplates.organizationId, orgId),
 				),
 			);
 		return reply.send({ success: true });
@@ -303,8 +331,8 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 		await ensureClinicalTemplatesSeeded(orgId);
 		const templates = await db
 			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
+			.from(protocolTemplates)
+			.where(eq(protocolTemplates.organizationId, orgId));
 		return reply.send({ success: true, count: templates.length });
 	});
 }

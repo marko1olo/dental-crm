@@ -62,16 +62,23 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 			const blockingRule = evaluation.evaluations.find(
 				(e) => !e.resolved && e.severity === "blocker",
 			);
-			if (blockingRule && input.enforceBlockers) {
-				return reply.code(400).send({
-					code: "ClinicalRuleBlocker",
-					error: "ClinicalRuleBlocker",
-					message: `Клиническое противопоказание: ${blockingRule.message}`,
-					ruleId: blockingRule.ruleId,
-					evaluation: blockingRule,
-				});
-			}
-			return clinicalRuleEvaluationResponseSchema.parse(evaluation);
+			const hasWarnings = Boolean(
+				blockingRule ||
+					evaluation.summary.blockers > 0 ||
+					evaluation.summary.warnings > 0,
+			);
+			const warningMessage = blockingRule
+				? `Клиническое противопоказание: ${blockingRule.message}`
+				: null;
+
+			// Мандат 8y (Пассивная безопасность): запрещен серверный отказ 400!
+			// Аллергии и противопоказания возвращаются строкой предупреждения hasWarnings: true,
+			// кнопка «Сохранить» / «Утвердить» всегда остаётся доступной врачу в 1 клик.
+			return clinicalRuleEvaluationResponseSchema.parse({
+				...evaluation,
+				hasWarnings,
+				warningMessage,
+			});
 		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({

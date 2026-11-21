@@ -33,10 +33,11 @@ export async function runDiarySigningCeremony(
 
 	const validation = Icd10ClinicalValidator.validate(diary.diagnosisIcd10, diary.diagnosisTooth?.trim() || undefined);
 	if (!validation.isValid) throw new DiarySigningError(validation.errorCode, validation.errorMessage);
+	const effectiveIcd10 = diary.diagnosisIcd10?.trim() || validation.normalizedCode;
 
 	const hash = computeDiaryHash(
 		diary.visitId, diary.patientId ?? "", diary.anamnesis, diary.statusLocalis,
-		diary.treatmentDescription, diary.diagnosisIcd10, diary.diagnosisTooth,
+		diary.treatmentDescription, effectiveIcd10, diary.diagnosisTooth,
 		diary.complications, diary.comorbidities, diary.instrumentTrayBarcode,
 	);
 	const lockedAt = new Date();
@@ -46,7 +47,7 @@ export async function runDiarySigningCeremony(
 
 	const lockedRows = await tx.update(visitDiaries).set({
 		isLocked: true, lockedAt, lockedByUserId: userId, coSignedByUserId: userId,
-		authorId: userId, doctorId: userId, diaryHash: hash,
+		authorId: userId, doctorId: userId, diagnosisIcd10: effectiveIcd10, diaryHash: hash,
 		cryptoSignaturePkcs7: finalizedSignature, updatedAt: lockedAt,
 	}).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, organizationId), eq(visitDiaries.isLocked, false)))
 	.returning({ id: visitDiaries.id });
@@ -60,7 +61,7 @@ export async function runDiarySigningCeremony(
 	if (diary.visitId) {
 		await syncVisitEmkFromDiarySoap(tx, {
 			visitId: diary.visitId, organizationId, anamnesis: diary.anamnesis, statusLocalis: diary.statusLocalis,
-			diagnosisIcd10: diary.diagnosisIcd10, diagnosisTooth: diary.diagnosisTooth, treatmentDescription: diary.treatmentDescription,
+			diagnosisIcd10: effectiveIcd10, diagnosisTooth: diary.diagnosisTooth, treatmentDescription: diary.treatmentDescription,
 		});
 		await markVisitSigned(tx, { visitId: diary.visitId, organizationId, lockedAt });
 	}

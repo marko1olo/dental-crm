@@ -3,7 +3,7 @@ import type {
 	VisitDraftAutosave,
 	VisitDraftAutosaveRequest,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../client.js";
 import * as schema from "../../schema.js";
 import type { VisitDraftAutosaveLookup } from "../types.js";
@@ -198,7 +198,7 @@ export async function upsertVisitDraftAutosaveInDb(
 
 		if (!saved) throw new Error("Визит не найден");
 
-		// Синхронизация с таблицей visitDiaries (дневники приёма)
+		// Синхронизация с таблицей visitDiaries (дневники приёма) с изоляцией по зубу (Multi-Tooth ACID)
 		if (
 			nextComplaint ||
 			nextAnamnesis ||
@@ -207,6 +207,10 @@ export async function upsertVisitDraftAutosaveInDb(
 			nextTreatmentPlan ||
 			nextTooth
 		) {
+			const toothCondition = nextTooth
+				? eq(schema.visitDiaries.diagnosisTooth, nextTooth)
+				: isNull(schema.visitDiaries.diagnosisTooth);
+
 			const [existingDiary] = await tx
 				.select()
 				.from(schema.visitDiaries)
@@ -214,19 +218,17 @@ export async function upsertVisitDraftAutosaveInDb(
 					and(
 						eq(schema.visitDiaries.visitId, input.visitId),
 						eq(schema.visitDiaries.organizationId, organizationId),
+						toothCondition,
 					),
 				)
 				.limit(1);
-
-			const combinedAnamnesis = [nextComplaint, nextAnamnesis]
-				.filter(Boolean)
-				.join("\n\n");
 
 			if (existingDiary && !existingDiary.isLocked) {
 				await tx
 					.update(schema.visitDiaries)
 					.set({
-						anamnesis: combinedAnamnesis || existingDiary.anamnesis,
+						complaint: nextComplaint || existingDiary.complaint,
+						anamnesis: nextAnamnesis || existingDiary.anamnesis,
 						statusLocalis: nextObjectiveStatus || existingDiary.statusLocalis,
 						diagnosisIcd10: nextDiagnosis || existingDiary.diagnosisIcd10,
 						diagnosisTooth: nextTooth || existingDiary.diagnosisTooth,
@@ -246,7 +248,8 @@ export async function upsertVisitDraftAutosaveInDb(
 					organizationId,
 					visitId: input.visitId,
 					patientId: visit.patientId,
-					anamnesis: combinedAnamnesis || "",
+					complaint: nextComplaint || null,
+					anamnesis: nextAnamnesis || "",
 					statusLocalis: nextObjectiveStatus || "",
 					diagnosisIcd10: nextDiagnosis || "",
 					diagnosisTooth: nextTooth || null,

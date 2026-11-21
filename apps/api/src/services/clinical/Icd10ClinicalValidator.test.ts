@@ -229,21 +229,25 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 	});
 
 	describe("5. Comprehensive Clinical Validation Ceremony", () => {
-		it("fails with Icd10Required when diagnosis code is missing", () => {
+		it("auto-defaults to Z01.2 (Mandates 8e, 8k Doctor Autonomy) when diagnosis code is missing", () => {
 			const res1 = Icd10ClinicalValidator.validate("");
-			assert.equal(res1.isValid, false);
-			if (!res1.isValid) {
-				assert.equal(res1.errorCode, "Icd10Required");
+			assert.equal(res1.isValid, true);
+			if (res1.isValid) {
+				assert.equal(res1.normalizedCode, "Z01.2");
+				assert.equal(res1.baseRubric, "Z01");
 				assert.equal(
-					res1.errorMessage,
-					"Перед подписанием дневника приёма укажите код диагноза по МКБ-10. Сохраните черновик с кодом и повторите подписание.",
+					res1.categoryTitle,
+					"Стоматологическое обследование (профилактический осмотр, гигиена полости рта, санация)",
 				);
+				assert.equal(res1.isToothSpecific, false);
+				assert.deepEqual(res1.parsedTeeth, []);
 			}
 
 			const res2 = Icd10ClinicalValidator.validate(null);
-			assert.equal(res2.isValid, false);
-			if (!res2.isValid) {
-				assert.equal(res2.errorCode, "Icd10Required");
+			assert.equal(res2.isValid, true);
+			if (res2.isValid) {
+				assert.equal(res2.normalizedCode, "Z01.2");
+				assert.equal(res2.baseRubric, "Z01");
 			}
 		});
 

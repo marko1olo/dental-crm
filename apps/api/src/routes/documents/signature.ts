@@ -8,6 +8,7 @@ import { recordAuditEvent } from "../../audit.js";
 import {
 	getDocumentById,
 	issueGeneratedDocumentInDb,
+	writeIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import * as schema from "../../db/schema.js";
@@ -313,12 +314,27 @@ export async function register(app: FastifyInstance) {
 					tx,
 				});
 			} else {
-				// Документ уже был выдан — обновляем векторную подпись в базе данных PostgreSQL 18
+				// Документ уже был выдан — обновляем HTML-снапшот на диске со штампом подписи и фиксируем в PostgreSQL 18
+				const signedDocumentCandidate = {
+					...existing,
+					signatureAttestation,
+					signatureSvg,
+				};
+				const signedHtml = renderDocumentHtml(
+					signedDocumentCandidate,
+					patient,
+					renderContext,
+				);
+				const snapshot = writeIssuedDocumentSnapshot(id, signedHtml);
+
 				await tx
 					.update(schema.generatedDocuments)
 					.set({
 						signatureSvg,
 						signatureAttestation,
+						storagePath: snapshot.snapshotPath,
+						issuedSnapshotSha256: snapshot.sha256,
+						issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
 					})
 					.where(
 						and(
@@ -328,14 +344,7 @@ export async function register(app: FastifyInstance) {
 					);
 
 				// Фиксация в реестре электронных подписей document_signatures для аудита и 63-ФЗ
-				const docSha256 =
-					existing.issuedSnapshotSha256 ||
-					crypto
-						.createHash("sha256")
-						.update(
-							`${existing.id}:${existing.issuedAt ? new Date(existing.issuedAt).toISOString() : effectiveSignedAt}`,
-						)
-						.digest("hex");
+				const docSha256 = snapshot.sha256;
 
 				await tx.insert(schema.documentSignatures).values({
 					organizationId: orgId,

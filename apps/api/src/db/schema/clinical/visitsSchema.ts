@@ -112,35 +112,7 @@ export const egiszMultipleDiagnoses = pgTable(
 	}),
 );
 
-// visit templates (protocol templates for visits)
-export const visitTemplates = pgTable(
-	"visit_templates",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		title: text("title").notNull(),
-		category: text("category"),
-		specialty: text("specialty").notNull().default("universal"),
-		prefilledAnamnesis: text("prefilled_anamnesis"),
-		prefilledObjective: text("prefilled_objective"),
-		prefilledTreatment: text("prefilled_treatment"),
-		defaultIcd10: text("default_icd10"),
-		defaultIcd10Label: text("default_icd10_label"),
-		suggestedProcedureIds: jsonb("suggested_procedure_ids"),
-		templateJson: jsonb("template_json"),
-		isBuiltIn: boolean("is_built_in").notNull().default(false),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("visit_templates_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);
+
 
 // visit diaries (full clinical diary with structured fields)
 export const visitDiaries = pgTable(

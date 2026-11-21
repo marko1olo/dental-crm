@@ -436,6 +436,8 @@ export type ClinicalRuleEvaluationInput = z.infer<
 export const clinicalRuleEvaluationResponseSchema = z.object({
 	evaluations: z.array(clinicalRuleEvaluationSchema),
 	summary: clinicalRuleSummarySchema,
+	hasWarnings: z.boolean().optional(),
+	warningMessage: z.string().nullable().optional(),
 });
 
 export type ClinicalRuleEvaluationResponse = z.infer<

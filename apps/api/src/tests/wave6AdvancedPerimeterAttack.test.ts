@@ -32,7 +32,7 @@ import {
 	users,
 	visitDiaries,
 	visits,
-	visitTemplates,
+	protocolTemplates,
 } from "../db/schema.js";
 import registerDiaryRoutes from "../routes/diary.js";
 import registerEgiszRoutes from "../routes/egisz.js";
@@ -225,18 +225,17 @@ describe("RED-TEAM HAMMER: WAVE 6 — Clinical Protocol & Endodontic Perimeter A
 				.onConflictDoNothing();
 
 			await db
-				.insert(visitTemplates)
+				.insert(protocolTemplates)
 				.values({
 					id: TEMPLATE_ID,
 					organizationId: ORGANIZATION_ID,
 					title: "Эндодонтическое лечение пульпита (K04.0)",
-					category: "Терапия",
-					specialty: "Терапевт-эндодонтист",
-					prefilledAnamnesis: "Боли самопроизвольного характера, усиливающиеся ночью",
-					prefilledObjective: "Зондирование дна полости резко болезненно в одной точке",
-					prefilledTreatment: "Анестезия, коффердам, механическая и медикаментозная обработка каналов",
-					defaultIcd10: "K04.0",
-					defaultIcd10Label: "Острый пульпит",
+					visitReason: "Терапия",
+					specialty: "therapist",
+					complaintPrompt: "Боли самопроизвольного характера, усиливающиеся ночью",
+					objectiveTemplate: "Зондирование дна полости резко болезненно в одной точке",
+					treatmentPlanTemplate: "Анестезия, коффердам, механическая и медикаментозная обработка каналов",
+					diagnosisHints: ["K04.0"],
 				})
 				.onConflictDoNothing();
 		});

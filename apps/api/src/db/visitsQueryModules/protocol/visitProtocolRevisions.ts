@@ -4,7 +4,7 @@ import type {
 	Visit,
 	VisitSaveReceipt,
 } from "@dental/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { visitCloseChecklistFactsFor } from "../../../sampleData.js";
 import { deductMaterialsForVisit } from "../../../services/inventory/materialDeduction.js";
 import { buildVisitCloseChecklist } from "../../../visitCloseChecklist.js";
@@ -13,6 +13,7 @@ import { db } from "../../client.js";
 import { hydrateDomainStateFromDb } from "../../domainStateHydration.js";
 import * as schema from "../../schema.js";
 import { projectVisitRow } from "../../visitsProjection.js";
+import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
 import { VisitSignedResponseIncompleteError } from "../types.js";
 
 /**
@@ -215,6 +216,17 @@ export async function acceptVisitDraftInDb(
 
 		if (!signedRow) throw new Error("Прием не подписан");
 
+		const targetTooth =
+			input.draft.diagnosisTooth != null && String(input.draft.diagnosisTooth).trim() !== ""
+				? String(input.draft.diagnosisTooth).trim()
+				: input.draft.toothNumber != null && String(input.draft.toothNumber).trim() !== ""
+					? String(input.draft.toothNumber).trim()
+					: null;
+
+		const toothCondition = targetTooth
+			? eq(schema.visitDiaries.diagnosisTooth, targetTooth)
+			: isNull(schema.visitDiaries.diagnosisTooth);
+
 		// Синхронизация SSOT с таблицей visitDiaries и фиксация ревизии «Исправленному верить»
 		const [existingDiary] = await tx
 			.select()
@@ -223,6 +235,7 @@ export async function acceptVisitDraftInDb(
 				and(
 					eq(schema.visitDiaries.visitId, input.visitId),
 					eq(schema.visitDiaries.organizationId, organizationId),
+					toothCondition,
 				),
 			)
 			.limit(1);
@@ -232,10 +245,12 @@ export async function acceptVisitDraftInDb(
 				await tx.insert(schema.visitDiaryRevisions).values({
 					organizationId,
 					diaryId: existingDiary.id,
+					previousComplaint: existingDiary.complaint,
 					previousAnamnesis: existingDiary.anamnesis,
 					previousStatusLocalis: existingDiary.statusLocalis,
 					previousDiagnosisIcd10: existingDiary.diagnosisIcd10,
 					previousTreatmentDescription: existingDiary.treatmentDescription,
+					previousDiagnosisTooth: existingDiary.diagnosisTooth,
 					previousComplications: existingDiary.complications,
 					previousComorbidities: existingDiary.comorbidities,
 					previousInstrumentTrayBarcode: existingDiary.instrumentTrayBarcode,
@@ -244,26 +259,66 @@ export async function acceptVisitDraftInDb(
 					revisedAt: savedAt,
 				});
 			}
+
+			const nextComplaint = input.draft.complaint ?? existingDiary.complaint;
+			const nextAnamnesis = input.draft.anamnesis;
+			const nextStatusLocalis = input.draft.objectiveStatus;
+			const nextTreatmentDescription = input.draft.treatmentPlan;
+			const nextDiagnosisIcd10 = input.draft.diagnosis;
+			const nextTooth = targetTooth ?? (existingDiary.diagnosisTooth ? String(existingDiary.diagnosisTooth) : null);
+
+			const newHash = computeDiaryHash(
+				input.visitId,
+				visit.patientId,
+				nextAnamnesis,
+				nextStatusLocalis,
+				nextTreatmentDescription,
+				nextDiagnosisIcd10,
+				nextTooth,
+				existingDiary.complications,
+				existingDiary.comorbidities,
+				existingDiary.instrumentTrayBarcode,
+			);
+
 			await tx
 				.update(schema.visitDiaries)
 				.set({
-					anamnesis: input.draft.anamnesis,
-					statusLocalis: input.draft.objectiveStatus,
-					treatmentDescription: input.draft.treatmentPlan,
-					diagnosisIcd10: input.draft.diagnosis,
+					complaint: nextComplaint,
+					anamnesis: nextAnamnesis,
+					statusLocalis: nextStatusLocalis,
+					treatmentDescription: nextTreatmentDescription,
+					diagnosisIcd10: nextDiagnosisIcd10,
+					diagnosisTooth: nextTooth,
+					diaryHash: newHash,
 					version: (existingDiary.version ?? 1) + 1,
 					updatedAt: savedAt,
 				})
 				.where(eq(schema.visitDiaries.id, existingDiary.id));
 		} else {
+			const newHash = computeDiaryHash(
+				input.visitId,
+				visit.patientId,
+				input.draft.anamnesis,
+				input.draft.objectiveStatus,
+				input.draft.treatmentPlan,
+				input.draft.diagnosis,
+				targetTooth,
+				null,
+				null,
+				null,
+			);
+
 			await tx.insert(schema.visitDiaries).values({
 				organizationId,
 				visitId: input.visitId,
 				patientId: visit.patientId,
+				complaint: input.draft.complaint ?? null,
 				anamnesis: input.draft.anamnesis,
 				statusLocalis: input.draft.objectiveStatus,
 				diagnosisIcd10: input.draft.diagnosis,
+				diagnosisTooth: targetTooth,
 				treatmentDescription: input.draft.treatmentPlan,
+				diaryHash: newHash,
 				content: "",
 				isLocked: false,
 				version: 1,
@@ -274,41 +329,8 @@ export async function acceptVisitDraftInDb(
 
 		let deductionWarning: string | null = null;
 
-		// Списание расходников только при первичной подписи
+		// Списание расходников и блокировка дневника только при первичной подписи
 		if (!isAmendingSigned) {
-			let signingDoctorId: string | null = null;
-			if (visit.appointmentId) {
-				const [appRow] = await tx
-					.select({ doctorUserId: schema.appointments.doctorUserId })
-					.from(schema.appointments)
-					.where(eq(schema.appointments.id, visit.appointmentId))
-					.limit(1);
-				if (appRow?.doctorUserId) {
-					signingDoctorId = appRow.doctorUserId;
-				}
-			}
-
-			try {
-				const deductionResult = await deductMaterialsForVisit(tx, {
-					organizationId,
-					visitId: input.visitId,
-					userId: signingDoctorId,
-					transactionType: "auto_deduct",
-				});
-				if (deductionResult?.hasOverdraft) {
-					deductionWarning =
-						"Мягкий овердрафт склада: часть расходников списана с отрицательным остатком";
-				}
-			} catch (deductionError) {
-				deductionWarning =
-					"Предупреждение: автоматическое списание расходников со склада завершилось с ошибкой, карта сохранена";
-				console.warn(
-					`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
-						"завершилось с ошибкой, но подписание карты приёма продолжено:",
-					deductionError,
-				);
-			}
-
 			// Блокировка записи в visitDiaries
 			await tx
 				.update(schema.visitDiaries)
@@ -324,6 +346,41 @@ export async function acceptVisitDraftInDb(
 						eq(schema.visitDiaries.isLocked, false),
 					),
 				);
+
+			let signingDoctorId: string | null = null;
+			if (visit.appointmentId) {
+				const [appRow] = await tx
+					.select({ doctorUserId: schema.appointments.doctorUserId })
+					.from(schema.appointments)
+					.where(eq(schema.appointments.id, visit.appointmentId))
+					.limit(1);
+				if (appRow?.doctorUserId) {
+					signingDoctorId = appRow.doctorUserId;
+				}
+			}
+
+			try {
+				await tx.transaction(async (subTx) => {
+					const deductionResult = await deductMaterialsForVisit(subTx, {
+						organizationId,
+						visitId: input.visitId,
+						userId: signingDoctorId,
+						transactionType: "auto_deduct",
+					});
+					if (deductionResult?.hasOverdraft) {
+						deductionWarning =
+							"Мягкий овердрафт склада: часть расходников списана с отрицательным остатком";
+					}
+				});
+			} catch (deductionError) {
+				deductionWarning =
+					"Предупреждение: автоматическое списание расходников со склада завершилось с ошибкой, карта сохранена";
+				console.warn(
+					`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
+						"завершилось с ошибкой, но подписание карты приёма продолжено:",
+					deductionError,
+				);
+			}
 		}
 
 		const signedVisit = projectVisitRow(signedRow);
