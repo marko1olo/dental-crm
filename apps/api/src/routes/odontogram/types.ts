@@ -247,6 +247,10 @@ export const treatmentPlanUpsertSchema = z.object({
 		.default("plan_fixed"),
 	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
 	planDiscountRub: z.number().nonnegative().optional().default(0),
+	isInstallment: z.boolean().optional(),
+	installmentMonths: z.number().int().min(1).max(36).optional(),
+	downPaymentKopecks: z.number().int().nonnegative().optional(),
+	monthlyPaymentKopecks: z.number().int().nonnegative().optional(),
 	allowClinicalBlockerOverride: z.boolean().optional().default(true),
 	clinicalBlockerOverrideReason: z.string().trim().max(1000).optional().nullable(),
 });

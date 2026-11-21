@@ -3,6 +3,8 @@ import {
 	type PlanServiceItemForTax,
 	parseKopecks,
 	percentageOfKopecks,
+	rublesToKopecks,
+	kopecksToRubles,
 	calculatePlanTaxDeductionBreakdown,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 } from "@dental/shared";
@@ -12,7 +14,7 @@ import type {
 } from "../types";
 
 export const NDFL_STANDARD_ANNUAL_LIMIT_RUB = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024;
-export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = (ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 * 100) as Kopecks;
+export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = rublesToKopecks(ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024);
 
 /**
  * Расчет налогового вычета 13% НДФЛ.
@@ -51,8 +53,8 @@ export function calculateNdflDeduction(
 		refundKopecks = percentageOfKopecks(baseKopecks, 1300);
 	}
 
-	const refundRub = Math.round(refundKopecks / 100);
-	const totalRub = Math.round(totalKopecks / 100);
+	const refundRub = Math.round(kopecksToRubles(refundKopecks));
+	const totalRub = Math.round(kopecksToRubles(totalKopecks));
 	const finalPriceWithRefundRub = Math.max(0, totalRub - refundRub);
 
 	return {

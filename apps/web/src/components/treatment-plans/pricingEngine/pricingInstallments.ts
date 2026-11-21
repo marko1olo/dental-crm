@@ -1,6 +1,7 @@
 import {
 	type Kopecks,
 	splitKopecks,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { TierInstallmentPlan } from "../types";
 
@@ -34,7 +35,7 @@ export function calculateInstallmentScheduleKopecks(
 
 	const parts = splitKopecks(totalKopecks, months);
 	const monthlyPaymentKopecks = (parts[0] ?? 0) as Kopecks;
-	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+	const monthlyPaymentRub = Math.round(kopecksToRubles(monthlyPaymentKopecks));
 	const basePart = Math.floor(totalKopecks / months);
 	const remainder = (totalKopecks - basePart * months) as Kopecks;
 
@@ -70,7 +71,7 @@ export function computeTierInstallments(
 		if (distributeEvenly) {
 			const parts = splitKopecks(totalKopecks, months);
 			const monthlyPaymentKopecks = (parts[0] ?? 0) as Kopecks;
-			const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+			const monthlyPaymentRub = Math.round(kopecksToRubles(monthlyPaymentKopecks));
 			const remainderKopecks = ((parts[parts.length - 1] ?? 0) - monthlyPaymentKopecks) as Kopecks;
 			return {
 				months,
@@ -88,7 +89,7 @@ export function computeTierInstallments(
 		for (let i = 0; i < months; i++) {
 			parts.push((i === 0 ? basePart + remainder : basePart) as Kopecks);
 		}
-		const monthlyPaymentRub = Math.round(basePart / 100);
+		const monthlyPaymentRub = Math.round(kopecksToRubles(basePart));
 		return {
 			months,
 			monthlyPaymentKopecks: basePart,

@@ -8,7 +8,7 @@
 
 import React, { useState, useMemo } from "react";
 import { CreditCard, ShieldCheck, CheckCircle2, Sparkles, CalendarDays } from "lucide-react";
-import { splitKopecks, formatKopecksToRub, type Kopecks } from "@dental/shared";
+import { splitKopecks, formatKopecksToRub, rublesToKopecks, kopecksToRubles, percentageOfKopecks, type Kopecks } from "@dental/shared";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
 
@@ -34,12 +34,13 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 		}
 	};
 
-	const totalKopecks: Kopecks = (activeTier.totalKopecks ?? activeTier.totalRub * 100) as Kopecks;
+	const totalKopecks: Kopecks = (activeTier.totalKopecks ?? rublesToKopecks(activeTier.totalRub)) as Kopecks;
 	const totalRub = activeTier.totalRub;
 
 	// Расчет вычета НДФЛ 13%
 	const isExpensiveTreatment = totalRub > 150000;
-	const ndflRefundRub = Math.round(totalRub * 0.13);
+	const ndflRefundKopecks = percentageOfKopecks(totalKopecks, 1300);
+	const ndflRefundRub = Math.round(kopecksToRubles(ndflRefundKopecks));
 	const netCostAfterNdfl = Math.max(0, totalRub - ndflRefundRub);
 
 	const selectedParts = useMemo(
@@ -75,7 +76,7 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 					{INSTALLMENT_TERMS.map((months) => {
 						const parts = splitKopecks(totalKopecks, months);
-						const monthlyRub = Math.round((parts[0] ?? 0) / 100);
+						const monthlyRub = Math.round(kopecksToRubles(parts[0] ?? 0));
 						const isSelected = selectedMonths === months;
 
 						return (
