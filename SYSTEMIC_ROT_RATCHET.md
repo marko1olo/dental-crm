@@ -55,6 +55,9 @@
   - `marketing.ts` — ✅ FIXED (2026-11-21, суммы оплат в ROMI метриках через rublesToKopecks)
   - `orthodontics/materialDeduction.ts` — ✅ FIXED (2026-11-21, снос захардкоженного мока 120_000n, учет фактической цены ТМЦ)
   - `treatmentPlanPersonalize.ts` — ✅ FIXED (2026-11-21, снос мока baseTotalRub || 100000)
+  - `sberPosTypes.ts` & `sbpQrEngine.ts` — ✅ FIXED (2026-11-21, снос ручных делений / 100, переход на formatKopecksToRubles и formatKopecksRu)
+  - `useDocumentPatientBillingSummary.ts` & `useFiscalOperations.ts` — ✅ FIXED (2026-11-21, снос / 100 в расчете сумм и налоговых вычетов, kopecksToRubles)
+  - `CheckoutPaymentMethods.tsx` & `InstallmentsPresetCreatorSubView.tsx` — ✅ FIXED (2026-11-21, снос Math.round делений в графике рассрочки, переход на splitKopecks, percentageOfKopecks и formatKopecksRu)
 - **Эталон:** `@dental/shared/src/money.ts` → `formatKopecksToRub`, `rublesToKopecks`, `kopecksToRubles`
 
 ---

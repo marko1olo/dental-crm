@@ -1,4 +1,5 @@
 import { createSetter } from "../createSetter";
+import type { GeneratedDocument } from "@dental/shared";
 import { currentLocalDateTimeInputValue } from "../../../utils/dateUtils";
 import { loadUiPreferences } from "../../../utils/preferencesUtils";
 import {
@@ -118,7 +119,7 @@ export const createDocumentSlice = (
 	),
 	documentAuditFacts: null,
 	selectedDocumentKind: "treatment_plan",
-	setSelectedDocumentKind: createSetter(set, "selectedDocumentKind"),
+	setSelectedDocumentKind: createSetter<GeneratedDocument["kind"]>(set, "selectedDocumentKind"),
 	isDocumentIngesting: false,
 	setIsDocumentIngesting: createSetter(set, "isDocumentIngesting"),
 	setDocumentAuditFacts: createSetter(set, "documentAuditFacts"),

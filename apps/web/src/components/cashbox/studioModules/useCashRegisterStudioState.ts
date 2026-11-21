@@ -10,7 +10,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, formatRubles } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import {
@@ -244,7 +244,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			setActiveTab("checkout");
 
 			showToast(
-				`Применен сплит ДМС: страховая ${Math.round(dms).toLocaleString("ru-RU")} ₽, к доплате ${Math.round(copay).toLocaleString("ru-RU")} ₽`,
+				`Применен сплит ДМС: страховая ${formatRubles(dms)}, к доплате ${formatRubles(copay)}`,
 				"success",
 			);
 		};

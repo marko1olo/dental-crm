@@ -1,4 +1,5 @@
 import { useTelegramSettings } from "../useTelegramSettings";
+import { fetchWithHandling } from "../../utils/networkUtils";
 import {
 	useTelegramBotSettings,
 	useTelegramBroadcastCampaigns,
@@ -16,7 +17,7 @@ export function useTelegramModule(
 	options: UseTelegramModuleOptions,
 ): UseTelegramModuleResult {
 	const telegramSettingsModule = useTelegramSettings({
-		apiFetch: null,
+		apiFetch: fetchWithHandling,
 		setError: options.setError,
 		settingsAdminSecretSession: options.settingsAdminSecretSession || undefined,
 		loadDashboard: options.loadDashboard,

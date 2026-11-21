@@ -25,6 +25,13 @@ export interface SoftPeerPresence {
 	lastSeen: number;
 }
 
+interface PresenceMessagePayload {
+	peers?: SoftPeerPresence[];
+	presence?: SoftPeerPresence;
+	activePeers?: SoftPeerPresence[];
+	staffId?: string;
+}
+
 export interface UseSoftPresenceOptions {
 	visitId?: string | undefined;
 	patientId?: string | undefined;
@@ -157,7 +164,9 @@ export function useSoftPresence(options: UseSoftPresenceOptions = {}): UseSoftPr
 		if (!lastMessage?.type) return;
 
 		const type = lastMessage.type;
-		const payload = lastMessage.payload;
+		const payload = (typeof lastMessage.payload === "object" && lastMessage.payload !== null)
+			? (lastMessage.payload as PresenceMessagePayload)
+			: undefined;
 
 		if (type === "STAFF_PRESENCE_LIST") {
 			if (Array.isArray(payload?.peers)) {
@@ -174,18 +183,19 @@ export function useSoftPresence(options: UseSoftPresenceOptions = {}): UseSoftPr
 		}
 
 		if (type === "STAFF_PRESENCE_UPDATE") {
-			if (payload?.presence && payload.presence.staffId !== identity.staffId) {
+			const presence = payload?.presence;
+			if (presence && presence.staffId !== identity.staffId) {
 				const isRelevant =
-					(visitId && payload.presence.visitId === visitId) ||
-					(patientId && payload.presence.patientId === patientId);
+					(visitId && presence.visitId === visitId) ||
+					(patientId && presence.patientId === patientId);
 
 				if (isRelevant) {
 					setActivePeers((prev) => {
-						const exists = prev.some((p) => p.staffId === payload.presence.staffId);
+						const exists = prev.some((p) => p.staffId === presence.staffId);
 						if (exists) {
-							return prev.map((p) => (p.staffId === payload.presence.staffId ? payload.presence : p));
+							return prev.map((p) => (p.staffId === presence.staffId ? presence : p));
 						}
-						return [...prev, payload.presence];
+						return [...prev, presence];
 					});
 				}
 			} else if (Array.isArray(payload?.activePeers)) {
@@ -214,7 +224,8 @@ export function useSoftPresence(options: UseSoftPresenceOptions = {}): UseSoftPr
 	const summaryText = useMemo(() => {
 		if (activePeers.length === 0) return null;
 		if (activePeers.length === 1) {
-			const peer = activePeers[0]!;
+			const peer = activePeers[0];
+			if (!peer) return null;
 			const roleLabel =
 				peer.role === "doctor"
 					? "Врач"

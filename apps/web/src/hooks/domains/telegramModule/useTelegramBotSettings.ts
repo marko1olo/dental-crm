@@ -7,6 +7,7 @@ import {
 import { useSettingsStore } from "../../../store/settingsStore";
 import { emptyTelegramVisualCardUrlDrafts } from "../../../utils/draftDefaults";
 import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../../workspaceStaticOptions";
+import { fetchWithHandling } from "../../../utils/networkUtils";
 import { useTelegramSettings } from "../../useTelegramSettings";
 import type {
 	UseTelegramBotSettingsOptions,
@@ -60,7 +61,7 @@ export function useTelegramBotSettings({
 	} = useSettingsStore();
 
 	const internalTelegramSettingsModule = useTelegramSettings({
-		apiFetch: null,
+		apiFetch: fetchWithHandling,
 		setError,
 		settingsAdminSecretSession: settingsAdminSecretSession || undefined,
 		loadDashboard,

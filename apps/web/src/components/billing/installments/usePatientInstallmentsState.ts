@@ -13,11 +13,19 @@ import {
 	generateInstallmentContractNumber, recordInstallmentPayment,
 	TREATMENT_INSTALLMENT_PRESETS,
 } from "../installmentsEngine.js";
-import { rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext.js";
 import { usePatientInstallmentsApi, isUuid } from "../usePatientInstallmentsApi.js";
 import type { PatientInstallmentsModalProps, InstallmentsSubView } from "./installmentsTypes.js";
+
+function toInstallmentMonths(months: number): 3 | 6 | 12 | 24 {
+	if (months === 3 || months === 6 || months === 12 || months === 24) return months;
+	if (months <= 4) return 3;
+	if (months <= 8) return 6;
+	if (months <= 18) return 12;
+	return 24;
+}
 
 export function usePatientInstallmentsState(props: PatientInstallmentsModalProps) {
 	const {
@@ -58,7 +66,7 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		const target = itemId ? plan.schedule.find((s) => s.id === itemId) : plan.nextPaymentDueItem || plan.schedule.find((s) => s.paidKopecks < s.amountKopecks);
 		if (!target) { showToast("Все платежи по рассрочке уже оплачены!", "success"); return; }
 		setSelectedPaymentItemId(target.id);
-		setCustomPayAmountRub(((target.amountKopecks - target.paidKopecks) / 100).toFixed(0));
+		setCustomPayAmountRub(String(kopecksToRubles(target.amountKopecks - target.paidKopecks)));
 		setActiveSubView("quick_pay");
 	};
 
@@ -87,12 +95,18 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 
 	const handleCreateNewPlan = async () => {
 		const totalKop = rublesToKopecks(newTotalRubles);
-		const downPaymentKop = Math.round((totalKop * newDownPaymentPercent) / 100);
-		const validMonths = ([3, 6, 12, 24].includes(newMonthsCount) ? newMonthsCount : (newMonthsCount <= 4 ? 3 : (newMonthsCount <= 8 ? 6 : (newMonthsCount <= 18 ? 12 : 24)))) as 3 | 6 | 12 | 24;
+		const downPaymentKop = percentageOfKopecks(totalKop, newDownPaymentPercent * 100);
+		const validMonths = toInstallmentMonths(newMonthsCount);
 		const presetCfg = TREATMENT_INSTALLMENT_PRESETS[selectedPreset];
 
 		if (isUuid(patientId)) {
-			const serverPlan = await installmentsApi.createContract({ patientId, totalAmountRub: newTotalRubles, downPaymentRub: Math.round((newTotalRubles * newDownPaymentPercent) / 100), monthsCount: validMonths, notes: presetCfg.notes });
+			const serverPlan = await installmentsApi.createContract({
+				patientId,
+				totalAmountRub: newTotalRubles,
+				downPaymentRub: kopecksToRubles(downPaymentKop),
+				monthsCount: validMonths,
+				notes: presetCfg.notes,
+			});
 			if (serverPlan) { setPlan(serverPlan); onPlanUpdate?.(serverPlan); setActiveSubView("schedule"); showToast(`Договор рассрочки ${serverPlan.contractNumber} оформлен!`, "success"); return; }
 		}
 

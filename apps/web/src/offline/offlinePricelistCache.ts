@@ -156,8 +156,8 @@ export function cacheNomenclature804nOffline(items: CachedNomenclature804nItem[]
 		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
 			safeLocalStorageSetItem(NOMENCLATURE_STORAGE_KEY, JSON.stringify(bounded));
 		}
-	} catch (e) {
-		// Ignore quota
+	} catch (err) {
+		logger.warn("[offlinePricelistCache] LocalStorage quota exceeded while caching 804n nomenclature:", err);
 	}
 }
 
@@ -182,7 +182,9 @@ export function searchCachedNomenclature804n(query: string, limit = 15): CachedN
 					}
 				}
 			}
-		} catch (e) {}
+		} catch (err) {
+			logger.warn("[offlinePricelistCache] Error restoring 804n nomenclature from localStorage:", err);
+		}
 	}
 
 	if (!trimmed) {
@@ -206,7 +208,8 @@ export function isPricelistCacheStale(): boolean {
 			const limits = getPricelistCacheLimits();
 			return Date.now() - (meta.cachedAt || 0) > limits.ttlMs;
 		}
-	} catch (e) {
+	} catch (err) {
+		logger.warn("[offlinePricelistCache] Error checking pricelist cache freshness:", err);
 		return true;
 	}
 	return false;

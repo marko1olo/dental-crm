@@ -5,6 +5,7 @@ import {
 	type Patient,
 	type Payment,
 	type TreatmentPlanItem,
+	kopecksToRubles,
 	multiplyKopecks,
 	parseKopecks,
 	percentageOfKopecks,
@@ -33,8 +34,7 @@ export function useDocumentPatientBillingSummary({
 		);
 
 		const treatmentLineTotalKopecks = (item: (typeof activePlanItems)[number]) => {
-			const raw = item as unknown as { unitPriceRub?: number; priceRub?: number };
-			const unitKopecks = parseKopecks(raw.unitPriceRub ?? raw.priceRub ?? 0);
+			const unitKopecks = parseKopecks(item.unitPriceRub);
 			const quantity = Math.max(0, Math.round(Number(item.quantity) || 1));
 			const subtotalKopecks = multiplyKopecks(unitKopecks, quantity);
 			const discountKopecks = parseKopecks(item.discountRub ?? 0);
@@ -65,7 +65,7 @@ export function useDocumentPatientBillingSummary({
 		).length;
 
 		let insuranceCoverageKopecks = 0;
-		const contractId = (documentPatient?.administrativeProfile as any)?.insuranceContractId;
+		const contractId = documentPatient?.administrativeProfile?.insuranceContractId;
 		if (contractId) {
 			const contract = dashboard?.insuranceContracts?.find((c) => c.id === contractId);
 			if (contract?.isActive) {
@@ -92,15 +92,15 @@ export function useDocumentPatientBillingSummary({
 		}
 
 		return {
-			totalPlannedRub: totalPlannedKopecks / 100,
-			totalDiscountRub: totalDiscountKopecks / 100,
-			totalPaidRub: totalPaidKopecks / 100,
-			totalDueRub: Math.max(0, totalPlannedKopecks - insuranceCoverageKopecks - totalPaidKopecks) / 100,
-			taxDeductionEligibleRub: taxDeductionEligibleKopecks / 100,
-			draftDocumentAmountRub: draftDocumentAmountKopecks / 100,
+			totalPlannedRub: kopecksToRubles(totalPlannedKopecks),
+			totalDiscountRub: kopecksToRubles(totalDiscountKopecks),
+			totalPaidRub: kopecksToRubles(totalPaidKopecks),
+			totalDueRub: kopecksToRubles(Math.max(0, totalPlannedKopecks - insuranceCoverageKopecks - totalPaidKopecks)),
+			taxDeductionEligibleRub: kopecksToRubles(taxDeductionEligibleKopecks),
+			draftDocumentAmountRub: kopecksToRubles(draftDocumentAmountKopecks),
 			openTreatmentItems: activePlanItems.filter((i) => i.status !== "completed").length,
 			unpaidDocuments,
-			insuranceCoverageRub: insuranceCoverageKopecks / 100,
+			insuranceCoverageRub: kopecksToRubles(insuranceCoverageKopecks),
 		};
 	}, [activePayments, activeTreatmentPlanItems, activeUsableDocuments, dashboard, documentPatient]);
 }

@@ -5,6 +5,7 @@ import {
 	type Patient,
 	type Payment,
 } from "@dental/shared";
+import type { TaxDeductionApplicationForm } from "../../../store/documentStore/types/coreTypes";
 import { useCallback, useEffect, useMemo } from "react";
 import {
 	loadDocumentPaymentSelection,
@@ -38,8 +39,8 @@ export interface UseDocumentTaxPaymentsProps {
 	refundRecipientIdentityDocument: string;
 	setRefundRecipientIdentityDocument: (val: string) => void;
 	setRefundOriginalFiscalReceiptNumber: (val: string) => void;
-	taxApplicationForm: string;
-	setTaxApplicationForm: (val: string) => void;
+	taxApplicationForm: TaxDeductionApplicationForm;
+	setTaxApplicationForm: (val: TaxDeductionApplicationForm | ((prev: TaxDeductionApplicationForm) => TaxDeductionApplicationForm)) => void;
 }
 
 export function useDocumentTaxPayments({

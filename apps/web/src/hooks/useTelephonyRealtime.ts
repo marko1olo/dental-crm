@@ -45,9 +45,10 @@ export function useTelephonyRealtime() {
 
 		if (
 			lastMessage.type === "TELEPHONY_INCOMING_CALL" &&
-			lastMessage.payload
+			lastMessage.payload &&
+			typeof lastMessage.payload === "object"
 		) {
-			const p = lastMessage.payload;
+			const p = lastMessage.payload as Partial<IncomingCallPayload>;
 			triggerIncomingCall({
 				phone: p.phone || "",
 				patientId: p.patientId || null,
@@ -73,7 +74,9 @@ export function useTelephonyRealtime() {
 			useTelephonyStore.getState().endCall();
 			void fetchCallHistory();
 		} else if (lastMessage.type === "TELEPHONY_CALL_STATUS") {
-			const status = lastMessage.payload?.status;
+			const status = (typeof lastMessage.payload === "object" && lastMessage.payload !== null && "status" in lastMessage.payload)
+				? String((lastMessage.payload as { status?: unknown }).status)
+				: undefined;
 			if (status === "connected" || status === "answered") {
 				useTelephonyStore.getState().connectCall();
 			} else if (status === "ended" || status === "hangup" || status === "rejected") {

@@ -128,7 +128,7 @@ export function useDashboardLoaderLogic({
 			}
 			void loadPersistenceHealthRef.current?.({
 				silent: true,
-				adminSecret: options.adminSecret,
+				...(options.adminSecret !== undefined ? { adminSecret: options.adminSecret } : {}),
 			});
 			void refreshSpeechRuntimeRef.current?.({ silent: true });
 		},

@@ -10,6 +10,7 @@
 
 import React from "react";
 import { CreditCard, Gift, ShieldCheck, Wallet } from "lucide-react";
+import { splitKopecks, rublesToKopecks, formatKopecksRu } from "@dental/shared";
 import {
 	type CashboxTenderType,
 	type CashChangeResult,
@@ -207,23 +208,27 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 						Клиника компенсирует банковскую комиссию. Пациент оплачивает лечение равными частями без переплаты.
 					</p>
 					<div className="grid grid-cols-3 gap-2">
-						{([3, 6, 12] as const).map((m) => (
-							<button
-								key={m}
-								type="button"
-								onClick={() => setInstallmentMonths(m)}
-								className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-									installmentMonths === m
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-								}`}
-							>
-								<span className="text-xs font-semibold">{m} месяцев</span>
-								<span className="text-sm font-bold font-mono mt-0.5">
-									{formatRubles(Math.round(effectiveTotalRub / m))}/мес
-								</span>
-							</button>
-						))}
+						{([3, 6, 12] as const).map((m) => {
+							const totalKop = rublesToKopecks(effectiveTotalRub);
+							const [monthlyKop] = splitKopecks(totalKop, m);
+							return (
+								<button
+									key={m}
+									type="button"
+									onClick={() => setInstallmentMonths(m)}
+									className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+										installmentMonths === m
+											? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+									}`}
+								>
+									<span className="text-xs font-semibold">{m} месяцев</span>
+									<span className="text-sm font-bold font-mono mt-0.5">
+										{formatKopecksRu(monthlyKop)}/мес
+									</span>
+								</button>
+							);
+						})}
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs">
 						<span className="text-[var(--muted)]">Банки-партнёры: Т-Банк, Сбербанк, ОТП</span>
@@ -273,7 +278,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							<span>Оплата подарочным сертификатом клиники</span>
 						</span>
 						<span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
-							54-ФЗ: Тег 1215 (Зачёт аванса)
+							Зачёт аванса
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted)]">

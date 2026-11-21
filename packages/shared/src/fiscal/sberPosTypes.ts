@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import { formatKopecksToRubles } from "../money.js";
 
 export const sberPosProtocolSchema = z.enum([
 	"pilot_nt",
@@ -375,7 +376,7 @@ export function formatSberBankSlip(
 		orderId: string;
 	},
 ): string {
-	const amountRub = (data.amountKop / 100).toFixed(2);
+	const amountRub = formatKopecksToRubles(data.amountKop);
 	const copyTitle = data.isCustomerCopy ? "ЧЕК КЛИЕНТА" : "ЧЕК ТЕРМИНАЛА (КОПИЯ ДЛЯ БУХГАЛТЕРИИ)";
 
 	let opTitle = "ОПЛАТА УСЛУГ (БЕЗНАЛИЧНЫЙ РАСЧЕТ)";
@@ -427,11 +428,11 @@ export function formatSberSettlementSlip(
 	config: SberPosTerminalConfig,
 	totals: SberSettlementTotals,
 ): string {
-	const netRub = (totals.netTotalKop / 100).toFixed(2);
-	const saleRub = (totals.saleTotalKop / 100).toFixed(2);
-	const refundRub = (totals.refundTotalKop / 100).toFixed(2);
-	const qrRub = (totals.sberpayQrTotalKop / 100).toFixed(2);
-	const biometryRub = (totals.biometryTotalKop / 100).toFixed(2);
+	const netRub = formatKopecksToRubles(totals.netTotalKop);
+	const saleRub = formatKopecksToRubles(totals.saleTotalKop);
+	const refundRub = formatKopecksToRubles(totals.refundTotalKop);
+	const qrRub = formatKopecksToRubles(totals.sberpayQrTotalKop);
+	const biometryRub = formatKopecksToRubles(totals.biometryTotalKop);
 
 	return [
 		"========================================",
@@ -451,7 +452,7 @@ export function formatSberSettlementSlip(
 		`  - В Т.Ч. SBERPAY QR: ${totals.sberpayQrCount.toString().padStart(4, " ")} | ${qrRub.padStart(12, " ")} Р`,
 		`  - В Т.Ч. БИОМЕТРИЯ:  ${totals.biometryCount.toString().padStart(4, " ")} | ${biometryRub.padStart(12, " ")} Р`,
 		`ВОЗВРАТЫ (REFUND):     ${totals.refundCount.toString().padStart(4, " ")} | ${refundRub.padStart(12, " ")} Р`,
-		`ОТМЕНЫ (VOID):         ${totals.voidCount.toString().padStart(4, " ")} | ${(totals.voidTotalKop / 100).toFixed(2).padStart(12, " ")} Р`,
+		`ОТМЕНЫ (VOID):         ${totals.voidCount.toString().padStart(4, " ")} | ${formatKopecksToRubles(totals.voidTotalKop).padStart(12, " ")} Р`,
 		"----------------------------------------",
 		`ИТОГО В БАНК (NET):               ${netRub} Р`,
 		"----------------------------------------",
@@ -483,6 +484,6 @@ export function generateSberPayQrPayload(
 	amountKop: number,
 	merchantId: string,
 ): string {
-	const amountRub = (kopecksToSberAmount(amountKop) / 100).toFixed(2);
+	const amountRub = formatKopecksToRubles(kopecksToSberAmount(amountKop));
 	return `https://qr.sberbank.ru/sbp/pay?tid=${merchantId}&order=${orderId}&sum=${amountRub}&cur=RUB&mcc=8021`;
 }

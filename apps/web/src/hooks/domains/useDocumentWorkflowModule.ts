@@ -7,6 +7,7 @@ import type {
 	TreatmentPlanItem,
 } from "@dental/shared";
 import { type ClinicProfileDraft, type VisitNoteForm } from "../../AppConstants";
+import type { AppView } from "../../utils/routeUtils";
 import type { useAuthLogic } from "../../hooks/domains/useAuthLogic";
 import { useDocumentStore } from "../../store/documentStore";
 import { compactDocumentText } from "../../utils/documentPayloadUtils";
@@ -31,7 +32,7 @@ export interface DocumentWorkflowModuleProps {
 	clinicalAdminSecretSession: string;
 	setError: (error: string | null) => void;
 	loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
-	setCurrentView: (view: any) => void;
+	setCurrentView: (view: AppView) => void;
 }
 
 export function useDocumentWorkflowModule(props: DocumentWorkflowModuleProps) {
@@ -164,6 +165,6 @@ export function useDocumentWorkflowModule(props: DocumentWorkflowModuleProps) {
 		documentPatientMatchesActiveVisit,
 		medicalRecordExtractDraftVisitId: documentPatientMatchesActiveVisit ? (dashboard?.activeVisit?.id ?? null) : null,
 		inn: documentPatient?.administrativeProfile?.taxpayerInn?.trim() || "",
-		insuranceContractId: (documentPatient?.administrativeProfile as any)?.insuranceContractId || "",
+		insuranceContractId: documentPatient?.administrativeProfile?.insuranceContractId || "",
 	};
 }

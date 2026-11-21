@@ -1,4 +1,5 @@
 import type { Dashboard, GeneratedDocument, PostVisitCareTopic } from "@dental/shared";
+import type { AppView } from "../../../../utils/routeUtils";
 import type { DocumentState } from "../../../../store/documentStore";
 import {
 	telegramCareRequestTaskCareTopics,
@@ -13,7 +14,7 @@ export interface UseDocumentCommunicationTaskProps {
 	dashboard: Dashboard | null;
 	documentState: DocumentState;
 	changePostVisitCareTopic: (topic: PostVisitCareTopic) => void;
-	setCurrentView: (view: any) => void;
+	setCurrentView: (view: AppView) => void;
 	setError: (err: string | null) => void;
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "./kopecksArithmetic.js";
+import { formatKopecksRu, type Kopecks } from "../money.js";
 
 export interface SbpDynamicQrParams {
 	readonly sumRub: number;
@@ -238,8 +239,7 @@ export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDyna
  * Formats an integer amount of kopecks to Russian currency string (e.g. "14 500,00 ₽").
  */
 export function formatKopecksToCurrencyRu(kopecks: number): string {
-	const rub = Math.round(kopecks) / 100;
-	return `${rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
+	return formatKopecksRu(Math.round(kopecks) as Kopecks);
 }
 
 /**

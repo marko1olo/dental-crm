@@ -8,6 +8,7 @@ import type {
 	TreatmentPlanItem,
 } from "@dental/shared";
 import { type ClinicProfileDraft, type VisitNoteForm } from "../../../AppConstants";
+import type { AppView } from "../../../utils/routeUtils";
 import type { DocumentState } from "../../../store/documentStore";
 import { createDocumentFinancialCalculations } from "./documentFinancialCalculations";
 import { useDocumentClinicalAreaValues } from "./derived/useDocumentClinicalAreaValues";
@@ -29,7 +30,7 @@ export interface UseDocumentDerivedValuesProps {
 	documentState: DocumentState;
 	activeUsableDocuments: GeneratedDocument[];
 	selectedPaymentReceiptPayments: Payment[];
-	setCurrentView: (view: any) => void;
+	setCurrentView: (view: AppView) => void;
 	setError: (err: string | null) => void;
 }
 

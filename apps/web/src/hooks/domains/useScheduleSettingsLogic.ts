@@ -1,15 +1,16 @@
 import { useCallback } from "react";
 import { normalizeWorkingDaysDraft } from "../../AppHelpers";
 import { type ClinicProfileDraft } from "../../AppConstants";
+import type { StaffScheduleDraft } from "../../utils/clinicProfileUtils";
 
 export interface ScheduleSettingsLogicProps {
 	setClinicProfileDraft: React.Dispatch<React.SetStateAction<ClinicProfileDraft>>;
 	setClinicProfileDirty: (dirty: boolean) => void;
 	setClinicProfileSaveState: (state: "idle" | "saving" | "error" | "saved") => void;
-	staffScheduleDrafts: Record<string, unknown>;
-	updateStaffScheduleDraft: (id: string, patch: Record<string, unknown>) => void;
-	chairScheduleDrafts: Record<string, unknown>;
-	updateChairScheduleDraft: (id: string, patch: Record<string, unknown>) => void;
+	staffScheduleDrafts: Record<string, StaffScheduleDraft>;
+	updateStaffScheduleDraft: (id: string, patch: Partial<StaffScheduleDraft>) => void;
+	chairScheduleDrafts: Record<string, StaffScheduleDraft>;
+	updateChairScheduleDraft: (id: string, patch: Partial<StaffScheduleDraft>) => void;
 }
 
 export function useScheduleSettingsLogic({
@@ -33,20 +34,22 @@ export function useScheduleSettingsLogic({
 	}, [setClinicProfileDraft, setClinicProfileDirty, setClinicProfileSaveState]);
 
 	const toggleStaffWorkingDay = useCallback((staffId: string, day: number) => {
-		const currentDraft = staffScheduleDrafts[staffId] ?? { workingDays: [] };
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
+		const currentDraft = staffScheduleDrafts[staffId];
+		const currentWorkingDays = currentDraft?.workingDays ?? [];
+		const workingDays = currentWorkingDays.includes(day)
+			? currentWorkingDays.filter((item) => item !== day)
+			: [...currentWorkingDays, day];
 		updateStaffScheduleDraft(staffId, {
 			workingDays: normalizeWorkingDaysDraft(workingDays),
 		});
 	}, [staffScheduleDrafts, updateStaffScheduleDraft]);
 
 	const toggleChairWorkingDay = useCallback((chairId: string, day: number) => {
-		const currentDraft = chairScheduleDrafts[chairId] ?? { workingDays: [] };
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
+		const currentDraft = chairScheduleDrafts[chairId];
+		const currentWorkingDays = currentDraft?.workingDays ?? [];
+		const workingDays = currentWorkingDays.includes(day)
+			? currentWorkingDays.filter((item) => item !== day)
+			: [...currentWorkingDays, day];
 		updateChairScheduleDraft(chairId, {
 			workingDays: normalizeWorkingDaysDraft(workingDays),
 		});

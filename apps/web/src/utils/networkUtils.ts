@@ -1,13 +1,14 @@
 import { logger } from "./logger";
 
 export async function fetchWithHandling(
-	url: string,
+	url: RequestInfo | URL,
 	init?: RequestInit,
 ): Promise<Response> {
+	const urlStr = typeof url === "string" ? url : (url instanceof URL ? url.toString() : url.url);
 	try {
 		const res = await fetch(url, init);
 		if (!res.ok) {
-			const errorMsg = `HTTP ${res.status} ${res.statusText} for ${url}`;
+			const errorMsg = `HTTP ${res.status} ${res.statusText} for ${urlStr}`;
 			logger.error(`[networkUtils] ${errorMsg}`);
 			throw new Error(errorMsg);
 		}
@@ -17,7 +18,7 @@ export async function fetchWithHandling(
 			throw err;
 		}
 		const errorMsg = err instanceof Error ? err.message : String(err);
-		logger.error(`[networkUtils] Fetch error for ${url}: ${errorMsg}`, err);
+		logger.error(`[networkUtils] Fetch error for ${urlStr}: ${errorMsg}`, err);
 		throw err instanceof Error ? err : new Error(errorMsg);
 	}
 }

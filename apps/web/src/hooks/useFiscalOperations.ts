@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { kopecksToRubles } from "@dental/shared";
 import { showToast } from "../components/GlobalToast.js";
 import { FiscalReceiptQueueManager } from "../services/hardware/fiscalReceiptQueueManager.js";
 import type { QueuedFiscalReceiptItem, FiscalReceiptPrintPayload } from "../services/hardware/hardwareTypes.js";
@@ -69,25 +70,37 @@ export function useFiscalOperations() {
 
 	const queueOfflineReceipt = useCallback(
 		async (input: FiscalOperationInput, reason?: string): Promise<QueuedFiscalReceiptItem> => {
-			const rawPayload = input.payload || {};
+			const p = input.payload as unknown as Record<string, unknown>;
+			const rawItems = Array.isArray(p.items) ? p.items : [];
 			const printPayload: FiscalReceiptPrintPayload = {
-				clinicName: rawPayload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-				cashierFullName: rawPayload.cashierFullName || "Кассир",
-				customerContact: rawPayload.customerContact || rawPayload.clientContact || "",
-				operationType: rawPayload.operationType || "income",
-				items: (rawPayload.items || []).map((it: Record<string, unknown>) => ({
-					name: String(it.name || "Стоматологическая услуга"),
-					priceRub: typeof it.priceRub === "number" ? it.priceRub : typeof it.priceKopecks === "number" ? it.priceKopecks / 100 : 0,
-					quantity: typeof it.quantity === "number" ? it.quantity : 1,
-					amountRub: typeof it.amountRub === "number" ? it.amountRub : typeof it.amountKopecks === "number" ? it.amountKopecks / 100 : 0,
-					vatRate: "vat_0",
-				})),
-				totalRub: input.amountRub ?? rawPayload.totalRub ?? (rawPayload.totalKopecks ? rawPayload.totalKopecks / 100 : 0),
-				electronicRub: rawPayload.electronicRub || (rawPayload.payments?.cardRub || 0),
-				cashRub: rawPayload.cashRub || (rawPayload.payments?.cashRub || 0),
-				sbpRub: rawPayload.sbpRub || (rawPayload.payments?.sbpRub || 0),
-				prepaidRub: rawPayload.prepaidRub || 0,
-				visitId: input.visitId || rawPayload.visitId,
+				clinicName: typeof p.clinicName === "string" ? p.clinicName : "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: typeof p.cashierFullName === "string" ? p.cashierFullName : "Кассир",
+				customerContact: typeof p.customerContact === "string" ? p.customerContact : typeof p.clientContact === "string" ? p.clientContact : "",
+				operationType: p.operationType === "income_return" || p.operationType === "expense" || p.operationType === "expense_return" ? p.operationType : "income",
+				items: rawItems.map((it) => {
+					const rec = typeof it === "object" && it !== null ? (it as Record<string, unknown>) : {};
+					const priceRub = typeof rec.priceRub === "number" ? rec.priceRub : typeof rec.priceKopecks === "number" ? kopecksToRubles(rec.priceKopecks) : 0;
+					const amountRub = typeof rec.amountRub === "number" ? rec.amountRub : typeof rec.amountKopecks === "number" ? kopecksToRubles(rec.amountKopecks) : 0;
+					return {
+						name: String(rec.name || "Стоматологическая услуга"),
+						priceRub,
+						quantity: typeof rec.quantity === "number" ? rec.quantity : 1,
+						amountRub,
+						vatRate: "vat_0" as const,
+					};
+				}),
+				totalRub: typeof input.amountRub === "number"
+					? input.amountRub
+					: typeof p.totalRub === "number"
+						? p.totalRub
+						: typeof p.totalKopecks === "number"
+							? kopecksToRubles(p.totalKopecks)
+							: 0,
+				electronicRub: typeof p.electronicRub === "number" ? p.electronicRub : 0,
+				cashRub: typeof p.cashRub === "number" ? p.cashRub : 0,
+				sbpRub: typeof p.sbpRub === "number" ? p.sbpRub : 0,
+				prepaidRub: typeof p.prepaidRub === "number" ? p.prepaidRub : 0,
+				visitId: input.visitId || (typeof p.visitId === "string" ? p.visitId : undefined),
 			};
 
 			const item = FiscalReceiptQueueManager.enqueueReceipt(
