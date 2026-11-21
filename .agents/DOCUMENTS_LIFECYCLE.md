@@ -376,6 +376,49 @@ graph LR
 
 ---
 
+16. **Red Team Фиксер-Хирург: Ликвидация системных язв ЭМК, целостность SHA-256 протокола и суверенитет автономии врача (DEF-DOC14-01...06, Мандаты 8e, 8v, 8x, 8be, 8bd):**
+    * **DEF-DOC14-01 (Целостность SHA-256 хеша дневника приёма — Мандаты 8e, 8v):**
+      В `apps/api/src/services/clinical/signingModules/diaryHashCalculator.ts` в вычисление детерминированного SHA-256 хеша включена секция жалоб (`complaint`, 'S' в SOAP). Из хеша исключен санитарно-технический штрихкод инструментального лотка (`instrumentTrayBarcode`), так как СанПиН-лотки относятся к фоновому циклу автоклавирования, а не к неизменному тексту медицинского протокола приёма. При изменении жалоб хеш гарантированно обновляется.
+    * **DEF-DOC14-02 (Ликвидация блокировки исправления дневников по статусу автоклава — Мандаты 8e, 8v):**
+      В `apps/api/src/routes/diary/revisions/diaryReviseTransaction.ts` и `diaryReviseHandler.ts` ликвидировано блокирующее исключение `InvalidTrayBarcode`. Брак цикла стерилизации лотка в автоклаве — это фоновая отчетность медсестры в журнале СанПиН, которая не должна блокировать врачу у кресла внесение исправлений в протокол приёма («Исправленному верить»).
+    * **DEF-DOC14-03 (Чистый клинический стандарт рецептов без канцелярита и фейковых дат — Мандат 8x):**
+      В `apps/api/src/routes/prescriptions/prescriptionCreateService.ts` и `prescriptionCreateHandler.ts` префикс номера карты пациента заменен с архаичного `043/у-` на канонический `ЭМК-${patient.id.slice(0, 8).toUpperCase()}`. Ликвидирован синтетический фолбек даты рождения `"1990-01-01"`. При отсутствии даты рождения сервер возвращает структурированную ошибку 422 `PatientBirthDateRequired`.
+    * **DEF-DOC14-04 (Дедупликация лекарственных аллергий в личном кабинете):**
+      В `apps/api/src/routes/portal/profile/portalProfileMedicalRecords.ts` внедрена проверка существующих записей в `patientDrugAllergies` перед вставкой, что предотвращает дублирование одних и тех же аллергенов при повторном сохранении анкеты здоровья.
+    * **DEF-DOC14-05 (Динамический подписант справки ФНС для налогового вычета — Мандат 8n):**
+      В `apps/api/src/routes/portal/portalTaxCertRoutes.ts` хардкод `"Главный бухгалтер клиники"` заменен на динамическое получение должностного лица: подписант из настроек организации (`signatoryName`), либо главный врач/руководитель из учетных записей сотрудников, либо `signatoryTitle`.
+    * **DEF-DOC14-06 (Искоренение as any в шаблонах протоколов — Мандат 8be):**
+      В `apps/api/src/routes/templates.ts` полностью убран каст `as any` при сохранении специализации шаблона. Внедрена строгая валидация и нормализация через `DentalSpecialty`.
+    * **Машинные гейты (Machine Gates):**
+      - `npm run typecheck -w @dental/api`: **Exit Code 0 (0 ошибок компилятора)**.
+      - `npx tsx --test apps/api/src/tests/routes/prescriptions.test.ts`: **9/9 тестов PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/services/clinical/DiarySigningCeremonyService.test.ts`: **7/7 тестов PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/tests/routes/visitSoapMultiToothAndDiaryHashAudit.test.ts`: **3/3 теста PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts`: **21/21 тест PASS (Exit Code 0)**.
+
+---
+
+17. **Red Team Фиксер-Хирург: Профиль пациента, ИДС, Семейный кошелек и Справки ФНС (DEF-PAT17-01...05, Мандаты 8bm, 8be, 8x, 8ap, 8bo):**
+    * **DEF-PAT17-01 (Целочисленный BigInt расчет 13% вычета ФНС — Мандат 8bm):**
+      В `apps/api/src/services/familyWallet/familyFnsTaxService.ts:343` ликвидированы `Math.round` и float-деление. Расчет возврата переведен на целочисленный `BigInt`: `Number((BigInt(totalEligibleKopecks) * 13n) / 100n)` с переводом через `kopecksToRubles`, исключив расхождения в копейках.
+    * **DEF-PAT17-02 (Строгая типизация транзакции согласий без any — Мандат 8be):**
+      В `apps/api/src/routes/consents/queries.ts:246-258` тип параметра `tx?: any` заменен на канонический союз `DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]`, устранен слепой каст `as typeof db`.
+    * **DEF-PAT17-03 (Изоляция расходов пациента в справке ФНС — Приказ № ЕА-7-11/824@):**
+      В `apps/api/src/routes/portal/portalTaxCertRoutes.ts:220` расчет медицинских расходов ограничен строго запрашивающим пациентом (`targetPatientIds = [patientId]`). Исключено незаконное смешивание оплат других членов семьи под именем одного заявителя.
+    * **DEF-PAT17-04 (Семантический нейминг флагов ИДС без номеров приказов — Мандаты 8x, 8ap):**
+      В `apps/web/src/components/consents/consentSsotEngine.ts:54`, `consentSummaryHelper.ts` и `consentTemplates.ts` внедрен чистый флаг `CONSENT_PRIMARY_INSPECTION` («Информированное добровольное согласие на первичный осмотр и обследование») с сохранением обратной совместимости по алиасу `CONSENT_INSPECTION_1051N`.
+    * **DEF-PAT17-05 (Автоматическая преемственность главы семьи — Мандат 8bo):**
+      В `apps/api/src/routes/family/familyGroupWriteRoutes.ts:311` при удалении текущего главы семейного кошелька роль главы автоматически передается следующему совершеннолетнему члену группы с сохранением прав списания `ensureFamilyMemberSpendAuthorization`, предотвращая возникновение «безголовых» групп и ошибок 422/400.
+    * **Машинные гейты (Machine Gates):**
+      - `npx tsx --test apps/api/src/tests/routes/redTeamFixerSurgeonPatientDomain.test.ts`: **4/4 тестов PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/services/familyWallet/__tests__/familyWalletService.test.ts`: **5/5 тестов PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/tests/routes/patientPortal.test.ts apps/api/src/tests/routes/portalRoutes.test.ts`: **11/11 тестов PASS (Exit Code 0)**.
+      - `npx vitest run apps/web/src/tests/informedConsent.test.ts`: **12/12 тестов PASS (Exit Code 0)**.
+      - `tsc --noEmit` Exit Code 0 во всех модифицированных файлах API и Web.
+      - `npm run check:encoding`: **Exit Code 0 (20048 файлов проверено)**.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.
