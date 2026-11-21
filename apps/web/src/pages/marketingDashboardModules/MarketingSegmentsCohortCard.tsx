@@ -8,6 +8,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ChevronRight, Sparkles, Users } from "lucide-react";
+import { formatKopecksToRub } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
 import { DEFAULT_PATIENT_SEGMENTS } from "../../components/marketing/marketingPresets";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -111,7 +112,7 @@ export function MarketingSegmentsCohortCard({
 						</p>
 						{typeof seg.revenueKopecks === "number" && seg.revenueKopecks > 0 && (
 							<div className="text-[11px] font-medium text-[var(--muted)]">
-								Выручка: {Math.round(seg.revenueKopecks / 100).toLocaleString("ru-RU")} ₽
+								Выручка: {formatKopecksToRub(seg.revenueKopecks)}
 							</div>
 						)}
 						<button

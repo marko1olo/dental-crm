@@ -57,7 +57,6 @@ export const MarketingNewPromoForm: React.FC<MarketingNewPromoFormProps> = ({
 		};
 
 		onSave(newPromo);
-		showToast(`Акция «${trimmedTitle}» успешно создана!`, "info");
 		onClose();
 	};
 
