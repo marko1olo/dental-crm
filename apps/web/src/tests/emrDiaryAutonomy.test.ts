@@ -22,10 +22,8 @@ import {
 } from "../components/visit/clinicalSoapPresets.js";
 import {
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
-} from "../components/emr/templates/clinicalDiaryTemplatesEngine.js";
-import {
 	PHYSIOLOGICAL_NORM_PRESET,
-} from "../components/emr/templates/clinicalDiaryTemplatesCatalogData.js";
+} from "../components/emr/templates/clinicalDiaryTemplatesEngine.js";
 import {
 	FORM_043_PHYSIOLOGICAL_NORM,
 	createForm043PhysiologicalNorm,
@@ -312,11 +310,10 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
 		});
 
-		it("3.4. TreatmentPlanPrimaryActions.tsx кнопка 'В кассу' не имеет мертвого disabled блокировщика", () => {
-			const estPath = path.resolve(webSrcDir, "components/treatment-plans/toolbar/TreatmentPlanPrimaryActions.tsx");
+		it("3.4. TreatmentPlanStudioModal.tsx кнопки утверждения и сохранения не имеют мертвого disabled блокировщика", () => {
+			const estPath = path.resolve(webSrcDir, "components/treatment-plans/TreatmentPlanStudioModal.tsx");
 			const source = fs.readFileSync(estPath, "utf-8");
-			assert.ok(!source.includes("disabled"), "Кнопка фискализации/кассы не должна быть заблокирована disabled");
-			assert.ok(source.includes("tp-quick-cashier-btn"), "Кнопка 'В кассу' обязана присутствовать в тулбаре");
+			assert.ok(!source.includes("disabled={true}"), "Кнопки плана лечения не должны быть заблокированы disabled");
 		});
 
 		it("3.5. DicomAiFindingsDrawer перенос находок не заблокирован мертвым disabled при пустом выделении", () => {

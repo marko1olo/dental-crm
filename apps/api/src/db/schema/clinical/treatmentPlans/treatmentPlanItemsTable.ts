@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -112,6 +113,10 @@ export const treatmentItems = pgTable(
 			() => treatmentPlans.id,
 			{ onDelete: "set null" },
 		),
+		treatmentPlanItemId: uuid("treatment_plan_item_id").references(
+			() => treatmentPlanItemsNew.id,
+			{ onDelete: "set null" },
+		),
 		invoiceId: uuid("invoice_id").references(
 			() => patientInvoices.id,
 			{ onDelete: "set null" },
@@ -167,6 +172,9 @@ export const treatmentItems = pgTable(
 		treatmentPlanIdIdx: index("treatment_items_treatment_plan_id_idx").on(
 			t.treatmentPlanId,
 		),
+		treatmentPlanItemIdIdx: index("treatment_items_treatment_plan_item_id_idx").on(
+			t.treatmentPlanItemId,
+		),
 		invoiceIdIdx: index("treatment_items_invoice_id_idx").on(t.invoiceId),
 		serviceIdIdx: index("treatment_items_service_id_idx").on(t.serviceId),
 		plannedDoctorUserIdIdx: index(
@@ -186,7 +194,9 @@ export const treatmentPlanItemsNew = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		planId: uuid("plan_id").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => treatmentPlans.id, { onDelete: "cascade" }),
 		stageId: uuid("stage_id").references(() => treatmentPlanStages.id, {
 			onDelete: "set null",
 		}),
@@ -198,6 +208,8 @@ export const treatmentPlanItemsNew = pgTable(
 		discount: numeric("discount", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0"),
+		priceKopecks: bigint("price_kopecks", { mode: "number" }).notNull().default(0),
+		discountKopecks: bigint("discount_kopecks", { mode: "number" }).notNull().default(0),
 		phase: integer("phase").notNull().default(1),
 		isBundle: boolean("is_bundle").notNull().default(false),
 		commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })

@@ -254,6 +254,11 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(confirmBody.signature.method, "pep_sms");
 		assert.equal(confirmBody.signature.signerName, "Смирнов Алексей Павлович");
 		assert.equal(confirmBody.treatmentPlan.status, "Approved");
+		assert.ok(confirmBody.invoice || confirmBody.createdInvoice, "Invoice must be created on PEP signing");
+		const createdInv = confirmBody.invoice || confirmBody.createdInvoice;
+		assert.equal(createdInv.patientId, PATIENT_ID);
+		assert.equal(createdInv.status, "draft");
+		assert.ok(createdInv.id);
 	});
 
 	test("4. GET /api/treatment-plans lists plans with patientId filter and organization isolation", async () => {
@@ -296,6 +301,10 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 				name: "Обновленный план лечения",
 				planDiscountPercent: 10,
 				planDiscountRub: 1500,
+				curatorName: "Иванова Мария (Координатор)",
+				curatorFunnelStage: "decision_making",
+				curatorNextContactDate: "2026-12-01",
+				curatorNotes: "Пациент запросил расчет рассрочки на 6 месяцев",
 			},
 		});
 
@@ -304,6 +313,9 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(updateBody.success, true);
 		assert.equal(updateBody.plan.name, "Обновленный план лечения");
 		assert.equal(updateBody.plan.planDiscountPercent, 10);
+		assert.equal(updateBody.plan.curatorName, "Иванова Мария (Координатор)");
+		assert.equal(updateBody.plan.curatorFunnelStage, "decision_making");
+		assert.equal(updateBody.plan.curatorNotes, "Пациент запросил расчет рассрочки на 6 месяцев");
 	});
 
 	test("6. POST /api/treatment-plans/:id/approve marks plan as Approved", async () => {

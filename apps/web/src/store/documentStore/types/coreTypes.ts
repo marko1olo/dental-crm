@@ -15,6 +15,12 @@ import type {
 	DocumentPackagePresetOptions,
 } from "../../../utils/documentPackages";
 
+export type {
+	TaxDeductionApplicationDeliveryChannel,
+	TaxDeductionApplicationForm,
+	TaxDeductionApplicationRelationship,
+};
+
 export type MedicalDocumentReleaseChannel =
 	| "paper"
 	| "pdf"

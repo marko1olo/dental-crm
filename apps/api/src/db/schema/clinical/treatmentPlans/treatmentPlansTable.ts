@@ -105,6 +105,12 @@ export const treatmentPlans = pgTable(
 		installmentMonths: integer("installment_months"),
 		downPaymentKopecks: bigint("down_payment_kopecks", { mode: "number" }),
 		monthlyPaymentKopecks: bigint("monthly_payment_kopecks", { mode: "number" }),
+		// Куратор плана лечения (координатор заботы / воронка)
+		curatorId: uuid("curator_id").references(() => users.id),
+		curatorName: text("curator_name"),
+		curatorFunnelStage: text("curator_funnel_stage"),
+		curatorNextContactDate: text("curator_next_contact_date"),
+		curatorNotes: text("curator_notes"),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -118,6 +124,7 @@ export const treatmentPlans = pgTable(
 		),
 		patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId),
 		doctorIdIdx: index("treatment_plans_doctor_id_idx").on(t.doctorId),
+		curatorIdIdx: index("treatment_plans_curator_id_idx").on(t.curatorId),
 		planGroupIdIdx: index("treatment_plans_plan_group_id_idx").on(
 			t.planGroupId,
 		),

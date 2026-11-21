@@ -371,7 +371,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 					{/* Вкладка: Куратор плана */}
 					{activeTab === "curator" && (
-						<StudioCuratorAssignmentTab doctorFullName={doctorFullName || undefined} />
+						<StudioCuratorAssignmentTab
+							planId={propPlanId}
+							doctorFullName={doctorFullName || undefined}
+						/>
 					)}
 				</main>
 

@@ -113,6 +113,7 @@ export interface ToothClinicalServicePayload {
 	readonly discountPercent?: number | undefined;
 	readonly quantity?: number | undefined;
 	readonly category?: string | undefined;
+	readonly labOrderId?: string | undefined;
 	readonly labCostRub?: number | undefined;
 	readonly labCostKopecks?: number | undefined;
 }

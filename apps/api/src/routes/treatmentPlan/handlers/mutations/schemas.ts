@@ -65,6 +65,11 @@ export const updateTreatmentPlanSchema = z.object({
 	discountMode: z.string().optional(),
 	planDiscountPercent: z.number().min(0).max(100).optional(),
 	planDiscountRub: z.number().nonnegative().optional(),
+	curatorId: z.string().uuid().nullable().optional(),
+	curatorName: z.string().trim().nullable().optional(),
+	curatorFunnelStage: z.string().trim().nullable().optional(),
+	curatorNextContactDate: z.string().trim().nullable().optional(),
+	curatorNotes: z.string().trim().nullable().optional(),
 });
 
 export const updateTreatmentPlanStatusSchema = z.object({

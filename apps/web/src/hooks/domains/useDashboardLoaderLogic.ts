@@ -19,7 +19,7 @@ export interface DashboardLoaderLogicProps {
 				adminSecret?: string,
 			) => Record<string, string>;
 			[key: string]: unknown;
-		};
+		} | null;
 	};
 	setDashboard: (dashboard: Dashboard | null) => void;
 	setAccessUnlockRequired: (required: boolean) => void;
@@ -61,7 +61,9 @@ export function useDashboardLoaderLogic({
 			try {
 				const response = await fetch("/api/dashboard", {
 					cache: "no-store",
-					headers: authRef.current.denteClinicalReadHeaders({}, options.adminSecret),
+					headers: authRef.current
+						? authRef.current.denteClinicalReadHeaders({}, options.adminSecret)
+						: {},
 				});
 				if (!response.ok) {
 					const message = await responseErrorMessage(

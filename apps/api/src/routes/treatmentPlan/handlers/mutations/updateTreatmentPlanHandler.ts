@@ -46,6 +46,11 @@ export async function handleUpdateTreatmentPlan(
 	if (data.discountMode !== undefined) updatePayload.discountMode = data.discountMode;
 	if (data.planDiscountPercent !== undefined) updatePayload.planDiscountPercent = data.planDiscountPercent;
 	if (data.planDiscountRub !== undefined) updatePayload.planDiscountRub = data.planDiscountRub;
+	if (data.curatorId !== undefined) updatePayload.curatorId = data.curatorId;
+	if (data.curatorName !== undefined) updatePayload.curatorName = data.curatorName;
+	if (data.curatorFunnelStage !== undefined) updatePayload.curatorFunnelStage = data.curatorFunnelStage;
+	if (data.curatorNextContactDate !== undefined) updatePayload.curatorNextContactDate = data.curatorNextContactDate;
+	if (data.curatorNotes !== undefined) updatePayload.curatorNotes = data.curatorNotes;
 
 	const [updatedPlan] = await db
 		.update(treatmentPlans)

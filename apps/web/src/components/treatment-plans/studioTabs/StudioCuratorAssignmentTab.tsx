@@ -4,11 +4,16 @@
  */
 
 import React, { useState } from "react";
-import { UserCheck, Calendar, FileText, CheckCircle2 } from "lucide-react";
+import { UserCheck, Calendar, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAppStore } from "../../../store/appStore";
 
 export interface StudioCuratorAssignmentTabProps {
 	readonly doctorFullName?: string | undefined;
+	readonly planId?: string | null | undefined;
+	readonly initialCuratorId?: string | null | undefined;
+	readonly initialFunnelStage?: string | null | undefined;
+	readonly initialNextContactDate?: string | null | undefined;
+	readonly initialNotes?: string | null | undefined;
 	readonly onSaveCuratorSettings?: ((settings: {
 		curatorId: string;
 		curatorName: string;
@@ -20,6 +25,11 @@ export interface StudioCuratorAssignmentTabProps {
 
 export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProps> = ({
 	doctorFullName = "Лечащий врач",
+	planId,
+	initialCuratorId,
+	initialFunnelStage,
+	initialNextContactDate,
+	initialNotes,
 	onSaveCuratorSettings,
 }) => {
 	const dashboard = useAppStore((s) => s.dashboard);
@@ -29,17 +39,60 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 		role: s.role,
 	}));
 
-	const [selectedCuratorId, setSelectedCuratorId] = useState<string>("doctor_self");
-	const [funnelStage, setFunnelStage] = useState<string>("decision_making");
+	const [selectedCuratorId, setSelectedCuratorId] = useState<string>(initialCuratorId || "doctor_self");
+	const [funnelStage, setFunnelStage] = useState<string>(initialFunnelStage || "decision_making");
 	const [nextContactDate, setNextContactDate] = useState<string>(
-		new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] || ""
+		initialNextContactDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] || ""
 	);
-	const [notes, setNotes] = useState<string>("");
+	const [notes, setNotes] = useState<string>(initialNotes || "");
 	const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const handleSave = () => {
+	const handleSave = async () => {
+		setSaveError(null);
 		const curatorObj = staffList.find((s) => s.id === selectedCuratorId);
 		const curatorName = selectedCuratorId === "doctor_self" ? doctorFullName : curatorObj?.name || doctorFullName;
+		const actualCuratorId = selectedCuratorId === "doctor_self" ? null : (selectedCuratorId || null);
+
+		const isValidUuid = typeof planId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId);
+
+		if (isValidUuid && typeof window !== "undefined" && typeof window.fetch === "function") {
+			setIsSaving(true);
+			try {
+				const res = await fetch(`/api/treatment-plans/${encodeURIComponent(planId)}`, {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						curatorId: actualCuratorId,
+						curatorName,
+						curatorFunnelStage: funnelStage,
+						curatorNextContactDate: nextContactDate || null,
+						curatorNotes: notes || null,
+					}),
+				});
+
+				if (!res.ok) {
+					const errJson = await res.json().catch(() => ({}));
+					const errMsg = errJson?.message || errJson?.error || "Ошибка сохранения настроек куратора на сервере";
+					setSaveError(errMsg);
+					setIsSaving(false);
+					return;
+				}
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : "Сетевой сбой при обращении к серверу";
+				setSaveError(errMsg);
+				setIsSaving(false);
+				return;
+			}
+			setIsSaving(false);
+		} else if (!onSaveCuratorSettings && !planId) {
+			// Мандат 8e / T.A.R.S.: Запрет бутафорского тоста успеха при отсутствии реальной персистенции
+			setSaveError("План лечения ещё не сохранён в базе данных. Сохраните черновик плана для фиксации куратора.");
+			return;
+		}
 
 		if (onSaveCuratorSettings) {
 			onSaveCuratorSettings({
@@ -50,6 +103,7 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 				notes,
 			});
 		}
+
 		setSaveSuccess(true);
 		setTimeout(() => setSaveSuccess(false), 2500);
 	};
@@ -60,7 +114,15 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 			{saveSuccess && (
 				<div className="p-3 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-2 animate-in fade-in">
 					<CheckCircle2 className="w-4 h-4 shrink-0" />
-					<span>Настройки куратора плана успешно обновлены!</span>
+					<span>Настройки куратора плана успешно сохранены в базе данных!</span>
+				</div>
+			)}
+
+			{/* Сообщение об ошибке */}
+			{saveError && (
+				<div className="p-3 rounded-xl bg-[var(--danger-soft,rgba(239,68,68,0.1))] border border-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] text-xs font-medium flex items-center gap-2 animate-in fade-in">
+					<AlertCircle className="w-4 h-4 shrink-0" />
+					<span>{saveError}</span>
 				</div>
 			)}
 

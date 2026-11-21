@@ -144,23 +144,19 @@ export async function handleSignTreatmentPlanPep(
 					? Number(updated.planDiscountRub)
 					: (plan.planDiscountRub ? Number(plan.planDiscountRub) : 0),
 			});
+
+			await tx.insert(auditEvents).values({
+				organizationId,
+				actorUserId: null,
+				entityType: "treatment_plan",
+				entityId: planId,
+				action: "TREATMENT_PLAN_SIGNED_PEP",
+				reason: `План лечения «${plan.name}» успешно утвержден и подписан через ПЭП (${pepMethodKey})`,
+			});
 		}
 
 		return { signedPlan: updated, createdInvoice: invoice };
 	});
-
-	try {
-		await db.insert(auditEvents).values({
-			organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: planId,
-			action: "TREATMENT_PLAN_SIGNED_PEP",
-			reason: `План лечения «${plan.name}» успешно утвержден и подписан через ПЭП (${pepMethodKey})`,
-		});
-	} catch (auditErr) {
-		request.log.warn({ err: auditErr }, "Не удалось записать аудит подписания ПЭП");
-	}
 
 	activeOtpCache.delete(planId);
 	wsBroker.broadcastToOrganization(organizationId, {
