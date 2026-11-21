@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Single-Door SSOT & Anti-Duplicate Allowlist",
+  "description": "Авторитетный вайтлист легаси-исключений для scripts/check-single-doors.mjs. Каждая запись содержит конкретное техническое обоснование.",
+  "ui_sacred_clones_allowlist": [
+    {
+      "file": "apps/web/src/components/visit/PrescriptionModal.tsx",
+      "canonical": "apps/web/src/components/prescriptions/PrescriptionModal.tsx",
+      "reason": "Мандат 8s: Канонический тонкий фасад-реэкспорт для обратной совместимости вызовов из экрана визита"
+    }
+  ],
+  "ui_orphan_modals_legacy_backlog": [
+    {
+      "file": "apps/web/src/components/billing/PatientInstallmentsModal.tsx",
+      "reason": "Легаси-модалка рассрочек пациентов. Планируется к переносу в каноническую CashRegisterStudioModal"
+    },
+    {
+      "file": "apps/web/src/components/billing/QuickCreateInvoiceModal.tsx",
+      "reason": "Легаси-модалка быстрого счета. Вытеснена кассой 54-ФЗ и планами лечения"
+    },
+    {
+      "file": "apps/web/src/components/billing/RetailProductsModal.tsx",
+      "reason": "Легаси-модалка розничных товаров. Интегрируется в прейскурант и кассу"
+    },
+    {
+      "file": "apps/web/src/components/doctor/pieceRateWallet/ReconciliationModal.tsx",
+      "reason": "Модалка сверки сдельной оплаты труда врача. Управляется через DoctorPayrollStudioModal"
+    },
+    {
+      "file": "apps/web/src/components/finance/refunds/RefundServiceModal.tsx",
+      "reason": "Модалка возврата услуги. Интегрирована в чекаут кассы и смену"
+    },
+    {
+      "file": "apps/web/src/components/hardware/HardwareSettingsModal.tsx",
+      "reason": "Модалка настройки периферийного оборудования (ККТ, визиографы, сканеры)"
+    },
+    {
+      "file": "apps/web/src/components/imaging/dicomToolboxRibbonModules/DicomBoneDensityModal.tsx",
+      "reason": "Субкомпонент тулбокса КЛКТ для замера плотности кости по Хаунсфилду (HU)"
+    },
+    {
+      "file": "apps/web/src/components/inventory/bomModules/MaterialBomEditModal.tsx",
+      "reason": "Складская модалка редактирования техкарт расхода материалов (BOM)"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryItemFormModal.tsx",
+      "reason": "Складская форма создания номенклатурной позиции"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryStockAdjustModal.tsx",
+      "reason": "Складская форма корректировки остатков"
+    },
+    {
+      "file": "apps/web/src/components/inventory/MaterialBomsDeleteModal.tsx",
+      "reason": "Складская форма удаления спецификации техкарты"
+    },
+    {
+      "file": "apps/web/src/components/inventory/MaterialBomsQuickCatalogModal.tsx",
+      "reason": "Складская форма быстрого каталога техкарт"
+    },
+    {
+      "file": "apps/web/src/components/inventory/MaterialBomsRuleModal.tsx",
+      "reason": "Складская форма правил автоматического списания по процедурам"
+    },
+    {
+      "file": "apps/web/src/components/inventory/WarehouseBatchTrackingModal.tsx",
+      "reason": "Складская форма партионного учета и серий FEFO"
+    },
+    {
+      "file": "apps/web/src/components/inventory/WarehouseInventoryAuditModal.tsx",
+      "reason": "Складская форма инвентаризационной описи бэк-офиса"
+    },
+    {
+      "file": "apps/web/src/components/inventory/waybillsTab/ExpressWaybillModal.tsx",
+      "reason": "Складская экспресс-накладная прихода материалов"
+    },
+    {
+      "file": "apps/web/src/components/inventory/waybillsTab/WaybillEditorModal.tsx",
+      "reason": "Складской редактор приходных накладных поставщиков"
+    },
+    {
+      "file": "apps/web/src/components/mdlp/seniorNurseAct/SeniorNursePurchaseOrderModal.tsx",
+      "reason": "Форма наряда-заказа старшей медсестры для аптечного склада"
+    },
+    {
+      "file": "apps/web/src/components/mdlp/SeniorNurseDisposalActModal.tsx",
+      "reason": "Форма акта утилизации лекарственных средств и ампул по СанПиН"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mobileViewer/MobileAiAnalyzingModal.tsx",
+      "reason": "Мобильный индикатор анализа рентген-снимка искусственным интеллектом"
+    },
+    {
+      "file": "apps/web/src/components/radiology/RadiationSafetyRegistryModal.tsx",
+      "reason": "Журнал учета лучевых нагрузок пациентов (дозиметрия СанПиН)"
+    },
+    {
+      "file": "apps/web/src/components/visit/PrescriptionModal.tsx",
+      "reason": "Канонический фасад Мандата 8s для рецептурных бланков из окна визита"
+    }
+  ],
+  "api_mutation_doors_legacy_backlog": [
+    {
+      "pattern": "* /api/agent/*",
+      "reason": "Стриминговый чат соло-копилота, валидация через кастомный протокол SSE/WebSocket"
+    },
+    {
+      "pattern": "* /api/audit*",
+      "reason": "Фоновый журнал аудита безопасности, внутренний контракт fastify"
+    },
+    {
+      "pattern": "* /api/auth*",
+      "reason": "Маршруты аутентификации клиники и персонала, специфичный парсер токенов и PIN-кодов"
+    },
+    {
+      "pattern": "* /api/billing*",
+      "reason": "Легаси маршруты биллинга, валидация внутри транзакционных обработчиков"
+    },
+    {
+      "pattern": "* /api/payments*",
+      "reason": "Шлюз проведения оплат, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "* /api/finance*",
+      "reason": "Финансовые отчеты и операции, валидация внутри финансовых сервисов"
+    },
+    {
+      "pattern": "* /api/v1/billing*",
+      "reason": "Шлюз проведения оплат v1, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "* /api/v1/finance*",
+      "reason": "Шлюз проведения оплат v1, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "* /api/invoices*",
+      "reason": "Оплата инвойса, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "* /api/v1/invoices*",
+      "reason": "Оплата инвойса v1, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "* /api/cash*",
+      "reason": "Кассовые и фискальные операции 54-ФЗ, валидация внутри CashboxPaymentProcessor"
+    },
+    {
+      "pattern": "* /api/cashbox*",
+      "reason": "Кассовые операции кассы 54-ФЗ, валидация внутри кассовых процессоров"
+    },
+    {
+      "pattern": "* /api/fiscal*",
+      "reason": "Фискальные очереди и чеки 54-ФЗ, валидация в KktLanPrinterService"
+    },
+    {
+      "pattern": "* /api/commerceml*",
+      "reason": "Интеграция CommerceML 1С, парсинг XML-документов"
+    },
+    {
+      "pattern": "* /api/v1/integrations/1c/commerceml*",
+      "reason": "Интеграция CommerceML 1С v1, XML-поток"
+    },
+    {
+      "pattern": "* /api/communications*",
+      "reason": "Входящие вебхуки провайдеров SMS (SMS.RU, SMSC), кастомная верификация подписи"
+    },
+    {
+      "pattern": "* /api/dicomweb*",
+      "reason": "DICOMweb STOW-RS/WADO протоколы, бинарный multipart/related поток DICOM"
+    },
+    {
+      "pattern": "* /api/clinical/egisz*",
+      "reason": "Шлюз отправки РЭМД в ЕГИСЗ, валидация в сервисе криптографии"
+    },
+    {
+      "pattern": "* /api/egisz*",
+      "reason": "Шлюз отправки РЭМД в ЕГИСЗ, валидация в сервисе криптографии"
+    },
+    {
+      "pattern": "* /api/imaging*",
+      "reason": "Модули визиографа и томографии, multipart/бинарный ввод снимков DICOM"
+    },
+    {
+      "pattern": "* /api/radiology*",
+      "reason": "Радиология и КЛКТ, валидация внутри рентген-сервисов"
+    },
+    {
+      "pattern": "* /api/files*",
+      "reason": "Загрузка файлов и фотографий визита, multipart file-stream"
+    },
+    {
+      "pattern": "* /api/patients/:patientId/attachments",
+      "reason": "Загрузка прикреплений карты пациента, multipart-поток"
+    },
+    {
+      "pattern": "* /api/patients*",
+      "reason": "Картотека пациентов и родственные связи, валидация в patientService"
+    },
+    {
+      "pattern": "* /api/hardware*",
+      "reason": "Драйверы оборудования и сокеты ККТ"
+    },
+    {
+      "pattern": "* /api/integrations*",
+      "reason": "Внешние вебхуки и интеграции (Diagnocat и др.), кастомная верификация HMAC"
+    },
+    {
+      "pattern": "* /api/clinical-ai*",
+      "reason": "Вебхуки клинического ИИ, кастомная валидация подписи"
+    },
+    {
+      "pattern": "* /api/imports*",
+      "reason": "Импорт пациентов и номенклатуры (Excel/CSV/CommerceML), кастомный парсер таблиц"
+    },
+    {
+      "pattern": "* /api/installments*",
+      "reason": "Оплата траншей рассрочки, валидация внутри сервиса рассрочек"
+    },
+    {
+      "pattern": "* /api/installment-payments*",
+      "reason": "Оплата траншей рассрочки, валидация внутри сервиса рассрочек"
+    },
+    {
+      "pattern": "* /api/clinical-bundles*",
+      "reason": "Готовые комплексы услуг, валидация внутри сервиса"
+    },
+    {
+      "pattern": "* /api/v1/clinical-bundles*",
+      "reason": "Готовые комплексы услуг v1, валидация внутри сервиса"
+    },
+    {
+      "pattern": "* /:organizationId*",
+      "reason": "Префиксные складские маршруты филиалов, валидация в DTO сервиса склада"
+    },
+    {
+      "pattern": "* /receive-batch*",
+      "reason": "Складской приход партии, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /items*",
+      "reason": "Складская номенклатура, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /quick-writeoff*",
+      "reason": "Складское быстрое списание по техкарте (BOM), валидация в DTO склада"
+    },
+    {
+      "pattern": "* /storno*",
+      "reason": "Складское сторно и возвраты, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /overdraft-alert*",
+      "reason": "Складские алерты овердрафта, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /acceptance-waybill*",
+      "reason": "Складские приходные накладные, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /waybills*",
+      "reason": "Складские приходные накладные, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /invoices*",
+      "reason": "Складские счета поставщиков, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /consumables*",
+      "reason": "Складские расходники, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /reorder*",
+      "reason": "Складской перезаказ номенклатуры, валидация в DTO склада"
+    },
+    {
+      "pattern": "* /:itemId/*",
+      "reason": "Складские остатки по артикулу, валидация в DTO склада"
+    },
+    {
+      "pattern": "* <dynamic>",
+      "reason": "Динамические эндпоинты MCP / системных агентов"
+    },
+    {
+      "pattern": "* /api/appointments*",
+      "reason": "Статусы и переходы приёма, валидация в appointmentsStatusRoutes"
+    },
+    {
+      "pattern": "* /api/schedule/appointments*",
+      "reason": "Статусы и переходы расписания, валидация в appointmentsStatusRoutes"
+    },
+    {
+      "pattern": "* /api/clinical/*",
+      "reason": "Клинические протоколы, наряды лаборатории и задачи врача, валидация в clinicalTreatmentHandlers"
+    },
+    {
+      "pattern": "* /api/insurance*",
+      "reason": "Прикрепление полиса ДМС, валидация в policyMutationHandlers"
+    },
+    {
+      "pattern": "* /api/visits*",
+      "reason": "Клинический приём и дневники ЭМК, валидация внутри visitDraftAutosaveHandler / visitStore"
+    },
+    {
+      "pattern": "* /api/v1/visits*",
+      "reason": "Клинический приём и дневники ЭМК v1, валидация внутри visitDraftAutosaveHandler / visitStore"
+    },
+    {
+      "pattern": "* /api/treatment-plan*",
+      "reason": "Планы лечения и сметы, валидация внутри treatmentPlanService"
+    },
+    {
+      "pattern": "* /api/v1/treatment-plan*",
+      "reason": "Планы лечения и сметы v1, валидация внутри treatmentPlanService"
+    },
+    {
+      "pattern": "* /api/lab*",
+      "reason": "Зуботехническая лаборатория, наряды и заказы"
+    },
+    {
+      "pattern": "* /api/vk*",
+      "reason": "Интеграция с ВКонтакте, кастомный парсер webhook / OAuth токенов"
+    },
+    {
+      "pattern": "* */vk/webhook",
+      "reason": "Входящий вебхук VK Callback API, кастомная валидация secret_key"
+    },
+    {
+      "pattern": "* /api/whatsapp*",
+      "reason": "Интеграция WhatsApp Cloud API, валидация webhook-сигнатур"
+    },
+    {
+      "pattern": "* /api/telegram*",
+      "reason": "Интеграция Telegram Bot API, валидация секретных токенов бота"
+    },
+    {
+      "pattern": "* /api/schedule/ical*",
+      "reason": "Ротация секретных токенов подписки календаря iCal (без payload)"
+    },
+    {
+      "pattern": "* /api/xray*",
+      "reason": "Рентгенологические снимки и запуск ИИ-анализа, multipart/бинарный поток"
+    },
+    {
+      "pattern": "* /api/odontogram*",
+      "reason": "Зубная формула и эндодонтия, валидация в toothStatusController"
+    },
+    {
+      "pattern": "* /api/portal*",
+      "reason": "Портал самозаписи и онлайн-оплаты пациента, кастомный OTP-контракт"
+    },
+    {
+      "pattern": "* /api/documents*",
+      "reason": "Юридические документы и печатные формы, валидация в документарном сервисе"
+    },
+    {
+      "pattern": "* /api/settings*",
+      "reason": "Настройки филиалов и персонала, валидация в settingsPayloadParser"
+    },
+    {
+      "pattern": "* /api/staff*",
+      "reason": "Мутации карточки сотрудников клиники, валидация в staffMutationRoutes"
+    },
+    {
+      "pattern": "* /api/workspace*",
+      "reason": "Профиль клиники и филиалы, валидация в workspaceProfileHandlers"
+    },
+    {
+      "pattern": "* /api/network*",
+      "reason": "Сетевой меш и авто-обнаружение рабочих станций клиники"
+    },
+    {
+      "pattern": "* /api/leads*",
+      "reason": "Воронка обращений и лидов, валидация в leadsService"
+    },
+    {
+      "pattern": "* /api/marketing*",
+      "reason": "Маркетинговые каналы и ROMI-аналитика"
+    },
+    {
+      "pattern": "* /api/mdlp*",
+      "reason": "Фоновая очередь маркировки Честный Знак / МДЛП"
+    },
+    {
+      "pattern": "* /queue/*",
+      "reason": "Фоновая очередь маркировки Честный Знак / МДЛП"
+    },
+    {
+      "pattern": "* /api/v1/message-templates*",
+      "reason": "Шаблоны сервисных сообщений и уведомлений"
+    },
+    {
+      "pattern": "* /api/message-templates*",
+      "reason": "Шаблоны сервисных сообщений и уведомлений"
+    },
+    {
+      "pattern": "* /api/day-confirmations*",
+      "reason": "Подтверждение расписания дня, кастомный парсер статусов"
+    },
+    {
+      "pattern": "* /api/public*",
+      "reason": "Публичные виджеты онлайн-записи и вебхуки, кастомная валидация"
+    },
+    {
+      "pattern": "* /api/migration*",
+      "reason": "Маршруты миграции данных клиники из сторонних МИС (Dental4Windows, Инфодент), кастомная валидация схем"
+    },
+    {
+      "pattern": "* /api/mobile*",
+      "reason": "Маршруты публикации обновлений Mobile OTA, кастомная подпись артефактов"
+    },
+    {
+      "pattern": "* /api/bots*",
+      "reason": "Омниканальные боты и чаты клиники (Telegram, WhatsApp, MAX), кастомная валидация вебхуков"
+    },
+    {
+      "pattern": "* /api/onboarding*",
+      "reason": "Мастер первоначальной настройки клиники (onboarding), транзакционные обработчики"
+    },
+    {
+      "pattern": "* /api/periodontogram*",
+      "reason": "Пародонтологическая карта (перио-карта), валидация в perioControllers"
+    },
+    {
+      "pattern": "* /api/perio*",
+      "reason": "Пародонтологическая карта (перио-карта) алиас, валидация в perioControllers"
+    },
+    {
+      "pattern": "* /api/photo-bridge*",
+      "reason": "Стриминг фотографий полости рта с мобильного устройства врача, multipart upload по токену"
+    },
+    {
+      "pattern": "* /self-checkin*",
+      "reason": "Киоск саморегистрации пациента в холле клиники, валидация в kioskHandlers"
+    },
+    {
+      "pattern": "* /kiosk*",
+      "reason": "Киоск терминала пациента (саморегистрация, экстренный визит), валидация в kioskHandlers"
+    },
+    {
+      "pattern": "* /appointments*",
+      "reason": "Пациентский портал: запись и перенос приёма, валидация в patientPortalHandlers"
+    },
+    {
+      "pattern": "* /auth*",
+      "reason": "Пациентский портал: OTP-авторизация по СМС, валидация в portalAuthHandlers"
+    },
+    {
+      "pattern": "* /consents*",
+      "reason": "Пациентский портал: подписание согласий ИДС, валидация в portalConsentsHandlers"
+    },
+    {
+      "pattern": "* /treatment-plans*",
+      "reason": "Пациентский портал: выбор и одобрение плана лечения, валидация в portalTreatmentPlanHandlers"
+    },
+    {
+      "pattern": "* /payments*",
+      "reason": "Пациентский портал: онлайн-оплата СБП по QR-коду, валидация в portalPaymentHandlers"
+    },
+    {
+      "pattern": "* /health-questionnaire*",
+      "reason": "Пациентский портал: электронная анкета здоровья перед приёмом, валидация в portalHealthHandlers"
+    },
+    {
+      "pattern": "* /api/prescriptions*",
+      "reason": "Рецептурные бланки (форма 107-1/у) и превью, валидация в prescriptionHandlers"
+    },
+    {
+      "pattern": "* /api/pricelist*",
+      "reason": "Прейскурант и прайс-лист клиники, валидация в pricelistHandlers"
+    },
+    {
+      "pattern": "* /create*",
+      "reason": "Публичный виджет онлайн-записи: создание записи, валидация в publicBookingMutations"
+    },
+    {
+      "pattern": "* /waitlist*",
+      "reason": "Публичный виджет онлайн-записи: постановка в лист ожидания, валидация в publicBookingMutations"
+    },
+    {
+      "pattern": "* /api/registers*",
+      "reason": "Журналы СанПиН старшей медсестры (бактерицидные, генеральные уборки, ПСО), пакетные нормы"
+    },
+    {
+      "pattern": "* /api/sterilization*",
+      "reason": "Журналы стерилизации и автоклавирования, пакетное закрытие смены медсестры"
+    },
+    {
+      "pattern": "* /api/sanpin*",
+      "reason": "СанПиН и автоклавы: циклы стерилизации и азопирамовые пробы, валидация в sanpinSterilizationHandlers"
+    },
+    {
+      "pattern": "* /api/sberbank*",
+      "reason": "Вебхук эквайринга Сбербанка, верификация HMAC и криптографической подписи"
+    },
+    {
+      "pattern": "* /api/sbp*",
+      "reason": "Вебхук Системы Быстрых Платежей (СБП), верификация подписи НСПК"
+    },
+    {
+      "pattern": "* /api/shifts*",
+      "reason": "Сменные итоги и Z-отчеты кассы, валидация в shiftHandlers"
+    },
+    {
+      "pattern": "* /api/sync*",
+      "reason": "Синхронизация данных оффлайн-клиента, валидация в syncHandlers"
+    },
+    {
+      "pattern": "* /calls*",
+      "reason": "Маршруты управления звонками софтфона (ответ, завершение, теги), валидация в telephonyCallLifecycleHandler"
+    },
+    {
+      "pattern": "* /webhook*",
+      "reason": "Входящие вебхуки телефонии (Asterisk/SIP/Телфин), валидация в telephonyWebhookHandler"
+    },
+    {
+      "pattern": "* /sms*",
+      "reason": "Входящие вебхуки СМС-провайдеров, кастомная валидация сигнатуры"
+    },
+    {
+      "pattern": "* /outbound-call*",
+      "reason": "Инициация исходящего звонка из карточки пациента, валидация в telephonyOutboundHandler"
+    },
+    {
+      "pattern": "* /sip*",
+      "reason": "SIP-учетные данные и перевод звонка, валидация в telephonySipRoutes"
+    },
+    {
+      "pattern": "* /asterisk*",
+      "reason": "События AMI Asterisk, внутренняя шина телефонии"
+    },
+    {
+      "pattern": "* /api/templates*",
+      "reason": "Сидирование системных шаблонов документов и протоколов"
+    }
+  ]
+}
