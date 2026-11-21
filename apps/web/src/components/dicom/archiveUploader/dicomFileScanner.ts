@@ -33,22 +33,61 @@ export async function processSingleDicomFile(file: File): Promise<ParsedDicomRes
 	});
 }
 
-export async function traverseFileSystemEntry(item: any, path: string = ""): Promise<File[]> {
+export interface FileSystemEntry {
+	readonly isFile: boolean;
+	readonly isDirectory: boolean;
+	readonly name: string;
+}
+
+export interface FileSystemFileEntry extends FileSystemEntry {
+	file(successCallback: (file: File) => void, errorCallback?: (error: unknown) => void): void;
+}
+
+export interface FileSystemDirectoryReader {
+	readEntries(
+		successCallback: (entries: FileSystemEntry[]) => void,
+		errorCallback?: (error: unknown) => void,
+	): void;
+}
+
+export interface FileSystemDirectoryEntry extends FileSystemEntry {
+	createReader(): FileSystemDirectoryReader;
+}
+
+function isFileSystemFileEntry(entry: FileSystemEntry): entry is FileSystemFileEntry {
+	return entry.isFile && "file" in entry && typeof entry.file === "function";
+}
+
+function isFileSystemDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
+	return entry.isDirectory && "createReader" in entry && typeof entry.createReader === "function";
+}
+
+export async function traverseFileSystemEntry(
+	item: FileSystemEntry | null | undefined,
+	path = "",
+): Promise<File[]> {
+	if (!item) return [];
+
 	return new Promise((resolve) => {
-		if (item.isFile) {
-			item.file((file: File) => resolve([file]));
-		} else if (item.isDirectory) {
+		if (isFileSystemFileEntry(item)) {
+			item.file(
+				(file: File) => resolve([file]),
+				() => resolve([]),
+			);
+		} else if (isFileSystemDirectoryEntry(item)) {
 			const dirReader = item.createReader();
 			const files: File[] = [];
 			const readBatch = () => {
 				dirReader.readEntries(
-					async (entries: any[]) => {
+					async (entries: FileSystemEntry[]) => {
 						if (!entries || entries.length === 0) {
 							resolve(files);
 							return;
 						}
 						for (let i = 0; i < entries.length; i++) {
-							const nested = await traverseFileSystemEntry(entries[i], `${path + item.name}/`);
+							const entry = entries[i];
+							if (!entry) continue;
+							const nested = await traverseFileSystemEntry(entry, `${path + item.name}/`);
 							files.push(...nested);
 						}
 						readBatch();

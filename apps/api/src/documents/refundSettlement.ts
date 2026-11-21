@@ -64,12 +64,13 @@ export type RefundSettlementOutcome = {
 	}[];
 };
 
+import type { TenantDb } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 
 export async function settleRefundedPaymentsForPatient(
 	organizationId: string,
 	patientId: string,
-	tx?: any,
+	tx?: TenantDb | undefined,
 ): Promise<RefundSettlementOutcome> {
 	return withTenantCtx(organizationId, async () => {
 		const [payments, documents] = await Promise.all([

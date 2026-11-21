@@ -21,6 +21,7 @@ import {
 	type DemoRoleProfile,
 } from "../../utils/demo/demoInteractiveSimulation.js";
 import { syncAuthTokensFromStorage } from "../../lib/apiAuthFetch.js";
+import { isAppView } from "../../utils/routeUtils.js";
 import { DemoCaseViewerModal } from "./DemoCaseViewerModal.js";
 import { useAppStore } from "../../store/appStore.js";
 import { usePatientStore } from "../../store/patientStore.js";
@@ -115,8 +116,8 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 				if (appState?.setSelectedWorkspaceRole) {
 					appState.setSelectedWorkspaceRole(result.profile.role);
 				}
-				if (appState?.setCurrentView) {
-					appState.setCurrentView(result.profile.targetView as any);
+				if (appState?.setCurrentView && isAppView(result.profile.targetView)) {
+					appState.setCurrentView(result.profile.targetView);
 				}
 				if (result.profile.targetPatientId) {
 					const patientState = usePatientStore.getState();

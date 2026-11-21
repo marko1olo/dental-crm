@@ -84,6 +84,24 @@ const testPrintBodySchema = z.object({
 // ROUTE REGISTRATION
 // ============================================================================
 
+interface SyncHardwareDevicePayload {
+	presetId?: string | undefined;
+	name?: string | undefined;
+	vendor?: string | undefined;
+	category?: string | undefined;
+	executablePath?: string | undefined;
+	hotFolderPath?: string | undefined;
+	protocol?: string | undefined;
+	protocolTemplate?: string | undefined;
+	supportedExtensions?: unknown;
+	isActive?: boolean | undefined;
+	autoAttachToVisit?: boolean | undefined;
+	status?: string | undefined;
+	statusMessage?: string | undefined;
+	latencyMs?: unknown;
+	lastCheckedAt?: unknown;
+}
+
 export async function registerHardwareRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * GET /api/hardware/devices
@@ -420,7 +438,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const organizationId = await requireResolvedOrganizationId(request, reply, "sync hardware devices");
 			if (!organizationId) return;
 
-			const body = (request.body || {}) as { devices?: unknown[] };
+			const body = (request.body || {}) as { devices?: SyncHardwareDevicePayload[] | undefined };
 			const rawDevices = Array.isArray(body?.devices) ? body.devices : [];
 
 			await db.transaction(async (tx) => {
@@ -429,7 +447,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 					.where(eq(clinicHardwareDevices.organizationId, organizationId));
 
 				if (rawDevices.length > 0) {
-					const values = rawDevices.map((dev: any) => ({
+					const values = rawDevices.map((dev: SyncHardwareDevicePayload) => ({
 						organizationId,
 						presetId: String(dev.presetId || "custom"),
 						name: String(dev.name || "Устройство"),
@@ -439,7 +457,9 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 						hotFolderPath: String(dev.hotFolderPath || ""),
 						protocol: String(dev.protocol || "hot_folder"),
 						protocolTemplate: String(dev.protocolTemplate || ""),
-						supportedExtensions: Array.isArray(dev.supportedExtensions) ? dev.supportedExtensions : [".dcm"],
+						supportedExtensions: Array.isArray(dev.supportedExtensions)
+							? dev.supportedExtensions.filter((ext): ext is string => typeof ext === "string")
+							: [".dcm"],
 						isActive: dev.isActive !== false,
 						autoAttachToVisit: dev.autoAttachToVisit !== false,
 						status: String(dev.status || "untested"),

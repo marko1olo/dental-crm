@@ -1,7 +1,7 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { db, type TenantDb } from "../../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
 
@@ -21,7 +21,7 @@ export interface DeductOrthoMaterialParams {
 	visitId?: string | null | undefined;
 	userId?: string | null | undefined;
 	logger?: FastifyBaseLogger | undefined;
-	tx?: any;
+	tx?: TenantDb | undefined;
 }
 
 export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParams): Promise<OrthoMaterialDeductionResult> {
@@ -50,7 +50,7 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				: null;
 
 	try {
-		const runWithTx = async (tx: any) => {
+		const runWithTx = async (tx: TenantDb) => {
 			const found = await tx.select().from(inventoryItems).where(and(
 				eq(inventoryItems.organizationId, organizationId),
 				or(ilike(inventoryItems.name, `%${itemNamePattern}%`), ilike(inventoryItems.name, `%${defaultItemName}%`)),

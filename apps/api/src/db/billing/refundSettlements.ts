@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import type {
 	PaymentRefundSettlementItem,
@@ -31,9 +31,9 @@ import type {
 export async function applyPaymentRefundSettlementsInDb(
 	organizationId: string,
 	settlements: readonly PaymentRefundSettlementItem[],
-	tx?: any,
+	tx?: TenantDb | undefined,
 ): Promise<PaymentRefundSettlementResult> {
-	const client = (tx ?? db) as typeof db;
+	const client = tx ?? db;
 	const toRefund = settlements
 		.filter((item) => item.fullyRefunded)
 		.map((item) => item.paymentId);

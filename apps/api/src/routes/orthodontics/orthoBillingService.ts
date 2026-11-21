@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { db, type TenantDb } from "../../db/client.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
 export interface LinkOrthoBillingParams {
@@ -12,7 +12,7 @@ export interface LinkOrthoBillingParams {
 	serviceName: string;
 	priceRub?: number | undefined;
 	priceKopecks: bigint;
-	tx?: any;
+	tx?: TenantDb | undefined;
 	logger?: FastifyBaseLogger | undefined;
 }
 
@@ -48,7 +48,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 	}
 
 	try {
-		const runWithTx = async (tx: any) => {
+		const runWithTx = async (tx: TenantDb) => {
 			let invoice = (
 				await tx
 					.select()
