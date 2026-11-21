@@ -6,6 +6,7 @@ import {
 	type RefundableInvoiceItem,
 	type RefundReasonCategory,
 } from "@dental/shared";
+import { kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../../GlobalToast";
@@ -214,9 +215,9 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 								paymentMethod: "full_payment",
 								paymentSubject: "service",
 							})),
-							cashRub: refundCashKopecks / 100,
-							electronicRub: refundElectronicKopecks / 100,
-							prepaidRub: refundPrepaidKopecks / 100,
+							cashRub: kopecksToRubles(refundCashKopecks),
+							electronicRub: kopecksToRubles(refundElectronicKopecks),
+							prepaidRub: kopecksToRubles(refundPrepaidKopecks),
 							taxationSystem: "usn_income",
 						},
 						"ККТ временно офлайн при фискализации возврата",
@@ -252,9 +253,9 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 							paymentMethod: "full_payment",
 							paymentSubject: "service",
 						})),
-						cashRub: refundCashKopecks / 100,
-						electronicRub: refundElectronicKopecks / 100,
-						prepaidRub: refundPrepaidKopecks / 100,
+						cashRub: kopecksToRubles(refundCashKopecks),
+						electronicRub: kopecksToRubles(refundElectronicKopecks),
+						prepaidRub: kopecksToRubles(refundPrepaidKopecks),
 						taxationSystem: "usn_income",
 					},
 					"Сбой связи с сервером кассы: чек возврата сохранен локально",
@@ -280,9 +281,9 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 						paymentMethod: "full_payment",
 						paymentSubject: "service",
 					})),
-					cashRub: refundCashKopecks / 100,
-					electronicRub: refundElectronicKopecks / 100,
-					prepaidRub: refundPrepaidKopecks / 100,
+					cashRub: kopecksToRubles(refundCashKopecks),
+					electronicRub: kopecksToRubles(refundElectronicKopecks),
+					prepaidRub: kopecksToRubles(refundPrepaidKopecks),
 					taxationSystem: "usn_income",
 				},
 				"ККТ временно недоступна: чек возврата сохранен в локальную очередь",

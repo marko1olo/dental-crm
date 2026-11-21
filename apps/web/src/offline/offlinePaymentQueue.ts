@@ -277,7 +277,7 @@ export function getCachedDailyPayments(dateStr?: string): OfflinePaymentItem[] {
  * Flushes pending payment mutations to server using the provided dispatcher.
  */
 export async function syncOfflinePaymentQueue(
-	syncDispatcher: (payment: OfflinePaymentItem) => Promise<{ success: boolean; serverPaymentId?: string }>,
+	syncDispatcher: (payment: OfflinePaymentItem) => Promise<{ success: boolean; serverPaymentId?: string | undefined }>,
 ): Promise<{ syncedCount: number; failedCount: number }> {
 	const pending = await getPendingOfflinePayments();
 	let syncedCount = 0;
@@ -344,7 +344,7 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 
 		if (res.ok) {
 			const data = (await res.json().catch(() => null)) as { success?: boolean; paymentId?: string } | null;
-			return { success: true, serverPaymentId: data?.paymentId };
+			return { success: true, ...(data?.paymentId ? { serverPaymentId: data.paymentId } : {}) };
 		}
 		if (res.status === 409) {
 			// Idempotency duplicate — already registered on server

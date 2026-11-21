@@ -5,18 +5,19 @@
 
 import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
 import type { DoctorPayrollResult } from "@dental/shared/payroll";
+import { formatKopecksToRubles } from "@dental/shared";
 
 export function generateDoctorPayrollCsv(results: readonly DoctorPayrollResult[]): string {
 	const header = "Табельный ID;Врач;Специальность;Период;Выручка (руб);Вычет Лаб (руб);Вычет Мат (руб);Базовый %;Начислено (руб);KPI %;KPI Премия (руб);НДФЛ 13% (руб);К выплате на руки (руб);Сторно возвратов (руб)\n";
 	const rows = results.map((r) => {
-		const grossRub = (r.totalGrossRevenueKop / 100).toFixed(2);
-		const labRub = (r.totalLabDeductionsKop / 100).toFixed(2);
-		const matRub = (r.totalMaterialDeductionsKop / 100).toFixed(2);
-		const baseEarnedRub = (r.earnedBaseCommissionKop / 100).toFixed(2);
-		const kpiEarnedRub = (r.kpiBonusEarnedKop / 100).toFixed(2);
-		const taxRub = ((r.ndflTaxKop ?? r.ndfl13TaxKop) / 100).toFixed(2);
-		const netRub = (r.netPayoutToDoctorKop / 100).toFixed(2);
-		const stornoRub = (r.totalRefundClawbackKop / 100).toFixed(2);
+		const grossRub = formatKopecksToRubles(r.totalGrossRevenueKop);
+		const labRub = formatKopecksToRubles(r.totalLabDeductionsKop);
+		const matRub = formatKopecksToRubles(r.totalMaterialDeductionsKop);
+		const baseEarnedRub = formatKopecksToRubles(r.earnedBaseCommissionKop);
+		const kpiEarnedRub = formatKopecksToRubles(r.kpiBonusEarnedKop);
+		const taxRub = formatKopecksToRubles(r.ndflTaxKop ?? r.ndfl13TaxKop);
+		const netRub = formatKopecksToRubles(r.netPayoutToDoctorKop);
+		const stornoRub = formatKopecksToRubles(r.totalRefundClawbackKop);
 
 		return `${r.doctorId};"${r.doctorName}";"${r.specialtyTitleRu}";"${r.periodLabelRu}";${grossRub};${labRub};${matRub};${r.baseCommissionPercent}%;${baseEarnedRub};${r.kpiBonusPercent}%;${kpiEarnedRub};${taxRub};${netRub};${stornoRub}`;
 	});
@@ -43,41 +44,41 @@ export function generateStaffPayrollCsv(summary: ConsolidatedStaffPayrollSummary
 		if (r.role === "doctor") {
 			days = r.daysWorked;
 			hours = r.hoursWorked;
-			baseAccruedRub = (r.earnedBaseCommissionKop / 100).toFixed(2);
+			baseAccruedRub = formatKopecksToRubles(r.earnedBaseCommissionKop);
 			const bonusesKop =
 				r.earnedRetailCommissionKop +
 				r.comprehensivePlanBonusKop +
 				r.revenueKpiBonusKop +
 				(r.guaranteeTopUpKop ?? 0) +
 				r.manualAdjustmentKop;
-			bonusAccruedRub = (bonusesKop / 100).toFixed(2);
+			bonusAccruedRub = formatKopecksToRubles(bonusesKop);
 		} else if (r.role === "assistant") {
 			days = r.totalShiftsCount;
 			hours = r.totalHoursWorked;
-			baseAccruedRub = (r.baseShiftsPayoutKop / 100).toFixed(2);
+			baseAccruedRub = formatKopecksToRubles(r.baseShiftsPayoutKop);
 			const bonusesKop =
 				r.categoryBonusKop +
 				r.sterilizationBonusKop +
 				r.radiographsPayoutKop +
 				r.surgeriesPayoutKop +
 				r.manualAdjustmentKop;
-			bonusAccruedRub = (bonusesKop / 100).toFixed(2);
+			bonusAccruedRub = formatKopecksToRubles(bonusesKop);
 		} else if (r.role === "administrator") {
 			days = r.shiftsWorked;
 			hours = r.hoursWorked;
-			baseAccruedRub = (r.baseSalaryPayoutKop / 100).toFixed(2);
+			baseAccruedRub = formatKopecksToRubles(r.baseSalaryPayoutKop);
 			const bonusesKop =
 				r.cashRevenueCommissionKop +
 				r.leadConversionBonusKop +
 				r.manualAdjustmentKop;
-			bonusAccruedRub = (bonusesKop / 100).toFixed(2);
+			bonusAccruedRub = formatKopecksToRubles(bonusesKop);
 		}
 
-		const grossRub = (r.grossPayoutBeforeTaxKop / 100).toFixed(2);
+		const grossRub = formatKopecksToRubles(r.grossPayoutBeforeTaxKop);
 		return `${rowNum};${r.employeeTabNumber};"${r.employeeFullName}";"${r.positionRu}";"${r.departmentRu}";${days};${hours.toFixed(1)};${baseAccruedRub};${bonusAccruedRub};${grossRub}`;
 	});
 
-	const totalGrossRub = (summary.totalGrossPayoutKop / 100).toFixed(2);
+	const totalGrossRub = formatKopecksToRubles(summary.totalGrossPayoutKop);
 	const totalLine = `ИТОГО ПО КЛИНИКЕ;;;;"${summary.totalEmployeesCount} сотр.";;;;${totalGrossRub}`;
 
 	return headerLines.join("\n") + "\n" + rows.join("\n") + "\n" + totalLine;

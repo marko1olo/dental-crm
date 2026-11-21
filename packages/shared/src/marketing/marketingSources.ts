@@ -148,9 +148,10 @@ export const MARKETING_SOURCES_CATALOG: readonly MarketingSourceMeta[] = [
 ];
 
 export const MARKETING_BY_CHANNEL = Object.freeze(
-	Object.fromEntries(
-		MARKETING_SOURCES_CATALOG.map((item) => [item.channel, item]),
-	) as Record<string, MarketingSourceMeta>,
+	Object.fromEntries([
+		...MARKETING_SOURCES_CATALOG.map((item) => [item.channel, item]),
+		["yandex", MARKETING_SOURCES_CATALOG[0]!],
+	]) as Record<string, MarketingSourceMeta>,
 );
 
 export interface MarketingSourceItem {

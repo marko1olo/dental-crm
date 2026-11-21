@@ -1,4 +1,5 @@
 import type { DoctorPayrollResult } from "@dental/shared/payroll";
+import { kopecksToRubles, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 
 /**
  * Generates clean formatted text for instant messenger dispatch (WhatsApp / Telegram).
@@ -9,11 +10,11 @@ export function generateDoctorPayslipMessengerText(
 	clinicName: string = "Стоматологическая клиника"
 ): string {
 	const isChairRental = payrollResult.payoutModel === "chair_rental";
-	const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const labRub = (payrollResult.totalLabDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const matRub = (payrollResult.totalMaterialDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const netBaseRub = (payrollResult.totalNetBaseKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const netToDocRub = (payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const grossRub = kopecksToRubles(payrollResult.totalGrossRevenueKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const labRub = kopecksToRubles(payrollResult.totalLabDeductionsKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const matRub = kopecksToRubles(payrollResult.totalMaterialDeductionsKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netBaseRub = kopecksToRubles(payrollResult.totalNetBaseKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netToDocRub = kopecksToRubles(payrollResult.netPayoutToDoctorKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 	const isSelfEmployed = payrollResult.taxRegime === "self_employed";
 
 	const lines: string[] = [
@@ -29,7 +30,7 @@ export function generateDoctorPayslipMessengerText(
 	];
 
 	if (isChairRental && (payrollResult.chairRentalKop ?? 0) > 0) {
-		const rentalRub = ((payrollResult.chairRentalKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const rentalRub = kopecksToRubles(payrollResult.chairRentalKop ?? 0).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Аренда стоматологического кресла: -${rentalRub} ₽`);
 	}
 
@@ -40,7 +41,7 @@ export function generateDoctorPayslipMessengerText(
 		lines.push(`• Материалы: -${matRub} ₽`);
 	}
 	if (payrollResult.totalRefundClawbackKop > 0) {
-		const clawbackRub = (payrollResult.totalRefundClawbackKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const clawbackRub = kopecksToRubles(payrollResult.totalRefundClawbackKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Сторно возвратов пациентам: -${clawbackRub} ₽`);
 	}
 
@@ -49,19 +50,20 @@ export function generateDoctorPayslipMessengerText(
 	if (isChairRental) {
 		lines.push(`• Чистый доход врача (100%): ${netBaseRub} ₽`);
 	} else {
-		const commRub = (payrollResult.earnedBaseCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const commRub = kopecksToRubles(payrollResult.earnedBaseCommissionKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Начислено по ставке (${payrollResult.baseCommissionPercent}%): ${commRub} ₽`);
 		if (payrollResult.kpiBonusEarnedKop > 0) {
-			const kpiRub = (payrollResult.kpiBonusEarnedKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+			const kpiRub = kopecksToRubles(payrollResult.kpiBonusEarnedKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 			lines.push(`• KPI Премия (+${payrollResult.kpiBonusPercent}%): ${kpiRub} ₽`);
 		}
 	}
 
 	if (isSelfEmployed) {
-		const npdRub = ((payrollResult.npd6TaxKop ?? Math.round((payrollResult.netPayoutToDoctorKop * 6) / 100)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const npd6Kop = payrollResult.npd6TaxKop ?? percentageOfKopecks(toExactKopecks(payrollResult.netPayoutToDoctorKop), 600);
+		const npdRub = kopecksToRubles(npd6Kop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Налог НПД (6%): ${npdRub} ₽ (чек «Мой налог»)`);
 	} else {
-		const effectiveNdfl = (payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop) / 100;
+		const effectiveNdfl = kopecksToRubles(payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop);
 		lines.push(`• Удержан НДФЛ: -${effectiveNdfl.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`);
 	}
 
@@ -69,8 +71,8 @@ export function generateDoctorPayslipMessengerText(
 	lines.push(`Итого к выплате: ${netToDocRub} ₽`);
 
 	if ((payrollResult.advancePayoutKop ?? 0) > 0) {
-		const advanceRub = ((payrollResult.advancePayoutKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-		const mainRub = ((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - (payrollResult.advancePayoutKop ?? 0))) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const advanceRub = kopecksToRubles(payrollResult.advancePayoutKop ?? 0).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const mainRub = kopecksToRubles(payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - (payrollResult.advancePayoutKop ?? 0))).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Выплаченный аванс: -${advanceRub} ₽`);
 		lines.push(`• ОСТАТОК К ПЕРЕЧИСЛЕНИЮ: ${mainRub} ₽`);
 	}

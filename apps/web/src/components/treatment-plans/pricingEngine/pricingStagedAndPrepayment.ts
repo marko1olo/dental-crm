@@ -1,6 +1,8 @@
 import {
 	type Kopecks,
 	calculateStaged304030Schedule,
+	kopecksToRubles,
+	percentageOfKopecks,
 } from "@dental/shared";
 import { safeKopecks } from "./pricingFormatters";
 
@@ -34,8 +36,8 @@ export function calculateStagedPaymentScheduleKopecks(
 		};
 	}
 
-	const stage1Kopecks = Math.round((totalKopecks * ratios[0]) / 100) as Kopecks;
-	const stage2Kopecks = Math.round((totalKopecks * ratios[1]) / 100) as Kopecks;
+	const stage1Kopecks = percentageOfKopecks(totalKopecks, Math.round(ratios[0] * 100));
+	const stage2Kopecks = percentageOfKopecks(totalKopecks, Math.round(ratios[1] * 100));
 	const stage3Kopecks = Math.max(0, totalKopecks - stage1Kopecks - stage2Kopecks) as Kopecks;
 
 	return {
@@ -43,9 +45,9 @@ export function calculateStagedPaymentScheduleKopecks(
 		stage1Kopecks,
 		stage2Kopecks,
 		stage3Kopecks,
-		stage1Rub: Math.round(stage1Kopecks / 100),
-		stage2Rub: Math.round(stage2Kopecks / 100),
-		stage3Rub: Math.round(stage3Kopecks / 100),
+		stage1Rub: kopecksToRubles(stage1Kopecks),
+		stage2Rub: kopecksToRubles(stage2Kopecks),
+		stage3Rub: kopecksToRubles(stage3Kopecks),
 	};
 }
 
@@ -84,15 +86,15 @@ export function calculatePrepaymentDiscountKopecks(
 	) as Kopecks;
 
 	const safePct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 5));
-	const discountKopecks = Math.round(rawKopecks * (safePct / 100)) as Kopecks;
+	const discountKopecks = percentageOfKopecks(rawKopecks, Math.round(safePct * 100));
 	const finalPriceKopecks = Math.max(0, rawKopecks - discountKopecks) as Kopecks;
 
 	return {
 		totalKopecks: rawKopecks,
 		discountPercent: safePct,
 		discountKopecks,
-		discountRub: Math.round(discountKopecks / 100),
+		discountRub: kopecksToRubles(discountKopecks),
 		finalPriceKopecks,
-		finalPriceRub: Math.round(finalPriceKopecks / 100),
+		finalPriceRub: kopecksToRubles(finalPriceKopecks),
 	};
 }

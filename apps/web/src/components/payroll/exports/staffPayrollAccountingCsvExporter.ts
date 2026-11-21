@@ -4,6 +4,7 @@
  */
 
 import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
+import { formatKopecksToRubles } from "@dental/shared";
 
 /**
  * Generates accounting-compatible tabular CSV format with UTF-8 BOM.
@@ -15,7 +16,7 @@ export function generateStaffPayrollAccountingCsv(summary: ConsolidatedStaffPayr
 	const rows: string[] = [];
 
 	summary.records.forEach((r) => {
-		const grossRub = (r.grossPayoutBeforeTaxKop / 100).toFixed(2);
+		const grossRub = formatKopecksToRubles(r.grossPayoutBeforeTaxKop);
 		const period = summary.periodStartIso.slice(0, 7);
 
 		rows.push(

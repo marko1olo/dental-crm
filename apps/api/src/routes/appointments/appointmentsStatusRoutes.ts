@@ -128,10 +128,11 @@ export async function applyAppointmentStatusTransitions(
 		try {
 			await openVisitForAppointmentInDb(orgId, appointmentId, tx);
 		} catch (err) {
-			request.log.warn(
+			request.log.error(
 				{ err, appointmentId, orgId },
-				"[scheduleRoutes] Не удалось открыть визит при переходе в in_treatment",
+				"[scheduleRoutes] Не удалось открыть визит при переходе в in_treatment (откат транзакции)",
 			);
+			throw err;
 		}
 	} else if (status === "completed") {
 		void syncRecallOnAppointmentCompleted(orgId, appointmentId);
@@ -147,10 +148,11 @@ export async function applyAppointmentStatusTransitions(
 					),
 				);
 		} catch (err) {
-			request.log.warn(
+			request.log.error(
 				{ err, appointmentId, orgId },
-				"[scheduleRoutes] Не удалось обновить статус визита при переходе в completed",
+				"[scheduleRoutes] Не удалось обновить статус визита при переходе в completed (откат транзакции)",
 			);
+			throw err;
 		}
 	}
 }

@@ -4,6 +4,7 @@ import {
 	transitionAppointmentStatus,
 	adaptToDoctorShiftAppointments,
 	DOCTOR_APPOINTMENT_STATUS_META,
+	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
 	type DoctorAppointmentStatus,
 } from "@dental/shared";
@@ -14,7 +15,27 @@ import type {
 	DoctorMobileShiftModalProps,
 	DoctorShiftTab,
 } from "../types";
-import { getShowcaseShiftAppointments } from "../shiftApiUtils";
+
+function getShowcaseShiftAppointments(
+	doctorId: string,
+	doctorName: string,
+	doctorSpecialty: string,
+	shiftDateIso: string,
+): DoctorShiftAppointment[] {
+	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+	return SAMPLE_DOCTOR_SHIFT_APPOINTMENTS.map((apt) => {
+		const timeStart = apt.startsAtIso.split("T")[1] || "09:00:00.000Z";
+		const timeEnd = apt.endsAtIso.split("T")[1] || "10:00:00.000Z";
+		return {
+			...apt,
+			doctorId,
+			doctorFullName: doctorName || apt.doctorFullName,
+			doctorSpecialty: doctorSpecialty || apt.doctorSpecialty,
+			startsAtIso: `${targetDate}T${timeStart}`,
+			endsAtIso: `${targetDate}T${timeEnd}`,
+		};
+	});
+}
 
 const EMPTY_APPOINTMENTS: readonly DoctorShiftAppointment[] = [];
 

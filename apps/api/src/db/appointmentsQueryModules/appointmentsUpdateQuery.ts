@@ -18,6 +18,7 @@ import {
 	assertAppointmentResourcesBelongToOrganization,
 	assertNoResourceOverlap,
 	lockAppointmentResources,
+	type DbClientOrTransaction,
 } from "./appointmentValidationHelpers.js";
 
 export async function updateAppointmentInDb(
@@ -28,6 +29,7 @@ export async function updateAppointmentInDb(
 		allowOverbooking?: boolean | undefined;
 		urgency?: "routine" | "urgent" | "emergency" | undefined;
 	},
+	executor?: DbClientOrTransaction,
 ): Promise<Appointment> {
 	if (useInMemory()) {
 		return updateAppointmentInMemory(appointmentId, input);
@@ -35,7 +37,7 @@ export async function updateAppointmentInDb(
 	// Перенос приёма — та же гонка, что и создание: между проверкой занятости
 	// и записью другой администратор успевает занять слот. Всё внутри одной
 	// транзакции с блокировкой строк ресурсов.
-	const updated = await db.transaction(async (tx) => {
+	const run = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
 		// Шаг 1: Чтение исходной записи без FOR UPDATE (MVCC snapshot).
 		// Это исключает deadlock инверсии appointments <-> chairs/users/patients.
 		const [existing] = await tx
@@ -216,7 +218,12 @@ export async function updateAppointmentInDb(
 			.returning();
 
 		return row;
-	});
+	};
+
+	const updated =
+		executor && executor !== db
+			? await run(executor as Parameters<Parameters<typeof db.transaction>[0]>[0])
+			: await db.transaction(run);
 
 	if (!updated) throw new Error("Не удалось обновить запись на приём");
 

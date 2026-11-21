@@ -5,9 +5,10 @@
 
 import { escapeXml } from "./escapeXml";
 import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
+import { formatKopecksToRubles } from "@dental/shared";
 
 export function generateStaffPayrollLedgerHtml(summary: ConsolidatedStaffPayrollSummary): string {
-	const totalGrossRub = (summary.totalGrossPayoutKop / 100).toFixed(2);
+	const totalGrossRub = formatKopecksToRubles(summary.totalGrossPayoutKop);
 
 	const rowsHtml = summary.records
 		.map((r, i) => {
@@ -19,36 +20,36 @@ export function generateStaffPayrollLedgerHtml(summary: ConsolidatedStaffPayroll
 			if (r.role === "doctor") {
 				days = r.daysWorked;
 				hours = r.hoursWorked;
-				baseRub = (r.earnedBaseCommissionKop / 100).toFixed(2);
+				baseRub = formatKopecksToRubles(r.earnedBaseCommissionKop);
 				const bonusesKop =
 					r.earnedRetailCommissionKop +
 					r.comprehensivePlanBonusKop +
 					r.revenueKpiBonusKop +
 					r.manualAdjustmentKop;
-				bonusRub = (bonusesKop / 100).toFixed(2);
+				bonusRub = formatKopecksToRubles(bonusesKop);
 			} else if (r.role === "assistant") {
 				days = r.totalShiftsCount;
 				hours = r.totalHoursWorked;
-				baseRub = (r.baseShiftsPayoutKop / 100).toFixed(2);
+				baseRub = formatKopecksToRubles(r.baseShiftsPayoutKop);
 				const bonusesKop =
 					r.categoryBonusKop +
 					r.sterilizationBonusKop +
 					r.radiographsPayoutKop +
 					r.surgeriesPayoutKop +
 					r.manualAdjustmentKop;
-				bonusRub = (bonusesKop / 100).toFixed(2);
+				bonusRub = formatKopecksToRubles(bonusesKop);
 			} else if (r.role === "administrator") {
 				days = r.shiftsWorked;
 				hours = r.hoursWorked;
-				baseRub = (r.baseSalaryPayoutKop / 100).toFixed(2);
+				baseRub = formatKopecksToRubles(r.baseSalaryPayoutKop);
 				const bonusesKop =
 					r.cashRevenueCommissionKop +
 					r.leadConversionBonusKop +
 					r.manualAdjustmentKop;
-				bonusRub = (bonusesKop / 100).toFixed(2);
+				bonusRub = formatKopecksToRubles(bonusesKop);
 			}
 
-			const gross = (r.grossPayoutBeforeTaxKop / 100).toFixed(2);
+			const gross = formatKopecksToRubles(r.grossPayoutBeforeTaxKop);
 			return `<tr>
 				<td>${i + 1}</td>
 				<td>${escapeXml(r.employeeTabNumber)}</td>

@@ -1,5 +1,6 @@
 import { escapeXml } from "./escapeXml";
 import type { DoctorPayrollResult, DoctorCompletedServiceItem } from "@dental/shared/payroll";
+import { kopecksToRubles, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 
 export function renderDoctorPayslipServicesTableHtml(
 	payrollResult: DoctorPayrollResult,
@@ -14,11 +15,11 @@ export function renderDoctorPayslipServicesTableHtml(
 		const matKop = s.materialCostKop ?? 0;
 		const netBaseKop = Math.max(0, paidKop - labKop - matKop);
 		const pct = s.customCommissionPercent ?? payrollResult.baseCommissionPercent;
-		const earnedKop = isChairRental ? netBaseKop : Math.round((netBaseKop * pct) / 100);
+		const earnedKop = isChairRental ? netBaseKop : percentageOfKopecks(toExactKopecks(netBaseKop), Math.round(pct * 100));
 
-		const paidFormatted = (paidKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-		const labFormatted = labKop > 0 ? `-${(labKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽` : "—";
-		const earnedFormatted = (earnedKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const paidFormatted = kopecksToRubles(paidKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const labFormatted = labKop > 0 ? `-${kopecksToRubles(labKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽` : "—";
+		const earnedFormatted = kopecksToRubles(earnedKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 
 		return `<tr>
 			<td style="text-align: center; color: #64748b;">${index + 1}</td>

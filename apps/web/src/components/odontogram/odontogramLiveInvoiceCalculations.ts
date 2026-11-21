@@ -1,5 +1,5 @@
 import { isDeciduousTooth } from "../treatment-plans/treatmentPlanStagesEngine";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 import type { ToothData } from "./ToothChart";
 
 export interface LiveInvoiceItem {
@@ -431,7 +431,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = prSrp.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const disc = kopecksToRubles(discKopecks);
@@ -455,7 +455,7 @@ export function calculateLiveInvoiceItems(
 					const grossKopecks = prCur.amountKopecks * qty;
 					const discKopecks =
 						discountPercent > 0
-							? Math.round((grossKopecks * discountPercent) / 100)
+							? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
 					const disc = kopecksToRubles(discKopecks);
@@ -480,7 +480,7 @@ export function calculateLiveInvoiceItems(
 					const grossKopecks = prSplint.amountKopecks * qty;
 					const discKopecks =
 						discountPercent > 0
-							? Math.round((grossKopecks * discountPercent) / 100)
+							? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
 					const disc = kopecksToRubles(discKopecks);
@@ -520,7 +520,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = pedPr.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const disc = kopecksToRubles(discKopecks);
@@ -559,7 +559,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = prepProc.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const disc = kopecksToRubles(discKopecks);
@@ -582,7 +582,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = obtProc.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const disc = kopecksToRubles(discKopecks);
@@ -612,7 +612,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = pr.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const itemDiscount = kopecksToRubles(discKopecks);
@@ -640,7 +640,7 @@ export function calculateLiveInvoiceItems(
 					const grossKopecks = prGraft.amountKopecks * qty;
 					const discKopecks =
 						discountPercent > 0
-							? Math.round((grossKopecks * discountPercent) / 100)
+							? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
 					const disc = kopecksToRubles(discKopecks);
@@ -664,7 +664,7 @@ export function calculateLiveInvoiceItems(
 				const grossKopecks = prProsth.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
-						? Math.round((grossKopecks * discountPercent) / 100)
+						? percentageOfKopecks(toExactKopecks(grossKopecks), Math.round(discountPercent * 100))
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
 				const disc = kopecksToRubles(discKopecks);

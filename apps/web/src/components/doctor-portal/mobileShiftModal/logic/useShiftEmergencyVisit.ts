@@ -1,7 +1,49 @@
 import { useState, useMemo, useCallback } from "react";
 import type { DoctorShiftAppointment } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { buildEmergencyAppointment } from "../shiftApiUtils";
+
+function buildEmergencyAppointment(
+	doctorId: string,
+	doctorName: string,
+	shiftDateIso?: string | undefined,
+): DoctorShiftAppointment {
+	const now = new Date();
+	const nowTimeStr = now.toTimeString().slice(0, 5);
+	const endHour = new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5);
+	const shiftDate = shiftDateIso ?? now.toISOString().split("T")[0]!;
+
+	return {
+		id: `apt-emerg-${now.getTime()}`,
+		doctorId,
+		doctorFullName: doctorName,
+		patientId: `pat-emerg-${now.getTime()}`,
+		patientFullName: "Экстренный пациент (Острая боль)",
+		cardNumber: `ЭКСТР-${now.getTime().toString().slice(-4)}`,
+		startsAtIso: `${shiftDate}T${nowTimeStr}:00`,
+		endsAtIso: `${shiftDate}T${endHour}:00`,
+		chairName: "Кресло № 1",
+		status: "in_chair",
+		treatmentDescription: "Экстренная стоматологическая помощь (острая боль)",
+		services: [
+			{
+				id: `srv-emerg-${now.getTime()}`,
+				code804n: "A16.07.001",
+				nameRu: "Первичный осмотр и купирование острой зубной боли",
+				category: "therapy",
+				quantity: 1,
+				unitPriceKop: 0,
+				totalCostKop: 0,
+				discountKop: 0,
+				finalRevenueKop: 0,
+				commissionPercent: 25,
+				directLabZtlCostKop: 0,
+				directMaterialCostKop: 0,
+				earnedDoctorPayoutKop: 0,
+			},
+		],
+		emrCard043uStatus: "draft",
+	};
+}
 
 export interface UseShiftEmergencyVisitParams {
 	initialDoctorId: string;

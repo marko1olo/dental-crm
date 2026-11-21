@@ -1,5 +1,9 @@
-import type { StaffWorkingHours } from "@dental/shared";
-import type { StaffScheduleDraft } from "../../../AppConstants";
+import type { Dashboard, StaffWorkingHours } from "@dental/shared";
+import type {
+	ClinicProfileDraft,
+	StaffScheduleDraft,
+	StaffScheduleSaveState,
+} from "../../../AppConstants";
 import {
 	defaultStaffScheduleDraft,
 	normalizeWorkingDaysDraft,
@@ -10,17 +14,36 @@ import {
 } from "../../../AppHelpers";
 import { showToast } from "../../../components/GlobalToast";
 import { actionFailureToast } from "../../../lib/panelStateText";
+import type { ScheduleStore } from "../../../store/scheduleStore";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 
 export interface UseStaffChairScheduleDraftsProps {
-	dashboard: any;
-	auth: any;
+	dashboard: Dashboard | null | undefined;
+	auth: {
+		settingsAccessHeaders: (extra?: Record<string, string>) => Record<string, string>;
+	};
 	setError: (msg: string | null) => void;
-	clinicProfileDraft: any;
+	clinicProfileDraft?: ClinicProfileDraft | null | undefined;
 	staffScheduleDraftsRef: React.MutableRefObject<Record<string, StaffScheduleDraft>>;
 	chairScheduleDraftsRef: React.MutableRefObject<Record<string, StaffScheduleDraft>>;
 	loadDashboard: () => Promise<void>;
-	scheduleStore: any;
+	scheduleStore: Pick<
+		ScheduleStore,
+		| "staffScheduleDrafts"
+		| "setStaffScheduleDrafts"
+		| "setStaffScheduleSavingId"
+		| "staffScheduleDirtyIds"
+		| "setStaffScheduleDirtyIds"
+		| "staffScheduleSaveStates"
+		| "setStaffScheduleSaveStates"
+		| "chairScheduleDrafts"
+		| "setChairScheduleDrafts"
+		| "setChairScheduleSavingId"
+		| "chairScheduleDirtyIds"
+		| "setChairScheduleDirtyIds"
+		| "chairScheduleSaveStates"
+		| "setChairScheduleSaveStates"
+	>;
 }
 
 export function useStaffChairScheduleDrafts({
@@ -56,7 +79,7 @@ export function useStaffChairScheduleDrafts({
 			next.add(staffId);
 			return next;
 		});
-		setStaffScheduleSaveStates((current: any) => ({
+		setStaffScheduleSaveStates((current) => ({
 			...current,
 			[staffId]: "idle",
 		}));
@@ -68,7 +91,7 @@ export function useStaffChairScheduleDrafts({
 			next.add(chairId);
 			return next;
 		});
-		setChairScheduleSaveStates((current: any) => ({
+		setChairScheduleSaveStates((current) => ({
 			...current,
 			[chairId]: "idle",
 		}));
@@ -78,14 +101,14 @@ export function useStaffChairScheduleDrafts({
 		staffId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
-		setStaffScheduleDrafts((current: any) => {
+		setStaffScheduleDrafts((current) => {
 			const base = current[staffId] ?? defaultStaffScheduleDraft();
 			const nextWorkingDays = normalizeWorkingDaysDraft(
 				patch.workingDays ?? base.workingDays,
 			);
 			const nextStart = patch.start ?? base.start;
 			const nextEnd = patch.end ?? base.end;
-			const perDay = base.perDay.map((day: any) => ({
+			const perDay = base.perDay.map((day) => ({
 				...day,
 				enabled: nextWorkingDays.includes(day.weekday),
 				start:
@@ -116,14 +139,14 @@ export function useStaffChairScheduleDrafts({
 		chairId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
-		setChairScheduleDrafts((current: any) => {
+		setChairScheduleDrafts((current) => {
 			const base = current[chairId] ?? defaultStaffScheduleDraft();
 			const nextWorkingDays = normalizeWorkingDaysDraft(
 				patch.workingDays ?? base.workingDays,
 			);
 			const nextStart = patch.start ?? base.start;
 			const nextEnd = patch.end ?? base.end;
-			const perDay = base.perDay.map((day: any) => ({
+			const perDay = base.perDay.map((day) => ({
 				...day,
 				enabled: nextWorkingDays.includes(day.weekday),
 				start:
@@ -155,13 +178,13 @@ export function useStaffChairScheduleDrafts({
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
 	) {
-		setStaffScheduleDrafts((current: any) => {
+		setStaffScheduleDrafts((current) => {
 			const base = current[staffId] ?? defaultStaffScheduleDraft();
 			return {
 				...current,
 				[staffId]: {
 					...base,
-					perDay: base.perDay.map((day: any) =>
+					perDay: base.perDay.map((day) =>
 						day.weekday === weekday ? { ...day, ...patch } : day,
 					),
 				},
@@ -175,13 +198,13 @@ export function useStaffChairScheduleDrafts({
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
 	) {
-		setChairScheduleDrafts((current: any) => {
+		setChairScheduleDrafts((current) => {
 			const base = current[chairId] ?? defaultStaffScheduleDraft();
 			return {
 				...current,
 				[chairId]: {
 					...base,
-					perDay: base.perDay.map((day: any) =>
+					perDay: base.perDay.map((day) =>
 						day.weekday === weekday ? { ...day, ...patch } : day,
 					),
 				},
@@ -203,20 +226,20 @@ export function useStaffChairScheduleDrafts({
 		}
 		const activeStaff =
 			(dashboard?.clinicSettings?.staff || []).filter(
-				(member: any) => member.active,
+				(member) => member.active,
 			) ?? [];
 		const activeDoctors = activeStaff.filter(
-			(member: any) => member.role === "doctor" || member.role === "owner",
+			(member) => member.role === "doctor" || member.role === "owner",
 		);
 		const activeAssistants = activeStaff.filter(
-			(member: any) => member.role === "assistant",
+			(member) => member.role === "assistant",
 		);
 		const activeChairs =
 			(dashboard?.clinicSettings?.chairs || []).filter(
-				(chair: any) => chair.active,
+				(chair) => chair.active,
 			) ?? [];
 		if (!activeDoctors.length) issues.push("врач для первого приема");
-		if (!activeDoctors.some((member: any) => member.canSignMedicalRecords))
+		if (!activeDoctors.some((member) => member.canSignMedicalRecords))
 			issues.push("врач с правом подписи ЭМК");
 		if (!activeChairs.length) issues.push("кресло / кабинет");
 		if (
@@ -226,13 +249,13 @@ export function useStaffChairScheduleDrafts({
 			issues.push("ассистент");
 		const activeAppointmentReadiness = dashboard?.activeVisit?.appointmentId
 			? dashboard.appointmentReadiness?.find(
-					(readiness: any) =>
+					(readiness) =>
 						readiness.appointmentId === dashboard?.activeVisit?.appointmentId,
 				)
 			: null;
 		const activeAppointmentBlockingChecks =
 			(activeAppointmentReadiness?.checks || []).filter(
-				(check: any) =>
+				(check) =>
 					(check.key === "team" || check.key === "schedule") && !check.ready,
 			) ?? [];
 		for (const check of activeAppointmentBlockingChecks) {
@@ -246,7 +269,7 @@ export function useStaffChairScheduleDrafts({
 		if (!draft) return false;
 		const expectedSignature = staffScheduleDraftSignature(draft);
 		setStaffScheduleSavingId(staffId);
-		setStaffScheduleSaveStates((current: any) => ({
+		setStaffScheduleSaveStates((current) => ({
 			...current,
 			[staffId]: "saving",
 		}));
@@ -264,7 +287,7 @@ export function useStaffChairScheduleDrafts({
 				},
 			);
 			if (!response.ok) {
-				setStaffScheduleSaveStates((current: any) => ({
+				setStaffScheduleSaveStates((current) => ({
 					...current,
 					[staffId]: "error",
 				}));
@@ -287,7 +310,7 @@ export function useStaffChairScheduleDrafts({
 					return next;
 				});
 			}
-			setStaffScheduleSaveStates((current: any) => ({
+			setStaffScheduleSaveStates((current) => ({
 				...current,
 				[staffId]: latestMatchesSaved ? "saved" : "idle",
 			}));
@@ -301,7 +324,7 @@ export function useStaffChairScheduleDrafts({
 				),
 				"error",
 			);
-			setStaffScheduleSaveStates((current: any) => ({
+			setStaffScheduleSaveStates((current) => ({
 				...current,
 				[staffId]: "error",
 			}));
@@ -322,7 +345,7 @@ export function useStaffChairScheduleDrafts({
 		if (!draft) return false;
 		const expectedSignature = staffScheduleDraftSignature(draft);
 		setChairScheduleSavingId(chairId);
-		setChairScheduleSaveStates((current: any) => ({
+		setChairScheduleSaveStates((current) => ({
 			...current,
 			[chairId]: "saving",
 		}));
@@ -340,7 +363,7 @@ export function useStaffChairScheduleDrafts({
 				},
 			);
 			if (!response.ok) {
-				setChairScheduleSaveStates((current: any) => ({
+				setChairScheduleSaveStates((current) => ({
 					...current,
 					[chairId]: "error",
 				}));
@@ -363,7 +386,7 @@ export function useStaffChairScheduleDrafts({
 					return next;
 				});
 			}
-			setChairScheduleSaveStates((current: any) => ({
+			setChairScheduleSaveStates((current) => ({
 				...current,
 				[chairId]: latestMatchesSaved ? "saved" : "idle",
 			}));
@@ -377,7 +400,7 @@ export function useStaffChairScheduleDrafts({
 				),
 				"error",
 			);
-			setChairScheduleSaveStates((current: any) => ({
+			setChairScheduleSaveStates((current) => ({
 				...current,
 				[chairId]: "error",
 			}));

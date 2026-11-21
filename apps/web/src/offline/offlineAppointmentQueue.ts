@@ -10,6 +10,7 @@
  * Provides resilient optimistic queueing of created, rescheduled, and updated appointments.
  */
 
+import type { AppointmentStatus } from "@dental/shared";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -30,7 +31,7 @@ export interface OfflineAppointmentItem {
 	readonly chairId?: string | undefined;
 	readonly startTime: string;
 	readonly endTime: string;
-	readonly status: "scheduled" | "confirmed" | "completed" | "cancelled";
+	readonly status: AppointmentStatus | "scheduled";
 	readonly notes?: string | undefined;
 	readonly serviceIds?: string[] | undefined;
 	readonly organizationId?: string | undefined;
@@ -195,7 +196,7 @@ export function getCachedScheduleOffline(dateStr: string): OfflineAppointmentIte
  * Flushes pending appointment mutations with a provided server dispatcher.
  */
 export async function syncAppointmentQueue(
-	syncDispatcher: (mutation: QueuedAppointmentMutation) => Promise<{ success: boolean; serverId?: string }>,
+	syncDispatcher: (mutation: QueuedAppointmentMutation) => Promise<{ success: boolean; serverId?: string | undefined }>,
 ): Promise<{ syncedCount: number; failedCount: number }> {
 	const pending = await getPendingAppointmentMutations();
 	let syncedCount = 0;

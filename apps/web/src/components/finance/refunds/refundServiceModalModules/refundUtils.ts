@@ -4,6 +4,7 @@ import type {
 	RefundReasonCategory,
 } from "@dental/shared";
 import { REFUND_REASON_LABELS } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 import type { RefundPaymentMethod, RefundServiceItem } from "./types";
 
 export function mapServicesToRefundableItems(
@@ -15,7 +16,7 @@ export function mapServicesToRefundableItems(
 		const rawUnitPriceKop =
 			typeof (s as unknown as { priceKop?: number }).priceKop === "number"
 				? (s as unknown as { priceKop: number }).priceKop
-				: Math.round((Number.isFinite(s.priceRub) ? s.priceRub : 0) * 100);
+				: rublesToKopecks(Number.isFinite(s.priceRub) ? s.priceRub : 0);
 		const unitPriceKop = Number.isFinite(rawUnitPriceKop) ? Math.max(0, Math.round(rawUnitPriceKop)) : 0;
 		const quantity = Number.isFinite(s.quantity) && s.quantity > 0 ? s.quantity : 1;
 		const totalAmountKop = Math.round(unitPriceKop * quantity);
@@ -30,7 +31,7 @@ export function mapServicesToRefundableItems(
 			netAmountKop: totalAmountKop,
 			doctorName: s.doctorName || doctorName,
 			commissionPct: s.commissionPct ?? doctorCommissionPct,
-			materialCostKop: Math.round((Number.isFinite(s.materialCostRub) ? s.materialCostRub! : 0) * 100),
+			materialCostKop: rublesToKopecks(Number.isFinite(s.materialCostRub) ? s.materialCostRub! : 0),
 		};
 	});
 }

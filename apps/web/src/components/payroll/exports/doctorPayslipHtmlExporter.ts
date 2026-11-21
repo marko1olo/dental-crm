@@ -1,5 +1,6 @@
 import { escapeXml } from "./escapeXml";
 import type { DoctorPayrollResult, DoctorCompletedServiceItem } from "@dental/shared/payroll";
+import { kopecksToRubles, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 import { renderDoctorPayslipServicesTableHtml } from "./doctorPayslipHtmlServices";
 
 export function generateDoctorPayslipHtml(
@@ -7,38 +8,39 @@ export function generateDoctorPayslipHtml(
 	clinicName: string = "Стоматологическая клиника",
 	services?: readonly DoctorCompletedServiceItem[]
 ): string {
-	const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const labRub = (payrollResult.totalLabDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const matRub = (payrollResult.totalMaterialDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const netBaseRub = (payrollResult.totalNetBaseKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const baseCommRub = (payrollResult.earnedBaseCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const retailRub = (payrollResult.earnedRetailCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const kpiRub = (payrollResult.kpiBonusEarnedKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const grossPayoutRub = (payrollResult.grossPayoutBeforeTaxKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const grossRub = kopecksToRubles(payrollResult.totalGrossRevenueKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const labRub = kopecksToRubles(payrollResult.totalLabDeductionsKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const matRub = kopecksToRubles(payrollResult.totalMaterialDeductionsKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netBaseRub = kopecksToRubles(payrollResult.totalNetBaseKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const baseCommRub = kopecksToRubles(payrollResult.earnedBaseCommissionKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const retailRub = kopecksToRubles(payrollResult.earnedRetailCommissionKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const kpiRub = kopecksToRubles(payrollResult.kpiBonusEarnedKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const grossPayoutRub = kopecksToRubles(payrollResult.grossPayoutBeforeTaxKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 	const effectiveNdflKop = payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop;
-	const ndflRub = (effectiveNdflKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const netToDocRub = (payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const ndflRub = kopecksToRubles(effectiveNdflKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netToDocRub = kopecksToRubles(payrollResult.netPayoutToDoctorKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 	const isSelfEmployed = payrollResult.taxRegime === "self_employed" || effectiveNdflKop === 0;
 	const taxTitle = isSelfEmployed
 		? "НДФЛ (ИП / Самозанятый, налог уплачивается врачом самостоятельно):"
 		: payrollResult.isProgressiveTaxApplied ? "Удержан НДФЛ 13-15% (ст. 224, п. 6 ст. 225 НК РФ):" : "Удержан НДФЛ 13% (п. 6 ст. 225 НК РФ):";
 
 	const overheadHtml = (payrollResult.overheadConsumablesCoveredKop && payrollResult.overheadConsumablesCoveredKop > 0)
-		? `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; font-size: 9.5pt; color: #1e40af;"><strong>Клинический стандарт DENTE:</strong> Общеклинические расходные материалы на сумму <strong>${(payrollResult.overheadConsumablesCoveredKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</strong> оплачены клиникой и не удерживаются из зарплаты врача.</div>`
+		? `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; font-size: 9.5pt; color: #1e40af;"><strong>Клинический стандарт DENTE:</strong> Общеклинические расходные материалы на сумму <strong>${kopecksToRubles(payrollResult.overheadConsumablesCoveredKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</strong> оплачены клиникой и не удерживаются из зарплаты врача.</div>`
 		: "";
 
 	const isChairRental = payrollResult.payoutModel === "chair_rental";
 	const chairRentalRow = (isChairRental && (payrollResult.chairRentalKop ?? 0) > 0)
-		? `<tr><td>Аренда стоматологического кресла (соло-врач)</td><td class="num" style="color: #b91c1c;">-${((payrollResult.chairRentalKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>`
+		? `<tr><td>Аренда стоматологического кресла (соло-врач)</td><td class="num" style="color: #b91c1c;">-${kopecksToRubles(payrollResult.chairRentalKop ?? 0).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>`
 		: "";
 
 	const advanceRows = (payrollResult.advancePayoutKop && payrollResult.advancePayoutKop > 0)
-		? `<div class="summary-row" style="color: #64748b;"><span>Выплаченный ранее аванс:</span><span>-${((payrollResult.advancePayoutKop) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span></div>
-		<div class="summary-row total" style="color: #0d9488; font-size: 14pt;"><span>ОСТАТОК К ПЕРЕЧИСЛЕНИЮ:</span><span>${((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - payrollResult.advancePayoutKop)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span></div>`
+		? `<div class="summary-row" style="color: #64748b;"><span>Выплаченный ранее аванс:</span><span>-${kopecksToRubles(payrollResult.advancePayoutKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span></div>
+		<div class="summary-row total" style="color: #0d9488; font-size: 14pt;"><span>ОСТАТОК К ПЕРЕЧИСЛЕНИЮ:</span><span>${kopecksToRubles(payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - payrollResult.advancePayoutKop)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span></div>`
 		: "";
 
+	const npd6Kop = payrollResult.npd6TaxKop ?? percentageOfKopecks(toExactKopecks(payrollResult.netPayoutToDoctorKop), 600);
 	const npdRow = (isSelfEmployed && (payrollResult.npd6TaxKop || payrollResult.netPayoutToDoctorKop > 0))
-		? `<div class="summary-row" style="color: #0284c7; font-size: 9.5pt;"><span>Налог на профессиональный доход (НПД 6%):</span><span>${((payrollResult.npd6TaxKop ?? Math.round((payrollResult.netPayoutToDoctorKop * 6) / 100)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (чек «Мой налог»)</span></div>`
+		? `<div class="summary-row" style="color: #0284c7; font-size: 9.5pt;"><span>Налог на профессиональный доход (НПД 6%):</span><span>${kopecksToRubles(npd6Kop).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (чек «Мой налог»)</span></div>`
 		: "";
 
 	const servicesTableHtml = renderDoctorPayslipServicesTableHtml(payrollResult, services);
@@ -72,7 +74,7 @@ export function generateDoctorPayslipHtml(
 		${!isChairRental ? `<tr><td>Начислено: Сдельная оплата (${payrollResult.baseCommissionPercent}%)</td><td class="num">${baseCommRub} ₽</td></tr>` : ""}
 		<tr><td>Начислено: Продажа средств гигиены (Retail)</td><td class="num">${retailRub} ₽</td></tr>
 		${!isChairRental ? `<tr><td>Премия: Выполнение нормативов KPI (${escapeXml(payrollResult.kpiTierBadgeRu)})</td><td class="num">${kpiRub} ₽</td></tr>` : ""}
-		${payrollResult.manualAdjustmentKop !== 0 ? `<tr><td>Корректировка / Аванс</td><td class="num">${(payrollResult.manualAdjustmentKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>` : ""}
+		${payrollResult.manualAdjustmentKop !== 0 ? `<tr><td>Корректировка / Аванс</td><td class="num">${kopecksToRubles(payrollResult.manualAdjustmentKop).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>` : ""}
 	</tbody></table>
 	${servicesTableHtml}
 	<div class="summary-box">

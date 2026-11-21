@@ -51,17 +51,20 @@ function toOfflineAppointmentStatus(
 	switch (status) {
 		case "confirmed":
 			return "confirmed";
+		case "arrived":
+			return "arrived";
+		case "in_treatment":
+			return "in_treatment";
 		case "completed":
 			return "completed";
 		case "cancelled":
 			return "cancelled";
-		case "scheduled":
-		case "planned":
-		case "arrived":
-		case "in_treatment":
 		case "no_show":
+			return "no_show";
+		case "planned":
+		case "scheduled":
 		default:
-			return "scheduled";
+			return "planned";
 	}
 }
 
@@ -194,9 +197,11 @@ export function useAppointmentMutations({
 				patients: dashboard?.patients ?? null,
 			},
 		).filter((m) => {
-			// Mandate 8e: не блокируем сохранение, если не выбран врач/кресло при автодефолтах
+			// Mandate 8e: не блокируем сохранение при автодефолтах и Drag & Drop переносе слота
 			if (m.includes("врач") && draft.doctorUserId) return false;
 			if (m.includes("кресл") && draft.chairId) return false;
+			// Mandate 8e / Drag & Drop: в БД patient_id nullable, перемещение слота не требует пациента
+			if (m.includes("пациент")) return false;
 			return true;
 		});
 		if (missing.length) {
@@ -219,7 +224,10 @@ export function useAppointmentMutations({
 			const mutationId = appointmentMutationIdRef.current;
 			const response = await fetchWithHandling(`/api/appointments/${appointmentId}`, {
 				method: "PATCH",
-				headers: auth.scheduleMutationHeaders({ "Content-Type": "application/json" }),
+				headers: auth.scheduleMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": mutationId,
+				}),
 				body: JSON.stringify({
 					...appointmentUpdateInputFromDraft(draft),
 					clientMutationId: mutationId,
@@ -313,7 +321,8 @@ export function useAppointmentMutations({
 					endTime: draft.endsAt,
 					status: toOfflineAppointmentStatus(draft.status || sourceAppointment?.status),
 					notes: draft.reason,
-					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
+					organizationId:
+						dashboard?.clinicSettings?.profile?.organizationId ?? undefined,
 					createdAt: new Date().toISOString(),
 				};
 				await enqueueOfflineAppointment("UPDATE_APPOINTMENT", offlineAppt);
@@ -406,6 +415,8 @@ export function useAppointmentMutations({
 		const missing = newAppointmentMissingFields(activeNewDraft).filter((m) => {
 			if (m.includes("врач") && activeNewDraft.doctorUserId) return false;
 			if (m.includes("кресл") && activeNewDraft.chairId) return false;
+			// Mandate 8e / 8n: создание анонимной брони/резерва слота не блокируется отсутствием пациента
+			if (m.includes("пациент")) return false;
 			return true;
 		});
 		if (missing.length) {
@@ -432,6 +443,7 @@ export function useAppointmentMutations({
 				method: "POST",
 				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": mutationId,
 				}),
 				body: JSON.stringify({
 					...appointmentCreateInputFromDraft(activeNewDraft),
@@ -546,6 +558,9 @@ export function useAppointmentMutations({
 				);
 				const doctorName = matchedDoctor?.fullName || "Врач";
 
+				const resolvedOrgId =
+					dashboard?.clinicSettings?.profile?.organizationId ?? undefined;
+
 				const offlineAppt: OfflineAppointmentItem = {
 					id: clientRefId,
 					clientReferenceId: clientRefId,
@@ -556,9 +571,9 @@ export function useAppointmentMutations({
 					chairId: activeNewDraft.chairId,
 					startTime: activeNewDraft.startsAt,
 					endTime: activeNewDraft.endsAt,
-					status: "scheduled",
+					status: "planned",
 					notes: activeNewDraft.reason,
-					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
+					organizationId: resolvedOrgId,
 					createdAt: new Date().toISOString(),
 					isOfflineCreated: true,
 				};
@@ -566,7 +581,7 @@ export function useAppointmentMutations({
 
 				const createdAppointmentModel: Appointment = {
 					id: clientRefId,
-					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
+					organizationId: resolvedOrgId || "",
 					patientId: offlineAppt.patientId,
 					doctorUserId: offlineAppt.doctorId,
 					assistantUserId: activeNewDraft.assistantUserId ?? null,
