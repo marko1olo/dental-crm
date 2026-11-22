@@ -1,4 +1,5 @@
 import React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { showToast } from "../GlobalToast";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
@@ -31,7 +32,7 @@ export const LiveInvoiceFiscalBridge: React.FC<
 	const effectiveKopecks =
 		netTotalKopecks !== undefined
 			? BigInt(netTotalKopecks)
-			: BigInt(Math.round(netTotalPrice * 100));
+			: rublesToKopecks(netTotalPrice);
 
 	return (
 		<CashRegisterStudioModal

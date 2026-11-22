@@ -7,6 +7,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import { getImagingOrganizationId } from "../imaging/imagingHelpers.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import {
 	dicomCStoreScpServer,
 	dicomStudyIngestService,
@@ -146,13 +147,28 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	app.post("/api/radiology/dicom/bridge/start", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "start vatech bridge"))) return;
 
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
 		const bodySchema = z.object({
 			watchDirectory: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body ?? {});
 
+		let sanitizedWatchDir: string | undefined;
+		if (parsed.success && parsed.data.watchDirectory) {
+			try {
+				sanitizedWatchDir = validateAndResolvePacsLocalFilePath(orgId, parsed.data.watchDirectory);
+			} catch (err: unknown) {
+				return reply.code(400).send({
+					error: "PathValidationError",
+					message: err instanceof Error ? err.message : "Недопустимый путь к папке мониторинга Vatech (Path Traversal).",
+				});
+			}
+		}
+
 		try {
-			await vatechDirectBridgeService.start(parsed.success ? parsed.data.watchDirectory : undefined);
+			await vatechDirectBridgeService.start(sanitizedWatchDir);
 			return reply.send({
 				success: true,
 				message: "Мониторинг папки аппаратов Vatech запущен.",
@@ -195,14 +211,36 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	app.post("/api/radiology/dicom/bridge/scan-now", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "scan vatech directory"))) return;
 
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
 		const bodySchema = z.object({
 			directoryPath: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body ?? {});
-		const targetDir =
-			(parsed.success ? parsed.data.directoryPath : undefined) ??
-			vatechDirectBridgeService.getStatus().watchedDirectory ??
-			process.cwd();
+
+		let targetDir: string;
+		if (parsed.success && parsed.data.directoryPath) {
+			try {
+				targetDir = validateAndResolvePacsLocalFilePath(orgId, parsed.data.directoryPath);
+			} catch (err: unknown) {
+				return reply.code(400).send({
+					error: "PathValidationError",
+					message: err instanceof Error ? err.message : "Недопустимый путь к папке сканирования Vatech (Path Traversal).",
+				});
+			}
+		} else {
+			const activeWatched = vatechDirectBridgeService.getStatus().watchedDirectory;
+			if (activeWatched) {
+				try {
+					targetDir = validateAndResolvePacsLocalFilePath(orgId, activeWatched);
+				} catch {
+					targetDir = validateAndResolvePacsLocalFilePath(orgId, "vatech_incoming");
+				}
+			} else {
+				targetDir = validateAndResolvePacsLocalFilePath(orgId, "vatech_incoming");
+			}
+		}
 
 		const scannedCount = await vatechDirectBridgeService.scanDirectoryRecursively(targetDir);
 		return reply.send({

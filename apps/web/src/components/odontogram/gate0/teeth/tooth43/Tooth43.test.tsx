@@ -35,9 +35,9 @@ describe("Tooth43 Wheeler Ch. 11 Mandibular Canine Anatomical Invariants", () =>
 		assert.equal(canals[0]?.apex.y, 158.0);
 	});
 
-	it("renders Tooth43Container with XXL badge clearance (cy=194.5, height=218)", () => {
+	it("renders Tooth43Container with precision badge clearance (cy=176, height=218)", () => {
 		const html = renderToStaticMarkup(React.createElement(Tooth43Container, { presetId: "intact" }));
-		assert.ok(html.includes("<svg") && html.includes("id=\"tooth43-crown\"") && html.includes("r=\"18.5\""));
+		assert.ok(html.includes("<svg") && html.includes("id=\"tooth43-crown\"") && html.includes("r=\"14\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {

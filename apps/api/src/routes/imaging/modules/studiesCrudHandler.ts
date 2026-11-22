@@ -1,5 +1,6 @@
 import { createImagingStudySchema, imagingStudySchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
 import { createImagingStudyInDb, updateImagingStudyInDb } from "../../../db/imagingQuery.js";
@@ -60,33 +61,49 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 		}
 	}
 
-	const study = await createImagingStudyInDb(orgId, {
-		patientId: input.patientId, visitId: input.visitId, kind: input.kind, title: input.title, toothCode: input.toothCode,
-		region: input.region, sourceKind: input.sourceKind, sourceName: input.sourceName, storagePath: storagePath ?? null,
-		dicomStudyUid: input.dicomStudyUid, capturedAt: input.capturedAt, aiSummary: input.aiSummary,
-	});
-
-	if (["periapical", "bitewing", "opg", "other"].includes(input.kind)) {
-		try {
-			await db.insert(xrayScans).values({
-				id: study.id,
-				organizationId: orgId,
+	const study = await db.transaction(async (tx) => {
+		const createdStudy = await createImagingStudyInDb(
+			orgId,
+			{
 				patientId: input.patientId,
-				visitId: input.visitId ?? null,
-				storagePath: storagePath ?? null,
-				fileUrl: `/api/xray/scans/${study.id}/file`,
-				originalFilename: input.title,
-				mimeType: "image/jpeg",
+				visitId: input.visitId,
 				kind: input.kind,
-				toothCode: input.toothCode ?? null,
-				notes: input.title,
-				status: "done",
-				capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
-			}).onConflictDoNothing();
-		} catch (mirrorErr) {
-			request.log.warn({ mirrorErr, studyId: study.id }, "Не удалось зеркалировать study в xrayScans");
+				title: input.title,
+				toothCode: input.toothCode,
+				region: input.region,
+				sourceKind: input.sourceKind,
+				sourceName: input.sourceName,
+				storagePath: storagePath ?? null,
+				dicomStudyUid: input.dicomStudyUid,
+				capturedAt: input.capturedAt,
+				aiSummary: input.aiSummary,
+			},
+			tx,
+		);
+
+		if (["periapical", "bitewing", "opg", "other"].includes(input.kind)) {
+			await tx
+				.insert(xrayScans)
+				.values({
+					id: createdStudy.id,
+					organizationId: orgId,
+					patientId: input.patientId,
+					visitId: input.visitId ?? null,
+					storagePath: storagePath ?? null,
+					fileUrl: `/api/xray/scans/${createdStudy.id}/file`,
+					originalFilename: input.title,
+					mimeType: "image/jpeg",
+					kind: input.kind,
+					toothCode: input.toothCode ?? null,
+					notes: input.title,
+					status: "done",
+					capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
+				})
+				.onConflictDoNothing();
 		}
-	}
+
+		return createdStudy;
+	});
 
 	return reply.code(201).send(imagingStudySchema.parse(study));
 }
@@ -102,7 +119,37 @@ export async function updateStudyHandler(request: FastifyRequest, reply: Fastify
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры обновления снимка", issues: parsed.error.issues });
 	}
 
-	const study = await updateImagingStudyInDb(orgId, id, parsed.data);
+	const study = await db.transaction(async (tx) => {
+		const updatedStudy = await updateImagingStudyInDb(orgId, id, parsed.data, tx);
+
+		const xrayUpdates: Partial<typeof xrayScans.$inferInsert> = {};
+		if (parsed.data.title !== undefined) {
+			xrayUpdates.originalFilename = parsed.data.title;
+			xrayUpdates.notes = parsed.data.title;
+		}
+		if (parsed.data.toothCode !== undefined) {
+			xrayUpdates.toothCode = parsed.data.toothCode;
+		}
+		if (parsed.data.visitId !== undefined) {
+			xrayUpdates.visitId = parsed.data.visitId;
+		}
+		if (parsed.data.kind !== undefined && ["periapical", "bitewing", "opg", "other"].includes(parsed.data.kind)) {
+			xrayUpdates.kind = parsed.data.kind;
+		}
+		if (parsed.data.aiSummary !== undefined) {
+			xrayUpdates.aiSummary = parsed.data.aiSummary;
+		}
+
+		if (Object.keys(xrayUpdates).length > 0) {
+			await tx
+				.update(xrayScans)
+				.set({ ...xrayUpdates, updatedAt: new Date() })
+				.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)));
+		}
+
+		return updatedStudy;
+	});
+
 	if (!study) return sendImagingStudyNotFound(reply);
 	return reply.send(imagingStudySchema.parse(study));
 }

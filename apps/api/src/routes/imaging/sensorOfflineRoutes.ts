@@ -5,6 +5,17 @@ import type { ImagingStudyKind } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 
+export function normalizeImagingStudyKind(raw: string | undefined): ImagingStudyKind {
+	const val = (raw || "").toLowerCase().trim();
+	if (val === "opg" || val === "optg" || val === "panoramic") return "opg";
+	if (val === "periapical" || val === "rvg") return "periapical";
+	if (val === "bitewing") return "bitewing";
+	if (val === "ceph" || val === "cephalometric") return "ceph";
+	if (val === "cbct" || val === "ct") return "cbct";
+	if (val === "photo" || val === "photo_intraoral" || val === "photo_extraoral") return "photo";
+	return "other";
+}
+
 const registerLocalStudyBodySchema = z.object({
 	patientId: z.string().uuid("Идентификатор пациента должен быть валидным UUID"),
 	visitId: z.string().uuid().optional().nullable(),
@@ -42,6 +53,8 @@ import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { xrayScans } from "../../db/schema.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	createImagingStudyInDb,
@@ -52,8 +65,8 @@ import {
 	browserRenderableImageMimeType,
 	isDicomOrRadiographFile,
 } from "../../imaging/previewFormats.js";
-import { DicomProcessorService } from "../../services/imaging/DicomProcessorService.js";
-import type { DicomHeaderMetadata } from "../../services/imaging/dicomProcessor/types.js";
+import { parseDicomHeader } from "./dicomParsing.js";
+import type { DicomHeaderMetadata } from "./imagingConstants.js";
 import {
 	LocalPacsStorageService,
 	InvalidMagicBytesError,
@@ -110,7 +123,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			patientId: data.patientId,
 			visitId: data.visitId,
 			doctorId: data.doctorId || undefined,
-			kind: data.kind as ImagingStudyKind,
+			kind: normalizeImagingStudyKind(data.kind),
 			title: data.title || `Снимок ${data.kind.toUpperCase()}`,
 			toothCode: data.toothCode,
 			region: data.region,
@@ -178,7 +191,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				filename = part.filename;
 				const fields = (part.fields || {}) as Record<string, { value?: unknown }>;
 				patientId = String(fields.patientId?.value || "");
-				kind = (String(fields.kind?.value || "cbct")) as ImagingStudyKind;
+				kind = normalizeImagingStudyKind(fields.kind?.value ? String(fields.kind.value) : "cbct");
 				title = String(fields.title?.value || "");
 				toothCode = fields.toothCode?.value ? String(fields.toothCode.value) : undefined;
 				region = fields.region?.value ? String(fields.region.value) : undefined;
@@ -186,7 +199,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			} else {
 				const query = (request.query || {}) as Record<string, string>;
 				patientId = query.patientId || (request.headers["x-patient-id"] as string) || "";
-				kind = (query.kind || (request.headers["x-study-kind"] as string) || "cbct") as ImagingStudyKind;
+				kind = normalizeImagingStudyKind(query.kind || (request.headers["x-study-kind"] as string) || "cbct");
 				title = query.title || (request.headers["x-study-title"] as string) || "";
 				toothCode = query.toothCode || undefined;
 				region = query.region || undefined;
@@ -248,9 +261,9 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 						const fd = openSync(stored.storagePath, "r");
 						readSync(fd, headBuf, 0, headBuf.length, 0);
 						closeSync(fd);
-						const safeParsed = DicomProcessorService.parseBufferSafe(headBuf);
-						if (safeParsed.success && safeParsed.metadata) {
-							dicomMetadata = safeParsed.metadata;
+						const parsed = parseDicomHeader(headBuf);
+						if (parsed.tagsRead > 0) {
+							dicomMetadata = parsed;
 						}
 					} catch {
 						// Non-fatal if header parsing fails on full file
@@ -271,20 +284,65 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				}
 
 				const studyTitle = title.trim() || `Снимок ${kind.toUpperCase()}`;
-				const study = await createImagingStudyInDb(organizationId, {
-					patientId,
-					visitId: visitId || null,
-					kind,
-					title: studyTitle,
-					toothCode: toothCode || null,
-					region: region || null,
-					sourceKind: "dicom_file",
-					sourceName: filename,
-					storagePath: stored.relativePath,
-					dicomStudyUid: dicomMetadata?.studyInstanceUid ?? undefined,
-					dicomSeriesUid: dicomMetadata?.seriesInstanceUid ?? undefined,
-					dicomSopInstanceUid: dicomMetadata?.sopInstanceUid ?? undefined,
-					aiSummary: localThumbnailDataUri ? "Снимок загружен. Сформировано превью." : null,
+				const study = await db.transaction(async (tx) => {
+					const createdStudy = await createImagingStudyInDb(
+						organizationId,
+						{
+							patientId,
+							visitId: visitId || null,
+							kind,
+							title: studyTitle,
+							toothCode: toothCode || null,
+							region: region || null,
+							sourceKind: "dicom_file",
+							sourceName: filename,
+							storagePath: stored.relativePath,
+							dicomStudyUid: dicomMetadata?.studyInstanceUid ?? undefined,
+							dicomSeriesUid: dicomMetadata?.seriesInstanceUid ?? undefined,
+							dicomSopInstanceUid: dicomMetadata?.sopInstanceUid ?? undefined,
+							aiSummary: localThumbnailDataUri ? "Снимок загружен. Сформировано превью." : null,
+						},
+						tx,
+					);
+
+					if (kind !== "cbct") {
+						const xrayKind =
+							kind === "bitewing"
+								? "bitewing"
+								: kind === "opg"
+									? "opg"
+									: kind === "periapical"
+										? "periapical"
+										: "other";
+
+						await tx
+							.insert(xrayScans)
+							.values({
+								id: createdStudy.id,
+								organizationId,
+								patientId,
+								visitId: visitId || null,
+								storagePath: stored.relativePath,
+								fileUrl: `/api/xray/scans/${createdStudy.id}/file`,
+								originalFilename: filename,
+								fileSizeBytes: stored.fileSizeBytes,
+								sha256: stored.sha256,
+								mimeType:
+									stored.detectedFormat === "png"
+										? "image/png"
+										: stored.detectedFormat === "jpeg"
+											? "image/jpeg"
+											: "application/dicom",
+								kind: xrayKind,
+								toothCode: toothCode || null,
+								notes: studyTitle,
+								status: "done",
+								capturedAt: new Date(),
+							})
+							.onConflictDoNothing();
+					}
+
+					return createdStudy;
 				});
 
 				return reply.status(201).send({

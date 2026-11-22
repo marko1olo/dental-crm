@@ -6,9 +6,9 @@ import type {
 } from "../OdontogramModalsLayer";
 
 export interface OdontogramPrintFooterProps {
-	activeDoctor?: OdontogramActiveDoctorContext | undefined;
-	activePatient?: OdontogramActivePatientContext | undefined;
-	auth?: OdontogramAuthContext | undefined;
+	activeDoctor?: OdontogramActiveDoctorContext | null | undefined;
+	activePatient?: OdontogramActivePatientContext | null | undefined;
+	auth?: OdontogramAuthContext | null | undefined;
 }
 
 export const OdontogramPrintFooter: React.FC<OdontogramPrintFooterProps> = ({

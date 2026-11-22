@@ -54,7 +54,7 @@ export function exportLiveInvoiceToPlan({
 	);
 }
 
-export function exportLiveInvoiceToCashier({
+export async function exportLiveInvoiceToCashier({
 	baseItems,
 	grossTotalPrice,
 	totalDiscountRub,
@@ -63,7 +63,7 @@ export function exportLiveInvoiceToCashier({
 	patientId,
 	patientName,
 	onCreateInvoice,
-}: LiveInvoiceExportParams): void {
+}: LiveInvoiceExportParams): Promise<void> {
 	if (baseItems.length === 0) {
 		showToast("Смета пуста: отметьте зубы на формуле", "warning", 3000);
 		return;
@@ -81,10 +81,76 @@ export function exportLiveInvoiceToCashier({
 		discountPercent,
 		createdAtIso: new Date().toISOString(),
 	};
-	onCreateInvoice?.(invoiceData);
+
+	if (onCreateInvoice) {
+		onCreateInvoice(invoiceData);
+		showToast(
+			`Счет на ${netTotalPrice.toLocaleString("ru-RU")} ₽ выставлен кассиру!`,
+			"success",
+			5000,
+		);
+		return;
+	}
+
+	if (patientId) {
+		try {
+			const invoicePayload = {
+				patientId,
+				totalAmountRub: grossTotalPrice,
+				discountAmountRub: totalDiscountRub,
+				finalAmountRub: netTotalPrice,
+				items: baseItems.map((item) => ({
+					nameRu: item.title,
+					title: item.title,
+					code804n: item.code,
+					toothNumber: item.toothNumber,
+					toothCode: String(item.toothNumber),
+					priceKopecks: item.amountKopecks,
+					priceRub: item.price,
+					unitPriceRub: item.price,
+					quantity: item.quantity,
+					discountRub: item.discountRub ?? 0,
+					discountPercent,
+					totalRub: item.price * item.quantity - (item.discountRub ?? 0),
+				})),
+				notes: `Живая смета одонтограммы (${baseItems.length} поз.)`,
+			};
+
+			const response = await fetch("/api/invoices", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key":
+						typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+							? crypto.randomUUID()
+							: `live-inv-${Date.now()}`,
+				},
+				body: JSON.stringify(invoicePayload),
+			});
+
+			if (!response.ok) {
+				const errJson = (await response.json().catch(() => ({}))) as {
+					message?: string;
+				};
+				throw new Error(errJson.message || `Ошибка сервера: ${response.status}`);
+			}
+
+			showToast(
+				`Счет на ${netTotalPrice.toLocaleString("ru-RU")} ₽ выставлен в кассу и сохранен в базе!`,
+				"success",
+				5000,
+			);
+			return;
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			showToast(`Не удалось создать счёт: ${errMsg}`, "error", 5000);
+			return;
+		}
+	}
+
 	showToast(
-		`Счет на ${netTotalPrice.toLocaleString("ru-RU")} ₽ выставлен кассиру!`,
-		"success",
-		5000,
+		`Счет на ${netTotalPrice.toLocaleString("ru-RU")} ₽ сформирован (пациент не выбран)`,
+		"info",
+		4000,
 	);
 }

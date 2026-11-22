@@ -68,6 +68,8 @@ export interface ToothData {
 	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16;
 	hasFracture?: boolean;
 	hasApicoectomy?: boolean;
+	hasSecondaryCaries?: boolean | undefined;
+	secondaryCariesUnderFilling?: boolean | undefined;
 	stageBadge?: string | undefined;
 	calculus?: boolean | undefined;
 	updatedAt?: string | undefined;

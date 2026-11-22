@@ -58,6 +58,7 @@ import {
 	parseDicomHeader,
 	readFilePrefix,
 } from "./dicomParsing.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 
 export async function collectImagingFiles(
 	root: string,
@@ -65,10 +66,21 @@ export async function collectImagingFiles(
 	maxFiles: number,
 	options: ApiDicomScanOptions = {},
 	limits: ApiDicomFolderTraversalLimits = {},
+	organizationId?: string,
 ) {
 	const files: string[] = [];
 	const warnings: string[] = [];
-	const queue = [path.resolve(root)];
+	const safeRoot = organizationId
+		? validateAndResolvePacsLocalFilePath(organizationId, root)
+		: path.resolve(root);
+
+	if (!organizationId) {
+		if (root.includes("..") || root.includes("\0")) {
+			throw new Error("Недопустимый путь к папке снимков (Path Traversal).");
+		}
+	}
+
+	const queue = [safeRoot];
 	const maxFolders = Math.max(
 		1,
 		Math.floor(limits.maxFolders ?? apiDicomDefaultMaxFolders),
@@ -161,6 +173,14 @@ export async function collectImagingFiles(
 					const fullPath = path.join(current, entryName);
 					if (entry.isDirectory()) {
 						if (recursive) {
+							if (organizationId) {
+								try {
+									validateAndResolvePacsLocalFilePath(organizationId, fullPath);
+								} catch {
+									warnings.push(`Пропущена папка вне хранилища организации: ${entryName}`);
+									continue;
+								}
+							}
 							const queuedFolders = queue.length - queueIndex;
 							if (foldersScanned + queuedFolders < maxFolders) {
 								queue.push(fullPath);

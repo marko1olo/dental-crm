@@ -9,8 +9,8 @@ import {
 export interface OdontogramPatientSafetyCandidate {
 	readonly id?: string | undefined;
 	readonly birthDate?: string | null | undefined;
-	readonly allergies?: string | null | undefined;
-	readonly anamnesis?: { readonly allergies?: string | null | undefined } | null | undefined;
+	readonly allergies?: string | readonly string[] | string[] | null | undefined;
+	readonly anamnesis?: { readonly allergies?: string | readonly string[] | string[] | null | undefined } | null | undefined;
 	readonly clinicalSafetyProfile?: Parameters<typeof evaluatePatientSafetyFlags>[0] | null | undefined;
 	readonly notes?: string | null | undefined;
 }

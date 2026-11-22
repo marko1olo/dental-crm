@@ -1,7 +1,9 @@
 import type { TopBarOnboardingBaseProps } from "./topBarOnboardingTypes";
+import type { AdminSecretUnlockDomain } from "../../../helpers/types";
 import type {
 	DenteTelegramBotStatus,
 	DenteTelegramFeature,
+	DentalPricelistAnalysisResponse,
 	DocumentIngestionTarget,
 	ImagingSourceKind,
 	ImportSourceKind,
@@ -27,7 +29,7 @@ export interface TopBarOnboardingDraftProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleStaffWorkingDay: (staffId: string, day: number) => void;
-	saveStaffSchedule: (staffId: string) => Promise<void> | void;
+	saveStaffSchedule: (staffId: string) => Promise<unknown> | void;
 	chairScheduleDrafts: Record<string, StaffScheduleDraft>;
 	chairScheduleSaveStates: Record<string, string>;
 	chairScheduleDirtyIds: Set<string>;
@@ -37,12 +39,12 @@ export interface TopBarOnboardingDraftProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleChairWorkingDay: (chairId: string, day: number) => void;
-	saveChairSchedule: (chairId: string) => Promise<void> | void;
+	saveChairSchedule: (chairId: string) => Promise<unknown> | void;
 	pricelistSourceKindLabels: Record<PricelistSourceKind, string>;
 	pricelistSourceKind: PricelistSourceKind;
 	setPricelistSourceKind: (kind: PricelistSourceKind) => void;
 	clearPricelistImage: () => void;
-	setPricelistAnalysis: (analysis: unknown) => void;
+	setPricelistAnalysis: (analysis: DentalPricelistAnalysisResponse | null) => void;
 	importSourceLabels: Record<
 		ImportSourceKind,
 		{ title: string; detail?: string }
@@ -103,7 +105,7 @@ export interface TopBarOnboardingDraftProps {
 	) => void;
 	telegramAdminSecretDraft: string;
 	setTelegramAdminSecretDraft: (secret: string) => void;
-	unlockTelegramAdminSession: (scope?: string) => Promise<void> | void;
+	unlockTelegramAdminSession: (domainOverride?: AdminSecretUnlockDomain) => Promise<void> | void;
 	telegramAdminSecretSession: boolean;
 	telegramPrivacyModeDraft: string;
 	setTelegramPrivacyModeDraft: (mode: string) => void;
@@ -117,17 +119,17 @@ export interface TopBarOnboardingDraftProps {
 	telegramEnabledFeaturesDraft: readonly string[];
 	toggleTelegramFeature: (feature: string) => void;
 	telegramFeatureLabel: (feature: string) => string;
-	saveTelegramSettings: () => Promise<void> | void;
+	saveTelegramSettings: () => Promise<unknown> | void;
 	isTelegramSettingsSaving: boolean;
 	telegramSettingsSaveState: string;
 	telegramSettingsSaveError: string | null;
 	telegramSettingsDirty: boolean;
 	documentFactoryGroups: readonly DocumentFactoryGroup[];
-	saveClinicProfileFromDraft: () => Promise<void> | void;
+	saveClinicProfileFromDraft: () => Promise<unknown> | void;
 	clinicProfileSaveState: string;
-	onboardingTelegramRecommendations?: readonly string[];
-	previousOnboardingStep: OnboardingStepItem | null;
-	nextOnboardingStep: OnboardingStepItem | null;
+	onboardingTelegramRecommendations?: readonly string[] | undefined;
+	previousOnboardingStep?: OnboardingStepItem | null | undefined;
+	nextOnboardingStep?: OnboardingStepItem | null | undefined;
 }
 
 export interface TopBarOnboardingProps

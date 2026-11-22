@@ -113,6 +113,11 @@
 	.odontogram-toolbar__segmented {
 		max-width: 100%;
 		overflow-x: auto;
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+	.odontogram-toolbar__segmented::-webkit-scrollbar {
+		display: none;
 	}
 	.odontogram-toolbar__btn,
 	.odontogram-tools-trigger-btn {

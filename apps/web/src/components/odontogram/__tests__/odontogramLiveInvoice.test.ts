@@ -285,5 +285,41 @@ describe("OdontogramLiveInvoice — Order 804n Nomenclature & Endodontic Anatomi
 		// Проверяем шинирование
 		assert.ok(items.some((i) => i.toothNumber === 31 && i.code === "A16.07.019"));
 	});
+
+	test("Кариес по стандарту 804н: 1 поверхность A16.07.002.001, 2+ поверхности A16.07.002.002, вторичный кариес под пломбой (DEF 2.5)", () => {
+		// 1 поверхность кариеса
+		const tooth1Surf: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["occlusal"] },
+		];
+		const items1 = calculateLiveInvoiceItems(tooth1Surf);
+		assert.equal(items1.length, 1);
+		assert.equal(items1[0]?.code, "A16.07.002.001");
+		assert.equal(items1[0]?.price, 4500);
+		assert.equal(items1[0]?.amountKopecks, 450000);
+
+		// 2 поверхности кариеса (MODBL: mesial + occlusal)
+		const tooth2Surfs: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["mesial", "occlusal"] },
+		];
+		const items2 = calculateLiveInvoiceItems(tooth2Surfs);
+		assert.equal(items2.length, 1);
+		assert.equal(items2[0]?.code, "A16.07.002.002");
+		assert.equal(items2[0]?.price, 6000);
+		assert.equal(items2[0]?.amountKopecks, 600000);
+
+		// Пломбированный зуб с вторичным кариесом НЕ должен пропускаться!
+		const toothSecondaryCaries: ToothData[] = [
+			{
+				toothNumber: 46,
+				state: "Filled",
+				hasSecondaryCaries: true,
+				surfaces: ["distal", "occlusal"],
+			},
+		];
+		const itemsSecondary = calculateLiveInvoiceItems(toothSecondaryCaries);
+		assert.equal(itemsSecondary.length, 1, "Пломбированный зуб с вторичным кариесом обязан включаться в смету");
+		assert.equal(itemsSecondary[0]?.code, "A16.07.002.002");
+		assert.ok(itemsSecondary[0]?.title.includes("Вторичный кариес"));
+	});
 });
 

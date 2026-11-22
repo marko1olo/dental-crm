@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	patients,
@@ -16,23 +17,10 @@ import {
 } from "./types.js";
 
 /**
- * Валидный детерминированный UUID для позиций книги лечения (Мандат 8e, 8b: исключает синтез невалидных строк).
- * Если planId — стандартный 36-значный UUIDv4/v7 (8-4-4-4-12), детерминированно формирует валидный UUID
- * заменой последних 4 символов 12-символьного хвоста, гарантируя строгое соблюдение RFC 4122.
+ * Валидный детерминированный UUIDv7 для позиций книги лечения (Мандаты 8e, 8ap: честный реляционный SSOT).
  */
-export function ledgerRowId(planId: string, slot: number): string {
-	if (
-		typeof planId === "string" &&
-		planId.length === 36 &&
-		planId.charAt(8) === "-" &&
-		planId.charAt(13) === "-" &&
-		planId.charAt(18) === "-" &&
-		planId.charAt(23) === "-"
-	) {
-		const slotHex = slot.toString(16).padStart(4, "0").slice(-4);
-		return `${planId.slice(0, 32)}${slotHex}`;
-	}
-	return randomUUID();
+export function ledgerRowId(_planId?: string, _slot?: number): string {
+	return generateUuidV7();
 }
 
 export async function ensurePatientInOrganization(
@@ -107,17 +95,16 @@ export function serializeTreatmentPlan(
 			stageName: s.stageName,
 			completionPercentage: s.completionPercentage,
 		})),
-		items: items.map((item, index) => {
+		items: items.map((item) => {
 			const { priceId, name: legacyName } = splitStoredPriceId(item.priceId);
 			const name = item.name || (legacyName !== priceId ? legacyName : (item.name || legacyName));
 			const docInfo =
 				item.doctorId && doctorsById
 					? doctorsById.get(item.doctorId)
 					: undefined;
-			const ledgerId = ledgerRowId(plan.id, index).toLowerCase();
 			const ledgerRow =
 				(item.id ? ledgerByPlanItemId?.get(item.id.toLowerCase()) : undefined) ??
-				ledgerMap?.get(ledgerId);
+				(item.id ? ledgerMap?.get(item.id.toLowerCase()) : undefined);
 			const isCompleted = plan.status === "Completed" || ledgerRow?.status === "completed";
 			return {
 				id: item.id,
@@ -127,9 +114,9 @@ export function serializeTreatmentPlan(
 				quantity: item.quantity,
 				price: numeric(item.price),
 				discount: numeric(item.discount),
-				priceKopecks: Number(item.priceKopecks ?? Math.round(numeric(item.price) * 100)),
-				unitPriceKopecks: Number(item.priceKopecks ?? Math.round(numeric(item.price) * 100)),
-				discountKopecks: Number(item.discountKopecks ?? Math.round(numeric(item.discount) * 100)),
+				priceKopecks: Number(item.priceKopecks ?? rublesToKopecks(numeric(item.price))),
+				unitPriceKopecks: Number(item.priceKopecks ?? rublesToKopecks(numeric(item.price))),
+				discountKopecks: Number(item.discountKopecks ?? rublesToKopecks(numeric(item.discount))),
 				phase: item.phase,
 				isAuto: item.isBundle,
 				doctorId: item.doctorId ?? null,

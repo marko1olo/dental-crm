@@ -1,9 +1,12 @@
 import { createReadStream } from "node:fs";
 import { access } from "node:fs/promises";
+import { and, eq } from "drizzle-orm";
 import { imagingStudySchema, isValidToothFdi } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
+import { db } from "../../../db/client.js";
+import { xrayScans } from "../../../db/schema.js";
 import {
 	bindPatientToStudyInDb,
 	getImagingStudyById,
@@ -18,6 +21,7 @@ import {
 } from "../../../services/imaging/localPacsStorageService.js";
 import { autoBindUnassignedStudies } from "../patientFioBindingEngine.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
+import { parseDicomHeader, readFilePrefix } from "../dicomParsing.js";
 
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
@@ -32,7 +36,42 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 	}
 
 	try {
-		const updated = await bindPatientToStudyInDb(orgId, id, parsed.data.patientId);
+		const updated = await db.transaction(async (tx) => {
+			const study = await bindPatientToStudyInDb(orgId, id, parsed.data.patientId, tx);
+			if (study) {
+				const [existingXray] = await tx
+					.select({ id: xrayScans.id })
+					.from(xrayScans)
+					.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)))
+					.limit(1);
+
+				if (existingXray) {
+					await tx
+						.update(xrayScans)
+						.set({ patientId: parsed.data.patientId, updatedAt: new Date() })
+						.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)));
+				} else if (["periapical", "bitewing", "opg", "other"].includes(study.kind)) {
+					await tx
+						.insert(xrayScans)
+						.values({
+							id: study.id,
+							organizationId: orgId,
+							patientId: parsed.data.patientId,
+							storagePath: study.storagePath ?? null,
+							fileUrl: `/api/xray/scans/${study.id}/file`,
+							originalFilename: study.title,
+							mimeType: "image/jpeg",
+							kind: study.kind,
+							toothCode: study.toothCode ?? null,
+							notes: study.title,
+							status: "done",
+							capturedAt: study.capturedAt ? new Date(study.capturedAt) : new Date(),
+						})
+						.onConflictDoNothing();
+				}
+			}
+			return study;
+		});
 		if (!updated) return sendImagingStudyNotFound(reply);
 		return reply.code(200).send(imagingStudySchema.parse(updated));
 	} catch (err) {
@@ -63,7 +102,21 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 		}
 	}
 
-	const updated = await updateImagingStudyInDb(orgId, id, { toothCode: formatted, region: formatted ? `Зуб ${formatted}` : null });
+	const updated = await db.transaction(async (tx) => {
+		const study = await updateImagingStudyInDb(
+			orgId,
+			id,
+			{ toothCode: formatted, region: formatted ? `Зуб ${formatted}` : null },
+			tx,
+		);
+		if (study) {
+			await tx
+				.update(xrayScans)
+				.set({ toothCode: formatted, updatedAt: new Date() })
+				.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)));
+		}
+		return study;
+	});
 	if (!updated) return sendImagingStudyNotFound(reply);
 	return reply.code(200).send(imagingStudySchema.parse(updated));
 }
@@ -74,9 +127,21 @@ export async function unbindPatientHandler(request: FastifyRequest, reply: Fasti
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const updated = await unbindPatientFromStudyInDb(orgId, id);
-	if (!updated) return sendImagingStudyNotFound(reply);
-	return reply.code(200).send(imagingStudySchema.parse(updated));
+	try {
+		const updated = await db.transaction(async (tx) => {
+			const study = await unbindPatientFromStudyInDb(orgId, id, tx);
+			if (study) {
+				await tx
+					.delete(xrayScans)
+					.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)));
+			}
+			return study;
+		});
+		if (!updated) return sendImagingStudyNotFound(reply);
+		return reply.code(200).send(imagingStudySchema.parse(updated));
+	} catch (err) {
+		return reply.code(400).send({ error: "UnbindingFailed", message: err instanceof Error ? err.message : "Ошибка при отвязке исследования от пациента." });
+	}
 }
 
 export async function autoBindHandler(request: FastifyRequest, reply: FastifyReply) {
@@ -160,9 +225,46 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 		const filePath = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
 		await access(filePath);
 
+		let dimX = 512;
+		let dimY = 512;
+		let dimZ = study.sliceCount && study.sliceCount > 0 ? study.sliceCount : 1;
+		if (study.dimensions) {
+			const parts = study.dimensions.toLowerCase().split(/[x×]/).map((p) => Number.parseInt(p.trim(), 10)).filter((n) => !Number.isNaN(n) && n > 0);
+			if (parts.length >= 2) {
+				dimX = parts[0]!;
+				dimY = parts[1]!;
+				if (parts.length >= 3) dimZ = parts[2]!;
+			}
+		}
+
+		let spX = 0.25;
+		let spY = 0.25;
+		let spZ = 0.25;
+		if (study.voxelSpacing) {
+			const spParts = study.voxelSpacing.toLowerCase().replace(/mm/g, "").split(/[x×]/).map((p) => Number.parseFloat(p.trim())).filter((n) => !Number.isNaN(n) && n > 0);
+			if (spParts.length >= 1) {
+				spX = spParts[0]!;
+				spY = spParts[1] ?? spParts[0]!;
+				spZ = spParts[2] ?? spParts[1] ?? spParts[0]!;
+			}
+		}
+
+		if (!study.dimensions) {
+			try {
+				const prefix = readFilePrefix(filePath, 65536);
+				const meta = parseDicomHeader(prefix);
+				if (meta.imageColumns && meta.imageRows) {
+					dimX = meta.imageColumns;
+					dimY = meta.imageRows;
+				}
+			} catch {
+				// best-effort fallback
+			}
+		}
+
 		reply.header("Content-Type", "application/octet-stream");
-		reply.header("x-cbct-dim-x", "512").header("x-cbct-dim-y", "512").header("x-cbct-dim-z", "1");
-		reply.header("x-cbct-sp-x", "0.25").header("x-cbct-sp-y", "0.25").header("x-cbct-sp-z", "0.25");
+		reply.header("x-cbct-dim-x", String(dimX)).header("x-cbct-dim-y", String(dimY)).header("x-cbct-dim-z", String(dimZ));
+		reply.header("x-cbct-sp-x", String(spX)).header("x-cbct-sp-y", String(spY)).header("x-cbct-sp-z", String(spZ));
 		reply.header("x-cbct-min-hu", "-1000").header("x-cbct-max-hu", "3000");
 		return reply.send(createReadStream(filePath));
 	} catch (err) {

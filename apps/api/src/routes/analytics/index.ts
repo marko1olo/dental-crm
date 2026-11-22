@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { registerCohortRoutes } from "./cohortRoutes.js";
 import { registerCuratorRoutes } from "./curatorRoutes.js";
 import { registerDashboardRoutes } from "./dashboardRoutes.js";
-import { registerDiagnocatRoutes } from "./diagnocatRoutes.js";
+import { registerDiagnocatAnalyticsRoutes } from "./diagnocatRoutes.js";
 import { registerRebookingRoutes } from "./rebookingRoutes.js";
 import { registerUtilizationRoutes } from "./utilizationRoutes.js";
 
@@ -14,7 +14,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 	await registerDashboardRoutes(app);
 	await registerCuratorRoutes(app);
 	await registerRebookingRoutes(app);
-	await registerDiagnocatRoutes(app);
+	await registerDiagnocatAnalyticsRoutes(app);
 	await registerCohortRoutes(app);
 	await registerUtilizationRoutes(app);
 }

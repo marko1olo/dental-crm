@@ -11,14 +11,18 @@ import {
 	AppToastPortal,
 	AppTopBar,
 	AppViewRouter,
+	type AppTopBarProps,
 } from "../components/appLayout";
 import { TelephonyDrawer } from "../components/telephony/TelephonyDrawer";
 import { preloadWorkspaceView } from "../workspacePreload";
-import { getFilteredAppViews } from "../workspaceShell";
+import { getFilteredAppViews, type AppView } from "../workspaceShell";
 import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
 import { viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 import type { useAppLogic } from "../useAppLogic";
+import type { CommunicationTask, GeneratedDocument, ImagingSourceKind, ImagingStudy, StaffRole } from "@dental/shared";
+import type { ClinicProfileDraft } from "../components/onboarding/wizard/types";
+import type { AdminSecretUnlockDomain } from "../constants/uiPreferencesConstants";
 
 interface AppNavigationShellProps {
 	appLogic: ReturnType<typeof useAppLogic>;
@@ -35,18 +39,98 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 
 	const { dashboard, currentView, setCurrentView, selectedWorkspaceRole, activeVisitPatient, activePatient, activePatientInsight, activeCommunicationTasks, activeImagingStudies, activeUsableDocuments, patientId, clinicProfileDraft, setQuery, setScheduleDateFilter } = appLogic;
 
-	const topBarProps = {
+	const topBarProps: AppTopBarProps = {
+		...appLogic,
 		dashboard,
-		clinicName: dashboard.clinicName,
-		todayIso: dashboard.todayIso,
+		clinicName: dashboard?.clinicName ?? "",
+		todayIso: dashboard?.todayIso ?? new Date().toISOString().slice(0, 10),
 		defaultClinicNoticeHidden,
 		setDefaultClinicNoticeHidden,
 		handleLockSession: sessionAuth.handleLockSession,
-		openDoctorShiftCockpit: appLogic.openDoctorShiftCockpit,
+		openDoctorShiftCockpit: appLogic.openDoctorShiftCockpit ?? (() => {}),
 		setIsCbctDirectModalOpen: routing.setIsCbctDirectModalOpen,
 		isStripDismissedLocally,
 		setIsStripDismissedLocally,
-		...appLogic,
+		setUiLanguage: (lang: string) => {
+			if (lang === "ru" || lang === "en") {
+				appLogic.setUiLanguage(lang);
+			}
+		},
+		updateClinicProfileDraft: (fieldOrPatch: string | Partial<ClinicProfileDraft>, value?: unknown) => {
+			if (typeof fieldOrPatch === "string") {
+				appLogic.updateClinicProfileDraft?.(fieldOrPatch, value);
+			} else if (fieldOrPatch && typeof fieldOrPatch === "object") {
+				Object.entries(fieldOrPatch).forEach(([k, v]) => {
+					appLogic.updateClinicProfileDraft?.(k, v);
+				});
+			}
+		},
+		addStaffMember: async () => {
+			if (typeof appLogic.addStaffMember === "function") {
+				await (appLogic.addStaffMember as (role?: StaffRole) => Promise<unknown>)(appLogic.newStaffRole as StaffRole);
+			}
+		},
+		saveStaffSchedule: async (staffId: string) => {
+			if (typeof appLogic.saveStaffSchedule === "function") {
+				await appLogic.saveStaffSchedule(staffId);
+			}
+		},
+		saveChairSchedule: async (chairId: string) => {
+			if (typeof appLogic.saveChairSchedule === "function") {
+				await appLogic.saveChairSchedule(chairId);
+			}
+		},
+		imagingImportSourceKind: (appLogic.imagingImportSourceKind as ImagingSourceKind | undefined) ?? "manual_upload",
+		setImagingImportSourceKind: (kind: ImagingSourceKind) => {
+			if (typeof appLogic.setImagingImportSourceKind === "function") {
+				(appLogic.setImagingImportSourceKind as (k: ImagingSourceKind) => void)(kind);
+			}
+		},
+		setImagingImportPreview: (preview: unknown) => {
+			if (typeof appLogic.setImagingImportPreview === "function") {
+				(appLogic.setImagingImportPreview as (p: unknown) => void)(preview);
+			}
+		},
+		setImagingImportCommit: (commit: unknown) => {
+			if (typeof appLogic.setImagingImportCommit === "function") {
+				(appLogic.setImagingImportCommit as (c: unknown) => void)(commit);
+			}
+		},
+		setDicomSeriesPreview: (preview: unknown) => {
+			if (typeof appLogic.setDicomSeriesPreview === "function") {
+				(appLogic.setDicomSeriesPreview as (p: unknown) => void)(preview);
+			}
+		},
+		setDicomViewerLaunchManifest: (manifest: unknown) => {
+			if (typeof appLogic.setDicomViewerLaunchManifest === "function") {
+				(appLogic.setDicomViewerLaunchManifest as (m: unknown) => void)(manifest);
+			}
+		},
+		setDicomViewerToolStateBundle: (bundle: unknown) => {
+			if (typeof appLogic.setDicomViewerToolStateBundle === "function") {
+				(appLogic.setDicomViewerToolStateBundle as (b: unknown) => void)(bundle);
+			}
+		},
+		setDicomViewerWorkbenchManifest: (manifest: unknown) => {
+			if (typeof appLogic.setDicomViewerWorkbenchManifest === "function") {
+				(appLogic.setDicomViewerWorkbenchManifest as (m: unknown) => void)(manifest);
+			}
+		},
+		setDicomWebCheck: (check: unknown) => {
+			if (typeof appLogic.setDicomWebCheck === "function") {
+				(appLogic.setDicomWebCheck as (c: unknown) => void)(check);
+			}
+		},
+		setDicomWebEndpointUrl: (url: string) => {
+			if (typeof appLogic.setDicomWebEndpointUrl === "function") {
+				(appLogic.setDicomWebEndpointUrl as (u: string) => void)(url);
+			}
+		},
+		unlockTelegramAdminSession: (domainOverride?: AdminSecretUnlockDomain) => {
+			if (typeof appLogic.unlockTelegramAdminSession === "function") {
+				(appLogic.unlockTelegramAdminSession as (d?: AdminSecretUnlockDomain) => void)(domainOverride);
+			}
+		},
 	};
 
 	const featureFlags = useWorkspaceProfile();
@@ -63,7 +147,7 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 				sidebarCollapsed={sidebarCollapsed}
 				toggleSidebarCollapsed={() => setSidebarCollapsed((c) => !c)}
 				handleLockSession={sessionAuth.handleLockSession}
-				setCurrentView={setCurrentView}
+				setCurrentView={(view) => setCurrentView(view as AppView)}
 			/>
 			<AppViewRouter
 				currentView={currentView}
@@ -72,18 +156,22 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 				activeVisitPatient={activeVisitPatient}
 				activePatient={activePatient}
 				activePatientInsight={activePatientInsight}
-				activeCommunicationTasks={activeCommunicationTasks}
-				activeImagingStudies={activeImagingStudies}
-				activeUsableDocuments={activeUsableDocuments}
-				patientId={patientId}
+				activeCommunicationTasks={(activeCommunicationTasks ?? null) as readonly CommunicationTask[] | null}
+				activeImagingStudies={(activeImagingStudies ?? null) as readonly ImagingStudy[] | null}
+				activeUsableDocuments={(activeUsableDocuments ?? null) as readonly GeneratedDocument[] | null}
+				patientId={(patientId ?? null) as string | null}
 				clinicProfileDraft={clinicProfileDraft}
 				appLogicValue={appLogic}
 				topBar={<AppTopBar {...topBarProps} />}
 				toastPortal={
 					<AppToastPortal
-						setCurrentView={setCurrentView}
+						setCurrentView={(view) => setCurrentView(view as AppView)}
 						setQuery={setQuery}
-						setScheduleDateFilter={setScheduleDateFilter}
+						setScheduleDateFilter={(date) => {
+							if (typeof setScheduleDateFilter === "function") {
+								setScheduleDateFilter(date);
+							}
+						}}
 					/>
 				}
 			/>

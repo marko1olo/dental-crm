@@ -7,7 +7,11 @@ import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
-import { ORDER_804N_PROCEDURES } from "./odontogramLiveInvoiceCalculations";
+import {
+	ORDER_804N_PROCEDURES,
+	type LiveInvoiceCashierExport,
+	type LiveInvoiceItem,
+} from "./odontogramLiveInvoiceCalculations";
 
 export interface OdontogramActiveViewSlotProps {
 	readonly activeMode: OdontogramViewMode;
@@ -34,6 +38,14 @@ export interface OdontogramActiveViewSlotProps {
 	readonly onInvertSelection?: (() => void) | undefined;
 	readonly isPediatric?: boolean | undefined;
 	readonly isMixed?: boolean | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly onGenerateTreatmentPlan?:
+		| ((items: LiveInvoiceItem[]) => void)
+		| undefined;
+	readonly onCreateInvoice?:
+		| ((invoice: LiveInvoiceCashierExport) => void)
+		| undefined;
 }
 
 export const OdontogramActiveViewSlot: React.FC<
@@ -55,6 +67,10 @@ export const OdontogramActiveViewSlot: React.FC<
 	onInvertSelection,
 	isPediatric,
 	isMixed,
+	patientId,
+	patientName,
+	onGenerateTreatmentPlan,
+	onCreateInvoice,
 }) => {
 	const [liveEstimateToast, setLiveEstimateToast] = useState<{
 		toothNumbers: number[];
@@ -227,6 +243,10 @@ export const OdontogramActiveViewSlot: React.FC<
 					teethData={teethData}
 					isOpen={isLiveInvoiceOpen}
 					onClose={() => setIsLiveInvoiceOpen(false)}
+					patientId={patientId ?? (sharedViewProps?.patientId as string | undefined)}
+					patientName={patientName ?? (sharedViewProps?.patientName as string | undefined)}
+					onGenerateTreatmentPlan={onGenerateTreatmentPlan}
+					onCreateInvoice={onCreateInvoice}
 					className="rounded-2xl border border-[var(--line)] overflow-hidden"
 				/>
 			)}

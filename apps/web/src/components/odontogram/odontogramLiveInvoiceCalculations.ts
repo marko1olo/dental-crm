@@ -45,6 +45,20 @@ export const ORDER_804N_PROCEDURES: Record<
 		amountKopecks: 450000,
 		category: "Терапия",
 	},
+	Caries1Surface: {
+		code: "A16.07.002.001",
+		title: "Восстановление зуба пломбой I, V, VI класс по Блэку (1 поверхность)",
+		price: 4500,
+		amountKopecks: 450000,
+		category: "Терапия",
+	},
+	CariesMultiSurfaces: {
+		code: "A16.07.002.002",
+		title: "Восстановление зуба пломбой II, III, IV класс по Блэку (2 и более поверхностей)",
+		price: 6000,
+		amountKopecks: 600000,
+		category: "Терапия",
+	},
 	Crown: {
 		code: "A16.07.004.001",
 		title: "Восстановление зуба коронкой из диоксида циркония / E.max",
@@ -498,7 +512,18 @@ export function calculateLiveInvoiceItems(
 			}
 		}
 
-		if (!state || state === "Healthy" || state === "Filled") continue;
+		const hasSecondaryCaries =
+			Boolean(t.hasSecondaryCaries) ||
+			Boolean(
+				(t.clinicalData as Record<string, unknown> | undefined)
+					?.hasSecondaryCaries,
+			) ||
+			Boolean(
+				(t.clinicalData as Record<string, unknown> | undefined)
+					?.secondaryCariesUnderFilling,
+			);
+
+		if (!state || state === "Healthy" || (state === "Filled" && !hasSecondaryCaries)) continue;
 
 		// 2. Детская стоматология (Временные зубы 51..85)
 		if (isDeciduous) {
@@ -601,7 +626,64 @@ export function calculateLiveInvoiceItems(
 			continue;
 		}
 
-		// 4. Взрослая терапия, ортопедия, хирургия (Caries, Crown, Implant, Missing...)
+		// 4. Взрослая терапия (кариес постоянных зубов, включая вторичный кариес и 804н по числу поверхностей)
+		const isCariesTreatment = state === "Caries" || (state === "Filled" && hasSecondaryCaries);
+		if (isCariesTreatment) {
+			let surfaceCount = 1;
+			if (Array.isArray(t.surfaces) && t.surfaces.length > 0) {
+				surfaceCount = t.surfaces.length;
+			} else if (
+				t.clinicalData &&
+				typeof t.clinicalData === "object" &&
+				"defectSurfaces" in t.clinicalData &&
+				Array.isArray(
+					(t.clinicalData as { defectSurfaces?: unknown[] }).defectSurfaces,
+				)
+			) {
+				surfaceCount = (
+					t.clinicalData as { defectSurfaces: unknown[] }
+				).defectSurfaces.length;
+			}
+
+			const pr =
+				surfaceCount >= 2
+					? ORDER_804N_PROCEDURES.CariesMultiSurfaces!
+					: ORDER_804N_PROCEDURES.Caries1Surface!;
+
+			const itemKey = `${num}-${pr.code}`;
+			const qty = quantities[itemKey] ?? 1;
+
+			if (!excludedKeys.has(itemKey)) {
+				const itemPrice = pr.price;
+				const grossKopecks = pr.amountKopecks * qty;
+				const discKopecks =
+					discountPercent > 0
+						? percentageOfKopecks(
+								toExactKopecks(grossKopecks),
+								Math.round(discountPercent * 100),
+							)
+						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const itemDiscount = kopecksToRubles(discKopecks);
+				const titleDetail = hasSecondaryCaries
+					? `Зуб ${num}: Вторичный кариес под пломбой — ${pr.title}`
+					: `Зуб ${num}: ${pr.title}`;
+
+				items.push({
+					toothNumber: num,
+					code: pr.code,
+					title: titleDetail,
+					category: pr.category,
+					price: itemPrice,
+					amountKopecks: netKopecks,
+					quantity: qty,
+					discountRub: itemDiscount,
+				});
+			}
+			continue;
+		}
+
+		// 5. Взрослая ортопедия, хирургия (Crown, Implant, Missing...)
 		if (ORDER_804N_PROCEDURES[state]) {
 			const pr = ORDER_804N_PROCEDURES[state]!;
 			const itemKey = `${num}-${pr.code}`;

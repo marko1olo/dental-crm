@@ -44,7 +44,7 @@ import { registerOnboardingRoutes } from "../routes/onboarding/index.js";
 import { registerIngestionRoutes } from "../routes/ingestion.js";
 import { registerInsuranceRoutes } from "../routes/insurance.js";
 import { registerInvoiceRoutes } from "../routes/invoices.js";
-import { registerDiagnocatRoutes } from "../routes/integrations/diagnocat.js";
+import { registerDiagnocatIntegrationRoutes } from "../routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "../routes/integrations/flexbe.js";
 import { registerProdoctorovRoutes } from "../routes/integrations/prodoctorov.js";
 import { registerDadataLandingIntegrationRoutes } from "../routes/integrations/dadataLandingIntegrationRoutes.js";
@@ -231,7 +231,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerVisitRoutes(app);
 	await registerDicomwebRoutes(app);
 	await registerXrayRoutes(app);
-	await registerDiagnocatRoutes(app);
+	await registerDiagnocatIntegrationRoutes(app);
 	await registerAuthRoutes(app);
 	await registerAnalyticsRoutes(app);
 	await registerAuditRoutes(app);

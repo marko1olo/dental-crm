@@ -168,15 +168,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		}
 
 		if (!patientExists) {
-			// Для демо-пациентов или при работе вне тестовой БД возвращаем нормальное состояние
-			if (patientId.startsWith("pat-") || patientId.startsWith("demo-")) {
-				return reply.send({
-					success: true,
-					toothNumber,
-					state: "Healthy",
-					clinicalData: null,
-				});
-			}
 			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
 		}
 
@@ -186,6 +177,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			surfaces: string[] | null;
 			notes: string | null;
 			canalMeasurements: EndoToothClinicalData["canals"] | null;
+			clinicalData: EndoToothClinicalData | null;
 		} | undefined;
 		try {
 			const [firstRow] = await db
@@ -195,6 +187,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					surfaces: toothStates.surfaces,
 					notes: toothStates.notes,
 					canalMeasurements: toothStates.canalMeasurements,
+					clinicalData: toothStates.clinicalData,
 				})
 				.from(toothStates)
 				.where(
@@ -213,6 +206,9 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					notes: firstRow.notes,
 					canalMeasurements: Array.isArray(firstRow.canalMeasurements)
 						? (firstRow.canalMeasurements as EndoToothClinicalData["canals"])
+						: null,
+					clinicalData: (firstRow.clinicalData && typeof firstRow.clinicalData === "object")
+						? (firstRow.clinicalData as EndoToothClinicalData)
 						: null,
 				};
 			}
@@ -239,7 +235,8 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		let resolvedClinicalData = parseClinicalDataFromNotes(tooth.notes);
+		let resolvedClinicalData: EndoToothClinicalData | null =
+			tooth.clinicalData || parseClinicalDataFromNotes(tooth.notes);
 		if (tooth.canalMeasurements && Array.isArray(tooth.canalMeasurements) && tooth.canalMeasurements.length > 0) {
 			const firstCanalMeta = (tooth.canalMeasurements[0] && typeof tooth.canalMeasurements[0] === "object")
 				? (tooth.canalMeasurements[0] as Record<string, unknown>)
@@ -248,12 +245,12 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			resolvedClinicalData = {
 				toothNumber: tooth.toothNumber,
 				canals: tooth.canalMeasurements,
-				irrigation: (firstCanalMeta?.irrigation as string | undefined) ?? resolvedClinicalData?.irrigation ?? null,
-				rotarySystem: (firstCanalMeta?.rotarySystem as string | undefined) ?? resolvedClinicalData?.rotarySystem ?? null,
-				radiologyControl: (firstCanalMeta?.radiologyControl as string | undefined) ?? resolvedClinicalData?.radiologyControl ?? null,
-				apexLocator: (firstCanalMeta?.apexLocator as string | undefined) ?? resolvedClinicalData?.apexLocator ?? (tooth.canalMeasurements[0]?.apexLocatorReading || null),
+				irrigation: (resolvedClinicalData?.irrigation as string | undefined) ?? (firstCanalMeta?.irrigation as string | undefined) ?? null,
+				rotarySystem: (resolvedClinicalData?.rotarySystem as string | undefined) ?? (firstCanalMeta?.rotarySystem as string | undefined) ?? null,
+				radiologyControl: (resolvedClinicalData?.radiologyControl as string | undefined) ?? (firstCanalMeta?.radiologyControl as string | undefined) ?? null,
+				apexLocator: (resolvedClinicalData?.apexLocator as string | undefined) ?? (firstCanalMeta?.apexLocator as string | undefined) ?? (tooth.canalMeasurements[0]?.apexLocatorReading || null),
 				notes: tooth.notes && !tooth.notes.startsWith("{") ? tooth.notes : (resolvedClinicalData?.notes || ""),
-				stageStamp: (firstCanalMeta?.stageStamp as "COMPLETED" | "TEMP_CAOH2" | "DRAFT" | undefined) ?? resolvedClinicalData?.stageStamp ?? (tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED"),
+				stageStamp: (resolvedClinicalData?.stageStamp as "COMPLETED" | "TEMP_CAOH2" | "DRAFT" | undefined) ?? (firstCanalMeta?.stageStamp as "COMPLETED" | "TEMP_CAOH2" | "DRAFT" | undefined) ?? (tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED"),
 				updatedAt: resolvedClinicalData?.updatedAt || new Date().toISOString(),
 			};
 		}
@@ -350,7 +347,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			}
 		}
 
-		if (!patientExists && !patientId.startsWith("pat-") && !patientId.startsWith("demo-")) {
+		if (!patientExists) {
 			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
 		}
 
@@ -435,9 +432,9 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			updatedAt: now.toISOString(),
 		};
 
-		// Если БД оффлайн или пациент виртуальный demo — возвращаем успешный ответ
-		if (dbOffline || !patientExists) {
-			const simulatedState = {
+		// Если БД оффлайн — возвращаем аварийный фолбэк
+		if (dbOffline) {
+			const fallbackState = {
 				toothNumber,
 				state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Pulpitis" : "Root_Canal_Treated"),
 				surfaces: parsed.data.surfaces || null,
@@ -445,7 +442,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 				canalMeasurements: sanitizedCanals,
 				clinicalData,
 			};
-			return reply.send({ success: true, ...simulatedState });
+			return reply.send({ success: true, ...fallbackState });
 		}
 
 		try {
@@ -503,6 +500,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					newState: targetState,
 					previousSurfaces: existing?.surfaces ?? null,
 					newSurfaces: targetSurfaces,
+					clinicalData: clinicalData,
 					canalMeasurements: enrichedCanals,
 					changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
 					reason: endoReason,
@@ -519,6 +517,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 						state: targetState,
 						surfaces: targetSurfaces,
 						notes: finalNotesText,
+						clinicalData: clinicalData,
 						canalMeasurements: enrichedCanals,
 						updatedAt: now,
 						isSynced: false,
@@ -530,6 +529,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 							state: targetState,
 							surfaces: targetSurfaces,
 							notes: finalNotesText,
+							clinicalData: clinicalData,
 							canalMeasurements: enrichedCanals,
 							updatedAt: now,
 							isSynced: false,
@@ -541,6 +541,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 						state: toothStates.state,
 						surfaces: toothStates.surfaces,
 						notes: toothStates.notes,
+						clinicalData: toothStates.clinicalData,
 						canalMeasurements: toothStates.canalMeasurements,
 					});
 

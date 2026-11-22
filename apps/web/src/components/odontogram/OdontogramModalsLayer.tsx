@@ -27,7 +27,7 @@ export interface OdontogramActivePatientContext {
 	readonly id?: string | undefined;
 	readonly name?: string | undefined;
 	readonly fullName?: string | undefined;
-	readonly phone?: string | undefined;
+	readonly phone?: string | null | undefined;
 	readonly birthDate?: string | null | undefined;
 	readonly cardNumber?: string | undefined;
 	readonly medicalCardNumber?: string | undefined;
@@ -43,6 +43,8 @@ export interface OdontogramAuthContext {
 	readonly organizationId?: string | undefined;
 	readonly userId?: string | undefined;
 	readonly currentUser?: { readonly name?: string | undefined } | undefined;
+	readonly role?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 interface DictationSoapPayload {
@@ -135,9 +137,9 @@ export interface OdontogramModalsLayerProps {
 	setIsFastCheckoutOpen: (open: boolean) => void;
 	fastCheckoutMethod: CheckoutPaymentMethodType;
 	liveGrossTotalRub: number;
-	activePatient?: OdontogramActivePatientContext | undefined;
-	activeDoctor?: OdontogramActiveDoctorContext | undefined;
-	auth?: OdontogramAuthContext | undefined;
+	activePatient?: OdontogramActivePatientContext | null | undefined;
+	activeDoctor?: OdontogramActiveDoctorContext | null | undefined;
+	auth?: OdontogramAuthContext | null | undefined;
 	setAiPendingProposal: React.Dispatch<
 		React.SetStateAction<{
 			source: "voice" | "vision" | "sensor";
@@ -222,17 +224,23 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 							const surfaces = tooth?.surfaces || [];
 							try {
 								const res = await fetch(
-									`/api/patients/${patientId}/tooth-states/batch`,
+									`/api/patients/${patientId}/tooth-states/${endoTooth}/endo`,
 									{
 										method: "POST",
 										headers: denteAdminSecretRequestHeaders({
 											"Content-Type": "application/json",
+											"Idempotency-Key": crypto.randomUUID(),
 										}),
 										body: JSON.stringify({
-											toothNumbers: [endoTooth],
+											canals: canals || clinicalData?.canals || [],
+											irrigation: clinicalData?.irrigation ?? null,
+											rotarySystem: clinicalData?.rotarySystem ?? null,
+											radiologyControl: clinicalData?.radiologyControl ?? null,
+											apexLocator: clinicalData?.apexLocator ?? null,
+											notes: clinicalData?.notes ?? "",
+											stageStamp: clinicalData?.stageStamp ?? "COMPLETED",
 											state,
 											surfaces: surfaces.length > 0 ? surfaces : undefined,
-											clinicalData,
 										}),
 									},
 								);

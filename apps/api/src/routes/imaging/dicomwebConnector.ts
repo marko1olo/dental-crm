@@ -93,17 +93,17 @@ export async function checkDicomWebConnector(input: DicomWebConnectorCheckReques
 				wadoBaseUrl,
 				stowBaseUrl,
 				configuredAuthMode: input.authMode,
-				status: "ready",
-				canSearch: true,
-				canRetrieve: true,
-				storeConfigured: true,
-				qidoHttpStatus: 200,
+				status: "unreachable",
+				canSearch: false,
+				canRetrieve: false,
+				storeConfigured: Boolean(input.stowRsPath),
+				qidoHttpStatus: null,
 				latencyMs,
 				warnings: [
-					"Амбулаторная стоматология: внешний PACS на локальном порту не запущен, активирован встроенный архив снимков клиники.",
-					"Снимки КЛКТ и визиографа хранятся и обрабатываются локально в защищённом хранилище клиники.",
+					"Внешний узел DICOMweb на локальном адресе не отвечает (порт закрыт или сервер не запущен).",
+					"Снимки КЛКТ и визиографа сохраняются во встроенном защищённом локальном хранилище клиники.",
 				],
-				nextAction: "Локальный архив снимков стоматологической клиники готов к работе.",
+				nextAction: "Внешний PACS не запущен. Для работы со снимками используется встроенный защищённый архив клиники.",
 			});
 		}
 

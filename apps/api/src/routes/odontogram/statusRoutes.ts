@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId,
@@ -95,6 +95,7 @@ async function applyToothStateMutation(
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				clinicalData: toothStates.clinicalData,
 				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 				version: toothStates.version,
@@ -113,6 +114,7 @@ async function applyToothStateMutation(
 			state: string;
 			surfaces: unknown;
 			notes: string | null;
+			clinicalData: unknown | null;
 			canalMeasurements: unknown | null;
 			updatedAt: Date | null;
 			version: number | null;
@@ -124,12 +126,36 @@ async function applyToothStateMutation(
 			]),
 		);
 
-		const serializedClinicalNotes = data.clinicalData
-			? JSON.stringify(data.clinicalData)
-			: data.notes;
+		let incomingClinicalData: Record<string, unknown> | null =
+			(data.clinicalData as Record<string, unknown> | undefined) ?? null;
+		let incomingDoctorNotes: string | null | undefined = data.notes;
+		if (
+			typeof incomingDoctorNotes === "string" &&
+			incomingDoctorNotes.trim().startsWith("{") &&
+			incomingDoctorNotes.trim().endsWith("}")
+		) {
+			try {
+				const parsed = JSON.parse(incomingDoctorNotes);
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+					if (!incomingClinicalData) {
+						incomingClinicalData = parsed as Record<string, unknown>;
+					}
+					const innerNotes =
+						(parsed as { notes?: unknown; doctorNotes?: unknown })
+							.doctorNotes ??
+						(parsed as { notes?: unknown; doctorNotes?: unknown }).notes;
+					incomingDoctorNotes =
+						typeof innerNotes === "string" &&
+						!innerNotes.trim().startsWith("{")
+							? innerNotes
+							: null;
+				}
+			} catch {
+				// not json
+			}
+		}
 
 		const historyToInsert: (typeof toothStateHistory.$inferInsert)[] = [];
-		const teethToDelete: number[] = [];
 		const statesToInsert: (typeof toothStates.$inferInsert)[] = [];
 
 		for (const toothNumber of toothNumbers) {
@@ -144,7 +170,9 @@ async function applyToothStateMutation(
 				(incomingTime === prevTime && incomingVersion >= prevVersion);
 
 			if (incomingWins) {
-				const prevClinical = parseClinicalDataFromNotes(prev?.notes);
+				const prevClinical =
+					(prev?.clinicalData as Record<string, unknown> | null) ||
+					parseClinicalDataFromNotes(prev?.notes);
 				const prevStateRaw = prev?.state ?? null;
 				const prevStateLower = (prevStateRaw ?? "").toLowerCase();
 
@@ -188,10 +216,12 @@ async function applyToothStateMutation(
 
 				let effectiveState = data.state;
 				let effectiveSurfaces = data.surfaces ? normalizeSurfaces(data.surfaces) : null;
+				let effectiveClinicalData: Record<string, unknown> | null =
+					incomingClinicalData ?? prevClinical ?? null;
 				let effectiveNotes: string | null =
-					serializedClinicalNotes !== undefined
-						? serializedClinicalNotes
-						: (prev?.notes ?? null);
+					incomingDoctorNotes !== undefined
+						? incomingDoctorNotes
+						: (prev?.notes && !prev.notes.trim().startsWith("{") ? prev.notes : null);
 
 				let historyNewState = data.state;
 				let historyReason = data.clinicalData
@@ -266,7 +296,7 @@ async function applyToothStateMutation(
 						lastPathologyAt: incomingUpdatedAt.toISOString(),
 					};
 
-					effectiveNotes = JSON.stringify(compositeClinicalData);
+					effectiveClinicalData = compositeClinicalData;
 					historyNewState = `${baseStateName} + ${data.state}`;
 					historyReason =
 						data.reason ||
@@ -322,7 +352,7 @@ async function applyToothStateMutation(
 						lastPathologyAt: incomingUpdatedAt.toISOString(),
 					};
 
-					effectiveNotes = JSON.stringify(compositeClinicalData);
+					effectiveClinicalData = compositeClinicalData;
 					historyNewState = `${prevStateRaw} [${prevSurfaces.join(",")}] + ${data.state} [${incomingSurfaces.join(",")}]`;
 					historyReason =
 						data.reason ||
@@ -358,7 +388,7 @@ async function applyToothStateMutation(
 						fillingSurfaces: incomingLower === "filled" ? incomingSurfaces : undefined,
 					};
 
-					effectiveNotes = JSON.stringify(compositeClinicalData);
+					effectiveClinicalData = compositeClinicalData;
 					historyReason =
 						data.reason ||
 						`Восстановление / ортопедическое лечение (${data.state})`;
@@ -377,7 +407,7 @@ async function applyToothStateMutation(
 				const effectiveSecondaryCaries = data.secondaryCariesUnderFilling ?? data.clinicalData?.secondaryCariesUnderFilling ?? prevClinical?.secondaryCariesUnderFilling;
 
 				if (isPrimaryTooth || effectiveMobility !== undefined || effectiveResorption !== undefined || effectivePediatricCrown !== undefined || effectiveSecondaryCaries !== undefined) {
-					const existingObj = parseClinicalDataFromNotes(effectiveNotes) || prevClinical || {};
+					const existingObj = effectiveClinicalData || prevClinical || {};
 					const enrichedClinicalData = {
 						...existingObj,
 						...(isPrimaryTooth ? { isPrimaryPediatric: true } : {}),
@@ -386,7 +416,7 @@ async function applyToothStateMutation(
 						...(effectivePediatricCrown !== undefined ? { pediatricCrownPresent: effectivePediatricCrown } : {}),
 						...(effectiveSecondaryCaries !== undefined ? { secondaryCariesUnderFilling: effectiveSecondaryCaries } : {}),
 					};
-					effectiveNotes = JSON.stringify(enrichedClinicalData);
+					effectiveClinicalData = enrichedClinicalData;
 				}
 
 				// 1. Record transition into append-only tooth state history audit log
@@ -399,13 +429,12 @@ async function applyToothStateMutation(
 					newState: historyNewState,
 					previousSurfaces: prev?.surfaces ?? null,
 					newSurfaces: effectiveSurfaces || null,
+					clinicalData: effectiveClinicalData,
 					canalMeasurements: effectiveCanalMeasurements,
 					changedByUserId: actorUserId,
 					reason: historyReason,
 					changedAt: incomingUpdatedAt,
 				});
-
-				teethToDelete.push(toothNumber);
 
 				statesToInsert.push({
 					organizationId,
@@ -414,6 +443,7 @@ async function applyToothStateMutation(
 					state: effectiveState,
 					surfaces: effectiveSurfaces || null,
 					notes: effectiveNotes,
+					clinicalData: effectiveClinicalData,
 					canalMeasurements: effectiveCanalMeasurements,
 					updatedAt: incomingUpdatedAt,
 					isSynced: false,
@@ -436,6 +466,7 @@ async function applyToothStateMutation(
 					newState: data.state,
 					previousSurfaces: null,
 					newSurfaces: data.surfaces || null,
+					clinicalData: (data.clinicalData as Record<string, unknown> | null) ?? null,
 					canalMeasurements: effectiveCanalMeasurements,
 					changedByUserId: actorUserId,
 					reason:
@@ -449,19 +480,27 @@ async function applyToothStateMutation(
 		if (historyToInsert.length > 0) {
 			await tx.insert(toothStateHistory).values(historyToInsert);
 		}
-		if (teethToDelete.length > 0) {
-			await tx
-				.delete(toothStates)
-				.where(
-					and(
-						eq(toothStates.organizationId, organizationId),
-						eq(toothStates.patientId, patientId),
-						inArray(toothStates.toothNumber, teethToDelete),
-					),
-				);
-		}
 		if (statesToInsert.length > 0) {
-			await tx.insert(toothStates).values(statesToInsert);
+			await tx
+				.insert(toothStates)
+				.values(statesToInsert)
+				.onConflictDoUpdate({
+					target: [
+						toothStates.organizationId,
+						toothStates.patientId,
+						toothStates.toothNumber,
+					],
+					set: {
+						state: sql`excluded.state`,
+						surfaces: sql`excluded.surfaces`,
+						notes: sql`excluded.notes`,
+						clinicalData: sql`excluded.clinical_data`,
+						canalMeasurements: sql`excluded.canal_measurements`,
+						updatedAt: sql`excluded.updated_at`,
+						isSynced: sql`excluded.is_synced`,
+						version: sql`excluded.version`,
+					},
+				});
 		}
 
 		const currentStates = await tx
@@ -470,6 +509,7 @@ async function applyToothStateMutation(
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				clinicalData: toothStates.clinicalData,
 				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 			})
@@ -483,12 +523,20 @@ async function applyToothStateMutation(
 			);
 
 		return currentStates.map((row) => {
-			const clin = parseClinicalDataFromNotes(row.notes);
+			const clin =
+				(row.clinicalData as Record<string, unknown> | null) ||
+				parseClinicalDataFromNotes(row.notes);
+			const cleanNotes =
+				row.notes &&
+				row.notes.trim().startsWith("{") &&
+				row.notes.trim().endsWith("}")
+					? null
+					: row.notes;
 			return {
 				toothNumber: row.toothNumber,
 				state: row.state,
 				surfaces: row.surfaces,
-				notes: row.notes,
+				notes: cleanNotes,
 				canalMeasurements: row.canalMeasurements ?? null,
 				updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 				clinicalData: clin,
@@ -573,6 +621,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				clinicalData: toothStates.clinicalData,
 				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 			})
@@ -593,12 +642,20 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		});
 
 		const states = rawStates.map((row) => {
-			const clin = parseClinicalDataFromNotes(row.notes);
+			const clin =
+				(row.clinicalData as Record<string, unknown> | null) ||
+				parseClinicalDataFromNotes(row.notes);
+			const cleanNotes =
+				row.notes &&
+				row.notes.trim().startsWith("{") &&
+				row.notes.trim().endsWith("}")
+					? null
+					: row.notes;
 			return {
 				toothNumber: row.toothNumber,
 				state: row.state,
 				surfaces: row.surfaces,
-				notes: row.notes,
+				notes: cleanNotes,
 				canalMeasurements: row.canalMeasurements ?? null,
 				updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 				clinicalData: clin,

@@ -54,7 +54,7 @@ export async function fetchAiDiagnosticStats(
 /** Алиас для обратной совместимости импортов */
 export const fetchDiagnocatStats = fetchAiDiagnosticStats;
 
-export async function registerDiagnocatRoutes(app: FastifyInstance) {
+export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
 	const handler = async (request: FastifyRequest<{ Querystring: { range?: string } }>, reply: FastifyReply) => {
 		const readAllowed = await requireClinicalReadAccess(
 			request,
@@ -108,3 +108,5 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/ai-diagnostics", handler);
 	app.get("/api/analytics/diagnocat", handler);
 }
+
+export const registerDiagnocatRoutes = registerDiagnocatAnalyticsRoutes;

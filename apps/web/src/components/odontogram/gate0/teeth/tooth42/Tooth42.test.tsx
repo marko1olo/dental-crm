@@ -36,9 +36,9 @@ describe("Tooth42 Wheeler Ch. 10 Mandibular Lateral Incisor Anatomical Invariant
 		assert.equal(canals[0]?.apex.y, 142.0);
 	});
 
-	it("renders Tooth42Container with XXL badge clearance (cy=194.5, height=218)", () => {
+	it("renders Tooth42Container with precision badge clearance (cy=176, height=218)", () => {
 		const html = renderToStaticMarkup(React.createElement(Tooth42Container, { presetId: "intact" }));
-		assert.ok(html.includes("<svg") && html.includes("id=\"tooth42-crown\"") && html.includes("r=\"18.5\""));
+		assert.ok(html.includes("<svg") && html.includes("id=\"tooth42-crown\"") && html.includes("r=\"14\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {

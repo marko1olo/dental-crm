@@ -17,6 +17,9 @@ interface PatientHistoryParams {
 	patientId: string;
 }
 
+export type { ToothHistoryTimelineEvent } from "./toothHistoryTimeline.js";
+export { isToothReferenced } from "./toothHistoryTimeline.js";
+
 export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
 	 * Получение хронологии изменений конкретного зуба (аудит Формы 043/у)
@@ -153,3 +156,5 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 		},
 	);
 }
+
+export { registerHistoryRoutes as registerToothHistoryRoutes };

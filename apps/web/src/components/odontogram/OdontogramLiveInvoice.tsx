@@ -1,4 +1,5 @@
 import type React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { LiveInvoiceCategoryBreakdown } from "./LiveInvoiceCategoryBreakdown";
 import { LiveInvoiceDiscountToolbar } from "./LiveInvoiceDiscountToolbar";
 import { LiveInvoiceFiscalBridge } from "./LiveInvoiceFiscalBridge";
@@ -91,7 +92,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 				patientId={patientId}
 				patientName={patientName}
 				netTotalPrice={invoice.netTotalPrice}
-				netTotalKopecks={BigInt(Math.round(invoice.netTotalPrice * 100))}
+				netTotalKopecks={rublesToKopecks(invoice.netTotalPrice)}
 				onClose={() => invoice.setIsFiscalModalOpen(false)}
 			/>
 		</aside>

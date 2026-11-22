@@ -18,6 +18,7 @@ import { requireClinicalReadAccess } from "../../../accessGuard.js";
 import { parseImagingManifest } from "../manifestParser.js";
 import { checkDicomWebConnector } from "../dicomwebConnector.js";
 import { collectImagingFiles, buildFolderScanManifest } from "../folderScanManifest.js";
+import { validateAndResolvePacsLocalFilePath } from "../../../services/imaging/localPacsSanitizer.js";
 
 export async function handleImagingImportPreview(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "imaging import preview"))) return;
@@ -50,10 +51,15 @@ export async function handleDicomServerPing(request: FastifyRequest, reply: Fast
 	const checkResult = await checkDicomWebConnector({
 		endpointUrl, qidoRsPath: "/studies", wadoRsPath: "/studies", stowRsPath: "/studies", authMode: "none", timeoutMs: 2500,
 	});
+	const isReady = checkResult.status === "ready";
 	return reply.send({
-		ok: checkResult.status === "ready", status: checkResult.status, latencyMs: checkResult.latencyMs, endpointUrl,
+		ok: isReady,
+		status: checkResult.status,
+		mode: isReady ? "external_pacs" : "internal_embedded_storage",
+		latencyMs: checkResult.latencyMs,
+		endpointUrl,
 		aeTitle: body.aeTitle ?? "DENTE_PACS",
-		message: checkResult.status === "ready"
+		message: isReady
 			? `Связь с узлом PACS (${body.aeTitle ?? "DENTE_PACS"} @ ${endpointUrl}) подтверждена (${checkResult.latencyMs} мс)`
 			: `Узел PACS (${endpointUrl}) не ответил: ${checkResult.nextAction}`,
 	});
@@ -76,17 +82,29 @@ export async function handleFolderScanPreview(request: FastifyRequest, reply: Fa
 		"Сканирование папки снимков не запущено: выберите папку и безопасные лимиты чтения.",
 	);
 	if (!parsed.ok) return reply.code(400).send(parsed.response);
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
 	const input = parsed.data;
-	return runAbortableImagingScan(request, reply, async (options) => {
-		const scan = await collectImagingFiles(input.folderPath, input.recursive, input.maxFiles, options, {
-			maxFolders: input.maxFolders, maxEntriesPerFolder: input.maxEntriesPerFolder,
+
+	let sanitizedFolderPath: string;
+	try {
+		sanitizedFolderPath = validateAndResolvePacsLocalFilePath(orgId, input.folderPath);
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Недопустимый путь к папке снимков (Path Traversal).";
+		return reply.code(400).send({
+			error: "PATH_TRAVERSAL_DETECTED",
+			message,
 		});
+	}
+
+	return runAbortableImagingScan(request, reply, async (options) => {
+		const scan = await collectImagingFiles(sanitizedFolderPath, input.recursive, input.maxFiles, options, {
+			maxFolders: input.maxFolders, maxEntriesPerFolder: input.maxEntriesPerFolder,
+		}, orgId);
 		const rawText = buildFolderScanManifest(scan.files);
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
 		const preview = await parseImagingManifest(orgId, { sourceName: input.sourceName, sourceKind: "folder_watch", rawText });
 		return imagingFolderScanResponseSchema.parse({
-			folderPath: path.resolve(input.folderPath), recursive: input.recursive,
+			folderPath: sanitizedFolderPath, recursive: input.recursive,
 			filesFound: scan.files.length, filesReturned: scan.files.length, rawText, preview, warnings: scan.warnings,
 		});
 	});

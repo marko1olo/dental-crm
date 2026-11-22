@@ -28,7 +28,7 @@ describe("Gate 0 First Article — Tooth 46 Monolithic Anatomical Odontogram", (
 			React.createElement(Tooth46Container, { isDark: true, zoom: 1 }),
 		);
 
-		assert.ok(htmlLight.includes('viewBox="0 0 100 170"'));
+		assert.ok(htmlLight.includes('viewBox="0 0 100 218"'));
 		assert.ok(htmlLight.includes("dente-enamel-porcelain"));
 		assert.ok(htmlLight.includes("dente-root-dentin"));
 		assert.ok(htmlDark.includes("dente-enamel-porcelain"));

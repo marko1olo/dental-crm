@@ -1,6 +1,6 @@
 import type { ImagingStudy } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy, mapXrayScanToImagingStudy } from "./imagingMappers.js";
 
@@ -8,8 +8,9 @@ export async function bindPatientToStudyInDb(
 	organizationId: string,
 	studyId: string,
 	patientId: string,
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy | null> {
-	const [patient] = await db
+	const [patient] = await targetDb
 		.select({ id: schema.patients.id, fullName: schema.patients.fullName })
 		.from(schema.patients)
 		.where(
@@ -24,7 +25,7 @@ export async function bindPatientToStudyInDb(
 		throw new Error("Пациент не найден в базе организации");
 	}
 
-	const [updated] = await db
+	const [updated] = await targetDb
 		.update(schema.imagingStudies)
 		.set({
 			patientId: patient.id,
@@ -46,8 +47,9 @@ export async function bindPatientToStudyInDb(
 export async function unbindPatientFromStudyInDb(
 	organizationId: string,
 	studyId: string,
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy | null> {
-	const [updated] = await db
+	const [updated] = await targetDb
 		.update(schema.imagingStudies)
 		.set({
 			patientId: null,

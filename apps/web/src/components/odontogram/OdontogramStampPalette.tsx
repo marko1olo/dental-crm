@@ -275,7 +275,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 
 				{/* Segmented Category Filter Tabs */}
 				<div
-					className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-white/10 shrink-0"
+					className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-white/10 max-w-full overflow-x-auto scrollbar-none shrink-0"
 					role="tablist"
 					aria-label="Категории клинических штампов"
 				>
@@ -289,7 +289,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								aria-selected={isSelected}
 								onClick={() => setActiveCategory(cat.id)}
 								data-testid={cat.testId}
-								className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer select-none whitespace-nowrap ${
+								className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
 									isSelected
 										? "bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-300 shadow-2xs border border-black/5 dark:border-white/10"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"

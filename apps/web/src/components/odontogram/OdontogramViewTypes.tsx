@@ -10,6 +10,10 @@ import type {
 	ToothState,
 	OdontogramQuadrantId,
 } from "./ToothChart";
+import type {
+	LiveInvoiceCashierExport,
+	LiveInvoiceItem,
+} from "./odontogramLiveInvoiceCalculations";
 
 export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
@@ -94,6 +98,13 @@ export interface OdontogramViewContainerProps {
 	onMarkFrontalHygiene?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
 	patientId?: string | undefined;
+	patientName?: string | undefined;
+	onGenerateTreatmentPlan?:
+		| ((items: LiveInvoiceItem[]) => void)
+		| undefined;
+	onCreateInvoice?:
+		| ((invoice: LiveInvoiceCashierExport) => void)
+		| undefined;
 	onSyncAllToDiary?: (() => void) | undefined;
 	liveGrossTotalRub?: number | undefined;
 	onOpenFastCheckout?: (() => void) | undefined;

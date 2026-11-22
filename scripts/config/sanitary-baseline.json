@@ -1,6 +1,6 @@
 {
-  "maxExplicitAny": 117,
-  "maxLinterSuppressions": 171,
-  "maxRawFloatDivisions": 250,
-  "maxUppercaseButtons": 13
+  "maxExplicitAny": 109,
+  "maxLinterSuppressions": 164,
+  "maxRawFloatDivisions": 214,
+  "maxUppercaseButtons": 11
 }

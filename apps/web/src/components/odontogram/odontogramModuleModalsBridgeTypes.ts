@@ -12,8 +12,8 @@ export interface OdontogramModuleModalsBridgeProps {
 	readonly syncFacade: ReturnType<typeof useOdontogramModuleSyncFacade>;
 	readonly modals: ReturnType<typeof useOdontogramModuleModalsState>;
 	readonly handleApplyToothState: (state: ToothState) => void;
-	readonly activePatient?: OdontogramActivePatientContext | undefined;
-	readonly activeDoctor?: OdontogramActiveDoctorContext | undefined;
-	readonly auth?: OdontogramAuthContext | undefined;
+	readonly activePatient?: OdontogramActivePatientContext | null | undefined;
+	readonly activeDoctor?: OdontogramActiveDoctorContext | null | undefined;
+	readonly auth?: OdontogramAuthContext | null | undefined;
 	readonly odontogramUseSurfaces?: boolean | undefined;
 }

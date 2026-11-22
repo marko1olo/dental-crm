@@ -25,14 +25,16 @@ import {
 import { DOCUMENT_CATEGORY_KINDS, type DocumentCategoryTab } from "../components/documents/DocumentNavTabs";
 import type { DocumentEdsFilter, DocumentStatusFilter } from "../components/documents/DocumentRegistryFilterBar";
 import { executeDocumentVoidAutonomy, executeOpenLatestDocumentAutonomy } from "../components/documents/documentAutonomy";
-import { DocumentTemplatesCatalog } from "../components/documents/tabs/DocumentTemplatesCatalog";
+import { DocumentsTemplateGridContainer } from "./templateGridModules/DocumentsTemplateGridContainer";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useDocumentStore } from "../store/documentStore";
-import type { DocumentsViewProps } from "./types";
+import type { Egisz043uPayload } from "../components/egisz/egiszRemdEngine";
+import type { DocumentModalsContainerProps } from "../components/documents/tabs/modals/types";
+import type { DocumentsViewControllerResult, DocumentsViewProps } from "./types";
 
-export const _catalogComponentReference = DocumentTemplatesCatalog;
+export const _catalogComponentReference = DocumentsTemplateGridContainer;
 
-export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps>) {
+export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps>): DocumentsViewControllerResult {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as ReturnType<typeof useAppLogicContext> & DocumentsViewProps;
 
@@ -297,7 +299,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 	const safeFormatShortDate = (d: string | null | undefined) => (d ? formatShortDate(d) : "");
 
 	return {
-		props, activePatient, activeDoctor, clinicProfileDraft, typedActiveDocuments,
+		activePatient, activeDoctor, clinicProfileDraft, typedActiveDocuments,
 		patientIssuedDocsCount, patientDraftDocsCount, activeCategoryTab, handleSelectCategoryTab,
 		navCategoryCounts, isEditingInFocus, setIsEditingInFocus, selectedDocumentKind,
 		setSelectedDocumentKind, normalizedDocumentKind, sanitizedDocumentFactoryGroups,
@@ -331,7 +333,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			selectedDocumentCreateGuidanceId, patient: activePatient,
 			doctorName: activeDoctor?.fullName,
 			clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
-			clinicProfileDraft, formProps: props,
+			clinicProfileDraft, formProps: props as Record<string, unknown>,
 		},
 		catalogViewProps: {
 			patient: activePatient, patientName, doctorName: activeDoctor?.fullName,
@@ -400,7 +402,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			documentVoidReasonLabels, loadDocumentAuditFacts, setDocumentAuditFacts,
 			openIssuedDocumentHtml, downloadIssuedDocumentHtml, downloadIssuedDocumentPdf,
 		},
-		modalsContainerProps: {
+		modalsContainerProps: ({
 			isPrimaryIntakeOpen, setIsPrimaryIntakeOpen, isSurgicalPackageOpen, setIsSurgicalPackageOpen,
 			isClinicalVisitOpen, setIsClinicalVisitOpen, isTaxAccountingOpen, setIsTaxAccountingOpen,
 			isSanpinRegistryOpen, setIsSanpinRegistryOpen, isAutoclaveLogOpen, setIsAutoclaveLogOpen,
@@ -411,8 +413,8 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			activePatient, activeDoctor, clinicProfileDraft, typedActiveDocuments, createDocument,
 			openIssuedDocumentHtml, setSelectedDocumentKind, taxDocumentYear, setTaxDocumentYear,
 			typedTaxDocumentPayerOptions, selectedTaxDocumentPayerKey: props.selectedTaxDocumentPayerKey,
-			setTaxDocumentPayerInn, egiszInitialPayload: props.egiszInitialPayload,
+			setTaxDocumentPayerInn, egiszInitialPayload: (props.egiszInitialPayload ?? undefined) as Egisz043uPayload | undefined,
 			requestDocumentIssue,
-		},
+		} as DocumentModalsContainerProps),
 	};
 }

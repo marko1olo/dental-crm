@@ -38,9 +38,9 @@ describe("Tooth41 Wheeler Ch. 10 Mandibular Central Incisor Anatomical Invariant
 		assert.equal(canals[0]?.apex.x, 45.2);
 	});
 
-	it("renders Tooth41Container with XXL badge clearance (cy=194.5, height=218)", () => {
+	it("renders Tooth41Container with precision badge clearance (cy=176, height=218)", () => {
 		const html = renderToStaticMarkup(React.createElement(Tooth41Container, { presetId: "intact" }));
-		assert.ok(html.includes("<svg") && html.includes("id=\"tooth41-crown\"") && html.includes("r=\"18.5\""));
+		assert.ok(html.includes("<svg") && html.includes("id=\"tooth41-crown\"") && html.includes("r=\"14\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {

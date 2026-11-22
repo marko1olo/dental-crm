@@ -15,6 +15,7 @@ import type {
 	Payment,
 } from "@dental/shared";
 import type { DocumentCategoryTab } from "../components/documents/DocumentNavTabs";
+import type { Egisz043uPayload } from "../components/egisz/egiszRemdEngine";
 import type {
 	DocumentEdsFilter,
 	DocumentStatusFilter,
@@ -47,6 +48,8 @@ export interface DocumentsViewProps {
 	readonly requestDocumentIssue?: (id: string) => void;
 	readonly requestDocumentVoid?: (id: string) => void;
 	readonly updateDocumentStatus?: (id: string, status: DocumentStatus) => Promise<void> | void;
+	readonly egiszInitialPayload?: Egisz043uPayload | undefined;
+	readonly selectedTaxDocumentPayerKey?: string | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -174,4 +177,49 @@ export interface DocumentsA4PrintPreviewProps {
 	readonly formProps?: Record<string, any> | undefined;
 	readonly children?: React.ReactNode | undefined;
 	readonly className?: string | undefined;
+}
+
+import type { MobileDocumentsHubProps } from "../components/documents/mobile/MobileDocumentsHub";
+import type { DocumentHeaderSectionProps } from "../components/documents/tabs/DocumentHeaderSection";
+import type { DocumentsCatalogViewProps } from "../components/documents/DocumentsCatalogView";
+import type { DocumentIssueConfirmationModalProps } from "../components/documents/tabs/DocumentIssueConfirmationModal";
+import type { DocumentVoidConfirmationModalProps } from "../components/documents/tabs/DocumentVoidConfirmationModal";
+import type { DocumentAuditFactsModalProps } from "../components/documents/tabs/DocumentAuditFactsModal";
+import type { DocumentModalsContainerProps } from "../components/documents/tabs/DocumentModalsContainer";
+
+export interface DocumentsViewControllerResult {
+	readonly activePatient?: Patient | null | undefined;
+	readonly activeDoctor?: { readonly fullName?: string; readonly id?: string; readonly specialty?: string } | null | undefined;
+	readonly clinicProfileDraft?: Record<string, unknown> | undefined;
+	readonly typedActiveDocuments: GeneratedDocument[];
+	readonly patientIssuedDocsCount: number;
+	readonly patientDraftDocsCount: number;
+	readonly activeCategoryTab: DocumentCategoryTab;
+	readonly handleSelectCategoryTab: (tab: DocumentCategoryTab) => void;
+	readonly navCategoryCounts: Record<DocumentCategoryTab, number>;
+	readonly isEditingInFocus: boolean;
+	readonly setIsEditingInFocus: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly selectedDocumentKind: DocumentKind | (string & {});
+	readonly setSelectedDocumentKind: (kind: DocumentKind) => void;
+	readonly normalizedDocumentKind: (kind: string) => DocumentKind;
+	readonly sanitizedDocumentFactoryGroups: Array<{
+		readonly title: string;
+		readonly kinds: DocumentKind[];
+	}>;
+	readonly documentLabels?: Record<string, string> | undefined;
+	readonly documentCreateSavingKind?: string | null | undefined;
+	readonly isSelectedDocumentCreating: boolean;
+	readonly selectedDocumentCreateGuidanceId: string;
+	readonly createDocument: (kind: DocumentKind | string) => Promise<void> | void;
+	readonly setIsAutoclaveLogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly safeFormatShortDate: (d: string | null | undefined) => string;
+	readonly mobileHubProps: MobileDocumentsHubProps;
+	readonly legacyHeaderProps: DocumentHeaderSectionProps;
+	readonly focusPreviewProps: DocumentsA4PrintPreviewProps;
+	readonly catalogViewProps: DocumentsCatalogViewProps;
+	readonly recentListProps: DocumentsRecentListProps;
+	readonly issueModalProps: DocumentIssueConfirmationModalProps;
+	readonly voidModalProps: DocumentVoidConfirmationModalProps;
+	readonly auditModalProps: DocumentAuditFactsModalProps;
+	readonly modalsContainerProps: DocumentModalsContainerProps;
 }

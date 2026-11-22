@@ -8,7 +8,7 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 
-export async function registerDiagnocatRoutes(app: FastifyInstance) {
+export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 	const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const isAuthorized = verifyWebhookSecret(request, reply, {
 			channel: "diagnocat",
@@ -148,4 +148,5 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 	app.get("/api/integrations/diagnocat/reports/:patientId", reportsHandler);
 }
 
-export const registerClinicalAiRoutes = registerDiagnocatRoutes;
+export const registerDiagnocatRoutes = registerDiagnocatIntegrationRoutes;
+export const registerClinicalAiRoutes = registerDiagnocatIntegrationRoutes;

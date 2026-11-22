@@ -51,7 +51,7 @@ describe("Tooth45 Wheeler Ch. 11 Second Mandibular Premolar Anatomical Invariant
 		assert.equal(canals[0]?.apex.x, 42.0);
 	});
 
-	it("renders Tooth45Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {
+	it("renders Tooth45Container with default precision badge (R=14, cy=176)", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(Tooth45Container, { presetId: "intact" }),
 		);
@@ -59,8 +59,8 @@ describe("Tooth45 Wheeler Ch. 11 Second Mandibular Premolar Anatomical Invariant
 		assert.ok(html.includes("viewBox=\"0 0 100 218\""));
 		assert.ok(html.includes("id=\"tooth45-roots\""));
 		assert.ok(html.includes("id=\"tooth45-natural-crown-group\""));
-		assert.ok(html.includes("r=\"18.5\""));
-		assert.ok(html.includes("cy=\"194.5\""));
+		assert.ok(html.includes("r=\"14\""));
+		assert.ok(html.includes("cy=\"176\""));
 	});
 
 	it("renders endodontic obturation and pathology layers seamlessly", () => {
