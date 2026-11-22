@@ -8,6 +8,8 @@
  */
 
 import type { ArchwireMaterial } from "@dental/shared";
+import type { AngleClassId } from "@dental/shared";
+import { normalizeAngleClass } from "@dental/shared";
 
 // SSOT реэкспорт канонических клинических справочников из @dental/shared
 export {
@@ -27,13 +29,16 @@ export {
 	ALIGNER_ATTACHMENT_PRESETS,
 	ORTHODONTIC_QUICK_PRESETS,
 	generateOrthodonticSoapNote,
+	normalizeAngleClass,
 } from "@dental/shared";
+export type { AngleClassId };
 
 export type ApplianceCategory = "brackets" | "aligners" | "plate";
 export type ArchwireAlloy = "niti" | "cuniti" | "ss" | "tma" | ArchwireMaterial;
 export type ArchwireSection = "0.012" | "0.014" | "0.016" | "0.018" | "16x22" | "17x25" | "19x25";
 export type ArchwireShape = "round" | "rectangular";
-export type AngleClass = "class_1" | "class_2_1" | "class_2_2" | "class_3";
+export type AngleClass = AngleClassId;
+export type LegacyAngleClass = "class_1" | "class_2_1" | "class_2_2" | "class_3" | AngleClassId;
 export type VerticalBite = "normal" | "deep" | "open" | "cross";
 
 export interface ApplianceDef {
@@ -66,10 +71,15 @@ export interface AngleClassificationDef {
 
 export const ANGLE_CLASSES_CATALOG: AngleClassificationDef[] = [
 	{ key: "class_1", titleRu: "I Класс по Энглю (Нейтральный)", descriptionRu: "Мезиально-щечный бугор 16/26 смыкается с межбугорковой фиссурой 36/46. Аномалии положения отдельных зубов" },
-	{ key: "class_2_1", titleRu: "II Класс, 1 подкласс (Дистальный, протрузия)", descriptionRu: "Дистальное положение нижних моляров относительно верхних. Веерообразная протрузия резцов верхней челюсти" },
-	{ key: "class_2_2", titleRu: "II Класс, 2 подкласс (Дистальный, ретрузия)", descriptionRu: "Дистальное смыкание моляров с небным наклоном верхних центральных резцов и глубоким перекрытием" },
+	{ key: "class_2_div_1", titleRu: "II Класс, 1 подкласс (Дистальный, протрузия)", descriptionRu: "Дистальное положение нижних моляров относительно верхних. Веерообразная протрузия резцов верхней челюсти" },
+	{ key: "class_2_div_2", titleRu: "II Класс, 2 подкласс (Дистальный, ретрузия)", descriptionRu: "Дистальное смыкание моляров с небным наклоном верхних центральных резцов и глубоким перекрытием" },
 	{ key: "class_3", titleRu: "III Класс по Энглю (Мезиальный)", descriptionRu: "Мезиальное положение нижних моляров, мезиально-щечный бугор 16/26 позади межбугорковой фиссуры 36/46, обратное перекрытие" },
 ];
+
+export function getAngleClassDef(rawKey?: string | null): AngleClassificationDef | undefined {
+	const normalized = normalizeAngleClass(rawKey);
+	return ANGLE_CLASSES_CATALOG.find((ac) => ac.key === normalized);
+}
 
 export interface ArchwireAlloyDef {
 	key: ArchwireAlloy;
@@ -354,7 +364,7 @@ export function formatOrthoProtocolSoapEntry(state: OrthoProtocolState): string 
 	const upperAlloyObj = ARCHWIRE_ALLOYS_SSOT.find((a) => a.key === state.upperAlloy)?.shortRu || state.upperAlloy;
 	const lowerAlloyObj = ARCHWIRE_ALLOYS_SSOT.find((a) => a.key === state.lowerAlloy)?.shortRu || state.lowerAlloy;
 	const elastic = ELASTICS_CATALOG.find((e) => e.id === state.selectedElasticId);
-	const angleObj = ANGLE_CLASSES_CATALOG.find((ac) => ac.key === state.angleClass);
+	const angleObj = getAngleClassDef(state.angleClass);
 	const actionLabels = state.selectedActionIds.map((id) => CHAIRSIDE_ACTIONS_CATALOG.find((a) => a.id === id)?.label).filter(Boolean);
 
 	const parts: string[] = [

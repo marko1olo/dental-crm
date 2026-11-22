@@ -111,53 +111,27 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 			const upperMat = materialMap[protocol.upperAlloy] || "CuNiTi";
 			const lowerMat = materialMap[protocol.lowerAlloy] || "CuNiTi";
 
-			if (upperMat === lowerMat && protocol.upperSection === protocol.lowerSection) {
-				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
-					material: upperMat,
-					section: protocol.upperSection,
-					arch: "both",
-					applianceCategory: "brackets",
-					isWireChange: true,
-					note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
-					visitId,
-					soapSummary,
-					applianceId: protocol.applianceId,
-					applianceName: protocol.applianceName,
-					selectedElasticId: protocol.selectedElasticId,
-					selectedActionIds: protocol.selectedActionIds,
-				}, `${idempotencyKey}-wire-both`);
-			} else {
-				// Сохраняем параметры обеих дуг: ВЧ и НЧ раздельно без взаимного затирания
-				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
-					material: upperMat,
-					section: protocol.upperSection,
-					arch: "upper",
-					applianceCategory: "brackets",
-					isWireChange: true,
-					note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
-					visitId,
-					soapSummary,
-					applianceId: protocol.applianceId,
-					applianceName: protocol.applianceName,
-					selectedElasticId: protocol.selectedElasticId,
-					selectedActionIds: protocol.selectedActionIds,
-				}, `${idempotencyKey}-wire-upper`);
-
-				await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
-					material: lowerMat,
-					section: protocol.lowerSection,
-					arch: "lower",
-					applianceCategory: "brackets",
-					isWireChange: true,
-					note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
-					visitId,
-					soapSummary,
-					applianceId: protocol.applianceId,
-					applianceName: protocol.applianceName,
-					selectedElasticId: protocol.selectedElasticId,
-					selectedActionIds: protocol.selectedActionIds,
-				}, `${idempotencyKey}-wire-lower`);
-			}
+			const isSameWire = upperMat === lowerMat && protocol.upperSection === protocol.lowerSection;
+			await postOrthoEndpoint(`/api/orthodontics/${patientId}/archwire-change`, {
+				material: upperMat,
+				section: protocol.upperSection,
+				upperMaterial: upperMat,
+				upperSection: protocol.upperSection,
+				lowerMaterial: lowerMat,
+				lowerSection: protocol.lowerSection,
+				arch: "both",
+				applianceCategory: "brackets",
+				isWireChange: true,
+				note: isSameWire
+					? "Плановая смена ортодонтических дуг ВЧ + НЧ"
+					: `Смена дуг: ВЧ (${upperMat} ${protocol.upperSection}), НЧ (${lowerMat} ${protocol.lowerSection})`,
+				visitId,
+				soapSummary,
+				applianceId: protocol.applianceId,
+				applianceName: protocol.applianceName,
+				selectedElasticId: protocol.selectedElasticId,
+				selectedActionIds: protocol.selectedActionIds,
+			}, `${idempotencyKey}-wire-both`);
 
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/ligatures-activate`, {
 				powerChain: protocol.selectedActionIds.includes("power_chain"),

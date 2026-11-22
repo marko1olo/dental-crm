@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from "react";
-import type { OrthoProtocolState } from "./orthodonticsCatalogData";
+import { createDefaultOrthoProtocolState, type OrthoProtocolState } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
@@ -13,9 +13,15 @@ export function useOrthodonticsStudioHydration(
 	patientId: string | undefined,
 	setProtocol: React.Dispatch<React.SetStateAction<OrthoProtocolState>>,
 ): void {
-	// 1. Честная гидратация данных пациента из базы PostgreSQL 18
+	// 1. Честная гидратация данных пациента из базы PostgreSQL 18 (Zero-Leak Draft: Mandates 8d/8zq, 8bn)
 	useEffect(() => {
-		if (!patientId) return;
+		if (!patientId) {
+			setProtocol(createDefaultOrthoProtocolState());
+			return;
+		}
+
+		// Немедленный сброс черновика при смене patientId во избежание утечки чужих клинических данных
+		setProtocol(createDefaultOrthoProtocolState());
 		let isCancelled = false;
 
 		const fetchProgress = async () => {
@@ -25,6 +31,7 @@ export function useOrthodonticsStudioHydration(
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {
+						hasActiveTreatment?: boolean;
 						currentAligner?: number;
 						totalAligners?: number;
 						currentStage?: number;
@@ -36,26 +43,33 @@ export function useOrthodonticsStudioHydration(
 						selectedElasticId?: string | null;
 						selectedActionIds?: string[];
 					};
-					if (!isCancelled && data) {
-						setProtocol((prev) => ({
-							...prev,
-							...(data.applianceId ? { applianceId: data.applianceId } : {}),
-							...(data.applianceName ? { applianceName: data.applianceName } : {}),
-							...(data.applianceCategory ? { applianceCategory: data.applianceCategory } : {}),
-							...(data.selectedElasticId !== undefined ? { selectedElasticId: data.selectedElasticId } : {}),
-							...(Array.isArray(data.selectedActionIds) ? { selectedActionIds: data.selectedActionIds } : {}),
-							...(data.currentAligner
-								? {
-										alignerTracking: {
-											...prev.alignerTracking,
-											currentStep: data.currentAligner,
-											totalSteps: data.totalAligners ?? prev.alignerTracking.totalSteps,
-										},
-								  }
-								: {}),
-							...(data.currentStage ? { currentMonth: data.currentStage } : {}),
-						}));
+					if (!isCancelled) {
+						if (!data || data.hasActiveTreatment === false) {
+							// Пациент без активного лечения — гарантированный сброс на дефолтный чистый стейт
+							setProtocol(createDefaultOrthoProtocolState());
+						} else {
+							setProtocol((prev) => ({
+								...prev,
+								...(data.applianceId ? { applianceId: data.applianceId } : {}),
+								...(data.applianceName ? { applianceName: data.applianceName } : {}),
+								...(data.applianceCategory ? { applianceCategory: data.applianceCategory } : {}),
+								...(data.selectedElasticId !== undefined ? { selectedElasticId: data.selectedElasticId } : {}),
+								...(Array.isArray(data.selectedActionIds) ? { selectedActionIds: data.selectedActionIds } : {}),
+								...(data.currentAligner
+									? {
+											alignerTracking: {
+												...prev.alignerTracking,
+												currentStep: data.currentAligner,
+												totalSteps: data.totalAligners ?? prev.alignerTracking.totalSteps,
+											},
+									  }
+									: {}),
+								...(data.currentStage ? { currentMonth: data.currentStage } : {}),
+							}));
+						}
 					}
+				} else if (res.status === 404 && !isCancelled) {
+					setProtocol(createDefaultOrthoProtocolState());
 				}
 			} catch (err) {
 				if (!isCancelled) {

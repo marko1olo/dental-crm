@@ -108,11 +108,16 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 			});
 
 			const billing = await db.transaction(async (tx) => {
-				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-					...adminProfile,
-					orthodonticProgress: updatedProgress,
-				});
+				// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
+				await updatePatientAdministrativeProfileInDb(
+					orgId,
+					patientId,
+					{
+						...adminProfile,
+						orthodonticProgress: updatedProgress,
+					},
+					tx,
+				);
 
 				return await linkOrthoServiceToBillingSafely({
 					organizationId: orgId,

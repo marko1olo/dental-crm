@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
 import { registerOrthodonticsRoutes } from "../../routes/orthodontics/index.js";
+import { linkOrthoServiceToBillingSafely } from "../../routes/orthodontics/orthoBillingService.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -386,5 +387,38 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(body.study.placedCount, 16);
 		assert.equal(body.study.landmarks.S.x, 280);
 		assert.equal(body.study.analysis.sna, 82.5);
+	});
+
+	it("11. linkOrthoServiceToBillingSafely calculates exact kopecks and formats totals without float drift (Mandate 8bm)", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const VISIT_ID = fixtureUuid(NAMESPACE, 15);
+		const result1 = await linkOrthoServiceToBillingSafely({
+			organizationId: ORG_ID,
+			patientId: PATIENT_ID,
+			visitId: VISIT_ID,
+			serviceCode: "A16.07.048.001",
+			serviceName: "Активация брекет-системы",
+			priceKopecks: 250050n,
+		});
+
+		assert.equal(result1.serviceAdded, true);
+		assert.equal(result1.priceRub, 2500.5);
+		assert.equal(result1.priceKopecks, 250050);
+		assert.equal(result1.amountKopecks, 250050n);
+
+		const result2 = await linkOrthoServiceToBillingSafely({
+			organizationId: ORG_ID,
+			patientId: PATIENT_ID,
+			visitId: VISIT_ID,
+			serviceCode: "A16.07.048.002",
+			serviceName: "Замена ортодонтической дуги",
+			priceKopecks: 149950n,
+		});
+
+		assert.equal(result2.serviceAdded, true);
+		assert.equal(result2.priceRub, 1499.5);
+		assert.equal(result2.priceKopecks, 149950);
+		assert.equal(result2.amountKopecks, 149950n);
 	});
 });

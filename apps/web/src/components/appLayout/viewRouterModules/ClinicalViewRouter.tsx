@@ -108,7 +108,7 @@ export function ClinicalViewRouter({
 			<WorkspaceRouteErrorBoundary view="visit" label={viewLabels.visit} panelClassName="panel visit-panel" panelId="visit">
 				<Suspense fallback={<AppLoadingState message="Загрузка клинического приёма..." />}>
 					{perspective === "orthodontic" ? (
-						<OrthodonticsStudioModal {...orthoProps} />
+						<OrthodonticsStudioModal key={targetPatientId || "empty"} {...orthoProps} />
 					) : perspective === "presentation" ? (
 						<TreatmentPlanStudioModal
 							key={patientId || "draft"}

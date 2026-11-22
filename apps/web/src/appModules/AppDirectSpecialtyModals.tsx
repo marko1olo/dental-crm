@@ -78,6 +78,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isOrthoProtocolDirectModalOpen && (
 				<Suspense fallback={null}>
 					<OrthodonticsStudioModal
+						key={patient?.id || "empty"}
 						isOpen={true}
 						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}

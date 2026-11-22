@@ -73,6 +73,18 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState<boolean>(false);
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 
+	// Zero-Leak Draft (Мандаты 8d/8zq, 8bn): сброс локального черновика при закрытии модалки
+	const handleClose = useCallback(() => {
+		setProtocol(createDefaultOrthoProtocolState());
+		onClose();
+	}, [onClose]);
+
+	useEffect(() => {
+		if (!isOpen) {
+			setProtocol(initialProtocol ? { ...initialProtocol } : createDefaultOrthoProtocolState());
+		}
+	}, [isOpen, initialProtocol]);
+
 	// Честная гидратация данных пациента из базы PostgreSQL 18 и ТРГ-синхронизация
 	useOrthodonticsStudioHydration(patientId, setProtocol);
 
@@ -175,6 +187,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		setFeedbackToast("✓ Активация этапа зафиксирована");
 		setTimeout(() => {
 			setFeedbackToast(null);
+			setProtocol(createDefaultOrthoProtocolState());
 			onClose();
 		}, 400);
 	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, onSaveProtocol, onClose]);
@@ -212,7 +225,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							</p>
 						</div>
 					</div>
-					<button type="button" onClick={onClose} aria-label="Закрыть студию" className="ortho-close-btn">
+					<button type="button" onClick={handleClose} aria-label="Закрыть студию" className="ortho-close-btn">
 						<X className="w-5 h-5" />
 					</button>
 				</header>
@@ -311,7 +324,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						<span>Ортодонтический приём: дуги, элайнеры, тяги и окклюзия</span>
 					</div>
 					<div className="flex flex-col-reverse sm:flex-row items-center gap-2.5 w-full sm:w-auto justify-end">
-						<button type="button" onClick={onClose} className="ortho-secondary-btn w-full sm:w-auto">
+						<button type="button" onClick={handleClose} className="ortho-secondary-btn w-full sm:w-auto">
 							Отмена
 						</button>
 						<button

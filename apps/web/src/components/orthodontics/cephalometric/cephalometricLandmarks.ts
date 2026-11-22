@@ -23,6 +23,13 @@ export type LandmarkKey =
 	| "Gn"
 	| "Me"
 	| "Go"
+	| "Ba"
+	| "Ar"
+	| "Pt"
+	| "Prn"
+	| "Ls"
+	| "Li"
+	| "Pog_prime"
 	| "U1t"
 	| "U1a"
 	| "L1t"
@@ -49,7 +56,7 @@ export interface CephalometricMeasurement {
 	value: number | null;
 	status: "normal" | "deviation_high" | "deviation_low" | "unmeasured";
 	clinicalInterpretation: string;
-	category: "skeletal_sagittal" | "skeletal_vertical" | "dental_upper" | "dental_lower" | "interincisal";
+	category: "skeletal_sagittal" | "skeletal_vertical" | "dental_upper" | "dental_lower" | "interincisal" | "soft_tissue";
 	readonly symbol?: string | undefined;
 }
 
@@ -66,6 +73,7 @@ export interface CephalometricDiagnosis {
 	upperIncisorInclinationRu: string;
 	lowerIncisorInclination: "Normal" | "Proclination" | "Retroclination" | "Undefined";
 	lowerIncisorInclinationRu: string;
+	rickettsELineRu?: string | undefined;
 	witsRelationshipRu: string;
 	downsConvexityRu: string;
 	mcnamaraRelationshipRu: string;
@@ -99,6 +107,13 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 	{ key: "Gn", code: "Gn", nameRu: "Gnathion (Гнатион)", latinName: "Gnathion", anatomicalDescription: "Гнатион (передне-нижняя точка симфиза)", category: "mandibular", color: "#38bdf8" },
 	{ key: "Me", code: "Me", nameRu: "Menton (Ментон)", latinName: "Menton", anatomicalDescription: "Ментон (нижняя точка подбородочного симфиза)", category: "mandibular", color: "#38bdf8" },
 	{ key: "Go", code: "Go", nameRu: "Gonion (Гонион)", latinName: "Gonion", anatomicalDescription: "Гонион (вершина угла нижней челюсти)", category: "mandibular", color: "#38bdf8" },
+	{ key: "Ba", code: "Ba", nameRu: "Basion (Базион)", latinName: "Basion", anatomicalDescription: "Задняя граница основания черепа (передний край foramen magnum)", category: "cranial", color: "#38bdf8" },
+	{ key: "Ar", code: "Ar", nameRu: "Articulare (Артикуляре)", latinName: "Articulare", anatomicalDescription: "Пересечение основания черепа и заднего контура ветви НЧ", category: "cranial", color: "#38bdf8" },
+	{ key: "Pt", code: "Pt", nameRu: "Pterygoid (Птеригоид)", latinName: "Pterygoid", anatomicalDescription: "Верхняя точка крыловидно-челюстной щели", category: "cranial", color: "#38bdf8" },
+	{ key: "Prn", code: "Prn", nameRu: "Pronasale (Проназале)", latinName: "Pronasale", anatomicalDescription: "Наиболее выступающая точка кончика носа (линия Риккетса E-line)", category: "soft_tissue", color: "#f43f5e" },
+	{ key: "Ls", code: "Ls", nameRu: "Labrale superius (Верхняя губа)", latinName: "Labrale superius", anatomicalDescription: "Наиболее выступающая точка красной каймы верхней губы", category: "soft_tissue", color: "#f43f5e" },
+	{ key: "Li", code: "Li", nameRu: "Labrale inferius (Нижняя губа)", latinName: "Labrale inferius", anatomicalDescription: "Наиболее выступающая точка красной каймы нижней губы", category: "soft_tissue", color: "#f43f5e" },
+	{ key: "Pog_prime", code: "Pog'", nameRu: "Pog' (Кожный погонион)", latinName: "Pogonion cutaneum", anatomicalDescription: "Наиболее передняя точка мягких тканей подбородка", category: "soft_tissue", color: "#f43f5e" },
 	{ key: "U1t", code: "U1-tip", nameRu: "U1 Tip (Край верхнего резца)", latinName: "Incisor superior incisal", anatomicalDescription: "Режущий край центрального резца ВЧ", category: "dental", color: "#22c55e" },
 	{ key: "U1a", code: "U1-apex", nameRu: "U1 Apex (Корень верхнего резца)", latinName: "Incisor superior apical", anatomicalDescription: "Верхушка корня центрального резца ВЧ", category: "dental", color: "#22c55e" },
 	{ key: "L1t", code: "L1-tip", nameRu: "L1 Tip (Край нижнего резца)", latinName: "Incisor inferior incisal", anatomicalDescription: "Режущий край центрального резца НЧ", category: "dental", color: "#22c55e" },
@@ -118,6 +133,13 @@ export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	Gn: { x: 442, y: 520 },
 	Me: { x: 420, y: 540 },
 	Go: { x: 250, y: 435 },
+	Ba: { x: 220, y: 290 },
+	Ar: { x: 235, y: 310 },
+	Pt: { x: 310, y: 270 },
+	Prn: { x: 535, y: 295 },
+	Ls: { x: 508, y: 380 },
+	Li: { x: 498, y: 425 },
+	Pog_prime: { x: 472, y: 490 },
 	U1t: { x: 494, y: 395 },
 	U1a: { x: 456, y: 325 },
 	L1t: { x: 471, y: 400 },
@@ -130,6 +152,7 @@ export const CLASS_I_NORMAL_LANDMARKS_PRESET: LandmarkMap = {
 	Pog: { x: 466, y: 490 },
 	Gn: { x: 456, y: 520 },
 	Me: { x: 435, y: 540 },
+	Pog_prime: { x: 486, y: 490 },
 };
 
 export const CLASS_II_DISTAL_LANDMARKS_PRESET: LandmarkMap = {
@@ -138,6 +161,8 @@ export const CLASS_II_DISTAL_LANDMARKS_PRESET: LandmarkMap = {
 	Pog: { x: 446, y: 490 },
 	Gn: { x: 436, y: 520 },
 	Me: { x: 415, y: 540 },
+	Pog_prime: { x: 466, y: 490 },
+	Li: { x: 490, y: 425 },
 };
 
 export const CLASS_III_MESIAL_LANDMARKS_PRESET: LandmarkMap = {
@@ -146,6 +171,8 @@ export const CLASS_III_MESIAL_LANDMARKS_PRESET: LandmarkMap = {
 	Pog: { x: 491, y: 490 },
 	Gn: { x: 480, y: 520 },
 	Me: { x: 460, y: 540 },
+	Pog_prime: { x: 510, y: 490 },
+	Li: { x: 512, y: 425 },
 };
 
 export const LANDMARK_CLINICAL_ROLES: Record<LandmarkKey, { depends: string; clinicalTip: string }> = {
@@ -197,6 +224,34 @@ export const LANDMARK_CLINICAL_ROLES: Record<LandmarkKey, { depends: string; cli
 		depends: "Франкфуртская горизонталь FH (FMA Tweed, Facial Angle Downs, Y-Axis, McNamara)",
 		clinicalTip: "Верхний край наружного слухового прохода.",
 	},
+	Ba: {
+		depends: "Основание черепа: плоскость Ba-N, краниальный угол Ba-S-N, анализ Jarabak и McNamara",
+		clinicalTip: "Базион — самая нижняя и задняя точка переднего края большого затылочного отверстия.",
+	},
+	Ar: {
+		depends: "Суставной угол S-Ar-Go, высота ветви нижней челюсти, полигон Бьёрка-Джарабака",
+		clinicalTip: "Точка пересечения нижней границы основания черепа с задним контуром ветви нижней челюсти.",
+	},
+	Pt: {
+		depends: "Ось лица Риккетса (Pt-Gn), наклон плоскости челюсти, цефалометрический анализ Ricketts",
+		clinicalTip: "Верхняя точка крыловидно-челюстной щели на 12 часов овального контура.",
+	},
+	Prn: {
+		depends: "Эстетическая линия Риккетса E-line (Prn - Pog'), носогубный угол, профиль лица",
+		clinicalTip: "Наиболее выступающая вперед точка мягких тканей кончика носа.",
+	},
+	Ls: {
+		depends: "Эстетическая линия Риккетса E-line (Ls to E-line: -4 мм), профиль мягких тканей",
+		clinicalTip: "Наиболее выступающая вперед точка красной каймы верхней губы.",
+	},
+	Li: {
+		depends: "Эстетическая линия Риккетса E-line (Li to E-line: -2 мм), профиль мягких тканей",
+		clinicalTip: "Наиболее выступающая вперед точка красной каймы нижней губы.",
+	},
+	Pog_prime: {
+		depends: "Эстетическая линия Риккетса E-line (Prn - Pog'), анализ Holdaway, толщина мягких тканей",
+		clinicalTip: "Наиболее выступающая вперед точка мягких тканей подбородочного возвышения.",
+	},
 	U1t: {
 		depends: "Инклинация 1-NA (22°±2°), расстояние 1-NA (4±1 мм), U1-SN (104°±2°), межрезцовый угол U1-L1",
 		clinicalTip: "Режущий край наиболее выступающего центрального резца верхней челюсти (1.1 или 2.1).",
@@ -226,6 +281,7 @@ export function getRequiredLandmarksForMeasurement(id: string): LandmarkKey[] {
 		case "Downs-AB": return ["N", "Pog", "A", "B"];
 		case "SN-GoGn": return ["S", "N", "Go", "Gn"];
 		case "FMA": return ["Po", "Or", "Go", "Me"];
+		case "FMIA": return ["Po", "Or", "Go", "Me", "L1t", "L1a"];
 		case "Downs-YAxis": return ["S", "Gn", "Po", "Or"];
 		case "Downs-CantOP": return ["Po", "Or", "U1t", "L1t"];
 		case "U1-SN": return ["S", "N", "U1t", "U1a"];
@@ -238,6 +294,8 @@ export function getRequiredLandmarksForMeasurement(id: string): LandmarkKey[] {
 		case "NL-ML": return ["ANS", "PNS", "Go", "Me"];
 		case "McNamara-A-Nperp": return ["N", "A", "Po", "Or"];
 		case "McNamara-Pog-Nperp": return ["N", "Pog", "Po", "Or"];
+		case "Ricketts-E-Ls": return ["Prn", "Pog_prime", "Ls"];
+		case "Ricketts-E-Li": return ["Prn", "Pog_prime", "Li"];
 		default: return [];
 	}
 }

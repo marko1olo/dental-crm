@@ -7,7 +7,7 @@ import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
 import { resolveOrthoMaterialCost, resolveOrthoServicePrice } from "./orthoPricelistResolver.js";
-import { archwireChangeSchema, ligatureActivateSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
+import { archwireChangeSchema, ligatureActivateSchema, patientParamsSchema, type OrthodonticProgressRecord, type OrthoMaterialDeductionResult } from "./types.js";
 
 export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
 	app.post<{ Params: { patientId: string } }>(
@@ -23,9 +23,16 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
+			const effectiveUpperMat = body.upperMaterial || body.material;
+			const effectiveUpperSec = body.upperSection || body.section;
+			const effectiveLowerMat = body.lowerMaterial || body.material;
+			const effectiveLowerSec = body.lowerSection || body.section;
+
 			const archLabel = body.arch === "upper" ? "ВЧ" : body.arch === "lower" ? "НЧ" : "ВЧ + НЧ";
 			const wireSpec = `${body.material} ${body.section}"`;
-			const archwireStr = `${wireSpec} (${archLabel})`;
+			const archwireStr = body.arch === "both" && (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec)
+				? `ВЧ: ${effectiveUpperMat} ${effectiveUpperSec}", НЧ: ${effectiveLowerMat} ${effectiveLowerSec}"`
+				: `${wireSpec} (${archLabel})`;
 			const actionSummary = `Смена дуги: ${archwireStr}${body.note ? ` · ${body.note}` : ""}`;
 
 			// DEF-ORTHO-01 / Досье a9c64bbc: Раздельное хранение дуг ВЧ и НЧ (исключение взаимного затирания)
@@ -37,13 +44,17 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			} else if (body.arch === "lower") {
 				lowerArchwire = `${wireSpec} (НЧ)`;
 			} else {
-				upperArchwire = `${wireSpec} (ВЧ)`;
-				lowerArchwire = `${wireSpec} (НЧ)`;
+				upperArchwire = `${effectiveUpperMat} ${effectiveUpperSec}" (ВЧ)`;
+				lowerArchwire = `${effectiveLowerMat} ${effectiveLowerSec}" (НЧ)`;
 			}
 
 			let combinedArchwire = archwireStr;
 			if (body.arch === "both") {
-				combinedArchwire = archwireStr;
+				if (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec) {
+					combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
+				} else {
+					combinedArchwire = archwireStr;
+				}
 			} else if (upperArchwire && lowerArchwire) {
 				combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
 			} else {
@@ -68,8 +79,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductWire = Boolean(body.isWireChange && !isPlate);
 
-			const archwireQty = body.arch === "both" ? 2 : 1;
-			// DEF-ORTHO-02 / DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости из остатков склада, списание только если не съемная пластинка и isWireChange === true
+			// DEF-ORTHO-02 / DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости из остатков склада
 			const archwireCost = await resolveOrthoMaterialCost({
 				organizationId: orgId,
 				itemNamePattern: body.material,
@@ -77,12 +87,13 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			});
 
 			// DEF-ORTHO-02 / DEF-ORTHO-05 / Red Team: Выбор цены услуги из прейскуранта клиники
+			// Мандат 8bm: A16.07.048.001 при смене обеих дуг (4000 руб единым тарифом вместо двух счетов по 3500 руб)
 			const serviceName = isPlate
 				? "Активация съемного ортодонтического аппарата (пластинки)"
 				: body.arch === "both"
 					? "Активация брекет-системы и замена ортодонтических дуг (ВЧ + НЧ)"
 					: `Активация брекет-системы и замена ортодонтической дуги (${archLabel})`;
-			const serviceCode = isPlate ? "A16.07.047" : "A16.07.048.002";
+			const serviceCode = isPlate ? "A16.07.047" : body.arch === "both" ? "A16.07.048.001" : "A16.07.048.002";
 			const fallbackPriceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
 
 			const resolvedPrice = await resolveOrthoServicePrice({
@@ -93,14 +104,65 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			});
 
 			const { deduction, billing } = await db.transaction(async (tx) => {
-				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-					...adminProfile,
-					orthodonticProgress: updatedProgress,
-				});
+				// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
+				await updatePatientAdministrativeProfileInDb(
+					orgId,
+					patientId,
+					{
+						...adminProfile,
+						orthodonticProgress: updatedProgress,
+					},
+					tx,
+				);
 
-				const deductionRes = shouldDeductWire
-					? await deductOrthoMaterialSafely({
+				let deductionRes: OrthoMaterialDeductionResult | null = null;
+				if (shouldDeductWire) {
+					if (body.arch === "both" && (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec)) {
+						// Списание разных материалов для ВЧ и НЧ раздельно по BOM
+						const upperCost = await resolveOrthoMaterialCost({
+							organizationId: orgId,
+							itemNamePattern: effectiveUpperMat,
+							fallbackCostRub: 1200,
+						});
+						const lowerCost = await resolveOrthoMaterialCost({
+							organizationId: orgId,
+							itemNamePattern: effectiveLowerMat,
+							fallbackCostRub: 1200,
+						});
+						const upperDeduct = await deductOrthoMaterialSafely({
+							organizationId: orgId,
+							patientId,
+							itemNamePattern: effectiveUpperMat,
+							defaultItemName: `Дуга ортодонтическая ${effectiveUpperMat} ${effectiveUpperSec}" (ВЧ)`,
+							category: "ortho_archwire",
+							quantity: 1,
+							unit: "шт.",
+							unitCostKopecks: upperCost.unitCostKopecks,
+							unitCostRub: upperCost.unitCostRub,
+							notes: `Смена дуги ВЧ: ${effectiveUpperMat} ${effectiveUpperSec}"`,
+							visitId: body.visitId,
+							tx,
+							logger: request.log,
+						});
+						const lowerDeduct = await deductOrthoMaterialSafely({
+							organizationId: orgId,
+							patientId,
+							itemNamePattern: effectiveLowerMat,
+							defaultItemName: `Дуга ортодонтическая ${effectiveLowerMat} ${effectiveLowerSec}" (НЧ)`,
+							category: "ortho_archwire",
+							quantity: 1,
+							unit: "шт.",
+							unitCostKopecks: lowerCost.unitCostKopecks,
+							unitCostRub: lowerCost.unitCostRub,
+							notes: `Смена дуги НЧ: ${effectiveLowerMat} ${effectiveLowerSec}"`,
+							visitId: body.visitId,
+							tx,
+							logger: request.log,
+						});
+						deductionRes = upperDeduct || lowerDeduct;
+					} else {
+						const archwireQty = body.arch === "both" ? 2 : 1;
+						deductionRes = await deductOrthoMaterialSafely({
 							organizationId: orgId,
 							patientId,
 							itemNamePattern: body.material,
@@ -114,8 +176,9 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							visitId: body.visitId,
 							tx,
 							logger: request.log,
-					  })
-					: null;
+						});
+					}
+				}
 
 				const billingRes = await linkOrthoServiceToBillingSafely({
 					organizationId: orgId,
@@ -184,7 +247,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
 					...adminProfile,
 					orthodonticProgress: updatedProgress,
-				});
+				}, tx);
 
 				// Списание материалов отключается для съемных пластинок (plate)
 				return shouldDeductLigatures

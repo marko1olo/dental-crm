@@ -356,11 +356,11 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 										)}
 									</div>
 
-									<div className="flex items-baseline justify-between">
-										<span className="text-sm font-extrabold text-[var(--ink)]">
+									<div className="flex flex-col gap-0.5 mt-1">
+										<span className="text-sm font-mono tracking-tight font-extrabold text-[var(--ink)]">
 											{formatKopecksToRub(t.amountKopecks)}
 										</span>
-										<span className="text-[10px] text-[var(--ink-muted)]">{t.dueDateText}</span>
+										<span className="text-[10px] text-[var(--ink-muted)] leading-tight">{t.dueDateText}</span>
 									</div>
 								</div>
 							);

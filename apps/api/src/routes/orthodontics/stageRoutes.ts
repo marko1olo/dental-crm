@@ -88,8 +88,8 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		};
 
 		// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при обновлении профиля пациента
-		await db.transaction(async () => {
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
+		await db.transaction(async (tx) => {
+			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress }, tx);
 		});
 
 		return reply.send({ success: true, currentStage: body.nextStage, actionSummary, progress: updatedProgress });
@@ -129,8 +129,8 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		});
 
 		const deduction = await db.transaction(async (tx) => {
-			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
+			// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
+			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress }, tx);
 
 			return await deductOrthoMaterialSafely({
 				organizationId: orgId,

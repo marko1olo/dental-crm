@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useRef, useCallback } from "react";
-import { UploadCloud, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { UploadCloud, ZoomIn, ZoomOut, RotateCcw, Ruler } from "lucide-react";
 
 export type XrayFilterMode = "normal" | "invert" | "contrast" | "bone_enhance";
 export const SAMPLE_TRG_CEPHALOGRAM_URL = "/radiology/sample_trg_cephalogram.jpg";
@@ -68,7 +68,12 @@ const LANDMARK_COLORS: Record<string, string> = {
 	Me: "#38bdf8",
 	Go: "#38bdf8",
 	Ba: "#38bdf8",
+	Ar: "#38bdf8",
 	Pt: "#38bdf8",
+	Prn: "#f43f5e",
+	Ls: "#f43f5e",
+	Li: "#f43f5e",
+	Pog_prime: "#f43f5e",
 	U1t: "#22c55e",
 	U1a: "#22c55e",
 	L1t: "#22c55e",
@@ -93,6 +98,8 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 	showPolygon = true,
 	showPlanes = true,
 	showLabels = true,
+	scaleMmPerPixel = 0.15,
+	onScaleChange,
 	children,
 	className,
 }) => {
@@ -105,6 +112,23 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isPanning, setIsPanning] = useState<boolean>(false);
 	const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+	// Двухточечная калибровка линейки (DEF-ORTHO-05, 10/50 мм)
+	const [isCalibrating, setIsCalibrating] = useState<boolean>(false);
+	const [calibPoint1, setCalibPoint1] = useState<PointCoord>({ x: 120, y: 700 });
+	const [calibPoint2, setCalibPoint2] = useState<PointCoord>({ x: 453, y: 700 }); // ~333px = 50mm
+	const [calibDistanceMm, setCalibDistanceMm] = useState<number>(50);
+	const [draggingCalib, setDraggingCalib] = useState<"p1" | "p2" | null>(null);
+
+	const calibPixelDist = Math.hypot(calibPoint2.x - calibPoint1.x, calibPoint2.y - calibPoint1.y);
+	const calculatedScale = calibPixelDist > 1 ? calibDistanceMm / calibPixelDist : scaleMmPerPixel;
+
+	const handleApplyCalibration = () => {
+		if (calibPixelDist > 5 && onScaleChange) {
+			onScaleChange(Math.round(calculatedScale * 10000) / 10000);
+		}
+		setIsCalibrating(false);
+	};
 
 	// CSS-фильтры рентгенограммы
 	const getFilterStyle = (): string => {
@@ -142,6 +166,15 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 
 	// Обработка перемещения точки
 	const handlePointerMove = (e: React.PointerEvent) => {
+		if (draggingCalib) {
+			const coords = getSvgCoords(e.clientX, e.clientY);
+			if (coords) {
+				if (draggingCalib === "p1") setCalibPoint1(coords);
+				if (draggingCalib === "p2") setCalibPoint2(coords);
+			}
+			return;
+		}
+
 		if (draggingKey && onLandmarkChange) {
 			const coords = getSvgCoords(e.clientX, e.clientY);
 			if (coords) {
@@ -160,6 +193,14 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 
 	// Обработка отпускания точки
 	const handlePointerUp = (e: React.PointerEvent) => {
+		if (draggingCalib) {
+			try {
+				(e.target as Element).releasePointerCapture(e.pointerId);
+			} catch {
+				/* ignore */
+			}
+			setDraggingCalib(null);
+		}
 		if (draggingKey) {
 			try {
 				(e.target as Element).releasePointerCapture(e.pointerId);
@@ -175,7 +216,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 
 	// Клик по холсту для расстановки активного ориентира
 	const handleCanvasClick = (e: React.MouseEvent) => {
-		if (draggingKey || isPanning) return;
+		if (draggingKey || isPanning || draggingCalib) return;
 		if (activeTargetKey && onLandmarkChange) {
 			const coords = getSvgCoords(e.clientX, e.clientY);
 			if (coords) {
@@ -221,6 +262,10 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 	const pGo = getPt("Go");
 	const pANS = getPt("ANS");
 	const pPNS = getPt("PNS");
+	const pPrn = getPt("Prn");
+	const pLs = getPt("Ls");
+	const pLi = getPt("Li");
+	const pPogPrime = getPt("Pog_prime") || getPt("Pog");
 	const pU1t = getPt("U1t") || getPt("U1T");
 	const pU1a = getPt("U1a") || getPt("U1A");
 	const pL1t = getPt("L1t") || getPt("L1T");
@@ -363,6 +408,14 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 									/>
 								)}
 
+								{/* Эстетическая линия Риккетса E-line: Prn -> Pog' */}
+								{pPrn && pPogPrime && (
+									<line
+										x1={pPrn.x} y1={pPrn.y} x2={pPogPrime.x} y2={pPogPrime.y}
+										stroke="#f43f5e" strokeWidth="1.8" strokeDasharray="5 3"
+									/>
+								)}
+
 								{/* Ось верхнего резца U1a -> U1t */}
 								{pU1a && pU1t && (
 									<line
@@ -448,7 +501,130 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 								);
 							})}
 						</g>
+
+						{/* 4. Интерактивная 2-точечная калибровочная линейка (DEF-ORTHO-05) */}
+						{isCalibrating && (
+							<g className="ceph-calibration-ruler" pointerEvents="auto">
+								<line
+									x1={calibPoint1.x}
+									y1={calibPoint1.y}
+									x2={calibPoint2.x}
+									y2={calibPoint2.y}
+									stroke="#38bdf8"
+									strokeWidth="2.5"
+									strokeDasharray="6 3"
+								/>
+								<g transform={`translate(${(calibPoint1.x + calibPoint2.x) / 2}, ${(calibPoint1.y + calibPoint2.y) / 2 - 14})`}>
+									<rect
+										x="-50"
+										y="-10"
+										width="100"
+										height="20"
+										rx="5"
+										fill="rgba(15, 23, 42, 0.9)"
+										stroke="#38bdf8"
+										strokeWidth="1"
+									/>
+									<text
+										fill="#38bdf8"
+										fontSize="11"
+										fontWeight="bold"
+										textAnchor="middle"
+										dominantBaseline="central"
+										fontFamily="system-ui, monospace"
+									>
+										{calibDistanceMm} мм ({Math.round(calibPixelDist)} px)
+									</text>
+								</g>
+								{/* Точка 1 */}
+								<g
+									transform={`translate(${calibPoint1.x}, ${calibPoint1.y})`}
+									className="cursor-move"
+									onPointerDown={(e) => {
+										e.stopPropagation();
+										(e.target as Element).setPointerCapture(e.pointerId);
+										setDraggingCalib("p1");
+									}}
+								>
+									<circle r="18" fill="transparent" />
+									<circle r="7" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
+									<line x1="-12" y1="0" x2="12" y2="0" stroke="#38bdf8" strokeWidth="1.5" />
+									<line x1="0" y1="-12" x2="0" y2="12" stroke="#38bdf8" strokeWidth="1.5" />
+								</g>
+								{/* Точка 2 */}
+								<g
+									transform={`translate(${calibPoint2.x}, ${calibPoint2.y})`}
+									className="cursor-move"
+									onPointerDown={(e) => {
+										e.stopPropagation();
+										(e.target as Element).setPointerCapture(e.pointerId);
+										setDraggingCalib("p2");
+									}}
+								>
+									<circle r="18" fill="transparent" />
+									<circle r="7" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
+									<line x1="-12" y1="0" x2="12" y2="0" stroke="#38bdf8" strokeWidth="1.5" />
+									<line x1="0" y1="-12" x2="0" y2="12" stroke="#38bdf8" strokeWidth="1.5" />
+								</g>
+							</g>
+						)}
 					</svg>
+				</div>
+			)}
+
+			{/* Верхняя панель двухточечной калибровки (DEF-ORTHO-05) */}
+			{isCalibrating && imageUrl && (
+				<div
+					data-testid="ceph-calibration-panel"
+					className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-2 p-2 rounded-xl bg-[var(--paper-strong)]/95 border border-[var(--line)] backdrop-blur-md shadow-xl text-xs text-[var(--ink)] max-w-[94vw]"
+				>
+					<div className="flex items-center gap-1.5 font-medium pl-1">
+						<Ruler className="w-4 h-4 text-[var(--primary)] shrink-0" />
+						<span>Калибровка масштаба:</span>
+					</div>
+					<div className="flex items-center p-0.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
+						<button
+							type="button"
+							onClick={() => setCalibDistanceMm(10)}
+							className={`h-7 px-2.5 rounded-lg font-medium cursor-pointer transition-colors ${
+								calibDistanceMm === 10
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							10 мм
+						</button>
+						<button
+							type="button"
+							onClick={() => setCalibDistanceMm(50)}
+							className={`h-7 px-2.5 rounded-lg font-medium cursor-pointer transition-colors ${
+								calibDistanceMm === 50
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							50 мм
+						</button>
+					</div>
+					<div className="font-mono text-[var(--ink-muted)] tabular-nums px-1">
+						{calibPixelDist.toFixed(1)} px → <strong className="text-[var(--primary)]">{calculatedScale.toFixed(4)} мм/px</strong>
+					</div>
+					<div className="flex items-center gap-1.5 ml-auto">
+						<button
+							type="button"
+							onClick={handleApplyCalibration}
+							className="h-8 px-3 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-medium cursor-pointer transition-colors"
+						>
+							Применить
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsCalibrating(false)}
+							className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+						>
+							Отмена
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -484,6 +660,21 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 						aria-label="Сбросить зум и панорамирование"
 					>
 						<RotateCcw size={18} />
+					</button>
+					<button
+						type="button"
+						data-testid="ceph-calibration-toggle"
+						onClick={() => setIsCalibrating((prev) => !prev)}
+						className={`min-h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+							isCalibrating
+								? "bg-[var(--primary)] text-white shadow-xs"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						}`}
+						title="Интерактивная двухточечная калибровка линейки (10/50 мм)"
+						aria-label="Калибровка линейки"
+					>
+						<Ruler size={16} />
+						<span className="hidden sm:inline">Линейка {scaleMmPerPixel ? `(${scaleMmPerPixel.toFixed(3)} мм/px)` : ""}</span>
 					</button>
 					<span className="text-xs font-mono text-[var(--primary)] px-2 font-bold tabular-nums">
 						{Math.round(zoom * 100)}%

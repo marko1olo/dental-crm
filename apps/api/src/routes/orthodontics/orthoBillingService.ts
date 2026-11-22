@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, parseKopecks } from "@dental/shared";
 import { db, type TenantDb } from "../../db/client.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
@@ -36,7 +36,7 @@ export interface OrthoBillingResult {
 export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingParams): Promise<OrthoBillingResult> {
 	const { organizationId, patientId, visitId, serviceCode, serviceName, priceKopecks } = params;
 	const itemKopecks = BigInt(priceKopecks);
-	const priceRub = kopecksToRubles(Number(itemKopecks));
+	const priceRub = kopecksToRubles(itemKopecks);
 
 	if (!visitId) {
 		return {
@@ -67,25 +67,21 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 						patientId,
 						visitId,
 						status: "draft",
-						totalRub: String(priceRub),
+						totalRub: formatKopecksToRubles(itemKopecks),
 						totalAmountRub: priceRub,
 					})
 					.returning();
 				invoice = created;
 			} else {
-				// Мандат 8bm: Zero-Float Drift — сложение строго в целочисленных копейках без Math.round((prevTotalRub + addedRub) * 100) / 100
-				const rawAmount = invoice.totalAmountRub ?? invoice.totalRub ?? 0;
-				const existingKopecks = BigInt(
-					typeof rawAmount === "number"
-						? rublesToKopecks(rawAmount)
-						: rublesToKopecks(Number(rawAmount) || 0),
-				);
+				// Мандат 8bm: Zero-Float Drift — суммирование сметы счёта строго в целочисленных копейках через parseKopecks без parseFloat и дробных погрешностей IEEE 754
+				const rawAmount = invoice.totalAmountRub ?? invoice.totalRub;
+				const existingKopecks = BigInt(parseKopecks(rawAmount));
 				const newTotalKopecks = existingKopecks + itemKopecks;
-				const newTotalRub = kopecksToRubles(Number(newTotalKopecks));
+				const newTotalRub = kopecksToRubles(newTotalKopecks);
 				await tx
 					.update(patientInvoices)
 					.set({
-						totalRub: String(newTotalRub),
+						totalRub: formatKopecksToRubles(newTotalKopecks),
 						totalAmountRub: newTotalRub,
 					})
 					.where(and(eq(patientInvoices.id, invoice.id), eq(patientInvoices.organizationId, organizationId)));

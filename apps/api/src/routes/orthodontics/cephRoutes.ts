@@ -73,11 +73,16 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 			};
 
 			// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при сохранении анализа ТРГ в PostgreSQL 18
-			await db.transaction(async () => {
-				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-					...adminProfile,
-					orthodonticProgress: updatedOrtho,
-				});
+			await db.transaction(async (tx) => {
+				await updatePatientAdministrativeProfileInDb(
+					orgId,
+					patientId,
+					{
+						...adminProfile,
+						orthodonticProgress: updatedOrtho,
+					},
+					tx,
+				);
 			});
 
 			return reply.send({

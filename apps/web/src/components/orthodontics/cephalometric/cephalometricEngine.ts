@@ -86,6 +86,13 @@ export function calculateCephalometrics(
 	const Gn = landmarks.Gn;
 	const Me = landmarks.Me;
 	const Go = landmarks.Go;
+	const Ba = landmarks.Ba;
+	const Ar = landmarks.Ar;
+	const Pt = landmarks.Pt;
+	const Prn = landmarks.Prn;
+	const Ls = landmarks.Ls;
+	const Li = landmarks.Li;
+	const PogPrime = landmarks.Pog_prime || landmarks.Pog;
 	const U1t = landmarks.U1t;
 	const U1a = landmarks.U1a;
 	const L1t = landmarks.L1t;
@@ -592,6 +599,85 @@ export function calculateCephalometrics(
 		category: "skeletal_sagittal",
 	});
 
+	// 22. FMIA (Tweed: 65°±3°)
+	let fmiaVal: number | null = null;
+	let fmiaInterp = "Установите Po, Or, Go, Me, L1t, L1a";
+	let fmiaStatus: CephalometricMeasurement["status"] = "unmeasured";
+	if (fmaVal !== null && l1MpVal !== null) {
+		fmiaVal = Math.round((180 - fmaVal - l1MpVal) * 10) / 10;
+		fmiaStatus = fmiaVal > 68 ? "deviation_high" : fmiaVal < 62 ? "deviation_low" : "normal";
+		fmiaInterp = fmiaStatus === "normal"
+			? "FMIA в норме (сбалансированное положение нижнего резца в профиле по Tweed)"
+			: fmiaStatus === "deviation_high"
+				? "Ретрузия нижнего резца относительно профиля (высокий угол FMIA Tweed)"
+				: "Протрузия нижнего резца относительно профиля (низкий угол FMIA Tweed)";
+	}
+	measurements.push({
+		id: "FMIA",
+		nameRu: "FMIA Tweed (Угол нижнего резца к франкфуртской горизонтали)",
+		normMin: 62,
+		normMax: 68,
+		unit: "deg",
+		value: fmiaVal,
+		status: fmiaStatus,
+		clinicalInterpretation: fmiaInterp,
+		category: "dental_lower",
+	});
+
+	// 23. Ricketts E-Line Ls (-4 ± 2 мм)
+	let rickettsLsVal: number | null = null;
+	let rickettsLsInterp = "Установите Prn, Pog' (Pog), Ls";
+	let rickettsLsStatus: CephalometricMeasurement["status"] = "unmeasured";
+	if (Prn && PogPrime && Ls) {
+		const proj = projectPointOntoLine(Ls, Prn, PogPrime);
+		const sign = Ls.x >= proj.x ? 1 : -1;
+		rickettsLsVal = Math.round(sign * distance(Ls, proj) * scaleMmPerPixel * 10) / 10;
+		rickettsLsStatus = rickettsLsVal > -2 ? "deviation_high" : rickettsLsVal < -6 ? "deviation_low" : "normal";
+		rickettsLsInterp = rickettsLsStatus === "normal"
+			? "Положение верхней губы к линии Риккетса в норме (-4±2 мм)"
+			: rickettsLsStatus === "deviation_high"
+				? "Протрузия верхней губы (выстояние за линию E-line)"
+				: "Ретрузия верхней губы (западение за линией E-line)";
+	}
+	measurements.push({
+		id: "Ricketts-E-Ls",
+		nameRu: "Ricketts E-Line Ls (Верхняя губа к эстетической линии E)",
+		normMin: -6,
+		normMax: -2,
+		unit: "mm",
+		value: rickettsLsVal,
+		status: rickettsLsStatus,
+		clinicalInterpretation: rickettsLsInterp,
+		category: "soft_tissue",
+	});
+
+	// 24. Ricketts E-Line Li (-2 ± 2 мм)
+	let rickettsLiVal: number | null = null;
+	let rickettsLiInterp = "Установите Prn, Pog' (Pog), Li";
+	let rickettsLiStatus: CephalometricMeasurement["status"] = "unmeasured";
+	if (Prn && PogPrime && Li) {
+		const proj = projectPointOntoLine(Li, Prn, PogPrime);
+		const sign = Li.x >= proj.x ? 1 : -1;
+		rickettsLiVal = Math.round(sign * distance(Li, proj) * scaleMmPerPixel * 10) / 10;
+		rickettsLiStatus = rickettsLiVal > 0 ? "deviation_high" : rickettsLiVal < -4 ? "deviation_low" : "normal";
+		rickettsLiInterp = rickettsLiStatus === "normal"
+			? "Положение нижней губы к линии Риккетса в норме (-2±2 мм)"
+			: rickettsLiStatus === "deviation_high"
+				? "Протрузия нижней губы (выстояние за линию E-line)"
+				: "Ретрузия нижней губы (западение за линией E-line)";
+	}
+	measurements.push({
+		id: "Ricketts-E-Li",
+		nameRu: "Ricketts E-Line Li (Нижняя губа к эстетической линии E)",
+		normMin: -4,
+		normMax: 0,
+		unit: "mm",
+		value: rickettsLiVal,
+		status: rickettsLiStatus,
+		clinicalInterpretation: rickettsLiInterp,
+		category: "soft_tissue",
+	});
+
 	// ==========================================
 	// 3. КЛИНИЧЕСКИЙ СИНТЕЗ ДИАГНОЗА
 	// ==========================================
@@ -638,10 +724,13 @@ export function calculateCephalometrics(
 	const mcnamaraRelationshipRu = mcnamaraAVal === null || mcnamaraPogVal === null ? "Параметры McNamara не рассчитаны" : `McNamara: A to N-perp = ${mcnamaraAVal >= 0 ? "+" : ""}${mcnamaraAVal} мм (${mcnamaraAInterp}), Pog to N-perp = ${mcnamaraPogVal >= 0 ? "+" : ""}${mcnamaraPogVal} мм (${mcnamaraPogInterp})`;
 	const u1NaRelationshipRu = u1NaAngleVal === null ? "Соотношение 1-NA не оценено" : `1-NA = ${u1NaAngleVal}° (${u1NaDistVal !== null ? `${u1NaDistVal} мм, ` : ""}${u1NaAngleInterp})`;
 	const l1NbRelationshipRu = l1NbAngleVal === null ? "Соотношение 1-NB не оценено" : `1-NB = ${l1NbAngleVal}° (${l1NbDistVal !== null ? `${l1NbDistVal} мм, ` : ""}${l1NbAngleInterp})`;
+	const rickettsELineRu = rickettsLsVal === null || rickettsLiVal === null
+		? "Эстетическая линия Риккетса не оценена"
+		: `Линия Риккетса E-line: верхняя губа = ${rickettsLsVal >= 0 ? "+" : ""}${rickettsLsVal} мм (${rickettsLsInterp}), нижняя губа = ${rickettsLiVal >= 0 ? "+" : ""}${rickettsLiVal} мм (${rickettsLiInterp})`;
 
 	const summaryRu = skeletalClass === "Undefined"
 		? "Для построения ортодонтического заключения расставьте все анатомические реперные точки на снимке ТРГ."
-		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}. ${mcnamaraRelationshipRu}. ${u1NaRelationshipRu}. ${l1NbRelationshipRu}.`;
+		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}${fmiaVal !== null ? ` (FMIA Tweed = ${fmiaVal}°)` : ""}. ${witsRelationshipRu}. ${downsConvexityRu}. ${mcnamaraRelationshipRu}. ${u1NaRelationshipRu}. ${l1NbRelationshipRu}. ${rickettsELineRu}.`;
 
 	const protocol043Text = `Ортодонтическое заключение ТРГ: ${summaryRu}`;
 
@@ -658,6 +747,7 @@ export function calculateCephalometrics(
 		upperIncisorInclinationRu,
 		lowerIncisorInclination,
 		lowerIncisorInclinationRu,
+		rickettsELineRu,
 		witsRelationshipRu,
 		downsConvexityRu,
 		mcnamaraRelationshipRu,
@@ -706,6 +796,9 @@ export function generateOrthodonticProtocolText(
 	const wits = analysis.measurements.find((m) => m.id === "Wits");
 	const fma = analysis.measurements.find((m) => m.id === "FMA");
 	const impa = analysis.measurements.find((m) => m.id === "L1-MP");
+	const fmia = analysis.measurements.find((m) => m.id === "FMIA");
+	const rickettsLs = analysis.measurements.find((m) => m.id === "Ricketts-E-Ls");
+	const rickettsLi = analysis.measurements.find((m) => m.id === "Ricketts-E-Li");
 	const u1sn = analysis.measurements.find((m) => m.id === "U1-SN");
 	const u1l1 = analysis.measurements.find((m) => m.id === "U1-L1");
 	const u1naAngle = analysis.measurements.find((m) => m.id === "1-NA-Angle");
@@ -716,7 +809,7 @@ export function generateOrthodonticProtocolText(
 	const mcnamaraPog = analysis.measurements.find((m) => m.id === "McNamara-Pog-Nperp");
 
 	return `ПРОТОКОЛ ЦЕФАЛОМЕТРИЧЕСКОГО АНАЛИЗА ТРГ В БОКОВОЙ ПРОЕКЦИИ
-(Медицинская карта пациента · Штайнер, Твид, Даунс, Якобсон, Макнамара)
+(Медицинская карта пациента · Штайнер, Твид, Даунс, Якобсон, Макнамара, Риккетс)
 Пациент: ${pName}
 Врач: ${docName}
 Дата исследования: ${dateStr}
@@ -741,7 +834,12 @@ export function generateOrthodonticProtocolText(
 • Положение нижних резцов к N-B (1-NB мм): ${l1nbDist?.value !== null && l1nbDist?.value !== undefined ? `${l1nbDist.value >= 0 ? "+" : ""}${l1nbDist.value.toFixed(1)} мм (Норма 4±1 мм)` : "—"} — ${l1nbDist?.clinicalInterpretation || "—"}
 • Инклинация верхних резцов (U1-SN): ${u1sn?.value !== null && u1sn?.value !== undefined ? `${u1sn.value.toFixed(1)}° (Норма 104°±2°)` : "—"} — ${u1sn?.clinicalInterpretation || "—"}
 • Наклон нижних резцов IMPA (L1-MP): ${impa?.value !== null && impa?.value !== undefined ? `${impa.value.toFixed(1)}° (Норма 90°±3°)` : "—"} — ${impa?.clinicalInterpretation || "—"}
+• Угол FMIA Tweed (L1 к FH): ${fmia?.value !== null && fmia?.value !== undefined ? `${fmia.value.toFixed(1)}° (Норма 65°±3°)` : "—"} — ${fmia?.clinicalInterpretation || "—"}
 • Межрезцовый угол (U1-L1): ${u1l1?.value !== null && u1l1?.value !== undefined ? `${u1l1.value.toFixed(1)}° (Норма 131°±5°)` : "—"} — ${u1l1?.clinicalInterpretation || "—"}
+
+4. ЭСТЕТИКА ПРОФИЛЯ И МЯГКИЕ ТКАНИ (Ricketts):
+• Линия E-line к верхней губе (Ls): ${rickettsLs?.value !== null && rickettsLs?.value !== undefined ? `${rickettsLs.value >= 0 ? "+" : ""}${rickettsLs.value.toFixed(1)} мм (Норма -4±2 мм)` : "—"} — ${rickettsLs?.clinicalInterpretation || "—"}
+• Линия E-line к нижней губе (Li): ${rickettsLi?.value !== null && rickettsLi?.value !== undefined ? `${rickettsLi.value >= 0 ? "+" : ""}${rickettsLi.value.toFixed(1)} мм (Норма -2±2 мм)` : "—"} — ${rickettsLi?.clinicalInterpretation || "—"}
 
 ЗАКЛЮЧЕНИЕ ЦЕФАЛОМЕТРИИ (ТРГ):
 ${analysis.diagnosis.summaryRu}`;

@@ -34,6 +34,11 @@ import {
 } from "../orthodonticsCatalogData";
 import { OrthodonticsStudioModal } from "../OrthodonticsStudioModal";
 import { DirectOrthodonticsLauncher } from "../DirectOrthodonticsLauncher";
+import {
+	CEPHALOMETRIC_LANDMARKS,
+	DEFAULT_CEPH_LANDMARKS_PRESET,
+	calculateCephalometrics,
+} from "../cephalometricMath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,7 +63,7 @@ describe("Orthodontics Canonical SSOT Invariants (Appliances, Bite, Archwires & 
 	it("2. Verifies Angle malocclusion classification catalog (Classes I, II/1, II/2, III)", () => {
 		assert.equal(ANGLE_CLASSES_CATALOG.length, 4, "Must contain 4 Angle classification groups");
 		const keys = ANGLE_CLASSES_CATALOG.map((ac) => ac.key);
-		assert.deepEqual(keys, ["class_1", "class_2_1", "class_2_2", "class_3"]);
+		assert.deepEqual(keys, ["class_1", "class_2_div_1", "class_2_div_2", "class_3"]);
 		for (const ac of ANGLE_CLASSES_CATALOG) {
 			assert.ok(ac.titleRu.length > 0, `Angle class ${ac.key} must have title`);
 			assert.ok(ac.descriptionRu.length > 0, `Angle class ${ac.key} must have clinical description`);
@@ -313,8 +318,9 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 			"Must advance stage / activate screw for plate category",
 		);
 		assert.ok(
-			content.includes('arch: "upper"') && content.includes('arch: "lower"'),
-			"Must preserve both upper and lower arch parameters independently",
+			(content.includes('arch: "both"') && content.includes("upperMaterial") && content.includes("lowerMaterial")) ||
+			(content.includes('arch: "upper"') && content.includes('arch: "lower"')),
+			"Must preserve both upper and lower arch parameters independently without double billing",
 		);
 		assert.ok(
 			!content.includes("initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}\n\t\t\t\t\t\tdoctorName="),
@@ -426,5 +432,69 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(content.includes("bone_enhance") && content.includes("invert") && content.includes("contrast"), "Must support hardware x-ray filter modes");
 		assert.ok(content.includes("setPointerCapture"), "Must use pointer capture for drag-and-drop tracing precision");
 		assert.ok(content.includes("svgRef"), "Must render reactive SVG cranial planes overlay");
+	});
+
+	it("27. Verifies expanded cephalometric anatomy (Ba, Ar, Pt, Prn, Ls, Li, Pog'), Tweed FMIA and Ricketts E-line", () => {
+		const landmarkKeys = new Set(CEPHALOMETRIC_LANDMARKS.map((l) => l.key));
+		for (const key of ["Ba", "Ar", "Pt", "Prn", "Ls", "Li", "Pog_prime"] as const) {
+			assert.ok(landmarkKeys.has(key), `Landmark ${key} must be registered in CEPHALOMETRIC_LANDMARKS`);
+			assert.ok(DEFAULT_CEPH_LANDMARKS_PRESET[key] !== undefined, `Preset must contain coordinates for ${key}`);
+		}
+
+		// Verify Tweed FMIA and Ricketts E-line calculation
+		const analysis = calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET, 0.15);
+		const fmia = analysis.measurements.find((m) => m.id === "FMIA");
+		assert.ok(fmia, "FMIA measurement must be calculated");
+		assert.equal(fmia.unit, "deg");
+		assert.ok(typeof fmia.value === "number" && Number.isFinite(fmia.value), "FMIA must be a finite number");
+
+		const rickettsLs = analysis.measurements.find((m) => m.id === "Ricketts-E-Ls");
+		assert.ok(rickettsLs, "Ricketts E-Line Ls must be calculated");
+		assert.equal(rickettsLs.unit, "mm");
+		assert.equal(rickettsLs.category, "soft_tissue");
+
+		const rickettsLi = analysis.measurements.find((m) => m.id === "Ricketts-E-Li");
+		assert.ok(rickettsLi, "Ricketts E-Line Li must be calculated");
+		assert.equal(rickettsLi.unit, "mm");
+		assert.equal(rickettsLi.category, "soft_tissue");
+	});
+
+	it("28. Verifies 2-point calibration ruler and design tokens in CephalometricCanvas & CephLandmarkCanvas", () => {
+		const canvasPath = path.join(orthoDir, "CephalometricCanvas.tsx");
+		const canvasContent = fs.readFileSync(canvasPath, "utf-8");
+		assert.ok(canvasContent.includes('data-testid="ceph-calibration-toggle"'), "Must have calibration toggle button");
+		assert.ok(canvasContent.includes('data-testid="ceph-calibration-panel"'), "Must have calibration control panel");
+		assert.ok(canvasContent.includes("ceph-calibration-ruler"), "Must render SVG calibration ruler");
+		assert.ok(canvasContent.includes("setCalibDistanceMm(10)") && canvasContent.includes("setCalibDistanceMm(50)"), "Must support 10/50 mm presets");
+
+		const cephLandmarkCanvasPath = path.resolve(webSrcDir, "components/radiology/cephModal/CephLandmarkCanvas.tsx");
+		const landmarkCanvasContent = fs.readFileSync(cephLandmarkCanvasPath, "utf-8");
+		assert.ok(!landmarkCanvasContent.includes("#020617"), "Must NOT contain hardcoded #020617");
+		assert.ok(!landmarkCanvasContent.includes("slate-950"), "Must NOT contain hardcoded slate-950");
+		assert.ok(landmarkCanvasContent.includes("var(--paper-strong)"), "Must use var(--paper-strong)");
+		assert.ok(landmarkCanvasContent.includes("var(--line)"), "Must use var(--line)");
+	});
+
+	it("29. Verifies Keyed Remount (Mandate 8bn) and Zero-Leak Draft (Mandate 8d/8zq) in specialty modals and routers", () => {
+		const specialtyModalsPath = path.resolve(webSrcDir, "appModules/AppDirectSpecialtyModals.tsx");
+		const specialtyContent = fs.readFileSync(specialtyModalsPath, "utf-8");
+		assert.ok(
+			specialtyContent.includes('key={patient?.id || "empty"}'),
+			"AppDirectSpecialtyModals must mount OrthodonticsStudioModal with entity key (Mandate 8bn)",
+		);
+
+		const routerPath = path.resolve(webSrcDir, "components/appLayout/viewRouterModules/ClinicalViewRouter.tsx");
+		const routerContent = fs.readFileSync(routerPath, "utf-8");
+		assert.ok(
+			routerContent.includes('key={targetPatientId || "empty"}'),
+			"ClinicalViewRouter must mount OrthodonticsStudioModal with entity key (Mandate 8bn)",
+		);
+
+		const modalPath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
+		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		assert.ok(
+			modalContent.includes("handleClose") && modalContent.includes("createDefaultOrthoProtocolState()"),
+			"OrthodonticsStudioModal must purge draft on close (Zero-Leak Draft)",
+		);
 	});
 });
