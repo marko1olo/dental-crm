@@ -4,10 +4,10 @@
  */
 
 import React from "react";
-import { ActClinicHeader } from "./actHeader/ActClinicHeader";
-import { ActDocumentTitleBanner } from "./actHeader/ActDocumentTitleBanner";
-import { ActRequisitesTable } from "./actHeader/ActRequisitesTable";
-import type { TreatmentPlanActHeaderProps } from "./actHeader/types";
+import { ActClinicHeader } from "./ActClinicHeader";
+import { ActDocumentTitleBanner } from "./ActDocumentTitleBanner";
+import { ActRequisitesTable } from "./ActRequisitesTable";
+import type { TreatmentPlanActHeaderProps } from "./types";
 
 export type { TreatmentPlanActHeaderProps };
 

@@ -1,19 +1,19 @@
 /**
- * treatmentPlanAutoGenerator.ts — автоматическая 1-Click генерация этапов плана лечения по одонтограмме.
+ * TreatmentPlanAutoGenerator.ts — автоматическая 1-Click генерация этапов плана лечения по одонтограмме.
  * Фасад модульного распила autoGenerator/ (Мандат 8b: все файлы <= 120 строк).
  */
 
-import type { ToothData } from "../odontogram/ToothChart";
-import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
-import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
-import { UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "./catalogPredicates";
-import { makeEmptyStage } from "./treatmentPlanItemFactory";
-import { DEMO_SHOWCASE_TEETH, setDemoShowcaseMode, isDemoShowcaseMode } from "./autoGenerator/autoGenDemoMode";
-import { buildPeriodontalAndHygieneItems } from "./autoGenerator/autoGenPeriodontal";
-import { buildDeciduousToothItems } from "./autoGenerator/autoGenPediatric";
-import { buildPermanentToothItems } from "./autoGenerator/autoGenPermanentTherapy";
-import { processJawMissingTeeth } from "./autoGenerator/autoGenJawProcessor";
-import { assembleTreatmentPlanStages } from "./autoGenerator/autoGenStagesBuilder";
+import type { ToothData } from "../../odontogram/ToothChart";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
+import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
+import { UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "../catalogPredicates";
+import { makeEmptyStage } from "../treatmentPlanItemFactory";
+import { DEMO_SHOWCASE_TEETH, setDemoShowcaseMode, isDemoShowcaseMode } from "./autoGenDemoMode";
+import { buildPeriodontalAndHygieneItems } from "./autoGenPeriodontal";
+import { buildDeciduousToothItems } from "./autoGenPediatric";
+import { buildPermanentToothItems } from "./autoGenPermanentTherapy";
+import { processJawMissingTeeth } from "./autoGenJawProcessor";
+import { assembleTreatmentPlanStages } from "./autoGenStagesBuilder";
 
 export { DEMO_SHOWCASE_TEETH, setDemoShowcaseMode, isDemoShowcaseMode };
 

@@ -5,6 +5,7 @@
 
 import type { ToothData } from "../types";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier } from "../treatmentPlanTypes";
+import { rublesToKopecks } from "@dental/shared";
 import { mkItem, mkStage } from "./presetHelpers";
 import { INTACT_PREVENTION_TIERS } from "./presetCanonicalTiers";
 
@@ -81,15 +82,15 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 	let stageIdx = 1;
 	if (econTherapyItems.length > 0) {
 		const total = econTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		econStages.push(mkStage("st-econ-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация очагов инфекции и кариеса", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, econTherapyItems));
+		econStages.push(mkStage("st-econ-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация очагов инфекции и кариеса", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, rublesToKopecks(total), econTherapyItems));
 	}
 	if (econSurgeryItems.length > 0) {
 		const total = econSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		econStages.push(mkStage("st-econ-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Восстановление жевательной опоры", `Дентальная имплантация в области: ${missingTeeth.join(", ")}`, total, total * 100, econSurgeryItems));
+		econStages.push(mkStage("st-econ-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Восстановление жевательной опоры", `Дентальная имплантация в области: ${missingTeeth.join(", ")}`, total, rublesToKopecks(total), econSurgeryItems));
 	}
 	if (econOrthoItems.length > 0) {
 		const total = econOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		econStages.push(mkStage("st-econ-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Функциональное восстановление жевания", `Протезирование зубов металлокерамикой: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, econOrthoItems));
+		econStages.push(mkStage("st-econ-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Функциональное восстановление жевания", `Протезирование зубов металлокерамикой: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, rublesToKopecks(total), econOrthoItems));
 	}
 
 	// 2. Оптимум
@@ -131,15 +132,15 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 	stageIdx = 1;
 	if (stdTherapyItems.length > 0) {
 		const total = stdTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		stdStages.push(mkStage("st-std-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация под увеличением и биосовместимая изоляция", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, stdTherapyItems));
+		stdStages.push(mkStage("st-std-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация под увеличением и биосовместимая изоляция", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, rublesToKopecks(total), stdTherapyItems));
 	}
 	if (stdSurgeryItems.length > 0) {
 		const total = stdSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		stdStages.push(mkStage("st-std-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Двухэтапная дентальная имплантация", `Установка SLA-имплантатов в области: ${missingTeeth.join(", ")}`, total, total * 100, stdSurgeryItems));
+		stdStages.push(mkStage("st-std-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Двухэтапная дентальная имплантация", `Установка SLA-имплантатов в области: ${missingTeeth.join(", ")}`, total, rublesToKopecks(total), stdSurgeryItems));
 	}
 	if (stdOrthoItems.length > 0) {
 		const total = stdOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		stdStages.push(mkStage("st-std-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Анатомические коронки из диоксида циркония", `Циркониевые коронки CAD/CAM: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, stdOrthoItems));
+		stdStages.push(mkStage("st-std-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Анатомические коронки из диоксида циркония", `Циркониевые коронки CAD/CAM: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, rublesToKopecks(total), stdOrthoItems));
 	}
 
 	// 3. Премиум
@@ -182,15 +183,15 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 	stageIdx = 1;
 	if (premTherapyItems.length > 0) {
 		const total = premTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		premStages.push(mkStage("st-prem-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Премиальная санация и микроскопная эндодонтия", `Керамические накладки и микроэндодонтия: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, premTherapyItems));
+		premStages.push(mkStage("st-prem-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Премиальная санация и микроскопная эндодонтия", `Керамические накладки и микроэндодонтия: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, rublesToKopecks(total), premTherapyItems));
 	}
 	if (premSurgeryItems.length > 0) {
 		const total = premSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		premStages.push(mkStage("st-prem-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Навигационная имплантация премиум-класса", `Премиальная имплантация по 3D-шаблону в области: ${missingTeeth.join(", ")}`, total, total * 100, premSurgeryItems));
+		premStages.push(mkStage("st-prem-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Навигационная имплантация премиум-класса", `Премиальная имплантация по 3D-шаблону в области: ${missingTeeth.join(", ")}`, total, rublesToKopecks(total), premSurgeryItems));
 	}
 	if (premOrthoItems.length > 0) {
 		const total = premOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
-		premStages.push(mkStage("st-prem-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Безметалловая керамика и индивидуальные абатменты", `Индивидуальные коронки и абатменты: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, premOrthoItems));
+		premStages.push(mkStage("st-prem-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Безметалловая керамика и индивидуальные абатменты", `Индивидуальные коронки и абатменты: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, rublesToKopecks(total), premOrthoItems));
 	}
 
 	const econTotalRub = econStages.reduce((sum, s) => sum + s.totalRub, 0);
@@ -205,8 +206,8 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 			badge: "Эконом",
 			isRecommended: false,
 			totalRub: econTotalRub,
-			totalKopecks: econTotalRub * 100,
-			amountKopecks: BigInt(econTotalRub * 100),
+			totalKopecks: rublesToKopecks(econTotalRub),
+			amountKopecks: BigInt(rublesToKopecks(econTotalRub)),
 			warrantyYears: 1,
 			keyAdvantages: [
 				"Базовая терапевтическая санация полости рта",
@@ -224,8 +225,8 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 			badge: "Рекомендуемый",
 			isRecommended: true,
 			totalRub: stdTotalRub,
-			totalKopecks: stdTotalRub * 100,
-			amountKopecks: BigInt(stdTotalRub * 100),
+			totalKopecks: rublesToKopecks(stdTotalRub),
+			amountKopecks: BigInt(rublesToKopecks(stdTotalRub)),
 			warrantyYears: 3,
 			keyAdvantages: [
 				"Лечение каналов под операционным дентальным микроскопом",
@@ -243,8 +244,8 @@ export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | unde
 			badge: "Эстетика",
 			isRecommended: false,
 			totalRub: premTotalRub,
-			totalKopecks: premTotalRub * 100,
-			amountKopecks: BigInt(premTotalRub * 100),
+			totalKopecks: rublesToKopecks(premTotalRub),
+			amountKopecks: BigInt(rublesToKopecks(premTotalRub)),
 			warrantyYears: 10,
 			keyAdvantages: [
 				"Премиальная дентальная имплантация высокой гидрофильности",

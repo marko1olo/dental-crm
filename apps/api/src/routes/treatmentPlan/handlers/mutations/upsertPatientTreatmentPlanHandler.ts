@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, computePayloadHash } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { withTenantCtx } from "../../../../db/rls.js";
@@ -10,6 +10,7 @@ import {
 	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
+import { idempotencyKeys } from "../../../../db/schema/idempotency.js";
 import { debtNumericText, rublesFromKopecks } from "../../../../money/patientDebt.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import {
@@ -73,6 +74,38 @@ export async function handleUpsertPatientTreatmentPlan(
 		return reply.code(404).send({ error: "PatientNotFound" });
 	}
 
+	const rawIdempotencyKey = request.headers["idempotency-key"];
+	const idempotencyKey =
+		typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+			? rawIdempotencyKey.trim()
+			: null;
+
+	if (idempotencyKey) {
+		const [existingKey] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, organizationId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (existingKey) {
+			if (existingKey.status === "completed" && existingKey.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				return reply.code(existingKey.responseCode ?? 200).send(existingKey.responseBody);
+			}
+			if (existingKey.status === "in_flight") {
+				return reply.code(409).send({
+					error: "Conflict",
+					message: "Операция сохранения плана лечения уже обрабатывается, повторите запрос через несколько секунд.",
+				});
+			}
+		}
+	}
+
 	const parsed = treatmentPlanUpsertSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -84,14 +117,17 @@ export async function handleUpsertPatientTreatmentPlan(
 
 	const input = parsed.data;
 	const now = new Date();
-	let planId: string | null = null;
+	let upsertResult: {
+		savedPlanId: string;
+		responseBody: Record<string, unknown>;
+	} | null = null;
 	let totalPriceKopecks = 0;
 
 	try {
 		const calculatedTotals = calculateTreatmentPlanTotals(patientId, input.items);
 		totalPriceKopecks = calculatedTotals.totalPriceKopecks;
 
-		planId = await withTenantCtx(organizationId, async (tx) => {
+		upsertResult = await withTenantCtx(organizationId, async (tx) => {
 			let savedPlanId = input.id ?? null;
 			let isRevision = false;
 
@@ -462,7 +498,57 @@ export async function handleUpsertPatientTreatmentPlan(
 				logger: request.log,
 			});
 
-			return savedPlanId;
+			const [rawPlan] = await tx
+				.select()
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, savedPlanId),
+						eq(treatmentPlans.patientId, patientId),
+						eq(treatmentPlans.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			const savedPlan = rawPlan ? serializeTreatmentPlan(rawPlan, []) : null;
+
+			const responseBody: Record<string, unknown> = {
+				success: true,
+				planId: savedPlanId,
+				totalPrice: numeric(rublesFromKopecks(totalPriceKopecks)),
+				plan: savedPlan ?? null,
+			};
+
+			// DEF-03 / Мандат 8bo: Запись ключа идемпотентности строго ВНУТРИ единой ACID-транзакции tx
+			if (idempotencyKey) {
+				try {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: organizationId,
+							key: idempotencyKey,
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody,
+							responseCode: 200,
+							status: "completed",
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								responseBody,
+								responseCode: 200,
+								status: "completed",
+							},
+						});
+				} catch (idempErr) {
+					request.log.warn({ err: idempErr }, "Не удалось сохранить ключ идемпотентности сохранения плана лечения");
+				}
+			}
+
+			return {
+				savedPlanId,
+				responseBody,
+			};
 		});
 	} catch (err: unknown) {
 		const customErr = err as CustomErrorWithStatus;
@@ -475,33 +561,11 @@ export async function handleUpsertPatientTreatmentPlan(
 		throw err;
 	}
 
-	if (!planId) {
+	if (!upsertResult || !upsertResult.savedPlanId) {
 		return reply.code(input.id ? 404 : 500).send({
 			error: input.id ? "TreatmentPlanNotFound" : "TreatmentPlanSaveFailed",
 		});
 	}
 
-	const patientPlans = await loadTreatmentPlansForPatient(patientId, organizationId);
-	let savedPlan = patientPlans.find((p) => p.id === planId) ?? null;
-	if (!savedPlan) {
-		const [rawPlan] = await db
-			.select()
-			.from(treatmentPlans)
-			.where(
-				and(
-					eq(treatmentPlans.id, planId),
-					eq(treatmentPlans.patientId, patientId),
-					eq(treatmentPlans.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		savedPlan = rawPlan ? serializeTreatmentPlan(rawPlan, []) : null;
-	}
-
-	return reply.send({
-		success: true,
-		planId,
-		totalPrice: numeric(rublesFromKopecks(totalPriceKopecks)),
-		plan: savedPlan ?? null,
-	});
+	return reply.send(upsertResult.responseBody);
 }

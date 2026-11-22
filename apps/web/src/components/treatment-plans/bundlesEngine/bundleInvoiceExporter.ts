@@ -1,4 +1,4 @@
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, percentageOfKopecks, kopecksToRubles } from "@dental/shared";
 import type { InvoiceServiceItem } from "../../finance/invoiceEngine";
 import type { ClinicalBundleId } from "../treatmentPlanBundlesPresets";
 import type { CashierInvoiceExportData } from "../types";
@@ -77,10 +77,15 @@ export function createBundleInvoiceExport(
 
 	const planItems = createBundlePlanItems(bundleId, options);
 	const grossTotalRub = planItems.reduce((acc, it) => acc + it.priceRub, 0);
+	const grossKopecks = parseKopecks(grossTotalRub);
 	const discountPercent = Math.max(0, Math.min(100, options.discountPercent ?? 0));
-	const discountRub = Math.round((grossTotalRub * discountPercent) / 100);
-	const netTotalRub = Math.max(0, grossTotalRub - discountRub);
-	const netTotalKopecks = parseKopecks(netTotalRub);
+	const discountKopecks =
+		discountPercent > 0
+			? percentageOfKopecks(grossKopecks, discountPercent * 100)
+			: (0 as Kopecks);
+	const discountRub = Math.round(kopecksToRubles(discountKopecks));
+	const netTotalKopecks = Math.max(0, grossKopecks - discountKopecks) as Kopecks;
+	const netTotalRub = Math.round(kopecksToRubles(netTotalKopecks));
 
 	const toothNote = bundle.requiresTooth
 		? ` (Зуб ${options.toothNumber ?? bundle.defaultTooth})`

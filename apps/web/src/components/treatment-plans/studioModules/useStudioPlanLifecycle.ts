@@ -20,7 +20,7 @@ import {
 	generateTreatmentPlanFromDiagnosis,
 	buildPresenterTiersFromTeeth,
 } from "../treatmentPlanCatalogData";
-import { type ClinicalBundleDefinition } from "../treatmentPlanBundlesEngine";
+import { type ClinicalBundleDefinition } from "../bundlesEngine";
 
 export type StudioDepthMode = "express" | "expert";
 export type StudioTab = "tiers" | "installment" | "warranty" | "photo" | "bundles" | "curator";
@@ -112,10 +112,15 @@ export function useStudioPlanLifecycle({
 		setApprovalErrorMessage(null);
 		setDraftSavedNotice(null);
 		setExportSuccessNotice(null);
-		if (typeof window !== "undefined" && patientId) {
+		if (typeof window !== "undefined") {
 			try {
-				localStorage.removeItem(`dente_plan_draft_${patientId}`);
-			} catch {}
+				if (patientId) {
+					localStorage.removeItem(`dente_plan_draft_${patientId}`);
+				}
+				localStorage.removeItem("dente_plan_draft_current");
+			} catch (storageErr) {
+				console.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error:", storageErr);
+			}
 		}
 	}, [patientId]);
 
@@ -450,11 +455,21 @@ export function useStudioPlanLifecycle({
 
 	// 4.3 Выставить счёт на этап плана в кассу в 1 клик (DEF-04)
 	const handleGenerateStageInvoice = useCallback(async (stage: TreatmentPlanStage): Promise<boolean> => {
-		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
-		if (typeof window === "undefined" || !isValidUuid) {
-			setApprovedSuccessMessage(`Счёт на этап «${stage.title}» подготовлен к оплате!`);
-			setTimeout(() => setApprovedSuccessMessage(null), 3500);
-			return true;
+		const isWalkInOrInvalid =
+			!patientId ||
+			patientId === "pat-walkin" ||
+			!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+
+		if (isWalkInOrInvalid) {
+			setApprovalErrorMessage(
+				"Для выставления счёта в кассу выберите или зарегистрируйте реального пациента в картотеке.",
+			);
+			setTimeout(() => setApprovalErrorMessage(null), 4000);
+			return false;
+		}
+
+		if (typeof window === "undefined") {
+			return false;
 		}
 
 		try {
@@ -625,9 +640,19 @@ export function useStudioPlanLifecycle({
 	const handleApprove = useCallback(async () => {
 		setApprovalErrorMessage(null);
 
-		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+		const isWalkInOrInvalid =
+			!patientId ||
+			patientId === "pat-walkin" ||
+			!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
 
-		if (typeof window !== "undefined" && typeof window.fetch === "function" && isValidUuid) {
+		if (isWalkInOrInvalid) {
+			setApprovalErrorMessage(
+				"Для утверждения плана выберите или зарегистрируйте реального пациента в картотеке (план для незарегистрированного пациента не может быть активирован).",
+			);
+			return;
+		}
+
+		if (typeof window !== "undefined" && typeof window.fetch === "function") {
 			try {
 				// SEV-1.2: Сначала сохраняем обновленный состав плана и этапов в БД
 				const savedPlanId = await savePlanToApi("Draft");
@@ -686,10 +711,13 @@ export function useStudioPlanLifecycle({
 			window.dispatchEvent(new CustomEvent("dente:plan-status-changed", { detail: detailPayload }));
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
 
-			if (patientId) {
-				try {
+			try {
+				if (patientId) {
 					localStorage.removeItem(`dente_plan_draft_${patientId}`);
-				} catch {}
+				}
+				localStorage.removeItem("dente_plan_draft_current");
+			} catch (storageErr) {
+				console.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error:", storageErr);
 			}
 		}
 

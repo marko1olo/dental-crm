@@ -55,12 +55,27 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 				// fallback
 			}
 
+			const rawFinancials = (inst.financialsJsonb as Record<string, unknown> | null) ?? null;
+			const financials =
+				rawFinancials && "financials" in rawFinancials
+					? rawFinancials.financials
+					: (rawFinancials ?? parsedNotes.financials ?? null);
+			const deductedMaterials =
+				rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
+					? rawFinancials.deductedMaterials
+					: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
+
 			return {
 				...inst,
-				financials: parsedNotes.financials ?? null,
-				deductedMaterials: parsedNotes.deductedMaterials ?? [],
+				catalogArticle: inst.catalogArticle ?? parsedNotes.sku ?? null,
+				sku: inst.catalogArticle ?? parsedNotes.sku ?? null,
+				expirationDate: inst.expirationDate ?? parsedNotes.expirationDate ?? null,
+				connectionType: inst.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
+				financials,
+				deductedMaterials,
 				isImmediateLoadingFeasible:
 					Boolean(parsedNotes.isImmediateLoadingFeasible) ||
+					(rawFinancials && Boolean(rawFinancials.isImmediateLoadingFeasible)) ||
 					(Number(inst.baselineIsq || 0) >= 70 && Number(inst.finalInsertionTorqueNcm || 0) >= 35),
 			};
 		});
@@ -145,12 +160,27 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 				// fallback
 			}
 
+			const rawFinancials = (inst.financialsJsonb as Record<string, unknown> | null) ?? null;
+			const financials =
+				rawFinancials && "financials" in rawFinancials
+					? rawFinancials.financials
+					: (rawFinancials ?? parsedNotes.financials ?? null);
+			const deductedMaterials =
+				rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
+					? rawFinancials.deductedMaterials
+					: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
+
 			return {
 				...inst,
-				financials: parsedNotes.financials ?? null,
-				deductedMaterials: parsedNotes.deductedMaterials ?? [],
+				catalogArticle: inst.catalogArticle ?? parsedNotes.sku ?? null,
+				sku: inst.catalogArticle ?? parsedNotes.sku ?? null,
+				expirationDate: inst.expirationDate ?? parsedNotes.expirationDate ?? null,
+				connectionType: inst.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
+				financials,
+				deductedMaterials,
 				isImmediateLoadingFeasible:
 					Boolean(parsedNotes.isImmediateLoadingFeasible) ||
+					(rawFinancials && Boolean(rawFinancials.isImmediateLoadingFeasible)) ||
 					(Number(inst.baselineIsq || 0) >= 70 && Number(inst.finalInsertionTorqueNcm || 0) >= 35),
 			};
 		});

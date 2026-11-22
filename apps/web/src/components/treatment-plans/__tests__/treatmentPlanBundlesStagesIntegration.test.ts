@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { describe, it as test } from "node:test";
 import { parseKopecks } from "@dental/shared";
-import { applyClinicalBundleToStages } from "../treatmentPlanBundlesEngine";
+import { applyClinicalBundleToStages } from "../bundlesEngine";
 import type { TreatmentPlanStage } from "../types";
 
 describe("treatmentPlanBundlesEngine — Применение пакета к этапам", () => {

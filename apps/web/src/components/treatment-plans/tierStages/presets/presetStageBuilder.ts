@@ -1,4 +1,4 @@
-import type { Kopecks } from "@dental/shared";
+import { type Kopecks, rublesToKopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 
 export function buildPresetStage(
@@ -18,7 +18,7 @@ export function buildPresetStage(
 		0,
 	);
 	const effectiveTotalRub = calculatedItemsTotalRub > 0 ? calculatedItemsTotalRub : totalRub;
-	const effectiveTotalKopecks = Math.round(effectiveTotalRub * 100) as Kopecks;
+	const effectiveTotalKopecks = rublesToKopecks(effectiveTotalRub) as Kopecks;
 
 	return {
 		stageNumber,

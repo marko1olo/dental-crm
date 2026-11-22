@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { TreatmentPlanActSignatures } from "../TreatmentPlanActSignatures";
+import { TreatmentPlanActSignatures } from "../actSignatures";
 import type { ActPrintSignaturesAndLegalProps } from "./types";
 
 export const ActPrintSignaturesAndLegal: React.FC<ActPrintSignaturesAndLegalProps> = (

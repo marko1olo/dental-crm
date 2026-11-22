@@ -10,7 +10,7 @@ import {
 	CLINICAL_BUNDLES,
 	type ClinicalBundleId,
 	getClinicalBundleById,
-} from "../treatmentPlanBundlesEngine";
+} from "../bundlesEngine";
 
 describe("treatmentPlanBundlesEngine — Реестр канонических пакетов", () => {
 	test("реестр содержит ровно 10 канонических пакетов", () => {

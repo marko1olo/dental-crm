@@ -16,7 +16,7 @@ import { crmLeads, crmLeadStageHistory, organizations } from "../db/schema.js";
 import {
 	extractUtmAttribution,
 	resolveStructuredLeadAttribution,
-} from "../routes/leadsConversion.js";
+} from "../routes/leadsConversionModules/index.js";
 import { recordLeadStageTransition } from "../routes/leadsConversionModules/leadStageTransition.js";
 import {
 	fixtureUuid,

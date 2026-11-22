@@ -243,6 +243,10 @@ async function main() {
 		// 4. Mobile Dark Surgery Hub
 		console.log("  Capturing 04_surgery_hub_mobile_dark_390x844.png...");
 		await setTheme(pcPage, "dark");
+		await pcPage.goto("http://127.0.0.1:5173/?stand=surgery#surgery", { waitUntil: "domcontentloaded", timeout: 45000 });
+		await pcPage.waitForSelector('[data-testid="chairside-surgery-hub-modal"]', { state: "visible", timeout: 15000 });
+		await sleep(800);
+		await setTheme(pcPage, "dark");
 		await suppressOverlays(pcPage);
 		await saveProof(pcPage, "04_surgery_hub_mobile_dark_390x844.png", "Surgery Hub Mobile Dark (Apple HIG Bottom Sheet)");
 

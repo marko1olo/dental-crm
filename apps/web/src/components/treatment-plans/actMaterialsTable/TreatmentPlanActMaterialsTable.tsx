@@ -5,11 +5,11 @@
 
 import React from "react";
 import { Package } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData } from "./types";
-import type { DocumentBrandColorPalette } from "../../store/documentBrandingStore";
+import type { CompletedWorksActAndWriteOffData } from "../types";
+import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore";
 import type { Kopecks } from "@dental/shared";
-import { formatMoneyExact } from "./treatmentPlanActFormatters";
-import { ActMaterialsTableRow } from "./actMaterialsTable/ActMaterialsTableRow";
+import { formatMoneyExact } from "../treatmentPlanActFormatters";
+import { ActMaterialsTableRow } from "./ActMaterialsTableRow";
 
 export interface TreatmentPlanActMaterialsTableProps {
 	readonly actData: CompletedWorksActAndWriteOffData;

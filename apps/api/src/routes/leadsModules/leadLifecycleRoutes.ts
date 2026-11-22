@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
 	DEMO_SHOWCASE_ORG_ID,
 	normalizePhone,
+	parseKopecks,
 	patchLeadStageSchema,
 } from "@dental/shared";
 import {
@@ -57,6 +58,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 							source: seed.source,
 							status: seed.status,
 							expectedRevenue: seed.expectedRevenue,
+							expectedRevenueKopecks: seed.expectedRevenue
+								? BigInt(parseKopecks(seed.expectedRevenue))
+								: null,
 							notes: seed.notes,
 							clinicalTags: [...seed.clinicalTags],
 							priority: "normal" as const,
@@ -162,6 +166,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				phone: cleanPhone,
 				source: data.source,
 				expectedRevenue: data.expectedRevenue,
+				expectedRevenueKopecks: data.expectedRevenue
+					? BigInt(parseKopecks(data.expectedRevenue))
+					: null,
 				notes: data.notes,
 				dropReason: data.dropReason,
 				assignedDoctorId: data.assignedDoctorId,
@@ -472,7 +479,12 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 					: null;
 			}
 			if (data.source !== undefined) updatePayload.source = data.source;
-			if (data.expectedRevenue !== undefined) updatePayload.expectedRevenue = data.expectedRevenue;
+			if (data.expectedRevenue !== undefined) {
+				updatePayload.expectedRevenue = data.expectedRevenue;
+				updatePayload.expectedRevenueKopecks = data.expectedRevenue
+					? BigInt(parseKopecks(data.expectedRevenue))
+					: null;
+			}
 			if (data.status !== undefined) updatePayload.status = data.status;
 			if (data.notes !== undefined) updatePayload.notes = data.notes;
 			if (data.dropReason !== undefined) updatePayload.dropReason = data.dropReason;

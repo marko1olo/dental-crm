@@ -28,9 +28,10 @@ export function detectChannelFromSource(source?: string | null): string {
 	if (s.includes("tg") || s.includes("telegr") || s.includes("телеграм")) return "tg_bot";
 	if (s.includes("wa") || s.includes("whats") || s.includes("ватсап") || s.includes("waba")) return "wa_bot";
 
-	// 2. Мед-агрегаторы (ПроДокторов, СберЗдоровье / DocDoc)
+	// 2. Мед-агрегаторы (ПроДокторов, СберЗдоровье / DocDoc) и рекомендации врачей
 	if (s.includes("prodoctorov") || s.includes("продокторов")) return "prodoctorov";
-	if (s.includes("sber") || s.includes("сбер") || s.includes("docdoc") || s.includes("доктор")) return "prodoctorov";
+	if (s.includes("sber") || s.includes("сбер") || s.includes("docdoc") || s.includes("sberhealth")) return "sberhealth";
+	if (s.includes("коллег") || s.includes("врач") || s.includes("доктор") || s === "doctor_referral") return "doctor_referral";
 
 	// 3. Партнеры, страховые компании, ДМС
 	if (
@@ -63,7 +64,10 @@ export function detectChannelFromSource(source?: string | null): string {
 	if (canonical === "gis2") return "gis2";
 	if (canonical === "website") return "website";
 	if (canonical === "yandex_maps") return "yandex_maps";
+	if (canonical === "yandex_direct") return "yandex_direct";
 	if (canonical === "prodoctorov") return "prodoctorov";
+	if (canonical === "sberhealth") return "sberhealth";
+	if (canonical === "doctor_referral") return "doctor_referral";
 	if (canonical === "other") return "telephony";
 
 	return canonical;
@@ -97,9 +101,9 @@ export function normalizeChannelKey(key?: string | null): string {
 	) {
 		return "yandex_maps";
 	}
-	if (k === "prodoctorov" || k === "sber" || k === "docdoc" || k.includes("продокторов") || k.includes("доктор")) {
-		return "prodoctorov";
-	}
+	if (k === "prodoctorov" || k.includes("продокторов")) return "prodoctorov";
+	if (k === "sber" || k === "сбер" || k === "docdoc" || k === "sberhealth" || k.includes("сбер")) return "sberhealth";
+	if (k === "doctor_referral" || k.includes("коллег") || k.includes("врач") || k.includes("доктор")) return "doctor_referral";
 	if (k === "tg" || k === "telegram" || k === "tg_bot" || k.includes("телеграм")) return "tg_bot";
 	if (k === "wa" || k === "whatsapp" || k === "wa_bot" || k === "waba" || k.includes("ватсап")) return "wa_bot";
 	if (k === "phone" || k === "call" || k === "telephony" || k.includes("звонок")) return "telephony";
@@ -113,7 +117,9 @@ export const ONLINE_CHANNEL_DEFS = [
 	{ key: "gis2", nameRu: "2ГИС (Профиль клиники / Запись)", categoryRu: "Гео-сервисы" },
 	{ key: "word_of_mouth", nameRu: "Сарафанное радио (Рекомендации)", categoryRu: "Рекомендации" },
 	{ key: "partner", nameRu: "Партнеры (Страховые / Мед-агрегаторы)", categoryRu: "Партнеры" },
-	{ key: "prodoctorov", nameRu: "ПроДокторов / СберЗдоровье", categoryRu: "Мед-агрегаторы" },
+	{ key: "prodoctorov", nameRu: "ПроДокторов (Портал отзывов)", categoryRu: "Мед-агрегаторы" },
+	{ key: "sberhealth", nameRu: "СберЗдоровье (DocDoc)", categoryRu: "Мед-агрегаторы" },
+	{ key: "doctor_referral", nameRu: "Направление от коллеги-врача", categoryRu: "Рекомендации" },
 	{ key: "tg_bot", nameRu: "Telegram-бот / Mini App", categoryRu: "Мессенджеры" },
 	{ key: "wa_bot", nameRu: "WhatsApp-чатбот / WABA", categoryRu: "Мессенджеры" },
 ] as const;
@@ -130,6 +136,8 @@ export const CHANNEL_NAMES_RU_MAP: Record<string, string> = {
 	gis2: "2ГИС Карты",
 	gis_2: "2ГИС Карты",
 	prodoctorov: "ПроДокторов",
+	sberhealth: "СберЗдоровье (DocDoc)",
+	doctor_referral: "Направление от коллеги-врача",
 	tg_bot: "Telegram-бот",
 	wa_bot: "WhatsApp-чатбот",
 	telephony: "Телефония / Звонок",

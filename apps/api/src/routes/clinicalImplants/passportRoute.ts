@@ -91,8 +91,18 @@ export function registerPassportRoute(app: FastifyInstance) {
 				parsedNotes = JSON.parse(installation.notes);
 			}
 		} catch {
-			// fallback
+			// fallback для обратной совместимости со старыми записями
 		}
+
+		const rawFinancials = (installation.financialsJsonb as Record<string, unknown> | null) ?? null;
+		const financialsObj =
+			rawFinancials && "financials" in rawFinancials
+				? rawFinancials.financials
+				: (rawFinancials ?? parsedNotes.financials ?? null);
+		const deductedMaterials =
+			rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
+				? rawFinancials.deductedMaterials
+				: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
 
 		const canonicalPassportId = `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`;
 		const passportData = {
@@ -101,24 +111,36 @@ export function registerPassportRoute(app: FastifyInstance) {
 			toothFdi: installation.toothNumberFdi,
 			installedAt: installation.installedAt,
 			implantBrand: installation.implantBrand,
+			connectionType: installation.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
 			diameterMm: Number(installation.implantDiameterMm),
 			lengthMm: Number(installation.implantLengthMm),
 			lotNumber: installation.lotNumber,
 			serialNumber: installation.serialNumber,
+			catalogArticle: installation.catalogArticle ?? parsedNotes.sku ?? null,
+			sku: installation.catalogArticle ?? parsedNotes.sku ?? null,
+			expirationDate: installation.expirationDate ?? parsedNotes.expirationDate ?? null,
 			boneDensityClass: installation.boneDensityClass,
 			torqueNcm: Number(installation.finalInsertionTorqueNcm),
 			baselineIsq: installation.baselineIsq,
 			protocol: installation.initialProtocol,
 			graftMaterial: installation.boneGraftMaterial,
 			membraneUsed: installation.membraneUsed,
+			isGuidedSurgery: installation.isGuidedSurgery,
+			guidedSleeveDiameterMm: installation.guidedSleeveDiameterMm ? Number(installation.guidedSleeveDiameterMm) : null,
+			guidedSleeveOffsetMm: installation.guidedSleeveOffsetMm ? Number(installation.guidedSleeveOffsetMm) : null,
+			surgicalGuideTemplateId: installation.surgicalGuideTemplateId ?? null,
 			clinicName: org?.name ?? "Стоматологическая клиника DENTE",
 			patientName: patient?.fullName ?? "Пациент",
 			patientCardNumber: patient?.id?.slice(0, 8) ?? "CARD-01",
 			doctorName,
 			qrVerificationUrl: `https://dente.clinic/passport/${canonicalPassportId}`,
 			isqHistory,
-			financials: parsedNotes.financials ?? null,
-			deductedMaterials: parsedNotes.deductedMaterials ?? [],
+			financials: financialsObj,
+			deductedMaterials,
+			notes:
+				installation.notes && !installation.notes.startsWith("{")
+					? installation.notes
+					: ((parsedNotes.userNotes as string | undefined) ?? null),
 		};
 
 		return reply.send({ success: true, passport: passportData });

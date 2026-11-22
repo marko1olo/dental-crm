@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Package, Plus, Check, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { CLINICAL_BUNDLES, type ClinicalBundleDefinition, type ClinicalBundleCategory } from "../treatmentPlanBundlesEngine";
+import { CLINICAL_BUNDLES, type ClinicalBundleDefinition, type ClinicalBundleCategory } from "../bundlesEngine";
 import { formatRubles } from "../treatmentPlanTypes";
 
 export interface StudioClinicalBundlesTabProps {

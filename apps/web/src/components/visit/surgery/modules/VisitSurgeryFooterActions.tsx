@@ -141,7 +141,7 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 					type="button"
 					onClick={handleAddServices}
 					className={`${BTN_BASE} border-[var(--primary)] bg-[var(--paper-soft)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white`}
-					data-testid="btn-tab-add-to-invoice-804n"
+					data-testid="btn-tab-add-to-invoice-surgery"
 					title="Добавить хирургические услуги в смету визита"
 				>
 					<Plus size={16} />

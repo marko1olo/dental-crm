@@ -180,6 +180,7 @@ export async function handleGetMarketingReports(
 			db.select({
 				id: payments.id,
 				patientId: payments.patientId,
+				amountKopecks: payments.amountKopecks,
 				amountRub: payments.amountRub,
 				status: payments.status,
 			}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),

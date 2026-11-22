@@ -8,7 +8,7 @@
 import type { ToothData } from "../odontogram/ToothChart.js";
 import type { TreatmentPlanTier } from "./types/index.js";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine.js";
-import { DEMO_SHOWCASE_TEETH, isDemoShowcaseMode } from "./treatmentPlanAutoGenerator.js";
+import { DEMO_SHOWCASE_TEETH, isDemoShowcaseMode } from "./autoGenerator/index.js";
 import { generateTierPlanStages } from "./treatmentPlanTierStagesGenerator.js";
 import {
 	ECONOMY_TIER_META,

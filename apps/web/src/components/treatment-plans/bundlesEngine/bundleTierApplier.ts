@@ -4,6 +4,7 @@ import {
 	calculateStaged304030Schedule,
 	parseKopecks,
 	sumKopecks,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { ClinicalBundleId } from "../treatmentPlanBundlesPresets";
 import { computeTierInstallments } from "../treatmentPlanStagesEngine";
@@ -18,7 +19,7 @@ export function applyClinicalBundleToTier(
 ): TreatmentPlanTier {
 	const updatedStages = applyClinicalBundleToStages(tier.stages, bundleId, toothNumberOrOptions);
 	const totalKopecks = sumKopecks(updatedStages.map((s) => s.totalKopecks));
-	const totalRub = Math.round(totalKopecks / 100);
+	const totalRub = Math.round(kopecksToRubles(totalKopecks));
 	const allItems = updatedStages.flatMap((s) => s.items);
 
 	const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);

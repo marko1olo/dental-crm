@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -20,6 +21,7 @@ import {
 } from "../_common.js";
 import { clinics, organizations, users } from "../auth.js";
 import { patients } from "../patients.js";
+import { appointments } from "../schedule/appointmentsTable.js";
 import { communicationTasks } from "./campaignsSchema.js";
 
 export const communicationEvents = pgTable(
@@ -44,6 +46,7 @@ export const communicationEvents = pgTable(
 		audioFormat: text("audio_format").default("audio/mpeg"),
 		providerCallId: text("provider_call_id"),
 		providerName: text("provider_name"),
+		idempotencyKey: text("idempotency_key"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -58,6 +61,10 @@ export const communicationEvents = pgTable(
 		callerPhoneIdx: index("communication_events_caller_phone_idx").on(t.callerPhone),
 		actorUserIdIdx: index("communication_events_actor_user_id_idx").on(
 			t.actorUserId,
+		),
+		idempotencyKeyIdx: index("communication_events_idempotency_key_idx").on(
+			t.organizationId,
+			t.idempotencyKey,
 		),
 		providerCallIdUniqueIdx: uniqueIndex(
 			"communication_events_org_provider_call_id_idx",
@@ -127,6 +134,9 @@ export const crmLeads = pgTable(
 		patientId: uuid("patient_id").references(() => patients.id, {
 			onDelete: "set null",
 		}),
+		appointmentId: uuid("appointment_id").references(() => appointments.id, {
+			onDelete: "set null",
+		}),
 		phone: text("phone"),
 		source: text("source"),
 		status: text("status").notNull().default("new"),
@@ -150,6 +160,7 @@ export const crmLeads = pgTable(
 		 * `z.string()`, и строковый тип drizzle совпадает с его контрактом.
 		 */
 		expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
+		expectedRevenueKopecks: bigint("expected_revenue_kopecks", { mode: "bigint" }),
 		stageEnteredAt: timestamp("stage_entered_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -170,6 +181,7 @@ export const crmLeads = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("crm_leads_patient_id_idx").on(t.patientId),
+		appointmentIdIdx: index("crm_leads_appointment_id_idx").on(t.appointmentId),
 		statusIdx: index("crm_leads_status_idx").on(t.status),
 		stageEnteredAtIdx: index("crm_leads_stage_entered_at_idx").on(
 			t.stageEnteredAt,

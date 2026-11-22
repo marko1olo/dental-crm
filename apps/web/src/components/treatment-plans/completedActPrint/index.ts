@@ -11,3 +11,4 @@ export * from "./ActPrintServicesTable";
 export * from "./ActPrintFinancialSummary";
 export * from "./ActPrintSignaturesAndLegal";
 export * from "./useTreatmentPlanCompletedActData";
+export * from "./TreatmentPlanCompletedActPrint";

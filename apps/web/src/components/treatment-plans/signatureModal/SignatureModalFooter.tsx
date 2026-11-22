@@ -26,11 +26,11 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 		: undefined;
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--border)] bg-[var(--paper-soft)] pb-[max(1rem,env(safe-area-inset-bottom))]">
+		<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] pb-[max(1rem,env(safe-area-inset-bottom))]">
 			<button
 				type="button"
 				onClick={onClose}
-				className="w-full sm:w-auto min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] border border-[var(--border)] transition-colors cursor-pointer"
+				className="w-full sm:w-auto min-h-[44px] sm:h-9 px-4 rounded-xl sm:rounded-lg text-sm font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] bg-[var(--paper)] transition-colors cursor-pointer"
 			>
 				Отмена
 			</button>
@@ -43,12 +43,12 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 				}}
 				aria-busy={isSubmitting}
 				title={conflictTitle}
-				className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer ${
+				className={`w-full sm:w-auto min-h-[44px] sm:h-9 flex items-center justify-center gap-2 px-4 rounded-xl sm:rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer ${
 					isSubmitting ? "opacity-75" : ""
 				}`}
 				data-testid="paper-signature-confirm-btn"
 			>
-				<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+				<ShieldCheck className="w-4 h-4 shrink-0 text-current" />
 				<span>Бумажный оригинал подписан пациентом</span>
 			</button>
 
@@ -60,12 +60,12 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 				}}
 				aria-busy={isSubmitting}
 				title={conflictTitle}
-				className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white transition-all bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer ${
+				className={`w-full sm:w-auto min-h-[44px] sm:h-9 flex items-center justify-center gap-2 px-5 rounded-xl sm:rounded-lg text-sm font-medium text-white transition-all bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer ${
 					isSubmitting ? "opacity-75" : ""
 				}`}
 				data-testid="confirm-sign-plan-btn"
 			>
-				<Lock size={14} />
+				<Lock className="w-4 h-4 shrink-0 text-current" />
 				<span>{isSubmitting ? "Сохранение..." : signMethod === "sms" && smsSent ? "Подтвердить СМС-код и утвердить" : "Утвердить и подписать"}</span>
 			</button>
 		</div>

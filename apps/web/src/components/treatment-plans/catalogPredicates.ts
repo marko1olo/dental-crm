@@ -1,4 +1,4 @@
-import type { Order804nProcedureDefinition } from "./types";
+import type { ClinicalProcedureDefinition, Order804nProcedureDefinition } from "./types";
 import type { ToothData } from "../odontogram/ToothChart";
 
 export function isDeciduousTooth(toothNumber: number): boolean {
@@ -33,7 +33,7 @@ export function extractCanalCount(tooth: ToothData): number {
 	return getAnatomicalRootCanalCount(tooth.toothNumber, overrideCount);
 }
 
-export function getEndoPreparationProcedure(canalsCount: number): Order804nProcedureDefinition {
+export function getEndoPreparationProcedure(canalsCount: number): ClinicalProcedureDefinition {
 	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
 	return {
 		code: "A16.07.030.00" + clamped,
@@ -49,7 +49,7 @@ export function getEndoPreparationProcedure(canalsCount: number): Order804nProce
 	};
 }
 
-export function getEndoObturationProcedure(canalsCount: number): Order804nProcedureDefinition {
+export function getEndoObturationProcedure(canalsCount: number): ClinicalProcedureDefinition {
 	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
 	return {
 		code: "A16.07.008.00" + clamped,

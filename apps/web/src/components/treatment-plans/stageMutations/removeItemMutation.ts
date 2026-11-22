@@ -1,4 +1,5 @@
 import type { TreatmentPlanStage } from "../types/index.js";
+import { kopecksToRubles } from "@dental/shared";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
 export function removeItemFromStages(
@@ -12,7 +13,7 @@ export function removeItemFromStages(
 		return {
 			...st,
 			items: updatedItems,
-			totalRub: Math.round(stTotalKopecks / 100),
+			totalRub: Math.round(kopecksToRubles(stTotalKopecks)),
 			totalKopecks: stTotalKopecks,
 		};
 	});

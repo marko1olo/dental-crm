@@ -3,6 +3,7 @@ import {
 	calculateStaged304030Schedule,
 	getTierMaterialsHeadlineRu,
 	getTierAdvantagesRu,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "../types/index.js";
 import { calculateNdflDeduction, computeTierInstallments } from "../treatmentPlanPricingEngine.js";
@@ -89,7 +90,7 @@ export function assembleTierFromPreset(
 ): TreatmentPlanTier {
 	const allItems = stages.flatMap((s) => s.items);
 	const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
-	const totalRub = Math.round(totalKopecks / 100);
+	const totalRub = Math.round(kopecksToRubles(totalKopecks));
 
 	const isHighCost = allItems.some((i) => {
 		const code = (i.code804n || "").trim().toUpperCase();

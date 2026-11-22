@@ -505,6 +505,27 @@
       "when": 1787400110000,
       "tag": "0278_payments_amount_kopecks",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1787400120000,
+      "tag": "0282_implant_passport_and_guided_surgery_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1787400130000,
+      "tag": "0283_branches_and_cross_branch_shifts",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1787400140000,
+      "tag": "0284_crm_leads_kopecks_and_appointment_id",
+      "breakpoints": true
     }
   ]
 }

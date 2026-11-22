@@ -4,7 +4,7 @@
  * Расчет суммарной себестоимости плана и генерация Акта выполненных работ.
  */
 
-import { type Kopecks, sumKopecks } from "@dental/shared";
+import { type Kopecks, sumKopecks, kopecksToRubles } from "@dental/shared";
 import type {
 	CompletedWorksActAndWriteOffData,
 	StageMaterialCostSummary,
@@ -19,11 +19,11 @@ export function calculatePlanTotalMaterialCost(
 ) {
 	const summaries = stages.map((s) => calculateStageMaterialRequirements(s, inventoryItems));
 	const totalMaterialsCostKopecks = sumKopecks(summaries.map((s) => s.totalMaterialsCostKopecks));
-	const totalMaterialsCostRub = Math.round(totalMaterialsCostKopecks / 100);
+	const totalMaterialsCostRub = Math.round(kopecksToRubles(totalMaterialsCostKopecks));
 	const totalServiceRevenueKopecks = sumKopecks(summaries.map((s) => s.serviceRevenueKopecks));
-	const totalServiceRevenueRub = Math.round(totalServiceRevenueKopecks / 100);
+	const totalServiceRevenueRub = Math.round(kopecksToRubles(totalServiceRevenueKopecks));
 	const totalGrossMarginKopecks = Math.max(0, totalServiceRevenueKopecks - totalMaterialsCostKopecks) as Kopecks;
-	const totalGrossMarginRub = Math.round(totalGrossMarginKopecks / 100);
+	const totalGrossMarginRub = Math.round(kopecksToRubles(totalGrossMarginKopecks));
 	const overallMarginPercent = totalServiceRevenueKopecks > 0 ? Math.round((totalGrossMarginKopecks / totalServiceRevenueKopecks) * 100) : 0;
 	const totalDeficitItemsCount = summaries.reduce((acc, s) => acc + s.deficitCount, 0);
 

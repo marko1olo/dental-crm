@@ -1,4 +1,4 @@
-import { parseKopecks } from "@dental/shared";
+import { parseKopecks, percentageOfKopecks, kopecksToRubles, type Kopecks } from "@dental/shared";
 import type { CatalogServiceLookupItem } from "../treatmentPlanStagesEngine";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTierId } from "../types";
 import { buildBoneAugmentationItems } from "./boneAugmentationBuilder";
@@ -57,7 +57,15 @@ export function assembleTierStages(
 	}
 
 	function makeStage(stageNum: number, stageTitle: string, subtitleText: string, goal: string, stageKind: "stage_1_therapy" | "stage_2_surgery" | "stage_3_orthopedics", items: TreatmentPlanItem[]): TreatmentPlanStage {
-		const itemsWithDisc = items.map((it) => ({ ...it, discountRub: Math.round(((it.priceRub * it.quantity) * validDiscountPct) / 100) }));
+		const itemsWithDisc = items.map((it) => {
+			const lineKopecks = parseKopecks(it.priceRub * it.quantity);
+			const discKopecks =
+				validDiscountPct > 0
+					? percentageOfKopecks(lineKopecks, validDiscountPct * 100)
+					: (0 as Kopecks);
+			const discountRub = Math.round(kopecksToRubles(discKopecks));
+			return { ...it, discountRub };
+		});
 		const totalRub = itemsWithDisc.reduce((acc, it) => acc + (it.priceRub * it.quantity - it.discountRub), 0);
 		return {
 			stageNumber: stageNum,

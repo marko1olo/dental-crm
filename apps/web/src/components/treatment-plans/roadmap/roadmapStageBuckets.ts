@@ -2,6 +2,7 @@ import { formatFdiToothName } from "../../portal/patientPortalEngine.js";
 import type { RoadmapStageKind, RoadmapProcedureItem } from "./types.js";
 import { translate804nToPatientDescription } from "./roadmapPriceHelpers.js";
 import type { TreatmentPlanItem } from "../types/index.js";
+import { rublesToKopecks } from "@dental/shared";
 
 export interface RoadmapAccumulatedBuckets {
 	stageBuckets: Record<RoadmapStageKind, RoadmapProcedureItem[]>;
@@ -37,7 +38,7 @@ export function accumulateRoadmapStageBuckets(
 
 		const priceKop = typeof it.priceKopecks === "number"
 			? Math.round(it.priceKopecks)
-			: Math.round((it.priceRub || 0) * 100);
+			: rublesToKopecks(it.priceRub || 0);
 
 		const targetBucket = stageBuckets[stageKind];
 		if (targetBucket) {

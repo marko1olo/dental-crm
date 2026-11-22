@@ -19,14 +19,14 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 	return (
 		<div className="flex items-center justify-between px-5 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] print:hidden shrink-0">
 			<div className="flex items-center gap-2.5">
-				<div className="p-1.5 rounded-lg bg-[var(--teal-soft)] text-[var(--teal,#0d9488)]">
+				<div className="p-1.5 rounded-lg bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)]">
 					<FileText size={18} />
 				</div>
 				<div>
 					<h3 className="text-sm font-bold text-[var(--ink)] m-0">
 						Договор на оказание медицинских услуг и утвержденная смета
 					</h3>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-[11px] text-[var(--ink-muted)] m-0">
 						Официальный бланк клиники (Клинические протоколы СтАР)
 					</p>
 				</div>
@@ -39,8 +39,8 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 						onClick={() => setViewMode("patient_friendly")}
 						className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
 							viewMode === "patient_friendly"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs font-bold"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--primary)] shadow-xs font-semibold"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="contract-view-patient-friendly-btn"
 					>
@@ -51,8 +51,8 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 						onClick={() => setViewMode("official_appendix")}
 						className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
 							viewMode === "official_appendix"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs font-bold"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--primary)] shadow-xs font-semibold"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="contract-view-official-btn"
 					>
@@ -63,18 +63,18 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 				<button
 					type="button"
 					onClick={onCopyForMessenger}
-					className="px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+					className="px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
 					title="Скопировать смету для отправки в WhatsApp или Telegram"
 					data-testid="contract-copy-messenger-btn"
 				>
 					{isCopiedMessenger ? (
 						<>
-							<Check size={14} className="text-[var(--teal,#0d9488)]" />
-							<span className="text-[var(--teal,#0d9488)]">Скопировано!</span>
+							<Check size={14} className="text-[var(--primary)]" />
+							<span className="text-[var(--primary)]">Скопировано!</span>
 						</>
 					) : (
 						<>
-							<Share2 size={14} className="text-[var(--teal,#0d9488)]" />
+							<Share2 size={14} className="text-[var(--primary)]" />
 							<span>В мессенджер</span>
 						</>
 					)}
@@ -83,7 +83,7 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 				<button
 					type="button"
 					onClick={() => window.print()}
-					className="px-3.5 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+					className="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
 					data-testid="contract-print-btn"
 				>
 					<Printer size={15} />
@@ -92,7 +92,7 @@ export const TreatmentPlanContractPrintHeader: React.FC<TreatmentPlanContractPri
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] transition-colors cursor-pointer"
+					className="p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					aria-label="Закрыть"
 				>
 					<X size={18} />

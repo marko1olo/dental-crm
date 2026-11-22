@@ -223,6 +223,12 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						implantLengthMm: String(currentItemInput.implantLengthMm),
 						lotNumber: screw.effectiveLotNumber,
 						serialNumber: screw.effectiveSerialNumber,
+						catalogArticle: screw.invItem.sku ?? currentItemInput.catalogArticle ?? null,
+						expirationDate: screw.invItem.expirationDate ?? currentItemInput.expirationDate ?? null,
+						connectionType:
+							currentItemInput.connectionType ??
+							currentItemInput.implantConnectionType ??
+							"internal_hex",
 						boneDensityClass: currentItemInput.boneDensityClass,
 						averageHounsfieldUnits: currentItemInput.averageHounsfieldUnits
 							? String(currentItemInput.averageHounsfieldUnits)
@@ -234,19 +240,23 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						underdrillingUsed: currentItemInput.underdrillingUsed,
 						boneGraftMaterial: currentItemInput.boneGraftMaterial ?? null,
 						membraneUsed: currentItemInput.membraneUsed ?? null,
+						isGuidedSurgery: Boolean(currentItemInput.isGuidedSurgery),
+						guidedSleeveDiameterMm:
+							currentItemInput.guidedSleeveDiameterMm != null
+								? String(currentItemInput.guidedSleeveDiameterMm)
+								: null,
+						guidedSleeveOffsetMm:
+							currentItemInput.guidedSleeveOffsetMm != null
+								? String(currentItemInput.guidedSleeveOffsetMm)
+								: null,
+						surgicalGuideTemplateId: currentItemInput.surgicalGuideTemplateId ?? null,
 						torqueCurveSamplesJson: JSON.stringify(currentItemInput.torqueCurveSamples || []),
-						notes: JSON.stringify({
-							userNotes: currentItemInput.notes ?? null,
-							connectionType:
-								currentItemInput.connectionType ??
-								currentItemInput.implantConnectionType ??
-								"internal_hex",
-							expirationDate: screw.invItem.expirationDate ?? currentItemInput.expirationDate,
-							sku: screw.invItem.sku,
+						financialsJsonb: {
 							financials,
 							deductedMaterials: itemDeductions,
 							isImmediateLoadingFeasible,
-						}),
+						},
+						notes: currentItemInput.notes ?? null,
 					})
 					.returning();
 

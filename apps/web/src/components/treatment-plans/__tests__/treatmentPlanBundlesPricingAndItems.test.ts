@@ -11,7 +11,7 @@ import {
 	createBundlePlanItems,
 	getClinicalBundleById,
 	type ClinicalBundleId,
-} from "../treatmentPlanBundlesEngine";
+} from "../bundlesEngine";
 
 describe("treatmentPlanBundlesEngine — Расчет цен и создание позиций", () => {
 	test("при полном составе цена равна базовой стоимости пакета", () => {

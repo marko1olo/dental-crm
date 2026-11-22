@@ -91,7 +91,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 }) => {
 	const isDemo = explicitDemoMode ?? isDemoShowcaseMode();
 	const patientName = propPatientName ?? (isDemo ? "Демо-пациент" : "");
-	const patientId = propPatientId ?? (isDemo ? "00000000-0000-0000-0000-000000000001" : undefined);
+	const patientId = propPatientId ?? undefined;
 	const doctorFullName = propDoctorFullName ?? (isDemo ? "Дежурный врач" : "");
 	const mainRef = useRef<HTMLElement | null>(null);
 

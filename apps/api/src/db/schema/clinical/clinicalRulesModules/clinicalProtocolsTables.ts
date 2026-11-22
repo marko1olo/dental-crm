@@ -137,6 +137,7 @@ export const labOrders = pgTable(
 		doctorId: uuid("doctor_id"),
 		doctorName: text("doctor_name"),
 		laboratoryName: text("laboratory_name"),
+		orderNumber: text("order_number"),
 		secureToken: text("secure_token").notNull().unique(),
 		toothFdi: text("tooth_fdi"),
 		material: text("material"),
@@ -351,6 +352,9 @@ export const patientImplantInstallations = pgTable(
 		}).notNull(),
 		lotNumber: text("lot_number"),
 		serialNumber: text("serial_number"),
+		catalogArticle: text("catalog_article"),
+		expirationDate: text("expiration_date"),
+		connectionType: text("connection_type").default("internal_hex"),
 		boneDensityClass: text("bone_density_class").notNull().default("D2"),
 		averageHounsfieldUnits: numeric("average_hounsfield_units", {
 			precision: 6,
@@ -368,9 +372,20 @@ export const patientImplantInstallations = pgTable(
 		underdrillingUsed: boolean("underdrilling_used").notNull().default(false),
 		boneGraftMaterial: text("bone_graft_material"),
 		membraneUsed: text("membrane_used"),
+		isGuidedSurgery: boolean("is_guided_surgery").notNull().default(false),
+		guidedSleeveDiameterMm: numeric("guided_sleeve_diameter_mm", {
+			precision: 4,
+			scale: 2,
+		}),
+		guidedSleeveOffsetMm: numeric("guided_sleeve_offset_mm", {
+			precision: 4,
+			scale: 2,
+		}),
+		surgicalGuideTemplateId: text("surgical_guide_template_id"),
 		torqueCurveSamplesJson: text("torque_curve_samples_json")
 			.notNull()
 			.default("[]"),
+		financialsJsonb: jsonb("financials_jsonb"),
 		notes: text("notes"),
 		isArchived: boolean("is_archived").notNull().default(false),
 		createdAt: timestamp("created_at", { withTimezone: true })

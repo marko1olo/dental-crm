@@ -4,6 +4,7 @@
  */
 
 import type { TreatmentPlanItem } from "./types";
+import { rublesToKopecks } from "@dental/shared";
 
 export function createWarrantyPlanItem(item: TreatmentPlanItem): TreatmentPlanItem {
 	return {
@@ -33,7 +34,7 @@ export function createPriceUpdatedPlanItem(
 	updatedPrice: number,
 ): TreatmentPlanItem {
 	const isZero = updatedPrice === 0;
-	const kopecks = Math.round(updatedPrice * 100);
+	const kopecks = rublesToKopecks(updatedPrice);
 	return {
 		...item,
 		priceRub: updatedPrice,

@@ -19,6 +19,7 @@ import {
 	QrCode,
 	RefreshCw,
 	ExternalLink,
+	AlertCircle,
 } from "lucide-react";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
@@ -68,6 +69,7 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 		status: string;
 	} | null>(null);
 	const [isRegistering, setIsRegistering] = useState<boolean>(false);
+	const [patientWarning, setPatientWarning] = useState<string | null>(null);
 
 	// Динамическое формирование стандартов на основе реальных услуг, входящих в тариф
 	const materialStandards = useMemo(() => {
@@ -288,10 +290,26 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 						},
 					];
 
-		const effectivePatientId =
-			patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)
-				? patientId
-				: "00000000-0000-0000-0000-000000000001";
+		const isValidPatientId =
+			typeof patientId === "string" &&
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+
+		if (!isValidPatientId) {
+			setPatientWarning("Для регистрации сертификата в официальном реестре клиники привяжите пациента к приёму.");
+			const fallbackResult = {
+				certificateNumber: certNumber,
+				integritySha256: generateSha256(
+					`${certNumber}:preview:${warrantyMonths}:${serviceLifeMonths}:${new Date().getTime()}`,
+				),
+				status: "preview",
+			};
+			setRegisteredCert(fallbackResult);
+			setIsRegistering(false);
+			return fallbackResult;
+		}
+
+		setPatientWarning(null);
+		const effectivePatientId = patientId;
 
 		const issuedAtDate = new Date();
 		const expiresAtDate = new Date(issuedAtDate.getTime() + warrantyMonths * 30 * 24 * 60 * 60 * 1000);
@@ -501,11 +519,15 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 					<div className="flex items-center gap-2 flex-wrap">
 						{registeredCert ? (
 							<span
-								className="text-[11px] font-bold text-[var(--success,#16a34a)] bg-[var(--success-soft,rgba(22,163,74,0.1))] px-2.5 py-1.5 rounded-xl border border-[var(--success,#16a34a)]/30 inline-flex items-center gap-1.5"
-								data-testid="warranty-cert-registered-badge"
+								className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl border inline-flex items-center gap-1.5 ${
+									registeredCert.status === "preview"
+										? "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30"
+										: "text-[var(--success,#16a34a)] bg-[var(--success-soft,rgba(22,163,74,0.1))] border-[var(--success,#16a34a)]/30"
+								}`}
+								data-testid={registeredCert.status === "preview" ? "warranty-cert-preview-badge" : "warranty-cert-registered-badge"}
 							>
-								<Check className="w-3.5 h-3.5" />
-								<span>Реестр: № {registeredCert.certificateNumber}</span>
+								{registeredCert.status === "preview" ? <FileText className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+								<span>{registeredCert.status === "preview" ? `Бланк: № ${registeredCert.certificateNumber}` : `Реестр: № ${registeredCert.certificateNumber}`}</span>
 							</span>
 						) : (
 							<button
@@ -570,6 +592,17 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 					<strong className="text-[var(--ink)]">{doctorFullName}</strong>.
 					При возникновении любых вопросов по состоянию выполненных работ гарантийное обслуживание проводится бесплатно в приоритетном порядке.
 				</div>
+
+				{patientWarning && (
+					<div
+						className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-medium flex items-center gap-2"
+						role="status"
+						data-testid="warranty-patient-warning"
+					>
+						<AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+						<span>{patientWarning}</span>
+					</div>
+				)}
 			</div>
 
 			{/* 2. Сертификаты и спецификация материалов */}

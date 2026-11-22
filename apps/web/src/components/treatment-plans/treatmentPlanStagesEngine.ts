@@ -16,7 +16,7 @@ export * from "./catalogPredicates";
 export * from "./treatmentPlanProcedures";
 export * from "./treatmentPlanPricingEngine";
 export * from "./treatmentPlanItemFactory";
-export * from "./treatmentPlanAutoGenerator";
+export * from "./autoGenerator";
 export * from "./treatmentPlanTierStagesGenerator";
 export * from "./treatmentPlanTierComparisonEngine";
 export * from "./treatmentPlanReorderEngine";

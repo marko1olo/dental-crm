@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { Wrench } from "lucide-react";
+import { Compass, Wrench } from "lucide-react";
 import {
 	SURGERY_IMPLANT_SYSTEMS,
 	getImplantSystemById,
@@ -28,6 +28,14 @@ export interface SurgeryImplantParametersSectionProps {
 	readonly catalogArticle: string;
 	readonly lotNumber: string;
 	readonly serialNumber: string;
+	readonly isGuidedSurgery?: boolean | undefined;
+	readonly onToggleGuidedSurgery?: ((val: boolean) => void) | undefined;
+	readonly guidedSleeveDiameterMm?: number | undefined;
+	readonly onSelectGuidedSleeveDiameter?: ((val: number) => void) | undefined;
+	readonly guidedSleeveOffsetMm?: number | undefined;
+	readonly onSelectGuidedSleeveOffset?: ((val: number) => void) | undefined;
+	readonly surgicalGuideTemplateId?: string | undefined;
+	readonly onChangeSurgicalGuideTemplateId?: ((val: string) => void) | undefined;
 }
 
 export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersSectionProps> = ({
@@ -46,6 +54,14 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 	catalogArticle,
 	lotNumber,
 	serialNumber,
+	isGuidedSurgery = false,
+	onToggleGuidedSurgery,
+	guidedSleeveDiameterMm = 5.0,
+	onSelectGuidedSleeveDiameter,
+	guidedSleeveOffsetMm = 2.0,
+	onSelectGuidedSleeveOffset,
+	surgicalGuideTemplateId = "",
+	onChangeSurgicalGuideTemplateId,
 }) => {
 	const selectedSystem = getImplantSystemById(selectedBrand);
 	const availableDiameters = selectedSystem?.standardDiametersMm?.length
@@ -69,7 +85,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 						onClick={() => onSelectBrand(sys.brandName)}
 						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center whitespace-nowrap ${
 							selectedBrand === sys.brandName
-								? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+								? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]/80"
 						}`}
 						data-testid={`brand-${sys.id}`}
@@ -90,7 +106,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								onClick={() => onSelectDiameter(d)}
 								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									diameterMm === d
-										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`diameter-${d}`}
@@ -110,7 +126,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								onClick={() => onSelectLength(l)}
 								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									lengthMm === l
-										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`length-${l}`}
@@ -130,7 +146,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								onClick={() => onSelectTorque(t)}
 								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									torqueNcm === t
-										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`torque-${t}`}
@@ -153,7 +169,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								onClick={() => onSelectIsq?.(val)}
 								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									isqValue === val
-										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`isq-preset-${val}`}
@@ -188,7 +204,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 					onClick={() => onSelectCapType("fdm")}
 					className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 text-xs font-bold rounded-xl border whitespace-nowrap flex items-center justify-center cursor-pointer transition-all ${
 						capType === "fdm"
-							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+							? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="cap-fdm"
@@ -200,13 +216,87 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 					onClick={() => onSelectCapType("plug")}
 					className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 text-xs font-bold rounded-xl border whitespace-nowrap flex items-center justify-center cursor-pointer transition-all ${
 						capType === "plug"
-							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+							? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="cap-plug"
 				>
 					Винт-заглушка (наглухо)
 				</button>
+			</div>
+
+			<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]" data-testid="guided-surgery-controls">
+				<div className="flex items-center justify-between">
+					<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Compass size={14} className="text-[var(--primary)]" />
+						<span>Навигационная хирургия (хирургический шаблон):</span>
+					</div>
+					<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--ink)]">
+						<input
+							type="checkbox"
+							checked={Boolean(isGuidedSurgery)}
+							onChange={(e) => onToggleGuidedSurgery?.(e.target.checked)}
+							className="rounded accent-[var(--primary)] cursor-pointer w-4 h-4"
+							data-testid="checkbox-guided-surgery"
+						/>
+						<span>По шаблону</span>
+					</label>
+				</div>
+				{Boolean(isGuidedSurgery) && (
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+						<div className="flex flex-col gap-1">
+							<span className="text-[11px] font-semibold text-[var(--muted)]">Ø Втулки шаблона (мм):</span>
+							<div className="flex items-center gap-1">
+								{[4.0, 5.0, 5.5].map((s) => (
+									<button
+										key={s}
+										type="button"
+										onClick={() => onSelectGuidedSleeveDiameter?.(s)}
+										className={`flex-1 min-h-[36px] h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center justify-center cursor-pointer ${
+											guidedSleeveDiameterMm === s
+												? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
+												: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										}`}
+										data-testid={`sleeve-diameter-${s}`}
+									>
+										Ø {s}
+									</button>
+								))}
+							</div>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-[11px] font-semibold text-[var(--muted)]">Оффсет втулки (мм):</span>
+							<div className="flex items-center gap-1">
+								{[1.0, 2.0, 3.5].map((o) => (
+									<button
+										key={o}
+										type="button"
+										onClick={() => onSelectGuidedSleeveOffset?.(o)}
+										className={`flex-1 min-h-[36px] h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center justify-center cursor-pointer ${
+											guidedSleeveOffsetMm === o
+												? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
+												: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										}`}
+										data-testid={`sleeve-offset-${o}`}
+									>
+										+{o} мм
+									</button>
+								))}
+							</div>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-[11px] font-semibold text-[var(--muted)]">ID шаблона / CAD-файла:</span>
+							<input
+								type="text"
+								value={surgicalGuideTemplateId || ""}
+								onChange={(e) => onChangeSurgicalGuideTemplateId?.(e.target.value)}
+								placeholder="SG-2026-T46"
+								className="w-full min-h-[36px] h-9 px-2 text-xs font-mono rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+								data-testid="input-surgical-guide-template-id"
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 
 			<div className="grid grid-cols-3 gap-2 text-xs pt-1">

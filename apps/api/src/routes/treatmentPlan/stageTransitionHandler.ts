@@ -1,11 +1,12 @@
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { computePayloadHash } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, treatmentItems, treatmentPlans } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import { LEDGER_ID_PREFIX_LENGTH } from "../odontogram/types.js";
 import { cancelRejectedPlanTierLedgerItems } from "./handlers/mutations/planLedgerSync.js";
 import {
 	createInvoiceForApprovedPlan,
@@ -34,10 +35,36 @@ export async function handleStageTransition(
 ) {
 	const rawIdempotencyKey =
 		(request.headers?.["idempotency-key"] as string | undefined) ??
-		(request.headers?.["x-idempotency-key"] as string | undefined);
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
 	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
 	if (idempotencyKey) {
 		reply.header("Idempotency-Key", idempotencyKey);
+
+		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo, 8zp)
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция перемещения плана лечения с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
 	}
 
 	const { id } = request.params;
@@ -122,7 +149,6 @@ export async function handleStageTransition(
 		let invoice: CreatedInvoiceSummary | null = null;
 
 		if (targetStatus === "Approved") {
-			const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 			await tx
 				.update(treatmentItems)
 				.set({
@@ -134,11 +160,7 @@ export async function handleStageTransition(
 						eq(treatmentItems.organizationId, organizationId),
 						eq(treatmentItems.patientId, existing.patientId),
 						eq(treatmentItems.status, "proposed"),
-						or(
-							eq(treatmentItems.treatmentPlanId, id),
-							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
-							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
-						),
+						eq(treatmentItems.treatmentPlanId, id),
 					),
 				);
 
@@ -170,7 +192,38 @@ export async function handleStageTransition(
 			reason: `План лечения «${plan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
 		});
 
-		return { plan, invoice, targetStatus, now, patientId: existing.patientId };
+		const responsePayload: Record<string, unknown> = {
+			success: true,
+			status: targetStatus,
+			newStage: targetStage,
+			newStatus: targetStatus,
+			plan,
+			invoice,
+			createdInvoice: invoice,
+		};
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: organizationId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: responsePayload,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: responsePayload,
+						responseCode: 200,
+					},
+				});
+		}
+
+		return { responsePayload, plan, invoice, targetStatus, now, patientId: existing.patientId };
 	});
 
 	if (result && "kind" in result && result.kind === "not_found") {
@@ -187,7 +240,7 @@ export async function handleStageTransition(
 		});
 	}
 
-	const { plan: updatedPlan, invoice: createdInvoice, targetStatus, now, patientId } = result;
+	const { responsePayload, invoice: createdInvoice, targetStatus, now, patientId } = result;
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "TREATMENT_PLAN_UPDATED",
@@ -217,13 +270,5 @@ export async function handleStageTransition(
 		}
 	}
 
-	return reply.code(200).send({
-		success: true,
-		status: targetStatus,
-		newStage: targetStage,
-		newStatus: targetStatus,
-		plan: updatedPlan,
-		invoice: createdInvoice,
-		createdInvoice,
-	});
+	return reply.code(200).send(responsePayload);
 }

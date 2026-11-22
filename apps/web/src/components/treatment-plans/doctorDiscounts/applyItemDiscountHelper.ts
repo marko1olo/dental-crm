@@ -1,6 +1,7 @@
 import {
 	type Kopecks,
 	multiplyKopecks,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../types";
 import { safeKopecks } from "../treatmentPlanPricingEngine";
@@ -26,9 +27,9 @@ export function calculateItemDiscountedState(
 
 	return {
 		...it,
-		unitPriceRub: Math.round(baseUnitPriceKop / 100),
-		priceRub: Math.round(lineTotalKop / 100),
-		discountRub: Math.round(lineDiscountKop / 100),
+		unitPriceRub: Math.round(kopecksToRubles(baseUnitPriceKop)),
+		priceRub: Math.round(kopecksToRubles(lineTotalKop)),
+		discountRub: Math.round(kopecksToRubles(lineDiscountKop)),
 	};
 }
 

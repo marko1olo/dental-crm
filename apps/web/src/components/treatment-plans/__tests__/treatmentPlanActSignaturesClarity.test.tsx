@@ -7,7 +7,7 @@
 import React from "react";
 import { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
-import { TreatmentPlanActSignatures } from "../TreatmentPlanActSignatures";
+import { TreatmentPlanActSignatures } from "../actSignatures";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
 import type { CompletedWorksActAndWriteOffData, DigitalSignatureAgreementData, TreatmentPlanTier } from "../types";
 import { BRAND_COLOR_PALETTES } from "../../../store/documentBrandingStore";

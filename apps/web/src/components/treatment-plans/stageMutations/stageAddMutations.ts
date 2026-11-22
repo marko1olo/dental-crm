@@ -1,4 +1,4 @@
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types/index.js";
 import { romanizeStageNumber } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
@@ -15,7 +15,7 @@ export function addItemToPlanStages(
 	const grossKopecks = (unitPriceKop * qty) as Kopecks;
 	const discKopecks = parseKopecks(discRub);
 	const netKopecks = Math.max(0, grossKopecks - discKopecks) as Kopecks;
-	const netRub = Math.round(netKopecks / 100);
+	const netRub = Math.round(kopecksToRubles(netKopecks));
 
 	const stageKind: TreatmentPlanStageKind =
 		newItemData.stageKind ||
@@ -63,7 +63,7 @@ export function addItemToPlanStages(
 				...s,
 				items: updatedItems,
 				totalKopecks,
-				totalRub: Math.round(totalKopecks / 100),
+				totalRub: Math.round(kopecksToRubles(totalKopecks)),
 				serviceCatalogCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 				order804nCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 			};

@@ -9,7 +9,7 @@
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { generatePatientCasePresentation, rublesToKopecks, kopecksToRubles, sumKopecks } from "@dental/shared";
+import { generatePatientCasePresentation, rublesToKopecks, kopecksToRubles, sumKopecks, percentageOfKopecks } from "@dental/shared";
 
 // Экспорты из декомпозированных модулей пресетов (Мандат 8b/8zi)
 export * from "./catalogPresets/presetHelpers";
@@ -77,6 +77,7 @@ export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
  * Исключает хардкод и фиктивные множители *0.85 / *1.35.
  */
 export interface ClinicTierServicePrice {
+	readonly serviceCode?: string | undefined;
 	readonly code804n: string;
 	readonly category: string;
 	readonly economy: { readonly name: string; readonly priceRub: number };
@@ -331,15 +332,16 @@ export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], 
 	const clampedDiscount = Math.max(0, Math.min(100, discountPercent));
 	if (clampedDiscount === 0) return tiers;
 
-	const multiplier = (100 - clampedDiscount) / 100;
+	const discountBasisPoints = clampedDiscount * 100;
 	return tiers.map((tier) => {
 		const discountedStages = tier.stages.map((stage) => {
 			const discountedItems = stage.items.map((it) => {
 				const itemKopecks = rublesToKopecks(it.priceRub);
-				const discountedItemKopecks = Math.round(itemKopecks * multiplier);
+				const discountKopecks = percentageOfKopecks(itemKopecks, discountBasisPoints);
+				const discountedItemKopecks = Math.max(0, itemKopecks - discountKopecks);
 				const itemRub = kopecksToRubles(discountedItemKopecks);
 				const unitPriceRub = typeof it.unitPriceRub === "number"
-					? kopecksToRubles(Math.round(rublesToKopecks(it.unitPriceRub) * multiplier))
+					? kopecksToRubles(Math.max(0, rublesToKopecks(it.unitPriceRub) - percentageOfKopecks(rublesToKopecks(it.unitPriceRub), discountBasisPoints)))
 					: undefined;
 				return {
 					...it,

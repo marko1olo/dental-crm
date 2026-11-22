@@ -1,4 +1,4 @@
-import { type Kopecks, parseKopecks, percentageOfKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, percentageOfKopecks, kopecksToRubles } from "@dental/shared";
 
 export interface ItemPricingCalculationResult {
 	readonly unitPriceKopecks: Kopecks;
@@ -28,9 +28,9 @@ export function calculateItemPricing(
 	const totalKopecks = (finalUnitPriceKopecks * quantity) as Kopecks;
 	const totalDiscountKopecks = (discountKopecksPerUnit * quantity) as Kopecks;
 
-	const unitPriceRub = Math.round(unitPriceKopecks / 100);
-	const totalPriceRub = Math.round(totalKopecks / 100);
-	const discountRub = Math.round(totalDiscountKopecks / 100);
+	const unitPriceRub = Math.round(kopecksToRubles(unitPriceKopecks));
+	const totalPriceRub = Math.round(kopecksToRubles(totalKopecks));
+	const discountRub = Math.round(kopecksToRubles(totalDiscountKopecks));
 
 	return {
 		unitPriceKopecks,

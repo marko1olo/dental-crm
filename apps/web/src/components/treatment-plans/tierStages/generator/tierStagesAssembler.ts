@@ -1,4 +1,4 @@
-import { parseKopecks, sumKopecks } from "@dental/shared";
+import { parseKopecks, sumKopecks, kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanStage } from "../../types";
 import type { TierGeneratorContext } from "./types";
 
@@ -9,11 +9,11 @@ export function assembleTierStages(
 	const { tierId, stage1Items, stage2Items, stage3Items } = ctx;
 
 	const s1TotalKopecks = sumKopecks(stage1Items.map((it) => parseKopecks(it.priceRub)));
-	const s1Total = Math.round(s1TotalKopecks / 100);
+	const s1Total = Math.round(kopecksToRubles(s1TotalKopecks));
 	const s2TotalKopecks = sumKopecks(stage2Items.map((it) => parseKopecks(it.priceRub)));
-	const s2Total = Math.round(s2TotalKopecks / 100);
+	const s2Total = Math.round(kopecksToRubles(s2TotalKopecks));
 	const s3TotalKopecks = sumKopecks(stage3Items.map((it) => parseKopecks(it.priceRub)));
-	const s3Total = Math.round(s3TotalKopecks / 100);
+	const s3Total = Math.round(kopecksToRubles(s3TotalKopecks));
 
 	const stage1Subtitle =
 		tierId === "premium"

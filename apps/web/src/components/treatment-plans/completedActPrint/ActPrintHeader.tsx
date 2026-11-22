@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { TreatmentPlanActHeader } from "../TreatmentPlanActHeader";
+import { TreatmentPlanActHeader } from "../actHeader";
 import type { ActPrintHeaderProps } from "./types";
 
 export const ActPrintHeader: React.FC<ActPrintHeaderProps> = (props) => {

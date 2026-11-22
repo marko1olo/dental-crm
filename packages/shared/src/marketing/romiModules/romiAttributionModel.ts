@@ -1,4 +1,4 @@
-import { DENTE_MARKETING_SOURCES } from "../../patients/tagsModules/marketingSources.js";
+import { DENTE_MARKETING_SOURCES } from "../marketingSources.js";
 import { rublesToKopecks } from "../../money.js";
 import type { AdvertisingChannelInput } from "./romiTypes.js";
 

@@ -11,7 +11,7 @@ import {
 	applyClinicalBundleToStages,
 	calculateBundlePrice,
 	getCbctBundleById,
-} from "../treatmentPlanBundlesEngine";
+} from "../bundlesEngine";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { TreatmentPlanStage } from "../types";
 

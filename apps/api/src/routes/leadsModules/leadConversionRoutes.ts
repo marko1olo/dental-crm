@@ -6,7 +6,7 @@ import {
 	convertLeadSchema,
 	convertLeadToAppointment,
 	createPatientFromLead,
-} from "../leadsConversion.js";
+} from "../leadsConversionModules/index.js";
 
 export async function registerLeadConversionRoutes(app: FastifyInstance): Promise<void> {
 	app.post("/api/leads/:id/convert", async (req, reply) => {

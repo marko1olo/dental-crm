@@ -1,4 +1,4 @@
-import { parseKopecks, sumKopecks } from "@dental/shared";
+import { kopecksToRubles, parseKopecks, sumKopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
 import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanProcedures";
@@ -28,11 +28,11 @@ export function assembleTreatmentPlanStages(
 	}
 
 	const s1TotalKopecks = sumKopecks(stage1Items.map((it) => parseKopecks(it.priceRub)));
-	const s1TotalRub = Math.round(s1TotalKopecks / 100);
+	const s1TotalRub = Math.round(kopecksToRubles(s1TotalKopecks));
 	const s2TotalKopecks = sumKopecks(stage2Items.map((it) => parseKopecks(it.priceRub)));
-	const s2TotalRub = Math.round(s2TotalKopecks / 100);
+	const s2TotalRub = Math.round(kopecksToRubles(s2TotalKopecks));
 	const s3TotalKopecks = sumKopecks(stage3Items.map((it) => parseKopecks(it.priceRub)));
-	const s3TotalRub = Math.round(s3TotalKopecks / 100);
+	const s3TotalRub = Math.round(kopecksToRubles(s3TotalKopecks));
 
 	const stage1: TreatmentPlanStage = {
 		stageNumber: 1,

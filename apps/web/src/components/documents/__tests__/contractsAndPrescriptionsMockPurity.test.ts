@@ -215,7 +215,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 	test("DENTE TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", () => {
 		const actSignaturesPath = path.join(
 			webSrcDir,
-			"components/treatment-plans/TreatmentPlanActSignatures.tsx",
+			"components/treatment-plans/actSignatures/TreatmentPlanActSignatures.tsx",
 		);
 		const actGridPath = path.join(
 			webSrcDir,

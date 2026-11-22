@@ -11,24 +11,12 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import { kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
+import { formatKopecksToRubles, kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../../../invoiceRoutes/invoiceCalculationHelpers.js";
-import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
 import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
 import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
-
-/**
- * Детерминированное строковое форматирование копеек без float-артефактов (Мандат 8bm).
- */
-function kopecksToDebtNumericText(kopecks: number): string {
-	const sign = kopecks < 0 ? "-" : "";
-	const absKop = Math.round(Math.abs(kopecks));
-	const rub = Math.floor(absKop / 100);
-	const kop = absKop % 100;
-	return `${sign}${rub}.${kop < 10 ? "0" : ""}${kop}`;
-}
 
 /**
  * statusTreatmentPlanHandler.ts — Утверждение, смена статуса и жизненный цикл плана лечения.
@@ -291,7 +279,7 @@ export async function createInvoiceForApprovedPlan(
 
 	const totalAmountKopecks = rublesToKopecks(totalAmountRub);
 	const finalTotalAmountRub = kopecksToRubles(totalAmountKopecks);
-	const totalRubText = kopecksToDebtNumericText(totalAmountKopecks);
+	const totalRubText = formatKopecksToRubles(totalAmountKopecks);
 
 	// SEV-1 FK Invariant: Сначала создаём родительский счёт в patientInvoices, затем дочерние строки в invoiceItems!
 	await tx.insert(patientInvoices).values({
@@ -351,8 +339,6 @@ export async function handleApproveTreatmentPlan(
 		});
 	}
 
-	const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-
 	const { approvedPlan, createdInvoice } = await db.transaction(async (tx) => {
 		let invoice: CreatedInvoiceSummary | null = null;
 		const [planToLock] = await tx
@@ -391,7 +377,6 @@ export async function handleApproveTreatmentPlan(
 						eq(treatmentItems.status, "proposed"),
 						or(
 							eq(treatmentItems.treatmentPlanId, id),
-							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
 							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
 						),
 					),
@@ -521,7 +506,6 @@ export async function handleUpdateTreatmentPlanStatus(
 			.returning();
 
 		if (updated && isApproved) {
-			const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 			await tx
 				.update(treatmentItems)
 				.set({
@@ -535,7 +519,6 @@ export async function handleUpdateTreatmentPlanStatus(
 						eq(treatmentItems.status, "proposed"),
 						or(
 							eq(treatmentItems.treatmentPlanId, id),
-							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
 							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
 						),
 					),

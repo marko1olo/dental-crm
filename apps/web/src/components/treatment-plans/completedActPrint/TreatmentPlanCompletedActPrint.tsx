@@ -1,5 +1,5 @@
 /**
- * TreatmentPlanCompletedActPrint.tsx — Тонкий фасад печатной формы Акта сдачи-приемки
+ * TreatmentPlanCompletedActPrint.tsx — Печатная форма Акта сдачи-приемки
  * выполненных стоматологических работ и Накладной на списание ТМЦ.
  * Оформлен в журнальной полиграфической типографике согласно стандартам Минздрава РФ,
  * Постановлению Правительства РФ № 736 и ГОСТ Р 7.0.97-2016.
@@ -9,9 +9,9 @@
 import React from "react";
 import { createPortal } from "react-dom";
 if (typeof window !== "undefined") {
-	void import("../../styles/premium-document-print.css");
+	void import("../../../styles/premium-document-print.css");
 }
-import { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
+import { TreatmentPlanActMaterialsTable } from "../actMaterialsTable";
 import {
 	ActPrintActionBar,
 	ActPrintFinancialSummary,
@@ -19,21 +19,9 @@ import {
 	ActPrintServicesTable,
 	ActPrintSignaturesAndLegal,
 	ActPrintWatermark,
-	type TreatmentPlanActPrintData,
 	type TreatmentPlanCompletedActPrintProps,
 	useTreatmentPlanCompletedActData,
-} from "./completedActPrint";
-
-export { TreatmentPlanActHeader } from "./TreatmentPlanActHeader";
-export { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
-export { TreatmentPlanActSignatures } from "./TreatmentPlanActSignatures";
-export {
-	formatMoneyExact,
-	numberToWordsRu,
-	pluralizeRu,
-} from "./treatmentPlanActFormatters";
-export type { TreatmentPlanActPrintData, TreatmentPlanCompletedActPrintProps };
-export * from "./completedActPrint";
+} from "./index";
 
 export const TreatmentPlanCompletedActPrint: React.FC<
 	TreatmentPlanCompletedActPrintProps
@@ -95,4 +83,3 @@ export const TreatmentPlanCompletedActPrint: React.FC<
 	}
 	return modalNode;
 };
-

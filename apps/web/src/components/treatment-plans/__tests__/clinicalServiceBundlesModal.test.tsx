@@ -11,7 +11,7 @@ import { describe, it as test } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { StudioClinicalBundlesTab } from "../studioTabs/StudioClinicalBundlesTab";
-import { CLINICAL_BUNDLES } from "../treatmentPlanBundlesEngine";
+import { CLINICAL_BUNDLES } from "../bundlesEngine";
 
 describe("StudioClinicalBundlesTab — Компонент пакетов комплексного лечения в студии", () => {
 	test("рендерит контейнер, категории фильтрации и пакеты", () => {

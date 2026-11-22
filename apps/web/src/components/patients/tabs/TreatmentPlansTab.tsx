@@ -32,7 +32,7 @@ import type { TreatmentPlansListProps } from "../plansList/treatmentPlansListTyp
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
 import { TreatmentPlan3TierComparison } from "../../treatment-plans/TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "../../treatment-plans/TreatmentPlanContractPrint";
-import { TreatmentPlanCompletedActPrint } from "../../treatment-plans/TreatmentPlanCompletedActPrint";
+import { TreatmentPlanCompletedActPrint } from "../../treatment-plans/completedActPrint";
 import {
 	type TierCategory,
 	type TreatmentTierOption,

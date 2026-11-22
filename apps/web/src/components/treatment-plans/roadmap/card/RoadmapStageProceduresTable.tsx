@@ -1,5 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import { formatKopecksToRubExact } from "../roadmapPriceHelpers.js";
 import type { RoadmapStageData } from "../types.js";
 
@@ -13,7 +14,7 @@ export const RoadmapStageProceduresTable: React.FC<TableProps> = ({ stage }) => 
 			{stage.procedures.length > 0 ? (
 				stage.procedures.map((proc) => {
 					const lineKopecks =
-						(typeof proc.priceKopecks === "number" ? proc.priceKopecks : Math.round((proc.priceRub || 0) * 100)) *
+						(typeof proc.priceKopecks === "number" ? proc.priceKopecks : rublesToKopecks(proc.priceRub || 0)) *
 						(typeof proc.quantity === "number" ? proc.quantity : 1);
 
 					return (

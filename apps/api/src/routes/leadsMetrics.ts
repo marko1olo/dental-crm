@@ -60,7 +60,12 @@ export async function calculateLeadPipelineMetrics(
 			}
 		}
 
-		if (lead.expectedRevenue) {
+		if (lead.expectedRevenueKopecks != null) {
+			const kopecks = Number(lead.expectedRevenueKopecks);
+			if (kopecks > 0) {
+				pipelineExpectedRevenueKopecks += kopecks;
+			}
+		} else if (lead.expectedRevenue) {
 			const kopecks = parseKopecks(lead.expectedRevenue);
 			if (kopecks > 0) {
 				pipelineExpectedRevenueKopecks += kopecks;

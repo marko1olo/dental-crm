@@ -105,7 +105,18 @@ export async function convertLeadToAppointment(params: {
 			}, tx);
 
 			const updatedMeta = { ...existingMeta, appointmentId: appointment.id };
-			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "consult_booked", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id, metadata: updatedMeta });
+			await recordLeadStageTransition({
+				tx,
+				organizationId,
+				leadId: lead.id,
+				fromStage: lead.status,
+				toStage: "consult_booked",
+				stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
+				changedByUserId,
+				patientId: patient.id,
+				appointmentId: appointment.id,
+				metadata: updatedMeta,
+			});
 		} else {
 			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "converted", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id });
 		}

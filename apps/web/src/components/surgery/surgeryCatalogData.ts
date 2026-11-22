@@ -4,7 +4,7 @@
  * чистая номенклатура, списание расходников с Soft Negative Overdraft, SOAP дневники и памятки (Мандаты 8b, 8e, 8n, 8x).
  */
 
-import type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
+import type { SurgicalServiceItem, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
 import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS } from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS } from "../implants/implantCatalogData";
 import { DEFAULT_CANONICAL_IMPLANT_STOCK } from "../implants/implantQuickPresets";
@@ -17,7 +17,6 @@ import {
 
 export type {
 	SurgicalServiceItem,
-	SurgicalService804n,
 	SurgicalOperationNorm,
 	SurgicalWarehouseOverdraftStatus,
 	QuickDeductSurgicalMaterialsParams,
@@ -36,6 +35,7 @@ export interface SurgeryMaterialItem { readonly id?: string; readonly name: stri
 export interface SurgeryScenarioDefinition {
 	readonly id: string; readonly type: SurgeryScenarioType; readonly titleRu: string; readonly subtitleRu: string; readonly defaultToothFdi: number; readonly icd10: string; readonly icd10Label: string; readonly serviceCode: string; readonly serviceNameRu: string; readonly defaultPriceRub: number; readonly defaultProtocolRu: string; readonly defaultRecommendationsRu: string; readonly standardMaterials: readonly SurgeryMaterialItem[];
 }
+export type SurgeryScenarioConfig = SurgeryScenarioDefinition;
 export interface SurgeryImplantSystemSpec {
 	readonly id: string; readonly brandName: string; readonly unitCostRub: number; readonly popularLines: readonly string[]; readonly platformName: string; readonly screwdriverType: string; readonly screwdriverAliasRu: string; readonly minTorqueNcm: number; readonly defaultTorqueNcm: number; readonly maxSafeTorqueNcm: number; readonly isqOptimalRange: string; readonly standardDiametersMm: readonly number[]; readonly standardLengthsMm: readonly number[]; readonly defaultDiameterMm: number; readonly defaultLengthMm: number; readonly defaultArticle: string; readonly defaultLotNumber: string; readonly defaultSerialNumber: string; readonly defaultExpirationDate: string;
 	readonly implantCostKopecks?: bigint;

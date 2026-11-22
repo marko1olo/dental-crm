@@ -4,6 +4,7 @@ import {
 	calculateStaged304030Schedule,
 	parseKopecks,
 	sumKopecks,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { CatalogServiceLookupItem } from "../treatmentPlanStagesEngine";
 import { computeTierInstallments } from "../treatmentPlanStagesEngine";
@@ -24,7 +25,7 @@ export function generateCbctAutoPlanScenarios(
 		const stages = assembleTierStages(findings, tierId, catalog, validDiscountPct);
 		const allItems = stages.flatMap((s) => s.items);
 		const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
-		const totalRub = Math.round(totalKopecks / 100);
+		const totalRub = Math.round(kopecksToRubles(totalKopecks));
 
 		const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);
 		const isHighCost = ndflBreakdown.hasCode02ExpensiveServices;

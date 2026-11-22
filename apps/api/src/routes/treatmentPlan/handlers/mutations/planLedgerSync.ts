@@ -1,13 +1,10 @@
 import { and, eq, inArray, ne, or, sql, type SQL } from "drizzle-orm";
-import { rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks, generateUuidV7 } from "@dental/shared";
 import { evaluateClinicalRulesInDb } from "../../../../db/clinicalQuery.js";
 import type { TenantDb } from "../../../../db/rls.js";
 import { serviceCatalogItems, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
 import { chargeLineKopecks, rublesFromKopecks } from "../../../../money/patientDebt.js";
-import { ledgerRowId } from "../../../odontogram/planHelpers.js";
 import {
-	LEDGER_ID_PREFIX_LENGTH,
-	LEDGER_MAX_SLOT,
 	LEDGER_STATUSES_OWNED_BY_PLAN,
 	UUID_SHAPE,
 } from "../../../odontogram/types.js";
@@ -20,6 +17,8 @@ export interface SyncPlanLedgerItemInput {
 	quantity: number;
 	price: number;
 	discount: number;
+	discountPercent?: number | undefined;
+	priceKopecks?: number | bigint | undefined;
 	unitPriceKopecks?: number | undefined;
 	totalPriceKopecks?: number | undefined;
 	phase?: number | undefined;
@@ -58,7 +57,6 @@ export async function syncUpsertPlanLedgerItems(
 		logger,
 	} = params;
 
-	const ledgerPrefix = savedPlanId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 	const ownedRows = await tx
 		.select({
 			id: treatmentItems.id,
@@ -71,16 +69,9 @@ export async function syncUpsertPlanLedgerItems(
 			and(
 				eq(treatmentItems.organizationId, organizationId),
 				eq(treatmentItems.patientId, patientId),
-				or(
-					eq(treatmentItems.treatmentPlanId, savedPlanId),
-					sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
-				),
+				eq(treatmentItems.treatmentPlanId, savedPlanId),
 			),
 		);
-
-	const ownedRowsById = new Map<string, (typeof ownedRows)[0]>(
-		ownedRows.map((r) => [r.id.toLowerCase(), r]),
-	);
 
 	const existingByPlanItemId = new Map<string, (typeof ownedRows)[0]>();
 	for (const row of ownedRows) {
@@ -209,19 +200,17 @@ export async function syncUpsertPlanLedgerItems(
 	const ledgerStatus = patientSignature ? "approved" : "proposed";
 
 	const toInsert: (typeof treatmentItems.$inferInsert)[] = [];
-	let slot = 0;
 
 	for (let index = 0; index < items.length; index++) {
 		const item = items[index]!;
-		const lineTotalRub = rublesFromKopecks(
-			chargeLineKopecks({
-				patientId,
-				status: ledgerStatus,
-				unitPriceRub: item.price,
-				quantity: item.quantity,
-				discountRub: item.discount,
-			}),
-		);
+		const lineTotalKopecksNumber = chargeLineKopecks({
+			patientId,
+			status: ledgerStatus,
+			unitPriceRub: item.price,
+			quantity: item.quantity,
+			discountRub: item.discount,
+		});
+		const lineTotalRub = rublesFromKopecks(lineTotalKopecksNumber);
 		const unitPriceRub = rublesFromKopecks(
 			chargeLineKopecks({
 				patientId,
@@ -236,6 +225,15 @@ export async function syncUpsertPlanLedgerItems(
 			(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
 			(item.priceId && knownServiceIds.has(item.priceId) ? item.priceId : null);
 
+		// DEF-PLAN-02 / Мандат 8bm: Честный Line Total в копейках для treatment_items.priceKopecks (со скидкой)
+		const lineTotalKopecks = item.totalPriceKopecks != null
+			? BigInt(item.totalPriceKopecks)
+			: BigInt(lineTotalKopecksNumber);
+		const unitPriceKopecks = item.unitPriceKopecks != null
+			? BigInt(item.unitPriceKopecks)
+			: BigInt(rublesToKopecks(item.price));
+		const discountKopecks = BigInt(rublesToKopecks(item.discount || 0));
+
 		let existingRow: (typeof ownedRows)[0] | undefined;
 		let rowId: string | undefined;
 
@@ -249,29 +247,7 @@ export async function syncUpsertPlanLedgerItems(
 		}
 
 		if (!rowId) {
-			while (slot <= LEDGER_MAX_SLOT) {
-				const candidateId = ledgerRowId(savedPlanId, slot);
-				const candidateLower = candidateId.toLowerCase();
-				const existingAtSlot = ownedRowsById.get(candidateLower);
-				if (existingAtSlot && (existingAtSlot.visitId !== null || !LEDGER_STATUSES_OWNED_BY_PLAN.has(existingAtSlot.status))) {
-					slot += 1;
-					continue;
-				}
-				if (usedRowIds.has(candidateLower)) {
-					slot += 1;
-					continue;
-				}
-				rowId = candidateId;
-				existingRow = existingAtSlot;
-				slot += 1;
-				break;
-			}
-		}
-
-		if (!rowId) {
-			throw new Error(
-				`Позиции плана лечения некуда записать: свободных слотов книги лечения не осталось (позиция ${index + 1}).`,
-			);
+			rowId = generateUuidV7();
 		}
 
 		usedRowIds.add(rowId.toLowerCase());
@@ -299,9 +275,9 @@ export async function syncUpsertPlanLedgerItems(
 							discountRub: 0,
 						}),
 					),
-					priceKopecks: BigInt(rublesToKopecks(item.price)),
-					unitPriceKopecks: BigInt(rublesToKopecks(item.price)),
-					discountKopecks: BigInt(rublesToKopecks(item.discount || 0)),
+					priceKopecks: lineTotalKopecks,
+					unitPriceKopecks: unitPriceKopecks,
+					discountKopecks: discountKopecks,
 					status: ledgerStatus as "proposed" | "approved",
 					plannedDoctorUserId: item.doctorId ?? null,
 					treatmentPlanItemId: item.treatmentPlanItemId ?? null,
@@ -338,9 +314,9 @@ export async function syncUpsertPlanLedgerItems(
 						discountRub: 0,
 					}),
 				),
-				priceKopecks: BigInt(rublesToKopecks(item.price)),
-				unitPriceKopecks: BigInt(rublesToKopecks(item.price)),
-				discountKopecks: BigInt(rublesToKopecks(item.discount || 0)),
+				priceKopecks: lineTotalKopecks,
+				unitPriceKopecks: unitPriceKopecks,
+				discountKopecks: discountKopecks,
 				status: ledgerStatus as "proposed" | "approved",
 				plannedDoctorUserId: item.doctorId ?? null,
 				notes: null,
@@ -449,8 +425,6 @@ export async function cancelRejectedPlanTierLedgerItems(
 		);
 
 	// 3. Аннулируем все незавершенные позиции отвергнутых тарифов в treatment_items
-	const ledgerPrefixes = siblingIds.map((id) => id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase());
-
 	const updated = await tx
 		.update(treatmentItems)
 		.set({
@@ -462,13 +436,7 @@ export async function cancelRejectedPlanTierLedgerItems(
 				eq(treatmentItems.patientId, patientId),
 				inArray(treatmentItems.status, ["proposed", "approved"]),
 				sql`${treatmentItems.visitId} IS NULL`,
-				or(
-					inArray(treatmentItems.treatmentPlanId, siblingIds),
-					...ledgerPrefixes.map(
-						(prefix) =>
-							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${prefix}`,
-					),
-				),
+				inArray(treatmentItems.treatmentPlanId, siblingIds),
 			),
 		)
 		.returning({ id: treatmentItems.id });

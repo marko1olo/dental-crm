@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState } from "react";
 import { formatWarrantyYearsText, type DigitalSignatureAgreementData, type TreatmentPlanStage, type TreatmentPlanTier } from "./types";
-import { type Kopecks, parseKopecks, kopecksToRubles } from "@dental/shared";
+import { type Kopecks, parseKopecks, kopecksToRubles, splitKopecks } from "@dental/shared";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 import { TreatmentPlanContractPrintHeader } from "./TreatmentPlanContractPrintHeader";
 import { TreatmentPlanContractClinicPatientInfo } from "./TreatmentPlanContractClinicPatientInfo";
@@ -69,7 +69,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	}), [displayContractNumber, patientId, patientName, doctorFullName, finalTotalRub, tier.title, clinicName, clinicInn, clinicLicense, signedAgreement]);
 
 	const handleCopyForMessenger = () => {
-		const lines = [`[Клиника]: ${clinicName}`, `[План лечения]: ${patientName}`, `[Выбранный вариант]: «${tier.title}»`, tier.materialsHeadline ? `[Материалы]: ${tier.materialsHeadline}` : "", `[Длительность]: ~${tier.durationWeeks} нед. (${tier.durationVisits} визитов)`, `[Гарантия клиники]: ${formatWarrantyYearsText(tier.warrantyYears || 1)}`, "", "Клинические этапы:", ...activeStages.map((s, idx) => `  ${idx + 1}. ${s.title}: ${s.totalRub.toLocaleString("ru-RU")} ₽ (~${s.estimatedWeeks} нед.)`), "", `[Итоговая смета]: ${finalTotalRub.toLocaleString("ru-RU")} ₽`, `[Рассрочка клиники 0%]: ${(tier.installments?.[12]?.monthlyPaymentRub ?? Math.round(finalTotalRub / 12)).toLocaleString("ru-RU")} ₽/мес (на 12 мес)`, (tier.ndflRefundRub ?? 0) > 0 ? `[Налоговый вычет 13%]: до +${(tier.ndflRefundRub ?? 0).toLocaleString("ru-RU")} ₽ к возврату` : "", `[Лечащий врач]: ${doctorFullName}`, "Подготовлено в соответствии с клиническими рекомендациями и протоколами СтАР."].filter(Boolean);
+		const lines = [`[Клиника]: ${clinicName}`, `[План лечения]: ${patientName}`, `[Выбранный вариант]: «${tier.title}»`, tier.materialsHeadline ? `[Материалы]: ${tier.materialsHeadline}` : "", `[Длительность]: ~${tier.durationWeeks} нед. (${tier.durationVisits} визитов)`, `[Гарантия клиники]: ${formatWarrantyYearsText(tier.warrantyYears || 1)}`, "", "Клинические этапы:", ...activeStages.map((s, idx) => `  ${idx + 1}. ${s.title}: ${s.totalRub.toLocaleString("ru-RU")} ₽ (~${s.estimatedWeeks} нед.)`), "", `[Итоговая смета]: ${finalTotalRub.toLocaleString("ru-RU")} ₽`, `[Рассрочка клиники 0%]: ${(tier.installments?.[12]?.monthlyPaymentRub ?? Math.round(kopecksToRubles(splitKopecks(finalTotalKopecks, 12)[0]))).toLocaleString("ru-RU")} ₽/мес (на 12 мес)`, (tier.ndflRefundRub ?? 0) > 0 ? `[Налоговый вычет 13%]: до +${(tier.ndflRefundRub ?? 0).toLocaleString("ru-RU")} ₽ к возврату` : "", `[Лечащий врач]: ${doctorFullName}`, "Подготовлено в соответствии с клиническими рекомендациями и протоколами СтАР."].filter(Boolean);
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(lines.join("\n")).catch((err: unknown) => {
 				console.warn("[TreatmentPlanContractPrint] Clipboard write failed:", err);

@@ -10,7 +10,7 @@ import {
 	applyClinicalBundleToTier,
 	createBundleInvoiceExport,
 	createBundleInvoiceItems,
-} from "../treatmentPlanBundlesEngine";
+} from "../bundlesEngine";
 import { initialTestTier } from "./helpers/bundlesTestHelpers";
 
 describe("treatmentPlanBundlesEngine — Применение к тарифу и кассовые чеки", () => {

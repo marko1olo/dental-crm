@@ -1,6 +1,6 @@
 import type { TreatmentPlanStage, TreatmentPlanTierId } from "../../types";
 import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
-import { isDemoShowcaseMode } from "../../treatmentPlanAutoGenerator";
+import { isDemoShowcaseMode } from "../../autoGenerator";
 import { getEconomyPresetStages } from "./economyPreset";
 import { getStandardPresetStages } from "./standardPreset";
 import { getOptimumPresetStages } from "./optimumPreset";

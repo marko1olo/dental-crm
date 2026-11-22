@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
@@ -9,14 +9,6 @@ import {
 } from "../../../../db/schema.js";
 import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
 import { updateTreatmentPlanSchema } from "./schemas.js";
-
-function kopecksToDebtNumericText(kopecks: number): string {
-	const sign = kopecks < 0 ? "-" : "";
-	const absKop = Math.round(Math.abs(kopecks));
-	const rub = Math.floor(absKop / 100);
-	const kop = absKop % 100;
-	return `${sign}${rub}.${kop < 10 ? "0" : ""}${kop}`;
-}
 
 /**
  * updateTreatmentPlanHandler.ts — Редактирование реквизитов и режима скидок плана лечения.
@@ -129,7 +121,7 @@ export async function handleUpdateTreatmentPlan(
 			updatePayload.totalPriceKopecks = BigInt(effective.finalTotalKopecks);
 			updatePayload.planDiscountKopecks = BigInt(effective.discountKopecks);
 			updatePayload.totalPriceRub = String(kopecksToRubles(effective.finalTotalKopecks));
-			updatePayload.totalPrice = kopecksToDebtNumericText(effective.finalTotalKopecks);
+			updatePayload.totalPrice = formatKopecksToRubles(effective.finalTotalKopecks);
 		}
 
 		const [updated] = await tx
@@ -145,7 +137,7 @@ export async function handleUpdateTreatmentPlan(
 				entityType: "treatment_plan",
 				entityId: id,
 				action: "TREATMENT_PLAN_UPDATED",
-				reason: `План лечения «${updated.name || updated.title}» обновлен (сумма: ${updated.totalPriceRub || updated.totalPrice} ₽)`,
+				reason: `План лечения «${updated.name || updated.title}» обновлен (сумма: ${formatKopecksToRub(updated.totalPriceKopecks ? Number(updated.totalPriceKopecks) : rublesToKopecks(Number(updated.totalPrice || 0)))})`,
 			});
 		}
 

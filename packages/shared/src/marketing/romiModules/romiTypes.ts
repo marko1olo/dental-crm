@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DENTE_MARKETING_SOURCES, type MarketingSourceItem } from "../../patients/tagsModules/marketingSources.js";
+import { DENTE_MARKETING_SOURCES, type MarketingSourceItem } from "../marketingSources.js";
 import { rublesToKopecks } from "../../money.js";
 
 /**

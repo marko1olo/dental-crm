@@ -200,6 +200,7 @@ export function validateTreatmentPlanStarProtocols(
 				messageRu: `Код «${code}» не соответствует формату кода услуги прейскуранта.`,
 				recommendationRu: "Рекомендуется обновить привязку услуги к каталогу клиники.",
 				normativeRefRu: "Прейскурант и номенклатура медицинских услуг",
+				serviceCatalogCodesRelated: [code],
 				order804nCodesRelated: [code],
 			});
 		}
@@ -222,6 +223,7 @@ export function validateTreatmentPlanStarProtocols(
 				messageRu: `Для зуба №${it.toothNumber || "—"} запланирована имплантация без предварительной КЛКТ.`,
 				recommendationRu: "Рекомендуется включить конусно-лучевую компьютерную томографию (A06.07.012).",
 				normativeRefRu: "Клинические рекомендации СтАР по дентальной имплантации",
+				serviceCatalogCodesRelated: ["A06.07.012", it.code804n || "A16.07.054"],
 				order804nCodesRelated: ["A06.07.012", it.code804n || "A16.07.054"],
 			});
 		}
@@ -237,6 +239,7 @@ export function validateTreatmentPlanStarProtocols(
 			status: "pass",
 			messageRu: "3D КЛКТ диагностика челюстно-лицевой области (A06.07.012 / A06.07.004) включена в план",
 			normativeRefRu: "Клинические рекомендации СтАР «Диагностика в стоматологии»",
+			serviceCatalogCodesRelated: ["A06.07.012", "A06.07.004"],
 			order804nCodesRelated: ["A06.07.012", "A06.07.004"],
 		});
 	}
@@ -244,6 +247,7 @@ export function validateTreatmentPlanStarProtocols(
 	// 3. Взаимоисключающие манипуляции
 	const exclusiveConflicts = detectMutuallyExclusiveToothProcedures(allItems);
 	for (const conflict of exclusiveConflicts) {
+		const relatedCodes = [conflict.procedureA.code804n, conflict.procedureB.code804n].filter((c): c is string => Boolean(c));
 		checks.push({
 			ruleId: `star-conflict-exclusive-${conflict.toothNumber}-${conflict.procedureA.id}-${conflict.procedureB.id}`,
 			protocolCode: "K08_IMPLANT_ORTHO",
@@ -254,19 +258,21 @@ export function validateTreatmentPlanStarProtocols(
 			messageRu: `Клиническая заметка (зуб №${conflict.toothNumber}): совмещение процедур («${conflict.procedureA.name}» и «${conflict.procedureB.name}»).`,
 			recommendationRu: `Врач автономно определяет последовательность и необходимость этапов лечения зуба №${conflict.toothNumber}. Сохранение плана не блокируется.`,
 			normativeRefRu: "Клинические стандарты и врачебная автономия DENTE CRM",
-			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n].filter((c): c is string => Boolean(c)),
+			serviceCatalogCodesRelated: relatedCodes,
+			order804nCodesRelated: relatedCodes,
 		});
 	}
 
 	// 4. Базовый проход протоколов при отсутствии критических дефектов
 	checks.push({
 		ruleId: "star-plan-structure-pass",
-		protocolCode: "NOMENCLATURE_804N",
+		protocolCode: "CATALOG_SERVICES",
 		protocolTitleRu: "Структура клинического маршрута",
 		ruleDescriptionRu: "План лечения содержит корректные последовательные этапы",
 		status: "pass",
 		messageRu: "Клинический маршрут сформирован корректно.",
 		normativeRefRu: "Клинические рекомендации СтАР",
+		serviceCatalogCodesRelated: [],
 		order804nCodesRelated: [],
 	});
 

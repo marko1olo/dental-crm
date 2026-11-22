@@ -4,7 +4,7 @@
  * Расчет потребности и себестоимости материалов для этапа комплексного плана лечения.
  */
 
-import { type Kopecks, multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
+import { type Kopecks, multiplyKopecks, parseKopecks, sumKopecks, kopecksToRubles } from "@dental/shared";
 import type {
 	PlanStageMaterialRequirement,
 	StageMaterialCostSummary,
@@ -52,7 +52,7 @@ export function calculateStageMaterialRequirements(
 					? multiplyKopecks(unitCostKopecks, reqQty)
 					: Math.round(unitCostKopecks * reqQty)
 			) as Kopecks;
-			const totalCostRub = Math.round(totalCostKopecks / 100);
+			const totalCostRub = Math.round(kopecksToRubles(totalCostKopecks));
 
 			const inStockQuantity = matchedInv ? matchedInv.stockQuantity : undefined;
 			const totalRequiredForStage = stageTotalRequiredByMaterial.get(norm.materialName) ?? reqQty;
@@ -86,11 +86,11 @@ export function calculateStageMaterialRequirements(
 	}
 
 	const totalMaterialsCostKopecks = sumKopecks(resultItems.map((i) => i.totalCostKopecks));
-	const totalMaterialsCostRub = Math.round(totalMaterialsCostKopecks / 100);
+	const totalMaterialsCostRub = Math.round(kopecksToRubles(totalMaterialsCostKopecks));
 	const serviceRevenueKopecks = stage.totalKopecks;
 	const serviceRevenueRub = stage.totalRub;
 	const grossMarginKopecks = Math.max(0, serviceRevenueKopecks - totalMaterialsCostKopecks) as Kopecks;
-	const grossMarginRub = Math.round(grossMarginKopecks / 100);
+	const grossMarginRub = Math.round(kopecksToRubles(grossMarginKopecks));
 	const marginPercent = serviceRevenueKopecks > 0 ? Math.round((grossMarginKopecks / serviceRevenueKopecks) * 100) : 0;
 	const deficitCount = resultItems.filter((i) => i.isDeficit).length;
 

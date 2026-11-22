@@ -9,6 +9,7 @@ import test, { describe } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanStudioModal } from "../TreatmentPlanStudioModal";
+import { StudioModalFooter } from "../studioModules/StudioModalFooter";
 
 describe("TreatmentPlanStudioModal (Curator Tab) — Doctor Autonomy & Non-blocking Actions (Mandates 8e, 8n)", () => {
 	test("renders 1-click doctor actions without disabled attribute", () => {
@@ -43,20 +44,76 @@ describe("TreatmentPlanStudioModal (Curator Tab) — Doctor Autonomy & Non-block
 	});
 
 	test("executes approval, print, and save draft callbacks cleanly in 1 click", () => {
-		let approved = false;
-		let printed = false;
-		let draftSaved = false;
+		let capturedApprovedTier: unknown = null;
+		let capturedDraftStages: unknown = null;
+		let capturedDraftTier: unknown = null;
+		let capturedPrintTier: unknown = null;
 
-		const onApprove = () => { approved = true; };
-		const onPrint = () => { printed = true; };
-		const onDraft = () => { draftSaved = true; };
+		const mockTier = {
+			id: "optimum" as const,
+			tierId: "optimum" as const,
+			name: "Оптимальный",
+			title: "Оптимальный",
+			totalRub: 45000,
+			durationDays: 14,
+			visitCount: 3,
+			stages: [],
+			highlights: ["Гарантия 2 года"],
+		};
 
-		onApprove();
-		onPrint();
-		onDraft();
+		const onApprovePlan = (tier: typeof mockTier) => {
+			capturedApprovedTier = tier;
+		};
+		const onSaveDraft = (stages: readonly unknown[], tier: typeof mockTier) => {
+			capturedDraftStages = stages;
+			capturedDraftTier = tier;
+		};
+		const onPrintContract = (tier: typeof mockTier) => {
+			capturedPrintTier = tier;
+		};
 
-		assert.strictEqual(approved, true);
-		assert.strictEqual(printed, true);
-		assert.strictEqual(draftSaved, true);
+		// 1. Проверяем прямое исполнение контракта кнопок автономии врача (Мандат 8e)
+		onApprovePlan(mockTier);
+		onSaveDraft([], mockTier);
+		onPrintContract(mockTier);
+
+		assert.deepStrictEqual(capturedApprovedTier, mockTier, "План должен быть передан в onApprovePlan");
+		assert.deepStrictEqual(capturedDraftTier, mockTier, "Тариф должен быть передан в onSaveDraft");
+		assert.deepStrictEqual(capturedDraftStages, [], "Этапы должны быть переданы в onSaveDraft");
+		assert.deepStrictEqual(capturedPrintTier, mockTier, "Тариф должен быть передан в onPrintContract");
+
+		// 2. Проверяем вызовы обработчиков подвала StudioModalFooter
+		let footerApprovedCalled = false;
+		let footerDraftCalled = false;
+
+		const handleSaveDraft = () => {
+			footerDraftCalled = true;
+		};
+		const handleApprove = () => {
+			footerApprovedCalled = true;
+		};
+
+		const footer = StudioModalFooter({
+			sanitizedActiveTitle: "Оптимальный",
+			activeTierTotalRub: 45000,
+			handleSaveDraft,
+			handleApprove,
+		});
+
+		assert.ok(footer, "Подвал студии должен быть успешно инициализирован");
+		
+		// Проверяем проброс обработчиков на кнопки подвала
+		const buttonsContainer = footer.props.children[1];
+		const draftButton = buttonsContainer.props.children[0];
+		const approveButton = buttonsContainer.props.children[1];
+
+		assert.strictEqual(draftButton.props["data-testid"], "save-draft-btn");
+		assert.strictEqual(approveButton.props["data-testid"], "approve-treatment-plan-btn");
+
+		draftButton.props.onClick();
+		approveButton.props.onClick();
+
+		assert.strictEqual(footerDraftCalled, true, "Кнопка 'Сохранить черновик' должна вызывать handleSaveDraft");
+		assert.strictEqual(footerApprovedCalled, true, "Кнопка 'Утвердить' должна вызывать handleApprove");
 	});
 });

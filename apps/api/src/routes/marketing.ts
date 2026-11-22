@@ -25,6 +25,7 @@ import {
 } from "../accessGuard.js";
 import {
 	aggregateCrmMarketingMetrics,
+	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import {
@@ -99,6 +100,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				db.select({
 					id: payments.id,
 					patientId: payments.patientId,
+					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 					status: payments.status,
 				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
@@ -161,8 +163,12 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				payments: allPayments.map((pay) => ({
 					id: pay.id,
 					patientId: pay.patientId,
-					amountKopecks: rublesToKopecks(Number(pay.amountRub || 0)),
-					amount: Number(pay.amountRub || 0),
+					amountKopecks: pay.amountKopecks != null
+						? Number(pay.amountKopecks)
+						: rublesToKopecks(Number(pay.amountRub || 0)),
+					amount: pay.amountKopecks != null
+						? kopecksToRubles(pay.amountKopecks)
+						: Number(pay.amountRub || 0),
 					status: pay.status ?? "paid",
 				})),
 				communicationEvents: allCallEvents.map((c) => ({
@@ -215,6 +221,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				db.select({
 					id: payments.id,
 					patientId: payments.patientId,
+					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 					status: payments.status,
 				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
@@ -256,8 +263,12 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				payments: allPayments.map((pay) => ({
 					id: pay.id,
 					patientId: pay.patientId,
-					amountKopecks: rublesToKopecks(Number(pay.amountRub || 0)),
-					amount: Number(pay.amountRub || 0),
+					amountKopecks: pay.amountKopecks != null
+						? Number(pay.amountKopecks)
+						: rublesToKopecks(Number(pay.amountRub || 0)),
+					amount: pay.amountKopecks != null
+						? kopecksToRubles(pay.amountKopecks)
+						: Number(pay.amountRub || 0),
 					status: pay.status ?? "paid",
 				})),
 				communicationEvents: allCallEvents.map((c) => ({
@@ -309,6 +320,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				db.select({
 					id: payments.id,
 					patientId: payments.patientId,
+					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 					status: payments.status,
 				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),

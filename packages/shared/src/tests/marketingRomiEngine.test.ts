@@ -24,7 +24,7 @@ import {
 	aggregateCrmMarketingMetrics,
 	type AdvertisingChannelInput,
 } from "../marketing/marketingRomiEngine.js";
-import { DENTE_MARKETING_SOURCES } from "../patients/tagsModules/marketingSources.js";
+import { DENTE_MARKETING_SOURCES } from "../marketing/marketingSources.js";
 
 describe("Dental Marketing ROMI & Performance Engine", () => {
 	it("1. calculateChannelRomi computes exact positive ROMI, CAC, and average check", () => {

@@ -47,14 +47,20 @@ export function useMarketingLiveSpends() {
 				if (Array.isArray(data.selfBookingChannels)) {
 					for (const ch of data.selfBookingChannels) {
 						const rub = Math.round(kopecksToRubles(ch.spentKopecks || 0));
-						if (ch.key === "gis_2") liveSpends.gis_2 = rub;
-						else if (ch.key === "prodoctorov") liveSpends.prodoctorov = rub;
-						else if (ch.key === "yandex_maps") {
+						if (ch.key === "gis_2" || ch.key === "gis2") {
+							liveSpends.gis_2 = rub;
+							liveSpends.gis2 = rub;
+						} else if (ch.key === "prodoctorov") {
+							liveSpends.prodoctorov = rub;
+						} else if (ch.key === "sberhealth") {
+							liveSpends.sberhealth = rub;
+						} else if (ch.key === "yandex_maps") {
 							liveSpends.yandex_maps = rub;
+						} else if (ch.key === "yandex_direct") {
 							liveSpends.yandex_direct = rub;
-						}
-						else if (ch.key === "website_widget") liveSpends.site_seo = rub;
-						else if (ch.key === "tg_bot" || ch.key === "wa_bot") {
+						} else if (ch.key === "website_widget" || ch.key === "website") {
+							liveSpends.site_seo = rub;
+						} else if (ch.key === "tg_bot" || ch.key === "wa_bot") {
 							liveSpends.social_media = (liveSpends.social_media || 0) + rub;
 						}
 					}

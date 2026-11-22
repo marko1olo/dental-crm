@@ -2,6 +2,7 @@ import {
 	type Kopecks,
 	parseKopecks,
 	percentageOfKopecks,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { LoyaltyBonusDeduction } from "../types";
 
@@ -34,13 +35,13 @@ export function calculateLoyaltyBonusDeduction(
 		requestedBonusKopecks,
 		maxSpendableBonusKopecks,
 	) as Kopecks;
-	const appliedBonusRub = Math.floor(appliedBonusKopecks / 100);
+	const appliedBonusRub = Math.floor(kopecksToRubles(appliedBonusKopecks));
 
 	const netPayableKopecks = Math.max(
 		0,
 		afterDiscountKopecks - appliedBonusKopecks,
 	) as Kopecks;
-	const netPayableRub = Math.round(netPayableKopecks / 100);
+	const netPayableRub = Math.round(kopecksToRubles(netPayableKopecks));
 
 	return {
 		availableBalanceRub: availablePatientBalanceRub,
