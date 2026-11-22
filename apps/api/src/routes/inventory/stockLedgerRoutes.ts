@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -51,7 +51,7 @@ async function handleStockAdjustment(
 	}
 
 	// Read-modify-write on stock must be atomic: lock row FOR UPDATE
-	const result = await db.transaction(async (tx) => {
+	const result = await withTenantCtx(organizationId, async (tx) => {
 		const [item] = await tx
 			.select()
 			.from(inventoryItems)

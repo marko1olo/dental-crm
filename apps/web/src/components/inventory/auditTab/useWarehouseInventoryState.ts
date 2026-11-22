@@ -53,7 +53,7 @@ export function useWarehouseInventoryState(
 
 	const currentDoc: WarehouseInventoryAuditDocument = useMemo(() => ({
 		id: `audit-${Date.now()}`, documentNumber: `СВЕРКА-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
-		orderNumber: "ПР-44/ИНВ", orderDate: todayDate, auditStartDate: todayDate, auditEndDate: todayDate, auditDate: todayDate,
+		orderNumber: "", orderDate: todayDate, auditStartDate: todayDate, auditEndDate: todayDate, auditDate: todayDate,
 		branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 		molFullName: "Кузнецов А.В. (Врач-стоматолог)", molPosition: "Врач-стоматолог / Ответственный сотрудник", status: "reconciliation",
 		commission: [{ fullName: "Кузнецов А.В. (Врач-стоматолог)", position: "Врач-стоматолог", role: "mol", roleRu: "Материально ответственное лицо" }],

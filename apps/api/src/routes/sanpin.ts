@@ -1,6 +1,5 @@
 import type { FastifyInstance } from "fastify";
 import { registerSanpinBactericidalRoutes } from "./sanpin/bactericidalRoutes.js";
-import { registerSanpinChairReadinessRoutes } from "./sanpin/chairReadinessRoutes.js";
 import { registerSanpinCleaningRoutes } from "./sanpin/cleaningRoutes.js";
 import { registerSanpinPsoRoutes } from "./sanpin/psoRoutes.js";
 import { registerSanpinRegulatoryExportAndShiftCloseRoutes } from "./sanpin/regulatoryExportAndShiftCloseRoutes.js";
@@ -28,7 +27,6 @@ declare module "fastify" {
  * - Medical Waste & Emergency Biohazard Logs (`wasteAndBiohazardRoutes.ts`)
  * - Temperature & Humidity Monitoring (`temperatureRoutes.ts`)
  * - Rapid Shift Autofill Engine (`shiftAutofillRoutes.ts`)
- * - Chair & Cabinet Readiness Status (`chairReadinessRoutes.ts`)
  * - Regulatory Export Dossiers & Shift Close (`regulatoryExportAndShiftCloseRoutes.ts`)
  */
 export async function registerSanpinRoutes(app: FastifyInstance): Promise<void> {
@@ -40,13 +38,11 @@ export async function registerSanpinRoutes(app: FastifyInstance): Promise<void> 
 	registerSanpinWasteAndBiohazardRoutes(app);
 	registerSanpinTemperatureRoutes(app);
 	registerSanpinShiftAutofillRoutes(app);
-	registerSanpinChairReadinessRoutes(app);
 	registerSanpinRegulatoryExportAndShiftCloseRoutes(app);
 }
 
 export {
 	registerSanpinBactericidalRoutes,
-	registerSanpinChairReadinessRoutes,
 	registerSanpinCleaningRoutes,
 	registerSanpinPsoRoutes,
 	registerSanpinRegulatoryExportAndShiftCloseRoutes,

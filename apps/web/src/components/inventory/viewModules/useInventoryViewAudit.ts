@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
@@ -18,13 +19,13 @@ export function useInventoryViewAudit(
 		const isDemo = isDemoShowcaseMode();
 		if (!items || items.length === 0) {
 			return {
-				id: `audit-${Date.now()}`, documentNumber: `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
-				orderNumber: "ПР-44/ИНВ", orderDate: auditDate, auditStartDate: auditDate, auditEndDate: auditDate, auditDate,
+				id: `audit-${Date.now()}`, documentNumber: `АКТ-ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+				orderNumber: "", orderDate: auditDate, auditStartDate: auditDate, auditEndDate: auditDate, auditDate,
 				branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 				molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 				commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS,
 				items: isDemo ? [...DEFAULT_INVENTORY_ITEMS_PRESET] : [],
-				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701987654",
+				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701987654",
 			};
 		}
 		const auditItems: WarehouseAuditItemLine[] = items.map((it, idx) => computeAuditLineItem({
@@ -32,16 +33,16 @@ export function useInventoryViewAudit(
 			category: it.category || "Расходные материалы", unitRu: it.unit || "шт.", okeiCode: "796",
 			batchNumber: it.lotNumber || `ПАРТИЯ-${it.id.slice(0, 6)}`, expiryDate: it.expirationDate || "2027-12-31",
 			storageLocationRu: "Основной стеллаж", bookQuantity: Number(it.stockQuantity) || 0, actualQuantity: Number(it.stockQuantity) || 0,
-			unitCostKopecks: Math.round((parseFloat(it.unitCostRub) || 0) * 100),
+			unitCostKopecks: rublesToKopecks(parseFloat(it.unitCostRub) || 0),
 		}, auditDate));
 
 		return {
-			id: `audit-${Date.now()}`, documentNumber: `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
-			orderNumber: "ПР-44/ИНВ", orderDate: auditDate, auditStartDate: auditDate, auditEndDate: auditDate, auditDate,
+			id: `audit-${Date.now()}`, documentNumber: `АКТ-ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+			orderNumber: "", orderDate: auditDate, auditStartDate: auditDate, auditEndDate: auditDate, auditDate,
 			branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 			molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 			commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS, items: auditItems,
-			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701987654",
+			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701987654",
 		};
 	}, [items, organizationId]);
 

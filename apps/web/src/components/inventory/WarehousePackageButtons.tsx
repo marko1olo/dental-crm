@@ -21,7 +21,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "carpule_quick"}
-			className="btn-writeoff-anesthetic-carpule h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-anesthetic-carpule min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-anesthetic-carpule"
 			title="Списание использованных карпул анестетика"
 		>
@@ -40,7 +40,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "sterilization_kit"}
-			className="btn-writeoff-sterilization-kit h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-sterilization-kit min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-sterilization-kit"
 			title="Списание набора стерилизации: 1 лоток + перчатки"
 		>
@@ -59,7 +59,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "anesthesia"}
-			className="btn-writeoff-anesthesia-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-anesthesia-packet min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-anesthesia-packet"
 			title="Списание пакета: Артикаин 1.7 мл + карпульная игла 30G + расходники"
 		>
@@ -78,7 +78,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "hygiene"}
-			className="btn-writeoff-hygiene-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-hygiene-packet min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-hygiene-packet"
 			title="Списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка"
 		>
@@ -97,7 +97,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "filling"}
-			className="btn-writeoff-filling-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-filling-packet min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-filling-packet"
 			title="Списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
 		>
@@ -116,7 +116,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 				}
 			}}
 			aria-busy={submittingPackageId === "surgery"}
-			className="btn-writeoff-surgery-packet h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+			className="btn-writeoff-surgery-packet min-h-[44px] h-11 sm:h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
 			data-testid="btn-writeoff-surgery-packet"
 			title="Списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
 		>

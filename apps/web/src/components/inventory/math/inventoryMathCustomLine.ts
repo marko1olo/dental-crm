@@ -1,4 +1,4 @@
-import { parseKopecks } from "@dental/shared";
+import { parseKopecks, rublesToKopecks } from "@dental/shared";
 import type { InventoryItem } from "../inventoryDataMappers.js";
 import type {
 	ClinicalTechMapPackage,
@@ -55,7 +55,7 @@ export function createQuickCustomLineItem(
 		try {
 			unitCostKopecks =
 				typeof options.unitCostRub === "number"
-					? Math.round(options.unitCostRub * 100)
+					? rublesToKopecks(options.unitCostRub)
 					: parseKopecks(options.unitCostRub);
 		} catch {
 			unitCostKopecks = 0;

@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { inventoryItems } from "../../../db/schema.js";
 import {
 	INVALID_DATE,
@@ -29,8 +30,15 @@ export const handleCreateInventoryItem = async (
 	const {
 		name,
 		criticalThreshold = 0,
-		unitCostRub = 0,
+		unitCostRub,
+		purchasePriceKopecks,
+		unitPriceKopecks,
+		purchasePricePerUnit,
 		stockQuantity = 0,
+		packageMultiplier = 1,
+		unit = "шт",
+		category = "material",
+		notes = null,
 		sku = null,
 		barcode = null,
 		lotNumber = null,
@@ -58,29 +66,64 @@ export const handleCreateInventoryItem = async (
 		});
 	}
 
-	const newItem = await db
-		.insert(inventoryItems)
-		.values({
-			organizationId,
-			name: name.trim(),
-			criticalThreshold: String(Math.max(0, criticalThreshold)),
-			unitCostRub: String(Math.max(0, unitCostRub)),
-			stockQuantity: String(Math.max(0, stockQuantity)),
-			sku: sku?.trim() || null,
-			barcode: barcode?.trim() || null,
-			lotNumber: lotNumber?.trim() || null,
-			expirationDate: expiration,
-		})
-		.returning();
+	let effectiveCostRub = 0;
+	if (purchasePriceKopecks !== undefined) {
+		effectiveCostRub = kopecksToRubles(purchasePriceKopecks);
+	} else if (unitPriceKopecks !== undefined) {
+		effectiveCostRub = kopecksToRubles(unitPriceKopecks);
+	} else if (purchasePricePerUnit !== undefined) {
+		effectiveCostRub = purchasePricePerUnit;
+	} else if (unitCostRub !== undefined) {
+		effectiveCostRub = unitCostRub;
+	}
 
-	const created = newItem[0];
+	const stockQtyStr = String(Math.max(0, stockQuantity));
+	const critThresholdStr = String(Math.max(0, criticalThreshold));
+	const unitCostStr = String(Math.max(0, effectiveCostRub));
+	const unitStr = unit?.trim() || "шт";
+	const categoryStr = category?.trim() || "material";
+	const notesStr = notes?.trim() || null;
+	const multStr = String(packageMultiplier ?? 1);
+
+	const created = await withTenantCtx(organizationId, async (tx) => {
+		const newItem = await tx
+			.insert(inventoryItems)
+			.values({
+				organizationId,
+				name: name.trim(),
+				category: categoryStr,
+				unit: unitStr,
+				criticalThreshold: critThresholdStr,
+				minQty: critThresholdStr,
+				unitCostRub: unitCostStr,
+				pricePerUnit: unitCostStr,
+				stockQuantity: stockQtyStr,
+				currentQty: stockQtyStr,
+				packageMultiplier: multStr,
+				notes: notesStr,
+				sku: sku?.trim() || null,
+				barcode: barcode?.trim() || null,
+				lotNumber: lotNumber?.trim() || null,
+				expirationDate: expiration,
+			})
+			.returning();
+		return newItem[0];
+	});
+
 	if (!created)
 		return reply.status(500).send({
 			error: "InventoryItemNotSaved",
 			message:
 				"Позиция склада не создана: сервер не сохранил запись. Проверьте название и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
-	return created;
+
+	const computedKopecks = rublesToKopecks(
+		Number(created.unitCostRub ?? created.pricePerUnit ?? 0),
+	);
+	return {
+		...created,
+		purchasePriceKopecks: computedKopecks,
+	};
 };
 
 export const handleUpdateInventoryItem = async (
@@ -99,7 +142,15 @@ export const handleUpdateInventoryItem = async (
 	const {
 		name,
 		criticalThreshold = 0,
-		unitCostRub = 0,
+		unitCostRub,
+		purchasePriceKopecks,
+		unitPriceKopecks,
+		purchasePricePerUnit,
+		stockQuantity,
+		packageMultiplier,
+		unit,
+		category,
+		notes,
 		sku = null,
 		barcode = null,
 		lotNumber = null,
@@ -123,37 +174,79 @@ export const handleUpdateInventoryItem = async (
 		return reply.status(404).send({ error: "Item not found" });
 	}
 
-	const [existing] = await db
-		.select({ id: inventoryItems.id })
-		.from(inventoryItems)
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!existing) return reply.status(404).send({ error: "Item not found" });
+	let effectiveCostRub: number | undefined;
+	if (purchasePriceKopecks !== undefined) {
+		effectiveCostRub = kopecksToRubles(purchasePriceKopecks);
+	} else if (unitPriceKopecks !== undefined) {
+		effectiveCostRub = kopecksToRubles(unitPriceKopecks);
+	} else if (purchasePricePerUnit !== undefined) {
+		effectiveCostRub = purchasePricePerUnit;
+	} else if (unitCostRub !== undefined) {
+		effectiveCostRub = unitCostRub;
+	}
 
-	const [updated] = await db
-		.update(inventoryItems)
-		.set({
+	const critStr = String(Math.max(0, criticalThreshold));
+	const costStr = effectiveCostRub !== undefined ? String(Math.max(0, effectiveCostRub)) : "0";
+
+	const updated = await withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select({ id: inventoryItems.id })
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!existing) return null;
+
+		const updatePayload: Partial<typeof inventoryItems.$inferInsert> = {
 			name: name.trim(),
-			criticalThreshold: String(Math.max(0, criticalThreshold)),
-			unitCostRub: String(Math.max(0, unitCostRub)),
+			criticalThreshold: critStr,
+			minQty: critStr,
+			unitCostRub: costStr,
+			pricePerUnit: costStr,
 			sku: sku?.trim() || null,
 			barcode: barcode?.trim() || null,
 			lotNumber: lotNumber?.trim() || null,
 			expirationDate: expiration,
 			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.returning();
+		};
+		if (unit !== undefined) {
+			updatePayload.unit = unit?.trim() || "шт";
+		}
+		if (category !== undefined) {
+			updatePayload.category = category?.trim() || "material";
+		}
+		if (notes !== undefined) {
+			updatePayload.notes = notes?.trim() || null;
+		}
+		if (packageMultiplier !== undefined) {
+			updatePayload.packageMultiplier = String(packageMultiplier);
+		}
+		if (stockQuantity !== undefined) {
+			const qtyStr = String(Math.max(0, stockQuantity));
+			updatePayload.stockQuantity = qtyStr;
+			updatePayload.currentQty = qtyStr;
+		}
+
+		const [res] = await tx
+			.update(inventoryItems)
+			.set(updatePayload)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.returning();
+		return res;
+	});
+
+	if (updated === null) {
+		return reply.status(404).send({ error: "Item not found" });
+	}
 
 	if (!updated)
 		return reply.status(500).send({
@@ -161,7 +254,14 @@ export const handleUpdateInventoryItem = async (
 			message:
 				"Позиция склада не сохранена: сервер не записал изменения. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
-	return updated;
+
+	const computedKopecks = rublesToKopecks(
+		Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0),
+	);
+	return {
+		...updated,
+		purchasePriceKopecks: computedKopecks,
+	};
 };
 
 export const handlePatchInventoryItem = async (
@@ -182,20 +282,8 @@ export const handlePatchInventoryItem = async (
 		return reply.status(404).send({ error: "Item not found" });
 	}
 
-	const [existing] = await db
-		.select()
-		.from(inventoryItems)
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!existing) return reply.status(404).send({ error: "Item not found" });
-
 	const data = parsedPatch.data;
-	const patchData: Record<string, any> = { updatedAt: new Date() };
+	const patchData: Partial<typeof inventoryItems.$inferInsert> = { updatedAt: new Date() };
 
 	if (data.name !== undefined) {
 		if (!data.name?.trim()) {
@@ -206,11 +294,36 @@ export const handlePatchInventoryItem = async (
 		}
 		patchData.name = data.name.trim();
 	}
-	if (data.criticalThreshold !== undefined) {
-		patchData.criticalThreshold = String(Math.max(0, data.criticalThreshold));
+	if (data.unit !== undefined) {
+		patchData.unit = data.unit?.trim() || "шт";
 	}
-	if (data.unitCostRub !== undefined) {
-		patchData.unitCostRub = String(Math.max(0, data.unitCostRub));
+	if (data.category !== undefined) {
+		patchData.category = data.category?.trim() || "material";
+	}
+	if (data.notes !== undefined) {
+		patchData.notes = data.notes?.trim() || null;
+	}
+	if (data.criticalThreshold !== undefined) {
+		const crit = String(Math.max(0, data.criticalThreshold));
+		patchData.criticalThreshold = crit;
+		patchData.minQty = crit;
+	}
+	if (data.purchasePriceKopecks !== undefined) {
+		const cost = String(Math.max(0, kopecksToRubles(data.purchasePriceKopecks)));
+		patchData.unitCostRub = cost;
+		patchData.pricePerUnit = cost;
+	} else if (data.unitPriceKopecks !== undefined) {
+		const cost = String(Math.max(0, kopecksToRubles(data.unitPriceKopecks)));
+		patchData.unitCostRub = cost;
+		patchData.pricePerUnit = cost;
+	} else if (data.purchasePricePerUnit !== undefined) {
+		const cost = String(Math.max(0, data.purchasePricePerUnit));
+		patchData.unitCostRub = cost;
+		patchData.pricePerUnit = cost;
+	} else if (data.unitCostRub !== undefined) {
+		const cost = String(Math.max(0, data.unitCostRub));
+		patchData.unitCostRub = cost;
+		patchData.pricePerUnit = cost;
 	}
 	if (data.stockQuantity !== undefined) {
 		patchData.stockQuantity = String(data.stockQuantity);
@@ -239,16 +352,35 @@ export const handlePatchInventoryItem = async (
 		patchData.expirationDate = expiration;
 	}
 
-	const [updated] = await db
-		.update(inventoryItems)
-		.set(patchData)
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.returning();
+	const updated = await withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!existing) return null;
+
+		const [res] = await tx
+			.update(inventoryItems)
+			.set(patchData)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.returning();
+		return res;
+	});
+
+	if (updated === null) {
+		return reply.status(404).send({ error: "Item not found" });
+	}
 
 	if (!updated) {
 		return reply.status(500).send({
@@ -256,7 +388,14 @@ export const handlePatchInventoryItem = async (
 			message: "Позиция склада не сохранена.",
 		});
 	}
-	return updated;
+
+	const computedKopecks = rublesToKopecks(
+		Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0),
+	);
+	return {
+		...updated,
+		purchasePriceKopecks: computedKopecks,
+	};
 };
 
 export const handleDeleteInventoryItem = async (
@@ -268,28 +407,34 @@ export const handleDeleteInventoryItem = async (
 		return reply.status(404).send({ error: "Item not found" });
 	}
 
-	const [existing] = await db
-		.select({ id: inventoryItems.id })
-		.from(inventoryItems)
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!existing) return reply.status(404).send({ error: "Item not found" });
+	const deleted = await withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select({ id: inventoryItems.id })
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!existing) return null;
 
-	const [deleted] = await db
-		.delete(inventoryItems)
-		.where(
-			and(
-				eq(inventoryItems.id, itemId),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.returning({ id: inventoryItems.id });
-	if (!deleted) return reply.status(404).send({ error: "Item not found" });
+		const [res] = await tx
+			.delete(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.returning({ id: inventoryItems.id });
+		return res;
+	});
+
+	if (deleted === null || !deleted) {
+		return reply.status(404).send({ error: "Item not found" });
+	}
 	return { success: true };
 };
 

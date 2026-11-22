@@ -37,9 +37,9 @@ export function useWarehouseAuditState({
 	onTorg16Generated,
 }: UseWarehouseAuditStateProps) {
 	const [docNumber, setDocNumber] = useState<string>(
-		() => initialDocument?.documentNumber || `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+		() => initialDocument?.documentNumber || `АКТ-ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
 	);
-	const [orderNumber] = useState<string>(initialDocument?.orderNumber || "ПР-44/ИНВ");
+	const [orderNumber] = useState<string>(initialDocument?.orderNumber || "");
 	const [orderDate] = useState<string>(initialDocument?.orderDate || new Date().toISOString().slice(0, 10));
 	const [auditDate] = useState<string>(initialDocument?.auditDate || new Date().toISOString().slice(0, 10));
 	const [branchNameRu] = useState<string>(initialDocument?.branchNameRu || "Центральный распределительный склад (ЦС)");
@@ -92,7 +92,7 @@ export function useWarehouseAuditState({
 		molFullName, molPosition, status, commission, items, totals,
 		notes: initialDocument?.notes,
 		organizationNameRu: initialDocument?.organizationNameRu || 'ООО "ДЕНТЕ КЛИНИК"',
-		organizationOkpo: initialDocument?.organizationOkpo || "12345678",
+		organizationOkpo: initialDocument?.organizationOkpo || "",
 		organizationInn: initialDocument?.organizationInn || "7701234567",
 	}), [
 		initialDocument?.id, initialDocument?.auditStartDate, initialDocument?.auditEndDate, initialDocument?.branchId,

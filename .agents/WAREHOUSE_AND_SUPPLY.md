@@ -510,6 +510,34 @@
   * `npm run check:ratchet`: 0 новых any, авто-храповик закручен на -14 float-делений.
   * `tsc --noEmit` в затронутых модулях: 0 ошибок компилятора.
 
+---
+
+## 🛡️ 22. Red Team Fixer Surgeon: Ликвидация 6 дефектов Склада, RLS-транзакций, советского канцелярита и копеечного расчета (Мандаты 8bm, 8bo, 8x, 8bi, 8ap, 8d)
+
+* **ДЕФЕКТ №1: Канонический расчет копеек в пользовательских строках списания (`inventoryMathCustomLine.ts`)**:
+  * В `createQuickCustomLineItem` ручной расчет `typeof options.unitCostRub === "number" ? Math.round(options.unitCostRub * 100) : parseKopecks(...)` заменен на канонический `rublesToKopecks(options.unitCostRub)` из `@dental/shared`. Устранено нарушение Мандата 8bm.
+* **ДЕФЕКТ №2: Канонический расчет копеек в хуке инвентаризации (`useInventoryViewAudit.ts`)**:
+  * В маппинге строк аудита заменен кустарный расчет `Math.round((parseFloat(it.unitCostRub) || 0) * 100)` на канонический `rublesToKopecks(parseFloat(it.unitCostRub) || 0)`.
+* **ДЕФЕКТ №3: Сквозная multi-tenant RLS изоляция в мутациях каталога номенклатуры (`itemCatalogMutations.ts`)**:
+  * Во всех 4 мутациях (`handleCreateInventoryItem`, `handleUpdateInventoryItem`, `handlePatchInventoryItem`, `handleDeleteInventoryItem`) сырые транзакции `await db.transaction(...)` заменены на канонические `await withTenantCtx(organizationId, async (tx) => ...)`. Гарантирована изоляция данных филиалов и исключены утечки записей через FORCE RLS.
+* **ДЕФЕКТ №4: Сквозная multi-tenant RLS изоляция в складской книге остатков (`stockLedgerRoutes.ts`)**:
+  * В `handleStockAdjustment` неделимая транзакция блокировки `SELECT ... FOR UPDATE` и списания партий переведена с `db.transaction` на `await withTenantCtx(organizationId, async (tx) => ...)`.
+* **ДЕФЕКТ №5: Искоренение советского канцелярита, номеров приказов и фиктивного ОКПО (`useInventoryViewAudit.ts`, `useWarehouseAuditState.ts`, `useWarehouseInventoryState.ts`)**:
+  * Номер документа `ИНВ-...` заменен на канонический медицинский номер `АКТ-ИНВ-...`.
+  * Удален советский номер приказа `ПР-44/ИНВ` и убран фиктивный ОКПО `49201948` / `12345678` (Мандаты 8x, 8bi).
+* **ДЕФЕКТ №6: Очистка фантомного комментария в фасаде СанПиН (`sanpin.ts`)**:
+  * Из шапки фасада маршрутов `sanpin.ts` удалена строка с несуществующим файлом `chairReadinessRoutes.ts` (Мандат 8ap).
+* **ДОПОЛНИТЕЛЬНО: Сенсорные тач-таргеты кнопок пакетов списания (`WarehousePackageButtons.tsx`)**:
+  * Все 6 кнопок панели пакетного списания приведены к Apple HIG стандарту `min-h-[44px] h-11 sm:h-9` (Мандат 8d, WCAG).
+* **Машинные гейты и верификация**:
+  * `inventoryIntegrityAndDeadlockDefense.test.ts`: 3/3 PASS (Exit Code 0).
+  * Все 57 файлов тестов склада `apps/web/src/components/inventory`: 185/185 PASS (Exit Code 0).
+  * `inventoryBatchWriteoffAndPatch.test.ts`, `sanpinAndInventory.test.ts`, `inventoryHygieneBundle.test.ts`: 25/25 PASS (Exit Code 0).
+  * `npx tsc -p apps/api/tsconfig.json --noEmit`: 0 ошибок (Exit Code 0).
+  * `npm run check:diff`: 0 костылей (Exit Code 0).
+  * `npm run check:encoding`: 19 981 файлов проверено, 0 нарушений (Exit Code 0).
+
+
 
 
 
