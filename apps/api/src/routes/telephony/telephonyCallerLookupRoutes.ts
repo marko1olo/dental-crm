@@ -7,9 +7,9 @@
  */
 
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalReadContext } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
-import { CallerLookupService } from "../services/telephony/callerLookupService.js";
+import { requireClinicalReadContext } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { CallerLookupService } from "../../services/telephony/callerLookupService.js";
 
 export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) => {
 	const handleLookupCaller = async (

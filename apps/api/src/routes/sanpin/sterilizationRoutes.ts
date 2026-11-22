@@ -54,7 +54,7 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.post("/api/sanpin/sterilization-cycles/batch", handleSterilizationShiftBatch);
 	app.post("/api/sanpin/sterilization/shift-batch", handleSterilizationShiftBatch);
 
-	// Контроль качества предстерилизационной очистки (ПСО)
+	// Контроль качества предстерилизационной очистки (азопирам, фенолфталеин)
 	app.get("/api/sanpin/sterilization/pso-tests", handleGetPsoTests);
 	app.post("/api/sanpin/sterilization/pso-tests", handleCreatePsoTest);
 	app.post("/api/sanpin/sterilization/pso/quick-norm", handlePsoQuickNorm);

@@ -15,6 +15,7 @@ import {
 	CLINICAL_CATEGORY_LABELS,
 	type Order804nServiceItem,
 	PHYSIOLOGICAL_NORM_PRESET,
+	formatKopecksToRub,
 } from "@dental/shared";
 
 export {
@@ -55,6 +56,8 @@ export interface SynthesizedDiaryResult {
 	readonly appliedMaterials: string;
 	readonly homeCareRecommendations: string;
 	readonly unifiedSoapText: string;
+	readonly clinicalServices: readonly Order804nServiceItem[];
+	/** @deprecated Использовать clinicalServices (Мандат 8ap) */
 	readonly order804nServices: readonly Order804nServiceItem[];
 	readonly totalEstimatedKopecks?: number | undefined;
 }
@@ -185,6 +188,7 @@ export function synthesize1ClickSoapDiary(
 		anesthesia,
 		materialsStr,
 		recommendations,
+		clinicalServices: template.order804nServices,
 		order804nServices: template.order804nServices,
 		doctorFullName: options.doctorFullName ?? null,
 		doctorSpecialty: options.doctorSpecialty ?? null,
@@ -208,6 +212,7 @@ export function synthesize1ClickSoapDiary(
 		appliedMaterials: materialsStr,
 		homeCareRecommendations: recommendations,
 		unifiedSoapText,
+		clinicalServices: template.order804nServices,
 		order804nServices: template.order804nServices,
 		totalEstimatedKopecks: totalEstimatedKopecks > 0 ? totalEstimatedKopecks : undefined,
 	};
@@ -228,7 +233,8 @@ export function formatStatutoryUnifiedSoapText(params: {
 	readonly anesthesia: string;
 	readonly materialsStr: string;
 	readonly recommendations: string;
-	readonly order804nServices: readonly Order804nServiceItem[];
+	readonly clinicalServices?: readonly Order804nServiceItem[] | undefined;
+	readonly order804nServices?: readonly Order804nServiceItem[] | undefined;
 	readonly doctorFullName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
 	readonly customNotes?: string | null | undefined;
@@ -265,14 +271,15 @@ export function formatStatutoryUnifiedSoapText(params: {
 		parts.push(`Использованные материалы: ${params.materialsStr}`);
 	}
 
-	if (params.order804nServices && params.order804nServices.length > 0) {
+	const services = params.clinicalServices || params.order804nServices;
+	if (services && services.length > 0) {
 		parts.push("");
 		parts.push(`ОКАЗАННЫЕ УСЛУГИ:`);
-		for (const s of params.order804nServices) {
+		for (const s of services) {
 			const qty = s.defaultQuantity && s.defaultQuantity > 1 ? ` (x${s.defaultQuantity})` : "";
 			const price =
 				typeof s.priceKopecks === "number" && s.priceKopecks > 0
-					? ` — ${(s.priceKopecks / 100).toLocaleString("ru-RU")} ₽`
+					? ` — ${formatKopecksToRub(s.priceKopecks)}`
 					: "";
 			parts.push(`• ${s.code} — ${s.nameRu}${qty}${price}`);
 		}

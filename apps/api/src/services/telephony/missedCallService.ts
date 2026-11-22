@@ -18,7 +18,7 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { maskPhoneDisplay } from "@dental/shared";
-import { normalizePhoneNumber } from "../../routes/telephony.js";
+import { normalizePhoneNumber } from "./telephonySecurity.js";
 import { wsBroker } from "../websocketBroker.js";
 
 export interface MissedCallEventParams {

@@ -22,7 +22,7 @@ import {
 	temperatureMeasurementPeriodSchema,
 } from "./types.js";
 
-// ─── 1. Журнал предстерилизационной очистки (ПСО, Форма № 366/у) ─────────────
+// ─── 1. Журнал предстерилизационной очистки (азопирам, фенолфталеин) ─────────────
 
 export const psoCleaningLogSchema = z.object({
 	id: z.string().uuid(),

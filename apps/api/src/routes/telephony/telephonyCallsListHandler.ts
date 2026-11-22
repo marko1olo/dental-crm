@@ -31,6 +31,14 @@ export async function telephonyCallsListHandler(
 	);
 	if (!orgId) return;
 
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации",
+		});
+	}
+
 	const rawLimit = Number(request.query?.limit);
 	const limit =
 		Number.isFinite(rawLimit) && rawLimit > 0

@@ -13,7 +13,7 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { appointments, clinics, organizations, patients, users } from "../../db/schema.js";
-import { normalizePhoneNumber, resolveWebhookOrgId, telephonyRoutes } from "../../routes/telephony.js";
+import { normalizePhoneNumber, resolveWebhookOrgId, telephonyRoutes } from "../../routes/telephony/index.js";
 import { CallerLookupService } from "../../services/telephony/callerLookupService.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";

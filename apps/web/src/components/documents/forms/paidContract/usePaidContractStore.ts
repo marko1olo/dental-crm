@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { parseRublesToKopecks, createDefaultPaidContract, generatePaidContractNumber, generatePaidContractText, printPaidContract736 } from "../../paidContractEngine";
 import { type PaidContractRequiredFieldsReview, paidContractRequiredFieldsReview } from "../../paidContractRequiredFields";
@@ -23,7 +24,7 @@ export function usePaidContractStore(props: {
 
 	const effectiveTotalRub = useMemo(() => {
 		const parsedKopecks = parseRublesToKopecks(store.paidContractTotalRub);
-		return parsedKopecks > 0 ? parsedKopecks / 100 : totalRubVal;
+		return parsedKopecks > 0 ? kopecksToRubles(parsedKopecks) : totalRubVal;
 	}, [store.paidContractTotalRub, totalRubVal]);
 
 	const review: PaidContractRequiredFieldsReview = useMemo(() => paidContractRequiredFieldsReview({
@@ -60,7 +61,7 @@ export function usePaidContractStore(props: {
 	};
 
 	const buildContractData = () => {
-		const kopecks = parseRublesToKopecks(store.paidContractTotalRub) || (totalRubVal ? Math.round(totalRubVal * 100) : 0);
+		const kopecks = parseRublesToKopecks(store.paidContractTotalRub) || (totalRubVal ? rublesToKopecks(totalRubVal) : 0);
 		const c = createDefaultPaidContract({
 			contractNumber: store.paidContractNumber.trim() || undefined, contractDate: store.paidContractDate.trim() || undefined,
 			patientFullName: props.documentPatientFullName || undefined, patientPassport: props.documentPatientPassport || undefined,

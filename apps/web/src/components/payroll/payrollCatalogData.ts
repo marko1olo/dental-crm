@@ -9,10 +9,11 @@ import {
 	computeNetBaseKopecks, calculateDoctorCommissionKopecks,
 	applyMinimumGuarantee, type DoctorPayrollResult,
 } from "@dental/shared/payroll";
+import { calculateProgressiveNdflTax, formatKopecksToRubles } from "@dental/shared";
 import { generateDoctorPayslipHtml } from "./exports/doctorPayslipHtmlExporter";
 import { generateDoctorPayslipMessengerText as exportMessengerText } from "./exports/doctorPayslipMessengerExporter";
 
-export { computeNetBaseKopecks, calculateDoctorCommissionKopecks };
+export { computeNetBaseKopecks, calculateDoctorCommissionKopecks, formatKopecksToRubles };
 
 export type MotivationSchemeType = "net_percentage" | "gross_percentage" | "fixed_shift" | "chair_rental";
 export type PayrollPayoutStatus = "accrued" | "paid_rko";
@@ -212,7 +213,7 @@ export function calculateDoctorPayrollSummary(params: {
 		docOrders.length,
 		shouldApply,
 	);
-	const ndfl13TaxKopecks = params.doctor.taxRegime === "employee" ? Math.round((grossPayout * 13) / 100) : 0;
+	const ndfl13TaxKopecks = params.doctor.taxRegime === "employee" ? calculateProgressiveNdflTax(grossPayout).ndflTaxKop : 0;
 	const payoutKopecks = Math.max(0, grossPayout - ndfl13TaxKopecks - advanceKopecks);
 
 	return {
@@ -315,10 +316,6 @@ export const CANONICAL_CLOSED_PERIODS: readonly ClosedPayrollPeriodItem[] = [
 	{ id: "cls-02", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-01", doctorId: "doc-sokolova", doctorName: "Д-р Соколова Елена Владимировна", specialtyTitleRu: "Стоматолог-терапевт", grossKopecks: 4900000, labCostKopecks: 0, materialCostKopecks: 420000, netBaseKopecks: 4480000, payoutKopecks: 974400, rkoReceiptNumber: "РКО-09/26-2", isPaidRko: true },
 	{ id: "cls-03", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-02", doctorId: "doc-morozov", doctorName: "Д-р Морозов Дмитрий Игоревич", specialtyTitleRu: "Стоматолог-хирург-имплантолог", grossKopecks: 9800000, labCostKopecks: 0, materialCostKopecks: 3200000, netBaseKopecks: 6600000, payoutKopecks: 2310000, rkoReceiptNumber: "РКО-09/26-3", isPaidRko: true },
 ];
-
-export function formatKopecksToRubles(kopecks: number): string {
-	return (Math.round(kopecks) / 100).toLocaleString("ru-RU") + " ₽";
-}
 
 function toResult(c: DoctorPayrollCalculation, d?: PayrollDoctorProfile): DoctorPayrollResult {
 	const isRental = c.isChairRental || d?.payoutModel === "chair_rental";

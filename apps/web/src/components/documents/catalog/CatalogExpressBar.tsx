@@ -24,7 +24,7 @@ export function CatalogExpressBar({
 			<div className="flex items-center gap-2 flex-wrap">
 				<button
 					type="button"
-					data-testid="btn-fast-print-intake-package-1click"
+					data-testid="btn-fast-print-intake-package-instant"
 					onClick={onFastPrintPrimaryIntake}
 					className="secondary-button inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] text-xs font-semibold hover:bg-[var(--teal,#0d9488)]/10 transition-colors cursor-pointer"
 					title="Распечатать сразу весь пакет первичного приёма: Договор + ИДС + Согласие на обработку персданных"

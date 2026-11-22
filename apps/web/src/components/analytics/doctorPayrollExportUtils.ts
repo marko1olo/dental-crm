@@ -7,6 +7,7 @@
  * Инвариант: отсутствие вызовов toISOString (календарные даты передаются на сервер как есть).
  */
 
+import { formatRubles } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 
 export interface DoctorPayrollItem {
@@ -69,7 +70,7 @@ export interface AssistantPayrollItem {
 }
 
 export function formatRub(rub: number): string {
-	return `${Math.round(rub || 0).toLocaleString("ru-RU")} ₽`;
+	return formatRubles(rub);
 }
 
 export const PERIOD_LABELS: Record<string, string> = {

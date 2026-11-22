@@ -11,6 +11,7 @@ import { useVisitStore } from "../store/visitStore";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 import type { ToothData } from "../components/odontogram/ToothChart";
 import { normalizeToothState } from "../components/treatment-plans/tierStages/toothStateHelpers";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import type { ExtendedMedicalRecordInitialData } from "../components/emr/MedicalRecordStudioModal";
 
 const ClinicalTasksPanel = lazyWithRetry(() =>
@@ -39,10 +40,10 @@ const ConsentStudioModal = lazyWithRetry(() =>
 );
 
 export interface SpecialtyModalsAppLogic {
-	readonly activePatient?: { id: string; fullName?: string; name?: string; birthDate?: string; cardNumber?: string; cardId?: string } | null | undefined;
-	readonly activeVisitPatient?: { id: string; fullName?: string; name?: string; birthDate?: string; cardNumber?: string; cardId?: string } | null | undefined;
+	readonly activePatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
+	readonly activeVisitPatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
 	readonly activeDoctor?: { id: string; fullName?: string; name?: string } | null | undefined;
-	readonly activeTooth?: number | null | undefined;
+	readonly activeTooth?: string | number | null | undefined;
 }
 
 interface AppDirectSpecialtyModalsProps {
@@ -111,32 +112,43 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<MedicalRecordStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsEmrCardDirectModalOpen(false)}
-						patientId={patient?.id || "pat-demo-01"}
+						patientId={patient?.id || (isDemoShowcaseMode() ? "pat-demo-01" : "")}
 						onSave={async () => {
 							showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
 						}}
-						initialData={{
-							passport: {
-								patientFullName: patient?.fullName || patient?.name || "Пациент",
-								patientBirthDate: patient?.birthDate || "1990-05-14",
-								medicalCardNumber: patient?.cardNumber || patient?.cardId || "pat-demo-01",
-							},
-							visitDiaries: [
-								{
-									id: "diary-demo-01",
-									entryDate: new Date().toISOString().slice(0, 10),
-									entryTime: "12:00",
-									doctorFullName: staffUser?.fullName || activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
-									doctorSpecialty: "Стоматолог-терапевт",
-									toothNumber: "46",
-									subjectiveComplaints: "Ноющая боль в области зуба 4.6 при накусывании",
-									objectiveStatusLocalis: "Зуб 4.6: глубокая кариозная полость, зондирование болезненно по дну",
-									assessmentDiagnosisText: "Пульпит (зуб 4.6)",
-									assessmentIcd10Code: "K04.0",
-									procedureProtocol: "Анестезия, препарирование кариозной полости, пломбирование каналов",
-								},
-							],
-						}}
+						initialData={
+							isDemoShowcaseMode()
+								? {
+										passport: {
+											patientFullName: patient?.fullName || patient?.name || "Пациент",
+											patientBirthDate: patient?.birthDate || "1990-05-14",
+											medicalCardNumber: patient?.cardNumber || patient?.cardId || "pat-demo-01",
+										},
+										visitDiaries: [
+											{
+												id: "diary-demo-01",
+												entryDate: new Date().toISOString().slice(0, 10),
+												entryTime: "12:00",
+												doctorFullName: staffUser?.fullName || activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
+												doctorSpecialty: "Стоматолог-терапевт",
+												toothNumber: "46",
+												subjectiveComplaints: "Ноющая боль в области зуба 4.6 при накусывании",
+												objectiveStatusLocalis: "Зуб 4.6: глубокая кариозная полость, зондирование болезненно по дну",
+												assessmentDiagnosisText: "Пульпит (зуб 4.6)",
+												assessmentIcd10Code: "K04.0",
+												procedureProtocol: "Анестезия, препарирование кариозной полости, пломбирование каналов",
+											},
+										],
+									}
+								: {
+										passport: {
+											patientFullName: patient?.fullName || patient?.name || "",
+											patientBirthDate: patient?.birthDate || "",
+											medicalCardNumber: patient?.cardNumber || patient?.cardId || "",
+										},
+										visitDiaries: [],
+									}
+						}
 						isLocked={false}
 						isDraft={true}
 					/>
@@ -170,11 +182,11 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<ConsentStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsConsentDirectModalOpen(false)}
-						patient={patient || { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" }}
-						patientName={patient?.fullName || patient?.name || "Иванов Иван Иванович"}
+						patient={patient || (isDemoShowcaseMode() ? { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" } : undefined)}
+						patientName={patient?.fullName || patient?.name || (isDemoShowcaseMode() ? "Иванов Иван Иванович" : "Пациент")}
 						patientContext={{
-							patientName: patient?.fullName || patient?.name || "Иванов Иван Иванович",
-							birthDate: patient?.birthDate || "12.04.1988",
+							patientName: patient?.fullName || patient?.name || (isDemoShowcaseMode() ? "Иванов Иван Иванович" : "Пациент"),
+							birthDate: patient?.birthDate || (isDemoShowcaseMode() ? "12.04.1988" : ""),
 							doctorName: staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач",
 							clinicName: "Клиника «DENTE»",
 						}}

@@ -22,7 +22,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerLeadsRoutes } from "../../routes/leads.js";
-import { telephonyRoutes } from "../../routes/telephony.js";
+import { telephonyRoutes } from "../../routes/telephony/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	CLINIC_TOKEN_HEADER,

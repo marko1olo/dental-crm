@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
 import { telephonyOutboxService } from "../../services/telephonyOutboxService.js";
 import { telephonyRecordingStreamRoutes } from "./telephonyRecordingStreamHandler.js";
-import { telephonySipRoutes } from "../telephonySipRoutes.js";
-import { telephonyCallerLookupRoutes } from "../telephonyCallerLookupRoutes.js";
+import { telephonySipRoutes } from "./telephonySipRoutes.js";
+import { telephonyCallerLookupRoutes } from "./telephonyCallerLookupRoutes.js";
 import { telephonyCallLifecycleRoutes } from "./telephonyCallLifecycleHandler.js";
 import { telephonyCallsListHandler } from "./telephonyCallsListHandler.js";
 import { telephonyCallUpdateHandler } from "./telephonyCallUpdateHandler.js";
@@ -21,6 +21,18 @@ export * from "./telephonyOutboundHandler.js";
 export * from "./telephonyCallLifecycleHandler.js";
 export * from "./telephonyCallsListHandler.js";
 export * from "./telephonyCallUpdateHandler.js";
+export * from "./telephonySipRoutes.js";
+export * from "./telephonyCallerLookupRoutes.js";
+export {
+	UUID_REGEX,
+	type NormalizedPhone,
+	normalizePhoneNumber,
+	authenticatePbxWebhook,
+	detectMarketingAttribution,
+	isForbiddenPrivateIp,
+	validateSsrfSafeRecordingUrl,
+} from "../../services/telephony/telephonySecurity.js";
+export { telephonyOutboxService } from "../../services/telephonyOutboxService.js";
 
 export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	// Webhooks
@@ -52,9 +64,13 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	server.patch<{ Params: { id: string; organizationId: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/:organizationId/calls/:id", telephonyCallUpdateHandler);
 
 	// 1-Click Outbound call (Mandate 8e: Doctor Autonomy)
+	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", telephonyOutboundHandler);
+	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
 	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound-call", telephonyOutboundHandler);
+	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound", telephonyOutboundHandler);
+	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
 	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound", telephonyOutboundHandler);
 
 	await server.register(telephonyRecordingStreamRoutes);

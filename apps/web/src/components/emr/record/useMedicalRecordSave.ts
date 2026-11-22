@@ -9,7 +9,7 @@
 import { useCallback, useState } from "react";
 import { resolveDentalSpecialty, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 
@@ -72,6 +72,7 @@ export function useMedicalRecordSave({
 				const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 				if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
 					const diariesToPersist = formData.visitDiaries.length > 0 ? formData.visitDiaries : [undefined];
+					let anyDiaryFailed = false;
 					try {
 						// Последовательное сохранение всех дневников приёма (Multi-Tooth SOAP Loop, Мандаты 8e, 8n)
 						for (const diary of diariesToPersist) {
@@ -92,7 +93,7 @@ export function useMedicalRecordSave({
 								headers: {
 									"Content-Type": "application/json",
 									"Idempotency-Key": idempotencyKey,
-									...denteAdminSecretRequestHeaders(),
+									...getDenteAuthHeaders(),
 								},
 								credentials: "same-origin",
 								body: JSON.stringify({
@@ -109,6 +110,7 @@ export function useMedicalRecordSave({
 							});
 
 							if (!diaryRes.ok) {
+								anyDiaryFailed = true;
 								const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
 								const errorMessage = errJson?.message || errJson?.error || "Ошибка сохранения дневника приёма в базу данных";
 								console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
@@ -116,84 +118,34 @@ export function useMedicalRecordSave({
 							}
 						}
 					} catch (diaryPersistErr) {
+						anyDiaryFailed = true;
 						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
 						showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
 					}
-				}
 
-				const autosaveIdempotency =
-					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-						? crypto.randomUUID()
-						: generateUuidV7();
-
-				const aggregatedComplaints = formData.visitDiaries
-					.map((d) => d.subjectiveComplaints ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.subjectiveComplaints}` : d.subjectiveComplaints) : null)
-					.filter(Boolean)
-					.join("\n");
-				const aggregatedStatus = formData.visitDiaries
-					.map((d) => d.objectiveStatusLocalis ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.objectiveStatusLocalis}` : d.objectiveStatusLocalis) : null)
-					.filter(Boolean)
-					.join("\n");
-				const aggregatedDiagnoses = formData.visitDiaries
-					.map((d) => d.assessmentIcd10Code ? (d.toothNumber ? `${d.toothNumber}: ${d.assessmentIcd10Code}` : d.assessmentIcd10Code) : null)
-					.filter(Boolean)
-					.join(", ");
-				const aggregatedTreatments = formData.visitDiaries
-					.map((d) => d.procedureProtocol ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.procedureProtocol}` : d.procedureProtocol) : null)
-					.filter(Boolean)
-					.join("\n");
-
-				const res = await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						"Idempotency-Key": autosaveIdempotency,
-						...denteAdminSecretRequestHeaders(),
-					},
-					credentials: "same-origin",
-					body: JSON.stringify({
-						patientId: effectivePatientId,
-						selectedSpecialty: resolvedSpecialty,
-						transcript: "",
-						draft: {
-							complaint: aggregatedComplaints || complaint,
-							anamnesis,
-							objectiveStatus: aggregatedStatus || statusLocalis,
-							diagnosis: aggregatedDiagnoses || diagnosisIcd10,
-							treatmentPlan: aggregatedTreatments || treatmentDescription,
-							warnings: [],
-						},
-						clientDraftId: `visit-draft-${effectiveVisitId}`,
-						clientSavedAt: new Date().toISOString(),
-					}),
-				});
-
-				if (res.ok) {
-					if (typeof sessionStorage !== "undefined" && effectivePatientId) {
-						try {
-							sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
-						} catch { /* ignore storage error */ }
+					if (!anyDiaryFailed) {
+						if (typeof sessionStorage !== "undefined" && effectivePatientId) {
+							try {
+								sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
+							} catch { /* ignore storage error */ }
+						}
+						void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
+						void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
+						void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+						if (effectivePatientId) {
+							void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
+						}
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente:diary-saved", {
+									detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
+								}),
+							);
+							window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: formData }));
+							window.dispatchEvent(new CustomEvent("dente:visit-updated", { detail: { visitId: effectiveVisitId } }));
+						}
+						showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
 					}
-					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
-					if (effectivePatientId) {
-						void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
-					}
-					if (typeof window !== "undefined") {
-						window.dispatchEvent(
-							new CustomEvent("dente:diary-saved", {
-								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
-							}),
-						);
-						window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: formData }));
-						window.dispatchEvent(new CustomEvent("dente:visit-updated", { detail: { visitId: effectiveVisitId } }));
-					}
-					showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
-				} else {
-					const errorPayload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-					const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить медицинскую карту";
-					showToast(errorMessage, "error", 4000);
 				}
 			} else if (effectivePatientId) {
 				const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
@@ -225,7 +177,7 @@ export function useMedicalRecordSave({
 						headers: {
 							"Content-Type": "application/json",
 							"Idempotency-Key": generateUuidV7(),
-							...denteAdminSecretRequestHeaders(),
+							...getDenteAuthHeaders(),
 						},
 						body: JSON.stringify(patchPayload),
 					});

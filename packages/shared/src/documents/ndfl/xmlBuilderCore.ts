@@ -48,7 +48,7 @@ export function buildFnsKnd1151156Xml(
 	const taxYear = String(payload.taxYear || new Date().getFullYear()).slice(0, 4);
 	const certKind = payload.certificateKind || "1";
 	const corrNumber = payload.correctionNumber ?? (certKind === "1" ? 0 : 1);
-	const progVersion = payload.softwareVersion || "DentalMIS_FNS_Gateway_v2.4.0";
+	const progVersion = payload.softwareVersion || "Dente_FNS_Gateway_v1.0.0";
 
 	const clinicInn = cleanDigits(payload.clinic.inn);
 	const clinicKpp = payload.clinic.kpp ? cleanDigits(payload.clinic.kpp) : undefined;

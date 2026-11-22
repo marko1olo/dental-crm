@@ -5,7 +5,19 @@ import type { CallOutcome } from "./outcomeTypes.js";
  * Canonical SSOT for @dental/shared, @dental/api, and @dental/web
  */
 
-export type TelephonyProvider = "sip" | "webrtc" | "cloud_pbx" | "local_pbx" | "asterisk" | "mango" | "uis" | "zadarma" | "unknown";
+export type TelephonyProvider =
+	| "mango"
+	| "uis"
+	| "zadarma"
+	| "asterisk"
+	| "domru"
+	| "megafon"
+	| "webrtc"
+	| "sip"
+	| "generic"
+	| "cloud_pbx"
+	| "local_pbx"
+	| "unknown";
 export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
 export type CallStatus = TelephonyCallStatus;
 export type CallDirection = "inbound" | "outbound";

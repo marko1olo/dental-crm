@@ -419,6 +419,42 @@ graph LR
 
 ---
 
+18. **Red Team Фиксер-Хирург: Ликвидация коммерческого загрязнения в XML ФНС, запрет ручных расчетов денег и депаразитизация дев-сленга (DEF-DOC18-01...03, Мандаты 8x, 8ap, 8bm, 8am, 8zg):**
+    * **DEF-DOC18-01 (Суверенный бренд Dente в XML ФНС — Мандаты 8x, 8ap):**
+      В `xmlBuilderCore.ts:51`, `ndflXmlGenerator.ts:260` и `familyTaxBatchEngine.ts:497` ликвидирован чужой бренд `DentalMIS_FNS_Gateway_v2.4.0`. Утверждена суверенная марка `Dente_FNS_Gateway_v1.0.0`.
+    * **DEF-DOC18-02 (Ликвидация ручного деления / 100 при передаче суммы договора — Мандат 8bm):**
+      В `useDocumentStudioSignAndIssue.ts:332` ручной расчет `options.totalAmountKopecks > 0 ? options.totalAmountKopecks / 100 : 0` заменен на канонический хелпер `kopecksToRubles(options.totalAmountKopecks)` из `@dental/shared`. По правилу бойскаута также очищены сопутствующие деления в `useDocumentsStudioModel.ts` и `usePaidContractStore.ts`.
+    * **DEF-DOC18-03 (Искоренение дев-сленга «1click» и «в 1 клик» — Мандаты 8am, 8zg):**
+      В `CatalogExpressBar.tsx:27` селектор `data-testid="btn-fast-print-intake-package-1click"` переведен в семантический `data-testid="btn-fast-print-intake-package-instant"`. В `PatientDocumentsTab.tsx:99` комментарий очищен в пользу «Мгновенное прикрепление документов».
+    * **Машинные гейты (Machine Gates):**
+      - `node --import tsx --test packages/shared/src/documents/__tests__/ndflXmlGenerator.test.ts`: **14/14 тестов PASS (Exit Code 0)**.
+      - `node --import tsx --test apps/api/src/documents/*.test.ts`: **116/116 тестов PASS (Exit Code 0)**.
+      - `npx vitest run apps/web/src/components/documents/__tests__/`: **202/202 теста PASS (Exit Code 0)**.
+      - `npm run check:diff`: **Exit Code 0 (DIFF SAFETY PASSED, 0 костылей)**.
+      - `npm run build -w @dental/shared` и `npm run typecheck -w @dental/shared`: **Exit Code 0**.
+
+---
+
+19. **Red Team Фиксер-Хирург: Домен 21 — Информированные согласия (ИДС), договоры, цифровая подпись ПЭП (63-ФЗ), водяные знаки и BOLA/IDOR изоляция (DEF-DOC21-01...04, Мандаты 8e, 8n, 8bm, 8bo, 8az):**
+    * **DEF-DOC21-01 (Двухрежимные фоновые водяные знаки «ЧЕРНОВИК» и «ПОДПИСАНО ВРАЧОМ» — Мандат 8e):**
+      В `apps/api/src/documents/templates/baseDocument.ts` внедрены векторные полупрозрачные водяные знаки под углом -32°:
+      - При `document.status === "draft"` в тело документа внедряется `<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>` с точной полупрозрачностью и поддержкой `-webkit-print-color-adjust: exact`.
+      - При `document.status === "issued"` в тело документа внедряется `<div class="watermark-signed" aria-hidden="true">ПОДПИСАНО ВРАЧОМ</div>`.
+      - При аннулировании (`voided`) водяные знаки не накладываются, блокируя нелегитимное использование.
+    * **DEF-DOC21-02 (Полноценная поддержка простой электронной подписи ПЭП 63-ФЗ в визуальных штампах — Мандат 8e):**
+      В `apps/api/src/documents/templates/signatureRenderUtils.ts` и `apps/api/src/routes/documents/sharedDocUtils/archiveAndPdfRenderer.ts` режим `simple_electronic_signature` включен в распознавание электронных подписей `isSigned`/`isElectronicallySigned`. Для ПЭП автоматически формируется идентификатор `ПЭП-${document.id.slice(0, 8).toUpperCase()}` и генерируется официальный штамп подписи (`gost-stamp-simple` с гербом и отметкой МИС DENTE Clinical CRM) согласно 63-ФЗ.
+    * **DEF-DOC21-03 (Абсолютная ликвидация BOLA/IDOR в маршрутах чтения и выгрузки документов — Мандаты 8e, 8n):**
+      В `apps/api/src/routes/documents/html.ts`, `pdf.ts` и `query.ts` внедрен шлюз `extractPortalPatient(request)`. Если запрос отправлен пациентом портала, доступ к документу разрешается **ТОЛЬКО** при точном совпадении `document.patientId === portalPatient.patientId` (иначе немедленный 403 Forbidden). В листинге `GET /api/documents` выборка для пациента портала принудительно ограничивается его собственными документами.
+    * **DEF-DOC21-04 (Гарантированная фиксация следа ПЭП в document_signatures при подписании черновиков — Мандат 8bo):**
+      В `apps/api/src/routes/documents/signature.ts` внутри атомарной ACID-транзакции `db.transaction(async tx => ...)` добавлена вставка в таблицу `schema.documentSignatures` для документов, находившихся в статусе `draft`, что устранило потерю юридически значимого следа подписи пациента по 63-ФЗ.
+    * **Машинные гейты (Machine Gates):**
+      - `npx tsx --test apps/api/src/documents/redTeamDomain21WatermarkBolaPep.test.ts`: **4/4 тестов PASS (Exit Code 0)**.
+      - `npx tsx --test apps/api/src/documents/*.test.ts`: **120/120 тестов PASS (Exit Code 0)**.
+      - `npm run typecheck -w @dental/api`: **Exit Code 0 (0 ошибок компилятора TypeScript)**.
+      - `npm run check:encoding`: **Exit Code 0 (20021 файлов проверено, без UTF-8 BOM и mojibake)**.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

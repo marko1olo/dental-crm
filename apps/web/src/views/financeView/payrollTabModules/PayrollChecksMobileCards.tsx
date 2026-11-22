@@ -1,5 +1,7 @@
 import React from "react";
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
+import { calculateDoctorCommissionKopecks } from "@dental/shared/payroll";
+import { formatRubles, kopecksToRubles } from "@dental/shared";
 
 export interface PayrollChecksMobileCardsProps {
 	readonly services: readonly DoctorCompletedServiceItem[];
@@ -7,7 +9,7 @@ export interface PayrollChecksMobileCardsProps {
 }
 
 export function PayrollChecksMobileCards({ services, commissionPercent }: PayrollChecksMobileCardsProps): React.JSX.Element {
-	const fmt = (kop: number) => (kop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ₽";
+	const fmt = (kop: number) => formatRubles(kopecksToRubles(kop));
 
 	if (services.length === 0) {
 		return (
@@ -28,7 +30,7 @@ export function PayrollChecksMobileCards({ services, commissionPercent }: Payrol
 				const matKop = item.materialCostKop || 0;
 				const netBaseKop = Math.max(0, paidKop - labKop - matKop);
 				const rate = item.customCommissionPercent ?? commissionPercent;
-				const earnedKop = Math.round((netBaseKop * rate) / 100);
+				const earnedKop = calculateDoctorCommissionKopecks(netBaseKop, rate);
 
 				return (
 					<div

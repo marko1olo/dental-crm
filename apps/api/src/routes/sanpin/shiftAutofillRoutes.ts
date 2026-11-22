@@ -38,7 +38,7 @@ export {
 } from "./shiftAutofillModules/shiftAutofillCalculators.js";
 
 /**
- * Canonical Facade: 1-Click SanPiN Shift & Month Autofill Routes (СанПиН 3.3686-21, Форма 257/у, 366/у)
+ * Canonical Facade: Автопилот смены и месяца журналов СанПиН (Журнал автоклавирования и предстерилизационной очистки)
  * Decomposed into modular architecture in ./shiftAutofillModules/
  *
  * Layer 0: shiftAutofillSchemas.ts (Zod Validation)
@@ -47,11 +47,11 @@ export {
  * Layer 5: shiftAutofillRoutes.ts (Compact Canonical Facade <= 250 lines)
  */
 export function registerSanpinShiftAutofillRoutes(app: FastifyInstance) {
-	// 7. 1-КЛИК АВТОПИЛОТ СМЕНЫ САНПИН (Форма 257/у, 366/у)
+	// 7. Автопилот смены журналов СанПиН
 	app.post("/api/registers/autofill-shift", handleAutofillShift);
 	app.post("/api/sanpin/shift-autofill", handleAutofillShift);
 
-	// 8. 1-КЛИК АВТОПИЛОТ МЕСЯЦА САНПИН (Форма 257/у, 366/у)
+	// 8. Автопилот месяца журналов СанПиН
 	app.post("/api/registers/autofill-month", handleAutofillMonth);
 	app.post("/api/sanpin/month-autofill", handleAutofillMonth);
 }

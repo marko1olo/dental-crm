@@ -37,9 +37,9 @@
 :is([data-theme="dark"], .dark) .emr-studio-audit-badge-icon.pending { background: #0c4a6e; color: #38bdf8; }
 
 .emr-studio-status-badge {
-  font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
-  text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+  letter-spacing: 0.03em;
 }
-.emr-studio-status-badge.approved { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-.emr-studio-status-badge.rejected_with_remarks { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-.emr-studio-status-badge.pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.emr-studio-status-badge.approved { background: var(--ok-bg, rgba(16, 185, 129, 0.15)); color: var(--ok-fg, #15803d); border: 1px solid var(--ok-border, #86efac); }
+.emr-studio-status-badge.rejected_with_remarks { background: var(--danger-bg, rgba(239, 68, 68, 0.15)); color: var(--danger-fg, #b91c1c); border: 1px solid var(--danger-border, #fca5a5); }
+.emr-studio-status-badge.pending { background: var(--warn-bg, rgba(245, 158, 11, 0.15)); color: var(--warn-fg, #b45309); border: 1px solid var(--warn-border, #fde68a); }

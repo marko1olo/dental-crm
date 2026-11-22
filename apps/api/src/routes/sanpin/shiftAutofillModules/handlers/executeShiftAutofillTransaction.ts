@@ -36,9 +36,9 @@ export async function executeShiftAutofillTransaction(
 }> {
 	const { organizationId, body, operatorId, todayStr } = params;
 
-	// 1. Пробы контроля очистки (ПСО)
+	// 1. Пробы контроля предстерилизационной очистки
 	const psoBatches = getShiftPsoBatches(body.psoRecords);
-	const rawAutoclaveCycles = body.autoclaveCycle ?? body.form257;
+	const rawAutoclaveCycles = body.autoclaveCycles ?? body.autoclaveCycle ?? body.form257 ?? body.sterilizationRecords;
 	const autoclaveCycles = getShiftSterilizationRecords(body.sterilizationRecords, rawAutoclaveCycles);
 
 	const psoRows = await tx
@@ -87,8 +87,19 @@ export async function executeShiftAutofillTransaction(
 		)
 		.returning();
 
+	const sterilWithCounts = sterilRows.map((row, idx) => {
+		const f = autoclaveCycles[idx];
+		const packCount = Number(
+			(f as Record<string, unknown>)?.packagedItemsCount ??
+			(f as Record<string, unknown>)?.count ??
+			(body as Record<string, unknown>)?.packagedItemsCount ??
+			1,
+		);
+		return Object.assign(row, { packagedItemsCount: Math.max(1, packCount) });
+	});
+
 	// 3. Бактерицидная обработка, климат и отходы
 	await executeShiftBactericidalAndClimateLogs(tx, organizationId, todayStr, operatorId);
 
-	return { insertedPso: psoRows, insertedSteril: sterilRows };
+	return { insertedPso: psoRows, insertedSteril: sterilWithCounts };
 }

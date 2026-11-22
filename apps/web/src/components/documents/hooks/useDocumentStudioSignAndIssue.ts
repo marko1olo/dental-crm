@@ -24,7 +24,7 @@ import type {
 	DocumentPackageKey,
 	PatientRequisites,
 } from "../../consents/consentCatalogData";
-import type { TaxDeductionRelationship } from "@dental/shared";
+import { kopecksToRubles, type TaxDeductionRelationship } from "@dental/shared";
 
 export interface ClinicRequisitesDto {
 	readonly name: string;
@@ -329,7 +329,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 							: "Договор на оказание платных медицинских услуг";
 
 				const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
-				const totalRub = options.totalAmountKopecks > 0 ? options.totalAmountKopecks / 100 : 0;
+				const totalRub = kopecksToRubles(options.totalAmountKopecks);
 				const effectiveDoctor = options.effectiveDoctorName || "Врач-стоматолог";
 				const effectivePayerName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName.trim() || "Пациент";
 

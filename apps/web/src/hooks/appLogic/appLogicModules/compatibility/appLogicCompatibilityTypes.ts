@@ -4,7 +4,7 @@
  * Interfaces and contracts for legacy hook compatibility adapters.
  */
 
-import type { StaffRole } from "@dental/shared";
+import type { StaffRole, DocumentIngestionTarget } from "@dental/shared";
 import type { AppStore } from "../../../../store/appStore.js";
 import type { useSettingsStore } from "../../../../store/settingsStore.js";
 import type { ImagingStore } from "../../../../store/imagingStore.js";
@@ -71,8 +71,8 @@ export interface LegacyStubsAndFallbacks {
 	readonly goToVisitDictation: () => void;
 	readonly handleQuickConsult: () => void;
 	readonly isQuickConsultLoading: false;
-	readonly documentIngestionTarget: "general";
-	readonly setDocumentIngestionTarget: () => void;
+	readonly documentIngestionTarget: DocumentIngestionTarget;
+	readonly setDocumentIngestionTarget: (target: DocumentIngestionTarget) => void;
 	readonly selectedSpecialty: string;
 	readonly setSelectedSpecialty: () => void;
 	readonly setSelectedProtocolId: () => void;

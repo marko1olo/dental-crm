@@ -9,7 +9,7 @@ import { communicationEvents, crmLeads, organizations, patients } from "../../db
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { telephonyCallLifecycleRoutes } from "../../routes/telephony/telephonyCallLifecycleHandler.js";
 import { getAudioCachePath } from "../../routes/telephony/telephonyRecordingStreamHandler.js";
-import { telephonyRoutes } from "../../routes/telephony.js";
+import { telephonyRoutes } from "../../routes/telephony/index.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 
 interface BroadcastedMsg {
@@ -769,5 +769,69 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 			try { await fs.promises.unlink(cachePath); } catch {}
 			await app.close();
 		}
+	});
+
+	test("GET /:organizationId/calls blocks IDOR when rawOrgId does not match auth context", async () => {
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const fakeAlienOrgId = "a0000000-0000-4000-8000-000000000099";
+
+		const mismatchedRes = await app.inject({
+			method: "GET",
+			url: `/${fakeAlienOrgId}/calls`,
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+		});
+
+		assert.equal(mismatchedRes.statusCode, 403);
+		const mismatchJson = mismatchedRes.json();
+		assert.equal(mismatchJson.error, "OrganizationMismatch");
+
+		await app.close();
+	});
+
+	test("POST /:organizationId/sip/transfer blocks IDOR and enforces clinical mutation context", async () => {
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const fakeAlienOrgId = "a0000000-0000-4000-8000-000000000099";
+
+		// Unauthenticated -> 401
+		const unauthRes = await app.inject({
+			method: "POST",
+			url: `/${fakeAlienOrgId}/sip/transfer`,
+			payload: {
+				callId: "call-123",
+				targetExtensionOrPhone: "101",
+			},
+		});
+		assert.ok(
+			unauthRes.statusCode === 401 || unauthRes.statusCode === 403,
+			"Unauthenticated SIP transfer must be rejected",
+		);
+
+		// Mismatched orgId -> 403 OrganizationMismatch
+		const mismatchedRes = await app.inject({
+			method: "POST",
+			url: `/${fakeAlienOrgId}/sip/transfer`,
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				callId: "call-123",
+				targetExtensionOrPhone: "101",
+			},
+		});
+		assert.equal(mismatchedRes.statusCode, 403);
+		const mismatchJson = mismatchedRes.json();
+		assert.equal(mismatchJson.error, "OrganizationMismatch");
+
+		await app.close();
 	});
 });

@@ -56,7 +56,7 @@ import {
 	patients,
 	users,
 } from "../../db/schema.js";
-import { telephonyRoutes } from "../../routes/telephony.js";
+import { telephonyRoutes } from "../../routes/telephony/index.js";
 import {
 	isValidWhatsappSignature,
 	isWebhookPath,
@@ -627,7 +627,7 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 				.where(eq(communicationEvents.id, json.call.id));
 			assert.ok(dbRecord, "Record must physically exist in communicationEvents table");
 			assert.ok(dbRecord.message.includes(noteText));
-			assert.ok(dbRecord.message.includes(`[call_id: ${providerCallId}]`), "Must preserve call_id marker");
+			assert.equal(dbRecord.providerCallId, providerCallId, "Must preserve providerCallId");
 
 			// Update note a second time: ensure [call_id: ...] is not erased (DEFECT-2 fix)
 			const updatedNoteText = "Повторное уточнение: запись перенесена на 16:30";
@@ -651,7 +651,7 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 				.where(eq(communicationEvents.id, json.call.id));
 			assert.ok(dbRecordUpdated, "Updated record must exist");
 			assert.ok(dbRecordUpdated.message.includes(updatedNoteText));
-			assert.ok(dbRecordUpdated.message.includes(`[call_id: ${providerCallId}]`), "Must still preserve call_id marker after multiple updates");
+			assert.equal(dbRecordUpdated.providerCallId, providerCallId, "Must still preserve providerCallId after multiple updates");
 		});
 	});
 

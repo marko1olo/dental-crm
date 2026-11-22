@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
 
@@ -14,11 +14,19 @@ export async function handleSipCallTransfer(
 	}>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "transfer sip call"))) {
+	const mutationContext = await requireClinicalMutationContext(request, reply, "transfer sip call");
+	if (!mutationContext) {
 		return;
 	}
-	const orgId = await requireResolvedOrganizationId(request, reply, "transfer sip call");
-	if (!orgId) return;
+	const orgId = mutationContext.organizationId;
+
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации",
+		});
+	}
 
 	const body = request.body || {};
 	const callId = (body.callId || "").trim();

@@ -19,7 +19,7 @@ import {
 import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "../../types/recordDataTypes";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../../lib/queryClient";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
@@ -207,7 +207,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 								headers: {
 									"Content-Type": "application/json",
 									"Idempotency-Key": generateUuidV7(),
-									...denteAdminSecretRequestHeaders(),
+									...getDenteAuthHeaders(),
 								},
 								credentials: "same-origin",
 								body: JSON.stringify({
@@ -215,7 +215,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 									anamnesis: existing.assessmentDiagnosisText || "Соматически здоров. Аллергоанамнез не отягощен.",
 									statusLocalis: objective || existing.objectiveStatusLocalis || "Статус без патологии",
 									diagnosisIcd10: icd10Code || existing.assessmentIcd10Code || undefined,
-									diagnosisTooth: selectedTooth ? String(selectedTooth) : existing.toothNumber,
+									diagnosisTooth: selectedTooth ? String(selectedTooth) : (existing.toothNumber ?? undefined),
 									treatmentDescription: protocol || existing.procedureProtocol || "Проведен осмотр",
 									revisionReason: "Исправленному верить",
 								}),

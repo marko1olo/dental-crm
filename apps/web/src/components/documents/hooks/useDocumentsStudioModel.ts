@@ -7,6 +7,7 @@
 
 import { useMemo } from "react";
 import type { Patient } from "@dental/shared";
+import { kopecksToRubles } from "@dental/shared";
 import { resolveTaxDeductionCategory, type TaxDeductionPaymentItem } from "../taxCertificateEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
@@ -231,7 +232,7 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 					fiscalSign: fiscalSign || "0",
 					serviceName,
 					...(code804n ? { code804n } : {}),
-					amountRub: amtKop / 100,
+					amountRub: kopecksToRubles(amtKop),
 					amountKopecks: amtKop,
 					taxCode: (rawTaxCode === "2" ? "2" : "1") as "1" | "2",
 				};

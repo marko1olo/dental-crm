@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { AsteriskAmiEventPayload } from "../services/telephony/telephonyGatewayService.js";
-import { handleAsteriskAmiEvent } from "./telephony/sip/handleAsteriskAmiEvent.js";
-import { handleSipCallTransfer } from "./telephony/sip/handleSipCallTransfer.js";
-import { handleSipCredentials } from "./telephony/sip/handleSipCredentials.js";
-import { handleSipFailover, handleSipStatus } from "./telephony/sip/handleSipStatusAndFailover.js";
+import type { AsteriskAmiEventPayload } from "../../services/telephony/telephonyGatewayService.js";
+import { handleAsteriskAmiEvent } from "./sip/handleAsteriskAmiEvent.js";
+import { handleSipCallTransfer } from "./sip/handleSipCallTransfer.js";
+import { handleSipCredentials } from "./sip/handleSipCredentials.js";
+import { handleSipFailover, handleSipStatus } from "./sip/handleSipStatusAndFailover.js";
 
 export const telephonySipRoutes: FastifyPluginAsync = async (server) => {
 	// WebRTC SIP Credentials

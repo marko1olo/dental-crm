@@ -6950,3 +6950,57 @@ ead_file по 8 осям качества Хаммера:
   - 📱 **Mobile Light (390x844, 51.1 KB):** [`03_analytics_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/03_analytics_mobile_light_390x844.png) — Apple HIG нативный Bottom Sheet со скруглением 24px, тактильный drag handle по центру, тач-таргеты $\ge 44\times 44$px, кнопка в Natural Thumb Zone, 0px горизонтального скролла.
   - 🌙 **Mobile Dark (390x844, 53.7 KB):** [`04_analytics_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/04_analytics_mobile_dark_390x844.png) — Мобильный интерфейс в глубокой тёмной теме без наездов и разрывов верстки.
 
+---
+
+## ДОМЕН 22: САНИТАРНЫЙ КОНТРОЛЬ И СТЕРИЛИЗАЦИЯ (САНПИН 3.3686-21, ЖУРНАЛ АВТОКЛАВИРОВАНИЯ, ПРЕДСТЕРИЛИЗАЦИОННАЯ ОЧИСТКА, ОТХОДЫ КЛАССА Б)
+
+### [SANPIN-01..06] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Пакетная фоновая фиксация смены автоклава в 1 клик, списание расходников по BOM (Soft Negative Stock), покрытие мутаций Idempotency-Key, сквозная изоляция tenant RLS, замена float-расчетов на точные копейки в shared/sanpin, чистка советских номеров приказов в пользу клинического языка, 4-State Visual Proof
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** SanPiN Regulatory Registers, Infection Control, Central Sterilization (CSO), Class B Autoclave Automation, Pre-sterilization Cleaning (Azopyram / Phenolphthalein), Class B Medical Waste Disposal, Microclimate & Bactericidal Irradiator Logs (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (SanPiN & Infection Control Fixer Surgeon / `bd17d71b`).
+- **Канонический SSOT архитектуры СанПиН и стерилизации:**
+  - Fastify роуты СанПиН: [`apps/api/src/routes/sanpin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin.ts) и подмодули [`apps/api/src/routes/sanpin/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/)
+  - Роуты автоклава и стерилизации: [`apps/api/src/routes/sanpin/sterilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationRoutes.ts)
+  - Пакетное автоклавирование: [`apps/api/src/routes/sanpin/sterilizationModules/handlers/createAutoclaveBatchCycleHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationModules/handlers/createAutoclaveBatchCycleHandler.ts)
+  - Списание расходников со склада: [`apps/api/src/routes/sanpin/sterilizationModules/handlers/sterilizationConsumablesDeduction.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationModules/handlers/sterilizationConsumablesDeduction.ts)
+  - Плагин идемпотентности: [`apps/api/src/plugins/idempotencyPlugin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/plugins/idempotencyPlugin.ts)
+  - Схемы БД Drizzle: [`apps/api/src/db/schema/sanpin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/sanpin.ts) и [`inventorySterilizationTable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/inventory/inventorySterilizationTable.ts)
+  - Ядро расчета технологических карт списания: [`packages/shared/src/sanpin/procedureMaterialDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/sanpin/procedureMaterialDeductionEngine.ts)
+  - Движок крафт-пакетов и штрихкодов: [`packages/shared/src/sanpin/kraftBarcodeParser.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/sanpin/kraftBarcodeParser.ts) и [`sterilizationPouchEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/sanpin/sterilizationPouchEngine.ts)
+  - Клиентские компоненты: [`apps/web/src/components/sanpin/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/)
+
+- **Хирургические исправления и ликвидация брака:**
+  1. **[SEV-1] [SANPIN-01] Сквозное покрытие мутаций СанПиН плагином Idempotency-Key (`idempotencyPlugin.ts`):**
+     - Расширены регулярные выражения защиты от повторных кликов (`enforceForPaths`) в `idempotencyPlugin.ts`: добавлены все канонические пути и алиасы мутаций стерилизации и журналов (`/api/sanpin/sterilization(?:-cycles)?/(?:quick-norm|quick-norm-cycle|shift-batch|batch|cycles|pso/quick-norm)` и `/api/sanpin/(?:shift-autofill|month-autofill)`).
+     - Повторные сетевые вызовы с одинаковым клиентским `Idempotency-Key` (UUIDv7) возвращают сохраненный кэшированный ответ без повторных списаний со склада или дублирования записей в БД.
+  2. **[SEV-1] [SANPIN-02] Атомарные транзакции списания и сохранения смены (`createAutoclaveBatchCycleHandler.ts`, `shiftCloseBatchHandler.ts`):**
+     - Фиксация смены автоклава, сохранение проб предстерилизационной очистки и списание упаковок/индикаторов со склада объединены в строгие неделимые ACID-транзакции `withTenantCtx(organizationId, async (tx) => ...)`.
+     - При списании расходников применен Soft Negative Stock: при нехватке остатка на складе формируется `emergency_overdraft`, статус партии и автоклавирования не блокирует работу клиники и врача у кресла (Мандаты 8v, 8aa).
+  3. **[SEV-2] [SANPIN-03] Ликвидация float-арифметики в расчете технологических карт (`procedureMaterialDeductionEngine.ts`):**
+     - Устранены ручные операции умножения и `Math.round` для копеечных констант (`endo_sealer_ah_plus`, `endo_edta_gel_ml`).
+     - Внедрены канонические методы `@dental/shared/src/money.ts`: `multiplyKopecks` и `multiplyKopecksFractional` со строгой целочисленной защитой `assertWholeKopecks` (Мандат 8b).
+  4. **[SEV-2] [SANPIN-04] Искоренение советского канцелярита и сырых номеров приказов (Мандат 8x, 8ap):**
+     - Заменены регуляторные аббревиатуры и номера законов в пользовательских ошибках и комментариях: «ПСО» -> «предстерилизационная очистка», «Форма 257/у» -> «Журнал автоклавирования», «Форма 366/у» -> «Журнал предстерилизационной очистки».
+     - Пользовательский интерфейс и ответы API оперируют понятным профессиональным русским языком: «Журнал стерилизации и автоклава», «Очистка инструментов», «Санитарный режим».
+  5. **[SEV-2] [SANPIN-05] Сквозная изоляция арендаторов `organizationId` и структурированный логгер:**
+     - Все эндпоинты СанПиН валидируют токен клиники через `requireResolvedStaffOrAdminOrganizationId` с фильтрацией по `organizationId` во всех Drizzle queries.
+     - Ноль мусорных `console.*` в роутах СанПиН: используется штатный логгер Fastify (`req.log.error`, `req.log.warn`).
+  6. **[SEV-2] [SANPIN-06] Регрессионный тестовый гейт и интеграция алиасов (`sanpinSterilizationSsotAliases.test.ts`):**
+     - Создан тестовый сьют, проверяющий регистрацию всех роутов стерилизации и гарантирующий 100% покрытие путей СанПиН регулярными выражениями плагина идемпотентности.
+
+- **Машинные гейты (100% Exit Code 0):**
+  - `npx tsx --test apps/api/src/tests/routes/*sanpin*.test.ts` -> **27/27 PASS (10 suites, Exit Code 0)**.
+  - `npx tsx --test packages/shared/src/tests/sanpin*.test.ts` -> **79/79 PASS (28 suites, Exit Code 0)**.
+  - `npx tsx --test apps/web/src/components/sanpin/__tests__/*.test.ts apps/web/src/components/sanpin/__tests__/*.test.tsx` -> **237/237 PASS (94 suites, Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0** (20 021 файл проверен, UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (4293 TSX, 1291 CSS проверено, 0 нарушений).
+  - `npm run check:diff` -> **Exit Code 0** (0 запрещенных костылей `as any`, `!`, float money).
+
+- **Визуальные доказательства (4-State Visual Proof, лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900, 102 KB):** [`01_sanpin_journal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/01_sanpin_journal_pc_light_1440x900.png) — Журнал стерилизации и автоклава: единый тиловый Primary CTA `#0d9488` («Зафиксировать смену стерилизации»), статусная плашка ЦСО, таблица циклов с параметрами пара 134.4°C / 2.15 бар, индикаторами 5 класса (ИнтеТЕСТ), zero-clipping и нулевой шум.
+  - 🌙 **PC Dark (1440x900, 110 KB):** [`02_sanpin_journal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/02_sanpin_journal_pc_dark_1440x900.png) — Глубокая тёмная тема (`var(--paper)`), контрастность текста WCAG AAA, ноль слепящих белых рамок.
+  - 📱 **Mobile Light (390x844, 98 KB):** [`03_sanpin_journal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/03_sanpin_journal_mobile_light_390x844.png) — Apple HIG Grouped List карточки партий вместо широких таблиц, хитбоксы $\ge 44\times 44$px, липкая кнопка Primary CTA в Natural Thumb Zone (`min-h-[52px]`), 0px горизонтального скролла.
+  - 🌙 **Mobile Dark (390x844, 104 KB):** [`04_sanpin_journal_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/04_sanpin_journal_mobile_dark_390x844.png) — Мобильный интерфейс в темной теме, четкие статусные бейджи «Стерильно», нулевые разрывы верстки.
+
+

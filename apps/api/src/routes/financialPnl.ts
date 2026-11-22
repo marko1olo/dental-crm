@@ -167,21 +167,22 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 				const items = p.visitId ? visitItemsMap.get(p.visitId) : undefined;
 				if (items && items.length > 0) {
-					const catTotals = new Map<string, number>();
-					let sumPrices = 0;
+					const catTotalsKop = new Map<string, number>();
+					let sumPricesKop = 0;
 					for (const it of items) {
-						catTotals.set(it.category, (catTotals.get(it.category) || 0) + it.priceRub);
-						sumPrices += it.priceRub;
+						const itPriceKop = rublesToKopecks(it.priceRub);
+						catTotalsKop.set(it.category, (catTotalsKop.get(it.category) || 0) + itPriceKop);
+						sumPricesKop += itPriceKop;
 					}
 
 					const totalPaymentKop = rublesToKopecks(p.amountRub);
-					if (sumPrices > 0) {
+					if (sumPricesKop > 0) {
 						let allocatedKop = 0;
-						const entries = Array.from(catTotals.entries());
+						const entries = Array.from(catTotalsKop.entries());
 						for (let i = 0; i < entries.length; i++) {
-							const [cat, catPrice] = entries[i]!;
+							const [cat, catPriceKop] = entries[i]!;
 							const isLast = i === entries.length - 1;
-							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round((totalPaymentKop * catPrice) / sumPrices);
+							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round((totalPaymentKop * catPriceKop) / sumPricesKop);
 							allocatedKop += catKop;
 							paymentRows.push({
 								amountRub: kopecksToRubles(catKop),
@@ -190,7 +191,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 							});
 						}
 					} else {
-						const categories = Array.from(catTotals.keys());
+						const categories = Array.from(catTotalsKop.keys());
 						const count = categories.length;
 						const splitParts = splitKopecks(totalPaymentKop, count);
 						for (let i = 0; i < count; i++) {
@@ -233,10 +234,10 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				amountRub: e.amountRub,
 			}));
 
-			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostRub), не проведенных через кассовую операцию
+			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostKopecks / labCostRub), не проведенных через кассовую операцию
 			const [unpaidLabOrders] = await tx
 				.select({
-					totalRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
+					totalKopecks: sql<number | string>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, round(coalesce(${labOrders.labCostRub}, 0) * 100)::bigint, 0)), 0)`,
 				})
 				.from(labOrders)
 				.where(
@@ -250,18 +251,18 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const unpaidLabRub = Number(unpaidLabOrders?.totalRub || 0);
-			if (unpaidLabRub > 0) {
+			const unpaidLabKop = Number(unpaidLabOrders?.totalKopecks || 0);
+			if (unpaidLabKop > 0) {
 				expenseRows.push({
 					reasonId: 11, // Зуботехническая лаборатория (ЗТЛ)
-					amountRub: unpaidLabRub,
+					amountRub: kopecksToRubles(unpaidLabKop),
 				});
 			}
 
 			// 3b. Учитываем фактические списания материалов (inventoryTransactions)
 			const [materialsUsage] = await tx
 				.select({
-					totalCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
+					totalCostKopecks: sql<number | string>`coalesce(sum(round(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) * 100)::bigint), 0)`,
 				})
 				.from(inventoryTransactions)
 				.where(
@@ -273,14 +274,14 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const cashMaterialsRub = expenseRows
+			const cashMaterialsKop = expenseRows
 				.filter((e) => e.reasonId === 4 || e.reasonId === 5)
-				.reduce((acc, e) => acc + Number(e.amountRub || 0), 0);
-			const actualMaterialsCostRub = Number(materialsUsage?.totalCostRub || 0);
-			if (actualMaterialsCostRub > cashMaterialsRub) {
+				.reduce((acc, e) => acc + rublesToKopecks(Number(e.amountRub || 0)), 0);
+			const actualMaterialsCostKop = Number(materialsUsage?.totalCostKopecks || 0);
+			if (actualMaterialsCostKop > cashMaterialsKop) {
 				expenseRows.push({
 					reasonId: 4, // Стоматологические материалы
-					amountRub: kopecksToRubles(Math.max(0, rublesToKopecks(actualMaterialsCostRub) - rublesToKopecks(cashMaterialsRub))),
+					amountRub: kopecksToRubles(actualMaterialsCostKop - cashMaterialsKop),
 				});
 			}
 
@@ -338,11 +339,15 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 			let doctorPieceRatePayrollRub = 0;
 			try {
-				const doctorPayroll = await doctorPayrollReport({
-					organizationId: orgId,
-					from: fromDate,
-					to: toDate,
-				});
+				const doctorPayroll = await doctorPayrollReport(
+					{
+						organizationId: orgId,
+						from: fromDate,
+						to: toDate,
+					},
+					undefined,
+					req.log,
+				);
 				doctorPieceRatePayrollRub = Number(doctorPayroll?.totals?.totalClinicPayrollRub || doctorPayroll?.totals?.totalPayoutRub || 0);
 			} catch (err) {
 				req.log.warn({ err }, "Не удалось рассчитать сдельную зарплату врачей для P&L");

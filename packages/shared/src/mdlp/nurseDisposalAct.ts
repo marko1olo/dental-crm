@@ -3,6 +3,7 @@ import type {
 	SeniorNurseDisposalActData,
 	SeniorNurseDisposalActItem,
 } from "./types.js";
+import { formatKopecksToRubles, kopecksToRubles, rublesToKopecks } from "../money.js";
 
 // ─── Russian Number to Words Formatter (Сумма прописью) ─────────────────────
 
@@ -68,8 +69,9 @@ function tripletToWords(num: number, isFem = false): string {
 export function amountToRussianWords(amount: number): string {
 	if (amount === 0) return "Ноль рублей 00 копеек";
 
-	const integerPart = Math.floor(Math.abs(amount));
-	const kopecksPart = Math.round((Math.abs(amount) - integerPart) * 100);
+	const totalKopecks = rublesToKopecks(Math.abs(amount));
+	const integerPart = Math.floor(kopecksToRubles(totalKopecks));
+	const kopecksPart = Math.abs(totalKopecks) % 100;
 
 	const billions = Math.floor(integerPart / 1_000_000_000);
 	const millions = Math.floor((integerPart % 1_000_000_000) / 1_000_000);
@@ -154,10 +156,11 @@ export function formatSeniorNurseDisposalActData(options: {
 		`СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${String(actSequenceCounter).padStart(3, "0")}`;
 	const actDate = options.actDate ?? now.toISOString().slice(0, 10);
 
-	let totalCost = 0;
+	let totalCostKopecks = 0;
 	const actItems: SeniorNurseDisposalActItem[] = options.items.map((it, idx) => {
-		const unitCost = it.costRub ?? 0;
-		totalCost += unitCost;
+		const unitCostKopecks = rublesToKopecks(it.costRub ?? 0);
+		totalCostKopecks += unitCostKopecks;
+		const unitCostRub = kopecksToRubles(unitCostKopecks);
 
 		return {
 			itemIndex: idx + 1,
@@ -168,8 +171,8 @@ export function formatSeniorNurseDisposalActData(options: {
 			expirationDate: it.expirationDate ?? "—",
 			sgtin: it.sgtin || it.rawBarcode,
 			carpulesCount: 1,
-			unitCostRub: Number(unitCost.toFixed(2)),
-			totalCostRub: Number(unitCost.toFixed(2)),
+			unitCostRub,
+			totalCostRub: unitCostRub,
 			patientFullName: it.patientName ?? undefined,
 			visitNumber: it.visitId ? `VI-${it.visitId.slice(0, 8).toUpperCase()}` : undefined,
 			disposalReasonRu: it.isExpired
@@ -181,10 +184,9 @@ export function formatSeniorNurseDisposalActData(options: {
 	// В стоматологической клинике списание пустых карпул (медотходы Класса Б)
 	// проводится единолично медсестрой/врачом по умолчанию (Мандаты 8e п. 10, 8k, 8n),
 	// без созыва бюрократической комиссии из 3 человек.
-	// Комиссионный состав (3 человека) формируется ТОЛЬКО если явно задан флаг requireCommission === true
-	// либо если isSingleSigner явно установлен в false.
+	// Комиссионный состав формируется ТОЛЬКО если явно задан флаг requireCommission === true.
 	const isPaperAcknowledged = options.paperJournalAcknowledged === true;
-	const requireCommission = options.requireCommission === true || options.isSingleSigner === false;
+	const requireCommission = options.requireCommission === true;
 	const useSingleNurse = !requireCommission;
 	const role = options.approverRole ?? (options.seniorNurseName ? "senior_nurse" : "doctor");
 
@@ -223,20 +225,14 @@ export function formatSeniorNurseDisposalActData(options: {
 				{
 					role: "senior_nurse" as const,
 					roleTitleRu: "Председатель комиссии",
-					fullName: options.seniorNurseName ?? "Иванова Е.В.",
-					positionRu: "Старшая медицинская сестра",
-				},
-				{
-					role: "chief_doctor" as const,
-					roleTitleRu: "Член комиссии",
-					fullName: options.chiefDoctorName ?? "Петров А.С.",
-					positionRu: "Главный врач клиники",
+					fullName: options.seniorNurseName ?? defaultApproverName,
+					positionRu: options.seniorNurseName ? "Старшая медицинская сестра" : defaultPositionRu,
 				},
 				{
 					role: "dentist" as const,
 					roleTitleRu: "Член комиссии (МОЛ)",
-					fullName: options.dentistName ?? "Кузнецов М.С.",
-					positionRu: "Врач-стоматолог терапевт / хирург",
+					fullName: options.dentistName ?? options.chiefDoctorName ?? "Кузнецов М.С.",
+					positionRu: "Врач-стоматолог (дежурный)",
 				},
 			];
 
@@ -245,6 +241,8 @@ export function formatSeniorNurseDisposalActData(options: {
 		const paperNote = "Бумажный журнал учтён (старшая медсестра опциональна)";
 		notes = notes ? `${notes}; ${paperNote}` : paperNote;
 	}
+
+	const totalCostRub = kopecksToRubles(totalCostKopecks);
 
 	return {
 		actNumber,
@@ -261,8 +259,8 @@ export function formatSeniorNurseDisposalActData(options: {
 		commission,
 		items: actItems,
 		totalQuantityCarpules: actItems.length,
-		totalCostRub: Number(totalCost.toFixed(2)),
-		totalCostInWordsRu: amountToRussianWords(totalCost),
+		totalCostRub,
+		totalCostInWordsRu: amountToRussianWords(totalCostRub),
 		totalQuantityInWordsRu: carpulesQuantityToRussianWords(actItems.length, "карпула"),
 		notes,
 		approvedByFullName: defaultApproverName,
@@ -292,8 +290,8 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
         <td style="text-align: center; font-size: 11px;">${it.expirationDate}</td>
         <td style="font-family: monospace; font-size: 10px; word-break: break-all;">${it.sgtin}</td>
         <td style="text-align: center; font-weight: bold;">${it.carpulesCount}</td>
-        <td style="text-align: right;">${it.unitCostRub.toFixed(2)}</td>
-        <td style="text-align: right; font-weight: bold;">${it.totalCostRub.toFixed(2)}</td>
+        <td style="text-align: right;">${formatKopecksToRubles(rublesToKopecks(it.unitCostRub))}</td>
+        <td style="text-align: right; font-weight: bold;">${formatKopecksToRubles(rublesToKopecks(it.totalCostRub))}</td>
         <td style="font-size: 10px;">
           ${it.patientFullName ? `Пациент: ${it.patientFullName}` : ""}${
 						it.visitNumber ? `<br/>${it.visitNumber}` : ""
@@ -481,7 +479,7 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
         <td colspan="6" style="text-align: right;">ИТОГО ПО АКТУ:</td>
         <td style="text-align: center;">${actData.totalQuantityCarpules}</td>
         <td></td>
-        <td style="text-align: right;">${actData.totalCostRub.toFixed(2)}</td>
+        <td style="text-align: right;">${formatKopecksToRubles(rublesToKopecks(actData.totalCostRub))}</td>
         <td></td>
       </tr>
     </tfoot>
@@ -490,7 +488,7 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
   <!-- Итоговые суммы прописью -->
   <div class="totals-block">
     <div><strong>Всего списано:</strong> ${actData.totalQuantityInWordsRu}.</div>
-    <div><strong>На общую сумму:</strong> ${actData.totalCostInWordsRu} (${actData.totalCostRub.toFixed(2)} руб.).</div>
+    <div><strong>На общую сумму:</strong> ${actData.totalCostInWordsRu} (${formatKopecksToRubles(rublesToKopecks(actData.totalCostRub))} руб.).</div>
     ${actData.notes ? `<div style="margin-top: 4px;"><strong>Примечание:</strong> ${actData.notes}</div>` : ""}
     <div style="margin-top: 4px; font-size: 11px; color: #333;">
       Все перечисленные медикаменты выведены из системы маркировки Честный ЗНАК (ИС МДЛП) в установленном законом порядке.
@@ -504,7 +502,7 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
   </div>
 
   <div class="stamp-place">
-    Акт составлен в 2 (двух) экземплярах: 1-й экз. — в бухгалтерию, 2-й экз. — старшей медицинской сестре.
+    Акт сформирован в электронном виде в системе DENTE Dental CRM.
   </div>
 </body>
 </html>`;

@@ -4,8 +4,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History, FileSpreadsheet } from "lucide-react";
-import { type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary, type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary, formatKopecksToRubles } from "./payrollCatalogData";
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary, type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary } from "./payrollCatalogData";
+import { rublesToKopecks, kopecksToRubles, formatRubles } from "@dental/shared";
 import { printDoctorPayslip, copyPayslipToClipboard, exportDoctorPayrollToCsv, buildDoctorPayrollCalculation, calculateOrderNetAndFee, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { PendingCashierOrdersSection } from "./PendingCashierOrdersSection";
@@ -127,7 +127,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
 		netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
 	}), { gross: 0, lab: 0, netBase: 0, payout: 0 }), [allDoctorsSummaries]);
-	const rub = formatKopecksToRubles;
+	const rub = (kop: number) => `${kopecksToRubles(kop).toLocaleString("ru-RU")} ₽`;
 	const calcCompat = useMemo(() => buildDoctorPayrollCalculation(summary, selectedDoctor, periodDates, customPercent), [summary, selectedDoctor, periodDates, customPercent]);
 
 	const handlePrintPayslip = (customCalc?: typeof calcCompat, customDoc?: PayrollDoctorProfile) => {

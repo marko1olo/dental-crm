@@ -17,7 +17,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, users } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { telephonyRoutes } from "../../routes/telephony.js";
+import { telephonyRoutes } from "../../routes/telephony/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

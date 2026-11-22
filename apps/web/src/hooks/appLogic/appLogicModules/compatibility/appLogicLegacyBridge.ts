@@ -4,7 +4,7 @@
  * Adapters, normalizers, and fallback signatures for backward compatibility.
  */
 
-import type { CommunicationTask, Dashboard, Patient } from "@dental/shared";
+import type { CommunicationTask, Dashboard, Patient, DocumentIngestionTarget } from "@dental/shared";
 import type { AppStore } from "../../../../store/appStore.js";
 import type { ClinicalSessionLogicSlice, NavigationStateSlice } from "../../types.js";
 import {
@@ -65,8 +65,8 @@ export function buildLegacyStubsAndFallbacks(): LegacyStubsAndFallbacks {
 		goToVisitDictation: () => {},
 		handleQuickConsult: () => {},
 		isQuickConsultLoading: false,
-		documentIngestionTarget: "general",
-		setDocumentIngestionTarget: () => {},
+		documentIngestionTarget: "smart_import",
+		setDocumentIngestionTarget: (_target: DocumentIngestionTarget) => {},
 		selectedSpecialty: "",
 		setSelectedSpecialty: () => {},
 		setSelectedProtocolId: () => {},

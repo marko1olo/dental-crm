@@ -107,8 +107,9 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.match(res.unifiedSoapText, /КЛИНИЧЕСКИЙ ДИАГНОЗ ПО МКБ-10 \(A\):/);
 		assert.match(res.unifiedSoapText, /ПРОТОКОЛ ЛЕЧЕНИЯ \(P\):/);
 		assert.match(res.unifiedSoapText, /ОКАЗАННЫЕ УСЛУГИ:/);
-		assert.match(res.unifiedSoapText, /A16\.07\.002\.001.*3\s500\s₽/);
-		assert.match(res.unifiedSoapText, /A16\.07\.031.*800\s₽/);
+		assert.match(res.unifiedSoapText, /A16\.07\.002\.001.*3\s500(,00)?\s₽/);
+		assert.match(res.unifiedSoapText, /A16\.07\.031.*800(,00)?\s₽/);
+		assert.ok(res.clinicalServices && res.clinicalServices.length > 0, "clinicalServices alias must be present");
 		assert.match(res.unifiedSoapText, /Врач: Волкова Екатерина Сергеевна/);
 	});
 

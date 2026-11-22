@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { TelephonyProvider } from "@dental/shared";
+
 export const telephonyCallEventSchema = z.enum([
 	"ringing",
 	"call_started",
@@ -23,14 +25,7 @@ export type TelephonyCallEvent = z.infer<typeof telephonyCallEventSchema>;
 
 export type NormalizedCallAction = "ringing" | "answered" | "ended" | "missed";
 
-export type TelephonyProvider =
-	| "mango"
-	| "domru"
-	| "uis"
-	| "megafon"
-	| "zadarma"
-	| "asterisk"
-	| "generic";
+export type { TelephonyProvider };
 
 export const telephonyWebhookPayloadSchema = z.object({
 	event: z.string().optional(),

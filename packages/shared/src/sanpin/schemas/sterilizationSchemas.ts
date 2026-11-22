@@ -13,7 +13,7 @@ import {
 	sterilizerPackagingTypeSchema,
 } from "./types.js";
 
-// ─── 2. Журнал контроля работы стерилизаторов (Форма № 257/у) ─────────────────
+// ─── 2. Журнал контроля работы стерилизаторов (автоклавирование) ─────────────────
 
 export const sterilizationLogRecordSchema = z.object({
 	id: z.string().uuid(),

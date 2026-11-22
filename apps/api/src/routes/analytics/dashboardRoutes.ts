@@ -1,5 +1,6 @@
 import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
@@ -187,21 +188,12 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 			const [revenueRow] = await db
 				.select({
-					total: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
 					totalKopecks: sql<number>`coalesce(round(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) * 100)::bigint, 0)`,
-					cash: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'cash' then ${payments.amountRub} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::numeric / 100, 0) else 0 end)), 0)`,
 					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'cash' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					card: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'card' then ${payments.amountRub} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::numeric, (${payments.fiscalReceipt}->>'electronicKopecks')::numeric, greatest(0, round(${payments.amountRub} * 100) - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::numeric, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::numeric, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::numeric, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::numeric, 0))) / 100, 0) else 0 end)), 0)`,
 					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'card' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, round(${payments.amountRub} * 100)::bigint - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
-					cashless: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then ${payments.amountRub} else 0 end)), 0)`,
-					cashlessKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then round(${payments.amountRub} * 100)::bigint else 0 end)), 0)::bigint`,
-					advance: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} in ('family_wallet', 'other') then ${payments.amountRub} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::numeric, (${payments.fiscalReceipt}->>'depositKopecks')::numeric) / 100, 0) else 0 end)), 0)`,
 					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} in ('family_wallet', 'other') then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
-					sbp: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'online' then ${payments.amountRub} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::numeric / 100, 0) else 0 end)), 0)`,
 					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'online' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					bankTransfer: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then ${payments.amountRub} else 0 end)), 0)`,
 					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then round(${payments.amountRub} * 100)::bigint else 0 end)), 0)::bigint`,
-					insurance: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'insurance' then ${payments.amountRub} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::numeric / 100, 0) else 0 end)), 0)`,
 					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'insurance' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
 				})
 				.from(payments)
@@ -398,39 +390,39 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const repeatCount = Number(repeatPayingPatientRow?.count ?? 0);
 			const primaryCount = Math.max(0, totalPayingPatients - repeatCount);
 			const totalRegisteredPatients = Number(patientCountRow?.count ?? 0);
-			const totalRevenueKopecks = Number(revenueRow?.totalKopecks ?? Math.round(Number(revenueRow?.total ?? 0) * 100));
-			const cashKopecks = Number(revenueRow?.cashKopecks ?? Math.round(Number(revenueRow?.cash ?? 0) * 100));
-			const cardKopecks = Number(revenueRow?.cardKopecks ?? Math.round(Number(revenueRow?.card ?? 0) * 100));
-			const cashlessKopecks = Number(revenueRow?.cashlessKopecks ?? Math.round(Number(revenueRow?.cashless ?? 0) * 100));
-			const advanceKopecks = Number(revenueRow?.advanceKopecks ?? Math.round(Number(revenueRow?.advance ?? 0) * 100));
-			const sbpKopecks = Number(revenueRow?.sbpKopecks ?? Math.round(Number(revenueRow?.sbp ?? 0) * 100));
-			const bankTransferKopecks = Number(revenueRow?.bankTransferKopecks ?? Math.round(Number(revenueRow?.bankTransfer ?? 0) * 100));
-			const insuranceKopecks = Number(revenueRow?.insuranceKopecks ?? Math.round(Number(revenueRow?.insurance ?? 0) * 100));
+			const totalRevenueKopecks = Number(revenueRow?.totalKopecks ?? 0);
+			const cashKopecks = Number(revenueRow?.cashKopecks ?? 0);
+			const cardKopecks = Number(revenueRow?.cardKopecks ?? 0);
+			const advanceKopecks = Number(revenueRow?.advanceKopecks ?? 0);
+			const sbpKopecks = Number(revenueRow?.sbpKopecks ?? 0);
+			const bankTransferKopecks = Number(revenueRow?.bankTransferKopecks ?? 0);
+			const cashlessKopecks = bankTransferKopecks;
+			const insuranceKopecks = Number(revenueRow?.insuranceKopecks ?? 0);
 
 			const avgCheckKopecks =
 				totalPayingPatients > 0
 					? Math.round(totalRevenueKopecks / totalPayingPatients)
 					: 0;
-			const avgChk = Math.round(avgCheckKopecks / 100);
+			const avgChk = Math.round(kopecksToRubles(avgCheckKopecks));
 
 			const data = {
 				kpis: {
 					totalPatients: totalRegisteredPatients,
-					totalRevenue: Math.round(totalRevenueKopecks / 100),
+					totalRevenue: Math.round(kopecksToRubles(totalRevenueKopecks)),
 					totalRevenueKopecks,
-					cashRevenue: Math.round(cashKopecks / 100),
+					cashRevenue: Math.round(kopecksToRubles(cashKopecks)),
 					cashKopecks,
-					cardRevenue: Math.round(cardKopecks / 100),
+					cardRevenue: Math.round(kopecksToRubles(cardKopecks)),
 					cardKopecks,
-					cashlessRevenue: Math.round(cashlessKopecks / 100),
+					cashlessRevenue: Math.round(kopecksToRubles(cashlessKopecks)),
 					cashlessKopecks,
-					advanceRevenue: Math.round(advanceKopecks / 100),
+					advanceRevenue: Math.round(kopecksToRubles(advanceKopecks)),
 					advanceKopecks,
-					sbpRevenue: Math.round(sbpKopecks / 100),
+					sbpRevenue: Math.round(kopecksToRubles(sbpKopecks)),
 					sbpKopecks,
-					bankTransferRevenue: Math.round(bankTransferKopecks / 100),
+					bankTransferRevenue: Math.round(kopecksToRubles(bankTransferKopecks)),
 					bankTransferKopecks,
-					insuranceRevenue: Math.round(insuranceKopecks / 100),
+					insuranceRevenue: Math.round(kopecksToRubles(insuranceKopecks)),
 					insuranceKopecks,
 					bonusRevenue: 0,
 					totalAppointments: Number(apptCountRow?.count ?? 0),
@@ -457,7 +449,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					totalPlansCount === 0 &&
 					noShowHeatmap.totalCancelled === 0 &&
 					noShowHeatmap.totalNoShow === 0 &&
-					Number(revenueRow?.total ?? 0) === 0 &&
+					Number(revenueRow?.totalKopecks ?? 0) === 0 &&
 					Number(apptCountRow?.count ?? 0) === 0,
 			};
 

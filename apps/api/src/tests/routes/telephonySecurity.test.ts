@@ -6,8 +6,10 @@ import {
 	isForbiddenPrivateIp,
 	normalizePhoneNumber,
 	validateSsrfSafeRecordingUrl,
-} from "../../routes/telephony.js";
+} from "../../routes/telephony/index.js";
 import { checkReplayTimestamp } from "../../routes/telephony/telephonyEngine.js";
+import { getAudioCachePath } from "../../routes/telephony/telephonyRecordingStreamHandler.js";
+import { TelephonyGatewayService } from "../../services/telephony/telephonyGatewayService.js";
 
 describe("IP Telephony Phone Normalization & E.164 Standards", () => {
 	test("normalizes standard Russian 11-digit mobile numbers with +7 and 8", () => {
@@ -227,5 +229,43 @@ describe("Telephony Webhook Replay Protection", () => {
 		});
 		assert.equal(result.valid, false);
 		assert.match(result.reason || "", /drift window exceeded/i);
+	});
+});
+
+describe("Telephony Recording Cache Path Traversal Mitigation", () => {
+	test("allows valid UUID orgId and eventId", () => {
+		const orgId = "00000000-0000-0000-0000-000000000001";
+		const eventId = "11111111-1111-1111-1111-111111111111";
+		const p = getAudioCachePath(orgId, eventId);
+		assert.match(p, /00000000-0000-0000-0000-000000000001/);
+		assert.match(p, /11111111-1111-1111-1111-111111111111\.audio$/);
+	});
+
+	test("throws error when orgId contains path traversal attack vector", () => {
+		assert.throws(
+			() => getAudioCachePath("../../etc", "11111111-1111-1111-1111-111111111111"),
+			/Invalid audio cache parameters/,
+		);
+	});
+
+	test("throws error when eventId contains path traversal attack vector", () => {
+		assert.throws(
+			() => getAudioCachePath("00000000-0000-0000-0000-000000000001", "../../../passwd"),
+			/Invalid audio cache parameters/,
+		);
+	});
+});
+
+describe("Telephony Gateway Failover Persistence", () => {
+	test("sets in-memory and persists failover flag across calls", async () => {
+		const orgId = "00000000-0000-0000-0000-000000000001";
+		TelephonyGatewayService.clearForcedFailoverCache();
+		await TelephonyGatewayService.setForcedFailover(orgId, true);
+		const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
+		assert.equal(status.activeMode, "cloud_webhooks");
+		assert.equal(status.localPbxOnline, false);
+
+		// Reset back
+		await TelephonyGatewayService.setForcedFailover(orgId, false);
 	});
 });

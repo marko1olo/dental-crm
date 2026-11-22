@@ -1,13 +1,14 @@
 import React from "react";
 import { TrendingUp, FlaskConical, Package, Calculator, Award, Wallet } from "lucide-react";
 import type { DoctorPayrollResult } from "@dental/shared/payroll";
+import { formatRubles, kopecksToRubles } from "@dental/shared";
 
 export interface PayrollStatCardsProps {
 	readonly result: DoctorPayrollResult;
 }
 
 export function PayrollStatCards({ result }: PayrollStatCardsProps): React.JSX.Element {
-	const fmt = (kop: number) => (kop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ₽";
+	const fmt = (kop: number) => formatRubles(kopecksToRubles(kop));
 
 	const cards = [
 		{

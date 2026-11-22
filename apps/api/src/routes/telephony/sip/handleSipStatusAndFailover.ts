@@ -28,7 +28,7 @@ export async function handleSipFailover(
 	const body = (request.body || {}) as { forceCloudFallback?: boolean };
 	const force = Boolean(body.forceCloudFallback);
 
-	TelephonyGatewayService.setForcedFailover(orgId, force);
+	await TelephonyGatewayService.setForcedFailover(orgId, force);
 	const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
 
 	return reply.status(200).send({

@@ -10,6 +10,7 @@ import {
 	type Kopecks,
 	formatKopecksRu,
 	multiplyKopecks,
+	multiplyKopecksFractional,
 	parseKopecks,
 	sumKopecks,
 } from "../utils/money.js";
@@ -375,7 +376,7 @@ export function calculateProcedureAutoDeduction(
 			});
 
 			// Силер эпоксидный (AH Plus) — пропорционально каналам
-			const sealerCost = Math.round(DEFAULT_MATERIAL_PRICES.endo_sealer_ah_plus * (canalsCount / 1));
+			const sealerCost = multiplyKopecks(DEFAULT_MATERIAL_PRICES.endo_sealer_ah_plus, canalsCount);
 			items.push({
 				id: "endo-sealer",
 				name: "Эпоксидный силер для постоянной 3D-обтурации AH Plus (Dentsply)",
@@ -424,7 +425,7 @@ export function calculateProcedureAutoDeduction(
 					unit: "мл",
 					quantity: Number((0.5 * canalsCount).toFixed(1)),
 					unitCostKopecks: DEFAULT_MATERIAL_PRICES.endo_edta_gel_ml,
-					totalCostKopecks: Math.round(DEFAULT_MATERIAL_PRICES.endo_edta_gel_ml * (0.5 * canalsCount)),
+					totalCostKopecks: multiplyKopecksFractional(DEFAULT_MATERIAL_PRICES.endo_edta_gel_ml, 0.5 * canalsCount),
 					isMandatory: true,
 					descriptionRu: `${(0.5 * canalsCount).toFixed(1)} мл эндолубриканта`,
 				},

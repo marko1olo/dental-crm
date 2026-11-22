@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ManagerialPnlReport } from "@dental/shared";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { fetchManagerialPnl } from "../../../lib/managerialPnlApi";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 
 export type ManagerialPnlPeriodPreset =
@@ -59,9 +59,6 @@ export function useManagerialPnl(
 ): UseManagerialPnlResult {
 	const { initialPreset = "current_month", enabled = true } = options;
 
-	const appLogic = useAppLogicContext();
-	const auth = appLogic?.auth;
-
 	const [report, setReport] = useState<ManagerialPnlReport | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
@@ -71,11 +68,10 @@ export function useManagerialPnl(
 	const dates = getDatesForPnlPreset(periodPreset);
 
 	const reload = useCallback(async () => {
-		if (!auth?.denteClinicalReadHeaders) return;
 		try {
 			setLoading(true);
 			setError(null);
-			const headers = auth.denteClinicalReadHeaders();
+			const headers = denteClinicalReadHeaders();
 			const activeDates = getDatesForPnlPreset(periodPreset);
 			const res = await fetchManagerialPnl(headers, activeDates);
 			setReport(res.data || null);
@@ -86,7 +82,7 @@ export function useManagerialPnl(
 		} finally {
 			setLoading(false);
 		}
-	}, [auth, periodPreset]);
+	}, [periodPreset]);
 
 	useEffect(() => {
 		if (enabled) {

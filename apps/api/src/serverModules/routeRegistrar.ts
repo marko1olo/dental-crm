@@ -94,13 +94,12 @@ import { registerSmartImportRoutes } from "../routes/smartImports.js";
 import { registerSpeechRoutes } from "../routes/speech.js";
 import { registerSpeechLiveRoutes } from "../routes/speechLive.js";
 import { registerSanpinRoutes } from "../routes/sanpin.js";
-import { registerSterilizationRoutes } from "../routes/sterilization.js";
 import { registerSyncRoutes } from "../routes/sync/index.js";
 import { registerSystemRoutes } from "../routes/system.js";
 import { registerTelegramRoutes } from "../routes/telegram.js";
 import { registerTelegramReferralLoyaltyRoutes } from "../routes/telegramReferralLoyalty.js";
 import { registerTasksRoutes } from "../routes/tasks.js";
-import { telephonyRoutes } from "../routes/telephony.js";
+import { telephonyRoutes } from "../routes/telephony/index.js";
 import registerTemplateRoutes from "../routes/templates.js";
 import { treatmentConsumablesRoutes } from "../routes/inventory/consumables/index.js";
 import { registerVisitRoutes } from "../routes/visits.js";
@@ -200,7 +199,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
      /api/whatsapp/...), поэтому префикс не нужен и адреса не меняются. */
 	await app.register(registerMaxRoutes);
 	await registerSanpinRoutes(app);
-	await registerSterilizationRoutes(app);
 	await registerVkRoutes(app);
 	await registerWaitlistRoutes(app);
 	// registerWhatsappRoutes инкапсулирует канонический вебхук-контур (/api/whatsapp/webhook и /api/v1/webhooks/whatsapp)

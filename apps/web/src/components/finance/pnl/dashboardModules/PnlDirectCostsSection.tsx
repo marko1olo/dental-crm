@@ -1,6 +1,6 @@
 import type React from "react";
 import { TrendingDown } from "lucide-react";
-import type { ManagerialPnlReport } from "@dental/shared";
+import { type ManagerialPnlReport, formatRubles } from "@dental/shared";
 
 export interface PnlDirectCostsSectionProps {
 	readonly report: ManagerialPnlReport;
@@ -47,14 +47,14 @@ export const PnlDirectCostsSection: React.FC<PnlDirectCostsSectionProps> = ({ re
 										<span className="pnl-tag-taxes">Налоги и сборы</span>
 									)}
 								</td>
-								<td className="font-semibold">{exp.amountRub.toLocaleString("ru-RU")} ₽</td>
-								<td>{exp.shareOfExpensesPct}%</td>
+								<td className="font-mono tabular-nums text-right font-semibold">{formatRubles(exp.amountRub)}</td>
+								<td className="font-mono tabular-nums text-right">{exp.shareOfExpensesPct}%</td>
 							</tr>
 						))}
 						<tr className="total-row">
-							<td colSpan={3}>ИТОГО РАСХОДОВ КЛИНИКИ</td>
-							<td>{report.totalExpensesRub.toLocaleString("ru-RU")} ₽</td>
-							<td>100%</td>
+							<td colSpan={3}>Итого расходов клиники</td>
+							<td className="font-mono tabular-nums text-right font-bold">{formatRubles(report.totalExpensesRub)}</td>
+							<td className="font-mono tabular-nums text-right">100%</td>
 						</tr>
 					</tbody>
 				</table>

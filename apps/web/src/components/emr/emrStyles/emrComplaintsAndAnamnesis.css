@@ -66,7 +66,6 @@
 .emr-studio-field-label {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--muted, #64748b);
   margin-bottom: 4px;

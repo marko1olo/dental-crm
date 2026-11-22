@@ -68,8 +68,8 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 									doc={doc}
 									documentLabels={appLogic?.documentLabels}
 									documentStatusLabels={appLogic?.documentStatusLabels}
-									formatShortDate={appLogic?.formatShortDate}
-									money={appLogic?.money}
+									formatShortDate={appLogic?.formatShortDate ? (d) => appLogic.formatShortDate?.(String(d || "")) ?? "" : undefined}
+									money={appLogic?.money ? (val) => appLogic.money?.(val) ?? "" : undefined}
 									onAuditDoc={(id) => void appLogic?.loadDocumentAuditFacts?.(id)}
 									onOpenDocHtml={(id) => void appLogic?.openIssuedDocumentHtml?.(id)}
 									onDownloadPdf={(id) => void appLogic?.downloadIssuedDocumentPdf?.(id)}
@@ -96,12 +96,12 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 				{/* Матрица согласий пациента на каналы связи (152-ФЗ / 38-ФЗ) */}
 				<PatientCommunicationConsentsPanel patientId={patient.id} />
 
-				{/* Панель прикрепления документов, сканов и полисов в 1 клик (Мандат 8aq) */}
+				{/* Панель прикрепления документов, сканов и полисов: Мгновенное прикрепление документов (Мандат 8aq) */}
 				<PatientAttachmentsPanel patientId={patient.id} patientName={patient.fullName} />
 
 				<PatientDocumentsModalsWrapper
 					patient={patient}
-					appLogic={appLogic ?? {}}
+					appLogic={appLogic ?? undefined}
 					docStore={docStore}
 					isFastPrintOpen={logic.isFastPrintOpen}
 					setIsFastPrintOpen={logic.setIsFastPrintOpen}

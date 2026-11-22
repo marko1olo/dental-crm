@@ -32,7 +32,7 @@ import {
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
 import { registerImagingRoutes } from "../../routes/imaging.js";
-import { telephonyRoutes } from "../../routes/telephony.js";
+import { telephonyRoutes } from "../../routes/telephony/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { LocalPacsStorageService } from "../../services/imaging/localPacsStorageService.js";
 import {

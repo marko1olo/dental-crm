@@ -494,7 +494,7 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 		}
 	}
 
-	const batchXml = `<?xml version="1.0" encoding="UTF-8"?>\n<Файл ИдФайл="${firstRes.fileId}" ВерсПрог="DentalMIS_FNS_Gateway_v2.4.0" ВерсФорм="5.01">\n${docBlocks.join("\n")}\n</Файл>`;
+	const batchXml = `<?xml version="1.0" encoding="UTF-8"?>\n<Файл ИдФайл="${firstRes.fileId}" ВерсПрог="Dente_FNS_Gateway_v1.0.0" ВерсФорм="5.01">\n${docBlocks.join("\n")}\n</Файл>`;
 
 	return {
 		fileName: firstRes.fileName,
