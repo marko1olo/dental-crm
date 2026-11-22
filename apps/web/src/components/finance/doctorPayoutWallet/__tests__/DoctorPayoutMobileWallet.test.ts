@@ -121,6 +121,15 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			assert.equal(s1.patientCount, 1);
 			assert.equal(s1.shiftRevenueRub, 32000);
 			assert.equal(s1.shiftEarnedRub, Math.round(32000 * 0.3)); // 9600
+
+			for (const shift of shifts) {
+				const sumVisitsEarnedRub = shift.visits.reduce((acc, v) => acc + (v.earnedRub ?? 0), 0);
+				assert.equal(
+					Math.round(sumVisitsEarnedRub * 100),
+					Math.round(shift.shiftEarnedRub * 100),
+					`Shift ${shift.date} sum of visits (${sumVisitsEarnedRub}) must equal shiftEarnedRub (${shift.shiftEarnedRub})`,
+				);
+			}
 		});
 
 		it("formats month and shift date correctly", () => {

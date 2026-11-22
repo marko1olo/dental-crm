@@ -23,12 +23,16 @@ export function isEmergencyBookingOverride(input: {
 	allowEmergencyOverride?: boolean | null | undefined;
 	allowOverbooking?: boolean | null | undefined;
 	urgency?: "routine" | "urgent" | "emergency" | null | undefined;
+	isCito?: boolean | null | undefined;
+	cito?: boolean | null | undefined;
 }): boolean {
 	return Boolean(
 		input?.allowEmergencyOverride ||
 			input?.allowOverbooking ||
 			input?.urgency === "urgent" ||
-			input?.urgency === "emergency",
+			input?.urgency === "emergency" ||
+			input?.isCito ||
+			input?.cito,
 	);
 }
 

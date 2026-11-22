@@ -2,9 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import {
+	detectCrossBranchScheduleCollisions,
+	type DoctorBranchShift,
+} from "@dental/shared";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
+	clinics,
 	doctorShiftRosters,
 	urgentScheduleRequests,
 } from "../../db/schema.js";
@@ -22,6 +27,8 @@ const scheduleShiftsSchema = z.object({
 		z
 			.object({
 				id: z.string().optional(),
+				clinicId: z.string().nullable().optional(),
+				branchId: z.string().nullable().optional(),
 				doctorId: z.string(),
 				doctorName: z.string(),
 				cabinetId: z.string().nullable().optional(),
@@ -98,12 +105,26 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			(await requireOrganizationContext(req, reply)) ||
 			requireClinicOrganizationId(req, reply);
 		if (!orgId) return;
+
+		const queryClinicId =
+			(req.query as { clinicId?: string; branchId?: string })?.clinicId ||
+			(req.query as { clinicId?: string; branchId?: string })?.branchId;
+
+		const condition = queryClinicId
+			? and(
+					eq(doctorShiftRosters.organizationId, orgId),
+					eq(doctorShiftRosters.clinicId, queryClinicId),
+				)
+			: eq(doctorShiftRosters.organizationId, orgId);
+
 		const rows = await db
 			.select()
 			.from(doctorShiftRosters)
-			.where(eq(doctorShiftRosters.organizationId, orgId));
+			.where(condition);
+
 		const shifts = rows.map((s) => ({
 			id: s.id,
+			clinicId: s.clinicId ?? null,
 			doctorId: s.doctorId,
 			doctorName: s.doctorName,
 			cabinetId: s.cabinetId ?? "",
@@ -136,6 +157,74 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			new Set([...shifts.map((s) => s.dateIso || s.shiftDateIso || ""), explicitDate].filter((d): d is string => Boolean(d))),
 		);
 
+		// Загрузка названий филиалов для понятных сообщений об ошибках коллизий
+		const clinicRows = await db
+			.select({ id: clinics.id, name: clinics.name })
+			.from(clinics)
+			.where(eq(clinics.organizationId, orgId));
+		const branchMap = new Map<string, string>(clinicRows.map((c) => [c.id, c.name]));
+
+		// Проверка кросс-филиальных коллизий смен врача (Мандат Домена 30)
+		const shiftsToCheck: DoctorBranchShift[] = shifts.map((s) => {
+			const resolvedDate = s.dateIso || s.shiftDateIso || dateIso || new Date().toISOString().split("T")[0]!;
+			const bId = s.clinicId || s.branchId || "default";
+			return {
+				id: s.id || randomUUID(),
+				doctorId: s.doctorId,
+				doctorName: s.doctorName,
+				organizationId: orgId,
+				branchId: bId,
+				branchName: branchMap.get(bId) || `Отделение ${bId}`,
+				cabinetId: s.cabinetId || undefined,
+				shiftDate: String(resolvedDate),
+				startTime: s.startTime || "08:00",
+				endTime: s.endTime || "20:00",
+			};
+		});
+
+		// Если не глобальная перезапись, учитываем существующие смены врача в других филиалах
+		const doctorIds = Array.from(new Set(shifts.map((s) => s.doctorId)));
+		if (doctorIds.length > 0 && targetDates.length > 0 && replaceAll !== true) {
+			const existingOtherShifts = await db
+				.select()
+				.from(doctorShiftRosters)
+				.where(
+					and(
+						eq(doctorShiftRosters.organizationId, orgId),
+						inArray(doctorShiftRosters.doctorId, doctorIds),
+						inArray(doctorShiftRosters.dateIso, targetDates),
+					),
+				);
+			for (const ex of existingOtherShifts) {
+				if (!shifts.some((s) => s.id === ex.id)) {
+					const bId = ex.clinicId || "default";
+					shiftsToCheck.push({
+						id: ex.id,
+						doctorId: ex.doctorId,
+						doctorName: ex.doctorName,
+						organizationId: orgId,
+						branchId: bId,
+						branchName: branchMap.get(bId) || `Отделение ${bId}`,
+						cabinetId: ex.cabinetId || undefined,
+						shiftDate: ex.dateIso,
+						startTime: ex.startTime,
+						endTime: ex.endTime,
+					});
+				}
+			}
+		}
+
+		const collisionReport = detectCrossBranchScheduleCollisions(shiftsToCheck, 30);
+		if (collisionReport.hasCollisions) {
+			return reply.code(409).send({
+				error: "ScheduleCollisionError",
+				message:
+					collisionReport.collisions[0]?.messageRu ||
+					"Обнаружена коллизия смен врача между филиалами клиники.",
+				collisions: collisionReport.collisions,
+			});
+		}
+
 		await db.transaction(async (tx) => {
 			if (replaceAll === true) {
 				// Явный флаг глобальной перезаписи смен клиники
@@ -161,6 +250,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 						return {
 							id: s.id || randomUUID(),
 							organizationId: orgId,
+							clinicId: s.clinicId || s.branchId || null,
 							doctorId: s.doctorId,
 							doctorName: s.doctorName,
 							cabinetId: s.cabinetId || null,

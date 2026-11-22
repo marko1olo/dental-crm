@@ -17,7 +17,7 @@ import {
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
 } from "../sanpin/kraftBarcodeParser.js";
-import { parseKopecks } from "../utils/money.js";
+import { parseKopecks } from "../money.js";
 
 describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 	// ─────────────────────────────────────────────────────────────────────────

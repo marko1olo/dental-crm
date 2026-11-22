@@ -61,7 +61,7 @@ export function GuestLabPortalHeader({ order }: GuestLabPortalHeaderProps): Reac
 						}}
 					>
 						<User size={20} />
-						{order.patientFullName || "Пациент не указан"}
+						{order.patientInitials || order.patientFullName || "Пациент не указан"}
 					</h2>
 				</div>
 				<div className={`guest-portal-status-badge ${order.status}`}>

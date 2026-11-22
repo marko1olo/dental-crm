@@ -18,7 +18,8 @@ export interface PerioDynamicsSummary {
 	readonly overallTrend: PerioTrendStatus;
 	readonly trendLabelRu: string;
 	readonly summaryRu: string;
-	readonly form043DynamicsTextRu: string;
+	readonly clinicalProtocolDynamicsTextRu: string;
+	readonly form043DynamicsTextRu?: string;
 }
 
 /**
@@ -44,6 +45,7 @@ export function calculatePerioDynamics(
 			overallTrend: "baseline",
 			trendLabelRu: "Первичный осмотр (исходная база)",
 			summaryRu: "Исходное состояние пародонта зафиксировано как базовая линия.",
+			clinicalProtocolDynamicsTextRu: "• Динамика: Первичный пародонтологический осмотр (базовая линия).",
 			form043DynamicsTextRu: "• Динамика: Первичный пародонтологический осмотр (базовая линия).",
 		};
 	}
@@ -90,7 +92,7 @@ export function calculatePerioDynamics(
 		: "Показатели стабильны, значимых отклонений от предыдущего визита не выявлено.";
 
 	const dateStr = options?.baselineDate ? ` от ${options.baselineDate}` : "";
-	const form043DynamicsTextRu = [
+	const clinicalProtocolDynamicsTextRu = [
 		`• Динамика пародонта в сравнении с предыдущим осмотром${dateStr}:`,
 		`  Статус: ${trendLabelRu}.`,
 		`  ${summaryRu}`,
@@ -107,6 +109,7 @@ export function calculatePerioDynamics(
 		overallTrend,
 		trendLabelRu,
 		summaryRu,
-		form043DynamicsTextRu,
+		clinicalProtocolDynamicsTextRu,
+		form043DynamicsTextRu: clinicalProtocolDynamicsTextRu,
 	};
 }

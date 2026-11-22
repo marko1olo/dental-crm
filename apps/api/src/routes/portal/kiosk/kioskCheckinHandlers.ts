@@ -123,51 +123,8 @@ export async function handleKioskCheckinRequest(
 		};
 	}
 
-	// 3. Поиск приёма на сегодня или экстренное/первичное назначение
-	let appointment: KioskAppointmentRecord | null = null;
-	appointment = await lookupTodayAppointment(organizationId, targetPatient.id);
-
-	if (!appointment && isEmergency) {
-		appointment = await createEmergencyAppointment(
-			organizationId,
-			targetPatient.id,
-			emergencyChiefComplaint,
-		);
-	}
-
-	if (!appointment && isFirstTime) {
-		appointment = await createFirstTimeAppointment(
-			organizationId,
-			targetPatient.id,
-			patientFullName || targetPatient.fullName || "Первичный визит",
-		);
-	}
-
-	if (!appointment) {
-		reply.status(404);
-		return {
-			success: false,
-			arrived: false,
-			error: "AppointmentNotFound",
-			message: "На сегодня активная запись на приём не найдена. Пожалуйста, обратитесь к администратору на стойке регистрации.",
-		};
-	}
-
-	// 4. Определение кабинета и врача
-	const { doctorName, cabinetName } = await getDoctorAndCabinetInfo(
-		organizationId,
-		appointment.doctorUserId,
-		appointment.chairId,
-	);
-
-	const apptTimeStr = isEmergency
-		? `Экстренный приём прямо сейчас (${cabinetName})`
-		: isFirstTime
-			? `Первичный приём прямо сейчас (${cabinetName})`
-			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
-
-	// SEV-1 BOLA & PII Protection: Защита от перебора 4 цифр телефона чужих пациентов
-	// При частичном совпадении (только 4 цифры) данные приёма (время, врач, кабинет) НЕ возвращаются.
+	// 3. SEV-1 BOLA & PII Protection: Верификация личности пациента
+	// При частичном совпадении (только 4 цифры) данные существующего приёма (время, врач, кабинет) НЕ возвращаются.
 	// Требуется подтверждение: совпадение полного номера телефона с картой пациента, либо валидный SMS-код.
 	const targetPhoneDigits = (targetPatient.phone || "").replace(/\D/g, "");
 	const inputPhoneDigits = rawPhone.replace(/\D/g, "");
@@ -178,7 +135,7 @@ export async function handleKioskCheckinRequest(
 	);
 
 	let isCheckinCodeVerified = false;
-	if (rawCheckinCode && rawCheckinCode.length >= 4) {
+	if (rawCheckinCode && rawCheckinCode.length >= 4 && !targetPatient.isVirtualGuest) {
 		const now = new Date();
 		const [activeOtp] = await withTenantCtx(organizationId, async () => {
 			return db
@@ -212,9 +169,17 @@ export async function handleKioskCheckinRequest(
 		}
 	}
 
-	const isVerifiedIdentity = isEmergency || isFirstTime || isPhoneVerified || isCheckinCodeVerified;
+	const isPhoneOrCodeVerified = isPhoneVerified || isCheckinCodeVerified;
 
-	if (!isVerifiedIdentity) {
+	// 4. Поиск приёма на сегодня в базе клиники
+	let appointment: KioskAppointmentRecord | null = null;
+	if (!targetPatient.isVirtualGuest) {
+		appointment = await lookupTodayAppointment(organizationId, targetPatient.id);
+	}
+
+	// 4a. Если у существующего пациента найден приём на сегодня, но подтверждение личности не пройдено:
+	// флаги isEmergency и isFirstTime КАТЕГОРИЧЕСКИ НЕ ИМЕЮТ ПРАВА обходить верификацию существующего приёма чужого пациента!
+	if (appointment && !isPhoneOrCodeVerified) {
 		return {
 			success: true,
 			arrived: false,
@@ -224,23 +189,67 @@ export async function handleKioskCheckinRequest(
 		};
 	}
 
+	// 4b. Если записи на сегодня нет — экстренное или первичное обращение
+	if (!appointment && isEmergency) {
+		appointment = await createEmergencyAppointment(
+			organizationId,
+			targetPatient.id,
+			emergencyChiefComplaint,
+		);
+	}
+
+	if (!appointment && isFirstTime) {
+		appointment = await createFirstTimeAppointment(
+			organizationId,
+			targetPatient.id,
+			patientFullName || targetPatient.fullName || "Первичный визит",
+		);
+	}
+
+	if (!appointment) {
+		reply.status(404);
+		return {
+			success: false,
+			arrived: false,
+			error: "AppointmentNotFound",
+			message: "На сегодня активная запись на приём не найдена. Пожалуйста, обратитесь к администратору на стойке регистрации.",
+		};
+	}
+
+	// 5. Определение кабинета и врача
+	const { doctorName, cabinetName } = await getDoctorAndCabinetInfo(
+		organizationId,
+		appointment.doctorUserId,
+		appointment.chairId,
+	);
+
+	const apptTimeStr = isEmergency
+		? `Экстренный приём прямо сейчас (${cabinetName})`
+		: isFirstTime
+			? `Первичный приём прямо сейчас (${cabinetName})`
+			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
+
 	// 5. Генерация талона очереди (Э-xx для острой боли, П-xx для первичных, А-xx для плановых)
 	const ticketPrefix = isEmergency ? "Э" : isFirstTime ? "П" : "А";
 	const ticketSuffix = appointment.id.slice(-2).toUpperCase();
 	const queueTicket = `Талон № ${ticketPrefix}-${ticketSuffix}`;
 
-	// 6. Обновление статуса визита на 'arrived' и оповещение WebSocket
-	await withTenantCtx(organizationId, async (tx) => {
-		await tx
-			.update(appointments)
-			.set({ status: "arrived" })
-			.where(
-				and(
-					eq(appointments.id, appointment.id),
-					eq(appointments.organizationId, organizationId),
-				),
-			);
-	});
+	const isVirtualAppointment = appointment.id.startsWith("emg-") || appointment.id.startsWith("first-");
+
+	// 6. Обновление статуса визита на 'arrived' в БД только для реальных приёмов из расписания
+	if (!isVirtualAppointment) {
+		await withTenantCtx(organizationId, async (tx) => {
+			await tx
+				.update(appointments)
+				.set({ status: "arrived" })
+				.where(
+					and(
+						eq(appointments.id, appointment.id),
+						eq(appointments.organizationId, organizationId),
+					),
+				);
+		});
+	}
 
 	try {
 		wsBroker.broadcastToOrganization(organizationId, {
@@ -268,7 +277,7 @@ export async function handleKioskCheckinRequest(
 	}
 
 	// 7. Сохранение согласий с ПЭП аудитом (63-ФЗ)
-	if (signedConsents.length > 0) {
+	if (!targetPatient.isVirtualGuest && signedConsents.length > 0) {
 		await persistKioskConsents(
 			organizationId,
 			targetPatient,
@@ -279,7 +288,7 @@ export async function handleKioskCheckinRequest(
 	}
 
 	// 8. Сохранение аллергий из соматической анкеты
-	if (somaticProfile) {
+	if (!targetPatient.isVirtualGuest && somaticProfile) {
 		await persistKioskAllergies(organizationId, targetPatient.id, somaticProfile);
 	}
 

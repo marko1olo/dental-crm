@@ -13,7 +13,14 @@ import {
 	resolveLeadBookingStaff,
 } from "../leadsKanbanTypes";
 
-export function useLeadStaffChairs(dashboard: any) {
+interface DashboardSettingsSource {
+	clinicSettings?: {
+		staff?: BookableDoctor[] | undefined;
+		chairs?: BookableChair[] | undefined;
+	} | null | undefined;
+}
+
+export function useLeadStaffChairs(dashboard?: DashboardSettingsSource | null) {
 	const [staff, setStaff] = useState<BookableDoctor[]>([]);
 	const [chairs, setChairs] = useState<BookableChair[]>([]);
 	const [selectedDoctorId, setSelectedDoctorId] = useState("");

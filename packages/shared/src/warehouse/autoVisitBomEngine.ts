@@ -16,7 +16,7 @@
  */
 
 import { z } from "zod";
-import { formatKopecksRu } from "../utils/money.js";
+import { formatKopecksRu } from "../money.js";
 import { generateClassBWasteSealAndBarcode } from "../utils/idGenerators.js";
 import {
 	type ConsumableDeductedItem,

@@ -284,7 +284,7 @@ export function appointmentScheduleDateMissingSteps(
 }
 
 export function isTechnicalBreakAppointment(
-	item: { reason?: string | null; comment?: string | null } | null | undefined,
+	item: { reason?: string | null | undefined; comment?: string | null | undefined } | null | undefined,
 ): boolean {
 	if (!item) return false;
 	const r = String(item.reason || "").toLowerCase();

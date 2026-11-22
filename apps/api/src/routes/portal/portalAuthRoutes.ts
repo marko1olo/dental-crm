@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -25,6 +25,7 @@ import {
 	otpIpRequestCounts,
 	otpPhoneRequestCounts,
 	pendingRegistrationOtpStore,
+	persistRevokedToken,
 	portalRevokedBeforeByPatient,
 	revokedPortalTokens,
 } from "./portalAuthStore.js";
@@ -202,16 +203,8 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					}
 				}
 				if (!effectiveOrgId) {
-					const [firstOrg] = await db
-						.select({ id: organizations.id })
-						.from(organizations)
-						.limit(1);
-					if (firstOrg) {
-						effectiveOrgId = firstOrg.id;
-					}
-				}
-
-				if (!effectiveOrgId) {
+					// Мультитенантность: запрещено привязывать нового пациента к случайной клинике через LIMIT 1!
+					// Для регистрации нового пациента в ЛК требуется явный organizationId клиники.
 					reply.status(202);
 					return neutralAccepted;
 				}
@@ -233,12 +226,25 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 				const regCode = generateNumericCode(policy.codeLength);
 				const regCodeHash = await hashCredential(regCode);
+				const otpExpiresAt = new Date(now.getTime() + policy.ttlSeconds * 1000);
+
+				await db.insert(portalOtpCodes).values({
+					organizationId: effectiveOrgId,
+					patientId: null,
+					phone: phoneSuffix,
+					codeHash: regCodeHash,
+					channel: developerLogFallback ? "developer_log" : "sms",
+					deliveryStatus: "sent",
+					expiresAt: otpExpiresAt,
+					attemptCount: 0,
+				});
+
 				pendingRegistrationOtpStore.set(phoneSuffix, {
 					phoneSuffix,
 					rawPhone,
 					codeHash: regCodeHash,
 					organizationId: effectiveOrgId,
-					expiresAt: new Date(now.getTime() + policy.ttlSeconds * 1000),
+					expiresAt: otpExpiresAt,
 					attemptCount: 0,
 				});
 
@@ -495,8 +501,32 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			if (!patient) {
 				const phoneDigits = rawPhone.replace(/\D/g, "");
 				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
-				const pendingReg = pendingRegistrationOtpStore.get(phoneSuffix);
 				const now = new Date();
+
+				// Persistent PostgreSQL 18 check first, fallback to memory
+				const [dbPendingReg] = await db
+					.select()
+					.from(portalOtpCodes)
+					.where(
+						and(
+							isNull(portalOtpCodes.patientId),
+							eq(portalOtpCodes.phone, phoneSuffix),
+							isNull(portalOtpCodes.consumedAt),
+							gt(portalOtpCodes.expiresAt, now),
+						),
+					)
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1);
+
+				const pendingReg = dbPendingReg
+					? {
+							organizationId: dbPendingReg.organizationId,
+							codeHash: dbPendingReg.codeHash,
+							attemptCount: dbPendingReg.attemptCount,
+							expiresAt: dbPendingReg.expiresAt,
+							id: dbPendingReg.id,
+						}
+					: pendingRegistrationOtpStore.get(phoneSuffix);
 
 				if (!pendingReg || pendingReg.expiresAt.getTime() < now.getTime()) {
 					pendingRegistrationOtpStore.delete(phoneSuffix);
@@ -504,11 +534,25 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					return invalidOtp;
 				}
 
-				pendingReg.attemptCount += 1;
-				if (pendingReg.attemptCount > policy.maxAttempts) {
+				if (pendingReg.attemptCount >= policy.maxAttempts) {
+					if ("id" in pendingReg) {
+						await db
+							.update(portalOtpCodes)
+							.set({ consumedAt: now })
+							.where(eq(portalOtpCodes.id, pendingReg.id));
+					}
 					pendingRegistrationOtpStore.delete(phoneSuffix);
 					reply.status(401);
 					return invalidOtp;
+				}
+
+				if ("id" in pendingReg) {
+					await db
+						.update(portalOtpCodes)
+						.set({ attemptCount: pendingReg.attemptCount + 1 })
+						.where(eq(portalOtpCodes.id, pendingReg.id));
+				} else {
+					pendingReg.attemptCount += 1;
 				}
 
 				const isCodeValid = await verifyCredential(code, pendingReg.codeHash);
@@ -517,6 +561,12 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					return invalidOtp;
 				}
 
+				if ("id" in pendingReg) {
+					await db
+						.update(portalOtpCodes)
+						.set({ consumedAt: now })
+						.where(eq(portalOtpCodes.id, pendingReg.id));
+				}
 				pendingRegistrationOtpStore.delete(phoneSuffix);
 
 				const newPatient = await withTenantCtx(pendingReg.organizationId, async () => {
@@ -685,8 +735,13 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 		const nowSeconds = Math.floor(Date.now() / 1000);
 		const nowIso = new Date().toISOString();
 
-		// Revoke in-memory active token and record revocation threshold for patient
-		revokedPortalTokens.add(token);
+		// Revoke active token in PostgreSQL and memory
+		await persistRevokedToken(
+			token,
+			patientId,
+			organizationId,
+			new Date(Date.now() + 30 * 24 * 3600 * 1000),
+		);
 		portalRevokedBeforeByPatient.set(patientId, nowSeconds);
 
 		// Record revocation timestamp in patient's administrative profile for audit trails

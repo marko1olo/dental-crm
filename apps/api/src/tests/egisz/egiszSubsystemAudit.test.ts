@@ -90,6 +90,10 @@ describe("EGISZ REMD: CDA R3 Statutory Validation & Outbox DLQ (PostgreSQL 18.4)
 				fullName: "Пациентов Алексей Игоревич",
 				birthDate: "1985-06-15",
 				phone: "+79991112233",
+				administrativeProfile: {
+					snils: "112-233-445 95",
+					identityDocument: "Паспорт РФ 4509 123456",
+				},
 				createdAt: new Date(),
 			});
 
@@ -475,7 +479,7 @@ describe("EGISZ REMD: CDA R3 Statutory Validation & Outbox DLQ (PostgreSQL 18.4)
 
 			const dlqEvent = dlqAuditLogs.find((l) => l.eventType === "REMD_DLQ_EXHAUSTED");
 			assert.ok(dlqEvent, "Must record REMD_DLQ_EXHAUSTED audit event");
-			const payload = (dlqEvent.payloadJson ?? (dlqEvent as any).payload) as { isDeadLetterQueue?: boolean; attempts?: number };
+			const payload = (dlqEvent.payloadJson ?? null) as { isDeadLetterQueue?: boolean; attempts?: number };
 			assert.equal(payload.isDeadLetterQueue, true, "Payload must confirm isDeadLetterQueue: true");
 			assert.equal(payload.attempts, 5, "Payload must record attempts = 5");
 

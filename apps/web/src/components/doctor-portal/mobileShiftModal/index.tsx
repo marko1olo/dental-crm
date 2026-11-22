@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { DoctorShiftCloseModal } from "../../shift/DoctorShiftCloseModal";
+import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 import { FastClinicalPrintEngine } from "../../documents/FastClinicalPrintEngine";
 import type { DoctorShiftAppointment } from "@dental/shared";
 import { useDoctorMobileShift } from "./useDoctorMobileShift";
@@ -96,15 +96,11 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = (pr
 
 			{/* Doctor Shift Close Reconciliation & Handover Screen */}
 			{shift.isCloseModalOpen && (
-				<DoctorShiftCloseModal
+				<CashShiftClosingModal
 					isOpen={shift.isCloseModalOpen}
 					onClose={() => shift.setIsCloseModalOpen(false)}
-					onConfirmClose={shift.handleConfirmCloseShift}
-					doctorFullName={initialDoctorName}
-					doctorSpecialtyRu={initialDoctorSpecialty}
-					shiftDateLabel={shift.formattedShiftDate}
-					shiftStats={shift.shiftStats}
-					emrSummary={shift.emrSummary}
+					onShiftClosed={shift.handleConfirmCloseShift}
+					cashierFullName={initialDoctorName}
 				/>
 			)}
 

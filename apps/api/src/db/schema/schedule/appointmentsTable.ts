@@ -60,6 +60,8 @@ export const appointments = pgTable(
 			onDelete: "set null",
 		}),
 		attributionReason: text("attribution_reason"),
+		treatmentPlanId: uuid("treatment_plan_id"),
+		stageId: uuid("stage_id"),
 	},
 	(table) => {
 		return {
@@ -101,6 +103,12 @@ export const appointments = pgTable(
 			parentAppointmentIdIdx: index(
 				"appointments_parent_appointment_id_idx",
 			).on(table.parentAppointmentId),
+			treatmentPlanIdIdx: index(
+				"appointments_treatment_plan_id_idx",
+			).on(table.treatmentPlanId),
+			stageIdIdx: index(
+				"appointments_stage_id_idx",
+			).on(table.stageId),
 			timeOrderCheck: check(
 				"appointments_time_order_check",
 				sql`${table.startsAt} < ${table.endsAt}`,

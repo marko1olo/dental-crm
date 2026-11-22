@@ -71,6 +71,10 @@ export const FinancePatientModalsSubhost: React.FC<
 > = ({ s, isDoctorPayrollOpen, onCloseDoctorPayroll }) => {
 	const docPat = s.documentPatient;
 	const activePat = s.activePatient;
+	const profile = s.dashboard?.clinicSettings?.profile;
+	const clinicName = profile?.clinicName || s.dashboard?.clinicName || "Стоматология ДЕНТЕ Премиум";
+	const clinicLegalName = profile?.legalName || clinicName;
+	const clinicInn = profile?.inn ?? undefined;
 
 	return (
 		<>
@@ -81,11 +85,11 @@ export const FinancePatientModalsSubhost: React.FC<
 					mode="checkout"
 					patientId={docPat?.id}
 					patientName={docPat?.fullName}
-					patientPhone={docPat?.phone}
+					patientPhone={docPat?.phone ?? undefined}
 					patientDepositRub={resolvePatientDeposit(docPat)}
 					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
-					clinicName={s.dashboard?.clinicSettings?.name}
-					clinicLegalName={s.dashboard?.clinicSettings?.legalName}
+					clinicName={clinicName}
+					clinicLegalName={clinicLegalName}
 				/>
 			)}
 
@@ -100,8 +104,8 @@ export const FinancePatientModalsSubhost: React.FC<
 					patientInn={resolvePatientInn(activePat) || resolvePatientInn(docPat)}
 					patientSnils={resolvePatientSnils(activePat) || resolvePatientSnils(docPat)}
 					patientId={activePat?.id || docPat?.id}
-					clinicName={s.dashboard?.clinicSettings?.name}
-					clinicInn={s.dashboard?.clinicSettings?.inn}
+					clinicName={clinicName}
+					clinicInn={clinicInn}
 					payments={s.taxDeductionPayments}
 				/>
 			)}
@@ -116,9 +120,7 @@ export const FinancePatientModalsSubhost: React.FC<
 						}
 						s.setIsTimesheetT13Open?.(false);
 					}}
-					clinicName={
-						s.dashboard?.clinicSettings?.name || s.dashboard?.clinicName
-					}
+					clinicName={clinicName}
 				/>
 			)}
 
@@ -129,10 +131,10 @@ export const FinancePatientModalsSubhost: React.FC<
 					mode="checkout"
 					patientId={docPat?.id}
 					patientName={docPat?.fullName}
-					patientPhone={docPat?.phone}
+					patientPhone={docPat?.phone ?? undefined}
 					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
-					clinicName={s.dashboard?.clinicSettings?.name}
-					clinicLegalName={s.dashboard?.clinicSettings?.legalName}
+					clinicName={clinicName}
+					clinicLegalName={clinicLegalName}
 					onPaymentComplete={() => {
 						void s.loadDashboard?.();
 						s.setIsFamilyBillingOpen(false);

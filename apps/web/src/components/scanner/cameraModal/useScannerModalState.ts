@@ -5,7 +5,7 @@
  * filters, presets, and patient attachment upload.
  */
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { useCameraStream } from "../hooks/useCameraStream";
@@ -18,6 +18,7 @@ export function useScannerModalState(
 	onClose: () => void,
 	onAttachmentUploaded?: () => void,
 ) {
+	const [isUploading, setIsUploading] = useState<boolean>(false);
 	const presets = useDocumentPresets();
 	const stream = useCameraStream(true, isOpen);
 
@@ -72,6 +73,7 @@ export function useScannerModalState(
 
 	const handleSaveAttachment = useCallback(async () => {
 		if (!capture.capturedBlob || !patientId) return;
+		setIsUploading(true);
 		try {
 			const ext = capture.capturedBlob.type === "application/pdf" ? "pdf" : "jpg";
 			const fileName = `${presets.preset.shortTitle}_${new Date().toISOString().slice(0, 10)}.${ext}`;
@@ -86,6 +88,8 @@ export function useScannerModalState(
 			handleModalClose();
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось сохранить скан", "error");
+		} finally {
+			setIsUploading(false);
 		}
 	}, [capture.capturedBlob, handleModalClose, onAttachmentUploaded, patientId, presets.preset.shortTitle]);
 
@@ -93,6 +97,7 @@ export function useScannerModalState(
 		...presets,
 		...stream,
 		...capture,
+		isUploading,
 		handleModalClose,
 		handleFileChange,
 		processFile,

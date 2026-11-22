@@ -23,6 +23,7 @@ import type {
 	visitNoteFieldDefinitions,
 	visitSaveReceiptText,
 } from "../../AppHelpers";
+import type { AppStore } from "../../store/appStoreModules/types";
 import type { ImagingStore } from "../../store/imagingStore";
 import type { BrowserContinuityStatus } from "../../browserContinuity";
 import type {
@@ -31,6 +32,7 @@ import type {
 } from "../../mprControlMath";
 import type { ToothState } from "../../store/visit/types";
 import type { AppView, SettingsTab } from "../../utils/routeUtils";
+import type { useAuthLogic } from "../domains/useAuthLogic";
 import type { useClinicalVisitLogic } from "../domains/useClinicalVisitLogic";
 import type { useDicomWorkbenchModule } from "../domains/useDicomWorkbenchModule";
 import type { useDocumentWorkflowModule } from "../domains/useDocumentWorkflowModule";
@@ -47,6 +49,12 @@ import type { useCommunicationsQueries } from "../domains/useCommunicationsQueri
 import type { useImagingQueries } from "../domains/useImagingQueries";
 import type { useMigrationQueries } from "../domains/useMigrationQueries";
 import type { useStaffSettingsLogic } from "../domains/useStaffSettingsLogic";
+import type { AppLogicWorkflowCompatibilitySlice } from "./appLogicModules/appLogicWorkflowCompatibility";
+import type { AppLogicImagingCompatibilitySlice } from "./appLogicModules/appLogicImagingCompatibility";
+import type {
+	ProfileAndLegalCompatibility,
+	LegacyStubsAndFallbacks,
+} from "./appLogicModules/compatibility/appLogicCompatibilityTypes";
 
 type PatientLogicReturn = ReturnType<typeof usePatientLogic>;
 type PatientIntakeLogicReturn = ReturnType<typeof usePatientIntakeLogic>;
@@ -340,10 +348,18 @@ export type UseAppLogicReturn = NavigationStateSlice &
 	SettingsAndIntegrationsLogicSlice &
 	AppStore &
 	TelegramModuleReturn &
+	ReturnType<typeof useAuthLogic> &
 	ReturnType<typeof useCommunicationsQueries> &
 	ReturnType<typeof useImagingQueries> &
 	ReturnType<typeof useMigrationQueries> &
-	ReturnType<typeof useStaffSettingsLogic> & {
+	ReturnType<typeof useStaffSettingsLogic> &
+	DocumentWorkflowReturn &
+	AppLogicWorkflowCompatibilitySlice &
+	AppLogicImagingCompatibilitySlice &
+	ProfileAndLegalCompatibility &
+	LegacyStubsAndFallbacks & {
+		auth: ReturnType<typeof useAuthLogic>;
 		loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
+		uiLanguageOptions: Array<{ value: string; label: string; detail: string }>;
 		[key: string]: unknown;
 	};

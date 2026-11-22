@@ -47,7 +47,7 @@ export const PrescriptionMkbSelector: React.FC<PrescriptionMkbSelectorProps> = (
 		if (!searchQuery.trim()) {
 			return DENTAL_ICD10_FULL_CATALOG.slice(0, 25);
 		}
-		return searchDentalIcd10Catalog(searchQuery, 25);
+		return searchDentalIcd10Catalog(searchQuery).slice(0, 25);
 	}, [searchQuery]);
 
 	// Close on click outside

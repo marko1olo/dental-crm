@@ -46,7 +46,7 @@ export function IncomingCallPatientContextCard({
 					<button
 						type="button"
 						onClick={() => handleSwitchAndAnswerSecondaryLine("expanded")}
-						className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs min-h-[32px]"
+						className="px-2.5 py-1 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs min-h-[32px]"
 						data-testid="answer-secondary-line-btn"
 						title={`Ответить со 2-й линии с удержанием Линии ${activeLineId}`}
 					>

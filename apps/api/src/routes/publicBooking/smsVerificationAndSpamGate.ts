@@ -9,6 +9,7 @@ import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, or } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes, users } from "../../db/schema.js";
 import { hashCredential } from "../../utils/cryptoHelper.js";
 import { resolveChannelCredentials, sendThroughChannel } from "../../services/communications/channelRouter.js";
@@ -35,26 +36,18 @@ export function normalizePhoneDigits(phone: string): string {
 	return phone.replace(/\D/g, "");
 }
 
-export async function resolveDefaultOrganizationId(): Promise<string> {
-	try {
-		const [demoOrg] = await db
-			.select({ organizationId: organizations.id })
-			.from(organizations)
-			.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
-			.limit(1);
-		if (demoOrg?.organizationId) return demoOrg.organizationId;
-
-		const [orgWithDoctor] = await db
-			.select({ organizationId: organizations.id })
-			.from(organizations)
-			.innerJoin(users, eq(users.organizationId, organizations.id))
-			.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
-			.limit(1);
-		if (orgWithDoctor?.organizationId) return orgWithDoctor.organizationId;
-	} catch {
-		// Fallback to canonical demo tenant
+export async function resolveDefaultOrganizationId(targetOrgId?: string): Promise<string | null> {
+	if (targetOrgId) {
+		const [org] = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select({ organizationId: organizations.id })
+				.from(organizations)
+				.where(eq(organizations.id, targetOrgId))
+				.limit(1);
+		});
+		return org?.organizationId ?? null;
 	}
-	return "01a00000-0000-0000-0000-000000000000";
+	return null;
 }
 
 // 1. General IP request limiter for endpoints
@@ -179,7 +172,7 @@ export class BookingVerificationEngine {
 
 		void (async () => {
 			try {
-				const targetOrgId = organizationId || (await resolveDefaultOrganizationId());
+				const targetOrgId = organizationId ? (await resolveDefaultOrganizationId(organizationId)) : null;
 				if (!targetOrgId) return;
 
 				const [pt] = await db
@@ -193,17 +186,16 @@ export class BookingVerificationEngine {
 					)
 					.limit(1);
 
-				if (pt) {
-					const hashed = await hashCredential(code);
-					await db.insert(portalOtpCodes).values({
-						organizationId: targetOrgId,
-						patientId: pt.id,
-						codeHash: hashed,
-						channel: method,
-						deliveryStatus: "sent",
-						expiresAt: new Date(now + OTP_TTL_MS),
-					});
-				}
+				const hashed = await hashCredential(code);
+				await db.insert(portalOtpCodes).values({
+					organizationId: targetOrgId,
+					patientId: pt?.id ?? null,
+					phone: cleanPhone,
+					codeHash: hashed,
+					channel: method,
+					deliveryStatus: "sent",
+					expiresAt: new Date(now + OTP_TTL_MS),
+				});
 
 				// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
 				if (method === "sms") {

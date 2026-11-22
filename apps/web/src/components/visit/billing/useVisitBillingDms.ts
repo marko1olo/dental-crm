@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders.js";
 import { logger } from "../../../utils/logger.js";
 
 export interface ActiveDmsLetterInfo {
@@ -91,7 +91,7 @@ export function useVisitBillingDms({
 		if (availableDmsCoverageRub !== undefined || !patientId || patientId === "pat-walkin" || isDemo) return;
 		let isMounted = true;
 		fetch(`/api/insurance/guarantee-letters?patientId=${encodeURIComponent(patientId)}&status=active`, {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: getDenteAuthHeaders(),
 		})
 			.then((r) => (r.ok ? r.json() : []))
 			.then((letters: unknown) => {

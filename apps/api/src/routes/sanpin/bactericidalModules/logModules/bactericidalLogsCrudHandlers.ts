@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
@@ -83,7 +83,12 @@ export async function handleCreateBactericidalLog(
 	const [equipment] = await db
 		.select()
 		.from(bactericidalEquipments)
-		.where(eq(bactericidalEquipments.id, data.equipmentId))
+		.where(
+			and(
+				eq(bactericidalEquipments.id, data.equipmentId),
+				eq(bactericidalEquipments.organizationId, organizationId),
+			),
+		)
 		.limit(1);
 
 	if (!equipment) {
@@ -105,7 +110,12 @@ export async function handleCreateBactericidalLog(
 		await tx
 			.update(bactericidalEquipments)
 			.set({ totalOperatingHours: String(newTotalHours), lampStatus: lampLife.status, updatedAt: new Date() })
-			.where(eq(bactericidalEquipments.id, equipment.id));
+			.where(
+				and(
+					eq(bactericidalEquipments.id, equipment.id),
+					eq(bactericidalEquipments.organizationId, organizationId),
+				),
+			);
 
 		return tx
 			.insert(bactericidalIrradiatorLogs)

@@ -28,7 +28,7 @@ export const SAMPLE_043U_PATIENT_PRESET = {
 	patientId: "PAT-043-8942",
 	cardNumber: "043-2026/184",
 	patientFullName: "Соколова Анна Владимировна",
-	patientSnils: "123-456-789 64",
+	patientSnils: "112-233-445 95",
 	patientBirthDate: "1988-06-14",
 	patientGender: "female" as const,
 	patientPolisOms: "1658493021948572",

@@ -1,5 +1,5 @@
 import React from "react";
-import type { CmoAuditSummaryMetrics } from "@dental/shared";
+import type { CmoAuditSummaryMetrics } from "./cmoAuditEngine.js";
 
 export interface EmkMetricsSummaryStripProps {
 	readonly metrics: CmoAuditSummaryMetrics;

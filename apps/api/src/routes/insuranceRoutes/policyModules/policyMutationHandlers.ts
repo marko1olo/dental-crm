@@ -1,8 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { computePayloadHash } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { dmsGuaranteeLetters, insuranceContracts } from "../../../db/schema.js";
+import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
+import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import {
 	INSURANCE_COMPANY_NAME_REQUIRED,
 	INSURANCE_CONTRACT_NOT_FOUND,
@@ -59,6 +61,45 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// Mandate 8zp/8bo: Idempotency-Key support
+		const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
+		const rawIdemKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+		const idempotencyKey =
+			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+				? rawIdemKey.trim()
+				: undefined;
+
+		if (idempotencyKey) {
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция создания договора ДМС с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		// Clamp all coverage values to [0, 100]
 		const clamp = (v: number) => Math.min(100, Math.max(0, v));
 
@@ -79,6 +120,28 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					isActive: true,
 				})
 				.returning();
+
+			if (inserted && idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: inserted,
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: inserted,
+							responseCode: 201,
+						},
+					});
+			}
+
 			return inserted;
 		});
 
@@ -88,6 +151,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 				message:
 					"Договор ДМС не сохранён: сервер не подтвердил запись. Введённое осталось на экране — не закрывайте окно, повторите сохранение, а если снова не выйдет, сообщите администратору клиники.",
 			});
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return reply.code(201).send(created);
 	});
 
@@ -305,6 +372,64 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// Mandate 8z: BOLA/IDOR protection - verify patient belongs to current clinic organization
+		const [patient] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, body.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!patient) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в текущей клинике",
+			});
+		}
+
+		// Mandate 8zp/8bo: Idempotency-Key support
+		const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
+		const rawIdemKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+		const idempotencyKey =
+			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+				? rawIdemKey.trim()
+				: undefined;
+
+		if (idempotencyKey) {
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция экспресс-прикрепления полиса ДМС с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		const insurerName = INSURER_NAMES[body.insurerKey] || "Страховая компания ДМС";
 		const todayIso = new Date().toISOString().slice(0, 10);
 		const oneYearLaterIso = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
@@ -346,13 +471,41 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					status: "active",
 				})
 				.returning();
-			return inserted;
+
+			const responsePayload = {
+				success: true,
+				letter: inserted,
+				warning: body.isEmergency ? "Требуется досылка гарантийного письма ДМС" : undefined,
+			};
+
+			if (inserted && idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 201,
+						},
+					});
+			}
+
+			return responsePayload;
 		});
 
-		return reply.code(201).send({
-			success: true,
-			letter: created,
-			warning: body.isEmergency ? "Требуется досылка гарантийного письма ДМС" : undefined,
-		});
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		return reply.code(201).send(created);
 	});
 }

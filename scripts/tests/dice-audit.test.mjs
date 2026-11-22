@@ -46,7 +46,7 @@ test("PRNG Mulberry32: детерминированность генерации
 test("CLI парсер аргументов: значения по умолчанию и флаги", () => {
 	// Значения по умолчанию
 	const def = parseCliArgs([]);
-	assert.equal(def.samples, 20);
+	assert.equal(def.samples, 100);
 	assert.equal(def.seed, null);
 	assert.equal(def.list, "all");
 	assert.equal(def.strict, false);

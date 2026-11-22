@@ -97,18 +97,18 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 								Баланс
 							</span>
 							{hasDms && (
-								<span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-0.5 shrink-0">
-									<Shield size={9} className="text-sky-500" /> ДМС
+								<span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-[var(--info-soft)] text-[var(--info)] border border-[var(--info-soft)] flex items-center gap-0.5 shrink-0">
+									<Shield size={9} className="text-[var(--info)]" /> ДМС
 								</span>
 							)}
 						</div>
 						<div className="pt-0.5">
 							{hasDebt ? (
-								<span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+								<span className="text-xs font-bold text-[var(--danger)]">
 									Долг: {financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}
 								</span>
 							) : (
-								<span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+								<span className="text-xs font-bold text-[var(--success)]">
 									Аванс: {financialSummary.formattedBalance || (financialSummary.balanceRub ? `+${financialSummary.balanceRub} ₽` : "0 ₽")}
 								</span>
 							)}
@@ -185,15 +185,15 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 
 			{/* Urgent Somatic Alerts */}
 			{allergyAlerts.length > 0 && (
-				<div className="p-2 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-2">
-					<AlertTriangle size={14} className="text-rose-600 shrink-0" />
+				<div className="p-2 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] text-[var(--danger)] text-xs font-bold flex items-center gap-2">
+					<AlertTriangle size={14} className="text-[var(--danger)] shrink-0" />
 					<span>Внимание: аллергический статус в карте пациента!</span>
 				</div>
 			)}
 
 			{acutePainAlerts.length > 0 && (
-				<div className="p-2 rounded-xl border border-rose-400 bg-rose-100 dark:bg-rose-900/60 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-center gap-2">
-					<Zap size={14} className="text-rose-600 shrink-0" />
+				<div className="p-2 rounded-xl border border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)] text-xs font-bold flex items-center gap-2">
+					<Zap size={14} className="text-[var(--danger)] shrink-0" />
 					<span>Острая боль! Требуется внеочередной приём (Cito)</span>
 				</div>
 			)}

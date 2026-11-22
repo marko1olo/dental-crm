@@ -1,9 +1,11 @@
 import type {
 	Dashboard,
+	ImagingSourceKind,
 	ImagingStudyKind,
 	DicomMprTool,
 	ImagingViewerTool,
 } from "@dental/shared";
+import type { OfflineSyncLogicSlice, SettingsAndIntegrationsLogicSlice } from "../types.js";
 import type { MprProjection } from "../../../imagingUiLabels";
 import type { DicomFirstFrameViewerState } from "../../settingsDerivations/types";
 import {
@@ -36,28 +38,32 @@ import {
 import { dicomFolderWorkupPathLabels } from "../../../workspaceUiLabels";
 
 export interface AppLogicImagingCompatibilityParams {
-	offlineSync: { isOnline: boolean; [key: string]: unknown };
-	settingsAndIntegrations: {
-		visibleImagingStudies: Dashboard["imagingStudies"];
-		dicomWorkbenchModule: { selectedImagingStudy?: Dashboard["imagingStudies"][number] | null; [key: string]: unknown };
-		mprAxisDeg?: number;
-		mprAxisGuidance?: unknown;
-		mprCrosshairEnabled?: boolean;
-		mprLinkedPlanesEnabled?: boolean;
-		mprProjection?: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip";
-		mprProjectionCompass?: unknown;
-		mprSlabMm?: number;
-		mprSliceIndex?: number;
-		mprWindowPreset?: string;
-		setMprAxisDeg?: (deg: number) => void;
-		setMprCrosshairEnabled?: (enabled: boolean) => void;
-		setMprLinkedPlanesEnabled?: (enabled: boolean) => void;
-		setMprProjection?: (projection: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip") => void;
-		setMprSlabMm?: (mm: number) => void;
-		setMprSliceIndex?: (index: number) => void;
-		setMprWindowPreset?: (preset: string) => void;
-		[key: string]: unknown;
-	};
+	offlineSync?: OfflineSyncLogicSlice | (Record<string, unknown> & { isOnline?: boolean | undefined }) | Record<string, unknown> | null | undefined;
+	settingsAndIntegrations?:
+		| SettingsAndIntegrationsLogicSlice
+		| (Record<string, unknown> & {
+				visibleImagingStudies?: Dashboard["imagingStudies"] | undefined;
+				dicomWorkbenchModule?: { selectedImagingStudy?: Dashboard["imagingStudies"][number] | null | undefined } | null | undefined;
+				mprAxisDeg?: number;
+				mprAxisGuidance?: unknown;
+				mprCrosshairEnabled?: boolean;
+				mprLinkedPlanesEnabled?: boolean;
+				mprProjection?: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip";
+				mprProjectionCompass?: unknown;
+				mprSlabMm?: number;
+				mprSliceIndex?: number;
+				mprWindowPreset?: string;
+				setMprAxisDeg?: (deg: number) => void;
+				setMprCrosshairEnabled?: (enabled: boolean) => void;
+				setMprLinkedPlanesEnabled?: (enabled: boolean) => void;
+				setMprProjection?: (projection: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip") => void;
+				setMprSlabMm?: (mm: number) => void;
+				setMprSliceIndex?: (index: number) => void;
+				setMprWindowPreset?: (preset: string) => void;
+		  })
+		| Record<string, unknown>
+		| null
+		| undefined;
 	appLogicBag: Record<string, unknown>;
 }
 
@@ -68,8 +74,10 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		appLogicBag,
 	} = params;
 
-	const { isOnline } = offlineSync;
-	const { visibleImagingStudies, dicomWorkbenchModule } = settingsAndIntegrations;
+	const isOnline = Boolean(offlineSync && "isOnline" in offlineSync ? offlineSync.isOnline : false);
+	const settingsRec = (settingsAndIntegrations ?? {}) as Record<string, unknown>;
+	const visibleImagingStudies = (settingsRec.visibleImagingStudies as Dashboard["imagingStudies"] | undefined) ?? [];
+	const dicomWorkbenchModule = (settingsRec.dicomWorkbenchModule as Record<string, unknown> | null | undefined) ?? {};
 
 	const activeImagingStudies = visibleImagingStudies;
 	const canRetryImagingViewerSave = false;
@@ -103,6 +111,52 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 
 	const createImagingStudy = async (_kind: ImagingStudyKind) => {};
 
+	const setDicomSeriesPreview = (
+		typeof appLogicBag.setDicomSeriesPreview === "function"
+			? (appLogicBag.setDicomSeriesPreview as (preview: unknown) => void)
+			: (_preview: unknown): void => {}
+	);
+	const setDicomViewerLaunchManifest = (
+		typeof appLogicBag.setDicomViewerLaunchManifest === "function"
+			? (appLogicBag.setDicomViewerLaunchManifest as (manifest: unknown) => void)
+			: (_manifest: unknown): void => {}
+	);
+	const setDicomViewerToolStateBundle = (
+		typeof appLogicBag.setDicomViewerToolStateBundle === "function"
+			? (appLogicBag.setDicomViewerToolStateBundle as (bundle: unknown) => void)
+			: (_bundle: unknown): void => {}
+	);
+	const setDicomViewerWorkbenchManifest = (
+		typeof appLogicBag.setDicomViewerWorkbenchManifest === "function"
+			? (appLogicBag.setDicomViewerWorkbenchManifest as (manifest: unknown) => void)
+			: (_manifest: unknown): void => {}
+	);
+	const setDicomWebCheck = (
+		typeof appLogicBag.setDicomWebCheck === "function"
+			? (appLogicBag.setDicomWebCheck as (check: unknown) => void)
+			: (_check: unknown): void => {}
+	);
+	const setDicomWebEndpointUrl = (
+		typeof appLogicBag.setDicomWebEndpointUrl === "function"
+			? (appLogicBag.setDicomWebEndpointUrl as (url: string) => void)
+			: (_url: string): void => {}
+	);
+	const setImagingImportCommit = (
+		typeof appLogicBag.setImagingImportCommit === "function"
+			? (appLogicBag.setImagingImportCommit as (commit: unknown) => void)
+			: (_commit: unknown): void => {}
+	);
+	const setImagingImportPreview = (
+		typeof appLogicBag.setImagingImportPreview === "function"
+			? (appLogicBag.setImagingImportPreview as (preview: unknown) => void)
+			: (_preview: unknown): void => {}
+	);
+	const setImagingImportSourceKind = (
+		typeof appLogicBag.setImagingImportSourceKind === "function"
+			? (appLogicBag.setImagingImportSourceKind as (kind: ImagingSourceKind) => void)
+			: (_kind: ImagingSourceKind): void => {}
+	);
+
 	return {
 		activeImagingStudies,
 		canRetryImagingViewerSave,
@@ -114,8 +168,8 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		imagingViewerRetryMissingId,
 		createImagingStudy,
 		cbctWorkbenchPlanes: null,
-		cbctWorkbenchProjections: appLogicBag.cbctWorkbenchProjections ?? [],
-		cbctWorkbenchTools: null,
+		cbctWorkbenchProjections: (appLogicBag.cbctWorkbenchProjections as MprProjection[] | undefined) ?? ["axial", "coronal", "sagittal"],
+		cbctWorkbenchTools: (appLogicBag.cbctWorkbenchTools as DicomMprTool[] | undefined) ?? [],
 		createCtPlanningArtifact: null,
 		ctPlanningActiveQuickActionId: appLogicBag.ctPlanningActiveQuickActionId ?? null,
 		ctPlanningAnnotationRefs: [],
@@ -144,26 +198,26 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		dicomViewerToolStateBundle: appLogicBag.dicomViewerToolStateBundle ?? null,
 		dicomViewerWorkbenchManifest: appLogicBag.dicomViewerWorkbenchManifest ?? null,
 		dicomWebCheck: appLogicBag.dicomWebCheck ?? null,
-		dicomWebEndpointUrl: appLogicBag.dicomWebEndpointUrl ?? "",
+		dicomWebEndpointUrl: typeof appLogicBag.dicomWebEndpointUrl === "string" ? appLogicBag.dicomWebEndpointUrl : "",
 		dicomWebStatusLabels: appLogicBag.dicomWebStatusLabels ?? {},
 		dicomWorkbenchLocalSavedAt: appLogicBag.dicomWorkbenchLocalSavedAt ?? null,
 		dicomWorkbenchServerBundle: appLogicBag.dicomWorkbenchServerBundle ?? null,
 		dicomWorkstationReadiness: appLogicBag.dicomWorkstationReadiness ?? null,
 		imagingConnectorCards,
 		imagingCreateSavingKind: appLogicBag.imagingCreateSavingKind ?? null,
-		imagingFolderPath: appLogicBag.imagingFolderPath ?? "",
+		imagingFolderPath: typeof appLogicBag.imagingFolderPath === "string" ? appLogicBag.imagingFolderPath : "",
 		imagingFolderScan: appLogicBag.imagingFolderScan ?? null,
 		imagingImportCommit: appLogicBag.imagingImportCommit ?? null,
 		imagingImportPreview: appLogicBag.imagingImportPreview ?? null,
-		imagingImportSourceKind: appLogicBag.imagingImportSourceKind ?? "device",
-		imagingImportText: appLogicBag.imagingImportText ?? "",
+		imagingImportSourceKind: (appLogicBag.imagingImportSourceKind as ImagingSourceKind | undefined) ?? "manual_upload",
+		imagingImportText: typeof appLogicBag.imagingImportText === "string" ? appLogicBag.imagingImportText : "",
 		imagingKindFilter: appLogicBag.imagingKindFilter ?? "all",
 		imagingToothFilter: appLogicBag.imagingToothFilter ?? "all",
 		imagingKindLabels: appLogicBag.imagingKindLabels ?? {},
 		imagingKindOptions: appLogicBag.imagingKindOptions ?? [],
 		imagingSourceChoices,
 		imagingSourceDetails: appLogicBag.imagingSourceDetails ?? {},
-		imagingSourceLabels: appLogicBag.imagingSourceLabels ?? {},
+		imagingSourceLabels: (appLogicBag.imagingSourceLabels as Record<ImagingSourceKind, string> | undefined) ?? ({} as Record<ImagingSourceKind, string>),
 		imagingViewerActiveTool: appLogicBag.imagingViewerActiveTool ?? "select",
 		imagingViewerAnnotations: appLogicBag.imagingViewerAnnotations ?? [],
 		imagingViewerCapabilities,
@@ -175,7 +229,7 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		imagingViewerState: appLogicBag.imagingViewerState ?? null,
 		imagingViewerToolLabels: appLogicBag.imagingViewerToolLabels ?? {},
 		isBrowserImagingFolderPicking: appLogicBag.isBrowserImagingFolderPicking ?? false,
-		isDicomFirstFramePreviewing: appLogicBag.isDicomFirstFramePreviewing ?? false,
+		isDicomFirstFramePreviewing: typeof appLogicBag.isDicomFirstFramePreviewing === "boolean" ? appLogicBag.isDicomFirstFramePreviewing : false,
 		isDicomFolderWorkupPlanning: appLogicBag.isDicomFolderWorkupPlanning ?? false,
 		isDicomLocalDiscovering: appLogicBag.isDicomLocalDiscovering ?? false,
 		isDicomManifestBuilding: appLogicBag.isDicomManifestBuilding ?? false,
@@ -200,9 +254,9 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		mprActiveProjectionOrientation: null,
 		mprAxisAngleBadge: null,
 		mprAxisBounds,
-		mprAxisDeg: settingsAndIntegrations.mprAxisDeg ?? 0,
+		mprAxisDeg: (settingsRec.mprAxisDeg as number | undefined) ?? 0,
 		mprAxisDirectionLabel: null,
-		mprAxisGuidance: settingsAndIntegrations.mprAxisGuidance,
+		mprAxisGuidance: settingsRec.mprAxisGuidance,
 		mprAxisNudgeDeg,
 		mprAxisPresetDeg: Array.isArray(appLogicBag.mprAxisPresetDeg) ? appLogicBag.mprAxisPresetDeg : [-30, -15, 0, 15, 30],
 		mprAxisRangeValue: null,
@@ -215,24 +269,24 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		mprClinicalPresets: appLogicBag.mprClinicalPresets ?? [],
 		mprControlsAutoOpen: null,
 		mprControlsReady: null,
-		mprCrosshairEnabled: settingsAndIntegrations.mprCrosshairEnabled ?? false,
-		mprLinkedPlanesEnabled: settingsAndIntegrations.mprLinkedPlanesEnabled ?? false,
+		mprCrosshairEnabled: Boolean(settingsRec.mprCrosshairEnabled),
+		mprLinkedPlanesEnabled: Boolean(settingsRec.mprLinkedPlanesEnabled),
 		mprLoadStrategyLabels: appLogicBag.mprLoadStrategyLabels ?? {},
 		mprNearestClinicalPreset: null,
 		mprOperatorSummaryCards: [],
-		mprProjection: settingsAndIntegrations.mprProjection ?? "axial",
-		mprProjectionCompass: settingsAndIntegrations.mprProjectionCompass,
-		mprProjectionLabels: appLogicBag.mprProjectionLabels ?? {},
+		mprProjection: (settingsRec.mprProjection as "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | undefined) ?? "axial",
+		mprProjectionCompass: settingsRec.mprProjectionCompass,
+		mprProjectionLabels: (appLogicBag.mprProjectionLabels as Record<string, string> | undefined) ?? ({} as Record<string, string>),
 		mprResourceTierLabels: appLogicBag.mprResourceTierLabels ?? {},
 		mprSeriesRequiredProjectionLabel: appLogicBag.mprSeriesRequiredProjectionLabel ?? (() => ""),
 		mprSlabBadge: null,
 		mprSlabBounds,
-		mprSlabMm: settingsAndIntegrations.mprSlabMm ?? 1,
+		mprSlabMm: (settingsRec.mprSlabMm as number | undefined) ?? 1,
 		mprSlabNudgeMm,
 		mprSlabPresetMm: Array.isArray(appLogicBag.mprSlabPresetMm) ? appLogicBag.mprSlabPresetMm : [1, 2, 3, 5, 10, 20],
 		mprSlabRangeValue: null,
 		mprSliceBadge: null,
-		mprSliceIndex: settingsAndIntegrations.mprSliceIndex ?? 0,
+		mprSliceIndex: (settingsRec.mprSliceIndex as number | undefined) ?? 0,
 		mprSliceIndexFromFraction,
 		mprSliceLabel: null,
 		mprSliceNudgeSteps,
@@ -240,13 +294,13 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		mprSliceRangeValue: null,
 		mprToolLabels: appLogicBag.mprToolLabels ?? {},
 		mprUnavailableProjectionLabel: appLogicBag.mprUnavailableProjectionLabel ?? (() => ""),
-		mprWindowPreset: settingsAndIntegrations.mprWindowPreset ?? "bone",
-		mprWindowPresetLabels: appLogicBag.mprWindowPresetLabels ?? {},
+		mprWindowPreset: (settingsRec.mprWindowPreset as string | undefined) ?? "bone",
+		mprWindowPresetLabels: (appLogicBag.mprWindowPresetLabels as Record<string, string> | undefined) ?? {},
 		mprWorkbenchDraftRestored: appLogicBag.mprWorkbenchDraftRestored ?? false,
 		mprWorkbenchLocalSavedAt: appLogicBag.mprWorkbenchLocalSavedAt ?? null,
 		mprWorkbenchSummaryText: null,
 		resetMprControls: null,
-		selectedImagingStudy: dicomWorkbenchModule.selectedImagingStudy,
+		selectedImagingStudy: (dicomWorkbenchModule as { selectedImagingStudy?: unknown })?.selectedImagingStudy as Dashboard["imagingStudies"][number] | null | undefined,
 		visibleImagingStudies,
 		applyCtPlanningQuickAction: null,
 		applyMprClinicalPreset: null,
@@ -261,41 +315,41 @@ export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompati
 		describeMprClinicalPresetProjectionFallback,
 		handleMprKeyboardNavigation: async (..._args: unknown[]) => {},
 		imagingComparisonCandidates: [],
-		setCtPlanningActiveQuickActionId: appLogicBag.setCtPlanningActiveQuickActionId ?? (() => {}),
+		setCtPlanningActiveQuickActionId: (appLogicBag.setCtPlanningActiveQuickActionId as ((id: string | null) => void) | undefined) ?? (() => {}),
 		setCtPlanningImplantPlan: appLogicBag.setCtPlanningImplantPlan ?? (() => {}),
 		setDicomFirstFramePreview: appLogicBag.setDicomFirstFramePreview ?? (() => {}),
-		setDicomFirstFrameViewerState: appLogicBag.setDicomFirstFrameViewerState ?? (() => {}),
+		setDicomFirstFrameViewerState: (appLogicBag.setDicomFirstFrameViewerState as ((updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState) => void) | undefined) ?? (() => {}),
 		setDicomFolderSeriesScan: appLogicBag.setDicomFolderSeriesScan ?? (() => {}),
 		setDicomFolderWorkupPlan: appLogicBag.setDicomFolderWorkupPlan ?? (() => {}),
 		setDicomLocalFolderDiscovery: appLogicBag.setDicomLocalFolderDiscovery ?? (() => {}),
 		setDicomRenderCachePlan: appLogicBag.setDicomRenderCachePlan ?? (() => {}),
-		setDicomSeriesPreview: appLogicBag.setDicomSeriesPreview ?? (() => {}),
-		setDicomViewerLaunchManifest: appLogicBag.setDicomViewerLaunchManifest ?? (() => {}),
-		setDicomViewerToolStateBundle: appLogicBag.setDicomViewerToolStateBundle ?? (() => {}),
-		setDicomViewerWorkbenchManifest: appLogicBag.setDicomViewerWorkbenchManifest ?? (() => {}),
-		setDicomWebCheck: appLogicBag.setDicomWebCheck ?? (() => {}),
-		setDicomWebEndpointUrl: appLogicBag.setDicomWebEndpointUrl ?? (() => {}),
+		setDicomSeriesPreview,
+		setDicomViewerLaunchManifest,
+		setDicomViewerToolStateBundle,
+		setDicomViewerWorkbenchManifest,
+		setDicomWebCheck,
+		setDicomWebEndpointUrl,
 		setDicomWorkbenchLocalSavedAt: appLogicBag.setDicomWorkbenchLocalSavedAt ?? (() => {}),
 		setDicomWorkstationReadiness: appLogicBag.setDicomWorkstationReadiness ?? (() => {}),
 		setImagingFolderPath: appLogicBag.setImagingFolderPath ?? (() => {}),
 		setImagingFolderScan: appLogicBag.setImagingFolderScan ?? (() => {}),
-		setImagingImportCommit: appLogicBag.setImagingImportCommit ?? (() => {}),
-		setImagingImportPreview: appLogicBag.setImagingImportPreview ?? (() => {}),
-		setImagingImportSourceKind: appLogicBag.setImagingImportSourceKind ?? (() => {}),
+		setImagingImportCommit,
+		setImagingImportPreview,
+		setImagingImportSourceKind,
 		setImagingImportText: appLogicBag.setImagingImportText ?? (() => {}),
 		setImagingKindFilter: appLogicBag.setImagingKindFilter ?? (() => {}),
 		setImagingToothFilter: appLogicBag.setImagingToothFilter ?? (() => {}),
-		setImagingViewerActiveTool: appLogicBag.setImagingViewerActiveTool ?? (() => {}),
+		setImagingViewerActiveTool: (appLogicBag.setImagingViewerActiveTool as ((tool: ImagingViewerTool) => void) | undefined) ?? (() => {}),
 		setImagingViewerNote: appLogicBag.setImagingViewerNote ?? (() => {}),
 		setImagingViewerState: appLogicBag.setImagingViewerState ?? (() => {}),
 		setLocalImagingOrganizer: appLogicBag.setLocalImagingOrganizer ?? (() => {}),
-		setMprAxisDeg: settingsAndIntegrations.setMprAxisDeg ?? (() => {}),
-		setMprCrosshairEnabled: settingsAndIntegrations.setMprCrosshairEnabled ?? (() => {}),
-		setMprLinkedPlanesEnabled: settingsAndIntegrations.setMprLinkedPlanesEnabled ?? (() => {}),
-		setMprProjection: settingsAndIntegrations.setMprProjection ?? (() => {}),
-		setMprSlabMm: settingsAndIntegrations.setMprSlabMm ?? (() => {}),
-		setMprSliceIndex: settingsAndIntegrations.setMprSliceIndex ?? (() => {}),
-		setMprWindowPreset: settingsAndIntegrations.setMprWindowPreset ?? (() => {}),
+		setMprAxisDeg: typeof settingsRec.setMprAxisDeg === "function" ? (settingsRec.setMprAxisDeg as (deg: number) => void) : (() => {}),
+		setMprCrosshairEnabled: typeof settingsRec.setMprCrosshairEnabled === "function" ? (settingsRec.setMprCrosshairEnabled as (enabled: boolean) => void) : (() => {}),
+		setMprLinkedPlanesEnabled: typeof settingsRec.setMprLinkedPlanesEnabled === "function" ? (settingsRec.setMprLinkedPlanesEnabled as (enabled: boolean) => void) : (() => {}),
+		setMprProjection: typeof settingsRec.setMprProjection === "function" ? (settingsRec.setMprProjection as (projection: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip") => void) : (() => {}),
+		setMprSlabMm: typeof settingsRec.setMprSlabMm === "function" ? (settingsRec.setMprSlabMm as (mm: number) => void) : (() => {}),
+		setMprSliceIndex: typeof settingsRec.setMprSliceIndex === "function" ? (settingsRec.setMprSliceIndex as (index: number) => void) : (() => {}),
+		setMprWindowPreset: typeof settingsRec.setMprWindowPreset === "function" ? (settingsRec.setMprWindowPreset as (preset: string) => void) : (() => {}),
 		setSelectedImagingStudyId: appLogicBag.setSelectedImagingStudyId ?? (() => {}),
 		xrayPregnancyStatusOptions,
 		xrayStudyTypeOptions,

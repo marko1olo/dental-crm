@@ -16,7 +16,7 @@ export const MobilePriceRegulatoryCard: React.FC<MobilePriceRegulatoryCardProps>
 }) => {
 	return (
 		<div className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-			<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] block">
+			<span className="text-[11px] font-bold text-[var(--muted)] block">
 				Налоговый и фискальный статус
 			</span>
 

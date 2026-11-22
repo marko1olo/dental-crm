@@ -4,6 +4,7 @@ import {
 	visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftSignalLabel,
 	visitNoteFieldDefinitions, visitSaveReceiptText,
 } from "../../../../AppHelpers";
+import { uiLanguageOptions as defaultUiLanguageOptions } from "../../../../constants/uiPreferencesConstants";
 import { viewLabels } from "../../../../utils/routeUtils";
 import { buildAppLogicImagingCompatibility } from "../appLogicImagingCompatibility";
 import { buildAppLogicWorkflowCompatibility } from "../appLogicWorkflowCompatibility";
@@ -218,7 +219,7 @@ export function buildAppLogicCompatibilityBag(
 		taxApplicationDeliveryChannelOptions: appLogicBag.taxApplicationDeliveryChannelOptions ?? [],
 		taxApplicationFormOptions: appLogicBag.taxApplicationFormOptions ?? [],
 		taxApplicationRelationshipOptions: appLogicBag.taxApplicationRelationshipOptions ?? [],
-		uiLanguageOptions: appLogicBag.uiLanguageOptions ?? [],
+		uiLanguageOptions: defaultUiLanguageOptions,
 		soundNotificationsMuted: soundNotifications.muted,
 		setSoundNotificationsMuted: soundNotifications.setMuted,
 		testOnlineBookingSound: soundNotifications.testOnlineBookingSound,
@@ -243,3 +244,4 @@ export function buildAppLogicCompatibilityBag(
 		recentPatientViewsVersion: params.recentPatientViewsVersion,
 	};
 }
+

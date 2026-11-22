@@ -7,11 +7,13 @@ import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	inMemoryDomainState,
-	hasDenteTelegramWebhookUpdate,
-	claimDenteTelegramWebhookUpdate,
-	recordDenteTelegramWebhookEvent,
 	type DomainState,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import {
+	claimDenteTelegramWebhookUpdate,
+	hasDenteTelegramWebhookUpdate,
+	recordDenteTelegramWebhookEvent,
+} from "../../services/telegram/telegramWebhookEventsService.js";
 import {
 	sendTelegramPhotoMessage,
 	sendTelegramTextMessage,
@@ -229,13 +231,12 @@ export async function handleWebhook(
 			});
 		}
 		const update = parsedUpdate.value as UnknownRecord & { update_id: number };
-		if (
-			hasDenteTelegramWebhookUpdate(
-				update.update_id,
-				runtime.organizationId,
-				runtime.botConfigId,
-			)
-		) {
+		const isDuplicate = await hasDenteTelegramWebhookUpdate(
+			update.update_id,
+			runtime.organizationId,
+			runtime.botConfigId,
+		);
+		if (isDuplicate) {
 			return denteTelegramWebhookResponseSchema.parse({
 				ok: true,
 				duplicate: true,
@@ -263,9 +264,10 @@ export async function handleWebhook(
 		const messageText = extractMessageText(update);
 		const suppressPublicChatReply = Boolean(chatType && chatType !== "private");
 		const chatHash = chatFingerprint(chatId, runtime.organizationId);
-		const webhookClaim = claimDenteTelegramWebhookUpdate({
+		const webhookClaim = await claimDenteTelegramWebhookUpdate({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
+			clinicId: runtime.clinicId,
 			botConfigId: runtime.botConfigId,
 			chatFingerprint: chatHash,
 			updateKind,
@@ -325,9 +327,10 @@ export async function handleWebhook(
 					refereeProfile,
 				);
 
-			const event = recordDenteTelegramWebhookEvent({
+			const event = await recordDenteTelegramWebhookEvent({
 				updateId: update.update_id,
 				organizationId: runtime.organizationId,
+				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
 				chatFingerprint: chatHash,
 				updateKind,
@@ -413,9 +416,10 @@ export async function handleWebhook(
 					crmBaseUrl: runtime.settings.patientPortalBaseUrl ?? undefined,
 				});
 
-			const event = recordDenteTelegramWebhookEvent({
+			const event = await recordDenteTelegramWebhookEvent({
 				updateId: update.update_id,
 				organizationId: runtime.organizationId,
+				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
 				chatFingerprint: chatHash,
 				updateKind,

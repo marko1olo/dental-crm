@@ -20,7 +20,9 @@ export class SyncNetworkWatcher {
 						logger.info(`[OfflineSyncService] Heartbeat auto-draining ${pending.length} pending mutations`);
 						await onDrain();
 					}
-				} catch {}
+				} catch (err) {
+					logger.debug("[OfflineSyncService] Heartbeat auto-drain check encountered error:", err);
+				}
 			})();
 		}, intervalMs);
 	}
@@ -86,6 +88,9 @@ export class SyncNetworkWatcher {
 		try {
 			const b = await (navigator as unknown as { getBattery: () => Promise<{ level?: number; charging?: boolean }> }).getBattery();
 			return !b?.charging && (b?.level ?? 1.0) <= 0.15;
-		} catch { return false; }
+		} catch (batteryErr) {
+			logger.debug("[OfflineSyncService] Battery inspection unavailable:", batteryErr);
+			return false;
+		}
 	}
 }

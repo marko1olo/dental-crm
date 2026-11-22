@@ -14,7 +14,7 @@ import {
 	sumKopecks,
 	formatRublesExactRu,
 	formatCurrency,
-} from "../utils/money.js";
+} from "../money.js";
 
 
 /**

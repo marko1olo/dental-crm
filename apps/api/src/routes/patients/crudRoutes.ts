@@ -137,7 +137,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 
 			return dbPatients.map((patient) => patientSchema.parse(patient));
 		} catch (e) {
-			console.error("[Patients] Error fetching from DB:", e);
+			request.log.error({ err: e }, "[Patients] Error fetching from DB");
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message:
@@ -246,7 +246,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 
 			return reply.send(patientSchema.parse(patient));
 		} catch (e) {
-			console.error("[Patients] Error fetching patient by ID:", e);
+			request.log.error({ err: e }, "[Patients] Error fetching patient by ID");
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message: "Не удалось загрузить данные карточки пациента.",
@@ -322,7 +322,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
 		} catch (e: unknown) {
-			console.error("[Patients] Create error:", e);
+			request.log.error({ err: e }, "[Patients] Create error");
 			const errObj = typeof e === "object" && e !== null ? (e as Record<string, unknown>) : null;
 			const errCause = errObj?.cause && typeof errObj.cause === "object" ? (errObj.cause as Record<string, unknown>) : null;
 			const code = String(errObj?.code ?? "");
@@ -344,7 +344,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 						return sendPatientDuplicate(reply, duplicate);
 					}
 				} catch (subErr) {
-					console.error("[Patients] Error looking up duplicate on 23505:", subErr);
+					request.log.error({ err: subErr }, "[Patients] Error looking up duplicate on 23505");
 				}
 				return reply.code(409).send({
 					error: "PatientDuplicateError",

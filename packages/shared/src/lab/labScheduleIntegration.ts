@@ -40,19 +40,19 @@ export interface AppointmentLabStatusInfo {
 }
 
 export interface MinimalLabOrderForSchedule {
-	readonly id?: string | null;
-	readonly orderNumber?: string | null;
-	readonly patientId?: string | null;
-	readonly toothFdi?: string | null;
-	readonly material?: string | null;
-	readonly colorVita?: string | null;
-	readonly status?: string | null;
-	readonly stage?: string | null;
-	readonly dueDate?: string | Date | null;
-	readonly expectedDate?: string | Date | null;
-	readonly receivedDate?: string | Date | null;
-	readonly workType?: string | null;
-	readonly workTypeRu?: string | null;
+	readonly id?: string | null | undefined;
+	readonly orderNumber?: string | number | null | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly toothFdi?: string | null | undefined;
+	readonly material?: string | null | undefined;
+	readonly colorVita?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly stage?: string | null | undefined;
+	readonly dueDate?: string | Date | null | undefined;
+	readonly expectedDate?: string | Date | null | undefined;
+	readonly receivedDate?: string | Date | null | undefined;
+	readonly workType?: string | null | undefined;
+	readonly workTypeRu?: string | null | undefined;
 }
 
 /**
@@ -104,7 +104,8 @@ export function evaluateAppointmentLabStatus(
 
 	const orderId = order.id || undefined;
 	const orderNumber =
-		order.orderNumber || (order.id ? `ЗТЛ-${order.id.slice(0, 6).toUpperCase()}` : "ЗТЛ");
+		(order.orderNumber !== undefined && order.orderNumber !== null ? String(order.orderNumber) : undefined) ||
+		(order.id ? `ЗТЛ-${order.id.slice(0, 6).toUpperCase()}` : "ЗТЛ");
 
 	// 1. Статус «Поступил в клинику» (работа уже в клинике, готова к приёму)
 	const isReadyInClinic =

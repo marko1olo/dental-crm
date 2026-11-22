@@ -15,7 +15,7 @@ import {
 	stockDeductionRecordSchema,
 	stockDeductionResultSchema,
 	visitStockDeductionRequestSchema,
-} from "../warehouse/consumables.js";
+} from "../inventory/consumables.js";
 
 describe("Treatment Consumables Shared Contracts & Calculations", () => {
 	describe("Validation Schemas", () => {

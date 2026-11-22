@@ -119,16 +119,17 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	}, [fetchThread]);
 
 	const quickTemplates = useMemo(() => {
+		const profile = dashboard?.clinicSettings?.profile;
 		return buildQuickTemplates({
-			clinicName: dashboard?.clinicSettings?.name || "клинику DENTE",
-			clinicAddress: dashboard?.clinicSettings?.address || "г. Москва, ул. Клиническая, 10",
-			clinicPhone: dashboard?.clinicSettings?.phone,
+			clinicName: profile?.clinicName || dashboard?.clinicName || "клинику DENTE",
+			clinicAddress: profile?.address || "г. Москва, ул. Клиническая, 10",
+			clinicPhone: profile?.phone ?? undefined,
 			effectiveName,
 			upcomingAppointment,
 			financialSummary,
 			activeTreatmentPlan,
 		});
-	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary, activeTreatmentPlan]);
+	}, [dashboard?.clinicSettings, dashboard?.clinicName, upcomingAppointment, effectiveName, financialSummary, activeTreatmentPlan]);
 
 	const handleApplyTemplate = (tmpl?: QuickTemplateItem) => {
 		if (!tmpl) return;
@@ -228,9 +229,10 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	};
 
 	const handleLaunchWhatsAppNative = () => {
+		const clinicName = dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName || "DENTE";
 		const text =
 			inputText.trim() ||
-			`Здравствуйте, ${effectiveName}! Вас приветствует стоматология ${dashboard?.clinicSettings?.name || "DENTE"}.`;
+			`Здравствуйте, ${effectiveName}! Вас приветствует стоматология ${clinicName}.`;
 		openWhatsAppChat(effectivePhone, text);
 		showToast(`Открыт диалог в WhatsApp (${effectiveName})`, "info");
 	};

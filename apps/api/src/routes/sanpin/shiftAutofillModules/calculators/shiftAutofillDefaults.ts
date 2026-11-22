@@ -33,13 +33,13 @@ export function getShiftPsoBatches(providedRecords?: PsoBatchItem[] | Record<str
 
 export function getShiftSterilizationRecords(
 	sterilizationRecords?: SterilizationBatchItem[] | Record<string, unknown>[],
-	form257Fallback?: Record<string, unknown>[],
+	autoclaveFallback?: Record<string, unknown>[],
 ): (SterilizationBatchItem | Record<string, unknown>)[] {
 	if (Array.isArray(sterilizationRecords) && sterilizationRecords.length > 0) {
 		return sterilizationRecords;
 	}
-	if (Array.isArray(form257Fallback) && form257Fallback.length > 0) {
-		return form257Fallback;
+	if (Array.isArray(autoclaveFallback) && autoclaveFallback.length > 0) {
+		return autoclaveFallback;
 	}
 	return [
 		{

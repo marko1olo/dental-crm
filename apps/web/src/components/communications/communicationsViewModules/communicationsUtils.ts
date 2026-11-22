@@ -11,7 +11,7 @@ export function defaultFormatDateTime(value: string): string {
 }
 
 export function hasCommunicationSummaryNumbers(
-	dashboard: Dashboard | undefined,
+	dashboard: Dashboard | null | undefined,
 ): boolean {
 	return Boolean(
 		(dashboard?.communicationSummary?.openTasks ?? 0) ||
@@ -24,7 +24,7 @@ export function hasCommunicationSummaryNumbers(
 }
 
 export function resolveEffectiveCommunicationEvents(
-	dashboard: Dashboard | undefined,
+	dashboard: Dashboard | null | undefined,
 	_isDemo?: boolean,
 ): CommunicationEvent[] | undefined {
 	return dashboard?.communicationEvents;
@@ -53,7 +53,7 @@ const DEMO_COMMUNICATION_TASKS: CommunicationTask[] = [
 
 export function resolveEffectiveCommunicationTasks(
 	sortedCommunicationTasks: CommunicationTask[] | undefined,
-	dashboard: Dashboard | undefined,
+	dashboard: Dashboard | null | undefined,
 	isDemo?: boolean,
 ): CommunicationTask[] {
 	if (Array.isArray(sortedCommunicationTasks) && sortedCommunicationTasks.length > 0) {

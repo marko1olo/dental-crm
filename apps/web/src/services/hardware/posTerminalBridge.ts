@@ -55,10 +55,19 @@ export class PosTerminalBridge {
 			const timeout = setTimeout(() => controller.abort(), 2000);
 
 			const pingUrl = `http://${targetConfig.hostIp}:${targetConfig.hostPort}/api/sberpos/ping`;
-			await fetch(pingUrl, { signal: controller.signal }).catch(() => {
-				// Non-fatal if local HTTP agent is absent, terminal TCP driver handles raw socket
-			});
+			const res = await fetch(pingUrl, { signal: controller.signal });
 			clearTimeout(timeout);
+
+			if (!res.ok) {
+				const latencyMs = Math.round(performance.now() - startTime);
+				const errorMsg = `Терминал вернул ошибку при проверке связи (HTTP ${res.status})`;
+				logger.warn("[PosTerminalBridge] Ping returned non-OK status:", { status: res.status, url: pingUrl });
+				return {
+					online: false,
+					latencyMs: Math.max(1, latencyMs),
+					error: errorMsg,
+				};
+			}
 
 			const latencyMs = Math.round(performance.now() - startTime);
 			return {
@@ -67,7 +76,7 @@ export class PosTerminalBridge {
 			};
 		} catch (err: unknown) {
 			const latencyMs = Math.round(performance.now() - startTime);
-			const errMsg = err instanceof Error ? err.message : "Таймаут подключения к POS-терминалу";
+			const errMsg = err instanceof Error ? err.message : "Таймаут или сбой подключения к POS-терминалу";
 			logger.warn("[PosTerminalBridge] Ping warning:", errMsg);
 			return {
 				online: false,

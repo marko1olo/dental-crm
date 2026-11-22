@@ -1,5 +1,5 @@
 import React from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, RecommendedAction } from "@dental/shared";
 import type { useDoctorShiftData } from "../components/shift";
 import { ShiftDesktopCockpitGrid } from "./ShiftDesktopCockpitGrid";
 import { ShiftSecondaryAccordion } from "./ShiftSecondaryAccordion";
@@ -21,18 +21,18 @@ export interface ShiftDesktopViewWrapProps {
 	chairRentalRentExpenseRub: number;
 	setChairRentalActTrigger: React.Dispatch<React.SetStateAction<number>>;
 	chairRentalActTrigger: number;
-	visibleRecommendedActions?: readonly unknown[];
-	recommendedActionPriorityLabels?: Record<string, string>;
+	visibleRecommendedActions?: readonly RecommendedAction[];
+	recommendedActionPriorityLabels?: Record<string, string> | undefined;
 	setSelectedPatientId?: (id: string | null) => void;
 	setError?: (err: unknown) => void;
 	setIsQueueBoardModalOpen: (open: boolean) => void;
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
-	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
-	mostLoadedResource?: string;
-	activeQueueRole?: string;
-	staffRoleLabels?: Record<string, string>;
+	runRecommendedAction: (action: ShiftRecommendedAction) => void;
+	mostLoadedResource?: string | undefined;
+	activeQueueRole?: string | undefined;
+	staffRoleLabels?: Record<string, string> | undefined;
 	modalsNode: React.ReactNode;
 	userRole?: string | undefined;
 }

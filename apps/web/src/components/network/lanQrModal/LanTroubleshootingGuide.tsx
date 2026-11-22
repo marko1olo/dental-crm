@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, ExternalLink, Info } from "lucide-react";
 import { getApIsolationDiagnostics, type LanServerInterfaceItem } from "../lanQrEngine";
 
 export interface LanTroubleshootingGuideProps {
-	readonly interfaces?: readonly LanServerInterfaceItem[];
+	readonly interfaces?: readonly LanServerInterfaceItem[] | undefined;
 	readonly showDetails: boolean;
 	readonly onToggleDetails: () => void;
 }

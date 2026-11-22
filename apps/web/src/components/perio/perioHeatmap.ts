@@ -13,7 +13,7 @@ export type HeatmapTone = "neutral" | "success" | "warning-low" | "warning-high"
 
 export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
 	neutral: "bg-[var(--paper-soft,#f1f5f9)] ring-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]",
-	success: "bg-[var(--primary-soft,rgba(13,148,136,0.12))] ring-[var(--primary)] text-[var(--primary)] border-[var(--primary)]/30",
+	success: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] ring-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30",
 	"warning-low": "bg-[var(--warning-soft,#f59e0b1a)] ring-[var(--warning,#f59e0b)] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)]/30",
 	"warning-high": "bg-[var(--warning-soft,#f59e0b26)] ring-[var(--warning-strong,#d97706)] text-[var(--warning-strong,#d97706)] border-[var(--warning-strong,#d97706)]/40",
 	error: "bg-[var(--danger-soft,#ef44441a)] ring-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/30",
@@ -22,7 +22,7 @@ export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
 
 export const TONE_TO_HEX: Record<HeatmapTone, string> = {
 	neutral: "var(--muted, #94a3b8)",
-	success: "var(--primary)",
+	success: "var(--teal, #0d9488)",
 	"warning-low": "var(--warning, #f59e0b)",
 	"warning-high": "var(--warning-strong, #d97706)",
 	error: "var(--danger, #ef4444)",

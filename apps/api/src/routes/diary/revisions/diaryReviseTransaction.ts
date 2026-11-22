@@ -1,6 +1,6 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { sterilizationLogs, visitDiaries, visitDiaryRevisions } from "../../../db/schema.js";
+import { visitDiaries, visitDiaryRevisions } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
 	syncVisitEmkFromDiarySoap,
@@ -33,21 +33,18 @@ export async function executeDiaryReviseTx(params: {
 		if (!isAuthorized) return { kind: "forbidden" as const };
 
 		const nextTrayBarcode = body.instrumentTrayBarcode !== undefined ? body.instrumentTrayBarcode.trim() : (existing.instrumentTrayBarcode ?? "");
-		if (body.instrumentTrayBarcode !== undefined && nextTrayBarcode.length > 0) {
-			const [trayLog] = await tx
-				.select({ id: sterilizationLogs.id, status: sterilizationLogs.status })
-				.from(sterilizationLogs)
-				.where(and(eq(sterilizationLogs.organizationId, orgId), eq(sterilizationLogs.barcode, nextTrayBarcode)))
-				.orderBy(desc(sterilizationLogs.timestamp))
-				.limit(1);
-			if (trayLog?.status === "failed") return { kind: "invalid_tray" as const };
-		}
 
 		const newHash = computeDiaryHash(
-			existing.visitId, existing.patientId ?? "", body.anamnesis ?? existing.anamnesis,
-			body.statusLocalis ?? existing.statusLocalis, body.treatmentDescription ?? existing.treatmentDescription,
-			body.diagnosisIcd10 ?? existing.diagnosisIcd10, body.diagnosisTooth ?? existing.diagnosisTooth,
-			body.complications ?? existing.complications, body.comorbidities ?? existing.comorbidities, nextTrayBarcode,
+			existing.visitId,
+			existing.patientId ?? "",
+			body.complaint ?? existing.complaint,
+			body.anamnesis ?? existing.anamnesis,
+			body.statusLocalis ?? existing.statusLocalis,
+			body.treatmentDescription ?? existing.treatmentDescription,
+			body.diagnosisIcd10 ?? existing.diagnosisIcd10,
+			body.diagnosisTooth ?? existing.diagnosisTooth,
+			body.complications ?? existing.complications,
+			body.comorbidities ?? existing.comorbidities,
 		);
 		const priorVersion = existing.version ?? 1;
 

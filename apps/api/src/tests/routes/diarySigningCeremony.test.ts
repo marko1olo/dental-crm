@@ -43,6 +43,7 @@ import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { computeDiaryHash } from "../../services/clinical/signingModules/diaryHashCalculator.js";
 
 /**
  * Склад: 10 на старте, правило списывает 2 на единицу услуги, услуг 2 -> остаток 6.
@@ -68,6 +69,7 @@ const PKCS7 = "MIIB-test-signature-blob";
 function diaryHashOf(row: {
 	visitId: string;
 	patientId: string | null;
+	complaint?: string | null;
 	anamnesis: string | null;
 	statusLocalis: string | null;
 	treatmentDescription: string | null;
@@ -77,8 +79,18 @@ function diaryHashOf(row: {
 	comorbidities?: string | null;
 	instrumentTrayBarcode?: string | null;
 }): string {
-	const raw = `${row.visitId}|${row.patientId ?? ""}|${row.anamnesis ?? ""}|${row.statusLocalis ?? ""}|${row.treatmentDescription ?? ""}|${row.diagnosisIcd10 ?? ""}|${row.diagnosisTooth ?? ""}|${row.complications ?? ""}|${row.comorbidities ?? ""}|${row.instrumentTrayBarcode ?? ""}`;
-	return crypto.createHash("sha256").update(raw).digest("hex");
+	return computeDiaryHash(
+		row.visitId,
+		row.patientId ?? "",
+		row.complaint,
+		row.anamnesis,
+		row.statusLocalis,
+		row.treatmentDescription,
+		row.diagnosisIcd10,
+		row.diagnosisTooth,
+		row.complications,
+		row.comorbidities,
+	);
 }
 
 interface Scenario {
@@ -766,32 +778,42 @@ describe("церемония подписания дневника одинак�
 		assert.equal(lockAgain.statusCode, 409, lockAgain.body);
 		assert.equal(JSON.parse(lockAgain.body).error, "AlreadyLocked");
 
-		// Попытка подделать диагноз или анамнез черновиком после блокировки
-		const tamperDraft = await app.inject({
+		// Дополнение дневника врачом после блокировки («Исправленному верить», Мандат 8e)
+		const reviseDraft = await app.inject({
 			method: "POST",
 			url: "/api/diaries",
 			headers: { "x-dente-staff-token": staffToken },
 			payload: {
 				visitId: scenario.visitId,
 				patientId,
-				anamnesis: "Фальсифицированный анамнез задним числом",
-				diagnosisIcd10: "K05.0", // Попытка подменить диагноз
+				anamnesis: "Уточнённый клинический анамнез врача («Исправленному верить»)",
+				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "draft",
 			},
 		});
-		assert.equal(tamperDraft.statusCode, 403, tamperDraft.body);
-		assert.equal(JSON.parse(tamperDraft.body).error, "DiaryLocked");
+		assert.equal(reviseDraft.statusCode, 200, reviseDraft.body);
+		assert.equal(JSON.parse(reviseDraft.body).success, true);
 
-		// Проверяем, что в БД данные остались неизменными (K02.1 и оригинальный ANAMNESIS)
-		const [unalteredDiary] = await withFixtureTenant(organizationId, async () =>
+		// Проверяем, что в БД создана ревизия и обновлен дневник с версией 2
+		const [revisedDiary] = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
 				.from(visitDiaries)
 				.where(eq(visitDiaries.id, diary.id)),
 		);
-		assert.ok(unalteredDiary, "Unaltered diary must exist");
-		assert.equal(unalteredDiary.diagnosisIcd10, "K02.1");
-		assert.equal(unalteredDiary.anamnesis, ANAMNESIS);
+		assert.ok(revisedDiary, "Revised diary must exist");
+		assert.equal(revisedDiary.anamnesis, "Уточнённый клинический анамнез врача («Исправленному верить»)");
+		assert.equal(revisedDiary.version, 2, "Версия дневника увеличилась до 2");
+
+		const revisions = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(visitDiaryRevisions)
+				.where(eq(visitDiaryRevisions.diaryId, diary.id)),
+		);
+		assert.equal(revisions.length, 1, "Создана 1 ревизия в visitDiaryRevisions");
+		assert.equal(revisions[0]?.previousAnamnesis, ANAMNESIS);
 
 		// Материал списан один раз, а не по разу на каждую попытку подписи.
 		const stockAfterRetries = await observe(scenario);

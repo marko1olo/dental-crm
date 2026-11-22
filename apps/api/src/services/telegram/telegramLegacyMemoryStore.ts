@@ -7,3 +7,4 @@
 
 export type * from "./legacyMemory/types.js";
 export * from "./legacyMemory/index.js";
+export * from "./telegramWebhookEventsService.js";

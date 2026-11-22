@@ -64,6 +64,9 @@ export async function telephonySmsWebhookHandler(
 	}
 
 	const orgId = resolvedOrgId;
+	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
+
 	return withTenantCtx(orgId, async () => {
 		const smsId = (data.sms_id || data.call_id || data.id || "").trim();
 		if (smsId) {
@@ -146,6 +149,7 @@ export async function telephonySmsWebhookHandler(
 					direction: "inbound",
 					status: "delivered",
 					message: smsId ? `${messageText} [sms_id: ${smsId}]` : messageText,
+					idempotencyKey,
 				});
 			});
 		} catch (err) {

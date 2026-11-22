@@ -2,7 +2,7 @@
  * treatmentPlanMultiOptionBuilder.ts — Создание многовариантного плана лечения (А, Б, В) DENTE.
  */
 
-import { multiplyKopecks, percentageOfKopecks } from "../../utils/money.js";
+import { multiplyKopecks, percentageOfKopecks } from "../../money.js";
 import { generateTreatmentPlanId, generateTreatmentPlanNumber } from "../../utils/idGenerators.js";
 import {
 	DEFAULT_CLINIC_LEGAL_REQUISITES,

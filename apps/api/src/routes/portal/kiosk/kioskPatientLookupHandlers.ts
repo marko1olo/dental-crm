@@ -39,6 +39,7 @@ export interface KioskPatientRecord {
 	fullName: string | null;
 	phone: string | null;
 	organizationId: string;
+	isVirtualGuest?: boolean;
 }
 
 export interface KioskAppointmentRecord {
@@ -56,23 +57,18 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * 1. Определение организации (клиники) с изоляцией тенанта
  */
 export async function resolveOrganizationId(rawOrgId?: string | null): Promise<string | null> {
-	let organizationId = rawOrgId?.trim() || "";
-	if (organizationId && !UUID_REGEX.test(organizationId)) {
+	const organizationId = rawOrgId?.trim() || "";
+	if (!organizationId || !UUID_REGEX.test(organizationId)) {
 		return null;
 	}
-	if (!organizationId) {
-		const firstOrg = await withSuperuserBypass(async () => {
-			const [org] = await db
-				.select({ id: organizations.id })
-				.from(organizations)
-				.limit(1);
-			return org;
-		});
-		if (firstOrg) {
-			organizationId = firstOrg.id;
-		}
-	}
-	return organizationId || null;
+	const [org] = await withSuperuserBypass(async () => {
+		return db
+			.select({ id: organizations.id })
+			.from(organizations)
+			.where(eq(organizations.id, organizationId))
+			.limit(1);
+	});
+	return org?.id ?? null;
 }
 
 /**
@@ -157,7 +153,26 @@ export async function lookupPatient(
 				.limit(10);
 
 			if (candidates.length === 1 && candidates[0]) {
-				targetPatient = candidates[0];
+				const cand = candidates[0];
+				const now = new Date();
+				const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+				const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+				const [apt] = await db
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							eq(appointments.patientId, cand.id),
+							gte(appointments.startsAt, startOfDay),
+							lt(appointments.startsAt, endOfDay),
+							notInArray(appointments.status, ["cancelled"]),
+						),
+					)
+					.limit(1);
+				if (apt || isEmergency || isFirstTime) {
+					targetPatient = cand;
+				}
 			} else if (candidates.length > 1) {
 				const now = new Date();
 				const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -182,53 +197,23 @@ export async function lookupPatient(
 						break;
 					}
 				}
-				if (!targetPatient && candidates[0]) {
-					targetPatient = candidates[0];
-				}
 			}
 		}
 
-		// Экстренный приём без найденного пациента — регистрация гостя
-		if (!targetPatient && isEmergency) {
-			const [newEmergencyPatient] = await db
-				.insert(patients)
-				.values({
-					organizationId,
-					fullName: "Пациент Экстренный",
-					phone: rawPhone || (rawPhoneLast4 ? `+7 (000) 000-${rawPhoneLast4}` : null),
-					notes: `Саморегистрация через терминал: ${emergencyChiefComplaint}`,
-				})
-				.returning({
-					id: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					organizationId: patients.organizationId,
-				});
-			if (newEmergencyPatient) {
-				targetPatient = newEmergencyPatient;
-			}
-		}
-
-		// Первичный приём без найденного пациента — автоматическая регистрация карты первичного пациента
-		if (!targetPatient && isFirstTime) {
-			const resolvedName = patientFullName.trim() || "Первичный пациент";
-			const [newFirstTimePatient] = await db
-				.insert(patients)
-				.values({
-					organizationId,
-					fullName: resolvedName,
-					phone: rawPhone || (rawPhoneLast4 ? `+7 (000) 000-${rawPhoneLast4}` : null),
-					notes: "Саморегистрация через терминал: Первичный визит",
-				})
-				.returning({
-					id: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					organizationId: patients.organizationId,
-				});
-			if (newFirstTimePatient) {
-				targetPatient = newFirstTimePatient;
-			}
+		// Экстренный или первичный приём без найденного пациента:
+		// Предотвращение спама в таблицу patients фантомных записей ("Пациент Экстренный").
+		// Создается виртуальный талон гостя для оперативной очереди к стойке регистрации.
+		if (!targetPatient && (isEmergency || isFirstTime)) {
+			const guestName = isEmergency
+				? "Экстренный посетитель"
+				: (patientFullName.trim() || "Первичный посетитель");
+			targetPatient = {
+				id: `guest-${Date.now().toString(36)}`,
+				fullName: guestName,
+				phone: rawPhone || (rawPhoneLast4 ? `+7 (***) ***-${rawPhoneLast4}` : null),
+				organizationId,
+				isVirtualGuest: true,
+			};
 		}
 
 		return targetPatient;
@@ -274,7 +259,7 @@ export async function lookupTodayAppointment(
 }
 
 /**
- * 4. Создание экстренного слота приёма
+ * 4. Создание экстренного слота приёма или оперативного талона очереди
  */
 export async function createEmergencyAppointment(
 	organizationId: string,
@@ -283,6 +268,20 @@ export async function createEmergencyAppointment(
 ): Promise<KioskAppointmentRecord | null> {
 	const now = new Date();
 	const emergencyEnds = new Date(now.getTime() + 30 * 60 * 1000);
+	const virtualId = `emg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+	// Для незарегистрированных посетителей формируем оперативный талон без спама в базу appointments
+	if (patientId.startsWith("guest-")) {
+		return {
+			id: virtualId,
+			startsAt: now,
+			endsAt: emergencyEnds,
+			status: "arrived",
+			doctorUserId: null,
+			chairId: null,
+		};
+	}
+
 	let created: KioskAppointmentRecord | null = null;
 
 	await withTenantCtx(organizationId, async () => {
@@ -322,6 +321,20 @@ export async function createFirstTimeAppointment(
 ): Promise<KioskAppointmentRecord | null> {
 	const now = new Date();
 	const firstTimeEnds = new Date(now.getTime() + 30 * 60 * 1000);
+	const virtualId = `first-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+	// Для незарегистрированных посетителей формируем оперативный талон без спама в базу appointments
+	if (patientId.startsWith("guest-")) {
+		return {
+			id: virtualId,
+			startsAt: now,
+			endsAt: firstTimeEnds,
+			status: "arrived",
+			doctorUserId: null,
+			chairId: null,
+		};
+	}
+
 	let created: KioskAppointmentRecord | null = null;
 
 	await withTenantCtx(organizationId, async () => {
@@ -360,8 +373,8 @@ export async function getDoctorAndCabinetInfo(
 	chairId: string | null,
 ): Promise<{ doctorName: string; cabinetName: string }> {
 	return withTenantCtx(organizationId, async () => {
-		let doctorName = "Дежурный врач-стоматолог";
-		let cabinetName = "Кабинет 1";
+		let doctorName = doctorUserId ? "Дежурный врач-стоматолог" : "Дежурный врач";
+		let cabinetName = chairId ? "Кабинет 1" : "Стойка регистрации";
 
 		if (doctorUserId) {
 			const [doc] = await db

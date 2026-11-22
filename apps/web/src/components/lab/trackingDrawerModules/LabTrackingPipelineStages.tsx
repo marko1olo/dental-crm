@@ -37,8 +37,7 @@ export function LabTrackingPipelineStages({
 							<button
 								key={item.id} type="button"
 								onClick={() => {
-									const map: Record<string, LabOrderStageKey> = { sent: "sent_to_lab", in_progress: "in_progress", fitting: "fitting_scheduled", ready: "delivered_to_clinic", completed: "delivered_completed" };
-									if (map[item.id]) handleAdvanceStage(map[item.id]);
+									handleAdvanceStage(item.id);
 								}}
 								className={`p-2 sm:p-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] flex flex-col justify-center touch-manipulation ${
 									item.step === 5 ? "col-span-2 sm:col-span-1" : ""

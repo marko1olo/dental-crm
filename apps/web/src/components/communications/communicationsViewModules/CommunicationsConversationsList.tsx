@@ -42,7 +42,7 @@ export function CommunicationsConversationsList({
 									documentKinds={documentKindsForCommunicationTask(task)}
 									documentLabels={documentLabels} formatDateTime={formatDateTime}
 									openCommunicationTaskDocumentWorkflow={openCommunicationTaskDocumentWorkflow}
-									staffRoleLabels={staffRoleLabels} appointments={dashboard?.appointments}
+									staffRoleLabels={staffRoleLabels} appointments={dashboard?.appointments ?? []}
 								/>
 							))}
 							{tasksSlice.hasMore && (

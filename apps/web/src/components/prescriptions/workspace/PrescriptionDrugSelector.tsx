@@ -42,7 +42,7 @@ export const PrescriptionDrugSelector: React.FC<PrescriptionDrugSelectorProps> =
 			const q = searchQuery.toLowerCase();
 			return (
 				drug.tradeName.toLowerCase().includes(q) ||
-				drug.activeSubstanceRu.toLowerCase().includes(q) ||
+				(drug.activeSubstanceRu?.toLowerCase().includes(q) ?? false) ||
 				drug.latinName.toLowerCase().includes(q)
 			);
 		});

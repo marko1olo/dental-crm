@@ -7,7 +7,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
@@ -15,14 +15,14 @@ import {
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
-async function ensureDefaultEquipments(organizationId: string) {
-	let equips = await db
+async function ensureDefaultEquipments(tx: TenantDb, organizationId: string) {
+	let equips = await tx
 		.select()
 		.from(temperatureHumidityEquipments)
 		.where(eq(temperatureHumidityEquipments.organizationId, organizationId));
 
 	if (equips.length === 0) {
-		const [fridge] = await db
+		const [fridge] = await tx
 			.insert(temperatureHumidityEquipments)
 			.values({
 				organizationId,
@@ -36,7 +36,7 @@ async function ensureDefaultEquipments(organizationId: string) {
 			})
 			.returning();
 
-		const [room] = await db
+		const [room] = await tx
 			.insert(temperatureHumidityEquipments)
 			.values({
 				organizationId,
@@ -70,10 +70,10 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 	const measurementPeriod: "morning" | "evening" = body.period === "evening" ? "evening" : "morning";
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const equips = await ensureDefaultEquipments(organizationId);
-	const createdLogs: Array<typeof temperatureHumidityLogs.$inferSelect> = [];
+	const createdLogs = await withTenantCtx(organizationId, async (tx) => {
+		const equips = await ensureDefaultEquipments(tx, organizationId);
+		if (equips.length === 0) return [];
 
-	if (equips.length > 0) {
 		const logsToInsert = equips.map((tEquip) => {
 			const isFridge = tEquip.equipmentType.includes("refrigerator");
 			return {
@@ -90,9 +90,8 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 			};
 		});
 
-		const inserted = await db.insert(temperatureHumidityLogs).values(logsToInsert).returning();
-		createdLogs.push(...inserted);
-	}
+		return tx.insert(temperatureHumidityLogs).values(logsToInsert).returning();
+	});
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_TEMPERATURE_SHIFT_AUTOPILOT",

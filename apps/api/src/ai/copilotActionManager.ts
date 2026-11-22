@@ -189,28 +189,73 @@ export class CopilotActionManager {
 			};
 		}
 
-		this.pendingActions.delete(callId);
-
 		const effectiveArgs = modifiedArgs ?? action.arguments;
 
-		// Mark as confirmed in PostgreSQL
+		// Атомарный SQL CAS: UPDATE copilot_pending_actions SET status = 'confirmed' WHERE id = ${callId} AND status = 'pending' RETURNING id
 		if (ctx.organizationId) {
-			withTenantCtx(ctx.organizationId, async (tx) => {
-				await tx
-					.update(copilotPendingActions)
-					.set({
-						status: "confirmed",
-						arguments: effectiveArgs,
-						resolvedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(copilotPendingActions.id, callId),
-							eq(copilotPendingActions.organizationId, ctx.organizationId),
-						),
-					);
-			}).catch(() => {});
+			try {
+				let updatedRows = await withTenantCtx(ctx.organizationId, async (tx) => {
+					return tx
+						.update(copilotPendingActions)
+						.set({
+							status: "confirmed",
+							arguments: effectiveArgs,
+							resolvedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(copilotPendingActions.id, callId),
+								eq(copilotPendingActions.organizationId, ctx.organizationId),
+								eq(copilotPendingActions.status, "pending"),
+							),
+						)
+						.returning({ id: copilotPendingActions.id });
+				});
+
+				// Fallback если экшен был зарегистрирован только в памяти и еще не сброшен в БД
+				if ((!updatedRows || updatedRows.length === 0) && this.pendingActions.has(callId)) {
+					const cached = this.pendingActions.get(callId);
+					if (cached) {
+						const expiresAt = new Date(cached.createdAt + COPILOT_ACTION_TTL_MS);
+						updatedRows = await withTenantCtx(ctx.organizationId, async (tx) => {
+							return tx
+								.insert(copilotPendingActions)
+								.values({
+									id: callId,
+									sessionId: cached.sessionId,
+									organizationId: ctx.organizationId,
+									userId: ctx.userId ?? null,
+									toolName: cached.toolName,
+									arguments: effectiveArgs,
+									status: "confirmed",
+									createdAt: new Date(cached.createdAt),
+									expiresAt,
+									resolvedAt: new Date(),
+								})
+								.onConflictDoNothing()
+								.returning({ id: copilotPendingActions.id });
+						});
+					}
+				}
+
+				if (!updatedRows || updatedRows.length === 0) {
+					this.pendingActions.delete(callId);
+					return {
+						ok: false,
+						error: "Конфликт: действие уже подтверждено или не находится в статусе ожидания",
+						executionTimeMs: 0,
+					};
+				}
+			} catch (dbErr: unknown) {
+				return {
+					ok: false,
+					error: dbErr instanceof Error ? dbErr.message : "Ошибка базы данных при подтверждении действия",
+					executionTimeMs: 0,
+				};
+			}
 		}
+
+		this.pendingActions.delete(callId);
 
 		const startTime = Date.now();
 		// Execute with guardrail config overriding supervised requirement for this approved action

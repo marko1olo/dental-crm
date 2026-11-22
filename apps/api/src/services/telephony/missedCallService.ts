@@ -21,6 +21,29 @@ import { maskPhoneDisplay } from "@dental/shared";
 import { normalizePhoneNumber } from "./telephonySecurity.js";
 import { wsBroker } from "../websocketBroker.js";
 
+const defaultStructuredLogger = {
+	warn: (obj: unknown, msg?: string) => {
+		process.stderr.write(
+			JSON.stringify({
+				level: "warn",
+				time: new Date().toISOString(),
+				msg: msg || "",
+				details: obj,
+			}) + "\n",
+		);
+	},
+	error: (obj: unknown, msg?: string) => {
+		process.stderr.write(
+			JSON.stringify({
+				level: "error",
+				time: new Date().toISOString(),
+				msg: msg || "",
+				details: obj,
+			}) + "\n",
+		);
+	},
+};
+
 export interface MissedCallEventParams {
 	organizationId: string;
 	phone: string;
@@ -62,7 +85,7 @@ export class MissedCallService {
 		const national10 = normalized.national10;
 		const callId = (params.callId || "").trim();
 
-		return await db.transaction(async (tx) => {
+		const txResult = await db.transaction(async (tx) => {
 			// Serialize concurrent webhooks for this organization and phone/callId
 			const lockKey = callId
 				? `missed:${organizationId}:call:${callId}`
@@ -210,11 +233,11 @@ export class MissedCallService {
 						createdLeadRecord = createdLead || null;
 					}
 				} catch (err) {
-					if (params.logger) {
-						params.logger.warn({ err, organizationId, patientId }, "[MissedCallService] Existing patient lead handling notice");
-					} else {
-						process.stderr.write(`[MissedCallService] Existing patient lead handling notice: ${String(err)}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.warn(
+						{ err, organizationId, patientId },
+						"[MissedCallService] Existing patient lead handling notice",
+					);
 				}
 
 				// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds
@@ -339,11 +362,11 @@ export class MissedCallService {
 						taskId = createdLead?.id;
 					}
 				} catch (err) {
-					if (params.logger) {
-						params.logger.warn({ err, organizationId, callerPhone: callerPhoneE164 }, "[MissedCallService] Unknown caller lead handling notice");
-					} else {
-						process.stderr.write(`[MissedCallService] Unknown caller lead handling notice: ${String(err)}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.warn(
+						{ err, organizationId, callerPhone: callerPhoneE164 },
+						"[MissedCallService] Unknown caller lead handling notice",
+					);
 					patientDisplayName = `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
 				}
 			}
@@ -362,10 +385,16 @@ export class MissedCallService {
 				durationSeconds: 0,
 			});
 
-			// 6. WebSocket Broadcast for Reception Desk (Quiet Backoffice & Zero Chairside Distraction — Mandate 8v & 8e)
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "TELEPHONY_MISSED_CALL",
-				payload: {
+			return {
+				result: {
+					success: true,
+					taskId,
+					patientId,
+					patientName: patientDisplayName,
+					phone: callerPhoneE164,
+					isNewLead,
+				},
+				broadcastMissedCall: {
 					taskId,
 					phone: callerPhoneE164,
 					patientId,
@@ -376,28 +405,28 @@ export class MissedCallService {
 					priority: "URGENT",
 					taskTitle: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
 				},
-			});
-
-			if (createdLeadRecord) {
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "LEAD_CREATED",
-					payload: {
-						lead: createdLeadRecord,
-					},
-				});
-			}
-
-			// Doctor Sterile Zone & Quiet Backoffice (Mandates 8e & 8v):
-			// Missed calls are operational reception tasks, NEVER clinical emergencies in doctor copilot!
-
-			return {
-				success: true,
-				taskId,
-				patientId,
-				patientName: patientDisplayName,
-				phone: callerPhoneE164,
-				isNewLead,
+				broadcastLead: createdLeadRecord ? { lead: createdLeadRecord } : null,
 			};
 		});
+
+		// 6. WebSocket Broadcast for Reception Desk strictly AFTER transaction commits (Mandate 8e & ACID)
+		if (
+			"broadcastMissedCall" in txResult &&
+			txResult.broadcastMissedCall
+		) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "TELEPHONY_MISSED_CALL",
+				payload: txResult.broadcastMissedCall,
+			});
+		}
+
+		if ("broadcastLead" in txResult && txResult.broadcastLead) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "LEAD_CREATED",
+				payload: txResult.broadcastLead,
+			});
+		}
+
+		return "result" in txResult ? txResult.result : txResult;
 	}
 }

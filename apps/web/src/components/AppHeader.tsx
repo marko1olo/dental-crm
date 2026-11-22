@@ -1,7 +1,6 @@
 /**
- * AppHeader facade component (macOS HIG / 152-FZ CRM Top Header)
- * Re-exports Header components and provides canonical AppHeader alias.
+ * AppHeader facade component (macOS HIG / CRM Clinic Control Pill)
+ * Re-exports ClinicControlPill and provides canonical AppHeader alias.
  */
 
-export * from "./Header";
-export { ClinicControlPill as AppHeader } from "./Header";
+export { ClinicControlPill, ClinicControlPill as AppHeader } from "./headerModules/headerStatus/ClinicControlPill";

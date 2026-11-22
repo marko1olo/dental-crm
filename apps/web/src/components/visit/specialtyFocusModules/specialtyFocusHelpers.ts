@@ -11,7 +11,7 @@ export const SPECIALTY_DICTIONARY: Record<string, string> = {
 	diagnostics: "Диагностика",
 };
 
-export function computePatientAgeYears(activePatient?: { birthDate?: string | Date; age?: number }): number | undefined {
+export function computePatientAgeYears(activePatient?: { birthDate?: string | Date | null | undefined; age?: number | string | null | undefined } | null | undefined): number | undefined {
 	if (activePatient?.birthDate) {
 		const birth = new Date(activePatient.birthDate);
 		if (!Number.isNaN(birth.getTime())) {
@@ -25,6 +25,10 @@ export function computePatientAgeYears(activePatient?: { birthDate?: string | Da
 		}
 	}
 	if (typeof activePatient?.age === "number") return activePatient.age;
+	if (typeof activePatient?.age === "string") {
+		const parsed = Number.parseInt(activePatient.age, 10);
+		if (!Number.isNaN(parsed)) return parsed;
+	}
 	return undefined;
 }
 

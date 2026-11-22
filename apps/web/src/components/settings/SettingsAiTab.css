@@ -83,8 +83,6 @@
 	font-size: 11px;
 	color: var(--muted);
 	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
 }
 
 .ai-gateway-status-pill strong {

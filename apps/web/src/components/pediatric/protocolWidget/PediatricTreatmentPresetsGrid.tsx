@@ -67,7 +67,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`pediatric-preset-btn-${preset.id}`}
-								title={`${preset.titleRu} • ${preset.serviceCode || preset.serviceCode804n}`}
+								title={`${preset.titleRu} • ${preset.serviceCode}`}
 							>
 								<div className="flex items-center gap-1.5 font-bold text-xs">
 									<PresetIcon className="h-4 w-4 shrink-0" />

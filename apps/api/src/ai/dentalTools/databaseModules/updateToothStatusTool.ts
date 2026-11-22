@@ -6,6 +6,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import { toothStateHistory, toothStates } from "../../../db/schema.js";
 import { normalizeToothState } from "../../../routes/odontogram/types.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
@@ -73,6 +74,10 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 	let finalSurfaces: string[] | null = null;
 
 	async function mutateToothInDb(tx: typeof defaultDb | TenantDb) {
+		if (!patientId) {
+			throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент");
+		}
+
 		const existing = await tx
 			.select()
 			.from(toothStates)

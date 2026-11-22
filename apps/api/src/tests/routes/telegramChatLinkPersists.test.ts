@@ -7,11 +7,11 @@ import { db } from "../../db/client.js";
 import {
 	clinics,
 	denteTelegramChatLinks,
+	denteTelegramWebhookEvents,
 	organizations,
 } from "../../db/schema.js";
 import {
 	registerTelegramRoutes,
-	registerTelegramWebhookRoutes,
 } from "../../routes/telegram.js";
 import { denteTelegramChatLinks as inMemoryChatLinks } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
@@ -149,7 +149,6 @@ describe("привязка Telegram переживает перезапуск с
 		// Те же два хука, что боевой `server.ts` вешает на настоящее приложение.
 		app = createTenantTestApp();
 		await registerTelegramRoutes(app);
-		await registerTelegramWebhookRoutes(app);
 		await app.ready();
 
 		const statusResponse = await app.inject({
@@ -195,6 +194,11 @@ describe("привязка Telegram переживает перезапуск с
 				.where(
 					eq(denteTelegramChatLinks.organizationId, runtime.organizationId),
 				);
+			await db
+				.delete(denteTelegramWebhookEvents)
+				.where(
+					eq(denteTelegramWebhookEvents.organizationId, runtime.organizationId),
+				);
 		});
 
 		// Соседняя клиника — отдельный арендатор, поэтому и отдельный вызов:
@@ -204,6 +208,9 @@ describe("привязка Telegram переживает перезапуск с
 			await db
 				.delete(denteTelegramChatLinks)
 				.where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
+			await db
+				.delete(denteTelegramWebhookEvents)
+				.where(eq(denteTelegramWebhookEvents.organizationId, FOREIGN_ORG));
 			await db.delete(clinics).where(eq(clinics.organizationId, FOREIGN_ORG));
 			await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
 			await db
@@ -218,8 +225,25 @@ describe("привязка Telegram переживает перезапуск с
 			await db
 				.delete(denteTelegramChatLinks)
 				.where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
+			await db
+				.delete(denteTelegramWebhookEvents)
+				.where(eq(denteTelegramWebhookEvents.organizationId, FOREIGN_ORG));
 			await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
 		});
+		if (runtime?.organizationId) {
+			await withFixtureTenant(runtime.organizationId, async () => {
+				await db
+					.delete(denteTelegramChatLinks)
+					.where(
+						eq(denteTelegramChatLinks.organizationId, runtime.organizationId),
+					);
+				await db
+					.delete(denteTelegramWebhookEvents)
+					.where(
+						eq(denteTelegramWebhookEvents.organizationId, runtime.organizationId),
+					);
+			});
+		}
 		process.env = originalEnv;
 	});
 

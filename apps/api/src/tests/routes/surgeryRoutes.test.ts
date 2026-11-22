@@ -262,4 +262,68 @@ describe("Outpatient Surgery & Implantology Engine (Mandates 8e, 8i, 8s, 8n)", (
 			assert.ok(norm.title.length > 0);
 		}
 	});
+
+	it("10. SEV-1: createSurgicalProtocolSchema strictly rejects implanting deciduous teeth (51–85), but permits extraction of deciduous teeth", () => {
+		const baseProtocol = {
+			patientId: "00000000-0000-4000-8000-000000000001",
+			protocolText: "Протокол операции зафиксирован в карте приёма.",
+		};
+
+		// 1. Постоянный зуб 46 при имплантации -> Валидно
+		const validPermanentRes = createSurgicalProtocolSchema.safeParse({
+			...baseProtocol,
+			normId: "surgery_implant_standard",
+			toothNumberFdi: 46,
+		});
+		assert.equal(validPermanentRes.success, true);
+
+		// 2. Молочный зуб 55 при имплантации -> ОТКЛОНЕНО
+		const invalidDeciduousRes = createSurgicalProtocolSchema.safeParse({
+			...baseProtocol,
+			normId: "surgery_implant_standard",
+			toothNumberFdi: 55,
+		});
+		assert.equal(invalidDeciduousRes.success, false);
+		if (!invalidDeciduousRes.success) {
+			assert.ok(
+				invalidDeciduousRes.error.issues[0]?.message.includes("молочного зуба"),
+				"Сообщение об ошибке должно содержать запрет молочного зуба",
+			);
+		}
+
+		// 3. Молочный зуб 51 при простом удалении -> РАЗРЕШЕНО (педиатрическая хирургия)
+		const validExtractionRes = createSurgicalProtocolSchema.safeParse({
+			...baseProtocol,
+			normId: "surgery_extraction_simple",
+			toothNumberFdi: 51,
+		});
+		assert.equal(validExtractionRes.success, true, "Удаление молочного зуба должно быть разрешено");
+	});
+
+	it("11. SEV-2: createSurgicalProtocolSchema supports batch teeth array and enforces deciduous gate on batch implants", () => {
+		const baseProtocol = {
+			patientId: "00000000-0000-4000-8000-000000000001",
+			normId: "surgery_implant_standard",
+			protocolText: "Протокол All-on-4 / множественной имплантации.",
+		};
+
+		// Валидный батч постоянных зубов
+		const validBatchRes = createSurgicalProtocolSchema.safeParse({
+			...baseProtocol,
+			teeth: [16, 26, 36, 46],
+		});
+		assert.equal(validBatchRes.success, true);
+
+		// Батч с примесью молочного зуба 65
+		const invalidBatchRes = createSurgicalProtocolSchema.safeParse({
+			...baseProtocol,
+			teeth: [16, 26, 65, 46],
+		});
+		assert.equal(invalidBatchRes.success, false);
+		if (!invalidBatchRes.success) {
+			assert.ok(
+				invalidBatchRes.error.issues.some((issue) => issue.message.includes("молочного зуба (#65)")),
+			);
+		}
+	});
 });

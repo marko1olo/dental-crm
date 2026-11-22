@@ -3,6 +3,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8s (Modular Architecture)
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { safeDivide, safePercent } from "./funnelRoiEngine.js";
 import {
 	FUNNEL_STAGES,
@@ -96,7 +97,7 @@ export function buildSummaryMetrics(params: {
 		overallConversionPercent,
 		totalMarketingSpendRub,
 		totalRevenueRub,
-		totalRevenueKopecks: totalRevenueRub * 100,
+		totalRevenueKopecks: rublesToKopecks(totalRevenueRub),
 		avgBillRub,
 		netMarketingProfitRub,
 		cplRub,

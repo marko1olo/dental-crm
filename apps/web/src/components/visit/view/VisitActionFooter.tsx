@@ -250,6 +250,11 @@ export function VisitActionFooter({
 				<div style={{ padding: "0.75rem 1rem" }}>
 					<VisitSecondaryPanelsInner
 						{...props}
+						specialtiesWithTemplates={
+							Array.isArray(props.specialtiesWithTemplates)
+								? (props.specialtiesWithTemplates as readonly string[])
+								: undefined
+						}
 						isTreatmentPlanExpiredSoft={isTreatmentPlanExpiredSoft}
 						treatmentPlanAgeDays={treatmentPlanAgeDays}
 						setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}

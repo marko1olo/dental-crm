@@ -93,7 +93,7 @@ import {
 } from "../../../workspaceUiLabels";
 
 // biome-ignore lint/suspicious/noExplicitAny: workflow & integration compatibility builder
-export function buildAppLogicWorkflowCompatibility(params: any): any {
+export function buildAppLogicWorkflowCompatibility(params: any) {
 	const {
 		appStore,
 		settingsAndIntegrations,
@@ -450,3 +450,5 @@ export function buildAppLogicWorkflowCompatibility(params: any): any {
 		toDateTimeLocalValue,
 	};
 }
+
+export type AppLogicWorkflowCompatibilitySlice = ReturnType<typeof buildAppLogicWorkflowCompatibility>;

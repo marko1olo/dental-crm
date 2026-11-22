@@ -6,7 +6,7 @@ import { TodayQueueBoard } from "../components/schedule/TodayQueueBoard";
 export interface QueueBoardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly todayAppointments: readonly (Partial<Appointment> & Record<string, unknown>)[];
+	readonly todayAppointments: readonly unknown[];
 	readonly onUpdateAppointmentStatus?: ((appointmentId: string, newStatus: string) => void) | undefined;
 	readonly onSelectAppointment?: ((appId: string) => void) | undefined;
 }

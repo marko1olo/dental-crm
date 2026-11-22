@@ -3,9 +3,9 @@ import { describe, it } from "node:test";
 import { createHash } from "node:crypto";
 import {
 	buildFnsKnd1151156Xml,
-	type FnsTaxPayload,
-} from "../../services/fns/fnsKnd1151156Builder.js";
+} from "../../routes/documents/sharedDocUtils/index.js";
 import {
+	type FnsTaxPayload,
 	createDemonstrationGostCmsSignature,
 	validateGostCmsPkcs7Signature,
 	kopecksToNumericString,

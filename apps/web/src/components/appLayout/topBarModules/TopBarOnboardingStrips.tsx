@@ -34,20 +34,20 @@ export interface TopBarOnboardingStripsProps {
 	setSettingsTab: (tab: string) => void;
 }
 
-export function TopBarOnboardingStrips(props: TopBarOnboardingStripsProps) {
+export function TopBarOnboardingStrips(props: Partial<TopBarOnboardingStripsProps>) {
 	const {
-		onboardingDismissed,
-		showFullOnboardingGuide,
-		isLocalOnboardingDismissed,
-		isStripDismissedLocally,
-		setIsStripDismissedLocally,
+		onboardingDismissed = false,
+		showFullOnboardingGuide = false,
+		isLocalOnboardingDismissed = false,
+		isStripDismissedLocally = false,
+		setIsStripDismissedLocally = () => {},
 		currentView,
-		currentOnboardingIndex,
-		onboardingSteps,
-		legalReadinessPercent,
-		continueOnboardingInDraftMode,
-		openOnboardingGuide,
-		dismissOnboarding,
+		currentOnboardingIndex = 0,
+		onboardingSteps = [],
+		legalReadinessPercent = 0,
+		continueOnboardingInDraftMode = () => {},
+		openOnboardingGuide = () => {},
+		dismissOnboarding = () => {},
 	} = props;
 
 	const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;

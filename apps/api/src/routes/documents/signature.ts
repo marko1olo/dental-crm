@@ -15,6 +15,7 @@ import * as schema from "../../db/schema.js";
 import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { hashCredential, verifyCredential } from "../../utils/cryptoHelper.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { syncDocumentToPatientConsent } from "../consents/queries.js";
 import { apiError, resolveDocumentRenderContext } from "./shared.js";
 
@@ -64,6 +65,11 @@ export async function register(app: FastifyInstance) {
 	app.post("/api/documents/pep-sms/send", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send(apiError("Некорректный заголовок Idempotency-Key (ожидается UUID)"));
+		}
 
 		const parseResult = sendPepSmsSchema.safeParse(request.body);
 		if (!parseResult.success) {
@@ -145,6 +151,11 @@ export async function register(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send(apiError("Некорректный заголовок Idempotency-Key (ожидается UUID)"));
+		}
+
 		const parseResult = verifyPepSmsSchema.safeParse(request.body);
 		if (!parseResult.success) {
 			return reply.code(400).send(apiError("Некорректный формат кода"));
@@ -209,6 +220,11 @@ export async function register(app: FastifyInstance) {
 
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send(apiError("Некорректный заголовок Idempotency-Key (ожидается UUID)"));
+		}
 
 		const { id } = request.params as { id: string };
 		const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -305,13 +321,30 @@ export async function register(app: FastifyInstance) {
 					renderContext,
 				);
 
-				await issueGeneratedDocumentInDb(orgId, id, {
+				const issuedDoc = await issueGeneratedDocumentInDb(orgId, id, {
 					issuedByUserId: null,
 					issuedAt: effectiveSignedAt,
 					snapshotHtml: issuedHtml,
 					signatureAttestation,
 					signatureSvg,
 					tx,
+				});
+
+				// Фиксация в реестре электронных подписей document_signatures для аудита и 63-ФЗ
+				const docSha256 =
+					issuedDoc?.issuedSnapshotSha256 ||
+					crypto.createHash("sha256").update(issuedHtml, "utf8").digest("hex");
+
+				await tx.insert(schema.documentSignatures).values({
+					organizationId: orgId,
+					documentId: existing.id,
+					patientId: existing.patientId,
+					signerRole: recipientRole || "patient",
+					signerName: effectiveRecipientName || "Пациент (ПЭП 63-ФЗ)",
+					signatureType: signatureSvg ? "pep_canvas" : "pep_sms",
+					signatureSvg: signatureSvg ?? null,
+					documentSha256: docSha256,
+					signedAt: new Date(effectiveSignedAt),
 				});
 			} else {
 				// Документ уже был выдан — обновляем HTML-снапшот на диске со штампом подписи и фиксируем в PostgreSQL 18
@@ -394,6 +427,10 @@ export async function register(app: FastifyInstance) {
 			{ documentId: existing.id, patientId: existing.patientId, mode, clientIp },
 			"[DOC-03/DOC-04] Подпись пациента сохранена в БД и зафиксирована в audit_events",
 		);
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		return reply.send({
 			success: true,

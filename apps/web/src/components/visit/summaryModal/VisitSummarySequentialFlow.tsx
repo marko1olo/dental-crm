@@ -12,7 +12,7 @@ import { buildEnrichedReceiptItems } from "./summaryReceiptEnricher";
 export interface VisitSummarySequentialFlowProps {
 	readonly props: VisitSummaryModalProps;
 	readonly state: ReturnType<typeof useVisitSummaryModalState>;
-	readonly appLogic?: Partial<AppLogicContextType> | null;
+	readonly appLogic?: AppLogicContextType | Partial<AppLogicContextType> | null | undefined;
 }
 
 export function VisitSummarySequentialFlow({
@@ -78,7 +78,7 @@ export function VisitSummarySequentialFlow({
 						  }
 						: undefined
 				}
-				dashboard={appLogic?.dashboard}
+				dashboard={appLogic?.dashboard ?? undefined}
 				auth={appLogic?.auth}
 				onAppointmentCreated={() => {
 					state.setIsNextStageModalOpen(false);
@@ -116,14 +116,14 @@ export function VisitSummarySequentialFlow({
 				patientId={props.patient?.id || appLogic?.activePatientId || "pat-walkin"}
 				patientName={state.patientName !== "—" ? state.patientName : "Пациент"}
 				patientPhone={props.patient?.phone || ""}
-				visitId={appLogic?.activeVisitId}
+				visitId={(appLogic?.activeVisitId as string | undefined) ?? undefined}
 				amountRub={state.effectiveTotalDueRub}
 				defaultMethod={defaultMethod}
 				patientDepositRub={state.effectiveDepositRub}
 				patientFamilyBalanceRub={state.effectiveFamilyBalanceRub}
 				cashierFullName={props.doctorName || "Врач-стоматолог"}
 				doctorFullName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
-				clinicLegalName={appLogic?.dashboard?.clinicSettings?.legalName || "ООО «ДЕНТЕ»"}
+				clinicLegalName={appLogic?.dashboard?.clinicSettings?.profile?.legalName || "ООО «ДЕНТЕ»"}
 				serviceTitle={enrichedItems[0]?.name || "Стоматологические услуги"}
 				onSuccess={state.handlePaymentSuccessCallback}
 			/>

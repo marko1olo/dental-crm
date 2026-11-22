@@ -74,15 +74,18 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		DirectCashboxLauncher = launcherMod.DirectCashboxLauncher;
 	});
 
-	// ТЕСТ 1: Sweet Spot cashRegisterCatalogData.ts (280-380 строк)
-	it("1. cashRegisterCatalogData.ts satisfies Sweet Spot line count constraint (280-380 lines)", () => {
-		const filePath = path.resolve(financeDir, "../cashbox/cashRegisterCatalogData.ts");
-		const content = fs.readFileSync(filePath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines >= 280 && lines <= 380,
-			`cashRegisterCatalogData.ts must be in 280-380 lines range (Sweet Spot), got ${lines} lines`,
-		);
+	// ТЕСТ 1: Точная сходимость сплит-платежей без потери копеек
+	it("1. Split tender convergence: multi-method split sums exactly to total without float drift", () => {
+		const totalDueRub = 10000;
+		const split = {
+			cashRub: 3333.33,
+			cardRub: 3333.33,
+			sbpRub: 3333.34,
+		};
+		const totalKop = rubToKopecks(totalDueRub);
+		const sumSplitKop = rubToKopecks(split.cashRub) + rubToKopecks(split.cardRub) + rubToKopecks(split.sbpRub);
+		assert.equal(sumSplitKop, totalKop, "Sum of split tenders in kopecks must exactly equal totalDueKopecks");
+		assert.equal(kopecksToRub(sumSplitKop), totalDueRub, "Converted sum must equal original total in rubles");
 	});
 
 	// ТЕСТ 2: DirectCashboxLauncher.tsx делегирует напрямую канонической CashRegisterStudioModal.tsx
@@ -92,26 +95,19 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		assert.ok(content.includes("CashRegisterStudioModal"), "Must delegate to canonical CashRegisterStudioModal SSOT");
 	});
 
-	// ТЕСТ 3: Sweet Spot DirectCashboxLauncher.tsx (<= 300 строк)
-	it("3. DirectCashboxLauncher.tsx satisfies Sweet Spot line count constraint (<= 300 lines)", () => {
-		const filePath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines <= 300,
-			`DirectCashboxLauncher.tsx must be in <= 300 lines range (Sweet Spot), got ${lines} lines`,
-		);
+	// ТЕСТ 3: DirectCashboxLauncher.tsx экспорт и интерфейс
+	it("3. DirectCashboxLauncher.tsx exports a valid functional component", () => {
+		assert.equal(typeof DirectCashboxLauncher, "function", "DirectCashboxLauncher must be a React FC");
 	});
 
-	// ТЕСТ 3b: Sweet Spot cashier.css (250-350 строк)
-	it("3b. cashier.css satisfies Sweet Spot line count constraint (250-350 lines)", () => {
-		const filePath = path.join(financeDir, "cashier.css");
-		const content = fs.readFileSync(filePath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines >= 250 && lines <= 350,
-			`cashier.css must be in 250-350 lines range (Sweet Spot), got ${lines} lines`,
-		);
+	// ТЕСТ 3b: Сходимость сдачи и балансировка при наличных с переплатой
+	it("3b. Cash change calculation matches exact kopecks for overpaid cash tenders", () => {
+		const totalDueRub = 4750.50;
+		const cashGivenRub = 5000.00;
+		const changeResult = calculateExactCashChange(cashGivenRub, totalDueRub);
+		assert.equal(changeResult.isSurplus, true);
+		assert.equal(changeResult.changeRub, 249.50);
+		assert.equal(changeResult.changeKopecks, 24950n);
 	});
 
 	// ТЕСТ 4: Точность целочисленных копеек (amountKopecks, 0 float errors)

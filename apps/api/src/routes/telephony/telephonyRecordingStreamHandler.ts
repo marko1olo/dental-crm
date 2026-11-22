@@ -35,6 +35,9 @@ export function getAudioCacheDir(): string {
 }
 
 export function getAudioCachePath(orgId: string, eventId: string): string {
+	if (!UUID_REGEX.test(orgId) || !UUID_REGEX.test(eventId)) {
+		throw new Error("Invalid audio cache parameters: orgId and eventId must be valid UUIDs to prevent path traversal");
+	}
 	return path.join(getAudioCacheDir(), orgId, `${eventId}.audio`);
 }
 
@@ -243,11 +246,11 @@ export async function handleStreamRecording(
 				resolve();
 			});
 
-			proxyRes.on("error", () => {
+			proxyRes.on("error", async () => {
 				if (cacheWriteStream && tempFilePath) {
 					try {
 						cacheWriteStream.destroy();
-						fs.unlinkSync(tempFilePath);
+						await fs.promises.unlink(tempFilePath).catch(() => {});
 					} catch {}
 				}
 				if (!reply.raw.headersSent) reply.status(500).send({ error: "StreamError", message: "Failed to stream audio" });

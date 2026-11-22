@@ -30,6 +30,7 @@ import {
 import {
 	computeFpd54Fz,
 	format54FzFtsQrString,
+	rublesToKopecks,
 	type Ffd12OperationType,
 } from "@dental/shared";
 
@@ -169,7 +170,7 @@ export class AtolKkt10Emulator {
 
 		const now = new Date();
 		const operationType: Ffd12OperationType = req.type === "sellReturn" ? "income_return" : "income";
-		const totalKopecks = Math.round(req.total * 100);
+		const totalKopecks = rublesToKopecks(req.total);
 		const fiscalSign = computeFpd54Fz({
 			fnSerial: this.fnSerialNumber,
 			fiscalDocumentNumber: this.fiscalDocumentCounter,

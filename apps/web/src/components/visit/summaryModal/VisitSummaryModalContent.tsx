@@ -220,7 +220,7 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 						onAddAllUnbilledToBill={handleAddAllUnbilledToBill}
 					/>
 
-					{/* Разделы Формы 043/у */}
+					{/* Разделы дневника приёма медицинской карты */}
 					<VisitSummaryDiarySections
 						diary={diary}
 						synthesizedDiaryPreview={synthesizedDiaryPreview}

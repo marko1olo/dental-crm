@@ -21,12 +21,12 @@ export function useWhatsappPanelState({
 
 	// QR Hub States
 	const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-	const [pairingCode, setPairingCode] = useState<string | null>("7A4K-9M2N");
+	const [pairingCode, setPairingCode] = useState<string | null>(null);
 	const [secondsLeft, setSecondsLeft] = useState<number>(60);
 	const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
 	const [deviceModel, setDeviceModel] = useState<string | null>(null);
 	const [isPairingCodeMode, setIsPairingCodeMode] = useState(false);
-	const [phoneInput, setPhoneInput] = useState("+7 (999) 123-45-67");
+	const [phoneInput, setPhoneInput] = useState("");
 	const [isQrLoading, setIsQrLoading] = useState(false);
 
 	// WABA State
@@ -68,8 +68,8 @@ export function useWhatsappPanelState({
 					setQrDataUrl(data.qrDataUrl);
 					setPairingCode(data.pairingCode);
 					setSecondsLeft(data.expiresInSeconds || 60);
-					if (data.status === "authenticated") {
-						setConnectedPhone(data.connectedPhone || "+7 (999) 123-45-67");
+					if (data.status === "authenticated" && data.connectedPhone) {
+						setConnectedPhone(data.connectedPhone);
 					}
 				}
 			} catch {
@@ -89,8 +89,8 @@ export function useWhatsappPanelState({
 			});
 			if (res.ok) {
 				const data = await res.json();
-				if (data.status === "authenticated") {
-					setConnectedPhone(data.connectedPhone || "+7 (999) 123-45-67");
+				if (data.status === "authenticated" && data.connectedPhone) {
+					setConnectedPhone(data.connectedPhone);
 					setDeviceModel(data.deviceModel || "WhatsApp Web Multi-Device");
 				} else if (data.status === "qr_ready") {
 					setSecondsLeft(data.secondsLeft);
@@ -139,30 +139,8 @@ export function useWhatsappPanelState({
 	}, [startQrSession]);
 
 	const handleSimulateScan = useCallback(async () => {
-		try {
-			const res = await fetch("/api/whatsapp/qr/session/simulate-auth", {
-				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					phone: phoneInput || "+7 (999) 123-45-67",
-					deviceModel: "Рабочий iPhone клиники",
-				}),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				setConnectedPhone(data.connectedPhone);
-				setDeviceModel(data.deviceModel);
-				showToast("Рабочий смартфон клиники успешно подключен!", "success");
-			}
-		} catch {
-			setConnectedPhone(phoneInput || "+7 (999) 123-45-67");
-			setDeviceModel("Рабочий смартфон клиники (Демо)");
-			showToast("Рабочий телефон подключен (демо)", "success");
-		}
-	}, [phoneInput]);
+		await fetchQrStatus();
+	}, [fetchQrStatus]);
 
 	const handleTestWaba = useCallback(async () => {
 		setIsTestingWaba(true);

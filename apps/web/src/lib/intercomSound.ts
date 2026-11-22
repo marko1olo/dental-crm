@@ -5,13 +5,17 @@
  * Pure procedural synthesis with soft gain envelope (anti-click).
  */
 
+interface WindowWithWebkitAudio extends Window {
+	webkitAudioContext?: typeof AudioContext;
+}
+
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
 	try {
 		const AudioContextClass =
-			window.AudioContext || (window as any).webkitAudioContext;
+			window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
 		if (!AudioContextClass) return null;
 		if (!audioCtx) {
 			audioCtx = new AudioContextClass();

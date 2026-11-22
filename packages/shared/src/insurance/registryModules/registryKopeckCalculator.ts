@@ -1,5 +1,5 @@
-import type { Kopecks } from "../../utils/money.js";
-import { kopecksToNumericString } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
+import { kopecksToNumericString } from "../../money.js";
 import { amountToWordsRu } from "../../finance/taxDeduction.js";
 import type { DmsRegistryRecord, DmsRegistryTotals } from "./registryTypes.js";
 

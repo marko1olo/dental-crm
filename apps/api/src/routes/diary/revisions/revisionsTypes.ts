@@ -2,7 +2,6 @@ export type ReviseTxResult =
 	| { kind: "not_found" }
 	| { kind: "not_locked" }
 	| { kind: "forbidden" }
-	| { kind: "invalid_tray" }
 	| { kind: "update_lost" }
 	| { kind: "ok"; hash: string; revisionCount: number };
 

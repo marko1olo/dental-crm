@@ -52,8 +52,8 @@ export function mapXrayScanToImagingStudy(
 		patientFullName: patientFullName ?? null,
 		status: "available",
 		aiSummary: record.aiSummary,
-		doseMsv: kind === "opg" ? 0.025 : 0.002,
-		effectiveDoseMsv: kind === "opg" ? 0.025 : 0.002,
+		doseMsv: null,
+		effectiveDoseMsv: null,
 		previewUrl: record.storagePath
 			? (browserRenderableImageMimeType(record.storagePath)
 				? `/api/imaging/studies/${record.id}/file`

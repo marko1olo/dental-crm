@@ -86,6 +86,10 @@ export async function insertPrescriptionWithItems(
 	now: Date,
 ) {
 	return await db.transaction(async (tx) => {
+		if (!patient.birthDate) {
+			throw new Error("Для выписки электронного рецепта необходимо указать дату рождения пациента в его медицинской карте.");
+		}
+
 		const [presc] = await tx
 			.insert(electronicPrescriptions)
 			.values({
@@ -101,8 +105,8 @@ export async function insertPrescriptionWithItems(
 				isSpecialChronicIndication: input.isSpecialChronicIndication,
 				chronicDispenseFrequencyNotes: input.chronicDispenseFrequencyNotes || null,
 				patientFullName: patient.fullName,
-				patientBirthDate: patient.birthDate || "1990-01-01",
-				patientCardNumber: `043/у-${patient.id.slice(-6).toUpperCase()}`,
+				patientBirthDate: patient.birthDate,
+				patientCardNumber: `ЭМК-${patient.id.slice(0, 8).toUpperCase()}`,
 				doctorFullName,
 				clinicalDiagnosisMkb10: input.clinicalDiagnosisMkb10 || null,
 				clinicalDiagnosisDescription: input.clinicalDiagnosisDescription || null,
@@ -125,6 +129,7 @@ export async function insertPrescriptionWithItems(
 					catalogDrugId: item.catalogDrugId && uuidRx.test(item.catalogDrugId) ? item.catalogDrugId : null,
 					itemIndex: index + 1,
 					innLatin: item.innLatin,
+					tradeName: item.tradeName || null,
 					dosageFormLatin: item.dosageFormLatin,
 					dosageDoseConcentration: item.dosageDoseConcentration,
 					dispenseInstructionLatin: item.dispenseInstructionLatin,

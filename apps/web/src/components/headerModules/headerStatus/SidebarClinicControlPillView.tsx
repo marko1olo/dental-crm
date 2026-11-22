@@ -64,11 +64,15 @@ export function SidebarClinicControlPillView({
 				{activeCall ? (
 					<PhoneCall size={12} className="text-emerald-500 animate-bounce" />
 				) : (
-					<ShieldCheck
-						size={13}
-						className={isShiftOpen ? "text-emerald-500 shrink-0" : "text-amber-500 shrink-0"}
+					<span
 						title={isShiftOpen ? `Касса: смена открыта (${formattedShiftTime})` : "Касса: смена закрыта"}
-					/>
+						className="inline-flex items-center"
+					>
+						<ShieldCheck
+							size={13}
+							className={isShiftOpen ? "text-emerald-500 shrink-0" : "text-amber-500 shrink-0"}
+						/>
+					</span>
 				)}
 				<span
 					className="px-1 py-0.2 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold text-[9px] border border-teal-500/20"

@@ -8,28 +8,28 @@ export const DEMO_FALLBACK_PATIENTS: PatientSearchCandidate[] = [
 		fullName: "Захаров Иван Дмитриевич",
 		birthDate: "1985-04-12",
 		phone: "+7 (916) 123-45-67",
-		cardNumber: "МК-043/у-01",
+		cardNumber: "ЭМК №101",
 	},
 	{
 		id: "01a00000-0000-0000-0000-000000000002",
 		fullName: "Иванов Алексей Сергеевич",
 		birthDate: "1992-08-24",
 		phone: "+7 (926) 987-65-43",
-		cardNumber: "МК-043/у-02",
+		cardNumber: "ЭМК №102",
 	},
 	{
 		id: "01a00000-0000-0000-0000-000000000003",
 		fullName: "Смирнова Елена Александровна",
 		birthDate: "1988-11-03",
 		phone: "+7 (903) 555-12-34",
-		cardNumber: "МК-043/у-03",
+		cardNumber: "ЭМК №103",
 	},
 	{
 		id: "01a00000-0000-0000-0000-000000000004",
 		fullName: "Кузнецов Дмитрий Павлович",
 		birthDate: "1979-02-17",
 		phone: "+7 (915) 333-88-99",
-		cardNumber: "МК-043/у-04",
+		cardNumber: "ЭМК №104",
 	},
 ];
 

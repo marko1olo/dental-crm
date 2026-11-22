@@ -90,6 +90,6 @@ export const settingsTabGroups = [
 
 export type SettingsTabGroup = (typeof settingsTabGroups)[number]["id"];
 
-import { defaultUiPreferences, type UiPreferences } from "../appHelpers/preferenceHelpers";
+import { defaultUiPreferences } from "../appHelpers/preferenceHelpers";
 
 export const initialUiPreferences: UiPreferences = defaultUiPreferences;

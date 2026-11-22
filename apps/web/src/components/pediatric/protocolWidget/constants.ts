@@ -25,8 +25,6 @@ export const PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION = {
 	diagnosisNameRu: "Стоматологическое обследование / физиологическая норма временного прикуса (Z01.2)",
 	serviceCode: "A01.07.001",
 	serviceName: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
-	serviceCode804n: "A01.07.001",
-	serviceName804n: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
 };
 
 export const FRANKL_EXPRESS_ITEMS: readonly FranklExpressItem[] = [

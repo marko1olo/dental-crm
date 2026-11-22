@@ -31,7 +31,7 @@ describe("WhatsApp Connection Hub (QR & WABA Cloud API)", () => {
 		assert.ok(!code.includes("I"), "Не должен содержать букву I");
 	});
 
-	test("QR Session Lifecycle: start -> status -> simulate auth -> disconnect", () => {
+	test("QR Session Lifecycle: start -> status -> disconnect", () => {
 		// 1. Старт новой сессии
 		const session = WhatsappConnectionHubService.startQrSession({
 			organizationId: testOrgId,
@@ -50,21 +50,7 @@ describe("WhatsApp Connection Hub (QR & WABA Cloud API)", () => {
 		assert.ok(status.secondsLeft > 0 && status.secondsLeft <= 60);
 		assert.strictEqual(status.pairingPhone, "+7 (999) 000-11-22");
 
-		// 3. Симуляция авторизации (сканирование рабочим телефоном)
-		const authSession = WhatsappConnectionHubService.simulateAuthenticate(
-			testOrgId,
-			"+7 (999) 777-88-99",
-			"Клиника Рабочий Смартфон",
-		);
-		assert.strictEqual(authSession.status, "authenticated");
-		assert.strictEqual(authSession.connectedPhone, "+7 (999) 777-88-99");
-		assert.strictEqual(authSession.deviceModel, "Клиника Рабочий Смартфон");
-
-		const statusAfterAuth = WhatsappConnectionHubService.getQrSessionStatus(testOrgId);
-		assert.strictEqual(statusAfterAuth.status, "authenticated");
-		assert.strictEqual(statusAfterAuth.connectedPhone, "+7 (999) 777-88-99");
-
-		// 4. Отвязка устройства
+		// 3. Отвязка устройства
 		const disconnected = WhatsappConnectionHubService.disconnectQrSession(testOrgId);
 		assert.strictEqual(disconnected, true);
 
@@ -73,18 +59,57 @@ describe("WhatsApp Connection Hub (QR & WABA Cloud API)", () => {
 		assert.strictEqual(statusAfterDisconnect.connectedPhone, null);
 	});
 
-	test("testWabaConnection: validates Meta API response", async () => {
-		// Валидный тест
+	test("testWabaConnection: validates Meta API response via real HTTP client", async (t) => {
+		// 1. Валидный ответ Meta Graph API v21.0
+		const fetchMock = t.mock.method(
+			globalThis,
+			"fetch",
+			async (input: string | URL | Request, init?: RequestInit) => {
+				const url = String(input);
+				const headers = init?.headers as Record<string, string> | undefined;
+
+				assert.ok(
+					url.startsWith("https://graph.facebook.com/v21.0/109876543210"),
+					`Ожидался запрос к Meta Graph API v21.0, получено: ${url}`,
+				);
+				assert.equal(headers?.Authorization, "Bearer meta_crm_valid_token");
+
+				return new Response(
+					JSON.stringify({
+						verified_name: "Стоматологическая Клиника ДЕНТЕ",
+						display_phone_number: "+7 (495) 911-20-20",
+						quality_rating: "GREEN",
+						code_verification_status: "VERIFIED",
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			},
+		);
+
 		const validResult = await WhatsappConnectionHubService.testWabaConnection({
 			phoneNumberId: "109876543210",
-			accessToken: "test_mock_token_valid_crm_meta",
+			accessToken: "meta_crm_valid_token",
 		});
 
 		assert.strictEqual(validResult.ok, true);
-		assert.ok(validResult.verifiedName?.includes("ДЕНТЕ"));
+		assert.strictEqual(validResult.verifiedName, "Стоматологическая Клиника ДЕНТЕ");
+		assert.strictEqual(validResult.displayPhoneNumber, "+7 (495) 911-20-20");
 		assert.strictEqual(validResult.qualityRating, "GREEN");
+		assert.strictEqual(validResult.codeVerificationStatus, "VERIFIED");
 
-		// Ошибка недействительного токена
+		// 2. Ошибка недействительного токена Meta Graph API (HTTP 401)
+		fetchMock.mock.mockImplementation(async () => {
+			return new Response(
+				JSON.stringify({
+					error: {
+						message: "Error validating access token: Session has expired",
+						code: 190,
+					},
+				}),
+				{ status: 401, headers: { "Content-Type": "application/json" } },
+			);
+		});
+
 		const invalidResult = await WhatsappConnectionHubService.testWabaConnection({
 			phoneNumberId: "109876543210",
 			accessToken: "test_mock_token_invalid_expired",
@@ -92,6 +117,6 @@ describe("WhatsApp Connection Hub (QR & WABA Cloud API)", () => {
 
 		assert.strictEqual(invalidResult.ok, false);
 		assert.strictEqual(invalidResult.errorCode, 190);
-		assert.ok(invalidResult.errorMessage?.includes("Недействительный токен"));
+		assert.ok(invalidResult.errorMessage?.includes("Error validating access token"));
 	});
 });

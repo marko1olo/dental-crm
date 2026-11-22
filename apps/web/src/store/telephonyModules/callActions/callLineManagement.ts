@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { logger } from "../../../utils/logger.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { normalizePhone } from "../../telephonyHelpers";
 import { getSharedTelephonyAudioStreamManager } from "../telephonyAudioStreamManager";
@@ -98,7 +99,7 @@ export function createCallLineManagementActions(set: SetState, get: GetState) {
 
 		triggerIncomingCall: (call: IncomingCallPayload) => {
 			if (!isDemoShowcaseMode() && (!call.phone || call.phone.trim().length < 4)) {
-				console.warn("[TelephonyStore] Production reject: call without valid phone number is prohibited.");
+				logger.warn("[TelephonyStore] Production reject: call without valid phone number is prohibited.");
 				return;
 			}
 

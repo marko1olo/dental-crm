@@ -48,7 +48,7 @@ export const ScheduleChairHeaderTopBar: React.FC<ScheduleChairHeaderTopBarProps>
             </div>
           );
         })()}
-        <span className="hidden 2xl:inline text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider border shrink-0" data-chair-palette={chairPalette.nameRu}
+        <span className="hidden 2xl:inline text-[9px] px-1 py-0.5 rounded font-medium border shrink-0" data-chair-palette={chairPalette.nameRu}
           style={{ color: chairPalette.bright_code, borderColor: `${chairPalette.bright_code}50`, backgroundColor: "var(--paper)" }}
           title={`Рабочее место: ${chairPalette.nameRu}`} data-testid={`chair-palette-badge-${chair.id}`}>
           {chairPalette.nameRu}

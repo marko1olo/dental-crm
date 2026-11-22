@@ -81,6 +81,7 @@ export async function executeCopilotConfirmation({
 			headers: {
 				"Content-Type": "application/json",
 				"x-agent-runtime": runtimeMode,
+				"Idempotency-Key": generateUuidV7(),
 				...(token ? { Authorization: `Bearer ${token}` } : {}),
 			},
 			body: JSON.stringify({

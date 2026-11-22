@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-11-18T09:11:30.823Z",
+  "savedAt": "2026-11-22T18:41:39.660Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -36,7 +36,7 @@
       },
       "networkEnabled": true,
       "egiszEnabled": false,
-      "updatedAt": "2026-11-18T09:11:30.813Z",
+      "updatedAt": "2026-11-21T15:29:17.802Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -639,6 +639,69 @@
         "endsAt": "2026-05-12T12:30:00+04:00",
         "reason": "Первичная консультация",
         "comment": null
+      },
+      {
+        "id": "e44370da-d3b6-44e7-a8d8-2b09fa2547c7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
+      },
+      {
+        "id": "57a7676e-6b63-4815-bc07-14ac866cf652",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
+      },
+      {
+        "id": "6868edcc-cee1-4a3c-ad8c-69b34bf3122f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
       }
     ],
     "patients": [
@@ -657,7 +720,7 @@
         "administrativeProfile": null,
         "balanceRub": 0,
         "createdAt": "2026-10-17T18:58:22.968Z",
-        "updatedAt": "2026-11-18T09:09:18.581Z"
+        "updatedAt": "2026-11-21T15:26:31.439Z"
       },
       {
         "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
@@ -1029,6 +1092,106 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "75094cd3-21e8-4fd8-96a6-05cfa4b865ba",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "6868edcc-cee1-4a3c-ad8c-69b34bf3122f",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-22T18:41:39.458Z"
+      },
+      {
+        "id": "d655afd6-e146-40c1-ab0b-ce5169edde14",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "6868edcc-cee1-4a3c-ad8c-69b34bf3122f",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-22T18:41:39.458Z"
+      },
+      {
+        "id": "592be347-97f3-44f8-b20f-f7ac98615d16",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "57a7676e-6b63-4815-bc07-14ac866cf652",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-22T10:52:53.963Z"
+      },
+      {
+        "id": "ff7a6d22-b83a-4602-986f-8c06fc363c62",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "57a7676e-6b63-4815-bc07-14ac866cf652",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-22T10:52:53.962Z"
+      },
+      {
+        "id": "5dbdcb04-b31c-4960-a3ec-19bc8f6a1b25",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "e44370da-d3b6-44e7-a8d8-2b09fa2547c7",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-22T09:28:08.119Z"
+      },
+      {
+        "id": "bff1c869-09da-4612-a0b9-e97b744202eb",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "e44370da-d3b6-44e7-a8d8-2b09fa2547c7",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-22T09:28:08.119Z"
+      },
+      {
+        "id": "14e43803-0ca2-40f8-9a23-32f04f8dd88a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: network_center.",
+        "createdAt": "2026-11-21T15:29:17.802Z"
+      },
+      {
+        "id": "63405ece-4d25-47e2-88dc-7590cbfb05be",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: standard_clinic.",
+        "createdAt": "2026-11-21T15:29:17.801Z"
+      },
+      {
+        "id": "7baf095b-0356-4b99-ac68-17f5eec3ef16",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: solo_doctor.",
+        "createdAt": "2026-11-21T15:29:17.800Z"
+      },
+      {
+        "id": "808c2b59-0cfb-454c-b6bd-687a785ca770",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "patient",
+        "entityId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "action": "patient_core_updated",
+        "reason": "Core patient identity and contact facts updated for scheduling, documents, tax, and communication.",
+        "createdAt": "2026-11-21T15:26:31.440Z"
+      },
+      {
         "id": "5a465413-9f71-420d-bf53-23b77bfd5741",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1303,5 +1466,5 @@
       "updatedAt": "2026-10-17T18:58:22.968Z"
     }
   },
-  "checksum": "efead05cee884659fda4d7f0b9b240f19c926b569c21e13f8ac7c306923b8c95"
+  "checksum": "51f8de4dffa9e2ae49a240d97d26fc36921976643ae7400248afe937ad40e538"
 }

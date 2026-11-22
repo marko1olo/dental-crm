@@ -84,8 +84,8 @@ export const ClinicEgiszConnectionParams: React.FC<ClinicEgiszConnectionParamsPr
 				</div>
 			</div>
 
-			<div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2.5">
-				<ShieldAlert size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+			<div className="p-3 rounded-xl bg-[var(--primary-soft)] border border-[var(--line)] flex items-start gap-2.5">
+				<ShieldAlert size={16} className="text-[var(--primary)] shrink-0 mt-0.5" />
 				<p className="text-xs text-[var(--ink)] m-0 leading-relaxed">
 					При сохранении протокола приёма врача подписывается электронный документ стандарта CDA R3 и ставится в тихую фоновую очередь отправки. Врач не ждет ответа сервера ЕГИСЗ.
 				</p>

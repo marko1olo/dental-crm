@@ -19,7 +19,12 @@ ALTER TABLE "portal_budget_tokens" ADD COLUMN IF NOT EXISTS "total_price_kopecks
 ALTER TABLE "portal_budget_tokens" ADD COLUMN IF NOT EXISTS "discount_kopecks" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "portal_budget_tokens" ADD COLUMN IF NOT EXISTS "net_total_kopecks" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
 
-ALTER TABLE "treatment_scenarios" ADD COLUMN IF NOT EXISTS "total_kopecks" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'treatment_scenarios') THEN
+        ALTER TABLE "treatment_scenarios" ADD COLUMN IF NOT EXISTS "total_kopecks" bigint DEFAULT 0 NOT NULL;
+    END IF;
+END $$;--> statement-breakpoint
 
 UPDATE "service_catalog_items"
 SET "price_kopecks" = ROUND(COALESCE("price_rub", 0)::numeric * 100)::bigint,
@@ -49,6 +54,11 @@ SET "total_price_kopecks" = ROUND(COALESCE("total_price_rub", 0)::numeric * 100)
     "net_total_kopecks" = ROUND(COALESCE("net_total_rub", 0)::numeric * 100)::bigint
 WHERE "total_price_kopecks" = 0 AND ("total_price_rub" IS NOT NULL OR "net_total_rub" IS NOT NULL);--> statement-breakpoint
 
-UPDATE "treatment_scenarios"
-SET "total_kopecks" = ROUND(COALESCE("total_rub", 0)::numeric * 100)::bigint
-WHERE "total_kopecks" = 0 AND "total_rub" IS NOT NULL;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'treatment_scenarios') THEN
+        UPDATE "treatment_scenarios"
+        SET "total_kopecks" = ROUND(COALESCE("total_rub", 0)::numeric * 100)::bigint
+        WHERE "total_kopecks" = 0 AND "total_rub" IS NOT NULL;
+    END IF;
+END $$;

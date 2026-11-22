@@ -17,6 +17,30 @@ export async function labOrderMarkInstalledHandler(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 ) {
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.headers?.["Idempotency-Key"] as string | undefined);
+
+	const idempotencyKey = rawIdempotencyKey?.trim();
+	if (!idempotencyKey) {
+		return reply.code(400).send({
+			error: "IdempotencyKeyRequired",
+			message: "Для сдачи и фиксации ортопедической работы обязателен заголовок Idempotency-Key (UUIDv7).",
+		});
+	}
+
+	const uuidValidation = z.string().uuid().safeParse(idempotencyKey);
+	if (!uuidValidation.success) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный формат Idempotency-Key (ожидается валидный UUIDv7).",
+			details: uuidValidation.error.issues,
+		});
+	}
+
+	reply.header("Idempotency-Key", idempotencyKey);
+
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -36,7 +60,10 @@ export async function labOrderMarkInstalledHandler(
 	const parsed = markInstalledBodySchema.safeParse(request.body || {});
 	const data = parsed.success ? parsed.data : {};
 
-	const result = await executeLabOrderMarkInstalled(orgId, paramsParsed.data.id, data);
+	const result = await executeLabOrderMarkInstalled(orgId, paramsParsed.data.id, {
+		...data,
+		idempotencyKey,
+	});
 
 	if (result.kind === "order_not_found") {
 		return reply.code(404).send({

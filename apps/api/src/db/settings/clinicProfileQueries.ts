@@ -736,17 +736,28 @@ export async function updateClinicProfileInDb(
 	if (input.timezone !== undefined) clinicUpdateData.timezone = input.timezone;
 
 	if (Object.keys(clinicUpdateData).length > 0) {
+		const targetId = (input as { branchId?: string; clinicId?: string }).branchId ||
+			(input as { branchId?: string; clinicId?: string }).clinicId;
+		const query = targetId
+			? and(eq(schema.clinics.id, targetId), eq(schema.clinics.organizationId, organizationId))
+			: eq(schema.clinics.organizationId, organizationId);
+
 		const existingClinic = await db
 			.select({ id: schema.clinics.id })
 			.from(schema.clinics)
-			.where(eq(schema.clinics.organizationId, organizationId))
+			.where(query)
 			.limit(1);
 
 		if (existingClinic.length > 0) {
 			await db
 				.update(schema.clinics)
 				.set(clinicUpdateData)
-				.where(eq(schema.clinics.organizationId, organizationId));
+				.where(
+					and(
+						eq(schema.clinics.id, existingClinic[0]!.id),
+						eq(schema.clinics.organizationId, organizationId),
+					),
+				);
 		} else {
 			await db.insert(schema.clinics).values({
 				organizationId,

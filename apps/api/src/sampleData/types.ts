@@ -38,6 +38,7 @@ export type UpdateStaffMemberProfileInput = {
  * из базы как пустые значения. Принимать их значило бы молча терять ввод.
  */
 export type UpdateChairProfileInput = {
+	clinicId?: string | null | undefined;
 	name?: string | undefined;
 	room?: string | null | undefined;
 	color?: string | null | undefined;

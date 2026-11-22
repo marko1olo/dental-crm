@@ -26,9 +26,12 @@ export interface PerioDetailedProbeSectionProps {
 	readonly selectedSiteKey: SiteKey;
 	readonly onSelectSiteKey: (siteKey: SiteKey) => void;
 	readonly onUpdateMobility: (mobility: 0 | 1 | 2 | 3) => void;
+	readonly onUpdateFurcation?: ((furcation: 0 | 1 | 2 | 3) => void) | undefined;
 	readonly onUpdateDepth: (depth: number) => void;
+	readonly onUpdateGingivalMargin?: ((gm: number) => void) | undefined;
 	readonly onToggleBop: () => void;
 	readonly onTogglePlaque: () => void;
+	readonly onToggleSuppuration?: (() => void) | undefined;
 }
 
 function getToothSummary(tooth: PerioToothRecord | undefined) {
@@ -68,9 +71,12 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 	selectedSiteKey,
 	onSelectSiteKey,
 	onUpdateMobility,
+	onUpdateFurcation,
 	onUpdateDepth,
+	onUpdateGingivalMargin,
 	onToggleBop,
 	onTogglePlaque,
+	onToggleSuppuration,
 }) => {
 	const teethByNumber = useMemo(() => {
 		const map = new Map<number, PerioToothRecord>();
@@ -84,6 +90,11 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 	const activeSite = activeTooth?.[selectedSiteKey];
 	const activeSiteBop = Boolean(activeSite?.bleedingOnProbing);
 	const activeSitePlaque = Boolean(activeSite?.plaque);
+	const activeSiteSuppuration = Boolean(activeSite?.suppuration);
+	const activeSiteGm = activeSite?.gingivalMarginMm ?? 0;
+	const activeSiteDepth = activeSite?.probingDepthMm ?? 2;
+	const activeSiteCal = activeSite?.calMm ?? (activeSiteDepth + activeSiteGm);
+	const isMolar = [18, 17, 16, 26, 27, 28, 38, 37, 36, 46, 47, 48].includes(selectedToothNum);
 
 	const renderArchRow = (label: string, toothNumbers: readonly number[], testPrefix: string) => (
 		<div className="flex flex-col gap-1.5">
@@ -182,6 +193,28 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										</button>
 									);
 								})}
+								{isMolar && (
+									<div className="flex items-center gap-1 ml-2 pl-2 border-l border-[var(--line)]">
+										<span className="text-[11px] text-[var(--muted)] font-medium">Фуркация:</span>
+										{([0, 1, 2, 3] as const).map((f) => {
+											const activeFurc = (activeTooth?.furcation ?? 0) === f;
+											return (
+												<button
+													key={f}
+													type="button"
+													onClick={() => onUpdateFurcation?.(f)}
+													className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${
+														activeFurc
+															? "bg-[var(--danger,#e11d48)]/15 text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
+															: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
+													}`}
+												>
+													{f === 0 ? "0" : f === 1 ? "I" : f === 2 ? "II" : "III"}
+												</button>
+											);
+										})}
+									</div>
+								)}
 							</div>
 						</div>
 
@@ -192,6 +225,9 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								const depth = siteData?.probingDepthMm ?? 2;
 								const isBop = Boolean(siteData?.bleedingOnProbing);
 								const isPlaque = Boolean(siteData?.plaque);
+								const isSupp = Boolean(siteData?.suppuration);
+								const gm = siteData?.gingivalMarginMm ?? 0;
+								const cal = siteData?.calMm ?? (depth + gm);
 								const isSelectedSite = selectedSiteKey === site.key;
 								const tone = probingDepthTone(depth, "clinical");
 								const toneBadge = getToneBadgeClass(tone, depth);
@@ -201,7 +237,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										key={site.key}
 										type="button"
 										onClick={() => onSelectSiteKey(site.key)}
-										title={site.label}
+										title={`${site.label}: глубина ${depth} мм, рецессия ${gm} мм, CAL ${cal} мм${isBop ? ", BOP+" : ""}${isSupp ? ", нагноение" : ""}`}
 										className={`touch-manipulation min-h-[44px] sm:min-h-[38px] px-2 py-1.5 rounded-xl text-xs cursor-pointer border flex items-center justify-between gap-1 transition-all ${
 											isSelectedSite
 												? "bg-[var(--primary)]/15 text-[var(--primary)] font-bold border-[var(--primary)] ring-1 ring-[var(--primary)]"
@@ -211,24 +247,25 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										<span className="font-semibold text-[11px] truncate">{site.short}</span>
 										<div className="flex items-center gap-1 shrink-0">
 											<span className={`text-[11px] px-1 py-0.2 rounded ${toneBadge}`}>{depth}</span>
-											{isBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" />}
-											{isPlaque && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" />}
+											{isBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" title="BOP+" />}
+											{isSupp && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Гной+" />}
+											{isPlaque && !isBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Налёт" />}
 										</div>
 									</button>
 								);
 							})}
 						</div>
 
-						{/* Цифровой ввод глубин (1..15 мм) и маркеры патологии */}
+						{/* Цифровой ввод глубин (0..15 мм) и маркеры патологии */}
 						<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
 							<div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-								<span className="text-[11px] text-[var(--muted)] font-medium mr-1">Глубина:</span>
-								{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((d) => (
+								<span className="text-[11px] text-[var(--muted)] font-medium mr-1">Глубина (PD):</span>
+								{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((d) => (
 									<button
 										key={d}
 										type="button"
 										onClick={() => onUpdateDepth(d)}
-										className={`touch-manipulation min-h-[44px] min-w-[36px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
+										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
 											(activeSite?.probingDepthMm ?? 2) === d
 												? "bg-[var(--primary)] text-white border-[var(--primary)]"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
@@ -238,12 +275,12 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									</button>
 								))}
 							</div>
-							<div className="flex items-center gap-2 shrink-0">
+							<div className="flex flex-wrap items-center gap-1.5 shrink-0">
 								<button
 									type="button"
 									onClick={onToggleBop}
 									aria-pressed={activeSiteBop}
-									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
 										activeSiteBop
 											? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
@@ -255,7 +292,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									type="button"
 									onClick={onTogglePlaque}
 									aria-pressed={activeSitePlaque}
-									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
 										activeSitePlaque
 											? "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)] ring-1 ring-[var(--warning,#f59e0b)]"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
@@ -263,6 +300,45 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								>
 									{activeSitePlaque ? "✓ Налёт+" : "Налёт+"}
 								</button>
+								<button
+									type="button"
+									onClick={onToggleSuppuration}
+									aria-pressed={activeSiteSuppuration}
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+										activeSiteSuppuration
+											? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--danger,#e11d48)]"
+									}`}
+								>
+									{activeSiteSuppuration ? "✓ Гной+" : "Гной+"}
+								</button>
+							</div>
+						</div>
+
+						{/* Ввод рецессии десны (GM: -3..+8 мм) и расчет CAL = PD + GM */}
+						<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
+							<div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+								<span className="text-[11px] text-[var(--muted)] font-medium mr-1">Рецессия (GM):</span>
+								{[-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8].map((gm) => (
+									<button
+										key={gm}
+										type="button"
+										onClick={() => onUpdateGingivalMargin?.(gm)}
+										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
+											activeSiteGm === gm
+												? "bg-[var(--warning,#f59e0b)] text-white border-[var(--warning,#f59e0b)]"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--warning,#f59e0b)] hover:bg-[var(--paper-soft)]"
+										}`}
+									>
+										{gm > 0 ? `+${gm}` : gm}
+									</button>
+								))}
+							</div>
+							<div className="flex items-center gap-2 shrink-0">
+								<span className="text-[11px] font-semibold text-[var(--muted)]">CAL (PD+GM):</span>
+								<span className={`text-xs px-2.5 py-1 rounded-lg font-mono font-bold ${activeSiteCal >= 5 ? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/30" : "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"}`}>
+									{activeSiteCal} мм
+								</span>
 							</div>
 						</div>
 					</div>

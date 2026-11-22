@@ -29,7 +29,7 @@ export interface QuickCarpuleWriteoffParams {
 	readonly notes?: string | undefined;
 	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
 	readonly actDate?: string | undefined;
-	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | "material_writeoff" | undefined;
+	readonly statutoryFormType?: "material_writeoff" | "waybill" | "disposal_act" | undefined;
 	readonly includePackage?: boolean | undefined;
 }
 
@@ -51,7 +51,7 @@ export interface QuickAnesthesiaPackageWriteoffParams {
 	readonly patientId?: string | undefined;
 	readonly notes?: string | undefined;
 	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
-	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | "material_writeoff" | undefined;
+	readonly statutoryFormType?: "material_writeoff" | "waybill" | "disposal_act" | undefined;
 }
 
 export interface QuickVisitWriteoffParams {
@@ -64,7 +64,7 @@ export interface QuickVisitWriteoffParams {
 	readonly assistantFullName?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
-	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | "material_writeoff" | undefined;
+	readonly statutoryFormType?: "material_writeoff" | "waybill" | "disposal_act" | undefined;
 	readonly notes?: string | undefined;
 	readonly isSingleSigner?: boolean | undefined;
 }

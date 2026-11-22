@@ -69,9 +69,9 @@ export function usePediatricWidgetActions(
 	}, [clinicalCalculation, onApplyProtocolText, state]);
 
 	const handleAddServicesToInvoice = useCallback(() => {
-		onAddToInvoice?.(clinicalCalculation.services804n);
-		dispatchAddServicesToInvoice(state.currentTooth, clinicalCalculation.services804n);
-		showToast(`Услуги добавлены в смету (${clinicalCalculation.services804n.map((s) => s.code).join(", ")})`, "success", 2500);
+		onAddToInvoice?.(clinicalCalculation.services);
+		dispatchAddServicesToInvoice(state.currentTooth, clinicalCalculation.services);
+		showToast(`Услуги добавлены в смету (${clinicalCalculation.services.map((s) => s.code).join(", ")})`, "success", 2500);
 	}, [clinicalCalculation, onAddToInvoice, state.currentTooth]);
 
 	const handleApplyPhysiologicalNorm = useCallback(() => {

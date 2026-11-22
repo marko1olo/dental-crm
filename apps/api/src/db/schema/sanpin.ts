@@ -83,6 +83,7 @@ export const bactericidalEquipments = pgTable(
 			.default("0.00"),
 		lampStatus: text("lamp_status").notNull().default("normal"), // normal | warning_replace_soon | expired_replace_now
 		lastLampReplacementDate: date("last_lamp_replacement_date", { mode: "string" }),
+		status: text("status").notNull().default("active"), // active | in_maintenance | decommissioned
 		isCommissioned: boolean("is_commissioned").notNull().default(true),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })

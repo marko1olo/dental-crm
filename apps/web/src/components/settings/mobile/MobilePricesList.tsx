@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronRight, Clock } from "lucide-react";
-import type { ServiceCatalogItem } from "@dental/shared";
+import { kopecksToRubles, type ServiceCatalogItem } from "@dental/shared";
 import { money } from "../../../AppHelpers";
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
@@ -31,7 +31,7 @@ export const MobilePricesList: React.FC<MobilePricesListProps> = ({
 	return (
 		<div className="rounded-[16px] bg-[var(--paper)] border border-[var(--line)] overflow-hidden divide-y divide-[var(--line-subtle)] shadow-xs">
 			{services.map((service) => {
-				const basePrice = service.basePriceRub ?? service.priceRub ?? (service.priceKopecks ? service.priceKopecks / 100 : 0);
+				const basePrice = service.basePriceRub ?? service.priceRub ?? (service.priceKopecks ? kopecksToRubles(service.priceKopecks) : 0);
 				return (
 					<div
 						key={service.id}
@@ -59,16 +59,16 @@ export const MobilePricesList: React.FC<MobilePricesListProps> = ({
 									</span>
 								)}
 								{service.taxDeductible !== false && (
-									<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 whitespace-nowrap">
+									<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--success-soft)] text-[var(--success)] border border-[var(--line)] whitespace-nowrap">
 										Вычет
 									</span>
 								)}
 								{service.vatRate === "vat_20" ? (
-									<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 whitespace-nowrap">
+									<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--warning-soft)] text-[var(--warning)] whitespace-nowrap">
 										НДС 20%
 									</span>
 								) : (
-									<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-800 dark:text-teal-300 whitespace-nowrap">
+									<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--primary-soft)] text-[var(--primary)] whitespace-nowrap">
 										ст. 149
 									</span>
 								)}
@@ -94,7 +94,7 @@ export const MobilePricesList: React.FC<MobilePricesListProps> = ({
 
 						<div className="flex items-center gap-2 shrink-0">
 							<div className="flex flex-col items-end">
-								<span className="text-[16px] font-bold font-mono text-[var(--teal)] whitespace-nowrap">
+								<span className="text-[16px] font-bold font-mono text-[var(--primary)] whitespace-nowrap">
 									{money(basePrice)}
 								</span>
 							</div>

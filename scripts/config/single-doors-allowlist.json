@@ -19,10 +19,6 @@
       "reason": "Легаси-модалка быстрого счета. Вытеснена кассой 54-ФЗ и планами лечения"
     },
     {
-      "file": "apps/web/src/components/billing/RetailProductsModal.tsx",
-      "reason": "Легаси-модалка розничных товаров. Интегрируется в прейскурант и кассу"
-    },
-    {
       "file": "apps/web/src/components/doctor/pieceRateWallet/ReconciliationModal.tsx",
       "reason": "Модалка сверки сдельной оплаты труда врача. Управляется через DoctorPayrollStudioModal"
     },
@@ -517,7 +513,7 @@
       "reason": "Входящие вебхуки СМС-провайдеров, кастомная валидация сигнатуры"
     },
     {
-      "pattern": "* /outbound-call*",
+      "pattern": "* /outbound*",
       "reason": "Инициация исходящего звонка из карточки пациента, валидация в telephonyOutboundHandler"
     },
     {

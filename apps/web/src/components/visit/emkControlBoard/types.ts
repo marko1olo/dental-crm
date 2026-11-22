@@ -1,10 +1,10 @@
+import type { Dashboard } from "@dental/shared";
 import type {
 	CmoAuditEvaluatedVisit,
 	CmoAuditVisitItem,
 	EmkDefectTag,
 	EmkQualityStatus,
-	Dashboard,
-} from "@dental/shared";
+} from "./cmoAuditEngine.js";
 
 /**
  * Clinical AI report widget data item (Mandate 8ap).

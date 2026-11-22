@@ -12,23 +12,26 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ORCH_ID = "0b7866b2-4ebf-443b-8f35-0fa3ff22cb58";
-const SUBAGENT_ID = "3f8dfe53-7fb4-4dda-afae-135e48876e09";
+const ORCH_ID = "d8f4b35b-af3a-4c9f-91df-6a9f31e6364c";
+const SUBAGENT_ID = "9f20a82f-4b33-40f9-9c87-dec3e4f4ee34";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/perio");
+const OUT_DOCS_ALT = path.resolve(__dirname, "../docs/proofs/periodontics");
 const OUT_ORCH = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${ORCH_ID}`);
 const OUT_SELF = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${SUBAGENT_ID}`);
 
-[OUT_DOCS, OUT_ORCH, OUT_SELF].forEach((dir) => {
+[OUT_DOCS, OUT_DOCS_ALT, OUT_ORCH, OUT_SELF].forEach((dir) => {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 async function saveProof(page, filename) {
 	await page.waitForTimeout(1000);
 	const pDocs = path.join(OUT_DOCS, filename);
+	const pDocsAlt = path.join(OUT_DOCS_ALT, filename);
 	const pOrch = path.join(OUT_ORCH, filename);
 	const pSelf = path.join(OUT_SELF, filename);
 
 	await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
+	try { fs.copyFileSync(pDocs, pDocsAlt); } catch { /* ignore */ }
 	try { fs.copyFileSync(pDocs, pOrch); } catch { /* ignore */ }
 	try { fs.copyFileSync(pDocs, pSelf); } catch { /* ignore */ }
 
@@ -104,8 +107,7 @@ async function main() {
 
 	const browser = await chromium.launch({
 		headless: true,
-		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox"],
 	});
 
 	try {
@@ -128,8 +130,11 @@ async function main() {
 		});
 
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto(`${baseUrl}/?perio=1#perio`, { waitUntil: "domcontentloaded", timeout: 30000 });
-		await pcPage.waitForTimeout(2000);
+		pcPage.on("console", msg => console.log("PAGE LOG:", msg.text()));
+		pcPage.on("pageerror", err => console.error("PAGE ERROR:", err.message));
+		await pcPage.goto(`${baseUrl}/?perio=1#perio`, { waitUntil: "commit", timeout: 20000 });
+		await pcPage.waitForSelector("#root", { timeout: 10000 }).catch(() => {});
+		await pcPage.waitForTimeout(3000);
 		await suppressOverlays(pcPage);
 
 		// Если модалка не открылась автоматически, шлем событие
@@ -173,7 +178,7 @@ async function main() {
 		});
 
 		const mobPage = await mobContext.newPage();
-		await mobPage.goto(`${baseUrl}/?perio=1#perio`, { waitUntil: "domcontentloaded", timeout: 30000 });
+		await mobPage.goto(`${baseUrl}/?perio=1#perio`, { waitUntil: "commit", timeout: 20000 });
 		await mobPage.waitForTimeout(2000);
 		await suppressOverlays(mobPage);
 

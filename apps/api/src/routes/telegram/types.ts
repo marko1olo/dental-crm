@@ -93,7 +93,7 @@ export type DenteTelegramCareRequestTopic = Parameters<
 export type TelegramRuntimeContext = {
 	settings: DenteTelegramBotSettings;
 	organizationId: string;
-	clinicId: string;
+	clinicId: string | null;
 	botConfigId: string;
 	botUsername: string | null;
 	botToken: string | null;
@@ -131,7 +131,7 @@ export type TelegramClinicBotEnvConfig = {
 export type TelegramRuntimeSettingsResolution = {
 	settings: DenteTelegramBotSettings;
 	envConfig: TelegramClinicBotEnvConfig | null;
-	clinicId?: string;
+	clinicId?: string | null | undefined;
 };
 
 export type TelegramLinkCodeRejection = {

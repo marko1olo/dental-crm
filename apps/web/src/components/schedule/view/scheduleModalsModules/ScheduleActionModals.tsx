@@ -1,6 +1,6 @@
 import React from "react";
 import { DoctorFreeSlotsModal } from "../../DoctorFreeSlotsModal";
-import { PreventiveInspectionModal } from "../../PreventiveInspectionModal";
+import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
 import { SlotConflictModal } from "../../SlotConflictModal";
 import { PatientSearchModal } from "../../PatientSearchModal";
 import { TomorrowRemindersModal } from "../../TomorrowRemindersModal";
@@ -79,31 +79,31 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
         />
       )}
 
-      {dashboard && preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
-        <PreventiveInspectionModal
+      {preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
+        <PatientRecallsHubModal
           isOpen={preventiveInspectionOpen}
           onClose={() => {
             setPreventiveInspectionOpen(false);
             useUiSurfaceStore
               .getState()
-              .closePrimaryModal("preventive_inspection");
+              .closePrimaryModal("patient_recalls_hub");
           }}
-          dashboard={dashboard}
-          onBookPatient={(candidate) => {
+          clinicName={dashboard?.clinicName || "Стоматология ДЕНТЕ"}
+          onBookAppointment={(candidate) => {
             setPreventiveInspectionOpen(false);
             useUiSurfaceStore
               .getState()
-              .transitionModalToDrawer("preventive_inspection", "quick_booking");
+              .transitionModalToDrawer("patient_recalls_hub", "quick_booking");
             if (waitlistOpen) setWaitlistOpen(false);
             if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
             setQuickBookingSlot({
               patientId: candidate.patientId,
-              patientName: candidate.patientFullName,
+              patientName: candidate.fullName,
               doctorUserId:
-                candidate.lastDoctorId || scheduleDoctorFilterId || null,
-              doctorName: candidate.lastDoctorName,
+                candidate.attendingDoctorId || scheduleDoctorFilterId || null,
+              doctorName: candidate.attendingDoctorName,
               reason:
-                candidate.recommendedProcedureName || candidate.categoryTitle,
+                candidate.cycleLabel || "Плановый профосмотр",
               dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
               durationMinutes: 45,
             });

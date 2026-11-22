@@ -29,31 +29,45 @@ export const PatientRecallsKanbanDropdownMenu: React.FC<PatientRecallsKanbanDrop
 
 	return (
 		<div
-			className="recall-kanban-dropdown-menu"
-			style={{
-				position: "absolute", right: 0, bottom: "100%", marginBottom: "4px", zIndex: 60,
-				background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)",
-				borderRadius: "8px", boxShadow: "0 8px 18px rgba(0, 0, 0, 0.2)", padding: "4px", minWidth: "185px",
-				display: "flex", flexDirection: "column", gap: "2px",
-			}}
+			className="recall-kanban-dropdown-menu absolute right-0 bottom-full mb-1 z-[60] bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-lg p-1 min-w-[185px] flex flex-col gap-0.5 text-[var(--ink)]"
 		>
-			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%" }} onClick={() => { onCopySms(candidate); onClose(); }} data-testid={`recall-sms-btn-${candidate.id}`}>
+			<button
+				type="button"
+				className="recall-dropdown-item flex items-center gap-1.5 px-2 py-1.5 text-xs bg-transparent border-0 cursor-pointer text-left w-full hover:bg-[var(--paper-soft)] rounded text-[var(--ink)]"
+				onClick={() => { onCopySms(candidate); onClose(); }}
+				data-testid={`recall-sms-btn-${candidate.id}`}
+			>
 				<Send size={12} /> <span>Копировать SMS</span>
 			</button>
-			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%" }} onClick={() => { onPostpone ? onPostpone(candidate, "2_weeks") : onStatusUpdate(candidate.id, "declined"); onClose(); }} data-testid={`kanban-postpone-2w-btn-${candidate.id}`}>
+			<button
+				type="button"
+				className="recall-dropdown-item flex items-center gap-1.5 px-2 py-1.5 text-xs bg-transparent border-0 cursor-pointer text-left w-full hover:bg-[var(--paper-soft)] rounded text-[var(--ink)]"
+				onClick={() => { onPostpone ? onPostpone(candidate, "2_weeks") : onStatusUpdate(candidate.id, "declined"); onClose(); }}
+				data-testid={`kanban-postpone-2w-btn-${candidate.id}`}
+			>
 				<Clock size={12} /> <span>Отложить на 2 недели</span>
 			</button>
-			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%" }} onClick={() => { onPostpone ? onPostpone(candidate, "1_month") : onStatusUpdate(candidate.id, "declined"); onClose(); }} data-testid={`kanban-postpone-1m-btn-${candidate.id}`}>
+			<button
+				type="button"
+				className="recall-dropdown-item flex items-center gap-1.5 px-2 py-1.5 text-xs bg-transparent border-0 cursor-pointer text-left w-full hover:bg-[var(--paper-soft)] rounded text-[var(--ink)]"
+				onClick={() => { onPostpone ? onPostpone(candidate, "1_month") : onStatusUpdate(candidate.id, "declined"); onClose(); }}
+				data-testid={`kanban-postpone-1m-btn-${candidate.id}`}
+			>
 				<Clock size={12} /> <span>Отложить на 1 месяц</span>
 			</button>
-			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%", color: "var(--success, #059669)" }} onClick={() => { onStatusUpdate(candidate.id, "scheduled"); onClose(); }} data-testid={`kanban-fast-scheduled-btn-${candidate.id}`}>
+			<button
+				type="button"
+				className="recall-dropdown-item flex items-center gap-1.5 px-2 py-1.5 text-xs bg-transparent border-0 cursor-pointer text-left w-full hover:bg-[var(--paper-soft)] rounded text-[var(--success)]"
+				onClick={() => { onStatusUpdate(candidate.id, "scheduled"); onClose(); }}
+				data-testid={`kanban-fast-scheduled-btn-${candidate.id}`}
+			>
 				<Check size={12} /> <span>Пометить: Записан</span>
 			</button>
-			<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "2px 0" }} />
-			<div style={{ padding: "4px 8px" }}>
-				<div style={{ fontSize: "0.7rem", color: "var(--ink-muted, #64748b)", marginBottom: "3px" }}>Статус канбана:</div>
+			<div className="h-px bg-[var(--line)] my-0.5" />
+			<div className="px-2 py-1">
+				<div className="text-[11px] text-[var(--ink-muted)] mb-1">Статус канбана:</div>
 				<select
-					style={{ width: "100%", padding: "3px 4px", borderRadius: "4px", border: "1px solid var(--line, #e2e8f0)", background: "var(--paper-soft, #f8fafc)", fontSize: "0.72rem" }}
+					className="w-full px-1 py-1 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)]"
 					value={toCanonicalRecallStatus(candidate.status)}
 					onChange={(e) => {
 						onStatusUpdate(candidate.id, fromCanonicalRecallStatus(e.target.value as CanonicalRecallWorkflowStatus));

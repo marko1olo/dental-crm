@@ -16,11 +16,29 @@ export async function createChairInDb(
 	input: CreateChairInput,
 ) {
 	if (useInMemory()) return createChairInMemory(input);
-	let [clinic] = await db
-		.select()
-		.from(schema.clinics)
-		.where(eq(schema.clinics.organizationId, organizationId))
-		.limit(1);
+	let clinic = input.clinicId
+		? (
+				await db
+					.select()
+					.from(schema.clinics)
+					.where(
+						and(
+							eq(schema.clinics.id, input.clinicId),
+							eq(schema.clinics.organizationId, organizationId),
+						),
+					)
+					.limit(1)
+			)[0]
+		: undefined;
+
+	if (!clinic) {
+		const [firstClinic] = await db
+			.select()
+			.from(schema.clinics)
+			.where(eq(schema.clinics.organizationId, organizationId))
+			.limit(1);
+		clinic = firstClinic;
+	}
 
 	if (!clinic) {
 		const [org] = await db
@@ -101,6 +119,7 @@ export async function updateChairProfileInDb(
 		return;
 	}
 	const updateData: {
+		clinicId?: string;
 		name?: string;
 		isActive?: boolean;
 		specializations?: string | null;
@@ -109,6 +128,7 @@ export async function updateChairProfileInDb(
 		defaultDoctorId?: string | null;
 		equipment?: string | null;
 	} = {};
+	if (input.clinicId) updateData.clinicId = input.clinicId;
 	if (input.name !== undefined) updateData.name = input.name;
 	if (input.active !== undefined) updateData.isActive = input.active;
 	if (input.specialization !== undefined) updateData.specializations = input.specialization ?? null;

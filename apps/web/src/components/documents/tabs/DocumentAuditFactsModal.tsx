@@ -8,12 +8,12 @@ import { DocumentAuditClinicalLinksSection } from "./auditFacts/DocumentAuditCli
 import { DocumentAuditModalFooter } from "./auditFacts/DocumentAuditModalFooter";
 
 export interface DocumentAuditFactsModalProps {
-	documentAuditFacts: DocumentAuditFacts | null;
-	documentLabels?: Record<DocumentKind, string>;
-	documentStatusLabels?: Record<DocumentStatus, string>;
-	formatShortDate?: (date: string | null | undefined) => string;
-	documentSourceStatusClassNames?: Record<DocumentSourceStatus, string>;
-	documentSourceStatusLabels?: Record<DocumentSourceStatus, string>;
+	documentAuditFacts?: DocumentAuditFacts | null | undefined;
+	documentLabels?: Record<DocumentKind, string> | undefined;
+	documentStatusLabels?: Record<DocumentStatus, string> | undefined;
+	formatShortDate?: ((date: string | null | undefined) => string) | undefined;
+	documentSourceStatusClassNames?: Record<DocumentSourceStatus, string> | undefined;
+	documentSourceStatusLabels?: Record<DocumentSourceStatus, string> | undefined;
 	documentIssueSignatureModeLabels: Record<string, string>;
 	documentVoidReasonLabels: Record<string, string>;
 	loadDocumentAuditFacts: (id: string) => Promise<void> | void;

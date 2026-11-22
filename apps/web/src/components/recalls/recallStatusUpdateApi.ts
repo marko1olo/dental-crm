@@ -18,7 +18,7 @@ export async function sendRecallCandidateStatusUpdate(
 	headers?: Record<string, string>,
 ): Promise<RecallStatusUpdateResponse> {
 	const response = await fetch(
-		`/api/patients/recall-candidates/${encodeURIComponent(params.patientId)}/status`,
+		`/api/recalls/${encodeURIComponent(params.patientId)}/status`,
 		{
 			method: "PATCH",
 			headers: {

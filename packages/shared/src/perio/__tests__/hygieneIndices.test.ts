@@ -160,15 +160,16 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 		assert.equal(derived[26]?.debrisScore, 0);
 	});
 
-	it("generates comprehensive 043/u Russian clinical summary", () => {
+	it("generates comprehensive Russian clinical protocol summary", () => {
 		const healthy = createHealthyHygieneAssessment();
 		const report = calculateCombinedHygieneReport(healthy);
 
-		assert.ok(report.summaryText043.includes("КЛИНИЧЕСКИЕ ИНДЕКСЫ ГИГИЕНЫ И СОСТОЯНИЯ ПАРОДОНТА"));
-		assert.ok(report.summaryText043.includes("OHI-S"));
-		assert.ok(report.summaryText043.includes("PMA"));
-		assert.ok(report.summaryText043.includes("КПИ"));
-		assert.ok(report.summaryText043.includes("интактны"));
+		assert.ok(report.clinicalProtocolSummaryRu.includes("КЛИНИЧЕСКИЕ ИНДЕКСЫ ГИГИЕНЫ И СОСТОЯНИЯ ПАРОДОНТА"));
+		assert.ok(report.clinicalProtocolSummaryRu.includes("OHI-S"));
+		assert.ok(report.clinicalProtocolSummaryRu.includes("PMA"));
+		assert.ok(report.clinicalProtocolSummaryRu.includes("КПИ"));
+		assert.ok(report.clinicalProtocolSummaryRu.includes("интактны"));
+		assert.ok(report.summaryText043?.includes("интактны"));
 	});
 
 	it("calculates Silness-Löe cervical plaque index (0.0..3.0)", () => {
@@ -271,7 +272,8 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 		assert.equal(dynamics.bopDiffPercent, -24);
 		assert.equal(dynamics.deepPocketsDiffCount, -7);
 		assert.ok(dynamics.summaryRu.includes("Положительная динамика"));
-		assert.ok(dynamics.form043DynamicsTextRu.includes("12.01.2026"));
+		assert.ok(dynamics.clinicalProtocolDynamicsTextRu.includes("12.01.2026"));
+		assert.ok(dynamics.form043DynamicsTextRu?.includes("12.01.2026"));
 	});
 
 	it("excludes missing teeth from denominator and scoring in PMA, KPI, and OHI-S", () => {

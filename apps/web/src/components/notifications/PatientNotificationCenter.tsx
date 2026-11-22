@@ -113,21 +113,26 @@ export function PatientNotificationCenter({
 
 		// 2. Расписание из dashboard?.appointments (критические отмены и подтверждения)
 		const appointments = dashboard?.appointments;
+		const patientsMap = new Map((dashboard?.patients ?? []).map((p) => [p.id, p.fullName]));
 		if (Array.isArray(appointments) && appointments.length > 0) {
 			for (const apt of appointments) {
-				const aptTs = apt.updatedAt || apt.startTime ? new Date(apt.updatedAt || apt.startTime).getTime() : 0;
+				const aptTs = apt.startsAt ? new Date(apt.startsAt).getTime() : 0;
 				if (aptTs < clearedAt) continue;
+
+				const patientName = apt.patientId ? (patientsMap.get(apt.patientId) || "Пациент") : "Пациент";
+				const timeStr = apt.startsAt ? new Date(apt.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+				const timestamp = apt.startsAt || new Date().toISOString();
 
 				if (apt.status === "cancelled") {
 					items.push({
 						id: `appt-cancel-${apt.id}`,
 						category: "appointment",
 						title: "Отмена визита",
-						description: `${apt.patientName || "Пациент"}: отмена приёма на ${apt.startTime ? new Date(apt.startTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""}`,
-						timestamp: apt.updatedAt || apt.startTime || new Date().toISOString(),
+						description: `${patientName}: отмена приёма на ${timeStr}`,
+						timestamp,
 						isRead: readIds.has(`appt-cancel-${apt.id}`),
 						patientId: apt.patientId,
-						patientName: apt.patientName || "Пациент",
+						patientName,
 						priority: "critical",
 						actionType: "schedule",
 					});
@@ -136,11 +141,11 @@ export function PatientNotificationCenter({
 						id: `appt-confirm-${apt.id}`,
 						category: "appointment",
 						title: "Приём подтверждён",
-						description: `${apt.patientName || "Пациент"}: подтверждение визита на ${apt.startTime ? new Date(apt.startTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""}`,
-						timestamp: apt.updatedAt || apt.startTime || new Date().toISOString(),
+						description: `${patientName}: подтверждение визита на ${timeStr}`,
+						timestamp,
 						isRead: readIds.has(`appt-confirm-${apt.id}`),
 						patientId: apt.patientId,
-						patientName: apt.patientName || "Пациент",
+						patientName,
 						priority: "normal",
 						actionType: "schedule",
 					});
@@ -231,7 +236,7 @@ export function PatientNotificationCenter({
 		} else if (notif.actionType === "whatsapp" && notif.phone) {
 			openWhatsAppChat(
 				notif.phone,
-				`Здравствуйте, ${notif.patientName || ""}! Вас приветствует стоматология ${dashboard?.clinicSettings?.name || "DENTE"}.`,
+				`Здравствуйте, ${notif.patientName || ""}! Вас приветствует стоматология ${dashboard?.clinicName || "DENTE"}.`,
 			);
 			showToast(`Открыт диалог в WhatsApp (${notif.patientName || notif.phone})`, "info");
 		} else if (notif.actionType === "schedule") {

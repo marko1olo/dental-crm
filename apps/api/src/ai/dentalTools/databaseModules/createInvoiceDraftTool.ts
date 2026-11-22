@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { kopecksToRub, rubToKopecks } from "./dbTypes.js";
@@ -102,14 +103,11 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		};
 	}
 
-	const executeTx = async (callback: (tx: typeof defaultDb) => Promise<string>): Promise<string> => {
-		if ("transaction" in activeDb && typeof (activeDb as { transaction?: unknown }).transaction === "function") {
-			return await (activeDb as { transaction: (cb: (tx: typeof defaultDb) => Promise<string>) => Promise<string> }).transaction(callback);
+	async function saveInvoiceInDb(tx: TenantDb | typeof defaultDb): Promise<string> {
+		if (!patientId) {
+			throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент");
 		}
-		return await callback(activeDb as typeof defaultDb);
-	};
 
-	const insertedId = await executeTx(async (tx) => {
 		const [inserted] = await tx
 			.insert(patientInvoices)
 			.values({
@@ -160,7 +158,16 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		}
 
 		return inserted.id;
-	});
+	}
+
+	let insertedId: string;
+	if ("transaction" in activeDb && typeof activeDb.transaction === "function") {
+		insertedId = await activeDb.transaction(async (tx) => {
+			return await saveInvoiceInDb(tx);
+		});
+	} else {
+		insertedId = await saveInvoiceInDb(activeDb);
+	}
 
 	return {
 		success: true,

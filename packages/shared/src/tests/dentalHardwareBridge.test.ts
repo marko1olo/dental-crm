@@ -298,6 +298,14 @@ DATEI=C:\\Data\\xray_36.dcm`;
 	test("8. getTwainDeviceCatalog returns multi-vendor sensors, scanners and document devices", () => {
 		const devices = getTwainDeviceCatalog();
 		assert.ok(devices.length >= 15);
+		assert.ok(
+			devices.every((d) => d.connected === false),
+			"All devices must be connected: false by default until physical connection is confirmed",
+		);
+		assert.ok(
+			devices.every((d) => typeof d.connectionHint === "string" && d.connectionHint.length > 0),
+			"All devices must provide honest connection hints",
+		);
 
 		const rvg = devices.filter((d) => d.family === "rvg");
 		assert.ok(rvg.length >= 8);

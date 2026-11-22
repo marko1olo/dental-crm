@@ -23,7 +23,7 @@ export interface MdlpSchema444Params {
 	readonly docNum: string;
 	readonly docDate: string;
 	readonly patientId?: string | null | undefined;
-	readonly cardNumber?: string | null | undefined; // Form 043/у
+	readonly cardNumber?: string | null | undefined; // Медицинская карта приёма
 	readonly visitId?: string | null | undefined;
 	readonly doctorId?: string | null | undefined;
 	readonly doctorSnils?: string | null | undefined;
@@ -58,7 +58,7 @@ export function validateMdlpSchema444Params(params: MdlpSchema444Params): {
 	}
 
 	if (!params.docNum || typeof params.docNum !== "string" || !params.docNum.trim()) {
-		errors.push("Номер первичного документа/протокола 043/у (docNum) обязателен.");
+		errors.push("Номер первичного документа/протокола медицинской карты (docNum) обязателен.");
 	}
 
 	if (!params.docDate || typeof params.docDate !== "string" || !params.docDate.trim()) {
@@ -95,7 +95,8 @@ export function generateMdlpSchema444Payload(
 				: new Date().toISOString();
 
 	const schemaVersion = options.version ?? "1.38";
-	const effectiveCardNumber = params.cardNumber || "043/у";
+	const effectiveCardNumber =
+		params.cardNumber || (params.visitId ? `Визит-${params.visitId.slice(0, 8)}` : "Медицинская карта приёма");
 
 	const detailsTags = params.items
 		.map((it) => {

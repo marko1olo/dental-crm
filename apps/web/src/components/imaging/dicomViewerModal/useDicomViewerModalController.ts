@@ -11,6 +11,12 @@ import type { DicomViewerModalProps } from "./types.js";
 import { useDicomViewerModalAi } from "./useDicomViewerModalAi.js";
 import { teardownViewportCanvases } from "../../../utils/viewportTeardownHelper.js";
 import { logger } from "../../../utils/logger.js";
+import { denteClinicalMutationHeaders as getDenteMutationHeaders, denteClinicalReadHeaders as getDenteReadHeaders } from "../../../lib/denteRequestHeaders.js";
+
+type AuthWithClinicalHeaders = {
+	denteClinicalReadHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
+	denteClinicalMutationHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
+};
 
 export function useDicomViewerModalController(props: DicomViewerModalProps) {
 	const { isOpen, onClose, imageSrc, title, toothFdiCode, patientName, patientId, studyId, studyDate, initialViewMode = "2d", onInsertToProtocol } = props;
@@ -32,11 +38,11 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const appLogic = useOptionalAppLogicContext();
-	const authRef = useRef(appLogic?.auth);
-	authRef.current = appLogic?.auth;
+	const authRef = useRef<AuthWithClinicalHeaders | undefined>(appLogic?.auth as AuthWithClinicalHeaders | undefined);
+	authRef.current = appLogic?.auth as AuthWithClinicalHeaders | undefined;
 
-	const denteClinicalReadHeaders = useCallback((extra?: Record<string, string>) => (authRef.current?.denteClinicalReadHeaders ? authRef.current.denteClinicalReadHeaders(extra ?? {}) : { ...(extra ?? {}) }), []);
-	const denteClinicalMutationHeaders = useCallback((extra?: Record<string, string>) => (authRef.current?.denteClinicalMutationHeaders ? authRef.current.denteClinicalMutationHeaders(extra ?? {}) : { ...(extra ?? {}) }), []);
+	const denteClinicalReadHeaders = useCallback((extra?: Record<string, string>) => (authRef.current?.denteClinicalReadHeaders ? authRef.current.denteClinicalReadHeaders(extra ?? {}) : getDenteReadHeaders(extra ?? {})), []);
+	const denteClinicalMutationHeaders = useCallback((extra?: Record<string, string>) => (authRef.current?.denteClinicalMutationHeaders ? authRef.current.denteClinicalMutationHeaders(extra ?? {}) : getDenteMutationHeaders(extra ?? {})), []);
 
 	const ai = useDicomViewerModalAi(currentImageSrc, selectedPatientId, denteClinicalReadHeaders, denteClinicalMutationHeaders, fileInputRef);
 
@@ -64,7 +70,7 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 		setViewMode(mode);
 	}, [patientId, patientName, studyId, activeStudyId]);
 
-	const handleInsertNormaTo043 = useCallback(() => {
+	const handleInsertNormaToEmk = useCallback(() => {
 		const targetTooth = toothFdiCode ? ` зуба ${toothFdiCode}` : "";
 		const statement = `Рентгенологическое исследование (RVG/DICOM)${targetTooth}: норма. Патологических изменений костной ткани не выявлено.`;
 		applyRadiologyProtocolToForm043({ protocol: statement, options: { toothFdi: toothFdiCode, modalityLabel: "RVG/DICOM" }, onInsertToProtocol, showNotification: false });
@@ -78,6 +84,8 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 		setAppliedProtocolId("norma");
 		showToast(`Заключение «Норма» внесено в медицинскую карту${targetTooth ? ` (${targetTooth.trim()})` : ""}`, "success");
 	}, [toothFdiCode, onInsertToProtocol]);
+
+	const handleInsertNormaTo043 = handleInsertNormaToEmk;
 
 	const handleApplyProtocol = useCallback((preset: (typeof RADIOLOGY_STANDARD_PROTOCOLS)[number]) => {
 		applyRadiologyProtocolToForm043({ protocol: preset.text, options: { toothFdi: toothFdiCode, modalityLabel: "RVG/DICOM" }, onInsertToProtocol, showNotification: true });
@@ -133,6 +141,6 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 		activeStudyId, setActiveStudyId, viewportState, setViewportState, measurements, setMeasurements,
 		isNormaApplied, isProtocolsDropdownOpen, setIsProtocolsDropdownOpen, appliedProtocolId,
 		isDragOver, setIsDragOver, fileInputRef, modalContainerRef, protocolsDropdownRef, ai,
-		handleClose, handleSwitchViewMode, handleInsertNormaTo043, handleApplyProtocol, processFile,
+		handleClose, handleSwitchViewMode, handleInsertNormaToEmk, handleInsertNormaTo043, handleApplyProtocol, processFile,
 	};
 }

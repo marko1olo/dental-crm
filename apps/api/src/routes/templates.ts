@@ -109,6 +109,31 @@ const TEMPLATE_TITLE_REQUIRED_MESSAGE =
 const TEMPLATE_BUILT_IN_MESSAGE =
 	"Это встроенный протокол приёма, он поставляется вместе с программой и удалить его нельзя. Если он вам не подходит, создайте свой протокол приёма и выбирайте на приёме его — встроенный останется в списке, но пользоваться им никто не обязан.";
 
+const DENTAL_SPECIALTIES = [
+	"therapist",
+	"orthopedist",
+	"surgeon",
+	"orthodontist",
+	"periodontist",
+	"hygienist",
+	"pediatric",
+	"implantologist",
+	"radiologist",
+	"universal",
+] as const;
+
+type DentalSpecialty = (typeof DENTAL_SPECIALTIES)[number];
+
+function resolveTemplateSpecialty(val: unknown): DentalSpecialty {
+	if (typeof val === "string") {
+		const normalized = val.trim().toLowerCase();
+		if ((DENTAL_SPECIALTIES as readonly string[]).includes(normalized)) {
+			return normalized as DentalSpecialty;
+		}
+	}
+	return "universal";
+}
+
 /**
  * POST /api/templates: тело раньше — bare cast `req.body as { title: string; … }`.
  * null/array → TypeError на body.title (500). Zod safeParse после AUTH/org → 400.
@@ -261,7 +286,7 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 				organizationId: orgId,
 				title,
 				visitReason: str(parsedBody.data.category) || "",
-				specialty: (str(parsedBody.data.specialty) as any) || "universal",
+				specialty: resolveTemplateSpecialty(parsedBody.data.specialty),
 				complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
 				objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
 				treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",

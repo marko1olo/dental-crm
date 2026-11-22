@@ -6,11 +6,13 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
 import { actionFailureToast } from "../../../lib/panelStateText";
-import { useSettingsDerivations } from "../../../useSettingsDerivations";
 import { logger } from "../../../utils/logger";
+import {
+	denteClinicalReadHeaders,
+	denteClinicalMutationHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { ContractFormData } from "../insurance/InsuranceContractModal";
 import {
@@ -25,11 +27,6 @@ import {
 } from "./insuranceContractsTypes";
 
 export function useInsuranceContractsController() {
-	const appLogic = useAppLogicContext();
-	const derivations = useSettingsDerivations();
-	const mergedProps = Object.assign({}, appLogic, derivations);
-	const { auth } = mergedProps;
-
 	const flags = useWorkspaceProfile();
 	const insuranceEnabled = flags.hasInsuranceCoPay;
 
@@ -53,10 +50,10 @@ export function useInsuranceContractsController() {
 		try {
 			const [res, lettersRes] = await Promise.all([
 				fetch("/api/insurance/contracts", {
-					headers: auth.denteClinicalReadHeaders(),
+					headers: denteClinicalReadHeaders(),
 				}),
 				fetch("/api/insurance/guarantee-letters", {
-					headers: auth.denteClinicalReadHeaders(),
+					headers: denteClinicalReadHeaders(),
 				}).catch(() => null),
 			]);
 			if (lettersRes?.ok) {
@@ -89,13 +86,13 @@ export function useInsuranceContractsController() {
 			logger.error("[договоры ДМС] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		}
-	}, [auth]);
+	}, []);
 
 	const handleExportRegistry = useCallback(
 		async (format: "xml" | "csv") => {
 			try {
 				const res = await fetch(`/api/insurance/registry?format=${format}`, {
-					headers: auth.denteClinicalReadHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) {
 					showToast("Не удалось сформировать реестр счетов ДМС", "error");
@@ -118,7 +115,7 @@ export function useInsuranceContractsController() {
 				showToast("Ошибка при выгрузке реестра счетов ДМС", "error");
 			}
 		},
-		[auth],
+		[],
 	);
 
 	useEffect(() => {
@@ -176,7 +173,7 @@ export function useInsuranceContractsController() {
 			if (editingContract) {
 				res = await fetch(`/api/insurance/contracts/${editingContract.id}`, {
 					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(payload),
@@ -184,7 +181,7 @@ export function useInsuranceContractsController() {
 			} else {
 				res = await fetch("/api/insurance/contracts", {
 					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(payload),
@@ -217,7 +214,7 @@ export function useInsuranceContractsController() {
 		try {
 			const res = await fetch(`/api/insurance/contracts/${contract.id}`, {
 				method: "DELETE",
-				headers: auth.denteClinicalMutationHeaders(),
+				headers: denteClinicalMutationHeaders(),
 			});
 			if (!res.ok) {
 				logger.error("[договоры ДМС] не убран из работы, ответ", res.status);

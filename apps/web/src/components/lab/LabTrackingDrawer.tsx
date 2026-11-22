@@ -13,7 +13,7 @@ import { useLabTrackingState } from "./trackingDrawerModules/useLabTrackingState
 
 export function LabTrackingDrawer({
 	isOpen, onClose, order, patientDepositRub, stageTotalRub, stagePaidRub,
-	onStageUpdate, onFittingDateUpdate,
+	onStageUpdate, onFittingDateUpdate, onOpenWarrantyPassport,
 }: LabTrackingDrawerProps): React.JSX.Element | null {
 	const state = useLabTrackingState({
 		order, patientDepositRub, stageTotalRub, stagePaidRub, onStageUpdate, onFittingDateUpdate,
@@ -58,7 +58,16 @@ export function LabTrackingDrawer({
 						isUpdating={state.isUpdating} secureToken={secureToken} portalUrl={portalUrl}
 					/>
 				</div>
-				<LabTrackingDrawerFooter onClose={onClose} />
+				<LabTrackingDrawerFooter
+					onClose={onClose}
+					onOpenPassport={onOpenWarrantyPassport ? () => onOpenWarrantyPassport(order) : undefined}
+					isInstalled={Boolean(
+						order.status === "installed" ||
+						order.status === "completed" ||
+						order.isLockedInstalled ||
+						order.currentStage === "completed"
+					)}
+				/>
 			</div>
 		</div>
 	);

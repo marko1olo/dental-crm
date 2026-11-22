@@ -3,14 +3,14 @@
  * Объединяет экспресс-скрининг ВОЗ (PSR) по 6 секстантам, протоколы профгигиены AirFlow/Кюретаж/Шинирование,
  * списание расходников пакетом (Soft Negative Stock, Мандат 8n), автономию врача (Мандат 8e),
  * и ровно ОДНУ Primary CTA кнопку (var(--primary)) на видимый контекст (Мандат 8am).
- * Разблокированный клавиатурный ввод 1..9, 10..15 мм, Пробел (BOP), стрелки и Tab.
- * Норматив размера: < 500 строк (Sweet Spot 200–460 строк, Мандат 8b).
+ * Норматив размера: < 380 строк (Мандат 8b).
  */
 
-import React, { useId, useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, { useId, useMemo, useState, useCallback, useEffect } from "react";
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
-	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
+	calculatePerioIndices, calculateOlearyFromPerioTeeth, deriveHygieneFromPerioTeeth,
+	calculateOhiSScore, calculatePmaScore,
 	convertPerioDentitionToSepa, convertSepaDentitionToPerio, formatKopecksToRub,
 	generateComprehensivePerioProtocolText, generateFullMouthProbingSequence,
 	generateUuidV7,
@@ -20,14 +20,16 @@ import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
-	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset, applyLowerJawNormPreset,
+	applyExpressPerioPreset, applyUpperJawNormPreset, applyLowerJawNormPreset,
 	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset, computePsrSummary, deductPeriodontalConsumablesSoftOverdraft,
-	dispatchPresetSideEffects, generatePerioProtocolText, normalizePerioDentition, PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG,
-	PERIO_TREATMENT_PROTOCOLS, type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
+	dispatchPresetSideEffects, normalizePerioDentition, PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG,
+	PERIO_TREATMENT_PROTOCOLS, type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, type SiteKey,
 } from "./perioCatalogData";
 import { PerioPresetActions } from "./PerioPresetActions";
 import { PerioDetailedProbeSection } from "./PerioDetailedProbeSection";
-import "./perioChart.css";
+import { PerioIndicesPanel } from "./PerioIndicesPanel";
+import { usePerioKeyboardNavigation } from "./usePerioKeyboardNavigation";
+import { PerioPrintFooter } from "./PerioPrintFooter";
 
 export interface PerioStudioModalProps {
 	readonly isOpen?: boolean | undefined; readonly onClose?: (() => void) | undefined; readonly isModal?: boolean | undefined;
@@ -48,20 +50,88 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const [selectedSiteKey, setSelectedSiteKey] = useState<SiteKey>("distoBuccal");
 	const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved">("idle");
 	const [showIndicesPanel, setShowIndicesPanel] = useState<boolean>(false);
-	const twoDigitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const pendingOneRef = useRef<boolean>(false);
 
 	const [teeth, setTeeth] = useState<PerioToothRecord[]>(() => normalizePerioDentition(initialTeeth));
 	const [screeningMap, setScreeningMap] = useState<PsrScreeningMap>(() => ({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } }));
 	const summary = useMemo(() => calculatePerioIndices(teeth), [teeth]);
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
+	const olearySummary = useMemo(() => calculateOlearyFromPerioTeeth(teeth), [teeth]);
+	const hygieneAssessments = useMemo(() => deriveHygieneFromPerioTeeth(teeth), [teeth]);
+	const ohiResult = useMemo(() => calculateOhiSScore(hygieneAssessments), [hygieneAssessments]);
+	const pmaResult = useMemo(() => calculatePmaScore(hygieneAssessments), [hygieneAssessments]);
 	const probingSequence = useMemo(() => generateFullMouthProbingSequence(teeth), [teeth]);
 
+	const {
+		handleUpdateDepth, handleToggleBop, handleTogglePlaque, handleToggleSuppuration,
+		handleUpdateGingivalMargin, handleUpdateMobility, handleUpdateFurcation, clearTimers,
+	} = usePerioKeyboardNavigation({
+		isOpen,
+		selectedToothNum,
+		selectedSiteKey,
+		probingSequence,
+		setTeeth,
+		setSelectedToothNum,
+		setSelectedSiteKey,
+	});
+
 	const handleClose = useCallback(() => {
-		if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
-		pendingOneRef.current = false;
+		clearTimers();
+		// Zero-Leak Draft Invariant (Мандат 8d / 8zq):
+		// При закрытии гарантирован полный сброс локального черновика к дефолту,
+		// предотвращающий утечку данных прошлого пациента следующему
+		setTeeth(normalizePerioDentition(initialTeeth));
+		setScreeningMap({
+			S1: { code: 0, asterisk: false },
+			S2: { code: 0, asterisk: false },
+			S3: { code: 0, asterisk: false },
+			S4: { code: 0, asterisk: false },
+			S5: { code: 0, asterisk: false },
+			S6: { code: 0, asterisk: false },
+		});
+		setSelectedProtocolId("prophy_airflow_ultrasound");
+		setSelectedToothNum(initialSelectedTooth);
+		setSelectedSiteKey("distoBuccal");
+		setSyncStatus("idle");
+		setShowIndicesPanel(false);
+		setIsDetailedExpanded(initialTier3Expanded);
+
 		if (onClose) onClose();
-	}, [onClose]);
+	}, [clearTimers, initialTeeth, initialSelectedTooth, initialTier3Expanded, onClose]);
+
+	// Escape key dismissal for modal mode
+	useEffect(() => {
+		if (!isOpen || !isModal) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.stopPropagation();
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, isModal, handleClose]);
+
+	// Debounced Draft Autosave (Мандат 8e / Домен 20) — сохранение каждые 500мс
+	useEffect(() => {
+		const cleanPatientId = patientId?.trim();
+		if (!cleanPatientId) return;
+		const timer = setTimeout(() => {
+			try {
+				localStorage.setItem(
+					`dente_perio_draft_${cleanPatientId}`,
+					JSON.stringify({
+						teeth,
+						screeningMap,
+						selectedProtocolId,
+						updatedAt: new Date().toISOString(),
+					}),
+				);
+			} catch (e) {
+				console.warn("[PerioStudio] Failed to autosave draft to localStorage:", e);
+			}
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [patientId, teeth, screeningMap, selectedProtocolId]);
 
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
@@ -69,13 +139,21 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		const safePatientId = cleanPatientId;
 		let isCancelled = false;
 		try {
-			const cached = localStorage.getItem(`dente_perio_cache_${safePatientId}`);
-			if (cached) {
-				const parsed = JSON.parse(cached);
+			const draft = localStorage.getItem(`dente_perio_draft_${safePatientId}`);
+			if (draft) {
+				const parsed = JSON.parse(draft);
 				if (Array.isArray(parsed.teeth) && parsed.teeth.length > 0) setTeeth(normalizePerioDentition(parsed.teeth));
 				if (parsed.screeningMap && typeof parsed.screeningMap === "object") setScreeningMap(parsed.screeningMap);
+				if (parsed.selectedProtocolId) setSelectedProtocolId(parsed.selectedProtocolId);
+			} else {
+				const cached = localStorage.getItem(`dente_perio_cache_${safePatientId}`);
+				if (cached) {
+					const parsed = JSON.parse(cached);
+					if (Array.isArray(parsed.teeth) && parsed.teeth.length > 0) setTeeth(normalizePerioDentition(parsed.teeth));
+					if (parsed.screeningMap && typeof parsed.screeningMap === "object") setScreeningMap(parsed.screeningMap);
+				}
 			}
-		} catch (err) { console.warn("[PerioStudio] Failed to read from local cache:", err); }
+		} catch (err) { console.warn("[PerioStudio] Failed to read from local draft/cache:", err); }
 
 		async function fetchPerio() {
 			try {
@@ -198,7 +276,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					}),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера ${res.status}`);
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (e) { console.warn("[PerioStudio] Failed to write cache:", e); }
+				try {
+					localStorage.removeItem(`dente_perio_draft_${patientId}`);
+					localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }));
+				} catch (e) { console.warn("[PerioStudio] Failed to write cache:", e); }
 			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
 			setSyncStatus("saved");
@@ -210,7 +291,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		} catch (err) {
 			console.error("[PerioStudio] Save failed:", err);
 			if (patientId?.trim()) {
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (e) { console.warn("[PerioStudio] Failed to write fallback cache:", e); }
+				try {
+					localStorage.removeItem(`dente_perio_draft_${patientId}`);
+					localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }));
+				} catch (e) { console.warn("[PerioStudio] Failed to write fallback cache:", e); }
 			}
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);
@@ -227,95 +311,6 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			showToast("Формирование пародонтологического протокола для печати", "info");
 		}
 	}, []);
-
-	const handleUpdateDepth = useCallback((depth: number) => {
-		setTeeth((prev) => prev.map((t) => {
-			if (t.toothNumber !== selectedToothNum) return t;
-			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
-			return { ...t, [selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, site.gingivalMarginMm || 0) } };
-		}));
-
-		// Анатомический обход дуги Florida Probe: непрерывный проход по всей челюсти
-		if (probingSequence.length > 0) {
-			const currIdx = probingSequence.findIndex((s) => s.toothNumber === selectedToothNum && s.siteKey === selectedSiteKey);
-			if (currIdx >= 0 && currIdx < probingSequence.length - 1) {
-				const nextStep = probingSequence[currIdx + 1];
-				if (nextStep) { setSelectedToothNum(nextStep.toothNumber); setSelectedSiteKey(nextStep.siteKey as SiteKey); }
-			} else if (currIdx === probingSequence.length - 1) {
-				const firstStep = probingSequence[0];
-				if (firstStep) { setSelectedToothNum(firstStep.toothNumber); setSelectedSiteKey(firstStep.siteKey as SiteKey); }
-				showToast("✓ Полный анатомический цикл зондирования завершён", "success");
-			}
-		}
-	}, [selectedToothNum, selectedSiteKey, probingSequence]);
-
-	const handleToggleBop = useCallback(() => {
-		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), bleedingOnProbing: !t[selectedSiteKey]?.bleedingOnProbing } }));
-	}, [selectedToothNum, selectedSiteKey]);
-
-	const handleTogglePlaque = useCallback(() => {
-		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), plaque: !t[selectedSiteKey]?.plaque } }));
-	}, [selectedToothNum, selectedSiteKey]);
-
-	const handleUpdateMobility = useCallback((mobility: 0 | 1 | 2 | 3) => {
-		setTeeth((prev) => prev.map((t) => (t.toothNumber === selectedToothNum ? { ...t, mobility } : t)));
-	}, [selectedToothNum]);
-
-	const handleNavigateSite = useCallback((direction: "next" | "prev") => {
-		if (probingSequence.length === 0) return;
-		const currIdx = probingSequence.findIndex((s) => s.toothNumber === selectedToothNum && s.siteKey === selectedSiteKey);
-		const targetIdx = direction === "next" ? (currIdx >= 0 && currIdx < probingSequence.length - 1 ? currIdx + 1 : 0) : (currIdx > 0 ? currIdx - 1 : probingSequence.length - 1);
-		const step = probingSequence[targetIdx];
-		if (step) { setSelectedToothNum(step.toothNumber); setSelectedSiteKey(step.siteKey as SiteKey); }
-	}, [selectedToothNum, selectedSiteKey, probingSequence]);
-
-	const handleNavigateTooth = useCallback((direction: "next" | "prev") => {
-		const perioTeeth = ALL_PERIO_TEETH as readonly number[];
-		const tIdx = perioTeeth.indexOf(selectedToothNum);
-		const target = direction === "next" ? (tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0]) : (tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1]);
-		if (target !== undefined) setSelectedToothNum(target);
-	}, [selectedToothNum]);
-
-	const handleToggleJawAspect = useCallback(() => {
-		const aspectMap: Record<SiteKey, SiteKey> = { distoBuccal: "distoLingual", midBuccal: "midLingual", mesioBuccal: "mesioLingual", distoLingual: "distoBuccal", midLingual: "midBuccal", mesioLingual: "mesioBuccal" };
-		setSelectedSiteKey((cur) => aspectMap[cur] || cur);
-	}, []);
-
-	// Разблокированный клавиатурный ввод 1..9, 10..15 мм, Пробел (BOP), стрелки, Tab
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const tag = (e.target as HTMLElement)?.tagName;
-			if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-			if (pendingOneRef.current && e.key >= "0" && e.key <= "5") {
-				e.preventDefault();
-				if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
-				pendingOneRef.current = false;
-				handleUpdateDepth(10 + Number(e.key));
-				return;
-			}
-			if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
-			pendingOneRef.current = false;
-			if (e.key === "1") {
-				e.preventDefault();
-				pendingOneRef.current = true;
-				twoDigitTimerRef.current = setTimeout(() => { pendingOneRef.current = false; handleUpdateDepth(1); }, 650);
-				return;
-			}
-			if (e.key >= "2" && e.key <= "9") { e.preventDefault(); handleUpdateDepth(Number(e.key)); }
-			else if (e.code === "Space" || e.key === " ") { e.preventDefault(); handleToggleBop(); }
-			else if (e.key === "Tab") { e.preventDefault(); handleNavigateSite(e.shiftKey ? "prev" : "next"); }
-			else if (e.key === "ArrowRight") { e.preventDefault(); handleNavigateTooth("next"); }
-			else if (e.key === "ArrowLeft") { e.preventDefault(); handleNavigateTooth("prev"); }
-			else if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); handleToggleJawAspect(); }
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-			if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
-		};
-	}, [isOpen, handleUpdateDepth, handleToggleBop, handleNavigateSite, handleNavigateTooth, handleToggleJawAspect]);
 
 	if (!isOpen) return null;
 
@@ -369,16 +364,16 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				</div>
 			</div>
 
-			{showIndicesPanel && (
-				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
-					<div className="flex flex-wrap items-center gap-4">
-						<div><span className="text-[var(--muted)]">BOP:</span> <span className="font-bold text-[var(--ink)]">{summary.fmbsPercent}%</span></div>
-						<div><span className="text-[var(--muted)]">Глубокие карманы (&ge; 4 мм):</span> <span className="font-bold text-[var(--ink)]">{summary.deepPocketsCount}</span></div>
-						<div><span className="text-[var(--muted)]">PSR:</span> <span className="font-bold text-[var(--primary)]">{psrSummary.psrFormula}</span></div>
-					</div>
-					<button type="button" onClick={() => setShowIndicesPanel(false)} className="min-h-[44px] sm:min-h-[36px] px-2 text-xs text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer">Скрыть</button>
-				</div>
-			)}
+			<PerioIndicesPanel
+				isOpen={showIndicesPanel}
+				onClose={() => setShowIndicesPanel(false)}
+				olearySummary={olearySummary}
+				ohiResult={ohiResult}
+				pmaResult={pmaResult}
+				summary={summary}
+				psrFormula={psrSummary.psrFormula}
+				suggestedDiagnosisRu={psrSummary.suggestedDiagnosisRu}
+			/>
 
 			{/* Клинические пресеты и макро-выбор челюстей */}
 			<div className="perio-presets-container">
@@ -480,20 +475,18 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					onToggleDetailedExpanded={() => setIsDetailedExpanded((prev) => !prev)}
 					teeth={teeth} selectedToothNum={selectedToothNum} onSelectToothNum={setSelectedToothNum}
 					selectedSiteKey={selectedSiteKey} onSelectSiteKey={setSelectedSiteKey}
-					onUpdateMobility={handleUpdateMobility} onUpdateDepth={handleUpdateDepth}
-					onToggleBop={handleToggleBop} onTogglePlaque={handleTogglePlaque}
+					onUpdateMobility={handleUpdateMobility}
+					onUpdateFurcation={handleUpdateFurcation}
+					onUpdateDepth={handleUpdateDepth}
+					onUpdateGingivalMargin={handleUpdateGingivalMargin}
+					onToggleBop={handleToggleBop}
+					onTogglePlaque={handleTogglePlaque}
+					onToggleSuppuration={handleToggleSuppuration}
 				/>
 			</div>
 
 			{/* Печатный футер A4 с подписью врача */}
-			<div className="hidden print:flex flex-col gap-4 pt-6 mt-4 border-t-2 border-black text-xs text-black perio-print-footer">
-				<div className="flex justify-between items-center">
-					<span>Дата обследования: {new Date().toLocaleDateString("ru-RU")}</span><span>Пациент: {patientName}</span>
-				</div>
-				<div className="flex justify-between items-center pt-4">
-					<span>Врач-стоматолог: ____________________ / ____________________</span><span>Подпись: ____________________ (М.П.)</span>
-				</div>
-			</div>
+			<PerioPrintFooter patientName={patientName} />
 
 			{/* Мобильная плавающая нижняя плашка Primary CTA (Natural Thumb Zone) */}
 			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 pb-safe bg-[var(--paper-strong)] border-t border-[var(--line)] z-[110] flex sm:hidden">
@@ -506,7 +499,16 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 	if (isModal) {
 		return (
-			<div className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay bg-[var(--overlay)]" style={{ backgroundColor: "var(--overlay)" }} data-testid="perio-chart-modal" role="dialog" aria-modal="true">
+			<div
+				className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay"
+				style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
+				data-testid="perio-chart-modal"
+				role="dialog"
+				aria-modal="true"
+				onClick={(e) => {
+					if (e.target === e.currentTarget) handleClose();
+				}}
+			>
 				<div className="w-full max-w-7xl my-0 sm:my-auto max-h-[94vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl perio-modal-content">{content}</div>
 			</div>
 		);

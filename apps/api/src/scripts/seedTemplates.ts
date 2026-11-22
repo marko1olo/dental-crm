@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { organizations, protocolTemplates } from "../db/schema.js";
+import { organizations, protocolTemplates, dentalSpecialty } from "../db/schema.js";
 
 const BUILT_IN_TEMPLATES: Array<{
 	title: string;
@@ -449,6 +449,14 @@ const BUILT_IN_TEMPLATES: Array<{
 	},
 ];
 
+function normalizeSpecialty(val: string): (typeof dentalSpecialty.enumValues)[number] {
+	const validSpecialties = dentalSpecialty.enumValues as readonly string[];
+	if (validSpecialties.includes(val)) {
+		return val as (typeof dentalSpecialty.enumValues)[number];
+	}
+	return "therapist";
+}
+
 export async function ensureClinicalTemplatesSeeded(
 	organizationId: string,
 ): Promise<void> {
@@ -470,7 +478,7 @@ export async function ensureClinicalTemplatesSeeded(
 		await db.insert(protocolTemplates).values({
 			organizationId,
 			title: template.title,
-			specialty: (template.specialty as any) || "therapist",
+			specialty: normalizeSpecialty(template.specialty),
 			visitReason: template.category || "",
 			complaintPrompt: template.prefilledAnamnesis || "",
 			objectiveTemplate: template.prefilledObjective || "",

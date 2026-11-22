@@ -50,6 +50,11 @@ function buildFiscalReceiptDetails(
 export class FiscalQueueRetryWorker {
 	private static isRunning = false;
 	private static intervalTimer: NodeJS.Timeout | null = null;
+	public static logger?: {
+		warn: (obj: unknown, msg?: string) => void;
+		error: (obj: unknown, msg?: string) => void;
+		info?: (obj: unknown, msg?: string) => void;
+	} | null = null;
 
 	/**
 	 * Calculates exponential backoff with full jitter for offline queue retry attempts:
@@ -264,9 +269,9 @@ export class FiscalQueueRetryWorker {
 							),
 						);
 				} catch (paySyncErr) {
-					console.warn(
-						`[FiscalQueueRetryWorker] Failed to sync fiscal receipt to payment ${queueItem.paymentId}:`,
-						paySyncErr,
+					FiscalQueueRetryWorker.logger?.warn(
+						{ paySyncErr, paymentId: queueItem.paymentId },
+						`[FiscalQueueRetryWorker] Failed to sync fiscal receipt to payment ${queueItem.paymentId}`,
 					);
 				}
 			}
@@ -432,9 +437,9 @@ export class FiscalQueueRetryWorker {
 									),
 								);
 						} catch (paySyncErr) {
-							console.warn(
-								`[FiscalQueueRetryWorker] Failed to sync payment ${item.paymentId}:`,
-								paySyncErr,
+							FiscalQueueRetryWorker.logger?.warn(
+								{ paySyncErr, paymentId: item.paymentId },
+								`[FiscalQueueRetryWorker] Failed to sync payment ${item.paymentId}`,
 							);
 						}
 					}
@@ -455,14 +460,28 @@ export class FiscalQueueRetryWorker {
 	/**
 	 * Starts background auto-retry timer (e.g. every 30 seconds).
 	 */
-	public static startAutoRetryLoop(organizationId: string, intervalMs = 30000): void {
+	public static startAutoRetryLoop(
+		organizationId: string,
+		intervalMs = 30000,
+		logger?: {
+			warn: (obj: unknown, msg?: string) => void;
+			error: (obj: unknown, msg?: string) => void;
+			info?: (obj: unknown, msg?: string) => void;
+		},
+	): void {
+		if (logger) {
+			this.logger = logger;
+		}
 		if (this.isRunning) return;
 		this.isRunning = true;
 		this.intervalTimer = setInterval(async () => {
 			try {
 				await this.flushOrganizationQueue(organizationId);
 			} catch (err) {
-				console.error("[FiscalQueueRetryWorker] Auto-retry tick error:", err);
+				FiscalQueueRetryWorker.logger?.error(
+					{ err, organizationId },
+					"[FiscalQueueRetryWorker] Auto-retry tick error",
+				);
 			}
 		}, intervalMs);
 		this.intervalTimer.unref();

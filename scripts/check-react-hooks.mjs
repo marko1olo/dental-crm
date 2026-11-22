@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "@babel/parser";
 import _traverse from "@babel/traverse";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const traverse = _traverse.default || _traverse;
 
@@ -454,6 +455,10 @@ export function runReactHooksCheck() {
 		console.error(`  • ${err.file}:${err.line}:${err.col} [${err.rule}]`);
 		console.error(`    ${err.message}\n`);
 	}
+
+	printFailureManifesto("REACT_HOOKS", {
+		details: `Обнаружено ${allErrors.length} дефектов хуков React 19 (условные вызовы, вложенные коллбэки или рендер-фаза setState).`,
+	});
 
 	return 1;
 }

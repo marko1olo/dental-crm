@@ -25,6 +25,11 @@ export const ChairsideServiceHeader: React.FC<ChairsideServiceHeaderProps> = ({ 
 				</span>
 			)}
 			<span className="text-xs font-bold text-[var(--ink,#0f172a)] break-words">{item.title}</span>
+			{item.code804n ? (
+				<span className="text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+					{item.code804n}
+				</span>
+			) : null}
 			{item.labOrderNumber ? (
 				<span
 					className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800"

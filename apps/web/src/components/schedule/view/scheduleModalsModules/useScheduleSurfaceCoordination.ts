@@ -81,17 +81,17 @@ export function useScheduleSurfaceCoordination({
     setWaitlistQuickFillSlot,
   ]);
 
-  // 4. PreventiveInspectionModal
+  // 4. PatientRecallsHubModal (канонический хаб реколлов)
   React.useEffect(() => {
     if (preventiveInspectionOpen) {
-      useUiSurfaceStore.getState().openPrimaryModal("preventive_inspection");
+      useUiSurfaceStore.getState().openPrimaryModal("patient_recalls_hub");
       if (quickBookingOpen) setQuickBookingOpen(false);
       if (waitlistOpen) setWaitlistOpen(false);
       if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
     } else if (
-      useUiSurfaceStore.getState().primaryModal?.id === "preventive_inspection"
+      useUiSurfaceStore.getState().primaryModal?.id === "patient_recalls_hub"
     ) {
-      useUiSurfaceStore.getState().closePrimaryModal("preventive_inspection");
+      useUiSurfaceStore.getState().closePrimaryModal("patient_recalls_hub");
     }
   }, [
     preventiveInspectionOpen,

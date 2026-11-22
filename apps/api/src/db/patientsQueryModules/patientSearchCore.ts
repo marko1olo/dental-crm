@@ -587,11 +587,13 @@ export async function updatePatientAdministrativeProfileInDb(
 	organizationId: string,
 	patientId: string,
 	input: UpdatePatientAdministrativeProfileInput,
+	tx?: TenantDb,
 ): Promise<Patient | null> {
 	if (useInMemory()) {
 		return updatePatientAdministrativeProfileInMemory(patientId, input);
 	}
 	try {
+		const client = tx ?? db;
 		/*
 		 * БЫЛО: .set({ administrativeProfile: input }) — целиком перезаписывал
 		 * JSONB partial-пейлоадом. Маршрут patients.ts уже мержит existing+input
@@ -602,7 +604,7 @@ export async function updatePatientAdministrativeProfileInDb(
 		 * СТАЛО: читаем текущий профиль в той же организации, мержим, пишем
 		 * merged. Partial wipe невозможен даже без merge на маршруте.
 		 */
-		const [current] = await db
+		const [current] = await client
 			.select({
 				administrativeProfile: schema.patients.administrativeProfile,
 			})
@@ -628,7 +630,7 @@ export async function updatePatientAdministrativeProfileInDb(
 			...(input as Record<string, unknown>),
 		};
 
-		const [updated] = await db
+		const [updated] = await client
 			.update(schema.patients)
 			.set({
 				administrativeProfile:
@@ -651,7 +653,7 @@ export async function updatePatientAdministrativeProfileInDb(
 
 		/* Та же причина, что в updatePatientInDb: ответ — полная карточка, и
 		   сальдо в ней обязано быть настоящим, а не нулём после правки анкеты. */
-		const balances = await patientAccountBalancesRub(organizationId, [updated.id]);
+		const balances = await patientAccountBalancesRub(organizationId, [updated.id], tx);
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
 		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть как успешное сохранение. */

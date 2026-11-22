@@ -14,8 +14,8 @@
  */
 
 import { z } from "zod";
-import type { Kopecks } from "../utils/money.js";
-import { formatKopecksRu, kopecksToRubles, rublesToKopecks } from "../utils/money.js";
+import type { Kopecks } from "../money.js";
+import { formatKopecksRu, formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "../money.js";
 import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "./guaranteeModules/guaranteeMatcher.js";
 import {
 	type DmsGuaranteeLetter,
@@ -876,8 +876,7 @@ export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
  * Formats integer kopecks to Russian currency string with rubles ("1 500 ₽").
  */
 export function formatCurrencyKopecks(kopecks: number | null | undefined): string {
-	if (kopecks == null || !Number.isFinite(kopecks)) return "0 ₽";
-	return `${Math.round(kopecksToRubles(kopecks)).toLocaleString("ru-RU")} ₽`;
+	return formatKopecksToRub(kopecks);
 }
 
 export interface DmsCoPaymentSplitItemResult {

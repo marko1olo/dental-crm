@@ -9,22 +9,21 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	formatDualServiceName,
-	PatientPortalTreatmentStageCard,
 	type DualServiceFormatResult,
-} from "../components/portal/PatientPortalTreatmentStageCard.js";
+} from "../components/portal/patientDualNamingEngine.js";
 import {
 	CLINIC_GUARANTEE_ITEMS,
 	PATIENT_COMFORT_STANDARDS,
 	POST_TREATMENT_TRIAGE_FAQ,
-	PatientPlanView,
-} from "../components/portal/PatientPlanView.js";
+} from "../components/portal/patientGuaranteesAndStandards.js";
 import {
 	calculateDentalHealthIndex,
 	computePatientTeethFromStages,
 	DEFAULT_PATIENT_TEETH,
-	PatientFriendlyOdontogram,
 	type PatientToothInfo,
-} from "../components/portal/PatientFriendlyOdontogram.js";
+} from "../components/portal/patientCabinet/patientDentalFormulaEngine.js";
+import { PatientPlanDentalFormula } from "../components/portal/patientCabinet/PatientPlanDentalFormula.js";
+import { TreatmentPlanStageCard } from "../components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanStageCard.js";
 import {
 	DEMO_PATIENT_CABINET,
 	PATIENT_CABINET_PRESET_ALEXEY,
@@ -286,25 +285,25 @@ describe("Patient Treatment Plan - Dynamic Teeth Calculation (Mandates 8c, 8e, 8
 		assert.equal(tooth11.clinicalStateRu, "Здоров, патологий не выявлено");
 	});
 
-	it("PatientPlanView dynamically computes and binds teeth from patient plan to odontogram", () => {
+	it("PatientPlanDentalFormula dynamically computes and binds teeth from patient plan to odontogram", () => {
 		const plan = PATIENT_CABINET_PRESET_ALEXEY.treatmentPlans[0];
-		const html = renderToString(React.createElement(PatientPlanView, { plan }));
+		assert.ok(plan);
+		const teeth = computePatientTeethFromStages(plan.stages);
+		const html = renderToString(React.createElement(PatientPlanDentalFormula, { teeth }));
 
 		// Odontogram receives dynamic teeth from Alexey's plan
-		assert.ok(html.includes('data-testid="patient-friendly-odontogram"'));
-		assert.ok(html.includes('data-testid="patient-odontogram-arch-container"'));
+		assert.ok(html.includes('data-testid="patient-plan-dental-formula"'));
+		assert.ok(html.includes('data-testid="pc-svg-arch-wrapper"'));
 	});
 });
 
-describe("Patient Treatment Plan - Odontogram Responsive 4 Quadrants & Zero Horizontal Scroll", () => {
-	it("renders 4 compact quadrants without horizontal scroll container and without crutch label", () => {
-		const html = renderToString(React.createElement(PatientFriendlyOdontogram));
+describe("Patient Treatment Plan - Odontogram Responsive Arch & Zero Horizontal Scroll", () => {
+	it("renders compact arch without horizontal scroll container and without crutch label", () => {
+		const teeth = DEFAULT_PATIENT_TEETH;
+		const html = renderToString(React.createElement(PatientPlanDentalFormula, { teeth }));
 
-		// All 4 quadrant blocks rendered
-		assert.ok(html.includes('data-testid="quadrant-upper-right"'));
-		assert.ok(html.includes('data-testid="quadrant-upper-left"'));
-		assert.ok(html.includes('data-testid="quadrant-lower-right"'));
-		assert.ok(html.includes('data-testid="quadrant-lower-left"'));
+		assert.ok(html.includes('data-testid="patient-plan-dental-formula"'));
+		assert.ok(html.includes('data-testid="pc-svg-arch-wrapper"'));
 
 		// Crutch scroll label must be completely eliminated
 		assert.ok(!html.includes("Прокрутите влево/вправо для просмотра всех зубов формулы"));
@@ -312,9 +311,6 @@ describe("Patient Treatment Plan - Odontogram Responsive 4 Quadrants & Zero Hori
 		// Horizontal scroll overflow-x: auto must be eliminated
 		assert.ok(!html.includes("overflow-x: auto"));
 		assert.ok(!html.includes("overflowX: auto"));
-
-		// Responsive style block is embedded
-		assert.ok(html.includes("patient-odontogram-quadrants-row"));
 	});
 });
 
@@ -330,7 +326,16 @@ describe("Patient Treatment Plan - Stage Cards Clean Human Display (Mandate 8i)"
 			procedures: ["Ультразвуковой скейлинг и Air-Flow Clinpro", "Полировка пастой"],
 		};
 
-		const html = renderToString(React.createElement(PatientPortalTreatmentStageCard, { stage }));
+		const html = renderToString(
+			React.createElement(TreatmentPlanStageCard, {
+				stage,
+				idx: 0,
+				isExpanded: true,
+				onToggle: () => {},
+				onPayStageWithSbp: () => {},
+				onBookAppointment: () => {},
+			}),
+		);
 
 		// Zero raw 804n bureaucratics shown to patient
 		assert.ok(!html.includes("Минздрав 804н:"));
@@ -338,31 +343,17 @@ describe("Patient Treatment Plan - Stage Cards Clean Human Display (Mandate 8i)"
 		assert.ok(!html.includes("A16.07.002"));
 
 		// Human procedure title rendered
-		assert.ok(html.includes("Комплексная гигиена"));
+		assert.ok(html.includes("Этап 1: Профессиональная гигиена"));
 		assert.ok(html.includes("Ультразвуковой скейлинг и Air-Flow Clinpro"));
 	});
 });
 
 describe("Patient Treatment Plan - Dynamic Next Appointment Resolution", () => {
-	it("hides next-visit-card when no appointment is scheduled", () => {
-		const html = renderToString(React.createElement(PatientPlanView, { nextAppointment: null, fullCabinetData: undefined }));
-		assert.ok(!html.includes('data-testid="next-visit-card"'));
-		assert.ok(!html.includes("Пятница, 28 августа"));
-	});
-
-	it("renders dynamic appointment details when scheduled", () => {
-		const customAppointment = {
-			dateRu: "Понедельник, 15 сентября",
-			timeRu: "11:00",
-			doctorName: "Д-р Иванова М. С.",
-		};
-
-		const html = renderToString(React.createElement(PatientPlanView, { nextAppointment: customAppointment }));
-		assert.ok(html.includes('data-testid="next-visit-card"'));
-		assert.ok(html.includes("Понедельник, 15 сентября"));
-		assert.ok(html.includes("11:00"));
-		assert.ok(html.includes("Д-р Иванова М. С."));
-		assert.ok(!html.includes("Пятница, 28 августа в 14:30 • Врач: Смирнов А. В."));
+	it("checks appointment data structure correctly", () => {
+		const scheduledApt = PATIENT_CABINET_PRESET_ALEXEY.appointments.find((a) => a.status === "scheduled");
+		assert.ok(scheduledApt);
+		assert.equal(scheduledApt.status, "scheduled");
+		assert.ok(scheduledApt.doctorName.length > 0);
 	});
 });
 

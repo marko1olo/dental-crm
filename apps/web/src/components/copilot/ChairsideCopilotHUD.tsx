@@ -18,6 +18,7 @@ import type {
 import { type DentalVoiceIntent, parseDentalVoiceSpeech } from "../../services/voice";
 import { executeCopilotAgentRequest } from "./chairside/chairsideAgentExecutor";
 import { useCopilotStore } from "../../store/copilotStore";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import "./ChairsideCopilotHUD.css";
 
 export {
@@ -188,14 +189,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         const kopecks =
           typeof s.priceKopecks === "number"
             ? s.priceKopecks
-            : Math.round((s.priceRub ?? 0) * 100);
+            : rublesToKopecks(s.priceRub ?? 0);
         return sum + kopecks * s.quantity;
       }, 0),
     [servicesProposal]
   );
 
   const servicesTotalPrice = useMemo(
-    () => Math.round(servicesTotalKopecks / 100),
+    () => kopecksToRubles(servicesTotalKopecks),
     [servicesTotalKopecks]
   );
 
@@ -303,8 +304,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         detail: { toothNumber: toothProposal.toothNumber, status: canonicalState, surfaces: toothProposal.surfaces },
       }));
     }
+    // Fallback в copilotStore для защиты от потери данных при отсутствии слушателя (Мандат 8d/8zq)
+    useCopilotStore.getState().savePendingDictationDraft({
+      patientId: props.patientId,
+      toothUpdates: [{ toothNumber: toothProposal.toothNumber, status: canonicalState, surfaces: toothProposal.surfaces }],
+    });
     setToothProposal((prev) => (prev ? { ...prev, applied: true } : null));
-  }, [toothProposal, onApplyToothState, onUpdateToothStatus]);
+  }, [toothProposal, onApplyToothState, onUpdateToothStatus, props.patientId]);
 
   const handleApplyServices = useCallback(() => {
     if (onApplyServices) onApplyServices(servicesProposal);
@@ -320,8 +326,21 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         })
       );
     }
+    // Fallback в copilotStore для защиты от потери данных при отсутствии слушателя (Мандат 8d/8zq)
+    useCopilotStore.getState().savePendingDictationDraft({
+      patientId: props.patientId,
+      billingServices: servicesProposal.map((s) => ({
+        code: s.serviceCode || s.code804n || "A16.07.002",
+        name: s.title,
+        title: s.title,
+        price: s.priceRub ?? kopecksToRubles(s.priceKopecks ?? 0),
+        priceRub: s.priceRub ?? kopecksToRubles(s.priceKopecks ?? 0),
+        priceKopecks: typeof s.priceKopecks === "number" ? s.priceKopecks : rublesToKopecks(s.priceRub ?? 0),
+        toothNumber: s.toothNumber,
+      })),
+    });
     setServicesProposal((prev) => prev.map((s) => ({ ...s, applied: true })));
-  }, [servicesProposal, servicesTotalKopecks, servicesTotalPrice, onApplyServices, onAddBillingItem]);
+  }, [servicesProposal, servicesTotalKopecks, servicesTotalPrice, onApplyServices, onAddBillingItem, props.patientId]);
 
   const handleApplySoap = useCallback(() => {
     const patch: Record<string, string> = {
@@ -337,8 +356,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: patch }));
     }
+    // Fallback в copilotStore для защиты от потери данных при отсутствии слушателя (Мандат 8d/8zq)
+    useCopilotStore.getState().savePendingDictationDraft({
+      patientId: props.patientId,
+      soapPatch: patch,
+    });
     setSoapProposal((prev) => ({ ...prev, applied: true }));
-  }, [soapProposal, onApplySoapNotes, onApplySoapDiary]);
+  }, [soapProposal, onApplySoapNotes, onApplySoapDiary, props.patientId]);
 
   const handleApplyAllActions = useCallback(() => {
     handleApplyTooth();

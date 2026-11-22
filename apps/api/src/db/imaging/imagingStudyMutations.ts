@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { ImagingStudy } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy } from "./imagingMappers.js";
 
@@ -40,8 +40,9 @@ export async function createImagingStudyInDb(
 		aiSummary?: string | null | undefined;
 		fileSizeBytes?: number | null | undefined;
 	},
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy> {
-	return db.transaction(async (tx) => {
+	const runOperation = async (tx: TenantDb) => {
 		const [ownedPatient] = await tx
 			.select({ id: schema.patients.id })
 			.from(schema.patients)
@@ -125,5 +126,10 @@ export async function createImagingStudyInDb(
 		}
 
 		return mapImagingStudy(record);
-	});
+	};
+
+	if (targetDb !== db) {
+		return runOperation(targetDb);
+	}
+	return db.transaction(async (tx) => runOperation(tx as TenantDb));
 }

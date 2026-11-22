@@ -175,3 +175,67 @@ export function mapTo5StageLabStatus(rawStatus?: string | null): Canonical5LabSt
 	}
 	return "sent";
 }
+
+export const LAB_ORDER_STAGES = [
+	{
+		id: "sent" as const,
+		name: "1. Слепок / Скан",
+		desc: "Оттиски (силикон/скан) и наряд переданы в лабораторию",
+		step: 1,
+		color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300",
+		badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
+	},
+	{
+		id: "in_progress" as const,
+		name: "2. В работе у техника",
+		desc: "CAD-моделирование, фрезеровка каркаса или нанесение керамики",
+		step: 2,
+		color: "text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-700 dark:text-indigo-300",
+		badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300",
+	},
+	{
+		id: "fitting" as const,
+		name: "3. Примерка",
+		desc: "Клиническая примерка каркаса или постановки в полости рта",
+		step: 3,
+		color: "text-[var(--warning-ink)] bg-[var(--warning-soft)] border-[var(--warning-line)]",
+		badgeColor: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]",
+	},
+	{
+		id: "ready" as const,
+		name: "4. Готов в клинике",
+		desc: "Готовая ортопедическая конструкция ожидает пациента в клинике",
+		step: 4,
+		color: "text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-900/30 dark:border-teal-700 dark:text-teal-300",
+		badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300",
+	},
+	{
+		id: "completed" as const,
+		name: "5. Зафиксировано",
+		desc: "Окончательная фиксация в полости рта, гарантийный паспорт выдан",
+		step: 5,
+		color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300",
+		badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+	},
+] as const;
+
+export type LabOrderStageKey =
+	| (typeof LAB_ORDER_STAGES)[number]["id"]
+	| Canonical5LabStatus
+	| "sent_to_lab"
+	| "fitting_scheduled"
+	| "delivered_completed"
+	| "correction_remake"
+	| "model_cad_design"
+	| "framework_wax_milling"
+	| "sintering_ceramic_layering"
+	| "fitting_in_mouth"
+	| "final_glaze"
+	| "delivered_to_clinic"
+	| "impression_scan"
+	| "cad_modeling"
+	| "milling_casting"
+	| "framework_fitting"
+	| "ceramic_layering"
+	| "ready_in_clinic"
+	| "patient_fixation";

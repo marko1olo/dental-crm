@@ -70,8 +70,8 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 			<RapidLaunchWizard
 				isModal={true}
 				onClose={() => setShowRapidWizard(false)}
-				onFinished={onDismissOnboarding}
-				onSkipped={onDismissOnboarding}
+				onFinished={onDismissOnboarding ?? (() => {})}
+				onSkipped={onDismissOnboarding ?? (() => {})}
 			/>
 		);
 	}
@@ -99,11 +99,12 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 		let staffName = newStaffName?.trim?.() ?? "";
 		if (!staffName) {
 			const activeDoctor = staffList.find((s) => s.role === "doctor" && s.fullName)?.fullName;
-			staffName = activeDoctor || (newStaffRole === "doctor" ? "Врач-терапевт" : staffRoleLabels[newStaffRole] || "Врач-терапевт");
+			const role = newStaffRole ?? "doctor";
+			staffName = activeDoctor || (role === "doctor" ? "Врач-терапевт" : (staffRoleLabels?.[role] || "Врач-терапевт"));
 			setNewStaffName(staffName);
 			showToast("Введите ФИО сотрудника или выберите стандартную роль", "info");
 		}
-		addStaffMember(newStaffRole, staffName);
+		if (typeof addStaffMember === "function") addStaffMember(newStaffRole ?? "doctor", staffName);
 	};
 
 	const handleAddChair = () => {
@@ -113,7 +114,7 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 			chairName = `Кресло ${currentChairs.length + 1}`;
 			setNewChairName(chairName);
 		}
-		addChair(chairName);
+		if (typeof addChair === "function") addChair(chairName);
 	};
 
 	const renderActiveStep = () => {

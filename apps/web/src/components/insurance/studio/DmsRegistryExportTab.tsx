@@ -30,7 +30,7 @@ export const DmsRegistryExportTab: React.FC<DmsRegistryExportTabProps> = ({
 					style={{
 						fontSize: "14px",
 						fontWeight: 700,
-						color: "var(--ink, #0f172a)",
+						color: "var(--ink)",
 					}}
 				>
 					Оказанные услуги по ДМС за текущий период

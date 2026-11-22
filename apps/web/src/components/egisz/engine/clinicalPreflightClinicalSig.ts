@@ -3,7 +3,7 @@
  */
 
 import { EGISZ_REMD_OIDS } from "../remdXml/egiszRemdPresets";
-import type { EgiszDentalCdaPayload } from "../cdaR2XmlBuilder";
+import type { EgiszDentalCdaPayload } from "../cdaR2/cdaTypes";
 import type { EgiszPreflightCheckResult } from "./engineTypes";
 
 export function checkClinicalAndSignature(payload: EgiszDentalCdaPayload, checks: EgiszPreflightCheckResult[]): void {

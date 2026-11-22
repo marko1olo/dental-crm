@@ -14,6 +14,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, relative } from "node:path";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const ROOT_DIR = process.cwd();
 const RATCHET_LEDGER_PATH = join(ROOT_DIR, ".data/code-health-ratchet.json");
@@ -199,11 +200,16 @@ function auditScopes() {
 
 	if (hasFailures) {
 		console.error("\n💥 [TYPE RATCHET FAILED] Обнаружены нарушения дисциплины типов Мандата 8bh!");
-		console.error("Правило: новые any и biome-ignore запрещены. Потолок зафиксирован навсегда.");
+		printFailureManifesto("TYPE_RATCHET", {
+			details: "Превышен санитарный потолок any, biome-ignore или невалидированных req.body as any в Fastify API.",
+		});
 		process.exit(1);
 	}
 
-	console.log("\n✅ [TYPE RATCHET PASSED] Все проверки храповика типов успешно пройдены.\n");
+	const totalAnys = Object.values(stats).reduce((acc, s) => acc + s.anyCount, 0);
+	const totalBiomes = Object.values(stats).reduce((acc, s) => acc + s.biomeCount, 0);
+	console.log(`\n🛡️ [TYPE RATCHET] Нового говна не добавлено (рост any/biome-ignore заблокирован).`);
+	console.log(`⚠️  Внимание: в коде остаётся ${totalAnys} any и ${totalBiomes} biome-ignores. Не расслабляться, снижать по правилу бойскаута!\n`);
 }
 
 auditScopes();

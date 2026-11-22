@@ -118,6 +118,7 @@ export async function getLabOrderByToken(token: string) {
 			id: labOrders.id,
 			organizationId: labOrders.organizationId,
 			patientId: labOrders.patientId,
+			orderNumber: labOrders.orderNumber,
 			patientFullName: patients.fullName,
 			toothFdi: labOrders.toothFdi,
 			material: labOrders.material,
@@ -129,7 +130,13 @@ export async function getLabOrderByToken(token: string) {
 			createdAt: labOrders.createdAt,
 		})
 		.from(labOrders)
-		.innerJoin(patients, eq(patients.id, labOrders.patientId))
+		.innerJoin(
+			patients,
+			and(
+				eq(patients.id, labOrders.patientId),
+				eq(patients.organizationId, labOrders.organizationId),
+			),
+		)
 		.where(eq(labOrders.secureToken, token))
 		.limit(1);
 

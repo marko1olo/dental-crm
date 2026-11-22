@@ -17,9 +17,48 @@ import * as net from "node:net";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
+import { communicationEvents, crmLeads, organizations, patients } from "../../db/schema.js";
 import { maskPhoneDisplay } from "@dental/shared";
 import { wsBroker } from "../websocketBroker.js";
+
+export interface TelephonyStructuredLogger {
+	info(obj: unknown, msg?: string): void;
+	warn(obj: unknown, msg?: string): void;
+	error(obj: unknown, msg?: string): void;
+}
+
+const defaultStructuredLogger: TelephonyStructuredLogger = {
+	info: (obj, msg) => {
+		process.stdout.write(
+			JSON.stringify({
+				level: "info",
+				time: new Date().toISOString(),
+				msg: msg || "",
+				details: obj,
+			}) + "\n",
+		);
+	},
+	warn: (obj, msg) => {
+		process.stderr.write(
+			JSON.stringify({
+				level: "warn",
+				time: new Date().toISOString(),
+				msg: msg || "",
+				details: obj,
+			}) + "\n",
+		);
+	},
+	error: (obj, msg) => {
+		process.stderr.write(
+			JSON.stringify({
+				level: "error",
+				time: new Date().toISOString(),
+				msg: msg || "",
+				details: obj,
+			}) + "\n",
+		);
+	},
+};
 
 export type TelephonyMode = "local_webrtc_sip" | "cloud_webhooks" | "hybrid_active_fallback";
 export type CloudProviderType = "mango" | "zadarma" | "uis" | "asterisk";
@@ -161,7 +200,21 @@ export class TelephonyGatewayService {
 						? "uis"
 						: "mango");
 
-		const isForcedFailover = this.forcedFailoverMap.get(organizationId) || false;
+		let isForcedFailover = this.forcedFailoverMap.get(organizationId);
+		if (isForcedFailover === undefined) {
+			try {
+				const orgRows = await db
+					.select({ flags: organizations.workspaceFeatureFlags })
+					.from(organizations)
+					.where(eq(organizations.id, organizationId))
+					.limit(1);
+				const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+				isForcedFailover = Boolean(flags.telephonyForcedFailover);
+				this.forcedFailoverMap.set(organizationId, isForcedFailover);
+			} catch {
+				isForcedFailover = false;
+			}
+		}
 		if (isForcedFailover || process.env.PBX_FORCE_OFFLINE === "1") {
 			return {
 				organizationId,
@@ -223,9 +276,42 @@ export class TelephonyGatewayService {
 
 	/**
 	 * Sets or clears manual failover override for an organization.
+	 * Persists failover state into PostgreSQL 18 (organizations.workspaceFeatureFlags)
+	 * to prevent amnesia and ensure survivor status across Node.js process restarts.
 	 */
-	public static setForcedFailover(organizationId: string, forceCloudFallback: boolean): void {
+	public static async setForcedFailover(
+		organizationId: string,
+		forceCloudFallback: boolean,
+	): Promise<void> {
 		this.forcedFailoverMap.set(organizationId, forceCloudFallback);
+		try {
+			const orgRows = await db
+				.select({ flags: organizations.workspaceFeatureFlags })
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+			const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+			const updatedFlags = { ...flags, telephonyForcedFailover: forceCloudFallback };
+			await db
+				.update(organizations)
+				.set({
+					workspaceFeatureFlags: updatedFlags,
+					updatedAt: new Date(),
+				})
+				.where(eq(organizations.id, organizationId));
+		} catch (err) {
+			defaultStructuredLogger.error(
+				{ err, organizationId },
+				"[TelephonyGatewayService] Failed to persist failover status",
+			);
+		}
+	}
+
+	/**
+	 * Clears in-memory forced failover cache (useful for test isolation).
+	 */
+	public static clearForcedFailoverCache(): void {
+		this.forcedFailoverMap.clear();
 	}
 
 	/**
@@ -685,11 +771,8 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					if (params.logger) {
-						params.logger.error({ err, provider: "mango" }, `[Telephony:Mango] Outbound call error: ${errMsg}`);
-					} else {
-						process.stderr.write(`[Telephony:Mango] Outbound call error: ${errMsg}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.error({ err, provider: "mango" }, `[Telephony:Mango] Outbound call error: ${errMsg}`);
 					return {
 						dispatched: false,
 						callId,
@@ -722,11 +805,8 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					if (params.logger) {
-						params.logger.error({ err, provider: "zadarma" }, `[Telephony:Zadarma] Outbound call error: ${errMsg}`);
-					} else {
-						process.stderr.write(`[Telephony:Zadarma] Outbound call error: ${errMsg}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.error({ err, provider: "zadarma" }, `[Telephony:Zadarma] Outbound call error: ${errMsg}`);
 					return {
 						dispatched: false,
 						callId,
@@ -757,11 +837,8 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					if (params.logger) {
-						params.logger.error({ err, provider: "uis" }, `[Telephony:UIS] Outbound call error: ${errMsg}`);
-					} else {
-						process.stderr.write(`[Telephony:UIS] Outbound call error: ${errMsg}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.error({ err, provider: "uis" }, `[Telephony:UIS] Outbound call error: ${errMsg}`);
 					return {
 						dispatched: false,
 						callId,
@@ -797,11 +874,8 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					if (params.logger) {
-						params.logger.error({ err, provider: "asterisk" }, `[Telephony:Asterisk] Outbound call error: ${errMsg}`);
-					} else {
-						process.stderr.write(`[Telephony:Asterisk] Outbound call error: ${errMsg}\n`);
-					}
+					const log = params.logger || defaultStructuredLogger;
+					log.error({ err, provider: "asterisk" }, `[Telephony:Asterisk] Outbound call error: ${errMsg}`);
 					return {
 						dispatched: false,
 						callId,

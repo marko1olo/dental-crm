@@ -14,7 +14,7 @@ export interface InlinePatientFormInputsProps {
   isCreatingPatient: boolean;
   doctors: Array<{ id: string; fullName: string }>;
   doctorUserId: string;
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   handleCreateInlinePatient?: ((e: React.FormEvent) => Promise<void>) | undefined;
 }
 

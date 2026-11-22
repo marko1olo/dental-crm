@@ -158,7 +158,7 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 			const timeZone = await clinicTimeZone(orgId);
 
 			const { departments, activeDoctorsCount, topDoctors, topProcedures } =
-				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate);
+				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate, range.endDate);
 
 			const {
 				kpis,

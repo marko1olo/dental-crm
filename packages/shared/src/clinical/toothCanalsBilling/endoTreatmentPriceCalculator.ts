@@ -10,7 +10,7 @@ import {
 	sumKopecks,
 	kopecksToRubles,
 	formatKopecksRu,
-} from "../../utils/money.js";
+} from "../../money.js";
 import type {
 	AnatomicalCanalCount,
 	ClinicalCase804nOptions,

@@ -213,7 +213,7 @@ export function WaitlistMatchesBlock({
     );
   }
 
-  const clinicName = ctx?.dashboard?.clinicSettings?.name || "Стоматология DENTE";
+  const clinicName = ctx?.dashboard?.clinicSettings?.profile?.clinicName || "Стоматология DENTE";
 
   return (
     <div

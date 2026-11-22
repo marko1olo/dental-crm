@@ -21,10 +21,6 @@ export function validatePaidMedicalServicesContract(
 		paidContractWarrantyTerms,
 		paidContractDoctorFullNameValue,
 		paidContractSignedAt,
-		paidContractClinicInfoConfirmed,
-		paidContractServiceListConfirmed,
-		paidContractPaidBasisConfirmed,
-		paidContractWrittenChangesConfirmed,
 		requiredDocumentField = defaultRequiredDocumentField,
 	} = state;
 	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
@@ -82,19 +78,7 @@ export function validatePaidMedicalServicesContract(
 			"договор, гарантия и претензии",
 		) ??
 		requiredDocumentField(paidContractDoctorFullNameValue(), "договор, врач") ??
-		requiredDocumentField(paidContractSignedAt, "договор, дата подписания") ??
-		(paidContractClinicInfoConfirmed !== false
-			? null
-			: "Подтвердите, что пациент получил сведения о клинике и лицензии.") ??
-		(paidContractServiceListConfirmed !== false
-			? null
-			: "Подтвердите, что пациент получил перечень услуг и стоимость.") ??
-		(paidContractPaidBasisConfirmed !== false
-			? null
-			: "Подтвердите, что пациент понимает платную основу услуг.") ??
-		(paidContractWrittenChangesConfirmed !== false
-			? null
-			: "Подтвердите, что изменения договора оформляются письменно.")
+		requiredDocumentField(paidContractSignedAt, "договор, дата подписания")
 	);
 }
 

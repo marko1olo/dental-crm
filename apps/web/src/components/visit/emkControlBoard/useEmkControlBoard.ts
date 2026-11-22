@@ -5,8 +5,8 @@ import {
 	type EmkDefectTag,
 	type EmkQualityStatus,
 	calculateCmoAuditSummary,
-} from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+} from "./cmoAuditEngine.js";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 
 interface RawQualityControlRow {
 	id: string;
@@ -68,7 +68,7 @@ export function useEmkControlBoard() {
 			setLoading(true);
 			setError(null);
 			const res = await fetch("/api/visits/quality-control", {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: getDenteAuthHeaders(),
 			});
 			if (!res.ok) {
 				throw new Error("Не удалось загрузить приемы для проверки");
@@ -155,9 +155,10 @@ export function useEmkControlBoard() {
 			setSubmittingId(visitId);
 			const res = await fetch(`/api/visits/${visitId}/quality-control`, {
 				method: "PUT",
-				headers: denteAdminSecretRequestHeaders({
+				headers: {
+					...getDenteAuthHeaders(),
 					"Content-Type": "application/json",
-				}),
+				},
 				body: JSON.stringify({
 					status: "approved",
 					cmoRemarks: "Утверждено Главным врачом. Стандарты СтАР соблюдены.",
@@ -182,9 +183,10 @@ export function useEmkControlBoard() {
 			setSubmittingId(visitId);
 			const res = await fetch(`/api/visits/${visitId}/quality-control`, {
 				method: "PUT",
-				headers: denteAdminSecretRequestHeaders({
+				headers: {
+					...getDenteAuthHeaders(),
 					"Content-Type": "application/json",
-				}),
+				},
 				body: JSON.stringify({
 					status: "needs_correction",
 					cmoRemarks: rejectionReason,
@@ -210,9 +212,10 @@ export function useEmkControlBoard() {
 			for (const v of eligible) {
 				await fetch(`/api/visits/${v.id}/quality-control`, {
 					method: "PUT",
-					headers: denteAdminSecretRequestHeaders({
+					headers: {
+						...getDenteAuthHeaders(),
 						"Content-Type": "application/json",
-					}),
+					},
 					body: JSON.stringify({
 						status: "approved",
 						cmoRemarks:

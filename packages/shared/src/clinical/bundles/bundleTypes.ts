@@ -102,6 +102,7 @@ export interface ToothClinicalServicePayload {
 	readonly code804n?: string | undefined;
 	readonly code?: string | undefined;
 	readonly toothNumber?: number | string | undefined;
+	readonly teethNumbers?: readonly number[] | undefined;
 	readonly toothCode?: string | undefined;
 	readonly name?: string | undefined;
 	readonly title?: string | undefined;

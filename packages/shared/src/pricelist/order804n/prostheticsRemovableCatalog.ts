@@ -13,19 +13,34 @@ import type { StatutoryNomenclatureEntry } from "./types.js";
  */
 export const PROSTHETICS_REMOVABLE_804N_CATALOG: readonly StatutoryNomenclatureEntry[] = [
 	{
-		code: "A16.07.006",
-		title: "Протезирование съемными бюгельными протезами",
+		code: "A16.07.036",
+		title: "Протезирование съемными бюгельными протезами с кламмерной фиксацией",
 		category: "prosthetics",
 		specialty: "orthopedist",
 		primaryKeywords: [
 			/бюгельн.*протез/i,
 			/бюгел/i,
 			/кламмерн.*бюгел/i,
-			/замков.*бюгел/i,
-			/аттачмен.*бюгел/i,
+			/кламмерн.*фиксац/i,
 		],
 		secondaryKeywords: [/дуга.*протез/i, /литье.*бюгел/i],
 		defaultPriceRub: 42000,
+		defaultDurationMinutes: 60,
+		taxDeductible: true,
+	},
+	{
+		code: "A16.07.037",
+		title: "Протезирование съемными бюгельными протезами с замковой фиксацией",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		primaryKeywords: [
+			/замков.*бюгел/i,
+			/аттачмен.*бюгел/i,
+			/бюгел.*на.*замк/i,
+			/бюгел.*аттачмен/i,
+		],
+		secondaryKeywords: [/матриц.*патриц/i, /замков.*креплен/i],
+		defaultPriceRub: 52000,
 		defaultDurationMinutes: 60,
 		taxDeductible: true,
 	},

@@ -36,6 +36,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -727,7 +728,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		process.exit(0);
 	} else {
 		console.error(`💥 [VERDICT: EXIT CODE 1] ОБНАРУЖЕНО ${result.allViolations.length} НАРУШЕНИЙ SSOT.`);
-		console.error("================================================================================\n");
+		printFailureManifesto("SINGLE_DOORS", {
+			details: `Найдено ${result.cloneViolations.length} клонов, ${result.orphanViolations.length} сирот, ${result.apiViolations.length} незащищённых мутаций API.`,
+		});
 		process.exit(1);
 	}
 }

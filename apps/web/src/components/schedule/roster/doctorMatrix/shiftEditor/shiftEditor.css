@@ -107,8 +107,6 @@
 	font-size: 0.75rem;
 	font-weight: 600;
 	color: var(--muted, #64748b);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
 	margin-bottom: 0.5rem;
 }
 

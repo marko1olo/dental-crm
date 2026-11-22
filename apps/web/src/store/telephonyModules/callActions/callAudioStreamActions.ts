@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { logger } from "../../../utils/logger.js";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -59,8 +60,12 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 						patientId: updatedCall.patientId || undefined,
 						lineId: activeLineId,
 					}),
-				}).catch(() => {});
-			} catch {}
+				}).catch((err) => {
+					logger.warn("[Telephony] Failed to sync call answer to API:", err);
+				});
+			} catch (err) {
+				logger.warn("[Telephony] Failed to initiate call answer fetch:", err);
+			}
 		},
 
 		connectCall: () => {
@@ -123,7 +128,11 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
 			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
 			if (nextL1.state === "idle" && nextL2.state === "idle") {
-				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+				try {
+					getSharedTelephonyAudioStreamManager().detachRemoteAudio();
+				} catch (err) {
+					logger.warn("[Telephony] Failed to detach remote audio on reject:", err);
+				}
 			}
 
 			set({
@@ -151,7 +160,11 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
 			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
 			if (nextL1.state === "idle" && nextL2.state === "idle") {
-				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+				try {
+					getSharedTelephonyAudioStreamManager().detachRemoteAudio();
+				} catch (err) {
+					logger.warn("[Telephony] Failed to detach remote audio on dismiss:", err);
+				}
 			}
 
 			set({

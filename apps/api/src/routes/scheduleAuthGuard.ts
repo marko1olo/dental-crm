@@ -1,14 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { unguardedBypassAllowed } from "../accessGuard.js";
+import { getRequestIdentity } from "../security/identity.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
 	clinicSessionMissingMessage,
 	clinicSessionRejectedMessage,
 } from "../utils/clinicSessionRefusal.js";
-import { verifyToken } from "../utils/cryptoHelper.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
-import { TOKEN_SECRET } from "./auth.js";
 
 export const denteAdminSecretHeader = "x-dente-admin-secret";
 
@@ -33,44 +32,58 @@ export function scheduleUnguardedMutationsAllowed(): boolean {
 }
 
 /**
- * Валидация токена организации клиники из заголовка.
+ * Валидация контекста организации клиники из токенов запроса (кабинет, сотрудник, Bearer).
+ * Интегрирован с каноническим getRequestIdentity (Мандаты 8e & 8n).
  */
 export function requireClinicOrganizationId(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): string | null {
-	const clinicHeader = request.headers["x-dente-clinic-token"];
+	const clinicHeader =
+		request.headers["x-dente-clinic-token"] ||
+		request.headers["x-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
 		: clinicHeader;
-	if (typeof clinicToken !== "string" || !clinicToken) {
-		reply.code(401).send({
-			error: "AuthRequired",
-			message: clinicSessionMissingMessage(
-				"расписание клиники ведётся только из кабинета",
-			),
-		});
-		return null;
-	}
+
 	if (
-		clinicToken.startsWith("demo-showcase-token") ||
-		clinicToken.startsWith("demo-showcase-clinic-token")
+		typeof clinicToken === "string" &&
+		(clinicToken.startsWith("demo-showcase-token") ||
+			clinicToken.startsWith("demo-showcase-clinic-token"))
 	) {
 		return DEMO_SHOWCASE_ORG_ID;
 	}
-	const payload = verifyToken(clinicToken, TOKEN_SECRET());
-	if (!payload?.organizationId) {
-		reply
-			.code(401)
-			.send({ error: "AuthExpired", message: clinicSessionRejectedMessage });
+
+	const hasAnyToken =
+		Boolean(clinicToken && typeof clinicToken === "string" && clinicToken.trim()) ||
+		Boolean(request.headers.authorization) ||
+		Boolean(request.headers["x-staff-token"]);
+
+	const identity = getRequestIdentity(request);
+	if (identity.organizationId) {
+		return identity.organizationId;
+	}
+
+	if (hasAnyToken) {
+		reply.code(401).send({
+			error: "AuthExpired",
+			message: clinicSessionRejectedMessage,
+		});
 		return null;
 	}
-	return payload.organizationId as string;
+
+	reply.code(401).send({
+		error: "AuthRequired",
+		message: clinicSessionMissingMessage(
+			"расписание клиники ведётся только из кабинета",
+		),
+	});
+	return null;
 }
 
 /**
  * Проверка доступа для изменяющих операций расписания (Мандаты 8e & 8n).
- * Врач или администратор с валидным токеном кабинета клиники управляет
+ * Врач или администратор с валидной авторизацией клиники управляет
  * расписанием свободно, без требования ввода админского секрета.
  */
 export async function requireScheduleMutationAccess(
@@ -78,7 +91,9 @@ export async function requireScheduleMutationAccess(
 	reply: FastifyReply,
 	protectedArea = "schedule mutation",
 ): Promise<boolean> {
-	const clinicHeader = request.headers["x-dente-clinic-token"];
+	const clinicHeader =
+		request.headers["x-dente-clinic-token"] ||
+		request.headers["x-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
 		: clinicHeader;
@@ -90,13 +105,11 @@ export async function requireScheduleMutationAccess(
 		return true;
 	}
 
-	// Мандаты 8e & 8n: Авторизованный персонал клиники с токеном кабинета
+	// Мандаты 8e & 8n: Авторизованный персонал клиники (токен кабинета, staff-токен, Bearer)
 	// имеет полный суверенный доступ к расписанию без бюрократических паролей.
-	if (typeof clinicToken === "string" && clinicToken.trim().length > 0) {
-		const payload = verifyToken(clinicToken, TOKEN_SECRET());
-		if (payload?.organizationId) {
-			return true;
-		}
+	const identity = getRequestIdentity(request);
+	if (identity.organizationId) {
+		return true;
 	}
 
 	// Лазейка для локальной разработки / тестов

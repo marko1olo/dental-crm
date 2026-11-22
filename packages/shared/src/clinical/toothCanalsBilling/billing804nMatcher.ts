@@ -9,7 +9,7 @@ import type {
 	Order804nEndoItem,
 	Order804nNomenclatureCategory,
 } from "./types.js";
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 import { getAnatomicalRootCanalCount } from "./toothCanalAnatomyMap.js";
 
 /**

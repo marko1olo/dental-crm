@@ -42,11 +42,7 @@ import { type StaffProfileExtended, staffProfileExtendedSchema } from "@dental/s
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
-declare global {
-	interface Window {
-		__denteCopilot?: { open: () => void };
-	}
-}
+
 
 function DirectSettingsTransition(): null {
 	React.useEffect(() => {

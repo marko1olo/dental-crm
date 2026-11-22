@@ -8,9 +8,9 @@ import type { Lead } from "../../../store/leadsStore";
 import { showToast } from "../../GlobalToast";
 
 interface LeadFormStateOptions {
-	addLead: (payload: any) => Promise<any>;
-	updateLeadDetails: (id: string, payload: any) => Promise<any>;
-	deleteLead: (id: string) => Promise<any>;
+	addLead: (payload: Omit<Lead, "id" | "status">) => Promise<void>;
+	updateLeadDetails: (id: string, payload: Partial<Omit<Lead, "id">>) => Promise<void>;
+	deleteLead: (id: string) => Promise<void>;
 }
 
 export function useLeadFormState(opts: LeadFormStateOptions) {

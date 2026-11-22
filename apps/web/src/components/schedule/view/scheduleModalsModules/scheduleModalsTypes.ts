@@ -11,6 +11,7 @@ import type {
 import type { QuickAddChairData } from "../../QuickAddChairModal";
 import type { ChairDoctorShiftAssignment } from "../../grid/gridTypes";
 import type { AppointmentScheduleDraft } from "../scheduleViewTypes";
+import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
 
 export type {
   QuickBookingSlotInfo,
@@ -67,7 +68,7 @@ export interface ScheduleViewModalsProps {
   editingChairData: QuickAddChairData | null;
   setEditingChairData: (data: QuickAddChairData | null) => void;
   dashboard: Dashboard | null | undefined;
-  auth?: { user?: { id?: string | undefined; name?: string | undefined; role?: string | undefined } | null | undefined } | null | undefined;
+  auth?: AppLogicContextType["auth"] | undefined;
   loadDashboard?: (() => void | Promise<void>) | undefined;
   logicContext?: ScheduleLogicContext | null | undefined;
   scheduleDoctorFilterId: string | null;

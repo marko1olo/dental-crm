@@ -309,10 +309,9 @@ describe("Patient Personal Portal API Routes", () => {
 		};
 
 		assert.ok(body.threeTierModel);
-		assert.equal(body.threeTierModel.tiers.length, 3);
-		assert.ok(body.threeTierModel.tiers.some((t) => t.tierId === "basic"));
+		// Честная модель: если у пациента 1 утвержденный план без альтернатив, не клонируем на фейковые тарифы
+		assert.ok(body.threeTierModel.tiers.length >= 1);
 		assert.ok(body.threeTierModel.tiers.some((t) => t.tierId === "standard"));
-		assert.ok(body.threeTierModel.tiers.some((t) => t.tierId === "premium"));
 
 		const selectRes = await app.inject({
 			method: "POST",

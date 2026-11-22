@@ -9,10 +9,10 @@ import { ArrowLeft, BookOpen, Gamepad2, Keyboard, Printer } from "lucide-react";
 export interface ClinicalHelpTopBarProps {
 	readonly viewMode: "catalog" | "detail";
 	readonly onBackToCatalog: () => void;
-	readonly activeTitle?: string;
-	readonly activeShortTitle?: string;
-	readonly onLaunchTour?: () => void;
-	readonly onOpenShortcuts?: () => void;
+	readonly activeTitle?: string | undefined;
+	readonly activeShortTitle?: string | undefined;
+	readonly onLaunchTour?: (() => void) | undefined;
+	readonly onOpenShortcuts?: (() => void) | undefined;
 }
 
 export const ClinicalHelpTopBar: React.FC<ClinicalHelpTopBarProps> = React.memo(({

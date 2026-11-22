@@ -10,10 +10,10 @@ import {
 	buildTaxPaymentSnapshotForIssue,
 	taxDocumentUsesPaymentSnapshot,
 } from "../../documents/taxPaymentSnapshot.js";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import {
 	apiError,
+	buildKnd1151156Xml,
 	configuredTaxOfficeCode,
 	documentIssueChainBlockReason,
 	findIssuedDuplicateTaxCertificate,

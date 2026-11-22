@@ -1,7 +1,9 @@
-import type {
-	DentalSpecialty,
-	ServiceCatalogItem,
-	ServiceCategory,
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	type DentalSpecialty,
+	type ServiceCatalogItem,
+	type ServiceCategory,
 } from "@dental/shared";
 import {
 	normalizeCategoryToBackend,
@@ -89,10 +91,10 @@ function extractItemPriceRub(item: SyncableCatalogItemInput): number {
 		return Math.round(item.priceRub * 100) / 100;
 	}
 	if (typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)) {
-		return Math.round(item.priceKopecks) / 100;
+		return kopecksToRubles(item.priceKopecks);
 	}
 	if (typeof item.basePriceKopecks === "number" && Number.isFinite(item.basePriceKopecks)) {
-		return Math.round(item.basePriceKopecks) / 100;
+		return kopecksToRubles(item.basePriceKopecks);
 	}
 	return 0;
 }
@@ -105,7 +107,7 @@ function extractItemMaterialsCostRub(item: SyncableCatalogItemInput): number {
 		return Math.round(item.materialCostRub * 100) / 100;
 	}
 	if (typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)) {
-		return Math.round(item.costKopecks) / 100;
+		return kopecksToRubles(item.costKopecks);
 	}
 	if (typeof item.costRub === "number" && Number.isFinite(item.costRub)) {
 		return Math.round(item.costRub * 100) / 100;
@@ -216,7 +218,7 @@ export async function syncPricelistItemsToCatalog({
 				durationMinutes,
 				taxDeductible: item.taxDeductible !== false,
 				active,
-				priceKopecks: Math.round(exactBasePriceRub * 100),
+				priceKopecks: rublesToKopecks(exactBasePriceRub),
 			};
 
 			if (itemCode) existingByCode.set(itemCode, targetRecord);

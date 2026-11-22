@@ -9,15 +9,30 @@ export function mapImagingStudy(
 	patientFullNameOrOptions?:
 		| string
 		| null
-		| { patientFullName?: string | null },
+		| {
+				patientFullName?: string | null | undefined;
+				doseMsv?: number | null | undefined;
+				effectiveDoseMsv?: number | null | undefined;
+		  },
 ): ImagingStudy {
+	const options =
+		typeof patientFullNameOrOptions === "object" &&
+		patientFullNameOrOptions !== null
+			? patientFullNameOrOptions
+			: null;
 	const patientFullName =
 		typeof patientFullNameOrOptions === "string"
 			? patientFullNameOrOptions
-			: typeof patientFullNameOrOptions === "object" &&
-					patientFullNameOrOptions !== null
-				? patientFullNameOrOptions.patientFullName ?? null
-				: null;
+			: options?.patientFullName ?? null;
+
+	const rawRecord = record as {
+		doseMsv?: number | null | undefined;
+		effectiveDoseMsv?: number | null | undefined;
+	};
+	const doseMsv = options?.doseMsv ?? rawRecord.doseMsv ?? null;
+	const effectiveDoseMsv =
+		options?.effectiveDoseMsv ?? rawRecord.effectiveDoseMsv ?? doseMsv ?? null;
+
 	return {
 		id: record.id,
 		organizationId: record.organizationId,
@@ -50,26 +65,8 @@ export function mapImagingStudy(
 		patientFullName: patientFullName ?? null,
 		status: record.status,
 		aiSummary: record.aiSummary,
-		doseMsv:
-			record.kind === "periapical" || record.kind === "bitewing"
-				? 0.002
-				: record.kind === "opg"
-					? 0.025
-					: record.kind === "cbct"
-						? 0.05
-						: record.kind === "ceph"
-							? 0.01
-							: null,
-		effectiveDoseMsv:
-			record.kind === "periapical" || record.kind === "bitewing"
-				? 0.002
-				: record.kind === "opg"
-					? 0.025
-					: record.kind === "cbct"
-						? 0.05
-						: record.kind === "ceph"
-							? 0.01
-							: null,
+		doseMsv,
+		effectiveDoseMsv,
 		previewUrl: record.storagePath
 			? (browserRenderableImageMimeType(record.storagePath)
 				? `/api/imaging/studies/${record.id}/file`

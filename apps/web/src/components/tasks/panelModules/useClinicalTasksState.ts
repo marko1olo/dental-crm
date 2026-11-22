@@ -17,6 +17,8 @@ export interface UseClinicalTasksStateParams {
 export function useClinicalTasksState({ patientId, assignedDoctorId = null, treatmentPlanId = null }: UseClinicalTasksStateParams) {
 	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
+	const orgId = appLogic?.dashboard?.clinicSettings?.profile?.organizationId || auth?.activeWorkspaceProfile?.id || "current-org";
+	const authUserId = auth?.activeWorkspaceProfile?.id || appLogic?.activeDoctor?.id;
 	const readHeaders = useCallback(() => (auth ? auth.denteClinicalReadHeaders() : {}), [auth]);
 	const { tasks, setTasks, customTaskTypes, error, loading, load } = useClinicalTasksFetch(patientId, readHeaders);
 
@@ -44,13 +46,13 @@ export function useClinicalTasksState({ patientId, assignedDoctorId = null, trea
 		if (!patientId) { setActionError("Пациент не выбран — создать задачу нельзя."); return; }
 		setActionError(null); setActionNotice(null);
 		const { task: newTask, dueFormatted } = await executeClinicalPresetTaskAutonomy({
-			preset, patientId, notes, organizationId: auth?.organizationId, treatmentPlanId, assignedDoctorId,
-			authUserId: auth?.user?.id, setTasks: (updater) => setTasks(updater), showToastFn: showToast,
+			preset, patientId, notes, organizationId: orgId, treatmentPlanId, assignedDoctorId,
+			authUserId: authUserId ?? null, setTasks: (updater) => setTasks(updater), showToastFn: showToast,
 		});
 		setActionNotice(`Создана клиническая задача: «${preset.title}» (срок: ${dueFormatted}).`);
 		if (notes.trim()) setNotes("");
 		try {
-			const effective = assignedDoctorId || auth?.user?.id;
+			const effective = assignedDoctorId || authUserId;
 			if (effective) {
 				void fetch(`/api/patients/${encodeURIComponent(patientId)}/tickets`, {
 					method: "POST",
@@ -59,7 +61,7 @@ export function useClinicalTasksState({ patientId, assignedDoctorId = null, trea
 				}).catch((err) => logger.warn("[ClinicalTasks] Background ticket sync failed:", err));
 			}
 		} catch { /* сохранен локально */ }
-	}, [patientId, notes, auth, treatmentPlanId, assignedDoctorId, setTasks]);
+	}, [patientId, notes, auth, orgId, authUserId, treatmentPlanId, assignedDoctorId, setTasks]);
 
 	const handleCompleteTask = useCallback(async (taskId: string) => {
 		if (completingTaskId === taskId) return;
@@ -89,7 +91,7 @@ export function useClinicalTasksState({ patientId, assignedDoctorId = null, trea
 		if (!patientId) return;
 		const newTask: ClinicalTask = {
 			id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `clinical-task-${Date.now()}`,
-			organizationId: auth?.organizationId ?? "current-org", patientId, treatmentPlanId, assignedDoctorId,
+			organizationId: orgId, patientId, treatmentPlanId, assignedDoctorId,
 			taskType: taskData.taskType ?? "custom_reminder", status: "pending", title: taskData.title,
 			description: taskData.description ?? null, dueAt: taskData.dueAt ?? null, createdAt: new Date().toISOString(),
 		};

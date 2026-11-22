@@ -14,9 +14,11 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { mdlpItems } from "../../db/schema.js";
 import { inventoryItems } from "../../db/schema/inventory.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
+import { mdlpLogger } from "./logger.js";
 import { mdlpQueueService } from "./MdlpQueueService.js";
 
 // In-memory fallback ledger for test isolation and offline resilience
@@ -337,7 +339,7 @@ export class MdlpDisposalService {
 
 		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock within an atomic transaction
 		try {
-			await db.transaction(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				for (const it of disposalItems) {
 					const warehouseId = input.warehouseId ?? null;
 					let inventoryItemId: string | null = null;
@@ -382,9 +384,9 @@ export class MdlpDisposalService {
 							}
 						}
 					} catch (stockErr) {
-						console.warn(
-							`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}:`,
+						mdlpLogger.warn(
 							stockErr,
+							`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}`,
 						);
 					}
 

@@ -11,7 +11,7 @@ export interface VisitHeaderMoreActionsDropdownProps {
 	headerMoreMenuRef: React.RefObject<HTMLDivElement | null>;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | undefined;
+	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | null | undefined;
 	setIsEmergencyModalOpen: (open: boolean) => void;
 	handlePrintForm043uFast: () => void;
 	handlePrintCompletedActFast: () => void;

@@ -260,6 +260,50 @@
 	--color-teal-100: var(--teal-soft);
 	--color-teal-700: var(--teal-dark);
 	--accent-primary: var(--primary);
+
+	/* План лечения (Treatment Plans) токены */
+	--tp-border: var(--line);
+	--tp-primary: var(--primary);
+	--tp-text-muted: var(--ink-muted);
+	--tp-text-main: var(--ink);
+	--tp-surface: var(--paper);
+	--tp-surface-soft: var(--paper-soft);
+	--tp-primary-light: var(--primary-light, var(--teal-soft));
+	--tp-bg: var(--paper-soft);
+	--tp-radius-lg: var(--radius-lg, 12px);
+	--tp-radius-md: var(--radius-md, 8px);
+	--tp-radius-sm: var(--radius-sm, 6px);
+	--tp-success: var(--success, var(--ok-fg));
+	--tp-success-light: var(--ok-bg);
+
+	/* Семантические статусные токены */
+	--danger-soft: var(--bad-bg);
+	--danger-ink: var(--bad-fg);
+	--danger-line: var(--bad-fg);
+	--success-soft: var(--ok-bg);
+	--success-ink: var(--ok-fg);
+	--success-line: var(--ok-fg);
+	--warning-soft: var(--warn-bg);
+	--warning-ink: var(--warn-fg);
+	--warning-line: var(--warn-fg);
+	--amber-ink: var(--warn-fg);
+	--amber-line: var(--warn-fg);
+	--amber-dark: var(--warn-fg);
+	--info-soft: var(--info-bg);
+	--info-ink: var(--info-fg);
+	--ink-subtle: var(--ink-2);
+	--ink-base: var(--ink);
+	--primary-shadow: rgba(14, 165, 233, 0.2);
+	--teal-hover: var(--teal-dark);
+	--teal-line: var(--teal-border);
+	--bad-surface: var(--bad-bg);
+	--warn-surface: var(--warn-bg);
+	--emerald-soft: var(--ok-bg);
+	--paper-backdrop: var(--backdrop);
+	--paper-canvas: var(--paper);
+	--paper-deep: var(--paper-soft);
+	--purple-accent: #8b5cf6;
+	--purple-surface: rgba(139, 92, 246, 0.12);
 }
 
 /* Светлые значения ровно те, что были зашиты в main.css.

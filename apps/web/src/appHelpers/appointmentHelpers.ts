@@ -407,7 +407,7 @@ export function newAppointmentDraftFromDashboard(
 	};
 }
 
-export function nullableAppointmentDraftValue(value?: string | null): string | null {
+export function nullableAppointmentDraftValue(value?: string | null | undefined): string | null {
 	const trimmed = (value ?? "").trim();
 	return trimmed ? trimmed : null;
 }
@@ -475,7 +475,13 @@ export function appointmentScheduleDateMissingSteps(
 }
 
 export function isTechnicalBreakAppointment(
-	item: { reason?: string | null; comment?: string | null } | null | undefined,
+	item:
+		| {
+				reason?: string | null | undefined;
+				comment?: string | null | undefined;
+		  }
+		| null
+		| undefined,
 ): boolean {
 	if (!item) return false;
 	const r = String(item.reason || "").toLowerCase();

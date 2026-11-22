@@ -162,6 +162,13 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
 	};
 }
 
+function generateIdempotencyKey(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return crypto.randomUUID();
+	}
+	return `idem-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 export const useLeadsStore = create<LeadsState>((set, get) => ({
 	leads: [],
 	isLoading: false,
@@ -245,7 +252,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}/status`, {
 				method: "PATCH",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify({ status, dropReason, reason: dropReason }),
 			});
 			if (!res.ok) {
@@ -287,7 +297,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/batch-stage`, {
 				method: "POST",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify({
 					leadIds,
 					toStage,
@@ -326,7 +339,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads`, {
 				method: "POST",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify(leadData),
 			});
 			if (!res.ok) {
@@ -349,7 +365,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}`, {
 				method: "PATCH",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify(details),
 			});
 			if (!res.ok) {
@@ -376,7 +395,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}/convert`, {
 				method: "POST",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
@@ -416,7 +438,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}`, {
 				method: "DELETE",
-				headers: authHeaders(),
+				headers: authHeaders({
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 			});
 			if (!res.ok) {
 				set({ leads: previousLeads });
@@ -438,7 +462,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}/create-patient`, {
 				method: "POST",
-				headers: authHeaders({ "Content-Type": "application/json" }),
+				headers: authHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateIdempotencyKey(),
+				}),
 				body: JSON.stringify({}),
 			});
 			if (!res.ok) {

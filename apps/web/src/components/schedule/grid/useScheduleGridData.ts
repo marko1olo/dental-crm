@@ -13,7 +13,7 @@ import { DEFAULT_SOLO_CHAIR } from "./gridConstants";
 import {
   calculateDailyChairDoctorTally,
   deriveClinicWorkingHours,
-} from "../doctorFreeSlotsEngine";
+} from "../freeSlotsModules";
 import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 
 export interface ExtendedAppointmentProps {
@@ -237,10 +237,10 @@ export function useScheduleGridData({
       return {
         id: a.id,
         clinicId:
-          dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
-        doctorId: a.doctorUserId || "doc-1",
-        cabinetId: a.chairId || "chair-1",
-        patientId: a.patientId || "pat-1",
+          dashboard?.clinicSettings?.profile?.organizationId || "",
+        doctorId: a.doctorUserId || "",
+        cabinetId: a.chairId || "",
+        patientId: a.patientId || "",
         startTime: a.startsAt,
         endTime: a.endsAt,
         status: a.status ?? "planned",
@@ -253,7 +253,7 @@ export function useScheduleGridData({
       const shift: DoctorShiftSchedule = {
         id: `shift-${doc.id}-${dateKey}`,
         clinicId:
-          dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
+          dashboard?.clinicSettings?.profile?.organizationId || "",
         doctorId: doc.id,
         doctorFullName: doc.fullName,
         shiftDate: dateKey,

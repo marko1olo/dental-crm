@@ -93,6 +93,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/installments\/tranches\/[^/]+\/pay/,
 		/^\/api\/installment-payments\/[^/]+\/pay/,
 		/^\/api\/lab\/orders\/[^/]+\/pay/,
+		/^\/api\/(?:clinical\/)?(?:lab-orders|lab\/orders)\/[^/]+\/mark-installed/,
 		/^\/api\/portal\/appointments/,
 		/^\/api\/portal\/payments/,
 		/^\/api\/public\/booking\/(?:[^/]+\/)?book/,
@@ -107,12 +108,14 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/telephony\/sip\/transfer$/,
 		/^\/api\/(?:periodontogram|perio)(?:\/.*)?$/,
 		/^\/api\/inventory(?:\/[^/]+)?\/(?:acceptance-waybill|waybills|invoices|shift-batch-deduct|shift-deduct|quick-carpule-disposal)$/,
+		/^\/api\/mdlp\/(?:dispose|dispose-batch|batch-disposal|disposal-act)(?:\/.*)?$/,
 		/^\/api\/treatment-plans(?:\/.*)?$/,
 		/^\/api\/patients\/[^/]+\/treatment-plans(?:\/.*)?$/,
 		/^\/api\/orthodontics(?:\/.*)?$/,
 		/^\/api\/clinical\/implants(?:\/.*)?$/,
 		/^\/api\/surgery(?:\/.*)?$/,
 		/^\/api\/agent\/(?:action|confirm)/,
+		/^\/api\/leads\/[^/]+\/(?:convert|create-patient|convert-to-patient)$/,
 	];
 
 	// 1. PRE-HANDLER HOOK
@@ -131,9 +134,9 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			const idempotencyKey = extractIdempotencyKey(request, headerName);
 			if (!idempotencyKey) {
 				if (isEnforced) {
-					const isSchedulePath = /^\/api\/(?:appointments|schedule)(?:\/.*)?$/.test(url);
+					const isScheduleOrLeadsPath = /^\/api\/(?:appointments|schedule|leads)(?:\/.*)?$/.test(url);
 					if (
-						isSchedulePath ||
+						isScheduleOrLeadsPath ||
 						(process.env.NODE_ENV === "test" &&
 							process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1") ||
 						process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS === "1"
@@ -151,8 +154,8 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			}
 
 			if (isEnforced && !isValidUuid(idempotencyKey)) {
-				const isSchedulePath = /^\/api\/(?:appointments|schedule)(?:\/.*)?$/.test(url);
-				if (!isSchedulePath) {
+				const isScheduleOrLeadsPath = /^\/api\/(?:appointments|schedule|leads)(?:\/.*)?$/.test(url);
+				if (!isScheduleOrLeadsPath) {
 					reply.code(400);
 					return reply.send({
 						error: "ValidationError",

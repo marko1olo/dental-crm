@@ -9,14 +9,14 @@ export type ScheduleFilterSummaryProps = {
   scheduleDoctorFilterId: string | null;
   scheduleAssistantFilterId: string | null;
   scheduleChairFilterId: string | null;
-  appointmentLabels?: Record<Appointment["status"], string>;
-  dashboard?: Dashboard;
+  appointmentLabels?: Record<Appointment["status"], string> | Record<string, string> | undefined;
+  dashboard?: Dashboard | null | undefined;
   visibleDayGroups?: ScheduleDayGroup[] | undefined;
   scheduleOverlapCount: number;
-  shiftWarnings?: Dashboard["shiftIntelligence"]["scheduleWarnings"];
+  shiftWarnings?: Dashboard["shiftIntelligence"]["scheduleWarnings"] | null | undefined;
   resetScheduleFilters: () => void;
   setScheduleDateFilter: (date: string) => void;
-  openScheduleWarning: (warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number]) => void;
+  openScheduleWarning?: ((warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number]) => void) | undefined;
 };
 
 export function useScheduleFilterSummary(props: ScheduleFilterSummaryProps) {
@@ -131,7 +131,7 @@ export function useScheduleFilterSummary(props: ScheduleFilterSummaryProps) {
             key={warning.id}
             type="button"
             className={`status-pill schedule-warning-chip max-w-[220px] text-left h-7 px-2 inline-flex items-center cursor-pointer shrink-0 ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
-            onClick={() => openScheduleWarning(warning)}
+            onClick={() => openScheduleWarning?.(warning)}
             title={`${warning.title}: ${warning.detail}`}
           >
             <span className="truncate">

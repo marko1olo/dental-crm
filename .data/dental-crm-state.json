@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-11-15T23:33:00.969Z",
+  "savedAt": "2026-11-21T23:33:44.607Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -639,6 +639,69 @@
         "endsAt": "2026-05-12T12:30:00+04:00",
         "reason": "Первичная консультация",
         "comment": null
+      },
+      {
+        "id": "d6a7bddc-c93e-446f-ae9e-c9e1cec7bea1",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "planned",
+        "startsAt": "2026-11-25T10:00:00+04:00",
+        "endsAt": "2026-11-25T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
+      },
+      {
+        "id": "90245e1f-11f8-42fa-b1cf-d96e44fdeef2",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
+      },
+      {
+        "id": "a3e8222f-eaec-4c96-8f81-407f3a238836",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
       }
     ],
     "patients": [
@@ -1029,6 +1092,66 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "493b7997-d50e-4d1d-8427-0d92e02586fb",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "a3e8222f-eaec-4c96-8f81-407f3a238836",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-21T23:33:44.523Z"
+      },
+      {
+        "id": "35ddcbdb-b920-4edc-b874-6cb9cb2eebb0",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "a3e8222f-eaec-4c96-8f81-407f3a238836",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-21T23:33:44.523Z"
+      },
+      {
+        "id": "6ef22587-47d3-4060-a3f5-6df6ca05d682",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "90245e1f-11f8-42fa-b1cf-d96e44fdeef2",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-21T23:30:35.974Z"
+      },
+      {
+        "id": "e7de9818-92c9-4647-948d-2cd0e65574d4",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "90245e1f-11f8-42fa-b1cf-d96e44fdeef2",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-21T23:30:35.973Z"
+      },
+      {
+        "id": "ad3e3244-28ba-49ef-944e-3b6f62ed6e87",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "d6a7bddc-c93e-446f-ae9e-c9e1cec7bea1",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-21T23:27:35.628Z"
+      },
+      {
+        "id": "9d7c7446-1aa5-4ef1-b4f7-5d5b278ad069",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "d6a7bddc-c93e-446f-ae9e-c9e1cec7bea1",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-21T23:27:35.627Z"
+      },
+      {
         "id": "ce216af4-539f-4250-94da-62669d98fac7",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1293,5 +1416,5 @@
       "updatedAt": "2026-10-09T16:23:48.438Z"
     }
   },
-  "checksum": "7c505aa677d99e29aa64c19a6d2cec52fdee8a1068942b9bc22c5569615ef2a9"
+  "checksum": "ec537672cad23db31ec0d1c38a96637d7899a976fcc6f119da42cb84dd717ef5"
 }

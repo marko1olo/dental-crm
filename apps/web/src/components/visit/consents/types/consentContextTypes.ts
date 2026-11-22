@@ -16,7 +16,7 @@ export interface VisitConsentsTabPatient {
 	cardNumber?: string | null | undefined;
 	medicalCardNumber?: string | null | undefined;
 	cardOpenedAt?: string | null | undefined;
-	allergies?: string | null | undefined;
+	allergies?: string | string[] | readonly string[] | null | undefined;
 	somaticNotes?: string | null | undefined;
 }
 

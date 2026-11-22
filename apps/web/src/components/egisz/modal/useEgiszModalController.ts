@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import type { RemdDocumentRecord, RemdDocumentStatus } from "../egiszJournalData";
-import { buildDeferredRemdRecord, submitCdaPackageToRemd, submitFnsTaxToGateway } from "../egiszPackageSender";
+import { submitCdaPackageToRemd, submitFnsTaxToGateway } from "../egiszPackageSender";
 import type { useEgiszRemdState } from "../useEgiszRemdState";
 import type { useCryptoProSigning } from "../useCryptoProSigning";
 import type { EgiszHubActiveDocType, EgiszHubModalTab } from "./modalTypes";
@@ -45,21 +45,35 @@ export function useEgiszModalController({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [onClose]);
 
-	const handleQueueDeferred = useCallback(() => {
-		const deferred = buildDeferredRemdRecord({
-			docType: activeDocType, semdDocCode: state.semdDocCode, patient: state.patient,
-			doctor: state.doctor, clinic: state.clinic, semdPayload: state.semdPayload,
-			taxPatientName: state.taxPatientName, taxPatientSnils: state.taxPatientSnils,
-		});
-		journal.setRecords((p) => [deferred, ...p]);
-		showToast("Документ помещен в очередь «Отложенная отправка ЕГИСЗ». Прием и расчет не заблокированы!", "success");
-		if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: deferred.id, timestamp: new Date().toISOString() });
-	}, [activeDocType, state, onSentSuccess, journal]);
+	const handleQueueDeferred = useCallback(async () => {
+		try {
+			if (activeDocType === "cda_semd") {
+				const txId = await submitCdaPackageToRemd({
+					semdPayload: state.semdPayload,
+					generatedXml: state.generatedXml,
+					doctorSig: crypto.doctorSig,
+					moSig: crypto.moSig,
+				});
+				await journal.handleRefreshOutbox();
+				showToast("Документ помещен в очередь «Отложенная отправка ЕГИСЗ». Прием и расчет не заблокированы!", "success");
+				if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: txId, timestamp: new Date().toISOString() });
+			} else {
+				const txId = await submitFnsTaxToGateway({
+					patientId: state.fnsPayload.taxpayer?.inn || "taxpayer",
+					visitId: state.fnsPayload.documentNumber || `FNS-${Date.now()}`,
+				});
+				showToast("Справка для налогового вычета зарегистрирована в реестре документов клиники", "success");
+				if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: txId, timestamp: new Date().toISOString() });
+			}
+		} catch (err: unknown) {
+			showToast(`Ошибка постановки в очередь: ${err instanceof Error ? err.message : String(err)}`, "warning");
+		}
+	}, [activeDocType, state, crypto, onSentSuccess, journal]);
 
 	const handleSendToRegistry = async () => {
 		if (isSending) return;
 		if (!crypto.doctorSig && activeDocType === "cda_semd") {
-			handleQueueDeferred();
+			await handleQueueDeferred();
 			showToast("УКЭП не наложена. Документ отправлен в отложенную очередь для фонового подписания!", "info");
 			return;
 		}
@@ -67,6 +81,7 @@ export function useEgiszModalController({
 		try {
 			if (activeDocType === "cda_semd") {
 				const txId = await submitCdaPackageToRemd({ semdPayload: state.semdPayload, generatedXml: state.generatedXml, doctorSig: crypto.doctorSig, moSig: crypto.moSig });
+				await journal.handleRefreshOutbox();
 				showToast(`СЭМД успешно поставлен в очередь отправки РЭМД ЕГИСЗ (ID: ${txId})`, "success");
 				if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: txId, timestamp: new Date().toISOString() });
 			} else {
@@ -75,7 +90,7 @@ export function useEgiszModalController({
 				if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: txId, timestamp: new Date().toISOString() });
 			}
 		} catch (err: unknown) {
-			handleQueueDeferred();
+			await handleQueueDeferred();
 			showToast(`Шлюз ЕГИСЗ временно недоступен (${err instanceof Error ? err.message : String(err)}). Документ сохранен в очередь.`, "warning");
 		} finally {
 			setIsSending(false);

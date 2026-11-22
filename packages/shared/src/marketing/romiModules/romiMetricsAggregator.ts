@@ -1,4 +1,4 @@
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import { calculateChannelRomi } from "./romiKopeckCalculator.js";
 import { calculateRepeatRatePercent, calculateEstimatedCohortLtvKopecks } from "./romiCohortAnalyzer.js";
 import { findTopChannelByRevenue } from "./romiChannelRanker.js";

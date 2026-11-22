@@ -22,7 +22,7 @@ export interface EgiszRemdHubModalProps {
 	onClose: () => void;
 	initialDocType?: EgiszHubActiveDocType | undefined;
 	initialPayload?: Partial<EgiszDentalCdaPayload> | undefined;
-	initialXmlPayload?: any | undefined;
+	initialXmlPayload?: unknown;
 	initialFnsPayload?: Partial<FnsTaxCertificatePayload> | undefined;
 	initialTab?: EgiszHubModalTab | undefined;
 	initialJournalFilter?: RemdDocumentStatus | "all" | undefined;

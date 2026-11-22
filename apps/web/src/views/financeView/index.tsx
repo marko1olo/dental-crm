@@ -67,11 +67,11 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 			<FinanceTabsNavBar activeTab={activeTab} onSelectTab={setActiveTab} />
 
 			{activeTab === "doctor_payroll" ? (
-				<DoctorPayrollTab clinicName={s.dashboard?.clinicSettings?.name} />
+				<DoctorPayrollTab clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName} />
 			) : activeTab === "shift_journal" ? (
 				<div className="pt-2">
 					<CashShiftJournalView
-						clinicName={s.dashboard?.clinicSettings?.name}
+						clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName}
 						cashierFullName={s.paymentFiscalCashierName}
 						onOpenShiftCloseModal={() => s.handleCloseShift()}
 						onOpenNewShift={() => s.handleOpenShift()}

@@ -43,7 +43,7 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 							data-testid="btn-print-memo"
 							title="Распечатать памятку пациенту"
 						>
-							<Printer size={14} className="text-[var(--primary)]" /><span>Печать памятки</span>
+							<Printer size={14} className="shrink-0" /><span>Печать памятки</span>
 						</button>
 					)}
 					<button

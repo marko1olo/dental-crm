@@ -2,7 +2,7 @@
  * printExtractTemplate.ts — Printable HTML for Medical Record Extracts & Sanitation Certificates
  */
 
-import { escapeXml, formatRuDate } from "./../cdaR2XmlBuilder";
+import { escapeXml, formatRuDate } from "@dental/shared/cda";
 
 export interface MedicalRecordExtractPayload {
 	readonly clinicName: string;

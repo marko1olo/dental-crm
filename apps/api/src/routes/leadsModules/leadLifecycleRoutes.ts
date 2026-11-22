@@ -221,6 +221,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			type: "LEAD_CREATED",
 			payload: leadWithPatient,
 		});
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return leadWithPatient;
 	});
 
@@ -231,6 +234,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			"lead stage update",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
 
 		const { id } = req.params as { id: string };
 		const parsed = patchLeadStageSchema.safeParse(req.body);
@@ -319,6 +330,10 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			payload: result.lead,
 		});
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return result.lead;
 	});
 
@@ -352,6 +367,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			"lead status update",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
 
 		const { id } = req.params as { id: string };
 		const statusParsed = z
@@ -429,6 +452,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			type: "LEAD_UPDATED",
 			payload: result.lead,
 		});
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return result.lead;
 	});
 
@@ -439,6 +465,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			"lead update",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
 
 		const { id } = req.params as { id: string };
 		const parsed = patchLeadSchema.safeParse(req.body);
@@ -536,6 +570,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			type: "LEAD_UPDATED",
 			payload: lead,
 		});
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return lead;
 	});
 
@@ -546,6 +583,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			"lead update",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
 
 		const { id } = req.params as { id: string };
 		const parsed = leadSchema.safeParse(req.body);
@@ -619,6 +664,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			type: "LEAD_UPDATED",
 			payload: lead,
 		});
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return lead;
 	});
 

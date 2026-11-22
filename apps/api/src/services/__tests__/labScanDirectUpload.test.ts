@@ -215,7 +215,7 @@ describe("labScanDirectUpload (3D STL/PLY Scans & S3 Presigned URLs)", () => {
 			assert.ok(Math.abs(expiresAtMs - nowMs - expectedDiff) < 5000);
 		});
 
-		test("работает в mock-fallback режиме при отсутствии переменных S3 в окружении", () => {
+		test("работает в direct-storage fallback режиме при отсутствии переменных S3 в окружении", () => {
 			const uploadRes = getLabScanUploadPresignedUrl({
 				organizationId: "org-dev",
 				labOrderId: "order-local",
@@ -223,15 +223,15 @@ describe("labScanDirectUpload (3D STL/PLY Scans & S3 Presigned URLs)", () => {
 				// configOverride не передан -> fallback
 			});
 
-			assert.strictEqual(uploadRes.provider, "mock_fallback");
-			assert.ok(uploadRes.uploadUrl.includes("/api/portal/mock-storage/upload"));
-			assert.ok(uploadRes.downloadUrl.includes("/api/portal/mock-storage/download"));
+			assert.strictEqual(uploadRes.provider, "direct_storage_fallback");
+			assert.ok(uploadRes.uploadUrl.includes("/api/portal/direct-storage/upload"));
+			assert.ok(uploadRes.downloadUrl.includes("/api/portal/direct-storage/download"));
 
 			const downloadRes = getLabScanDownloadPresignedUrl({
 				storageKey: uploadRes.storageKey,
 			});
-			assert.strictEqual(downloadRes.provider, "mock_fallback");
-			assert.ok(downloadRes.downloadUrl.includes("/api/portal/mock-storage/download"));
+			assert.strictEqual(downloadRes.provider, "direct_storage_fallback");
+			assert.ok(downloadRes.downloadUrl.includes("/api/portal/direct-storage/download"));
 		});
 	});
 });

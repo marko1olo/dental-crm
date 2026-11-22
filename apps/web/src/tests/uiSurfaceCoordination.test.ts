@@ -69,10 +69,10 @@ describe("UI Surface Coordination & Anti-Clutter Invariants (Mandates 8b, 8d, 8e
 		expect(useUiSurfaceStore.getState().primaryModal).toBeNull();
 		expect(useUiSurfaceStore.getState().activeDrawer).toBe("quick_booking");
 
-		// 3. PreventiveInspectionModal transition
-		surface.openPrimaryModal("preventive_inspection");
-		expect(useUiSurfaceStore.getState().primaryModal?.id).toBe("preventive_inspection");
-		surface.transitionModalToDrawer("preventive_inspection", "quick_booking");
+		// 3. PatientRecallsHubModal transition
+		surface.openPrimaryModal("patient_recalls_hub");
+		expect(useUiSurfaceStore.getState().primaryModal?.id).toBe("patient_recalls_hub");
+		surface.transitionModalToDrawer("patient_recalls_hub", "quick_booking");
 		expect(useUiSurfaceStore.getState().primaryModal).toBeNull();
 		expect(useUiSurfaceStore.getState().activeDrawer).toBe("quick_booking");
 	});

@@ -25,11 +25,7 @@ import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 
-declare global {
-	interface Window {
-		__denteCopilot?: { open: () => void };
-	}
-}
+
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,

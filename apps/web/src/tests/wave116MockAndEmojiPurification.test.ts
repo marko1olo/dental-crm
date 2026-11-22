@@ -65,15 +65,15 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 		);
 	});
 
-	it("5. Emojis eradication: DmsGuaranteeLetterModal & InsuranceContractsPanel (no star emoji)", () => {
+	it("5. Emojis eradication: DmsStudioModal & InsuranceContractsPanel (no star emoji)", () => {
 		const dmsLetterPath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
+			"apps/web/src/components/insurance/DmsStudioModal.tsx",
 		);
 		const dmsLetterContent = fs.readFileSync(dmsLetterPath, "utf-8");
 		assert.ok(
 			!dmsLetterContent.includes("⭐") && !dmsLetterContent.includes("★"),
-			"DmsGuaranteeLetterModal must not contain cartoon star emojis",
+			"DmsStudioModal must not contain cartoon star emojis",
 		);
 
 		const insuranceContractsPath = path.join(

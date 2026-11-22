@@ -7,7 +7,7 @@
 import type { DbExecutor } from "../types.js";
 import { isPureUuid, type RawRequiredMaterial, type ServiceDescriptor } from "./stockDeductionTypes.js";
 import { resolveServicesMetadata } from "./serviceMetadataResolver.js";
-import { resolveDbBomRulesForService } from "./procedureBomDbResolver.js";
+import { findDbProcedureItems } from "../../inventory/fefoModules/procedureBomResolver.js";
 import { resolveStatutoryBomForService } from "./statutoryBomResolver.js";
 
 export { resolveServicesMetadata };
@@ -30,9 +30,30 @@ export async function resolveRequiredMaterialsForServices(
 			title: null,
 		};
 
-		const dbMaterials = await resolveDbBomRulesForService(tx, organizationId, meta, srvQty);
-		if (dbMaterials && dbMaterials.length > 0) {
-			materials.push(...dbMaterials);
+		const targetServiceId = meta.serviceId || meta.rawToken || "";
+		const serviceMeta = {
+			serviceCode: meta.serviceCode || meta.rawToken || "",
+			serviceTitle: meta.title || "",
+			order804nCode: meta.order804nCode || "",
+		};
+
+		const dbItems = await findDbProcedureItems(
+			tx,
+			organizationId,
+			targetServiceId,
+			serviceMeta,
+			srvQty,
+		);
+		if (dbItems && dbItems.length > 0) {
+			materials.push(
+				...dbItems.map((ci) => ({
+					key: ci.inventoryItemId,
+					quantity: ci.quantity,
+					unit: ci.unit || "pcs",
+					name: ci.name,
+					isMdlpRequired: ci.isMdlpRequired,
+				})),
+			);
 			continue;
 		}
 

@@ -10,6 +10,7 @@ import { processDoctorServiceItems } from "./doctorServiceItemCalculator.js";
 import { processExplicitRefundDeductions } from "./doctorRefundProcessor.js";
 import { applyMinimumGuarantee, computeChairRental, computeKpiBonus } from "./doctorRentalAndBonusEngine.js";
 import { calculateProgressiveNdflTax } from "./progressiveNdflCalculator.js";
+import { percentageOfKopecks, type Kopecks } from "../../money.js";
 
 export function calculateDoctorPeriodPayroll(
 	input: DoctorPayrollCalculationInput
@@ -84,7 +85,7 @@ export function calculateDoctorPeriodPayroll(
 	const netToDoctor = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
 	const advancePayoutKop = Math.max(0, input.advancePayoutKop ?? 0);
 	const mainPayoutKop = Math.max(0, netToDoctor - advancePayoutKop);
-	const npd6TaxKop = isSoloOrSelfEmployed ? Math.round((grossPayout * 6) / 100) : 0;
+	const npd6TaxKop = isSoloOrSelfEmployed ? percentageOfKopecks(grossPayout as Kopecks, 600) : 0;
 
 	return {
 		doctorId: input.doctorId,

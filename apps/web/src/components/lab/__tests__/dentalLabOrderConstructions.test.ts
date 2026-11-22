@@ -80,15 +80,16 @@ describe("DentalLabOrderModal — Occlusion, Contact Points & Texture Specs", ()
 	});
 });
 
-describe("DentalLabOrderModal — 4-Step Clinical Lab Stages Tracker", () => {
-	test("Трекер этапов ЗТЛ содержит 4 клинических статуса: В работе, Примерка, Сдано, Коррекция", () => {
-		assert.equal(LAB_ORDER_STAGES.length, 4);
+describe("DentalLabOrderModal — 5-Step Clinical Lab Stages Tracker", () => {
+	test("Трекер этапов ЗТЛ содержит 5 канонических статусов: Слепок/Скан, В работе, Примерка, Готов в клинике, Зафиксировано", () => {
+		assert.equal(LAB_ORDER_STAGES.length, 5);
 		const stageIds = LAB_ORDER_STAGES.map((s) => s.id);
 		assert.deepEqual(stageIds, [
+			"sent",
 			"in_progress",
-			"fitting_scheduled",
-			"delivered_completed",
-			"correction_remake",
+			"fitting",
+			"ready",
+			"completed",
 		]);
 
 		for (let i = 0; i < LAB_ORDER_STAGES.length; i++) {

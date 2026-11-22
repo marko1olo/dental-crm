@@ -18,7 +18,7 @@ import {
 	ORDER_804N_OBTURATIONS,
 	ORDER_804N_UNSEALING,
 } from "../toothCanalsBilling/billing804nMatcher.js";
-import { kopecksToRubles } from "../../money.js";
+import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import { getAnatomicalRootCanalCount } from "../toothCanalsBilling/toothCanalAnatomyMap.js";
 import type {
 	Endo804nServiceEstimate,
@@ -69,8 +69,9 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// 1. При перелечивании — распломбирование корневых каналов (A16.07.082)
 	if (isRetreatment) {
 		const unsealPriceRub = ORDER_804N_UNSEALING.price;
-		const unsealPriceKopecks = unsealPriceRub * 100;
+		const unsealPriceKopecks = rublesToKopecks(unsealPriceRub);
 		services804n.push({
+			serviceCode: ORDER_804N_UNSEALING.code,
 			code804n: ORDER_804N_UNSEALING.code,
 			title: `${ORDER_804N_UNSEALING.title} (${canalCount} ${getCanalPluralRu(canalCount)})`,
 			category: "Эндодонтия",
@@ -87,8 +88,9 @@ export function calculateEndoBillingAndMaterialsEstimate(
 
 	// 2. Механическая и медикаментозная обработка корневых каналов (A16.07.030)
 	const instItem = ORDER_804N_INSTRUMENTATION[canalCount];
-	const instPriceKopecks = instItem.price * 100;
+	const instPriceKopecks = rublesToKopecks(instItem.price);
 	services804n.push({
+		serviceCode: instItem.code,
 		code804n: instItem.code,
 		title: instItem.title,
 		category: "Эндодонтия",
@@ -105,8 +107,9 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// 3. Обтурация (постоянная или временная Ca(OH)2)
 	if (stage === "TEMP_CAOH2") {
 		const medPriceRub = ORDER_804N_MEDICATION_CAOH2.price;
-		const medPriceKopecks = medPriceRub * 100;
+		const medPriceKopecks = rublesToKopecks(medPriceRub);
 		services804n.push({
+			serviceCode: ORDER_804N_MEDICATION_CAOH2.code,
 			code804n: ORDER_804N_MEDICATION_CAOH2.code,
 			title: `${ORDER_804N_MEDICATION_CAOH2.title} (${canalCount} ${getCanalPluralRu(canalCount)})`,
 			category: "Эндодонтия",
@@ -121,8 +124,9 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		});
 	} else if (stage === "COMPLETED") {
 		const obtItem = ORDER_804N_OBTURATIONS[canalCount];
-		const obtPriceKopecks = obtItem.price * 100;
+		const obtPriceKopecks = rublesToKopecks(obtItem.price);
 		services804n.push({
+			serviceCode: obtItem.code,
 			code804n: obtItem.code,
 			title: obtItem.title,
 			category: "Эндодонтия",
@@ -142,40 +146,43 @@ export function calculateEndoBillingAndMaterialsEstimate(
 
 	// 1. Машинный NiTi файл ProTaper / WaveOne (ресурс инструмента: 1 файл = 4 канала, мягкое списание Мандат 8aa)
 	const nitiFraction = Math.round((canalCount / 4) * 100) / 100;
+	const nitiRub = Math.round(650 * nitiFraction * 100) / 100;
 	materials.push({
 		itemId: "mat-niti-rotary-file",
 		itemName: "NiTi ротационный машинный файл (ProTaper / WaveOne)",
 		category: "rotary_file",
 		unit: "шт",
 		quantity: nitiFraction,
-		costPriceRub: Math.round(650 * nitiFraction * 100) / 100,
-		costPriceKopecks: Math.round(65000 * nitiFraction),
+		costPriceRub: nitiRub,
+		costPriceKopecks: rublesToKopecks(nitiRub),
 		notes: `Инструментальная обработка ${canalCount} ${getCanalPluralRu(canalCount)} зуба #${toothNumber} (ресурс инструмента: ${canalCount}/4)`,
 	});
 
 	// 2. Гипохлорит натрия 3% (5 мл на канал)
 	const hypoMl = 5 * canalCount;
+	const hypoRub = 24 * hypoMl;
 	materials.push({
 		itemId: "mat-hypochlorite-3",
 		itemName: "Гипохлорит натрия 3% стабилизированный (шприц с эндо-иглой)",
 		category: "disinfectant",
 		unit: "ml",
 		quantity: hypoMl,
-		costPriceRub: 24 * hypoMl, // 24 ₽ за мл (120 ₽ за 5 мл)
-		costPriceKopecks: 2400 * hypoMl,
+		costPriceRub: hypoRub, // 24 ₽ за мл (120 ₽ за 5 мл)
+		costPriceKopecks: rublesToKopecks(hypoRub),
 		notes: `Ирригация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 	});
 
 	// 3. Раствор ЭДТА 17% (2 мл на канал)
 	const edtaMl = 2 * canalCount;
+	const edtaRub = 42.5 * edtaMl;
 	materials.push({
 		itemId: "mat-endo-edta-17",
 		itemName: "Раствор ЭДТА 17% для удаления смазанного слоя (ЭндоЖи №2)",
 		category: "disinfectant",
 		unit: "ml",
 		quantity: edtaMl,
-		costPriceRub: 42.5 * edtaMl, // 85 ₽ за 2 мл
-		costPriceKopecks: 4250 * edtaMl,
+		costPriceRub: edtaRub, // 85 ₽ за 2 мл
+		costPriceKopecks: rublesToKopecks(edtaRub),
 		notes: `Хемомеханическая обработка ${canalCount} ${getCanalPluralRu(canalCount)}`,
 	});
 
@@ -183,27 +190,29 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	if (stage === "COMPLETED") {
 		// Гуттаперчевые конусные штифты (3 шт на каждый канал)
 		const guttaQty = 3 * canalCount;
+		const guttaRub = 15 * guttaQty;
 		materials.push({
 			itemId: "mat-gutta-percha",
 			itemName: "Гуттаперчевые конусные штифты (0.04 / 0.06)",
 			category: "gutta_percha",
 			unit: "шт",
 			quantity: guttaQty,
-			costPriceRub: 15 * guttaQty, // 45 ₽ за 3 шт
-			costPriceKopecks: 1500 * guttaQty,
+			costPriceRub: guttaRub, // 45 ₽ за 3 шт
+			costPriceKopecks: rublesToKopecks(guttaRub),
 			notes: `Трехмерная обтурация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
 		// Бумажные штифты/пины абсорбирующие для высушивания (4 шт на каждый канал)
 		const paperPointsQty = 4 * canalCount;
+		const paperRub = 8 * paperPointsQty;
 		materials.push({
 			itemId: "mat-paper-points",
 			itemName: "Бумажные штифты/пины абсорбирующие (Paper Points)",
 			category: "paper_points",
 			unit: "шт",
 			quantity: paperPointsQty,
-			costPriceRub: 8 * paperPointsQty,
-			costPriceKopecks: 800 * paperPointsQty,
+			costPriceRub: paperRub,
+			costPriceKopecks: rublesToKopecks(paperRub),
 			notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
 		});
 
@@ -238,14 +247,15 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		}
 	} else if (stage === "TEMP_CAOH2") {
 		// Гидроксид кальция (Calasept / Metapex) — 1 доза на каждый канал
+		const calciumRub = 180 * canalCount;
 		materials.push({
 			itemId: "mat-calcium-calasept",
 			itemName: "Гидроксид кальция паста рентгеноконтрастная Calasept / Metapex",
 			category: "calcium",
 			unit: "доза",
 			quantity: canalCount,
-			costPriceRub: 180 * canalCount,
-			costPriceKopecks: 18000 * canalCount,
+			costPriceRub: calciumRub,
+			costPriceKopecks: rublesToKopecks(calciumRub),
 			notes: `Временная дезинфекция ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
@@ -283,6 +293,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		sealer,
 		isRetreatment,
 		services804n,
+		services: services804n,
 		materials,
 		totalServicesPriceRub,
 		totalServicesPriceKopecks,

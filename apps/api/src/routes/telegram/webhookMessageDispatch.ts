@@ -17,9 +17,9 @@ import {
 	type DomainState,
 	extractDenteTelegramLinkCode,
 	consumeDenteTelegramLinkCode,
-	recordDenteTelegramWebhookEvent,
 	updateTelegramDialogSession,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramWebhookEventsService.js";
 import { answerTelegramCallbackQuery } from "../../telegramTransport.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
 import type {
@@ -115,9 +115,10 @@ export async function dispatchWebhookMessage(params: {
 			messageText &&
 			!command
 		) {
-			const event = recordDenteTelegramWebhookEvent({
+			const event = await recordDenteTelegramWebhookEvent({
 				updateId: update.update_id,
 				organizationId: runtime.organizationId,
+				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
 				chatFingerprint: chatHash,
 				updateKind,
@@ -197,11 +198,11 @@ export async function dispatchWebhookMessage(params: {
 		const linkCodeRejectedByRateLimit = Boolean(
 			linkCode &&
 				!linkCodeRejectedByChatType &&
-				telegramLinkCodeRateLimitExceeded(
+				(await telegramLinkCodeRateLimitExceeded(
 					chatHash,
 					runtime.organizationId,
 					runtime.botConfigId,
-				),
+				)),
 		);
 		const linkResult =
 			linkCode && !linkCodeRejectedByChatType && !linkCodeRejectedByRateLimit
@@ -394,9 +395,10 @@ export async function dispatchWebhookMessage(params: {
 		}
 		if (replyWarning) warnings.push(replyWarning);
 
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
+			clinicId: runtime.clinicId,
 			botConfigId: runtime.botConfigId,
 			chatFingerprint: chatHash,
 			updateKind,

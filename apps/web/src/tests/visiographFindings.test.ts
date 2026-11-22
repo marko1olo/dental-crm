@@ -227,27 +227,27 @@ test("Мандат 8e: снимок визиографа открывается 
 
 	// Действие «Норма: патологии на снимке не выявлено»
 	assert.ok(
-		source.includes("data-testid=\"btn-dicom-norma-043\""),
-		"DicomViewerModal обязан содержать действие 'btn-dicom-norma-043' для внесения нормы в карту",
+		source.includes("data-testid=\"btn-dicom-norma-emk\"") || source.includes("data-testid=\"btn-dicom-norma-043\""),
+		"DicomViewerModal обязан содержать действие 'btn-dicom-norma-emk' для внесения нормы в карту",
 	);
 	assert.ok(
-		source.includes("handleInsertNormaTo043"),
-		"DicomViewerModal обязан иметь обработчик handleInsertNormaTo043",
+		source.includes("handleInsertNormaToEmk") || source.includes("handleInsertNormaTo043"),
+		"DicomViewerModal обязан иметь обработчик handleInsertNormaToEmk",
 	);
 });
 
-test("Мандат 8e: DicomViewerModal поддерживает 1-клик Норму в 043/у", () => {
+test("Мандат 8e / 8x: DicomViewerModal поддерживает 1-клик Норму в ЭМК", () => {
 	const dicomHeader = readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
 	const dicomCtrl = readSource("components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
 	const source = dicomHeader + "\n" + dicomCtrl;
 
 	assert.ok(
-		source.includes("btn-dicom-norma-043"),
-		"DicomViewerModal обязан содержать 1-клик кнопку 'btn-dicom-norma-043' для внесения нормы в карту 043/у",
+		source.includes("btn-dicom-norma-emk"),
+		"DicomViewerModal обязан содержать 1-клик кнопку 'btn-dicom-norma-emk' для внесения нормы в ЭМК",
 	);
 	assert.ok(
-		source.includes("handleInsertNormaTo043"),
-		"DicomViewerModal обязан иметь функцию handleInsertNormaTo043",
+		source.includes("handleInsertNormaToEmk"),
+		"DicomViewerModal обязан иметь функцию handleInsertNormaToEmk",
 	);
 });
 

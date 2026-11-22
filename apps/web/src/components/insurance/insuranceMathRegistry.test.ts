@@ -10,6 +10,7 @@ import {
 	formatRubKopecks,
 	generateBilateralAcceptanceActHtml,
 	search804nServices,
+	searchDmsServices,
 	type DmsRegistryServiceRecord,
 } from "@dental/shared";
 
@@ -43,9 +44,9 @@ describe("insuranceMath — Сводка реестра и проверка ба
 	});
 });
 
-describe("insuranceMath — Поиск номенклатурных услуг 804н", () => {
-	it("search804nServices находит услуги по коду и названию", () => {
-		const byCode = search804nServices("A16.07.002");
+describe("insuranceMath — Поиск номенклатурных услуг 804н и ДМС", () => {
+	it("search804nServices и searchDmsServices находят услуги по коду и названию", () => {
+		const byCode = searchDmsServices("A16.07.002");
 		assert.ok(byCode.length > 0);
 		assert.ok(byCode.some((i) => i.code === "A16.07.002.001"));
 

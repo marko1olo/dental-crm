@@ -19,7 +19,12 @@ import { z } from "zod";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
+import {
+	clinicTimeZone,
+	currentMonthPeriod,
+} from "../services/reports/managerReports.js";
 import { doctorPayrollReport } from "../services/reports/managerReports/financialExecutiveReports.js";
+import { resolvePeriodBoundary } from "./reports/reportsShared.js";
 import {
 	appointments,
 	cashBoxes,
@@ -64,18 +69,14 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const now = new Date();
-		const defaultFrom = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0));
-		const defaultTo = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
-
-		const rawFrom = parsed.data.from ? new Date(parsed.data.from) : defaultFrom;
-		const fromDate = Number.isNaN(rawFrom.getTime()) ? defaultFrom : rawFrom;
-		const rawTo = parsed.data.to ? new Date(parsed.data.to) : defaultTo;
-		const toDate = Number.isNaN(rawTo.getTime()) ? defaultTo : rawTo;
-
-		if (toDate.getUTCHours() === 0 && toDate.getUTCMinutes() === 0) {
-			toDate.setUTCHours(23, 59, 59, 999);
-		}
+		const orgTimeZone = await clinicTimeZone(orgId);
+		const defaultPeriod = currentMonthPeriod(new Date(), orgTimeZone);
+		const fromDate = parsed.data.from
+			? resolvePeriodBoundary(parsed.data.from, "from", orgTimeZone) ?? defaultPeriod.from
+			: defaultPeriod.from;
+		const toDate = parsed.data.to
+			? resolvePeriodBoundary(parsed.data.to, "to", orgTimeZone) ?? defaultPeriod.to
+			: defaultPeriod.to;
 
 		const fromDateStr = fromDate.toISOString().slice(0, 10);
 		const toDateStr = toDate.toISOString().slice(0, 10);
@@ -207,7 +208,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				} else {
 					paymentRows.push({
 						amountRub: p.amountRub,
-						department: "therapy",
+						department: "unassigned",
 						cashBoxType: boxType,
 					});
 				}
@@ -224,8 +225,8 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					and(
 						eq(cashOperations.organizationId, orgId),
 						eq(cashOperations.operationType, "expense"),
-						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) >= ${fromDateStr}`,
-						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) <= ${toDateStr}`,
+						sql`COALESCE((${cashOperations.metadata}->>'expenseDate')::date, (${cashOperations.createdAt} AT TIME ZONE COALESCE(${orgTimeZone}, 'Europe/Moscow'))::date) >= ${fromDateStr}::date`,
+						sql`COALESCE((${cashOperations.metadata}->>'expenseDate')::date, (${cashOperations.createdAt} AT TIME ZONE COALESCE(${orgTimeZone}, 'Europe/Moscow'))::date) <= ${toDateStr}::date`,
 					),
 				);
 
@@ -235,9 +236,10 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			}));
 
 			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostKopecks / labCostRub), не проведенных через кассовую операцию
-			const [unpaidLabOrders] = await tx
+			const unpaidLabOrders = await tx
 				.select({
-					totalKopecks: sql<number | string>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, round(coalesce(${labOrders.labCostRub}, 0) * 100)::bigint, 0)), 0)`,
+					labCostKopecks: labOrders.labCostKopecks,
+					labCostRub: labOrders.labCostRub,
 				})
 				.from(labOrders)
 				.where(
@@ -251,7 +253,15 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const unpaidLabKop = Number(unpaidLabOrders?.totalKopecks || 0);
+			let unpaidLabKop = 0;
+			for (const row of unpaidLabOrders) {
+				if (row.labCostKopecks != null) {
+					unpaidLabKop += Number(row.labCostKopecks);
+				} else if (row.labCostRub != null) {
+					unpaidLabKop += rublesToKopecks(row.labCostRub);
+				}
+			}
+
 			if (unpaidLabKop > 0) {
 				expenseRows.push({
 					reasonId: 11, // Зуботехническая лаборатория (ЗТЛ)
@@ -260,9 +270,11 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			}
 
 			// 3b. Учитываем фактические списания материалов (inventoryTransactions)
-			const [materialsUsage] = await tx
+			const materialsUsage = await tx
 				.select({
-					totalCostKopecks: sql<number | string>`coalesce(sum(round(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) * 100)::bigint), 0)`,
+					qty: inventoryTransactions.qty,
+					quantityChanged: inventoryTransactions.quantityChanged,
+					unitCostRub: inventoryTransactions.unitCostRub,
 				})
 				.from(inventoryTransactions)
 				.where(
@@ -274,10 +286,18 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					),
 				);
 
+			let actualMaterialsCostKop = 0;
+			for (const row of materialsUsage) {
+				const qty = Math.abs(Number(row.qty ?? row.quantityChanged ?? 0));
+				const unitCostRub = Number(row.unitCostRub ?? 0);
+				if (qty > 0 && unitCostRub > 0) {
+					actualMaterialsCostKop += rublesToKopecks(qty * unitCostRub);
+				}
+			}
+
 			const cashMaterialsKop = expenseRows
 				.filter((e) => e.reasonId === 4 || e.reasonId === 5)
 				.reduce((acc, e) => acc + rublesToKopecks(Number(e.amountRub || 0)), 0);
-			const actualMaterialsCostKop = Number(materialsUsage?.totalCostKopecks || 0);
 			if (actualMaterialsCostKop > cashMaterialsKop) {
 				expenseRows.push({
 					reasonId: 4, // Стоматологические материалы

@@ -5,17 +5,19 @@ import { saveLocalTask } from "./clinicalTaskStorage";
 export async function executeClinicalPresetTaskAutonomy(params: {
 	preset: ClinicalTaskPreset;
 	patientId: string;
-	notes?: string;
-	organizationId?: string;
-	treatmentPlanId?: string | null;
-	assignedDoctorId?: string | null;
-	authUserId?: string | null;
-	saveLocally?: boolean;
-	setTasks?: (updater: (prev: ClinicalTask[] | null) => ClinicalTask[]) => void;
-	showToastFn?: (
-		msg: string,
-		type: "info" | "success" | "warning" | "error",
-	) => void;
+	notes?: string | undefined;
+	organizationId?: string | undefined;
+	treatmentPlanId?: string | null | undefined;
+	assignedDoctorId?: string | null | undefined;
+	authUserId?: string | null | undefined;
+	saveLocally?: boolean | undefined;
+	setTasks?: ((updater: (prev: ClinicalTask[] | null) => ClinicalTask[]) => void) | undefined;
+	showToastFn?:
+		| ((
+				msg: string,
+				type: "info" | "success" | "warning" | "error",
+		  ) => void)
+		| undefined;
 }): Promise<{ task: ClinicalTask; dueFormatted: string }> {
 	const dueAt = params.preset.computeDueAt();
 	const trimmedNotes = (params.notes ?? "").trim();

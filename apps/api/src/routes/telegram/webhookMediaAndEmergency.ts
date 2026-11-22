@@ -3,7 +3,7 @@ import {
 	type DenteTelegramUpdateKind,
 	type DenteTelegramWebhookResponse,
 } from "@dental/shared";
-import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramWebhookEventsService.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
 import { TelegramVoiceIntakeService } from "../../services/telegram/TelegramVoiceIntakeService.js";
 import { TelegramRedFlagDetector } from "../../services/telegram/TelegramRedFlagDetector.js";
@@ -63,9 +63,10 @@ export async function handleWebhookMediaAndEmergency(params: {
 						updateId: update.update_id,
 					});
 
-				const event = recordDenteTelegramWebhookEvent({
+				const event = await recordDenteTelegramWebhookEvent({
 					updateId: update.update_id,
 					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
 					botConfigId: runtime.botConfigId,
 					chatFingerprint: chatHash,
 					updateKind,
@@ -123,9 +124,10 @@ export async function handleWebhookMediaAndEmergency(params: {
 						updateId: update.update_id,
 					});
 
-				const event = recordDenteTelegramWebhookEvent({
+				const event = await recordDenteTelegramWebhookEvent({
 					updateId: update.update_id,
 					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
 					botConfigId: runtime.botConfigId,
 					chatFingerprint: chatHash,
 					updateKind,
@@ -184,9 +186,10 @@ export async function handleWebhookMediaAndEmergency(params: {
 					botToken: runtime.botToken,
 				});
 
-				const event = recordDenteTelegramWebhookEvent({
+				const event = await recordDenteTelegramWebhookEvent({
 					updateId: update.update_id,
 					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
 					botConfigId: runtime.botConfigId,
 					chatFingerprint: chatHash,
 					updateKind,

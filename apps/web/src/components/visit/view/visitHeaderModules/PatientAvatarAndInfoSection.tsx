@@ -59,7 +59,11 @@ export function PatientAvatarAndInfoSection({
 			</span>
 			{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
 			<span className="hidden sm:inline-flex shrink-0">
-				<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
+				<VisitTimer createdAt={(() => {
+					const raw = activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt;
+					if (!raw) return null;
+					return raw instanceof Date ? raw.toISOString() : String(raw);
+				})()} />
 			</span>
 			<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText ?? null} className="hidden sm:inline-flex shrink-0" />
 

@@ -9,9 +9,9 @@ export interface LanConnectionActionsProps {
 	readonly copied: boolean;
 	readonly onCopyUrl: () => void;
 	readonly physicalInterfaces: readonly LanServerInterfaceItem[];
-	readonly primaryIp?: string;
+	readonly primaryIp?: string | undefined;
 	readonly onSelectAdapter: (ip: string) => void;
-	readonly onOpenDiagnostics?: () => void;
+	readonly onOpenDiagnostics?: (() => void) | undefined;
 }
 
 export const LanConnectionActions: React.FC<LanConnectionActionsProps> = ({

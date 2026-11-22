@@ -9,7 +9,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { generalCleaningLogs, users } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
@@ -21,33 +21,35 @@ export async function handleGetCleaning(req: FastifyRequest, reply: FastifyReply
 	);
 	if (!organizationId) return;
 
-	const logs = await db
-		.select({
-			id: generalCleaningLogs.id,
-			organizationId: generalCleaningLogs.organizationId,
-			cleaningType: generalCleaningLogs.cleaningType,
-			scheduledDate: generalCleaningLogs.scheduledDate,
-			actualDateTime: generalCleaningLogs.actualDateTime,
-			roomName: generalCleaningLogs.roomName,
-			treatedAreaM2: generalCleaningLogs.treatedAreaM2,
-			disinfectantName: generalCleaningLogs.disinfectantName,
-			activeIngredient: generalCleaningLogs.activeIngredient,
-			solutionConcentrationPercent: generalCleaningLogs.solutionConcentrationPercent,
-			applicationMethod: generalCleaningLogs.applicationMethod,
-			exposureTimeMinutes: generalCleaningLogs.exposureTimeMinutes,
-			uvIrradiationMinutes: generalCleaningLogs.uvIrradiationMinutes,
-			ventilationMinutes: generalCleaningLogs.ventilationMinutes,
-			operatorId: generalCleaningLogs.operatorId,
-			operatorName: users.fullName,
-			inspectorId: generalCleaningLogs.inspectorId,
-			status: generalCleaningLogs.status,
-			notes: generalCleaningLogs.notes,
-			createdAt: generalCleaningLogs.createdAt,
-		})
-		.from(generalCleaningLogs)
-		.leftJoin(users, eq(users.id, generalCleaningLogs.operatorId))
-		.where(eq(generalCleaningLogs.organizationId, organizationId))
-		.orderBy(desc(generalCleaningLogs.scheduledDate), desc(generalCleaningLogs.actualDateTime));
+	const logs = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select({
+				id: generalCleaningLogs.id,
+				organizationId: generalCleaningLogs.organizationId,
+				cleaningType: generalCleaningLogs.cleaningType,
+				scheduledDate: generalCleaningLogs.scheduledDate,
+				actualDateTime: generalCleaningLogs.actualDateTime,
+				roomName: generalCleaningLogs.roomName,
+				treatedAreaM2: generalCleaningLogs.treatedAreaM2,
+				disinfectantName: generalCleaningLogs.disinfectantName,
+				activeIngredient: generalCleaningLogs.activeIngredient,
+				solutionConcentrationPercent: generalCleaningLogs.solutionConcentrationPercent,
+				applicationMethod: generalCleaningLogs.applicationMethod,
+				exposureTimeMinutes: generalCleaningLogs.exposureTimeMinutes,
+				uvIrradiationMinutes: generalCleaningLogs.uvIrradiationMinutes,
+				ventilationMinutes: generalCleaningLogs.ventilationMinutes,
+				operatorId: generalCleaningLogs.operatorId,
+				operatorName: users.fullName,
+				inspectorId: generalCleaningLogs.inspectorId,
+				status: generalCleaningLogs.status,
+				notes: generalCleaningLogs.notes,
+				createdAt: generalCleaningLogs.createdAt,
+			})
+			.from(generalCleaningLogs)
+			.leftJoin(users, eq(users.id, generalCleaningLogs.operatorId))
+			.where(eq(generalCleaningLogs.organizationId, organizationId))
+			.orderBy(desc(generalCleaningLogs.scheduledDate), desc(generalCleaningLogs.actualDateTime));
+	});
 
 	return logs.map((l) => ({
 		...l,
@@ -73,28 +75,30 @@ export async function handlePostCleaning(req: FastifyRequest, reply: FastifyRepl
 	}
 	const data = parsed.data;
 
-	const [log] = await db
-		.insert(generalCleaningLogs)
-		.values({
-			organizationId,
-			cleaningType: data.cleaningType,
-			scheduledDate: data.scheduledDate,
-			actualDateTime: new Date(data.actualDateTime),
-			roomName: data.roomName,
-			treatedAreaM2: String(data.treatedAreaM2),
-			disinfectantName: data.disinfectantName,
-			activeIngredient: data.activeIngredient ?? null,
-			solutionConcentrationPercent: String(data.solutionConcentrationPercent),
-			applicationMethod: data.applicationMethod,
-			exposureTimeMinutes: data.exposureTimeMinutes,
-			uvIrradiationMinutes: data.uvIrradiationMinutes,
-			ventilationMinutes: data.ventilationMinutes,
-			operatorId: data.operatorId ?? null,
-			inspectorId: data.inspectorId ?? null,
-			status: data.status,
-			notes: data.notes ?? null,
-		})
-		.returning();
+	const [log] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.insert(generalCleaningLogs)
+			.values({
+				organizationId,
+				cleaningType: data.cleaningType,
+				scheduledDate: data.scheduledDate,
+				actualDateTime: new Date(data.actualDateTime),
+				roomName: data.roomName,
+				treatedAreaM2: String(data.treatedAreaM2),
+				disinfectantName: data.disinfectantName,
+				activeIngredient: data.activeIngredient ?? null,
+				solutionConcentrationPercent: String(data.solutionConcentrationPercent),
+				applicationMethod: data.applicationMethod,
+				exposureTimeMinutes: data.exposureTimeMinutes,
+				uvIrradiationMinutes: data.uvIrradiationMinutes,
+				ventilationMinutes: data.ventilationMinutes,
+				operatorId: data.operatorId ?? null,
+				inspectorId: data.inspectorId ?? null,
+				status: data.status,
+				notes: data.notes ?? null,
+			})
+			.returning();
+	});
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_CLEANING_ADDED",
@@ -120,16 +124,25 @@ export async function handleVerifyCleaning(req: FastifyRequest, reply: FastifyRe
 		});
 	}
 	const id = idParsed.data;
-	const [updated] = await db
-		.update(generalCleaningLogs)
-		.set({ status: "verified_by_inspector" })
-		.where(
-			and(
-				eq(generalCleaningLogs.id, id),
-				eq(generalCleaningLogs.organizationId, organizationId),
-			),
-		)
-		.returning();
+	const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.update(generalCleaningLogs)
+			.set({ status: "verified_by_inspector" })
+			.where(
+				and(
+					eq(generalCleaningLogs.id, id),
+					eq(generalCleaningLogs.organizationId, organizationId),
+				),
+			)
+			.returning();
+	});
+
+	if (!updated) {
+		return reply.code(404).send({
+			error: "NotFound",
+			message: "Запись журнала уборок не найдена.",
+		});
+	}
 
 	return updated;
 }

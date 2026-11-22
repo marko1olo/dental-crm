@@ -50,6 +50,18 @@ import { wsBroker } from "./websocketBroker.js";
 
 export const TELEPHONY_OUTBOX_TOPIC = "telephony.webhook";
 
+const defaultStructuredLogger = {
+	info: (obj: unknown, msg?: string) => {
+		process.stdout.write(`${JSON.stringify({ level: "info", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+	warn: (obj: unknown, msg?: string) => {
+		process.stdout.write(`${JSON.stringify({ level: "warn", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+	error: (obj: unknown, msg?: string) => {
+		process.stderr.write(`${JSON.stringify({ level: "error", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+};
+
 export interface TelephonyHttpError extends Error {
 	statusCode: number;
 	code: string;
@@ -517,18 +529,12 @@ export class TelephonyOutboxService {
 						log: {
 							info: (_obj: unknown, _msg?: string) => {},
 							warn: (obj: unknown, msg?: string) => {
-								if (this.logger) {
-									this.logger.warn({ obj }, msg || "[TelephonyOutbox] Warning");
-								} else {
-									process.stderr.write(`[TelephonyOutbox] Warning: ${msg || ""} ${JSON.stringify(obj)}\n`);
-								}
+								const activeLogger = this.logger || defaultStructuredLogger;
+								activeLogger.warn({ obj }, msg || "[TelephonyOutbox] Warning");
 							},
 							error: (obj: unknown, msg?: string) => {
-								if (this.logger) {
-									this.logger.error({ obj }, msg || "[TelephonyOutbox] Error");
-								} else {
-									process.stderr.write(`[TelephonyOutbox] Error: ${msg || ""} ${JSON.stringify(obj)}\n`);
-								}
+								const activeLogger = this.logger || defaultStructuredLogger;
+								activeLogger.error({ obj }, msg || "[TelephonyOutbox] Error");
 							},
 						},
 					},
@@ -563,16 +569,11 @@ export class TelephonyOutboxService {
 				});
 			});
 		} catch (auditErr) {
-			if (this.logger) {
-				this.logger.error(
-					{ auditErr, itemId: item.id },
-					`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}`,
-				);
-			} else {
-				process.stderr.write(
-					`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}: ${String(auditErr)}\n`,
-				);
-			}
+			const activeLogger = this.logger || defaultStructuredLogger;
+			activeLogger.error(
+				{ auditErr, itemId: item.id },
+				`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}`,
+			);
 		}
 	}
 

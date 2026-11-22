@@ -1,15 +1,21 @@
 import type { Appointment, Patient, StaffMember } from "@dental/shared";
 import { countLabel } from "../../../lib/russianPlural";
 
-export type ShiftVisitAppointment = Pick<Appointment, "startsAt" | "endsAt"> & {
+export type ShiftVisitAppointment = {
 	readonly id: string;
-	readonly patientId: string;
+	readonly startsAt: string;
+	readonly endsAt?: string | null | undefined;
+	readonly patientId?: string | null | undefined;
 	readonly doctorUserId?: string | null | undefined;
 	readonly doctorId?: string | null | undefined;
 	readonly status?: string | null | undefined;
 	readonly appointmentStatus?: string | null | undefined;
 	readonly state?: string | null | undefined;
 	readonly reason?: string | null | undefined;
+	readonly patient?: ShiftVisitPatient | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
 };
 
 export type ShiftVisitPatient = Pick<Patient, "id" | "fullName"> & {

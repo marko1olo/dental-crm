@@ -13,12 +13,19 @@ export interface PrescriptionDrugItem {
 	readonly id: string;
 	readonly latinName: string;
 	readonly tradeName: string;
-	readonly form: string;
-	readonly dosage: string;
-	readonly quantity: string;
+	readonly form?: string | undefined;
+	readonly dosage?: string | undefined;
+	readonly quantity?: string | undefined;
 	readonly dispenseLatin: string;
 	readonly signaRussian: string;
-	readonly category?: string | undefined;
+	readonly category: string;
+	readonly activeSubstanceRu?: string | undefined;
+	readonly categoryLabelRu?: string | undefined;
+	readonly formRu?: string | undefined;
+	readonly dosageRu?: string | undefined;
+	readonly quantityLabel?: string | undefined;
+	readonly memoInstruction?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface PrescriptionSheetPreviewProps {

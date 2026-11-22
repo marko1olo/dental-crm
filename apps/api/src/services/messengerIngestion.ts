@@ -57,6 +57,12 @@ import {
 } from "./communications/optOut.js";
 import { wsBroker } from "./websocketBroker.js";
 
+export type InboundIngestionLogger = {
+	readonly info?: (obj: unknown, msg?: string) => void;
+	readonly warn?: (obj: unknown, msg?: string) => void;
+	readonly error?: (obj: unknown, msg?: string) => void;
+};
+
 export type InboundIngestionReport = {
 	readonly processed: number;
 	readonly matchedToPatient: number;
@@ -241,9 +247,10 @@ async function markAsProcessed(eventId: string) {
 }
 
 export async function processInboundEvents(
-	options: { limit?: number } = {},
+	options: { limit?: number; logger?: InboundIngestionLogger } = {},
 ): Promise<InboundIngestionReport> {
 	const limit = Math.max(1, Math.min(500, options.limit ?? 100));
+	const logger = options.logger;
 	const report = {
 		processed: 0,
 		matchedToPatient: 0,
@@ -283,7 +290,7 @@ export async function processInboundEvents(
 			// Сбой на одном событии не должен останавливать разбор очереди.
 			// Клиника события известна из самой строки — работа идёт под ней.
 			await withTenantCtx(event.organizationId, () =>
-				processSingleEvent(event, report),
+				processSingleEvent(event, report, logger),
 			);
 			report.processed += 1;
 		} catch (error) {
@@ -320,6 +327,7 @@ async function sendOptOutAcknowledgement(
 	channel: CommunicationChannelCode,
 	intent: "opt_out" | "opt_in",
 	eventId: string,
+	logger?: InboundIngestionLogger,
 ): Promise<void> {
 	try {
 		const [clinic] = await db
@@ -340,12 +348,13 @@ async function sendOptOutAcknowledgement(
 		});
 
 		if (!result.ok) {
-			console.warn(
+			logger?.warn?.(
+				{ patientId, reason: result.reason },
 				`Подтверждение отписки не поставлено в очередь (пациент ${patientId}): ${result.reason}`,
 			);
 		}
 	} catch (error) {
-		console.error("Подтверждение отписки не поставлено в очередь:", error);
+		logger?.error?.({ error, patientId }, "Подтверждение отписки не поставлено в очередь");
 	}
 }
 
@@ -375,6 +384,7 @@ async function processSingleEvent(
 		optIns: number;
 		ambiguous: number;
 	},
+	logger?: InboundIngestionLogger,
 ): Promise<void> {
 	let messageText = event.messageText?.trim();
 	if (!messageText) {
@@ -439,6 +449,7 @@ async function processSingleEvent(
 				channel,
 				"opt_out",
 				event.id,
+				logger,
 			);
 		} else if (intent === "opt_in") {
 			await restoreServiceConsent(
@@ -454,6 +465,7 @@ async function processSingleEvent(
 				channel,
 				"opt_in",
 				event.id,
+				logger,
 			);
 		}
 
@@ -526,11 +538,11 @@ async function processSingleEvent(
 							dedupeKey: `appt_confirm_ack_${plannedAppt.id}`,
 						});
 					} catch (enqueueErr) {
-						console.warn("[MessengerIngestion] Failed to enqueue confirmation reply:", enqueueErr);
+						logger?.warn?.({ enqueueErr }, "[MessengerIngestion] Failed to enqueue confirmation reply");
 					}
 				}
 			} catch (apptErr) {
-				console.warn("[MessengerIngestion] Failed to auto-confirm appointment by text:", apptErr);
+				logger?.warn?.({ apptErr }, "[MessengerIngestion] Failed to auto-confirm appointment by text");
 			}
 		}
 
@@ -570,7 +582,7 @@ async function processSingleEvent(
 					});
 				}
 			} catch (err) {
-				console.warn("[MessengerIngestion] Triage processing failed:", err);
+				logger?.warn?.({ err }, "[MessengerIngestion] Triage processing failed");
 			}
 		}
 
@@ -662,7 +674,7 @@ async function processSingleEvent(
 			channel,
 		});
 	} catch (err) {
-		console.warn("[MessengerIngestion] Lead triage processing failed:", err);
+		logger?.warn?.({ err }, "[MessengerIngestion] Lead triage processing failed");
 	}
 
 	wsBroker.broadcastToOrganization(organizationId, {

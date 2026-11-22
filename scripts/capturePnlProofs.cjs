@@ -5,8 +5,8 @@ const { chromium } = require("playwright");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/finance");
-const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\920623aa-e4d9-4be9-8807-eab21302e829";
+const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/analytics_pnl");
+const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\72750686-ac5b-4af2-b253-54412e21705e";
 [PROOFS_DIR, CONV_DIR].forEach((d) => !fs.existsSync(d) && fs.mkdirSync(d, { recursive: true }));
 
 async function saveProof(page, filename) {
@@ -20,15 +20,15 @@ async function saveProof(page, filename) {
 
 async function openPnlModal(page) {
 	await page.waitForSelector('.boot-state, :has-text("Загрузка системы...")', { state: "detached", timeout: 25000 }).catch(() => {});
-	await page.waitForTimeout(1000);
+	await page.waitForTimeout(2000);
 	const optBtn = page.locator('[data-testid="finance-toolbar-options-btn"]').first();
-	await optBtn.waitFor({ state: "visible", timeout: 15000 });
+	await optBtn.waitFor({ state: "visible", timeout: 30000 });
 	await optBtn.click();
-	await page.waitForTimeout(400);
+	await page.waitForTimeout(600);
 	const pnlItem = page.locator('[role="menuitem"]:has-text("Управленческий P&L")').first();
-	await pnlItem.waitFor({ state: "visible", timeout: 5000 });
+	await pnlItem.waitFor({ state: "visible", timeout: 10000 });
 	await pnlItem.click();
-	await page.waitForSelector(".pnl-modal-dialog", { state: "visible", timeout: 15000 });
+	await page.waitForSelector(".pnl-modal-dialog", { state: "visible", timeout: 20000 });
 	await page.waitForTimeout(1000);
 }
 
@@ -70,7 +70,7 @@ async function main() {
 			await ctx.close();
 		}
 
-		// 2. Mobile Light & Dark (390x844) — Quick Expense Modal
+		// 2. Mobile Light & Dark (390x844) — P&L Dashboard & Quick Expense
 		for (const theme of ["light", "dark"]) {
 			const storageState = {
 				cookies: [{ name: "dente_clinic_token", value: auth.clinicToken, domain: "127.0.0.1", path: "/" }],
@@ -93,14 +93,7 @@ async function main() {
 				if (document.body) document.body.className = th;
 			}, { th: theme });
 			await openPnlModal(page);
-
-			const expBtn = page.locator(".pnl-action-btn-expense").first();
-			await expBtn.waitFor({ state: "visible", timeout: 5000 });
-			await expBtn.click();
-			await page.waitForSelector('.quick-expense-dialog, .quick-expense-overlay', { state: "visible", timeout: 15000 });
-			await page.waitForTimeout(1000);
-
-			await saveProof(page, theme === "light" ? "03_finance_quick_expense_mobile_light.png" : "04_finance_quick_expense_mobile_dark.png");
+			await saveProof(page, theme === "light" ? "03_finance_pnl_mobile_light.png" : "04_finance_pnl_mobile_dark.png");
 			await ctx.close();
 		}
 		console.log("=== ALL 4 RED TEAM PROOFS CAPTURED SUCCESSFULLY ===");

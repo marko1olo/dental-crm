@@ -3,6 +3,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8s (Modular Architecture)
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import type {
 	FunnelLead,
 	FunnelTimePeriod,
@@ -31,7 +32,7 @@ export function detectLeadStage(lead: FunnelLead): LeadFunnelStageKey {
 
 	const paidVal =
 		lead.paidAmountRub ??
-		(lead.paidAmountKopecks ? lead.paidAmountKopecks / 100 : 0);
+		(lead.paidAmountKopecks ? kopecksToRubles(lead.paidAmountKopecks) : 0);
 	const actualVal =
 		typeof lead.actualRevenueRub === "number" && lead.actualRevenueRub > 0
 			? lead.actualRevenueRub

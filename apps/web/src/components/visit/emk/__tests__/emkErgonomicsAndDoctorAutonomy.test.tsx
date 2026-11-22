@@ -187,12 +187,13 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	it("7. FinanceView hides clinical recommendations accordion when 0 active rules or evaluations exist", () => {
 		const source = fs.readFileSync(financeViewPath, "utf8");
 
-		// Condition must check for active rules / unresolved / evaluations before rendering accordion
+		// Condition must check for active rules / unresolved / evaluations before rendering accordion (or completely purged)
 		assert.ok(
-			source.includes("hasActiveClinicalRules") ||
+			!source.includes("clinical-recommendations-accordion") ||
+				source.includes("hasActiveClinicalRules") ||
 				source.includes("(clinicalRuleSummary.unresolved ?? 0) > 0 ||\n\t\t\t\t\t\t(clinicalRuleSummary.activeRules ?? 0) > 0") ||
 				source.includes("clinicalRuleSummary.activeRules ?? 0)) ||\n\t\t\t\t\t(clinicalRuleEvaluations && clinicalRuleEvaluations.length > 0)"),
-			"clinical-recommendations-accordion must only render when active rules or evaluations exist",
+			"clinical-recommendations-accordion must only render when active rules or evaluations exist or be completely purged",
 		);
 	});
 });

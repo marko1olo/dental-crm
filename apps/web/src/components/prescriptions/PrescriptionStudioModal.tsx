@@ -51,6 +51,9 @@ export interface PrescriptionStudioModalProps {
 	readonly clinicAddress?: string | undefined;
 	readonly clinicPhone?: string | undefined;
 	readonly clinicOgrn?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly medicalLicenseNumber?: string | undefined;
+	readonly doctorSnils?: string | undefined;
 	readonly diary?: {
 		readonly diagnosisIcd10?: string | undefined;
 		readonly anamnesisVitae?: string | undefined;
@@ -59,6 +62,7 @@ export interface PrescriptionStudioModalProps {
 	readonly allergies?: readonly string[] | string | undefined;
 	readonly initialSelectedDrugIds?: readonly string[] | undefined;
 	readonly onInsertToDiary?: ((rxText: string) => void) | undefined;
+	readonly onPrescriptionCreated?: ((rx: unknown) => void) | undefined;
 	readonly onPrint?: (() => void) | undefined;
 	readonly onSave?: ((savedRx: unknown) => void) | undefined;
 	readonly disablePortal?: boolean | undefined;
@@ -130,8 +134,8 @@ export const PrescriptionStudioModal: React.FC<PrescriptionStudioModalProps> = (
 			return (
 				matchesCategory &&
 				(d.tradeName.toLowerCase().includes(query) ||
-					d.activeSubstanceRu.toLowerCase().includes(query) ||
-					d.memoInstruction.toLowerCase().includes(query))
+					(d.activeSubstanceRu?.toLowerCase().includes(query) ?? false) ||
+					(d.memoInstruction?.toLowerCase().includes(query) ?? false))
 			);
 		});
 	}, [activeCategory, searchQuery]);

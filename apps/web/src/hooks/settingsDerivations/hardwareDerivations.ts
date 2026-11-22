@@ -128,28 +128,28 @@ export interface HardwareDerivationsParams {
 	dicomFolderWorkupPlan?: unknown;
 	cbctWorkbenchTools?: DicomMprTool[];
 	cbctWorkbenchProjections?: MprProjection[];
-	mprSliceIndex: number;
-	mprAxisDeg: number;
-	mprSlabMm: number;
-	mprProjection: string;
-	mprWindowPreset: string;
-	mprCrosshairEnabled: boolean;
-	mprLinkedPlanesEnabled: boolean;
-	mprProjectionLabels: Record<string, string>;
-	mprWindowPresetLabels: Record<string, string>;
-	setDicomFirstFrameViewerState: (
+	mprSliceIndex?: number | undefined;
+	mprAxisDeg?: number | undefined;
+	mprSlabMm?: number | undefined;
+	mprProjection?: string | undefined;
+	mprWindowPreset?: string | undefined;
+	mprCrosshairEnabled?: boolean | undefined;
+	mprLinkedPlanesEnabled?: boolean | undefined;
+	mprProjectionLabels?: Record<string, string> | undefined;
+	mprWindowPresetLabels?: Record<string, string> | undefined;
+	setDicomFirstFrameViewerState?: (
 		updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState,
 	) => void;
-	setMprProjection: (projection: MprProjection) => void;
-	setMprAxisDeg: (deg: number) => void;
-	setMprSlabMm: (mm: number) => void;
-	setMprSliceIndex: (index: number) => void;
-	setMprWindowPreset: (preset: string) => void;
-	setMprCrosshairEnabled: (enabled: boolean) => void;
-	setMprLinkedPlanesEnabled: (enabled: boolean) => void;
-	setCtPlanningActiveQuickActionId?: (id: string | null) => void;
-	setImagingViewerActiveTool: (tool: ImagingViewerTool) => void;
-	selectCtPlanningImplant: (implant: CtImplantLibraryItem) => void;
+	setMprProjection?: ((projection: MprProjection) => void) | undefined;
+	setMprAxisDeg?: ((deg: number) => void) | undefined;
+	setMprSlabMm?: ((mm: number) => void) | undefined;
+	setMprSliceIndex?: ((index: number) => void) | undefined;
+	setMprWindowPreset?: ((preset: string) => void) | undefined;
+	setMprCrosshairEnabled?: ((enabled: boolean) => void) | undefined;
+	setMprLinkedPlanesEnabled?: ((enabled: boolean) => void) | undefined;
+	setCtPlanningActiveQuickActionId?: ((id: string | null) => void) | undefined;
+	setImagingViewerActiveTool?: ((tool: ImagingViewerTool) => void) | undefined;
+	selectCtPlanningImplant?: ((implant: CtImplantLibraryItem) => void) | undefined;
 }
 
 export function deriveHardwareSettings(params: HardwareDerivationsParams) {
@@ -192,26 +192,26 @@ export function deriveHardwareSettings(params: HardwareDerivationsParams) {
 		dicomFolderWorkupPlan,
 		cbctWorkbenchTools,
 		cbctWorkbenchProjections,
-		mprSliceIndex,
-		mprAxisDeg,
-		mprSlabMm,
-		mprProjection,
-		mprWindowPreset,
-		mprCrosshairEnabled,
-		mprLinkedPlanesEnabled,
+		mprSliceIndex = 0,
+		mprAxisDeg = 0,
+		mprSlabMm = 1,
+		mprProjection = "axial",
+		mprWindowPreset = "bone",
+		mprCrosshairEnabled = false,
+		mprLinkedPlanesEnabled = false,
 		mprProjectionLabels,
 		mprWindowPresetLabels,
-		setDicomFirstFrameViewerState,
-		setMprProjection,
-		setMprAxisDeg,
-		setMprSlabMm,
-		setMprSliceIndex,
-		setMprWindowPreset,
-		setMprCrosshairEnabled,
-		setMprLinkedPlanesEnabled,
+		setDicomFirstFrameViewerState = () => {},
+		setMprProjection = () => {},
+		setMprAxisDeg = () => {},
+		setMprSlabMm = () => {},
+		setMprSliceIndex = () => {},
+		setMprWindowPreset = () => {},
+		setMprCrosshairEnabled = () => {},
+		setMprLinkedPlanesEnabled = () => {},
 		setCtPlanningActiveQuickActionId,
-		setImagingViewerActiveTool,
-		selectCtPlanningImplant,
+		setImagingViewerActiveTool = () => {},
+		selectCtPlanningImplant = () => {},
 	} = params;
 
 	const _recognitionInputReady = (recognitionText || "").trim().length > 0;
@@ -423,7 +423,7 @@ export function deriveHardwareSettings(params: HardwareDerivationsParams) {
 		"--mpr-slice-position": mprSlicePositionPercent,
 	};
 	const mprActiveProjectionLabel =
-		mprProjectionLabels[typedMprProjection] ?? typedMprProjection;
+		mprProjectionLabels?.[typedMprProjection] ?? typedMprProjection;
 	const mprActiveProjectionOrientation =
 		mprProjectionOrientationLabels[typedMprProjection] ?? "плоскость просмотра";
 	const mprProjectionCompass = mprProjectionCompassLabels(typedMprProjection);
@@ -459,7 +459,7 @@ export function deriveHardwareSettings(params: HardwareDerivationsParams) {
 		axisLabel: mprAxisDirectionLabel,
 		slabMm: mprSlabMm,
 		sliceLabel: mprSliceLabel,
-		windowLabel: mprWindowPresetLabels[mprWindowPreset] ?? mprWindowPreset,
+		windowLabel: mprWindowPresetLabels?.[mprWindowPreset] ?? mprWindowPreset,
 		crosshair: mprCrosshairEnabled,
 		linkedPlanes: mprLinkedPlanesEnabled,
 	};

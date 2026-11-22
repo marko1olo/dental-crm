@@ -1,4 +1,5 @@
 import {
+	computePayloadHash,
 	SEPA_SITE_CODES,
 	type SepaSiteCode,
 } from "@dental/shared";
@@ -11,6 +12,7 @@ import {
 	periodontogramSnapshots,
 	periodontogramTeeth,
 } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import {
 	batchUpsertSites,
 	patchSitesPayloadSchema,
@@ -87,6 +89,28 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
+
+			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+			}
 		}
 
 		const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
@@ -123,7 +147,39 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 
 			return await batchUpsertSites(tx, id, rawList, toothIdMap);
 		});
-		return reply.send({ success: true, data: savedSites });
+
+		const responsePayload = { success: true, data: savedSites };
+
+		if (idempotencyKey) {
+			try {
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(req.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+							lockedAt: new Date(),
+						},
+					});
+			} catch (idemErr) {
+				req.log.warn(
+					{ err: idemErr, idempotencyKey, orgId },
+					"[periodontogram] Не удалось сохранить ключ идемпотентности",
+				);
+			}
+		}
+
+		return reply.send(responsePayload);
 	});
 
 	/**
@@ -158,6 +214,28 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 					});
 				}
 				reply.header("Idempotency-Key", idempotencyKey);
+
+				// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 200)
+							.send(existingRecord.responseBody);
+					}
+				}
 			}
 			const toothNumber = Number.parseInt(rawTn, 10);
 			const rawSiteCode = (siteCode || "").toUpperCase();
@@ -208,7 +286,39 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 					parsed.data,
 				);
 			});
-			return reply.send({ success: true, data: saved });
+
+			const responsePayload = { success: true, data: saved };
+
+			if (idempotencyKey) {
+				try {
+					await db
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(req.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 200,
+								lockedAt: new Date(),
+							},
+						});
+				} catch (idemErr) {
+					req.log.warn(
+						{ err: idemErr, idempotencyKey, orgId },
+						"[periodontogram] Не удалось сохранить ключ идемпотентности",
+					);
+				}
+			}
+
+			return reply.send(responsePayload);
 		},
 	);
 }

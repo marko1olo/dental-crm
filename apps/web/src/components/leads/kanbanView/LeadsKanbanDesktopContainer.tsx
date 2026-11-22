@@ -6,6 +6,7 @@
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { ALL_KANBAN_COLUMNS, CORE_FUNNEL_COLUMNS } from "../leadsKanbanConstants";
+import type { BookableDoctor } from "../leadsKanbanTypes";
 import { LeadsKanbanBoardGrid } from "./LeadsKanbanBoardGrid";
 import { LeadsKanbanExpandedModal } from "./LeadsKanbanExpandedModal";
 import { LeadsKanbanHeaderToolbar } from "./LeadsKanbanHeaderToolbar";
@@ -14,8 +15,7 @@ import type { LeadViewMode } from "./types";
 interface LeadsKanbanDesktopContainerProps {
 	leads: Lead[];
 	filteredLeads: Lead[];
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic staff list
-	staff: any[];
+	staff: BookableDoctor[];
 	loadError: string | null;
 	searchQuery: string;
 	setSearchQuery: (q: string) => void;
@@ -36,8 +36,12 @@ interface LeadsKanbanDesktopContainerProps {
 	onDrop: (e: React.DragEvent, status: Lead["status"]) => void;
 	onDragStart: (e: React.DragEvent, id: string) => void;
 	onEditLead: (lead: Lead) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: event handler signature flexibility
-	onStatusChange: (e: any, id: string, status: Lead["status"], options?: any) => void;
+	onStatusChange: (
+		e: React.SyntheticEvent | Event | unknown,
+		id: string,
+		status: Lead["status"],
+		options?: { reason?: string; dropReason?: string },
+	) => void;
 	onCreatePatient: (lead: Lead) => void;
 	onSchedule: (id: string) => void;
 	onQuickSchedule: (id: string) => void;

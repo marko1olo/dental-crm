@@ -8,7 +8,7 @@
  */
 
 import { z } from "zod";
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. ZOD SCHEMAS & DOMAIN ENUMS

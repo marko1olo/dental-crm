@@ -3,12 +3,12 @@ import type { Dashboard } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import {
   type DayFreeSlots,
-  deriveClinicWorkingHours,
   findDoctorFreeSlots,
-} from "../doctorFreeSlotsEngine";
+} from "@dental/shared";
+import { deriveClinicWorkingHours } from "../freeSlotsModules";
 
 interface SlotFinderParams {
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   startsAtLocal: string;
   doctorUserId: string;
   durationMinutes: number;

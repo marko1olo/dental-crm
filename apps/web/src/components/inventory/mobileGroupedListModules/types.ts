@@ -83,11 +83,11 @@ export interface MobileInventoryGroupedListProps {
 	readonly onOpenInboundInvoice?: (() => void) | undefined;
 	readonly onOpenWaybills?: (() => void) | undefined;
 	readonly onOpenShiftDeduction?: (() => void) | undefined;
-	readonly onQuickWriteoffCarpules?: (() => void | Promise<any>) | undefined;
+	readonly onQuickWriteoffCarpules?: (() => void | Promise<void>) | undefined;
 	readonly isWritingOffCarpules?: boolean | undefined;
 	readonly onRefresh?: (() => void) | undefined;
 	readonly onOpenMdlpScanning?: (() => void) | undefined;
-	readonly money?: ((amountRub: any) => string) | undefined;
+	readonly money?: ((amountRub: number) => string) | undefined;
 	readonly getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
 	readonly hideTitleText?: boolean | undefined;
 }

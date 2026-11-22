@@ -37,7 +37,7 @@ export function DoctorCbctHardwareBar({
 				<div>
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="font-semibold text-[var(--ink)]">Аппаратная адаптация КТ:</span>
-						<span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] uppercase border ${tierBadgeColor}`} data-testid="cbct-hardware-tier-badge">
+						<span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] border ${tierBadgeColor}`} data-testid="cbct-hardware-tier-badge">
 							{hwProfile.tier} ({hwProfile.score}/100)
 						</span>
 						{hwProfile.isHybridGraphics ? (

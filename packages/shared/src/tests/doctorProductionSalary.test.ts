@@ -1,131 +1,17 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
-	calculateDiscountSalaryBase,
-	calculateDoctorNetSalary,
-	calculateDoctorSalary,
+	calculateDoctorPeriodPayroll,
 	extractDeductibleMaterialsFromWriteoff,
-} from "../finance/doctorNetSalaryEngine.js";
+} from "../finance/payrollModules/index.js";
 import {
 	processClinicalMaterialWriteoff,
 	formatClinicalMaterialWriteoffAct,
 	type ClinicalConsumableNorm,
 } from "../warehouse/clinicalMaterialWriteoffEngine.js";
-import type { Kopecks } from "../money.js";
 
 describe("Doctor Production Piece-Rate Salary & Material Write-Off (DENTE First Principles)", () => {
-	// ─── 1. DISCOUNT & PARTIAL PAYMENT POLICIES ─────────────────────────────────
-
-	test("calculateDiscountSalaryBase: gross_unconditional gives doctor full base regardless of discount/debt", () => {
-		const result = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 800000 as Kopecks,
-			paidKop: 500000 as Kopecks,
-			discountKop: 200000 as Kopecks,
-			clinicCostsKop: 300000 as Kopecks,
-			policy: "gross_unconditional",
-		});
-
-		assert.equal(result.doctorBaseKop, 700000);
-		assert.equal(result.doctorBaseRub, 7000);
-		assert.equal(result.isFullyPaid, false);
-		assert.equal(result.debtKop, 300000);
-	});
-
-	test("calculateDiscountSalaryBase: clinic_first prioritizes clinic costs coverage", () => {
-		const partialUnder = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 1000000 as Kopecks,
-			paidKop: 200000 as Kopecks,
-			discountKop: 0 as Kopecks,
-			clinicCostsKop: 300000 as Kopecks,
-			policy: "clinic_first",
-		});
-		assert.equal(partialUnder.doctorBaseKop, 0);
-		assert.equal(partialUnder.clinicShareKop, 200000);
-
-		const partialOver = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 1000000 as Kopecks,
-			paidKop: 500000 as Kopecks,
-			discountKop: 0 as Kopecks,
-			clinicCostsKop: 300000 as Kopecks,
-			policy: "clinic_first",
-		});
-		assert.equal(partialOver.doctorBaseKop, 200000);
-		assert.equal(partialOver.clinicShareKop, 300000);
-	});
-
-	test("calculateDiscountSalaryBase: doctor_first pays doctor fee first", () => {
-		const result = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 1000000 as Kopecks,
-			paidKop: 500000 as Kopecks,
-			discountKop: 0 as Kopecks,
-			clinicCostsKop: 300000 as Kopecks,
-			policy: "doctor_first",
-		});
-		assert.equal(result.doctorBaseKop, 500000);
-		assert.equal(result.clinicShareKop, 0);
-
-		const resultHigh = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 1000000 as Kopecks,
-			paidKop: 800000 as Kopecks,
-			discountKop: 0 as Kopecks,
-			clinicCostsKop: 300000 as Kopecks,
-			policy: "doctor_first",
-		});
-		assert.equal(resultHigh.doctorBaseKop, 700000);
-		assert.equal(resultHigh.clinicShareKop, 100000);
-	});
-
-	test("calculateDiscountSalaryBase: proportional scales doctor base by payment ratio", () => {
-		const result = calculateDiscountSalaryBase({
-			grossRevenueKop: 1000000 as Kopecks,
-			invoiceTotalKop: 900000 as Kopecks,
-			paidKop: 450000 as Kopecks,
-			discountKop: 100000 as Kopecks,
-			clinicCostsKop: 200000 as Kopecks,
-			policy: "proportional",
-		});
-		assert.equal(result.doctorBaseKop, 350000);
-		assert.equal(result.doctorBaseRub, 3500);
-		assert.equal(result.clinicShareKop, 100000);
-	});
-
-	// ─── 2. ONE-TIME DOCTOR PERCENTAGE DEDUCTION ───────────────────────────────
-
-	test("calculateDoctorNetSalary: correctly applies one-time deduction from piecework", () => {
-		const result = calculateDoctorNetSalary({
-			grossRevenueRub: 50000,
-			labCostRub: 10000,
-			materialsCostRub: 5000,
-			categoryPercent: 30,
-			fixedSalaryRub: 0,
-			oneTimeDeductions: [
-				{
-					id: "ded-01",
-					amountKop: 200000 as Kopecks,
-					reason: "Брак слепка / переделка коронки ЗТЛ наряд № 841",
-					orderNumber: "ЗТЛ-841",
-				},
-			],
-			ndflRatePercent: 13,
-		});
-
-		assert.equal(result.netBaseRevenueRub, 35000);
-		assert.equal(result.pieceworkAccruedKop, 1050000);
-		assert.equal(result.oneTimeDeductionsTotalKop, 200000);
-		assert.equal(result.oneTimeDeductionsTotalRub, 2000);
-		assert.equal(result.totalAccruedKop, 850000);
-		assert.equal(result.totalAccruedRub, 8500);
-		assert.equal(result.ndflTaxKop, 110500);
-		assert.equal(result.netPayoutKop, 739500);
-		assert.equal(result.netPayoutRub, 7395);
-	});
-
-	// ─── 3. 2-LEVEL MATERIAL WRITE-OFF (ВН / ВИ ФЛАГИ) ──────────────────────────
+	// ─── 1. 2-LEVEL MATERIAL WRITE-OFF (ВН / ВИ ФЛАГИ) ──────────────────────────
 
 	test("processClinicalMaterialWriteoff: segregates cheap overhead from expensive clinical materials", () => {
 		const norms: ClinicalConsumableNorm[] = [
@@ -224,86 +110,9 @@ describe("Doctor Production Piece-Rate Salary & Material Write-Off (DENTE First 
 		assert.ok(!/[🎉🚀💡🦷📦📄⚠️]/.test(actText), "Mandate 8d: zero cartoon emojis");
 	});
 
-	// ─── 4. DOCTOR SALARY CALCULATION MODELS (GROSS / NET / CASH_BASIS) ─────────
+	// ─── 2. EXTRACT DEDUCTIBLE MATERIALS ────────────────────────────────────────
 
-	test("calculateDoctorSalary: model 'gross' computes percentage from full gross without deducting lab/materials", () => {
-		const res = calculateDoctorSalary({
-			model: "gross",
-			grossRevenueRub: 100000,
-			labCostRub: 20000,
-			expensiveMaterialsCostRub: 15000,
-			overheadMaterialsCostRub: 5000,
-			doctorPercent: 30,
-			salaryPriceRub: 2000,
-			salaryPriceApplication: "flat_addition",
-			fixedSalaryRub: 10000,
-			bonusesRub: 5000,
-			penaltiesRub: 1000,
-			ndflRatePercent: 13,
-		});
-
-		assert.equal(res.effectiveBaseRub, 100000);
-		assert.equal(res.effectiveBaseKop, 10000000);
-		assert.equal(res.pieceworkAccruedRub, 30000);
-		assert.equal(res.salaryPriceAdditionRub, 2000);
-		assert.equal(res.fixedSalaryRub, 10000);
-		assert.equal(res.effectiveBonusesRub, 4000);
-		assert.equal(res.totalAccruedRub, 46000);
-		assert.equal(res.totalAccruedKop, 4600000);
-		assert.equal(res.deductedLabKop, 0);
-		assert.equal(res.deductedExpensiveMaterialsKop, 0);
-		assert.equal(res.coveredOverheadMaterialsRub, 5000);
-		assert.equal(res.ndflTaxRub, 5980);
-		assert.equal(res.netPayoutRub, 40020);
-		assert.equal(res.netPayoutKop, 4002000);
-	});
-
-	test("calculateDoctorSalary: model 'net' deducts lab and expensive materials but never cheap overhead", () => {
-		const res = calculateDoctorSalary({
-			model: "net",
-			grossRevenueRub: 100000,
-			labCostRub: 25000,
-			expensiveMaterialsCostRub: 15000,
-			overheadMaterialsCostRub: 4000,
-			doctorPercent: 25,
-			fixedSalaryRub: 0,
-			ndflRatePercent: 13,
-		});
-
-		assert.equal(res.effectiveBaseRub, 60000);
-		assert.equal(res.effectiveBaseKop, 6000000);
-		assert.equal(res.coveredOverheadMaterialsRub, 4000);
-		assert.equal(res.pieceworkAccruedRub, 15000);
-		assert.equal(res.totalAccruedRub, 15000);
-		assert.equal(res.ndflTaxRub, 1950);
-		assert.equal(res.netPayoutRub, 13050);
-	});
-
-	test("calculateDoctorSalary: model 'cash_basis' with partial payment, 'replaces_gross_base' and deferred pending earnings", () => {
-		const res = calculateDoctorSalary({
-			model: "cash_basis",
-			grossRevenueRub: 50000,
-			invoiceTotalRub: 45000,
-			paidAmountRub: 22500,
-			labCostRub: 5000,
-			expensiveMaterialsCostRub: 5000,
-			doctorPercent: 30,
-			discountPolicy: "proportional",
-			fixedSalaryRub: 0,
-			ndflRatePercent: 13,
-		});
-
-		assert.equal(res.paidRatio, 0.5);
-		assert.equal(res.effectiveBaseRub, 17500);
-		assert.equal(res.effectiveBaseKop, 1750000);
-		assert.equal(res.pieceworkAccruedRub, 5250);
-		assert.equal(res.totalAccruedRub, 5250);
-		assert.equal(res.deferredPendingDoctorEarningsRub, 5250);
-		assert.equal(res.deferredPendingDoctorEarningsKop, 525000);
-		assert.equal(res.ndflTaxKop, 68300); // 525 000 * 0.13 = 68 250 kop -> п. 6 ст. 225 НК РФ (округление до рубля) = 68 300 kop
-	});
-
-	test("calculateDoctorSalary: handles materialWriteoffResult auto-extraction and deduction", () => {
+	test("extractDeductibleMaterialsFromWriteoff: isolates expensive clinical costs from general overhead", () => {
 		const norms: ClinicalConsumableNorm[] = [
 			{
 				inventoryItemId: "mat-gloves-std",
@@ -338,27 +147,92 @@ describe("Doctor Production Piece-Rate Salary & Material Write-Off (DENTE First 
 		const extracted = extractDeductibleMaterialsFromWriteoff(writeoffRes);
 		assert.equal(extracted.cheapOverheadCostKop, 6000);
 		assert.equal(extracted.expensiveClinicalCostKop, 800000);
+		assert.equal(extracted.totalDoctorDeductibleKop, 800000);
+	});
 
-		const salaryRes = calculateDoctorSalary({
-			model: "net",
-			grossRevenueRub: 35000,
-			labCostRub: 5000,
-			materialWriteoffResult: writeoffRes,
-			doctorPercent: 25,
-			oneTimeDeductions: [
+	// ─── 3. DOCTOR PRODUCTION NET SALARY CALCULATION ─────────────────────────────
+
+	test("calculateDoctorPeriodPayroll: deducts lab and expensive materials but never cheap overhead", () => {
+		// Scenario: Gross = 100 000 ₽ (10 000 000 kop)
+		// Lab = 25 000 ₽ (2 500 000 kop)
+		// Expensive Materials = 15 000 ₽ (1 500 000 kop)
+		// Cheap Overhead Supplies = 4 000 ₽ (400 000 kop)
+		// Doctor Percent = 25%
+		// Expected: Net Base = 100 000 - 25 000 - 15 000 = 60 000 ₽ (6 000 000 kop)
+		// Overhead Covered = 4 000 ₽ (400 000 kop) — paid by clinic!
+		// Piecework commission = 60 000 * 25% = 15 000 ₽ (1 500 000 kop)
+		// 13% NDFL = 15 000 * 13% = 1 950 ₽ (195 000 kop)
+		// Net Payout = 15 000 - 1 950 = 13 050 ₽ (1 305 000 kop)
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-ortho-1",
+			doctorName: "Сидоров Алексей Петрович",
+			specialtyId: "orthopedics",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			customBasePercentage: 25,
+			services: [
 				{
-					id: "ded-1",
-					amountKop: 100000 as Kopecks,
-					reason: "Скол при примерке",
+					id: "srv-ortho-1",
+					dateIso: "2026-08-10",
+					patientName: "Ковалев И.Н.",
+					medicalCardNumber: "043-501",
+					serviceNameRu: "Коронка E.max",
+					category: "orthopedics",
+					grossRevenueKop: 10000000,
+					labCostKop: 2500000,
+					materialCostKop: 0,
+					materialItems: [
+						{ name: "Перчатки смотровые и салфетки", costKop: 400000, isOverhead: true },
+						{ name: "Слепочная масса Elite HD+", costKop: 1500000, isOverhead: false },
+					],
 				},
 			],
 		});
 
-		assert.equal(salaryRes.effectiveBaseRub, 22000);
-		assert.equal(salaryRes.coveredOverheadMaterialsRub, 60);
-		assert.equal(salaryRes.pieceworkAccruedRub, 5500);
-		assert.equal(salaryRes.oneTimeDeductionsTotalRub, 1000);
-		assert.equal(salaryRes.totalAccruedRub, 4500);
-		assert.equal(salaryRes.totalAccruedKop, 450000);
+		assert.equal(res.totalGrossRevenueKop, 10000000);
+		assert.equal(res.totalLabDeductionsKop, 2500000);
+		assert.equal(res.totalMaterialDeductionsKop, 1500000);
+		assert.equal(res.overheadConsumablesCoveredKop, 400000);
+		assert.equal(res.totalNetBaseKop, 6000000);
+		assert.equal(res.earnedBaseCommissionKop, 1500000);
+		assert.equal(res.grossPayoutBeforeTaxKop, 1500000);
+		assert.equal(res.ndflTaxKop, 195000);
+		assert.equal(res.netPayoutToDoctorKop, 1305000);
+	});
+
+	// ─── 4. LABOR CODE RF (ТК РФ СТ. 137, 192) & GUARANTEED MINIMUM ───────────────
+
+	test("calculateDoctorPeriodPayroll: applies minimum monthly guarantee when accrued earnings are below threshold", () => {
+		// Scenario: A doctor has 1 small service, earning 2 500 ₽ commission.
+		// Therapy preset monthly minimum guarantee is 60 000 ₽ (6 000 000 kop).
+		// With applyMinimumGuarantee: true, payout must rise to 60 000 ₽!
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-guar-1",
+			doctorName: "Новиков Денис Игоревич",
+			specialtyId: "therapy",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			applyMinimumGuarantee: true,
+			services: [
+				{
+					id: "srv-small",
+					dateIso: "2026-08-05",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "043-11",
+					serviceNameRu: "Осмотр и консультация",
+					category: "therapy",
+					grossRevenueKop: 1000000, // 10 000 ₽
+					labCostKop: 0,
+					materialCostKop: 0,
+					customCommissionPercent: 25, // 2 500 ₽
+				},
+			],
+		});
+
+		assert.equal(res.earnedBaseCommissionKop, 250000);
+		assert.equal(res.minimumGuaranteeApplied, true);
+		assert.equal(res.grossPayoutBeforeTaxKop, 6000000); // 60 000 ₽ guaranteed floor
+		assert.equal(res.ndflTaxKop, 780000); // 60 000 * 13% = 7 800 ₽ (780 000 kop)
+		assert.equal(res.netPayoutToDoctorKop, 5220000); // 52 200 ₽ net
 	});
 });

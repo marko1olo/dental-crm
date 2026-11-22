@@ -10,7 +10,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 import { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./types.js";
 
 /**

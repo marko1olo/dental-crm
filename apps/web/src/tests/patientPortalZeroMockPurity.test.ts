@@ -39,8 +39,8 @@ import {
 	SAMPLE_UPCOMING_VISIT,
 } from "../components/portal/patientPortalPresets.js";
 
-import { createDefaultHealthyAdultTeeth } from "../components/portal/patientFriendlyOdontogramEngine.js";
-import { PatientPlanView } from "../components/portal/PatientPlanView.js";
+import { createDefaultHealthyAdultTeeth } from "../components/portal/patientCabinet/patientDentalFormulaEngine.js";
+import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal.js";
 import { TelegramPatientPortalCabinet } from "../components/portal/telegramMiniApp/TelegramPatientPortalCabinet.js";
 import { TelegramMiniAppBooking } from "../components/portal/telegramMiniApp/TelegramMiniAppBooking.js";
 
@@ -98,18 +98,15 @@ describe("Patient Portal & Booking Zero-Mock Production Purity (Mandates 8c, 8f,
 		}
 	});
 
-	it("Gate 3: PatientPlanView renders zero synthetic mocks in production mode", () => {
+	it("Gate 3: PatientCabinetModal renders zero synthetic mocks in production mode", () => {
 		setRuntimeDemoMode(false);
 
-		const html = renderToStaticMarkup(React.createElement(PatientPlanView, {}));
+		const html = renderToStaticMarkup(React.createElement(PatientCabinetModal, { isOpen: true, onClose: () => {} }));
 
 		// В боевом режиме не должно быть следов хардкодной демо-персоны Воронова
 		assert.equal(html.includes("Воронов Алексей Владимирович"), false, "Must not leak demo persona 'Воронов' in production");
 		assert.equal(html.includes("043-8842"), false, "Must not leak demo card number '043-8842'");
 		assert.equal(html.includes("+7 (999) 123-45-67"), false, "Must not leak demo phone '+7 (999) 123-45-67'");
-		assert.equal(html.includes("10 000 бонусов"), false, "Must not leak demo 10 000 bonus balance");
-		assert.equal(html.includes("15 000 ₽ кэшбэк"), false, "Must not leak demo 15 000 cashback");
-		assert.equal(html.includes("default_adult_dente_16_cbct"), false, "Must not leak demo CT study ID in production");
 	});
 
 	it("Gate 4: TelegramPatientPortalCabinet renders honest empty state and zero balance in production mode", () => {

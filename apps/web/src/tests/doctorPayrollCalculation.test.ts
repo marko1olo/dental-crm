@@ -42,6 +42,7 @@ describe("Doctor & Staff Piece-Rate Payroll Calculation Engine", () => {
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services,
+			applyMinimumGuarantee: true,
 		});
 
 		assert.equal(res.totalGrossRevenueKop, 1000000);

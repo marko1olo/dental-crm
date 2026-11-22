@@ -14,7 +14,7 @@ import {
 	type AdvertisingChannelPerformanceInput,
 	type PatientAttributionRecord,
 } from "../analytics/callTrackingEngine.js";
-import { parseKopecks } from "../utils/money.js";
+import { parseKopecks } from "../money.js";
 
 describe("callTrackingEngine — UTM Parsing & Lead Binding", () => {
 	it("parses standard UTM parameters from full HTTP/HTTPS URLs", () => {

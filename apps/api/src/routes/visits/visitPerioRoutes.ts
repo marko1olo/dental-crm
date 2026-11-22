@@ -137,7 +137,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			notes,
 			status,
 			autoClose,
-			psrData: ((psr ?? summary) as Record<string, unknown>) || undefined,
+			psrData: (psr as Record<string, unknown>) || undefined,
 		});
 
 		return reply.send({

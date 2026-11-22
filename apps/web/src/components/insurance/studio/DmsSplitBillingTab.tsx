@@ -154,7 +154,7 @@ export const DmsSplitBillingTab: React.FC<DmsSplitBillingTabProps> = ({
 										<div
 											style={{
 												fontWeight: 600,
-												color: "var(--ink, #0f172a)",
+												color: "var(--ink)",
 											}}
 										>
 											{item.serviceName}
@@ -162,13 +162,13 @@ export const DmsSplitBillingTab: React.FC<DmsSplitBillingTabProps> = ({
 										<div
 											style={{
 												fontSize: "11px",
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 											}}
 										>
 											{item.splitReason}
 										</div>
 									</td>
-									<td style={{ color: "var(--muted, #64748b)" }}>
+									<td style={{ color: "var(--muted)" }}>
 										{item.toothNumber || "—"}
 									</td>
 									<td>{item.quantity}</td>

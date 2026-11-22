@@ -26,6 +26,8 @@ import {
 	type VisitNoteForm,
 } from "./types";
 
+export type { VisitNoteField, VisitNoteForm };
+
 export const toothRows = [
 	[
 		"18",

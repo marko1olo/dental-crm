@@ -10,17 +10,22 @@
  */
 
 import { execSync } from "node:child_process";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const CHECKS = [
-	{ name: "UTF-8 Encoding", cmd: "node --max-old-space-size=2048 scripts/check-encoding.mjs" },
-	{ name: "Dynamic Imports", cmd: "node --max-old-space-size=2048 scripts/check-dynamic-imports.mjs" },
-	{ name: "Type Ratchet (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-type-ratchet.mjs" },
-	{ name: "Mock Defaults Hunter (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-mock-defaults.mjs" },
+	{ id: "DIFF_SAFETY", name: "Diff Safety Guard (Anti-Blind-Kitten Gate)", cmd: "node --max-old-space-size=2048 scripts/check-staged-safety.mjs" },
+	{ id: "ENCODING_UTF8", name: "UTF-8 Encoding", cmd: "node --max-old-space-size=2048 scripts/check-encoding.mjs" },
+	{ id: "DYNAMIC_IMPORTS", name: "Dynamic Imports", cmd: "node --max-old-space-size=2048 scripts/check-dynamic-imports.mjs" },
+	{ id: "TYPE_RATCHET", name: "Type Ratchet (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-type-ratchet.mjs" },
+	{ id: "MOCK_DEFAULTS", name: "Mock Defaults Hunter (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-mock-defaults.mjs" },
+	{ id: "SINGLE_DOORS", name: "Single-Door SSOT Guardian", cmd: "node --max-old-space-size=2048 scripts/check-single-doors.mjs" },
+	{ id: "DICE_AUDIT", name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта)", cmd: "node --max-old-space-size=2048 scripts/dice-audit.mjs --strict" },
 ];
 
 console.log("🛡️ [PRE-COMMIT GATE] Запуск автоматических машинных замков...");
 
 let failed = false;
+let failedCheck = null;
 
 for (const check of CHECKS) {
 	try {
@@ -29,13 +34,15 @@ for (const check of CHECKS) {
 	} catch (e) {
 		console.error(`\n❌ [FAILED] Проверка '${check.name}' завершилась с ошибкой!`);
 		failed = true;
+		failedCheck = check;
 		break;
 	}
 }
 
-if (failed) {
-	console.error("\n💥 [COMMIT REJECTED] Коммит отклонен автоматическим гейтом качества!");
-	console.error("Устраните выявленные нарушения перед выполнением git commit.");
+if (failed && failedCheck) {
+	printFailureManifesto(failedCheck.id, {
+		details: `Провалился обязательный этап прекоммита: '${failedCheck.name}'. Команда: ${failedCheck.cmd}`,
+	});
 	process.exit(1);
 }
 

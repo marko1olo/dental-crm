@@ -1,29 +1,34 @@
-import type { Dashboard, StaffRole } from "@dental/shared";
+import type { Dashboard, RecommendedAction, StaffRole } from "@dental/shared";
 import type {
 	ShiftVisitAppointment,
 	ShiftVisitDoctor,
 	ShiftVisitPatient,
 } from "../components/shift/visitsKpi/visitsKpiTypes";
+import type { ShiftHeroPatient } from "../components/shift/heroCard/DoctorShiftInChairHero";
+import type { ShiftHeroAppointment } from "../components/shift/heroCard/DoctorShiftNextAppointmentHero";
 
-export type { ShiftVisitAppointment, ShiftVisitDoctor, ShiftVisitPatient };
+export type { ShiftVisitAppointment, ShiftVisitDoctor, ShiftVisitPatient, ShiftHeroPatient, ShiftHeroAppointment };
 
 export interface ShiftViewStats {
 	readonly totalAppointments: number;
 	readonly completedCount: number;
-	readonly inProgressCount?: number;
+	readonly inProgressCount: number;
 	readonly totalRevenueRub: number;
-	readonly plannedRevenueRub?: number;
-	readonly directPaymentsRub?: number;
-	readonly appointmentBilledRub?: number;
+	readonly plannedRevenueRub?: number | undefined;
+	readonly directPaymentsRub?: number | undefined;
+	readonly appointmentBilledRub?: number | undefined;
 	readonly cashBreakdown?: {
-		readonly cashRub: number;
-		readonly cardRub: number;
-		readonly sbpRub: number;
-		readonly depositRub: number;
-	};
-	readonly doctorCommissionPct?: number;
-	readonly estimatedDoctorPayoutRub?: number;
-	readonly hasActiveOvertime?: boolean;
+		readonly cashRub?: number | undefined;
+		readonly cardRub?: number | undefined;
+		readonly sbpRub?: number | undefined;
+		readonly depositRub?: number | undefined;
+	} | undefined;
+	readonly doctorCommissionPct: number;
+	readonly estimatedDoctorPayoutRub: number;
+	readonly hasActiveOvertime: boolean;
+	readonly chairOccupancyPct?: number | undefined;
+	readonly shiftDurationSeconds?: number | undefined;
+	readonly shiftStartTimeIso?: string | undefined;
 }
 
 export interface ShiftDashboardRuntimeMeta {
@@ -62,11 +67,7 @@ export interface ShiftCloseSummary {
 	readonly printZReport?: boolean;
 }
 
-export interface ShiftRecommendedAction {
-	readonly patientId?: string;
-	readonly section?: string;
-	readonly [key: string]: unknown;
-}
+export type ShiftRecommendedAction = RecommendedAction;
 
 export type ShiftViewProps = {
 	activePatientHasCallablePhone?: boolean;
@@ -133,17 +134,17 @@ export interface ShiftVisitsQueueProps {
 }
 
 export interface ShiftChairStatusCardProps {
-	inChairAppointment: unknown;
+	inChairAppointment?: ShiftVisitAppointment | null | undefined;
 	doctorFullName: string;
 	cabinetName?: string;
 	isSterilized?: boolean;
 	assistantReady?: boolean;
-	currentPatient?: unknown;
+	currentPatient?: ShiftHeroPatient | null | undefined;
 	currentPatientHasCallablePhone?: boolean;
 	currentPatientCallablePhone?: string | null;
 	currentAppointmentReason?: string;
-	nextAppointment?: unknown;
-	nextAppointmentPatient?: unknown;
+	nextAppointment?: ShiftHeroAppointment | null | undefined;
+	nextAppointmentPatient?: ShiftHeroPatient | null | undefined;
 	todayAppointmentsCount?: number;
 	formatClockTime?: (isoString?: string) => string;
 	onOpenVisit?: (patientId: string) => void;

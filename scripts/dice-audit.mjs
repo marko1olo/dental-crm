@@ -26,6 +26,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 /* ------------------------------------------------------------------ *
  * Секция 1. Детерминированный PRNG (Mulberry32)
@@ -966,13 +967,9 @@ function formatTerminalReport(report) {
 	if (report.summary.defectSamples === 0) {
 		console.log(c.bold(c.green("\n🎉 [ВЕРДИКТ: ЧИСТО — 0 ГОВНОСРАЛОВ] Архитектурный контроль подтверждён!")));
 	} else {
-		console.log(
-			c.bold(
-				c.yellow(
-					`\n⚠️  [ВНИМАНИЕ] Обнаружено ${report.summary.defectSamples} аномалий по случайной выборке. Изучите строки выше.`,
-				),
-			),
-		);
+		printFailureManifesto("DICE_AUDIT", {
+			details: `Кубик вскрыл ${report.summary.defectSamples} архитектурных дефектов среди ${report.summary.totalSamples} проверенных точек (индекс реальности: ${report.summary.realityScorePercent}%).`,
+		});
 	}
 	console.log("=".repeat(76) + "\n");
 }

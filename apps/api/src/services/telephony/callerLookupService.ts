@@ -56,6 +56,18 @@ import {
 
 export type { CallerLookupFamilyMember } from "@dental/shared";
 
+const defaultStructuredLogger = {
+	info: (obj: unknown, msg?: string) => {
+		process.stdout.write(`${JSON.stringify({ level: "info", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+	warn: (obj: unknown, msg?: string) => {
+		process.stdout.write(`${JSON.stringify({ level: "warn", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+	error: (obj: unknown, msg?: string) => {
+		process.stderr.write(`${JSON.stringify({ level: "error", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+	},
+};
+
 export interface CallerLookupResult {
 	found: boolean;
 	patient: {
@@ -252,11 +264,8 @@ export class CallerLookupService {
 			]);
 			balanceRub = balances.get(matchedPatient.id) ?? 0;
 		} catch (err) {
-			if (params.logger) {
-				params.logger.warn({ err, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Balance calculation warning");
-			} else {
-				process.stderr.write(`[CallerLookupService] Balance calculation warning: ${String(err)}\n`);
-			}
+			const activeLogger = params.logger || defaultStructuredLogger;
+			activeLogger.warn({ err, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Balance calculation warning");
 		}
 
 		const debtRub = Math.max(0, -balanceRub);
@@ -463,11 +472,8 @@ export class CallerLookupService {
 				};
 			}
 		} catch (planErr) {
-			if (params.logger) {
-				params.logger.warn({ planErr, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Treatment plan query warning");
-			} else {
-				process.stderr.write(`[CallerLookupService] Treatment plan query warning: ${String(planErr)}\n`);
-			}
+			const activeLogger = params.logger || defaultStructuredLogger;
+			activeLogger.warn({ planErr, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Treatment plan query warning");
 		}
 
 		// 7. Resolve Patient Category

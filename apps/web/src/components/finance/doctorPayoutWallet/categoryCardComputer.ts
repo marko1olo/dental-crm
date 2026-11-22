@@ -4,6 +4,7 @@
  */
 
 import type { DoctorPayoutRow, CategoryCardItem } from "./types.js";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 
 export function mapRoleToSpecialtyId(role: string): string {
 	const r = role.toLowerCase().trim();
@@ -102,7 +103,7 @@ export function classifyWalletServiceCategory(
 export function computeCategoryCards(currentDoctor: DoctorPayoutRow | null): readonly CategoryCardItem[] {
 	if (!currentDoctor) return [];
 	const specialtyId = mapRoleToSpecialtyId(currentDoctor.role);
-	const commRate = (currentDoctor.commissionPct ?? 0) / 100;
+	const commBasisPoints = Math.round((currentDoctor.commissionPct ?? 0) * 100);
 
 	const catSums: Record<string, { gross: number; earned: number; count: number; name: string; icon: CategoryCardItem["iconType"] }> = {
 		therapy: { gross: 0, earned: 0, count: 0, name: "Терапия", icon: "therapy" },
@@ -119,7 +120,8 @@ export function computeCategoryCards(currentDoctor: DoctorPayoutRow | null): rea
 				const bucket = c === "retail_hygiene" ? "hygiene" : c;
 				if (catSums[bucket]) {
 					catSums[bucket].gross += v.revenueRub;
-					catSums[bucket].earned += Math.round(v.revenueRub * commRate);
+					const earnedKop = percentageOfKopecks(rublesToKopecks(v.revenueRub), commBasisPoints);
+					catSums[bucket].earned += kopecksToRubles(earnedKop);
 					catSums[bucket].count += 1;
 				}
 			} else {
@@ -129,7 +131,8 @@ export function computeCategoryCards(currentDoctor: DoctorPayoutRow | null): rea
 					const sRev = s.priceRub * s.quantity;
 					if (catSums[bucket]) {
 						catSums[bucket].gross += sRev;
-						catSums[bucket].earned += Math.round(sRev * commRate);
+						const earnedKop = percentageOfKopecks(rublesToKopecks(sRev), commBasisPoints);
+						catSums[bucket].earned += kopecksToRubles(earnedKop);
 						catSums[bucket].count += 1;
 					}
 				}

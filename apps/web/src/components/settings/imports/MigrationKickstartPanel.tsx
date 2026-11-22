@@ -109,7 +109,7 @@ export function MigrationKickstartPanel({
 							key={item?.id ?? `prog-item-${idx}`}
 						>
 							<div className="flex items-center gap-1.5 mb-0.5">
-								<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-[var(--line-subtle)] text-[var(--muted)] font-mono">
+								<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--line-subtle)] text-[var(--muted)] font-mono">
 									Шаг {idx + 1}
 								</span>
 								<strong className="text-xs font-semibold text-[var(--ink)] truncate">{item?.title}</strong>

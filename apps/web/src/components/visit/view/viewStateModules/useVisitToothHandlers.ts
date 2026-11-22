@@ -20,7 +20,7 @@ import { dispatchOdontogramSoapAndBundle } from "../../../odontogram/odontogramM
 import type { ToothData, ToothState } from "../../../odontogram/ToothChart";
 import type { VisitToothUiState } from "../../../../store/visit/types";
 import type { VisitViewProps } from "../types";
-import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
 import { toCanonicalDbToothState } from "../../../../utils/dentalFormulaFdi";
 import { triggerHaptic } from "../../../../native/mobileBridge";
@@ -81,9 +81,10 @@ export function useVisitToothHandlers({
 				const cachedTooth = existingTeeth.find((t) => t.toothNumber === num);
 				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: {
 						"Content-Type": "application/json",
-					}),
+						...getDenteAuthHeaders(),
+					},
 					body: JSON.stringify({
 						toothNumbers: [num],
 						state: canonicalState,
@@ -183,9 +184,10 @@ export function useVisitToothHandlers({
 				const targetTooth = idx >= 0 ? updatedTeeth[idx] : undefined;
 				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: {
 						"Content-Type": "application/json",
-					}),
+						...getDenteAuthHeaders(),
+					},
 					body: JSON.stringify({
 						toothNumbers: [toothNum],
 						state: canonicalState,

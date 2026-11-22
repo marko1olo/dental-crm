@@ -73,59 +73,59 @@ function localBridgeEndpointSummary(
 }
 
 export interface AuditPersistencePanelProps {
-	browserCanRequestPersistentStorage: boolean;
-	browserContinuity: BrowserContinuityInfo;
-	browserContinuityChecks: BrowserContinuityCheck[];
-	browserContinuityState: string;
-	browserContinuityValue: StatusValueHolder;
-	clinicSettings: AuditClinicSettings;
-	downloadPersistenceExport: () => void;
-	formatDateTime: (iso: string) => string;
-	formatTime: (iso: string) => string;
-	hideVaultPanel?: boolean;
-	isPersistenceExporting: boolean;
-	loadLocalBridgeUsePlans: (opts?: { silent?: boolean }) => Promise<void>;
-	loadPersistenceHealth: (opts?: { silent?: boolean }) => Promise<void>;
-	localBridgeReadiness: LocalBridgeReadinessResponse | null;
-	localBridgeStatusLabels: Record<string, string>;
-	localBridgeStatusState: string;
-	localBridgeStatusValue: StatusValueHolder;
-	localBridgeUsePathLabels: Record<string, string>;
-	localBridgeUsePlans: LocalBridgeUsePlansResponse | null;
-	organizationId?: string;
-	persistenceHealth: PersistenceHealthInfo;
-	persistenceIntegrity: PersistenceIntegrityReport | null;
-	refreshBrowserContinuity: (opts?: { silent?: boolean }) => Promise<void>;
-	requestBrowserStoragePersistence: () => Promise<void>;
-	importBatches: ImportBatch[];
+	browserCanRequestPersistentStorage?: boolean | undefined;
+	browserContinuity?: BrowserContinuityInfo;
+	browserContinuityChecks?: BrowserContinuityCheck[] | undefined;
+	browserContinuityState?: string | undefined;
+	browserContinuityValue?: StatusValueHolder;
+	clinicSettings?: AuditClinicSettings;
+	downloadPersistenceExport?: (() => void | Promise<void>) | undefined;
+	formatDateTime?: ((iso: string | number | Date) => string) | undefined;
+	formatTime?: ((iso: string | number | Date) => string) | undefined;
+	hideVaultPanel?: boolean | undefined;
+	isPersistenceExporting?: boolean | undefined;
+	loadLocalBridgeUsePlans?: ((opts?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	loadPersistenceHealth?: ((opts?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	localBridgeReadiness?: LocalBridgeReadinessResponse | null | undefined;
+	localBridgeStatusLabels?: Record<string, string> | undefined;
+	localBridgeStatusState?: string | undefined;
+	localBridgeStatusValue?: StatusValueHolder;
+	localBridgeUsePathLabels?: Record<string, string> | undefined;
+	localBridgeUsePlans?: LocalBridgeUsePlansResponse | null | undefined;
+	organizationId?: string | undefined;
+	persistenceHealth?: PersistenceHealthInfo;
+	persistenceIntegrity?: PersistenceIntegrityReport | null | undefined;
+	refreshBrowserContinuity?: ((opts?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	requestBrowserStoragePersistence?: (() => Promise<unknown> | void) | undefined;
+	importBatches?: ImportBatch[] | undefined;
 }
 
 export function AuditPersistencePanel({
-	browserCanRequestPersistentStorage,
+	browserCanRequestPersistentStorage = false,
 	browserContinuity,
-	browserContinuityChecks,
-	browserContinuityState,
-	browserContinuityValue,
+	browserContinuityChecks = [],
+	browserContinuityState = "unknown",
+	browserContinuityValue = "—",
 	clinicSettings,
-	downloadPersistenceExport,
-	formatDateTime,
-	formatTime,
-	hideVaultPanel,
-	isPersistenceExporting,
-	loadLocalBridgeUsePlans,
-	loadPersistenceHealth,
-	localBridgeReadiness,
-	localBridgeStatusLabels,
-	localBridgeStatusState,
-	localBridgeStatusValue,
-	localBridgeUsePathLabels,
-	localBridgeUsePlans,
+	downloadPersistenceExport = () => {},
+	formatDateTime = (iso: string | number | Date) => String(iso),
+	formatTime = (iso: string | number | Date) => String(iso),
+	hideVaultPanel = false,
+	isPersistenceExporting = false,
+	loadLocalBridgeUsePlans = async () => {},
+	loadPersistenceHealth = async () => {},
+	localBridgeReadiness = null,
+	localBridgeStatusLabels = {},
+	localBridgeStatusState = "unknown",
+	localBridgeStatusValue = "—",
+	localBridgeUsePathLabels = {},
+	localBridgeUsePlans = null,
 	organizationId,
 	persistenceHealth,
-	persistenceIntegrity,
-	refreshBrowserContinuity,
-	requestBrowserStoragePersistence,
-	importBatches,
+	persistenceIntegrity = null,
+	refreshBrowserContinuity = async () => {},
+	requestBrowserStoragePersistence = async () => {},
+	importBatches = [],
 }: AuditPersistencePanelProps) {
 	return (
 		<>

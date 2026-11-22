@@ -17,7 +17,8 @@ import {
 	printDesktopFiscalReceiptTcp,
 	type DesktopFiscalReceiptPayload,
 } from "../../native/desktopBridge.js";
-import { computeFpd54Fz, format54FzFtsQrString } from "@dental/shared";
+import { computeFpd54Fz, format54FzFtsQrString, rublesToKopecks } from "@dental/shared";
+import { logger } from "../../utils/logger.js";
 import type {
 	CircuitBreakerState,
 	CircuitBreakerTelemetry,
@@ -205,8 +206,8 @@ export class KktLanPrinterService {
 					};
 				}
 			}
-		} catch {
-			// Ignore network fetch error and return offline state
+		} catch (statusErr) {
+			logger.debug("[KktLanPrinterService] Fallback device status check failed:", statusErr);
 		}
 
 		this.recordFailure();
@@ -233,7 +234,7 @@ export class KktLanPrinterService {
 		fiscalSign: string;
 		operationType: string | number;
 	}): string {
-		const totalKopecks = Math.round(params.totalRub * 100);
+		const totalKopecks = rublesToKopecks(params.totalRub);
 		let operCode = 1;
 		if (typeof params.operationType === "number") {
 			operCode = params.operationType;
@@ -269,7 +270,7 @@ export class KktLanPrinterService {
 		amountRub: number,
 		operationType: string | number = "income",
 	): string {
-		const amountKopecks = Math.round(amountRub * 100);
+		const amountKopecks = rublesToKopecks(amountRub);
 		return computeFpd54Fz({
 			fnSerial,
 			fiscalDocumentNumber: receiptDocNumber,
@@ -398,9 +399,9 @@ export class KktLanPrinterService {
 					cashierInn: payload.cashierInn || cfg.cashierInn,
 					items: payload.items.map((item) => ({
 						name: item.name,
-						priceKopecks: Math.round(item.priceRub * 100),
+						priceKopecks: rublesToKopecks(item.priceRub),
 						quantity: item.quantity,
-						amountKopecks: Math.round(item.amountRub * 100),
+						amountKopecks: rublesToKopecks(item.amountRub),
 						subject: item.paymentSubject || "service",
 						method: item.paymentMethod || "full_payment",
 						vatRate: item.vatRate || "vat_none",
@@ -408,12 +409,12 @@ export class KktLanPrinterService {
 						medicalServiceCode804n: item.medicalServiceCode804n,
 						markingCode: item.markingCode,
 					})),
-					cashKopecks: Math.round((payload.cashRub || 0) * 100),
-					electronicCardKopecks: Math.round((payload.electronicRub || 0) * 100),
-					sbpKopecks: Math.round((payload.sbpRub || 0) * 100),
-					prepaidKopecks: Math.round((payload.prepaidRub || 0) * 100),
+					cashKopecks: rublesToKopecks(payload.cashRub || 0),
+					electronicCardKopecks: rublesToKopecks(payload.electronicRub || 0),
+					sbpKopecks: rublesToKopecks(payload.sbpRub || 0),
+					prepaidKopecks: rublesToKopecks(payload.prepaidRub || 0),
 					creditKopecks: 0,
-					totalKopecks: Math.round(payload.totalRub * 100),
+					totalKopecks: rublesToKopecks(payload.totalRub),
 					taxationSystem: payload.taxationSystem || "usn_income",
 					taxDeductionSummaryCode: payload.taxDeductionCategory || "code_1_standard",
 					isCorrection: false,

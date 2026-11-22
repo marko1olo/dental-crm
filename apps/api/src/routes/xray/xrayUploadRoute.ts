@@ -10,6 +10,7 @@ import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { LocalPacsStorageService } from "../../services/imaging/localPacsStorageService.js";
 import { createXrayScanSchema, extractSummary, scanToResponse } from "../xraySchemas.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 export async function registerXrayUploadRoute(app: FastifyInstance): Promise<void> {
 	app.post("/api/xray/scans", async (request, reply) => {
@@ -23,6 +24,12 @@ export async function registerXrayUploadRoute(app: FastifyInstance): Promise<voi
 
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return { error: "InvalidIdempotencyKey", message: "Некорректный заголовок Idempotency-Key (ожидается UUID)" };
+		}
 
 		const data = parsed.data;
 		let base64Payload = data.imageBase64;
@@ -154,6 +161,10 @@ export async function registerXrayUploadRoute(app: FastifyInstance): Promise<voi
 		if (!inserted) {
 			reply.code(500);
 			return { error: "InsertError", message: "Не удалось сохранить снимок." };
+		}
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		reply.code(201);

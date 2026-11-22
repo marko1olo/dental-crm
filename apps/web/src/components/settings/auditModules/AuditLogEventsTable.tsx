@@ -277,13 +277,13 @@ export function AuditLogEventsTable({
 
 export interface SecurityAudit152FzPanelProps {
 	auditEvents: AuditEvent[];
-	formatDateTime: (iso: string) => string;
+	formatDateTime?: ((iso: string | number | Date) => string) | undefined;
 	onOpenAuditTrailModal: () => void;
 }
 
 export function SecurityAudit152FzPanel({
 	auditEvents,
-	formatDateTime,
+	formatDateTime = (iso: string | number | Date) => String(iso),
 	onOpenAuditTrailModal,
 }: SecurityAudit152FzPanelProps) {
 	return (

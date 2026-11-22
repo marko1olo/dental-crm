@@ -7,6 +7,7 @@ import { useTelephonyStore } from "./telephonyStore";
 export type PrimaryModalId =
 	| "patient_editor"
 	| "doctor_free_slots"
+	| "patient_recalls_hub"
 	| "preventive_inspection"
 	| "slot_conflict"
 	| "roster_modal"

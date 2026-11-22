@@ -21,7 +21,24 @@ import { generateSha256Hex } from "./portalUtils.js";
 import {
 	type SelectTierBody,
 } from "./types.js";
-import { isValidUuid } from "@dental/shared";
+import { isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
+function mapConsentKindToDocMeta(consentId: string): {
+	kind: "informed_consent" | "anesthesia_consent_log" | "personal_data_processing_consent" | "procedure_specific_consent_packet";
+	title: string;
+} {
+	const n = consentId.toLowerCase();
+	if (n.includes("anest") || n.includes("анест")) {
+		return { kind: "anesthesia_consent_log", title: "Информированное добровольное согласие на местное обезболивание" };
+	}
+	if (n.includes("pd") || n.includes("пдн") || n.includes("152")) {
+		return { kind: "personal_data_processing_consent", title: "Согласие на обработку персональных данных (152-ФЗ)" };
+	}
+	if (n.includes("packet") || n.includes("пакет")) {
+		return { kind: "procedure_specific_consent_packet", title: "Пакет информированных добровольных согласий на медицинские вмешательства" };
+	}
+	return { kind: "informed_consent", title: "Информированное добровольное согласие на стоматологическое лечение (ст. 20 № 323-ФЗ)" };
+}
 
 export async function registerPortalDocumentsRoutes(server: FastifyInstance): Promise<void> {
 	// 4. View Document HTML (Protected)
@@ -186,14 +203,9 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				? request.body.signatureSvg.trim()
 				: "";
 
-		let effectiveSignatureSvg = signatureSvg;
-		if (!effectiveSignatureSvg) {
-			if (signatureMethod === "paper_physical") {
-				effectiveSignatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">ПОДПИСАНО НА БУМАГЕ</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Оригинал хранится в медицинской карте клиники</text></svg>`;
-			} else {
-				effectiveSignatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Подтверждено в личном кабинете пациента</text></svg>`;
-			}
-		}
+		const defaultPaperSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">ПОДПИСАНО НА БУМАГЕ</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Оригинал хранится в медицинской карте клиники</text></svg>';
+		const defaultPepSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Подтверждено в личном кабинете пациента</text></svg>';
+		const effectiveSignatureSvg = signatureSvg || (signatureMethod === "paper_physical" ? defaultPaperSvg : defaultPepSvg);
 
 		const rawIp =
 			(request.headers["x-forwarded-for"] as string) ||
@@ -236,37 +248,16 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			}
 
 			// Физическая генерация официального бланка согласия в таблице generated_documents
-			const normalizedKind = consentId.toLowerCase();
-			let docKind:
-				| "informed_consent"
-				| "anesthesia_consent_log"
-				| "personal_data_processing_consent"
-				| "procedure_specific_consent_packet" = "informed_consent";
-			let docTitle = "Информированное добровольное согласие на стоматологическое лечение (ст. 20 № 323-ФЗ)";
-
-			if (normalizedKind.includes("anest") || normalizedKind.includes("анест")) {
-				docKind = "anesthesia_consent_log";
-				docTitle = "Информированное добровольное согласие на местное обезболивание";
-			} else if (
-				normalizedKind.includes("pd") ||
-				normalizedKind.includes("пдн") ||
-				normalizedKind.includes("152")
-			) {
-				docKind = "personal_data_processing_consent";
-				docTitle = "Согласие на обработку персональных данных (152-ФЗ)";
-			} else if (normalizedKind.includes("packet") || normalizedKind.includes("пакет")) {
-				docKind = "procedure_specific_consent_packet";
-				docTitle = "Пакет информированных добровольных согласий на медицинские вмешательства";
-			}
+			const docMeta = mapConsentKindToDocMeta(consentId);
 
 			const [createdDoc] = await db
 				.insert(generatedDocuments)
 				.values({
 					organizationId: auth.organizationId,
 					patientId: auth.patientId,
-					kind: docKind,
+					kind: docMeta.kind,
 					status: "issued",
-					title: docTitle,
+					title: docMeta.title,
 					signatureSvg: effectiveSignatureSvg,
 					issuedSnapshotSha256: integrityHash,
 					issuedAt: now,
@@ -423,9 +414,9 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					),
 				);
 
-			// [DEF-PORTAL-03] Ликвидация потёмкинских наценок (* 0.8 и * 1.4).
-			// Если доктор завел реальные альтернативы в БД (ст. 20 323-ФЗ) — отдаем их честно.
-			// Если у пациента один утвержденный план — отдаем его как канонический план лечения с реальной стоимостью без фальшивых коэффициентов.
+			// [DEF-PORTAL-03] Ликвидация фальсификации тарифов планов лечения.
+			// Если доктор завел реальные альтернативы в БД (ст. 20 323-ФЗ) — отдаем только фактически существующие альтернативы.
+			// Если у пациента один утвержденный план — отдаем его как единственный канонический план без вымышленных тарифов-клонов.
 			const hasRealAlternatives = dbPlans.some((p) => p.isAlternative || p.alternativeTier);
 
 			const basicPlan = dbPlans.find((p) => p.alternativeTier === "basic");
@@ -444,9 +435,17 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 						separatorIndex >= 0
 							? it.priceId.slice(separatorIndex + 2) || "Лечебная процедура"
 							: it.priceId || "Лечебная процедура";
-					const rawPrice =
-						Number(it.price || 0) * (it.quantity || 1) - Number(it.discount || 0);
-					const costRub = Math.max(0, Math.round(rawPrice));
+					const itemPriceKopecks =
+						it.priceKopecks && it.priceKopecks > 0n
+							? it.priceKopecks
+							: (it.price ? rublesToKopecks(Number(it.price)) : 0n);
+					const itemDiscountKopecks =
+						it.discountKopecks && it.discountKopecks > 0n
+							? it.discountKopecks
+							: (it.discount ? rublesToKopecks(Number(it.discount)) : 0n);
+					const rawKopecks =
+						BigInt(itemPriceKopecks) * BigInt(it.quantity || 1) - BigInt(itemDiscountKopecks);
+					const costRub = Math.max(0, kopecksToRubles(rawKopecks > 0n ? rawKopecks : 0n));
 					return {
 						id: it.id,
 						orderIndex: idx + 1,
@@ -462,66 +461,79 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				});
 			};
 
-			const standardStages = getPlanStages(standardPlan?.id);
-			const standardTotalCost = standardStages.reduce((sum, s) => sum + s.costRub, 0);
+			interface TreatmentTierDto {
+				tierId: "basic" | "standard" | "premium";
+				tierNameRu: string;
+				subtitleRu: string;
+				totalCostRub: number;
+				warrantyMonths: number;
+				durationWeeks: number;
+				benefits: string[];
+				stages: ReturnType<typeof getPlanStages>;
+			}
 
-			const basicStages = basicPlan ? getPlanStages(basicPlan.id) : standardStages;
-			const basicTotalCost = basicPlan
-				? basicStages.reduce((sum, s) => sum + s.costRub, 0)
-				: standardTotalCost;
-
-			const premiumStages = premiumPlan ? getPlanStages(premiumPlan.id) : standardStages;
-			const premiumTotalCost = premiumPlan
-				? premiumStages.reduce((sum, s) => sum + s.costRub, 0)
-				: standardTotalCost;
-
-			const threeTierModel = {
-				selectedTier,
-				isCustomAlternatives: hasRealAlternatives,
-				tiers: [
-					{
-						tierId: "basic" as const,
-						tierNameRu: basicPlan?.name || "Базовый (Эконом)",
-						subtitleRu: "Функциональное восстановление базовыми материалами",
-						totalCostRub: basicTotalCost,
-						warrantyMonths: 12,
-						durationWeeks: 4,
-						benefits: [
-							"Качественное восстановление современными материалами",
-							"Базовая клиническая гарантия 1 год",
-						],
-						stages: basicStages,
-					},
-					{
-						tierId: "standard" as const,
-						tierNameRu: standardPlan?.name || "Оптимальный (Стандарт)",
-						subtitleRu: "Анатомическая реставрация и расширенная гарантия",
-						totalCostRub: standardTotalCost,
-						warrantyMonths: 24,
-						durationWeeks: 6,
-						benefits: [
-							"Высокоэстетичные нанокомпозиты и премиальные материалы",
-							"Лечение по международным клиническим протоколам",
-							"Гарантия 2 года",
-						],
-						stages: standardStages,
-					},
-					{
-						tierId: "premium" as const,
-						tierNameRu: premiumPlan?.name || "Премиум (VIP All-Inclusive)",
-						subtitleRu: "Премиальные технологии и бессрочное сопровождение",
-						totalCostRub: premiumTotalCost,
-						warrantyMonths: 60,
-						durationWeeks: 8,
-						benefits: [
-							"Премиальные биосовместимые материалы",
-							"Персональный врач-куратор",
-							"Расширенная гарантия 5 лет с регулярными чекапами",
-						],
-						stages: premiumStages,
-					},
-				],
+			const buildTier = (
+				tierId: "basic" | "standard" | "premium",
+				plan: typeof standardPlan,
+				defaultName: string,
+				subtitleRu: string,
+				warrantyMonths: number,
+				durationWeeks: number,
+				benefits: string[],
+			): TreatmentTierDto | null => {
+				if (!plan) return null;
+				const stages = getPlanStages(plan.id);
+				return {
+					tierId,
+					tierNameRu: plan.name || defaultName,
+					subtitleRu,
+					totalCostRub: stages.reduce((sum, s) => sum + s.costRub, 0),
+					warrantyMonths,
+					durationWeeks,
+					benefits,
+					stages,
+				};
 			};
+
+			const tiers: TreatmentTierDto[] = [];
+			if (hasRealAlternatives) {
+				const b = buildTier("basic", basicPlan, "Базовый (Эконом)", "Функциональное восстановление базовыми материалами", 12, 4, [
+					"Качественное восстановление материалами базового прейскуранта",
+					"Базовая клиническая гарантия 1 год",
+				]);
+				if (b) tiers.push(b);
+				const s = buildTier("standard", standardPlan, "Оптимальный (Стандарт)", "Анатомическая реставрация и расширенная гарантия", 24, 6, [
+					"Высокоэстетичные нанокомпозиты и премиальные материалы",
+					"Лечение по международным клиническим протоколам",
+					"Гарантия 2 года",
+				]);
+				if (s) tiers.push(s);
+				const p = buildTier("premium", premiumPlan, "Премиум (VIP All-Inclusive)", "Премиальные технологии и бессрочное сопровождение", 60, 8, [
+					"Премиальные биосовместимые материалы",
+					"Персональный врач-куратор",
+					"Расширенная гарантия 5 лет с регулярными чекапами",
+				]);
+				if (p) tiers.push(p);
+			} else if (standardPlan) {
+				const s = buildTier("standard", standardPlan, "Основной план лечения", "Утверждённый клинический план лечения", 24, 6, [
+					"Лечение по международным клиническим протоколам",
+					"Сертифицированные биосовместимые материалы",
+					"Официальная гарантия клиники",
+				]);
+				if (s) tiers.push(s);
+			}
+
+			const effectiveSelectedTier = tiers.some((t) => t.tierId === selectedTier)
+				? (selectedTier as "basic" | "standard" | "premium")
+				: (tiers[0]?.tierId || "standard");
+
+			const threeTierModel = tiers.length > 0
+				? {
+						selectedTier: effectiveSelectedTier,
+						isCustomAlternatives: hasRealAlternatives,
+						tiers,
+					}
+				: null;
 
 			const enrichedPlans = dbPlans.map((p) => ({
 				...p,

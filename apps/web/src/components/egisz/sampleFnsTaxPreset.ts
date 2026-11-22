@@ -2,7 +2,7 @@
  * sampleFnsTaxPreset.ts — Sample fixture for FNS Tax Deduction (КНД 1151156)
  */
 
-import type { FnsTaxCertificatePayload } from "./cdaR2XmlBuilder";
+import type { FnsTaxCertificatePayload } from "./cdaR2/fnsTaxTypes";
 
 export const SAMPLE_FNS_TAX_1151156_PRESET: FnsTaxCertificatePayload = {
 	documentNumber: "СПР-2026/0412",

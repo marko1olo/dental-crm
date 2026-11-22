@@ -1,8 +1,10 @@
+import { computePayloadHash } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { periodontogramSnapshots } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { computeSnapshotIndices } from "../../services/periodontogramIndices.js";
 import {
@@ -42,6 +44,28 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
+
+			// Каноническая проверка idempotencyKeys: при сетевом ретрае закрытия возвращаем кэшированный 200 OK
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+			}
 		}
 
 		const [snapshot] = await db
@@ -72,20 +96,26 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 			parsed.success && parsed.data?.notes !== undefined
 				? parsed.data.notes
 				: snapshot.notes;
-		const { teeth, sites, formattedTeeth } = await fetchSnapshotTeethAndSites(id);
-		const computedIndices = computeSnapshotIndices(teeth, sites);
 		const identity = getRequestIdentity(req);
 		const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
 		const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
 
-		const closed = await db.transaction(async (tx) => {
+		// Дефект 2: атомарная транзакция закрытия снимка periodontogram_snapshots
+		// Чтение fetchSnapshotTeethAndSites(id, tx) перенесено внутрь единой транзакции
+		const { closed, formattedTeeth } = await db.transaction(async (tx) => {
+			const { teeth, sites, formattedTeeth } = await fetchSnapshotTeethAndSites(id, tx);
+			const computedIndices = computeSnapshotIndices(teeth, sites);
+
 			const [result] = await tx
 				.update(periodontogramSnapshots)
 				.set({
 					status: "closed",
 					closedAt: new Date(),
 					closedByUserId,
-					indices: computedIndices,
+					indices: {
+						...((snapshot.indices as Record<string, unknown>) || {}),
+						...computedIndices,
+					},
 					notes,
 					updatedAt: new Date(),
 				})
@@ -96,10 +126,41 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 					),
 				)
 				.returning();
-			return result;
+			return { closed: result, formattedTeeth };
 		});
 
-		return reply.send({ success: true, data: { ...closed, teeth: formattedTeeth } });
+		const responsePayload = { success: true, data: { ...closed, teeth: formattedTeeth } };
+
+		if (idempotencyKey) {
+			try {
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(req.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+							lockedAt: new Date(),
+						},
+					});
+			} catch (idemErr) {
+				req.log.warn(
+					{ err: idemErr, idempotencyKey, orgId },
+					"[periodontogram] Не удалось сохранить ключ идемпотентности",
+				);
+			}
+		}
+
+		return reply.send(responsePayload);
 	});
 
 	/**

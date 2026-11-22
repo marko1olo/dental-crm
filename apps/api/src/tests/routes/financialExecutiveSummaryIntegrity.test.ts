@@ -186,4 +186,63 @@ describe("FIN-01: Financial Executive Summary Decoupling & Double-Revenue Defens
 			await purgeFixtureOrganizations([orgId]);
 		}
 	});
+
+	it("accurately unpacks split-tender payments without dumping everything into cardRub", async () => {
+		const orgId = fixtureUuid("fin01Split", 1);
+		const patientId = fixtureUuid("fin01Split", 2);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		const now = new Date();
+		const from = new Date(now.getTime() - 24 * 3600 * 1000);
+		const to = new Date(now.getTime() + 24 * 3600 * 1000);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Клиника Сплит Платежей Тест",
+				});
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Сплитов Сергей Сергеевич",
+					phone: "+79004445566",
+				});
+				// Сплит-платеж на 60 000 ₽: 20 000 ₽ нал + 30 000 ₽ карта + 10 000 ₽ СБП
+				await tx.insert(payments).values({
+					organizationId: orgId,
+					patientId,
+					amountRub: 60000,
+					amountKopecks: 6000000n,
+					method: "split",
+					status: "paid",
+					paidAt: now,
+					clientMutationId: `mut-split-${Date.now()}`,
+					fiscalReceipt: {
+						cashKopecks: 2000000,
+						cardKopecks: 3000000,
+						sbpKopecks: 1000000,
+					},
+					note: "Сплит-платеж (нал + карта + СБП)",
+				});
+			});
+
+			const report = await financialExecutiveSummary({
+				organizationId: orgId,
+				from,
+				to,
+			});
+
+			// Проверяем честную распаковку сплитов без искажения кассы и ДДС
+			assert.equal(report.paymentBreakdown.cash.amountRub, 20000, "Cash tender in split must be 20 000 ₽");
+			assert.equal(report.paymentBreakdown.card.amountRub, 30000, "Card tender in split must be 30 000 ₽");
+			assert.equal(report.paymentBreakdown.sbp.amountRub, 10000, "SBP tender in split must be 10 000 ₽");
+			assert.equal(report.cashInflowRub, 60000, "Total cash inflow must be 60 000 ₽");
+			assert.equal(report.totalRevenueRub, 60000, "Total revenue must be 60 000 ₽");
+			assert.equal(report.isEmpty, false);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
 });

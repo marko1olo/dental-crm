@@ -16,6 +16,10 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
 	const patient = s.effectivePatient ?? s.documentPatient ?? s.activePatient ?? s.dashboard?.patients?.[0] ?? null;
+	const patientRecord = patient as Record<string, unknown> | null;
+	const patientDepositRub = typeof patientRecord?.depositRub === "number" ? patientRecord.depositRub : 0;
+	const patientFamilyBalanceRub = typeof patientRecord?.familyBalanceRub === "number" ? patientRecord.familyBalanceRub : 0;
+	const patientLoyaltyPoints = typeof patientRecord?.loyaltyPointsBalance === "number" ? patientRecord.loyaltyPointsBalance : 0;
 	const summaryAmount = Number(s.paymentAmount) > 0 ? Number(s.paymentAmount) : (s.effectiveBillingSummary?.totalDueRub ?? 0);
 	const patientName: string | null = patient?.fullName ?? null;
 
@@ -43,10 +47,10 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 				<LoyaltyStudioModal
 					isOpen={isLoyaltyModalOpen}
 					onClose={() => setIsLoyaltyModalOpen(false)}
-					clinicName={s.dashboard?.clinicSettings?.name}
+					clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName}
 					patientId={patient.id}
 					patientName={patientName ?? ""}
-					initialPointsBalance={patient.loyaltyPointsBalance}
+					initialPointsBalance={patientLoyaltyPoints}
 					currentInvoiceAmountKop={rublesToKopecks(summaryAmount)}
 					onRedeemSuccess={(redeemedPointsRub: number) => {
 						if (typeof s.setPaymentAmount === "function" && summaryAmount > 0) {
@@ -72,10 +76,10 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					patientId={patient?.id || undefined}
 					patientName={patientName || undefined}
 					patientPhone={patient?.phone || undefined}
-					patientDepositRub={patient?.depositRub ?? 0}
-					patientFamilyBalanceRub={patient?.familyBalanceRub ?? 0}
+					patientDepositRub={patientDepositRub}
+					patientFamilyBalanceRub={patientFamilyBalanceRub}
 					cashierFullName={s.paymentFiscalCashierName || undefined}
-					clinicLegalName={s.dashboard?.clinicSettings?.name || undefined}
+					clinicLegalName={s.dashboard?.clinicSettings?.profile?.legalName ?? s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName ?? undefined}
 					onClose={() => setIsPaymentModalOpen(false)}
 					onSuccess={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}
 					onPaymentComplete={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}

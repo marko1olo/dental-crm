@@ -14,7 +14,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { patientStatus } from "../_common.js";
-import { organizations } from "../auth.js";
+import { clinics, organizations } from "../auth.js";
 import { getPatientTableIndexes } from "./patientIndexes.js";
 
 export const patients = pgTable(
@@ -35,6 +35,9 @@ export const patients = pgTable(
 			"administrative_profile",
 		).$type<Partial<PatientAdministrativeProfile> | null>(),
 		familyGroupId: uuid("family_group_id"),
+		homeClinicId: uuid("home_clinic_id").references(() => clinics.id, {
+			onDelete: "set null",
+		}),
 		/**
 		 * Куда объединена карточка (миграция 0128). Заполнено — значит это дубль, все
 		 * записи, оплаты и снимки перенесены в указанную карточку.

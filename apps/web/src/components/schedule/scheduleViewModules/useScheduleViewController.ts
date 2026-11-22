@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { useScheduleStore } from "../../../store/scheduleStore";
@@ -12,7 +12,6 @@ import { useScheduleRosterData } from "../view/useScheduleRosterData";
 import { useScheduleChairDoctorOps } from "../view/useScheduleChairDoctorOps";
 import { useScheduleShortcuts } from "../view/useScheduleShortcuts";
 import { useScheduleFocus } from "../view/useScheduleFocus";
-import { findPreventiveInspectionCandidates } from "../doctorFreeSlotsEngine";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { useScheduleShiftDrawerController } from "./useScheduleShiftDrawerController";
 import { useScheduleFilterSummary } from "./useScheduleFilterSummary";
@@ -24,12 +23,18 @@ import type { ScheduleViewProps } from "./types";
 
 export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>) {
   const logicContext = useAppLogicContext();
-  const props = { ...(logicContext ?? {}), ...(rawProps ?? {}) } as ReturnType<
-    typeof useAppLogicContext
-  > &
-    Partial<ScheduleViewProps>;
+  const raw = rawProps ?? {};
+  const loadDashboard = raw.loadDashboard ?? logicContext?.loadDashboard;
+  const setDashboard = raw.setDashboard ?? logicContext?.setDashboard;
+  const auth = (raw as { auth?: typeof logicContext.auth }).auth ?? logicContext?.auth;
+  const toDateTimeLocalValue = raw.toDateTimeLocalValue ?? logicContext?.toDateTimeLocalValue;
+  const updateNewAppointmentDraft = raw.updateNewAppointmentDraft ?? logicContext?.updateNewAppointmentDraft;
+  const patientName = raw.patientName ?? logicContext?.patientName;
+  const appointmentLabels = raw.appointmentLabels ?? logicContext?.appointmentLabels;
+  const shiftWarnings = raw.shiftWarnings ?? logicContext?.shiftWarnings;
+  const openScheduleWarning = raw.openScheduleWarning ?? logicContext?.openScheduleWarning;
 
-  useScheduleRealtime(props.loadDashboard);
+  useScheduleRealtime(loadDashboard);
   const isMobile = useIsMobile(768);
 
   const scheduleStore = useScheduleStore();
@@ -42,8 +47,8 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
   }, []);
 
   const clinicToday = todayScheduleDate();
-  const effectiveSortedAppointments = props.sortedAppointments ?? [];
-  const effectiveDashboard = props.dashboard;
+  const effectiveSortedAppointments = raw.sortedAppointments ?? logicContext?.sortedAppointments ?? [];
+  const effectiveDashboard = raw.dashboard ?? logicContext?.dashboard;
 
   const gridNav = useScheduleGridNavigation({
     scheduleDateFilter: scheduleStore.scheduleDateFilter || clinicToday,
@@ -52,7 +57,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     todayScheduleDate,
     effectiveSortedAppointments,
     dashboard: effectiveDashboard,
-    toDateTimeLocalValue: props.toDateTimeLocalValue,
+    toDateTimeLocalValue,
     scheduleDoctorFilterId: scheduleStore.scheduleDoctorFilterId,
     scheduleAssistantFilterId: scheduleStore.scheduleAssistantFilterId,
     scheduleChairFilterId: scheduleStore.scheduleChairFilterId,
@@ -69,22 +74,25 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
   });
 
   const preventiveCandidatesCount = useMemo(() => {
-    return findPreventiveInspectionCandidates({
-      patients: effectiveDashboard?.patients ?? [],
-      appointments: effectiveDashboard?.appointments ?? [],
-      minDaysSinceVisit: 150,
-      referenceDate: scheduleStore.scheduleDateFilter || undefined,
-    }).length;
+    if (!effectiveDashboard?.appointments || !effectiveDashboard?.patients) return 0;
+    const now = Date.now();
+    const thresholdMs = 150 * 24 * 3600 * 1000;
+    const recentPatientIds = new Set(
+      effectiveDashboard.appointments
+        .filter((a: Appointment) => a.startsAt && now - new Date(a.startsAt).getTime() < thresholdMs)
+        .map((a: Appointment) => a.patientId)
+        .filter(Boolean),
+    );
+    return effectiveDashboard.patients.filter((p) => p.id && !recentPatientIds.has(p.id)).length;
   }, [
     effectiveDashboard?.patients,
     effectiveDashboard?.appointments,
-    scheduleStore.scheduleDateFilter,
   ]);
 
   const rosterData = useScheduleRosterData({
     dashboard: effectiveDashboard,
     sortedAppointments: effectiveSortedAppointments,
-    auth: props.auth,
+    auth,
     currentDateKey: gridNav.currentDateKey,
   });
 
@@ -95,15 +103,26 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     );
   }, [rosterData.savedDoctorShifts, gridNav.currentDateKey]);
 
+  const chairOpsSetDashboard = useMemo(() => {
+    if (!setDashboard) return undefined;
+    return (updater: (prev: Dashboard) => Dashboard) => {
+      const dispatch = setDashboard as (action: (current: Dashboard | null) => Dashboard | null) => void;
+      dispatch((current) => {
+        if (!current) return current;
+        return updater(current);
+      });
+    };
+  }, [setDashboard]);
+
   const chairOps = useScheduleChairDoctorOps({
-    loadDashboard: props.loadDashboard,
-    setDashboard: props.setDashboard,
+    loadDashboard,
+    setDashboard: chairOpsSetDashboard,
     setScheduleChairFilterId: scheduleStore.setScheduleChairFilterId,
     setEditingChairData: modalStates.setEditingChairData,
     setIsQuickAddChairOpen: modalStates.setIsQuickAddChairOpen,
     setSavedDoctorShifts: rosterData.setSavedDoctorShifts,
     currentDateKey: gridNav.currentDateKey,
-    auth: props.auth,
+    auth,
     showToast,
   });
 
@@ -131,7 +150,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     scheduleDateFilter: scheduleStore.scheduleDateFilter || clinicToday,
     clinicToday,
     todayScheduleDate,
-    auth: props.auth,
+    auth,
     setQuickBookingSlot: dragDrop.setQuickBookingSlot,
     setQuickBookingOpen: dragDrop.setQuickBookingOpen,
     showToast,
@@ -144,9 +163,9 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     setWaitlistOpen: dragDrop.setWaitlistOpen,
     showCreateForm: modalStates.showCreateForm,
     setShowCreateForm: modalStates.setShowCreateForm,
-    updateNewAppointmentDraft: props.updateNewAppointmentDraft,
+    updateNewAppointmentDraft,
     focusNewAppointmentEditor,
-    patientName: props.patientName,
+    patientName: patientName as ((patients: Dashboard["patients"], id: string | null) => string) | undefined,
     setUseManualSelects: modalStates.setUseManualSelects,
     setShowClipboardPanel: modalStates.setShowClipboardPanel,
     setShowFreedSlotsPanel: modalStates.setShowFreedSlotsPanel,
@@ -168,7 +187,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
   const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) =>
     appointmentScheduleMissingFields(
       draft,
-      effectiveDashboard?.clinicSettings?.profile?.mode ?? "clinic",
+      effectiveDashboard?.clinicSettings?.profile?.mode ?? "small_clinic",
       effectiveDashboard?.clinicSettings?.staff ?? [],
       {
         chairs: effectiveDashboard?.clinicSettings?.chairs ?? [],
@@ -183,23 +202,23 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     scheduleDoctorFilterId: scheduleStore.scheduleDoctorFilterId,
     scheduleAssistantFilterId: scheduleStore.scheduleAssistantFilterId,
     scheduleChairFilterId: scheduleStore.scheduleChairFilterId,
-    appointmentLabels: props.appointmentLabels,
+    appointmentLabels,
     dashboard: effectiveDashboard,
     visibleDayGroups: gridNav.visibleDayGroups,
     scheduleOverlapCount: gridNav.scheduleOverlapCount,
-    shiftWarnings: props.shiftWarnings,
+    shiftWarnings,
     resetScheduleFilters: gridNav.resetScheduleFilters,
     setScheduleDateFilter: scheduleStore.setScheduleDateFilter,
-    openScheduleWarning: props.openScheduleWarning,
+    openScheduleWarning: typeof openScheduleWarning === "function" ? (openScheduleWarning as (warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number]) => void) : undefined,
   });
 
   const handleRetryDashboard = useCallback(() => {
-    if (typeof props.loadDashboard === "function") {
-      void props.loadDashboard();
+    if (typeof loadDashboard === "function") {
+      void loadDashboard();
     } else if (typeof logicContext?.loadDashboard === "function") {
       void logicContext.loadDashboard();
     }
-  }, [props.loadDashboard, logicContext?.loadDashboard]);
+  }, [loadDashboard, logicContext?.loadDashboard]);
 
   const { headerToolbarProps, activeViewPortProps, modalsLayerProps } =
     buildScheduleComponentProps({
@@ -213,7 +232,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
       shortcuts,
       scheduleStore,
       settingsStore,
-      props: props as Record<string, unknown>,
+      props: { ...(logicContext ?? {}), ...(rawProps ?? {}) } as Record<string, unknown>,
       logicContext,
       effectiveDashboard,
       clinicToday,

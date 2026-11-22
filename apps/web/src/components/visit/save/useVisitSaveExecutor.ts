@@ -1,7 +1,8 @@
 import { useCallback, type MutableRefObject } from "react";
 import type { DentalSpecialty, VisitDraftAutosave, VisitDraftAutosaveResponse } from "@dental/shared";
 import type { VisitNoteForm } from "../../../AppHelpers";
-import { denteAdminSecretRequestHeaders, queuePendingVisitSave, visitNoteDraftFromForm } from "../../../AppHelpers";
+import { queuePendingVisitSave, visitNoteDraftFromForm } from "../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { broadcastClinicalEntityChange } from "../../../services/storage";
 import { fetchWithHandling } from "../../../utils/networkUtils";
@@ -94,7 +95,7 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 					headers: {
 						"Content-Type": "application/json",
 						"Idempotency-Key": idempotencyKey,
-						...denteAdminSecretRequestHeaders(),
+						...getDenteAuthHeaders(),
 					},
 					body: JSON.stringify({
 						patientId: effectivePatientId,

@@ -72,9 +72,10 @@ export function calculateCohortRetention(
 						: (lead.paidAmountRub ?? 0);
 				totalRevenueRub += rev;
 			}
+			const record = lead as unknown as Record<string, unknown>;
 			if (
-				(lead as any).followUpStatus === "closed_won" ||
-				((lead as any).visitsCount && (lead as any).visitsCount > 1)
+				record.followUpStatus === "closed_won" ||
+				(typeof record.visitsCount === "number" && record.visitsCount > 1)
 			) {
 				repeatVisitsCount += 1;
 			}

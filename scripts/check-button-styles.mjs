@@ -21,6 +21,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -281,9 +282,9 @@ function main() {
 			console.error(`    Offending token/class: "${v.forbiddenClass}"`);
 			console.error(`    Context: ${v.snippet}\n`);
 		}
-		console.error(`Per MANDATE 8am: Buttons must use canonical .dente-btn styles.`);
-		console.error(`Primary CTA: Strictly ONE teal (#0d9488) button per visible context.`);
-		console.error(`Secondary/Presets/Pills: Neutral contour (paper/line/ink). No circus amber/purple!`);
+		printFailureManifesto("BUTTON_STYLES", {
+			details: `Обнаружено ${allViolations.length} нарушений канонического стиля кнопок (цирковые цвета, нестандартные токены).`,
+		});
 		process.exit(1);
 	}
 

@@ -11,6 +11,7 @@
 
 import * as http from "node:http";
 import * as net from "node:net";
+import { kopecksToRubles } from "@dental/shared";
 import { Fiscal54FzService } from "../billing/fiscal54fzService.js";
 import { FiscalReceiptFactory, type Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
 import type {
@@ -278,27 +279,28 @@ export class LanKktDriverService {
 			},
 			payments: [
 				...(receipt.payments.cashKopecks > 0
-					? [{ type: "cash", sum: receipt.payments.cashKopecks / 100 }]
+					? [{ type: "cash", sum: kopecksToRubles(receipt.payments.cashKopecks) }]
 					: []),
 				...(receipt.payments.electronicCardKopecks > 0 || receipt.payments.sbpKopecks > 0
 					? [
 							{
 								type: "electronically",
-								sum:
-									(receipt.payments.electronicCardKopecks + receipt.payments.sbpKopecks) / 100,
+								sum: kopecksToRubles(
+									receipt.payments.electronicCardKopecks + receipt.payments.sbpKopecks,
+								),
 							},
 						]
 					: []),
 				...(receipt.payments.prepaidKopecks > 0
-					? [{ type: "prepaid", sum: receipt.payments.prepaidKopecks / 100 }]
+					? [{ type: "prepaid", sum: kopecksToRubles(receipt.payments.prepaidKopecks) }]
 					: []),
 			],
 			items: receipt.items.map((item) => ({
 				type: "position",
 				name: item.tag1030_subjectName,
-				price: item.priceKopecks / 100,
+				price: kopecksToRubles(item.priceKopecks),
 				quantity: item.quantity,
-				amount: item.amountKopecks / 100,
+				amount: kopecksToRubles(item.amountKopecks),
 				paymentMethod:
 					item.tag1214_paymentMethod === 1
 						? "fullPrepayment"
@@ -330,7 +332,7 @@ export class LanKktDriverService {
 						}
 					: {}),
 			})),
-			total: receipt.totalKopecks / 100,
+			total: kopecksToRubles(receipt.totalKopecks),
 		};
 	}
 
@@ -435,6 +437,74 @@ export class LanKktDriverService {
 		const commandCode =
 			type === "openShift" ? 0xe0 : type === "closeShift" ? 0x21 : 0x20;
 		return this.formatShtrikhMCommandPacket(commandCode, Buffer.alloc(0), password);
+	}
+
+	/**
+	 * Sends binary command packet to Shtrikh-M fiscal register over TCP socket.
+	 */
+	public static async sendShtrikhCommand(
+		host: string,
+		port: number,
+		packet: Buffer,
+		timeoutMs = 3000,
+	): Promise<{ success: boolean; data?: Buffer; errorCode?: number; errorMessage?: string }> {
+		return new Promise((resolve) => {
+			const socket = new net.Socket();
+			let hasResolved = false;
+			let response = Buffer.alloc(0);
+
+			const onDone = (res: { success: boolean; data?: Buffer; errorCode?: number; errorMessage?: string }) => {
+				if (hasResolved) return;
+				hasResolved = true;
+				socket.destroy();
+				resolve(res);
+			};
+
+			socket.setTimeout(timeoutMs);
+			socket.once("connect", () => {
+				socket.write(packet);
+			});
+			socket.on("data", (chunk) => {
+				response = Buffer.concat([response, chunk]);
+				if (response.length >= 4) {
+					const length = response[1]!;
+					if (response.length >= length + 2) {
+						const errorCode = response[3]!;
+						if (errorCode !== 0) {
+							onDone({
+								success: false,
+								errorCode,
+								errorMessage: LanKktDriverService.mapShtrikhErrorCode(errorCode),
+								data: response,
+							});
+						} else {
+							onDone({ success: true, errorCode: 0, data: response });
+						}
+					}
+				}
+			});
+			socket.once("timeout", () => {
+				onDone({
+					success: false,
+					errorMessage: `Таймаут обмена командами с ШТРИХ-М (${host}:${port})`,
+				});
+			});
+			socket.once("error", (err) => {
+				onDone({
+					success: false,
+					errorMessage: `Ошибка сокета ШТРИХ-М: ${err.message}`,
+				});
+			});
+
+			try {
+				socket.connect(port, host);
+			} catch (err: unknown) {
+				onDone({
+					success: false,
+					errorMessage: err instanceof Error ? err.message : String(err),
+				});
+			}
+		});
 	}
 
 	/**
@@ -563,7 +633,7 @@ export class LanKktDriverService {
 
 				const qrString = Fiscal54FzService.generate54FzQrString({
 					issuedAt: now,
-					totalRub: receipt.totalKopecks / 100,
+					totalRub: kopecksToRubles(receipt.totalKopecks),
 					fnSerial,
 					fiscalDocNumber,
 					fiscalSign,
@@ -596,13 +666,17 @@ export class LanKktDriverService {
 					};
 				}
 
+				// Query physical Shtrikh-M device status via command 0x11
+				const statusPacket = this.formatShtrikhMCommandPacket(0x11, Buffer.alloc(0), 30);
+				const cmdRes = await LanKktDriverService.sendShtrikhCommand(cfg.host, cfg.port, statusPacket, cfg.timeoutMs);
+
 				return {
 					success: false,
 					status: "hardware_offline",
 					fnSerial: fallbackFn,
 					receiptIssuedAt: now.toISOString(),
-					errorCode: "SHTRIKH_PENDING_SPOOL",
-					errorMessage: "Фискализация через сокет ШТРИХ-М передана в спулер очередей",
+					errorCode: cmdRes.errorCode ? `SHTRIKH_ERR_${cmdRes.errorCode}` : "SHTRIKH_HARDWARE_OFFLINE",
+					errorMessage: cmdRes.errorMessage || "ШТРИХ-М не вернул фискальные параметры (ФД / ФПД) из ФН. Чек буферизован в очереди.",
 				};
 			}
 
@@ -620,7 +694,7 @@ export class LanKktDriverService {
 				});
 				const qrString = Fiscal54FzService.generate54FzQrString({
 					issuedAt: now,
-					totalRub: receipt.totalKopecks / 100,
+					totalRub: kopecksToRubles(receipt.totalKopecks),
 					fnSerial,
 					fiscalDocNumber,
 					fiscalSign,
@@ -960,27 +1034,33 @@ export class LanKktDriverService {
 					};
 				}
 
-				const fnSerial = fallbackFn || "9960440302145896";
-				const shiftNumber = params?.shiftNumber ?? 1;
-				const fiscalDocNumber = String(2000 + shiftNumber);
-				const fiscalSign = String(1000000000 + ((shiftNumber * 9876543) % 900000000));
-				const qrString = Fiscal54FzService.generate54FzQrString({
-					issuedAt: now,
-					totalRub: 0,
-					fnSerial,
-					fiscalDocNumber,
-					fiscalSign,
-					operationType: 1,
-				});
+				const packet = this.formatShtrikhShiftPacket("closeShift", 30);
+				const cmdRes = await LanKktDriverService.sendShtrikhCommand(
+					cfg.host,
+					cfg.port,
+					packet,
+					cfg.timeoutMs,
+				);
+				if (!cmdRes.success) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: cmdRes.errorCode
+							? `SHTRIKH_ERR_${cmdRes.errorCode}`
+							: "SHTRIKH_Z_REPORT_ERROR",
+						errorMessage:
+							cmdRes.errorMessage ||
+							`Ошибка выполнения Z-отчета на ШТРИХ-М (${cfg.host}:${cfg.port})`,
+					};
+				}
 
 				return {
 					success: true,
 					status: "closed",
-					shiftNumber,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					fnSerial,
-					qrString,
+					shiftNumber: params?.shiftNumber ?? 1,
+					fnSerial: fallbackFn,
 					issuedAt: now.toISOString(),
 				};
 			}
@@ -1130,7 +1210,51 @@ export class LanKktDriverService {
 				};
 			}
 
-			if (cfg.model === "shtrikh_m_tcp" || cfg.model === "emulator") {
+			if (cfg.model === "shtrikh_m_tcp") {
+				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
+				if (!ping.reachable) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: "SHTRIKH_UNREACHABLE",
+						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
+					};
+				}
+
+				const packet = this.formatShtrikhShiftPacket("reportX", 30);
+				const cmdRes = await LanKktDriverService.sendShtrikhCommand(
+					cfg.host,
+					cfg.port,
+					packet,
+					cfg.timeoutMs,
+				);
+				if (!cmdRes.success) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: cmdRes.errorCode
+							? `SHTRIKH_ERR_${cmdRes.errorCode}`
+							: "SHTRIKH_X_REPORT_ERROR",
+						errorMessage:
+							cmdRes.errorMessage ||
+							`Ошибка выполнения X-отчета на ШТРИХ-М (${cfg.host}:${cfg.port})`,
+					};
+				}
+
+				return {
+					success: true,
+					status: "printed",
+					shiftNumber: params?.shiftNumber ?? 1,
+					fnSerial: fallbackFn,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "emulator") {
 				return {
 					success: true,
 					status: "printed",

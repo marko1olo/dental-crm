@@ -22,10 +22,13 @@ export function useSterilizationDrawerLogic(
 	onClose?: () => void,
 ) {
 	const appLogic = useOptionalAppLogicContext();
+	const authAny = appLogic?.auth as { currentUser?: { fullName?: string; name?: string }; activeWorkspaceProfile?: { title?: string } } | undefined;
+	const userAny = appLogic as { user?: { name?: string } } | null | undefined;
 	const sessionStaffName =
-		appLogic?.auth?.currentUser?.name ||
-		appLogic?.auth?.currentUser?.fullName ||
-		appLogic?.user?.name ||
+		authAny?.currentUser?.name ||
+		authAny?.currentUser?.fullName ||
+		userAny?.user?.name ||
+		authAny?.activeWorkspaceProfile?.title ||
 		"Смирнова А. В. (ассистент / медсестра ЦСО)";
 
 	const [selectedPresetId, setSelectedPresetId] =

@@ -26,7 +26,7 @@ export interface QuickTemplateItem {
 export interface BuildQuickTemplatesParams {
 	clinicName: string;
 	clinicAddress: string;
-	clinicPhone?: string;
+	clinicPhone?: string | undefined;
 	effectiveName: string;
 	upcomingAppointment: {
 		formattedDate: string;

@@ -3,7 +3,8 @@
  */
 
 import { formatHl7DateTime } from "@dental/shared/cda";
-import type { EgiszDentalCdaPayload, FnsTaxCertificatePayload } from "../cdaR2XmlBuilder";
+import type { EgiszDentalCdaPayload } from "../cdaR2/cdaTypes";
+import type { FnsTaxCertificatePayload } from "../cdaR2/fnsTaxTypes";
 
 export function generateEgiszXmlFilename(payload: EgiszDentalCdaPayload): string {
 	const docCode = payload.docTypeCode || "105";

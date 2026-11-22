@@ -126,10 +126,8 @@ export function SettingsMessengersTab({
 						}}
 						onOpenBotStudio={() => setIsBotStudioOpen(true)}
 						onOpenOperatorDesk={() => {
-							if (appLogic?.setActiveView) {
-								appLogic.setActiveView("chat");
-							} else if (appLogic?.setCurrentView) {
-								appLogic.setCurrentView("chat");
+							if (typeof appLogic?.setCurrentView === "function") {
+								appLogic.setCurrentView("communications");
 							} else {
 								showToast("Переход в диалоги оператора ботов", "info");
 							}

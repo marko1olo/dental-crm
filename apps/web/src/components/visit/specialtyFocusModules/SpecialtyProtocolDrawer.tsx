@@ -22,10 +22,10 @@ export interface PatientSummary {
 	readonly name?: string | undefined;
 	readonly phone?: string | null | undefined;
 	readonly birthDate?: string | Date | null | undefined;
-	readonly age?: number | undefined;
+	readonly age?: number | string | undefined;
 	readonly weight?: number | undefined;
 	readonly weightKg?: number | null | undefined;
-	readonly allergies?: string | null | undefined;
+	readonly allergies?: string | readonly string[] | string[] | null | undefined;
 	readonly representativeFullName?: string | undefined;
 	readonly representativePhone?: string | undefined;
 	readonly representativeRole?: string | undefined;
@@ -37,6 +37,7 @@ export interface PatientSummary {
 		readonly phone?: string | undefined;
 		readonly role?: string | undefined;
 	} | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface User {
@@ -47,11 +48,8 @@ export interface User {
 }
 
 export interface SpecialtyDrawerContext {
-	readonly dashboard?: {
-		readonly organization?: {
-			readonly name?: string | null | undefined;
-		} | null | undefined;
-	} | null | undefined;
+	readonly dashboard?: unknown;
+	readonly [key: string]: unknown;
 }
 
 export interface SpecialtyProtocolDrawerProps {
@@ -134,9 +132,9 @@ export function SpecialtyProtocolDrawer({
 					representativeFullName={activePatient?.representativeFullName || activePatient?.representative?.fullName || activePatient?.parentName}
 					representativePhone={activePatient?.representativePhone || activePatient?.representative?.phone || activePatient?.parentPhone || activePatient?.phone || undefined}
 					representativeRole={activePatient?.representativeRole || activePatient?.representative?.role || activePatient?.parentRole}
-					allergies={activePatient?.allergies ?? undefined}
+					allergies={Array.isArray(activePatient?.allergies) ? activePatient.allergies.join(", ") : (typeof activePatient?.allergies === "string" ? activePatient.allergies : undefined)}
 					doctorName={activeDoctor?.fullName}
-					clinicName={context?.dashboard?.organization?.name ?? undefined}
+					clinicName={context && typeof context === "object" && "dashboard" in context && (context.dashboard as { organization?: { name?: string } } | undefined)?.organization?.name ? (context.dashboard as { organization: { name: string } }).organization.name : undefined}
 				/>
 			) : isSurgery ? (
 				<VisitSurgeryProtocolTab

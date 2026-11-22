@@ -64,7 +64,7 @@ export const DEMO_SHOWCASE_SEED_LEADS = [
 		source: "ПроДокторов",
 		status: "showed_up" as const,
 		expectedRevenue: "310000",
-		notes: "План лечения согласован (2 имплантата Straumann + коронки ZrO2), внесён аванс",
+		notes: "План лечения согласован (2 премиум-имплантата + коронки ZrO2), внесён аванс",
 		clinicalTags: ["Имплантация", "План согласован"],
 	},
 	{
@@ -73,7 +73,7 @@ export const DEMO_SHOWCASE_SEED_LEADS = [
 		source: "2ГИС",
 		status: "showed_up" as const,
 		expectedRevenue: "28500",
-		notes: "Проведена профгигиена AirFlow и лечение кариеса 16 зуба",
+		notes: "Проведена комплексная аппаратная гигиена и лечение кариеса 16 зуба",
 		clinicalTags: ["Санация"],
 	},
 	{

@@ -8,7 +8,8 @@ import {
 	percentageOfKopecks,
 	splitKopecks,
 	formatKopecksRu,
-} from "../../utils/money.js";
+	rublesToKopecks,
+} from "../../money.js";
 import { ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 } from "../../finance/taxDeduction.js";
 import {
 	PLAN_TIER_CONFIGS,
@@ -110,7 +111,7 @@ export function calculateTierNdflDeduction(
 		}
 	}
 
-	const annualLimitKopecks = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 * 100;
+	const annualLimitKopecks = rublesToKopecks(ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024);
 	const cappedCode01Kopecks = Math.min(code01BaseKopecks, annualLimitKopecks);
 	const totalEligibleBaseKopecks = cappedCode01Kopecks + code02BaseKopecks;
 

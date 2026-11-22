@@ -7,6 +7,12 @@ export interface LabOrderCostBreakdown {
 	suggestedPriceKopecks?: number;
 	estimatedCostKopecks?: number;
 	grossMarginKopecks?: number;
+	abutmentsCount?: number;
+	ponticsCount?: number;
+	abutmentsCostKopecks?: number;
+	ponticsCostKopecks?: number;
+	abutmentsPriceKopecks?: number;
+	ponticsPriceKopecks?: number;
 }
 
 export interface LabOrderTurnaroundResult {

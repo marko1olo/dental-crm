@@ -1,4 +1,4 @@
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 import type { DmsGuaranteeLetter } from "./guaranteeTypes.js";
 import type { DmsServiceCheckResult } from "./guaranteeEvaluationTypes.js";
 import { evaluateGuaranteeLetterCoverage } from "./guaranteeQuotaTracker.js";

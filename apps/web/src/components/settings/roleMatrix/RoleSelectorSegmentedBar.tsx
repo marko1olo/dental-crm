@@ -28,7 +28,7 @@ export const RoleSelectorSegmentedBar: React.FC<RoleSelectorSegmentedBarProps> =
 	return (
 		<div className="flex flex-col gap-2.5 min-w-0" data-testid="canonical-roles-section">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">Канонические роли (4)</span>
+				<span className="text-xs font-bold text-[var(--ink)]">Канонические роли (4)</span>
 				<button type="button" onClick={onToggleAdvanced} className="text-[11px] font-medium text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[32px] touch-manipulation whitespace-nowrap">
 					<SlidersHorizontal size={12} />
 					<span>{showAdvanced ? "Скрыть расширенные" : "Все роли клиники (8)"}</span>

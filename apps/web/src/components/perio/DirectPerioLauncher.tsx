@@ -136,6 +136,7 @@ export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
 
 	return (
 		<PerioStudioModal
+			key={resolvedPatientId || "perio-modal"}
 			isOpen={isOpen}
 			isModal={true}
 			onClose={handleClose}

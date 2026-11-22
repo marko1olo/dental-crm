@@ -382,6 +382,8 @@ export function buildPatientAdministrativeProfilePayload(
 				: null,
 		isAnonymous: draft.isAnonymous === true,
 		anonymousCode: draft.isAnonymous === true ? nullablePatientDraftValue(draft.anonymousCode ?? "") : null,
+		leadSource: nullablePatientDraftValue(draft.leadSource),
+		advertisingSource: nullablePatientDraftValue(draft.advertisingSource),
 		telegramUserId: nullablePatientDraftValue(draft.telegramUserId),
 		telegramUsername: nullablePatientDraftValue(draft.telegramUsername),
 		insuranceContractId: (() => {

@@ -16,7 +16,7 @@ export function QuickDoctorColorPicker({ selectedColor, onSelectColor }: QuickDo
 		<div className="space-y-1.5">
 			<span
 				id="quick-doctor-color-label"
-				className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5"
+				className="block text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5"
 			>
 				<Palette className="w-3.5 h-3.5 text-[var(--teal)]" />
 				<span>Цветовой бейдж врача (палитра)</span>

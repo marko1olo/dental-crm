@@ -18,7 +18,7 @@ export function useCampaignSegments(): readonly PatientSegmentOption[] {
 		}
 
 		const appointments = appLogic?.dashboard?.appointments ?? [];
-		const treatmentPlans = appLogic?.dashboard?.treatmentPlans ?? [];
+		const treatmentPlans = appLogic?.dashboard?.treatmentPlanItems ?? [];
 		const now = Date.now();
 		const sixMonthsMs = 180 * 24 * 60 * 60 * 1000;
 
@@ -26,7 +26,8 @@ export function useCampaignSegments(): readonly PatientSegmentOption[] {
 		const hadHygieneAppointment = new Set<string>();
 
 		for (const appt of appointments) {
-			const apptTime = appt.startTime ? new Date(appt.startTime).getTime() : 0;
+			if (!appt.patientId) continue;
+			const apptTime = appt.startsAt ? new Date(appt.startsAt).getTime() : 0;
 			const currentLatest = latestAppointmentByPatient.get(appt.patientId) ?? 0;
 			if (apptTime > currentLatest) {
 				latestAppointmentByPatient.set(appt.patientId, apptTime);
@@ -79,24 +80,21 @@ export function useCampaignSegments(): readonly PatientSegmentOption[] {
 			{
 				id: "no_visit_6m",
 				name: "Пациенты без визита > 6 мес.",
-				count: Math.max(1, noVisit6mCount),
+				count: noVisit6mCount,
 				description:
 					"Прошли лечение более полугода назад, требуется контрольный осмотр и гигиена",
 			},
 			{
 				id: "missed_hygiene",
 				name: "Пропустили регулярную гигиену",
-				count: Math.max(1, missedHygieneCount || Math.round(noVisit6mCount * 0.35)),
+				count: missedHygieneCount,
 				description:
 					"Индивидуальный график профгигиены нарушен более чем на 2 месяца",
 			},
 			{
 				id: "ortho_therapy",
 				name: "Ортодонтия и терапия",
-				count: Math.max(
-					1,
-					orthoTherapyPatientIds.size || Math.round(livePatients.length * 0.4),
-				),
+				count: orthoTherapyPatientIds.size,
 				description:
 					"Пациенты с активными или незавершенными планами терапевтического лечения",
 			},
@@ -111,6 +109,6 @@ export function useCampaignSegments(): readonly PatientSegmentOption[] {
 	}, [
 		appLogic?.dashboard?.patients,
 		appLogic?.dashboard?.appointments,
-		appLogic?.dashboard?.treatmentPlans,
+		appLogic?.dashboard?.treatmentPlanItems,
 	]);
 }

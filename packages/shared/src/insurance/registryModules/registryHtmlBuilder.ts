@@ -1,5 +1,5 @@
 import { escapeXml } from "../../cda/c14n.js";
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import type { DmsRegistryData } from "./registryTypes.js";
 import { calculateDmsRegistryTotals } from "./registryKopeckCalculator.js";
 import { REGISTRY_A4_HTML_STYLE } from "./registryHtmlStyles.js";

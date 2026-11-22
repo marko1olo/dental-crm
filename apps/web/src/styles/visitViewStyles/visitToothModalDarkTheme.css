@@ -1,0 +1,7 @@
+/* visitToothModalDarkTheme.css - dark theme token mappings */
+[data-theme="dark"] .visit-tooth-modal,
+.dark .visit-tooth-modal {
+	background-color: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}

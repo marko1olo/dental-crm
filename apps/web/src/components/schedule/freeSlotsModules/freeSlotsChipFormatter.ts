@@ -9,7 +9,7 @@ import type {
 	FindNextDoctorFreeSlotParams,
 	QuickRepeatSlotsResult,
 } from "./freeSlotsTypes";
-import { findDoctorFreeSlots } from "./slotAvailabilityFilters";
+import { findDoctorFreeSlots } from "@dental/shared";
 
 /**
  * 1-Click Fast Re-booking algorithm:

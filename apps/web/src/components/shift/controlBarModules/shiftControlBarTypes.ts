@@ -19,9 +19,9 @@ export interface DoctorShiftStats {
 	readonly doctorCommissionPct: number;
 	readonly estimatedDoctorPayoutRub: number;
 	readonly hasActiveOvertime: boolean;
-	readonly chairOccupancyPct?: number;
-	readonly shiftDurationSeconds?: number;
-	readonly shiftStartTimeIso?: string;
+	readonly chairOccupancyPct?: number | undefined;
+	readonly shiftDurationSeconds?: number | undefined;
+	readonly shiftStartTimeIso?: string | undefined;
 	readonly cashBreakdown?: DoctorShiftCashBreakdown | undefined;
 }
 

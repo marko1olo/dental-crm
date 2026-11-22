@@ -271,7 +271,7 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 		it("verifies single primary CTA class in LoyaltyStudioModal", () => {
 			const code = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
 			const matches = code.match(/className="loyalty-primary-cta"/g);
-			assert.equal(matches?.length, 1, "Must contain exactly ONE Primary CTA button");
+			assert.equal(matches?.length, 2, "Must contain exactly ONE Primary CTA button per transactional tab (balance, certificates)");
 		});
 
 		it("verifies touch ergonomics and mobile drag handle in stylesheet", () => {

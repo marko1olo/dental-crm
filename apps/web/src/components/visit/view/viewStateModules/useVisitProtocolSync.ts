@@ -9,7 +9,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import { useVisitStore } from "../../../../store/visitStore";
 import {
@@ -26,7 +26,7 @@ export interface UseVisitProtocolSyncParams {
 	flushPendingVisitSaves: VisitViewProps["flushPendingVisitSaves"];
 	isQueueCockpitForced: boolean;
 	setSelectedPatientId?: ((id: string) => void) | undefined;
-	appLogic?: Record<string, unknown> | undefined;
+	appLogic?: Record<string, unknown> | null | undefined;
 }
 
 export function useVisitProtocolSync({
@@ -53,7 +53,7 @@ export function useVisitProtocolSync({
 		async function fetchPatientTreatmentPlan() {
 			try {
 				const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: getDenteAuthHeaders(),
 				});
 				if (!res.ok) return;
 				const data = await res.json();

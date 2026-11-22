@@ -4,7 +4,7 @@
  * Mandates:
  * - 8e (Doctor & Staff Autonomy: buttons NEVER disabled, instant defaults)
  * - 8n (Solo-Doctor & Small Clinic 1-3 chairs sovereignty: zero bureaucracy)
- * - 8am (Exactly ONE Primary CTA button var(--teal, #0d9488) per visible context)
+ * - 8am (Exactly ONE Primary CTA button var(--primary) per visible context)
  * - 8ze / Apple HIG (Touch targets >= 44x44px, native Bottom Sheet on mobile, 0px horizontal scroll)
  * - 8x / 8ap (Human Russian clinical language, zero raw law numbers)
  * - 8b (Healthy sweet spot: modular subcomponents under components/insurance/studio/)

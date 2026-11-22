@@ -80,7 +80,7 @@ export const RefundItemsSelectionTable: React.FC<RefundItemsSelectionTableProps>
 									</div>
 
 									<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted,#64748b)] mt-1">
-										<span>Код: {srv.code804n || "A16.07.002"}</span>
+										<span>Код: {srv.code || srv.code804n || "A16.07.002"}</span>
 										<span>•</span>
 										<span>Врач: {srv.doctorName || doctorName}</span>
 										<span>•</span>

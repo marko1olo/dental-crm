@@ -391,10 +391,15 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 		});
 
 		it("zero disabled buttons and zero cartoon emojis in VisitAnamnesisTab.tsx", () => {
-			const content = fs.readFileSync(
-				path.join(webSrc, "components/visit/VisitAnamnesisTab.tsx"),
-				"utf-8",
-			);
+			const tabPath = path.join(webSrc, "components/visit/VisitAnamnesisTab.tsx");
+			const tabDir = path.join(webSrc, "components/visit/anamnesisTab");
+			let content = fs.readFileSync(tabPath, "utf-8");
+			if (fs.existsSync(tabDir)) {
+				const childFiles = fs.readdirSync(tabDir).filter((f) => f.endsWith(".tsx"));
+				for (const cf of childFiles) {
+					content += "\n" + fs.readFileSync(path.join(tabDir, cf), "utf-8");
+				}
+			}
 
 			// Autonomy check
 			assert.ok(!content.includes("disabled={!"), "Must have 0 disabled buttons");

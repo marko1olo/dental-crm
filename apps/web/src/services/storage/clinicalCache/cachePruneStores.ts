@@ -8,6 +8,7 @@ import {
 	yieldToMainThread,
 } from "../../offline/offlineStorage";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
+import { logger } from "../../../utils/logger";
 import type { ClinicalCachedEntity } from "../storageTypes";
 import { inMemoryEntityCacheMap, removeLocalStorageCachedEntity } from "./cacheStorageMemory";
 
@@ -57,7 +58,9 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 					}
 					if (++op % 50 === 0) await yieldToMainThread();
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[CachePrune] Pruning clinical cache store failed:", err);
+			}
 		}
 
 		if (db.objectStoreNames.contains(DRAFTS_STORE_NAME)) {
@@ -80,7 +83,9 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 					}
 					if (++op % 50 === 0) await yieldToMainThread();
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[CachePrune] Pruning clinical cache store failed:", err);
+			}
 		}
 
 		if (db.objectStoreNames.contains(MUTATIONS_STORE_NAME)) {
@@ -101,7 +106,9 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 					}
 					if (++op % 50 === 0) await yieldToMainThread();
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[CachePrune] Pruning clinical cache store failed:", err);
+			}
 		}
 
 		if (db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) {
@@ -124,8 +131,12 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 					}
 					if (++op % 50 === 0) await yieldToMainThread();
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[CachePrune] Pruning clinical cache store failed:", err);
+			}
 		}
-	} catch {}
+	} catch (err) {
+		logger.warn("[CachePrune] Opening outbox database for prune failed:", err);
+	}
 	return { clinical, drafts, mutations, schedules };
 }

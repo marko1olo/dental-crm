@@ -17,7 +17,7 @@ import {
 } from "./quantumEngineTypes";
 import { buildQuantumBuckets } from "./quantumIndexBuilder";
 import { checkQuantumQuanta } from "./quantumCollisionChecker";
-import { findQuantumFreeWindow } from "./quantumSlotFinder";
+import { safeBuildSlotIso } from "./gridSlotMath";
 
 export {
   QUANTUM_MINUTES,
@@ -32,6 +32,43 @@ export {
   type QuantumCollisionParams,
   isMaintenanceBlock,
 };
+
+export function findQuantumFreeWindow(
+  dateKey: string,
+  checkFn: (hour: string) => QuantumCollisionResult,
+  startingHour: string,
+  durationMinutes: number,
+  timezone = "Europe/Moscow",
+): QuantumSlotAlternative | null {
+  const startMin = snapMinutesTo15Min(parseTimeToMinutes(startingHour));
+
+  for (
+    let candidateMin = startMin;
+    candidateMin + durationMinutes <= CLINIC_DAY_END_MINUTES;
+    candidateMin += QUANTUM_MINUTES
+  ) {
+    const candHour = formatMinutesToTime(candidateMin);
+    const res = checkFn(candHour);
+
+    if (!res.hasCollision) {
+      const endHour = formatMinutesToTime(candidateMin + durationMinutes);
+      const { startIso, endIso } = safeBuildSlotIso(
+        dateKey,
+        candHour,
+        durationMinutes,
+        timezone,
+      );
+      return {
+        timeDisplay: candHour,
+        label: `${candHour} – ${endHour}`,
+        startsAt: startIso,
+        endsAt: endIso,
+      };
+    }
+  }
+
+  return null;
+}
 
 export class ScheduleQuantumCollisionIndex {
   private readonly chairOccupancy: Map<string, Map<number, Appointment | ChairMaintenanceBlock>>;
@@ -84,6 +121,7 @@ export class ScheduleQuantumCollisionIndex {
       (hour) => this.checkCollision({ ...params, slotHour: hour }),
       params.startingHour,
       params.durationMinutes,
+      this.timezone,
     );
   }
 

@@ -8,6 +8,7 @@
 import React from "react";
 import { ChevronDown, Stethoscope, Armchair } from "lucide-react";
 import { workspaceTopbarLabels } from "../../workspaceUiLabels";
+import { BranchSelector } from "./BranchSelector";
 import {
 	formatDisplayClinicName,
 	type WorkspaceTopBarStatusAndSearchProps,
@@ -30,7 +31,7 @@ export function WorkspaceTopBarStatusAndSearch({
 			</div>
 
 			{/* Название клиники и дата */}
-			<div className="topbar-clinic flex-1 sm:flex-initial min-w-0 sm:max-w-[360px] lg:max-w-[480px] max-w-full flex flex-col justify-center leading-tight">
+			<div className="topbar-clinic hidden sm:flex flex-1 sm:flex-initial min-w-0 sm:max-w-[360px] lg:max-w-[480px] flex-col justify-center leading-tight">
 				<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 text-[var(--muted)] hidden sm:block">
 					{formattedDate.replace(" г.", "").replace(",", " ·")}
 				</p>
@@ -41,6 +42,9 @@ export function WorkspaceTopBarStatusAndSearch({
 					<span>{formatDisplayClinicName(clinicName)}</span>
 				</h1>
 			</div>
+
+			{/* Селектор отделения сети клиник */}
+			<BranchSelector defaultClinicName={clinicName ?? undefined} />
 
 			{/* Тихий индикатор кабинета для клиники 1-3 кресел */}
 			{cabinetName && (

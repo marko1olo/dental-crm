@@ -31,7 +31,7 @@ export const MarketingNewPromoForm: React.FC<MarketingNewPromoFormProps> = ({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		const trimmedTitle = title.trim() || "Специальная акция клиники";
-		const autoCode = `PROMO${Math.floor(1000 + Math.random() * 9000)}`;
+		const autoCode = `PROMO${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 		const trimmedCode = (promoCode.trim() || autoCode).toUpperCase();
 
 		const newPromo: MarketingPromo = {

@@ -7,7 +7,6 @@ import {
 	RefreshCw,
 	Smartphone,
 	Unlink,
-	Zap,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
 import { WhatsappQrInstructionsAccordion } from "./WhatsappQrInstructionsAccordion.js";
@@ -28,7 +27,7 @@ export interface WhatsappInstanceConnectionCardProps {
 	onTogglePairingMode: (enabled: boolean) => void;
 	onPhoneInputChange: (phone: string) => void;
 	onDisconnectQr: () => void;
-	onSimulateScan: () => void;
+	onSimulateScan?: (() => void) | undefined;
 	onToggleQrStep: (step: number) => void;
 	onChangeQrProvider?: (provider: QrProvider) => void;
 }
@@ -356,24 +355,6 @@ export function WhatsappInstanceConnectionCard({
 								</button>
 							</div>
 						)}
-
-						{/* Быстрая симуляция для мгновенного прохождения теста */}
-						<button
-							type="button"
-							className="btn-secondary compact-button"
-							onClick={onSimulateScan}
-							data-testid="qr-btn-check-session"
-							style={{
-								width: "100%",
-								justifyContent: "center",
-								fontSize: "11px",
-								color: "var(--teal)",
-								borderColor: "rgba(13, 148, 136, 0.3)",
-							}}
-						>
-							<Zap size={12} />
-							<span>Проверить / Симулировать сканирование</span>
-						</button>
 					</div>
 
 					{/* Инструкции в аккордеоне */}

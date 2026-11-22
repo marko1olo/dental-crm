@@ -120,8 +120,8 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		}
 
 		const body = request.body || {};
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body, tx);
+		return withTenantCtx(auth.organizationId, async () => {
+			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body);
 			if (!result) {
 				reply.status(404);
 				return { error: "PatientNotFound" };

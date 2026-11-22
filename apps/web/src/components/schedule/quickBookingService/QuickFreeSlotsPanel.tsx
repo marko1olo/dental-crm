@@ -1,7 +1,7 @@
 import { CalendarDays, X } from "lucide-react";
 import React from "react";
 import { showToast } from "../../GlobalToast";
-import type { DayFreeSlots } from "../doctorFreeSlotsEngine";
+import type { DayFreeSlots } from "@dental/shared";
 
 export interface QuickFreeSlotsPanelProps {
   durationMinutes: number;
@@ -55,7 +55,7 @@ export function QuickFreeSlotsPanel({
             .filter((day) => day.slots.length > 0)
             .map((day) => (
               <div key={day.date} className="space-y-1">
-                <div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+                <div className="text-[11px] font-medium text-[var(--muted)]">
                   {day.dateFormatted}
                 </div>
                 <div className="flex flex-wrap gap-1.5">

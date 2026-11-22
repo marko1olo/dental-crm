@@ -6,7 +6,7 @@ import {
 	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
 } from "@dental/shared";
-import { buildKnd1151156Xml } from "../../../documents/taxXml.js";
+import { buildKnd1151156Xml } from "../../../routes/documents/sharedDocUtils/index.js";
 import {
 	PATIENT_1_ID,
 	VISIT_1_ID,

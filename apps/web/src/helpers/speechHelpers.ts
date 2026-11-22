@@ -79,8 +79,6 @@ export {
 	visitNoteFormFromVisit,
 	visitNoteFormFromDraft,
 	visitNoteDraftFromForm,
-	type VisitNoteField,
-	type VisitNoteForm,
 } from "./clinicalCalculations";
 export type {
 	BrowserSpeechRecognition,

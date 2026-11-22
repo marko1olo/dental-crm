@@ -59,90 +59,6 @@ if (browserPath) {
 
 const browser = await chromium.launch(launchOptions);
 
-const context = await browser.newContext({
-	viewport: { width: 1440, height: 900 },
-	locale: "ru-RU",
-});
-
-await context.addInitScript(({ cTok, sTok, uid, fn }) => {
-	try {
-		localStorage.setItem("dente_demo_showcase", "true");
-		localStorage.setItem("dente_clinic_token", cTok);
-		localStorage.setItem("dente_staff_token", sTok);
-		localStorage.setItem("dente_active_session_token", sTok);
-		localStorage.setItem("dente_perspective", "orthodontic");
-		localStorage.setItem("dente_onboarding_completed", "true");
-		localStorage.setItem("dente_tour_completed", "true");
-		localStorage.setItem("dente_tour_dismissed", "true");
-		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-		localStorage.setItem("dente_active_role", "doctor");
-		localStorage.setItem("dente_role", "doctor");
-		localStorage.setItem("dental-crm:active-user:v1", JSON.stringify({ id: uid, fullName: fn, role: "doctor" }));
-		sessionStorage.setItem("dente_unlocked", "true");
-	} catch (_) {}
-}, {
-	cTok: auth.clinicToken,
-	sTok: auth.staffToken,
-	uid: auth.user.id,
-	fn: auth.user.fullName,
-});
-
-const page = await context.newPage();
-
-console.log("[NAV] Navigating to http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics...");
-await page.goto("http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics", {
-	waitUntil: "domcontentloaded",
-	timeout: 45000,
-}).catch((err) => console.log("[WARN] Navigation wait:", err.message));
-
-console.log("[WAIT] Waiting for .boot-state detachment...");
-await page.waitForFunction(() => {
-	const boot = document.querySelector(".boot-state");
-	const text = document.body ? document.body.innerText : "";
-	return (!boot || boot.clientHeight === 0) && !text.includes("Загрузка системы");
-}, { timeout: 35000 }).catch(() => {});
-
-console.log("[WAIT] Waiting for orthodontic studio modal...");
-try {
-	await page.waitForSelector('[data-testid="orthodontic-studio-modal"], .ortho-studio-modal', { state: "visible", timeout: 45000 });
-	console.log("[WAIT] Orthodontic studio modal is now visible!");
-} catch (e) {
-	console.log("[WARN] Modal not visible immediately, attempting fallback launcher click:", e.message);
-	const openBtn = await page.$('[data-testid="btn-open-ortho-protocol-widget"], [data-testid="ortho-toolbar-norm-btn"]');
-	if (openBtn) {
-		console.log("[CLICK] Clicking open button...");
-		await openBtn.click().catch(() => {});
-		await page.waitForSelector('[data-testid="orthodontic-studio-modal"], .ortho-studio-modal', { state: "visible", timeout: 20000 }).catch(() => {});
-	}
-}
-
-// Hide distracting onboarding/tour overlays & toasts
-await page.addStyleTag({
-	content: `
-		.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
-		.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
-		[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
-		.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay,
-		.sa-toast, [data-testid="global-toast"] {
-			display: none !important;
-			pointer-events: none !important;
-		}
-	`,
-}).catch(() => {});
-
-// Switch to aligners tab to showcase AlignerCaseTracker & BiteClassificationCard
-try {
-	const alignerTabBtn = page.locator('.ortho-tab-btn:has-text("Каппы"), .ortho-tab-btn:has-text("Элайнеры")').first();
-	await alignerTabBtn.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
-	if (await alignerTabBtn.isVisible()) {
-		console.log("[CLICK] Switching to Aligners & Bite tab...");
-		await alignerTabBtn.click();
-		await page.waitForTimeout(1000);
-	}
-} catch (e) {
-	console.log("[WARN] Tab switch:", e.message);
-}
-
 const states = [
 	{
 		filename: "01_orthodontics_studio_pc_light_1440x900.png",
@@ -172,7 +88,95 @@ const states = [
 
 for (const state of states) {
 	console.log(`\n[STATE] Switching to ${state.filename} (${state.viewport.width}x${state.viewport.height}, ${state.theme})...`);
-	await page.setViewportSize(state.viewport);
+
+	const context = await browser.newContext({
+		viewport: state.viewport,
+		locale: "ru-RU",
+		colorScheme: state.theme,
+	});
+
+	await context.addInitScript(({ cTok, sTok, uid, fn, theme }) => {
+		try {
+			const isDark = theme === "dark";
+			localStorage.setItem("dente_demo_showcase", "true");
+			localStorage.setItem("dente_clinic_token", cTok);
+			localStorage.setItem("dente_staff_token", sTok);
+			localStorage.setItem("dente_active_session_token", sTok);
+			localStorage.setItem("dente_perspective", "orthodontic");
+			localStorage.setItem("dente_onboarding_completed", "true");
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_tour_dismissed", "true");
+			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+			localStorage.setItem("dente_active_role", "doctor");
+			localStorage.setItem("dente_role", "doctor");
+			localStorage.setItem("dente_theme", theme);
+			localStorage.setItem("dente_theme_mode", theme);
+			localStorage.setItem("dental-crm:active-user:v1", JSON.stringify({ id: uid, fullName: fn, role: "doctor" }));
+			sessionStorage.setItem("dente_unlocked", "true");
+		} catch (_) {}
+	}, {
+		cTok: auth.clinicToken,
+		sTok: auth.staffToken,
+		uid: auth.user.id,
+		fn: auth.user.fullName,
+		theme: state.theme,
+	});
+
+	const page = await context.newPage();
+
+	console.log(`[NAV] Navigating to http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics...`);
+	await page.goto("http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics", {
+		waitUntil: "domcontentloaded",
+		timeout: 45000,
+	}).catch((err) => console.log("[WARN] Navigation wait:", err.message));
+
+	console.log("[WAIT] Waiting for .boot-state detachment...");
+	await page.waitForFunction(() => {
+		const boot = document.querySelector(".boot-state");
+		const text = document.body ? document.body.innerText : "";
+		return (!boot || boot.clientHeight === 0) && !text.includes("Загрузка системы");
+	}, { timeout: 35000 }).catch(() => {});
+
+	console.log("[WAIT] Waiting for orthodontic studio modal...");
+	try {
+		await page.waitForSelector('[data-testid="save-ortho-protocol-button"]', { state: "visible", timeout: 45000 });
+		console.log("[WAIT] Orthodontic studio modal is now visible!");
+	} catch (e) {
+		console.log("[WARN] Modal not visible immediately, attempting fallback launcher click:", e.message);
+		const openBtn = await page.$('[data-testid="btn-open-ortho-protocol-widget"], [data-testid="ortho-toolbar-norm-btn"]');
+		if (openBtn) {
+			console.log("[CLICK] Clicking open button...");
+			await openBtn.click().catch(() => {});
+			await page.waitForSelector('[data-testid="save-ortho-protocol-button"]', { state: "visible", timeout: 20000 }).catch(() => {});
+		}
+	}
+
+	// Hide distracting onboarding/tour overlays & toasts
+	await page.addStyleTag({
+		content: `
+			.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
+			.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
+			[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
+			.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay,
+			.sa-toast, [data-testid="global-toast"] {
+				display: none !important;
+				pointer-events: none !important;
+			}
+		`,
+	}).catch(() => {});
+
+	// Switch to aligners tab to showcase AlignerCaseTracker & BiteClassificationCard
+	try {
+		const alignerTabBtn = page.locator('.ortho-tab-btn:has-text("Каппы"), .ortho-tab-btn:has-text("Элайнеры")').first();
+		await alignerTabBtn.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+		if (await alignerTabBtn.isVisible()) {
+			console.log("[CLICK] Switching to Aligners & Bite tab...");
+			await alignerTabBtn.click();
+			await page.waitForTimeout(1000);
+		}
+	} catch (e) {
+		console.log("[WARN] Tab switch:", e.message);
+	}
 
 	await page.evaluate(({ theme }) => {
 		const isDark = theme === "dark";
@@ -183,14 +187,9 @@ for (const state of states) {
 		document.body.setAttribute("data-theme", theme);
 		document.body.classList.toggle("dark", isDark);
 		document.body.classList.toggle("light", !isDark);
-		localStorage.setItem("dente_theme", theme);
-		localStorage.setItem("dente_theme_mode", theme);
 	}, { theme: state.theme });
 
 	await page.waitForTimeout(800);
-	await page.waitForSelector(".boot-state", { state: "detached", timeout: 10000 }).catch(() => {});
-	await page.waitForSelector('[data-testid="ortho-visit-protocol-widget"], [data-testid="orthodontic-visit-protocol-widget"]', { state: "visible", timeout: 10000 }).catch(() => {});
-	await page.waitForTimeout(500);
 
 	const filePath = path.join(PROOFS_DIR, state.filename);
 	const buffer = await page.screenshot({ fullPage: false, animations: "disabled", timeout: 15000 });
@@ -206,9 +205,10 @@ for (const state of states) {
 		throw new Error(`[ERROR] Screenshot ${state.filename} is too small: ${stats.size} bytes (< 20 KB floor)!`);
 	}
 	console.log(`✓ Proof verified: ${state.filename} >= 20 KB`);
+
+	await context.close();
 }
 
-await context.close();
 await browser.close();
 
 console.log("\n=======================================================");

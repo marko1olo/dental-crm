@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { organizations, warrantyCertificates } from "../../db/schema.js";
+import { clinics, organizations, warrantyCertificates } from "../../db/schema.js";
 import { requireClinicalReadContext } from "../../accessGuard.js";
 import { isValidUuid } from "@dental/shared";
 
@@ -76,17 +76,26 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [clinicOrg] = await db
-				.select({
-					name: organizations.name,
-					legalAddress: organizations.legalAddress,
-					medicalLicenseNumber: organizations.medicalLicenseNumber,
-					email: organizations.email,
-					website: organizations.website,
-				})
-				.from(organizations)
-				.where(eq(organizations.id, cert.organizationId))
-				.limit(1);
+			const [[clinicOrg], [clinicRow]] = await Promise.all([
+				db
+					.select({
+						name: organizations.name,
+						legalAddress: organizations.legalAddress,
+						medicalLicenseNumber: organizations.medicalLicenseNumber,
+						email: organizations.email,
+						website: organizations.website,
+					})
+					.from(organizations)
+					.where(eq(organizations.id, cert.organizationId))
+					.limit(1),
+				db
+					.select({
+						phone: clinics.phone,
+					})
+					.from(clinics)
+					.where(eq(clinics.organizationId, cert.organizationId))
+					.limit(1),
+			]);
 
 			return reply.code(200).send({
 				success: true,
@@ -95,7 +104,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 					status: cert.status,
 					clinicName: clinicOrg?.name || "Стоматологическая клиника ДЕНТЕ",
 					clinicLegalName: clinicOrg?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
-					clinicPhone: "",
+					clinicPhone: clinicRow?.phone || "",
 					clinicAddress: clinicOrg?.legalAddress || "",
 					clinicWebsite: clinicOrg?.website || "",
 					clinicLicenseNumber: clinicOrg?.medicalLicenseNumber || "",
@@ -136,17 +145,26 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [clinicOrg] = await db
-				.select({
-					name: organizations.name,
-					legalAddress: organizations.legalAddress,
-					medicalLicenseNumber: organizations.medicalLicenseNumber,
-					email: organizations.email,
-					website: organizations.website,
-				})
-				.from(organizations)
-				.where(eq(organizations.id, cert.organizationId))
-				.limit(1);
+			const [[clinicOrg], [clinicRow]] = await Promise.all([
+				db
+					.select({
+						name: organizations.name,
+						legalAddress: organizations.legalAddress,
+						medicalLicenseNumber: organizations.medicalLicenseNumber,
+						email: organizations.email,
+						website: organizations.website,
+					})
+					.from(organizations)
+					.where(eq(organizations.id, cert.organizationId))
+					.limit(1),
+				db
+					.select({
+						phone: clinics.phone,
+					})
+					.from(clinics)
+					.where(eq(clinics.organizationId, cert.organizationId))
+					.limit(1),
+			]);
 
 			return reply.code(200).send({
 				success: true,
@@ -155,7 +173,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 					status: cert.status,
 					clinicName: clinicOrg?.name || "Стоматологическая клиника ДЕНТЕ",
 					clinicLegalName: clinicOrg?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
-					clinicPhone: "",
+					clinicPhone: clinicRow?.phone || "",
 					clinicAddress: clinicOrg?.legalAddress || "",
 					clinicWebsite: clinicOrg?.website || "",
 					clinicLicenseNumber: clinicOrg?.medicalLicenseNumber || "",

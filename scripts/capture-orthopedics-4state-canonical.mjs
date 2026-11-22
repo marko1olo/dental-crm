@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/orthopedics");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/aae67383-520b-4d6a-86c5-963da1bb0e49");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/ca81a2f4-2fca-4cc1-aa41-51d0fc3465e9");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -28,6 +28,9 @@ async function suppressOverlays(page) {
       const style = document.createElement("style");
       style.id = "suppress-all-overlays-ortho-clean";
       style.innerHTML = `
+        .dente-boot-splash,
+        .boot-state,
+        [data-testid="app-boot-loader"],
         .tour-spotlight-root,
         .tour-backdrop-clickable-zone,
         [data-testid="guided-tour-spotlight-overlay"],
@@ -43,6 +46,8 @@ async function suppressOverlays(page) {
         }
       `;
       document.head.appendChild(style);
+      // Remove splash from DOM if lingering
+      document.querySelectorAll('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]').forEach(el => el.remove());
     });
   } catch (_) {}
 }
@@ -123,17 +128,18 @@ async function main() {
 
     await page.goto("http://127.0.0.1:5173/?standalone=orthopedics#orthopedics", { waitUntil: "domcontentloaded", timeout: 45000 });
 
-    await page.waitForFunction(() => {
-      const splash = document.querySelector('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]');
-      const text = document.body ? document.body.innerText : "";
-      return (!splash || splash.clientHeight === 0) && !text.includes("Загрузка системы");
-    }, { timeout: 45000 }).catch(() => {});
-
     await page.waitForSelector('[data-testid="orthopedics-chairside-panel"]', {
       state: "visible",
       timeout: 45000,
     });
-    await page.waitForTimeout(2000);
+    await suppressOverlays(page);
+    await page.waitForTimeout(1500);
+
+    await page.waitForFunction(() => {
+      const splash = document.querySelector('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]');
+      const text = document.body ? document.body.innerText : "";
+      return (!splash || splash.clientHeight === 0) && !text.includes("Загрузка системы");
+    }, { timeout: 15000 }).catch(() => {});
 
     await suppressOverlays(page);
     await applyTheme(page, st.theme);

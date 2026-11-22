@@ -25,6 +25,10 @@ export function useDoctorWalletLogic(
 	const [isReconciledConfirmed, setIsReconciledConfirmed] = useState<boolean>(false);
 
 	const fetchEarnings = useCallback(async (targetDate: string) => {
+		if (!doctorId) {
+			setIsLoading(false);
+			return;
+		}
 		setIsLoading(true);
 		setError(null);
 		try {
@@ -93,7 +97,7 @@ export function useDoctorWalletLogic(
 				totalAccruedRub: data.summary.totalDoctorEarnedRub,
 				ndflTaxRub: kopecksToRubles(ndflKop),
 				withheldLabRub: data.summary.totalLabDeductionsRub,
-				withheldMaterialRub: 0,
+				withheldMaterialRub: data.summary.totalMaterialDeductionsRub,
 				netPayoutRub: kopecksToRubles(netPayoutKop),
 			});
 
@@ -132,6 +136,8 @@ export function useDoctorWalletLogic(
 				totalAccruedKop: earnedKop,
 				ndflKop,
 				netPayoutKop,
+				markPaid: false,
+				doctorReconciled: true,
 			});
 
 			setIsReconciledConfirmed(true);

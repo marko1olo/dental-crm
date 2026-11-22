@@ -93,6 +93,7 @@ export type PatientAdministrativeProfileDraft = {
 		| "utmContent"
 		| "utmTerm"
 		| "leadSource"
+		| "advertisingSource"
 		| "dmsPolicyNumber"
 		| "dmsInsuranceCompany"
 		| "dmsGuaranteeLetterNumber"
@@ -122,6 +123,7 @@ export type PatientAdministrativeProfileDraft = {
 	utmContent?: string | null | undefined;
 	utmTerm?: string | null | undefined;
 	leadSource?: string | null | undefined;
+	advertisingSource?: string | null | undefined;
 	telegramUserId?: string | null | undefined;
 	telegramUsername?: string | null | undefined;
 };
@@ -149,10 +151,10 @@ export type AppointmentScheduleDraft = {
 	status: Appointment["status"];
 	startsAt: string;
 	endsAt: string;
-	reason?: string | undefined;
-	comment?: string | undefined;
-	notes?: string | undefined;
-	cancellationReason?: string | undefined;
+	reason?: string | null | undefined;
+	comment?: string | null | undefined;
+	notes?: string | null | undefined;
+	cancellationReason?: string | null | undefined;
 };
 
 export type AppointmentScheduleSaveState =

@@ -19,7 +19,7 @@ import {
 	generateSanpinClassBWasteRecords,
 	getCanonicalProcedureRecipe,
 	resolveProcedureDeductionItems,
-} from "../../warehouse/materialsAutoDeductionSsot.js";
+} from "../materialsAutoDeductionSsot.js";
 
 describe("Inventory Units SSOT (ОКЕИ & Medical Nomenclature)", () => {
 	it("нормализует гетерогенные строки к каноническим ключам", () => {

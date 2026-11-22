@@ -132,6 +132,7 @@ export type UpdateChairWorkingHoursInput = z.infer<
 >;
 
 export const createChairSchema = z.object({
+	clinicId: z.string().uuid().nullable().optional(),
 	name: z.string().trim().min(1).max(120),
 	room: z.string().trim().max(120).nullable().optional(),
 	color: z.string().trim().max(50).nullable().optional(),

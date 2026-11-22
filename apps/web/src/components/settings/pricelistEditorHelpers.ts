@@ -1,4 +1,9 @@
-import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	type DentalSpecialty,
+	type ServiceCategory,
+} from "@dental/shared";
 
 export const NEW_SERVICE_TEMPLATE = {
 	title: "",
@@ -29,10 +34,10 @@ export function rubToPriceInput(
 	) {
 		return "";
 	}
-	const kopecks = Math.round(amountRub * 100);
+	const kopecks = rublesToKopecks(amountRub);
 	return kopecks % 100 === 0
-		? String(kopecks / 100)
-		: (kopecks / 100).toFixed(2).replace(".", ",");
+		? String(kopecksToRubles(kopecks))
+		: kopecksToRubles(kopecks).toFixed(2).replace(".", ",");
 }
 
 export const CATEGORY_TABS: Array<{ id: string; label: string }> = [

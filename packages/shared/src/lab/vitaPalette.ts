@@ -105,8 +105,8 @@ export const VITA_SHADE_HEX_MAP: Readonly<Record<string, string>> = Object.freez
  */
 export function getVitaShadeHex(shadeCode: string | null | undefined): string | undefined {
 	if (!shadeCode) return undefined;
-	const normalized = shadeCode.trim().toUpperCase();
-	return VITA_SHADE_HEX_MAP[normalized];
+	const normalized = shadeCode.trim().toUpperCase().replace(/^(?:CHROMASCOP|ХРОМАСКОП|CHROMA|ХРОМА)[\s\-_:]*/i, "");
+	return VITA_SHADE_HEX_MAP[normalized] ?? VITA_SHADE_HEX_MAP[shadeCode.trim().toUpperCase()];
 }
 
 /**

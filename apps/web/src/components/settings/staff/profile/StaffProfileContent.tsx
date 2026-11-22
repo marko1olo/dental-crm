@@ -1,5 +1,5 @@
 import React from "react";
-import type { StaffProfileExtended, ClinicBranch, Chair } from "@dental/shared";
+import type { StaffProfileExtended, Chair, ClinicBranch } from "@dental/shared";
 import {
 	validateStaffSnils,
 	validateStaffInn,
@@ -15,7 +15,7 @@ export interface StaffProfileContentProps {
 	readonly form: ReturnType<typeof useStaffProfileForm>;
 	readonly staffMember: StaffProfileExtended;
 	readonly callerRole: string;
-	readonly clinicsList: ClinicBranch[];
+	readonly clinicsList?: readonly ClinicBranch[] | undefined;
 	readonly chairsList: Chair[];
 	readonly activeTabMobile: "requisites" | "payroll" | "security";
 }
@@ -64,7 +64,7 @@ export const StaffProfileContent: React.FC<StaffProfileContentProps> = ({
 				setRole={form.setRole}
 				specialties={form.specialties}
 				handleSpecialtyToggle={(id) => form.setSpecialties((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id])}
-				clinicsList={clinicsList}
+				clinicsList={clinicsList ?? []}
 				assignedBranches={form.assignedBranches}
 				handleBranchToggle={(id) => form.setAssignedBranches((prev) => prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id])}
 				chairsList={chairsList}

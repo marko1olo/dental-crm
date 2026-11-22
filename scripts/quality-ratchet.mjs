@@ -29,6 +29,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -503,11 +504,13 @@ function runCli() {
 
 		let status = "";
 		if (delta > 0) {
-			status = `❌ РЕГРЕССИЯ (+${delta})`;
+			status = `❌ НАСРАНО СВЕРХУ (+${delta} новых косяков!)`;
 		} else if (delta < 0) {
-			status = `✨ ЧИЩЕ НА ${Math.abs(delta)} (авто-подгонка)`;
+			status = `✨ СТАЛО ЧИЩЕ (-${Math.abs(delta)}, потолок закручен)`;
+		} else if (current === 0) {
+			status = `💎 ИДЕАЛ (0)`;
 		} else {
-			status = `✓ В НОРМЕ (0)`;
+			status = `⚠️ НЕ НАСРАНО, НО ${current} КОСЯКОВ ЖДУТ ЗАЧИСТКИ`;
 		}
 
 		console.log(`${label} | ${curStr} | ${limStr} | ${status}`);
@@ -529,10 +532,15 @@ function runCli() {
 			}
 		}
 
-		console.error("\nСлужебный подлог или добавление костылей заблокированы храповиком.");
-		console.error("Сдаче подлежат только решения с монотонным сокращением технического долга.\n");
+		printFailureManifesto("TYPE_RATCHET", {
+			details: evaluation.regressions
+				.map((r) => `${formatMetricLabel(r.metric)}: факт ${r.current} > лимит ${r.limit} (+${r.delta})`)
+				.join("; "),
+		});
 		process.exit(1);
 	}
+
+	const totalLegacyDebt = counts.maxExplicitAny + counts.maxLinterSuppressions + counts.maxRawFloatDivisions + counts.maxUppercaseButtons;
 
 	// If improvements occurred, automatically ratchet down the baseline
 	if (evaluation.improvements.length > 0) {
@@ -543,7 +551,8 @@ function runCli() {
 			for (const imp of evaluation.improvements) {
 				console.log(`   ✓ ${imp.metric}: ${imp.limit} ➔ ${imp.current} (-${Math.abs(imp.delta)})`);
 			}
-			console.log(`Обновлён файл: ${DEFAULT_BASELINE_PATH}\n`);
+			console.log(`Обновлён файл: ${DEFAULT_BASELINE_PATH}`);
+			console.log(`Остаток старого техдолга: ${totalLegacyDebt} косяков. Не расслабляться, продолжать зачистку по правилу бойскаута!\n`);
 		} else {
 			console.log("\n💡 ЗАМЕЧЕН ПРОГРЕСС: Кодовая база стала чище (auto-ratchet отключен):");
 			for (const imp of evaluation.improvements) {
@@ -551,7 +560,9 @@ function runCli() {
 			}
 		}
 	} else {
-		console.log("\n✅ САНИТАРНЫЙ ХРАПОВИК ЧИСТ: Регрессий нет, лимиты строго соблюдены (Exit Code 0).\n");
+		console.log(`\n🛡️ САНИТАРНЫЙ ХРАПОВИК: Нового говна не добавлено (число косяков не увеличено, Exit Code 0).`);
+		console.log(`⚠️  НАПОМИНАНИЕ АГЕНТУ: в проекте остаётся ${totalLegacyDebt} старых косяков (${counts.maxExplicitAny} any, ${counts.maxLinterSuppressions} супрессий, ${counts.maxRawFloatDivisions} делений / 100, ${counts.maxUppercaseButtons} капслоков).`);
+		console.log(`   Не будь слепым котёнком: если правишь файл — ликвидируй в нём старый техдолг по правилу бойскаута!\n`);
 	}
 
 	process.exit(0);

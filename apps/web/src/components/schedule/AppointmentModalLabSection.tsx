@@ -26,7 +26,6 @@ export interface ActiveLabOrderInput extends MinimalLabOrderForSchedule {
   readonly vitaShade?: string | null | undefined;
   readonly shade?: string | null | undefined;
   readonly expectedDeliveryDate?: string | Date | null | undefined;
-  readonly [key: string]: unknown;
 }
 
 export interface AppointmentWithLabMeta extends Appointment {

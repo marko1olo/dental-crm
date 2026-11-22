@@ -17,7 +17,6 @@ import {
 	egiszRemdRegistrationReceiptSchema,
 	generateCdaXml,
 	generateSemd043_1uXml,
-	generateSemd130Xml,
 	validateCdaXmlStructure,
 	type EgiszRemdRegistrationReceipt,
 } from "@dental/shared";
@@ -474,67 +473,6 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 		assert.ok(orthodonticXml.includes("1.2.643.5.1.13.13.11.109"), "Must declare SEMD 109 template");
 		const validation = validateCdaXmlStructure(orthodonticXml, "109");
 		assert.equal(validation.valid, true, `SEMD 109 validation failed: ${validation.errors.join("; ")}`);
-		assert.equal(validation.errors.length, 0);
-	});
-
-	it("4.7 Generates and validates SEMD 130 (Tax Deduction Certificate, KND 1151156) XML structure against XSD constraints", () => {
-		const taxXml = generateSemd130Xml({
-			docKind: "130",
-			certificateNumber: "130-2026-0001",
-			taxYear: 2025,
-			issueDate: new Date("2026-09-03T10:00:00Z"),
-			documentId: "doc-tax-001",
-			patient: {
-				patientId: "pat-tax-1",
-				name: { last: "Иванов", first: "Петр", middle: "Сергеевич" },
-				birthDate: "1980-01-01",
-				gender: "male",
-				snils: "11223344595",
-			},
-			taxpayer: {
-				fullName: "Иванов Петр Сергеевич",
-				inn: "770123456789",
-				snils: "11223344595",
-				relationToPatient: "1",
-			},
-			doctor: {
-				name: { last: "Главврач", first: "Сергей", middle: "Петрович" },
-				snils: "000-001-001 00",
-				position: "Главный врач",
-				positionCode: "15",
-			},
-			clinic: {
-				name: "ООО Стоматология ДЕНТЕ",
-				oid: "1.2.643.5.1.13.13.12.2.77.1001",
-				ogrn: "1027700132195",
-				inn: "7701123456",
-				licenseNumber: "ЛО-77-01-012345",
-				licenseDate: "15.01.2020",
-			},
-			contractNumber: "Д-2025/112",
-			contractDate: "10.02.2025",
-			paymentRecords: [
-				{
-					fiscalReceiptNumber: "ФЧ-889900",
-					fiscalReceiptDate: "15.03.2025",
-					serviceCategoryCode: "1",
-					paymentAmountKopecks: 4500000,
-				},
-				{
-					fiscalReceiptNumber: "ФЧ-889901",
-					fiscalReceiptDate: "20.04.2025",
-					serviceCategoryCode: "2",
-					paymentAmountKopecks: 12000000,
-				},
-			],
-			totalOrdinaryTreatmentKopecks: 4500000,
-			totalExpensiveTreatmentKopecks: 12000000,
-			totalSumKopecks: 16500000,
-		});
-
-		assert.ok(taxXml.includes("1.2.643.5.1.13.13.11.130"), "Must declare SEMD 130 template");
-		const validation = validateCdaXmlStructure(taxXml, "130");
-		assert.equal(validation.valid, true, `SEMD 130 validation failed: ${validation.errors.join("; ")}`);
 		assert.equal(validation.errors.length, 0);
 	});
 

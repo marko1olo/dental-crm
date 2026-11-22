@@ -167,9 +167,10 @@ describe("Patient Personal Portal - OverviewTab Dynamic Calendars & Family Pool"
 	});
 
 	it("renders dynamic calendar export buttons with appointment date and time", () => {
+		const futureDateIso = new Date(Date.now() + 86400000 * 5).toISOString().slice(0, 10);
 		const customAppt = {
 			...PATIENT_CABINET_PRESET_ALEXEY.appointments[0]!,
-			dateIso: "2026-11-20",
+			dateIso: futureDateIso,
 			timeRu: "16:45",
 			doctorName: "Д-р Смирнов А. В.",
 			roomNumber: "Кабинет 3",
@@ -200,7 +201,7 @@ describe("Patient Personal Portal - OverviewTab Dynamic Calendars & Family Pool"
 		assert.ok(html.includes("data-testid=\"next-appt-yandex-cal-btn\""));
 
 		// Must contain appointment date in the card
-		assert.ok(html.includes("2026-11-20"));
+		assert.ok(html.includes(futureDateIso));
 		assert.ok(html.includes("16:45"));
 	});
 });

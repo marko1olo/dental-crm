@@ -17,5 +17,4 @@ export * from "./scheduleAndContactRequests.js";
 export * from "./outboxItemBuilders.js";
 export * from "./outboxFollowupBuilders.js";
 export * from "./outboxDelivery.js";
-export * from "./webhookEvents.js";
 export * from "./dialogSessions.js";

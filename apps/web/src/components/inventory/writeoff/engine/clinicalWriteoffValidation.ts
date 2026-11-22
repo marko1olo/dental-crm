@@ -24,7 +24,7 @@ export function validateWriteoffDocument(
 				errors.push(`Для «${line.nameRu}» обязателен ввод серийного номера (МДЛП).`);
 			}
 			if (line.isExpired) {
-				const isDisposal = doc.statutoryFormType === "disposal_act" || doc.statutoryFormType === "TORG16" || line.discrepancyReasonCode === "expired_quarantine";
+				const isDisposal = doc.statutoryFormType === "disposal_act" || line.discrepancyReasonCode === "expired_quarantine";
 				if (isDisposal) {
 					warnings.push(`Партия «${line.nameRu}» с истекшим сроком направлена на списание.`);
 				} else {

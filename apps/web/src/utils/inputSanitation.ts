@@ -262,6 +262,34 @@ export function maskRussianOmsPolicy(policy: string | null | undefined): string 
 }
 
 // ============================================================================
+// 5.1. DMS POLICY (ПОЛИС ДМС)
+// ============================================================================
+
+/**
+ * Автоформатирование и валидация номера полиса ДМС.
+ * В отличие от ОМС (строго 16 цифр), полисы ДМС российских страховщиков (СОГАЗ,
+ * Ингосстрах, АльфаСтрахование, РЕСО и др.) содержат буквы кириллицы/латиницы,
+ * дефисы, слэши, точки, пробелы и цифры (например: "СГЗ-2026-998811", "0123/ДМС-26").
+ */
+export function formatDmsPolicy(value: string | null | undefined): string {
+	if (!value) return "";
+	return String(value)
+		.replace(/[^A-Za-zА-Яа-яЁё0-9\-\/\.\s]/g, "")
+		.replace(/\s+/g, " ")
+		.slice(0, 40)
+		.trimStart();
+}
+
+/**
+ * Проверяет, что номер полиса ДМС заполнен и имеет достаточную длину (от 3 до 40 знаков).
+ */
+export function isValidDmsPolicy(value: string | null | undefined): boolean {
+	if (!value) return false;
+	const sanitized = formatDmsPolicy(value).trim();
+	return sanitized.length >= 3 && sanitized.length <= 40;
+}
+
+// ============================================================================
 // 6. NUMERIC & TEXT INPUT SANITATION
 // ============================================================================
 

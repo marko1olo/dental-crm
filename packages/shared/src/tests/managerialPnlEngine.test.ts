@@ -215,3 +215,56 @@ test("managerialPnlEngine: целочисленная арифметика ко�
 	assert.equal(pnl.ebitdaRub, 400.20);
 	assert.equal(pnl.netProfitRub, 400.20);
 });
+
+test("managerialPnlEngine: разделение ФОТ врачей (COGS) и окладов администраторов/управляющего (OPEX)", () => {
+	const input: CalculateManagerialPnlInput = {
+		period: { from: "2026-10-01", to: "2026-10-31" },
+		payments: [
+			{ amountRub: 1000000, department: "therapy" },
+		],
+		expenses: [
+			// Всего по статье 1 начислено 400 000 ₽
+			{ reasonId: 1, amountRub: 400000 },
+			// Аренда 100 000 ₽
+			{ reasonId: 12, amountRub: 100000 },
+		],
+		// Из них сдельная выработка врачей — 250 000 ₽ (COGS),
+		// значит оклады администраторов и управляющего — 150 000 ₽ (OPEX)
+		doctorPieceRatePayrollRub: 250000,
+	};
+
+	const pnl = calculateManagerialPnl(input);
+
+	assert.equal(pnl.grossRevenueRub, 1000000);
+	assert.equal(pnl.directDoctorPieceRateRub, 250000);
+	assert.equal(pnl.adminStaffPayrollRub, 150000);
+	assert.equal(pnl.totalCogsRub, 250000);
+	// Gross profit = 1 000 000 - 250 000 (COGS) = 750 000 ₽
+	assert.equal(pnl.grossProfitRub, 750000);
+	// OPEX = Аренда 100 000 + Оклады админов 150 000 = 250 000 ₽
+	assert.equal(pnl.totalOpexRub, 250000);
+	// EBITDA = Gross Profit 750 000 - OPEX 250 000 = 500 000 ₽
+	assert.equal(pnl.ebitdaRub, 500000);
+	assert.equal(pnl.netProfitRub, 500000);
+});
+
+test("managerialPnlEngine: неразмеченные платежи относятся к unassigned вместо therapy", () => {
+	const input: CalculateManagerialPnlInput = {
+		period: { from: "2026-10-01", to: "2026-10-31" },
+		payments: [
+			{ amountRub: 150000 }, // Без указания отделения
+			{ amountRub: 250000, department: "therapy" },
+		],
+		expenses: [],
+	};
+
+	const pnl = calculateManagerialPnl(input);
+
+	const unassigned = pnl.departmentRevenue.find((d) => d.department === "unassigned");
+	const therapy = pnl.departmentRevenue.find((d) => d.department === "therapy");
+
+	assert.equal(unassigned?.revenueRub, 150000);
+	assert.equal(unassigned?.servicesCount, 1);
+	assert.equal(therapy?.revenueRub, 250000);
+	assert.equal(therapy?.servicesCount, 1);
+});

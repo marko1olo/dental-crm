@@ -188,7 +188,8 @@ export interface EndoMaterialConsumableEstimate {
 
 /** Позиция услуги прейскуранта для эндодонтического протокола */
 export interface EndoPriceServiceEstimate {
-	readonly code804n: string;
+	readonly serviceCode?: string | undefined;
+	readonly code804n?: string | undefined;
 	readonly title: string;
 	readonly category: string;
 	readonly priceRub: number;

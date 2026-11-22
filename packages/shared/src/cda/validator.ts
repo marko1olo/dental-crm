@@ -12,7 +12,6 @@ import {
 	cdaSemd043_1uSchema,
 	cdaSemd101Schema,
 	cdaSemd104Schema,
-	cdaSemd130Schema,
 	detachedSignatureSchema,
 } from "./schemas.js";
 import type {
@@ -20,7 +19,6 @@ import type {
 	CdaSemd043_1uParams,
 	CdaSemd101Params,
 	CdaSemd104Params,
-	CdaSemd130Params,
 	CdaValidationIssue,
 	CdaValidationResult,
 	CertificateValidationDetails,
@@ -65,13 +63,10 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 	let parsedResult:
 		| ReturnType<typeof cdaSemd101Schema.safeParse>
 		| ReturnType<typeof cdaSemd104Schema.safeParse>
-		| ReturnType<typeof cdaSemd130Schema.safeParse>
 		| ReturnType<typeof cdaSemd043_1uSchema.safeParse>;
 
 	if (docKind === "104") {
 		parsedResult = cdaSemd104Schema.safeParse(params);
-	} else if (docKind === "130") {
-		parsedResult = cdaSemd130Schema.safeParse(params);
 	} else if (docKind === "043-1u" || docKind === "0431u" || docKind === "109") {
 		parsedResult = cdaSemd043_1uSchema.safeParse(params);
 	} else {
@@ -336,32 +331,6 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 					oid: EGISZ_OIDS.ICD10,
 				});
 			}
-		}
-	} else if (data.docKind === "130") {
-		const d130 = data as CdaSemd130Params;
-		if (d130.taxpayer.snils && !isValidSnils(d130.taxpayer.snils)) {
-			warnings.push(
-				`Налогоплательщик: СНИЛС "${d130.taxpayer.snils}" имеет неверную контрольную сумму`,
-			);
-		}
-		if (d130.taxpayer.inn && !validateInn(d130.taxpayer.inn)) {
-			warnings.push(
-				`Налогоплательщик: ИНН "${d130.taxpayer.inn}" имеет неверную контрольную сумму`,
-			);
-		}
-
-		const calcTotal =
-			d130.totalOrdinaryTreatmentKopecks + d130.totalExpensiveTreatmentKopecks;
-		if (calcTotal !== d130.totalSumKopecks) {
-			errors.push(
-				`Справка 130: Не сходится сумма в копейках: обычные (${d130.totalOrdinaryTreatmentKopecks}) + дорогостоящие (${d130.totalExpensiveTreatmentKopecks}) != общая сумма (${d130.totalSumKopecks})`,
-			);
-			issues.push({
-				path: "totalSumKopecks",
-				field: "totalSumKopecks",
-				message: "Не сходится итоговая сумма в копейках",
-				severity: "error",
-			});
 		}
 	} else if (
 		data.docKind === "043-1u" ||

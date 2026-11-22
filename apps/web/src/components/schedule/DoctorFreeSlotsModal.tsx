@@ -1,7 +1,6 @@
 import React from "react";
 import { Search, X } from "lucide-react";
-import type { Dashboard } from "@dental/shared";
-import type { DoctorFreeSlot } from "./doctorFreeSlotsEngine";
+import type { Dashboard, DoctorFreeSlot } from "@dental/shared";
 import { useDoctorFreeSlotsController } from "./doctorFreeSlots/useDoctorFreeSlotsController";
 import { DoctorFreeSlotsFilters } from "./doctorFreeSlots/DoctorFreeSlotsFilters";
 import { DoctorFreeSlotsResults } from "./doctorFreeSlots/DoctorFreeSlotsResults";

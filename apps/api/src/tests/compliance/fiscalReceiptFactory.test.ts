@@ -11,7 +11,7 @@ import {
 	parseAndValidate54FzFtsQrString,
 	validateRussianTaxpayerInn,
 } from "@dental/shared";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
+import { buildKnd1151156Xml } from "../../routes/documents/sharedDocUtils/index.js";
 
 describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 	it("1.1 Resolves FFD 1.2 Tag 1054 operation types correctly", () => {
@@ -409,6 +409,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			legalName: "ООО ДЕНТЕ ПРЕМИУМ",
 			inn: "7707083893",
 			kpp: "770701001",
+			ogrn: "1027700132195",
 			signatoryName: "Смирнов Виктор Павлович",
 		};
 

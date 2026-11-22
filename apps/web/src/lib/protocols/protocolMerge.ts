@@ -155,7 +155,10 @@ export function appendRecommendationToSoap(
 	diary: DiaryState,
 	recommendationText: string,
 ): DiaryState {
-	const cur = ((diary as any).treatmentPlan || diary.treatmentDescription || "").trim();
+	const treatmentPlan = "treatmentPlan" in diary && typeof (diary as Record<string, unknown>).treatmentPlan === "string"
+		? (diary as Record<string, unknown>).treatmentPlan as string
+		: diary.treatmentDescription;
+	const cur = (treatmentPlan || "").trim();
 	const recTrim = (recommendationText ?? "").trim();
 	if (!recTrim) return diary;
 	if (cur.includes(recTrim)) return diary;

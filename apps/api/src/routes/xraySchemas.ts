@@ -126,7 +126,18 @@ export async function persistXrayAnalysisOutcome(
 			);
 
 		if (patch.aiSummary !== undefined || patch.toothCode !== undefined) {
-			try {
+			const existingStudy = await tx
+				.select({ id: imagingStudies.id })
+				.from(imagingStudies)
+				.where(
+					and(
+						eq(imagingStudies.id, job.scanId),
+						eq(imagingStudies.organizationId, job.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (existingStudy.length > 0) {
 				const studyPatch: {
 					aiSummary?: string | null;
 					toothCode?: string | null;
@@ -146,8 +157,6 @@ export async function persistXrayAnalysisOutcome(
 							eq(imagingStudies.organizationId, job.organizationId),
 						),
 					);
-			} catch {
-				// Record might not exist in imagingStudies
 			}
 		}
 	});

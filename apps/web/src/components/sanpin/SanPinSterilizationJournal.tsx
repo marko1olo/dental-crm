@@ -45,7 +45,9 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 	const [packagesCount, setPackagesCount] = useState<number>(12);
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedOperator = useMemo(() => {
-		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
+		const authAny = appLogic?.auth as { currentUser?: { fullName?: string; name?: string }; activeWorkspaceProfile?: { title?: string } } | undefined;
+		const userAny = appLogic as { user?: { name?: string } } | null | undefined;
+		const fromAuth = authAny?.currentUser?.fullName || authAny?.currentUser?.name || userAny?.user?.name || authAny?.activeWorkspaceProfile?.title;
 		if (fromAuth && fromAuth.trim()) return fromAuth.trim();
 		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
 		if (cached?.fullName?.trim()) return cached.fullName.trim();

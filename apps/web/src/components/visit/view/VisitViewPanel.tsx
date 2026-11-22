@@ -39,7 +39,7 @@ export function VisitViewPanel({ s }: VisitViewPanelProps) {
 					handleFinishVisitAction={s.handleFinishVisitAction}
 					setIsQueueCockpitForced={s.setIsQueueCockpitForced}
 					setSelectedPatientId={s.setSelectedPatientId}
-					appLogic={s.appLogic}
+					appLogic={s.appLogic ?? undefined}
 					isHeaderMoreMenuOpen={s.isHeaderMoreMenuOpen}
 					setIsHeaderMoreMenuOpen={s.setIsHeaderMoreMenuOpen}
 					headerMoreMenuRef={s.headerMoreMenuRef}

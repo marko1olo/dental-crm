@@ -5,7 +5,6 @@
  */
 
 export type * from "./types";
-export * from "./HeaderBranding";
 export * from "./HeaderGlobalSearch";
 export * from "./HeaderSystemStatus";
 export * from "./HeaderUserMenu";

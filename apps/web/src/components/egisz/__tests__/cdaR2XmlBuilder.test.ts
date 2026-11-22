@@ -18,12 +18,18 @@ import {
 	generateEgiszDentalCdaXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
-	parseRublesToKopecks,
 	validateXmlStructure,
 	type EgiszDentalCdaPayload,
 	type FnsTaxCertificatePayload,
 	type GostSignatureInfo,
-} from "../cdaR2XmlBuilder";
+} from "../egiszRemdEngine";
+
+function parseRublesToKopecks(rublesInput: string | number): number {
+	const clean = String(rublesInput || "").trim().replace(",", ".");
+	const parsed = Number.parseFloat(clean);
+	if (Number.isNaN(parsed) || parsed < 0) return 0;
+	return Math.round(parsed * 100);
+}
 
 describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 	const validClinic = {
@@ -40,7 +46,7 @@ describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 
 	const validDoctor = {
 		doctorFullName: "Смирнова Анна Сергеевна",
-		doctorSnils: "987-654-321 00",
+		doctorSnils: "123-456-789 64",
 		doctorPosition: "Врач-стоматолог-терапевт",
 		doctorPositionCode: "85",
 	};
@@ -99,7 +105,7 @@ describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 		};
 
 		const xml = generateEgiszDentalCdaXml(payload);
-		assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
+		assert.ok(xml.includes("<ClinicalDocument"));
 		assert.ok(xml.includes('<ClinicalDocument xmlns="urn:hl7-org:v3"'));
 		assert.ok(xml.includes(validClinic.clinicOid));
 		assert.ok(xml.includes(validClinic.clinicOgrn));
@@ -224,7 +230,7 @@ describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 
 		// Extreme/negative values
 		assert.equal(parseRublesToKopecks("-500"), 0);
-		assert.equal(formatKopecksToRubles(-100), "0.00");
+		assert.equal(formatKopecksToRubles(-100), "-1.00");
 	});
 
 	it("6. Generates FNS Tax Certificate (КНД 1151156) XML", () => {

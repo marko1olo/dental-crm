@@ -6,28 +6,28 @@ import React from "react";
 import type { AppView } from "../../../utils/routeUtils";
 
 export interface TopBarDraftStripsProps {
-	onboardingDismissed: boolean;
-	onboardingDraftMode: boolean;
-	onboardingReadyToFinish: boolean;
-	onboardingBlockingIssues: readonly string[];
-	onboardingDocumentsReady: boolean;
-	onboardingDocumentReadinessIssues: readonly string[];
-	reopenOnboarding: () => void;
-	setCurrentView: (view: AppView) => void;
-	setSettingsTab: (tab: string) => void;
+	onboardingDismissed?: boolean | undefined;
+	onboardingDraftMode?: boolean | undefined;
+	onboardingReadyToFinish?: boolean | undefined;
+	onboardingBlockingIssues?: readonly string[] | undefined;
+	onboardingDocumentsReady?: boolean | undefined;
+	onboardingDocumentReadinessIssues?: readonly string[] | undefined;
+	reopenOnboarding?: (() => void) | undefined;
+	setCurrentView?: ((view: AppView) => void) | undefined;
+	setSettingsTab?: ((tab: string) => void) | undefined;
 }
 
 export function TopBarDraftStrips({
-	onboardingDismissed,
-	onboardingDraftMode,
-	onboardingReadyToFinish,
-	onboardingBlockingIssues,
-	onboardingDocumentsReady,
-	onboardingDocumentReadinessIssues,
-	reopenOnboarding,
-	setCurrentView,
-	setSettingsTab,
-}: TopBarDraftStripsProps) {
+	onboardingDismissed = false,
+	onboardingDraftMode = false,
+	onboardingReadyToFinish = false,
+	onboardingBlockingIssues = [],
+	onboardingDocumentsReady = false,
+	onboardingDocumentReadinessIssues = [],
+	reopenOnboarding = () => {},
+	setCurrentView = () => {},
+	setSettingsTab = () => {},
+}: Partial<TopBarDraftStripsProps>) {
 	if (!onboardingDismissed) return null;
 
 	return (

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { DenteTelegramUpdateKind } from "@dental/shared";
-import { listDenteTelegramWebhookEvents } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { countRejectedTelegramLinkCodeAttempts } from "../../services/telegram/telegramWebhookEventsService.js";
 import type {
 	UnknownRecord,
 	TelegramChatInfo,
@@ -28,42 +28,31 @@ export function chatFingerprint(
 		.slice(0, 24);
 }
 
-export function rejectedTelegramLinkCodeAttemptCount(
+export async function rejectedTelegramLinkCodeAttemptCount(
 	chatFingerprintValue: string | null,
 	organizationId: string,
 	botConfigId: string,
-	nowMs = Date.now(),
-): number {
+): Promise<number> {
 	if (!chatFingerprintValue) return 0;
-	const windowStartedAt = nowMs - telegramLinkCodeRateLimitWindowMs;
-	return listDenteTelegramWebhookEvents(
-		300,
+	return await countRejectedTelegramLinkCodeAttempts(
+		chatFingerprintValue,
 		organizationId,
 		botConfigId,
-	).filter((event) => {
-		if (event.chatFingerprint !== chatFingerprintValue) return false;
-		if (
-			event.action !== "rejected_telegram_link_code" &&
-			event.action !== "rate_limited_telegram_link_code"
-		)
-			return false;
-		const createdAtMs = Date.parse(event.createdAt);
-		return Number.isFinite(createdAtMs) && createdAtMs >= windowStartedAt;
-	}).length;
+		telegramLinkCodeRateLimitWindowMs,
+	);
 }
 
-export function telegramLinkCodeRateLimitExceeded(
+export async function telegramLinkCodeRateLimitExceeded(
 	chatFingerprintValue: string | null,
 	organizationId: string,
 	botConfigId: string,
-): boolean {
-	return (
-		rejectedTelegramLinkCodeAttemptCount(
-			chatFingerprintValue,
-			organizationId,
-			botConfigId,
-		) >= telegramLinkCodeRejectedAttemptLimit
+): Promise<boolean> {
+	const count = await rejectedTelegramLinkCodeAttemptCount(
+		chatFingerprintValue,
+		organizationId,
+		botConfigId,
 	);
+	return count >= telegramLinkCodeRejectedAttemptLimit;
 }
 
 export function normalizeCommand(text: string | null): string | null {

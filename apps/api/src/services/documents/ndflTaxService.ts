@@ -174,13 +174,21 @@ export class NdflTaxService {
 		]);
 
 		const periodPayments = allPayments.filter((p) => {
-			if (p.status !== "paid" || !p.paidAt) return false;
-			const paidTime = new Date(p.paidAt).getTime();
+			if (p.status !== "paid" && p.status !== "refunded") return false;
+			const date = p.paidAt || p.createdAt;
+			if (!date) return false;
+			const paidTime = new Date(date).getTime();
 			return paidTime >= start.getTime() && paidTime <= end.getTime();
 		});
 
+		const hasExplicitNegativeRefunds = periodPayments.some(
+			(p) => (Number(p.amountRub) || 0) < 0,
+		);
+
 		let code1Kopecks = 0;
 		let code2Kopecks = 0;
+		let code1RefundKopecks = 0;
+		let code2RefundKopecks = 0;
 		let excludedNonMedicalKopecks = 0;
 		let excludedNonMedicalCount = 0;
 		let excludedDmsKopecks = 0;
@@ -229,13 +237,54 @@ export class NdflTaxService {
 				null;
 
 			const rawAmountKop = parseKopecks(pay.amountRub);
-			const alreadyRefundedKop = alreadyRefundedKopecksForPayment(
-				pay.id,
-				patientDocuments,
-			);
+
+			// Отрицательные кассовые возвраты (54-ФЗ возврат прихода) уменьшают сумму соответствующего кода вычета
+			if (rawAmountKop < 0) {
+				const absRefundKop = Math.abs(rawAmountKop);
+				const deductionCode =
+					pay.taxDeductionCode === "2" ||
+					classifyNdflServiceCode(serviceName, payMeta.code804n) === "2"
+						? "2"
+						: "1";
+				if (deductionCode === "2") {
+					code2RefundKopecks += absRefundKop;
+				} else {
+					code1RefundKopecks += absRefundKop;
+				}
+				receipts.push({
+					id: pay.id,
+					receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+					fiscalDocumentNumber: fiscalDocNum,
+					receiptDate,
+					serviceName: serviceName.toLowerCase().startsWith("возврат") ? serviceName : `Возврат средств: ${serviceName}`,
+					deductionCode,
+					amountRub: pay.amountRub,
+					isExcluded: false,
+				});
+				continue;
+			}
+
+			// Для положительных платежей со статусом 'refunded' при отсутствии отрицательных проводок — исключаем
+			if (pay.status === "refunded" && !hasExplicitNegativeRefunds) {
+				receipts.push({
+					id: pay.id,
+					receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+					fiscalDocumentNumber: fiscalDocNum,
+					receiptDate,
+					serviceName,
+					deductionCode: "1",
+					amountRub: pay.amountRub,
+					isExcluded: true,
+					exclusionReason: "Сумма по чеку полностью возвращена пациенту",
+				});
+				continue;
+			}
+
+			const alreadyRefundedKop = hasExplicitNegativeRefunds
+				? 0
+				: alreadyRefundedKopecksForPayment(pay.id, patientDocuments);
 			const amountKop = Math.max(0, rawAmountKop - alreadyRefundedKop);
 
-			// Если чек был полностью возвращен пациенту — исключаем его из справки НДФЛ
 			if (amountKop <= 0) {
 				receipts.push({
 					id: pay.id,
@@ -412,8 +461,10 @@ export class NdflTaxService {
 			}
 		}
 
-		const code1TotalRub = rublesFromKopecks(code1Kopecks);
-		const code2TotalRub = rublesFromKopecks(code2Kopecks);
+		const netCode1Kopecks = Math.max(0, code1Kopecks - code1RefundKopecks);
+		const netCode2Kopecks = Math.max(0, code2Kopecks - code2RefundKopecks);
+		const code1TotalRub = rublesFromKopecks(netCode1Kopecks);
+		const code2TotalRub = rublesFromKopecks(netCode2Kopecks);
 		const totalEligibleRub = new Decimal(code1TotalRub)
 			.plus(code2TotalRub)
 			.toNumber();

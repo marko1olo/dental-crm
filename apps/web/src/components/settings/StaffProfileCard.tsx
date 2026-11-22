@@ -1,4 +1,4 @@
-import type { StaffProfileExtended } from "@dental/shared";
+import type { ClinicBranch, StaffProfileExtended } from "@dental/shared";
 import React, { useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { StaffProfileContent } from "./staff/profile/StaffProfileContent";
@@ -24,7 +24,7 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 }) => {
 	const appLogic = useOptionalAppLogicContext();
 	const dashboard = appLogic?.dashboard;
-	const clinicsList = dashboard?.clinicSettings?.clinics || [];
+	const clinicsList: readonly ClinicBranch[] = [];
 	const chairsList = dashboard?.clinicSettings?.chairs || [];
 	const [activeTabMobile, setActiveTabMobile] = useState<"requisites" | "payroll" | "security">("requisites");
 

@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { generateWarrantyPatientMemo, generateWarrantyRemediationActHtml, type WarrantyCertificateData, type WarrantyRemediationOrder } from "../../warrantyEngine.js";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { showToast } from "../../../GlobalToast";
 import type { AttachedWarrantyPayload, WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyExportActionsParams {
@@ -32,15 +34,25 @@ export function useWarrantyExportActions({
 				visitId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId)
 					? visitId
 					: null;
-			await fetch("/api/warranty/certificates", {
+			const res = await fetch("/api/warranty/certificates", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: {
+					"Idempotency-Key": generateUuidV7(),
+					...denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				},
 				body: JSON.stringify({
 					patientId: patient.id,
 					visitId: cleanVisitId,
 					certificateNumber: certificateData.certificateId,
 					status,
-					items: certificateData.items,
+					items: certificateData.items.map((item) => {
+						const title = item.clinicalWorkTitle || "Стоматологическая работа";
+						return {
+							...item,
+							name: title,
+							clinicalWorkTitle: title,
+						};
+					}),
 					warrantyMonths: certificateData.calculation.adjustedWarrantyMonths,
 					serviceLifeMonths: certificateData.calculation.adjustedServiceLifeMonths,
 					issuedAt: certificateData.issueDate ? new Date(certificateData.issueDate).toISOString() : new Date().toISOString(),
@@ -50,6 +62,11 @@ export function useWarrantyExportActions({
 					notes: `Оформлен гарантийный паспорт. Врач: ${doctorName || "Лечащий врач"}.`,
 				}),
 			});
+			if (!res.ok) {
+				const errText = await res.text().catch(() => "");
+				console.error("Failed to persist warranty certificate to backend:", res.status, errText);
+				showToast("Не удалось сохранить гарантийный паспорт на сервере", "error");
+			}
 		} catch (err) {
 			console.error("Failed to persist warranty certificate to backend:", err);
 		}

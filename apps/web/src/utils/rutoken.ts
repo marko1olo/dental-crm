@@ -6,6 +6,13 @@ import { logger } from "./logger";
  */
 
 export interface RutokenPluginInstance {
+	ready?: Promise<void> | undefined;
+	isExtensionInstalled: () => Promise<boolean>;
+	isPluginInstalled: () => Promise<boolean>;
+	loadPlugin: () => Promise<void>;
+	enumerateDevices: () => Promise<number[]>;
+	enumerateCertificates: (deviceId: number, category: number) => Promise<string[]>;
+	getCertificateInfo: (deviceId: number, certId: string, infoType: number) => Promise<string | number>;
 	login: (deviceId: number, pin: string) => Promise<unknown>;
 	digest: (deviceId: number, hashType: number, data: string) => Promise<string>;
 	sign: (
@@ -17,13 +24,17 @@ export interface RutokenPluginInstance {
 	) => Promise<string>;
 	logout: (deviceId: number) => Promise<unknown>;
 	HASH_TYPE_GOST3411_12_256: number;
-	[key: string]: unknown;
+	CERT_CATEGORY_USER: number;
+	CERT_INFO_SUBJECT: number;
+	CERT_INFO_ISSUER: number;
+	CERT_INFO_NOT_VALID_BEFORE: number;
+	CERT_INFO_NOT_VALID_AFTER: number;
 }
 
 declare global {
 	interface Window {
-		rutoken?: RutokenPluginInstance;
-		rutokenPluginLoaded?: boolean;
+		rutoken?: RutokenPluginInstance | undefined;
+		rutokenPluginLoaded?: boolean | undefined;
 	}
 }
 
@@ -78,6 +89,9 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 	}
 
 	const plugin = window.rutoken;
+	if (!plugin) {
+		throw new Error("Rutoken Web Plugin не установлен или не запущен.");
+	}
 	try {
 		const devices = await plugin.enumerateDevices();
 		if (devices.length === 0) {
@@ -116,10 +130,10 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 				);
 
 				certs.push({
-					subjectName: parseCommonName(subjectName),
-					issuerName: parseCommonName(issuerName),
-					validFrom: new Date(validFrom * 1000).toLocaleDateString("ru-RU"),
-					validTo: new Date(validTo * 1000).toLocaleDateString("ru-RU"),
+					subjectName: parseCommonName(String(subjectName)),
+					issuerName: parseCommonName(String(issuerName)),
+					validFrom: new Date(Number(validFrom) * 1000).toLocaleDateString("ru-RU"),
+					validTo: new Date(Number(validTo) * 1000).toLocaleDateString("ru-RU"),
 					id: certId,
 					deviceId: deviceId,
 				});
@@ -149,6 +163,9 @@ export async function signDataWithRutoken(
 	}
 
 	const plugin = window.rutoken;
+	if (!plugin) {
+		throw new Error("Rutoken Web Plugin не установлен или не запущен.");
+	}
 
 	try {
 		// Login to the device using the PIN

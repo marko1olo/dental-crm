@@ -13,7 +13,7 @@ export interface PatientSearchComboboxProps {
   setHighlightedIndex: React.Dispatch<React.SetStateAction<number>>;
   searchResults: Array<{ patient: Patient; isFuzzy?: boolean | undefined; suggestedName?: string | undefined }>;
   selectPatient: (p: Patient) => void;
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   setShowInlineNewPatient: (show: boolean) => void;
   setNewPatientFullName: (name: string) => void;
   setNewPatientPhone: (phone: string) => void;
@@ -52,7 +52,7 @@ export function PatientSearchCombobox({
           searchResults={searchResults}
           highlightedIndex={highlightedIndex}
           selectPatient={selectPatient}
-          dashboard={dashboard}
+          dashboard={dashboard ?? undefined}
           searchQuery={searchQuery}
           setShowInlineNewPatient={setShowInlineNewPatient}
           setIsTypeaheadOpen={setIsTypeaheadOpen}

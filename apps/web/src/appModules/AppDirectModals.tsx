@@ -4,6 +4,7 @@
  */
 
 import React, { Suspense } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { PrescriptionModal } from "../components/prescriptions/PrescriptionModal";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
@@ -134,7 +135,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 						initialTab="checkout"
 						totalDueRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
 						amountRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
-						amountKopecks={Math.round((appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0) * 100)}
+						amountKopecks={routing.fastCheckoutInitialAmountKopecks ?? rublesToKopecks(appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0)}
 						patientId={patient?.id || undefined}
 						patientName={patient?.fullName || undefined}
 						patientPhone={patient?.phone || undefined}

@@ -21,6 +21,16 @@ export {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
+	buildKnd1151156Xml,
+	buildFnsKnd1151156Xml,
+	generateFnsFileNameAndId,
+	preflightValidatePayload,
+	KND_1151156_PRINT_FORM_CODE,
+	FNS_MEDICAL_EXPENSE_XML_KND,
+	FNS_MEDICAL_EXPENSE_XML_VERSION,
+	FNS_MEDICAL_EXPENSE_ORDER,
+	type Knd1151156XmlContext,
+	type Knd1151156XmlResult,
 } from "./taxCertificateEngine.js";
 
 export {

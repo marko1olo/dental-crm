@@ -2,7 +2,7 @@
  * treatmentPlanTierCalculator.ts — Расчет варианта сметы (Tier) по 3 клиническим этапам DENTE.
  */
 
-import { sumKopecks, formatKopecksRu } from "../../utils/money.js";
+import { sumKopecks, formatKopecksRu } from "../../money.js";
 import {
 	PLAN_STAGE_METADATA,
 	PLAN_TIER_CONFIGS,

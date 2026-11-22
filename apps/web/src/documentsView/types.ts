@@ -169,12 +169,10 @@ export interface DocumentsA4PrintPreviewProps {
 	readonly patient?: Patient | null | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: profile draft
-	readonly clinicProfileDraft?: any | undefined;
+	readonly clinicProfileDraft?: Record<string, unknown> | null | undefined;
 	readonly onPrint?: (() => void) | undefined;
 	readonly onDownloadPdf?: (() => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: form props
-	readonly formProps?: Record<string, any> | undefined;
+	readonly formProps?: Record<string, unknown> | undefined;
 	readonly children?: React.ReactNode | undefined;
 	readonly className?: string | undefined;
 }

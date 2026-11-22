@@ -8,7 +8,7 @@ import {
 	rublesFromKopecks,
 	type TreatmentChargeRow,
 } from "../../money/patientDebt.js";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 
 /**
@@ -64,9 +64,11 @@ import * as schema from "../schema.js";
 export async function patientAccountBalancesRub(
 	organizationId: string,
 	patientIds: readonly string[],
+	tx?: TenantDb,
 ): Promise<Map<string, number | null>> {
 	const balances = new Map<string, number | null>();
 	if (patientIds.length === 0) return balances;
+	const client = tx ?? db;
 
 	/*
 	 * Оптимизация выборки сальдо: запрашиваем начисления и платежи
@@ -93,7 +95,7 @@ export async function patientAccountBalancesRub(
 	);
 
 	const [chargeRows, paymentRows] = await Promise.all([
-		db
+		client
 			.select({
 				patientId: schema.treatmentItems.patientId,
 				status: schema.treatmentItems.status,
@@ -103,7 +105,7 @@ export async function patientAccountBalancesRub(
 			})
 			.from(schema.treatmentItems)
 			.where(chargeScope),
-		db
+		client
 			.select({
 				patientId: schema.payments.patientId,
 				status: schema.payments.status,

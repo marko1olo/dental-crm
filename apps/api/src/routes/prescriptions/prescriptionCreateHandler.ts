@@ -54,6 +54,13 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 		return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
 	}
 
+	if (!patient.birthDate) {
+		return reply.code(422).send({
+			error: "PatientBirthDateRequired",
+			message: "Для выписки электронного рецепта необходимо указать дату рождения пациента в его медицинской карте.",
+		});
+	}
+
 	if (isAnonymousOmsPatient(patient, input.patientOmsPolicy, input.preferentialBenefitCode)) {
 		return reply.code(422).send({
 			error: "OmsIdentificationRequiredError",

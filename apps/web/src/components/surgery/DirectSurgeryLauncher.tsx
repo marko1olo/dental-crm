@@ -70,12 +70,16 @@ export const DirectSurgeryLauncher: React.FC = () => {
 
 	const storeActivePatient = useAppStore((s) => {
 		const activeId = s.activePatientId;
-		return (
-			s.dashboard?.patients?.find((p) => p.id === activeId) ||
-			s.dashboard?.activeVisit?.patientId
-				? s.dashboard?.patients?.find((p) => p.id === s.dashboard?.activeVisit?.patientId)
-				: s.dashboard?.patients?.[0]
-		);
+		if (activeId) {
+			const found = s.dashboard?.patients?.find((p) => p.id === activeId);
+			if (found) return found;
+		}
+		const visitPatientId = s.dashboard?.activeVisit?.patientId;
+		if (visitPatientId) {
+			const found = s.dashboard?.patients?.find((p) => p.id === visitPatientId);
+			if (found) return found;
+		}
+		return undefined;
 	});
 	const storeDoctorName = useAppStore((s) => s.activeDoctorName);
 

@@ -4,6 +4,7 @@
  */
 
 export * from "./dentalLabDefinitions";
+export { canTransitionLabStatus, getNextLabStatus } from "./dentalLabDefinitions";
 export * from "./orderEngine/labWageEngine";
 export * from "./orderEngine/labDateUtils";
 export * from "./orderEngine/labCollisionGuard";
@@ -11,5 +12,4 @@ export * from "./orderEngine/labDeadlineAlertTypes";
 export * from "./orderEngine/labDeadlineAlertEngine";
 export * from "./orderEngine/labOrderRecordTypes";
 export * from "./orderEngine/labPartialDeliveryEngine";
-export * from "./orderEngine/labStatusTransitions";
 export * from "./orderEngine/labOrderRecordFactory";

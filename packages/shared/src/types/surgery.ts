@@ -243,21 +243,56 @@ export const standardImplantationParamsSchema = z.object({
 /**
  * Zod-схема создания протокола операции (Форма 043/у)
  */
-export const createSurgicalProtocolSchema = z.object({
-	visitId: z.string().uuid().optional().nullable(),
-	patientId: z.string().uuid(),
-	doctorId: z.string().uuid().optional().nullable(),
-	normId: z.string().default("surgery_implant_standard"),
-	toothNumberFdi: z.number().int().min(11).max(85).optional().nullable(),
-	protocolText: z.string().min(10),
-	anesthesiaText: z.string().optional().nullable(),
-	recommendationsText: z.string().optional().nullable(),
-	services: z.array(surgicalServiceItemSchema).default([]),
-	services804n: z.array(surgicalServiceItemSchema).default([]),
-	materialsUsed: z.array(surgicalMaterialItemSchema).default([]),
-	isOverdraftActive: z.boolean().default(false),
-	notes: z.string().optional().nullable(),
-});
+export const createSurgicalProtocolSchema = z
+	.object({
+		visitId: z.string().uuid().optional().nullable(),
+		patientId: z.string().uuid(),
+		doctorId: z.string().uuid().optional().nullable(),
+		normId: z.string().default("surgery_implant_standard"),
+		toothNumberFdi: z.number().int().min(11).max(85).optional().nullable(),
+		teeth: z.array(z.number().int().min(11).max(85)).optional().default([]),
+		protocolText: z.string().min(10),
+		anesthesiaText: z.string().optional().nullable(),
+		recommendationsText: z.string().optional().nullable(),
+		services: z.array(surgicalServiceItemSchema).default([]),
+		services804n: z.array(surgicalServiceItemSchema).default([]),
+		materialsUsed: z.array(surgicalMaterialItemSchema).default([]),
+		isOverdraftActive: z.boolean().default(false),
+		notes: z.string().optional().nullable(),
+	})
+	.superRefine((data, ctx) => {
+		const isImplant =
+			data.normId.toLowerCase().includes("implant") ||
+			data.normId === "scen-implant" ||
+			data.normId === "surgery_implant_standard";
+
+		if (isImplant) {
+			if (
+				data.toothNumberFdi != null &&
+				data.toothNumberFdi >= 51 &&
+				data.toothNumberFdi <= 85
+			) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: `Установка дентального имплантата в область молочного зуба (#${data.toothNumberFdi}) категорически запрещена анатомическим протоколом`,
+					path: ["toothNumberFdi"],
+				});
+			}
+
+			if (data.teeth && Array.isArray(data.teeth)) {
+				for (let i = 0; i < data.teeth.length; i++) {
+					const t = data.teeth[i];
+					if (t != null && t >= 51 && t <= 85) {
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							message: `Установка дентального имплантата в область молочного зуба (#${t}) категорически запрещена анатомическим протоколом`,
+							path: ["teeth", i],
+						});
+					}
+				}
+			}
+		}
+	});
 
 export type CreateSurgicalProtocolInput = z.infer<typeof createSurgicalProtocolSchema>;
 

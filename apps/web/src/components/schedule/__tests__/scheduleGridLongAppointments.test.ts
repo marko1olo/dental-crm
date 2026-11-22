@@ -30,7 +30,7 @@ import {
 	findAlternativeChairsForSlot,
 	findShiftMinutesOptions,
 } from "../chairRosterMath";
-import { findDoctorFreeSlots } from "../doctorFreeSlotsEngine";
+import { findDoctorFreeSlots } from "@dental/shared";
 import { SlotConflictModal } from "../SlotConflictModal";
 
 describe("Schedule Multi-Hour Blocks & Collision Inquisitor Suite", () => {

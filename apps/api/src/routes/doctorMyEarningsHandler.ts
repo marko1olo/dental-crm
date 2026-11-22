@@ -13,7 +13,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { doctorCommissions, users } from "../db/schema.js";
+import { doctorCommissions, pricelistDoctorPayrolls, users } from "../db/schema.js";
 import { calculateDoctorCommissionKopecks, calculateDoctorPeriodPayroll, kopecksToRubles } from "@dental/shared";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { resolveDoctorUserUuid } from "./payrollSettlementDbQueries.js";
@@ -77,10 +77,12 @@ export async function handleGetDoctorMyEarnings(
 		: "therapy";
 	const doctorSpecialty = SPECIALTY_TITLES[specId] || "Врач-стоматолог";
 
-	const [activeComm] = await db
+	const commRecords = await db
 		.select({
+			serviceCategory: doctorCommissions.serviceCategory,
 			commissionPct: doctorCommissions.commissionPct,
 			commissionPercent: doctorCommissions.commissionPercent,
+			effectiveFrom: doctorCommissions.effectiveFrom,
 		})
 		.from(doctorCommissions)
 		.where(
@@ -90,11 +92,69 @@ export async function handleGetDoctorMyEarnings(
 				eq(doctorCommissions.isActive, true),
 			),
 		)
-		.orderBy(sql`${doctorCommissions.effectiveFrom} desc`)
-		.limit(1);
+		.orderBy(sql`${doctorCommissions.effectiveFrom} desc`);
 
-	const resolvedPct = activeComm?.commissionPct || activeComm?.commissionPercent;
-	const basePercent = resolvedPct ? Number(resolvedPct) : 25;
+	type AllowedSpecialtyCat = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric";
+	const categoryRatesMap: Partial<Record<AllowedSpecialtyCat, number>> = {};
+	let basePercent = 25;
+
+	for (const comm of commRecords) {
+		const val = Number(comm.commissionPercent || comm.commissionPct);
+		if (!Number.isFinite(val) || val <= 0) continue;
+
+		if (comm.serviceCategory) {
+			const catKey = comm.serviceCategory.toLowerCase() as AllowedSpecialtyCat;
+			if (categoryRatesMap[catKey] === undefined) {
+				categoryRatesMap[catKey] = val;
+			}
+		} else if (basePercent === 25) {
+			basePercent = val;
+		}
+	}
+
+	if (basePercent === 25 && commRecords.length > 0) {
+		const firstVal = Number(commRecords[0]?.commissionPercent || commRecords[0]?.commissionPct);
+		if (Number.isFinite(firstVal) && firstVal > 0) {
+			basePercent = firstVal;
+		}
+	}
+
+	const pricelistRows = await db
+		.select({
+			serviceCode: pricelistDoctorPayrolls.serviceCode,
+			serviceName: pricelistDoctorPayrolls.serviceName,
+			doctorPayrollPercent: pricelistDoctorPayrolls.doctorPayrollPercent,
+		})
+		.from(pricelistDoctorPayrolls)
+		.where(eq(pricelistDoctorPayrolls.organizationId, orgId));
+
+	const pricelistPercentByCode = new Map<string, number>();
+	const pricelistPercentByName = new Map<string, number>();
+	for (const pr of pricelistRows) {
+		const pct = Number(pr.doctorPayrollPercent);
+		if (Number.isFinite(pct) && pct > 0) {
+			if (pr.serviceCode) {
+				pricelistPercentByCode.set(pr.serviceCode.trim().toLowerCase(), pct);
+			}
+			if (pr.serviceName) {
+				pricelistPercentByName.set(pr.serviceName.trim().toLowerCase(), pct);
+			}
+		}
+	}
+
+	function resolveServiceCommissionPercent(category: string, serviceName?: string, serviceCode?: string): number {
+		if (serviceCode && pricelistPercentByCode.has(serviceCode.trim().toLowerCase())) {
+			return pricelistPercentByCode.get(serviceCode.trim().toLowerCase())!;
+		}
+		if (serviceName && pricelistPercentByName.has(serviceName.trim().toLowerCase())) {
+			return pricelistPercentByName.get(serviceName.trim().toLowerCase())!;
+		}
+		const catKey = category.toLowerCase() as AllowedSpecialtyCat;
+		if (categoryRatesMap[catKey] !== undefined) {
+			return categoryRatesMap[catKey]!;
+		}
+		return basePercent;
+	}
 
 	let fromStr: string;
 	let toStr: string;
@@ -127,6 +187,7 @@ export async function handleGetDoctorMyEarnings(
 		periodEndIso: toStr.slice(0, 10),
 		services: completedServices,
 		customBasePercentage: basePercent,
+		categoryRates: categoryRatesMap,
 		payoutModel: "percentage",
 		chairRentalKop: 0,
 		advancePayoutKop: 0,
@@ -204,8 +265,9 @@ export async function handleGetDoctorMyEarnings(
 			apptMap.set(apptKey, appt);
 		}
 
+		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu);
 		const netBaseItemKop = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earnedItemKop = calculateDoctorCommissionKopecks(netBaseItemKop, basePercent);
+		const earnedItemKop = calculateDoctorCommissionKopecks(netBaseItemKop, itemCommPercent);
 
 		appt.grossRevenueKop += ord.grossKopecks;
 		appt.labCostKop += ord.labCostKopecks;
@@ -224,7 +286,7 @@ export async function handleGetDoctorMyEarnings(
 			labCostKop: ord.labCostKopecks,
 			materialCostRub: kopecksToRubles(ord.materialCostKopecks),
 			materialCostKop: ord.materialCostKopecks,
-			commissionPercent: basePercent,
+			commissionPercent: itemCommPercent,
 			earnedRub: kopecksToRubles(earnedItemKop),
 			earnedKop: earnedItemKop,
 			isPaid: ord.isPaid54Fz,
@@ -267,12 +329,13 @@ export async function handleGetDoctorMyEarnings(
 
 	const catMap = new Map<string, CatAccumulator>();
 	for (const ord of orders) {
+		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu);
 		let cat = catMap.get(ord.category);
 		if (!cat) {
 			cat = {
 				category: ord.category,
 				categoryRu: ord.categoryLabelRu,
-				commissionPercent: basePercent,
+				commissionPercent: itemCommPercent,
 				grossRevenueKop: 0,
 				labDeductionsKop: 0,
 				netBaseKop: 0,
@@ -282,7 +345,7 @@ export async function handleGetDoctorMyEarnings(
 			catMap.set(ord.category, cat);
 		}
 		const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earned = calculateDoctorCommissionKopecks(netBase, basePercent);
+		const earned = calculateDoctorCommissionKopecks(netBase, itemCommPercent);
 
 		cat.grossRevenueKop += ord.grossKopecks;
 		cat.labDeductionsKop += ord.labCostKopecks;
@@ -324,7 +387,7 @@ export async function handleGetDoctorMyEarnings(
 		netBaseRevenueKop,
 		totalDoctorEarnedRub: kopecksToRubles(totalDoctorEarnedKop),
 		totalDoctorEarnedKop,
-		averageCommissionPercent: basePercent,
+		averageCommissionPercent: (netBaseRevenueKop > 0 ? Math.round((totalDoctorEarnedKop / netBaseRevenueKop) * 100) : basePercent),
 		completedAppointmentsCount: appointments.length,
 		inChairAppointmentsCount: 0,
 		totalAppointmentsCount: appointments.length,

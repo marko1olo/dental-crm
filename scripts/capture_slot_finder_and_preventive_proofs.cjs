@@ -381,14 +381,14 @@ async function captureForTheme(browser, themeMode, targetDir, port = 5173) {
   } else {
     await optionsMenuBtn.click({ force: true });
     await page.waitForTimeout(400);
-    const prevMenuItem = page.locator('[data-testid="schedule-strip-preventive-inspection-btn"], button:has-text("Осмотры по гарантии")').first();
+    const prevMenuItem = page.locator('[data-testid="schedule-options-recalls-hub-btn"], [data-testid="schedule-strip-preventive-inspection-btn"], button:has-text("Реколлы и профосмотры"), button:has-text("Осмотры по гарантии")').first();
     await prevMenuItem.waitFor({ state: "attached", timeout: 5000 });
     await prevMenuItem.evaluate((btn) => btn.click());
   }
 
-  const prevModal = page.locator('[data-testid="preventive-inspection-modal"]');
+  const prevModal = page.locator('[data-testid="patient-recalls-hub-modal"], [data-testid="preventive-inspection-modal"]').first();
   await prevModal.waitFor({ state: "visible", timeout: 8000 });
-  console.log(`[${themeMode}] PreventiveInspectionModal is visible!`);
+  console.log(`[${themeMode}] PatientRecallsHubModal is visible!`);
   await page.waitForTimeout(500);
 
   const prevProofPath = path.join(targetDir, `proof_preventive_inspection_${themeMode}.png`);

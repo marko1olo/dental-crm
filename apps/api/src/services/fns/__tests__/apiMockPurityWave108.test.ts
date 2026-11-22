@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import crypto from "node:crypto";
 import { describe, it } from "node:test";
-import { buildFnsKnd1151156Xml } from "../fnsKnd1151156Builder.js";
+import { buildFnsKnd1151156Xml } from "@dental/shared";
 import { renderDocumentHtml } from "../../../documents/renderDocument.js";
 import { parsePassportFromString } from "../../../routes/documentTemplatesModules/defaultStatutoryTemplates.js";
 import { verifySberPosWebhookChecksum } from "../../../routes/payments/sberPosWebhookRoute.js";
@@ -202,8 +202,8 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			mockPatient,
 		);
 		assert(
-			html.includes("Форма 043/у"),
-			"Rendered HTML must reference Form 043/u standard",
+			html.includes("Медицинская карта стоматологического пациента") || html.includes("Форма 043/у"),
+			"Rendered HTML must reference dental medical card standard",
 		);
 		assert(
 			html.includes("К04.0 Начальный пульпит"),

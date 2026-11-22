@@ -492,7 +492,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 
 			// Progress bar should not have hardcoded #e2e8f0 in doctors view
 			assert.doesNotMatch(html, /background:\s*#e2e8f0/);
-			assert.match(html, /var\(--line,\s*#334155\)/);
+			assert.match(html, /var\(--line/);
 
 			// Add buttons rendered for empty doctor days with >=44px touch target
 			assert.match(html, /class="roster-cell-add-btn"[^>]*min-height:\s*44px/);

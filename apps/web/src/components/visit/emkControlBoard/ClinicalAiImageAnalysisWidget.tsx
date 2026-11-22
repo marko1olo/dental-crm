@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Activity, AlertTriangle } from "lucide-react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import type { ClinicalAiReport, DiagnocatReport } from "./types";
 
@@ -12,13 +12,13 @@ export function ClinicalAiImageAnalysisWidget({ patientId }: { patientId: string
 		if (!patientId) return;
 		let cancelled = false;
 		fetch(`/api/clinical-ai/reports/${patientId}`, {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: getDenteAuthHeaders(),
 		})
 			.then(async (res) => {
 				if (!res.ok) {
 					// Fallback to legacy path if needed
 					return fetch(`/api/integrations/diagnocat/reports/${patientId}`, {
-						headers: denteAdminSecretRequestHeaders(),
+						headers: getDenteAuthHeaders(),
 					}).then(async (legacyRes) => {
 						if (!legacyRes.ok) throw new Error(`HTTP ${legacyRes.status}`);
 						return legacyRes.json();

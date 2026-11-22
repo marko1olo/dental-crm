@@ -117,9 +117,9 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			setChairRentalNetIncomeRub={c.setChairRentalNetIncomeRub}
 			setChairRentalRentExpenseRub={c.setChairRentalRentExpenseRub}
 			runRecommendedAction={c.runRecommendedAction}
-			mostLoadedResource={mostLoadedResource}
-			activeQueueRole={activeQueueRole}
-			staffRoleLabels={staffRoleLabels}
+			mostLoadedResource={typeof mostLoadedResource === "string" ? mostLoadedResource : undefined}
+			activeQueueRole={typeof activeQueueRole === "string" ? activeQueueRole : undefined}
+			staffRoleLabels={typeof staffRoleLabels === "object" && staffRoleLabels !== null ? (staffRoleLabels as Record<string, string>) : undefined}
 			modalsNode={modalsNode}
 			userRole={userRole}
 		/>

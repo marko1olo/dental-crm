@@ -1,5 +1,5 @@
-import type { Kopecks } from "../../utils/money.js";
-import { formatKopecksRu } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
+import { formatKopecksRu } from "../../money.js";
 import type { DmsGuaranteeLetter } from "./guaranteeTypes.js";
 import type {
 	DmsCoverageEvaluation, DmsCoverageEvaluationOptions, DmsCoverageEvaluationStatus,

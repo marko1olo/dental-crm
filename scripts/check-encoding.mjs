@@ -41,6 +41,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -471,10 +472,9 @@ for (const problem of problems) {
 	console.error(`  [${problem.kind}] ${problem.file}`);
 	console.error(`      ${problem.detail}`);
 }
-console.error(
-	"\nВосстановить исходный текст можно из git, например:\n" +
-		"  git log --oneline -- <файл>\n" +
-		"  git show <коммит-до-порчи>:<путь-к-файлу> > /tmp/clean.ts\n" +
-		"Если файл в CP1251 — перекодируйте его в UTF-8, а не читайте как UTF-8 с заменой символов.",
-);
+
+printFailureManifesto("ENCODING_UTF8", {
+	details: `Найдено ${problems.length} файлов с повреждением кодировки (BOM, CP1251, UTF-16 или U+FFFD).`,
+});
+
 process.exit(1);

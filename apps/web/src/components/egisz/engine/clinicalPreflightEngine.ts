@@ -2,7 +2,7 @@
  * clinicalPreflightEngine.ts — Runs statutory preflight checks for Dental SEMD payload
  */
 
-import type { EgiszDentalCdaPayload } from "../cdaR2XmlBuilder";
+import type { EgiszDentalCdaPayload } from "../cdaR2/cdaTypes";
 import { checkClinicAndDoctor, checkPatient } from "./clinicalPreflightMoDocPat";
 import { checkClinicalAndSignature } from "./clinicalPreflightClinicalSig";
 import type { EgiszPreflightCheckResult, EgiszPreflightReport } from "./engineTypes";

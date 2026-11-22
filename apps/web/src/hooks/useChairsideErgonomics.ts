@@ -9,6 +9,8 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders.js";
+import { logger } from "../utils/logger.js";
 import {
 	setupClipboardImagePaste,
 	setupHardwareBarcodeSniffer,
@@ -163,9 +165,28 @@ export function useChairsideErgonomics(): UseChairsideErgonomicsReturn {
 			}
 		};
 
+		// Mandate 8v: Silent background disposal queueing for MDLP DataMatrix scans
+		const handleMdlpBackgroundQueue = (e: Event) => {
+			const custom = e as CustomEvent<ScannedBarcodeDetail>;
+			const rawBarcode = custom.detail?.raw;
+			if (!rawBarcode || typeof rawBarcode !== "string" || !rawBarcode.trim()) return;
+
+			fetch("/api/mdlp/queue/add", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ rawBarcode: rawBarcode.trim() }),
+			}).catch((err: unknown) => {
+				logger.debug("[Chairside] Background MDLP queueing failed silently:", err);
+			});
+		};
+
 		window.addEventListener("dente:clipboard-image-pasted", handlePasteEvent);
 		window.addEventListener("dente:barcode-scanned", handleBarcodeEvent);
 		window.addEventListener("dente:privacy-shield-toggled", handlePrivacyEvent);
+		window.addEventListener("dente:mdlp-background-disposal-queued", handleMdlpBackgroundQueue);
 
 		return () => {
 			cleanupPaste();
@@ -174,6 +195,7 @@ export function useChairsideErgonomics(): UseChairsideErgonomicsReturn {
 			window.removeEventListener("dente:clipboard-image-pasted", handlePasteEvent);
 			window.removeEventListener("dente:barcode-scanned", handleBarcodeEvent);
 			window.removeEventListener("dente:privacy-shield-toggled", handlePrivacyEvent);
+			window.removeEventListener("dente:mdlp-background-disposal-queued", handleMdlpBackgroundQueue);
 			if (pasteToastTimerRef.current) clearTimeout(pasteToastTimerRef.current);
 			if (barcodeToastTimerRef.current) clearTimeout(barcodeToastTimerRef.current);
 			if (privacyToastTimerRef.current) clearTimeout(privacyToastTimerRef.current);

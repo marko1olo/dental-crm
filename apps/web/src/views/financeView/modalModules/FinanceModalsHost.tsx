@@ -1,5 +1,6 @@
 import type React from "react";
 import { lazy, Suspense } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
 import { FinanceInvoicesModal } from "../../../components/finance/FinanceInvoicesModal";
 import { QuickExpenseModal } from "../../../components/finance/QuickExpenseModal";
@@ -57,8 +58,12 @@ export function FinanceModalsHost({
 				: 4500;
 	const docPat = s.documentPatient;
 	const effPat = s.effectivePatient;
-	const clinic = s.dashboard?.clinicSettings;
-	const clinicName = clinic?.name || "Стоматология ДЕНТЕ Премиум";
+	const clinicSettings = s.dashboard?.clinicSettings;
+	const profile = clinicSettings?.profile;
+	const clinicName = profile?.clinicName || s.dashboard?.clinicName || "Стоматология ДЕНТЕ Премиум";
+	const clinicLegalName = profile?.legalName || clinicName;
+	const clinicInn = profile?.inn || "";
+	const clinicKpp = profile?.kpp || "770101001";
 	const depositRub = resolvePatientDepositRub(docPat);
 	const effDepositRub = resolvePatientDepositRub(effPat);
 
@@ -92,12 +97,12 @@ export function FinanceModalsHost({
 				isShiftOpen={s.isShiftOpen}
 				cashierFullName={s.paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
 				clinicName={clinicName}
-				clinicLegalName={clinicName}
-				cashierInn={clinic?.inn}
+				clinicLegalName={clinicLegalName}
+				cashierInn={profile?.inn ?? undefined}
 				onCloseShiftAction={s.handleCloseShift}
 				totalDueRub={totalBill}
 				amountRub={totalBill}
-				amountKopecks={Math.round(totalBill * 100)}
+				amountKopecks={rublesToKopecks(totalBill)}
 				patientId={docPat?.id}
 				patientName={docPat?.fullName}
 				patientPhone={docPat?.phone ?? undefined}
@@ -127,7 +132,7 @@ export function FinanceModalsHost({
 					defaultMethod="split"
 					totalDueRub={totalBill}
 					amountRub={totalBill}
-					amountKopecks={Math.round(totalBill * 100)}
+					amountKopecks={rublesToKopecks(totalBill)}
 					patientId={effPat?.id}
 					patientName={effPat?.fullName}
 					patientPhone={effPat?.phone ?? undefined}
@@ -155,8 +160,8 @@ export function FinanceModalsHost({
 						patientId={docPat?.id || effPat?.id}
 						patientPhone={docPat?.phone ?? effPat?.phone ?? undefined}
 						clinicName={clinicName}
-						clinicInn={clinic?.inn || ""}
-						clinicKpp={clinic?.kpp || "770101001"}
+						clinicInn={clinicInn}
+						clinicKpp={clinicKpp}
 						totalRub={totalBill}
 					/>
 				</Suspense>

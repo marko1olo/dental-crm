@@ -37,11 +37,11 @@ export function generateShiftClosingActHtml(act: ShiftClosingActData): string {
 			<td style="width: 60%;">Всего чеков прихода / возврата:</td>
 			<td style="font-weight: 600; text-align: right;">${rec.receiptsCount} / ${rec.returnsCount}</td>
 		</tr>
-		<tr><td>Приход наличными (Тег 1031):</td><td style="text-align: right;">${rec.tenders.cashIncomeRub.toFixed(2)} ₽</td></tr>
-		<tr><td>Приход по банковским картам (Тег 1081):</td><td style="text-align: right;">${rec.tenders.cardIncomeRub.toFixed(2)} ₽</td></tr>
-		<tr><td>Приход через СБП QR (Тег 1081):</td><td style="text-align: right;">${rec.tenders.sbpIncomeRub.toFixed(2)} ₽</td></tr>
-		<tr><td>Зачет авансов и депозитов (Тег 1215):</td><td style="text-align: right;">${rec.tenders.advanceOffsetIncomeRub.toFixed(2)} ₽</td></tr>
-		<tr><td>Возвраты прихода (Тег 1054=2):</td><td style="text-align: right; color: #991b1b;">−${rec.tenders.totalReturnsRub.toFixed(2)} ₽</td></tr>
+		<tr><td>Наличные:</td><td style="text-align: right;">${rec.tenders.cashIncomeRub.toFixed(2)} ₽</td></tr>
+		<tr><td>Банковская карта:</td><td style="text-align: right;">${rec.tenders.cardIncomeRub.toFixed(2)} ₽</td></tr>
+		<tr><td>Оплата через СБП:</td><td style="text-align: right;">${rec.tenders.sbpIncomeRub.toFixed(2)} ₽</td></tr>
+		<tr><td>Зачёт аванса / депозита:</td><td style="text-align: right;">${rec.tenders.advanceOffsetIncomeRub.toFixed(2)} ₽</td></tr>
+		<tr><td>Возврат денежных средств:</td><td style="text-align: right; color: #991b1b;">−${rec.tenders.totalReturnsRub.toFixed(2)} ₽</td></tr>
 		<tr style="background: #f8fafc; font-weight: 700;">
 			<td>ИТОГО ЧИСТАЯ ВЫРУЧКА СМЕНЫ:</td><td style="text-align: right;">${rec.tenders.netRevenueRub.toFixed(2)} ₽</td>
 		</tr>

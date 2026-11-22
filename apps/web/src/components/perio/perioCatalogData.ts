@@ -53,11 +53,11 @@ export interface PsrCodeMeta {
 }
 
 export const PSR_CODES_CATALOG: Record<PsrCode, PsrCodeMeta> = {
-	0: { code: 0, labelRu: "Код 0: Здоров", criteriaRu: "Цветная полоса зонда видна полностью, нет кровоточивости, глубина кармана < 3.5 мм", actionRu: "Профилактический осмотр через 6 месяцев, интактный пародонт", colorHex: "#10b981", badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-	1: { code: 1, labelRu: "Код 1: Кровоточивость", criteriaRu: "Кровоточивость при зондировании BOP, карманы < 3.5 мм, зубного камня нет", actionRu: "Обучение гигиене, полировка пастой / AirFlow, удаление биопленки", colorHex: "#f59e0b", badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
-	2: { code: 2, labelRu: "Код 2: Зубной камень", criteriaRu: "Над-/поддесневой зубной камень, нависающие края пломб, карманы < 3.5 мм", actionRu: "Профгигиена: УЗ-скейлинг + AirFlow + полировка + фторирование", colorHex: "#0ea5e9", badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30" },
-	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "#f97316", badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30" },
-	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "#f43f5e", badgeClass: "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40" },
+	0: { code: 0, labelRu: "Код 0: Здоров", criteriaRu: "Цветная полоса зонда видна полностью, нет кровоточивости, глубина кармана < 3.5 мм", actionRu: "Профилактический осмотр через 6 месяцев, интактный пародонт", colorHex: "var(--success,#10b981)", badgeClass: "bg-[var(--success-soft,rgba(16,185,129,0.15))] text-[var(--success,#10b981)] border border-[var(--success,#10b981)]/30" },
+	1: { code: 1, labelRu: "Код 1: Кровоточивость", criteriaRu: "Кровоточивость при зондировании BOP, карманы < 3.5 мм, зубного камня нет", actionRu: "Обучение гигиене, полировка пастой / AirFlow, удаление биопленки", colorHex: "var(--warning,#f59e0b)", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border border-[var(--warning,#f59e0b)]/30" },
+	2: { code: 2, labelRu: "Код 2: Зубной камень", criteriaRu: "Над-/поддесневой зубной камень, нависающие края пломб, карманы < 3.5 мм", actionRu: "Профгигиена: УЗ-скейлинг + AirFlow + полировка + фторирование", colorHex: "var(--primary)", badgeClass: "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30" },
+	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "var(--warning,#d97706)", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.2))] text-[var(--warning,#d97706)] border border-[var(--warning,#d97706)]/30" },
+	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "var(--danger,#e11d48)", badgeClass: "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/40" },
 };
 export const PSR_CODE_DEFINITIONS = PSR_CODES_CATALOG;
 export type PsrCodeDefinition = PsrCodeMeta;
@@ -176,8 +176,8 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 		...(visitId ? { visitId } : {}),
 	};
 
-	// В тестовом окружении Node.js без явного мока fetch возвращаем детерминированный результат
-	if (typeof window === "undefined" && typeof process !== "undefined" && process.env?.NODE_ENV === "test" && !(globalThis as Record<string, unknown>).__DENTE_TEST_MOCK_FETCH__) {
+	// В тестовом или бессерверном окружении Node.js без явного мока fetch возвращаем детерминированный результат
+	if (typeof window === "undefined" && typeof process !== "undefined" && !(globalThis as Record<string, unknown>).__DENTE_TEST_MOCK_FETCH__) {
 		return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (Soft Negative Stock)` };
 	}
 

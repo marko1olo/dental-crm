@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { logger } from "../../utils/logger.js";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -132,7 +133,7 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 			set({ callHistory: [...unsynced, ...mapped].slice(0, 50) });
 		}
 	} catch (err) {
-		console.warn("[telephonyStore] Failed to fetch call history:", err);
+		logger.warn("[telephonyStore] Failed to fetch call history:", err);
 	}
 }
 

@@ -21,6 +21,8 @@ export interface AppHashRoutingState {
 	setIsFastCheckoutDirectOpen: Dispatch<SetStateAction<boolean>>;
 	fastCheckoutInitialAmountRub?: number | undefined;
 	setFastCheckoutInitialAmountRub?: Dispatch<SetStateAction<number | undefined>> | undefined;
+	fastCheckoutInitialAmountKopecks?: number | undefined;
+	setFastCheckoutInitialAmountKopecks?: Dispatch<SetStateAction<number | undefined>> | undefined;
 	isOrthoPhotoDirectModalOpen: boolean;
 	setIsOrthoPhotoDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoProtocolDirectModalOpen: boolean;

@@ -6,7 +6,7 @@
 import {
 	denteTelegramWebhookResponseSchema,
 } from "@dental/shared";
-import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramLegacyMemoryStore.js";
+import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramWebhookEventsService.js";
 import {
 	answerTelegramCallbackQuery,
 	editTelegramMessageText,
@@ -144,7 +144,7 @@ export async function handleNpsCallback(
 		}).catch(() => {});
 	}
 
-	const event = recordDenteTelegramWebhookEvent({
+	const event = await recordDenteTelegramWebhookEvent({
 		updateId: update.update_id,
 		organizationId: runtime.organizationId,
 		botConfigId: runtime.botConfigId,
@@ -203,7 +203,7 @@ export async function handlePostOpCallback(
 	});
 
 	if (postOpCareResult.handled && postOpCareResult.screen) {
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,
@@ -293,7 +293,7 @@ export async function handlePostOpCallback(
 		});
 	}
 
-	const event = recordDenteTelegramWebhookEvent({
+	const event = await recordDenteTelegramWebhookEvent({
 		updateId: update.update_id,
 		organizationId: runtime.organizationId,
 		botConfigId: runtime.botConfigId,
@@ -349,7 +349,7 @@ export async function handleTriageCallback(
 	});
 
 	if (triageResult.handled && triageResult.screen) {
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,
@@ -408,7 +408,7 @@ export async function handleCloserCallback(
 	});
 
 	if (closerResult.handled && closerResult.screen) {
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,
@@ -568,7 +568,7 @@ export async function handleAppointmentCallback(
 		}).catch(() => {});
 	}
 
-	const event = recordDenteTelegramWebhookEvent({
+	const event = await recordDenteTelegramWebhookEvent({
 		updateId: update.update_id,
 		organizationId: runtime.organizationId,
 		botConfigId: runtime.botConfigId,

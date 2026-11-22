@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export type SemdDocKind = "101" | "103" | "104" | "105" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
+export type SemdDocKind = "101" | "103" | "104" | "105" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
 
 export interface PersonName {
 	first: string;
@@ -125,26 +125,6 @@ export interface ServiceRenderedItem {
 	completedAt?: Date | string | undefined;
 }
 
-export interface TaxPaymentRecordItem {
-	fiscalReceiptNumber: string;
-	fiscalReceiptDate: string;
-	paymentAmountKopecks: number;
-	/** "1" - обычные медуслуги, "2" - дорогостоящее лечение (Постановление Правительства № 458) */
-	serviceCategoryCode: "1" | "2";
-	contractNumber?: string | undefined;
-	contractDate?: string | undefined;
-	patientFullName?: string | undefined;
-}
-
-export interface TaxpayerInfo {
-	fullName: string;
-	snils?: string | undefined;
-	inn?: string | undefined;
-	birthDate?: string | undefined;
-	/** Родственная связь с пациентом: "1" - сам налогоплательщик, "2" - супруг(а), "3" - родитель, "4" - ребенок до 18/24 лет */
-	relationToPatient: "1" | "2" | "3" | "4";
-}
-
 // ─── Параметры для генерации СЭМД 101 / 043/у: Протокол консультации стоматолога ───
 
 export interface CdaSemd101Params {
@@ -233,36 +213,6 @@ export interface CdaSemd104Params {
 	outcomeName?: string | undefined;
 	recommendations: string | string[];
 	nextFollowupDate?: string | Date | undefined;
-}
-
-// ─── Параметры для генерации СЭМД 130: Справка об оплате медицинских услуг ──
-
-export interface CdaSemd130Params {
-	docKind: "130";
-	documentId: string;
-	documentVersion?: number | undefined;
-	documentTime?: Date | undefined;
-	issueDate: Date;
-	taxYear: number;
-	certificateNumber: string;
-
-	patient: PatientCdaInfo;
-	taxpayer: TaxpayerInfo;
-	doctor: DoctorCdaInfo;
-	clinic: ClinicCdaInfo;
-	legalAuthenticator?: LegalAuthenticatorCdaInfo | undefined;
-
-	// Секция: Договор на оказание медицинских услуг (LOINC 48768-6)
-	contractNumber: string;
-	contractDate: string;
-
-	// Секция: Реестр оплат и чеков
-	paymentRecords: TaxPaymentRecordItem[];
-
-	// Итоговые суммы в копейках
-	totalOrdinaryTreatmentKopecks: number; // Код 1
-	totalExpensiveTreatmentKopecks: number; // Код 2
-	totalSumKopecks: number;
 }
 
 export type CdaSemd043uParams = CdaSemd101Params;
@@ -371,7 +321,6 @@ export type CdaSemd109Params = CdaSemd043_1uParams;
 export type CdaDocumentParams =
 	| CdaSemd101Params
 	| CdaSemd104Params
-	| CdaSemd130Params
 	| CdaSemd043_1uParams;
 
 // ─── Отсоединенная электронная подпись УКЭП (ГОСТ Р 34.10-2012 / CAdES-BES) ─

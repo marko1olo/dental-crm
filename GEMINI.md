@@ -82,16 +82,15 @@
     - Изоляция по ключу: модалки и шторки монтируются строго с ключом сущности: `<PatientStudioModal key={patientId} patientId={patientId} ... />`. Смена ID чисто перемонтирует дерево React.
     - Очистка черновика на `onClose`: `useDraftStore.getState().resetDraft()`. Ноль утечек данных прошлого пациента следующему!
 45. **8bo (Сквозной Idempotency-Key и Неделимость ACID):** Все мутации несут заголовок `Idempotency-Key` (UUIDv7). Мутации 2+ таблиц строго в `await db.transaction(async tx => ...)`. Запрещен глобальный `db` внутри транзакции!
-46. **8bq (Санитарный Храповик, Закон Замка, Кубик и Нейросетевой Red Team):**
-    - `npm run check:ratchet` — авто-храповик санитарных порогов (лимиты any/float/супрессий монотонно снижаются при улучшениях).
-    - `npm run check:doors` — страж Единых Дверей SSOT (0 клонов модалок, 100% Zod-защита дверей API).
-    - `npm run audit:dice` — Монте-Карло сэмплирование (случайная выборка 20–30 файлов на 6 инвариантов).
-    - **Регулярный Нейросетевой Red Team аудит:** периодически (перед закрытием этапов, релизом доменов и контролем качества) натравливать независимого субагента-инквизитора (`TypeName: "self"`, `Model: "inherit"`) на случайную выборку файлов боевого контура. Инквизитор с презумпцией 100% брака ищет скрытые семантические язвы: задвоения денег и смен кассы, утечки данных между пациентами, split-brain канбана, гонки транзакций и слепые delete. Запрещено полагаться только на скрипты!
+46. **8bq (Санитарный Храповик, Кубик, Failure Manifestos и Трёхзвенная Цепь):**
+    - **Звено А (Барьер нового говна):** `npm run check:diff` (в прекоммите и в любое время `in-flight`) — ловит `as any`, `!`, `// @ts-ignore`, `catch {}`, `window.alert`, `/ 100`, моки в пропсах. Костыли блокируются намертво!
+    - **Звено Б (Истребление старого говна):** `npm run check:ratchet` (лимиты any/float монотонно закручиваются вниз при улучшениях; статус честно отражает остаток долга), `npm run check:doors` (0 клонов модалок, 100% Zod дверей API), правило бойскаута при любой правке.
+    - **Звено В (Превентивная архитектурная мудрость):** `npm run audit:dice` (Монте-Карло срез 175 точек), **Failure Manifestos** (глубокие наставления для агентов вместо красных крестиков), Zero-Trust аудит субагентов оркестратором.
 
 ## 🛠️ МАШИННЫЕ ГЕЙТЫ ПРИЁМКИ (DEFINITION OF DONE)
-Перед сдачей любой задачи подтверди прохождение 14 гейтов (Exit Code 0):
-1. **UTF-8:** `check:encoding` | 2. **Храповик & SSOT:** `check:ratchet` и `check:doors` | 3. **Кубик:** `audit:dice` (машинный + периодический Red Team) | 4. **Стабы:** `check:stub-overrides`
-5. **Fetch:** `check:fetch-response` | 6. **Импорты:** `check:dynamic-imports` | 7. **React 19:** `check:react-hooks` | 8. **Кнопки/CSS:** `check:buttons` и `check:css-tokens`
-9. **Миграции:** `check:migration-drift` | 10. **TypeScript:** `typecheck` во ВСЕХ пакетах | 11. **Тесты:** затронутые тесты (<=10с)
-12. **4-State Proof:** скриншоты >=20KB в `docs/proofs/`, личный осмотр через `read_file` (PC/Mobile x Light/Dark)
-13. **Docs:** синхронизация `.agents/` и `docs/` | 14. **Git:** пофайловый `git add <file>`, Conventional Commit, push в `origin` и `gitlab`.
+Перед сдачей любой задачи подтверди прохождение 15 гейтов (Exit Code 0):
+1. **Дифф:** `check:diff` (0 костылей) | 2. **UTF-8:** `check:encoding` | 3. **Храповик & SSOT:** `check:ratchet` и `check:doors` | 4. **Кубик:** `audit:dice` | 5. **Стабы:** `check:stub-overrides`
+6. **Fetch:** `check:fetch-response` | 7. **Импорты:** `check:dynamic-imports` | 8. **React 19:** `check:react-hooks` | 9. **Кнопки/CSS:** `check:buttons` и `check:css-tokens`
+10. **Миграции:** `check:migration-drift` | 11. **TypeScript:** `typecheck` во ВСЕХ пакетах | 12. **Тесты:** затронутые тесты (<=10с)
+13. **4-State Proof:** скриншоты >=20KB в `docs/proofs/`, личный осмотр через `read_file` (PC/Mobile x Light/Dark)
+14. **Docs:** синхронизация `.agents/` и `docs/` | 15. **Git:** пофайловый `git add <file>`, Conventional Commit, push в `origin` и `gitlab`.

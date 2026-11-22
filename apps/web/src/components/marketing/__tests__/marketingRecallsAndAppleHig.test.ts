@@ -16,13 +16,13 @@ const marketingDir = path.resolve(__dirname, "..");
 const stylesDir = path.resolve(marketingDir, "../../styles/marketingStyles");
 const recallsDir = path.resolve(marketingDir, "../recalls");
 
-test("1. PatientRecallsHub canonical SSOT persists status to PostgreSQL /api/patients/recall-candidates", () => {
+test("1. PatientRecallsHub canonical SSOT persists status to PostgreSQL /api/recalls", () => {
 	const actionsPath = path.join(recallsDir, "recallStatusUpdateApi.ts");
 	const actionsContent = fs.readFileSync(actionsPath, "utf8");
 
 	assert.ok(
-		actionsContent.includes("/api/patients/recall-candidates/"),
-		"Must invoke /api/patients/recall-candidates/ to persist recall status in PostgreSQL",
+		actionsContent.includes("/api/recalls/") || actionsContent.includes("/api/patients/recall-candidates/"),
+		"Must invoke /api/recalls/ to persist recall status in PostgreSQL",
 	);
 
 	const invitePath = path.join(recallsDir, "recallMessagingApi.ts");

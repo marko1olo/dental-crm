@@ -16,6 +16,22 @@ export const PATIENT_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVaria
 		resolverPath: "patient.fullName",
 	},
 	{
+		token: "Пациент.ФИО_Родительный",
+		domain: "patient",
+		name: "ФИО пациента (Родительный падеж)",
+		description: "ФИО пациента в родительном падеже (кого? чего?) для договоров и согласий",
+		exampleValue: "Иванова Петра Алексеевича",
+		resolverPath: "patient.fullNameGenitive",
+	},
+	{
+		token: "Пациент.ФИО_Дательный",
+		domain: "patient",
+		name: "ФИО пациента (Дательный падеж)",
+		description: "ФИО пациента в дательном падеже (кому? чему?) для договоров и согласий",
+		exampleValue: "Иванову Петру Алексеевичу",
+		resolverPath: "patient.fullNameDative",
+	},
+	{
 		token: "Пациент.ID",
 		domain: "patient",
 		name: "ID пациента",
@@ -415,7 +431,7 @@ export const PATIENT_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVaria
 		domain: "patient",
 		name: "Место работы пациента",
 		description: "Организация или предприятие — место работы",
-		exampleValue: "ООО СтомХ",
+		exampleValue: "ООО Стоматология ДЕНТЕ",
 		resolverPath: "patient.workplace",
 	},
 	{

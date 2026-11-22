@@ -3,7 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOF_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/odontogram";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/644b3011-8b68-485b-9f08-a6d58865d320";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/a20fbe77-d965-4318-9aa6-9a13a758cd74";
 
 [PROOF_DIR, BRAIN_DIR].forEach((dir) => {
 	if (!existsSync(dir)) {

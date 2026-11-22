@@ -65,8 +65,8 @@ export async function handleAnswerCall(
 	// Постоянный лид регистрируется при ответе на звонок (event: "answered"), исключая спам первого гудка
 	if (callerPhone.isValid && callerPhone.national10.length >= 7) {
 		const targetOrgId = resolvedOrgId;
-		void withTenantCtx(targetOrgId, async () => {
-			try {
+		try {
+			await withTenantCtx(targetOrgId, async () => {
 				await db.transaction(async (tx) => {
 					await tx.execute(
 						sql`SELECT pg_advisory_xact_lock(hashtext('telephony:lead:' || ${targetOrgId} || ':' || ${callerPhone.national10}))`,
@@ -121,12 +121,10 @@ export async function handleAnswerCall(
 						}
 					}
 				});
-			} catch (err) {
-				request.log.warn({ err, orgId: targetOrgId }, "[Telephony] Answer call lead creation warning");
-			}
-		}).catch((err) => {
-			request.log.warn({ err, orgId: targetOrgId }, "[Telephony] withTenantCtx lead creation rejected");
-		});
+			});
+		} catch (err) {
+			request.log.warn({ err, orgId: targetOrgId }, "[Telephony] Answer call lead creation warning");
+		}
 	}
 
 	return reply.status(200).send({
@@ -157,6 +155,8 @@ export async function handleEndCall(
 	const orgId = resolvedOrgId;
 
 	const body = request.body || ({} as EndCallBody);
+	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
 	const callerPhone = normalizePhoneNumber(body.phone);
 	const callId = body.callId || `call-${Date.now()}`;
 	const parsedDuration = typeof body.durationSeconds === "number"
@@ -225,6 +225,7 @@ export async function handleEndCall(
 						...(durationSeconds !== null && (existing.durationSeconds === null || durationSeconds > 0)
 							? { durationSeconds }
 							: {}),
+						...(idempotencyKey ? { idempotencyKey } : {}),
 					})
 					.where(eq(communicationEvents.id, existing.id));
 			} else {
@@ -242,48 +243,46 @@ export async function handleEndCall(
 						: `Звонок (${phoneStr})`,
 					recordingUrl: body.recordingUrl || null,
 					durationSeconds,
+					idempotencyKey,
 				});
 			}
 
 			// Если пациент не найден и телефон валиден — параллельно обновляем или создаем crmLeads
+			// ACID: Без подавления SQL-ошибок внутри открытой транзакции Postgres
 			if (!targetPatientId && callerPhone.isValid) {
-				try {
-					const existing = await tx
-						.select({ id: crmLeads.id })
-						.from(crmLeads)
-						.where(
-							and(
-								eq(crmLeads.organizationId, orgId),
-								or(
-									eq(crmLeads.phone, callerPhone.e164),
-									ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-								),
+				const existing = await tx
+					.select({ id: crmLeads.id })
+					.from(crmLeads)
+					.where(
+						and(
+							eq(crmLeads.organizationId, orgId),
+							or(
+								eq(crmLeads.phone, callerPhone.e164),
+								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
 							),
-						)
-						.limit(1);
+						),
+					)
+					.limit(1);
 
-					if (existing.length > 0 && existing[0]?.id) {
-						await tx
-							.update(crmLeads)
-							.set({
-								lastContactedAt: new Date(),
-								...(body.notes ? { notes: body.notes } : {}),
-							})
-							.where(eq(crmLeads.id, existing[0].id));
-					} else {
-						await tx.insert(crmLeads).values({
-							organizationId: orgId,
-							phone: callerPhone.e164,
-							patientName: "Новый лид",
-							name: "Новый лид",
-							source: "telephony",
-							status: "new",
+				if (existing.length > 0 && existing[0]?.id) {
+					await tx
+						.update(crmLeads)
+						.set({
 							lastContactedAt: new Date(),
 							...(body.notes ? { notes: body.notes } : {}),
-						});
-					}
-				} catch (err) {
-					request.log.warn({ err }, "[Telephony] Lead creation error in tx");
+						})
+						.where(eq(crmLeads.id, existing[0].id));
+				} else {
+					await tx.insert(crmLeads).values({
+						organizationId: orgId,
+						phone: callerPhone.e164,
+						patientName: "Новый лид",
+						name: "Новый лид",
+						source: "telephony",
+						status: "new",
+						lastContactedAt: new Date(),
+						...(body.notes ? { notes: body.notes } : {}),
+					});
 				}
 			}
 		});
@@ -340,6 +339,16 @@ export async function cleanupStaleRingingCalls(
 		return { cleanedCount: 0 };
 	}
 
+	const broadcastsToEmit: Array<{
+		organizationId: string;
+		payload: {
+			callId: string;
+			phone: string;
+			durationSeconds: number;
+			timestamp: string;
+		};
+	}> = [];
+
 	await db.transaction(async (tx) => {
 		for (const row of stale) {
 			await tx
@@ -350,8 +359,8 @@ export async function cleanupStaleRingingCalls(
 				})
 				.where(eq(communicationEvents.id, row.id));
 
-			wsBroker.broadcastToOrganization(row.organizationId, {
-				type: "TELEPHONY_CALL_ENDED",
+			broadcastsToEmit.push({
+				organizationId: row.organizationId,
 				payload: {
 					callId: row.providerCallId || row.id,
 					phone: row.callerPhone || "",
@@ -361,6 +370,14 @@ export async function cleanupStaleRingingCalls(
 			});
 		}
 	});
+
+	// Broadcast to WebSocket strictly AFTER successful commit of transaction
+	for (const b of broadcastsToEmit) {
+		wsBroker.broadcastToOrganization(b.organizationId, {
+			type: "TELEPHONY_CALL_ENDED",
+			payload: b.payload,
+		});
+	}
 
 	return { cleanedCount: stale.length };
 }

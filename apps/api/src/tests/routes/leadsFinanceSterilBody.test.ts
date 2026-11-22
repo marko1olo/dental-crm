@@ -11,7 +11,7 @@ import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { registerLeadsRoutes } from "../../routes/leads.js";
-import { registerSterilizationRoutes } from "../../routes/sterilization.js";
+import { registerSanpinSterilizationRoutes as registerSterilizationRoutes } from "../../routes/sanpin/sterilizationRoutes.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import {
 	CLINIC_TOKEN_HEADER,

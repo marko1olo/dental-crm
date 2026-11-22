@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks } from "@dental/shared";
 import {
 	buildShiftCompletedServices,
 	type ShiftCompletedAppointment,
@@ -81,10 +82,20 @@ export function useShiftFinancialSummary({
 		[todayAppointments],
 	);
 	const totalRevenueRub = useMemo(() => Math.max(0, directPaymentsRub > 0 ? directPaymentsRub : appointmentBilledRub), [directPaymentsRub, appointmentBilledRub]);
-	const estimatedDoctorPayoutRub = useMemo(() => Math.round((totalRevenueRub * doctorCommissionPct) / 100), [totalRevenueRub, doctorCommissionPct]);
+	const estimatedDoctorPayoutRub = useMemo(() => {
+		const totalKop = rublesToKopecks(totalRevenueRub);
+		const basisPoints = Math.round(doctorCommissionPct * 100);
+		return kopecksToRubles(percentageOfKopecks(totalKop, basisPoints));
+	}, [totalRevenueRub, doctorCommissionPct]);
 	const shiftCompletedServices = useMemo(() => buildShiftCompletedServices({ todayAppointments, patientsById, currentPatient, shiftActiveDoctorId, todayIso, staffById }), [todayAppointments, patientsById, currentPatient, shiftActiveDoctorId, todayIso, staffById]);
-	const totalLabCostRub = useMemo(() => Math.round(shiftCompletedServices.reduce((sum, item) => sum + item.labCostKop, 0) / 100), [shiftCompletedServices]);
-	const totalMaterialCostRub = useMemo(() => Math.round(shiftCompletedServices.reduce((sum, item) => sum + item.materialCostKop, 0) / 100), [shiftCompletedServices]);
+	const totalLabCostRub = useMemo(() => {
+		const sumKop = shiftCompletedServices.reduce((sum, item) => sum + item.labCostKop, 0);
+		return kopecksToRubles(sumKop);
+	}, [shiftCompletedServices]);
+	const totalMaterialCostRub = useMemo(() => {
+		const sumKop = shiftCompletedServices.reduce((sum, item) => sum + item.materialCostKop, 0);
+		return kopecksToRubles(sumKop);
+	}, [shiftCompletedServices]);
 	const netRevenueAfterDeductionsRub = useMemo(() => Math.max(0, totalRevenueRub - totalLabCostRub - totalMaterialCostRub), [totalRevenueRub, totalLabCostRub, totalMaterialCostRub]);
 
 	return {

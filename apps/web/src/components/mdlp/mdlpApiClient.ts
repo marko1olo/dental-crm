@@ -1,5 +1,6 @@
 import { type ChestnyZnakScannedItem, createChestnyZnakScannedItem, generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { logger } from "../../utils/logger.js";
 import { type MdlpOfflinePackage, saveMdlpOfflineQueue } from "./mdlpOfflineQueue.js";
 
 interface MdlpItemRow {
@@ -97,7 +98,7 @@ export async function fetchMdlpInStockItems(limit = 10): Promise<ChestnyZnakScan
 			});
 		});
 	} catch (err: unknown) {
-		console.debug("[MDLP ApiClient] fetchMdlpInStockItems failed:", err);
+		logger.debug("[MDLP ApiClient] fetchMdlpInStockItems failed:", err);
 		return [];
 	}
 }
@@ -144,7 +145,7 @@ export async function syncMdlpQueueToBackend(
 				failedCount++;
 			}
 		} catch (err: unknown) {
-			console.debug("[MDLP ApiClient] sync item failed:", err);
+			logger.debug("[MDLP ApiClient] sync item failed:", err);
 			failedCount++;
 		}
 	}
@@ -160,12 +161,13 @@ export async function fetchMdlpLiveQueue(): Promise<MdlpOfflinePackage[]> {
 		});
 		if (!res.ok) return [];
 		const data = await res.json();
-		if (!Array.isArray(data?.queue)) return [];
+		const rawQueue = data?.items ?? data?.queue;
+		if (!Array.isArray(rawQueue)) return [];
 
 		const todayStr = new Date().toISOString().slice(0, 10);
 		const dateCompact = todayStr.replace(/-/g, "");
 
-		return data.queue.map((item: MdlpQueueRow, idx: number) => ({
+		return rawQueue.map((item: MdlpQueueRow, idx: number) => ({
 			id: item.id || `live-mdlp-q-${idx}`,
 			createdAt: item.queuedAt || new Date().toISOString(),
 			docNum: `АКТ-ВЫБЫТИЕ-${dateCompact}-${String(idx + 1).padStart(3, "0")}`,
@@ -180,7 +182,7 @@ export async function fetchMdlpLiveQueue(): Promise<MdlpOfflinePackage[]> {
 			visitId: item.visitId ?? undefined,
 		}));
 	} catch (err: unknown) {
-		console.debug("[MDLP ApiClient] fetchMdlpLiveQueue failed:", err);
+		logger.debug("[MDLP ApiClient] fetchMdlpLiveQueue failed:", err);
 		return [];
 	}
 }

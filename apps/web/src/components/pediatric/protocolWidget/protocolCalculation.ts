@@ -54,8 +54,8 @@ export interface ClinicalCalculationResult {
 export function calculateClinicalProtocol(params: ClinicalCalculationParams): ClinicalCalculationResult {
 	const surfacesStr = params.selectedSurfaces.join(", ") || "O";
 	const presetResult = generatePresetTreatment(params.activePresetId, params.currentTooth, surfacesStr, params.selectedMaterial);
-	const primaryServiceCode = params.activePreset.serviceCode || params.activePreset.serviceCode804n || "A16.07.002.001";
-	const primaryServiceName = params.activePreset.serviceName || params.activePreset.serviceName804n || params.activePreset.titleRu;
+	const primaryServiceCode = params.activePreset.serviceCode || "A16.07.002.001";
+	const primaryServiceName = params.activePreset.serviceName || params.activePreset.titleRu;
 	const services: PediatricServiceItem[] = [{ code: primaryServiceCode, nameRu: primaryServiceName }, ...presetResult.extraServices];
 	let treatmentDescription = presetResult.treatmentDescription;
 

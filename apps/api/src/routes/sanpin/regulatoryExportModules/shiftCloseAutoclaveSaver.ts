@@ -4,10 +4,9 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import { sterilizationLogs } from "../../../db/schema.js";
-
-type TxType = Parameters<Parameters<typeof db.transaction>[0]>[0];
+import { executeSterilizationConsumablesDeduction } from "../sterilizationModules/sterilizationStockDeduction.js";
 
 function resolvePackagingType(raw?: string): string {
 	const valid = ["kraft_heat_sealed", "kraft_self_adhesive", "laminated_heat_sealed", "metal_cassette", "other"];
@@ -29,16 +28,24 @@ function resolveCycleMode(raw?: string): string {
 }
 
 export async function saveShiftAutoclaveRecords(
-	tx: TxType,
+	tx: TenantDb,
 	organizationId: string,
 	body: Record<string, unknown>,
 	operatorId: string | null,
 	dateStr: string,
 ): Promise<number> {
-	const form257Records = Array.isArray(body.form257Records) ? (body.form257Records as Record<string, unknown>[]) : [];
-	if (form257Records.length === 0) return 0;
+	const rawAutoclaveRecords =
+		body.autoclaveCycles ??
+		body.sterilizationRecords ??
+		body.form257Records ??
+		body.form257 ??
+		[];
+	const autoclaveRecords = Array.isArray(rawAutoclaveRecords)
+		? (rawAutoclaveRecords as Record<string, unknown>[])
+		: [];
+	if (autoclaveRecords.length === 0) return 0;
 
-	const sterilInserts = form257Records.map((f, idx: number) => ({
+	const sterilInserts = autoclaveRecords.map((f, idx: number) => ({
 		organizationId,
 		deviceName: String(f.sterilizerBrandModel || f.deviceName || "Автоклав класс B"),
 		autoclaveId: String(f.sterilizerEquipmentId || f.sterilizerId || f.autoclaveId || "АК-01"),
@@ -69,5 +76,20 @@ export async function saveShiftAutoclaveRecords(
 	}));
 
 	await tx.insert(sterilizationLogs).values(sterilInserts);
+
+	for (const f of autoclaveRecords) {
+		const rawCount = f.packagedItemsCount ?? f.count ?? (body as Record<string, unknown>).packagedItemsCount;
+		const packsCount = Number(rawCount) > 0 ? Number(rawCount) : 1;
+		await executeSterilizationConsumablesDeduction({
+			organizationId,
+			userId: operatorId,
+			count: packsCount,
+			packagingType: resolvePackagingType(typeof f.packagingType === "string" ? f.packagingType : undefined),
+			indicatorType: "class5_integrating",
+			cycleNumber: Number(f.cycleNumber) || 1,
+			barcode: String(f.pouchBatchNumber || `DNT-STER-${dateStr.replace(/-/g, "")}-1`),
+		}, tx);
+	}
+
 	return sterilInserts.length;
 }

@@ -6,7 +6,7 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 
-let dicomImageLoaderPromise: Promise<any> | null = null;
+let dicomImageLoaderPromise: Promise<unknown> | null = null;
 
 export async function getDicomImageLoader() {
 	if (!dicomImageLoaderPromise) {

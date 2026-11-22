@@ -28,6 +28,8 @@ import {
 	mergeExplicitAndStoreServices,
 } from "./completionModules/visitCompletionServicesAssembler";
 import { executeVisitPostCompletionPipeline } from "./completionModules/visitCompletionPipeline";
+import { createVisitInvoiceInApi } from "./completionModules/visitInvoiceCreationService";
+import { staffTelemetryService } from "../../services/logging/staffTelemetryService";
 import type { VisitPlanItemLike } from "./completedServicesPlan";
 
 export { assembleVisitStoreCompletedServices } from "./completionModules/visitCompletionServicesAssembler";
@@ -178,16 +180,104 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					result,
 				});
 
+				const effectiveDoctorId =
+					(activeVisit && "doctorId" in activeVisit && typeof (activeVisit as { doctorId?: unknown }).doctorId === "string"
+						? ((activeVisit as { doctorId: string }).doctorId)
+						: undefined) ||
+					(dashboard && "activeDoctor" in dashboard && typeof (dashboard as { activeDoctor?: { id?: string } }).activeDoctor?.id === "string"
+						? (dashboard as { activeDoctor: { id: string } }).activeDoctor.id
+						: undefined);
+
+				let createdInvoice: {
+					invoiceId: string;
+					invoiceNumber: string;
+					totalAmountRub: number;
+					isPersistedInDb: boolean;
+				} | null = null;
+
+				if (effectivePatientId && effectivePatientId !== "pat-unknown") {
+					try {
+						createdInvoice = await createVisitInvoiceInApi({
+							effectiveVisitId,
+							effectivePatientId,
+							effectiveDoctorId,
+							result,
+						});
+					} catch (invErr) {
+						logger.warn("[useVisitCompletion] Мягкое фоновое создание счёта:", invErr);
+					}
+				}
+
 				const finalResult: ClinicalVisitCompletionResult = {
 					...result,
+					...(createdInvoice?.invoiceId
+						? {
+								invoiceId: createdInvoice.invoiceId,
+								receiptNumber: createdInvoice.invoiceNumber,
+							}
+						: {}),
 					form043uSaved: true,
 					emkSaved: true,
 					medicalCardSaved: true,
 					...(materialsDeduction ? { materialsDeduction } : {}),
 				};
 
+				if (createdInvoice?.invoiceId) {
+					staffTelemetryService.recordAction({
+						actionType: "custom_action",
+						entityType: "visit",
+						entityId: effectiveVisitId,
+						patientId: effectivePatientId,
+						details: {
+							status: "completed",
+							invoiceId: createdInvoice.invoiceId,
+							totalNetRub: finalResult.totalNetRub,
+							receiptNumber: createdInvoice.invoiceNumber,
+						},
+					});
+
+					const pendingCheckout = {
+						patientId: effectivePatientId,
+						patientName: effectivePatientName,
+						visitId: effectiveVisitId,
+						invoiceId: createdInvoice.invoiceId,
+						services: finalResult.items,
+						totalDueRub: createdInvoice.totalAmountRub,
+						receiptNumber: createdInvoice.invoiceNumber,
+						timestamp: Date.now(),
+					};
+
+					try {
+						sessionStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
+						localStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
+					} catch {
+						// Safe
+					}
+
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent("dente-invoice-created", {
+								detail: {
+									invoiceId: createdInvoice.invoiceId,
+									patientId: effectivePatientId,
+									visitId: effectiveVisitId,
+									totalAmountRub: createdInvoice.totalAmountRub,
+								},
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:pending-checkout-ready", {
+								detail: pendingCheckout,
+							}),
+						);
+					}
+				}
+
 				setCompletionResult(finalResult);
-				showToast(`Приём завершён! ${finalResult.statusBannerText}`, "success", 4500);
+				const toastMessage = createdInvoice?.invoiceNumber
+					? `Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${finalResult.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.`
+					: `Приём завершён! ${finalResult.statusBannerText}`;
+				showToast(toastMessage, "success", 4500);
 				options?.onCompleteSuccess?.(finalResult);
 
 				return finalResult;

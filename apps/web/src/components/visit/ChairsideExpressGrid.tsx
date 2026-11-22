@@ -92,9 +92,16 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 						<div className="w-full flex items-start justify-between gap-1.5">
 							<div className="flex items-center gap-1.5 flex-1 min-w-0">
 								{getExpressIcon(s.id)}
-								<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 truncate">
-									{s.title}
-								</span>
+								<div className="flex flex-col min-w-0">
+									<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 truncate">
+										{s.title}
+									</span>
+									{s.code804n ? (
+										<span className="text-[10px] text-slate-400 font-mono">
+											{s.code804n}
+										</span>
+									) : null}
+								</div>
 							</div>
 							<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono shrink-0">
 								{money(s.priceRub)}

@@ -5,9 +5,7 @@ import { egiszAuditLogs } from "../../db/schema/clinical.js";
 
 export type DbTransaction =
 	| Parameters<Parameters<typeof db.transaction>[0]>[0]
-	| typeof db
-	// biome-ignore lint/suspicious/noExplicitAny: allow any drizzle transaction or connection adapter
-	| any;
+	| typeof db;
 
 export const GENESIS_HASH =
 	"0000000000000000000000000000000000000000000000000000000000000000";

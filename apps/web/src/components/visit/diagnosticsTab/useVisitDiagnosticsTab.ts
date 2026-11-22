@@ -53,9 +53,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 
 	const [isHotFolderModalOpen, setIsHotFolderModalOpen] = useState<boolean>(false);
 
+	const doctorSpecialty = ctx?.activeDoctor?.specialties?.[0] || (ctx?.activeDoctor as { specialty?: string })?.specialty || "";
 	const isOrthoContext =
-		String(ctx?.dashboard?.activeDoctor?.specialty || "").toLowerCase().includes("ortho") ||
-		String(ctx?.dashboard?.activeDoctor?.specialtyRu || "").toLowerCase().includes("ортодонт");
+		String(doctorSpecialty).toLowerCase().includes("ortho") ||
+		String(doctorSpecialty).toLowerCase().includes("ортодонт");
 	const [isAdvancedDiagnosticsOpen, setIsAdvancedDiagnosticsOpen] = useState<boolean>(isOrthoContext);
 	const [isCbctMenuOpen, setIsCbctMenuOpen] = useState<boolean>(false);
 	const cbctMenuRef = useRef<HTMLDivElement>(null);
@@ -76,10 +77,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const storeActiveToothNumber = useVisitStore((s) => s.activeToothNumber);
+	const visitToothRaw = (ctx?.dashboard?.activeVisit as { diagnosisTooth?: unknown; toothNumber?: unknown } | null | undefined)?.diagnosisTooth ?? (ctx?.dashboard?.activeVisit as { diagnosisTooth?: unknown; toothNumber?: unknown } | null | undefined)?.toothNumber;
 	const initialToothNumber =
 		storeActiveToothNumber ??
-		Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) ??
-		16;
+		(typeof visitToothRaw === "number" ? visitToothRaw : Number(visitToothRaw) || 16);
 	const [selectedToothForPhoto, setSelectedToothForPhoto] = useState<number>(initialToothNumber);
 	const [selectedPhotoType, setSelectedPhotoType] = useState<PhotoStageType>("before");
 	const [photoComment, setPhotoComment] = useState<string>("");

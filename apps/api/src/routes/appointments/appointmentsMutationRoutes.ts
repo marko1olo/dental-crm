@@ -147,11 +147,27 @@ export const createAppointmentHandler = async (
 
 		if (existingRecord) {
 			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply
-					.code(existingRecord.responseCode || 201)
-					.send(existingRecord.responseBody);
+				const apptId =
+					(existingRecord.responseBody as Record<string, unknown>)?.appointment &&
+					typeof (existingRecord.responseBody as Record<string, unknown>).appointment === "object"
+						? ((existingRecord.responseBody as Record<string, unknown>).appointment as Record<string, unknown>)?.id
+						: null;
+				if (typeof apptId === "string") {
+					const stillExists = await getAppointmentByIdInDb(orgId, apptId);
+					if (stillExists) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 201)
+							.send(existingRecord.responseBody);
+					}
+				} else {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 201)
+						.send(existingRecord.responseBody);
+				}
 			}
 			if (existingRecord.status === "in_flight") {
 				return reply.code(409).header("Retry-After", "1").send({
@@ -237,6 +253,8 @@ export const createAppointmentHandler = async (
 				startsAt: created.startsAt,
 				endsAt: created.endsAt,
 				status: created.status,
+				treatmentPlanId: created.treatmentPlanId ?? undefined,
+				stageId: created.stageId ?? undefined,
 			},
 		});
 
@@ -345,11 +363,14 @@ export const updateAppointmentHandler = async (
 
 		if (existingRecord) {
 			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply
-					.code(existingRecord.responseCode || 200)
-					.send(existingRecord.responseBody);
+				const stillExists = await getAppointmentByIdInDb(orgId, appointmentId);
+				if (stillExists) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
 			}
 			if (existingRecord.status === "in_flight") {
 				return reply.code(409).header("Retry-After", "1").send({
@@ -585,11 +606,27 @@ export const createNextStageAppointmentHandler = async (
 
 		if (existingRecord) {
 			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply
-					.code(existingRecord.responseCode || 201)
-					.send(existingRecord.responseBody);
+				const apptId =
+					(existingRecord.responseBody as Record<string, unknown>)?.appointment &&
+					typeof (existingRecord.responseBody as Record<string, unknown>).appointment === "object"
+						? ((existingRecord.responseBody as Record<string, unknown>).appointment as Record<string, unknown>)?.id
+						: null;
+				if (typeof apptId === "string") {
+					const stillExists = await getAppointmentByIdInDb(orgId, apptId);
+					if (stillExists) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 201)
+							.send(existingRecord.responseBody);
+					}
+				} else {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 201)
+						.send(existingRecord.responseBody);
+				}
 			}
 			if (existingRecord.status === "in_flight") {
 				return reply.code(409).header("Retry-After", "1").send({
@@ -670,6 +707,8 @@ export const createNextStageAppointmentHandler = async (
 				parentAppointmentId: created.parentAppointmentId,
 				stageIndex: created.stageIndex,
 				clinicalStage: created.clinicalStage,
+				treatmentPlanId: created.treatmentPlanId ?? undefined,
+				stageId: created.stageId ?? undefined,
 			},
 		});
 

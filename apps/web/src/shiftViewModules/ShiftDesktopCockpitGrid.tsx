@@ -1,7 +1,16 @@
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, RecommendedAction } from "@dental/shared";
 import React from "react";
 import { ShiftViewChairStatusCard } from "./ShiftViewChairStatusCard";
-import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats, ShiftVisitAppointment, ShiftVisitDoctor, ShiftVisitPatient } from "./shiftViewTypes";
+import type {
+	ShiftFinancialMode,
+	ShiftHeroAppointment,
+	ShiftHeroPatient,
+	ShiftRecommendedAction,
+	ShiftViewStats,
+	ShiftVisitAppointment,
+	ShiftVisitDoctor,
+	ShiftVisitPatient,
+} from "./shiftViewTypes";
 import { ShiftViewVisitsQueue } from "./ShiftViewVisitsQueue";
 import { ShiftDesktopRightColumn } from "./ShiftDesktopRightColumn";
 
@@ -13,8 +22,8 @@ export interface ShiftDesktopCockpitGridProps {
 	currentPatientHasCallablePhone: boolean;
 	currentPatientCallablePhone: string | null;
 	currentAppointmentReason: string;
-	nextAppointment?: unknown;
-	nextAppointmentPatient?: unknown;
+	nextAppointment?: ShiftHeroAppointment | null | undefined;
+	nextAppointmentPatient?: ShiftHeroPatient | null | undefined;
 	todayAppointments: readonly ShiftVisitAppointment[];
 	inChairAppointments: readonly ShiftVisitAppointment[];
 	waitingAppointments: readonly ShiftVisitAppointment[];
@@ -27,7 +36,7 @@ export interface ShiftDesktopCockpitGridProps {
 	chairRentalNetIncomeRub: number;
 	chairRentalRentExpenseRub: number;
 	chairRentalActTrigger: number;
-	visibleRecommendedActions?: readonly unknown[] | undefined;
+	visibleRecommendedActions?: readonly RecommendedAction[] | undefined;
 	recommendedActionPriorityLabels?: Record<string, string> | undefined;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 	setError?: ((err: unknown) => void) | undefined;
@@ -35,7 +44,7 @@ export interface ShiftDesktopCockpitGridProps {
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
-	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
+	runRecommendedAction: (action: ShiftRecommendedAction) => void;
 	userRole?: string | undefined;
 }
 

@@ -107,7 +107,9 @@ export type ScheduleViewProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
   loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
   setDashboard?:
-    | React.Dispatch<React.SetStateAction<Dashboard>>
+    | ((
+        val: Dashboard | null | ((current: Dashboard | null) => Dashboard | null),
+      ) => void)
     | ((updater: (prev: Dashboard) => Dashboard) => void);
 };
 

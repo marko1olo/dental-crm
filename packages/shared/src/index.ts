@@ -268,6 +268,8 @@ export * from "./doctor/index.js";
 export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
 export * from "./orthodontics/index.js";
+export type { AngleClass, AngleClassId } from "./orthodontics/index.js";
+export { normalizeAngleClass } from "./orthodontics/index.js";
 export * from "./branches/index.js";
 export * as inventory from "./inventory/index.js";
 export * from "./curator/index.js";

@@ -22,7 +22,7 @@ export interface UseLabTrackingStateProps {
 export function useLabTrackingState({
 	order, patientDepositRub, stageTotalRub, stagePaidRub, onStageUpdate, onFittingDateUpdate,
 }: UseLabTrackingStateProps) {
-	const [activeStage, setActiveStage] = useState<LabOrderStageKey>("sent_to_lab");
+	const [activeStage, setActiveStage] = useState<LabOrderStageKey>("sent");
 	const [stageNote, setStageNote] = useState<string>("");
 	const [isUpdating, setIsUpdating] = useState<boolean>(false);
 	const [gateOverride, setGateOverride] = useState<{ authorized: boolean; doctorName: string; timestampIso: string; reason: string } | null>(null);
@@ -33,7 +33,7 @@ export function useLabTrackingState({
 
 	useEffect(() => {
 		if (!order) return;
-		setActiveStage(order.currentStage || "sent_to_lab");
+		setActiveStage(order.currentStage || "sent");
 		setFrameworkTrialDate(order.frameworkTrialDate ? order.frameworkTrialDate.slice(0, 10) : "");
 		setCeramicTrialDate(order.ceramicTrialDate ? order.ceramicTrialDate.slice(0, 10) : "");
 		setDeliveryDate(order.deliveryDate ? order.deliveryDate.slice(0, 10) : order.dueDate ? order.dueDate.slice(0, 10) : "");
@@ -56,7 +56,7 @@ export function useLabTrackingState({
 			if (!nextStage && !targetStage) showToast("Заказ ЗТЛ уже на завершающем этапе.", "info");
 			return;
 		}
-		if ((stageToSet === "in_progress" || stageToSet === "sent_to_lab") && !financialGateResult.isGatePassed && !gateOverride) {
+		if ((stageToSet === "in_progress" || stageToSet === "sent" || stageToSet === "sent_to_lab") && !financialGateResult.isGatePassed && !gateOverride) {
 			setGateOverride(createDoctorClinicalOverride(order.doctorName || "Лечащий врач", "Перевод этапа ЗТЛ — автономия врача"));
 		}
 		setIsUpdating(true);

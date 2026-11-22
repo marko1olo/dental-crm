@@ -1,12 +1,18 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { create } from "zustand";
 import { useAppStore } from "./appStore";
-export type {
+import type {
 	AppointmentScheduleDraft,
 	AppointmentScheduleSaveState,
 	StaffScheduleDraft,
 	StaffScheduleSaveState,
 } from "../AppConstants";
+export type {
+	AppointmentScheduleDraft,
+	AppointmentScheduleSaveState,
+	StaffScheduleDraft,
+	StaffScheduleSaveState,
+};
 import type { QuickBookingSlotInfo } from "../components/schedule/QuickBookingDrawerTypes";
 import { emptyAppointmentScheduleDraft } from "../utils/draftDefaults";
 import {

@@ -4,6 +4,6 @@
 
 export * from "./freeSlotsTypes";
 export * from "./intervalIntersectionMath";
-export * from "./slotAvailabilityFilters";
 export * from "./freeSlotsChipFormatter";
 export * from "./chairDoctorOccupancyTally";
+export { findDoctorFreeSlots, formatRussianDayHeader } from "@dental/shared";

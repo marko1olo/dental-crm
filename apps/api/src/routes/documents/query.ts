@@ -17,6 +17,7 @@ import {
 } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { apiError } from "./shared.js";
 
 export const clinicalDocKinds = new Set<string>([
@@ -94,11 +95,16 @@ export async function registerQuery(app: FastifyInstance) {
 			offset?: string;
 		};
 
+		const portalPatient = extractPortalPatient(request);
 		const identity = getRequestIdentity(request);
 		const access = evaluateClinicalAccess(identity.role);
 
+		// Если запрос от пациента ЛК — строгая изоляция BOLA: видит только свои документы
+		const effectivePatientId = portalPatient ? portalPatient.patientId : query.patientId;
+
 		// Если запрашивается конкретный вид медицинского документа неклиническим персоналом — отказ 403
 		if (
+			!portalPatient &&
 			query.kind &&
 			clinicalDocKinds.has(query.kind) &&
 			!access.hasClinicalAccess &&
@@ -114,8 +120,8 @@ export async function registerQuery(app: FastifyInstance) {
 		}
 
 		// Если указан patientId, проверяем архивный статус пациента
-		if (query.patientId) {
-			const patient = await getPatientByIdFromDb(orgId, query.patientId);
+		if (effectivePatientId && !portalPatient) {
+			const patient = await getPatientByIdFromDb(orgId, effectivePatientId);
 			if (patient?.status === "archived" && !access.hasClinicalAccess) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
@@ -128,8 +134,8 @@ export async function registerQuery(app: FastifyInstance) {
 		}
 
 		const conditions = [eq(generatedDocuments.organizationId, orgId)];
-		if (query.patientId) {
-			conditions.push(eq(generatedDocuments.patientId, query.patientId));
+		if (effectivePatientId) {
+			conditions.push(eq(generatedDocuments.patientId, effectivePatientId));
 		}
 		if (query.kind) {
 			conditions.push(eq(generatedDocuments.kind, query.kind as DocumentKind));
@@ -146,8 +152,9 @@ export async function registerQuery(app: FastifyInstance) {
 			.limit(limit)
 			.offset(offset);
 
-		// 152-ФЗ / 323-ФЗ: фильтрация клинических документов от неклинических глаз
+		// 152-ФЗ / 323-ФЗ: фильтрация клинических документов от неклинических глаз (пациент видит все свои)
 		const filteredRecords = records.filter((doc) => {
+			if (portalPatient) return true;
 			if (
 				clinicalDocKinds.has(doc.kind) &&
 				!access.hasClinicalAccess &&
@@ -215,34 +222,44 @@ export async function registerQuery(app: FastifyInstance) {
 			return reply.code(404).send(apiError("Документ не найден"));
 		}
 
-		const identity = getRequestIdentity(request);
-		const access = evaluateClinicalAccess(identity.role);
+		// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
+		const portalPatient = extractPortalPatient(request);
+		if (portalPatient) {
+			if (document.patientId !== portalPatient.patientId) {
+				return reply
+					.code(403)
+					.send(apiError("Доступ к документам другого пациента запрещен (152-ФЗ / BOLA)"));
+			}
+		} else {
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role);
 
-		// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
-		if (
-			clinicalDocKinds.has(document.kind) &&
-			!access.hasClinicalAccess &&
-			!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
-		) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.document.read",
-				role: identity.role,
-				message:
-					"Доступ к медицинской тайне в документе ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-			});
-		}
+			// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
+			if (
+				clinicalDocKinds.has(document.kind) &&
+				!access.hasClinicalAccess &&
+				!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+			) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.document.read",
+					role: identity.role,
+					message:
+						"Доступ к медицинской тайне в документе ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
 
-		// Защита архивированного пациента
-		const patient = await getPatientByIdFromDb(orgId, document.patientId);
-		if (patient?.status === "archived" && !access.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "patients.archived.read",
-				role: identity.role,
-				message:
-					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных списанного в архив пациента неклиническим персоналом запрещено.",
-			});
+			// Защита архивированного пациента
+			const patient = await getPatientByIdFromDb(orgId, document.patientId);
+			if (patient?.status === "archived" && !access.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.read",
+					role: identity.role,
+					message:
+						"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных списанного в архив пациента неклиническим персоналом запрещено.",
+				});
+			}
 		}
 
 		// Аудит доступа к медицинскому документу

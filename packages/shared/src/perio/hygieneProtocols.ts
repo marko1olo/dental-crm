@@ -15,7 +15,8 @@ export interface CombinedHygieneReport {
 	readonly pma: PmaResult;
 	readonly kpi: KpiResult;
 	readonly assessedTeeth: Record<number, HygieneToothAssessment>;
-	readonly summaryText043: string;
+	readonly clinicalProtocolSummaryRu: string;
+	readonly summaryText043?: string;
 }
 
 export function calculateCombinedHygieneReport(
@@ -42,8 +43,14 @@ export function calculateCombinedHygieneReport(
 		lines.push(`Рекомендовано: Проведение контролируемой индивидуальной гигиены, обучение технике чистки зубов Bass/Stillman, курс противовоспалительной терапии.`);
 	}
 
+	const summaryText = lines.join("\n");
 	return {
-		ohiS, pma, kpi, assessedTeeth: assessmentsMap, summaryText043: lines.join("\n"),
+		ohiS,
+		pma,
+		kpi,
+		assessedTeeth: assessmentsMap,
+		clinicalProtocolSummaryRu: summaryText,
+		summaryText043: summaryText,
 	};
 }
 

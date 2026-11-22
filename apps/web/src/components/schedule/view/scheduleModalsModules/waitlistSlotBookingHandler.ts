@@ -81,7 +81,8 @@ export async function handleBookWaitlistSlot({
           (s: { id: string; role?: string }) => s.role === "doctor" || s.role === "dentist",
         )?.id ||
         (dashboard?.appointments as Array<{ doctorUserId?: string | null }> | undefined)?.[0]?.doctorUserId ||
-        auth?.user?.id;
+        auth?.activeWorkspaceProfile?.id ||
+        (auth as { user?: { id?: string } } | null | undefined)?.user?.id;
 
       if (!doctorUserId) {
         throw new Error("Не удалось определить врача для записи. Пожалуйста, укажите врача в расписании.");

@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { familyGroups, payments } from "../../../db/schema.js";
 import { processCashboxPayment } from "../../../routes/cashbox/cashboxPaymentProcessor.js";
-import type { FnsClinicInfo, FnsTaxPayload } from "../../fns/fnsKnd1151156Builder.js";
+import type { FnsClinicInfo, FnsTaxPayload } from "@dental/shared";
 import { generateFnsTaxCertificatesForFamilyLogic } from "../familyFnsTaxService.js";
 import {
 	FamilyWalletError,

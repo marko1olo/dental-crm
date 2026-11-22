@@ -20,10 +20,10 @@ import type { ToothState, VisitStore, VisitStoreSet } from "./types.js";
  * - Эндодонтия / пульпит (A16.07.030%, A16.07.008%) -> "treatment" (красный)
  */
 export function inferToothStateFromService(service: {
-	code?: string;
-	code804n?: string;
-	title?: string;
-	name?: string;
+	code?: string | undefined;
+	code804n?: string | undefined;
+	title?: string | undefined;
+	name?: string | undefined;
 }): ToothState {
 	const code = (service.code804n || service.code || "").trim();
 	const title = (service.title || service.name || "").toLowerCase();

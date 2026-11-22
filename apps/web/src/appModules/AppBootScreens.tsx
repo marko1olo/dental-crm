@@ -8,7 +8,9 @@ import { AppLoadingState, AppUnlockState } from "../AppBootState";
 import { operatorWorkflowFailureMessage } from "../AppHelpers";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
 import { cacheActiveStaffUser, getCachedStaffList } from "../lib/offlineStorage";
+import type { StaffUser } from "../components/auth/staffPinPad/staffPinPadTypes";
 import type { AppSessionAuthState } from "./appStateTypes";
+import type { AdminSecretUnlockDomain } from "../helpers/types";
 
 const AuthHub = lazyWithRetry(() =>
 	import("../components/auth/AuthHub").then((m) => ({ default: m.AuthHub })),
@@ -30,7 +32,7 @@ export interface AppBootScreensLogic {
 	accessUnlockMessage?: string | null;
 	clinicalAdminSecretDraft: string;
 	setClinicalAdminSecretDraft: (secret: string) => void;
-	unlockTelegramAdminSession: (scope: string) => void | Promise<void>;
+	unlockTelegramAdminSession: (domainOverride?: AdminSecretUnlockDomain) => void | Promise<void>;
 	loadDashboard: () => Promise<unknown> | void;
 }
 
@@ -48,10 +50,18 @@ export function AppBootScreens({ sessionAuth, appLogic }: AppBootScreensProps) {
 				<AuthHub
 					onSuccess={(_cp, up) => {
 						sessionAuth.setClinicAuthed(true);
-						if (up) {
+						if (up && typeof up === "object" && "id" in up && typeof up.id === "string") {
+							const staffUser: StaffUser = {
+								id: up.id,
+								...(typeof up.fullName === "string" ? { fullName: up.fullName } : {}),
+								...(typeof up.role === "string" ? { role: up.role } : {}),
+								...(typeof up.organizationId === "string" ? { organizationId: up.organizationId } : {}),
+								...(typeof up.email === "string" ? { email: up.email } : {}),
+								...(typeof up.phone === "string" ? { phone: up.phone } : {}),
+							};
 							sessionAuth.setStaffAuthed(true);
-							sessionAuth.setActiveStaffUser(up);
-							cacheActiveStaffUser(up);
+							sessionAuth.setActiveStaffUser(staffUser);
+							cacheActiveStaffUser(staffUser);
 						}
 						void loadDashboard();
 					}}

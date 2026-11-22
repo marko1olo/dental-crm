@@ -1,4 +1,5 @@
 import React from "react";
+import type { RecommendedAction } from "@dental/shared";
 import {
 	DoctorShiftCashSection,
 	ShiftTodoListSection,
@@ -14,10 +15,10 @@ export interface ShiftDesktopRightColumnProps {
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
 	setIsShiftCloseModalOpen: (open: boolean) => void;
-	visibleRecommendedActions?: readonly unknown[] | undefined;
+	visibleRecommendedActions?: readonly RecommendedAction[] | undefined;
 	recommendedActionPriorityLabels?: Record<string, string> | undefined;
 	patientsById: ReadonlyMap<string, ShiftVisitPatient>;
-	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
+	runRecommendedAction: (action: ShiftRecommendedAction) => void;
 	userRole?: string | undefined;
 }
 
@@ -38,7 +39,17 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 }) => (
 	<div className="space-y-4 min-w-0" data-testid="shift-right-column">
 		<DoctorShiftCashSection
-			cashSummary={shiftStats?.cashBreakdown}
+			cashSummary={
+				shiftStats?.cashBreakdown
+					? {
+							cashRub: shiftStats.cashBreakdown.cashRub ?? 0,
+							cardRub: shiftStats.cashBreakdown.cardRub ?? 0,
+							sbpRub: shiftStats.cashBreakdown.sbpRub ?? 0,
+							depositRub: shiftStats.cashBreakdown.depositRub ?? 0,
+							totalRevenueRub: shiftStats.totalRevenueRub ?? 0,
+						}
+					: undefined
+			}
 			totalRevenueRub={shiftStats?.totalRevenueRub ?? 0}
 			doctorCommissionPct={shiftStats?.doctorCommissionPct ?? 30}
 			estimatedDoctorPayoutRub={shiftStats?.estimatedDoctorPayoutRub ?? 0}

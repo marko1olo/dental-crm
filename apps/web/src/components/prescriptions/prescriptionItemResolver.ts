@@ -33,12 +33,18 @@ export function resolveActivePrescriptionItems(
 				id: found.id,
 				latinName: found.latinRp,
 				tradeName: found.tradeNameRu,
+				activeSubstanceRu: found.activeSubstanceRu,
+				category: found.category,
+				categoryLabelRu: found.categoryLabelRu,
+				formRu: found.formRu,
+				dosageRu: found.dosageRu,
+				quantityLabel: found.quantityLabel,
+				dispenseLatin: found.dispenseLatin,
+				signaRussian: signa,
+				memoInstruction: signa,
 				form: found.formRu,
 				dosage: found.dosageRu,
 				quantity: found.quantityLabel,
-				dispenseLatin: found.dispenseLatin,
-				signaRussian: signa,
-				category: found.category,
 			});
 		}
 	}

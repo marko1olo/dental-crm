@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { ChevronDown, ExternalLink, Plus, SlidersHorizontal, Trash2, Check } from "lucide-react";
+import { ChevronDown, ExternalLink, Plus, SlidersHorizontal, Check } from "lucide-react";
 import { kopecksToRubles, type EndoCanalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
@@ -17,7 +17,9 @@ import {
 	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, getAnatomicalWorkingLength,
 	type EndoStageStamp, type QuickCanalState,
 } from "./endodonticsCatalogData";
-export { getChairsideDefaultCanals, type QuickCanalState, type EndoStageStamp };
+import { generateSoapEndoProtocol } from "./chairsideEndoSoapBuilder";
+import { ChairsideCanalRow } from "./ChairsideCanalRow";
+export { getChairsideDefaultCanals, generateSoapEndoProtocol, type QuickCanalState, type EndoStageStamp };
 
 export interface ChairsideEndoQuickBarProps {
 	readonly activeTooth?: number | undefined; readonly toothState?: string | undefined; readonly patientId?: string | undefined; readonly visitId?: string | undefined;
@@ -29,38 +31,6 @@ export const QUICK_LENGTH_CHIPS = [19, 20, 21, 21.5, 22] as const;
 export const QUICK_MAF_OPTIONS = [
 	{ label: "25/.04", maf: "#25", taper: ".04", system: "ProTaper / NiTi" }, { label: "30/.04", maf: "#30", taper: ".04", system: "ProTaper / NiTi" }, { label: "25/.06", maf: "#25", taper: ".06", system: "ProTaper / NiTi" }, { label: "20/.04", maf: "#20", taper: ".04", system: "ProTaper / NiTi" },
 ] as const;
-
-/** Генерация чистого SOAP-протокола эндодонтии без сырого канцелярита (Мандат 8x) */
-export function generateSoapEndoProtocol({
-	activeTooth, toothNumber, toothAnatomicalName = "Моляр", currentCanals = [], toothState,
-}: { activeTooth?: number; toothNumber?: number; toothAnatomicalName?: string; currentCanals?: QuickCanalState[]; toothState?: string | undefined; }): string {
-	const toothNum = activeTooth ?? toothNumber ?? 46;
-	const canals = Array.isArray(currentCanals) && currentCanals.length > 0 ? currentCanals : getChairsideDefaultCanals(toothNum);
-	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2"), isBio = canals.some((c) => c.obturationType === "bioceramic");
-	const isPulpitis = Boolean(toothState && /пульпит|pulpitis|k04\.0/i.test(toothState));
-	const isPeriodontitis = !isPulpitis && Boolean(isBio || (toothState && /периодонтит|periodontitis|k04\.5|k04\.4|k04\.6|гранулем|кист/i.test(toothState)));
-
-	const canalsReport = canals.map((c) => {
-		if (c.isObliterated) return `• Канал ${c.name}: Облитерирован / склерозирован (устье склерозировано, 0 мм)`;
-		const obt = c.obturationType === "temp_caoh2" ? `временная паста гидроксида кальция ${c.sealer || "Ca(OH)2 (Каласепт/Метапекс)"}` : c.obturationType === "bioceramic" ? `постоянная обтурация гуттаперчей + биокерамика (${c.sealer || "BioRoot"})` : `обтурация гуттаперчей с ${c.sealer || "AH Plus"} методом латеральной компакции`;
-		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : getAnatomicalWorkingLength(toothNum, c.name).toFixed(1);
-		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex: ${c.apexLocatorReading || "0.0 Apex"}), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
-	}).join("\n");
-
-	const canalNamesRu = canals.map((c) => c.name).join(", ");
-	const diagnosisRu = toothState || (isPeriodontitis ? "Хронический апикальный периодонтит (K04.5)" : "Острый очаговый пульпит (K04.0)");
-
-	if (isTemp) {
-		const stageTitle = isPeriodontitis ? "ПЕРИОДОНТИТ 1-Й ВИЗИТ" : "ВРЕМЕННАЯ ОБТУРАЦИЯ Ca(OH)2";
-		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ${stageTitle}]\nS: Жалобы на боли при накусывании и чувство распирания в области зуба #${toothNum}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${toothNum}, эвакуация распада пульпы.\nМехобработка корневых каналов (${canalNamesRu}) машинной системой NiTi:\n${canalsReport}\nИрригация: медикаментозная обработка раствором 3% NaOCl с УЗ-активацией и 17% EDTA, высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Проведена временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 (Каласепт/Метапекс). Наложена герметичная повязка. Назначен 2-й визит через 10–14 дней.`;
-	}
-	if (isPeriodontitis) {
-		const sealerName = canals[0]?.sealer || (isBio ? "BioRoot" : "AH Plus");
-		const obturationMethodRu = isBio ? `гуттаперча + биокерамический силер (${sealerName})` : `гуттаперча с эпоксидным силером ${sealerName} методом латеральной компакции`;
-		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ (ПОСТОЯННАЯ ОБТУРАЦИЯ)]\nS: Жалоб нет, герметичная повязка сохранена, перкуссия безболезненна.\nO: Изоляция операционного поля коффердамом. Удаление временной повязки и эвакуация лечебной пасты Ca(OH)2 из каналов.\nИнструментальная калибровка каналов (${canalNamesRu}):\n${canalsReport}\nИрригация: 3% раствор NaOCl с УЗ-активацией, 17% EDTA, окончательное высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Постоянная обтурация корневых каналов: ${obturationMethodRu} до физиологического апекса. Рентген-контроль (визиография): каналы гомогенно обтурированы до апекса. Поставлена герметичная реставрация.`;
-	}
-	return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ПУЛЬПИТ В 1 ВИЗИТ]\nS: Жалобы на острые температурные и самопроизвольные боли в зубе #${toothNum}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${toothNum}, экстирпация пульпы.\nМехобработка машинной системой NiTi (ProTaper/WaveOne до F2):\n${canalsReport}\nМедикаментозная обработка: 3% раствор NaOCl с УЗ-активацией и 17% EDTA. Высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Обтурация гуттаперчей с AH Plus методом латеральной компакции до физиологического апекса. Рентген-контроль (визиография): каналы обтурированы до верхушки, гомогенно. Поставлена герметичная повязка/реставрация.`;
-}
 
 /** Сохранение параметров каналов в Fastify API и списание расходников (Мандаты 8e, 8n) */
 export function executeChairsideTransferToDiary({
@@ -107,7 +77,7 @@ export function executeChairsideTransferToDiary({
 				for (const s of billing.services804n) {
 					store.addCompletedService({ code: s.code804n, title: s.title, price: s.priceRub, toothNumber: activeTooth, toothCode: String(activeTooth) });
 				}
-				store.applyServicesToToothState({ toothNumber: activeTooth, services: billing.services804n.map((s) => ({ code: s.code804n, name: s.title, price: s.priceRub, toothNumber: activeTooth })) });
+				store.applyServicesToToothState({ toothNumber: activeTooth, services: billing.services804n.map((s) => ({ code: s.code804n || "A16.07.030", name: s.title, price: s.priceRub, toothNumber: activeTooth })) });
 			} catch { /* safe store update */ }
 
 			if (typeof window !== "undefined") {
@@ -126,37 +96,47 @@ export function executeChairsideTransferToDiary({
 						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
 					}));
 
-					const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
-					fetch("/api/inventory/deduct", {
-						method: "POST",
-						headers: getDenteAuthHeaders({
-							"Content-Type": "application/json",
-							...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-						}),
-						body: JSON.stringify({
-							materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
-							allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
-							notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
-						}),
-					}).then(async (res) => { if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание завершилось со статусом:", res.status); })
-						.catch((err) => { console.error("[ChairsideEndoQuickBar] Ошибка списания:", err); showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000); });
+					const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
+						? window.location.origin
+						: "";
+					if (baseUrl) {
+						const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+						fetch(`${baseUrl}/api/inventory/deduct`, {
+							method: "POST",
+							headers: getDenteAuthHeaders({
+								"Content-Type": "application/json",
+								...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+							}),
+							body: JSON.stringify({
+								materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
+								allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+								notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
+							}),
+						}).then(async (res) => { if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание завершилось со статусом:", res.status); })
+							.catch((err) => { console.error("[ChairsideEndoQuickBar] Ошибка списания:", err); showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000); });
+					}
 				}
 			}
 		}
 	} catch { /* soft */ }
 	if (patientId) {
-		const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
-		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
-			method: "POST",
-			headers: getDenteAuthHeaders({
-				"Content-Type": "application/json",
-				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-			}),
-			body: JSON.stringify({
-				toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
-				radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
-			}),
-		}).catch(() => {});
+		const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
+			? window.location.origin
+			: "";
+		if (baseUrl) {
+			const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+			fetch(`${baseUrl}/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
+				method: "POST",
+				headers: getDenteAuthHeaders({
+					"Content-Type": "application/json",
+					...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+				}),
+				body: JSON.stringify({
+					toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
+					radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
+				}),
+			}).catch(() => {});
+		}
 	}
 
 	if (onInsertToDiary) onInsertToDiary(soapProtocol, sharedCanals);
@@ -273,59 +253,17 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 
 				<div className="p-2.5 sm:p-3 border-t border-[var(--line)] divide-y divide-[var(--line)] space-y-2.5">
 					{canals.map((c) => (
-						<div key={c.id} className="pt-2 first:pt-0 space-y-2">
-							<div className="flex items-center justify-between gap-2 flex-wrap">
-								<div className="flex items-center gap-1.5 flex-wrap">
-									<span className="font-bold text-xs text-[var(--ink)]">Канал {c.name}</span>
-									<span className="text-[11px] font-semibold text-[var(--primary)]">{c.isObliterated ? "Облитерирован" : `${c.workingLengthMm.toFixed(1)} мм`}</span>
-									<div className="flex items-center gap-1">
-										<span className="text-[10px] font-mono text-[var(--success)] font-semibold" title="Apex 0.0">Apex 0.0</span>
-										{(["-0.5", "0.0", "+0.5"] as const).map((ap) => (
-											<button key={ap} type="button" onClick={() => updateCanal(c.id, { apexLocatorReading: `${ap} Apex` })} className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${(c.apexLocatorReading || "0.0 Apex").startsWith(ap) ? "bg-[var(--success)] text-white border-[var(--success)] font-bold" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}>{ap}</button>
-										))}
-									</div>
-								</div>
-								<div className="flex items-center gap-1.5">
-									<label className="flex items-center gap-1 text-[11px] text-[var(--muted)] cursor-pointer">
-										<input type="checkbox" checked={Boolean(c.isObliterated)} onChange={(e) => updateCanal(c.id, { isObliterated: e.target.checked, workingLengthMm: e.target.checked ? 0 : getAnatomicalWorkingLength(activeTooth, c.name) })} className="rounded text-[var(--primary)]" />
-										<span>Склероз</span>
-									</label>
-									{canals.length > 1 && (
-										<button type="button" onClick={() => removeCanal(c.id)} className="w-7 h-7 rounded-lg text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-transparent hover:border-[var(--danger)]/20 flex items-center justify-center cursor-pointer transition-colors" title="Удалить канал"><Trash2 size={13} /></button>
-									)}
-								</div>
-							</div>
-
-							<div className="flex items-center gap-1.5 flex-wrap">
-								<span className="text-[11px] text-[var(--muted)] font-medium">Длина:</span>
-								<div className="flex items-center gap-1">
-									<button type="button" onClick={() => adjustLength(c.id, -0.5)} className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer">-</button>
-									<button type="button" onClick={() => adjustLength(c.id, 0.5)} className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer">+</button>
-								</div>
-								{QUICK_LENGTH_CHIPS.map((len) => (
-									<button key={len} type="button" onClick={() => updateCanal(c.id, { workingLengthMm: len, isObliterated: false })} className={`chip-length-${c.name}-${len} ${c.name === "MB1" ? `chip-length-MB-${len}` : ""} px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${c.workingLengthMm === len && !c.isObliterated ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}>{len}</button>
-								))}
-							</div>
-
-							<div className="flex items-center gap-2 flex-wrap text-[11px]">
-								<div className="flex items-center gap-1 flex-wrap">
-									<span className="text-[var(--muted)] font-medium">MAF:</span>
-									{QUICK_MAF_OPTIONS.map((opt) => {
-										const cleanKey = `${opt.maf.replace("#", "")}${opt.taper.replace(".", "")}`;
-										const isSelected = c.masterApicalFile === opt.maf && c.taper === opt.taper;
-										return (
-											<button key={opt.label} type="button" onClick={() => updateCanal(c.id, { masterApicalFile: opt.maf, taper: opt.taper })} className={`chip-maf-${c.name}-${cleanKey} ${c.name === "MB1" ? `chip-maf-MB-${cleanKey}` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${isSelected ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}>{opt.label}</button>
-										);
-									})}
-								</div>
-								<div className="flex items-center gap-1 flex-wrap">
-									<span className="text-[var(--muted)] font-medium">Силер:</span>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "gutta_sealer", sealer: "AH Plus" })} className={`chip-obturation-gutta-${c.name} ${c.name === "MB1" ? `chip-obturation-gutta-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "gutta_sealer" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}>AH Plus</button>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "bioceramic", sealer: "BioRoot" })} className={`chip-obturation-bio-${c.name} ${c.name === "MB1" ? `chip-obturation-bio-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "bioceramic" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}>Биокерамика</button>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)" })} className={`chip-obturation-caoh2-${c.name} ${c.name === "MB1" ? `chip-obturation-caoh2-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "temp_caoh2" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}>Ca(OH)2</button>
-								</div>
-							</div>
-						</div>
+						<ChairsideCanalRow
+							key={c.id}
+							canal={c}
+							activeTooth={activeTooth}
+							canalsCount={canals.length}
+							quickLengthChips={QUICK_LENGTH_CHIPS}
+							quickMafOptions={QUICK_MAF_OPTIONS}
+							onUpdate={updateCanal}
+							onAdjustLength={adjustLength}
+							onRemove={removeCanal}
+						/>
 					))}
 				</div>
 			</details>

@@ -204,10 +204,12 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 			const toolbarPath = path.resolve(__dirname, "../FinanceToolbar.tsx");
 			const toolbarActionsPath = path.resolve(__dirname, "../toolbar/FinanceToolbarActions.tsx");
 			const modalPath = path.resolve(__dirname, "../FinanceInvoicesModal.tsx");
+			const modalHostPath = path.resolve(__dirname, "../../../views/financeView/modalModules/FinanceModalsHost.tsx");
 			const source = fs.readFileSync(financeFilePath, "utf-8") +
 				(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "") +
 				(fs.existsSync(toolbarActionsPath) ? fs.readFileSync(toolbarActionsPath, "utf-8") : "") +
-				(fs.existsSync(modalPath) ? fs.readFileSync(modalPath, "utf-8") : "");
+				(fs.existsSync(modalPath) ? fs.readFileSync(modalPath, "utf-8") : "") +
+				(fs.existsSync(modalHostPath) ? fs.readFileSync(modalHostPath, "utf-8") : "");
 
 			assert.ok(
 				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView.js\"") ||
@@ -229,12 +231,12 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 				"FinanceView must render modal container modal-finance-invoices",
 			);
 			assert.ok(
-				source.includes("patientId={documentPatient?.id}"),
-				"FinanceView must pass documentPatient?.id to InvoicesView",
+				source.includes("patientId={documentPatient?.id}") || source.includes("patientId={docPat?.id}"),
+				"FinanceView must pass documentPatient / docPat id to InvoicesView",
 			);
 			assert.ok(
-				source.includes("patientName={documentPatient?.fullName}"),
-				"FinanceView must pass documentPatient?.fullName to InvoicesView",
+				source.includes("patientName={documentPatient?.fullName}") || source.includes("patientName={docPat?.fullName}"),
+				"FinanceView must pass documentPatient / docPat fullName to InvoicesView",
 			);
 		});
 	});

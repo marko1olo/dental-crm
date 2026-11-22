@@ -66,7 +66,9 @@ export async function savePatientSnapshot<T = unknown>(
 
 	try {
 		safeLocalStorageSetItem(`dente_l2_patient:${record.patientId}`, JSON.stringify(record));
-	} catch {}
+	} catch (storageErr) {
+		logger.debug(`[L2Storage] LocalStorage save patient snapshot failed: ${record.patientId}`, storageErr);
+	}
 
 	try {
 		await idbPutRecord(L2_STORE_PATIENTS, record);
@@ -96,7 +98,9 @@ export async function getPatientSnapshot<T = unknown>(
 			const parsed = JSON.parse(raw);
 			return parsed && typeof parsed === "object" ? parsed : null;
 		}
-	} catch {}
+	} catch (readErr) {
+		logger.debug(`[L2Storage] LocalStorage read patient snapshot failed: ${patientId}`, readErr);
+	}
 
 	return null;
 }
@@ -137,7 +141,9 @@ export async function saveScheduleCache<T = unknown>(
 
 	try {
 		safeLocalStorageSetItem(`dente_l2_schedule:${record.scheduleKey}`, JSON.stringify(record));
-	} catch {}
+	} catch (storageErr) {
+		logger.debug(`[L2Storage] LocalStorage save schedule cache failed: ${record.scheduleKey}`, storageErr);
+	}
 
 	try {
 		await idbPutRecord(L2_STORE_SCHEDULE, record);
@@ -167,7 +173,9 @@ export async function getScheduleCache<T = unknown>(
 			const parsed = JSON.parse(raw);
 			return parsed && typeof parsed === "object" ? parsed : null;
 		}
-	} catch {}
+	} catch (readErr) {
+		logger.debug(`[L2Storage] LocalStorage read schedule cache failed: ${scheduleKey}`, readErr);
+	}
 
 	return null;
 }
@@ -424,7 +432,9 @@ function notifyL2StatusChanged(): void {
 		for (const listener of statusListeners) {
 			try {
 				listener(status);
-			} catch {}
+			} catch (listenerErr) {
+				logger.debug("[L2Storage] Status listener error:", listenerErr);
+			}
 		}
 	});
 }

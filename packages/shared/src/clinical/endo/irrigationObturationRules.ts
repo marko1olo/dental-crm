@@ -180,7 +180,7 @@ export const PERIODONTITIS_DESTRUCTIVE_PRESET: EndoProtocolPreset = {
 		"Механическая и ультразвуковая дезинфекция каналов, пролонгированная паста Metapex/Calcept на 14 дней",
 	rotarySystem: "Ревизия и машинная обработка NiTi ProTaper / WaveOne с ультразвуковой дезинфекцией",
 	irrigation:
-		"3% NaOCl + 17% EDTA + 2% хлоргексидин с ультразвуковой активацией, просушивание бумажными штифтами",
+		"3% NaOCl ➔ 0.9% NaCl (буферный отмыв) ➔ 17% EDTA ➔ 0.9% NaCl (буферный отмыв) ➔ 2% хлоргексидин с ультразвуковой активацией (исключено образование токсичного парахлоранилина PCA), просушивание бумажными штифтами",
 	radiologyControl:
 		"Контрольная радиовизиография: пролонгированная паста Metapex/Calcept введена плотно до верхушки на 14 дней, герметичная повязка.",
 	obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт / Metapex)",
@@ -190,6 +190,29 @@ export const PERIODONTITIS_DESTRUCTIVE_PRESET: EndoProtocolPreset = {
 	notes:
 		"Периодонтит (деструктивный): механическая и ультразвуковая дезинфекция каналов, пролонгированная паста Metapex/Calcept на 14 дней",
 };
+
+/**
+ * Клинический инвариант безопасности ирригации:
+ * Запрещено прямое смешивание гипохлорита натрия (NaOCl) и хлоргексидина (образуется осадок токсичного парахлоранилина PCA).
+ * Между NaOCl и хлоргексидином ОБЯЗАТЕЛЕН промежуточный буферный отмыв 0.9% раствором NaCl.
+ */
+export const PCA_AVOIDANCE_IRRIGATION_WARNING =
+	"Внимание: NaOCl и хлоргексидин не должны контактировать напрямую во избежание образования токсичного осадка PCA (парахлоранилина). Обязателен промежуточный отмыв 0.9% раствором NaCl.";
+
+export function validateIrrigationSafety(irrigationProtocol: string): { isSafe: boolean; warning?: string } {
+	const lower = irrigationProtocol.toLowerCase();
+	const hasNaOCl = lower.includes("naocl") || lower.includes("гипохлорит");
+	const hasChx = lower.includes("хлоргексидин") || lower.includes("chx");
+	const hasNaclBuffer = lower.includes("nacl") || lower.includes("физ") || lower.includes("буфер");
+
+	if (hasNaOCl && hasChx && !hasNaclBuffer) {
+		return {
+			isSafe: false,
+			warning: PCA_AVOIDANCE_IRRIGATION_WARNING,
+		};
+	}
+	return { isSafe: true };
+}
 
 export const PULPITIS_COMPLETE_PRESET: EndoProtocolPreset = {
 	id: "pulpitis_complete",

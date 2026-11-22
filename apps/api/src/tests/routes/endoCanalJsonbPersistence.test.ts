@@ -146,6 +146,11 @@ describe("Red Team Endo JSONB & Wheeler Persistence [END-03..07]", () => {
 		assert.equal(dbRow.notes, payload.notes);
 		assert.ok(Array.isArray(dbRow.canalMeasurements));
 		assert.equal((dbRow.canalMeasurements as any[]).length, 4);
+		assert.ok(dbRow.clinicalData, "Колонка clinical_data в tooth_states должна быть заполнена");
+		const clinicalDataDb = dbRow.clinicalData as any;
+		assert.equal(clinicalDataDb.irrigation, payload.irrigation);
+		assert.equal(clinicalDataDb.rotarySystem, payload.rotarySystem);
+		assert.equal(clinicalDataDb.stageStamp, payload.stageStamp);
 	});
 
 	it("[DEF-ENDO-01] POST /api/odontogram/status сохраняет canalMeasurements в toothStates без потерь", async () => {

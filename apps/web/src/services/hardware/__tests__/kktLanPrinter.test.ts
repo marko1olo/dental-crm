@@ -166,8 +166,8 @@ describe("KktLanPrinterService — Direct LAN TCP KKT Printing (54-ФЗ)", () =>
 		assert.equal(result.success, false);
 		assert.equal(result.status, "hardware_offline");
 		assert.ok(result.error?.includes("Таймаут"));
-		assert.ok(result.fiscalSign);
-		assert.ok(result.fiscalDocNum);
+		assert.equal(result.fiscalSign, undefined);
+		assert.equal(result.fiscalDocNum, undefined);
 	});
 
 	it("should perform health check on local KKT device via TCP", async () => {

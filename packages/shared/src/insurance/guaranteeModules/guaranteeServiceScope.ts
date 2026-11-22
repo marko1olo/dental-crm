@@ -1,6 +1,6 @@
 import type { DmsGuaranteeLetter } from "./guaranteeTypes.js";
 import type { DmsCoverageEvaluation, DmsCoverageEvaluationOptions } from "./guaranteeEvaluationTypes.js";
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 
 export function checkServiceScopeExclusion(
 	letter: DmsGuaranteeLetter,

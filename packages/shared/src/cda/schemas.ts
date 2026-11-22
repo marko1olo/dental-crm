@@ -121,24 +121,6 @@ export const serviceRenderedItemSchema = z.object({
 	completedAt: z.union([z.date(), z.string()]).optional(),
 });
 
-export const taxPaymentRecordItemSchema = z.object({
-	fiscalReceiptNumber: z.string().min(1),
-	fiscalReceiptDate: z.string().min(1),
-	paymentAmountKopecks: z.number().int().positive(),
-	serviceCategoryCode: z.enum(["1", "2"]).default("1"),
-	contractNumber: z.string().optional(),
-	contractDate: z.string().optional(),
-	patientFullName: z.string().optional(),
-});
-
-export const taxpayerInfoSchema = z.object({
-	fullName: z.string().min(1),
-	snils: z.string().optional(),
-	inn: z.string().optional(),
-	birthDate: z.string().optional(),
-	relationToPatient: z.enum(["1", "2", "3", "4"]).default("1"),
-});
-
 // ─── СЭМД 101 / 043/у: Протокол консультации стоматолога ───────────────────
 
 export const cdaSemd101Schema = z.object({
@@ -224,37 +206,6 @@ export const cdaSemd104Schema = z.object({
 	outcomeName: z.string().optional(),
 	recommendations: z.union([z.string(), z.array(z.string())]),
 	nextFollowupDate: z.union([z.string(), z.date()]).optional(),
-});
-
-// ─── СЭМД 130: Справка об оплате медицинских услуг ─────────────────────────
-
-export const cdaSemd130Schema = z.object({
-	docKind: z.literal("130").default("130"),
-	documentId: z.string().min(1),
-	documentVersion: z.number().int().positive().optional().default(1),
-	documentTime: z.preprocess((v) => {
-		if (!v) return undefined;
-		const d = v instanceof Date ? v : new Date(String(v));
-		return Number.isNaN(d.getTime()) ? undefined : d;
-	}, z.date().optional()),
-	issueDate: z.coerce.date(),
-	taxYear: z.number().int().min(2020).max(2035),
-	certificateNumber: z.string().min(1),
-
-	patient: patientCdaSchema,
-	taxpayer: taxpayerInfoSchema,
-	doctor: doctorCdaSchema,
-	clinic: clinicCdaSchema,
-	legalAuthenticator: legalAuthenticatorCdaSchema.optional(),
-
-	contractNumber: z.string().min(1),
-	contractDate: z.string().min(1),
-
-	paymentRecords: z.array(taxPaymentRecordItemSchema).min(1, "Требуется минимум одна запись об оплате"),
-
-	totalOrdinaryTreatmentKopecks: z.number().int().nonnegative(),
-	totalExpensiveTreatmentKopecks: z.number().int().nonnegative(),
-	totalSumKopecks: z.number().int().positive(),
 });
 
 // ─── СЭМД 109 / 043-1/у: Карта ортодонтического пациента ──────────────────
@@ -352,7 +303,6 @@ export const cdaSemd109Schema = cdaSemd043_1uSchema;
 export const cdaDocumentParamsSchema = z.union([
 	cdaSemd101Schema,
 	cdaSemd104Schema,
-	cdaSemd130Schema,
 	cdaSemd043_1uSchema,
 ]);
 

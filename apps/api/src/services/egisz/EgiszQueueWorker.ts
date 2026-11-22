@@ -41,9 +41,18 @@ export type EgiszQueueWorkerHandle = {
 
 function createDefaultLogger(): EgiszQueueWorkerLogger {
 	return {
-		info: (payload, message) => console.log(`[EgiszQueueWorker] ${message}`, payload),
-		warn: (payload, message) => console.warn(`[EgiszQueueWorker] ${message}`, payload),
-		error: (payload, message) => console.error(`[EgiszQueueWorker] ${message}`, payload),
+		info: (payload, message) =>
+			process.stdout.write(
+				`${JSON.stringify({ level: "info", tag: "EgiszQueueWorker", message, ...payload })}\n`,
+			),
+		warn: (payload, message) =>
+			process.stderr.write(
+				`${JSON.stringify({ level: "warn", tag: "EgiszQueueWorker", message, ...payload })}\n`,
+			),
+		error: (payload, message) =>
+			process.stderr.write(
+				`${JSON.stringify({ level: "error", tag: "EgiszQueueWorker", message, ...payload })}\n`,
+			),
 	};
 }
 

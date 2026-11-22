@@ -13,6 +13,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -398,9 +399,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
 			console.error("");
 		}
 
-		console.error("  Remediation:");
-		console.error("    1. Generate or add a migration in apps/api/drizzle/ with missing CREATE TABLE / ALTER TABLE ADD COLUMN / ALTER TYPE ADD VALUE statements.");
-		console.error("    2. Re-run `npm run check:migration-drift` until 100% parity is achieved.");
+		printFailureManifesto("MIGRATION_DRIFT", {
+			details: `Рассинхрон Drizzle и SQL: ${result.missingTables.length} отсутствующих таблиц, ${result.missingColumns.length} отсутствующих колонок, ${result.missingEnumValues.length} отсутствующих enum значений.`,
+		});
 		process.exit(1);
 	}
 

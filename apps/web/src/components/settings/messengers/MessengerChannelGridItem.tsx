@@ -31,7 +31,7 @@ export const MessengerChannelGridItem: React.FC<Props> = ({ channel, isTesting, 
 						</div>
 						<div className="min-w-0">
 							<h4 className="text-xs font-bold leading-tight text-[var(--ink)] truncate m-0">{channel.title}</h4>
-							<span className="inline-block px-1.5 py-0.2 rounded text-[9px] font-black uppercase text-white mt-0.5" style={{ backgroundColor: theme.iconColor }}>
+							<span className="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold text-white mt-0.5" style={{ backgroundColor: theme.iconColor }}>
 								{channel.shortBadge}
 							</span>
 						</div>

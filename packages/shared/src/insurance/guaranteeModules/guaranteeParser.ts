@@ -1,5 +1,5 @@
-import type { Kopecks } from "../../utils/money.js";
-import { rublesToKopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
+import { rublesToKopecks } from "../../money.js";
 import type { DmsGuaranteeLetter, DmsGuaranteeLetterStatus, DmsInsuranceCompanyId } from "./guaranteeTypes.js";
 
 export interface ParsedGuaranteeLetterDraft {

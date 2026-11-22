@@ -77,12 +77,6 @@ export async function handleDiaryRevisePost(req: FastifyRequest, reply: FastifyR
 			message: "Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники.",
 		});
 	}
-	if (reviseResult.kind === "invalid_tray") {
-		return reply.code(400).send({
-			error: "InvalidTrayBarcode",
-			message: "Лоток отмечен в журнале стерилизации как забракованный. Замените лоток на стерильный или очистите поле лотка.",
-		});
-	}
 	if (reviseResult.kind === "update_lost") {
 		return reply.code(409).send({
 			error: "ReviseConflict",

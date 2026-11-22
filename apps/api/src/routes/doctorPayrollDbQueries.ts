@@ -592,9 +592,10 @@ export async function fetchDoctorPayrollDataset(params: {
 	let remainingUnallocatedLabKop = trackedLabOrders.reduce((sum, lo) => sum + Math.max(0, lo.remainingCostKop), 0);
 
 	if (remainingUnallocatedLabKop > 0) {
-		// 1. Приоритетно дораспределяем по ортопедическим услугам доктора за период
+		// 1. Приоритетно дораспределяем СТРОГО по ортопедическим услугам доктора за период (Мандат 8e / SEV-2)
 		for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
-			const cs = completedServices[i]!;
+			const cs = completedServices[i];
+			if (!cs) continue;
 			if (cs.category === "orthopedics") {
 				const availableMargin = Math.max(0, cs.grossRevenueKop - cs.labCostKop - cs.materialCostKop);
 				const toDeduct = Math.min(availableMargin, remainingUnallocatedLabKop);
@@ -611,24 +612,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			}
 		}
 
-		// 2. Если остаток все еще есть — дораспределяем по остальным услугам доктора за период
-		for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
-			const cs = completedServices[i]!;
-			const availableMargin = Math.max(0, cs.grossRevenueKop - cs.labCostKop - cs.materialCostKop);
-			const toDeduct = Math.min(availableMargin, remainingUnallocatedLabKop);
-			if (toDeduct > 0) {
-				const updatedLabKop = cs.labCostKop + toDeduct;
-				completedServices[i] = {
-					...cs,
-					labCostKop: updatedLabKop,
-				};
-				const ord = orders.find((o) => o.id === cs.id);
-				if (ord) ord.labCostKopecks = updatedLabKop;
-				remainingUnallocatedLabKop -= toDeduct;
-			}
-		}
-
-		// 3. Если у доктора не было услуг или маржи не хватило — создаем балансовую запись расходов ЗТЛ периода
+		// 2. Изоляция ЗТЛ от терапии и гигиены (Мандат 8e): нераспределенный остаток фиксируется как балансовая позиция ЗТЛ
 		if (remainingUnallocatedLabKop > 0) {
 			const labItemDateIso = toStr.slice(0, 10);
 			const labItemId = `lab-balance-${resolvedDocId}-${labItemDateIso}`;

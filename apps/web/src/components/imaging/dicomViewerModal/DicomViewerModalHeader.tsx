@@ -11,7 +11,8 @@ export interface DicomViewerModalHeaderProps {
 	readonly viewMode: "2d" | "3d_mpr" | "sectioning";
 	readonly onSwitchViewMode: (mode: "2d" | "3d_mpr" | "sectioning") => void;
 	readonly isNormaApplied: boolean;
-	readonly onInsertNormaTo043: () => void;
+	readonly onInsertNormaToEmk?: (() => void) | undefined;
+	readonly onInsertNormaTo043?: (() => void) | undefined;
 	readonly isProtocolsDropdownOpen: boolean;
 	readonly setIsProtocolsDropdownOpen: (updater: (prev: boolean) => boolean) => void;
 	readonly appliedProtocolId: string | null;
@@ -31,12 +32,13 @@ export interface DicomViewerModalHeaderProps {
 
 export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 	title, toothFdiCode, patientName, studyDate, viewMode, onSwitchViewMode,
-	isNormaApplied, onInsertNormaTo043, isProtocolsDropdownOpen, setIsProtocolsDropdownOpen,
+	isNormaApplied, onInsertNormaToEmk, onInsertNormaTo043, isProtocolsDropdownOpen, setIsProtocolsDropdownOpen,
 	appliedProtocolId, onApplyProtocol, protocolsDropdownRef, isAnalyzing, aiReport,
 	onRunAiAnalysis, hasAiFindings, selectedFindingCodesCount, onToggleFindingsDrawer,
 	quickFilterState, onQuickFilterChange, onReset, onClose,
 }) => {
 	const btnStyle = "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 shadow-2xs hover:border-[var(--teal)] transition-colors text-xs cursor-pointer inline-flex items-center gap-1.5 shrink-0";
+	const handleNormaClick = onInsertNormaToEmk ?? onInsertNormaTo043 ?? (() => {});
 
 	return (
 		<div className="h-[42px] min-h-[42px] bg-slate-950 border-b border-slate-800 flex items-center justify-between px-3 gap-2 select-none flex-nowrap shrink-0 overflow-x-auto">
@@ -57,7 +59,7 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 			</div>
 
 			<div className="flex items-center gap-1.5 shrink-0">
-				<button type="button" data-testid="btn-dicom-norma-043" onClick={onInsertNormaTo043} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-emerald-600 bg-emerald-900 text-emerald-200"}`}>
+				<button type="button" data-testid="btn-dicom-norma-emk" onClick={handleNormaClick} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-emerald-600 bg-emerald-900 text-emerald-200"}`}>
 					{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} className="text-emerald-400" />}
 					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>

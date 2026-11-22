@@ -3,9 +3,11 @@ import { describe, it } from "node:test";
 import {
 	buildFnsKnd1151156Xml,
 	formatFnsDate,
+} from "@dental/shared";
+import {
+	buildKnd1151156Xml,
 	generateFnsFileNameAndId,
-} from "../../services/fns/fnsKnd1151156Builder.js";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
+} from "../../routes/documents/sharedDocUtils/index.js";
 import type { GeneratedDocument, Patient, Payment, ClinicProfile } from "@dental/shared";
 
 describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ ЕА-7-11/824@)", () => {

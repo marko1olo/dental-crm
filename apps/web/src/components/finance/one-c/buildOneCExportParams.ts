@@ -1,4 +1,5 @@
 import type { OneCDocumentType, OneCExportParams } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 import type { OneCExportItem } from "../OneCExportButton";
 
 export interface BuildOneCExportParamsInput {
@@ -51,8 +52,8 @@ export function buildOneCExportParams(p: BuildOneCExportParamsInput): OneCExport
 				},
 				items: p.items.map((it, idx) => {
 					const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
-					const unitPriceKop = Math.round(it.priceRub * 100);
-					const discKop = Math.round((it.discountRub || 0) * 100);
+					const unitPriceKop = rublesToKopecks(it.priceRub);
+					const discKop = rublesToKopecks(it.discountRub || 0);
 					const grossKop = unitPriceKop * qty;
 					return {
 						id: it.id || `item-${idx + 1}`,
@@ -67,7 +68,7 @@ export function buildOneCExportParams(p: BuildOneCExportParamsInput): OneCExport
 						vatAmountKopecks: 0,
 					};
 				}),
-				totalKopecks: Math.round(p.calculatedTotalRub * 100),
+				totalKopecks: rublesToKopecks(p.calculatedTotalRub),
 				contractNumber: p.selectedContract || null,
 				contractDate: p.selectedContractDate || null,
 				attendingDoctorName: p.customDoctorName,

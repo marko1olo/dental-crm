@@ -13,7 +13,7 @@ import {
 	saveStoredTeethData,
 } from "../../odontogram/odontogramStorage";
 import type { ToothData } from "../../odontogram/ToothChart";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { toVisitToothUiState } from "./toothStateConverters.js";
 
 interface UseOdontogramHydrationParams {
@@ -99,7 +99,7 @@ export function useOdontogramHydration({
 			lastHydratedPatientRef.current = patientId;
 		} else {
 			const controller = new AbortController();
-			fetch(`/api/patients/${patientId}/tooth-states`, { headers: denteAdminSecretRequestHeaders(), signal: controller.signal })
+			fetch(`/api/patients/${patientId}/tooth-states`, { headers: getDenteAuthHeaders(), signal: controller.signal })
 				.then(async (res) => {
 					if (!res.ok) return;
 					const data = (await res.json().catch(() => null)) as { success?: boolean; states?: ToothData[] } | null;

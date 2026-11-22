@@ -88,23 +88,54 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 		}
 	};
 
-	const handleSendSms = () => {
+	const handleSendSms = async () => {
 		const cleanPhone = patientPhone?.trim() ?? "";
 		if (!cleanPhone) {
 			showToast(
-				"Укажите номер телефона пациента в карточке для отправки СМС",
+				"Укажите номер телефона пациента в карточке для отправки ссылки",
 				"warning",
 				3500,
 			);
 			return;
 		}
-		setIsSmsSent(true);
-		showToast(
-			`СМС со ссылкой на оформление рассрочки отправлено на номер ${cleanPhone}`,
-			"success",
-			4000,
-		);
-		setTimeout(() => setIsSmsSent(false), 4000);
+		try {
+			const res = await fetch("/api/v1/communications/send-sms", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: cleanPhone,
+					message: linkData.formattedSmsText,
+					patientId,
+				}),
+			});
+			if (res.ok) {
+				setIsSmsSent(true);
+				showToast(
+					`Ссылка на оформление рассрочки отправлена на номер ${cleanPhone}`,
+					"success",
+					4000,
+				);
+				setTimeout(() => setIsSmsSent(false), 4000);
+			} else {
+				if (typeof navigator !== "undefined" && navigator.clipboard) {
+					await navigator.clipboard.writeText(linkData.formattedSmsText);
+				}
+				showToast(
+					`СМС-шлюз офлайн. Текст со ссылкой для ${cleanPhone} скопирован в буфер обмена`,
+					"info",
+					4000,
+				);
+			}
+		} catch {
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				await navigator.clipboard.writeText(linkData.formattedSmsText);
+			}
+			showToast(
+				`СМС-шлюз офлайн. Текст со ссылкой для ${cleanPhone} скопирован в буфер обмена`,
+				"info",
+				4000,
+			);
+		}
 	};
 
 	const handleApproveInstallment = () => {

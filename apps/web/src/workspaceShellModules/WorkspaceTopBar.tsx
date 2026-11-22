@@ -17,6 +17,7 @@ import { useSettingsStore } from "../store/settingsStore";
 import { useTelephonyStore } from "../store/telephonyStore";
 import { useUiSurfaceStore } from "../store/uiSurfaceStore";
 import {
+	BranchSelector,
 	formatDisplayClinicName,
 	PerspectiveSwitcher,
 	WorkspaceTopBarActions,
@@ -26,6 +27,7 @@ import {
 } from "./topBarModules";
 
 export {
+	BranchSelector,
 	formatDisplayClinicName,
 	IncomingCallPopup,
 	PerspectiveSwitcher,

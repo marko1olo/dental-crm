@@ -42,6 +42,7 @@ export interface EvaluateSterilizationLogResult {
 export interface DiaryHashInput {
 	visitId: string;
 	patientId?: string | null;
+	complaint?: string | null;
 	anamnesis?: string | null;
 	statusLocalis?: string | null;
 	treatmentDescription?: string | null;

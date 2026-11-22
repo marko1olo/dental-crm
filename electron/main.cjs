@@ -28,34 +28,36 @@ let mainWindow = null;
 const activeWatchers = new Map();
 
 /**
- * Enumerate Windows COM serial ports
+ * Enumerate Windows COM serial ports from Windows Registry
  */
 async function getWindowsSerialPorts() {
 	const ports = [];
 
-	// Known dental sensor & hardware vendor IDs
-	const knownHardware = [
-		{ vendorId: "0403", productId: "6001", manufacturer: "FTDI / Dental Sensor Bridge" },
-		{ vendorId: "10C4", productId: "EA60", manufacturer: "Silicon Labs / Visiograph Controller" },
-		{ vendorId: "067B", productId: "2303", manufacturer: "Prolific / KKT Fiscal Serial Interface" },
-		{ vendorId: "2E8A", productId: "000A", manufacturer: "Raspberry Pi / Operatory Button Box" },
-	];
-
-	try {
-		// Probe standard Windows COM port range (COM1 .. COM32)
-		for (let i = 1; i <= 16; i++) {
-			const portName = `COM${i}`;
-			const hwMatch = knownHardware[(i - 1) % knownHardware.length];
-			ports.push({
-				path: portName,
-				manufacturer: hwMatch.manufacturer,
-				serialNumber: `DENTE-HW-${i.toString().padStart(4, "0")}`,
-				vendorId: hwMatch.vendorId,
-				productId: hwMatch.productId,
+	if (process.platform === "win32") {
+		try {
+			const { execSync } = require("node:child_process");
+			const output = execSync('reg query "HKLM\\HARDWARE\\DEVICEMAP\\SERIALCOMM"', {
+				encoding: "utf8",
+				timeout: 1500,
+				windowsHide: true,
 			});
+			const lines = output.split(/\r?\n/);
+			for (const line of lines) {
+				const match = line.trim().match(/\s+REG_SZ\s+(COM\d+)/i);
+				if (match && match[1]) {
+					const portName = match[1].toUpperCase();
+					ports.push({
+						path: portName,
+						manufacturer: "Serial Communication Port",
+						serialNumber: portName,
+						vendorId: undefined,
+						productId: undefined,
+					});
+				}
+			}
+		} catch {
+			// No physical serial ports found in Windows registry
 		}
-	} catch (err) {
-		console.error("[Desktop Main] Error enumerating serial ports:", err);
 	}
 
 	return ports;
@@ -70,55 +72,55 @@ async function getTwainDevices() {
 			id: "twain-vatech-ezsensor",
 			name: "Vatech EzSensor Classic HD (TWAIN DSM)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-planmeca-prosensor",
 			name: "Planmeca ProSensor HD (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-carestream-rvg6200",
 			name: "Carestream RVG 6200 Intraoral Sensor",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-woodpecker-isensor",
 			name: "Woodpecker i-Sensor H2 (TWAIN/Direct)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-eighteeth-nanopix",
 			name: "Eighteeth NanoPix 2 Sensor (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-owandy-one",
 			name: "Owandy-One Intraoral Sensor (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-xpect-mammo",
 			name: "Xpect Vision CdTe Quantum Sensor (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-handy-hdr600",
 			name: "Handy HDR-600 Digital Sensor (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-trident-iview",
 			name: "Trident I-View Gold Sensor (TWAIN)",
 			type: "sensor",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-cs1200-camera",
@@ -130,37 +132,37 @@ async function getTwainDevices() {
 			id: "twain-runyes-3ds",
 			name: "Runyes 3DS Intraoral Scanner (TWAIN/Direct)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-pantum-m6500",
 			name: "Pantum M6500/M7100 Series Network Scanner (TWAIN/WIA)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-kyocera-ecosys",
 			name: "Kyocera ECOSYS M2040dn Document Scanner (TWAIN/WIA)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-hp-scanjet",
 			name: "HP ScanJet Pro 3000 / LaserJet MFP (TWAIN)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-canon-canoscan",
 			name: "Canon imageRUNNER / CanoScan (TWAIN/WIA)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 		{
 			id: "twain-fujitsu-fi7160",
 			name: "Fujitsu fi-7160 / ScanSnap ADF Scanner (TWAIN)",
 			type: "scanner",
-			connected: true,
+			connected: false,
 		},
 	];
 }
@@ -178,19 +180,6 @@ function checkKktStatusTcpSocket({ host, port, protocol = "atol", timeoutMs = 20
 			if (!resolved) {
 				resolved = true;
 				socket.destroy();
-				if (host === "127.0.0.1" || host === "localhost") {
-					return resolve({
-						online: true,
-						paperOk: true,
-						coverClosed: true,
-						fnPresent: true,
-						fnFiscalized: true,
-						latencyMs: Date.now() - startTime,
-						modelName: protocol === "shtrih" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-						fnSerial: "9960440302145896",
-						kktSerialNumber: "0010670000012345",
-					});
-				}
 				resolve({
 					online: false,
 					paperOk: false,
@@ -217,8 +206,6 @@ function checkKktStatusTcpSocket({ host, port, protocol = "atol", timeoutMs = 20
 					fnFiscalized: true,
 					latencyMs,
 					modelName: protocol === "shtrih" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-					fnSerial: "9960440302145896",
-					kktSerialNumber: "0010670000012345",
 				});
 			}
 		});
@@ -228,19 +215,6 @@ function checkKktStatusTcpSocket({ host, port, protocol = "atol", timeoutMs = 20
 				resolved = true;
 				clearTimeout(timeout);
 				socket.destroy();
-				if (host === "127.0.0.1" || host === "localhost") {
-					return resolve({
-						online: true,
-						paperOk: true,
-						coverClosed: true,
-						fnPresent: true,
-						fnFiscalized: true,
-						latencyMs: Date.now() - startTime,
-						modelName: protocol === "shtrih" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-						fnSerial: "9960440302145896",
-						kktSerialNumber: "0010670000012345",
-					});
-				}
 				resolve({
 					online: false,
 					paperOk: false,
@@ -264,7 +238,7 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 		try {
 			payload = typeof payloadJson === "string" ? JSON.parse(payloadJson) : (payloadJson || {});
 		} catch {
-			return resolve({ success: false, error: "Некорректный JSON фискального чека" });
+			return resolve({ success: false, status: "hardware_offline", error: "Некорректный JSON фискального чека" });
 		}
 
 		const socket = new net.Socket();
@@ -275,24 +249,9 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 			if (!resolved) {
 				resolved = true;
 				socket.destroy();
-				// Simulated successful fiscal printing if host is local loopback / testing
-				if (host === "127.0.0.1" || host === "localhost") {
-					const fiscalSign = crypto.randomInt(1000000000, 9999999999).toString();
-					const fiscalDocNum = crypto.randomInt(100, 99999).toString();
-					const shiftNum = crypto.randomInt(1, 200);
-					return resolve({
-						success: true,
-						fiscalSign,
-						fiscalDocNum,
-						shiftNum,
-						kktSerialNumber: "0010670000001234",
-						fnSerial: "9960440302145896",
-						printedAt: new Date().toISOString(),
-						qrString: `t=${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}&s=${(payload.totalRub || 0).toFixed(2)}&fn=9960440302145896&i=${fiscalDocNum}&fp=${fiscalSign}&n=1`,
-					});
-				}
 				resolve({
 					success: false,
+					status: "hardware_offline",
 					error: `Таймаут подключения к фискальному регистратору ${host}:${port}`,
 				});
 			}
@@ -311,22 +270,27 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 
 		socket.on("data", (chunk) => {
 			responseData = Buffer.concat([responseData, chunk]);
-			if (responseData.length >= 8 && !resolved) {
+			if (responseData.length >= 4 && !resolved) {
 				resolved = true;
 				clearTimeout(timeout);
 				socket.end();
 
-				const fiscalSign = crypto.randomInt(1000000000, 9999999999).toString();
-				const fiscalDocNum = crypto.randomInt(100, 99999).toString();
+				if (protocol === "shtrih") {
+					const errorCode = responseData[3] !== undefined ? responseData[3] : 0;
+					if (errorCode !== 0) {
+						return resolve({
+							success: false,
+							status: "hardware_offline",
+							error: `ШТРИХ-М возвратил ошибку команды: 0x${errorCode.toString(16)}`,
+						});
+					}
+				}
+
+				// Check if response contains valid physical FN confirmation
 				resolve({
-					success: true,
-					fiscalSign,
-					fiscalDocNum,
-					shiftNum: 142,
-					kktSerialNumber: "0010670000001234",
-					fnSerial: "9960440302145896",
-					printedAt: new Date().toISOString(),
-					qrString: `t=${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}&s=${(payload.totalRub || 0).toFixed(2)}&fn=9960440302145896&i=${fiscalDocNum}&fp=${fiscalSign}&n=1`,
+					success: false,
+					status: "hardware_offline",
+					error: "ШТРИХ-М не вернул фискальные реквизиты (ФД / ФПД) из ФН. Чек поставлен в очередь фискализации.",
 				});
 			}
 		});
@@ -336,23 +300,9 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 				resolved = true;
 				clearTimeout(timeout);
 				socket.destroy();
-				// If local simulation
-				if (host === "127.0.0.1" || host === "localhost") {
-					const fiscalSign = crypto.randomInt(1000000000, 9999999999).toString();
-					const fiscalDocNum = crypto.randomInt(100, 99999).toString();
-					return resolve({
-						success: true,
-						fiscalSign,
-						fiscalDocNum,
-						shiftNum: 142,
-						kktSerialNumber: "0010670000001234",
-						fnSerial: "9960440302145896",
-						printedAt: new Date().toISOString(),
-						qrString: `t=${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}&s=${(payload.totalRub || 0).toFixed(2)}&fn=9960440302145896&i=${fiscalDocNum}&fp=${fiscalSign}&n=1`,
-					});
-				}
 				resolve({
 					success: false,
+					status: "hardware_offline",
 					error: `Ошибка соединения с ККТ (${host}:${port}): ${err.message}`,
 				});
 			}
@@ -2606,19 +2556,39 @@ function registerIpcHandlers() {
 	});
 
 	ipcMain.handle("dente:acquire-twain-image", async (_event, deviceId) => {
-		const fixturePath = path.join(__dirname, "..", "packages", "shared", "test-fixtures", "xspect_visiograph_periapical_anonymized.dcm");
-		let dataBase64 = null;
-		if (fs.existsSync(fixturePath)) {
+		// Honest acquisition: check hot folder for incoming DICOM / sensor files
+		const vendorKey = deviceId ? deviceId.replace(/^twain-/, "").split("-")[0] : "scans";
+		const hotFolder = path.join("C:\\DenteHotFolder", vendorKey);
+		if (fs.existsSync(hotFolder)) {
 			try {
-				dataBase64 = `data:application/dicom;base64,${fs.readFileSync(fixturePath).toString("base64")}`;
-			} catch {}
+				const files = fs.readdirSync(hotFolder).filter((f) => /\.(dcm|dicom|tif|tiff|png|jpg)$/i.test(f));
+				if (files.length > 0) {
+					const latestFile = path.join(hotFolder, files[files.length - 1]);
+					const fileBuf = fs.readFileSync(latestFile);
+					const ext = path.extname(latestFile).toLowerCase();
+					const mime = ext === ".dcm" || ext === ".dicom" ? "application/dicom" : `image/${ext.replace(".", "")}`;
+					return {
+						success: true,
+						filePath: latestFile,
+						dataBase64: `data:${mime};base64,${fileBuf.toString("base64")}`,
+						deviceId,
+						vendor: detectHardwareVendorFromPath(deviceId || ""),
+					};
+				}
+			} catch (err) {
+				return {
+					success: false,
+					status: "acquisition_error",
+					error: `Ошибка чтения Hot Folder: ${err.message}`,
+					deviceId,
+				};
+			}
 		}
-		if (!dataBase64) {
-			dataBase64 = getAnatomicalDentalPreviewDataUri("16");
-		}
+
 		return {
-			success: true,
-			dataBase64,
+			success: false,
+			status: "hardware_offline",
+			error: `Визиограф '${deviceId || "default"}' не передал снимок. Ожидание снимка в Hot Folder (${hotFolder}) или запуск TWAIN DSM драйвера.`,
 			deviceId,
 			vendor: detectHardwareVendorFromPath(deviceId || ""),
 		};

@@ -3,12 +3,21 @@
  * Create Anesthesia Protocol with Stock Overdraft & Estimate Sync (Mandate 8b, <= 120 lines)
  */
 
-import { calculateAnestheticSafety } from "@dental/shared";
+import {
+	calculateAnestheticSafety,
+	kopecksToRub,
+	multiplyKopecks,
+	rublesToKopecks,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { anesthesiaLogs, patients, serviceCatalogItems, treatmentItems, users, visits } from "../../db/schema.js";
+import {
+	extractIdempotencyKey,
+	isValidUuid,
+} from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
@@ -41,6 +50,14 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.write", role: staffRole, message: `Отказ в создании протокола: ${evalAccess.reason}` });
+		}
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
 		}
 
 		const parsed = createAnesthesiaLogBodySchema.safeParse(request.body);
@@ -98,10 +115,33 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 					const allServices = await tx.select().from(serviceCatalogItems).where(and(eq(serviceCatalogItems.organizationId, orgId), eq(serviceCatalogItems.isActive, true))).limit(50);
 					const anesthesiaService = allServices.find((s) => s.order804nCode === "A16.07.030" || s.code === "A16.07.030" || s.title.toLowerCase().includes("анестези")) ?? null;
 					const unitPrice = anesthesiaService ? Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub) : 0;
+					const unitPriceKop = rublesToKopecks(unitPrice);
+					const totalKop = multiplyKopecks(unitPriceKop, data.carpulesAdministered);
+					const totalRub = kopecksToRub(totalKop);
 					const techTitle = data.technique === "mandibular_block" || data.technique === "tuberal_block" ? "проводниковая" : "инфильтрационная";
-					const [tItem] = await tx.insert(treatmentItems).values({ organizationId: orgId, patientId, visitId: data.visitId, serviceId: anesthesiaService?.id ?? null, toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null, title: `Анестезия ${techTitle} (${data.drugBrandName} 1.7 мл)`, quantity: String(data.carpulesAdministered), unitPriceRub: unitPrice, priceRub: Number((unitPrice * data.carpulesAdministered).toFixed(2)), discountRub: 0, status: "completed", plannedDoctorUserId: data.doctorId || null }).returning();
+					const [tItem] = await tx.insert(treatmentItems).values({
+						organizationId: orgId,
+						patientId,
+						visitId: data.visitId,
+						serviceId: anesthesiaService?.id ?? null,
+						toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null,
+						title: `Анестезия ${techTitle} (${data.drugBrandName} 1.7 мл)`,
+						quantity: String(data.carpulesAdministered),
+						unitPriceRub: unitPrice,
+						priceRub: totalRub,
+						unitPriceKopecks: BigInt(unitPriceKop),
+						priceKopecks: BigInt(totalKop),
+						discountRub: 0,
+						discountKopecks: 0n,
+						status: "completed",
+						plannedDoctorUserId: data.doctorId || null,
+					}).returning();
 					treatmentItemResult = tItem ?? null;
 				} catch (tErr: unknown) { request.log.warn({ err: tErr }, "Estimate addition warning"); }
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			const responsePayload = JSON.parse(

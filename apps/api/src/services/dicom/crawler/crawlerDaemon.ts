@@ -442,16 +442,6 @@ export class DicomCrawlerDaemon extends EventEmitter {
 
 	private async resolveOrganizationId(): Promise<string | null> {
 		if (this.config.defaultOrganizationId) return this.config.defaultOrganizationId;
-
-		const [org] = await db
-			.select({ id: schema.organizations.id })
-			.from(schema.organizations)
-			.limit(1);
-
-		if (org?.id) {
-			this.config.defaultOrganizationId = org.id;
-			return org.id;
-		}
 		return null;
 	}
 }

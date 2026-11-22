@@ -73,7 +73,7 @@ export const denteTelegramWebhookUpdateSchema = z
 export const denteTelegramBotStatusSchema = z.object({
 	settings: denteTelegramBotSettingsSchema,
 	organizationId: z.string().uuid(),
-	clinicId: z.string().uuid(),
+	clinicId: z.string().uuid().nullable(),
 	botConfigId: z.string().min(1).max(160),
 	mode: denteTelegramBotModeSchema,
 	botUsername: z.string().nullable(),

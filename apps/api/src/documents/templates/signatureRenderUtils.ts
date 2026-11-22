@@ -55,6 +55,7 @@ export function resolveDocumentDigitalSignatureStamp(
 	const isSigned =
 		attestation?.mode === "qualified_electronic_signature" ||
 		attestation?.mode === "enhanced_non_qualified_electronic_signature" ||
+		attestation?.mode === "simple_electronic_signature" ||
 		Boolean(document.cryptoSignaturePkcs7 && document.cryptoSignaturePkcs7.length > 0) ||
 		Boolean(document.doctorSignaturePkcs7 && document.doctorSignaturePkcs7.length > 0);
 
@@ -77,6 +78,10 @@ export function resolveDocumentDigitalSignatureStamp(
 		}
 	}
 
+	if (!certSerial && attestation?.mode === "simple_electronic_signature") {
+		certSerial = `ПЭП-${document.id.slice(0, 8).toUpperCase()}`;
+	}
+
 	if (!certSerial) return null;
 
 	const certSubject =
@@ -97,14 +102,19 @@ export function resolveDocumentDigitalSignatureStamp(
 		new Date().toISOString();
 
 	const signatureType =
-		attestation?.mode === "enhanced_non_qualified_electronic_signature"
-			? "unep"
-			: "ukep";
+		attestation?.mode === "simple_electronic_signature"
+			? "simple"
+			: attestation?.mode === "enhanced_non_qualified_electronic_signature"
+				? "unep"
+				: "ukep";
 
 	return renderDigitalSignatureStampHtml({
 		certificateSerialNumber: certSerial,
 		certificateSubject: certSubject,
-		certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+		certificateIssuer:
+			signatureType === "simple"
+				? "МИС DENTE Clinical CRM (63-ФЗ ПЭП)"
+				: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
 		validFrom,
 		validTo: validToDate.toISOString(),
 		signedAt,

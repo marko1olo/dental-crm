@@ -67,16 +67,16 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 				onAddServicesToInvoice={actions.handleAddServicesToInvoice}
 				onOpenMemoModal={() => state.setIsMemoModalOpen(true)}
 				onOpenDiplomaModal={() => state.setIsDiplomaModalOpen(true)}
-				servicesCount={clinicalCalculation.services804n.length}
+				servicesCount={clinicalCalculation.services.length}
 				diagnosisIcd10={clinicalCalculation.diagnosisIcd10}
-				primaryService={clinicalCalculation.services804n[0]}
+				primaryService={clinicalCalculation.services[0]}
 			/>
 
 			<PediatricMobileBottomBar
 				currentTooth={state.currentTooth}
 				activePreset={state.activePreset}
 				diagnosisIcd10={clinicalCalculation.diagnosisIcd10}
-				servicesCount={clinicalCalculation.services804n.length}
+				servicesCount={clinicalCalculation.services.length}
 				onInsertToClinicalNote={actions.handleInsertToClinicalNote}
 				onAddServicesToInvoice={actions.handleAddServicesToInvoice}
 				onOpenMemoModal={() => state.setIsMemoModalOpen(true)}

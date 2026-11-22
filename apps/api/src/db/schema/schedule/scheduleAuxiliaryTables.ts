@@ -9,7 +9,7 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { organizations } from "../auth.js";
+import { clinics, organizations } from "../auth.js";
 
 // #21 — расписание::виджет_срочные_обращения_под_календарем
 export const urgentScheduleRequests = pgTable(
@@ -234,6 +234,9 @@ export const doctorShiftRosters = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id, { onDelete: "cascade" }),
+		clinicId: uuid("clinic_id").references(() => clinics.id, {
+			onDelete: "set null",
+		}),
 		doctorId: text("doctor_id").notNull(),
 		doctorName: text("doctor_name").notNull(),
 		cabinetId: text("cabinet_id"),
@@ -252,6 +255,7 @@ export const doctorShiftRosters = pgTable(
 	},
 	(t) => ({
 		organizationIdIdx: index("idx_doctor_shift_rosters_org").on(t.organizationId),
+		orgClinicIdx: index("idx_doctor_shift_rosters_org_clinic").on(t.organizationId, t.clinicId),
 		orgDateIdx: index("idx_doctor_shift_rosters_org_date").on(t.organizationId, t.dateIso),
 		orgDoctorIdx: index("idx_doctor_shift_rosters_org_doc").on(t.organizationId, t.doctorId),
 	}),

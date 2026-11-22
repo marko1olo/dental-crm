@@ -246,7 +246,7 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 			updatedAt: new Date(),
 		};
 
-		test("подтверждённый член семьи имеет право на списание по умолчанию (Мандат 8n) без явной записи в patient_relationships", async () => {
+		test("подтверждённый член семьи имеет право на списание средств при подтверждении в patient_relationships (Мандаты 8n, 8e)", async () => {
 			const mockTx = {
 				select: (fields?: unknown) => ({
 					from: (_table: unknown) => ({
@@ -255,7 +255,16 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 								if (fields && typeof fields === "object" && "familyGroupId" in fields) {
 									return [{ id: "pat-child-uuid", familyGroupId: "family-group-1" }];
 								}
-								return [];
+								return [
+									{
+										patientId: "pat-head-uuid",
+										relatedPatientId: "pat-child-uuid",
+										relationshipType: "child",
+										canSpendFamilyWallet: true,
+										isLegalRepresentative: false,
+										notes: null,
+									},
+								];
 							},
 						}),
 					}),

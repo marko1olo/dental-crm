@@ -40,7 +40,7 @@
     * Лаконичные клинические метки без срезания многоточиями («Сравнение», «Этапы», «Маршрут», «Финансы», «Договор»).
     * Компактный Natural Thumb Zone футер: лаконичный CTA `Выбрать Оптимум (190 100 ₽)` (28 символов) и вторичные действия `Печать` / `Подписать` в аккуратной строке 130px.
     * 4-состояный доказательный визуальный пруф (Light/Dark 1440x900 & 390x844): `docs/proofs/treatment_plans/treatment_plans_mobile_light_390x844.png`, `docs/proofs/treatment_plans/treatment_plans_mobile_dark_390x844.png`.
-  - Готовые UI-модули: `TreatmentPlan3TierComparison.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlanPhased4StageView.tsx`, `TreatmentPlanCompletedActPrint.tsx`.
+  - Готовые UI-модули: `TreatmentPlan3TierComparison.tsx`, `TreatmentPlanStudioModal.tsx`, `TreatmentPlanPhased4StageView.tsx`, `TreatmentPlanCompletedActPrint.tsx`.
 
 ---
 

@@ -169,7 +169,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 									<div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--line)" }}>
 										<button
 											type="button"
-											className="loyalty-primary-btn"
+											className="loyalty-primary-cta"
 											style={{ width: "100%", justifyContent: "center" }}
 											onClick={state.handleRedeemCertificate}
 										>

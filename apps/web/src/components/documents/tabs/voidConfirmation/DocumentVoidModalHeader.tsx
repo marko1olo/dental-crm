@@ -6,7 +6,7 @@ export interface DocumentVoidModalHeaderProps {
 	document: GeneratedDocument;
 	documentLabels?: Record<DocumentKind, string> | undefined;
 	documentStatusLabels?: Record<DocumentStatus, string> | undefined;
-	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | undefined;
+	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | string | undefined;
 	patients?: Patient[] | undefined;
 }
 
@@ -18,7 +18,9 @@ export const DocumentVoidModalHeader: React.FC<DocumentVoidModalHeaderProps> = (
 	patients,
 }) => {
 	const docLabel = documentLabels?.[document.kind] ?? document.kind;
-	const patientTitle = typeof patientName === "function" ? patientName(patients, document.patientId) : "Пациент";
+	const patientTitle = typeof patientName === "function"
+		? patientName(patients, document.patientId)
+		: (typeof patientName === "string" ? patientName : "Пациент");
 	const statusTitle = documentStatusLabels?.[document.status] ?? CANONICAL_DOCUMENT_STATUS_LABELS[document.status] ?? document.status;
 
 	return (

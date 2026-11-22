@@ -1,4 +1,5 @@
 import {
+	computePayloadHash,
 	dmsGuaranteeLetterCreateSchema,
 	dmsGuaranteeLetterUpdateSchema,
 	kopecksToRubles,
@@ -8,6 +9,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { dmsGuaranteeLetters } from "../../../db/schema.js";
+import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { formatGuaranteeLetterResponse, isValidUuid } from "./guaranteeLetterFormatters.js";
 
 export async function handleCreateGuaranteeLetter(
@@ -28,6 +30,45 @@ export async function handleCreateGuaranteeLetter(
 			error: "ValidationError",
 			message: msg,
 		});
+	}
+
+	// Mandate 8zp/8bo: Idempotency-Key support
+	const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
+	const rawIdemKey =
+		(request.headers["idempotency-key"] as string | undefined) ||
+		(request.headers["x-idempotency-key"] as string | undefined) ||
+		(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+	const idempotencyKey =
+		typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+			? rawIdemKey.trim()
+			: undefined;
+
+	if (idempotencyKey) {
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, orgId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция создания гарантийного письма ДМС с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
 	}
 
 	const data = parsed.data;
@@ -85,7 +126,32 @@ export async function handleCreateGuaranteeLetter(
 			})
 			.returning();
 
-		return inserted;
+		if (!inserted) return null;
+
+		const formatted = formatGuaranteeLetterResponse(inserted);
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: formatted,
+					responseCode: 201,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: formatted,
+						responseCode: 201,
+					},
+				});
+		}
+
+		return formatted;
 	});
 
 	if (!created) {
@@ -95,7 +161,11 @@ export async function handleCreateGuaranteeLetter(
 		});
 	}
 
-	return reply.code(201).send(formatGuaranteeLetterResponse(created));
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
+	return reply.code(201).send(created);
 }
 
 export async function handleUpdateGuaranteeLetter(

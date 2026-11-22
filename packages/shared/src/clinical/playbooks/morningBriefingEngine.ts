@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import {
 	type AppointmentBrief,
 	type BudgetBrief,

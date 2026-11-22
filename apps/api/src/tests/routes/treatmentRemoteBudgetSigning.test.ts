@@ -51,6 +51,7 @@ describe("Treatment Remote Budget Signing & Verification Security", () => {
 
 		try {
 			await db.delete(portalBudgetTokens).where(eq(portalBudgetTokens.organizationId, ORG_ID));
+			await db.delete(treatmentPlans).where(eq(treatmentPlans.id, PLAN_1_ID));
 			await purgeFixtureOrganizations([ORG_ID]);
 
 			await withFixtureTenant(ORG_ID, async () => {
@@ -71,6 +72,7 @@ describe("Treatment Remote Budget Signing & Verification Security", () => {
 					})
 					.onConflictDoNothing();
 
+				await db.delete(treatmentPlans).where(eq(treatmentPlans.id, PLAN_1_ID));
 				await db.insert(treatmentPlans).values({
 					id: PLAN_1_ID,
 					organizationId: ORG_ID,
@@ -150,7 +152,7 @@ describe("Treatment Remote Budget Signing & Verification Security", () => {
 		assert.equal(body.patientFirstName, undefined, "patientFirstName must not be exposed");
 	});
 
-	test("2. POST /api/v1/public/budgets/:token/verify — 3 attempts brute-force lockout protection", async () => {
+	test("2. POST /api/v1/public/budgets/:token/verify — 5 attempts brute-force lockout protection", async () => {
 		// Attempt 1: wrong phone digits (401)
 		const fail1 = await app.inject({
 			method: "POST",
@@ -159,7 +161,7 @@ describe("Treatment Remote Budget Signing & Verification Security", () => {
 		});
 		assert.equal(fail1.statusCode, 401);
 		const b1 = JSON.parse(fail1.payload);
-		assert.equal(b1.remainingAttempts, 2);
+		assert.equal(b1.remainingAttempts, 4);
 
 		// Attempt 2: wrong phone digits (401)
 		const fail2 = await app.inject({
@@ -169,26 +171,46 @@ describe("Treatment Remote Budget Signing & Verification Security", () => {
 		});
 		assert.equal(fail2.statusCode, 401);
 		const b2 = JSON.parse(fail2.payload);
-		assert.equal(b2.remainingAttempts, 1);
+		assert.equal(b2.remainingAttempts, 3);
 
-		// Attempt 3: wrong phone digits -> triggers 429 lockout!
+		// Attempt 3: wrong phone digits (401)
 		const fail3 = await app.inject({
 			method: "POST",
 			url: `/api/v1/public/budgets/${budgetToken}/verify`,
 			payload: { phoneDigits: "2222" },
 		});
-		assert.equal(fail3.statusCode, 429);
+		assert.equal(fail3.statusCode, 401);
 		const b3 = JSON.parse(fail3.payload);
-		assert.equal(b3.isLocked, true);
-		assert.equal(b3.remainingAttempts, 0);
+		assert.equal(b3.remainingAttempts, 2);
+
+		// Attempt 4: wrong phone digits (401)
+		const fail4 = await app.inject({
+			method: "POST",
+			url: `/api/v1/public/budgets/${budgetToken}/verify`,
+			payload: { phoneDigits: "3333" },
+		});
+		assert.equal(fail4.statusCode, 401);
+		const b4 = JSON.parse(fail4.payload);
+		assert.equal(b4.remainingAttempts, 1);
+
+		// Attempt 5: wrong phone digits -> triggers 429 lockout!
+		const fail5 = await app.inject({
+			method: "POST",
+			url: `/api/v1/public/budgets/${budgetToken}/verify`,
+			payload: { phoneDigits: "4444" },
+		});
+		assert.equal(fail5.statusCode, 429);
+		const b5 = JSON.parse(fail5.payload);
+		assert.equal(b5.isLocked, true);
+		assert.equal(b5.remainingAttempts, 0);
 
 		// Subsequent attempt while locked -> 429
-		const fail4 = await app.inject({
+		const failLocked = await app.inject({
 			method: "POST",
 			url: `/api/v1/public/budgets/${budgetToken}/verify`,
 			payload: { phoneDigits: "7890" },
 		});
-		assert.equal(fail4.statusCode, 429);
+		assert.equal(failLocked.statusCode, 429);
 
 		// Manually reset lockout in DB to simulate lockout expiry and test successful verification
 		await db

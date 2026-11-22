@@ -1,6 +1,5 @@
-import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
+import type { Appointment, Dashboard, DentalSpecialty, DayFreeSlots } from "@dental/shared";
 import type React from "react";
-import type { DayFreeSlots } from "../doctorFreeSlotsEngine";
 import type {
   AppointmentTypePreset,
   DurationPreset,
@@ -82,7 +81,7 @@ export interface QuickBookingServiceSectionProps {
   isSoloClinic: boolean;
   selectedPatientName?: string | undefined;
   chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   initialSlot?: QuickBookingSlotInfo | null | undefined;
 }
 

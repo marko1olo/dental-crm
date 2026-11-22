@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
@@ -44,7 +44,7 @@ export async function handleBactericidalShiftAutopilot(
 	const sessionHours = calculateSessionHours(durationMinutes);
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 
-	const results = await db.transaction(async (tx) => {
+	const results = await withTenantCtx(organizationId, async (tx) => {
 		const activeEquipments = await tx
 			.select()
 			.from(bactericidalEquipments)

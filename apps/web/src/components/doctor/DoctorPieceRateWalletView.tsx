@@ -25,14 +25,41 @@ export { pluralizeRu };
 export type { DoctorPieceRateWalletViewProps };
 
 export const DoctorPieceRateWalletView: React.FC<DoctorPieceRateWalletViewProps> = ({
-	doctorId = "doc-1",
-	doctorName = "Д-р Смирнов Алексей Петрович",
-	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
+	doctorId = "",
+	doctorName = "Врач-специалист",
+	doctorSpecialty = "Стоматолог",
 	shiftDateIso = new Date().toISOString().split("T")[0] ?? "",
 	onClose,
 	onPrintPayslip,
 }) => {
 	const logic = useDoctorWalletLogic(doctorId, shiftDateIso, onPrintPayslip);
+
+	if (!doctorId) {
+		return (
+			<div className="doctor-piece-rate-container" data-testid="doctor-piece-rate-wallet-view" role="region" aria-label="Сдельная оплата труда врача">
+				<div className="dpr-mobile-drag-handle-bar" aria-hidden="true">
+					<span className="dpr-mobile-drag-pill" />
+				</div>
+				<DoctorWalletHeader
+					doctorName={doctorName}
+					doctorSpecialty={doctorSpecialty}
+					selectedDate={shiftDateIso}
+					activePeriodFilter="today"
+					isLoading={false}
+					onClose={onClose}
+					onSelectToday={() => {}}
+					onSelectYesterday={() => {}}
+					onDateChange={() => {}}
+					onRefresh={() => {}}
+				/>
+				<div className="p-12 text-center text-[var(--muted)]">
+					<AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+					<div className="font-semibold text-sm">Врач не выбран</div>
+					<div className="text-xs opacity-80 mt-1">Выберите врача для просмотра расчетного листа выработки</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="doctor-piece-rate-container" data-testid="doctor-piece-rate-wallet-view" role="region" aria-label="Сдельная оплата труда врача">

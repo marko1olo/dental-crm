@@ -26,10 +26,8 @@ import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-	AccessibilityModeButton,
-	ClinicControlPill,
-} from "../components/Header";
+import { ClinicControlPill } from "../components/headerModules/headerStatus/ClinicControlPill";
+import { AccessibilityModeButton } from "../components/headerModules/HeaderUserMenu";
 import { applyThemeToRoot, resolveTheme } from "../lib/themeClasses";
 import { useThemeStore } from "../store/themeStore";
 

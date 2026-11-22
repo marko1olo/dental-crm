@@ -22,7 +22,8 @@ export type ClinicalSpecialtyDepartment =
 	| "orthodontics"
 	| "hygiene"
 	| "pediatric"
-	| "diagnostic";
+	| "diagnostic"
+	| "unassigned";
 
 export const DEPARTMENT_METADATA_RU: Record<
 	ClinicalSpecialtyDepartment,
@@ -35,6 +36,7 @@ export const DEPARTMENT_METADATA_RU: Record<
 	hygiene: { label: "Профгигиена и пародонтология", code: "HYGIENE", color: "#10b981" },
 	pediatric: { label: "Детская стоматология", code: "PEDIA", color: "#ec4899" },
 	diagnostic: { label: "Рентген-диагностика / КЛКТ", code: "DIAG", color: "#6366f1" },
+	unassigned: { label: "Прочие / неразмеченные услуги", code: "OTHER", color: "#64748b" },
 };
 
 export interface DepartmentRevenueItem {
@@ -135,6 +137,7 @@ export interface ManagerialPnlReport {
 	grossMarginPct: number;
 
 	// 3. Операционные расходы (OPEX)
+	adminStaffPayrollRub: number; // Оклады административного и управленческого персонала (OPEX)
 	statutoryExpenses: StatutoryExpenseRow[];
 	totalOpexRub: number;
 
@@ -206,6 +209,7 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		hygiene: { sumKop: 0, count: 0 },
 		pediatric: { sumKop: 0, count: 0 },
 		diagnostic: { sumKop: 0, count: 0 },
+		unassigned: { sumKop: 0, count: 0 },
 	};
 
 	// Агрегация по кассам (в копейках)
@@ -218,8 +222,8 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		const amtKop = rubToKopecks(amtRub);
 		grossRevenueKop += amtKop;
 
-		// Направление
-		let deptKey: ClinicalSpecialtyDepartment = "therapy";
+		// Направление: если не указано или некорректно — относим в неразмеченные (unassigned)
+		let deptKey: ClinicalSpecialtyDepartment = "unassigned";
 		if (p.department && p.department in deptSumsKop) {
 			deptKey = p.department as ClinicalSpecialtyDepartment;
 		}
@@ -272,14 +276,22 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		totalExpensesKop += amtKop;
 	}
 
-	// Если передан расчетный ФОТ врачей от сделки и он выше записанного в кассе
+	// Если передан расчетный ФОТ врачей от сделки (COGS)
 	const currentSalaryKop = expenseSumsKop[1] ?? 0;
-	if (input.doctorPieceRatePayrollRub) {
+	let directDoctorPieceRateKop = currentSalaryKop;
+	let adminStaffPayrollKop = 0;
+
+	if (input.doctorPieceRatePayrollRub !== undefined && input.doctorPieceRatePayrollRub >= 0) {
 		const inputDoctorPieceRateKop = rubToKopecks(input.doctorPieceRatePayrollRub);
 		if (inputDoctorPieceRateKop > currentSalaryKop) {
 			const diffKop = inputDoctorPieceRateKop - currentSalaryKop;
 			expenseSumsKop[1] = inputDoctorPieceRateKop;
 			totalExpensesKop += diffKop;
+			directDoctorPieceRateKop = inputDoctorPieceRateKop;
+			adminStaffPayrollKop = 0;
+		} else {
+			directDoctorPieceRateKop = inputDoctorPieceRateKop;
+			adminStaffPayrollKop = currentSalaryKop - inputDoctorPieceRateKop;
 		}
 	}
 
@@ -289,20 +301,22 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		const meta = STATUTORY_NAMES[id] || { name: `Статья ${id}`, isLocked: false, costNature: "opex" as const };
 		const amtKop = expenseSumsKop[id] || 0;
 		const amtRub = kopecksToRub(amtKop);
+		const costNature = id === 1 && adminStaffPayrollKop > 0 && directDoctorPieceRateKop === 0
+			? ("opex" as const)
+			: meta.costNature;
 		return {
 			reasonId: id,
 			titleRu: meta.name,
 			isLocked: meta.isLocked,
 			amountRub: amtRub,
 			shareOfExpensesPct: totalExpensesKop > 0 ? Number(((amtKop / totalExpensesKop) * 100).toFixed(1)) : 0,
-			costNature: meta.costNature,
+			costNature,
 		};
 	});
 
 	// 3. Расчет себестоимости лечения (COGS) в копейках
 	const directLabCostKop = expenseSumsKop[11] || 0;
 	const directMaterialsCostKop = (expenseSumsKop[4] || 0) + (expenseSumsKop[5] || 0);
-	const directDoctorPieceRateKop = expenseSumsKop[1] || 0;
 	const totalCogsKop = directLabCostKop + directMaterialsCostKop + directDoctorPieceRateKop;
 
 	const directLabCostRub = kopecksToRub(directLabCostKop);
@@ -366,8 +380,10 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 
 	// 4. Операционные затраты (OPEX) в копейках
 	const opexReasons = [3, 6, 7, 8, 9, 10, 12];
-	const totalOpexKop = opexReasons.reduce((acc, rId) => acc + (expenseSumsKop[rId] || 0), 0);
+	const baseOpexKop = opexReasons.reduce((acc, rId) => acc + (expenseSumsKop[rId] || 0), 0);
+	const totalOpexKop = baseOpexKop + adminStaffPayrollKop;
 	const totalOpexRub = kopecksToRub(totalOpexKop);
+	const adminStaffPayrollRub = kopecksToRub(adminStaffPayrollKop);
 
 	// 5. EBITDA и Чистая прибыль в копейках
 	const ebitdaKop = grossProfitKop - totalOpexKop;
@@ -515,6 +531,7 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		grossProfitRub,
 		grossMarginPct,
 		statutoryExpenses,
+		adminStaffPayrollRub,
 		totalOpexRub,
 		ebitdaRub,
 		ebitdaMarginPct,

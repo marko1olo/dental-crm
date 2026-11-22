@@ -225,6 +225,7 @@ export async function upsertPatientFullPeriodontogram({
 					await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				const computedIndices = computeSnapshotIndices(currentTeeth, currentSites);
 				const mergedIndices = {
+					...((activeDraft.indices as Record<string, unknown>) || {}),
 					...computedIndices,
 					...(psrData ? { psrData } : {}),
 				};

@@ -13,7 +13,7 @@ import {
 	multiplyKopecksFractional,
 	parseKopecks,
 	sumKopecks,
-} from "../utils/money.js";
+} from "../money.js";
 
 export type ProcedureKind =
 	| "filling_composite"

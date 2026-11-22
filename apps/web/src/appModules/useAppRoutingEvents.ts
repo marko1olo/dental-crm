@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { kopecksToRub, rublesToKopecks } from "@dental/shared";
 import type { AppHashRoutingState } from "./appStateTypes";
 import { hasLocationToken } from "./appRoutingHelpers";
 
@@ -122,19 +123,23 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente-open-loyalty-program", () => stateRef.current.setIsLoyaltyProgramOpen(true));
 		window.addEventListener("dente-open-fast-checkout", (e: Event) => {
 			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
-			if (typeof d?.amountRub === "number") {
+			if (typeof d?.amountKopecks === "number") {
+				stateRef.current.setFastCheckoutInitialAmountKopecks?.(d.amountKopecks);
+				stateRef.current.setFastCheckoutInitialAmountRub?.(kopecksToRub(d.amountKopecks));
+			} else if (typeof d?.amountRub === "number") {
 				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountRub);
-			} else if (typeof d?.amountKopecks === "number") {
-				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountKopecks / 100);
+				stateRef.current.setFastCheckoutInitialAmountKopecks?.(rublesToKopecks(d.amountRub));
 			}
 			stateRef.current.setIsFastCheckoutDirectOpen(true);
 		});
 		window.addEventListener("dente:open-fast-checkout", (e: Event) => {
 			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
-			if (typeof d?.amountRub === "number") {
+			if (typeof d?.amountKopecks === "number") {
+				stateRef.current.setFastCheckoutInitialAmountKopecks?.(d.amountKopecks);
+				stateRef.current.setFastCheckoutInitialAmountRub?.(kopecksToRub(d.amountKopecks));
+			} else if (typeof d?.amountRub === "number") {
 				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountRub);
-			} else if (typeof d?.amountKopecks === "number") {
-				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountKopecks / 100);
+				stateRef.current.setFastCheckoutInitialAmountKopecks?.(rublesToKopecks(d.amountRub));
 			}
 			stateRef.current.setIsFastCheckoutDirectOpen(true);
 		});

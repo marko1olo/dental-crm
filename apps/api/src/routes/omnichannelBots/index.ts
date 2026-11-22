@@ -8,7 +8,7 @@ import {
 	getEngineMetricsHandler,
 	saveBotConfigHandler,
 } from "./botConfigs.js";
-import { handleMaxWebhook, handleWhatsAppWebhook } from "./channelMax.js";
+import { handleMaxWebhook } from "./channelMax.js";
 import { getMessengersOverviewHandler, handleTestConnection } from "./channelOverview.js";
 import { handleTelegramWebhook } from "./channelTelegram.js";
 import { handleVkWebhook } from "./channelVk.js";
@@ -122,8 +122,13 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		}
 
 		if (channel === "whatsapp") {
-			const res = await handleWhatsAppWebhook(body, organizationId);
-			return reply.code(200).send(res);
+			// Канонический шлюз WhatsApp — /api/whatsapp/webhook (DEF-MSG-06)
+			return reply.code(400).send({
+				ok: false,
+				error: "UseCanonicalWhatsAppWebhook",
+				message:
+					"Входящие вебхуки WhatsApp принимаются на каноническом эндпоинте /api/whatsapp/webhook.",
+			});
 		}
 
 		if (channel === "max") {

@@ -3,9 +3,18 @@
  */
 
 import React, { Suspense } from "react";
+import type { DentalSpecialty } from "@dental/shared";
 import { DoctorMobileShiftModal } from "../../doctor-portal/DoctorMobileShiftModal";
 import { OnboardingWizardModal } from "../../onboarding/OnboardingWizardModal";
+import type { OnboardingWizardModalProps } from "../../onboarding/wizard/types";
 import type { AppTopBarProps } from "../types/topBarTypes";
+
+function hasOnboardingWizardProps(props: AppTopBarProps): props is AppTopBarProps & OnboardingWizardModalProps {
+	return (
+		typeof props.currentOnboardingIndex === "number" &&
+		Array.isArray(props.onboardingSteps)
+	);
+}
 
 export function TopBarModalsHost(props: AppTopBarProps) {
 	const {
@@ -22,7 +31,7 @@ export function TopBarModalsHost(props: AppTopBarProps) {
 				<Suspense fallback={null}>
 					<DoctorMobileShiftModal
 						isOpen={isDoctorShiftCockpitOpen}
-						onClose={closeDoctorShiftCockpit}
+						onClose={closeDoctorShiftCockpit ?? (() => {})}
 						initialDoctorId={activeDoctor?.id || "doc-1"}
 						initialDoctorName={activeDoctor?.fullName || "Лечащий врач"}
 						initialDoctorSpecialty={activeDoctor?.specialty || "Терапевт-ортопед"}
@@ -34,9 +43,12 @@ export function TopBarModalsHost(props: AppTopBarProps) {
 				</Suspense>
 			)}
 
-			{showFullOnboardingGuide && (
+			{showFullOnboardingGuide && hasOnboardingWizardProps(props) && (
 				<Suspense fallback={null}>
-					<OnboardingWizardModal {...props} />
+					<OnboardingWizardModal
+						{...props}
+						selectedSpecialty={(props.selectedSpecialty as DentalSpecialty) || "universal"}
+					/>
 				</Suspense>
 			)}
 		</>

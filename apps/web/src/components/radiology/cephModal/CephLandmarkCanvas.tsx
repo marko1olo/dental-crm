@@ -85,8 +85,8 @@ export function CephLandmarkCanvas({
 }: CephLandmarkCanvasProps) {
 	return (
 		<div
-			className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"}`}
-			style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+			className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-[var(--paper-strong)] border-r border-[var(--line)] shrink-0 lg:overflow-hidden ${mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"}`}
+			style={{ backgroundColor: "var(--paper-strong)", color: "var(--ink)" }}
 		>
 			<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 				<CephalometricCanvas

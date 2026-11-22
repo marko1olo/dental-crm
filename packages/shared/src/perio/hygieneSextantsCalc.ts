@@ -29,7 +29,8 @@ export interface SextantHygieneCalculationResult {
 	readonly pma: PmaResult;
 	readonly kpi: KpiResult;
 	readonly assessedSextantsCount: number;
-	readonly summaryText043: string;
+	readonly clinicalProtocolSummaryRu: string;
+	readonly summaryText043?: string;
 }
 
 export function calculateSextantHygieneIndices(
@@ -80,9 +81,15 @@ export function calculateSextantHygieneIndices(
 		`• Комплексный индекс Леуса (КПИ): ${kpi.ratingText}`,
 	];
 
+	const summary = summaryLines.join("\n");
 	return {
-		sextants: sextantsMap, ohiS, pma, kpi, assessedSextantsCount: assessedCount,
-		summaryText043: summaryLines.join("\n"),
+		sextants: sextantsMap,
+		ohiS,
+		pma,
+		kpi,
+		assessedSextantsCount: assessedCount,
+		clinicalProtocolSummaryRu: summary,
+		summaryText043: summary,
 	};
 }
 

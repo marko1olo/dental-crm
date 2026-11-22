@@ -477,6 +477,75 @@ export function calculateLabOrderFinancialsKopecks(params: {
 	};
 }
 
+export interface BridgeCostCalculationParams {
+	abutmentPriceKopecks: number;
+	ponticPriceKopecks: number;
+	abutmentsCount: number;
+	ponticsCount: number;
+	abutmentCostKopecks?: number | undefined;
+	ponticCostKopecks?: number | undefined;
+}
+
+export interface BridgeCostCalculationResult {
+	patientPriceKopecks: number;
+	labCostKopecks: number;
+	abutmentsTotalPatientKopecks: number;
+	ponticsTotalPatientKopecks: number;
+	abutmentsTotalLabKopecks: number;
+	ponticsTotalLabKopecks: number;
+}
+
+/**
+ * Расчет стоимости мостовидного протеза с дифференциацией опорных коронок и понтиков (Мандат 8bm).
+ * Исключает плоское умножение единой цены.
+ */
+export function calculateBridgeRestorationCostKopecks(
+	params: BridgeCostCalculationParams,
+): BridgeCostCalculationResult {
+	const abutments = Math.max(0, params.abutmentsCount);
+	const pontics = Math.max(0, params.ponticsCount);
+	const abutmentPrice = Math.max(0, Math.round(params.abutmentPriceKopecks));
+	const ponticPrice = Math.max(0, Math.round(params.ponticPriceKopecks));
+	const abutmentCost = Math.max(0, Math.round(params.abutmentCostKopecks ?? Math.round(abutmentPrice * 0.35)));
+	const ponticCost = Math.max(0, Math.round(params.ponticCostKopecks ?? Math.round(ponticPrice * 0.35)));
+
+	const abutmentsTotalPatientKopecks = abutmentPrice * abutments;
+	const ponticsTotalPatientKopecks = ponticPrice * pontics;
+	const patientPriceKopecks = abutmentsTotalPatientKopecks + ponticsTotalPatientKopecks;
+
+	const abutmentsTotalLabKopecks = abutmentCost * abutments;
+	const ponticsTotalLabKopecks = ponticCost * pontics;
+	const labCostKopecks = abutmentsTotalLabKopecks + ponticsTotalLabKopecks;
+
+	return {
+		patientPriceKopecks,
+		labCostKopecks,
+		abutmentsTotalPatientKopecks,
+		ponticsTotalPatientKopecks,
+		abutmentsTotalLabKopecks,
+		ponticsTotalLabKopecks,
+	};
+}
+
+/**
+ * Разделение зубов мостовидного протеза на опорные коронки (abutments) и промежуточные части (pontics).
+ */
+export function partitionBridgeTeethFdi(teethFdi: readonly number[]): {
+	abutmentTeethFdi: number[];
+	ponticTeethFdi: number[];
+} {
+	if (!teethFdi || teethFdi.length === 0) {
+		return { abutmentTeethFdi: [], ponticTeethFdi: [] };
+	}
+	const sorted = [...teethFdi].sort((a, b) => a - b);
+	if (sorted.length <= 2) {
+		return { abutmentTeethFdi: sorted, ponticTeethFdi: [] };
+	}
+	const abutments = [sorted[0]!, sorted[sorted.length - 1]!];
+	const pontics = sorted.slice(1, -1);
+	return { abutmentTeethFdi: abutments, ponticTeethFdi: pontics };
+}
+
 // ─── CANONICAL 5-STAGE DENTAL LAB PIPELINE ───────────────────────────────────
 
 export const labPipeline5StageKeySchema = z.enum([
@@ -1000,6 +1069,8 @@ export const labOrderRecordSchema = z.object({
 	labName: z.string().min(1, "Наименование лаборатории обязательно"),
 	workType: labWorkTypeSchema,
 	toothReference: z.string().max(50).nullable().optional(),
+	abutmentTeethFdi: z.array(z.number().int()).optional().nullable(),
+	ponticTeethFdi: z.array(z.number().int()).optional().nullable(),
 	impressionType: impressionTypeSchema.nullable().optional(),
 	antagonistInfo: z.string().max(500).nullable().optional(),
 	shade: anyVitaShadeSchema.nullable().optional(),
@@ -1213,6 +1284,8 @@ export interface PatientLabOrderDto {
 	secureToken: string;
 	toothFdi?: string | null;
 	teethFdi?: string | null;
+	abutmentTeethFdi?: readonly number[] | null;
+	ponticTeethFdi?: readonly number[] | null;
 	material?: string | null;
 	colorVita?: string | null;
 	shadeCode?: string | null;

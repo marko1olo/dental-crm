@@ -9,15 +9,63 @@ import type {
 	ExistingAppointmentRecord,
 } from "./types.js";
 
-export function normalizeIsoDateTimeString(value: string): string {
+export const DEFAULT_SCHEDULE_TIMEZONE = "Europe/Moscow";
+
+export function getTimeZoneOffsetString(
+	date: Date,
+	timeZone: string = DEFAULT_SCHEDULE_TIMEZONE,
+): string {
+	try {
+		const dtf = new Intl.DateTimeFormat("en-US", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hour12: false,
+		});
+		const parts = dtf.formatToParts(date);
+		const p: Record<string, string> = {};
+		for (const part of parts) {
+			if (part.type !== "literal") p[part.type] = part.value;
+		}
+		const asLocalIso = `${p.year}-${p.month}-${p.day}T${p.hour === "24" ? "00" : p.hour}:${p.minute}:${p.second}Z`;
+		const targetTime = new Date(asLocalIso).getTime();
+		const utcTime = date.getTime();
+		const diffMinutes = Math.round((targetTime - utcTime) / 60000);
+		const sign = diffMinutes >= 0 ? "+" : "-";
+		const absMinutes = Math.abs(diffMinutes);
+		const offsetHours = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+		const offsetMins = String(absMinutes % 60).padStart(2, "0");
+		return `${sign}${offsetHours}:${offsetMins}`;
+	} catch {
+		return "+03:00";
+	}
+}
+
+export function normalizeIsoDateTimeString(
+	value: string,
+	timeZone: string = DEFAULT_SCHEDULE_TIMEZONE,
+): string {
 	let s = value.trim();
 	if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-	if (!s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) s = `${s}Z`;
-	return s;
+	if (s.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(s) || /[+-]\d{4}$/.test(s)) {
+		return s;
+	}
+	// Если дата без смещения (локальное время клиники),
+	// определяем смещение клиники (по умолчанию Europe/Moscow) и прикрепляем его,
+	// исключая потерю 3 часов.
+	const probeDate = new Date(`${s}Z`);
+	const safeProbe = Number.isNaN(probeDate.getTime()) ? new Date() : probeDate;
+	const offset = getTimeZoneOffsetString(safeProbe, timeZone);
+	return `${s}${offset}`;
 }
 
 export function normalizeAppointmentFieldAliases(
 	rawBody: Record<string, unknown>,
+	timeZone?: string | null,
 ): void {
 	if (
 		typeof rawBody.status === "string" &&
@@ -79,10 +127,16 @@ export function normalizeAppointmentFieldAliases(
 	}
 
 	if (typeof rawBody.startsAt === "string") {
-		rawBody.startsAt = normalizeIsoDateTimeString(rawBody.startsAt);
+		rawBody.startsAt = normalizeIsoDateTimeString(
+			rawBody.startsAt,
+			timeZone ?? DEFAULT_SCHEDULE_TIMEZONE,
+		);
 	}
 	if (typeof rawBody.endsAt === "string") {
-		rawBody.endsAt = normalizeIsoDateTimeString(rawBody.endsAt);
+		rawBody.endsAt = normalizeIsoDateTimeString(
+			rawBody.endsAt,
+			timeZone ?? DEFAULT_SCHEDULE_TIMEZONE,
+		);
 	}
 
 	if (
@@ -103,6 +157,7 @@ export function normalizeAppointmentFieldAliases(
 
 export function normalizeAppointmentUpdateRawBody(
 	body: unknown,
+	timeZone?: string | null,
 ): Record<string, unknown> | null {
 	const rawBody =
 		body && typeof body === "object"
@@ -116,7 +171,7 @@ export function normalizeAppointmentUpdateRawBody(
 		) {
 			rawBody.status = APPOINTMENT_STATUS_ALIASES[rawBody.status];
 		}
-		normalizeAppointmentFieldAliases(rawBody);
+		normalizeAppointmentFieldAliases(rawBody, timeZone);
 	}
 
 	return rawBody;

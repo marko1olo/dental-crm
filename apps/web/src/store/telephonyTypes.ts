@@ -226,9 +226,11 @@ export interface TelephonyStore {
 	isPlayingRecording: boolean;
 	transferState: CallTransferState;
 	isWsConnected: boolean;
+	isIncomingCallPopupExpanded: boolean;
 
 	// Actions
 	setWsConnected: (connected: boolean) => void;
+	setIsIncomingCallPopupExpanded: (expanded: boolean) => void;
 	setAgentState: (agentState: TelephonyAgentState) => void;
 	switchLine: (lineId: 1 | 2) => void;
 	holdCall: () => void;

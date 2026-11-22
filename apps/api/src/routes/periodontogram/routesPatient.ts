@@ -1,8 +1,12 @@
+import { computePayloadHash } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	fetchPatientLatestPeriodontogram,
@@ -105,6 +109,28 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
+
+			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+			}
 		}
 
 		const parsedBody = upsertPatientFullPeriodontogramBodySchema.safeParse(request.body);
@@ -155,7 +181,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
 			const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
 
-			return reply.send({
+			const responsePayload = {
 				success: true,
 				data: {
 					...result,
@@ -164,7 +190,38 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 					hygieneRecommendations,
 					hygienePlan,
 				},
-			});
+			};
+
+			if (idempotencyKey) {
+				try {
+					await db
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 200,
+								lockedAt: new Date(),
+							},
+						});
+				} catch (idemErr) {
+					request.log.warn(
+						{ err: idemErr, idempotencyKey, orgId },
+						"[periodontogram] Не удалось сохранить ключ идемпотентности",
+					);
+				}
+			}
+
+			return reply.send(responsePayload);
 		} catch (err: unknown) {
 			const e = err as { statusCode?: number; code?: string; message?: string };
 			if (e.statusCode === 404 || e.code === "PatientNotFound") {

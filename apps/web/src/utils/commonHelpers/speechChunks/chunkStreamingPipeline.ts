@@ -22,7 +22,6 @@ import {
 	pendingSpeechChunkQueueLocalKey,
 	savePendingSpeechChunksToLocalStorage,
 	speechAudioQueueRetentionMs,
-	type PendingSpeechChunk as SharedPendingSpeechChunk,
 } from "../../../helpers/speechHelpers";
 import { createLocalQueueId, localQueueOrganizationMatches } from "./domainGuards";
 import { int16PcmToBase64, pcmToWavArrayBuffer } from "./pcmAudioUtils";

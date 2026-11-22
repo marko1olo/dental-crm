@@ -28,15 +28,33 @@ export interface EmkPerioSectionProps extends EmkSectionProps {
 function extractPerioTeethStats(teeth?: unknown[]): { maxDepth: number; anyBop: boolean } {
 	let maxDepth = 2;
 	let anyBop = false;
-	if (Array.isArray(teeth)) {
-		for (const t of teeth) {
-			if (!t || typeof t !== "object") continue;
-			for (const siteKey of ["distobuccal", "midbuccal", "mesiobuccal", "distolingual", "midlingual", "mesiolingual"]) {
-				const s = (t as Record<string, { probingDepthMm?: number; bleedingOnProbing?: boolean }>)[siteKey];
-				if (s) {
-					if (s.probingDepthMm && s.probingDepthMm > maxDepth) maxDepth = s.probingDepthMm;
-					if (s.bleedingOnProbing) anyBop = true;
-				}
+	if (!Array.isArray(teeth)) return { maxDepth, anyBop };
+
+	const siteKeys = [
+		"distoBuccal", "midBuccal", "mesioBuccal", "distoLingual", "midLingual", "mesioLingual",
+		"distobuccal", "midbuccal", "mesiobuccal", "distolingual", "midlingual", "mesiolingual",
+	];
+
+	for (const t of teeth) {
+		if (!t || typeof t !== "object") continue;
+		const rec = t as Record<string, unknown>;
+
+		for (const key of siteKeys) {
+			const s = rec[key] as Record<string, unknown> | undefined;
+			if (s && typeof s === "object") {
+				const depth = Number(s.probingDepthMm ?? s.probing_depth_mm ?? 0);
+				if (depth > maxDepth) maxDepth = depth;
+				if (s.bleedingOnProbing ?? s.bleeding_on_probing) anyBop = true;
+			}
+		}
+
+		if (Array.isArray(rec.sites)) {
+			for (const site of rec.sites) {
+				if (!site || typeof site !== "object") continue;
+				const s = site as Record<string, unknown>;
+				const depth = Number(s.probingDepthMm ?? s.probing_depth_mm ?? 0);
+				if (depth > maxDepth) maxDepth = depth;
+				if (s.bleedingOnProbing ?? s.bleeding_on_probing) anyBop = true;
 			}
 		}
 	}
@@ -44,19 +62,13 @@ function extractPerioTeethStats(teeth?: unknown[]): { maxDepth: number; anyBop: 
 }
 
 export function EmkPerioSection({
-	visitNoteForm,
-	updateVisitNoteField,
-	isLocked = false,
-	activeTooth = 16,
-	onOpenPerioModal,
-	patientId,
-	patientName,
+	visitNoteForm, updateVisitNoteField, isLocked = false, activeTooth = 16,
+	onOpenPerioModal, patientId, patientName,
 }: EmkPerioSectionProps) {
 	const [isExpanded, setIsExpanded] = useState<boolean>(true);
 	const [perioStatus, setPerioStatus] = useState<
 		"healthy" | "gingivitis" | "periodontitis_mild" | "periodontitis_moderate" | "periodontitis_severe" | "custom"
 	>("healthy");
-
 	const [hygieneLevel, setHygieneLevel] = useState<"good" | "fair" | "poor" | null>(null);
 
 	const defaultActiveTooth = useMemo(() => {
@@ -87,11 +99,17 @@ export function EmkPerioSection({
 					const body = await res.json();
 					const data = body?.data ?? body;
 					if (isMounted && data) {
-						if (data.summary?.deepPocketsCount > 0) setPerioStatus("periodontitis_moderate");
-						else if (data.summary?.bleedingSitesCount > 0) setPerioStatus("gingivitis");
+						const ind = (data.indices as Record<string, unknown> | undefined) || {};
+						const sum = (data.summary as Record<string, unknown> | undefined) || {};
+						const deepPockets = Number(ind.deep_pockets_count ?? ind.deepPocketsCount ?? sum.deepPocketsCount ?? 0);
+						const bopVal = Number(ind.bop_pct ?? ind.bopPercent ?? sum.bleedingSitesCount ?? 0);
 						const { maxDepth, anyBop } = extractPerioTeethStats(data.teeth);
 						setPocketDepthMm(maxDepth);
 						setHasBop(anyBop);
+						if (deepPockets > 0 || maxDepth >= 5) setPerioStatus("periodontitis_moderate");
+						else if (maxDepth >= 4) setPerioStatus("periodontitis_mild");
+						else if (bopVal > 0 || anyBop) setPerioStatus("gingivitis");
+						else setPerioStatus("healthy");
 					}
 				}
 			} catch {
@@ -102,8 +120,10 @@ export function EmkPerioSection({
 						const { maxDepth, anyBop } = extractPerioTeethStats(parsed.teeth);
 						setPocketDepthMm(maxDepth);
 						setHasBop(anyBop);
-						if (maxDepth >= 4) setPerioStatus("periodontitis_moderate");
+						if (maxDepth >= 5) setPerioStatus("periodontitis_moderate");
+						else if (maxDepth >= 4) setPerioStatus("periodontitis_mild");
 						else if (anyBop) setPerioStatus("gingivitis");
+						else setPerioStatus("healthy");
 					}
 				} catch (cacheErr) {
 					console.warn("[EmkPerioSection] Failed to read periodontal snapshot cache fallback:", cacheErr);
@@ -126,12 +146,13 @@ export function EmkPerioSection({
 			if (!ce.detail) return;
 			const { patientId: savedPatientId, summary, teeth } = ce.detail;
 			if (savedPatientId && effectivePatientId && savedPatientId !== effectivePatientId) return;
-			if (summary) {
-				if (summary.deepPocketsCount && summary.deepPocketsCount > 0) setPerioStatus("periodontitis_moderate");
-				else if (summary.bleedingSitesCount && summary.bleedingSitesCount > 0) setPerioStatus("gingivitis");
-				else setPerioStatus("healthy");
-			}
 			const { maxDepth, anyBop } = extractPerioTeethStats(teeth);
+			const deepPockets = Number(summary?.deepPocketsCount ?? 0);
+			const bopVal = Number(summary?.bleedingSitesCount ?? 0);
+			if (deepPockets > 0 || maxDepth >= 5) setPerioStatus("periodontitis_moderate");
+			else if (maxDepth >= 4) setPerioStatus("periodontitis_mild");
+			else if (bopVal > 0 || anyBop) setPerioStatus("gingivitis");
+			else setPerioStatus("healthy");
 			if (teeth && teeth.length > 0) {
 				setPocketDepthMm(maxDepth);
 				setHasBop(anyBop);
@@ -235,33 +256,19 @@ export function EmkPerioSection({
 				<div className="space-y-3.5 animate-in fade-in duration-150">
 					{/* РАЗДЕЛ 1: Сводка, норма в 1 клик, гигиена OHI-S */}
 					<EmkPerioSummary
-						visitNoteForm={visitNoteForm}
-						updateVisitNoteField={updateVisitNoteField}
-						isLocked={isLocked}
-						activeTooth={activeTooth}
-						perioStatus={perioStatus}
-						setPerioStatus={setPerioStatus}
-						hygieneLevel={hygieneLevel}
-						setHygieneLevel={setHygieneLevel}
-						setHasBop={setHasBop}
-						setMobilityLevel={setMobilityLevel}
+						visitNoteForm={visitNoteForm} updateVisitNoteField={updateVisitNoteField}
+						isLocked={isLocked} activeTooth={activeTooth} perioStatus={perioStatus}
+						setPerioStatus={setPerioStatus} hygieneLevel={hygieneLevel} setHygieneLevel={setHygieneLevel}
+						setHasBop={setHasBop} setMobilityLevel={setMobilityLevel}
 					/>
 
 					{/* РАЗДЕЛ 2: Скрининг патологии и авто-план лечения */}
 					<EmkPerioMeasurements
-						visitNoteForm={visitNoteForm}
-						updateVisitNoteField={updateVisitNoteField}
-						isLocked={isLocked}
-						activeTooth={activeTooth}
-						selectedTeeth={selectedTeeth}
-						setSelectedTeeth={setSelectedTeeth}
-						pocketDepthMm={pocketDepthMm}
-						setPocketDepthMm={setPocketDepthMm}
-						hasBop={hasBop}
-						setHasBop={setHasBop}
-						mobilityLevel={mobilityLevel}
-						setMobilityLevel={setMobilityLevel}
-						setPerioStatus={setPerioStatus}
+						visitNoteForm={visitNoteForm} updateVisitNoteField={updateVisitNoteField}
+						isLocked={isLocked} activeTooth={activeTooth} selectedTeeth={selectedTeeth}
+						setSelectedTeeth={setSelectedTeeth} pocketDepthMm={pocketDepthMm}
+						setPocketDepthMm={setPocketDepthMm} hasBop={hasBop} setHasBop={setHasBop}
+						mobilityLevel={mobilityLevel} setMobilityLevel={setMobilityLevel} setPerioStatus={setPerioStatus}
 					/>
 				</div>
 			)}

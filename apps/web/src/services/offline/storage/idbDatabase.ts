@@ -64,9 +64,7 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 							store.indexNames &&
 							(typeof store.indexNames.contains === "function"
 								? store.indexNames.contains(name)
-								: typeof store.indexNames.indexOf === "function"
-									? store.indexNames.indexOf(name) !== -1
-									: false);
+								: Array.from(store.indexNames).includes(name));
 						if (!hasIndex) {
 							store.createIndex(name, keyPath ?? name);
 						}

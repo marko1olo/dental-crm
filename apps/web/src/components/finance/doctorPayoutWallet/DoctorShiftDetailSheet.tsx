@@ -5,6 +5,7 @@
 
 import React from "react";
 import { money } from "../../../AppHelpers";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { X, Package } from "lucide-react";
 import type { DoctorPayoutRow, ShiftSummaryItem } from "./types.js";
 
@@ -50,7 +51,11 @@ export function DoctorShiftDetailSheet({
 
 				<div className="doctor-wallet-sheet-scroll">
 					{activeShift.visits.map((v) => {
-						const visitEarned = Math.round(v.revenueRub * ((currentDoctor.commissionPct ?? 0) / 100));
+						const commBasisPoints = Math.round((currentDoctor.commissionPct ?? 0) * 100);
+						const visitMatRub = v.materialsCostRub ?? (Array.isArray(v.materials) ? v.materials.reduce((acc, m) => (!m.isOverheadConsumable && !m.coveredByClinic ? acc + (m.totalCostRub || 0) : acc), 0) : 0);
+						const visitLabRub = v.labCostRub ?? 0;
+						const netVisitRub = v.netRevenueRub ?? Math.max(0, v.revenueRub - visitMatRub - visitLabRub);
+						const visitEarned = v.earnedRub ?? kopecksToRubles(percentageOfKopecks(rublesToKopecks(netVisitRub), commBasisPoints));
 						return (
 							<div key={v.visitId} className="doctor-wallet-visit-item">
 								<div className="doctor-wallet-visit-top">
@@ -82,7 +87,18 @@ export function DoctorShiftDetailSheet({
 											<span>Материалы ({v.materials.length})</span>
 										</div>
 										<span className="doctor-wallet-service-price">
-											−{money(v.materials.reduce((acc, m) => acc + m.totalCostRub, 0))}
+											−{money(v.materials.reduce((acc, m) => (!m.isOverheadConsumable && !m.coveredByClinic ? acc + (m.totalCostRub || 0) : acc), 0))}
+										</span>
+									</div>
+								)}
+
+								{visitLabRub > 0 && (
+									<div className="doctor-wallet-service-row">
+										<div className="doctor-wallet-service-name">
+											<span>ЗТЛ лаборатория</span>
+										</div>
+										<span className="doctor-wallet-service-price">
+											−{money(visitLabRub)}
 										</span>
 									</div>
 								)}

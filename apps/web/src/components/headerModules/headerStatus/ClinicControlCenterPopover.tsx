@@ -55,7 +55,7 @@ export function ClinicControlCenterPopover({
 							Пульт Клиники
 						</h3>
 						<p className="text-[10px] text-[var(--muted,#475569)] truncate">
-							{dashboard?.clinicName || "Клиника DENTE"} · {dashboard?.role ? String(dashboard.role) : "Администратор"}
+							{dashboard?.clinicName || "Клиника DENTE"} · {ctx?.selectedWorkspaceRole ? String(ctx.selectedWorkspaceRole) : "Администратор"}
 						</p>
 					</div>
 				</div>

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
+import type { Appointment } from "@dental/shared";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 import { registerAppointmentsRoutes } from "../../routes/appointments.js";
 import { appointments as inMemoryAppointments } from "../../sampleData.js";
@@ -13,14 +14,11 @@ import {
 import { signToken } from "../../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 
-const ADMIN_SECRET = "dente-admin-secret-test-pass";
-
 describe("Appointment Next Stage Sequential Visits", () => {
   let app: FastifyInstance;
 
   before(async () => {
     process.env.DENTAL_STATE_PERSISTENCE = "off";
-    process.env.DENTE_SCHEDULE_ADMIN_SECRET = ADMIN_SECRET;
 
     app = createTenantTestApp();
     await registerAppointmentsRoutes(app);
@@ -30,11 +28,11 @@ describe("Appointment Next Stage Sequential Visits", () => {
     await app.close();
   });
 
-  test("creates next-stage appointment with inherited clinical fields", async () => {
+  test("creates next-stage appointment with inherited clinical fields without admin secret (Mandate 8e)", async () => {
     const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID }, TOKEN_SECRET());
 
     const parentId = "00000000-0000-4000-8000-000000000005";
-    inMemoryAppointments.push({
+    const parentAppt: Appointment = {
       id: parentId,
       organizationId: ORG_ID,
       patientId: PATIENT_ID,
@@ -44,11 +42,13 @@ describe("Appointment Next Stage Sequential Visits", () => {
       startsAt: "2026-08-10T10:00:00.000Z",
       endsAt: "2026-08-10T11:00:00.000Z",
       reason: "Эндодонтия: этап 1 (мех. обработка каналов)",
+      comment: "Полость вскрыта, каналы расширены",
       stageIndex: 1,
       clinicalStage: "Этап 1: Экстирпация пульпы",
       toothNumber: 16,
       diagnosisMkb10: "K04.0",
-    } as any);
+    };
+    inMemoryAppointments.push(parentAppt);
 
     const payload = {
       clinicalStage: "Этап 2: Обтурация корневых каналов",
@@ -63,7 +63,6 @@ describe("Appointment Next Stage Sequential Visits", () => {
       url: `/api/appointments/${parentId}/next-stage`,
       headers: {
         "x-dente-clinic-token": token,
-        "x-dente-admin-secret": ADMIN_SECRET,
         "x-organization-id": ORG_ID,
         "x-user-id": DOCTOR_ID,
         "x-user-role": "doctor",
@@ -95,7 +94,6 @@ describe("Appointment Next Stage Sequential Visits", () => {
       url: "/api/appointments/00000000-0000-4000-8000-000000000999/next-stage",
       headers: {
         "x-dente-clinic-token": token,
-        "x-dente-admin-secret": ADMIN_SECRET,
         "x-organization-id": ORG_ID,
         "x-user-id": DOCTOR_ID,
         "x-user-role": "doctor",

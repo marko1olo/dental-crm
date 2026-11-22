@@ -411,14 +411,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				},
 				body: JSON.stringify(payload),
 			};
-			let res = await fetch(endpoint, reqOpts);
-			if (!res.ok && isEditMode) {
-				res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, {
-					method: "POST",
-					headers: reqOpts.headers,
-					body: JSON.stringify(payload),
-				});
-			}
+			const res = await fetch(endpoint, reqOpts);
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);
 				const realId = responseData?.order?.id || responseData?.id;
@@ -433,7 +426,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				}
 				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно ${isEditMode ? "обновлен" : "создан"} и сохранен в базе данных`);
 			} else {
-				setFeedbackToast(`Ошибка сохранения наряда ${newEntry.orderNumber} на сервере`);
+				const errBody = await res.json().catch(() => ({}));
+				const errMsg = (errBody as { message?: string; error?: string })?.message || (errBody as { message?: string; error?: string })?.error || `Ошибка ${isEditMode ? "обновления" : "создания"} наряда ${newEntry.orderNumber} на сервере`;
+				setFeedbackToast(errMsg);
 			}
 		} catch (err) {
 			console.error("Failed to save lab order:", err);

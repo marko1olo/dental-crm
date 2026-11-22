@@ -5,7 +5,6 @@
 
 export type {
 	PackageZipExportOptions,
-	BuildDeferredRemdOptions,
 	SubmitCdaPackageOptions,
 	SubmitFnsTaxOptions,
 } from "./packageSender/packageSenderTypes";
@@ -14,8 +13,6 @@ export {
 	exportSingleDocumentZip,
 	exportBatchDocumentsZip,
 } from "./packageSender/remdZipExporter";
-
-export { buildDeferredRemdRecord } from "./packageSender/deferredRemdRecord";
 
 export {
 	fetchOutboxRecordsFromBackend,

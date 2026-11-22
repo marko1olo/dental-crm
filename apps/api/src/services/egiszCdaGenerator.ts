@@ -4,7 +4,6 @@
  * - SEMD 108 / 101: Dental Consultation Protocol (Протокол консультации стоматолога)
  * - SEMD 104: Stomatological Epicrisis (Выписной эпикриз)
  * - SEMD 109 / Form 043-1/у: Orthodontic Patient Card (Карта ортодонтического пациента)
- * - SEMD 130: Tax Deduction Medical Services Certificate (Справка об оплате мед. услуг, КНД 1151156)
  */
 
 export type {
@@ -31,13 +30,11 @@ export {
 	generateCdaXml,
 	generateSemd101Xml,
 	generateSemd104Xml,
-	generateSemd130Xml,
 	generateSemd043_1uXml,
 	type CdaDocumentParams,
 	type CdaGenerationResult,
 	type CdaSemd101Params,
 	type CdaSemd104Params,
-	type CdaSemd130Params,
 	type CdaSemd043_1uParams,
 } from "@dental/shared";
 

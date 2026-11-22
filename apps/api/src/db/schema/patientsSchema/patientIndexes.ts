@@ -11,6 +11,7 @@ export interface PatientTableColumns {
 	readonly status: ExtraColumn;
 	readonly familyGroupId: ExtraColumn;
 	readonly mergedIntoPatientId: ExtraColumn;
+	readonly homeClinicId?: ExtraColumn;
 }
 
 /**
@@ -47,5 +48,12 @@ export function getPatientTableIndexes(table: PatientTableColumns) {
 		idxPatientsMergedInto: index("idx_patients_merged_into").on(
 			table.mergedIntoPatientId,
 		),
+		...(table.homeClinicId
+			? {
+					idxPatientsHomeClinicId: index("idx_patients_home_clinic_id").on(
+						table.homeClinicId,
+					),
+				}
+			: {}),
 	};
 }

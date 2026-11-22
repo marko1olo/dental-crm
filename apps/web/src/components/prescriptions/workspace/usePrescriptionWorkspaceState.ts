@@ -225,10 +225,10 @@ export function usePrescriptionWorkspaceState({
 					diary?.notes || "Острый пульпит / периодонтит",
 				items: selectedDrugs.map((d) => ({
 					innLatin: d.latinName.split("\n")[0] || d.tradeName,
-					dosageFormLatin: d.formRu,
-					dosageDoseConcentration: d.dosageRu,
-					dispenseInstructionLatin: d.dispenseLatin,
-					signatureDirectionRussian: d.signaRussian,
+					dosageFormLatin: d.formRu || "",
+					dosageDoseConcentration: d.dosageRu || "",
+					dispenseInstructionLatin: d.dispenseLatin || "",
+					signatureDirectionRussian: d.signaRussian || "",
 					tradeName: d.tradeName,
 				})),
 			};

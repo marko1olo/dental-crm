@@ -2,13 +2,13 @@ import type { Dashboard, RoleQueue, StaffMember } from "@dental/shared";
 import type { RoleAccessPolicy, WorkspaceProfile } from "./types";
 
 export interface StaffDerivationsParams {
-	newStaffName?: string;
-	newChairName?: string;
-	telegramAdminSecretDraft?: string;
-	settingsTab?: string;
-	dashboard?: Dashboard | null;
-	telegramLinkStaffOptions?: StaffMember[];
-	activeWorkspaceProfile?: WorkspaceProfile | null;
+	newStaffName?: string | undefined;
+	newChairName?: string | undefined;
+	telegramAdminSecretDraft?: string | undefined;
+	settingsTab?: string | undefined;
+	dashboard?: Dashboard | null | undefined;
+	telegramLinkStaffOptions?: StaffMember[] | undefined;
+	activeWorkspaceProfile?: WorkspaceProfile | null | undefined;
 }
 
 export function deriveStaffSettings(params: StaffDerivationsParams) {

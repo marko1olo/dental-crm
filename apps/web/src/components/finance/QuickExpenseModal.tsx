@@ -105,7 +105,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 
 		try {
 			setIsSubmitting(true);
-			const headers = auth.denteClinicalWriteHeaders();
+			const headers = auth.denteClinicalMutationHeaders();
 			const amountKopecks = rubToKopecks(amountNum);
 
 			await createExpense(headers, {

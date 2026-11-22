@@ -12,7 +12,7 @@ import { patientInsightSchema, patientSchema } from "../patients/index.js";
 import { appointmentSchema } from "../schedule/index.js";
 import { paymentSchema } from "../fiscal/index.js";
 import { invoiceSchema } from "../billing/invoiceContract.js";
-import { nonNegativeMoneyRubSchema } from "../money.js";
+import { kopecksToRubles, nonNegativeMoneyRubSchema, rublesToKopecks } from "../money.js";
 import { calculateItemDmsSplit } from "../insurance/dmsFranchiseEngine.js";
 import type { MinimalLabOrderForSchedule } from "../lab/labScheduleIntegration.js";
 
@@ -366,9 +366,9 @@ export function calculateDmsCoverage(
 ): InsuranceCoverageCalculationResult {
 	const annualLimitKopecks =
 		contract.annualLimitRub != null && Number.isFinite(contract.annualLimitRub)
-			? Math.round(contract.annualLimitRub * 100)
+			? rublesToKopecks(contract.annualLimitRub)
 			: null;
-	const usedKopecks = Math.max(0, Math.round(usedAnnualAmountRub * 100));
+	const usedKopecks = Math.max(0, rublesToKopecks(usedAnnualAmountRub));
 
 	let availableLimitKopecks =
 		annualLimitKopecks != null
@@ -382,7 +382,7 @@ export function calculateDmsCoverage(
 	const breakdown: InsuranceItemBreakdown[] = [];
 
 	for (const item of items) {
-		const unitPriceKopecks = Math.round(item.priceRub * 100);
+		const unitPriceKopecks = rublesToKopecks(item.priceRub);
 		const lineTotalKopecks = unitPriceKopecks * item.quantity;
 		totalBillKopecks += lineTotalKopecks;
 
@@ -436,24 +436,24 @@ export function calculateDmsCoverage(
 			serviceName: item.serviceName,
 			category: item.category,
 			quantity: item.quantity,
-			unitPriceRub: unitPriceKopecks / 100,
-			totalPriceRub: lineTotalKopecks / 100,
+			unitPriceRub: kopecksToRubles(unitPriceKopecks),
+			totalPriceRub: kopecksToRubles(lineTotalKopecks),
 			coveragePct: pct,
-			coveredAmountRub: candidateCoveredKopecks / 100,
-			patientCoPayRub: itemCoPayKopecks / 100,
+			coveredAmountRub: kopecksToRubles(candidateCoveredKopecks),
+			patientCoPayRub: kopecksToRubles(itemCoPayKopecks),
 		});
 	}
 
 	return {
 		contractId: contract.id,
 		companyName: contract.companyName,
-		totalPriceRub: totalBillKopecks / 100,
-		totalCoveredRub: totalCoveredKopecks / 100,
-		totalPatientCoPayRub: totalCoPayKopecks / 100,
+		totalPriceRub: kopecksToRubles(totalBillKopecks),
+		totalCoveredRub: kopecksToRubles(totalCoveredKopecks),
+		totalPatientCoPayRub: kopecksToRubles(totalCoPayKopecks),
 		annualLimitRub: contract.annualLimitRub ?? null,
-		usedAnnualAmountRub: usedKopecks / 100,
+		usedAnnualAmountRub: kopecksToRubles(usedKopecks),
 		remainingAnnualLimitRub:
-			availableLimitKopecks != null ? availableLimitKopecks / 100 : null,
+			availableLimitKopecks != null ? kopecksToRubles(availableLimitKopecks) : null,
 		itemBreakdown: breakdown,
 	};
 }

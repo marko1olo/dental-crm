@@ -2,7 +2,7 @@
  * documentContracts.ts — Реквизиты клиники, договоры и документы планов лечения.
  */
 
-import type { Kopecks } from "../../../utils/money.js";
+import type { Kopecks } from "../../../money.js";
 import type { PlanTierKey } from "./stageTierContracts.js";
 import type { TreatmentPlanItemInput, TreatmentPlanStageSummary, TreatmentPlanTierEstimate } from "./itemContracts.js";
 

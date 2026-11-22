@@ -13,6 +13,7 @@ const targets = [
   {
     canonicalId: '01_insurance_guarantee_pc_light.png',
     legacyId: '01_insurance_pc_light_1440.png',
+    dmsId: '01_insurance_dms_pc_light_1440x900.png',
     theme: 'light',
     viewport: { width: 1440, height: 900 },
     isMobile: false,
@@ -20,6 +21,7 @@ const targets = [
   {
     canonicalId: '02_insurance_guarantee_pc_dark.png',
     legacyId: '02_insurance_pc_dark_1440.png',
+    dmsId: '02_insurance_dms_pc_dark_1440x900.png',
     theme: 'dark',
     viewport: { width: 1440, height: 900 },
     isMobile: false,
@@ -27,6 +29,7 @@ const targets = [
   {
     canonicalId: '03_insurance_guarantee_mobile_light.png',
     legacyId: '03_insurance_mobile_light_390.png',
+    dmsId: '03_insurance_dms_mobile_light_390x844.png',
     theme: 'light',
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -34,6 +37,7 @@ const targets = [
   {
     canonicalId: '04_insurance_guarantee_mobile_dark.png',
     legacyId: '04_insurance_mobile_dark_390.png',
+    dmsId: '04_insurance_dms_mobile_dark_390x844.png',
     theme: 'dark',
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -64,7 +68,7 @@ async function capture() {
       window.localStorage.setItem('dente_active_role', 'doctor');
     }, { theme: t.theme });
 
-    await page.goto('http://127.0.0.1:5174/?demo=true#patients', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(process.env.WEB_BASE || 'http://127.0.0.1:5173/?demo=true#patients', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(1000);
 
     // Wait for loading screen to clear
@@ -148,6 +152,11 @@ async function capture() {
       // Also copy to legacy ID for backwards compatibility
       const legacyPath = path.join(OUT_DIR, t.legacyId);
       fs.copyFileSync(canonicalPath, legacyPath);
+
+      if (t.dmsId) {
+        const dmsPath = path.join(OUT_DIR, t.dmsId);
+        fs.copyFileSync(canonicalPath, dmsPath);
+      }
 
       if (stats.size < 20000) {
         throw new Error(`File ${t.canonicalId} size (${stats.size}) is under 20KB threshold!`);

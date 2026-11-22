@@ -6,7 +6,7 @@ import {
 	ChevronUp,
 	MessageSquare,
 } from "lucide-react";
-import type { CmoAuditEvaluatedVisit } from "@dental/shared";
+import type { CmoAuditEvaluatedVisit } from "./cmoAuditEngine.js";
 import { ClinicalAiImageAnalysisWidget } from "./ClinicalAiImageAnalysisWidget";
 import { EmkPatientSummaryHeader } from "./EmkPatientSummaryHeader";
 
@@ -54,10 +54,10 @@ export function EmkVisitCard({
 			>
 				<EmkPatientSummaryHeader
 					patientFullName={visit.patientFullName}
-					patientCardCode={visit.patientCardCode}
+					patientCardCode={visit.patientCardCode ?? ""}
 					doctorFullName={visit.doctorFullName}
 					doctorSpecialty={visit.doctorSpecialty ?? ""}
-					visitDateIso={visit.visitDateIso}
+					visitDateIso={visit.visitDateIso ?? ""}
 					chairName={visit.chairName ?? ""}
 					diagnosisTooth={visit.diagnosisTooth ?? null}
 					completenessScore={score}

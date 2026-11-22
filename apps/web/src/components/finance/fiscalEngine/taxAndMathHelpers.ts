@@ -14,6 +14,7 @@ import {
 	resolveTaxDeductionCategoryShared,
 	calculateCanonicalSplit,
 	calculateDenominationsTotalRub as calculateDenominationsTotalRubShared,
+	percentageOfKopecks,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import {
@@ -105,10 +106,10 @@ export function calculateTaxDeductionBreakdown(
 	const code01UsedFromLimitRub = code01EligibleRub;
 	const code01RemainingLimitRub = Math.max(0, remainingLimit - code01EligibleRub);
 
-	const code01Refund13Kopecks = Math.round((parseKopecks(code01EligibleRub) * 13) / 100);
-	const code02Refund13Kopecks = Math.round((parseKopecks(code02Rub) * 13) / 100);
-	const code01Refund15Kopecks = Math.round((parseKopecks(code01EligibleRub) * 15) / 100);
-	const code02Refund15Kopecks = Math.round((parseKopecks(code02Rub) * 15) / 100);
+	const code01Refund13Kopecks = percentageOfKopecks(parseKopecks(code01EligibleRub), 1300);
+	const code02Refund13Kopecks = percentageOfKopecks(parseKopecks(code02Rub), 1300);
+	const code01Refund15Kopecks = percentageOfKopecks(parseKopecks(code01EligibleRub), 1500);
+	const code02Refund15Kopecks = percentageOfKopecks(parseKopecks(code02Rub), 1500);
 
 	const code01Refund13Rub = kopecksToRubles(code01Refund13Kopecks);
 	const code02Refund13Rub = kopecksToRubles(code02Refund13Kopecks);

@@ -1,5 +1,6 @@
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
+import type { CommunicationsAuthOptions } from "../../../hooks/domains/useCommunicationsQueries";
 
 export type CampaignCriteria = {
 	status?: "active" | "archived" | undefined;
@@ -75,13 +76,13 @@ export type CampaignPanelProps = {
 };
 
 export interface CampaignCommQueries {
-	getCampaigns?: ((auth?: unknown) => Promise<Response>) | undefined;
-	getCampaignsTemplates?: ((auth?: unknown) => Promise<Response>) | undefined;
-	getCampaignsVariables?: ((auth?: unknown) => Promise<Response>) | undefined;
-	createCampaign?: ((payload: unknown, auth?: unknown) => Promise<Response>) | undefined;
-	previewCampaign?: ((campaignId: string, auth?: unknown) => Promise<Response>) | undefined;
-	getCampaignProgress?: ((campaignId: string, auth?: unknown) => Promise<Response>) | undefined;
-	campaignAction?: ((campaignId: string, action: string, auth?: unknown) => Promise<Response>) | undefined;
+	getCampaigns?: ((auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	getCampaignsTemplates?: ((auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	getCampaignsVariables?: ((auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	createCampaign?: ((payload: unknown, auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	previewCampaign?: ((campaignId: string, auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	getCampaignProgress?: ((campaignId: string, auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
+	campaignAction?: ((campaignId: string, action: string, auth?: CommunicationsAuthOptions | null | undefined) => Promise<Response>) | undefined;
 }
 
 /** Подписи статусов очереди — те же, что в MessageDeliveryConsole. */

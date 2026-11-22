@@ -1,8 +1,6 @@
 import type { ClinicLegalInfo } from "../../sanpin/index.js";
-import type {
-	DmsRegistryServiceRecord,
-	StatutoryInsuranceContract,
-} from "../dmsPresetsAndCatalogs.js";
+import type { DmsRegistryServiceRecord } from "../catalogs/dmsRegistryExportOps.js";
+import type { StatutoryInsuranceContract } from "../catalogs/dmsInsurersCatalog.js";
 import { kopecksToRub } from "../../fiscal/index.js";
 import { rublesToKopecks } from "../../money.js";
 

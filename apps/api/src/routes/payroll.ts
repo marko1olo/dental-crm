@@ -92,6 +92,8 @@ const closeSettlementSchema = z.object({
 	ndflKop: z.number().int().optional(),
 	ndfl13Rub: z.number().optional(),
 	markPaid: z.boolean().optional().default(true),
+	doctorReconciled: z.boolean().optional(),
+	doctor_reconciled: z.boolean().optional(),
 });
 
 const reopenSettlementSchema = z.object({
@@ -390,14 +392,6 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	const closeSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const payoutAccess = await requirePayoutAccess(request, reply);
 		if (!payoutAccess) return;
-		if (payoutAccess.scope !== "all") {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "payroll.read",
-				role: payoutAccess.role,
-				message: "Закрытие расчетных периодов доступно только управляющему клиникой",
-			});
-		}
 
 		const parsed = closeSettlementSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -410,6 +404,30 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 		const orgId = payoutAccess.organizationId;
 		const body = parsed.data;
+		const isOwnDoctor = payoutAccess.scope === "own";
+
+		if (isOwnDoctor) {
+			if (body.doctorId === "all") {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "payroll.read",
+					role: payoutAccess.role,
+					message: "Врач может подтверждать акт сверки только по собственным начислениям",
+				});
+			}
+
+			const resolvedTargetId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId);
+			if (resolvedTargetId && resolvedTargetId !== payoutAccess.userId) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "payroll.read",
+					role: payoutAccess.role,
+					message: "Подтверждение начислений других врачей клиники запрещено",
+				});
+			}
+		}
+
+		const effectiveMarkPaid = isOwnDoctor ? false : (body.markPaid ?? true);
 
 		const rawIdemKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"] || body.idempotencyKey;
 		const idempotencyKey = typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0 ? rawIdemKey.trim() : undefined;
@@ -621,7 +639,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 				ndfl13Kopecks: ndflKop,
 				netPayoutKopecks: payoutKop,
 				rkoNumber: body.rkoNumber,
-				markPaid: body.markPaid ?? true,
+				markPaid: effectiveMarkPaid,
 			}, tx);
 
 			const payload: Record<string, unknown> = {
@@ -629,7 +647,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 				statementId: result.statementId,
 				statement: result.statement,
 				closedAppointmentsCount: result.closedAppointmentsCount,
-				message: "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
+				message: isOwnDoctor ? "Акт сверки смены успешно подтвержден врачом" : "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
 			};
 
 			if (idempotencyKey) {

@@ -89,12 +89,6 @@ export function extractHeader(request: FastifyRequest, name: string): string | n
 	return typeof res === "string" && res.trim() ? res.trim() : null;
 }
 
-export function extractQueryParam(request: FastifyRequest, name: string): string | null {
-	const query = request.query as Record<string, unknown> | undefined;
-	const val = query?.[name];
-	return typeof val === "string" && val.trim() ? val.trim() : null;
-}
-
 export async function authenticatePbxWebhook(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -140,23 +134,16 @@ export async function authenticatePbxWebhook(
 		}
 	}
 
-	const qSecret = extractQueryParam(request, "secret");
-	const qToken = extractQueryParam(request, "token");
-	const qApiKey =
-		extractQueryParam(request, "api_key") || extractQueryParam(request, "key");
-	const qSignature =
-		extractQueryParam(request, "signature") || extractQueryParam(request, "sign");
-
-	if (qSecret) candidateTokens.push(qSecret);
-	if (qToken) candidateTokens.push(qToken);
-	if (qApiKey) candidateTokens.push(qApiKey);
-
+	// Mandate: Zero secret leak in Query String (?secret=, ?token=).
+	// Webhook authorization is strictly restricted to HTTP headers and payload body fields.
 	if (payload.api_key) candidateTokens.push(payload.api_key);
 	if (payload.vpbx_api_key) candidateTokens.push(payload.vpbx_api_key);
 
 	// Mango Office Check: sign = sha256(vpbx_api_key + json + api_salt)
 	const mangoSign =
-		payload.sign || extractHeader(request, "x-mango-signature") || qSignature;
+		payload.sign ||
+		extractHeader(request, "x-mango-signature") ||
+		extractHeader(request, "x-signature");
 	const mangoKey = payload.vpbx_api_key || payload.api_key;
 	const mangoSalt = process.env.MANGO_API_SALT?.trim() || primarySecret;
 
@@ -204,7 +191,9 @@ export async function authenticatePbxWebhook(
 
 	// Zadarma MD5/SHA1 Check
 	const zadarmaSign =
-		payload.signature || extractHeader(request, "signature") || qSignature;
+		payload.signature ||
+		extractHeader(request, "signature") ||
+		extractHeader(request, "x-signature");
 	if (zadarmaSign && primarySecret) {
 		const callerId = payload.caller_id || payload.from || "";
 		const calledDid = payload.called_did || payload.to || "";

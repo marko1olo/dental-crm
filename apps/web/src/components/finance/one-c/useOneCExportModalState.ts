@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { generateOneCEnterpriseXml, type OneCDocumentType } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import type { OneCExportItem } from "../OneCExportButton";
 import { formatMoney, triggerXmlDownload } from "./types";
@@ -39,14 +40,14 @@ export function useOneCExportModalState(p: UseOneCExportModalStateParams) {
 		if (p.items && p.items.length > 0) {
 			const totalKop = p.items.reduce((sum, it) => {
 				const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
-				const unitPriceKop = Math.round(it.priceRub * 100);
-				const discKop = Math.round((it.discountRub || 0) * 100);
+				const unitPriceKop = rublesToKopecks(it.priceRub);
+				const discKop = rublesToKopecks(it.discountRub || 0);
 				return sum + Math.max(0, unitPriceKop * qty - discKop);
 			}, 0);
-			return totalKop / 100;
+			return kopecksToRubles(totalKop);
 		}
 		if (typeof p.initialTotalRub === "number" && p.initialTotalRub > 0) {
-			return Math.round(p.initialTotalRub * 100) / 100;
+			return kopecksToRubles(rublesToKopecks(p.initialTotalRub));
 		}
 		return 0;
 	}, [p.items, p.initialTotalRub]);

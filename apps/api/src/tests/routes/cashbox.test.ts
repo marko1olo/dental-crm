@@ -186,10 +186,12 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const instJson = instRes.json();
 			assert.equal(instJson.success, true);
 			assert.equal(instJson.contract.totalAmountRub, 60000);
-			assert.equal(instJson.tranches.length, 6);
+			assert.equal(instJson.tranches.length, 7); // 1 первоначальный взнос (№0) + 6 ежемесячных траншей
 
 			// 9. POST /api/installments/tranches/:id/pay -> 400 Bad Request without Idempotency-Key
-			const firstTranche = instJson.tranches[0];
+			const firstTranche =
+				instJson.tranches.find((t: { trancheNumber: number; isPaid: boolean }) => t.trancheNumber === 1 || !t.isPaid) ??
+				instJson.tranches[0];
 			const payWithoutKeyRes = await app.inject({
 				method: "POST",
 				url: `/api/installments/tranches/${firstTranche.id}/pay`,
@@ -289,12 +291,13 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			assert.equal(installJson.labOrder.isLockedInstalled, true);
 			assert.equal(installJson.labOrder.status, "completed");
 
-			// Subsequent attempt to edit the lab order must be rejected with 409
+			// Subsequent attempt to edit the lab order status must be rejected with 409
 			const patchAttemptRes = await app.inject({
 				method: "PATCH",
 				url: `/api/lab/orders/${labOrderId}`,
 				headers,
 				payload: {
+					status: "in_progress",
 					notes: "Попытка взломать наряд после установки",
 				},
 			});

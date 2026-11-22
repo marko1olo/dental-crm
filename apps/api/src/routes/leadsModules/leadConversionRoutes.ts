@@ -8,6 +8,11 @@ import {
 	createPatientFromLead,
 } from "../leadsConversionModules/index.js";
 
+function getIncomingIdempotencyKey(req: FastifyRequest): string | undefined {
+	const h = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+	return typeof h === "string" && h.trim() ? h.trim() : undefined;
+}
+
 export async function registerLeadConversionRoutes(app: FastifyInstance): Promise<void> {
 	app.post("/api/leads/:id/convert", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -16,6 +21,11 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 			"lead convert",
 		);
 		if (!organizationId) return;
+
+		const idempotencyKey = getIncomingIdempotencyKey(req);
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
 
 		const { id } = req.params as { id: string };
 		const convertParsed = convertLeadSchema.safeParse(req.body);
@@ -48,12 +58,18 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 		);
 		if (!organizationId) return;
 
+		const idempotencyKey = getIncomingIdempotencyKey(req);
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
+
 		const { id } = req.params as { id: string };
 		return await createPatientFromLead({
 			db,
 			wsBroker,
 			organizationId,
 			leadId: id,
+			req,
 			reply,
 		});
 	};

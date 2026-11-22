@@ -21,6 +21,7 @@ import {
 	formatMoney,
 	formatPassportFullString,
 } from "./dateAndAgeHelpers.js";
+import { declineFioRu } from "../declension/index.js";
 import type {
 	InterpolateVariablesOptions,
 	TemplateExecutionContext,
@@ -87,7 +88,17 @@ export function buildTemplateVariablesMap(
 		.filter(Boolean)
 		.join("; ");
 
+	const pFioDeclension = declineFioRu(pFullName || "", pGenderStr === "Мужской" ? "male" : pGenderStr === "Женский" ? "female" : undefined);
+
 	map["Пациент.ФИО"] = pFullName || "";
+	map["Пациент.ФИО_Родительный"] = pFioDeclension.genitive;
+	map["Пациент.ФИО_Дательный"] = pFioDeclension.dative;
+	map["Пациент.ФИО.Родительный"] = pFioDeclension.genitive;
+	map["Пациент.ФИО.Дательный"] = pFioDeclension.dative;
+	map["Пациент.ФИО_Род"] = pFioDeclension.genitive;
+	map["Пациент.ФИО_Дат"] = pFioDeclension.dative;
+	map["ФИО_Родительный"] = pFioDeclension.genitive;
+	map["ФИО_Дательный"] = pFioDeclension.dative;
 	map["Пациент.ID"] = p.id !== undefined && p.id !== null ? String(p.id) : "";
 	map["Пациент.НомерКарты"] =
 		p.cardNumber !== undefined && p.cardNumber !== null

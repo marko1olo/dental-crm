@@ -7,20 +7,21 @@
 export interface DentalOutpatientDrug {
 	readonly id: string;
 	readonly tradeName: string;
-	readonly activeSubstanceRu: string;
+	readonly activeSubstanceRu?: string | undefined;
 	readonly latinName: string;
 	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "mucosa" | "antihistamine" | "gastro" | string;
-	readonly categoryLabelRu: string;
-	readonly formRu: string;
-	readonly dosageRu: string;
-	readonly quantityLabel: string;
+	readonly categoryLabelRu?: string | undefined;
+	readonly formRu?: string | undefined;
+	readonly dosageRu?: string | undefined;
+	readonly quantityLabel?: string | undefined;
 	readonly dispenseLatin: string;
 	readonly signaRussian: string;
-	readonly memoInstruction: string;
+	readonly memoInstruction?: string | undefined;
 	readonly isSpecialControl?: boolean;
-	readonly form?: string;
-	readonly dosage?: string;
-	readonly quantity?: string;
+	readonly form?: string | undefined;
+	readonly dosage?: string | undefined;
+	readonly quantity?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface DentalFastPrescriptionSet {

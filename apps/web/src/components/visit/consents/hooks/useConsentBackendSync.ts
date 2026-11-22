@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { safeLocalStorageSetItem } from "../../../../lib/safeLocalStorage";
 import { generateSha256 } from "../../../consents/consentIntegrityHash";
 import type { ConsentTemplateKey, ConsentSubstitutionContext } from "../../../consents/consentTemplates";
@@ -28,7 +28,7 @@ export function useConsentBackendSync({
 		async function loadExistingDocuments() {
 			try {
 				const res = await fetch(`/api/documents?patientId=${encodeURIComponent(patientId)}`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: getDenteAuthHeaders(),
 				});
 				if (!res.ok) return;
 				const data = (await res.json()) as {
@@ -94,7 +94,7 @@ export function useConsentBackendSync({
 
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/consents`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: { "Content-Type": "application/json", ...getDenteAuthHeaders() },
 				body: JSON.stringify({
 					kind,
 					consentType: key,

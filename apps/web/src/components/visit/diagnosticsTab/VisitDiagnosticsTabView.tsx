@@ -97,7 +97,7 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				activePatientId={state.activePatient?.id}
 				activePatientFullName={state.activePatient?.fullName}
 				initialToothNumber={state.initialToothNumber}
-				doctorName={state.dashboard?.activeDoctor?.fullName || state.ctx?.auth?.currentUser?.name}
+				doctorName={state.ctx?.activeDoctor?.fullName || (state.ctx?.auth as { currentUser?: { name?: string }; activeWorkspaceProfile?: { title?: string } } | undefined)?.currentUser?.name || (state.ctx?.auth as { activeWorkspaceProfile?: { title?: string } } | undefined)?.activeWorkspaceProfile?.title || "Врач-куратор"}
 				cbctMenuRef={state.cbctMenuRef}
 				onOpenRadiologyReferral={() => state.setIsRadiologyModalOpen(true)}
 				onOpenDicomViewer={() => state.setIsDicomViewerModalOpen(true)}

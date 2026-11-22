@@ -24,8 +24,8 @@ import { useVisitToothHandlers } from "./viewStateModules/useVisitToothHandlers"
 import { useVisitModalsState } from "./viewStateModules/useVisitModalsState";
 
 export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
-	const appLogic = (useOptionalAppLogicContext() as Partial<VisitViewProps>) || {};
-	const props = { ...appLogic, ...(rawProps || {}) } as VisitViewProps;
+	const appLogic = useOptionalAppLogicContext();
+	const props = { ...(appLogic as Record<string, unknown> | null), ...(rawProps || {}) } as VisitViewProps;
 
 	const {
 		activePatient,
@@ -129,7 +129,7 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 		flushPendingVisitSaves,
 		isQueueCockpitForced,
 		setSelectedPatientId,
-		appLogic,
+		appLogic: appLogic ?? undefined,
 	});
 
 	// Быстрая печать и соматические бейджи

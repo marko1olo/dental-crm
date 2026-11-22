@@ -21,7 +21,7 @@ export interface InventoryTopToolbarProps {
 	paperSoftBg?: string;
 	borderColor?: string;
 	isWritingOffCarpules: boolean;
-	handleQuickWriteoffCarpules: (options?: any) => Promise<any> | void;
+	handleQuickWriteoffCarpules: (options?: unknown) => Promise<void> | void;
 	isOpsMenuOpen: boolean;
 	setIsOpsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	setIsAcceptanceWaybillsOpen: (open: boolean) => void;

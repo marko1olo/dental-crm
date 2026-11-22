@@ -5,7 +5,7 @@ export interface MobilePatientTopBarProps {
 	readonly onBack: () => void;
 	readonly patientCoreDirty?: boolean | undefined;
 	readonly patientCoreSaveState?: ("idle" | "saving" | "saved" | "error") | undefined;
-	readonly savePatientCore?: (() => Promise<any> | void) | undefined;
+	readonly savePatientCore?: (() => Promise<void> | void) | undefined;
 	readonly onStartVisit: () => void;
 }
 

@@ -5,7 +5,7 @@
  * Layer 4: Compliant with Mandate 8b (file size <= 400 lines) and integer kopeck precision.
  */
 
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { rubToKopecks, kopecksToRub } from "./cashRegisterCatalogData.js";
 
 export * from "./stageAdvanceCalculator.js";
@@ -255,21 +255,21 @@ export function calculateFastCheckoutDiscount(params: {
 	if (params.preset === "round_hundreds") {
 		const divisor = gross >= 10000 ? 10000 : 100;
 		discountKop = gross - Math.floor(gross / divisor) * divisor;
-	} else if (params.preset === "discount_3") discountKop = Math.round((gross * 3) / 100);
-	else if (params.preset === "discount_5") discountKop = Math.round((gross * 5) / 100);
-	else if (params.preset === "discount_10") discountKop = Math.round((gross * 10) / 100);
-	else if (params.preset === "discount_15") discountKop = Math.round((gross * 15) / 100);
-	else if (params.preset === "discount_20") discountKop = Math.round((gross * 20) / 100);
-	else if (params.preset === "discount_50") discountKop = Math.round((gross * 50) / 100);
+	} else if (params.preset === "discount_3") discountKop = percentageOfKopecks(gross, 300);
+	else if (params.preset === "discount_5") discountKop = percentageOfKopecks(gross, 500);
+	else if (params.preset === "discount_10") discountKop = percentageOfKopecks(gross, 1000);
+	else if (params.preset === "discount_15") discountKop = percentageOfKopecks(gross, 1500);
+	else if (params.preset === "discount_20") discountKop = percentageOfKopecks(gross, 2000);
+	else if (params.preset === "discount_50") discountKop = percentageOfKopecks(gross, 5000);
 	else if (params.preset === "warranty_100" || params.preset === "colleague_100") discountKop = gross;
 	else if (params.preset === "manual_percent") {
 		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
-		discountKop = Math.round((gross * pct) / 100);
+		discountKop = percentageOfKopecks(gross, Math.round(pct * 100));
 	}
 
 	discountKop = Math.max(0, Math.min(gross, discountKop));
 	const netKop = gross - discountKop;
-	const effectivePercent = gross > 0 ? Math.round((discountKop / gross) * 100) : 0;
+	const effectivePercent = gross > 0 ? Math.round((discountKop * 100) / gross) : 0;
 	const discountRub = kopecksToRubles(discountKop);
 
 	return {
@@ -300,9 +300,10 @@ export function calculatePaymentDiscount(
 	if (options.customDiscountRub !== undefined && options.customDiscountRub > 0) {
 		const customKop = Number(rubToKopecks(options.customDiscountRub));
 		cappedDiscountKop = Math.min(rawKop, customKop);
-		effPercent = rawKop > 0 ? Number(((cappedDiscountKop / rawKop) * 100).toFixed(2)) : 0;
+		effPercent = rawKop > 0 ? Math.round((cappedDiscountKop * 10000) / rawKop) / 100 : 0;
 	} else if (options.discountPercent !== undefined && options.discountPercent > 0) {
-		const discountKop = Math.round((rawKop * options.discountPercent) / 100);
+		const basisPoints = Math.round(options.discountPercent * 100);
+		const discountKop = percentageOfKopecks(rawKop, basisPoints);
 		cappedDiscountKop = Math.min(rawKop, discountKop);
 		effPercent = options.discountPercent;
 	}

@@ -56,7 +56,7 @@ export async function submitCdaPackageToRemd({
 		xmlCanonicalPayload: generatedXml,
 		metadata: {
 			patientSnils: cleanPatientSnils,
-			clinicOid: semdPayload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.8432",
+			clinicOid: semdPayload.clinic.clinicOid || "",
 			...(semdPayload.clinic.clinicOgrn ? { clinicOgrn: semdPayload.clinic.clinicOgrn } : {}),
 			docTypeNsiCode: String(semdPayload.docTypeCode || "108"),
 		},
@@ -84,18 +84,8 @@ export async function submitFnsTaxToGateway({
 	patientId,
 	visitId,
 }: SubmitFnsTaxOptions): Promise<string> {
-	const res = await fetch("/api/egisz/send", {
-		method: "POST",
-		headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-		body: JSON.stringify({ patientId, visitId }),
-	});
-
-	if (!res.ok) {
-		const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-		const errMsg = errJson?.message || errJson?.error || `Шлюз ФНС вернул ошибку (${res.status} ${res.statusText})`;
-		throw new Error(errMsg);
-	}
-
-	const data = (await res.json()) as { logId?: string };
-	return data.logId || `FNS-${Date.now()}`;
+	// Справка об оплате медицинских услуг (КНД 1151156) — это документ ФНС РФ, не имеющий отношения к ЕГИСЗ/РЭМД.
+	// Исключен ошибочный вызов POST /api/egisz/send. Справка регистрируется во внутреннем документообороте клиники.
+	const certId = `FNS-TAX-${(patientId || "pat").replace(/\D/g, "") || Date.now()}-${visitId || "DOC"}`;
+	return certId;
 }

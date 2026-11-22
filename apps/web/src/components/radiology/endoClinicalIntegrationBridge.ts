@@ -385,39 +385,18 @@ export function exportEndoToDiary(
 			);
 			// [END-07] Persist structured canal measurements into PostgreSQL 18 via Fastify API
 			if (params.patientId && params.patientId !== "cbct-patient") {
-				void fetch(`/api/patients/${params.patientId}/tooth-states/${params.toothFdi}/endo`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						toothNumber: params.toothFdi,
-						canals: endoCanals.map((c) => ({
-							canalName: c.canalName,
-							workingLengthMm: c.workingLengthMm,
-							referencePoint: c.referencePoint || "Режущий край / бугор",
-							apexLocatorReading: "0.0 (Apex)",
-							masterFile: c.masterApicalFile || "",
-							masterCone: "",
-							taper: c.taper || ".04",
-							sealer: c.sealer || "AH Plus",
-							obturationTechnique: c.obturationTechnique || "Латеральная компакция",
-						})),
-						state: "Root_Canal_Treated",
-					}),
-				}).catch(() => {
-					// fallback to odontogram status endpoint
-					void fetch("/api/odontogram/status", {
+				const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
+					? window.location.origin
+					: "";
+				if (origin) {
+					void fetch(`${origin}/api/patients/${params.patientId}/tooth-states/${params.toothFdi}/endo`, {
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({
-							patientId: params.patientId,
 							toothNumber: params.toothFdi,
-							toothNumbers: [params.toothFdi],
-							state: "Root_Canal_Treated",
-							canalMeasurements: endoCanals.map((c) => ({
+							canals: endoCanals.map((c) => ({
 								canalName: c.canalName,
 								workingLengthMm: c.workingLengthMm,
 								referencePoint: c.referencePoint || "Режущий край / бугор",
@@ -428,12 +407,41 @@ export function exportEndoToDiary(
 								sealer: c.sealer || "AH Plus",
 								obturationTechnique: c.obturationTechnique || "Латеральная компакция",
 							})),
+							state: "Root_Canal_Treated",
 						}),
-					}).catch(() => {});
-				});
+					}).catch((endoErr) => {
+						console.warn("[endoClinicalIntegrationBridge] Ошибка сохранения endo, fallback на status:", endoErr);
+						// fallback to odontogram status endpoint
+						void fetch(`${origin}/api/odontogram/status`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								patientId: params.patientId,
+								toothNumber: params.toothFdi,
+								toothNumbers: [params.toothFdi],
+								state: "Root_Canal_Treated",
+								canalMeasurements: endoCanals.map((c) => ({
+									canalName: c.canalName,
+									workingLengthMm: c.workingLengthMm,
+									referencePoint: c.referencePoint || "Режущий край / бугор",
+									apexLocatorReading: "0.0 (Apex)",
+									masterFile: c.masterApicalFile || "",
+									masterCone: "",
+									taper: c.taper || ".04",
+									sealer: c.sealer || "AH Plus",
+									obturationTechnique: c.obturationTechnique || "Латеральная компакция",
+								})),
+							}),
+						}).catch((statusErr) => {
+							console.warn("[endoClinicalIntegrationBridge] Fallback на odontogram status также завершился с ошибкой:", statusErr);
+						});
+					});
+				}
 			}
-		} catch {
-			// ignore storage failure
+		} catch (storageErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка локального сохранения каналов:", storageErr);
 		}
 	}
 
@@ -453,8 +461,8 @@ export function exportEndoToDiary(
 				};
 			});
 		}
-	} catch {
-		// ignore
+	} catch (noteErr) {
+		console.warn("[endoClinicalIntegrationBridge] Ошибка обновления формы визита:", noteErr);
 	}
 
 	// 3. Dispatch global SOAP event for useVisitDiaryLogic
@@ -474,8 +482,8 @@ export function exportEndoToDiary(
 					},
 				}),
 			);
-		} catch {
-			// ignore
+		} catch (soapEventErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка отправки события SOAP:", soapEventErr);
 		}
 	}
 
@@ -494,8 +502,8 @@ export function exportEndoToDiary(
 					},
 				}),
 			);
-		} catch {
-			// ignore
+		} catch (toothStateErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба:", toothStateErr);
 		}
 	}
 
@@ -523,8 +531,8 @@ export function exportEndoToDiary(
 			const existing = existingRaw ? JSON.parse(existingRaw) : [];
 			existing.push(emrAttachment);
 			window.localStorage.setItem(storageKey, JSON.stringify(existing));
-		} catch {
-			// ignore
+		} catch (emrErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка сохранения среза в EMR:", emrErr);
 		}
 	}
 
@@ -593,8 +601,8 @@ export function exportEndoToTreatmentPlan(
 			window.dispatchEvent(
 				new CustomEvent("dente-treatment-plan-attachment-added", { detail: planAttachment }),
 			);
-		} catch {
-			// ignore
+		} catch (attachErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка добавления вложения в план:", attachErr);
 		}
 	}
 
@@ -613,8 +621,8 @@ export function exportEndoToTreatmentPlan(
 					},
 				}),
 			);
-		} catch {
-			// ignore
+		} catch (stateErr) {
+			console.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба:", stateErr);
 		}
 	}
 
@@ -632,8 +640,8 @@ export function exportEndoToTreatmentPlan(
 						},
 					}),
 				);
-			} catch {
-				// ignore
+			} catch (eventErr) {
+				console.warn("[endoClinicalIntegrationBridge] Ошибка диспатча элемента плана:", eventErr);
 			}
 		}
 	}
@@ -667,7 +675,8 @@ export function loadPersistedEndoCanals(
 		if (!raw) return null;
 		const parsed = JSON.parse(raw);
 		return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
-	} catch {
+	} catch (loadErr) {
+		console.warn("[endoClinicalIntegrationBridge] Ошибка чтения каналов из localStorage:", loadErr);
 		return null;
 	}
 }

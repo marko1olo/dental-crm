@@ -27,14 +27,14 @@ export interface OfflineAppointmentItem {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly doctorId: string;
-	readonly doctorName?: string | undefined;
-	readonly chairId?: string | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly chairId?: string | null | undefined;
 	readonly startTime: string;
 	readonly endTime: string;
 	readonly status: AppointmentStatus | "scheduled";
-	readonly notes?: string | undefined;
+	readonly notes?: string | null | undefined;
 	readonly serviceIds?: string[] | undefined;
-	readonly organizationId?: string | undefined;
+	readonly organizationId?: string | null | undefined;
 	readonly createdAt: string;
 	readonly isOfflineCreated?: boolean | undefined;
 }

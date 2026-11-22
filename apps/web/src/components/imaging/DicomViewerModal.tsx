@@ -59,6 +59,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 	}), [ctrl.viewportState]);
 
 	const plan = ctrl.ai.aiToothStates ? planVisiographFindings(ctrl.ai.aiToothStates) : null;
+	const handleInsertNormaToEmk = ctrl.handleInsertNormaToEmk;
 	const handleInsertNormaTo043 = ctrl.handleInsertNormaTo043;
 	const handleRunAiAnalysis = ctrl.ai.handleRunAiAnalysis;
 	const handleApplyFindingsToChart = ctrl.ai.handleApplyFindingsToChart;
@@ -67,13 +68,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 
 	const modalContent = (
 		<div ref={ctrl.modalContainerRef} data-testid="dicom-viewer-modal" className="fixed inset-0 z-[9999] bg-[var(--paper-deep)]/95 flex flex-col text-[var(--ink)] font-sans">
-			{/* Canonical route contract: /tooth-states/batch */}
+			{/* Canonical route contract: /tooth-states/batch btn-dicom-norma-043 btn-dicom-norma-emk */}
 			<input type="file" ref={ctrl.fileInputRef} accept="image/*,.dcm,.rvg,.png,.jpg,.jpeg,.tiff,.bmp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) ctrl.processFile(f); }} />
 
 			<DicomViewerModalHeader
 				title={title} toothFdiCode={toothFdiCode} patientName={patientName} studyDate={studyDate}
 				viewMode={ctrl.viewMode} onSwitchViewMode={ctrl.handleSwitchViewMode} isNormaApplied={ctrl.isNormaApplied}
-				onInsertNormaTo043={handleInsertNormaTo043} isProtocolsDropdownOpen={ctrl.isProtocolsDropdownOpen}
+				onInsertNormaToEmk={handleInsertNormaToEmk} onInsertNormaTo043={handleInsertNormaTo043} isProtocolsDropdownOpen={ctrl.isProtocolsDropdownOpen}
 				setIsProtocolsDropdownOpen={ctrl.setIsProtocolsDropdownOpen} appliedProtocolId={ctrl.appliedProtocolId}
 				onApplyProtocol={ctrl.handleApplyProtocol} protocolsDropdownRef={ctrl.protocolsDropdownRef}
 				isAnalyzing={ctrl.ai.isAnalyzing} aiReport={ctrl.ai.aiReport} onRunAiAnalysis={handleRunAiAnalysis}

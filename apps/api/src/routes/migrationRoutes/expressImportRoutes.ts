@@ -7,9 +7,14 @@
 
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients, serviceCatalogItems } from "../../db/schema.js";
+import {
+	extractIdempotencyKey,
+	isValidUuid,
+} from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
 export async function registerExpressImportRoutes(app: FastifyInstance) {
 	/**
@@ -152,6 +157,14 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			};
 		}
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (phase === "commit" && idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		let importedRows = 0;
 		if (entityKind === "patients") {
 			const nameCol = detectedColumns.find((c) => c.field === "fullName")?.key;
@@ -159,7 +172,7 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			const birthCol = detectedColumns.find((c) => c.field === "birthDate")?.key;
 			const balanceCol = detectedColumns.find((c) => c.field === "balanceRub")?.key;
 
-			for (const r of rawRows) {
+			const patientRowsToInsert = rawRows.map((r) => {
 				const fullName =
 					(nameCol ? String(r[nameCol] ?? "") : "").trim() ||
 					"Пациент из импорта";
@@ -169,26 +182,35 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 				const notes =
 					balanceRub !== 0 ? `Баланс при переносе: ${balanceRub} руб.` : null;
 
-				await db.insert(patients).values({
+				return {
 					id: randomUUID(),
 					organizationId: context.organizationId,
 					fullName,
 					phone: phone || null,
 					birthDate: birthDate || null,
 					notes,
-					status: "active",
+					status: "active" as const,
 					createdAt: new Date(),
 					updatedAt: new Date(),
-				});
-				importedRows++;
-			}
+				};
+			});
+
+			await withTenantCtx(context.organizationId, async (tx) => {
+				const BATCH_SIZE = 100;
+				for (let i = 0; i < patientRowsToInsert.length; i += BATCH_SIZE) {
+					const batch = patientRowsToInsert.slice(i, i + BATCH_SIZE);
+					if (batch.length > 0) {
+						await tx.insert(patients).values(batch);
+					}
+				}
+			});
+			importedRows = patientRowsToInsert.length;
 		} else if (entityKind === "price_list") {
 			const codeCol = detectedColumns.find((c) => c.field === "code")?.key;
 			const titleCol = detectedColumns.find((c) => c.field === "title")?.key;
 			const priceCol = detectedColumns.find((c) => c.field === "priceRub")?.key;
 
-			for (let idx = 0; idx < rawRows.length; idx++) {
-				const r = rawRows[idx]!;
+			const catalogRowsToInsert = rawRows.map((r, idx) => {
 				const title =
 					(titleCol ? String(r[titleCol] ?? "") : "").trim() ||
 					`Услуга ${idx + 1}`;
@@ -196,20 +218,37 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 					(codeCol ? String(r[codeCol] ?? "") : "").trim() ||
 					`IMP-${idx + 1}`;
 				const priceNum = priceCol ? Math.max(0, Number(r[priceCol]) || 0) : 0;
+				const priceKop = BigInt(rublesToKopecks(priceNum));
 
-				await db.insert(serviceCatalogItems).values({
+				return {
 					organizationId: context.organizationId,
 					code,
 					title,
-					category: "therapy",
-					specialty: "universal",
+					category: "therapy" as const,
+					specialty: "universal" as const,
 					basePriceRub: priceNum,
 					priceRub: priceNum,
+					basePriceKopecks: priceKop,
+					priceKopecks: priceKop,
 					durationMinutes: 30,
 					isActive: true,
-				});
-				importedRows++;
-			}
+				};
+			});
+
+			await withTenantCtx(context.organizationId, async (tx) => {
+				const BATCH_SIZE = 100;
+				for (let i = 0; i < catalogRowsToInsert.length; i += BATCH_SIZE) {
+					const batch = catalogRowsToInsert.slice(i, i + BATCH_SIZE);
+					if (batch.length > 0) {
+						await tx.insert(serviceCatalogItems).values(batch);
+					}
+				}
+			});
+			importedRows = catalogRowsToInsert.length;
+		}
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		return {

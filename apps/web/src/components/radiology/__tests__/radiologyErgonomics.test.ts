@@ -204,7 +204,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 
 		assert.ok(html.includes("Смирнова Елена Васильевна"), "Renders patient name");
 		assert.ok(html.includes("Зуб 16"), "Renders tooth FDI code");
-		assert.ok(html.includes("btn-dicom-norma-043"), "Contains 1-click Norma button");
+		assert.ok(html.includes("btn-dicom-norma-emk") || html.includes("btn-dicom-norma-043"), "Contains 1-click Norma button");
 	});
 
 	it("synchronizes studyDate in DicomViewerModal header", { timeout: 15000 }, async () => {

@@ -1,7 +1,7 @@
 import React from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { DoctorPayrollStudioModal } from "../components/payroll/DoctorPayrollStudioModal";
-import { DoctorShiftCloseModal } from "../components/shift";
+import { CashShiftClosingModal } from "../components/shift";
 import type { DoctorShiftCashSummary, DoctorShiftStats } from "../components/shift";
 import { QueueBoardModal } from "./QueueBoardModal";
 import type { ShiftCloseSummary } from "./shiftViewTypes";
@@ -24,7 +24,7 @@ export interface ShiftViewModalsProps {
 	onConfirmCloseShift: (summary?: ShiftCloseSummary) => void;
 	isQueueBoardModalOpen: boolean;
 	onCloseQueueBoardModal: () => void;
-	todayAppointments: readonly (Partial<Appointment> & Record<string, unknown>)[];
+	todayAppointments: readonly unknown[];
 	onUpdateAppointmentStatus?: ((appointmentId: string, newStatus: string) => void) | undefined;
 	onSelectAppointment?: ((appId: string) => void) | undefined;
 }
@@ -57,24 +57,25 @@ export const ShiftViewModals: React.FC<ShiftViewModalsProps> = ({
 				isOpen={isPayrollModalOpen}
 				onClose={onClosePayrollModal}
 				clinicName={dashboard?.clinicName}
-				doctorsList={shiftDoctorsList}
+				doctorsList={shiftDoctorsList.map((doc) => ({
+					id: doc.id,
+					name: doc.fullName || doc.name || "Врач",
+					specialtyId: doc.specialty || "therapy",
+				}))}
 				initialDoctorId={shiftActiveDoctorId}
-				initialServices={shiftCompletedServices}
-				initialPeriodStart={todayIso}
-				initialPeriodEnd={todayIso}
-				initialBasePercentage={30}
-				useClinicalCategoryRates={true}
 			/>
 		)}
 		{isShiftCloseModalOpen && (
-			<DoctorShiftCloseModal
+			<CashShiftClosingModal
 				isOpen={isShiftCloseModalOpen}
 				onClose={onCloseShiftCloseModal}
-				onConfirmClose={onConfirmCloseShift}
-				doctorFullName={activeDoctorFullName}
-				shiftStats={shiftStats}
-				cashSummary={cashSummary}
-				clinicName={dashboard?.clinicName ?? ""}
+				onShiftClosed={() => onConfirmCloseShift()}
+				cashierFullName={activeDoctorFullName}
+				clinicLegalName={dashboard?.clinicName ?? ""}
+				incomeCashRub={shiftStats?.cashBreakdown?.cashRub}
+				incomeElectronicRub={shiftStats?.cashBreakdown?.cardRub}
+				incomeSbpRub={shiftStats?.cashBreakdown?.sbpRub}
+				advanceOffsetRub={shiftStats?.cashBreakdown?.depositRub}
 			/>
 		)}
 		<QueueBoardModal

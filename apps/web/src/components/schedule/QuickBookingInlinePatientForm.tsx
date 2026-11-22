@@ -6,7 +6,7 @@ import { InlinePatientDuplicatesAlert } from "./quickBookingPatient/InlinePatien
 import { InlinePatientFormInputs } from "./quickBookingPatient/InlinePatientFormInputs";
 
 export interface QuickBookingInlinePatientFormProps {
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   showInlineNewPatient: boolean;
   setShowInlineNewPatient: (show: boolean) => void;
   newPatientFullName: string;
@@ -85,7 +85,7 @@ export function QuickBookingInlinePatientForm(props: QuickBookingInlinePatientFo
         isCreatingPatient={isCreatingPatient}
         doctors={doctors}
         doctorUserId={doctorUserId}
-        dashboard={dashboard}
+        dashboard={dashboard ?? undefined}
         handleCreateInlinePatient={handleCreateInlinePatient}
       />
     </form>

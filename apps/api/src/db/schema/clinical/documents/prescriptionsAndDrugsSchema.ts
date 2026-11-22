@@ -188,6 +188,7 @@ export const electronicPrescriptionItems = pgTable(
 		}),
 		itemIndex: integer("item_index").notNull().default(1),
 		innLatin: text("inn_latin").notNull(),
+		tradeName: text("trade_name"),
 		dosageFormLatin: text("dosage_form_latin").notNull(),
 		dosageDoseConcentration: text("dosage_dose_concentration").notNull(),
 		dispenseInstructionLatin: text("dispense_instruction_latin").notNull(),

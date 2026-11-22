@@ -224,7 +224,7 @@ describe("Wave 122: Treatment Consumables Consumption Engine", () => {
 		assert.strictEqual(brush?.isOverdraft, false);
 	});
 
-	it("Test 4: Strict overdraft ban when allowOverdraft: false", () => {
+	it("Test 4: Soft negative overdraft without blocking when deficit occurs (Mandates 8e, 8v, 8aa)", () => {
 		const deficitStocks: Record<string, number> = {
 			"mat-anes-01": 1,
 			"mat-comp-01": 0,
@@ -238,19 +238,13 @@ describe("Wave 122: Treatment Consumables Consumption Engine", () => {
 			performedAt: "2026-09-11T15:00:00.000Z",
 		};
 
-		// Must throw error when allowOverdraft is false
-		assert.throws(
-			() => calculateConsumablesForTreatment(event, sampleFillingLinks, deficitStocks, false),
-			(err: unknown) => {
-				assert.ok(err instanceof Error, "Should throw an Error instance");
-				assert.match(
-					err.message,
-					/недостаточно остатка на складе/i,
-					"Error message must specify warehouse shortage",
-				);
-				return true;
-			},
-		);
+		// Under Mandates 8e, 8v, 8aa (Soft Negative Stock), does NOT throw error; records soft overdraft
+		const result = calculateConsumablesForTreatment(event, sampleFillingLinks, deficitStocks, false);
+		assert.strictEqual(result.hasOverdraft, true);
+		const compItem = result.items.find((i) => i.inventoryItemId === "mat-comp-01");
+		assert.ok(compItem);
+		assert.strictEqual(compItem.isOverdraft, true);
+		assert.ok(compItem.resultingStock < 0);
 	});
 
 	it("Test 5: Batch calculation across multiple services of a visit with cumulative stock recalculation", () => {

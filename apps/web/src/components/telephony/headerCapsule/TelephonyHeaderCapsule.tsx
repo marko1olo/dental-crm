@@ -80,24 +80,12 @@ export function TelephonyHeaderCapsule({
 	const isAnswered = Boolean(activeCall && activeCall.status !== "ringing");
 	const durationSeconds = activeCall?.callStartedAt ? Math.floor((Date.now() - activeCall.callStartedAt) / 1000) : 0;
 
-	// Streamline Header Capsule & Prevent UI competition (Defect #2):
+	// Streamline Header Capsule & Prevent UI competition:
 	// When full-sized IncomingCallPopup banner is expanded on screen, do not duplicate
-	// answer/reject buttons inside capsule and give caller name adequate breathing room (no 130px clipping).
-	const [hasExpandedPopupInDom, setHasExpandedPopupInDom] = useState(false);
-
-	useEffect(() => {
-		if (typeof document === "undefined") return;
-		const checkPopup = () => {
-			const fullPopup = document.querySelector('[data-testid="incoming-call-popup"]');
-			setHasExpandedPopupInDom(Boolean(fullPopup));
-		};
-		checkPopup();
-		const observer = new MutationObserver(checkPopup);
-		observer.observe(document.body, { childList: true, subtree: true });
-		return () => observer.disconnect();
-	}, []);
-
-	const isFullBannerActive = propIsPopupExpanded !== undefined ? propIsPopupExpanded : hasExpandedPopupInDom;
+	// answer/reject buttons inside capsule and give caller name adequate breathing room.
+	// Binds directly to reactive Zustand store without fragile DOM MutationObserver cargo cult.
+	const isStorePopupExpanded = useTelephonyStore((s) => s.isIncomingCallPopupExpanded);
+	const isFullBannerActive = propIsPopupExpanded !== undefined ? propIsPopupExpanded : isStorePopupExpanded;
 	const shouldShowActionButtons = isRinging && !isFullBannerActive;
 
 	const dotClass = activeCall

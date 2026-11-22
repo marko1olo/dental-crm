@@ -33,9 +33,9 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "../../text/repairMojibake.js";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import {
 	apiError,
+	buildKnd1151156Xml,
 	buildMedicalDocumentReleaseJournalEntry,
 	configuredTaxOfficeCode,
 	documentIssueChainBlockReason,

@@ -1,7 +1,7 @@
 import type { StockDeductionRecord, StockDeductionWarning } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { inventoryItems, inventoryTransactions } from "../../../db/schema.js";
-import { type DbExecutor, InsufficientStockError } from "../types.js";
+import type { DbExecutor } from "../types.js";
 import type { AggregatedManualItems } from "./manualDeductionAggregator.js";
 
 export async function executeManualDeductionLoop(
@@ -47,14 +47,6 @@ export async function executeManualDeductionLoop(
 
 		if (isItemOverdraft) {
 			hasAnyOverdraft = true;
-			if (allowOverdraft === false) {
-				throw new InsufficientStockError({
-					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					availableStock: baseStock,
-					requiredStock: requiredQty,
-				});
-			}
 			warnings.push({
 				type: "out_of_stock",
 				itemId: inv.id,

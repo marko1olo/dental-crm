@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import type { Dashboard, TelephonyPatientLike } from "@dental/shared";
 import type { CallerLookupResult, IncomingCallPayload } from "../../../store/telephonyTypes";
 import { resolvePatientFromPhone } from "../../../store/telephonyStore";
-import { isDemoShowcaseMode, getDemoShowcasePatients } from "../../../lib/demoMode";
 import { getOrCreatePatientFastIndex } from "./patientFastPhoneIndex";
 
 export function useResolvedPatient(

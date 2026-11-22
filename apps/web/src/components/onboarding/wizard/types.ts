@@ -1,6 +1,7 @@
 import type {
 	ClinicMode,
 	Dashboard,
+	DentalPricelistAnalysisResponse,
 	DentalSpecialty,
 	DenteTelegramBotStatus,
 	DenteTelegramFeature,
@@ -13,6 +14,7 @@ import type {
 	SmartImportMode,
 	StaffRole,
 } from "@dental/shared";
+import type { AdminSecretUnlockDomain } from "../../../helpers/types";
 
 export interface OnboardingStepItem {
 	id: string;
@@ -130,7 +132,7 @@ export interface OnboardingWizardModalProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleStaffWorkingDay: (staffId: string, day: number) => void;
-	saveStaffSchedule: (staffId: string) => Promise<void> | void;
+	saveStaffSchedule: (staffId: string) => Promise<unknown> | void;
 	chairScheduleDrafts: Record<string, StaffScheduleDraft>;
 	chairScheduleSaveStates: Record<string, string>;
 	chairScheduleDirtyIds: Set<string>;
@@ -140,12 +142,12 @@ export interface OnboardingWizardModalProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleChairWorkingDay: (chairId: string, day: number) => void;
-	saveChairSchedule: (chairId: string) => Promise<void> | void;
+	saveChairSchedule: (chairId: string) => Promise<unknown> | void;
 	pricelistSourceKindLabels: Record<PricelistSourceKind, string>;
 	pricelistSourceKind: PricelistSourceKind;
 	setPricelistSourceKind: (kind: PricelistSourceKind) => void;
 	clearPricelistImage: () => void;
-	setPricelistAnalysis: (analysis: unknown) => void;
+	setPricelistAnalysis: (analysis: DentalPricelistAnalysisResponse | null) => void;
 	importSourceLabels: Record<
 		ImportSourceKind,
 		{ title: string; detail?: string }
@@ -207,7 +209,7 @@ export interface OnboardingWizardModalProps {
 	) => void;
 	telegramAdminSecretDraft: string;
 	setTelegramAdminSecretDraft: (secret: string) => void;
-	unlockTelegramAdminSession: (scope?: string) => Promise<void> | void;
+	unlockTelegramAdminSession: (domainOverride?: AdminSecretUnlockDomain) => Promise<void> | void;
 	telegramAdminSecretSession: boolean;
 	telegramPrivacyModeDraft: string;
 	setTelegramPrivacyModeDraft: (mode: string) => void;
@@ -234,8 +236,8 @@ export interface OnboardingWizardModalProps {
 	dismissOnboarding: () => void;
 	saveClinicProfileFromDraft: () => Promise<void> | void;
 	clinicProfileSaveState: string;
-	previousOnboardingStep: OnboardingStepItem | null;
-	nextOnboardingStep: OnboardingStepItem | null;
+	previousOnboardingStep?: OnboardingStepItem | null | undefined;
+	nextOnboardingStep?: OnboardingStepItem | null | undefined;
 	initialShowRapidWizard?: boolean | undefined;
 	showRapidWizard?: boolean | undefined;
 	onToggleRapidWizard?: ((val?: boolean) => void) | undefined;
@@ -307,7 +309,7 @@ export interface WizardTeamStepProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleStaffWorkingDay: (staffId: string, day: number) => void;
-	saveStaffSchedule: (staffId: string) => Promise<void> | void;
+	saveStaffSchedule: (staffId: string) => Promise<unknown> | void;
 	chairScheduleDrafts: Record<string, StaffScheduleDraft>;
 	chairScheduleSaveStates: Record<string, string>;
 	chairScheduleDirtyIds: Set<string>;
@@ -317,7 +319,7 @@ export interface WizardTeamStepProps {
 		patch: Partial<StaffScheduleDraft>,
 	) => void;
 	toggleChairWorkingDay: (chairId: string, day: number) => void;
-	saveChairSchedule: (chairId: string) => Promise<void> | void;
+	saveChairSchedule: (chairId: string) => Promise<unknown> | void;
 	weekdayOptions: readonly WeekdayOption[];
 }
 
@@ -326,7 +328,7 @@ export interface WizardSourcesStepProps {
 	pricelistSourceKind: PricelistSourceKind;
 	setPricelistSourceKind: (kind: PricelistSourceKind) => void;
 	clearPricelistImage: () => void;
-	setPricelistAnalysis: (analysis: unknown) => void;
+	setPricelistAnalysis: (analysis: DentalPricelistAnalysisResponse | null) => void;
 	importSourceLabels: Record<
 		ImportSourceKind,
 		{ title: string; detail?: string }
@@ -391,7 +393,7 @@ export interface WizardTelegramStepProps {
 	) => void;
 	telegramAdminSecretDraft: string;
 	setTelegramAdminSecretDraft: (secret: string) => void;
-	unlockTelegramAdminSession: (scope?: string) => Promise<void> | void;
+	unlockTelegramAdminSession: (domainOverride?: AdminSecretUnlockDomain) => Promise<void> | void;
 	telegramAdminSecretSession: boolean;
 	telegramPrivacyModeDraft: string;
 	setTelegramPrivacyModeDraft: (mode: string) => void;

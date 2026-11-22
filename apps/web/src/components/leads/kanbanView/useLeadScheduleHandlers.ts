@@ -4,7 +4,11 @@
  */
 
 import { dateInputValuePlusDays } from "../../../AppHelpers";
-import type { Lead } from "../../../store/leadsStore";
+import type {
+	ConvertLeadResult,
+	ConvertLeadToAppointmentPayload,
+	Lead,
+} from "../../../store/leadsStore";
 import { showToast } from "../../GlobalToast";
 import {
 	type BookableChair,
@@ -27,7 +31,10 @@ interface ScheduleHandlersOptions {
 	appointmentTime: string;
 	visitMinutes: number | null | undefined;
 	clinicTimeZone: string | null | undefined;
-	convertLeadToAppointment: (id: string, payload: any) => Promise<any>;
+	convertLeadToAppointment: (
+		id: string,
+		payload: ConvertLeadToAppointmentPayload,
+	) => Promise<ConvertLeadResult>;
 	fetchLeads: () => void;
 	navigateToScheduleWithBooking: (b: PendingBookingInfo) => void;
 }

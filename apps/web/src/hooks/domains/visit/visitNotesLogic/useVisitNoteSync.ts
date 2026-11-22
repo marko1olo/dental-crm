@@ -20,9 +20,10 @@ import { actionFailureToast } from "../../../../lib/panelStateText";
 import { useAppStore } from "../../../../store/appStore";
 import { useVisitStore } from "../../../../store/visitStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
+import type { ClinicalAuthClient } from "../types";
 
 export interface UseVisitNoteSyncParams {
-	auth: { getHeaders?: () => HeadersInit; [key: string]: unknown };
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
 	hasVisitTranscriptText: boolean;

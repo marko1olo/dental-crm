@@ -9,6 +9,10 @@ import {
 	getDailySmsQuota,
 	incrementDailySmsQuota,
 } from "../db/uisSmsChatQuotasQuery.js";
+import {
+	resolveChannelCredentials,
+	sendThroughChannel,
+} from "../services/communications/channelRouter.js";
 import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 import { sendSmsViaUis } from "../services/uis/smsClient.js";
 
@@ -116,11 +120,14 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			// Concurrency & idempotency guard: prevent double-clicks and repeated quota deductions
 			const thirtySecAgo = new Date(Date.now() - 30 * 1000);
 			const duplicateConditions = [
-				eq(communicationEvents.message, parsed.data.message),
+				and(
+					eq(communicationEvents.message, parsed.data.message),
+					gt(communicationEvents.createdAt, thirtySecAgo),
+				),
 			];
 			if (parsed.data.idempotencyKey) {
 				duplicateConditions.push(
-					sql`${communicationEvents.message} LIKE ${`%[idempotency:${parsed.data.idempotencyKey}]%`}`,
+					eq(communicationEvents.idempotencyKey, parsed.data.idempotencyKey),
 				);
 			}
 
@@ -137,7 +144,6 @@ export async function registerChatRoutes(app: FastifyInstance) {
 						eq(communicationEvents.channel, "sms"),
 						eq(communicationEvents.direction, "outbound"),
 						or(...duplicateConditions),
-						gt(communicationEvents.createdAt, thirtySecAgo),
 					),
 				)
 				.limit(1);
@@ -159,18 +165,40 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				};
 			}
 
-			// Perform real UIS SMS dispatch (ZERO MOCKS)
-			await sendSmsViaUis({
-				patientPhone: patient.phone,
-				message: parsed.data.message,
-			});
+			// Централизованная отправка через channelRouter / smsTransport (SMS.RU / SMSC.RU) с fallback на UIS (DEF-MSG-05)
+			const credentials = await resolveChannelCredentials(organizationId);
+			const sendResult = await sendThroughChannel(
+				{
+					channel: "sms",
+					recipientAddress: patient.phone,
+					subject: null,
+					body: parsed.data.message,
+					idempotencyKey: parsed.data.idempotencyKey ?? null,
+				},
+				credentials,
+			);
+
+			if (!sendResult.ok) {
+				const uisFallback = await sendSmsViaUis({
+					patientPhone: patient.phone,
+					message: parsed.data.message,
+				}).catch(() => null);
+
+				if (!uisFallback) {
+					request.log.warn(
+						{ errorClass: sendResult.errorClass, errorMessage: sendResult.errorMessage },
+						"[Chat] Сбой отправки SMS через центральный шлюз",
+					);
+					return reply.code(502).send({
+						error: "SmsSendFailed",
+						message: sendResult.errorMessage || "Ошибка при отправке SMS через центральный шлюз.",
+					});
+				}
+			}
 
 			await incrementDailySmsQuota(organizationId);
 
-			const messageToStore = parsed.data.idempotencyKey
-				? `${parsed.data.message} [idempotency:${parsed.data.idempotencyKey}]`
-				: parsed.data.message;
-
+			// Чистый текст сообщения без [idempotency:...] в БД (DEF-MSG-04)
 			const [event] = await db
 				.insert(communicationEvents)
 				.values({
@@ -179,7 +207,8 @@ export async function registerChatRoutes(app: FastifyInstance) {
 					channel: "sms",
 					direction: "outbound",
 					status: "sent",
-					message: messageToStore,
+					message: parsed.data.message,
+					idempotencyKey: parsed.data.idempotencyKey ?? null,
 				})
 				.returning();
 

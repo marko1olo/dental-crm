@@ -2,13 +2,10 @@
  * printFnsTaxTemplate.ts — Printable HTML for FNS Tax Deduction Certificate (КНД 1151156)
  */
 
-import {
-	type FnsTaxCertificatePayload,
-	escapeXml,
-	formatKopecksToRubles,
-	formatRuDate,
-	generateGostSignatureStampHtml,
-} from "./../cdaR2XmlBuilder";
+import { escapeXml, formatRuDate } from "@dental/shared/cda";
+import { formatKopecksToRubles } from "@dental/shared";
+import type { FnsTaxCertificatePayload } from "./../cdaR2/fnsTaxTypes";
+import { generateGostSignatureStampHtml } from "./../cdaR2/gostSignatures";
 
 export function generateFnsTaxCertificatePrintHtml(payload: FnsTaxCertificatePayload): string {
 	const docDateStr = formatRuDate(payload.documentDate);

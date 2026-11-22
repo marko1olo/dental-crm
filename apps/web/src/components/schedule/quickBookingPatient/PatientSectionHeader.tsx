@@ -20,7 +20,7 @@ export interface PatientSectionHeaderProps {
   setDurationMinutes: (d: number) => void;
   doctors: Array<{ id: string; fullName: string }>;
   doctorUserId: string;
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   isTechnicalBreak?: boolean | undefined;
 }
 

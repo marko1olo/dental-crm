@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * EGISZ REMD CDA R2 & UKEP UNIT TESTS (МИНЗДРАВ РФ / 911Н / ГОСТ 34.10-2012)
- * Comprehensive testing of SEMD 101, 104, 130 generators, regulatory
+ * Comprehensive testing of SEMD 101, 104, 043-1u generators, regulatory
  * validators, foreign citizen fallback, C14N canonicalization, and UKEP.
  * ═══════════════════════════════════════════════════════════════════════════
  */
@@ -25,7 +25,6 @@ import {
 	generateCdaXml,
 	generateSemd101Xml,
 	generateSemd104Xml,
-	generateSemd130Xml,
 	isValidSnils,
 	normalizeSnils,
 	validateCdaParams,
@@ -39,7 +38,6 @@ import {
 	validateOrder804nCode,
 	type CdaSemd101Params,
 	type CdaSemd104Params,
-	type CdaSemd130Params,
 } from "../cda/index.js";
 
 const SAMPLE_CLINIC = {
@@ -302,93 +300,8 @@ describe("EGISZ REMD CDA R2 & UKEP Suite", () => {
 		});
 	});
 
-	// ─── 4. Генерация СЭМД 130: Справка об оплате медицинских услуг ───────────
-	describe("4. SEMD 130: Tax Payment Certificate Generation (КНД 1151156)", () => {
-		it("формирует копеечно-точный XML CDA R2 для СЭМД 130", () => {
-			const params: CdaSemd130Params = {
-				docKind: "130",
-				documentId: "DOC-SEMD130-2026-991",
-				certificateNumber: "130-2026/514",
-				taxYear: 2026,
-				issueDate: new Date("2026-08-25T14:00:00+03:00"),
-				patient: SAMPLE_PATIENT_RU,
-				taxpayer: {
-					fullName: "Соколов Владимир Иванович",
-					snils: "112-233-445 95",
-					inn: "500100732259",
-					relationToPatient: "3", // Родитель
-				},
-				doctor: SAMPLE_DOCTOR,
-				clinic: SAMPLE_CLINIC,
-				contractNumber: "ДОГ-2026/891",
-				contractDate: "2026-01-15",
-				paymentRecords: [
-					{
-						fiscalReceiptNumber: "ФЧ-89104",
-						fiscalReceiptDate: "2026-02-10",
-						paymentAmountKopecks: 1540050, // 15 400.50 руб.
-						serviceCategoryCode: "1", // Обычное
-					},
-					{
-						fiscalReceiptNumber: "ФЧ-99412",
-						fiscalReceiptDate: "2026-05-18",
-						paymentAmountKopecks: 4500000, // 45 000.00 руб.
-						serviceCategoryCode: "2", // Дорогостоящее (имплантация)
-					},
-				],
-				totalOrdinaryTreatmentKopecks: 1540050,
-				totalExpensiveTreatmentKopecks: 4500000,
-				totalSumKopecks: 6040050, // 60 400.50 руб.
-			};
-
-			const result = generateCdaXml(params);
-			assert.equal(result.success, true);
-			if (!result.success) return;
-
-			const xml = result.xml;
-			assert.ok(xml.includes(EGISZ_OIDS.SEMD_TEMPLATE_130));
-			assert.ok(xml.includes('<code code="130"'));
-			assert.ok(xml.includes("Соколов Владимир Иванович"));
-			assert.ok(xml.includes("500100732259")); // Taxpayer INN
-			assert.ok(xml.includes("Родитель"));
-			assert.ok(xml.includes("ФЧ-89104"));
-			assert.ok(xml.includes("15400.50"));
-			assert.ok(xml.includes("45000.00"));
-			assert.ok(xml.includes("60400.50"));
-		});
-
-		it("отклоняет СЭМД 130 при арифметическом несовпадении сумм в копейках", () => {
-			const badParams: CdaSemd130Params = {
-				docKind: "130",
-				documentId: "DOC-SEMD130-BAD",
-				certificateNumber: "130-BAD",
-				taxYear: 2026,
-				issueDate: new Date(),
-				patient: SAMPLE_PATIENT_RU,
-				taxpayer: {
-					fullName: "Соколов Владимир Иванович",
-					relationToPatient: "1",
-				},
-				doctor: SAMPLE_DOCTOR,
-				clinic: SAMPLE_CLINIC,
-				contractNumber: "ДОГ-1",
-				contractDate: "2026-01-01",
-				paymentRecords: [
-					{ fiscalReceiptNumber: "1", fiscalReceiptDate: "2026-01-01", paymentAmountKopecks: 100000, serviceCategoryCode: "1" },
-				],
-				totalOrdinaryTreatmentKopecks: 100000,
-				totalExpensiveTreatmentKopecks: 0,
-				totalSumKopecks: 99999, // MISMATCH!
-			};
-
-			const validation = validateCdaParams(badParams);
-			assert.equal(validation.valid, false);
-			assert.ok(validation.errors.some((e) => e.includes("Не сходится сумма в копейках")));
-		});
-	});
-
-	// ─── 5. Канонизация XML и УКЭП (ГОСТ Р 34.10-2012 / CAdES-BES) ────────────
-	describe("5. XML Canonicalization (C14N) & UKEP GOST R 34.10-2012 Packaging", () => {
+	// ─── 4. Канонизация XML и УКЭП (ГОСТ Р 34.10-2012 / CAdES-BES) ────────────
+	describe("4. XML Canonicalization (C14N) & UKEP GOST R 34.10-2012 Packaging", () => {
 		it("выполняет детерминированную канонизацию C14N (удаление BOM, нормализация CRLF)", () => {
 			const dirtyXml = "\uFEFF<?xml version=\"1.0\"?>  \r\n<root> \r\n  <tag>Test</tag>  \r\n</root>  \r\n";
 			const cleanXml = canonicalizeCdaXml(dirtyXml);

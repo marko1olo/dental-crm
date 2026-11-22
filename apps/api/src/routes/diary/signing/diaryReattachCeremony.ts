@@ -45,6 +45,7 @@ export async function executeReattachCeremony(params: {
 		const reattachHash = computeDiaryHash(
 			row.visitId,
 			row.patientId ?? "",
+			row.complaint,
 			row.anamnesis,
 			row.statusLocalis,
 			row.treatmentDescription,
@@ -52,7 +53,6 @@ export async function executeReattachCeremony(params: {
 			row.diagnosisTooth,
 			row.complications,
 			row.comorbidities,
-			row.instrumentTrayBarcode,
 		);
 		const resolvedReattach = await resolveSignatureForStorage({
 			pkcs7Signature: incomingPkcs7,

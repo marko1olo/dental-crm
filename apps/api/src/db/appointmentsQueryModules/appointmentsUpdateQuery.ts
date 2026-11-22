@@ -200,6 +200,8 @@ export async function updateAppointmentInDb(
 		if (input.clinicalStage !== undefined) updateData.clinicalStage = input.clinicalStage;
 		if (input.toothNumber !== undefined) updateData.toothNumber = input.toothNumber;
 		if (input.diagnosisMkb10 !== undefined) updateData.diagnosisMkb10 = input.diagnosisMkb10;
+		if (input.treatmentPlanId !== undefined) updateData.treatmentPlanId = input.treatmentPlanId;
+		if (input.stageId !== undefined) updateData.stageId = input.stageId;
 		if (input.allowOverbooking !== undefined || input.allowEmergencyOverride !== undefined) {
 			updateData.isOverbooking = Boolean(input.allowOverbooking || isEmergencyOverrideOverall);
 		} else if (!isEmergencyOverrideOverall && (input.startsAt !== undefined || input.chairId !== undefined || input.doctorUserId !== undefined)) {
@@ -248,6 +250,11 @@ export async function updateAppointmentInDb(
 		clinicalStage: updated.clinicalStage,
 		toothNumber: updated.toothNumber,
 		diagnosisMkb10: updated.diagnosisMkb10,
+		treatmentPlanId: updated.treatmentPlanId,
+		stageId: updated.stageId,
+		isCito: input.isCito ?? input.cito ?? undefined,
+		cito: input.cito ?? input.isCito ?? undefined,
+		createdAt: updated.createdAt?.toISOString(),
 	};
 	return result;
 }

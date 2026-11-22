@@ -3,6 +3,8 @@ import { createModalsAndSelectionSlice } from "./createModalsAndSelectionSlice";
 import { createNavigationAndThemeSlice } from "./createNavigationAndThemeSlice";
 import { createNotificationsAndSyncSlice } from "./createNotificationsAndSyncSlice";
 import type { AppStore } from "./types";
+export type { AppStore, AppState } from "./types";
+export * from "./types";
 
 export const useAppStore = create<AppStore>((...a) => ({
 	...createNavigationAndThemeSlice(...a),

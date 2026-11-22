@@ -456,8 +456,24 @@ export async function saveSomaticHealthQuestionnaire(
 			evaluated.somaticProfile.hasLocalAnestheticsAllergy ||
 			evaluated.somaticProfile.hasSulfiteAllergy)
 	) {
-		await db.insert(patientDrugAllergies).values(
-			evaluated.drugListToInsert.map((drugName) => ({
+		const existingAllergies = await db
+			.select({ drugInnLatin: patientDrugAllergies.drugInnLatin })
+			.from(patientDrugAllergies)
+			.where(
+				and(
+					eq(patientDrugAllergies.organizationId, organizationId),
+					eq(patientDrugAllergies.patientId, patientId),
+				),
+			);
+		const existingSet = new Set(
+			existingAllergies
+				.map((a) => a.drugInnLatin?.trim().toLowerCase())
+				.filter((s): s is string => Boolean(s)),
+		);
+
+		const itemsToInsert = evaluated.drugListToInsert
+			.filter((drugName) => !existingSet.has(drugName.trim().toLowerCase()))
+			.map((drugName) => ({
 				organizationId,
 				patientId,
 				allergenGroup: "Лекарственные препараты",
@@ -466,8 +482,11 @@ export async function saveSomaticHealthQuestionnaire(
 				clinicalManifestations:
 					body.allergies?.details || "Указано пациентом при заполнении анкеты здоровья в личном кабинете",
 				isConfirmedByAllergist: false,
-			})),
-		);
+			}));
+
+		if (itemsToInsert.length > 0) {
+			await db.insert(patientDrugAllergies).values(itemsToInsert);
+		}
 	}
 
 	return {

@@ -2,15 +2,15 @@ import type { Chair, ClinicMode, Dashboard } from "@dental/shared";
 import type { WeekdayOption } from "./types";
 
 export interface ScheduleDerivationsParams {
-	clinicProfileSaveState?: string;
-	clinicModeLabels?: Record<string, string>;
-	dashboard?: Dashboard | null;
-	weekdayOptions?: WeekdayOption[];
+	clinicProfileSaveState?: string | undefined;
+	clinicModeLabels?: Record<string, unknown> | undefined;
+	dashboard?: Dashboard | null | undefined;
+	weekdayOptions?: WeekdayOption[] | undefined;
 	uiLanguageOptions?: Array<{
 		value: string;
 		label: string;
 		detail: string;
-	}>;
+	}> | undefined;
 }
 
 export function deriveScheduleSettings(params: ScheduleDerivationsParams) {

@@ -33,7 +33,7 @@ export type CommunicationsViewProps = {
 		taskId: string,
 		outcome: CommunicationTaskOutcome,
 	) => void | Promise<void>;
-	dashboard: Dashboard;
+	dashboard?: Dashboard | null | undefined;
 	documentKindsForCommunicationTask: (
 		task: CommunicationTask,
 	) => readonly GeneratedDocument["kind"][];
@@ -69,7 +69,7 @@ export type CommunicationsChatFooterInputProps = {
 };
 
 export type CommunicationsConversationsListProps = {
-	dashboard: Dashboard;
+	dashboard?: Dashboard | null | undefined;
 	clinicMode: ClinicMode | string | null | undefined;
 	effectiveTasks: CommunicationTask[];
 	tasksSlice: {

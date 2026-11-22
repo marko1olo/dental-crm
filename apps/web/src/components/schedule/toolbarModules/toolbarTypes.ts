@@ -62,6 +62,8 @@ export interface ScheduleFilterStripProps {
 	onOpenDoctorFreeSlots?: (() => void) | undefined;
 	onOpenPreventiveInspection?: (() => void) | undefined;
 	preventiveInspectionCount?: number | undefined;
+	onOpenRecallsHub?: (() => void) | undefined;
+	recallsCount?: number | undefined;
 	onOpenPatientSearch?: (() => void) | undefined;
 	onSelectWholeWeek?: (() => void) | undefined;
 	onEmergencyCitoBooking?: (() => void) | undefined;

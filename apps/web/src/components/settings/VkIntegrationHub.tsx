@@ -443,7 +443,7 @@ export function VkIntegrationHub({ serverBaseUrl }: VkIntegrationHubProps) {
 
 					{/* Блок тестовой отправки сообщения в VK */}
 					<div className="mt-4 pt-4 border-t border-[var(--line,#e2e8f0)]" data-testid="vk-test-message-section">
-						<h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+						<h4 className="text-xs font-bold text-[var(--muted)] mb-2">
 							Тестовая отправка сообщения клиенту
 						</h4>
 						<form onSubmit={handleSendTestMessage} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">

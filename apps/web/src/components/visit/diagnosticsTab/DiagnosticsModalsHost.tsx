@@ -32,13 +32,13 @@ export interface DiagnosticsPatientContext {
 export interface DiagnosticsDashboardContext {
 	readonly activeDoctor?: { fullName?: string | undefined; [key: string]: unknown } | undefined;
 	readonly clinicSettings?: { profile?: { brandName?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
-	readonly activeVisit?: { id?: string | undefined; [key: string]: unknown } | undefined;
+	readonly activeVisit?: { id?: string | undefined; [key: string]: unknown } | null | undefined;
 	readonly [key: string]: unknown;
 }
 
 export interface DiagnosticsVisitContext {
 	readonly auth?: { currentUser?: { name?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
-	readonly dashboard?: { activeVisit?: { id?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
+	readonly dashboard?: { activeVisit?: { id?: string | undefined; [key: string]: unknown } | null | undefined; [key: string]: unknown } | null | undefined;
 	readonly appendToTranscript?: ((text: string) => void) | undefined;
 	readonly [key: string]: unknown;
 }

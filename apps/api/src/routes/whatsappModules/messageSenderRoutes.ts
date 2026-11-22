@@ -5,7 +5,7 @@
  * concurrency protection, idempotency guards, and WebSocket dispatch to CRM.
  */
 
-import { and, eq, gt, ilike, or, sql } from "drizzle-orm";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -107,44 +107,67 @@ export async function registerMessageSenderRoutes(
 			};
 		}
 
-		// PostgreSQL advisory lock to serialize concurrent sends to the same patient
-		await db.execute(
-			sql`SELECT pg_advisory_xact_lock(hashtext('whatsapp:send:' || ${orgId} || ':' || ${patientId}));`,
-		);
+		const sendOutcome = await db.transaction(async (tx) => {
+			// Честный PostgreSQL advisory lock внутри транзакции (DEF-MSG-03)
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext('whatsapp:send:' || ${orgId} || ':' || ${patientId}));`,
+			);
 
-		// Защита от дублей: если идентичное сообщение этому пациенту уже уходило за последние 60 секунд (или по idempotencyKey)
-		const sixtySecondsAgo = new Date(Date.now() - 60_000);
-		const duplicateCondition = idempotencyKey
-			? or(
-					and(
+			// Защита от дублей: если идентичное сообщение этому пациенту уже уходило за последние 60 секунд (или по idempotencyKey)
+			const sixtySecondsAgo = new Date(Date.now() - 60_000);
+			const duplicateCondition = idempotencyKey
+				? or(
+						and(
+							eq(communicationEvents.message, message),
+							gt(communicationEvents.createdAt, sixtySecondsAgo),
+						),
+						eq(communicationEvents.idempotencyKey, idempotencyKey),
+					)
+				: and(
 						eq(communicationEvents.message, message),
 						gt(communicationEvents.createdAt, sixtySecondsAgo),
-					),
-					ilike(
-						communicationEvents.message,
-						`%[idempotency:${idempotencyKey}]%`,
+					);
+
+			const [recentDuplicate] = await tx
+				.select({ id: communicationEvents.id })
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						eq(communicationEvents.patientId, patientId),
+						eq(communicationEvents.channel, "whatsapp"),
+						eq(communicationEvents.direction, "outbound"),
+						duplicateCondition,
 					),
 				)
-			: and(
-					eq(communicationEvents.message, message),
-					gt(communicationEvents.createdAt, sixtySecondsAgo),
-				);
+				.limit(1);
 
-		const [recentDuplicate] = await db
-			.select({ id: communicationEvents.id })
-			.from(communicationEvents)
-			.where(
-				and(
-					eq(communicationEvents.organizationId, orgId),
-					eq(communicationEvents.patientId, patientId),
-					eq(communicationEvents.channel, "whatsapp"),
-					eq(communicationEvents.direction, "outbound"),
-					duplicateCondition,
-				),
-			)
-			.limit(1);
+			if (recentDuplicate) {
+				return { isDuplicate: true as const };
+			}
 
-		if (recentDuplicate) {
+			const sendResult = await sendWhatsappTextMessage({
+				...credentials,
+				toPhoneE164: recipient,
+				text: message,
+			});
+
+			// Чистый текст сообщения пациента без мусора [idempotency:...] (DEF-MSG-04)
+			await tx.insert(communicationEvents).values({
+				organizationId: orgId,
+				patientId,
+				channel: "whatsapp",
+				direction: "outbound",
+				status: sendResult.ok ? "sent" : "failed",
+				message,
+				idempotencyKey: idempotencyKey ?? null,
+				providerCallId: sendResult.providerMessageId ?? null,
+			});
+
+			return { isDuplicate: false as const, sendResult };
+		});
+
+		if (sendOutcome.isDuplicate) {
 			reply.code(409);
 			return {
 				error: "DuplicateMessage",
@@ -153,25 +176,7 @@ export async function registerMessageSenderRoutes(
 			};
 		}
 
-		const sendResult = await sendWhatsappTextMessage({
-			...credentials,
-			toPhoneE164: recipient,
-			text: message,
-		});
-
-		// Запись в историю коммуникаций делается по фактическому результату:
-		// неудачная отправка сохраняется со статусом failed, а не как sent.
-		const recordedMessage = idempotencyKey
-			? `${message} [idempotency:${idempotencyKey}]`
-			: message;
-		await db.insert(communicationEvents).values({
-			organizationId: orgId,
-			patientId,
-			channel: "whatsapp",
-			direction: "outbound",
-			status: sendResult.ok ? "sent" : "failed",
-			message: recordedMessage,
-		});
+		const { sendResult } = sendOutcome;
 
 		if (!sendResult.ok) {
 			request.log.warn(

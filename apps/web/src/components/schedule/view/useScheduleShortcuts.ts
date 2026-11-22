@@ -3,7 +3,7 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import { motionSafeScrollIntoView } from "../../../motionPreference";
 import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { actionFailureToast } from "../../../lib/panelStateText";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { denteAdminSecretRequestHeaders, type AppointmentScheduleDraft } from "../../../AppHelpers";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 
 export interface UseScheduleShortcutsParams {
@@ -30,9 +30,9 @@ export interface UseScheduleShortcutsParams {
   setWaitlistOpen: (open: boolean) => void;
   showCreateForm: boolean;
   setShowCreateForm: (show: boolean) => void;
-  updateNewAppointmentDraft: (key: string, val: unknown) => void;
+  updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, val: AppointmentScheduleDraft[K]) => void;
   focusNewAppointmentEditor: () => void;
-  patientName?: ((patients: Dashboard["patients"], id: string | null | undefined) => string) | undefined;
+  patientName?: ((patients: Dashboard["patients"], id: string | null) => string) | undefined;
   setUseManualSelects: (use: boolean) => void;
   setShowClipboardPanel: (show: boolean) => void;
   setShowFreedSlotsPanel: (show: boolean) => void;
@@ -368,9 +368,9 @@ export function useScheduleShortcuts({
     const repeatAssistantId = appointment.assistantUserId ?? null;
 
     updateNewAppointmentDraft("patientId", appointment.patientId);
-    updateNewAppointmentDraft("doctorUserId", appointment.doctorUserId);
+    updateNewAppointmentDraft("doctorUserId", appointment.doctorUserId ?? "");
     updateNewAppointmentDraft("assistantUserId", repeatAssistantId);
-    updateNewAppointmentDraft("chairId", appointment.chairId);
+    updateNewAppointmentDraft("chairId", appointment.chairId ?? "");
     updateNewAppointmentDraft("status", "planned");
     updateNewAppointmentDraft("startsAt", weekAhead.toISOString());
     updateNewAppointmentDraft(

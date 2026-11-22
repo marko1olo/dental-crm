@@ -65,12 +65,13 @@ export interface VisitStateSnapshot {
 }
 
 export interface VisitServiceItemInput {
-	code?: string;
-	code804n?: string;
-	title?: string;
-	name?: string;
-	price?: number;
-	unitPriceRub?: number;
+	code?: string | undefined;
+	code804n?: string | undefined;
+	title?: string | undefined;
+	name?: string | undefined;
+	price?: number | undefined;
+	unitPriceRub?: number | undefined;
+	priceKopecks?: number | bigint | undefined;
 	toothCode?: string | undefined;
 	toothNumber?: number | string | undefined;
 }

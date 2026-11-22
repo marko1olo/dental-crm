@@ -10,10 +10,10 @@ import type { ClinicalGuideMeta, ClinicalGuideTab } from "./helpTypes";
 
 export interface ClinicalHelpCardsGridProps {
 	readonly guides: readonly ClinicalGuideMeta[];
-	readonly activeTab?: ClinicalGuideTab;
+	readonly activeTab?: ClinicalGuideTab | undefined;
 	readonly onSelectGuide: (id: ClinicalGuideTab) => void;
-	readonly onLaunchTour?: (trackId?: string) => void;
-	readonly onNavigateView?: (view: string) => void;
+	readonly onLaunchTour?: ((trackId?: string | undefined) => void) | undefined;
+	readonly onNavigateView?: ((view: string) => void) | undefined;
 }
 
 export const ClinicalHelpCardsGrid: React.FC<ClinicalHelpCardsGridProps> = React.memo(({

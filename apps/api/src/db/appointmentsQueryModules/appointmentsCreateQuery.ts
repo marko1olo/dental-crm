@@ -393,6 +393,8 @@ export async function createAppointmentInDb(
 				attributedRole: finalAttributedRole,
 				attributedUserId: finalAttributedUserId,
 				attributionReason: finalAttributionReason,
+				treatmentPlanId: input.treatmentPlanId ?? null,
+				stageId: input.stageId ?? null,
 			})
 			.returning();
 
@@ -416,6 +418,10 @@ export async function createAppointmentInDb(
 			clinicalStage: created.clinicalStage,
 			toothNumber: created.toothNumber,
 			diagnosisMkb10: created.diagnosisMkb10,
+			treatmentPlanId: created.treatmentPlanId,
+			stageId: created.stageId,
+			isCito: input.isCito ?? input.cito ?? undefined,
+			cito: input.cito ?? input.isCito ?? undefined,
 			createdAt: created.createdAt.toISOString(),
 			rebookingSourceVisitId: created.rebookingSourceVisitId,
 			rebookingDeltaMinutes: created.rebookingDeltaMinutes,

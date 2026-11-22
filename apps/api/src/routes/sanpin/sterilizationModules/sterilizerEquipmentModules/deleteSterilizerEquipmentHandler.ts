@@ -25,12 +25,18 @@ export async function handleDeleteSterilizerEquipment(
 	}
 	const id = idParsed.data;
 	await db
-		.delete(sterilizerEquipments)
+		.update(sterilizerEquipments)
+		.set({
+			status: "decommissioned",
+			isCommissioned: false,
+			decommissioningDate: new Date().toISOString().slice(0, 10),
+			updatedAt: new Date(),
+		})
 		.where(
 			and(
 				eq(sterilizerEquipments.id, id),
 				eq(sterilizerEquipments.organizationId, organizationId),
 			),
 		);
-	return { success: true, id };
+	return { success: true, id, status: "decommissioned" };
 }

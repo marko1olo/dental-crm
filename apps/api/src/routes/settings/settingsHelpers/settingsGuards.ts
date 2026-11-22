@@ -169,10 +169,16 @@ export async function requireSettingsMutationAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<string | null> {
-	if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) {
-		return null;
+	const orgId = await requireSettingsAccess(request, reply);
+	if (!orgId) return null;
+
+	const identity = getRequestIdentity(request);
+	if (identity.userId && identity.role) {
+		if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) {
+			return null;
+		}
 	}
-	return requireSettingsAccess(request, reply);
+	return orgId;
 }
 
 /**

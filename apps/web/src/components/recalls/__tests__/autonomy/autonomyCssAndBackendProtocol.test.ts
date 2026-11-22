@@ -9,16 +9,24 @@ import { sendRecallCandidateInvite } from "../../patientRecallEngine";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function getRecallsCssPath(filename: string): string {
+	const rootPath = path.resolve(process.cwd(), "apps/web/src/components/recalls", filename);
+	if (fs.existsSync(rootPath)) return rootPath;
+	const localPath = path.resolve(process.cwd(), "src/components/recalls", filename);
+	if (fs.existsSync(localPath)) return localPath;
+	return path.resolve(__dirname, "../../", filename);
+}
+
 describe("5 & 6. CSS Tokens & Fastify Protocol", () => {
 	it("verifies zero hardcoded hex colors in recalls.css", () => {
-		const cssPath = path.resolve(process.cwd(), "apps/web/src/components/recalls/recalls.css");
+		const cssPath = getRecallsCssPath("recalls.css");
 		const cssContent = fs.readFileSync(cssPath, "utf8");
 		const hexMatches = cssContent.match(/#[0-9a-fA-F]{3,8}\b/g);
 		assert.strictEqual(hexMatches, null);
 	});
 
 	it("verifies zero untokenized rgba/rgb backgrounds or borders in recalls.css", () => {
-		const cssPath = path.resolve(process.cwd(), "apps/web/src/components/recalls/recalls.css");
+		const cssPath = getRecallsCssPath("recalls.css");
 		const lines = fs.readFileSync(cssPath, "utf8").split("\n");
 		const violations: string[] = [];
 		lines.forEach((line, idx) => {
@@ -32,7 +40,7 @@ describe("5 & 6. CSS Tokens & Fastify Protocol", () => {
 	});
 
 	it("verifies zero hardcoded hex colors in recallsKanban.css", () => {
-		const cssPath = path.resolve(process.cwd(), "apps/web/src/components/recalls/recallsKanban.css");
+		const cssPath = getRecallsCssPath("recallsKanban.css");
 		const cssContent = fs.readFileSync(cssPath, "utf8");
 		const hexMatches = cssContent.match(/#[0-9a-fA-F]{3,8}\b/g);
 		assert.strictEqual(hexMatches, null);

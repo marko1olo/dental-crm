@@ -4,7 +4,7 @@
  * Mandates 8b, 8bf: SSOT consolidation into payrollModules, zero orphaned logic.
  */
 
-import { type Kopecks, formatKopecksRu } from "../../money.js";
+import { type Kopecks, formatKopecksRu, percentageOfKopecks } from "../../money.js";
 import { kopecksToRub as kopecksToRubles } from "../../fiscal/kopecksArithmetic.js";
 import type { ClinicalMaterialWriteoffResult } from "../../warehouse/clinicalMaterialWriteoffEngine.js";
 import {
@@ -372,7 +372,7 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 
 	const netBaseRevenueKop = Math.max(0, grossRevenueKop - labCostKop - materialsCostKop) as Kopecks;
 	const categoryPercent = Math.max(0, Math.min(100, input.categoryPercent));
-	const pieceworkAccruedKop = Math.round((netBaseRevenueKop * categoryPercent) / 100) as Kopecks;
+	const pieceworkAccruedKop = percentageOfKopecks(netBaseRevenueKop, Math.round(categoryPercent * 100));
 
 	const fixedSalaryKop = toKop(input.fixedSalaryRub, input.fixedSalaryKop);
 	const serviceSalaryPriceKop = toKop(input.serviceSalaryPriceRub, input.serviceSalaryPriceKop);
@@ -473,13 +473,13 @@ export function calculateDoctorSalary(
 
 	if (params.model === "gross") {
 		effectiveBaseKop = Math.max(0, baseCandidate) as Kopecks;
-		pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+		pieceworkAccruedKop = percentageOfKopecks(effectiveBaseKop, Math.round(doctorPercent * 100));
 		salaryPriceAdditionKop = salaryPriceApp === "flat_addition" ? salaryPriceKop : 0 as Kopecks;
 	} else if (params.model === "net") {
 		deductedLabKop = labCostKop;
 		deductedExpensiveMaterialsKop = expensiveMaterialsCostKop;
 		effectiveBaseKop = Math.max(0, baseCandidate - labCostKop - expensiveMaterialsCostKop) as Kopecks;
-		pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+		pieceworkAccruedKop = percentageOfKopecks(effectiveBaseKop, Math.round(doctorPercent * 100));
 		salaryPriceAdditionKop = salaryPriceApp === "flat_addition" ? salaryPriceKop : 0 as Kopecks;
 	} else {
 		const paidAmountKop = toKop(params.paidAmountRub, params.paidAmountKop);
@@ -494,7 +494,7 @@ export function calculateDoctorSalary(
 			policy: discountPolicy,
 		});
 		effectiveBaseKop = discountResult.doctorBaseKop;
-		pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+		pieceworkAccruedKop = percentageOfKopecks(effectiveBaseKop, Math.round(doctorPercent * 100));
 		salaryPriceAdditionKop = salaryPriceApp === "flat_addition" ? Math.round(salaryPriceKop * paidRatio) as Kopecks : 0 as Kopecks;
 		deductedLabKop = labCostKop;
 		deductedExpensiveMaterialsKop = expensiveMaterialsCostKop;
@@ -507,7 +507,7 @@ export function calculateDoctorSalary(
 			clinicCostsKop,
 			policy: discountPolicy,
 		});
-		const potentialTotalAt100 = (Math.round((fullDiscountRes.doctorBaseKop * doctorPercent) / 100) + (salaryPriceApp === "flat_addition" ? salaryPriceKop : 0)) as Kopecks;
+		const potentialTotalAt100 = (percentageOfKopecks(fullDiscountRes.doctorBaseKop, Math.round(doctorPercent * 100)) + (salaryPriceApp === "flat_addition" ? salaryPriceKop : 0)) as Kopecks;
 		deferredPendingDoctorEarningsKop = Math.max(0, potentialTotalAt100 - (pieceworkAccruedKop + salaryPriceAdditionKop)) as Kopecks;
 	}
 
@@ -593,7 +593,7 @@ export function calculateServicesPayrollBreakdown(
 		const categoryPercent = item.categoryPercent ?? defaultCategoryPercent;
 
 		const netBaseKop = Math.max(0, priceKop - labCostKop - materialsCostKop) as Kopecks;
-		const pieceworkKop = Math.round((netBaseKop * categoryPercent) / 100) as Kopecks;
+		const pieceworkKop = percentageOfKopecks(netBaseKop, Math.round(categoryPercent * 100));
 		const doctorEarningsKop = (pieceworkKop + salaryPriceKop) as Kopecks;
 
 		totalGrossKop = (totalGrossKop + priceKop) as Kopecks;

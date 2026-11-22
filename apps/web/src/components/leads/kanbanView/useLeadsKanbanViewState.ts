@@ -15,7 +15,7 @@ export function useLeadsKanbanViewState(
 	clinicTimeZone?: string | null,
 ) {
 	const [viewMode, setViewMode] = useState<"funnel" | "all">("funnel");
-	const [expandedColumnId, setExpandedColumnId] = useState<any>(null);
+	const [expandedColumnId, setExpandedColumnId] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sourceFilter, setSourceFilter] = useState("");
 	const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);

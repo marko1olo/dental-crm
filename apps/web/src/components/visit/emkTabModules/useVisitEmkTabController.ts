@@ -8,8 +8,7 @@
 import React from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import { denteQueryClient } from "../../../lib/queryClient";
+import { executeSaveOrReviseDiary } from "./saveOrReviseDiaryAction";
 import {
 	inferProcedureServiceFromStamp, inferCatalogServiceFromStamp, infer804nServiceFromStamp,
 } from "../clinicalProcedureCatalogService";
@@ -311,179 +310,17 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		// Устраняет Hydration Gap (амнезию) между экраном кресла и ЭМК (MedicalRecordStudioModal)
 		const effectiveVisitId = openVisitId || (dashboard?.activeVisit?.id as string | undefined) || "";
 		const effectivePatientId = activePatient?.id || (dashboard?.activeVisit?.patientId as string | undefined) || "";
-		const isUuid = (val: unknown): val is string =>
-			typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-		if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
-			try {
-				const complaintText = String(visitNoteForm?.complaint || "").trim();
-				const anamnesisText = String(visitNoteForm?.anamnesis || "").trim();
-				const statusLocalisText = String(visitNoteForm?.objectiveStatus || "").trim();
-				const diagnosisRaw = String(visitNoteForm?.diagnosis || "").trim();
-				const diagnosisIcd10Code =
-					String(visitNoteForm?.diagnosisIcd10 || "").trim() ||
-					(diagnosisRaw.match(/^[A-Z]\d{2}(?:\.\d{1,2})?/i)?.[0]?.toUpperCase());
-				const treatmentText = String(visitNoteForm?.treatmentPlan || "").trim();
-				const toothRaw = effectiveActiveTooth
-					? String(effectiveActiveTooth)
-					: visitNoteForm?.diagnosisTooth
-						? String(visitNoteForm.diagnosisTooth)
-						: undefined;
+		const saveOk = await executeSaveOrReviseDiary({
+			effectiveVisitId,
+			effectivePatientId,
+			visitNoteForm,
+			effectiveActiveTooth,
+			isSignedVisit,
+			isRevisingVisitNote,
+		});
 
-				const idempotencyKey =
-					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-						? crypto.randomUUID()
-						: generateUuidV7();
-
-				if (isSignedVisit && isRevisingVisitNote) {
-					// Канонический вызов ревизии подписанного дневника («Исправленному верить», Мандат 8e)
-					let targetDiaryId: string | null =
-						typeof visitNoteForm?.diaryId === "string" && isUuid(visitNoteForm.diaryId)
-							? visitNoteForm.diaryId
-							: null;
-
-					if (!targetDiaryId) {
-						try {
-							const diaryLookupRes = await fetch(`/api/diaries/visit/${effectiveVisitId}`, {
-								headers: { ...denteAdminSecretRequestHeaders() },
-								credentials: "same-origin",
-							});
-							if (diaryLookupRes.ok) {
-								const diaryLookupJson = (await diaryLookupRes.json().catch(() => null)) as {
-									diary?: { id?: string | null } | null;
-								} | null;
-								if (typeof diaryLookupJson?.diary?.id === "string" && isUuid(diaryLookupJson.diary.id)) {
-									targetDiaryId = diaryLookupJson.diary.id;
-								}
-							}
-						} catch (fetchErr) {
-							console.warn("useVisitEmkTabController: ошибка поиска diaryId для ревизии", fetchErr);
-						}
-					}
-
-					if (!targetDiaryId) {
-						showToast("Не найден идентификатор дневника для оформления ревизии («Исправленному верить»)", "error", 5000);
-						return;
-					}
-
-					const reviseRes = await fetch(`/api/diaries/${targetDiaryId}/revise`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"Idempotency-Key": idempotencyKey,
-							...denteAdminSecretRequestHeaders(),
-						},
-						credentials: "same-origin",
-						body: JSON.stringify({
-							complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-							anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-							statusLocalis: statusLocalisText || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-							diagnosisIcd10: diagnosisIcd10Code || undefined,
-							diagnosisTooth: toothRaw,
-							treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
-							revisionReason: "Исправленному верить",
-						}),
-					});
-
-					if (!reviseRes.ok) {
-						const errJson = (await reviseRes.json().catch(() => null)) as { error?: string; message?: string } | null;
-						const errorMsg = errJson?.message || "Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
-						console.warn("useVisitEmkTabController: отказ ревизии дневника в /api/diaries/:id/revise", errJson);
-						showToast(errorMsg, "error", 5000);
-						return;
-					}
-
-					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
-
-					if (typeof window !== "undefined") {
-						window.dispatchEvent(
-							new CustomEvent("dente:diary-saved", {
-								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
-							}),
-						);
-						window.dispatchEvent(
-							new CustomEvent("dente:emk-updated", {
-								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
-							}),
-						);
-						window.dispatchEvent(
-							new CustomEvent("dente:visit-updated", {
-								detail: { visitId: effectiveVisitId },
-							}),
-						);
-					}
-
-					if (typeof onSaveVisitNote === "function") {
-						await (onSaveVisitNote as () => Promise<void> | void)();
-					}
-					setIsRevisingVisitNote(false);
-					showToast(
-						"Исправление в дневнике приёма сохранено («Исправленному верить»)",
-						"success",
-						3000,
-					);
-					return;
-				}
-
-				const diaryRes = await fetch("/api/diaries", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"Idempotency-Key": idempotencyKey,
-						...denteAdminSecretRequestHeaders(),
-					},
-					credentials: "same-origin",
-					body: JSON.stringify({
-						visitId: effectiveVisitId,
-						patientId: effectivePatientId,
-						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-						statusLocalis: statusLocalisText || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-						diagnosisIcd10: diagnosisIcd10Code || undefined,
-						diagnosisTooth: toothRaw,
-						treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
-						status: "draft",
-					}),
-				});
-
-				if (!diaryRes.ok) {
-					const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
-					console.warn("useVisitEmkTabController: ошибка сохранения дневника в /api/diaries", errJson);
-					showToast(errJson?.message || "Ошибка сохранения дневника приёма", "error", 5000);
-					return;
-				} else {
-					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
-					void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
-
-					if (typeof window !== "undefined") {
-						window.dispatchEvent(
-							new CustomEvent("dente:diary-saved", {
-								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
-							}),
-						);
-						window.dispatchEvent(
-							new CustomEvent("dente:emk-updated", {
-								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
-							}),
-						);
-						window.dispatchEvent(
-							new CustomEvent("dente:visit-updated", {
-								detail: { visitId: effectiveVisitId },
-							}),
-						);
-					}
-				}
-			} catch (diaryErr) {
-				console.warn("useVisitEmkTabController: сетевая ошибка сохранения дневника в /api/diaries", diaryErr);
-				showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
-				return;
-			}
-		}
+		if (!saveOk) return;
 
 		if (typeof onSaveVisitNote === "function") {
 			await (onSaveVisitNote as () => Promise<void> | void)();

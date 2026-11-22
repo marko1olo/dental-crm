@@ -49,7 +49,7 @@ export interface VisitViewHeaderProps {
 	handleFinishVisitAction: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: (Partial<VisitViewProps> & { setSelectedPatientId?: ((id: string | null) => void) | undefined }) | undefined;
+	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | null | undefined;
 	isHeaderMoreMenuOpen: boolean;
 	setIsHeaderMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	headerMoreMenuRef: React.RefObject<HTMLDivElement | null>;

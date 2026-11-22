@@ -1,4 +1,4 @@
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 
 export type DmsCoverageEvaluationStatus =
 	| "approved"

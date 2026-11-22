@@ -23,18 +23,17 @@ import { SourcesIntegrationPresets } from "./sources/SourcesIntegrationPresets";
 import { MedflexSettingsTab } from "./integrations/MedflexSettingsTab";
 
 export function SettingsSourcesTab() {
-	const appLogic = useAppLogicContext() as {
-		setDicomWebEndpointUrl?: (url: string) => void;
-		checkDicomWebConnector?: () => Promise<void> | void;
-	};
 	return (
 		<>
 			<div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4 items-start">
 				<DicomServerConfigPanel
 					onSaveConfig={(cfg) => {
 						const nextEndpoint = `http://${cfg.host.trim() || "127.0.0.1"}:${cfg.port || 8042}/dicom-web`;
-						appLogic?.setDicomWebEndpointUrl?.(nextEndpoint);
-						void appLogic?.checkDicomWebConnector?.();
+						try {
+							localStorage.setItem("dente_dicomweb_endpoint", nextEndpoint);
+						} catch {
+							// safe quota guard
+						}
 					}}
 				/>
 				<div className="[&>div]:!my-0">

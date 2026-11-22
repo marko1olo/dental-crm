@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 
 export type DmsInsuranceCompanyId =
 	| "sogaz"

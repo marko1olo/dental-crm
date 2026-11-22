@@ -33,16 +33,28 @@ export function OrthopedicsZtlSelectors({
 	onSelectArticulatorType,
 	hasFacebow,
 	onToggleFacebow,
+	guidanceType,
+	onSelectGuidanceType,
+	sagittalCondylarAngleDeg,
+	onChangeSagittalAngle,
+	bennettAngleDeg,
+	onChangeBennettAngle,
 }: OrthopedicsZtlSelectorsProps) {
 	const [internalFixation, setInternalFixation] = useState<"cement" | "screw" | "clasp">(fixationType);
 	const [internalAntagonists, setInternalAntagonists] = useState<boolean>(hasAntagonists);
 	const [internalArticulator, setInternalArticulator] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
 	const [internalFacebow, setInternalFacebow] = useState<boolean>(false);
+	const [internalGuidance, setInternalGuidance] = useState<"canine_guidance" | "group_function" | "mutually_protected" | "balanced_articulation">("canine_guidance");
+	const [internalSagittal, setInternalSagittal] = useState<number>(33);
+	const [internalBennett, setInternalBennett] = useState<number>(15);
 
 	const activeFixation = fixationType ?? internalFixation;
 	const activeAntagonists = hasAntagonists ?? internalAntagonists;
 	const activeArticulator = articulatorType ?? internalArticulator;
 	const activeFacebow = hasFacebow ?? internalFacebow;
+	const activeGuidance = guidanceType ?? internalGuidance;
+	const activeSagittal = sagittalCondylarAngleDeg ?? internalSagittal;
+	const activeBennett = bennettAngleDeg ?? internalBennett;
 
 	return (
 		<>
@@ -60,6 +72,12 @@ export function OrthopedicsZtlSelectors({
 				onSelectArticulator={(type) => { setInternalArticulator(type); onSelectArticulatorType?.(type); }}
 				activeFacebow={activeFacebow}
 				onToggleFacebow={(checked) => { setInternalFacebow(checked); onToggleFacebow?.(checked); }}
+				guidanceType={activeGuidance}
+				onChangeGuidanceType={(g) => { setInternalGuidance(g); onSelectGuidanceType?.(g); }}
+				sagittalCondylarAngleDeg={activeSagittal}
+				onChangeSagittalAngle={(s) => { setInternalSagittal(s); onChangeSagittalAngle?.(s); }}
+				bennettAngleDeg={activeBennett}
+				onChangeBennettAngle={(b) => { setInternalBennett(b); onChangeBennettAngle?.(b); }}
 			/>
 			<ZtlSoloEconomicsCard
 				grossPriceRub={grossPriceRub}

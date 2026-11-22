@@ -17,7 +17,7 @@ import {
 	familyWalletService,
 } from "../../services/familyWallet/FamilyWalletService.js";
 import { generateFnsTaxCertificatesForFamilyLogic } from "../../services/familyWallet/familyFnsTaxService.js";
-import type { FnsClinicInfo } from "../../services/fns/fnsKnd1151156Builder.js";
+import type { FnsClinicInfo } from "@dental/shared";
 import { getFamilyHistoryRecords } from "./familyBalanceService.js";
 import { familyPaymentSchema } from "./familyFinanceTypes.js";
 

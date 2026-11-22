@@ -1,10 +1,7 @@
 import { useState, useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
-import {
-  deriveClinicWorkingHours,
-  findDoctorFreeSlots,
-  type TimeOfDayFilter,
-} from "../doctorFreeSlotsEngine";
+import { findDoctorFreeSlots, type TimeOfDayFilter } from "@dental/shared";
+import { deriveClinicWorkingHours } from "../freeSlotsModules";
 
 export interface UseDoctorFreeSlotsParams {
   dashboard: Dashboard;

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { registerBackupRoutes } from "./backupRoutes.js";
+import { registerBranchesRoutes } from "./branchesRoutes.js";
 import { registerChairsRoutes } from "./chairsRoutes.js";
 import { registerClinicProfileRoutes } from "./clinicProfileRoutes.js";
 import { registerProtocolTemplatesRoutes } from "./protocolTemplatesRoutes.js";
@@ -32,4 +33,5 @@ export async function registerSettingsRoutes(
 	registerServiceCatalogRoutes(app);
 	registerProtocolTemplatesRoutes(app);
 	registerBackupRoutes(app);
+	registerBranchesRoutes(app);
 }

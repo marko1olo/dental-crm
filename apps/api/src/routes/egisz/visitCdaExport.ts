@@ -91,10 +91,6 @@ export function registerVisitCdaExportRoute(app: FastifyInstance): void {
 			return reply.status(422).send({ error: "CdaGenerationFailed", message: "Ошибка схемы CDA.", details: cdaResult.error.issues });
 		}
 
-		try {
-			await db.insert(schema.egiszLogs).values({ organizationId: orgId, patientId: row.patient.id, visitId: row.visit.id, status: "Pending" });
-		} catch { /* ignore log write error */ }
-
 		return reply.header("content-type", "application/xml; charset=utf-8").header("content-disposition", `attachment; filename="cda-${row.visit.id}.xml"`).status(200).send(cdaResult.xml);
 	});
 }

@@ -14,6 +14,7 @@ import type {
 } from "@dental/shared";
 export type { DicomSeriesPreviewGroup };
 import type { ChangeEvent, CSSProperties, KeyboardEvent, ReactNode } from "react";
+import type { CtPlanningQuickAction } from "../../../../ctPlanningCatalog";
 import type { MprClinicalChecklistItem, MprOperatorSummaryCardItem } from "./DicomMprRoadmapPanel";
 
 export type CbctWorkbenchPlane = { key: string; title: string; detail: string };
@@ -238,7 +239,7 @@ export interface DicomMprWorkbenchPropsBag {
 	mprControlsReady?: boolean | undefined;
 	imagingViewerActiveTool?: ImagingViewerTool | null | undefined;
 	ctPlanningActiveQuickActionId?: string | null | undefined;
-	applyCtPlanningQuickAction?: ((actionId: string) => void) | undefined;
+	applyCtPlanningQuickAction?: ((action: CtPlanningQuickAction | string) => void) | undefined;
 	ctPlanningImplantPlan?: ImagingViewerImplantPlan | null | undefined;
 	selectCtPlanningImplantFromSettings?: ((implantId: string) => void) | undefined;
 	dicomViewerWorkbenchManifest?: DicomViewerWorkbenchManifestResponse | null | undefined;

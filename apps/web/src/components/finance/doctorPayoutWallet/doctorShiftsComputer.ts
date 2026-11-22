@@ -5,6 +5,7 @@
 
 import type { DoctorPayoutRow, DoctorPayoutVisit, ShiftSummaryItem } from "./types.js";
 import { formatShiftDate } from "./types.js";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks, type Kopecks } from "@dental/shared";
 
 export function computeDoctorShifts(
 	currentDoctor: DoctorPayoutRow | null,
@@ -22,47 +23,96 @@ export function computeDoctorShifts(
 	}
 
 	const sortedDates = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
-	const commissionRate = (currentDoctor.commissionPct ?? 0) / 100;
+	const commissionBasisPoints = Math.round((currentDoctor.commissionPct ?? 0) * 100);
 	const labOrdersList = currentDoctor.labOrders ?? [];
 
 	return sortedDates.map((dateStr) => {
-		const vList = map.get(dateStr) ?? [];
-		const rev = vList.reduce((acc, v) => acc + v.revenueRub, 0);
+		const rawVList = map.get(dateStr) ?? [];
+		const shiftPatients = new Set(rawVList.map((v) => v.patientName.trim().toLowerCase()));
 
-		// Себестоимость расходных материалов визитов смены (за вычетом общеклинических накладных)
-		let shiftMaterialsCostRub = 0;
-		for (const v of vList) {
-			if (Array.isArray(v.materials)) {
-				for (const m of v.materials) {
-					if (!m.isOverheadConsumable && !m.coveredByClinic) {
-						shiftMaterialsCostRub += (m.totalCostRub || 0);
+		const patientLabMap = new Map<string, number>();
+		let unlinkedLabKop = 0;
+		if (labOrdersList.length > 0) {
+			for (const lo of labOrdersList) {
+				const orderDate = lo.completedAt ? lo.completedAt.slice(0, 10) : "";
+				const pName = lo.patientName.trim().toLowerCase();
+				const isSameDate = orderDate === dateStr;
+				const isSamePatient = shiftPatients.has(pName);
+				if (isSameDate || isSamePatient) {
+					const loKop = rublesToKopecks(lo.withheldRub != null ? lo.withheldRub : lo.priceRub || 0);
+					if (isSamePatient) {
+						patientLabMap.set(pName, (patientLabMap.get(pName) ?? 0) + loKop);
+					} else {
+						unlinkedLabKop += loKop;
 					}
 				}
 			}
 		}
 
-		// Себестоимость зуботехнической лаборатории (ЗТЛ) смены
-		let shiftLabCostRub = 0;
-		if (labOrdersList.length > 0) {
-			const shiftPatients = new Set(vList.map((v) => v.patientName.trim().toLowerCase()));
-			for (const lo of labOrdersList) {
-				const orderDate = lo.completedAt ? lo.completedAt.slice(0, 10) : "";
-				const isSameDate = orderDate === dateStr;
-				const isSamePatient = shiftPatients.has(lo.patientName.trim().toLowerCase());
-				if (isSameDate || isSamePatient) {
-					shiftLabCostRub += (lo.withheldRub != null ? lo.withheldRub : lo.priceRub || 0);
+		type VisitDraft = {
+			visit: DoctorPayoutVisit;
+			revKop: number;
+			matKop: number;
+			labKop: number;
+			netKop: number;
+			earnedKop: number;
+		};
+
+		const visitDrafts: VisitDraft[] = [];
+		let shiftRevKop = 0;
+		let shiftMatKop = 0;
+		let shiftLabKop = unlinkedLabKop;
+
+		for (let i = 0; i < rawVList.length; i++) {
+			const v = rawVList[i]!;
+			const revKop = rublesToKopecks(v.revenueRub);
+			let matKop = 0;
+			if (Array.isArray(v.materials)) {
+				for (const m of v.materials) {
+					if (!m.isOverheadConsumable && !m.coveredByClinic) {
+						matKop += rublesToKopecks(m.totalCostRub || 0);
+					}
 				}
 			}
+
+			const pName = v.patientName.trim().toLowerCase();
+			let labKop = patientLabMap.get(pName) ?? 0;
+			patientLabMap.delete(pName);
+
+			if (i === 0 && unlinkedLabKop > 0) {
+				labKop += unlinkedLabKop;
+			}
+
+			const netKop = Math.max(0, revKop - matKop - labKop);
+			const earnedKop = percentageOfKopecks(netKop as Kopecks, commissionBasisPoints);
+
+			shiftRevKop += revKop;
+			shiftMatKop += matKop;
+			shiftLabKop += (labKop - (i === 0 ? unlinkedLabKop : 0));
+
+			visitDrafts.push({ visit: v, revKop, matKop, labKop, netKop, earnedKop });
 		}
 
-		// Чистая база смены (Net Revenue = Выручка - Материалы - ЗТЛ)
-		const netRevenueRub = Math.max(0, rev - shiftMaterialsCostRub - shiftLabCostRub);
-		const earned = Math.round(netRevenueRub * commissionRate);
-		const { formatted, dayOfWeek } = formatShiftDate(dateStr);
+		const shiftNetRevKop = Math.max(0, shiftRevKop - shiftMatKop - shiftLabKop);
+		const totalShiftEarnedKop = percentageOfKopecks(shiftNetRevKop as Kopecks, commissionBasisPoints);
 
-		// Реалистичная длительность смены (ст. 350 ТК РФ: стандарт 6 ч., либо фактический интервал приемов)
+		const sumDraftEarnedKop = visitDrafts.reduce((acc, d) => acc + d.earnedKop, 0);
+		const residualKop = totalShiftEarnedKop - sumDraftEarnedKop;
+
+		const enrichedVisits: DoctorPayoutVisit[] = visitDrafts.map((d, idx) => {
+			const finalEarnedKop = (idx === visitDrafts.length - 1) ? Math.max(0, d.earnedKop + residualKop) : d.earnedKop;
+			return {
+				...d.visit,
+				materialsCostRub: kopecksToRubles(d.matKop as Kopecks),
+				labCostRub: kopecksToRubles(d.labKop as Kopecks),
+				netRevenueRub: kopecksToRubles(d.netKop as Kopecks),
+				earnedRub: kopecksToRubles(finalEarnedKop as Kopecks),
+			};
+		});
+
+		const { formatted, dayOfWeek } = formatShiftDate(dateStr);
 		let estimatedHours = 6;
-		const validTimestamps = vList
+		const validTimestamps = rawVList
 			.map((v) => Date.parse(v.paidAt))
 			.filter((t) => !Number.isNaN(t));
 
@@ -77,11 +127,11 @@ export function computeDoctorShifts(
 			date: dateStr,
 			formattedDate: formatted,
 			dayOfWeek,
-			visits: vList,
-			patientCount: vList.length,
+			visits: enrichedVisits,
+			patientCount: rawVList.length,
 			estimatedHours,
-			shiftRevenueRub: rev,
-			shiftEarnedRub: earned,
+			shiftRevenueRub: kopecksToRubles(shiftRevKop as Kopecks),
+			shiftEarnedRub: kopecksToRubles(totalShiftEarnedKop),
 		};
 	});
 }

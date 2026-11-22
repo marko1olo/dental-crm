@@ -20,7 +20,7 @@ import {
 	type GenericStockBatch,
 	isChestnyZnakMdlpRequired,
 	isStrictLotTrackingRequired,
-} from "../warehouse/consumables.js";
+} from "../inventory/consumables.js";
 import { parseKopecks } from "../money.js";
 
 describe("Transparent Consumable FIFO & Strict Lot/MDLP Tracking Policy", () => {

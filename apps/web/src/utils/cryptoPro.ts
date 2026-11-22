@@ -7,9 +7,61 @@ import { logger } from "./logger";
  * under GOST R 34.10-2012 (Hardware CAdES-BES contour).
  */
 
+export interface CadesCertificateItem {
+	SubjectName: Promise<string>;
+	IssuerName: Promise<string>;
+	ValidFromDate: Promise<string | Date>;
+	ValidToDate: Promise<string | Date>;
+	Thumbprint: Promise<string>;
+	HasPrivateKey: () => Promise<boolean>;
+	IsValid: () => Promise<{ Result: Promise<boolean> | boolean }>;
+	SerialNumber?: Promise<string>;
+	PublicKey: () => Promise<{ Algorithm: Promise<{ Value?: Promise<string>; FriendlyName?: Promise<string> }> }>;
+}
+
+export interface CadesCertificatesCollection {
+	Count: Promise<number>;
+	Item: (index: number) => Promise<CadesCertificateItem>;
+	Find: (findType: number, query: string) => Promise<CadesCertificatesCollection>;
+}
+
+export interface CadesStoreObject {
+	Open: (containerStore: number, storeName: string, openMode: number) => Promise<void>;
+	Close: () => Promise<void>;
+	Certificates: Promise<CadesCertificatesCollection>;
+}
+
+export interface CadesSignerObject {
+	propset_Certificate: (cert: unknown) => Promise<void>;
+	propset_CheckCertificate: (check: boolean) => Promise<void>;
+	propset_KeyPin: (pin: string) => Promise<void>;
+}
+
+export interface CadesSignedDataObject {
+	propset_ContentEncoding: (encoding: number) => Promise<void>;
+	propset_Content: (content: string) => Promise<void>;
+	SignCades: (signer: CadesSignerObject, cadesType: number, detached: boolean) => Promise<string>;
+}
+
+export interface CadesPluginInstance {
+	then: (onfulfilled?: () => void, onrejected?: (reason: unknown) => void) => Promise<unknown>;
+	CreateObjectAsync: {
+		(name: "CAdESCOM.Store"): Promise<CadesStoreObject>;
+		(name: "CAdESCOM.CPSigner"): Promise<CadesSignerObject>;
+		(name: "CAdESCOM.CadesSignedData"): Promise<CadesSignedDataObject>;
+		(name: string): Promise<unknown>;
+	};
+	CADESCOM_CONTAINER_STORE: number;
+	CAPICOM_MY_STORE: string;
+	CAPICOM_STORE_OPEN_READ_ONLY: number;
+	CAPICOM_CERTIFICATE_FIND_SHA1_HASH: number;
+	CADESCOM_BASE64_TO_BINARY: number;
+	CADESCOM_CADES_BES: number;
+}
+
 declare global {
 	interface Window {
-		cadesplugin?: unknown;
+		cadesplugin?: CadesPluginInstance | undefined;
 	}
 }
 
@@ -232,7 +284,9 @@ export async function checkCryptoProPlugin(): Promise<boolean> {
 	if (typeof window !== "undefined" && window.cadesplugin) {
 		try {
 			await withTimeout(
-				window.cadesplugin.then,
+				new Promise<void>((resolve, reject) => {
+					window.cadesplugin?.then(() => resolve(), reject);
+				}),
 				5000,
 				"Таймаут инициализации плагина КриптоПро.",
 			);
@@ -252,6 +306,9 @@ export async function checkCryptoProPlugin(): Promise<boolean> {
  */
 async function getCertificatesFromCadesPlugin(): Promise<CryptoProCertificate[]> {
 	const cades = window.cadesplugin;
+	if (!cades) {
+		throw new Error("cadesplugin не обнаружен.");
+	}
 	return await withTimeout(
 		(async () => {
 			const oStore = await cades.CreateObjectAsync("CAdESCOM.Store");
@@ -338,7 +395,13 @@ export async function getPersonalCertificates(): Promise<CryptoProCertificate[]>
 	// 1. Попытка чтения через браузерный плагин cadesplugin
 	if (typeof window !== "undefined" && window.cadesplugin) {
 		try {
-			await withTimeout(window.cadesplugin.then, 5000, "Таймаут");
+			await withTimeout(
+				new Promise<void>((resolve, reject) => {
+					window.cadesplugin?.then(() => resolve(), reject);
+				}),
+				5000,
+				"Таймаут",
+			);
 			return await getCertificatesFromCadesPlugin();
 		} catch (cadesErr) {
 			logger.warn("CAdESCOM plugin store fetch failed, falling back to native bridge:", cadesErr);
@@ -399,6 +462,9 @@ async function signWithCadesPlugin(
 	pin?: string,
 ): Promise<string> {
 	const cades = window.cadesplugin;
+	if (!cades) {
+		throw new Error("cadesplugin не обнаружен.");
+	}
 	return await withTimeout(
 		(async () => {
 			const oStore = await cades.CreateObjectAsync("CAdESCOM.Store");
@@ -472,7 +538,13 @@ export async function signBase64WithCertificate(
 	// 1. Попытка формирования подписи через браузерный плагин cadesplugin
 	if (typeof window !== "undefined" && window.cadesplugin) {
 		try {
-			await withTimeout(window.cadesplugin.then, 5000, "Таймаут");
+			await withTimeout(
+				new Promise<void>((resolve, reject) => {
+					window.cadesplugin?.then(() => resolve(), reject);
+				}),
+				5000,
+				"Таймаут",
+			);
 			return await signWithCadesPlugin(base64Content, thumbprint, pin);
 		} catch (cadesErr) {
 			logger.warn("CAdESCOM signing failed, trying native CLI bridge:", cadesErr);

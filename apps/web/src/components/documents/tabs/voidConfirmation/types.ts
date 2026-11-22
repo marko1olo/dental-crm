@@ -7,18 +7,18 @@ import type {
 } from "@dental/shared";
 
 export interface DocumentVoidConfirmationModalProps {
-	documentVoidConfirmation: GeneratedDocument | null;
-	documentLabels?: Record<DocumentKind, string>;
-	documentStatusLabels?: Record<DocumentStatus, string>;
-	patientName?: (patients: Patient[] | undefined, id: string | null | undefined) => string;
-	patients?: Patient[];
+	documentVoidConfirmation?: GeneratedDocument | null | undefined;
+	documentLabels?: Record<DocumentKind, string> | undefined;
+	documentStatusLabels?: Record<DocumentStatus, string> | undefined;
+	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | string | undefined;
+	patients?: Patient[] | undefined;
 	documentVoidReasonCode: DocumentVoidAttestation["reasonCode"];
 	setDocumentVoidReasonCode: (code: DocumentVoidAttestation["reasonCode"]) => void;
 	normalizedDocumentVoidReasonCode: (val: string) => DocumentVoidAttestation["reasonCode"];
 	documentVoidReasonLabels: Record<string, string>;
 	documentVoidStaffFullName: string;
 	setDocumentVoidStaffFullName: (val: string) => void;
-	activeDoctor?: { fullName?: string } | null;
+	activeDoctor?: { fullName?: string } | null | undefined;
 	documentVoidStaffRole: string;
 	setDocumentVoidStaffRole: (val: string) => void;
 	documentVoidCorrectionDocumentId: string;

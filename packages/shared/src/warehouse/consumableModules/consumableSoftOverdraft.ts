@@ -1,4 +1,4 @@
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import { roundQuantity } from "./consumableLinkManager.js";
 import type { ConsumableDeductedItem, PlannedServiceConsumable } from "./consumableTypes.js";
 
@@ -53,12 +53,6 @@ export function processConsumablesStockDeduction(
 				? "Накладная в пути. Лечение не блокируется."
 				: "Операция не блокируется.");
 			const warningMsg = `${prefix} позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. Остаток 0, требуется пополнение. ${suffix}`;
-
-			if (!allowOverdraft) {
-				throw new Error(
-					`Складской дефицит: недостаточно остатка позиции «${planned.itemName}» (доступно: ${currentStock}, требуется: ${planned.requiredQuantity} ${planned.unit})`,
-				);
-			}
 
 			overdraftWarning = warningMsg;
 			softOverdrafts.push(warningMsg);

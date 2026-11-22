@@ -189,8 +189,8 @@ export function resetL2DbConnection(): void {
 	if (cachedDbInstance) {
 		try {
 			cachedDbInstance.close();
-		} catch {
-			// ignore
+		} catch (closeErr) {
+			logger.debug("[L2Storage] Database close error:", closeErr);
 		}
 		cachedDbInstance = null;
 	}

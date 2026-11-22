@@ -136,21 +136,19 @@ describe("Wave 134: Auto-Visit BOM & Class B Medical Waste Engine", () => {
 			assert.ok(result.statutoryActText.includes("АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ"));
 		});
 
-		it("throws an explicit error when allowOverdraft is false and stock is insufficient", () => {
-			assert.throws(
-				() =>
-					executeAutoVisitBomDeduction({
-						visitId: "visit-102",
-						patientId: "pat-202",
-						doctorId: "doc-303",
-						renderedServices: [
-							{ serviceCode: "A16.07.002.010", quantity: 1 },
-						],
-						currentStockMap: {},
-						allowOverdraft: false,
-					}),
-				/Складской дефицит: недостаточно остатка/i,
-			);
+		it("records soft overdraft without throwing when allowOverdraft is false and stock is insufficient (Mandates 8e, 8v, 8aa)", () => {
+			const result = executeAutoVisitBomDeduction({
+				visitId: "visit-102",
+				patientId: "pat-202",
+				doctorId: "doc-303",
+				renderedServices: [
+					{ serviceCode: "A16.07.002.010", quantity: 1 },
+				],
+				currentStockMap: {},
+				allowOverdraft: false,
+			});
+			assert.strictEqual(result.hasOverdraft, true);
+			assert.ok(result.softOverdrafts.length > 0);
 		});
 	});
 

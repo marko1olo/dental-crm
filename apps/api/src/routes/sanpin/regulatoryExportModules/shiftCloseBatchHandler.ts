@@ -7,10 +7,11 @@
 import crypto from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { saveShiftAutoclaveRecords } from "./shiftCloseAutoclaveSaver.js";
+import { saveShiftBactericidalRecords } from "./shiftCloseBactericidalSaver.js";
 import { saveShiftMicroclimateRecords } from "./shiftCloseMicroclimateSaver.js";
 import { saveShiftPsoRecords } from "./shiftClosePsoSaver.js";
 import { saveShiftWasteRecords } from "./shiftCloseWasteSaver.js";
@@ -38,18 +39,19 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 	const operatorId = getRequestIdentity(req).userId || null;
 
 	try {
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			const insertedPsoCount = await saveShiftPsoRecords(tx, organizationId, body, operatorId, operatorName);
 			const insertedSterilCount = await saveShiftAutoclaveRecords(tx, organizationId, body, operatorId, dateStr);
 			const insertedWasteCount = await saveShiftWasteRecords(tx, organizationId, body, operatorId, dateStr, operatorName);
 			const insertedMicroCount = await saveShiftMicroclimateRecords(tx, organizationId, body, operatorId, dateStr);
+			const insertedBactCount = await saveShiftBactericidalRecords(tx, organizationId, body, operatorId, dateStr, operatorName);
 
 			return {
 				insertedPsoCount,
 				insertedSterilCount,
 				insertedWasteCount,
 				insertedMicroCount,
-				insertedBactCount: 0,
+				insertedBactCount,
 			};
 		});
 
@@ -65,9 +67,11 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 			counts: result,
 			savedRecords: {
 				form257: result.insertedSterilCount,
+				autoclaveCycles: result.insertedSterilCount,
 				pso: result.insertedPsoCount,
 				waste: result.insertedWasteCount,
 				microclimate: result.insertedMicroCount,
+				bactericidal: result.insertedBactCount,
 			},
 			messageRu: `Смена ${dateStr} успешно зафиксирована в журналах СанПиН.`,
 		});

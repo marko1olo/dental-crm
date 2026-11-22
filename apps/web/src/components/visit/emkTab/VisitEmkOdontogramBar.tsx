@@ -18,7 +18,7 @@ import {
 	mergeMultiToothObjective,
 	mergeMultiToothTreatmentPlan,
 } from "../../../utils/clinicalTextSanitizer";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import {
@@ -133,9 +133,10 @@ export function VisitEmkOdontogramBar({
 					// Async background persist to PostgreSQL
 					fetch(`/api/patients/${patId}/tooth-states/batch`, {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({
+						headers: {
 							"Content-Type": "application/json",
-						}),
+							...getDenteAuthHeaders(),
+						},
 						body: JSON.stringify({
 							toothNumbers: [num],
 							state: canonicalState,
@@ -302,9 +303,10 @@ export function VisitEmkOdontogramBar({
 
 			fetch(`/api/patients/${patId}/tooth-states/batch`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: {
 					"Content-Type": "application/json",
-				}),
+					...getDenteAuthHeaders(),
+				},
 				body: JSON.stringify({
 					toothNumbers: numbers,
 					state: "Healthy",

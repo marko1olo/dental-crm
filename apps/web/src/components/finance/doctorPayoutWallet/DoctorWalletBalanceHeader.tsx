@@ -1,5 +1,6 @@
 import React from "react";
 import { money } from "../../../AppHelpers";
+import { rublesToKopecks } from "@dental/shared";
 import { Calendar, Sparkles, User } from "lucide-react";
 import type { DoctorPayoutRow } from "./types.js";
 
@@ -113,7 +114,7 @@ export function DoctorWalletBalanceHeader({
 						type="button"
 						onClick={() => {
 							if (onRequestPayout) {
-								onRequestPayout(currentDoctor, Math.round(payoutAmountRub * 100));
+								onRequestPayout(currentDoctor, rublesToKopecks(payoutAmountRub));
 							}
 						}}
 						data-testid="doctor-wallet-request-payout-btn"

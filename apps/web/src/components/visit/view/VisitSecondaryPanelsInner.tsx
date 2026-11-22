@@ -6,6 +6,7 @@ import type {
 	Dashboard,
 	DentalSpecialty,
 	StaffRole,
+	VisitCloseChecklist,
 	VisitCloseChecklistItem,
 	VisitNoteDraft,
 } from "@dental/shared";
@@ -27,7 +28,7 @@ export interface VisitSecondaryPanelsInnerProps {
 	selectedProtocolTemplate: VisitProtocolTemplateItem | null;
 	safeSpecialtyLabels?: Record<string, string> | undefined;
 	dashboard: Dashboard | null;
-	specialtiesWithTemplates?: Array<DentalSpecialty | string> | undefined;
+	specialtiesWithTemplates?: readonly (DentalSpecialty | string)[] | Array<DentalSpecialty | string> | undefined;
 	selectedSpecialty?: DentalSpecialty | string | undefined;
 	setSelectedSpecialty?:
 		| ((
@@ -40,9 +41,10 @@ export interface VisitSecondaryPanelsInnerProps {
 	setSelectedProtocolId?:
 		| ((val: string | null | ((prev: string | null) => string | null)) => void)
 		| undefined;
-	specialtyProtocolTemplates?: VisitProtocolTemplateItem[] | undefined;
+	specialtyProtocolTemplates?: readonly VisitProtocolTemplateItem[] | VisitProtocolTemplateItem[] | undefined;
 	applyProtocolTemplate?:
 		| ((t: VisitProtocolTemplateItem) => void)
+		| null
 		| undefined;
 	activeWorkspaceRole?: StaffRole | string | undefined;
 	activeVisitClinicalRuleEvaluations?: ClinicalRuleEvaluation[] | undefined;
@@ -62,7 +64,7 @@ export interface VisitSecondaryPanelsInnerProps {
 	setIsStagePaymentModalOpen: (v: boolean) => void;
 	transcript: string;
 	setVisitNoteForm: React.Dispatch<React.SetStateAction<VisitNoteFormExtended>>;
-	visitCloseChecklist?: VisitCloseChecklistItem[] | undefined;
+	visitCloseChecklist?: VisitCloseChecklist | VisitCloseChecklistItem[] | null | undefined;
 	openCloseChecklistSection?:
 		| ((task: VisitCloseChecklistItem) => void)
 		| undefined;
@@ -392,36 +394,41 @@ export function VisitSecondaryPanelsInner({
 				</div>
 			) : null}
 
-			{Array.isArray(visitCloseChecklist) && visitCloseChecklist.length > 0 ? (
-				<section className="close-checklist" aria-label="Чек-лист закрытия приема">
-					{(visitCloseChecklist || [])
-						.filter((task) =>
-							dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-								? task.ownerRole !== "assistant"
-								: true,
-						)
-						.map((task) => (
-							<button
-								className={`close-task min-h-[44px] px-3 py-2 min-w-0 ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
-								key={task.id}
-								type="button"
-								onClick={() => openCloseChecklistSection(task)}
-							>
-								<CheckCircle2 aria-hidden="true" className="shrink-0" />
-								<div className="min-w-0">
-									<strong className="break-words leading-tight">
-										{task.title}
-									</strong>
-									<p className="break-words leading-tight">{task.detail}</p>
-									<small className="break-words leading-tight">
-										{staffRoleLabels?.[task.ownerRole] || "исполнитель не указан"}{" "}
-										· {task.actionLabel}
-									</small>
-								</div>
-							</button>
-						))}
-				</section>
-			) : null}
+			{(() => {
+				const checklistItems: VisitCloseChecklistItem[] = Array.isArray(visitCloseChecklist)
+					? visitCloseChecklist
+					: (visitCloseChecklist?.items ?? []);
+				return checklistItems.length > 0 ? (
+					<section className="close-checklist" aria-label="Чек-лист закрытия приема">
+						{checklistItems
+							.filter((task) =>
+								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
+									? task.ownerRole !== "assistant"
+									: true,
+							)
+							.map((task) => (
+								<button
+									className={`close-task min-h-[44px] px-3 py-2 min-w-0 ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
+									key={task.id}
+									type="button"
+									onClick={() => openCloseChecklistSection?.(task)}
+								>
+									<CheckCircle2 aria-hidden="true" className="shrink-0" />
+									<div className="min-w-0">
+										<strong className="break-words leading-tight">
+											{task.title}
+										</strong>
+										<p className="break-words leading-tight">{task.detail}</p>
+										<small className="break-words leading-tight">
+											{staffRoleLabels?.[task.ownerRole] || "исполнитель не указан"}{" "}
+											· {task.actionLabel}
+										</small>
+									</div>
+								</button>
+							))}
+					</section>
+				) : null;
+			})()}
 		</>
 	);
 }

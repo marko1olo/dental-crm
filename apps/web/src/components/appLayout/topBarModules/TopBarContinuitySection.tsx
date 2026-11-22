@@ -7,20 +7,20 @@ import { WorkspaceContinuityStrip } from "../../../workspaceContinuityStrip";
 import type { TopBarEmergencyAndSyncProps } from "../types/topBarBaseTypes";
 
 export function TopBarContinuitySection({
-	browserContinuityCritical,
+	browserContinuityCritical = false,
 	browserContinuity,
-	isOnline,
-	isPendingVisitSyncing,
-	refreshBrowserContinuity,
-	flushPendingSpeechChunks,
-	flushPendingVisitSaves,
-	pendingSpeechChunkCount,
-	pendingVisitSaveCount,
+	isOnline = true,
+	isPendingVisitSyncing = false,
+	refreshBrowserContinuity = async () => {},
+	flushPendingSpeechChunks = async () => {},
+	flushPendingVisitSaves = async () => {},
+	pendingSpeechChunkCount = 0,
+	pendingVisitSaveCount = 0,
 	networkState,
-	pendingMutationCount,
-	syncOfflineMutations,
-	isSyncingMutations,
-}: TopBarEmergencyAndSyncProps) {
+	pendingMutationCount = 0,
+	syncOfflineMutations = async () => {},
+	isSyncingMutations = false,
+}: Partial<TopBarEmergencyAndSyncProps>) {
 	return (
 		<WorkspaceContinuityStrip
 			browserContinuityCritical={browserContinuityCritical}

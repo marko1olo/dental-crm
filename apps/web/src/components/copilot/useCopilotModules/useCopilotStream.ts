@@ -27,7 +27,7 @@ interface UseCopilotStreamParams {
 	setWhatsappHitLCards: React.Dispatch<
 		React.SetStateAction<WhatsAppApprovalCard[]>
 	>;
-	cacheNames: (toolName: string, result: unknown) => void;
+	cacheNames: (toolName: string, result: unknown, args?: Record<string, unknown>) => void;
 }
 
 const mapAssistantPhase = (p: string): CopilotPhase =>

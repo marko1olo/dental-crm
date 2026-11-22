@@ -72,13 +72,13 @@ export function BotAdminsStep({
 
 				{/* Plugin 2: Reminders 24h & 2h */}
 				<div className={`bot-plugin-card ${pluginReminders ? "enabled" : ""}`}>
-					<div className="bot-plugin-icon-wrap bg-blue-500/10 text-blue-600 dark:text-blue-400">
+					<div className="bot-plugin-icon-wrap bg-[var(--primary-soft)] text-[var(--primary)]">
 						<Clock size={20} />
 					</div>
 					<div className="bot-plugin-info">
 						<div className="flex items-center gap-2">
 							<h4 className="bot-plugin-title">Автоматические напоминания о приёме (24ч и 2ч)</h4>
-							<span className="bot-pill-mini text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/50">
+							<span className="bot-pill-mini text-[var(--primary)] bg-[var(--primary-soft)]">
 								No-Show защита
 							</span>
 						</div>

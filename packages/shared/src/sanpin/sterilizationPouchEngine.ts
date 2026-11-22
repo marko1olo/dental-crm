@@ -52,13 +52,16 @@ export interface ChairsideIndicatorState {
 	readonly verifiedAtIso: string;
 }
 
-export interface Form257LinkRef {
+export interface JournalAutoclaveRecord {
 	readonly recordId: string; // e.g. F257-20260925-АК01-C01
 	readonly journalTitleRu: string;
 	readonly digitalStampHash: string; // DENTE-CSO-257-...
 	readonly isLinked: boolean;
 	readonly sanpinClauseRu: string;
 }
+
+export type Form257LinkRef = JournalAutoclaveRecord;
+export type JournalAutoclaveLinkRef = JournalAutoclaveRecord;
 
 export type ChairsideTrayKind =
 	| "therapeutic"
@@ -82,7 +85,9 @@ export interface ChairsidePouchRecord {
 	readonly indicator: ChairsideIndicatorState;
 	readonly autoclave: ChairsideAutoclaveParams;
 	readonly form257Link: Form257LinkRef;
+	readonly autoclaveLink?: JournalAutoclaveRecord | undefined;
 	readonly formattedDiaryText043: string;
+	readonly formattedDiaryText?: string | undefined;
 	readonly statutoryDiarySnippet: string;
 	readonly createdAtIso: string;
 }
@@ -489,11 +494,17 @@ export function createChairsidePouchRecord(
 		indicator,
 		autoclave,
 		form257Link,
+		autoclaveLink: form257Link,
 		formattedDiaryText043,
+		formattedDiaryText: formattedDiaryText043,
 		statutoryDiarySnippet,
 		createdAtIso: new Date().toISOString(),
 	};
 }
+
+export const createAutoclaveLink = createForm257Link;
+export const formatSterilizationDiarySnippet = formatPouch043StatutorySnippet;
+export const formatSterilizationFullDiaryText = formatPouch043FullDiaryText;
 
 /**
  * Создает полноценную запись цикла автоклавирования для электронного журнала,

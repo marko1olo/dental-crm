@@ -19,7 +19,6 @@ import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault
 import { WhatsappConnectionHubService } from "../../services/messaging/whatsappConnectionHub.js";
 import {
 	qrSessionStartSchema,
-	qrSimulateAuthSchema,
 	updateWhatsappConfigSchema,
 	wabaConnectSchema,
 	wabaTestSchema,
@@ -327,49 +326,14 @@ export async function registerConnectionHubRoutes(
 
 	/**
 	 * POST /api/whatsapp/qr/session/simulate-auth
-	 * Тестовая / Демо авторизация для мгновенной верификации и E2E тестов.
+	 * Эндпоинт симуляции ликвидирован (DEF-MSG-01 / Мандаты 8z, 8ap).
 	 */
-	app.post("/api/whatsapp/qr/session/simulate-auth", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"whatsapp qr simulate auth",
-		);
-		if (!orgId) return;
-
-		if (
-			process.env.NODE_ENV !== "test" &&
-			process.env.DENTE_DEMO_MODE !== "true"
-		) {
-			reply.code(403);
-			return {
-				error: "SimulationForbidden",
-				message:
-					"Симуляция авторизации WhatsApp Web запрещена в боевом режиме. Подключите официальный WhatsApp Business Cloud API.",
-			};
-		}
-
-		const parsed = qrSimulateAuthSchema.safeParse(request.body || {});
-		const data = parsed.success
-			? parsed.data
-			: {
-					phone: "+7 (999) 123-45-67",
-					deviceModel: "Рабочий iPhone клиники",
-				};
-
-		const session = WhatsappConnectionHubService.simulateAuthenticate(
-			orgId,
-			data.phone,
-			data.deviceModel,
-		);
-
+	app.post("/api/whatsapp/qr/session/simulate-auth", async (_request, reply) => {
+		reply.code(403);
 		return {
-			ok: true,
-			status: session.status,
-			connectedPhone: session.connectedPhone,
-			connectedAt: session.connectedAt,
-			deviceModel: session.deviceModel,
-			isSimulated: session.isSimulated,
+			error: "SimulationForbidden",
+			message:
+				"Симуляция авторизации WhatsApp Web ликвидирована (Мандат 8ap). Для работы используйте официальный WhatsApp Business Cloud API.",
 		};
 	});
 

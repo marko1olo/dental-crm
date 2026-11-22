@@ -8,7 +8,6 @@ import {
 	type InstallmentPaymentStatus,
 	type PaymentMethod,
 	type PricelistSourceKind,
-	type TreatmentPlanAcceptanceVariant,
 } from "@dental/shared";
 import {
 	safeLocalStorageGetItem,
@@ -46,7 +45,7 @@ import {
 import {
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
-} from "./patientFormatters";
+} from "../appHelpers/uiFormatters.js";
 
 export { pricelistSourceKindLabels };
 
@@ -261,16 +260,7 @@ export function normalizedPaymentRefundCorrectionMethod(
 		: "card";
 }
 
-export const treatmentAcceptanceVariantOptions: readonly TreatmentPlanAcceptanceVariant[] =
-	["urgent", "standard", "optimal", "staged", "maintenance", "other"];
 
-export function normalizedTreatmentPlanAcceptanceVariant(
-	value: unknown,
-): TreatmentPlanAcceptanceVariant {
-	return isStringUnionValue(value, treatmentAcceptanceVariantOptions)
-		? value
-		: "standard";
-}
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
 	"image/jpeg",

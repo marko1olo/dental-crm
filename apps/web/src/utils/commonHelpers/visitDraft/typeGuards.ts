@@ -20,7 +20,7 @@ import {
 	type VisitNoteField,
 	type VisitNoteForm,
 	visitNoteFieldDefinitions,
-} from "../../../helpers/speechHelpers";
+} from "../../../helpers/clinicalCalculations";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,

@@ -76,9 +76,7 @@
 		flex: 1;
 	}
 	.topbar-clinic {
-		min-width: 0;
-		flex: 1;
-		overflow: visible;
+		display: none !important;
 	}
 	.compact-top-button,
 	.top-lock-button,

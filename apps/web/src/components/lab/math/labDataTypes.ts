@@ -145,4 +145,5 @@ export interface LabTrackingDrawerProps {
 	readonly chiefDoctorName?: string | undefined;
 	readonly onStageUpdate?: ((orderId: string, newStage: LabOrderStageKey, note?: string | undefined) => Promise<void> | void) | undefined;
 	readonly onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => Promise<void> | void) | undefined;
+	readonly onOpenWarrantyPassport?: ((order: DentalLabOrderData) => void) | undefined;
 }

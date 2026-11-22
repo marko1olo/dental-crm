@@ -28,7 +28,7 @@ export const DmsGuaranteeLettersTab: React.FC<DmsGuaranteeLettersTabProps> = ({
 				style={{
 					fontSize: "13px",
 					fontWeight: 700,
-					color: "var(--ink, #0f172a)",
+					color: "var(--ink)",
 				}}
 			>
 				Выберите страховую компанию РФ:
@@ -51,7 +51,7 @@ export const DmsGuaranteeLettersTab: React.FC<DmsGuaranteeLettersTabProps> = ({
 					style={{
 						fontSize: "14px",
 						fontWeight: 700,
-						color: "var(--ink, #0f172a)",
+						color: "var(--ink)",
 					}}
 				>
 					Прикрепить новое гарантийное письмо

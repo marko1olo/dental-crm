@@ -9,6 +9,7 @@ import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 import {
 	apiError,
@@ -63,15 +64,25 @@ export async function register(app: FastifyInstance) {
 				return reply.code(404).send(apiError("Документ не найден"));
 			}
 
-			// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
-			if (clinicalDocKinds.has(document.kind)) {
-				const identity = getRequestIdentity(request);
-				const access = evaluateClinicalAccess(identity.role);
-				if (
-					!access.hasClinicalAccess &&
-					!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
-				) {
-					return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
+			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
+			const portalPatient = extractPortalPatient(request);
+			if (portalPatient) {
+				if (document.patientId !== portalPatient.patientId) {
+					return reply
+						.code(403)
+						.send(apiError("Доступ к документам другого пациента запрещен (152-ФЗ / BOLA)"));
+				}
+			} else {
+				// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
+				if (clinicalDocKinds.has(document.kind)) {
+					const identity = getRequestIdentity(request);
+					const access = evaluateClinicalAccess(identity.role);
+					if (
+						!access.hasClinicalAccess &&
+						!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+					) {
+						return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
+					}
 				}
 			}
 
@@ -197,20 +208,30 @@ export async function register(app: FastifyInstance) {
 					);
 			}
 
-			// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в плане лечения
-			const identity = getRequestIdentity(request);
-			const access = evaluateClinicalAccess(identity.role);
-			if (
-				!access.hasClinicalAccess &&
-				!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
-			) {
-				return reply
-					.code(403)
-					.send(
-						apiError(
-							"Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
-						),
-					);
+			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
+			const portalPatient = extractPortalPatient(request);
+			if (portalPatient) {
+				if (document.patientId !== portalPatient.patientId) {
+					return reply
+						.code(403)
+						.send(apiError("Доступ к документам другого пациента запрещен (152-ФЗ / BOLA)"));
+				}
+			} else {
+				// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в плане лечения
+				const identity = getRequestIdentity(request);
+				const access = evaluateClinicalAccess(identity.role);
+				if (
+					!access.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+				) {
+					return reply
+						.code(403)
+						.send(
+							apiError(
+								"Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+							),
+						);
+				}
 			}
 
 			// 152-ФЗ / 323-ФЗ: Аудит экспорта плана лечения в PDF

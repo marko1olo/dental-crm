@@ -32,10 +32,16 @@ export const ORTHOPEDIC_STATUTORY_REGISTRY: readonly StatutoryNomenclatureEntry[
 		defaultPriceRub: 22000,
 	},
 	{
-		code: "A16.07.006", title: "Протезирование съемными бюгельными протезами", category: "orthopedics", specialty: "orthopedist",
-		primaryKeywords: [/бюгельн.*протез/i, /бюгел/i, /кламмерн.*фиксац/i, /замков.*бюгел/i, /аттачмен/i],
+		code: "A16.07.036", title: "Протезирование съемными бюгельными протезами с кламмерной фиксацией", category: "orthopedics", specialty: "orthopedist",
+		primaryKeywords: [/бюгельн.*протез/i, /бюгел/i, /кламмерн.*фиксац/i, /кламмерн.*бюгел/i],
 		secondaryKeywords: [/дуга.*протез/i],
 		defaultPriceRub: 42000,
+	},
+	{
+		code: "A16.07.037", title: "Протезирование съемными бюгельными протезами с замковой фиксацией", category: "orthopedics", specialty: "orthopedist",
+		primaryKeywords: [/замков.*бюгел/i, /аттачмен/i, /бюгел.*на.*замк/i, /замков.*фиксац/i],
+		secondaryKeywords: [/матриц.*патриц/i],
+		defaultPriceRub: 52000,
 	},
 	{
 		code: "A16.07.023", title: "Протезирование зубов полными съемными пластиночными протезами",

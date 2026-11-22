@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { visitDiaries } from "../../../../db/schema.js";
 import {
 	applyEmergencySterilizationToDiaryTreatment,
@@ -25,7 +25,7 @@ export async function executeLinkDiaryTransaction(params: LinkDiaryTransactionPa
 		emergencyAdmissionNote,
 	} = params;
 
-	return db.transaction(async (tx) => {
+	return withTenantCtx(organizationId, async (tx) => {
 		const [existingDiary] = await tx
 			.select()
 			.from(visitDiaries)

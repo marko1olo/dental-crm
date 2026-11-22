@@ -20,6 +20,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const ROOTS = ["apps/api/src", "apps/web/src", "packages/shared/src"];
 
@@ -144,13 +145,11 @@ if (broken.length > 0) {
 		console.log(`  ${item.file}:${item.line}`);
 		console.log(`      import("${item.specifier}") — файла нет`);
 	}
-	console.log(
-		"\nКак закрывать: либо вернуть модуль, либо убрать обращение к нему вместе",
-	);
-	console.log(
-		"с маршрутом. Оставлять импорт «на потом» нельзя: он не сломает сборку и",
-	);
-	console.log("будет ждать первого посетителя раздела.");
+
+	printFailureManifesto("DYNAMIC_IMPORTS", {
+		details: `Найдено ${broken.length} битых динамических импортов в коде сервера/клиента.`,
+	});
+
 	process.exit(1);
 }
 

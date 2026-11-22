@@ -1,20 +1,14 @@
-import assert from "node:assert";
-import { after, afterEach, before, describe, it, mock, test } from "node:test";
-import type { ImagingSourceKind, Patient } from "@dental/shared";
-import { db, dbRaw } from "../db/client.js";
-import { patients } from "../sampleData.js";
+import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+import type { ImagingSourceKind } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import * as schema from "../db/schema.js";
+import { fixtureUuid, withFixtureTenant } from "../tests/support/fixtureOrganizations.js";
 import { commitImagingImport, parseDicomSeriesManifest } from "./imaging.js";
 
 describe("parseDicomSeriesManifest", () => {
-	afterEach(() => {
-		if (typeof (mock as { restoreAll?: () => void })?.restoreAll === "function") {
-			(mock as { restoreAll: () => void }).restoreAll();
-		} else if (typeof (mock as { reset?: () => void })?.reset === "function") {
-			(mock as { reset: () => void }).reset();
-		}
-	});
-
-	test("returns default preview response when rawText yields no lines", async () => {
+	it("returns default preview response when rawText yields no lines", async () => {
 		const input = {
 			sourceName: "test-source.zip",
 			sourceKind: "dicom_file" as ImagingSourceKind,
@@ -38,172 +32,91 @@ describe("parseDicomSeriesManifest", () => {
 	});
 });
 
-/**
- * commitImagingImport tests:
- * Сопоставление пациента по ФИО и телефону идёт по данным в памяти и базы не
- * требует, поэтому подменяется только db.insert — и проверяется то, что
- * действительно уходит в базу.
- */
-const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
+describe("commitImagingImport (Real PostgreSQL 18)", () => {
+	const orgId = fixtureUuid("imagingImportReal", 1);
+	const patientId = fixtureUuid("imagingImportReal", 2);
 
-const testPatient = {
-	id: "123e4567-e89b-12d3-a456-4266141740aa",
-	organizationId: ORG_ID,
-	fullName: "Тестов Тест Тестович",
-	phone: "+79990000000",
-} as unknown as Patient;
+	before(async () => {
+		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
+			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
+			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
+			await db.delete(schema.organizations).where(eq(schema.organizations.id, orgId));
 
-const testPatientRow = {
-	id: testPatient.id,
-	organizationId: ORG_ID,
-	status: "active",
-	fullName: "Тестов Тест Тестович",
-	birthDate: null,
-	phone: "+79990000000",
-	email: null,
-	notes: null,
-	administrativeProfile: null,
-	createdAt: new Date("2026-01-01T00:00:00.000Z"),
-	updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-};
-
-describe("commitImagingImport", () => {
-	before(() => {
-		patients.push(testPatient);
-	});
-
-	after(() => {
-		const index = patients.indexOf(testPatient);
-		if (index >= 0) patients.splice(index, 1);
-	});
-
-	afterEach(() => {
-		if (typeof (mock as { restoreAll?: () => void })?.restoreAll === "function") {
-			(mock as { restoreAll: () => void }).restoreAll();
-		} else if (typeof (mock as { reset?: () => void })?.reset === "function") {
-			(mock as { reset: () => void }).reset();
-		}
-	});
-
-	it("processes valid records only and maps properties to the created study correctly", async () => {
-		const patient = testPatient;
-
-		const mockSelect = () => ({
-			from: () => ({
-				where: () => {
-					const promise = Promise.resolve([testPatientRow]);
-					const dynamicChain = {
-						orderBy: () => dynamicChain,
-						limit: () => dynamicChain,
-						offset: () => dynamicChain,
-						then: promise.then.bind(promise),
-						catch: promise.catch.bind(promise),
-					};
-					return Object.assign(promise, {
-						limit: () => promise,
-						$dynamic: () => dynamicChain,
-					});
-				},
-			}),
+			await db.insert(schema.organizations).values({ id: orgId, name: "Клиника импорта DICOM" }).onConflictDoNothing();
+			await db.insert(schema.patients).values({
+				id: patientId,
+				organizationId: orgId,
+				fullName: "Тестов Тест Тестович",
+				phone: "+79990000000",
+			}).onConflictDoNothing();
 		});
+	});
 
-		mock.method(dbRaw, "transaction", async (fn: any) => fn(dbRaw));
-		mock.method(dbRaw, "select", mockSelect);
-
-		const insertedValues: Array<Record<string, unknown>> = [];
-		const mockInsert = () => ({
-			values: (values: Record<string, unknown>) => {
-				insertedValues.push(values);
-				return {
-					returning: async () => [
-						{
-							id: `123e4567-e89b-12d3-a456-42661417${String(insertedValues.length).padStart(4, "0")}`,
-							...values,
-							createdAt: new Date(),
-						},
-					],
-				};
-			},
+	after(async () => {
+		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
+			await db.delete(schema.imagingInstances).where(eq(schema.imagingInstances.organizationId, orgId));
+			await db.delete(schema.imagingSeries).where(eq(schema.imagingSeries.organizationId, orgId));
+			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
+			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
+			await db.delete(schema.organizations).where(eq(schema.organizations.id, orgId));
 		});
-		mock.method(dbRaw, "insert", mockInsert);
+	});
 
+	it("processes valid records and persists to database with zero mocks", async () => {
 		const input = {
 			sourceName: "test_import",
 			sourceKind: "folder_watch" as ImagingSourceKind,
 			rawText: [
 				"fio|modality|filePath|title|phone|tooth|region|date",
-				// Valid row
-				`${patient.fullName}|opg|C:\\scans\\valid.dcm|Test OPG|${patient.phone}|12, 13|Maxilla|2023-10-27T10:00:00Z`,
-				// Invalid row (missing patient name, won't match)
-				`|opg|C:\\scans\\invalid.dcm|Invalid OPG||||`,
-				// Invalid row (no filepath)
-				`${patient.fullName}|opg||Missing Path|${patient.phone}|||`,
+				`Тестов Тест Тестович|opg|uploads/dicom/test_valid.dcm|Test OPG|+79990000000|12, 13|Maxilla|2023-10-27T10:00:00Z`,
+				`|opg|uploads/dicom/invalid.dcm|Invalid OPG||||`,
+				`Тестов Тест Тестович|opg||Missing Path|+79990000000|||`,
 			].join("\n"),
 		};
 
-		const result = await commitImagingImport(ORG_ID, input);
+		const result = await withFixtureTenant(orgId, async () => {
+			return commitImagingImport(orgId, input);
+		});
 
 		assert.strictEqual(result.preview.totalRows, 3);
 		assert.strictEqual(result.importedCount, 1);
 		assert.strictEqual(result.skippedCount, 2);
 		assert.strictEqual(result.createdStudyIds.length, 1);
 
-		// 1 исследование + 1 серия + 1 инстанс в рамках канонической DICOM-иерархии
-		assert.strictEqual(insertedValues.length, 3);
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const stored = insertedValues[0]!;
-		assert.strictEqual(stored.organizationId, ORG_ID);
-		assert.strictEqual(stored.patientId, patient.id);
-		assert.strictEqual(stored.kind, "opg");
-		assert.strictEqual(stored.title, "Test OPG");
-		assert.strictEqual(stored.toothCode, "12, 13");
-		assert.strictEqual(stored.region, "Maxilla");
-		assert.strictEqual(stored.sourceKind, "dicom_file");
-		assert.strictEqual(stored.sourceName, "test_import");
-		assert.strictEqual(stored.storagePath, "C:\\scans\\valid.dcm");
-		assert.strictEqual(
-			(stored.capturedAt as Date).toISOString(),
-			"2023-10-27T00:00:00.000Z",
-		);
-		assert.strictEqual(stored.aiSummary, null);
+		const createdId = result.createdStudyIds[0];
+		assert.ok(createdId, "ID созданного исследования должен присутствовать");
+
+		await withFixtureTenant(orgId, async () => {
+			const [stored] = await db
+				.select()
+				.from(schema.imagingStudies)
+				.where(and(eq(schema.imagingStudies.id, createdId), eq(schema.imagingStudies.organizationId, orgId)));
+
+			assert.ok(stored, "Исследование должно быть сохранено в PostgreSQL");
+			assert.strictEqual(stored.patientId, patientId);
+			assert.strictEqual(stored.kind, "opg");
+			assert.strictEqual(stored.title, "Test OPG");
+			assert.strictEqual(stored.toothCode, "12, 13");
+			assert.strictEqual(stored.region, "Maxilla");
+			assert.strictEqual(stored.storagePath, "uploads/dicom/test_valid.dcm");
+		});
 	});
 
 	it("не пишет в базу, если готовых строк нет", async () => {
-		mock.method(db, "select", () => ({
-			from: () => ({
-				where: () => {
-					const promise = Promise.resolve([testPatientRow]);
-					const dynamicChain = {
-						orderBy: () => dynamicChain,
-						limit: () => dynamicChain,
-						offset: () => dynamicChain,
-						then: promise.then.bind(promise),
-						catch: promise.catch.bind(promise),
-					};
-					return Object.assign(promise, {
-						limit: () => promise,
-						$dynamic: () => dynamicChain,
-					});
-				},
-			}),
-		}));
-
-		let insertCalls = 0;
-		mock.method(db, "insert", () => {
-			insertCalls += 1;
-			return { values: () => ({ returning: async () => [] }) };
-		});
-
-		const result = await commitImagingImport(ORG_ID, {
-			sourceName: "test_import",
-			sourceKind: "folder_watch" as ImagingSourceKind,
-			rawText: [
-				"fio|modality|filePath|title|phone|tooth|region|date",
-				`|opg|||||`,
-			].join("\n"),
+		const result = await withFixtureTenant(orgId, async () => {
+			return commitImagingImport(orgId, {
+				sourceName: "test_empty_import",
+				sourceKind: "folder_watch" as ImagingSourceKind,
+				rawText: [
+					"fio|modality|filePath|title|phone|tooth|region|date",
+					`|opg|||||`,
+				].join("\n"),
+			});
 		});
 
 		assert.strictEqual(result.importedCount, 0);
-		assert.strictEqual(insertCalls, 0);
+		assert.strictEqual(result.createdStudyIds.length, 0);
 	});
 });

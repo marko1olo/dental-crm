@@ -8,7 +8,7 @@ import type { Appointment } from "@dental/shared";
 import {
 	findDoctorFreeSlots,
 	getTimeOfDayCategory,
-} from "../doctorFreeSlotsEngine";
+} from "@dental/shared";
 
 describe("Doctor Free Slots Engine Suite", () => {
 	it("categorizes time of day accurately", () => {

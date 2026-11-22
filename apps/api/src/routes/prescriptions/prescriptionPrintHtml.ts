@@ -9,6 +9,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
+	clinics,
 	electronicPrescriptionItems,
 	electronicPrescriptions,
 	organizations,
@@ -25,6 +26,7 @@ interface PrescriptionPrintParams {
 
 interface PrescriptionPrintQuery {
 	withStamp?: string;
+	autoprint?: string;
 }
 
 interface PatientAddressProfile {
@@ -81,8 +83,9 @@ export async function handlePrescriptionPrintHtml(
 		metadata: { prescriptionId: presc.id },
 	});
 
-	const [[org], [patient], items] = await Promise.all([
+	const [[org], [clinic], [patient], items] = await Promise.all([
 		db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1),
+		db.select({ phone: clinics.phone }).from(clinics).where(eq(clinics.organizationId, orgId)).limit(1),
 		db
 			.select({ administrativeProfile: patients.administrativeProfile })
 			.from(patients)
@@ -113,12 +116,16 @@ export async function handlePrescriptionPrintHtml(
 	const payload = buildPrescriptionPrintPayload({
 		presc,
 		org,
+		clinicPhone: clinic?.phone || null,
 		resolvedPatientAddress,
 		items,
 		withStampAndSignature,
 	});
 
-	const html = renderPrescriptionUniversalHtml(payload);
+	let html = renderPrescriptionUniversalHtml(payload);
+	if (request.query.autoprint === "true" || request.query.autoprint === "1") {
+		html = html.replace("</body>", "<script>window.addEventListener('DOMContentLoaded', function() { setTimeout(function() { window.print(); }, 300); });</script></body>");
+	}
 	reply.type("text/html; charset=utf-8");
 	return reply.send(html);
 }

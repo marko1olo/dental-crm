@@ -4,6 +4,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { parseRublesToKopecks } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	SAMPLE_FNS_TAX_1151156_PRESET,
@@ -12,7 +13,6 @@ import {
 	type FnsTaxCertificatePayload,
 	type FnsTaxPaymentItem,
 	type GostSignatureInfo,
-	parseRublesToKopecks,
 	validateRussianInn,
 	validateRussianOgrn,
 	validateRussianSnils,

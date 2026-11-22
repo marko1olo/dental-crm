@@ -308,9 +308,9 @@ export class WhatsappConnectionHubService {
 				pairingCode: null,
 				pairingPhone: session.pairingPhone,
 				secondsLeft: 0,
-				connectedPhone: session.connectedPhone || "+7 (999) 123-45-67",
+				connectedPhone: session.connectedPhone,
 				connectedAt: session.connectedAt,
-				deviceModel: session.deviceModel || "WhatsApp Web Multi-Device",
+				deviceModel: session.deviceModel,
 				sessionId: session.sessionId,
 			};
 		}
@@ -330,31 +330,6 @@ export class WhatsappConnectionHubService {
 			deviceModel: session.deviceModel,
 			sessionId: session.sessionId,
 		};
-	}
-
-	/**
-	 * Симуляция успешного сканирования/сопряжения QR-кода (для тестов, демо или webhook-коллбэков Baileys/шлюза).
-	 */
-	static simulateAuthenticate(
-		organizationId: string,
-		phone = "+7 (999) 123-45-67",
-		deviceModel = "Рабочий iPhone клиники",
-	): WhatsappQrSession {
-		const isTestOrDemo =
-			process.env.NODE_ENV === "test" ||
-			process.env.DENTE_DEMO_MODE === "true";
-
-		let session = activeQrSessions.get(organizationId);
-		if (!session) {
-			session = this.startQrSession({ organizationId });
-		}
-		session.status = "authenticated";
-		session.connectedPhone = phone;
-		session.connectedAt = new Date().toISOString();
-		session.deviceModel = deviceModel;
-		session.isSimulated = isTestOrDemo;
-		activeQrSessions.set(organizationId, session);
-		return session;
 	}
 
 	/**
@@ -447,24 +422,6 @@ export class WhatsappConnectionHubService {
 			} catch {
 				// fallback
 			}
-		}
-
-		// Если передан синтетический токен в тестовом окружении
-		if (token.startsWith("test_mock_token_") || process.env.NODE_ENV === "test") {
-			if (token.includes("invalid")) {
-				return {
-					ok: false,
-					errorCode: 190,
-					errorMessage: "Недействительный токен Meta Access Token (Error validating access token).",
-				};
-			}
-			return {
-				ok: true,
-				verifiedName: "Стоматологическая Клиника ДЕНТЕ",
-				displayPhoneNumber: "+7 (495) 911-20-20",
-				qualityRating: "GREEN",
-				codeVerificationStatus: "VERIFIED",
-			};
 		}
 
 		try {

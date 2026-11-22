@@ -23,6 +23,7 @@ export function useAppHashRouting(
 	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(() => hasLocationToken(s, h, ["loyalty", "bonus", "family-pool", "points"]));
 	const [isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen] = useState(() => hasLocationToken(s, h, ["bonus-payment", "direct-cashier-bonus"]));
 	const [fastCheckoutInitialAmountRub, setFastCheckoutInitialAmountRub] = useState<number | undefined>(undefined);
+	const [fastCheckoutInitialAmountKopecks, setFastCheckoutInitialAmountKopecks] = useState<number | undefined>(undefined);
 	const [shiftNumber, setShiftNumber] = useState<number | undefined>(undefined);
 	const [isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"]));
 	const [isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-protocol", "orthodontic-protocol", "ortho=protocol"]));
@@ -56,6 +57,7 @@ export function useAppHashRouting(
 		isLoyaltyProgramOpen, setIsLoyaltyProgramOpen,
 		isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen,
 		fastCheckoutInitialAmountRub, setFastCheckoutInitialAmountRub,
+		fastCheckoutInitialAmountKopecks, setFastCheckoutInitialAmountKopecks,
 		isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen,
 		isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen,
 		isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen,

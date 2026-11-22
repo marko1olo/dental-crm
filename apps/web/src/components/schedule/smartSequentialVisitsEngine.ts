@@ -203,8 +203,8 @@ export function findSmartNextStageSlot(options: {
     });
 
     if (nearest) {
-      const sHour = nearest.startsAt.slice(11, 16);
-      const eHour = nearest.endsAt.slice(11, 16);
+      const sHour = nearest.timeDisplay;
+      const eHour = formatMinutesToTime(parseTimeToMinutes(sHour) + duration);
       return {
         targetDate: dateKey,
         startTime: sHour,
@@ -239,7 +239,7 @@ export function findSmartNextStageSlot(options: {
 export interface CreateSmartSequentialAppointmentParams {
   parentAppointment: {
     id: string;
-    patientId: string;
+    patientId: string | null;
     doctorUserId?: string | null | undefined;
     chairId?: string | null | undefined;
     startsAt?: string | null | undefined;
@@ -278,6 +278,11 @@ export async function createSmartSequentialAppointment(
   if (!protocol) {
     showToast("Неизвестный клинический протокол", "error");
     return { success: false, error: "Unknown protocol" };
+  }
+
+  if (!parentAppointment.patientId) {
+    showToast("Невозможно создать следующий этап: пациент не привязан к визиту", "warning");
+    return { success: false, error: "Patient ID missing" };
   }
 
   // Вычисляем оптимальный квантованный слот

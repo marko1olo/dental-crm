@@ -236,6 +236,15 @@ export const documentKindBaseMetadata = {
 		requiresVisit: true,
 		requiresPaidRecord: false,
 	},
+	bravery_diploma: {
+		title: "Диплом за храбрость",
+		label: "Диплом за храбрость",
+		actionLabel: "Диплом за храбрость",
+		group: "visit",
+		amountSource: "none",
+		requiresVisit: false,
+		requiresPaidRecord: false,
+	},
 	outpatient_medical_card_025u: {
 		title: "Медицинская карта приёма (архивный шаблон)",
 		label: "Архивная медкарта",

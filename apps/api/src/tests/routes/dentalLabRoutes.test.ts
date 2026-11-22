@@ -8,7 +8,9 @@ import {
 	CANONICAL_DENTAL_LAB_PRESETS,
 	checkPlanContinuitySchema,
 } from "../../routes/lab/index.js";
+import { labOrderPatchSchema } from "../../routes/lab/patchModules/labOrderPatchSchema.js";
 import { handleCheckPlanContinuity } from "../../routes/lab/ordersCrudModules/labPresetsHandlers.js";
+import { warrantyCertificateItemSchema } from "../../routes/warranty/types.js";
 import {
 	getLabScanDownloadPresignedUrl,
 	getLabScanUploadPresignedUrl,
@@ -260,6 +262,37 @@ describe("Dental Lab Warranty Passport & Circuit Integration (Mandates 8e, 8k)",
 		await handleGetWarrantyPassport(mockReq, mockReply);
 		assert.equal(statusCode, 404);
 		assert.equal(responseBody?.error, "LabOrderNotFound");
+	});
+});
+
+describe("Dental Lab & Warranty Contract & Patch Invariants (Red Team Fixes)", () => {
+	it("warrantyCertificateItemSchema accepts clinicalWorkTitle and aliases to name", () => {
+		const parsed = warrantyCertificateItemSchema.parse({
+			clinicalWorkTitle: "Коронка из диоксида циркония",
+			tooth: 16,
+			material: "ZrO2",
+			shade: "A2",
+			batchCode: "LOT-9988",
+		});
+		assert.equal(parsed.name, "Коронка из диоксида циркония");
+		assert.equal(parsed.clinicalWorkTitle, "Коронка из диоксида циркония");
+		assert.equal(parsed.toothNumber, 16);
+		assert.equal(parsed.materialName, "ZrO2");
+		assert.equal(parsed.color, "A2");
+		assert.equal(parsed.lot, "LOT-9988");
+	});
+
+	it("labOrderPatchSchema validates trial dates and delivery date without stripping", () => {
+		const parsed = labOrderPatchSchema.parse({
+			frameworkTrialDate: "2026-10-15T10:00:00.000Z",
+			ceramicTrialDate: "2026-10-20T11:00:00.000Z",
+			deliveryDate: "2026-10-25T12:00:00.000Z",
+			stage: "fitting_ready",
+		});
+		assert.equal(parsed.frameworkTrialDate, "2026-10-15T10:00:00.000Z");
+		assert.equal(parsed.ceramicTrialDate, "2026-10-20T11:00:00.000Z");
+		assert.equal(parsed.deliveryDate, "2026-10-25T12:00:00.000Z");
+		assert.equal(parsed.stage, "fitting_ready");
 	});
 });
 

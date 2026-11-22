@@ -2,11 +2,13 @@ import { createHash } from "node:crypto";
 import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labItems, labOrderEvents, labOrders, warrantyCertificates } from "../../../db/schema.js";
+import { idempotencyKeys, labItems, labOrderEvents, labOrders, warrantyCertificates } from "../../../db/schema.js";
+import { quickWriteoffOrthopedicProtocol } from "../../../services/treatmentConsumables/bundleWriteoffService.js";
 
 export interface LabOrderMarkInstalledInput {
 	readonly clinicalNotes?: string | undefined;
 	readonly doctorId?: string | undefined;
+	readonly idempotencyKey?: string | undefined;
 }
 
 export type LabOrderMarkInstalledResult =
@@ -184,6 +186,34 @@ export async function executeLabOrderMarkInstalled(
 
 		if (!updated) {
 			throw new Error("Не удалось зафиксировать установку ортопедической конструкции");
+		}
+
+		// Фоновое атомарное списание цементов постоянной фиксации по техкарте (Мандат 8v & 8bo)
+		try {
+			await quickWriteoffOrthopedicProtocol(tx, {
+				organizationId: orgId,
+				protocolId: "orthopedics_cementation",
+				userId: input.doctorId || order.doctorId,
+				visitId: order.appointmentId,
+				toothNumber: order.toothFdi,
+				notes: `Списание цементов постоянной фиксации для наряда ЗТЛ ${order.orderNumber || order.id}`,
+			});
+		} catch {
+			// Мягкий овердрафт: не блокирует клиническую фиксацию конструкции у кресла (Мандат 8v)
+		}
+
+		// Атомарная фиксация ключа идемпотентности внутри транзакции
+		if (input.idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: input.idempotencyKey,
+					status: "completed",
+					responseCode: 200,
+					responseBody: { labOrderId: order.id, status: "completed" },
+				})
+				.onConflictDoNothing();
 		}
 
 		return { kind: "ok" as const, labOrder: updated };

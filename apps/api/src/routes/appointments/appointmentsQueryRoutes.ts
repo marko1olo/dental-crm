@@ -210,6 +210,8 @@ export async function handleGetAppointments(
 		clinicalStage: r.appointment.clinicalStage,
 		toothNumber: r.appointment.toothNumber,
 		diagnosisMkb10: r.appointment.diagnosisMkb10,
+		treatmentPlanId: r.appointment.treatmentPlanId ?? undefined,
+		stageId: r.appointment.stageId ?? undefined,
 	}));
 
 	return reply.send({

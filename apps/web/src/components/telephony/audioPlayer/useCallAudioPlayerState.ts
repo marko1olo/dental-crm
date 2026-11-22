@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "../../../utils/logger.js";
 import {
 	generateWaveformBars,
 	type SpeechTranscriptUtterance,
@@ -71,7 +72,7 @@ export function useCallAudioPlayerState(
 				.then(() => setIsPlaying(true))
 				.catch((err: unknown) => {
 					if (err instanceof Error && err.name === "AbortError") return;
-					console.warn("[CallAudioPlayer] Audio playback failed:", err);
+					logger.warn("[CallAudioPlayer] Audio playback failed:", err);
 					setIsPlaying(false);
 					setPlaybackError(true);
 				});

@@ -38,8 +38,10 @@ export function VisitHeaderActionsToolbar(props: VisitViewHeaderProps) {
 							? {
 									...activePatient,
 									allergies: Array.isArray(activePatient.allergies)
-										? activePatient.allergies.join(", ")
-										: (activePatient.allergies ?? null),
+										? (activePatient.allergies as readonly string[]).join(", ")
+										: typeof activePatient.allergies === "string"
+											? activePatient.allergies
+											: null,
 								}
 							: null
 					}

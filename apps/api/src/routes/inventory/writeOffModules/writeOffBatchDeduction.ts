@@ -158,6 +158,21 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		"/batch-writeoff",
 	].forEach((p) => server.post(p, handleShiftDeduct));
 
+	// Сводка списания расходников за смену для ConsumablesBatchWriteoffModal
+	const handleShiftSummary = async (
+		request: FastifyRequest<{ Params?: OrgParams; Querystring: { date?: string; organizationId?: string } }>,
+		reply: FastifyReply,
+	) => {
+		const targetOrgId = await checkOrg(request, reply, "inventory shift summary");
+		if (!targetOrgId) return;
+		return withTenantCtx(targetOrgId, async (tx) =>
+			TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, request.query.date)
+		);
+	};
+
+	server.get("/:organizationId/shift-summary", handleShiftSummary);
+	server.get("/shift-summary", handleShiftSummary);
+
 	// 1-клик протоколы процедур
 	server.post<{ Params?: OrgParams; Body?: StandardKitBody }>("/:organizationId/quick-writeoff-standard-kit", async (req, rep) => {
 		const org = await checkOrg(req, rep, "standard kit"); if (!org) return;

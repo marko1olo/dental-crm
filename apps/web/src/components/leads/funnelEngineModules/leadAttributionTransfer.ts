@@ -4,6 +4,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { extractLeadRevenueRub } from "./funnelConversionCalculator.js";
 import {
 	type FunnelLead,
@@ -97,7 +98,7 @@ export function linkPatientRevenueToLeadAttribution(
 			...lead,
 			actualRevenueRub: newRevenueRub,
 			paidAmountRub: newRevenueRub,
-			paidAmountKopecks: newRevenueRub * 100,
+			paidAmountKopecks: rublesToKopecks(newRevenueRub),
 			...(newRevenueRub > 0 ? { isPaid: true, stageReached: "paid" } : {}),
 		};
 	});

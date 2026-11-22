@@ -8,6 +8,7 @@ import {
 	appointments,
 	chairs,
 	clinics,
+	idempotencyKeys,
 	organizations,
 	patients,
 	users,
@@ -56,6 +57,7 @@ describe("Schedule Drag & Drop Inquest: Overbooking, ACID Transitions & Solo Sov
 
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
+			await db.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID)).catch(() => {});
 			await withFixtureTenant(ORG_ID, async (tx) => {
 				await tx.insert(organizations).values({
 					id: ORG_ID,
@@ -120,6 +122,7 @@ describe("Schedule Drag & Drop Inquest: Overbooking, ACID Transitions & Solo Sov
 		}
 		if (databaseAvailable) {
 			await purgeFixtureOrganizations([ORG_ID]);
+			await db.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID)).catch(() => {});
 		}
 		await app.close();
 	});

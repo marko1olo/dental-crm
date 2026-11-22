@@ -84,7 +84,10 @@
 	}
 }
 
-@media (max-width: 768px) {
+@media (max-width: 840px) {
+	.topbar-clinic {
+		display: none !important;
+	}
 	.topbar .top-actions {
 		display: none !important;
 	}

@@ -75,7 +75,7 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 		? await db
 			.select({
 				invoiceId: payments.documentId,
-				paidKopecks: sql<string>`coalesce(sum(coalesce(${payments.amountKopecks}, cast(round(${payments.amountRub} * 100) as bigint))), 0)`.as("paid_kopecks"),
+				paidKopecks: sql<string>`coalesce(sum(${payments.amountKopecks}), 0)`.as("paid_kopecks"),
 			})
 			.from(payments)
 			.where(

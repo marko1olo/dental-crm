@@ -13,6 +13,7 @@ import { ClinicChairQuickCreateBar } from "./chairsModules/ClinicChairQuickCreat
 import { ClinicChairsList } from "./chairsModules/ClinicChairsList";
 import { persistChairDetails } from "./chairsModules/chairPersistService";
 import type { SettingsClinicChairsSectionProps } from "./chairsModules/clinicChairsTypes";
+import type { SettingsAccessHeaders } from "../staffMutationRequest";
 
 export type { SettingsClinicChairsSectionProps } from "./chairsModules/clinicChairsTypes";
 export type * from "./chairsModules/clinicChairsTypes";
@@ -33,7 +34,11 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 
 	const handleSaveChairDetails = async (chairId: string, patch: Partial<Chair>) => {
 		updateChairScheduleDraft(chairId, patch);
-		await persistChairDetails(chairId, patch, appLogic?.accessHeaders);
+		const accessHeaders =
+			typeof appLogic?.auth?.settingsAccessHeaders === "function"
+				? appLogic.auth.settingsAccessHeaders
+				: undefined;
+		await persistChairDetails(chairId, patch, accessHeaders);
 		await saveChairSchedule(chairId);
 		if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
 		showToast("Параметры кресла успешно обновлены", "success");

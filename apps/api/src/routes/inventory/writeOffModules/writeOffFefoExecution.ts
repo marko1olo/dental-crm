@@ -28,7 +28,14 @@ export async function executeFefoBatchDeduction(
 	const { organizationId, items, commonReason, visitId, allowOverdraftDefault = true, effectiveUserId } = params;
 	const results: Array<FefoDeductionResult> = [];
 
-	for (const item of items) {
+	// Детерминированная сортировка перед FOR UPDATE локами исключает взаимные блокировки PostgreSQL (40P01)
+	const sortedItems = [...items].sort((a, b) => {
+		const keyA = a.inventoryItemId || a.id || a.itemId || a.name || a.itemName || "";
+		const keyB = b.inventoryItemId || b.id || b.itemId || b.name || b.itemName || "";
+		return keyA.localeCompare(keyB);
+	});
+
+	for (const item of sortedItems) {
 		let itemId = item.inventoryItemId || item.id || item.itemId;
 
 		const searchName = (item.name || item.itemName || "").trim();

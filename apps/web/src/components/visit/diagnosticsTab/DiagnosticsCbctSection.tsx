@@ -8,10 +8,10 @@ export interface DiagnosticsCbctSectionProps {
 	isVisible: boolean;
 	visitPatientId: string | null;
 	visitPatientName: string | null;
-	activePatientId?: string;
-	activePatientFullName?: string;
+	activePatientId?: string | undefined;
+	activePatientFullName?: string | undefined;
 	initialToothNumber: number;
-	doctorName?: string;
+	doctorName?: string | undefined;
 	cbctMenuRef: React.RefObject<HTMLDivElement | null>;
 	onOpenRadiologyReferral: () => void;
 	onOpenDicomViewer: () => void;

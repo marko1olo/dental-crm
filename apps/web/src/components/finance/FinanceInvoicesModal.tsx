@@ -4,8 +4,8 @@ import { InvoicesView } from "../billing/InvoicesView.js";
 export interface FinanceInvoicesModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string | null;
-	patientName?: string | null;
+	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
 }
 
 export function FinanceInvoicesModal({

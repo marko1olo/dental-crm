@@ -8,6 +8,9 @@ import {
 import { db as database } from "../../db/client.js";
 import { visits } from "../../db/schema.js";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function registerVisitHygieneRoutes(app: FastifyInstance) {
 	app.get<{ Params: { patientId: string } }>(
 		"/api/patients/:patientId/hygiene-indices/latest",
@@ -19,6 +22,12 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 			);
 			if (!context) return;
 			const { patientId } = request.params;
+			if (!UUID_REGEX.test(patientId)) {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
 			const [latest] = await database
 				.select({
 					id: visits.id,
@@ -56,6 +65,12 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 		);
 		if (!context) return;
 		const { visitId } = request.params;
+		if (!UUID_REGEX.test(visitId)) {
+			return reply.code(400).send({
+				error: "InvalidVisitId",
+				message: "Некорректный идентификатор приёма",
+			});
+		}
 		const parsed = hygieneIndicesSchema.safeParse(request.body);
 		if (!parsed.success) {
 			reply.code(400);
@@ -75,10 +90,17 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 			)
 			.returning({ id: visits.id, hygieneIndices: visits.hygieneIndices });
 
+		if (!updated) {
+			return reply.code(404).send({
+				error: "VisitNotFound",
+				message: "Приём не найден",
+			});
+		}
+
 		return {
 			ok: true,
 			visitId,
-			hygieneIndices: updated?.hygieneIndices ?? parsed.data,
+			hygieneIndices: updated.hygieneIndices,
 		};
 	});
 }

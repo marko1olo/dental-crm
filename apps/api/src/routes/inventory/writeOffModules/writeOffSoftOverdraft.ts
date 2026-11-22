@@ -5,12 +5,23 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { inventoryItems } from "../../../db/schema.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { fefoStockService } from "../../../services/inventory/fefoStockService.js";
-import { softOverdraftDeductSchema } from "../../../services/warehouse/warehouseOperations.js";
 import { handleDeductRequest } from "./writeOffFefoParties.js";
+
+export const softOverdraftDeductSchema = z.object({
+	itemId: z.string().optional(),
+	inventoryItemId: z.string().optional(),
+	name: z.string().optional(),
+	itemName: z.string().optional(),
+	quantity: z.number().positive("Количество должно быть больше нуля"),
+	reason: z.string().optional(),
+	visitId: z.string().nullable().optional(),
+	organizationId: z.string().optional(),
+});
 
 async function resolveOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Promise<string | null> {
 	const resolved = await requireResolvedStaffOrAdminOrganizationId(req, rep, tag);

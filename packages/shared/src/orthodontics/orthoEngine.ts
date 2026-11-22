@@ -10,11 +10,12 @@
  * 6. 1-Click Form 043/u SOAP Diary Note generation without clerical friction (Mandates 8e, 8k, 8n).
  */
 
-import type { AngleClass } from "../diagnostics/photoProtocolEngine.js";
 import type {
 	AlignerAttachmentPreset,
 	AnbClass,
 	AnbClassOption,
+	AngleClass,
+	AngleClassId,
 	AngleClassOption,
 	ArchwireMaterial,
 	ArchwireMaterialOption,
@@ -28,6 +29,7 @@ import type {
 	OrthodonticSoapParams,
 	WorkhorseArchwireOption,
 } from "./types.js";
+import { normalizeAngleClass } from "./types.js";
 
 export const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 export const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
@@ -388,7 +390,8 @@ export function generateOrthodonticSoapNote(params: OrthodonticSoapParams): stri
 		.filter(Boolean)
 		.join("; ");
 
-	const angleObj = ANGLE_CLASS_OPTIONS.find((a) => a.id === params.angleClass);
+	const normalizedAngle = normalizeAngleClass(params.angleClass);
+	const angleObj = ANGLE_CLASS_OPTIONS.find((a) => a.id === normalizedAngle);
 	const angleText = angleObj
 		? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
 		: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";

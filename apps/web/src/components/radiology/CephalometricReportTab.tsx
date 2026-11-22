@@ -44,7 +44,7 @@ export function CephalometricReportTab({
 	copied,
 }: CephalometricReportTabProps) {
 	return (
-		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
+		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-[var(--paper)]">
 			<div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
 				<div className="flex items-center gap-2 min-w-0">
 					<FileText size={20} className="text-teal-400 shrink-0" />
@@ -357,28 +357,27 @@ export function CephalometricPresetsBar({
 	if (variant === "header") {
 		return (
 			<div
-				className="hidden md:flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800 shrink-0 mr-1"
+				className="hidden md:flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] shrink-0 mr-1"
 				data-testid="header-ceph-presets-bar"
-				style={{ backgroundColor: "#020617", borderColor: "#1e293b" }}
 			>
-				<span className="text-[11px] font-bold text-slate-400 px-1.5 whitespace-nowrap">
+				<span className="text-[11px] font-bold text-[var(--ink-muted)] px-1.5 whitespace-nowrap">
 					Пресеты:
 				</span>
 				<button
 					type="button"
 					onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
 					data-testid="header-preset-class-1"
-					className="h-8 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
+					className="h-8 px-2.5 rounded-lg bg-[var(--success-soft)] hover:bg-[var(--success-soft)]/80 text-[var(--success)] border border-[var(--success-line)] text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
 					title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
 				>
-					<Sparkles size={13} className="text-emerald-400 shrink-0" />
+					<Sparkles size={13} className="text-[var(--success)] shrink-0" />
 					<span>★ I Класс (Норма)</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => onApplyPreset(CLASS_II_DISTAL_LANDMARKS_PRESET, "II Класс (Дистальный)")}
 					data-testid="header-preset-class-2"
-					className="h-8 px-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
+					className="h-8 px-2.5 rounded-lg bg-[var(--warning-soft)] hover:bg-[var(--warning-soft)]/80 text-[var(--warning)] border border-[var(--warning-line)] text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
 					title="II Класс (Дистальный) — выставляет ориентиры дистального прикуса"
 				>
 					<span>II Класс (Дистальный)</span>
@@ -387,7 +386,7 @@ export function CephalometricPresetsBar({
 					type="button"
 					onClick={() => onApplyPreset(CLASS_III_MESIAL_LANDMARKS_PRESET, "III Класс (Мезиальный)")}
 					data-testid="header-preset-class-3"
-					className="h-8 px-2.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
+					className="h-8 px-2.5 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/30 text-[12.5px] font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
 					title="III Класс (Мезиальный) — выставляет ориентиры мезиального прикуса"
 				>
 					<span>III Класс (Мезиальный)</span>
@@ -396,10 +395,10 @@ export function CephalometricPresetsBar({
 					type="button"
 					onClick={onResetLandmarks}
 					data-testid="header-preset-clear"
-					className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-200 border border-slate-700 hover:border-rose-500/40 text-[12.5px] font-medium transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
+					className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--danger-soft)] text-[var(--ink-muted)] hover:text-[var(--danger)] border border-[var(--line)] hover:border-[var(--danger-soft)] text-[12.5px] font-medium transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-2xs"
 					title="Очистить разметку ориентиров для ручной укладки"
 				>
-					<Trash2 size={12} className="text-slate-400 shrink-0" />
+					<Trash2 size={12} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Очистить разметку</span>
 				</button>
 			</div>

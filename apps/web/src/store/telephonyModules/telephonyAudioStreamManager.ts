@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger.js";
 import type {
 	TelephonyAudioStreamConfig,
 	TelephonyAudioStreamStats,
@@ -62,7 +63,7 @@ export class TelephonyAudioStreamManager {
 					this.gainNode.connect(this.outputAnalyser);
 					this.outputAnalyser.connect(this.audioContext.destination);
 				} catch (err) {
-					console.warn("[TelephonyAudioStreamManager] Failed to init AudioContext:", err);
+					logger.warn("[TelephonyAudioStreamManager] Failed to init AudioContext:", err);
 				}
 			}
 		}
@@ -106,7 +107,7 @@ export class TelephonyAudioStreamManager {
 					this.inputSourceNode = this.audioContext.createMediaStreamSource(stream);
 					this.inputSourceNode.connect(this.inputAnalyser);
 				} catch (err) {
-					console.warn("[TelephonyAudioStreamManager] Could not route mic to AnalyserNode:", err);
+					logger.warn("[TelephonyAudioStreamManager] Could not route mic to AnalyserNode:", err);
 				}
 			}
 
@@ -130,7 +131,7 @@ export class TelephonyAudioStreamManager {
 			} else {
 				this.microphoneError = "Не удалось подключить микрофон";
 			}
-			console.warn("[TelephonyAudioStreamManager] Failed to acquire mic stream:", this.microphoneError, err);
+			logger.warn("[TelephonyAudioStreamManager] Failed to acquire mic stream:", this.microphoneError, err);
 			this.config.onError?.(this.microphoneError);
 			return null;
 		}
@@ -198,7 +199,7 @@ export class TelephonyAudioStreamManager {
 
 			return this.peerConnection;
 		} catch (err) {
-			console.warn("[TelephonyAudioStreamManager] Failed to init RTCPeerConnection:", err);
+			logger.warn("[TelephonyAudioStreamManager] Failed to init RTCPeerConnection:", err);
 			return null;
 		}
 	}
@@ -214,7 +215,7 @@ export class TelephonyAudioStreamManager {
 			await pc.setLocalDescription(offer);
 			return offer;
 		} catch (err) {
-			console.warn("[TelephonyAudioStreamManager] Error creating SDP offer:", err);
+			logger.warn("[TelephonyAudioStreamManager] Error creating SDP offer:", err);
 			return null;
 		}
 	}
@@ -229,7 +230,7 @@ export class TelephonyAudioStreamManager {
 			await this.peerConnection.setLocalDescription(answer);
 			return answer;
 		} catch (err) {
-			console.warn("[TelephonyAudioStreamManager] Error creating SDP answer:", err);
+			logger.warn("[TelephonyAudioStreamManager] Error creating SDP answer:", err);
 			return null;
 		}
 	}
@@ -263,7 +264,7 @@ export class TelephonyAudioStreamManager {
 		try {
 			await this.peerConnection.addIceCandidate(candidate);
 		} catch (err) {
-			console.warn("[TelephonyAudioStreamManager] Error adding ICE candidate:", err);
+			logger.warn("[TelephonyAudioStreamManager] Error adding ICE candidate:", err);
 		}
 	}
 
@@ -328,7 +329,7 @@ export class TelephonyAudioStreamManager {
 				this.remoteSourceNode = this.audioContext.createMediaStreamSource(stream);
 				this.remoteSourceNode.connect(this.gainNode);
 			} catch (err) {
-				console.warn("[TelephonyAudioStreamManager] Could not route remote stream to Web Audio:", err);
+				logger.warn("[TelephonyAudioStreamManager] Could not route remote stream to Web Audio:", err);
 			}
 		}
 
@@ -477,7 +478,7 @@ export class TelephonyAudioStreamManager {
 				if (roundTripTimeMs !== undefined) this.cachedRoundTripTimeMs = roundTripTimeMs;
 				if (codecName !== undefined) this.cachedCodecName = codecName;
 			} catch (err) {
-				console.warn("[TelephonyAudioStreamManager] Failed to read RTCPeerConnection stats:", err);
+				logger.warn("[TelephonyAudioStreamManager] Failed to read RTCPeerConnection stats:", err);
 			}
 		}
 

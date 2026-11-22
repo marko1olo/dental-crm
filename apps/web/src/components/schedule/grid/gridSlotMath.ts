@@ -82,16 +82,10 @@ export function safeBuildSlotIso(
   }
 
   const localDateTimeStr = `${cleanDate}T${cleanHour.slice(0, 5)}`;
-  let startMs: number;
-  if (timezone) {
-    const zonedIso = fromDateTimeLocalValue(localDateTimeStr, timezone);
-    const parsedMs = Date.parse(zonedIso);
-    startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
-  } else {
-    const candidateStartIso = `${cleanDate}T${cleanHour}.000Z`;
-    const parsedMs = Date.parse(candidateStartIso);
-    startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
-  }
+  const effectiveTz = timezone || "Europe/Moscow";
+  const zonedIso = fromDateTimeLocalValue(localDateTimeStr, effectiveTz);
+  const parsedMs = Date.parse(zonedIso);
+  const startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
 
   const startIso = new Date(startMs).toISOString();
   const endIso = new Date(startMs + dur * 60_000).toISOString();

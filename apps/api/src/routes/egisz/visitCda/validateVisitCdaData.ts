@@ -23,7 +23,7 @@ export interface ValidateVisitCdaInput {
 
 export function validateVisitCdaPrerequisites(input: ValidateVisitCdaInput): { error: string; message: string } | null {
 	if (input.diaryRow && input.diaryRow.isLocked !== true) {
-		return { error: "DiaryNotLocked", message: "Для выгрузки в ЕГИСЗ дневник 043/у должен быть подписан (заблокирован). Сохраните и подпишите карту." };
+		return { error: "DiaryNotLocked", message: "Для выгрузки в ЕГИСЗ медицинская карта приёма должна быть подписана (заблокирована). Сохраните и подпишите карту." };
 	}
 	if (!input.effectiveDiagnosis) {
 		return { error: "DiagnosisRequired", message: "Для выгрузки в ЕГИСЗ у случая обслуживания должен быть заполнен диагноз." };

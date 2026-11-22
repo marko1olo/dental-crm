@@ -109,7 +109,7 @@ export const ClinicGeneralInfoSection: React.FC<ClinicGeneralInfoSectionProps> =
 			{/* Clinic Account Header */}
 			<div className="clinic-config-head flex flex-col sm:flex-row items-start justify-between gap-4 w-full p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
 				<div className="min-w-0 max-w-full">
-					<p className="eyebrow text-xs uppercase font-bold text-[var(--muted)]">Аккаунт клиники</p>
+					<p className="eyebrow text-xs font-bold text-[var(--muted)]">Аккаунт клиники</p>
 					<h2 className="text-xl sm:text-2xl font-bold leading-tight break-words text-[var(--ink)] m-0 mt-0.5">
 						{synchronizedClinicName}
 					</h2>

@@ -1,7 +1,7 @@
 import type { StaffRole } from "@dental/shared";
 import { ChevronsLeft, Stethoscope } from "lucide-react";
 import React, { useMemo } from "react";
-import { ClinicControlPill } from "../components/Header";
+import { ClinicControlPill } from "../components/headerModules/headerStatus/ClinicControlPill";
 import { ThemeQuickAccessWidget } from "../components/workspace/ThemeQuickAccessWidget";
 import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
 import { isDemoShowcaseMode } from "../lib/demoMode";

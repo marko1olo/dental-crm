@@ -17,6 +17,7 @@ import {
 	calculateDoctorPeriodPayroll,
 	type DoctorSpecialtyCommissionRule,
 } from "@dental/shared/payroll";
+import { percentageOfKopecks, type Kopecks } from "@dental/shared";
 
 import type {
 	StaffRole,
@@ -198,11 +199,11 @@ export function calculateDoctorServicesMetrics(
 
 		if (item.category === "retail_hygiene") {
 			const retailPercent = item.customCommissionPercent ?? input.categoryRates?.retail_hygiene ?? clinicalRate ?? preset.retailProductsPercentage;
-			earnedRetail += Math.round((itemGrossKop * retailPercent) / 100);
+			earnedRetail += percentageOfKopecks(itemGrossKop as Kopecks, Math.round(retailPercent * 100));
 		} else {
 			const netItemBase = Math.max(0, itemGrossKop - labCost - materialCost);
 			const itemCommissionPercent = item.customCommissionPercent ?? input.categoryRates?.[item.category] ?? clinicalRate ?? (input.customBasePercentage !== undefined ? input.customBasePercentage : (preset.specialtyId === "solo_practitioner" || preset.defaultPercentage === 100 ? preset.defaultPercentage : (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? basePercent)));
-			earnedBase += Math.round((netItemBase * itemCommissionPercent) / 100);
+			earnedBase += percentageOfKopecks(netItemBase as Kopecks, Math.round(itemCommissionPercent * 100));
 		}
 	}
 
@@ -311,7 +312,7 @@ export function calculateAssistantStaffPayroll(input: AssistantStaffPayrollInput
 	}
 
 	const categoryBonusPercent = rates.categoryBonusPercentMap[input.category] ?? 0;
-	const categoryBonusKop = Math.round((baseShiftsPayout * categoryBonusPercent) / 100);
+	const categoryBonusKop = percentageOfKopecks(baseShiftsPayout as Kopecks, Math.round(categoryBonusPercent * 100));
 	const sterilizationBonusKop = Math.round(sterilizationShiftsCount * rates.sterilizationShiftBonusKop);
 	const radiographsPayoutKop = Math.round(totalRadiographs * rates.radiographBonusKop);
 	const surgeriesPayoutKop = Math.round(totalSurgeries * rates.surgeryAssistanceBonusKop);
@@ -355,7 +356,7 @@ export function calculateAdministratorStaffPayroll(input: AdministratorStaffPayr
 
 	const baseSalaryPayoutKop = Math.round(shiftsWorked * rates.baseShiftRateKop);
 	const cashRevKop = Math.round(Number(input.clinicCashRevenueKop) || 0);
-	const cashRevenueCommissionKop = Math.round((cashRevKop * rates.cashRevenueCommissionPercent) / 100);
+	const cashRevenueCommissionKop = percentageOfKopecks(cashRevKop as Kopecks, Math.round(rates.cashRevenueCommissionPercent * 100));
 
 	const primLeads = Math.round(Number(input.primaryLeadsCount) || 0);
 	const convLeads = Math.round(Number(input.convertedLeadsCount) || 0);

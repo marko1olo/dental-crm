@@ -22,7 +22,7 @@ import {
 	resolveActionCode,
 } from "../../services/communications/appointmentActionLinks.js";
 import { invalidateAppointmentReminders } from "../../services/communications/appointmentReminders.js";
-import { describeSmsPayload } from "../../services/communications/templateRenderer.js";
+import { describeSmsPayload } from "../../services/communications/templateEngine/templateRenderer.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 

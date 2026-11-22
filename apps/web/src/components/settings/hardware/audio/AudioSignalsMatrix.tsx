@@ -14,7 +14,7 @@ export const AudioSignalsMatrix: React.FC<Props> = ({ activeSignal, onTestSignal
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center justify-between">
-				<h4 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider m-0">
+				<h4 className="text-xs font-bold text-[var(--ink)] m-0">
 					Тестирование клинических процедурных сигналов
 				</h4>
 				<span className="text-[11px] text-[var(--muted)]">

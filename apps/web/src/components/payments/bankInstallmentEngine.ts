@@ -15,6 +15,7 @@
 import {
 	type Kopecks,
 	formatKopecksRu,
+	kopecksToRubles,
 	parseKopecks,
 	percentageOfKopecks,
 	rublesToKopecks,
@@ -175,7 +176,7 @@ export function calculateBankInstallment(
 			? termMonths
 			: provider.defaultTermMonths;
 
-	const totalRub = Math.round(totalKopecks / 100);
+	const totalRub = kopecksToRubles(totalKopecks);
 	const minKopecks = rublesToKopecks(provider.minAmountRub);
 	const maxKopecks = rublesToKopecks(provider.maxAmountRub);
 
@@ -232,13 +233,13 @@ export function calculateBankInstallment(
 					: `Ежемесячный платеж ${i + 1} из ${selectedTerm}`,
 			dueDateText,
 			amountKopecks: part,
-			amountRub: Math.round(part / 100),
+			amountRub: kopecksToRubles(part),
 			percentShare,
 		});
 	}
 
 	const monthlyPaymentKopecks = partsKopecks[0] ?? 0;
-	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+	const monthlyPaymentRub = kopecksToRubles(monthlyPaymentKopecks);
 
 	return {
 		provider,
@@ -276,7 +277,7 @@ export function generateBankInstallmentDeepLink(
 
 	if (params.providerId === "sberbank") {
 		// Стандартный deep-link СберБанк Онлайн (Покупай со Сбером)
-		deepLinkUrl = `https://pos.gosuslugi.ru/sberpay/installment?orderId=${orderId}&inn=${clinicInn}&amount=${amount}&term=${term}&patientId=${params.patientId}`;
+		deepLinkUrl = `https://pos.sberbank.ru/installment?orderId=${orderId}&inn=${clinicInn}&amount=${amount}&term=${term}&patientId=${params.patientId}`;
 	} else if (params.providerId === "tbank") {
 		// Т-Банк Кредит Лайн QR
 		deepLinkUrl = `https://forma.tbank.ru/installment?orderId=${orderId}&shopInn=${clinicInn}&sum=${amount}&term=${term}&clientPhone=${encodeURIComponent(params.patientPhone || "")}`;

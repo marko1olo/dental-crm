@@ -25,7 +25,7 @@ export interface StreamEventHandlerParams {
   setPending: (pending: PendingConfirmation | null) => void;
   setProactiveAlerts: React.Dispatch<React.SetStateAction<ProactiveAlertCardData[]>>;
   setWhatsappHitLCards: React.Dispatch<React.SetStateAction<WhatsAppApprovalCard[]>>;
-  cacheNames: (toolName: string, result: unknown) => void;
+  cacheNames: (toolName: string, result: unknown, args?: Record<string, unknown>) => void;
 }
 
 export function createStreamEventHandler(params: StreamEventHandlerParams) {
@@ -178,7 +178,7 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
       }
 
       if (isOk && data.name) {
-        cacheNames(String(data.name), res);
+        cacheNames(String(data.name), res, toolArgs);
       }
     } else if (
       event === "confirmation_required" ||

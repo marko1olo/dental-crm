@@ -155,8 +155,46 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		assert.equal(data.error, "PermissionDenied");
 	});
 
-	test("6. DEF-PAYROLL-01: Врач не может закрывать расчетные ведомости (403)", async () => {
-		const res = await app.inject({
+	test("6. DEF-PAYROLL-01: Врач со scope own подтверждает свой акт сверки (200), но не может закрывать чужие ведомости или ?doctorId=all (403)", async () => {
+		// Попытка подтвердить ведомости всех врачей клиники блокируется
+		const resAll = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "doctor"),
+				"Content-Type": "application/json",
+			},
+			payload: {
+				doctorId: "all",
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+		assert.equal(resAll.statusCode, 403);
+		const dataAll = JSON.parse(resAll.body);
+		assert.equal(dataAll.error, "PermissionDenied");
+
+		// Попытка подтвердить ведомость чужого врача блокируется
+		const OTHER_DOCTOR_ID = "c8000000-0000-4000-8000-00000000d002";
+		const resOther = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "doctor"),
+				"Content-Type": "application/json",
+			},
+			payload: {
+				doctorId: OTHER_DOCTOR_ID,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+		assert.equal(resOther.statusCode, 403);
+		const dataOther = JSON.parse(resOther.body);
+		assert.equal(dataOther.error, "PermissionDenied");
+
+		// Врач успешно подтверждает свой персональный акт сверки смены БЕЗ кассового РКО
+		const resSelf = await app.inject({
 			method: "POST",
 			url: "/api/v1/payroll/close-settlement",
 			headers: {
@@ -167,12 +205,16 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 				doctorId: DOCTOR_ID,
 				periodStart: "2026-10-01",
 				periodEnd: "2026-10-31",
+				markPaid: false,
+				doctorReconciled: true,
 			},
 		});
-
-		assert.equal(res.statusCode, 403);
-		const data = JSON.parse(res.body);
-		assert.equal(data.error, "PermissionDenied");
+		assert.equal(resSelf.statusCode, 200);
+		const dataSelf = JSON.parse(resSelf.body);
+		assert.equal(dataSelf.ok, true);
+		assert.ok(dataSelf.statementId);
+		assert.equal(dataSelf.statement.isFinalized, true);
+		assert.equal(dataSelf.message, "Акт сверки смены успешно подтвержден врачом");
 	});
 
 	test("7. DEF-PAYROLL-06: Администратор ресепшена без payroll.read получает замаскированные ставки (0%)", async () => {

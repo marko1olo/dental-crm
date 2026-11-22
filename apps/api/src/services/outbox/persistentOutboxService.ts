@@ -76,7 +76,7 @@ export class PersistentOutboxService {
 
 	private readonly queue: Map<string, OutboxItem> = new Map();
 	private readonly idempotencyIndex: Map<string, string> = new Map(); // idempotencyKey -> itemId
-	private readonly handlers: Map<string, OutboxHandler<any>> = new Map();
+	private readonly handlers: Map<string, (item: OutboxItem) => Promise<void>> = new Map();
 	private readonly dlqAlertListeners: DlqAlertListener[] = [];
 
 	private isRunning = false;
@@ -109,7 +109,7 @@ export class PersistentOutboxService {
 		topic: string,
 		handler: OutboxHandler<T>,
 	): void {
-		this.handlers.set(topic, handler);
+		this.handlers.set(topic, (item: OutboxItem) => handler(item as OutboxItem<T>));
 	}
 
 	/**

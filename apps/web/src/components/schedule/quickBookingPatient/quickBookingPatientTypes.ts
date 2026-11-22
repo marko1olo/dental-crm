@@ -4,7 +4,7 @@ import type { PotentialDuplicateItem } from "../patientSearchEngine";
 import type { PatientReliabilityAssessment, QuickBookingAppointmentType } from "../patientReliabilityScore";
 
 export interface QuickBookingPatientSectionProps {
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   selectedPatient: Patient | null;
   setSelectedPatient: (p: Patient | null) => void;
   setPatientId: (id: string) => void;

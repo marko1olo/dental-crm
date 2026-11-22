@@ -94,15 +94,20 @@ export interface PatientPrescriptionMemoParams {
 	medications: readonly (
 		| DentalMedicationPreset
 		| {
-				id: string;
-				nameRu?: string;
-				tradeNameRu?: string;
-				activeSubstanceRu?: string;
-				formRu?: string;
-				dosageRu?: string;
-				latinRp?: string;
-				signaRu?: string;
-				dispenseLatin?: string;
+				id?: string | undefined;
+				nameRu?: string | undefined;
+				tradeNameRu?: string | undefined;
+				activeSubstanceRu?: string | undefined;
+				formRu?: string | undefined;
+				dosageRu?: string | undefined;
+				latinRp?: string | undefined;
+				signaRu?: string | undefined;
+				dispenseLatin?: string | undefined;
+				category?: string | undefined;
+				categoryLabelRu?: string | undefined;
+				quantityLabel?: string | undefined;
+				validityDays?: number | undefined;
+				[key: string]: unknown;
 		  }
 	)[];
 	additionalNotesRu?: string | undefined;

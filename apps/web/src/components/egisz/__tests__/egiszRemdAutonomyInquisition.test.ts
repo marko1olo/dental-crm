@@ -22,11 +22,17 @@ import {
 	generateEgiszDentalCdaXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
-	parseRublesToKopecks,
 	validateXmlStructure,
 	type EgiszDentalCdaPayload,
 	type FnsTaxCertificatePayload,
-} from "../cdaR2XmlBuilder";
+} from "../egiszRemdEngine";
+
+function parseRublesToKopecks(rublesInput: string | number): number {
+	const clean = String(rublesInput || "").trim().replace(",", ".");
+	const parsed = Number.parseFloat(clean);
+	if (Number.isNaN(parsed) || parsed < 0) return 0;
+	return Math.round(parsed * 100);
+}
 import {
 	buildCdaXml,
 	EGISZ_SEMD_DOC_TYPES,
@@ -186,7 +192,7 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 		it("2.3 Source code audit confirms absence of fake hardcoded mock OIDs", () => {
 			const filesToCheck = [
 				resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
-				resolveRepoPath("apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/cdaR2/cdaTypes.ts"),
 				resolveRepoPath("apps/web/src/components/egisz/egiszCdaValidator.ts"),
 				resolveRepoPath("apps/web/src/components/egisz/egiszRemdEngine.ts"),
 			];
@@ -320,7 +326,7 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 		it("4.1 Source code of all EGISZ components contains zero cartoon emojis", () => {
 			const targetFiles = [
 				resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
-				resolveRepoPath("apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/cdaR2/cdaTypes.ts"),
 				resolveRepoPath("apps/web/src/components/egisz/egiszCdaValidator.ts"),
 				resolveRepoPath("apps/web/src/components/egisz/egiszRemdEngine.ts"),
 				resolveRepoPath("apps/web/src/components/egisz/egiszRemd.css"),

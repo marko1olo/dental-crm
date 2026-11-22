@@ -2,7 +2,7 @@
  * treatmentPlanItemNormalizer.ts — Создание нормализованного элемента плана лечения DENTE.
  */
 
-import { multiplyKopecks } from "../../utils/money.js";
+import { multiplyKopecks } from "../../money.js";
 import { isValidToothFdi } from "../../radiology/hotFolderSyncEngine.js";
 import {
 	PLAN_STAGE_METADATA,

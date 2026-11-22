@@ -25,7 +25,6 @@ import {
 } from "../cda/c14n.js";
 import { generateSemd101Xml } from "../cda/generator101.js";
 import { generateSemd104Xml } from "../cda/generator104.js";
-import { generateSemd130Xml } from "../cda/generator130.js";
 import { generateCdaXml } from "../cda/generator.js";
 
 // FNS Tax deduction imports
@@ -276,22 +275,13 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 			assert.ok(xml.includes("&amp;"), "Must escape ampersands in text");
 		});
 
-		it("Test 1.6: CDA R2 SEMD 104 and 130 XML generators escape surgery protocols and payment tables", () => {
-			const toxicSemd130 = {
-				docKind: "130" as const,
-				documentId: "doc-130-toxic",
-				certificateNumber: "130/2026-001\"<cert_inject>",
-				taxYear: 2026,
-				issueDate: new Date("2026-08-25T10:00:00Z"),
-				contractNumber: "ДОГ-999\" от <contract_inject>",
-				contractDate: "15.01.2026",
-				taxpayer: {
-					fullName: "Иванов И.И. & Супруга <taxpayer_inject>",
-					inn: "7707083893",
-					relationToPatient: "2" as const,
-				},
+		it("Test 1.6: CDA R2 SEMD 104 XML generator escapes surgery protocols and toxic injection tags", () => {
+			const toxicSemd104 = {
+				docKind: "104" as const,
+				documentId: "doc-104-toxic",
+				visitDate: new Date("2026-08-25T10:00:00Z"),
 				patient: {
-					patientId: "pat-130",
+					patientId: "pat-104",
 					name: { last: "Иванова", first: "Елена", middle: "Петровна" },
 					gender: "female" as const,
 					birthDate: "1994-06-10",
@@ -306,26 +296,30 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 					name: "Клиника «Дента» <clinic_tag>",
 					inn: "7707083893",
 				},
-				paymentRecords: [
+				dischargeDiagnoses: [
 					{
-						fiscalReceiptNumber: "ФД-100\"<fd_tag>",
-						fiscalReceiptDate: "2026-03-01",
-						serviceCategoryCode: "2\" methodCode=\"MALICIOUS",
-						paymentAmountKopecks: 15000000,
+						icd10Code: "K02.1",
+						diagnosisText: "Кариес дентина <diag_tag>",
 					},
 				],
-				totalOrdinaryTreatmentKopecks: 0,
-				totalExpensiveTreatmentKopecks: 15000000,
-				totalSumKopecks: 15000000,
+				servicesRendered: [
+					{
+						code: "A16.07.002.001",
+						name: "Пломбирование зуба <service_tag>",
+					},
+				],
+				epicrisisText: "Выписной эпикриз: проведено лечение <epicrisis_inject>",
+				surgeryProtocol: "Протокол операции <surgery_inject>",
+				recommendations: "Контрольный осмотр <rec_inject>",
 			};
 
-			const result = generateSemd130Xml(toxicSemd130 as any);
+			const result = generateSemd104Xml(toxicSemd104 as any);
 			assert.ok(result.includes("<ClinicalDocument"));
-			assert.ok(!result.includes("<cert_inject>"));
-			assert.ok(!result.includes("<taxpayer_inject>"));
-			assert.ok(!result.includes("<fd_tag>"));
-			assert.ok(result.includes("&lt;cert_inject&gt;"));
-			assert.ok(result.includes("&lt;taxpayer_inject&gt;"));
+			assert.ok(!result.includes("<clinic_tag>"));
+			assert.ok(!result.includes("<epicrisis_inject>"));
+			assert.ok(!result.includes("<surgery_inject>"));
+			assert.ok(result.includes("&lt;clinic_tag&gt;"));
+			assert.ok(result.includes("&lt;epicrisis_inject&gt;"));
 		});
 	});
 

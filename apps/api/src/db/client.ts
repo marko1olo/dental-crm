@@ -16,8 +16,14 @@ import * as schema from "./schema.js";
  */
 loadAdditionalServerEnv();
 
-if (typeof (BigInt.prototype as any).toJSON !== "function") {
-	(BigInt.prototype as any).toJSON = function () {
+declare global {
+	interface BigInt {
+		toJSON?: (() => number) | undefined;
+	}
+}
+
+if (typeof BigInt.prototype.toJSON !== "function") {
+	BigInt.prototype.toJSON = function (this: bigint) {
 		return Number(this);
 	};
 }

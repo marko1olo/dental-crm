@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { calculateDoctorShiftEarnings } from "@dental/shared";
 import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
-import type { DoctorShiftEmrSummary } from "../../shift/DoctorShiftCloseModal";
+import type { DoctorShiftEmrSummary } from "../../shift/doctorShiftClose/doctorShiftCloseTypes";
 import type { DoctorMobileShiftModalProps, UseDoctorMobileShiftReturn } from "./types";
 import { useShiftAppointmentsFlow } from "./logic/useShiftAppointmentsFlow";
 import { useShiftBatchSigning } from "./logic/useShiftBatchSigning";

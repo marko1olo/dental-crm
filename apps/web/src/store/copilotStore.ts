@@ -69,6 +69,24 @@ export interface ActiveDiff {
 
 export type CopilotActiveDiff = ActiveDiff;
 
+export interface CopilotUnconfirmedDraft {
+	patientId?: string | undefined;
+	toothUpdates?: Array<{ toothNumber: number; status: string; surfaces?: string[] | undefined }> | undefined;
+	soapPatch?: Record<string, string> | undefined;
+	billingServices?: Array<{
+		code: string;
+		code804n?: string | undefined;
+		name: string;
+		title: string;
+		price: number;
+		priceRub: number;
+		priceKopecks?: number | undefined;
+		toothNumber?: number | undefined;
+		toothCode?: string | undefined;
+	}> | undefined;
+	timestamp: string;
+}
+
 export interface CopilotSettings {
 	trustLevel: AiTrustLevel; provider: AiProvider; model: string;
 	modelRoutingMode: ModelRoutingMode; byokProvider: AiProvider; byokApiKey: string;
@@ -124,6 +142,10 @@ export interface CopilotStoreState {
 	setHudOpen: (open: boolean) => void;
 	expandToStudio: () => void;
 	collapseToHud: () => void;
+	unconfirmedDraft: CopilotUnconfirmedDraft | null;
+	setUnconfirmedDraft: (draft: CopilotUnconfirmedDraft | null) => void;
+	savePendingDictationDraft: (patch: Partial<CopilotUnconfirmedDraft>) => void;
+	clearUnconfirmedDraft: () => void;
 }
 
 const initialState = getInitialCopilotState();
@@ -146,6 +168,24 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	isStudioOpen: false,
 	isHudOpen: false,
 	telemetry: initialState.telemetry,
+	unconfirmedDraft: null,
+
+	setUnconfirmedDraft: (draft) => { set({ unconfirmedDraft: draft }); },
+	savePendingDictationDraft: (patch) => {
+		set((state) => {
+			const current = state.unconfirmedDraft || { timestamp: new Date().toISOString() };
+			const next: CopilotUnconfirmedDraft = {
+				...current,
+				...patch,
+				timestamp: new Date().toISOString(),
+				...(patch.toothUpdates ? { toothUpdates: [...(current.toothUpdates || []), ...patch.toothUpdates] } : {}),
+				...(patch.soapPatch ? { soapPatch: { ...(current.soapPatch || {}), ...patch.soapPatch } } : {}),
+				...(patch.billingServices ? { billingServices: [...(current.billingServices || []), ...patch.billingServices] } : {}),
+			};
+			return { unconfirmedDraft: next };
+		});
+	},
+	clearUnconfirmedDraft: () => { set({ unconfirmedDraft: null }); },
 
 	updateSettings: (patch) => {
 		set((state) => {

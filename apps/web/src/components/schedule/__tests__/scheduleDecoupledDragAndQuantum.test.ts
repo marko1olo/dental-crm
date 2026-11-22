@@ -274,10 +274,29 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
     const index = new ScheduleQuantumCollisionIndex({
       dateKey: testDate,
       appointments: [appt1, appt2],
+      timezone: "Europe/Moscow",
     });
 
-    it("finds next free 30-minute slot at 09:30", () => {
+    it("finds next free 30-minute slot at 09:30 (correctly zoned to UTC without 3-hour shift)", () => {
       const alt = index.findNextFreeSlot({
+        chairId: "chair-1",
+        durationMinutes: 30,
+        preferredStartHour: "08:00",
+      });
+
+      assert.ok(alt !== null);
+      assert.equal(alt?.timeDisplay, "09:30");
+      // 09:30 MSK (UTC+3) is exactly 06:30:00.000Z in UTC
+      assert.equal(alt?.startsAt, `${testDate}T06:30:00.000Z`);
+    });
+
+    it("finds next free slot with UTC timezone without shift", () => {
+      const utcIndex = new ScheduleQuantumCollisionIndex({
+        dateKey: testDate,
+        appointments: [appt1, appt2],
+        timezone: "UTC",
+      });
+      const alt = utcIndex.findNextFreeSlot({
         chairId: "chair-1",
         durationMinutes: 30,
         preferredStartHour: "08:00",

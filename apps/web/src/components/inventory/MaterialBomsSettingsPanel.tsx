@@ -38,7 +38,7 @@ export function MaterialBomsSettingsPanel({
 	const bomsData = useMaterialBomsData({
 		orgId,
 		getHeaders,
-		dashboardServices: dashboard?.services,
+		dashboardServices: dashboard?.serviceCatalog,
 	});
 
 	const handleOpenAddModal = (serviceId?: string) => {

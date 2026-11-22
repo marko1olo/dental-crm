@@ -56,7 +56,7 @@ export interface MigrationDerivationsParams {
 	documentIngestion?: unknown;
 	importIntake?: unknown;
 	importPreview?: unknown;
-	updateClinicProfileDraft: (key: string, value: string) => void;
+	updateClinicProfileDraft: (key: string, value?: unknown) => void;
 	setSmartImportMode: (mode: string) => void;
 	runMigrationAutopilot: (
 		discovery?: unknown,

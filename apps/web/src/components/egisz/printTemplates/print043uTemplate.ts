@@ -8,12 +8,9 @@ import {
 	type EgiszDentalSemdCode,
 	FDI_ADULT_TEETH,
 } from "./../remdXml/egiszRemdPresets";
-import {
-	type EgiszDentalCdaPayload,
-	escapeXml,
-	formatRuDate,
-	generateGostSignatureStampHtml,
-} from "./../cdaR2XmlBuilder";
+import { escapeXml, formatRuDate } from "@dental/shared/cda";
+import type { EgiszDentalCdaPayload } from "./../cdaR2/cdaTypes";
+import { generateGostSignatureStampHtml } from "./../cdaR2/gostSignatures";
 
 export function generateForm043uPrintHtml(payload: EgiszDentalCdaPayload): string {
 	const docDef = EGISZ_DENTAL_SEMD_TYPES[payload.docTypeCode as EgiszDentalSemdCode] || {

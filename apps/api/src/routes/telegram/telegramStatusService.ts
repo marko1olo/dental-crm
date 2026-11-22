@@ -3,11 +3,11 @@ import {
 	type DenteTelegramBotSettings,
 } from "@dental/shared";
 import {
-	listDenteTelegramWebhookEvents,
 	denteTelegramOutboxDeliveryReceipts,
 	listDenteTelegramLinkCodes,
 	getDenteTelegramBotSettings,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { listDenteTelegramWebhookEvents } from "../../services/telegram/telegramWebhookEventsService.js";
 import {
 	countActiveDenteTelegramChatLinks,
 } from "../../telegram/chatLinks.js";
@@ -104,10 +104,12 @@ export async function buildStatus(
 			clinicOwnedBotReady: runtime.clinicOwnedBotReady,
 			warnings,
 			nextActions,
-			processedUpdateCount: listDenteTelegramWebhookEvents(
-				300,
-				runtime.organizationId,
-				runtime.botConfigId,
+			processedUpdateCount: (
+				await listDenteTelegramWebhookEvents(
+					300,
+					runtime.organizationId,
+					runtime.botConfigId,
+				)
 			).filter((event) => event.status === "processed").length,
 			pendingLinkCodeCount: isPrimaryRuntime
 				? listDenteTelegramLinkCodes(100).filter(
@@ -115,7 +117,7 @@ export async function buildStatus(
 					).length
 				: 0,
 			activeChatLinkCount,
-			recentEvents: listDenteTelegramWebhookEvents(
+			recentEvents: await listDenteTelegramWebhookEvents(
 				50,
 				runtime.organizationId,
 				runtime.botConfigId,

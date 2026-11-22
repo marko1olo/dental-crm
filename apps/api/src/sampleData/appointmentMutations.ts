@@ -72,6 +72,16 @@ export function updateAppointment(
 				: appointment.assistantUserId,
 		chairId: input.chairId !== undefined ? input.chairId : appointment.chairId,
 		status: input.status !== undefined ? input.status : appointment.status,
+		treatmentPlanId:
+			input.treatmentPlanId !== undefined
+				? input.treatmentPlanId
+				: appointment.treatmentPlanId,
+		stageId:
+			input.stageId !== undefined
+				? input.stageId
+				: appointment.stageId,
+		isCito: input.isCito !== undefined ? input.isCito : appointment.isCito,
+		cito: input.cito !== undefined ? input.cito : appointment.cito,
 		startsAt,
 		endsAt,
 	};
@@ -83,6 +93,14 @@ export function updateAppointment(
 		appointment.assistantUserId = input.assistantUserId;
 	if (input.chairId !== undefined) appointment.chairId = input.chairId;
 	if (input.status !== undefined) appointment.status = input.status;
+	if (input.treatmentPlanId !== undefined)
+		appointment.treatmentPlanId = input.treatmentPlanId;
+	if (input.stageId !== undefined)
+		appointment.stageId = input.stageId;
+	if (input.isCito !== undefined)
+		appointment.isCito = input.isCito;
+	if (input.cito !== undefined)
+		appointment.cito = input.cito;
 	if (input.reason !== undefined)
 		appointment.reason = nullableTrimmed(input.reason);
 	if (input.comment !== undefined)
@@ -138,6 +156,10 @@ export function createAppointment(input: CreateAppointmentInput): Appointment {
 		clinicalStage: input.clinicalStage ?? null,
 		toothNumber: input.toothNumber ?? null,
 		diagnosisMkb10: input.diagnosisMkb10 ?? null,
+		treatmentPlanId: input.treatmentPlanId ?? null,
+		stageId: input.stageId ?? null,
+		isCito: input.isCito,
+		cito: input.cito,
 	};
 	assertAppointmentCanBeScheduled(appointment);
 	appointments.push(appointment);

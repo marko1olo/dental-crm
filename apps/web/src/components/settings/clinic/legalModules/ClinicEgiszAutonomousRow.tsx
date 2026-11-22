@@ -22,7 +22,7 @@ export const ClinicEgiszAutonomousRow: React.FC<ClinicEgiszAutonomousRowProps> =
 						<span className="text-xs font-bold text-[var(--ink)] block">
 							Автономный режим (без принудительной выгрузки в ЕГИСЗ)
 						</span>
-						<span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+						<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--success-soft)] text-[var(--success)] border border-[var(--line)]">
 							Соло-практика
 						</span>
 					</div>

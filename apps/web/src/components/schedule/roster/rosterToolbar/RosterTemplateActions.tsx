@@ -207,13 +207,12 @@ export const RosterQuickActionsGroup: React.FC<RosterTemplateActionsProps> = Rea
 							<>
 								<div
 									style={{
-										borderTop: "1px solid var(--line, #cbd5e1)",
+										borderTop: "1px solid var(--line)",
 										margin: "0.25rem 0",
 										padding: "0.25rem 0.75rem 0.125rem",
 										fontSize: "0.6875rem",
 										fontWeight: 700,
-										color: "var(--muted, #64748b)",
-										textTransform: "uppercase",
+										color: "var(--ink-muted)",
 									}}
 								>
 									Закрепление за креслом

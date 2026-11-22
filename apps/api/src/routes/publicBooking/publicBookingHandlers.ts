@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
+import { isValidUuid } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
@@ -53,7 +54,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const effectiveOrgId =
 			parsed.data.organizationId ||
 			request.params?.organizationId ||
-			(await resolveDefaultOrganizationId());
+			(request.query as { organizationId?: string } | undefined)?.organizationId;
+		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
 		const result = requestPhoneVerification(
 			parsed.data.phone,
 			parsed.data.method,
@@ -130,10 +137,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 
 
-	// Helper: resolve default clinic organization ID
-	const resolveDefaultClinicOrgId = async (): Promise<string> => {
-		return resolveDefaultOrganizationId();
-	};
+
 
 	// 0a. Get default active clinic for direct booking link (/book or #/book)
 	server.get("/default-clinic", async (request, reply) => {
@@ -218,8 +222,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
 		const { date, doctorId } = request.query;
-		const organizationId =
-			request.query.organizationId || (await resolveDefaultClinicOrgId());
+		const organizationId = request.query.organizationId;
+		if (!organizationId || !isValidUuid(organizationId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
 
 		if (!date) {
 			return reply.status(400).send({
@@ -251,7 +260,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		reply: FastifyReply,
 	) => {
 		const organizationId =
-			request.body?.organizationId || (await resolveDefaultClinicOrgId());
+			request.body?.organizationId || request.params.organizationId;
+		if (!organizationId || !isValidUuid(organizationId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
 		request.params.organizationId = organizationId;
 		return handleBookAppointment(request, reply);
 	};
@@ -310,9 +325,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const idempotencyKey = rawIdempotencyKey?.trim();
 
 		const organizationId =
-			request.params?.organizationId ||
-			body.organizationId ||
-			(await resolveDefaultClinicOrgId());
+			request.params?.organizationId || body.organizationId;
+		if (!organizationId || !isValidUuid(organizationId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
 
 		const cleanPhone = body.patientPhone.trim();
 		const cleanName = body.patientName.trim();
@@ -446,12 +465,18 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	server.post("/waitlist", publicWaitlistHandler);
 	server.post("/:organizationId/waitlist", publicWaitlistHandler);
 
-	// 1a. Get doctors with default organization fallback
+	// 1a. Get doctors with organization query
 	server.get("/doctors", async (request, reply) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const organizationId = await resolveDefaultClinicOrgId();
+		const organizationId = (request.query as { organizationId?: string } | undefined)?.organizationId;
+		if (!organizationId || !isValidUuid(organizationId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
 		return handleDoctorList(organizationId, reply);
 	});
 

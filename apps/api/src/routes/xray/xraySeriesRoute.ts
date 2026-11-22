@@ -161,14 +161,21 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 		}
 		const deleted = await db.transaction(async (tx) => {
-			const [res] = await tx.delete(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+			const [xrayRes] = await tx.delete(xrayScans)
+				.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
 				.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
-			if (!res) {
+
+			const [studyRes] = await tx.delete(imagingStudies)
+				.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)))
+				.returning({ id: imagingStudies.id, storagePath: imagingStudies.storagePath });
+
+			if (!xrayRes && !studyRes) {
 				return null;
 			}
-
-			await tx.delete(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
-			return res;
+			return {
+				id: xrayRes?.id ?? studyRes?.id,
+				storagePath: xrayRes?.storagePath ?? studyRes?.storagePath,
+			};
 		});
 
 		if (!deleted) {

@@ -168,6 +168,7 @@ export function calculateLabOrderTurnaround(
 
 /**
  * Calculates laboratory cost, clinic markup, and gross margin for an order in exact integer kopecks (Mandate 8bm).
+ * Differentiates bridge abutments and pontics to eliminate flat multiplication.
  */
 export function calculateLabOrderCostAndMarkup(params: {
 	materialOrConstruction: string;
@@ -176,6 +177,12 @@ export function calculateLabOrderCostAndMarkup(params: {
 	unitsCount?: number;
 	customCostPerUnit?: number | null;
 	customCostPerUnitKopecks?: number | null;
+	abutmentsCount?: number | null;
+	ponticsCount?: number | null;
+	abutmentPriceKopecks?: number | null;
+	ponticPriceKopecks?: number | null;
+	abutmentCostKopecks?: number | null;
+	ponticCostKopecks?: number | null;
 }): LabOrderCostBreakdown {
 	const units = Math.max(1, params.unitsCount ?? 1);
 	const normalizedKey = params.materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
@@ -200,12 +207,49 @@ export function calculateLabOrderCostAndMarkup(params: {
 		? rublesToKopecks(matchedPreset.suggestedPriceRub)
 		: defaultCostPerUnitKopecks;
 
-	const estimatedCostKopecks = defaultCostPerUnitKopecks * units;
-	const suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
-		? Math.round(Number(params.priceKopecks))
-		: params.priceRub != null && params.priceRub >= 0
-			? rublesToKopecks(params.priceRub)
-			: defaultPricePerUnitKopecks * units;
+	// Дифференциация опорных коронок (abutments) и фасеток/понтиков (pontics) для мостовидных протезов (Мандат 8bm)
+	const isBridge = normalizedKey.includes("bridge");
+	const hasBridgeCounts = (params.abutmentsCount != null && params.abutmentsCount > 0) || (isBridge && units >= 3);
+	const abutments = params.abutmentsCount != null && params.abutmentsCount >= 0
+		? params.abutmentsCount
+		: hasBridgeCounts ? 2 : units;
+	const pontics = params.ponticsCount != null && params.ponticsCount >= 0
+		? params.ponticsCount
+		: hasBridgeCounts ? Math.max(0, units - abutments) : 0;
+
+	// Понтик по умолчанию 70% стоимости опорной коронки
+	const abutmentPriceKop = params.abutmentPriceKopecks != null && params.abutmentPriceKopecks >= 0
+		? Math.round(params.abutmentPriceKopecks)
+		: defaultPricePerUnitKopecks;
+	const ponticPriceKop = params.ponticPriceKopecks != null && params.ponticPriceKopecks >= 0
+		? Math.round(params.ponticPriceKopecks)
+		: Math.round(abutmentPriceKop * 0.7);
+
+	const abutmentCostKop = params.abutmentCostKopecks != null && params.abutmentCostKopecks >= 0
+		? Math.round(params.abutmentCostKopecks)
+		: defaultCostPerUnitKopecks;
+	const ponticCostKop = params.ponticCostKopecks != null && params.ponticCostKopecks >= 0
+		? Math.round(params.ponticCostKopecks)
+		: Math.round(abutmentCostKop * 0.7);
+
+	let estimatedCostKopecks: number;
+	let suggestedPriceKopecks: number;
+
+	if (hasBridgeCounts && pontics > 0) {
+		estimatedCostKopecks = (abutmentCostKop * abutments) + (ponticCostKop * pontics);
+		suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
+			? Math.round(Number(params.priceKopecks))
+			: params.priceRub != null && params.priceRub >= 0
+				? rublesToKopecks(params.priceRub)
+				: (abutmentPriceKop * abutments) + (ponticPriceKop * pontics);
+	} else {
+		estimatedCostKopecks = defaultCostPerUnitKopecks * units;
+		suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
+			? Math.round(Number(params.priceKopecks))
+			: params.priceRub != null && params.priceRub >= 0
+				? rublesToKopecks(params.priceRub)
+				: defaultPricePerUnitKopecks * units;
+	}
 
 	const grossMarginKopecks = Math.max(0, suggestedPriceKopecks - estimatedCostKopecks);
 	const grossMarginPercent = suggestedPriceKopecks > 0
@@ -221,6 +265,12 @@ export function calculateLabOrderCostAndMarkup(params: {
 		suggestedPriceKopecks,
 		estimatedCostKopecks,
 		grossMarginKopecks,
+		abutmentsCount: abutments,
+		ponticsCount: pontics,
+		abutmentsCostKopecks: abutmentCostKop * abutments,
+		ponticsCostKopecks: ponticCostKop * pontics,
+		abutmentsPriceKopecks: abutmentPriceKop * abutments,
+		ponticsPriceKopecks: ponticPriceKop * pontics,
 	};
 }
 

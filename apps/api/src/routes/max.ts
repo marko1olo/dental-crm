@@ -8,7 +8,7 @@
  * Docs: https://business.max.ru (requires business account login)
  */
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireNonDoctorAccess,
@@ -258,32 +258,11 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		};
 	});
 
-	/**
-	 * POST /api/max/webhook
-	 * Receives inbound events from MAX messenger platform.
-	 * Always responds 200 immediately.
-	 *
-	 * MAX webhook payload (VK Teams Bot API pattern):
-	 * {
-	 *   eventType: "newMessage",
-	 *   payload: { chat: { chatId }, from: { userId }, text }
-	 * }
-	 *
-	 * Bot is identified by x-max-bot-id header or ?botId query param.
-	 */
-	app.post("/api/max/webhook", async (request, reply) => {
-		// Always ACK first — MAX retries on non-200. Shape-guard AFTER send so a
-		// null/non-object body cannot TypeError on body.payload (cast-after-200).
-		reply.code(200).send({ ok: true });
-
-		if (
-			!request.body ||
-			typeof request.body !== "object" ||
-			Array.isArray(request.body)
-		) {
-			return;
-		}
-		const body = request.body as Record<string, unknown>;
+	async function processMaxInboundEvent(
+		body: Record<string, unknown>,
+		botIdHeader: string,
+		request: FastifyRequest,
+	): Promise<void> {
 		const payloadRaw = body.payload;
 		if (
 			!payloadRaw ||
@@ -336,14 +315,6 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			typeof msgIdRaw === "string" || typeof msgIdRaw === "number"
 				? String(msgIdRaw).trim()
 				: null;
-
-		// Identify org by bot ID passed in header or query param
-		const botIdRaw =
-			request.headers["x-max-bot-id"] ??
-			(request.query as Record<string, string>).botId;
-		const botIdHeader = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
-
-		if (!botIdHeader) return;
 
 		/*
 		 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА»: событие прислал MAX, токена клиники в
@@ -403,6 +374,56 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		void processInboundEvents().catch((err) =>
 			console.error("MAX ingestion error:", err),
 		);
+	}
+
+	/**
+	 * POST /api/max/webhook
+	 * Receives inbound events from MAX messenger platform.
+	 * Always responds 200 immediately.
+	 *
+	 * MAX webhook payload (VK Teams Bot API pattern):
+	 * {
+	 *   eventType: "newMessage",
+	 *   payload: { chat: { chatId }, from: { userId }, text }
+	 * }
+	 * or batch array:
+	 * [
+	 *   { eventType: "newMessage", payload: ... }
+	 * ]
+	 *
+	 * Bot is identified by x-max-bot-id header or ?botId query param.
+	 */
+	// door-validation: none — Входящий вебхук MAX Messenger с динамической сигнатурой и асинхронной обработкой событий
+	app.post("/api/max/webhook", async (request, reply) => {
+		// Always ACK first — MAX retries on non-200. Shape-guard AFTER send so a
+		// null/non-object body cannot TypeError on body.payload (cast-after-200).
+		reply.code(200).send({ ok: true });
+
+		if (!request.body || typeof request.body !== "object") {
+			return;
+		}
+
+		// Identify org by bot ID passed in header or query param
+		const botIdRaw =
+			request.headers["x-max-bot-id"] ??
+			(request.query as Record<string, string>).botId;
+		const botIdHeader = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
+
+		if (!botIdHeader) return;
+
+		const rawEvents: unknown[] = Array.isArray(request.body)
+			? request.body
+			: [request.body];
+
+		for (const rawItem of rawEvents) {
+			if (rawItem && typeof rawItem === "object" && !Array.isArray(rawItem)) {
+				await processMaxInboundEvent(
+					rawItem as Record<string, unknown>,
+					botIdHeader,
+					request,
+				);
+			}
+		}
 	});
 
 	/**

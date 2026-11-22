@@ -5,16 +5,14 @@
  */
 
 import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import {
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
 } from "../../../db/schema.js";
 
-type TxType = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 export async function saveShiftMicroclimateRecords(
-	tx: TxType,
+	tx: TenantDb,
 	organizationId: string,
 	body: Record<string, unknown>,
 	operatorId: string | null,

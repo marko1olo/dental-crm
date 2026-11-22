@@ -22,7 +22,9 @@ export interface PlanStageMetadata {
 	readonly subtitleRu: string;
 	readonly clinicalGoalRu: string;
 	readonly iconName: string;
-	readonly defaultOrder804nPrefixes: readonly string[];
+	readonly defaultServiceCodePrefixes: readonly string[];
+	/** @deprecated используйте defaultServiceCodePrefixes по Мандату 8x */
+	readonly defaultOrder804nPrefixes?: readonly string[];
 }
 
 export const PLAN_STAGE_METADATA: Record<PlanStageKind, PlanStageMetadata> = {
@@ -35,7 +37,10 @@ export const PLAN_STAGE_METADATA: Record<PlanStageKind, PlanStageMetadata> = {
 		subtitleRu: "Устранение очагов инфекции, лечение кариеса, корневых каналов и профгигиена",
 		clinicalGoalRu: "Ликвидация болевого синдрома, купирование воспаления, герметизация полостей и подготовка к хирургии.",
 		iconName: "Stethoscope",
-		defaultOrder804nPrefixes: ["A16.07.002", "A16.07.008", "A16.07.030", "A16.07.050", "A16.07.051", "A11.07", "A06.07", "B01.065"],
+		defaultServiceCodePrefixes: ["A16.07.002", "A16.07.008", "A16.07.030", "A16.07.050", "A16.07.051", "A11.07", "A06.07", "B01.065"],
+		get defaultOrder804nPrefixes() {
+			return this.defaultServiceCodePrefixes;
+		},
 	},
 	stage_2_surgery: {
 		stageNumber: 2,
@@ -46,7 +51,10 @@ export const PLAN_STAGE_METADATA: Record<PlanStageKind, PlanStageMetadata> = {
 		subtitleRu: "Атравматичное удаление, направленная костная регенерация, синус-лифтинг и установка имплантатов",
 		clinicalGoalRu: "Создание стабильного костного фундамента и интеграция титановых/циркониевых опор для протезирования.",
 		iconName: "Scissors",
-		defaultOrder804nPrefixes: ["A16.07.001", "A16.07.041", "A16.07.054", "A16.07.093", "A16.07.026"],
+		defaultServiceCodePrefixes: ["A16.07.001", "A16.07.041", "A16.07.054", "A16.07.093", "A16.07.026"],
+		get defaultOrder804nPrefixes() {
+			return this.defaultServiceCodePrefixes;
+		},
 	},
 	stage_3_orthopedics: {
 		stageNumber: 3,
@@ -57,7 +65,10 @@ export const PLAN_STAGE_METADATA: Record<PlanStageKind, PlanStageMetadata> = {
 		subtitleRu: "Временное и постоянное протезирование, высокоэстетичные коронки E.max, диоксид циркония, мосты и виниры",
 		clinicalGoalRu: "Полное восстановление окклюзии, жевательной эффективности, анатомической эстетики и артикуляции.",
 		iconName: "Smile",
-		defaultOrder804nPrefixes: ["A16.07.004", "A16.07.006", "A16.07.003", "A16.07.005", "A16.07.036", "A16.07.023"],
+		defaultServiceCodePrefixes: ["A16.07.004", "A16.07.006", "A16.07.003", "A16.07.005", "A16.07.036", "A16.07.023"],
+		get defaultOrder804nPrefixes() {
+			return this.defaultServiceCodePrefixes;
+		},
 	},
 };
 

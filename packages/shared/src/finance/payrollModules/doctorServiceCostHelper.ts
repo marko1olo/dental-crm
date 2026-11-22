@@ -142,6 +142,7 @@ export function computeItemCostsAndCommission(
 		itemMaterialCost = 0;
 	} else {
 		const shouldDeductMaterial =
+			item.deductMaterialFromDoctor === true ||
 			preset.deductsMaterialCosts ||
 			item.category === "surgery" ||
 			item.category === "therapy" ||

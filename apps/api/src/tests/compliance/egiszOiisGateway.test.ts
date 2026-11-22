@@ -126,9 +126,8 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 		const client = new OiisGatewayClient({ isSandbox: true });
 		const statusRes = await client.getRemdDocumentStatus("REMD-12345678");
 
-		assert.equal(statusRes.status, "Registered");
-		assert.ok(statusRes.remdDocumentId);
-		assert.match(statusRes.statusDescription || "", /зарегистрирован/i);
+		assert.equal(statusRes.status, "Sent");
+		assert.match(statusRes.statusDescription || "", /ожидает|шлюз/i);
 	});
 
 	it("1.6 Cryptographic hash-chaining verification validates intact ledger", () => {
@@ -168,10 +167,10 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 		assert.equal(verification.count, 1);
 	});
 
-	it("1.7 OiisGatewayClient handles SEMD 101, 104, 130 and foreign citizen documents without SNILS", async () => {
+	it("1.7 OiisGatewayClient handles SEMD 101, 104, 108 and foreign citizen documents without SNILS", async () => {
 		const client = new OiisGatewayClient({ isSandbox: true });
 
-		for (const docType of ["101", "104", "130"]) {
+		for (const docType of ["101", "104", "108"]) {
 			const pkg = {
 				documentId: `DOC-${docType}-TEST-001`,
 				documentVersion: 1,

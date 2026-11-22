@@ -23,8 +23,12 @@ import { StaffActionJournalSection } from "./audit/StaffActionJournalSection";
 import { SecurityAudit152FzPanel } from "./auditModules/AuditLogEventsTable";
 import {
 	AuditPersistencePanel,
+	type AuditClinicSettings,
 	type BrowserContinuityCheck,
+	type BrowserContinuityInfo,
+	type PersistenceHealthInfo,
 	type PersistenceIntegrityReport,
+	type StatusValueHolder,
 } from "./auditModules/AuditPersistencePanel";
 
 // Lazy-loaded security audit modal for low-spec hardware (4GB RAM, 5400 RPM HDD)
@@ -32,7 +36,44 @@ const AuditTrailHubModal = lazy(() =>
 	import("../security/AuditTrailHubModal").then((m) => ({ default: m.AuditTrailHubModal })),
 );
 
-export function SettingsAuditTab(props: Record<string, any>) {
+export interface SettingsAuditTabProps {
+	readonly browserCanRequestPersistentStorage?: boolean | undefined;
+	readonly browserContinuity?: BrowserContinuityInfo;
+	readonly browserContinuityChecks?: readonly BrowserContinuityCheck[] | undefined;
+	readonly browserContinuityState?: string | undefined;
+	readonly browserContinuityValue?: StatusValueHolder;
+	readonly clinicSettings?: AuditClinicSettings;
+	readonly dashboard?:
+		| {
+				readonly importBatches?: readonly ImportBatch[] | undefined;
+				readonly auditEvents?: readonly AuditEvent[] | undefined;
+				readonly [key: string]: unknown;
+		  }
+		| null
+		| undefined;
+	readonly downloadPersistenceExport?: (() => void | Promise<void>) | undefined;
+	readonly formatDateTime?: ((date: string | number | Date) => string) | undefined;
+	readonly formatTime?: ((date: string | number | Date) => string) | undefined;
+	readonly hideVaultPanel?: boolean | undefined;
+	readonly isPersistenceExporting?: boolean | undefined;
+	readonly loadLocalBridgeUsePlans?: ((options?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	readonly loadPersistenceHealth?: ((options?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	readonly localBridgeReadiness?: LocalBridgeReadinessResponse | null | undefined;
+	readonly localBridgeStatusLabels?: Record<string, string> | undefined;
+	readonly localBridgeStatusState?: string | undefined;
+	readonly localBridgeStatusValue?: StatusValueHolder;
+	readonly localBridgeUsePathLabels?: Record<string, string> | undefined;
+	readonly localBridgeUsePlans?: LocalBridgeUsePlansResponse | null | undefined;
+	readonly organizationId?: string | undefined;
+	readonly persistenceHealth?: PersistenceHealthInfo;
+	readonly persistenceIntegrity?: PersistenceIntegrityReport | null | undefined;
+	readonly refreshBrowserContinuity?: ((options?: { readonly silent?: boolean | undefined }) => Promise<unknown> | void) | undefined;
+	readonly requestBrowserStoragePersistence?: (() => Promise<unknown> | void) | undefined;
+	readonly settingsTab?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
+export function SettingsAuditTab(props: SettingsAuditTabProps) {
 	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
 
 	const {

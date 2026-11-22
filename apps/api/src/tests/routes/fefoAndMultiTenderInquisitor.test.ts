@@ -36,10 +36,7 @@ import { inventoryRoutes as warehouseRoutes } from "../../routes/inventory.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import { sortBatchesByFefo } from "../../services/inventory/fefo/batchSelector.js";
 import { validateAndResolvePaymentSplit } from "../../db/billingQuery.js";
-import {
-	calculateDoctorNetSalary,
-	calculateDoctorSalary,
-} from "@dental/shared";
+import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import {
 	fixtureUuid,
 	withFixtureTenant,
@@ -523,42 +520,40 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 
 	it("7. [Doctor Piecework on Collected Cash] calculates net piecework strictly on cash collected basis with Art. 137/192 LC RF compliance", () => {
 		// Scenario:
-		// Invoice Total = 20 000 ₽
-		// Patient paid 50% = 10 000 ₽ (cash_basis)
-		// Lab Cost = 3 000 ₽
-		// Expensive Materials = 1 000 ₽
-		// Doctor Percent = 25%
-		// Disciplinary Penalty attempt = 5 000 ₽ (illegal under Art. 137, 192 LC RF)
-		// Stimulating Bonus = 2 000 ₽
-
-		const result = calculateDoctorSalary({
-			model: "cash_basis",
-			grossRevenueRub: 20000,
-			invoiceTotalRub: 20000,
-			paidAmountRub: 10000,
-			labCostRub: 3000,
-			expensiveMaterialsCostRub: 1000,
-			doctorPercent: 25,
-			bonusesRub: 2000,
-			penaltiesRub: 5000, // Should reduce bonuses, but NOT piecework!
-			discountPolicy: "proportional",
+		// Invoice Total = 20 000 ₽, collected cash = 10 000 ₽ (1 000 000 kop)
+		// Net base = 8 000 ₽ (800 000 kop) after deducting proportional lab (1 500 ₽) and materials (500 ₽)
+		// Doctor Percent = 25% -> 2 000 ₽ (200 000 kop)
+		const result = calculateDoctorPeriodPayroll({
+			doctorId: "doc-1",
+			doctorName: "Врач-ортопед",
+			specialtyId: "orthopedics",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			customBasePercentage: 25,
+			services: [
+				{
+					id: "srv-1",
+					dateIso: "2026-08-10",
+					patientName: "Смирнов А.В.",
+					medicalCardNumber: "043-1",
+					serviceNameRu: "Металлокерамическая коронка",
+					category: "orthopedics",
+					grossRevenueKop: 2000000,
+					actuallyPaidGrossKop: 1000000, // 50% оплата = 10 000 ₽
+					labCostKop: 150000, // пропорционально 50% = 1 500 ₽
+					materialCostKop: 50000, // пропорционально 50% = 500 ₽
+					deductMaterialFromDoctor: true,
+				},
+			],
 		});
 
-		// Clinic costs total = 3000 (Lab) + 1000 (Mat) = 4000 ₽
-		// Proportional cash basis base at 50% payment:
-		// Paid = 10 000 ₽. Clinic costs deducted at 50% = 2 000 ₽.
-		// Doctor base = 10 000 - 2 000 = 8 000 ₽ (800 000 kopecks).
-		// Piecework at 25% = 2 000 ₽ (200 000 kopecks).
-		assert.equal(result.pieceworkAccruedRub, 2000, "Piecework must be exactly 25% of collected net base (2 000 ₽)");
-
-		// Disciplinary fines protection: bonus of 2000 reduced to 0 by penalty,
-		// but penalty cannot eat into piecework!
-		assert.equal(result.effectiveBonusesRub, 0, "Stimulating bonus reduced to 0 by penalty");
-		assert.equal(result.pieceworkAccruedRub, 2000, "Statutory piecework cannot be reduced by penalties (Art. 137, 192 LC RF)");
-		assert.equal(result.totalAccruedRub, 2000, "Total accrued before tax is exactly 2 000 ₽");
-
-		// After 13% NDFL: 2000 - 260 = 1 740 ₽ net payout
-		assert.equal(result.ndflTaxRub, 260, "13% NDFL must be 260 ₽");
-		assert.equal(result.netPayoutRub, 1740, "Net payout on hands must be 1 740 ₽");
+		assert.equal(result.totalGrossRevenueKop, 1000000, "Collected gross must be 10 000 ₽ (1 000 000 kop)");
+		assert.equal(result.totalLabDeductionsKop, 150000, "Lab deduction must be 1 500 ₽ (150 000 kop)");
+		assert.equal(result.totalMaterialDeductionsKop, 50000, "Material deduction must be 500 ₽ (50 000 kop)");
+		assert.equal(result.totalNetBaseKop, 800000, "Net base must be 8 000 ₽ (800 000 kop)");
+		assert.equal(result.earnedBaseCommissionKop, 200000, "Piecework 25% must be 2 000 ₽ (200 000 kop)");
+		assert.equal(result.grossPayoutBeforeTaxKop, 200000, "Gross payout must be 2 000 ₽ (200 000 kop)");
+		assert.equal(result.ndflTaxKop, 26000, "13% NDFL must be 260 ₽ (26 000 kop)");
+		assert.equal(result.netPayoutToDoctorKop, 174000, "Net payout on hands must be 1 740 ₽ (174 000 kop)");
 	});
 });

@@ -27,12 +27,14 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			}
 
 			const files = fs.readdirSync(dir);
+			const orgPrefix = `org_${orgId}_`;
 			const backups = files
 				.filter(
 					(f) =>
-						f.endsWith(".sql.enc") ||
-						f.endsWith(".dente") ||
-						f.endsWith(".dentalbackup"),
+						f.startsWith(orgPrefix) &&
+						(f.endsWith(".sql.enc") ||
+							f.endsWith(".dente") ||
+							f.endsWith(".dentalbackup")),
 				)
 				.map((filename) => {
 					const fullPath = path.join(dir, filename);
@@ -87,14 +89,29 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			};
 		}
 
-		const stat = fs.statSync(outcome.filePath);
-		const fileBuffer = fs.readFileSync(outcome.filePath);
+		let finalPath = outcome.filePath;
+		let finalFilename = path.basename(finalPath);
+		const orgPrefix = `org_${orgId}_`;
+		if (!finalFilename.startsWith(orgPrefix)) {
+			const targetFilename = `${orgPrefix}${finalFilename}`;
+			const targetPath = path.join(path.dirname(finalPath), targetFilename);
+			try {
+				fs.renameSync(finalPath, targetPath);
+				finalPath = targetPath;
+				finalFilename = targetFilename;
+			} catch {
+				// Оставляем исходный путь при ошибке rename
+			}
+		}
+
+		const stat = fs.statSync(finalPath);
+		const fileBuffer = fs.readFileSync(finalPath);
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
 		return {
 			success: true,
-			filePath: outcome.filePath,
-			filename: path.basename(outcome.filePath),
+			filePath: finalPath,
+			filename: finalFilename,
 			sizeBytes: stat.size,
 			createdAt: stat.mtime.toISOString(),
 			sha256,

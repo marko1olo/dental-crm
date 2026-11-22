@@ -292,12 +292,13 @@ export async function registerWhatsappWebhookRoutes(
 						try {
 							const report = await applyReceipts(receipts);
 							if (report.unmatched > 0) {
-								console.warn(
-									`Whatsapp: квитанций без своего сообщения в очереди: ${report.unmatched}`,
+								request.log.warn(
+									{ unmatched: report.unmatched },
+									"Whatsapp: квитанций без своего сообщения в очереди",
 								);
 							}
 						} catch (receiptError) {
-							console.error("Whatsapp: квитанции не применены:", receiptError);
+							request.log.error({ err: receiptError }, "Whatsapp: квитанции не применены");
 						}
 					}
 
@@ -506,8 +507,8 @@ export async function registerWhatsappWebhookRoutes(
 			}
 
 			// Trigger async processor to ingest into CRM Inbox
-			void processInboundEvents().catch((err) =>
-				console.error("Whatsapp ingestion error:", err),
+			void processInboundEvents({ logger: request.log }).catch((err) =>
+				request.log.error({ err }, "Whatsapp ingestion error"),
 			);
 		};
 

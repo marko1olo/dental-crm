@@ -20,7 +20,7 @@ export const installmentPaymentSchedulePayloadSchema = z.object({
 	 * График рассрочки. Здесь копейки не роскошь, а условие сходимости: 100 000 ₽
 	 * на 3 платежа целыми рублями дают 33 333 × 3 = 99 999 — рубля не хватает, и
 	 * пациент по графику остаётся должен. Точное деление уже написано:
-	 * splitKopecks в packages/shared/src/utils/money.ts раскидывает остаток по
+	 * splitKopecks в packages/shared/src/money.ts раскидывает остаток по
 	 * первым платежам, чтобы сумма частей РАВНЯЛАСЬ итогу.
 	 */
 	totalAmountRub: positiveMoneyRubSchema,

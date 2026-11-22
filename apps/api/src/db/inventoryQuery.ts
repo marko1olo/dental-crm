@@ -1,4 +1,9 @@
 import { and, asc, desc, eq, gt, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import {
+	kopecksToRub,
+	multiplyKopecksFractional,
+	rublesToKopecks,
+} from "@dental/shared";
 import type { DbTransaction } from "../services/inventory/fefoStockService.js";
 import {
 	type FefoDeductionResult,
@@ -298,7 +303,7 @@ export const inventoryQuery = {
 			normalizeDateToIso(rawInvoiceDate) || new Date().toISOString().slice(0, 10);
 		const createdBatches: Array<typeof stockBatches.$inferSelect> = [];
 		let totalQuantity = 0;
-		let totalCostRub = 0;
+		let totalCostKopecks = 0;
 
 		// Пакетная предварительная загрузка существующих номенклатурных позиций (устранение N+1)
 		const requestedItemIds = Array.from(
@@ -426,7 +431,8 @@ export const inventoryQuery = {
 
 			createdBatches.push(batch);
 			totalQuantity += line.quantity;
-			totalCostRub += Number((line.quantity * unitPrice).toFixed(2));
+			const unitPriceKop = rublesToKopecks(unitPrice);
+			totalCostKopecks += multiplyKopecksFractional(unitPriceKop, line.quantity);
 		}
 
 		return {
@@ -435,7 +441,7 @@ export const inventoryQuery = {
 			supplierName: supplierName ?? null,
 			totalItems: createdBatches.length,
 			totalQuantity: Number(totalQuantity.toFixed(3)),
-			totalCostRub: Number(totalCostRub.toFixed(2)),
+			totalCostRub: kopecksToRub(totalCostKopecks),
 			batches: createdBatches,
 		};
 	},

@@ -51,7 +51,7 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 		assert.ok(html.includes("WhatsApp-чатбот / WABA"));
 
 		// Summary totals
-		assert.ok(html.includes("ИТОГО ПО САМОЗАПИСИ:"));
+		assert.ok(html.includes("Итого по онлайн-записи:"));
 	});
 
 	it("2. MarketingAttributionDashboard integrates online analytics, ROMI table, and clinic field settings", () => {

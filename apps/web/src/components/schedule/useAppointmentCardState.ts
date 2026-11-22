@@ -7,6 +7,7 @@ import {
 	getAppointmentDurationMinutes,
 	calculateAppointmentSpan,
 	resolveAppointmentLabStatus,
+	isAppointmentCito,
 } from "./appointmentCardHelpers";
 import type { AppointmentCardProps } from "./AppointmentCardTypes";
 import { extractTeethList } from "./appointmentCardModules/AppointmentCardTeethList";
@@ -208,13 +209,7 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 	});
 
 	const displayStatus = optimisticStatus ?? appointment?.status;
-	const extAppt = appointment as (Appointment & AppointmentScheduleMeta) | undefined;
-	const isCito = Boolean(
-		extAppt?.isCito || extAppt?.cito ||
-		(appointment?.reason ?? "").toLowerCase().includes("cito") ||
-		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
-		(appointment?.reason ?? "").toLowerCase().includes("срочн"),
-	);
+	const isCito = isAppointmentCito(appointment);
 	const isLockedStatus = Boolean(appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses?.has?.(displayStatus));
 
 	return {

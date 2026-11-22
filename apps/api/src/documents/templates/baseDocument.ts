@@ -396,6 +396,32 @@ export function baseDocument(
       page-break-inside: avoid;
     }
     .small { color: #64748b; font-size: 8pt; }
+    .watermark-draft, .watermark-signed {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-32deg);
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 56pt;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      pointer-events: none;
+      z-index: 9999;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .watermark-draft {
+      color: rgba(163, 79, 50, 0.14);
+      border: 5pt solid rgba(163, 79, 50, 0.14);
+      padding: 12px 36px;
+      border-radius: 8px;
+    }
+    .watermark-signed {
+      color: rgba(47, 115, 64, 0.12);
+      border: 5pt solid rgba(47, 115, 64, 0.12);
+      padding: 12px 36px;
+      border-radius: 8px;
+    }
     @media print {
       body { font-size: 9.5pt; color: #000 !important; background: #fff !important; }
       h2 { background: #f8fafc !important; color: #000 !important; border-bottom-color: #000 !important; }
@@ -405,10 +431,24 @@ export function baseDocument(
       .document-status-banner { color: #000; border-color: #000; }
       .stamp-seal-circle { border-color: #000 !important; color: #000 !important; }
       .gost-digital-stamp { border-color: #003399 !important; color: #003399 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .watermark-draft {
+        color: rgba(0, 0, 0, 0.10) !important;
+        border-color: rgba(0, 0, 0, 0.10) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .watermark-signed {
+        color: rgba(0, 0, 0, 0.08) !important;
+        border-color: rgba(0, 0, 0, 0.08) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
 <body>
+${document.status === "draft" ? `<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>` : ""}
+${document.status === "issued" ? `<div class="watermark-signed" aria-hidden="true">ПОДПИСАНО ВРАЧОМ</div>` : ""}
 <div class="doc-container">
   <div class="header-grid">
     <div class="clinic-info">

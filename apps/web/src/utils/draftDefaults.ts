@@ -24,8 +24,11 @@ export function emptyPatientCoreDraft(): PatientCoreDraft {
 	};
 }
 
-import type { PatientAdministrativeProfileDraft } from "../constants/onboardingConstants";
-export type { PatientAdministrativeProfileDraft };
+import type {
+	AppointmentScheduleDraft,
+	PatientAdministrativeProfileDraft,
+} from "../constants/onboardingConstants";
+export type { AppointmentScheduleDraft, PatientAdministrativeProfileDraft };
 
 export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeProfileDraft {
 	return {
@@ -76,20 +79,6 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 }
 
 
-
-export type AppointmentScheduleDraft = {
-	patientId?: string | null | undefined;
-	doctorUserId: string;
-	assistantUserId?: string | null | undefined;
-	chairId: string;
-	status: Appointment["status"];
-	startsAt: string;
-	endsAt: string;
-	reason?: string | undefined;
-	comment?: string | undefined;
-	notes?: string | undefined;
-	cancellationReason?: string | undefined;
-};
 
 export function emptyAppointmentScheduleDraft(): AppointmentScheduleDraft {
 	return {

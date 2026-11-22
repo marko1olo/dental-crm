@@ -40,7 +40,7 @@ import {
 	multiplyKopecksFractional,
 	parseKopecks,
 	sumKopecks,
-} from "../utils/money.js";
+} from "../money.js";
 
 describe("SANPIN 3.3686-21 STERILIZATION ROUTING & CONSUMABLES DEDUCTION (ROUND 47)", () => {
 	// ─────────────────────────────────────────────────────────────────────────

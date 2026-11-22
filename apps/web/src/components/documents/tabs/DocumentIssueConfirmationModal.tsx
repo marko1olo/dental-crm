@@ -8,11 +8,11 @@ import { DocumentIssueChecklistSection } from "./issueConfirmation/DocumentIssue
 import { DocumentIssueModalFooter } from "./issueConfirmation/DocumentIssueModalFooter";
 
 export interface DocumentIssueConfirmationModalProps {
-	documentIssueConfirmation: GeneratedDocument | null;
-	documentLabels?: Record<DocumentKind, string>;
-	patientName?: (patients: Patient[] | undefined, id: string | null | undefined) => string;
-	patients?: Patient[];
-	money?: (val: number | null | undefined) => string;
+	documentIssueConfirmation?: GeneratedDocument | null | undefined;
+	documentLabels?: Record<DocumentKind, string> | undefined;
+	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | string | undefined;
+	patients?: Patient[] | undefined;
+	money?: ((val: number | null | undefined) => string) | undefined;
 	documentIssueSignatureMode: DocumentIssueSignatureMode;
 	setDocumentIssueSignatureMode: (mode: DocumentIssueSignatureMode) => void;
 	normalizedDocumentIssueSignatureMode: (val: string) => DocumentIssueSignatureMode;
@@ -23,7 +23,7 @@ export interface DocumentIssueConfirmationModalProps {
 	documentIssueStaffFullName: string; setDocumentIssueStaffFullName: (val: string) => void;
 	documentIssueStaffRole: string; setDocumentIssueStaffRole: (val: string) => void;
 	documentIssueNote: string; setDocumentIssueNote: (val: string) => void;
-	activeDoctor?: { fullName?: string } | null;
+	activeDoctor?: { fullName?: string } | null | undefined;
 	documentIssueIdentityChecked: boolean; setDocumentIssueIdentityChecked: (val: boolean) => void;
 	documentIssueDocumentOpenedAndChecked: boolean; setDocumentIssueDocumentOpenedAndChecked: (val: boolean) => void;
 	documentIssueRecipientSigned: boolean; setDocumentIssueRecipientSigned: (val: boolean) => void;

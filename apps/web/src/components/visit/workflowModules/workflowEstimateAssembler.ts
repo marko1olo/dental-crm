@@ -1,5 +1,6 @@
 import { roundToKopecks } from "../completedServicesPlan";
 import { rublesToKopecks } from "@dental/shared";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
 import type {
 	ClinicalVisitCompletionInput,
 	ClinicalVisitCompletionResult,
@@ -48,7 +49,22 @@ export function assembleClinicalVisitEstimate(
 	// Мандаты 8e, 8n, 8z: Ноль синтетических инвойсов INV-2026-XXXXX и муляжных QR СБП.
 	// Номер счёта присваивается реальным Fastify API в PostgreSQL 18,
 	// а платежный QR предоставляется реальным эквайрингом/кассой.
-	const receiptNumber = input.receiptNumber || (input.visitId ? `СМЕТА-${input.visitId}` : "СМЕТА");
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(input.patientId);
+	const receiptNumber =
+		input.receiptNumber ||
+		(isDemo
+			? `ЧЕК-${now.getFullYear()}-${(input.visitId || "00001").replace(/-/g, "").slice(-5)}`
+			: input.visitId
+				? `СМЕТА-${input.visitId}`
+				: "СМЕТА");
+
+	const isDiaryFilled = Boolean(
+		input.diary &&
+			((typeof input.diary === "object" && "anamnesis" in input.diary && input.diary.anamnesis) ||
+				("statusLocalis" in input.diary && input.diary.statusLocalis) ||
+				("treatmentDescription" in input.diary && input.diary.treatmentDescription) ||
+				("diagnosisIcd10" in input.diary && input.diary.diagnosisIcd10)),
+	);
 
 	return {
 		visitId: input.visitId || input.appointmentId || "visit-default",

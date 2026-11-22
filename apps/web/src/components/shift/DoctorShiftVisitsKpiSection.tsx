@@ -58,7 +58,7 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 			{displayedAppointments.length > 0 ? (
 				<div className="today-schedule-list">
 					{displayedAppointments.map((app: ShiftVisitAppointment) => {
-						const patient = patientsById.get(app.patientId);
+						const patient = app.patientId ? patientsById.get(app.patientId) : undefined;
 						const isCurrent = Boolean(
 							currentPatient &&
 								(currentPatient.id === app.patientId ||

@@ -110,7 +110,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 				<div className="flex items-center gap-3">
-					<div className="w-10 h-10 rounded-lg bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+					<div className="w-10 h-10 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0">
 						<BellRing size={20} />
 					</div>
 					<div>
@@ -144,7 +144,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-start justify-between gap-3">
 					<div className="flex items-start gap-2.5">
-						<div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
 							<Clock size={16} />
 						</div>
 						<div>
@@ -152,7 +152,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 								<h4 className="font-bold text-sm text-[var(--ink)]">
 									1. Напоминание за 24 часа до приёма
 								</h4>
-								<span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300">
+								<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
 									Основное
 								</span>
 							</div>
@@ -214,7 +214,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-start justify-between gap-3">
 					<div className="flex items-start gap-2.5">
-						<div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
 							<MapPin size={16} />
 						</div>
 						<div>
@@ -222,7 +222,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 								<h4 className="font-bold text-sm text-[var(--ink)]">
 									2. Напоминание за 2 часа до приёма (навигация и выход)
 								</h4>
-								<span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
+								<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
 									Геопозиция
 								</span>
 							</div>
@@ -272,7 +272,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-start justify-between gap-3">
 					<div className="flex items-start gap-2.5">
-						<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
 							<HeartPulse size={16} />
 						</div>
 						<div>
@@ -280,7 +280,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 								<h4 className="font-bold text-sm text-[var(--ink)]">
 									3. Памятка и контроль самочувствия через 24ч после операции
 								</h4>
-								<span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300">
+								<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
 									Контроль приёма
 								</span>
 							</div>

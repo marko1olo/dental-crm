@@ -4,7 +4,7 @@
  * ДВУХУРОВНЕВАЯ МОДЕЛЬ СПИСАНИЯ МАТЕРИАЛОВ DENTE (Мандаты 8e, 8n, 8ao, 8ap):
  * 1. Уровень 1 («Дешевые / общеклинические материалы» — cheap_overhead):
  *    Перчатки, маски, салфетки, слюноотсосы, спирт, крафт-пакеты.
- *    Списываются автоматически в производство при внутреннем перемещении со склада в процедурный кабинет (М-11).
+ *    Списываются автоматически в производство при внутреннем перемещении со склада в процедурный кабинет (общеклинические накладные материалы).
  *    Врач у кресла НЕ тратит ни одной секунды на их учет, они не загромождают чекаут (Мандат 8e/8n).
  *
  * 2. Уровень 2 («Дорогостоящие клинические материалы» — expensive_clinical):
@@ -71,7 +71,7 @@ export interface ClinicalMaterialWriteoffResult {
 	readonly visitId: string;
 	readonly treatmentServiceId: string;
 	readonly treatmentServiceTitle: string;
-	/** Дешевые материалы (списаны в фоновые общеклинические расходы М-11) */
+	/** Дешевые материалы (списаны в фоновые общеклинические накладные материалы) */
 	readonly overheadItems: readonly ClinicalMaterialDeductionLine[];
 	readonly overheadTotalCostKopecks: Kopecks;
 	/** Дорогостоящие материалы (списаны под конкретную процедуру пациента) */
@@ -129,12 +129,6 @@ export function processClinicalMaterialWriteoff(
 			const resStock = curStock - qty;
 			const isOverdraft = resStock < 0;
 
-			if (isOverdraft && allowOverdraft === false) {
-				throw new Error(
-					`Складской отказ: недостаточно общеклинического материала "${norm.itemName}". В наличии: ${curStock}, требуется: ${qty}`,
-				);
-			}
-
 			if (isOverdraft) hasOverdraft = true;
 			runningStocks[norm.inventoryItemId] = resStock;
 
@@ -190,12 +184,6 @@ export function processClinicalMaterialWriteoff(
 		const curStock = runningStocks[norm.inventoryItemId] ?? 0;
 		const resStock = curStock - qty;
 		const isOverdraft = resStock < 0;
-
-		if (isOverdraft && allowOverdraft === false) {
-			throw new Error(
-				`Складской отказ: недостаточно клинического материала "${norm.itemName}". В наличии: ${curStock}, требуется: ${qty}`,
-			);
-		}
 
 		if (isOverdraft) hasOverdraft = true;
 		runningStocks[norm.inventoryItemId] = resStock;
@@ -277,7 +265,7 @@ export function formatClinicalMaterialWriteoffAct(
 	}
 
 	lines.push(lineSep);
-	lines.push("2. ОБЩЕКЛИНИЧЕСКИЕ НАКЛАДНЫЕ МАТЕРИАЛЫ (ПОКРЫВАЮТСЯ КЛИНИКОЙ М-11):");
+	lines.push("2. ОБЩЕКЛИНИЧЕСКИЕ НАКЛАДНЫЕ МАТЕРИАЛЫ (ОБЩЕКЛИНИЧЕСКИЕ НАКЛАДНЫЕ РАСХОДЫ КЛИНИКИ):");
 
 	if (result.overheadItems.length === 0) {
 		lines.push("   (Общеклинические материалы не списывались)");
@@ -298,20 +286,3 @@ export function formatClinicalMaterialWriteoffAct(
 
 	return lines.join("\n");
 }
-
-// ─── 3. BACKWARD-COMPATIBILITY ALIASES (MANDATE 8ap DEPRECATION) ──────────────
-
-/** @deprecated Use clinicalConsumableNormSchema (DENTE Domain Purity) */
-export const identConsumableNormSchema = clinicalConsumableNormSchema;
-/** @deprecated Use ClinicalConsumableNorm (DENTE Domain Purity) */
-export type IdentConsumableNorm = ClinicalConsumableNorm;
-/** @deprecated Use ClinicalMaterialDeductionLine (DENTE Domain Purity) */
-export type IdentMaterialDeductionLine = ClinicalMaterialDeductionLine;
-/** @deprecated Use ClinicalMaterialWriteoffResult (DENTE Domain Purity) */
-export type IdentMaterialWriteoffResult = ClinicalMaterialWriteoffResult;
-/** @deprecated Use ProcessClinicalWriteoffParams (DENTE Domain Purity) */
-export type ProcessIdentWriteoffParams = ProcessClinicalWriteoffParams;
-/** @deprecated Use processClinicalMaterialWriteoff (DENTE Domain Purity) */
-export const processIdentMaterialWriteoff = processClinicalMaterialWriteoff;
-/** @deprecated Use formatClinicalMaterialWriteoffAct (DENTE Domain Purity) */
-export const formatIdentMaterialWriteoffAct = formatClinicalMaterialWriteoffAct;

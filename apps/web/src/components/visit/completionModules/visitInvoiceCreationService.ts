@@ -1,4 +1,4 @@
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import type { ClinicalVisitCompletionResult, ClinicalEstimateItem } from "../clinicalVisitWorkflow";
@@ -71,7 +71,7 @@ export async function createVisitInvoiceInApi(
 			headers: {
 				"Content-Type": "application/json",
 				"Idempotency-Key": `invoice-create-${effectiveVisitId}`,
-				...denteAdminSecretRequestHeaders(),
+				...getDenteAuthHeaders(),
 			},
 			body: JSON.stringify(invoicePayload),
 		});

@@ -6,8 +6,10 @@ import {
 	classifyTaxDeduction804n,
 	extractTaxYearFromDate,
 	generateTaxCertificateQrSvg,
+	kopecksToRubles,
 	normalizePaymentsForTaxCertificate,
 	renderOfficialTaxCertificateKnd1151156Html,
+	rublesToKopecks,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
@@ -246,7 +248,7 @@ async function buildTaxCertificatePayload(
 			? Number(rawAmountKopecks)
 			: typeof rawAmountKopecks === "number"
 				? Math.round(rawAmountKopecks)
-				: Math.round((Number(p.amountRub) || 0) * 100);
+				: rublesToKopecks(Number(p.amountRub) || 0);
 		const isExpensive = Boolean(
 			p.taxDeductionCode === "2" ||
 			classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
@@ -275,10 +277,11 @@ async function buildTaxCertificatePayload(
 			fiscalDocumentNumber: docNum || "0",
 			fiscalSign,
 			serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
-			amountRub: amtKop / 100,
+			amountRub: kopecksToRubles(amtKop),
 			amountKopecks: amtKop,
 			taxCode: isExpensive ? ("2" as const) : ("1" as const),
-			isRefund: p.status === "refunded" || amtKop < 0,
+			status: p.status === "refunded" ? ("refunded" as const) : ("paid" as const),
+			isRefund: amtKop < 0,
 		});
 	}
 
@@ -287,7 +290,7 @@ async function buildTaxCertificatePayload(
 	let totalStandardKopBi = 0n;
 	let totalExpensiveKopBi = 0n;
 	for (const p of mappedPayments) {
-		const amtKop = BigInt(p.amountKopecks ?? Math.round(p.amountRub * 100));
+		const amtKop = BigInt(p.amountKopecks ?? rublesToKopecks(p.amountRub));
 		if (p.taxCode === "2") {
 			totalExpensiveKopBi += amtKop;
 		} else {
@@ -295,9 +298,9 @@ async function buildTaxCertificatePayload(
 		}
 	}
 
-	const totalStandardRub = Number(totalStandardKopBi) / 100;
-	const totalExpensiveRub = Number(totalExpensiveKopBi) / 100;
-	const totalSumRub = Number(totalStandardKopBi + totalExpensiveKopBi) / 100;
+	const totalStandardRub = kopecksToRubles(totalStandardKopBi);
+	const totalExpensiveRub = kopecksToRubles(totalExpensiveKopBi);
+	const totalSumRub = kopecksToRubles(totalStandardKopBi + totalExpensiveKopBi);
 	const certificateNumber = `СПР-${targetYear}/${patientId.slice(0, 6).toUpperCase()}`;
 	const issueDateIso = new Date().toISOString();
 

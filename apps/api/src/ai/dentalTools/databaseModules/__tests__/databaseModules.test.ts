@@ -260,6 +260,65 @@ describe("CRM Database AI Tools — AI-REV-10: Расчет сметы стро�
 		assert.strictEqual(res.patientId, "context-pat-inv");
 		assert.strictEqual(res.amountKopecks, 150000);
 	});
+
+	test("update_tooth_status: анатомическая изоляция MODBL — не затирает поверхности в null и объединяет новые", async () => {
+		let updatedSurfaces: string[] | null | undefined;
+		const mockToothDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [
+							{
+								id: "existing-tooth-1",
+								organizationId: TEST_ORG_ID,
+								patientId: "patient-modbl",
+								toothNumber: 36,
+								state: "caries",
+								surfaces: ["M", "O"],
+								notes: "Исходный кариес MO",
+							},
+						],
+					}),
+				}),
+			}),
+			update: () => ({
+				set: (data: { surfaces?: string[] | null }) => {
+					updatedSurfaces = data.surfaces;
+					return { where: async () => {} };
+				},
+			}),
+			insert: () => ({ values: async () => {} }),
+		};
+
+		// 1. При обновлении без surfaces — существующие ["M", "O"] сохраняются
+		const res1 = await handleUpdateToothStatus(
+			{
+				patientId: "patient-modbl",
+				toothNumber: 36,
+				state: "caries",
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, db: mockToothDb as any },
+		);
+		assert.strictEqual(res1.success, true);
+		assert.deepStrictEqual(res1.surfaces, ["M", "O"]);
+		assert.deepStrictEqual(updatedSurfaces, ["M", "O"]);
+
+		// 2. При передаче новой поверхности "D" — объединяются в ["M", "O", "D"]
+		const res2 = await handleUpdateToothStatus(
+			{
+				patientId: "patient-modbl",
+				toothNumber: 36,
+				state: "filling",
+				surfaces: ["D"],
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, db: mockToothDb as any },
+		);
+		assert.strictEqual(res2.success, true);
+		assert.deepStrictEqual(res2.surfaces, ["M", "O", "D"]);
+		assert.deepStrictEqual(updatedSurfaces, ["M", "O", "D"]);
+	});
 });
 
 describe("CRM Database AI Tools — Поиск пациентов и парсинг CSV", () => {

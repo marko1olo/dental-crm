@@ -13,7 +13,7 @@ import type {
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "./client.js";
+import { db, type TenantDb } from "./client.js";
 import * as schema from "./schema.js";
 import {
 	buildClinicSettings as buildInMemoryClinicSettings,
@@ -351,8 +351,8 @@ export async function issueGeneratedDocumentInDb(
 		taxPaymentSnapshot?: TaxPaymentSnapshot | null;
 		taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
 		taxXmlSnapshot?: TaxXmlSnapshot | null;
-		totalAmountRub?: number | null;
-		tx?: any;
+		totalAmountRub?: number | null | undefined;
+		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
 	if (useInMemory()) {
@@ -396,7 +396,7 @@ export async function issueGeneratedDocumentInDb(
 		return inMemoryDocument;
 	}
 
-	const client = (options.tx ?? db) as typeof db;
+	const client = options.tx ?? db;
 	const issuedByUserId = signerUserIdForColumn(
 		options.issuedByUserId,
 		"issued_by_user_id",
@@ -497,8 +497,8 @@ export async function voidGeneratedDocumentInDb(
 		 */
 		voidedByUserId: string | null;
 		voidedAt?: string;
-		voidAttestation?: DocumentVoidAttestation;
-		tx?: any;
+		voidAttestation?: DocumentVoidAttestation | undefined;
+		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
 	if (useInMemory()) {
@@ -526,7 +526,7 @@ export async function voidGeneratedDocumentInDb(
 		return inMemoryDocument;
 	}
 
-	const client = (options.tx ?? db) as typeof db;
+	const client = options.tx ?? db;
 	const voidedByUserId = signerUserIdForColumn(
 		options.voidedByUserId,
 		"voided_by_user_id",

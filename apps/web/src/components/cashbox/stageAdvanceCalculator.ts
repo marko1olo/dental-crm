@@ -4,6 +4,8 @@
  * Compliant with Mandate 8b and 54-FZ staging protocols.
  */
 
+import { percentageOfKopecks, toExactKopecks } from "@dental/shared";
+
 export interface TreatmentPlanStageOption {
 	readonly id: string;
 	readonly titleRu: string;
@@ -74,7 +76,7 @@ export function calculateStageAdvanceAmount(
 	const sanitizedPrevPaidKop = Number.isFinite(advanceAlreadyPaidKop) ? Math.max(0, Math.round(advanceAlreadyPaidKop)) : 0;
 
 	if (mode === "advance_30") {
-		const requiredAmountKop = Math.round((sanitizedStageKop * 30) / 100);
+		const requiredAmountKop = percentageOfKopecks(toExactKopecks(sanitizedStageKop), 3000);
 		return {
 			mode: "advance_30",
 			totalStageAmountKop: sanitizedStageKop,
@@ -91,7 +93,7 @@ export function calculateStageAdvanceAmount(
 	}
 
 	if (mode === "advance_50") {
-		const requiredAmountKop = Math.round((sanitizedStageKop * 50) / 100);
+		const requiredAmountKop = percentageOfKopecks(toExactKopecks(sanitizedStageKop), 5000);
 		return {
 			mode: "advance_50",
 			totalStageAmountKop: sanitizedStageKop,

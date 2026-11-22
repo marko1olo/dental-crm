@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	formatCurrencyNumeric,
+	formatDmsPolicy,
 	formatOmsPolicy,
 	formatPhoneNumber,
 	formatRussianPassport,
 	formatSnils,
 	formatTaxpayerInn,
+	isValidDmsPolicy,
 } from "../utils/inputSanitation";
 
 describe("inputSanitation — медицинские форматы и реквизиты пациента", () => {
@@ -83,6 +85,27 @@ describe("inputSanitation — медицинские форматы и рекв�
 				formatOmsPolicy("1234567890123456"),
 				"1234 5678 9012 3456",
 			);
+		});
+	});
+
+	describe("formatDmsPolicy & isValidDmsPolicy", () => {
+		it("бережно сохраняет буквы кириллицы, латиницы, дефисы и слэши для полисов ДМС", () => {
+			assert.equal(formatDmsPolicy("СГЗ-2026-998811"), "СГЗ-2026-998811");
+			assert.equal(formatDmsPolicy("0123/ДМС-26"), "0123/ДМС-26");
+			assert.equal(formatDmsPolicy("ING-0099/2026-A"), "ING-0099/2026-A");
+			assert.equal(formatDmsPolicy("  РЕСО-998811"), "РЕСО-998811");
+		});
+
+		it("удаляет опасные символы и кавычки", () => {
+			assert.equal(formatDmsPolicy("СГЗ<script>2026</script>"), "СГЗscript2026/script");
+			assert.equal(formatDmsPolicy("№ 12345' OR 1=1"), "12345 OR 11");
+		});
+
+		it("валидирует корректность длины полиса ДМС", () => {
+			assert.equal(isValidDmsPolicy("СГЗ-2026-998811"), true);
+			assert.equal(isValidDmsPolicy("12"), false);
+			assert.equal(isValidDmsPolicy(""), false);
+			assert.equal(isValidDmsPolicy(null), false);
 		});
 	});
 

@@ -11,7 +11,7 @@ import {
 	SAMPLE_043U_PATIENT_PRESET,
 } from "./remdXml/egiszRemdPresets";
 
-import type { EgiszDentalCdaPayload } from "./cdaR2XmlBuilder";
+import type { EgiszDentalCdaPayload } from "./cdaR2/cdaTypes";
 export { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
 
 export const SAMPLE_DENTAL_SEMD_105_PRESET: EgiszDentalCdaPayload = {

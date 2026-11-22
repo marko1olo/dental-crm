@@ -1,4 +1,6 @@
 export * from "./procedureBomEngine.js";
+export * from "./materialsAutoDeductionSsot.js";
+export * from "./inventoryUnitsSsot.js";
 export * from "./gs1DataMatrixParser.js";
 export * from "./reorderEngine.js";
 export * from "./treatmentConsumablesSchema.js";

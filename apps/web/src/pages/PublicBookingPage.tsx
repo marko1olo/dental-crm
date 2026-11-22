@@ -351,7 +351,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 							{/* Преимущества и сервис */}
 							<div className="pt-4 border-t border-[var(--line)] space-y-2">
-								<div className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-muted)] mb-2">
+								<div className="text-xs font-semibold text-[var(--ink-muted)] mb-2">
 									Гарантии клиники:
 								</div>
 								<div className="flex items-center gap-2 text-xs text-[var(--ink)]">
@@ -425,7 +425,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 						) : !otpSent ? (
 							<div className="space-y-4">
 								<div>
-									<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5 uppercase tracking-wider">
+									<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5">
 										Номер телефона
 									</label>
 									<div className="relative">
@@ -470,7 +470,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 									Код подтверждения отправлен на {loginPhone}
 								</div>
 								<div>
-									<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5 uppercase tracking-wider">
+									<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5">
 										Одноразовый SMS/Telegram-код
 									</label>
 									<div className="relative">

@@ -7,7 +7,6 @@ import { DentalToothIcon } from "../DentalToothIcon";
 import type { AppointmentProcedureBadgeProps } from "./appointmentCardTypes";
 
 type AppointmentWithPlanInfo = Appointment & {
-	readonly treatmentPlanId?: string | null | undefined;
 	readonly planNumber?: string | number | null | undefined;
 };
 

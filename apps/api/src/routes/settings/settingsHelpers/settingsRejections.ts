@@ -192,7 +192,7 @@ export function serviceCatalogMutationRejection(
 	}
 	// Причина уходит в журнал целиком: без записи отказ по прайсу неотличим от
 	// опечатки оператора, а разбирать его было бы нечем.
-	console.error("[настройки] прайс не изменён:", error);
+	reply.log.error({ err: error }, "[настройки] прайс не изменён");
 	reply.code(409);
 	return {
 		error: `${errorCode}Rejected`,
@@ -229,7 +229,7 @@ export function protocolTemplateMutationRejection(
 			message: notFoundMessage,
 		};
 	}
-	console.error("[настройки] шаблон протокола не изменён:", error);
+	reply.log.error({ err: error }, "[настройки] шаблон протокола не изменён");
 	reply.code(409);
 	return {
 		error: `${errorCode}Rejected`,
@@ -288,7 +288,7 @@ export function staffAuthorityMutationRejection(reply: FastifyReply, error: unkn
 	}
 	// Причина уходит в журнал целиком: наружу идёт текст для человека, но без
 	// записи здесь отказ по полномочиям был бы неотличим от опечатки в запросе.
-	console.error("[настройки] полномочия сотрудника не сохранены:", error);
+	reply.log.error({ err: error }, "[настройки] полномочия сотрудника не сохранены");
 	reply.code(409);
 	return {
 		error: "StaffAuthorityRejected",

@@ -2,11 +2,12 @@ import type { Dashboard } from "@dental/shared";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
 import { ShiftIntelligenceSection } from "../components/shift";
+import type { ShiftMostLoadedResource } from "../components/shift/intelligence/ShiftIntelligenceAnalyticsGrid";
 import { EmkControlBoard } from "../components/visit/EmkControlBoard";
 
 export interface ShiftSecondaryAccordionProps {
 	dashboard?: Dashboard | undefined;
-	mostLoadedResource?: string | undefined;
+	mostLoadedResource?: ShiftMostLoadedResource | string | null | undefined;
 	activeQueueRole?: string | undefined;
 	rolesWorthShowing?: boolean | undefined;
 	staffRoleLabels?: Record<string, string> | undefined;
@@ -87,9 +88,13 @@ export const ShiftSecondaryAccordion: React.FC<ShiftSecondaryAccordionProps> = (
 					) : (
 						<ShiftIntelligenceSection
 							dashboard={dashboard}
-							mostLoadedResource={mostLoadedResource}
+							mostLoadedResource={
+								typeof mostLoadedResource === "string"
+									? (mostLoadedResource ? { title: mostLoadedResource, utilizationPercent: 0, bookedMinutes: 0 } : null)
+									: mostLoadedResource
+							}
 							activeQueueRole={activeQueueRole}
-							rolesWorthShowing={typeof rolesWorthShowing === "boolean" ? rolesWorthShowing : Boolean(rolesWorthShowing && rolesWorthShowing.length > 0)}
+							rolesWorthShowing={Boolean(rolesWorthShowing)}
 							staffRoleLabels={staffRoleLabels}
 						/>
 					)}

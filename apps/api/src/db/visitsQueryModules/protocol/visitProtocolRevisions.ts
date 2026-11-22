@@ -270,6 +270,7 @@ export async function acceptVisitDraftInDb(
 			const newHash = computeDiaryHash(
 				input.visitId,
 				visit.patientId,
+				nextComplaint,
 				nextAnamnesis,
 				nextStatusLocalis,
 				nextTreatmentDescription,
@@ -277,7 +278,6 @@ export async function acceptVisitDraftInDb(
 				nextTooth,
 				existingDiary.complications,
 				existingDiary.comorbidities,
-				existingDiary.instrumentTrayBarcode,
 			);
 
 			await tx
@@ -298,12 +298,12 @@ export async function acceptVisitDraftInDb(
 			const newHash = computeDiaryHash(
 				input.visitId,
 				visit.patientId,
+				input.draft.complaint ?? null,
 				input.draft.anamnesis,
 				input.draft.objectiveStatus,
 				input.draft.treatmentPlan,
 				input.draft.diagnosis,
 				targetTooth,
-				null,
 				null,
 				null,
 			);

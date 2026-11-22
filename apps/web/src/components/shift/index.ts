@@ -31,11 +31,9 @@ export type {
 export { DoctorShiftControlBar, DoctorShiftHeaderBar } from "./DoctorShiftControlBar";
 
 export type {
-	DoctorShiftCloseModalProps,
 	DoctorShiftCashSummary,
 	DoctorShiftEmrSummary,
-} from "./DoctorShiftCloseModal";
-export { DoctorShiftCloseModal } from "./DoctorShiftCloseModal";
+} from "./doctorShiftClose/doctorShiftCloseTypes";
 
 export type { DoctorShiftCashSectionProps } from "./DoctorShiftCashSection";
 export { DoctorShiftCashSection } from "./DoctorShiftCashSection";

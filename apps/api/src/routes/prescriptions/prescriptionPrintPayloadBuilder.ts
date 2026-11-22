@@ -13,11 +13,12 @@ type Org = typeof organizations.$inferSelect;
 export function buildPrescriptionPrintPayload(params: {
 	presc: Presc;
 	org?: Org | null | undefined;
+	clinicPhone?: string | null | undefined;
 	resolvedPatientAddress: string;
 	items: Item[];
 	withStampAndSignature: boolean;
 }) {
-	const { presc, org, resolvedPatientAddress, items, withStampAndSignature } = params;
+	const { presc, org, clinicPhone, resolvedPatientAddress, items, withStampAndSignature } = params;
 
 	const snapshot = presc.safetyAuditSnapshotJson as {
 		ukepSignature?: {
@@ -45,7 +46,7 @@ export function buildPrescriptionPrintPayload(params: {
 		formNumber: presc.formType === "form_148_1_u_88" ? "148-1/у-88" : presc.formType === "form_148_1_u_04_l" ? "148-1/у-04(л)" : "107-1/у",
 		clinicLegalName: org?.name || "Медицинская организация",
 		clinicAddress: org?.legalAddress || "—",
-		clinicPhone: org?.email || "—",
+		clinicPhone: clinicPhone || (org && "phone" in org ? (org as { phone?: string | null }).phone : null) || "—",
 		clinicOgrn: org?.ogrn || "—",
 		clinicInn: org?.inn || "—",
 		medicalLicenseNumber: org?.medicalLicenseNumber || "—",
@@ -64,7 +65,7 @@ export function buildPrescriptionPrintPayload(params: {
 		items: items.map((i) => ({
 			id: i.id,
 			latinName: i.innLatin,
-			tradeName: i.innLatin,
+			tradeName: i.tradeName || i.innLatin,
 			form: i.dosageFormLatin,
 			dosage: i.dosageDoseConcentration,
 			quantity: `N. ${i.quantityPackages}`,

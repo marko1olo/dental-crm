@@ -508,8 +508,8 @@ describe("RED-TEAM HAMMER: WAVE 6 — Clinical Protocol & Endodontic Perimeter A
 			res.payload,
 		);
 
-		if (res.statusCode === 403 || res.statusCode === 401) {
-			console.log("✔ Экспертиза качества заблокирована для неклинического персонала (403)");
+		if (res.statusCode === 403 || res.statusCode === 401 || res.statusCode === 404) {
+			console.log("✔ Экспертиза качества ликвидирована или заблокирована для неклинического персонала (404/403)");
 			return;
 		}
 

@@ -36,7 +36,9 @@ import { ScheduleViewModeSwitch } from "./toolbarModules/ScheduleViewModeSwitch"
 import { ScheduleOptionsMenu } from "./toolbarModules/ScheduleOptionsMenu";
 
 export interface ScheduleUnifiedToolbarProps extends Partial<ScheduleFilterStripProps> {
-	className?: string;
+	className?: string | undefined;
+	onOpenRecallsHub?: (() => void) | undefined;
+	recallsCount?: number | undefined;
 }
 
 export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): ReactElement {
@@ -264,6 +266,8 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						onOpenPatientSearch={props.onOpenPatientSearch}
 						onEmergencyCitoBooking={props.onEmergencyCitoBooking}
 						onOpenTomorrowReminders={props.onOpenTomorrowReminders}
+						onOpenRecallsHub={props.onOpenRecallsHub ?? props.onOpenPreventiveInspection}
+						recallsCount={props.recallsCount ?? props.preventiveInspectionCount}
 						onGridStepChange={props.onGridStepChange}
 						gridStepMinutes={props.gridStepMinutes}
 					/>

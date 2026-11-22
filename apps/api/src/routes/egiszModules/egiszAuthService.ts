@@ -66,8 +66,14 @@ export interface EgiszIntegrationStatusResult {
 	checkedAt: string;
 }
 
-function componentStatus(...required: (string | null)[]): ComponentStatus {
-	return required.every((value) => value !== null && value.length > 0)
+function componentStatus(...required: (string | null | undefined)[]): ComponentStatus {
+	return required.length > 0 && required.every((value) => {
+		if (value === null || value === undefined) return false;
+		const trimmed = String(value).trim();
+		if (trimmed.length === 0) return false;
+		if (trimmed === "00000000-0000-0000-0000-000000000000" || trimmed.toLowerCase() === "mock" || trimmed.toLowerCase() === "test") return false;
+		return true;
+	})
 		? "CONNECTED"
 		: "NOT_CONFIGURED";
 }

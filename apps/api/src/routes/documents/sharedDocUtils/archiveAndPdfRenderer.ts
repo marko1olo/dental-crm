@@ -225,6 +225,7 @@ export function applySignatureStampIfSigned(
 	const isElectronicallySigned =
 		document.signatureAttestation?.mode === "qualified_electronic_signature" ||
 		document.signatureAttestation?.mode === "enhanced_non_qualified_electronic_signature" ||
+		document.signatureAttestation?.mode === "simple_electronic_signature" ||
 		Boolean(document.cryptoSignaturePkcs7 && document.cryptoSignaturePkcs7.length > 0) ||
 		Boolean(document.doctorSignaturePkcs7 && document.doctorSignaturePkcs7.length > 0);
 
@@ -247,6 +248,10 @@ export function applySignatureStampIfSigned(
 				// DER parsing fallback
 			}
 		}
+	}
+
+	if (!certSerial && document.signatureAttestation?.mode === "simple_electronic_signature") {
+		certSerial = `ПЭП-${document.id.slice(0, 8).toUpperCase()}`;
 	}
 
 	if (!certSerial) {
@@ -272,10 +277,21 @@ export function applySignatureStampIfSigned(
 	const validToDate = new Date(validFrom);
 	validToDate.setFullYear(validToDate.getFullYear() + 1);
 
+	const signatureType =
+		document.signatureAttestation?.mode === "simple_electronic_signature"
+			? "simple"
+			: document.signatureAttestation?.mode ===
+				  "enhanced_non_qualified_electronic_signature"
+				? "unep"
+				: "ukep";
+
 	const stampHtml = renderDigitalSignatureStampHtml({
 		certificateSerialNumber: certSerial,
 		certificateSubject: certSubject,
-		certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+		certificateIssuer:
+			signatureType === "simple"
+				? "МИС DENTE Clinical CRM (63-ФЗ ПЭП)"
+				: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
 		validFrom,
 		validTo: validToDate.toISOString(),
 		signedAt:
@@ -283,11 +299,7 @@ export function applySignatureStampIfSigned(
 			document.signatureAttestation?.signedAt ||
 			document.issuedAt ||
 			undefined,
-		signatureType:
-			document.signatureAttestation?.mode ===
-			"enhanced_non_qualified_electronic_signature"
-				? "unep"
-				: "ukep",
+		signatureType,
 		documentId: document.id,
 	});
 

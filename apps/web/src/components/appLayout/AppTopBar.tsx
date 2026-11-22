@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import type { StaffRole } from "@dental/shared";
 import { WorkspaceTopbar } from "../../workspaceShell";
 import { preloadWorkspaceView } from "../../workspacePreload";
 import {
@@ -13,6 +14,7 @@ import {
 	TopBarNotices,
 	TopBarOnboardingStrips,
 } from "./topBarModules";
+import { staffRoleLabels as defaultStaffRoleLabels } from "../../workspaceUiLabels";
 import type { AppTopBarProps } from "./types";
 
 export function AppTopBar(props: AppTopBarProps) {
@@ -53,7 +55,7 @@ export function AppTopBar(props: AppTopBarProps) {
 
 			<WorkspaceTopbar
 				clinicName={dashboard?.clinicName || "Стоматология"}
-				onGoToDictation={goToVisitDictation}
+				onGoToDictation={goToVisitDictation ?? (() => {})}
 				onGoToSchedule={() => {
 					if (typeof window !== "undefined") {
 						const isSchedule = window.location.hash === "#schedule" || window.location.hash === "schedule";
@@ -67,18 +69,26 @@ export function AppTopBar(props: AppTopBarProps) {
 				onGoToVisit={() => {
 					if (typeof window !== "undefined") window.location.hash = "visit";
 				}}
-				onReopenOnboarding={reopenOnboarding}
-				onRoleChange={setSelectedWorkspaceRole}
+				onReopenOnboarding={reopenOnboarding ?? (() => {})}
+				onRoleChange={setSelectedWorkspaceRole ?? (() => {})}
 				onViewIntent={preloadWorkspaceView}
-				roleFocusOrder={roleFocusOrder}
-				selectedWorkspaceRole={selectedWorkspaceRole}
-				showAdministrationTopActions={showAdministrationTopActions}
-				showDoctorVisitShortcut={showDoctorVisitShortcut}
-				staffRoleLabels={staffRoleLabels}
+				roleFocusOrder={roleFocusOrder ?? []}
+				selectedWorkspaceRole={selectedWorkspaceRole ?? "doctor"}
+				showAdministrationTopActions={showAdministrationTopActions ?? false}
+				showDoctorVisitShortcut={showDoctorVisitShortcut ?? false}
+				staffRoleLabels={
+					staffRoleLabels && Object.keys(staffRoleLabels).length > 0
+						? (staffRoleLabels as Record<StaffRole, string>)
+						: defaultStaffRoleLabels
+				}
 				todayIso={dashboard?.todayIso || props.todayIso || ""}
-				onLockSession={handleLockSession}
-				onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
-				onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}
+				onLockSession={handleLockSession ?? (() => {})}
+				onOpenDoctorShiftCockpit={openDoctorShiftCockpit ?? (() => {})}
+				onOpenCbctDemo={() => {
+					if (typeof setIsCbctDirectModalOpen === "function") {
+						setIsCbctDirectModalOpen(true);
+					}
+				}}
 				currentView={currentView}
 			/>
 

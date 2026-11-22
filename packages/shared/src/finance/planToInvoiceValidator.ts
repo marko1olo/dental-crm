@@ -27,7 +27,7 @@ import {
 	splitKopecks,
 	sumKopecks,
 	formatKopecksRu,
-} from "../utils/money.js";
+} from "../money.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA CONTRACTS & SCHEMAS

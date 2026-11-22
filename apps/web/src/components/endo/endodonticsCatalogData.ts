@@ -269,6 +269,11 @@ export interface EndoBillingCostBreakdown {
 	readonly services: ReadonlyArray<{ readonly code: string; readonly title: string; readonly priceKopecks: bigint; readonly quantity: number }>;
 }
 
+/** Базовый тариф радиовизиографического контроля в копейках (600 руб.) */
+export const DEFAULT_ENDO_RVG_PRICE_KOPECKS = 60_000n;
+/** Базовый тариф использования операционного микроскопа в копейках (3000 руб.) */
+export const DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS = 300_000n;
+
 export function calculateEndoTreatmentCostKopecks(params: {
 	toothNumber: number;
 	canalsCount: number;
@@ -292,13 +297,13 @@ export function calculateEndoTreatmentCostKopecks(params: {
 
 	const services: Array<{ code: string; title: string; priceKopecks: bigint; quantity: number }> = [];
 	for (const s of estimate.services804n) {
-		services.push({ code: s.code804n, title: s.title, priceKopecks: BigInt(s.totalPriceKopecks), quantity: s.quantity });
+		services.push({ code: s.code804n || "A16.07.030", title: s.title, priceKopecks: BigInt(s.totalPriceKopecks), quantity: s.quantity });
 	}
 	if (params.withRvg !== false) {
-		services.push({ code: "A06.07.003", title: "Прицельная радиовизиография контрольная (1 снимок)", priceKopecks: 60_000n, quantity: 1 });
+		services.push({ code: "A06.07.003", title: "Прицельная радиовизиография контрольная (1 снимок)", priceKopecks: DEFAULT_ENDO_RVG_PRICE_KOPECKS, quantity: 1 });
 	}
 	if (params.withMicroscope) {
-		services.push({ code: "A16.07.030.005", title: "Использование операционного микроскопа в эндодонтии", priceKopecks: 300_000n, quantity: 1 });
+		services.push({ code: "A16.07.030.005", title: "Использование операционного микроскопа в эндодонтии", priceKopecks: DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS, quantity: 1 });
 	}
 
 	const totalKopecks = services.reduce((acc, s) => acc + s.priceKopecks, 0n);

@@ -302,46 +302,48 @@ test("POST /api/imaging/studies/:id/bind-patient: ручная привязка 
 	const app = Fastify();
 	await registerStudiesRoutes(app);
 
-	t.mock.method(db, "select", () => {
-		const chain: any = {
-			from: () => chain,
-			where: () => chain,
-			limit: () => chain,
-			then: (
-				onfulfilled?: ((val: unknown) => unknown) | null,
-				onrejected?: ((err: unknown) => unknown) | null,
-			) =>
-				Promise.resolve([
-					{
-						id: PATIENT_ID,
-						fullName: "Захаров Иван",
-					},
-				]).then(onfulfilled, onrejected),
-		};
-		return chain;
-	});
+	const selectChain: any = {
+		from: () => selectChain,
+		where: () => selectChain,
+		limit: () => selectChain,
+		then: (
+			onfulfilled?: ((val: unknown) => unknown) | null,
+			onrejected?: ((err: unknown) => unknown) | null,
+		) =>
+			Promise.resolve([
+				{
+					id: PATIENT_ID,
+					fullName: "Захаров Иван",
+				},
+			]).then(onfulfilled, onrejected),
+	};
 
-	t.mock.method(db, "update", () => {
-		const chain: any = {
-			set: () => chain,
-			where: () => chain,
-			returning: () => chain,
-			then: (
-				onfulfilled?: ((val: unknown) => unknown) | null,
-				onrejected?: ((err: unknown) => unknown) | null,
-			) =>
-				Promise.resolve([
-					{
-						...mockStudyDbRow,
-						patientId: PATIENT_ID,
-						bindingStatus: "manual_bound",
-						bindingConfidence: 100,
-						aiSummary: "Вручную привязано врачом к пациенту: Захаров Иван",
-					},
-				]).then(onfulfilled, onrejected),
-		};
-		return chain;
-	});
+	const updateChain: any = {
+		set: () => updateChain,
+		where: () => updateChain,
+		returning: () => updateChain,
+		then: (
+			onfulfilled?: ((val: unknown) => unknown) | null,
+			onrejected?: ((err: unknown) => unknown) | null,
+		) =>
+			Promise.resolve([
+				{
+					...mockStudyDbRow,
+					patientId: PATIENT_ID,
+					bindingStatus: "manual_bound",
+					bindingConfidence: 100,
+					aiSummary: "Вручную привязано врачом к пациенту: Захаров Иван",
+				},
+			]).then(onfulfilled, onrejected),
+	};
+
+	t.mock.method(db, "select", () => selectChain);
+	t.mock.method(db, "update", () => updateChain);
+	const txMock: any = {
+		select: () => selectChain,
+		update: () => updateChain,
+	};
+	t.mock.method(db, "transaction", async (cb: (tx: unknown) => unknown) => cb(txMock));
 
 	const res = await app.inject({
 		method: "POST",
@@ -364,27 +366,31 @@ test("POST /api/imaging/studies/:id/unbind-patient: отвязка исслед�
 	const app = Fastify();
 	await registerStudiesRoutes(app);
 
-	t.mock.method(db, "update", () => {
-		const chain: any = {
-			set: () => chain,
-			where: () => chain,
-			returning: () => chain,
-			then: (
-				onfulfilled?: ((val: unknown) => unknown) | null,
-				onrejected?: ((err: unknown) => unknown) | null,
-			) =>
-				Promise.resolve([
-					{
-						...mockStudyDbRow,
-						patientId: null,
-						bindingStatus: "unassigned",
-						bindingConfidence: 0,
-						aiSummary: "Исследование отвязано от пациента врачом",
-					},
-				]).then(onfulfilled, onrejected),
-		};
-		return chain;
-	});
+	const unbindChain: any = {
+		set: () => unbindChain,
+		where: () => unbindChain,
+		returning: () => unbindChain,
+		then: (
+			onfulfilled?: ((val: unknown) => unknown) | null,
+			onrejected?: ((err: unknown) => unknown) | null,
+		) =>
+			Promise.resolve([
+				{
+					...mockStudyDbRow,
+					patientId: null,
+					bindingStatus: "unassigned",
+					bindingConfidence: 0,
+					aiSummary: "Исследование отвязано от пациента врачом",
+				},
+			]).then(onfulfilled, onrejected),
+	};
+
+	t.mock.method(db, "update", () => unbindChain);
+	const unbindTxMock: any = {
+		update: () => unbindChain,
+		delete: () => unbindChain,
+	};
+	t.mock.method(db, "transaction", async (cb: (tx: unknown) => unknown) => cb(unbindTxMock));
 
 	const res = await app.inject({
 		method: "POST",

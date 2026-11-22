@@ -9,7 +9,30 @@
  */
 
 import { z } from "zod";
-import type { AngleClass } from "../diagnostics/photoProtocolEngine.js";
+import type { AngleClass as PhotoAngleClass } from "../diagnostics/photoProtocolEngine.js";
+
+export const angleClassIdSchema = z.enum([
+	"class_1",
+	"class_2_div_1",
+	"class_2_div_2",
+	"class_3",
+]);
+export type AngleClassId = z.infer<typeof angleClassIdSchema>;
+export type AngleClass = AngleClassId;
+
+/**
+ * Нормализатор классификации Энгля для обратной совместимости и защиты от клинического подлога в ЭМК.
+ * Преобразует устаревшие нотации "class_2_1" / "class_2_2" в канонические "class_2_div_1" / "class_2_div_2".
+ */
+export function normalizeAngleClass(raw?: string | null): AngleClassId {
+	if (!raw) return "class_1";
+	if (raw === "class_2_1") return "class_2_div_1";
+	if (raw === "class_2_2") return "class_2_div_2";
+	if (raw === "class_2_div_1" || raw === "class_2_div_2" || raw === "class_3" || raw === "class_1") {
+		return raw;
+	}
+	return "class_1";
+}
 
 export const bracketSlotSchema = z.enum(["0.018", "0.022"]);
 export type BracketSlot = z.infer<typeof bracketSlotSchema>;
@@ -57,6 +80,10 @@ export const archwireChangePayloadSchema = z.object({
 	size: z.string().min(1).max(30).optional(),
 	profile: z.enum(["round", "rectangular"]).optional(),
 	arch: targetArchSchema.default("both"),
+	upperMaterial: z.string().optional(),
+	upperSection: z.string().optional(),
+	lowerMaterial: z.string().optional(),
+	lowerSection: z.string().optional(),
 	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
 	isWireChange: z.boolean().default(true),
 	note: z.string().max(300).optional(),

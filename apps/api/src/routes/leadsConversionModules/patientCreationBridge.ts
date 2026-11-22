@@ -4,14 +4,17 @@
  */
 
 import { and, eq, or } from "drizzle-orm";
-import type { FastifyReply } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { normalizePhone } from "@dental/shared";
+import { z } from "zod";
 import type { db } from "../../db/client.js";
 import { crmLeads, patients } from "../../db/schema.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { extractUtmAttribution } from "./conversionValidator.js";
 import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageTransition.js";
+import { saveLeadCommunicationConsents } from "./leadConsentBridge.js";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type DbExecutor = typeof db | DbTransaction;
@@ -22,6 +25,16 @@ export async function resolveOrCreatePatientFromLead(
 	lead: typeof crmLeads.$inferSelect,
 	comment?: string | null,
 ): Promise<{ patient: typeof patients.$inferSelect; alreadyExisted: boolean }> {
+	if (lead.patientId) {
+		const [byPatientId] = await tx
+			.select()
+			.from(patients)
+			.where(and(eq(patients.id, lead.patientId), eq(patients.organizationId, organizationId)))
+			.for("update")
+			.limit(1);
+		if (byPatientId) return { patient: byPatientId, alreadyExisted: true };
+	}
+
 	const rawPhone = lead.phone?.trim() || null;
 	const cleanPhone = rawPhone ? (normalizePhone(rawPhone) ?? rawPhone) : null;
 	const leadSource = lead.source ? String(lead.source).trim() : null;
@@ -32,7 +45,7 @@ export async function resolveOrCreatePatientFromLead(
 				eq(patients.organizationId, organizationId),
 				or(...(cleanPhone ? [eq(patients.phone, cleanPhone)] : []), ...(rawPhone && rawPhone !== cleanPhone ? [eq(patients.phone, rawPhone)] : [])),
 			),
-		).limit(1);
+		).for("update").limit(1);
 		if (existing) return { patient: existing, alreadyExisted: true };
 	}
 
@@ -72,31 +85,57 @@ export async function createPatientFromLead(params: {
 	organizationId: string;
 	leadId: string;
 	reply: FastifyReply;
+	req?: FastifyRequest;
 }) {
-	const { db, wsBroker, organizationId, leadId, reply } = params;
-	const [lead] = await db.select().from(crmLeads).where(
-		and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
-	).limit(1);
+	const { db, wsBroker, organizationId, leadId, reply, req } = params;
 
-	if (!lead) {
-		return reply.code(404).send({ error: "LeadNotFound", message: "Обращение не найдено в клинике." });
-	}
+	const result = await db.transaction(async (tx) => {
+		const [lead] = await tx
+			.select()
+			.from(crmLeads)
+			.where(and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)))
+			.for("update")
+			.limit(1);
 
-	const { patient, alreadyExisted } = await db.transaction(async (tx) => {
+		if (!lead) return { notFound: true as const };
+
 		const res = await resolveOrCreatePatientFromLead(tx, organizationId, lead);
-		await recordLeadStageTransition({
-			tx,
+
+		const identity = req ? getRequestIdentity(req) : null;
+		const changedByUserId =
+			identity?.userId && z.string().uuid().safeParse(identity.userId).success
+				? identity.userId
+				: null;
+
+		await saveLeadCommunicationConsents(tx, {
 			organizationId,
-			leadId: lead.id,
-			fromStage: lead.status,
-			toStage: "converted",
-			stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
-			changedByUserId: null,
 			patientId: res.patient.id,
+			consentMedical: true,
+			consentMarketing: false,
+			decidedByUserId: changedByUserId,
 		});
+
+		if (lead.status !== "converted") {
+			await recordLeadStageTransition({
+				tx,
+				organizationId,
+				leadId: lead.id,
+				fromStage: lead.status,
+				toStage: "converted",
+				stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
+				changedByUserId,
+				patientId: res.patient.id,
+			});
+		}
+
 		return res;
 	});
 
+	if ("notFound" in result) {
+		return reply.code(404).send({ error: "LeadNotFound", message: "Обращение не найдено в клинике." });
+	}
+
+	const { patient, alreadyExisted } = result;
 	broadcastLeadConversion({ wsBroker, organizationId, leadId, toStage: "converted", patient });
 	const statusCode = alreadyExisted ? 200 : 201;
 	return reply.code(statusCode).send({

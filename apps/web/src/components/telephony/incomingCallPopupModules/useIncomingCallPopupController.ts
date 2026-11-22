@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { type Chair, type Dashboard, patientSchema, type Patient, type StaffMember } from "@dental/shared";
+import { logger } from "../../../utils/logger.js";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
@@ -85,6 +86,20 @@ export function useIncomingCallPopupController(
 		return false;
 	});
 	const isPopupExpanded = isExpanded && !isCallDrawerOpen;
+
+	useEffect(() => {
+		const isFullyVisible =
+			isPopupExpanded &&
+			!isDoctorMode &&
+			Boolean(activeCall) &&
+			!isDndActive &&
+			!isFullScreenStudioActive &&
+			activeCall?.direction !== "outbound";
+		useTelephonyStore.getState().setIsIncomingCallPopupExpanded(isFullyVisible);
+		return () => {
+			useTelephonyStore.getState().setIsIncomingCallPopupExpanded(false);
+		};
+	}, [isPopupExpanded, isDoctorMode, activeCall, isDndActive, isFullScreenStudioActive]);
 	const [newPatientNameInput, setNewPatientNameInput] = useState("");
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
@@ -291,7 +306,7 @@ export function useIncomingCallPopupController(
 			fetch("/api/whatsapp/send", {
 				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ patientId: resolvedPatient.id, message: msg }),
-			}).catch((err) => console.warn("[IncomingCallPopup] WhatsApp direct send API error:", err));
+			}).catch((err) => logger.warn("[IncomingCallPopup] WhatsApp direct send API error:", err));
 		}
 		showToast(`Чат WhatsApp открыт для ${callerName} (${formattedPhone})`, "success");
 	};

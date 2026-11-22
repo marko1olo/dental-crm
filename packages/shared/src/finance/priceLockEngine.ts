@@ -20,7 +20,7 @@ import {
 	multiplyKopecks,
 	sumKopecks,
 	formatKopecksRu,
-} from "../utils/money.js";
+} from "../money.js";
 import { integerToRussianWords } from "../sanpin/sanpinRegistryEngine.js";
 
 // ─────────────────────────────────────────────────────────────────────────────

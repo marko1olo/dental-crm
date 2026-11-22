@@ -50,11 +50,24 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { fetchReportsSummary } from "../components/analytics/analyticsSlicesApi.js";
 import {
 	payoutMonthCalendarBounds,
 	requestDoctorPayouts,
 } from "../components/analytics/DoctorPayrollReport.js";
+
+function fetchReportsSummary(
+	period: { readonly from: string; readonly to: string; readonly granularity?: string },
+	headers?: Record<string, string>,
+): Promise<Response> {
+	const params = new URLSearchParams();
+	if (period.from) params.set("from", period.from);
+	if (period.to) params.set("to", period.to);
+	if (period.granularity) params.set("granularity", period.granularity);
+	const query = params.toString();
+	return fetch(`/api/reports/summary${query ? `?${query}` : ""}`, {
+		headers: headers ?? {},
+	});
+}
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -280,7 +293,6 @@ describe("границы периода уходят на сервер кале�
 	 */
 	test("ни в панели отчётов, ни в выплатах не осталось превращения даты в мгновение", () => {
 		for (const relative of [
-			"components/analytics/analyticsSlicesApi.ts",
 			"components/analytics/DoctorPayrollReport.tsx",
 		]) {
 			const source = readFileSync(path.join(webSrc, relative), "utf8");

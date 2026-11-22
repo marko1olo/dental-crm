@@ -13,7 +13,7 @@ import {
 	createTestPatient,
 	createTestPayment,
 } from "./testDocumentFixtures.js";
-import { buildKnd1151156Xml, type Knd1151156XmlContext } from "./taxXml.js";
+import { buildKnd1151156Xml, type Knd1151156XmlContext } from "../routes/documents/sharedDocUtils/index.js";
 
 describe("buildKnd1151156Xml", () => {
 	const baseDocument: GeneratedDocument = createTestGeneratedDocument({

@@ -7,6 +7,8 @@ export interface GuestLabPortalProps {
 
 export interface LabOrderData {
 	readonly id: string;
+	readonly orderNumber?: string | null | undefined;
+	readonly patientInitials?: string | null | undefined;
 	readonly patientFullName?: string | null | undefined;
 	readonly toothFdi?: string | null | undefined;
 	readonly material?: string | null | undefined;

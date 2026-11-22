@@ -11,7 +11,7 @@ import { renderToString } from "react-dom/server";
 import {
 	AppointmentsTab,
 	FamilyTab,
-} from "../../components/portal/patientCabinet/tabs";
+} from "../../components/portal/patientCabinet/tabs/index.js";
 import { mapServerPortalMeToCabinetData } from "../../components/portal/patientCabinet/patientCabinetMapper";
 import {
 	calculateCabinetSummary,
@@ -46,7 +46,10 @@ describe("Patient Personal Portal - SBP QR Payments & Currency Formatting", () =
 		assert.ok(invoice);
 		assert.equal(invoice.status, "unpaid");
 
-		const sbpPayload = generateSbpQrPayload(invoice);
+		const sbpPayload = generateSbpQrPayload(invoice, {
+			legalName: "ООО ДЕНТЕ",
+			inn: "7701234567",
+		});
 
 		assert.ok(sbpPayload.qrId.startsWith("SBPA"));
 		assert.equal(sbpPayload.invoiceNumber, "СЧ-2026/089");
@@ -76,7 +79,8 @@ describe("Patient Personal Portal - SBP QR Payments & Currency Formatting", () =
 		assert.equal(paid.paymentMethod, "sbp");
 		assert.ok(paid.paidAtIso);
 		assert.ok(paid.fiscalReceiptNumber?.startsWith("ФД-"));
-		assert.ok(paid.fiscalReceiptUrl?.includes("receipt.nalog.ru"));
+		// Фискальная безопасность: ликвидация потёмкинских ссылок на receipt.nalog.ru
+		assert.equal(paid.fiscalReceiptUrl, undefined);
 	});
 
 	it("filters invoices by payment status correctly", () => {

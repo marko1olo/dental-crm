@@ -96,7 +96,7 @@ test("ClinicControlPill - 3-Sensor Status Capsule & Settings State", () => {
 test("ClinicControlPill - renders 3-segment capsule without dead monolithic Header wrapper", async () => {
 	const React = await import("react");
 	const { renderToStaticMarkup } = await import("react-dom/server");
-	const { ClinicControlPill } = await import("../Header");
+	const { ClinicControlPill } = await import("../headerModules/headerStatus/ClinicControlPill");
 
 	const html = renderToStaticMarkup(
 		React.createElement(ClinicControlPill, {

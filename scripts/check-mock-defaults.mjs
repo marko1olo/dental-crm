@@ -11,6 +11,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, relative } from "node:path";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const ROOT_DIR = process.cwd();
 const RATCHET_LEDGER_PATH = join(ROOT_DIR, ".data/code-health-ratchet.json");
@@ -125,8 +126,9 @@ function auditMockDefaults() {
 		for (const v of violations) {
 			console.error(`   ${v.file}:${v.line} -> ${v.snippet}`);
 		}
-		console.error("\n💡 Любые НОВЫЕ вымышленные пациенты в дефолтных пропсах запрещены!");
-		console.error("Используйте честный Empty State (null/undefined) или обёртку isDemoShowcaseMode().");
+		printFailureManifesto("MOCK_DEFAULTS", {
+			details: `Найдено ${violations.length} захардкоженных вымышленных пациентов/сумм в UI (лимит: ${maxMockDefaults}).`,
+		});
 		process.exit(1);
 	} else {
 		console.log(

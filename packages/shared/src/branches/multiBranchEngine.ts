@@ -15,7 +15,7 @@
  */
 
 import { z } from "zod";
-import { type Kopecks, formatKopecksRu } from "../utils/money.js";
+import { type Kopecks, formatKopecksRu } from "../money.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
 
 // ─── 1. BRANCH CONFIGURATION & PROFILES ────────────────────────────────────────

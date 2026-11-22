@@ -32,8 +32,10 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	isPlayingRecording: false,
 	transferState: initialTransferState,
 	isWsConnected: false,
+	isIncomingCallPopupExpanded: false,
 
 	setWsConnected: (isWsConnected) => set({ isWsConnected }),
+	setIsIncomingCallPopupExpanded: (isIncomingCallPopupExpanded) => set({ isIncomingCallPopupExpanded }),
 	setAgentState: (agentState) => set({ agentState }),
 
 	...createTelephonyCallActions(set, get),

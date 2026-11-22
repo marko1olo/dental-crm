@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import { enqueueOfflineMutation } from "./idbBatchOperations";
 import type {
 	AppointmentMutationInput,
@@ -26,7 +27,7 @@ export async function enqueueOdontogramMutation(input: OdontogramStampMutationIn
 
 export async function enqueueServiceAdditionMutation(input: ServiceAdditionMutationInput): Promise<OfflineMutation<Record<string, unknown>>> {
 	const item = input.serviceItem;
-	const priceKop = item.priceKopecks !== undefined ? item.priceKopecks : Math.round((item.priceRub || 0) * 100);
+	const priceKop = item.priceKopecks !== undefined ? item.priceKopecks : rublesToKopecks(item.priceRub || 0);
 	return enqueueOfflineMutation<Record<string, unknown>>({
 		entityType: "TREATMENT_PLAN_DRAFT", entityId: input.visitId || input.patientId, action: input.action || "create",
 		payload: {

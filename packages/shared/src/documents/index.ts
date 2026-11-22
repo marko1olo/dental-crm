@@ -33,4 +33,5 @@ export * from "./templateEngine.js";
 export * from "./templateVariablesRegistry.js";
 export * from "./templates/index.js";
 export * from "./professionalA4Types.js";
+export * from "./declension/index.js";
 

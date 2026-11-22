@@ -3,7 +3,7 @@
  * EGISZ CDA R3 / REMD STATUTORY FORMATTER & UKEP GOST 34.10 PROTOCOL ENGINE
  * (МИНЗДРАВ РФ / ПРИКАЗ 911Н / 804Н / 834Н / ГОСТ Р 34.10-2012 / CAdES-BES)
  * Comprehensive statutory verification of Form 043/u (Dental Consultation),
- * SEMD 101, 104, 130, OID classifiers, foreign citizen fallback,
+ * SEMD 101, 104, 105, OID classifiers, foreign citizen fallback,
  * C14N canonicalization, SHA-256 / GOST digests, and detached UKEP signatures.
  * ═══════════════════════════════════════════════════════════════════════════
  */
@@ -24,7 +24,6 @@ import {
 	generateSemd043uXml,
 	generateSemd101Xml,
 	generateSemd104Xml,
-	generateSemd130Xml,
 	generateSemd105Xml,
 	isValidSnils,
 	normalizeSnils,
@@ -41,7 +40,6 @@ import {
 	type CdaSemd043uParams,
 	type CdaSemd101Params,
 	type CdaSemd104Params,
-	type CdaSemd130Params,
 } from "../cda/index.js";
 
 const SAMPLE_CLINIC = {
@@ -333,8 +331,8 @@ describe("EGISZ CDA R3 / REMD Statutory Formatter & UKEP GOST 34.10 Engine", () 
 		});
 	});
 
-	// ─── 3. СЭМД 104 (Эпикриз) и СЭМД 130 (Налоговая справка) ─────────────────
-	describe("3. SEMD 104 (Epicrisis) & SEMD 130 (Tax Certificate KND 1151156)", () => {
+	// ─── 3. СЭМД 104 (Эпикриз) и СЭМД 105 (Консультация) ───────────────────────
+	describe("3. SEMD 104 (Epicrisis) & SEMD 105 (Ambulatory Consultation Protocol)", () => {
 		it("генерирует стоматологический эпикриз СЭМД 104 с хирургическим протоколом", () => {
 			const params: CdaSemd104Params = {
 				docKind: "104",
@@ -364,49 +362,6 @@ describe("EGISZ CDA R3 / REMD Statutory Formatter & UKEP GOST 34.10 Engine", () 
 			assert.ok(res.xml.includes(EGISZ_OIDS.SEMD_TEMPLATE_104));
 			assert.ok(res.xml.includes("Хирургический протокол:"));
 			assert.ok(res.xml.includes("Улучшение клинического состояния"));
-		});
-
-		it("генерирует копеечно-точную налоговую справку СЭМД 130 и отклоняет арифметический дисбаланс", () => {
-			const valid130: CdaSemd130Params = {
-				docKind: "130",
-				documentId: "DOC-SEMD130-VALID",
-				certificateNumber: "130-2026/001",
-				taxYear: 2026,
-				issueDate: new Date("2026-08-25"),
-				patient: SAMPLE_PATIENT_RU,
-				taxpayer: {
-					fullName: "Соколов Владимир Иванович",
-					relationToPatient: "3", // Родитель
-					inn: "500100732259",
-					snils: "112-233-445 95",
-				},
-				doctor: SAMPLE_DOCTOR,
-				clinic: SAMPLE_CLINIC,
-				contractNumber: "ДОГ-8812",
-				contractDate: "2026-01-20",
-				paymentRecords: [
-					{ fiscalReceiptNumber: "Ч-1", fiscalReceiptDate: "2026-03-10", paymentAmountKopecks: 200050, serviceCategoryCode: "1" },
-					{ fiscalReceiptNumber: "Ч-2", fiscalReceiptDate: "2026-06-15", paymentAmountKopecks: 800000, serviceCategoryCode: "2" },
-				],
-				totalOrdinaryTreatmentKopecks: 200050,
-				totalExpensiveTreatmentKopecks: 800000,
-				totalSumKopecks: 1000050, // 10 000.50 руб.
-			};
-
-			const validRes = generateCdaXml(valid130);
-			assert.equal(validRes.success, true);
-			if (!validRes.success) return;
-			assert.ok(validRes.xml.includes("10000.50"));
-
-			// Дисбаланс сумм
-			const invalid130: CdaSemd130Params = {
-				...valid130,
-				totalSumKopecks: 1000000, // 10 000.00 руб. (расхождение на 50 копеек!)
-			};
-
-			const invalidVal = validateCdaParams(invalid130);
-			assert.equal(invalidVal.valid, false);
-			assert.ok(invalidVal.errors.some((e) => e.includes("Не сходится сумма в копейках")));
 		});
 
 		it("генерирует амбулаторный протокол консультации СЭМД 105 по стандарту HL7 CDA R2", () => {

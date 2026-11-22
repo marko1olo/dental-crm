@@ -3,7 +3,11 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type { Lead } from "../../../store/leadsStore";
+import type {
+	ConvertLeadResult,
+	ConvertLeadToAppointmentPayload,
+	Lead,
+} from "../../../store/leadsStore";
 import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
 export type { PendingBookingInfo } from "./useLeadBookingNavigation";
 import type { PendingBookingInfo } from "./useLeadBookingNavigation";
@@ -21,7 +25,10 @@ export interface ConvertSubmitOptions {
 	appointmentTime: string;
 	visitMinutes: number | null | undefined;
 	clinicTimeZone: string | null | undefined;
-	convertLeadToAppointment: (id: string, payload: any) => Promise<any>;
+	convertLeadToAppointment: (
+		id: string,
+		payload: ConvertLeadToAppointmentPayload,
+	) => Promise<ConvertLeadResult>;
 	fetchLeads: () => void;
 	setIsConvertOpen: (b: boolean) => void;
 	setConvertingLeadId: (id: string | null) => void;

@@ -130,7 +130,7 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(btnHtml.includes('data-testid="1c-export-xml-button"'));
   });
 
-  it('renders Billing1CExportModal with non-truncated CommerceML 2.09 & 54-FZ header and mobile-safe export button', () => {
+  it('renders Billing1CExportModal with non-truncated CommerceML 2.09 & кассовые чеки header and mobile-safe export button', () => {
     const html = renderToString(
       <Billing1CExportModal
         isOpen={true}
@@ -144,9 +144,7 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
 
     assert.ok(html.includes('data-testid="billing-1c-export-modal"'));
     assert.ok(
-      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и кассовые чеки') ||
-      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ') ||
-      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ')
+      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и кассовые чеки')
     );
     assert.ok(html.includes('CommerceML 2.09'));
     assert.ok(html.includes('Кассовый чек'));

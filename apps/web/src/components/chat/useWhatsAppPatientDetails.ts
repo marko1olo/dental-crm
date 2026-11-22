@@ -57,15 +57,19 @@ export function useWhatsAppPatientDetails({
 	}, [patient?.id, dashboard?.appointments, dashboard?.clinicSettings?.staff, dashboard?.todayIso]);
 
 	const activeTreatmentPlan = useMemo(() => {
-		const insight = dashboard?.patientInsights?.find((pi) => pi.patientId === patient?.id);
-		if (insight?.treatmentPlanTitle) {
+		const planItems = dashboard?.treatmentPlanItems?.filter((pi) => pi.patientId === patient?.id);
+		if (planItems && planItems.length > 0) {
+			const totalRub = planItems.reduce(
+				(acc, it) => acc + (it.unitPriceRub * it.quantity - it.discountRub),
+				0,
+			);
 			return {
-				title: insight.treatmentPlanTitle,
-				totalRub: insight.treatmentPlanTotalRub || "0",
+				title: planItems[0]?.snapshotServiceName || "План лечения",
+				totalRub: String(totalRub),
 			};
 		}
 		return null;
-	}, [dashboard?.patientInsights, patient?.id]);
+	}, [dashboard?.treatmentPlanItems, patient?.id]);
 
 	return {
 		dashboard,

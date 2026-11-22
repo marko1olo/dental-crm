@@ -10,6 +10,7 @@
  * NODE_ENV=test: секреты вебхука не заданы → dev-path (пропуск verify).
  */
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
@@ -53,10 +54,12 @@ describe("Messenger webhooks — cast-after-200 body guard", () => {
 		opts: {
 			body?: unknown;
 			rawPayload?: string | Buffer | null;
+			headers?: Record<string, string>;
 		} = {},
 	) {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
+			...(opts.headers ?? {}),
 		};
 		const injectOpts: {
 			method: "POST";
@@ -108,6 +111,24 @@ describe("Messenger webhooks — cast-after-200 body guard", () => {
 		assert.equal(res.json.ok, true);
 	});
 
+	test("MAX webhook: batch array of events → 200 ok, no throw", async () => {
+		const res = await postWebhook("/api/max/webhook", {
+			body: [
+				{
+					eventType: "newMessage",
+					payload: { chat: { chatId: "chat-1" }, text: "Первое сообщение" },
+				},
+				{
+					eventType: "newMessage",
+					payload: { chat: { chatId: "chat-2" }, text: "Второе сообщение" },
+				},
+			],
+			headers: { "x-max-bot-id": "test-bot" },
+		});
+		assert.equal(res.statusCode, 200, res.body);
+		assert.equal(res.json.ok, true);
+	});
+
 	test("WhatsApp webhook: JSON null body → 200 received, no throw", async () => {
 		const res = await postWebhook("/api/whatsapp/webhook", {
 			rawPayload: "null",
@@ -120,5 +141,41 @@ describe("Messenger webhooks — cast-after-200 body guard", () => {
 		const res = await postWebhook("/api/whatsapp/webhook", { body: {} });
 		assert.equal(res.statusCode, 200, res.body);
 		assert.equal(res.json.received, true);
+	});
+
+	test("WhatsApp webhook: valid HMAC-SHA256 signature → 200 received", async () => {
+		const secret = "test_whatsapp_secret_998877";
+		process.env.WHATSAPP_APP_SECRET = secret;
+		try {
+			const payload = JSON.stringify({ entry: [] });
+			const signature = `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`;
+
+			const res = await postWebhook("/api/whatsapp/webhook", {
+				rawPayload: payload,
+				headers: { "x-hub-signature-256": signature },
+			});
+			assert.equal(res.statusCode, 200, res.body);
+			assert.equal(res.json.received, true);
+		} finally {
+			delete process.env.WHATSAPP_APP_SECRET;
+		}
+	});
+
+	test("WhatsApp webhook: invalid/forged HMAC signature → 401 Unauthorized", async () => {
+		const secret = "test_whatsapp_secret_998877";
+		process.env.WHATSAPP_APP_SECRET = secret;
+		try {
+			const payload = JSON.stringify({ entry: [] });
+			const forgedSignature = "sha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+			const res = await postWebhook("/api/whatsapp/webhook", {
+				rawPayload: payload,
+				headers: { "x-hub-signature-256": forgedSignature },
+			});
+			assert.equal(res.statusCode, 401, res.body);
+			assert.equal(res.json.error, "WhatsappSignatureMismatch");
+		} finally {
+			delete process.env.WHATSAPP_APP_SECRET;
+		}
 	});
 });

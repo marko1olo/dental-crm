@@ -18,6 +18,7 @@ import { fetchDiaryRow, fetchVisitRow, resolveDoctorFromAppointmentOrDiary } fro
 import { EgiszOutboxDispatcher } from "../../services/egisz/EgiszOutboxDispatcher.js";
 import { extractIcd10, readGatewayConfig, readGenderFromProfile, readSnilsFromProfile, splitFullName } from "../egisz/helpers.js";
 import { registerN3HealthRoutes } from "../egisz/n3HealthRoutes.js";
+import { resolveN3HealthConfig } from "../egisz/n3/n3Config.js";
 import { registerEgiszOutboxRoutes } from "../egisz/outboxRoutes.js";
 import { registerVisitCdaExportRoute } from "../egisz/visitCdaExport.js";
 import {
@@ -235,7 +236,8 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 			}
 			pkg = parsedPkg.data;
 		} else {
-			const clinicOid = readGatewayConfig().clinicOid || "1.2.643.5.1.13.13.12.2.77.8432";
+			const n3Res = await resolveN3HealthConfig(orgId);
+			const clinicOid = n3Res.config?.clinicOid || readGatewayConfig().clinicOid || "";
 			const patientSnilsDigits = readSnilsFromProfile(row.patient.administrativeProfile);
 			const diaryIcd = typeof diaryRow?.diagnosisIcd10 === "string" ? diaryRow.diagnosisIcd10.trim() : "";
 			const effectiveDiagnosis = typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim() ? row.visit.diagnosis.trim() : (diaryIcd || "K02.1");
@@ -335,7 +337,7 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 				...(bodyToParse.moSignature || bodyToParse.clinicSignature ? { moSignature: bodyToParse.moSignature || bodyToParse.clinicSignature } : {}),
 				metadata: {
 					patientSnils: String(metadata.patientSnils || bodyToParse.patientSnils || "").replace(/\D/g, ""),
-					clinicOid: String(metadata.clinicOid || bodyToParse.clinicOid || readGatewayConfig().clinicOid || "1.2.643.5.1.13.13.12.2.77.8432"),
+					clinicOid: String(metadata.clinicOid || bodyToParse.clinicOid || (await resolveN3HealthConfig(orgId)).config?.clinicOid || readGatewayConfig().clinicOid || ""),
 					...(metadata.clinicOgrn || bodyToParse.clinicOgrn ? { clinicOgrn: String(metadata.clinicOgrn || bodyToParse.clinicOgrn) } : {}),
 					docTypeNsiCode: String(metadata.docTypeNsiCode || bodyToParse.docType || "108"),
 				},

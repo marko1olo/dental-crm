@@ -69,21 +69,31 @@ export async function registerXrayMetadataRoute(app: FastifyInstance): Promise<v
 		if (patch.status !== undefined) updateData.status = patch.status;
 		if (patch.toothCode !== undefined) updateData.toothCode = patch.toothCode;
 
-		const [updated] = await db.update(xrayScans).set(updateData)
-			.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).returning();
+		const updated = await db.transaction(async (tx) => {
+			const [xrayUpdated] = await tx
+				.update(xrayScans)
+				.set(updateData)
+				.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+				.returning();
+			if (!xrayUpdated) {
+				return null;
+			}
+
+			await tx
+				.update(imagingStudies)
+				.set({
+					aiSummary: xrayUpdated.aiSummary,
+					toothCode: xrayUpdated.toothCode,
+					region: xrayUpdated.toothCode ? `Зуб ${xrayUpdated.toothCode}` : null,
+				})
+				.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
+
+			return xrayUpdated;
+		});
+
 		if (!updated) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
-		}
-
-		try {
-			await db.update(imagingStudies).set({
-				aiSummary: updated.aiSummary,
-				toothCode: updated.toothCode,
-				region: updated.toothCode ? `Зуб ${updated.toothCode}` : null,
-			}).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
-		} catch (syncErr) {
-			request.log.warn({ syncErr, scanId: id }, "Не удалось обновить imaging_studies при обновлении заключения");
 		}
 		return scanToResponse(updated, false);
 	});
@@ -104,18 +114,27 @@ export async function registerXrayMetadataRoute(app: FastifyInstance): Promise<v
 		}
 
 		const formattedTooth = parsed.data.toothCode?.trim() || null;
-		const [updated] = await db.update(xrayScans).set({ toothCode: formattedTooth, updatedAt: new Date() })
-			.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).returning();
+		const updated = await db.transaction(async (tx) => {
+			const [xrayUpdated] = await tx
+				.update(xrayScans)
+				.set({ toothCode: formattedTooth, updatedAt: new Date() })
+				.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+				.returning();
+			if (!xrayUpdated) {
+				return null;
+			}
+
+			await tx
+				.update(imagingStudies)
+				.set({ toothCode: formattedTooth, region: formattedTooth ? `Зуб ${formattedTooth}` : null })
+				.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
+
+			return xrayUpdated;
+		});
+
 		if (!updated) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
-		}
-
-		try {
-			await db.update(imagingStudies).set({ toothCode: formattedTooth, region: formattedTooth ? `Зуб ${formattedTooth}` : null })
-				.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
-		} catch (syncErr) {
-			request.log.warn({ syncErr, scanId: id }, "Не удалось синхронизировать привязку зуба в imaging_studies");
 		}
 		return scanToResponse(updated, false);
 	};

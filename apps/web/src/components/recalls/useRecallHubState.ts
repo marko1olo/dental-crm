@@ -41,7 +41,7 @@ export function useRecallHubState(
 		setIsLoading(true);
 		setFetchError(null);
 		try {
-			const res = await fetch("/api/patients/recall-candidates?minMonths=1&limit=200", {
+			const res = await fetch("/api/recalls/candidates?minMonths=1&limit=200", {
 				headers: { ...(authHeaders ?? {}), Accept: "application/json" },
 			});
 			if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);

@@ -10,7 +10,8 @@ import { toVisitToothUiState } from "../visit/toothSync/toothStateConverters";
 import { loadStoredTeethData, saveStoredTeethData } from "../odontogram/odontogramStorage";
 import type { ToothState } from "../odontogram/ToothChart";
 import { showRollbackToast } from "../GlobalToast";
-import type { AiTrustLevel } from "../../store/copilotStore";
+import { useCopilotStore, type AiTrustLevel } from "../../store/copilotStore";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 
 export interface DictationPendingAction {
 	id: string;
@@ -95,6 +96,16 @@ export function handleClinicalSpeechOrText(
 					detail: { tooth: 11, toothNumber: 11, state: "idle", diagnosis: "Полость рта санирована, зубы интактны (Z01.2)", diagnosisIcd10: "Z01.2", treatmentPlan: "Профилактический осмотр. Полость рта санирована, патологий не выявлено. Контрольный осмотр через 6 месяцев." },
 				}));
 			}
+
+			// Fallback в copilotStore для защиты от потери данных при отсутствии слушателя (Мандат 8d/8zq)
+			useCopilotStore.getState().savePendingDictationDraft({
+				patientId: patientId || undefined,
+				soapPatch: {
+					diagnosis: "Полость рта санирована, зубы интактны (Z01.2)",
+					diagnosisIcd10: "Z01.2",
+					treatmentPlan: "Профилактический осмотр. Полость рта санирована, патологий не выявлено. Контрольный осмотр через 6 месяцев.",
+				},
+			});
 		};
 
 		if (shouldAutoApply) {
@@ -201,6 +212,7 @@ export function handleClinicalSpeechOrText(
 					title: string;
 					price: number;
 					priceRub: number;
+					priceKopecks: number;
 					toothNumber?: number | undefined;
 					toothCode?: string | undefined;
 				}
@@ -214,8 +226,13 @@ export function handleClinicalSpeechOrText(
 						const resolvedTooth = p.toothNumber || firstTooth;
 						const procedureCode = p.code804n;
 						billableServices.push({
-							code: procedureCode, code804n: procedureCode, name: p.name, title: p.name,
-							price: resolvedPrice, priceRub: resolvedPrice,
+							code: procedureCode,
+							code804n: procedureCode,
+							name: p.name,
+							title: p.name,
+							price: resolvedPrice,
+							priceRub: resolvedPrice,
+							priceKopecks: rublesToKopecks(resolvedPrice),
 							...(resolvedTooth ? { toothNumber: resolvedTooth, toothCode: String(resolvedTooth) } : {}),
 						});
 					}
@@ -231,8 +248,12 @@ export function handleClinicalSpeechOrText(
 						: 0;
 					const resolvedAnesthesiaPrice = Number(anPrice);
 					billableServices.push({
-						code: intent.anesthesia.code804n || "A11.07.012", name: `Анестезия: ${intent.anesthesia.displayName}`,
-						title: `Анестезия: ${intent.anesthesia.displayName}`, price: resolvedAnesthesiaPrice, priceRub: resolvedAnesthesiaPrice,
+						code: intent.anesthesia.code804n || "A11.07.012",
+						name: `Анестезия: ${intent.anesthesia.displayName}`,
+						title: `Анестезия: ${intent.anesthesia.displayName}`,
+						price: resolvedAnesthesiaPrice,
+						priceRub: resolvedAnesthesiaPrice,
+						priceKopecks: rublesToKopecks(resolvedAnesthesiaPrice),
 						...(firstTooth ? { toothNumber: firstTooth, toothCode: String(firstTooth) } : {}),
 					});
 				}
@@ -241,6 +262,25 @@ export function handleClinicalSpeechOrText(
 						detail: { patientId: patientId || undefined, services: billableServices, items: billableServices },
 					}));
 				}
+
+				// Fallback в copilotStore для защиты от потери данных при отсутствии слушателя (Мандат 8d/8zq)
+				useCopilotStore.getState().savePendingDictationDraft({
+					patientId: patientId || undefined,
+					toothUpdates: targetNumbers.map((tNum) => {
+						const u = intent.teethUpdates.find((tu) => tu.toothNumber === tNum);
+						return {
+							toothNumber: tNum,
+							status: u ? u.state : "Caries",
+							...(u?.surfaces ? { surfaces: u.surfaces } : {}),
+						};
+					}),
+					soapPatch: {
+						diagnosis: intent.teethUpdates[0]?.icd10Title || "Кариес дентина (K02.1)",
+						diagnosisIcd10: intent.teethUpdates[0]?.icd10Code || "K02.1",
+						treatmentPlan: intent.summary || "Лечение по стандартам СтАР",
+					},
+					billingServices: billableServices,
+				});
 			}
 		};
 

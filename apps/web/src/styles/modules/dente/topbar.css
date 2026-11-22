@@ -211,8 +211,7 @@ html.dark .topbar .eyebrow,
 		gap: 6px !important;
 	}
 	.topbar-clinic {
-		min-width: 0 !important;
-		max-width: 220px !important;
+		display: none !important;
 	}
 	.topbar-command-hub {
 		max-width: 150px !important;

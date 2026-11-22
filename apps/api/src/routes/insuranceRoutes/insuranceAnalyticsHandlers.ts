@@ -1,5 +1,6 @@
 import {
 	calculateDmsRegistryTotals,
+	calculateItemDmsSplit,
 	DEFAULT_CLINIC_PROFILE,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
@@ -10,7 +11,7 @@ import {
 	type DmsRegistryInsuranceCompanyInfo,
 	type DmsRegistryRecord,
 } from "@dental/shared";
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, eq, ne, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -187,9 +188,10 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			}
 		}
 
-		// 5. Запрос оказанных услуг (treatmentItems)
+		// 5. Запрос оказанных услуг (treatmentItems) - исключаем отмененные услуги
 		const treatmentConditions: SQL[] = [
 			eq(treatmentItems.organizationId, orgId),
+			ne(treatmentItems.status, "cancelled"),
 		];
 		if (patientId) {
 			treatmentConditions.push(eq(treatmentItems.patientId, patientId));
@@ -222,6 +224,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				visitDiagnosis: visits.diagnosis,
 				visitSignedAt: visits.signedAt,
 				visitCreatedAt: visits.createdAt,
+				visitStatus: visits.status,
 				// Doctor info
 				doctorFullName: users.fullName,
 			})
@@ -270,6 +273,11 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				continue;
 			}
 
+			// Исключаем аннулированные / отмененные визиты и услуги
+			if (tr.status === "cancelled" || tr.visitStatus === "voided") {
+				continue;
+			}
+
 			const letter = lettersByPatientId.get(tr.patientId);
 			const adminProfile = tr.patientAdminProfile;
 			const policyNumber = letter?.policyNumber || adminProfile?.insurancePolicyNumber || "";
@@ -305,9 +313,10 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			if (isExcluded) {
 				patientPaidKop = totalGrossKop;
 				insurerClaimKop = 0;
-			} else if (franchisePct > 0) {
-				patientPaidKop = Math.round((totalGrossKop * franchisePct) / 100);
-				insurerClaimKop = totalGrossKop - patientPaidKop;
+			} else {
+				const split = calculateItemDmsSplit(totalGrossKop, franchisePct, true);
+				patientPaidKop = split.patientKopecks;
+				insurerClaimKop = split.insurerKopecks;
 			}
 
 			const patientPaidRub = kopecksToRubles(patientPaidKop);
@@ -403,8 +412,9 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			const totalGrossKop = unitPriceKop;
 			const totalPriceRub = kopecksToRubles(totalGrossKop);
 			const franchisePct = Number(letter.franchisePct) || 0;
-			const patientPaidKop = franchisePct > 0 ? Math.round((totalGrossKop * franchisePct) / 100) : 0;
-			const insurerClaimKop = totalGrossKop - patientPaidKop;
+			const split = calculateItemDmsSplit(totalGrossKop, franchisePct, true);
+			const patientPaidKop = split.patientKopecks;
+			const insurerClaimKop = split.insurerKopecks;
 			const patientPaidRub = kopecksToRubles(patientPaidKop);
 			const dmsCoveredRub = kopecksToRubles(insurerClaimKop);
 

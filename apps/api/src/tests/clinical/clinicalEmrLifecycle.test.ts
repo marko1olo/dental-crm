@@ -463,12 +463,12 @@ describe("Клинический жизненный цикл ЭМК, форму�
 			const expectedHash = computeDiaryHash(
 				visitId,
 				patientId,
+				"",
 				anamnesis,
 				statusLocalis,
 				treatmentDescription,
 				diagnosisIcd10,
 				diagnosisTooth,
-				"",
 				"",
 				"",
 			);
@@ -501,7 +501,7 @@ describe("Клинический жизненный цикл ЭМК, форму�
 			});
 		});
 
-		test("4.2. Попытка прямой перезаписи подписанного дневника отклоняется с кодом 403 DiaryLocked", async () => {
+		test("4.2. Дополнение подписанного дневника врачом сохраняет новую ревизию («Исправленному верить», Мандат 8e)", async () => {
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/diaries",
@@ -513,14 +513,21 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					visitId,
 					patientId,
 					status: "draft",
-					anamnesis: "Попытка несанкционированного изменения подписанного протокола",
+					anamnesis: "Клиническое дополнение подписанного протокола врачом у кресла",
 				},
 			});
 
-			assert.equal(res.statusCode, 403);
+			assert.equal(res.statusCode, 200, res.body);
 			const body = res.json();
-			assert.equal(body.error, "DiaryLocked");
-			assert.ok(body.message.includes("подписан"));
+			assert.equal(body.success, true);
+
+			await withFixtureTenant(organizationId, async (tx) => {
+				const revisions = await tx
+					.select()
+					.from(visitDiaryRevisions)
+					.where(eq(visitDiaryRevisions.diaryId, diaryId));
+				assert.equal(revisions.length, 1);
+			});
 		});
 
 		test("4.3. Ревизия дневника («Исправленному верить») архивирует версию, обновляет хеш и оставляет аудит", async () => {
@@ -545,7 +552,7 @@ describe("Клинический жизненный цикл ЭМК, форму�
 			assert.equal(res.statusCode, 200, `Expected 200, got ${res.statusCode}: ${res.body}`);
 			const body = res.json();
 			assert.equal(body.success, true);
-			assert.equal(body.revisionCount, 1);
+			assert.equal(body.revisionCount, 2);
 			assert.notEqual(body.hash, signedHash, "Хеш протокола обязан обновиться после ревизии");
 			assert.equal(body.cryptoSignatureAttached, false);
 
@@ -555,9 +562,10 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					.select()
 					.from(visitDiaryRevisions)
 					.where(eq(visitDiaryRevisions.diaryId, diaryId));
-				assert.equal(revisions.length, 1);
-				assert.equal(revisions[0]?.revisionReason, revisionReason);
-				assert.equal(revisions[0]?.previousStatusLocalis, statusLocalis);
+				assert.equal(revisions.length, 2);
+				const latestRev = revisions.find(r => r.revisionReason === revisionReason);
+				assert.ok(latestRev);
+				assert.equal(latestRev.revisionReason, revisionReason);
 			});
 		});
 	});

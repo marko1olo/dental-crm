@@ -388,12 +388,12 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.equal(hasBusySlot, false, "Slot with occupied physical chair must be excluded from available slots");
 	});
 
-	it("7. Defect 1 Regression: POST /send-otp without organizationId resolves default organization and generates valid OTP challenge", async (t) => {
+	it("7. Multi-Tenant Strict Isolation: POST /send-otp without organizationId rejects with 404 ClinicNotFound", async (t) => {
 		if (!databaseAvailable) return t.skip("Database not available");
 
 		const testPhone = "+7 (999) 111-22-33";
 
-		// Direct call to root /send-otp without organizationId in path or body
+		// Direct call to root /send-otp without organizationId must be strictly rejected per Mandate 8s & 152-FZ
 		const res = await app.inject({
 			method: "POST",
 			url: "/send-otp",
@@ -403,12 +403,23 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 			},
 		});
 
-		assert.equal(res.statusCode, 200, `Expected 200, got ${res.statusCode}: ${res.body}`);
+		assert.equal(res.statusCode, 404, `Expected 404, got ${res.statusCode}: ${res.body}`);
 		const body = JSON.parse(res.body);
-		assert.equal(body.success, true);
-		assert.ok(body.challengeId);
+		assert.equal(body.error, "ClinicNotFound");
+		assert.ok(body.message.includes("Клиника не найдена"));
 
-		const code = getActiveCodeForTesting(testPhone);
-		assert.ok(code, "Active code must be present in OTP challenges store");
+		// Providing explicit valid organizationId succeeds with 200
+		const resValid = await app.inject({
+			method: "POST",
+			url: `/${ORG_ID}/send-otp`,
+			payload: {
+				phone: testPhone,
+				method: "sms",
+			},
+		});
+		assert.equal(resValid.statusCode, 200);
+		const validBody = JSON.parse(resValid.body);
+		assert.equal(validBody.success, true);
+		assert.ok(validBody.challengeId);
 	});
 });

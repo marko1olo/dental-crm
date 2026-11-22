@@ -18,9 +18,10 @@ import {
 } from "./DiarySigningCeremonyService.js";
 
 describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
-	it("computeDiaryHash produces deterministic SHA-256 across all 8 segments", () => {
+	it("computeDiaryHash produces deterministic SHA-256 across all SOAP segments including complaint", () => {
 		const visitId = "visit-123";
 		const patientId = "patient-456";
+		const complaint = "Acute toothache on cold";
 		const anamnesis = "Pain in lower jaw";
 		const statusLocalis = "Tooth 36 deep cavity";
 		const treatment = "Composite restoration";
@@ -28,11 +29,11 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 		const tooth = "36";
 		const complications = "None";
 		const comorbidities = "Hypertension";
-		const trayBarcode = "TRAY-2026-08";
 
 		const hash1 = computeDiaryHash(
 			visitId,
 			patientId,
+			complaint,
 			anamnesis,
 			statusLocalis,
 			treatment,
@@ -40,19 +41,19 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 			tooth,
 			complications,
 			comorbidities,
-			trayBarcode,
 		);
 
-		const expectedRaw = `${visitId}|${patientId}|${anamnesis}|${statusLocalis}|${treatment}|${icd10}|${tooth}|${complications}|${comorbidities}|${trayBarcode}`;
+		const expectedRaw = `${visitId}|${patientId}|${complaint}|${anamnesis}|${statusLocalis}|${treatment}|${icd10}|${tooth}|${complications}|${comorbidities}`;
 		const expectedHash = crypto.createHash("sha256").update(expectedRaw).digest("hex");
 
 		assert.equal(hash1, expectedHash);
 		assert.equal(hash1.length, 64);
 
-		// Changing tray barcode produces a different hash
+		// Changing complaint produces a different hash (Proof for Bug 1)
 		const hash2 = computeDiaryHash(
 			visitId,
 			patientId,
+			"Different complaint",
 			anamnesis,
 			statusLocalis,
 			treatment,
@@ -60,7 +61,6 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 			tooth,
 			complications,
 			comorbidities,
-			"TRAY-DIFFERENT",
 		);
 		assert.notEqual(hash1, hash2);
 
@@ -68,6 +68,7 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 		const hash3 = computeDiaryHash(
 			visitId,
 			patientId,
+			complaint,
 			anamnesis,
 			statusLocalis,
 			treatment,
@@ -75,7 +76,6 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 			tooth,
 			complications,
 			comorbidities,
-			trayBarcode,
 		);
 		assert.notEqual(hash1, hash3);
 	});

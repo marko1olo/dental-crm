@@ -14,7 +14,7 @@
  * НИКОГДА не блокируют врача и не прерывают завершение приёма (Soft Mode).
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import type { AutoVisitBomDeductionResult, Dashboard } from "@dental/shared";
@@ -135,7 +135,7 @@ export async function executeDraftAutosave(
 			headers: {
 				"Content-Type": "application/json",
 				"Idempotency-Key": `autosave-completion-${targetVisitId}-${ctx.activeVisit?.revision ?? 0}`,
-				...denteAdminSecretRequestHeaders(),
+				...getDenteAuthHeaders(),
 			},
 			body: JSON.stringify({
 				patientId: ctx.effectivePatientId,
@@ -192,7 +192,7 @@ export async function executeVisitCompletionEndpoint(
 				headers: {
 					"Content-Type": "application/json",
 					"Idempotency-Key": `complete-visit-${ctx.effectiveVisitId}`,
-					...denteAdminSecretRequestHeaders(),
+					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify({
 					diary: ctx.effectiveDiary,
@@ -208,7 +208,7 @@ export async function executeVisitCompletionEndpoint(
 					headers: {
 						"Content-Type": "application/json",
 						"Idempotency-Key": `complete-visit-fallback-${ctx.effectiveVisitId}`,
-						...denteAdminSecretRequestHeaders(),
+						...getDenteAuthHeaders(),
 					},
 					body: JSON.stringify({
 						diary: ctx.effectiveDiary,
@@ -252,7 +252,7 @@ export async function executeTreatmentPlanItemCompletion(
 				{
 					method: "GET",
 					headers: {
-						...denteAdminSecretRequestHeaders(),
+						...getDenteAuthHeaders(),
 					},
 				},
 			).catch(() => null);
@@ -309,7 +309,7 @@ export async function executeTreatmentPlanItemCompletion(
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
+						...getDenteAuthHeaders(),
 					},
 					body: JSON.stringify({
 						visitId: isUuid(ctx.effectiveVisitId) ? ctx.effectiveVisitId : undefined,
@@ -488,7 +488,7 @@ export async function executeOdontogramToothHistorySync(
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json",
-							...denteAdminSecretRequestHeaders(),
+							...getDenteAuthHeaders(),
 						},
 						body: JSON.stringify({
 							toothNumbers: group.teeth,

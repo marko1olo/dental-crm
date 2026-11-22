@@ -77,8 +77,8 @@ export interface VisitPatientEntity
 	phone?: string | null | undefined;
 	address?: string | null | undefined;
 	activeTreatmentPlanId?: string | null | undefined;
-	allergies?: string | null | undefined;
-	allergyHistory?: string | null | undefined;
+	allergies?: string | string[] | readonly string[] | null | undefined;
+	allergyHistory?: string | string[] | readonly string[] | null | undefined;
 	somaticNotes?: string | null | undefined;
 	somaticHistory?: string | null | undefined;
 	concomitantDiseases?: string | null | undefined;
@@ -102,7 +102,7 @@ export interface VisitAppointmentEntity
 		| "toothNumber"
 	> {
 	id: string;
-	patientId: string;
+	patientId: string | null;
 	doctorUserId?: string | null | undefined;
 	chairId?: string | null | undefined;
 	status?: Appointment["status"] | "signed" | "closed" | string | undefined;
@@ -110,7 +110,7 @@ export interface VisitAppointmentEntity
 	endsAt?: string | null | undefined;
 	startTime?: string | null | undefined;
 	startAt?: string | null | undefined;
-	createdAt?: string | null | undefined;
+	createdAt?: string | Date | null | undefined;
 	date?: string | null | undefined;
 	reason?: string | null | undefined;
 	diagnosisMkb10?: string | null | undefined;
@@ -215,7 +215,7 @@ export interface VisitViewProps {
 	selectedWorkspaceRole: StaffRole | "all";
 	activeVisitClinicalRuleSummary: ClinicalRuleSummary;
 	appendToTranscript: (text: string) => void;
-	applyProtocolTemplate: (template: VisitProtocolTemplateItem) => void;
+	applyProtocolTemplate?: ((template: VisitProtocolTemplateItem) => void) | null | undefined;
 	buildDraft: () => Promise<void> | void;
 	buildOfflineDraft: () => void;
 	clearTranscriptWithUndo: () => void;
@@ -239,7 +239,7 @@ export interface VisitViewProps {
 	emptyDictationVoiceActionLabel: string | null;
 	flushPendingSpeechChunks: (options?: { silent?: boolean }) => Promise<void>;
 	flushPendingVisitSaves: (options?: { silent?: boolean }) => Promise<void>;
-	formatTime: (iso: string | null | undefined) => string;
+	formatTime?: ((iso: string | null | undefined, timeZone?: string) => string) | ((value: string, timeZone?: string) => string) | undefined;
 	handleApplySomaticNormQuick?: (() => void) | undefined;
 	handlePolishTranscriptWithAi?: (() => Promise<void> | void) | undefined;
 	onOpenLabOrderModal?: (() => void) | undefined;
@@ -247,7 +247,7 @@ export interface VisitViewProps {
 	visitSubViewTab?: string | undefined;
 	onVisitSubViewTabChange?: ((tab: string) => void) | undefined;
 	hasVisitTranscriptText: boolean;
-	imagingKindLabels: Record<ImagingStudyKind, string>;
+	imagingKindLabels?: Record<ImagingStudyKind, string> | Record<string, string> | Partial<Record<ImagingStudyKind, string>> | undefined;
 	isDraftAccepting: boolean;
 	isDraftLoading: boolean;
 	isOnline: boolean;
@@ -287,9 +287,9 @@ export interface VisitViewProps {
 			| ((prev: DentalSpecialty) => DentalSpecialty),
 	) => void;
 	setTranscript: (val: string | ((prev: string) => string)) => void;
-	specialtiesWithTemplates: Array<DentalSpecialty | string>;
+	specialtiesWithTemplates?: readonly (DentalSpecialty | string)[] | Array<DentalSpecialty | string> | undefined;
 	specialtyLabels: Record<DentalSpecialty, string>;
-	specialtyProtocolTemplates: VisitProtocolTemplateItem[];
+	specialtyProtocolTemplates?: readonly VisitProtocolTemplateItem[] | VisitProtocolTemplateItem[] | undefined;
 	speechGatewayActiveProviderIsLocal: boolean | null;
 	speechGatewayStatus: SpeechGatewayStatus | null;
 	speechRecognitionReady: boolean | null;
@@ -326,7 +326,7 @@ export interface VisitViewProps {
 	visitWorkflowSteps: VisitWorkflowStep[];
 	setToothState: (code: string, state: ToothState | string) => void;
 	safeSpecialtyLabels?: Record<string, string> | undefined;
-	visitCloseChecklist?: VisitCloseChecklistItem[] | undefined;
+	visitCloseChecklist?: VisitCloseChecklistItem[] | Dashboard["visitCloseChecklist"] | null | undefined;
 	openCloseChecklistSection?:
 		| ((task: VisitCloseChecklistItem) => void)
 		| undefined;

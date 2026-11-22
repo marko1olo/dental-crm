@@ -47,6 +47,15 @@ export interface ExocadToothOrder {
 	marginLinePoints?: ReadonlyArray<readonly [number, number, number]>;
 }
 
+export interface ExocadArticulatorSettings {
+	articulatorType?: "bio_art" | "kavo_protar" | "average_anatomical" | string;
+	facebow?: boolean;
+	guidanceType?: "canine_guidance" | "group_function" | "mutually_protected" | "balanced_articulation" | string;
+	sagittalCondylarAngleDeg?: number;
+	bennettAngleDeg?: number;
+	shiftDeg?: number;
+}
+
 export interface ExocadProjectOptions {
 	projectId: string;
 	patientFullName: string;
@@ -61,6 +70,7 @@ export interface ExocadProjectOptions {
 	prepMeshFileName?: string;
 	scanbodyMeshFileName?: string;
 	occlusionMatrix?: Matrix4x4;
+	articulatorSettings?: ExocadArticulatorSettings;
 	notes?: string;
 }
 
@@ -112,6 +122,31 @@ export function generateExocadDentalProjectXml(options: ExocadProjectOptions): s
 	// Notes
 	if (notes) {
 		xml += `  <Notes>${notes}</Notes>\n`;
+	}
+
+	// Articulator Settings for Virtual CAD/CAM Simulation
+	if (options.articulatorSettings) {
+		const art = options.articulatorSettings;
+		xml += `  <ArticulatorSettings>\n`;
+		if (art.articulatorType) {
+			xml += `    <ArticulatorType>${escapeXml(art.articulatorType)}</ArticulatorType>\n`;
+		}
+		if (art.facebow !== undefined) {
+			xml += `    <Facebow>${art.facebow ? "true" : "false"}</Facebow>\n`;
+		}
+		if (art.guidanceType) {
+			xml += `    <GuidanceType>${escapeXml(art.guidanceType)}</GuidanceType>\n`;
+		}
+		if (art.sagittalCondylarAngleDeg != null) {
+			xml += `    <SagittalCondylarAngleDeg>${art.sagittalCondylarAngleDeg}</SagittalCondylarAngleDeg>\n`;
+		}
+		if (art.bennettAngleDeg != null) {
+			xml += `    <BennettAngleDeg>${art.bennettAngleDeg}</BennettAngleDeg>\n`;
+		}
+		if (art.shiftDeg != null) {
+			xml += `    <ShiftDeg>${art.shiftDeg}</ShiftDeg>\n`;
+		}
+		xml += `  </ArticulatorSettings>\n`;
 	}
 
 	// Occlusion Matrix if present
@@ -190,6 +225,7 @@ export function generateExocadConstructionInfoJson(options: ExocadProjectOptions
 			scanbody: options.scanbodyMeshFileName || null,
 		},
 		matrix: options.occlusionMatrix || null,
+		articulatorSettings: options.articulatorSettings || null,
 		teeth: options.teeth.map((t) => ({
 			toothNumber: t.toothFdi,
 			type: mapRestorationToExocadReconstructionType(t.restorationType),

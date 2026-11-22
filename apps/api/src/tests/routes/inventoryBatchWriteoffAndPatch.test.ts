@@ -234,4 +234,77 @@ describe("POST /api/v1/inventory/batch-writeoff & PATCH items (Mandates 8e, 8n)"
 		const body = JSON.parse(res.body);
 		assert.equal(body.sku, "FILTEK-A2-UP");
 	});
+
+	it("5. POST /api/inventory/:orgId создает позицию с поддержкой unit (мл, шт, упак) и purchasePriceKopecks", async () => {
+		if (!databaseReady) return;
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/inventory/${ORG_ID}`,
+			headers: authHeaders(),
+			payload: {
+				name: "Артикаин 4% Инибса 1:100 000",
+				unit: "мл",
+				category: "anesthesia",
+				purchasePriceKopecks: 14500,
+				criticalThreshold: 5,
+				stockQuantity: 100,
+				packageMultiplier: 50,
+			},
+		});
+
+		assert.equal(res.statusCode, 200, `Expected 200, got ${res.statusCode}: ${res.body}`);
+		const body = JSON.parse(res.body);
+		assert.equal(body.name, "Артикаин 4% Инибса 1:100 000");
+		assert.equal(body.unit, "мл");
+		assert.equal(body.category, "anesthesia");
+		assert.equal(body.purchasePriceKopecks, 14500);
+		assert.equal(Number(body.unitCostRub), 145);
+		assert.equal(Number(body.stockQuantity), 100);
+	});
+
+	it("6. PUT /api/inventory/:orgId/:itemId обновляет unit и purchasePriceKopecks", async () => {
+		if (!databaseReady) return;
+
+		const res = await app.inject({
+			method: "PUT",
+			url: `/api/inventory/${ORG_ID}/${ITEM_BOND_ID}`,
+			headers: authHeaders(),
+			payload: {
+				name: "Адгезив Single Bond Universal (Обновленный)",
+				unit: "упак",
+				category: "Терапия",
+				purchasePriceKopecks: 380000,
+				criticalThreshold: 2,
+				stockQuantity: 10,
+				packageMultiplier: 1,
+			},
+		});
+
+		assert.equal(res.statusCode, 200, `Expected 200, got ${res.statusCode}: ${res.body}`);
+		const body = JSON.parse(res.body);
+		assert.equal(body.unit, "упак");
+		assert.equal(body.purchasePriceKopecks, 380000);
+		assert.equal(Number(body.unitCostRub), 3800);
+	});
+
+	it("7. PATCH /api/inventory/:orgId/items/:itemId обновляет unit на 'шт' и purchasePriceKopecks", async () => {
+		if (!databaseReady) return;
+
+		const res = await app.inject({
+			method: "PATCH",
+			url: `/api/inventory/${ORG_ID}/items/${ITEM_COMPOSITE_ID}`,
+			headers: authHeaders(),
+			payload: {
+				unit: "шт",
+				purchasePriceKopecks: 260000,
+			},
+		});
+
+		assert.equal(res.statusCode, 200, `Expected 200, got ${res.statusCode}: ${res.body}`);
+		const body = JSON.parse(res.body);
+		assert.equal(body.unit, "шт");
+		assert.equal(body.purchasePriceKopecks, 260000);
+		assert.equal(Number(body.unitCostRub), 2600);
+	});
 });

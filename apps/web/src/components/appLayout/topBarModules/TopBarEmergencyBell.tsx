@@ -9,10 +9,10 @@ import { LanCitoEmergencyBanner } from "../../sync/LanCitoEmergencyBanner";
 import type { ActiveCitoAlert } from "../../../hooks/useLanP2P";
 
 export interface TopBarEmergencyBellProps {
-	activeCitoAlerts?: ActiveCitoAlert[];
-	dismissCitoAlert?: (alertId: string) => void;
-	onEmergencyClick?: () => void;
-	showSosButton?: boolean;
+	activeCitoAlerts?: ActiveCitoAlert[] | undefined;
+	dismissCitoAlert?: ((alertId: string) => void) | undefined;
+	onEmergencyClick?: (() => void) | undefined;
+	showSosButton?: boolean | undefined;
 }
 
 export function TopBarEmergencyBell({

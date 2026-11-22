@@ -312,7 +312,16 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     const directMatches = allLab.filter((lo) => lo.patientId === selectedPatient.id);
     if (directMatches.length > 0) return directMatches;
     if (isDemoShowcaseMode()) {
-      return SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id);
+      return SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id).map((lo) => ({
+        id: lo.id,
+        orderNumber: lo.orderNumber ? String(lo.orderNumber) : null,
+        patientId: lo.patientId ?? null,
+        stage: lo.stage ?? null,
+        dueDate: lo.dueDate ?? null,
+        workType: lo.workType ?? null,
+        toothNumber: lo.teeth?.[0] !== undefined ? lo.teeth[0] : null,
+        shade: lo.shadeCode ?? null,
+      }));
     }
     return [];
   }, [dashboard?.labOrders, selectedPatient?.id]);
@@ -322,7 +331,16 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     if (!selectedPatient?.id) return;
     const allLab: readonly ActiveLabOrderInput[] = dashboard?.labOrders ?? [];
     const fallbackDemo: readonly ActiveLabOrderInput[] = isDemoShowcaseMode()
-      ? SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id)
+      ? SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id).map((lo) => ({
+          id: lo.id,
+          orderNumber: lo.orderNumber ? String(lo.orderNumber) : null,
+          patientId: lo.patientId ?? null,
+          stage: lo.stage ?? null,
+          dueDate: lo.dueDate ?? null,
+          workType: lo.workType ?? null,
+          toothNumber: lo.teeth?.[0] !== undefined ? lo.teeth[0] : null,
+          shade: lo.shadeCode ?? null,
+        }))
       : [];
     const combined = [...allLab, ...fallbackDemo];
     const hasActiveUpcomingOrder = combined.some((lo) => {

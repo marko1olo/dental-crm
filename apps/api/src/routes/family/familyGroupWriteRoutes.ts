@@ -6,6 +6,7 @@ import { db } from "../../db/client.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	addFamilyMemberSchema,
 	createFamilyGroupSchema,
@@ -90,6 +91,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({ error: "InvalidIdempotencyKey", message: "Некорректный заголовок Idempotency-Key (ожидается UUID)" });
+		}
+
 		const createParsed = createFamilyGroupSchema.safeParse(req.body);
 		if (!createParsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Проверьте данные: нужно непустое имя." });
@@ -147,6 +153,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		});
 
 		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_CREATED", payload: family });
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return family;
 	});
 
@@ -155,6 +164,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({ error: "InvalidIdempotencyKey", message: "Некорректный заголовок Idempotency-Key (ожидается UUID)" });
+		}
 
 		const { id } = req.params as { id: string };
 		const updateParsed = updateFamilyGroupSchema.safeParse(req.body);
@@ -234,6 +248,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({ error: "InvalidIdempotencyKey", message: "Некорректный заголовок Idempotency-Key (ожидается UUID)" });
+		}
+
 		const { id } = req.params as { id: string };
 		const parsed = addFamilyMemberSchema.safeParse(req.body);
 		if (!parsed.success) {
@@ -267,6 +286,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 
 		if (result.status === 200) {
 			wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_UPDATED", payload: { id } });
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 		return reply.code(result.status).send(result.body);
 	});
@@ -443,6 +465,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({ error: "InvalidIdempotencyKey", message: "Некорректный заголовок Idempotency-Key (ожидается UUID)" });
+		}
 
 		const { id } = req.params as { id: string };
 		const deleteResult = await db.transaction(async (tx) => {

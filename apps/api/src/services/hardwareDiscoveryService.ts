@@ -513,7 +513,60 @@ export class HardwareDiscoveryService {
 			};
 		}
 
-		// 3. System spooler or local simulated test print
+		// 3. System spooler dispatch or buffer generation
+		if (target.interface === "system_spooler" && target.systemPrinterName) {
+			if (process.platform === "win32") {
+				let isInstalled = false;
+				try {
+					const escaped = target.systemPrinterName.replace(/'/g, "''");
+					const checkOutput = childProcess
+						.execSync(
+							`powershell.exe -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; (Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq '${escaped}' }).Name" 2>$null`,
+							{ timeout: 2500, windowsHide: true, encoding: "utf8" },
+						)
+						.trim();
+					isInstalled = checkOutput.length > 0;
+				} catch {
+					isInstalled = false;
+				}
+
+				if (isInstalled) {
+					try {
+						const tempFile = path.join(os.tmpdir(), `dente_spool_${Date.now()}.bin`);
+						fs.writeFileSync(tempFile, Buffer.from(buffer));
+						const escapedPrinter = target.systemPrinterName.replace(/'/g, "''");
+						childProcess.execSync(
+							`powershell.exe -NoProfile -Command "Get-Content -LiteralPath '${tempFile}' -Raw -Encoding Byte | Out-Printer -Name '${escapedPrinter}'"`,
+							{ timeout: 4000, windowsHide: true },
+						);
+						try {
+							fs.unlinkSync(tempFile);
+						} catch {
+							// Ignore temp cleanup error
+						}
+						return {
+							success: true,
+							bytesSent: buffer.length,
+							timestamp,
+							message: `Отправлено в спулер печати Windows (${target.systemPrinterName}): ${buffer.length} байт`,
+							rawHexPreview: hexPreview,
+							targetSummary,
+						};
+					} catch (err: unknown) {
+						return {
+							success: false,
+							bytesSent: 0,
+							timestamp,
+							message: `Ошибка передачи задания в спулер печати Windows: ${err instanceof Error ? err.message : String(err)}`,
+							rawHexPreview: hexPreview,
+							targetSummary,
+							error: err instanceof Error ? err.message : String(err),
+						};
+					}
+				}
+			}
+		}
+
 		return {
 			success: true,
 			bytesSent: buffer.length,

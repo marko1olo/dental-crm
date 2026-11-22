@@ -21,6 +21,7 @@ export interface UpdateCallNoteBody {
 	patientId?: string;
 	callerPhone?: string;
 	phone?: string;
+	direction?: "inbound" | "outbound";
 }
 
 export function extractCallIdMarker(
@@ -146,10 +147,12 @@ export async function telephonyCallUpdateHandler(
 				.where(
 					and(
 						eq(communicationEvents.organizationId, orgId),
-						or(
-							eq(communicationEvents.providerCallId, callId),
-							ilike(communicationEvents.message, `%${callId}%`),
-						),
+						UUID_REGEX.test(callId)
+							? or(
+									eq(communicationEvents.providerCallId, callId),
+									eq(communicationEvents.id, callId),
+								)
+							: eq(communicationEvents.providerCallId, callId),
 					),
 				)
 				.orderBy(desc(communicationEvents.createdAt))
@@ -183,6 +186,9 @@ export async function telephonyCallUpdateHandler(
 				return res[0] ?? null;
 			}
 
+			const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+			const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
+
 			// 2. Если звонок ещё не сохранён в БД (in-flight), создаём новую запись с привязкой providerCallId
 			const [created] = await db
 				.insert(communicationEvents)
@@ -193,9 +199,10 @@ export async function telephonyCallUpdateHandler(
 					callerPhone,
 					patientId: body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null,
 					channel: "phone",
-					direction: "inbound",
+					direction: body.direction === "outbound" ? "outbound" : "inbound",
 					status: "completed",
 					message: noteText,
+					idempotencyKey,
 				})
 				.returning({
 					id: communicationEvents.id,

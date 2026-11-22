@@ -16,11 +16,13 @@ import {
 	surgicalQuickDeductSchema,
 	evaluateWarehouseOverdraft,
 	rublesToKopecks,
+	computePayloadHash,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
 	patientInvoices,
@@ -30,6 +32,7 @@ import {
 	treatmentItems,
 	visits,
 } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -40,7 +43,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	/**
 	 * 1. GET /api/surgery/protocols/templates
 	 * Возвращает 1-клик шаблоны хирургических протоколов с физиологической нормой по умолчанию
-	 * (Номенклатура 804н, Форма 043/у, Мандаты 8e, 8i).
+	 * (Код услуги прейскуранта, Медицинская карта приёма, Мандаты 8e, 8i).
 	 */
 	app.get("/api/surgery/protocols/templates", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
@@ -55,7 +58,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 	/**
 	 * 2. POST /api/surgery/protocols
-	 * Регистрация протокола амбулаторной операции в карте 043/у и приёме (Мандаты 8e, 8i).
+	 * Регистрация протокола амбулаторной операции в медицинской карте приёма и дневнике приёма (Мандаты 8e, 8i).
 	 * Автоматически вносит дневник операции без бюрократических барьеров.
 	 */
 	app.post("/api/surgery/protocols", async (request, reply) => {
@@ -72,6 +75,48 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				role: staffRole,
 				message: `Отказ в записи протокола операции (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
 			});
+		}
+
+		// Дедупликация и проверка Idempotency-Key (Мандаты 8d, 8bo, 8zp)
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotence-key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+				: undefined);
+
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: null;
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+			const existingRecord = await withTenantCtx(orgId, async (tx) => {
+				const [rec] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+				return rec ?? null;
+			});
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция хирургического протокола с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
 		}
 
 		const parsed = createSurgicalProtocolSchema.safeParse(request.body);
@@ -110,6 +155,37 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			(n) => n.id === effectiveNormId || n.id === input.normId,
 		);
 
+		const isImplant =
+			effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
+
+		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
+		const rawBody =
+			typeof request.body === "object" && request.body !== null
+				? (request.body as Record<string, unknown>)
+				: {};
+		const targetTeeth: number[] = [];
+		if (input.toothNumberFdi) {
+			targetTeeth.push(input.toothNumberFdi);
+		}
+		if (Array.isArray(rawBody.teeth)) {
+			for (const t of rawBody.teeth) {
+				if (typeof t === "number" && !targetTeeth.includes(t)) {
+					targetTeeth.push(t);
+				}
+			}
+		}
+
+		if (isImplant) {
+			for (const toothNum of targetTeeth) {
+				if (toothNum >= 51 && toothNum <= 85) {
+					return reply.code(422).send({
+						error: "DeciduousToothImplantForbidden",
+						message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
+					});
+				}
+			}
+		}
+
 		const result = await db.transaction(async (tx) => {
 			let visitUpdated = false;
 			let targetVisitId = input.visitId ?? null;
@@ -134,7 +210,8 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 				if (visit) {
 					const existingObj = visit.objectiveStatus || "";
-					const formattedEntry = `[ПРОТОКОЛ ОПЕРАЦИИ: ${norm?.title || effectiveNormId}${input.toothNumberFdi ? ` (FDI #${input.toothNumberFdi})` : ""}]\n${input.protocolText}`;
+					const teethSuffix = targetTeeth.length > 0 ? ` (FDI #${targetTeeth.join(", #")})` : "";
+					const formattedEntry = `[ПРОТОКОЛ ОПЕРАЦИИ: ${norm?.title || effectiveNormId}${teethSuffix}]\n${input.protocolText}`;
 					const updatedObj = existingObj ? `${existingObj}\n\n${formattedEntry}` : formattedEntry;
 
 					await tx
@@ -149,19 +226,17 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				}
 			}
 
-			// Если указан номер зуба, фиксируем факт вмешательства в состоянии зуба
-			if (input.toothNumberFdi) {
-				const isImplant =
-					effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
-				const isExtraction =
-					effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
-				const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
-				const newSurfaces = isImplant
-					? ["implant_site"]
-					: isExtraction
-						? ["extracted_socket"]
-						: ["cured_apical"];
+			// Если указаны номера зубов, фиксируем факт вмешательства в состоянии зубов
+			const isExtraction =
+				effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
+			const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
+			const newSurfaces = isImplant
+				? ["implant_site"]
+				: isExtraction
+					? ["extracted_socket"]
+					: ["cured_apical"];
 
+			for (const currentToothNum of targetTeeth) {
 				const [existingTooth] = await tx
 					.select()
 					.from(toothStates)
@@ -169,7 +244,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 						and(
 							eq(toothStates.organizationId, orgId),
 							eq(toothStates.patientId, targetPatientId),
-							eq(toothStates.toothNumber, input.toothNumberFdi),
+							eq(toothStates.toothNumber, currentToothNum),
 						),
 					)
 					.limit(1);
@@ -197,14 +272,14 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 							and(
 								eq(toothStates.organizationId, orgId),
 								eq(toothStates.patientId, targetPatientId),
-								eq(toothStates.toothNumber, input.toothNumberFdi),
+								eq(toothStates.toothNumber, currentToothNum),
 							),
 						);
 				} else {
 					await tx.insert(toothStates).values({
 						organizationId: orgId,
 						patientId: targetPatientId,
-						toothNumber: input.toothNumberFdi,
+						toothNumber: currentToothNum,
 						state: newState,
 						surfaces: mergedSurfaces,
 						notes: mergedNotes,
@@ -214,7 +289,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				await tx.insert(toothStateHistory).values({
 					organizationId: orgId,
 					patientId: targetPatientId,
-					toothNumber: input.toothNumberFdi,
+					toothNumber: currentToothNum,
 					newState,
 					newSurfaces: mergedSurfaces,
 					reason: `Хирургическая операция: ${norm?.title || effectiveNormId}`,
@@ -223,9 +298,11 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 			// Фиксация в счете/смете пациента (Мандат 8wy, SSOT)
 			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 0;
-			const operationPriceRub = input.services?.[0]?.priceRub ?? normPrice;
+			const unitPriceRub = input.services?.[0]?.priceRub ?? normPrice;
+			const teethMultiplier = targetTeeth.length > 1 ? targetTeeth.length : 1;
+			const operationPriceRub = unitPriceRub * teethMultiplier;
 			const operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
-			const serviceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
+			const baseServiceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
 
 			let linkedInvoiceId: string | null = null;
 			if (targetVisitId) {
@@ -253,18 +330,35 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				linkedInvoiceId = newInvoice?.id ?? null;
 			}
 
-			await tx.insert(treatmentItems).values({
-				organizationId: orgId,
-				patientId: targetPatientId,
-				visitId: targetVisitId ?? null,
-				toothCode: input.toothNumberFdi ? String(input.toothNumberFdi) : null,
-				title: `${serviceTitle}${input.toothNumberFdi ? ` (Зуб FDI #${input.toothNumberFdi})` : ""}`,
-				priceRub: operationPriceRub,
-				unitPriceRub: operationPriceRub,
-				quantity: "1",
-				status: "completed",
-				notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
-			});
+			if (targetTeeth.length > 0) {
+				for (const currentToothNum of targetTeeth) {
+					await tx.insert(treatmentItems).values({
+						organizationId: orgId,
+						patientId: targetPatientId,
+						visitId: targetVisitId ?? null,
+						toothCode: String(currentToothNum),
+						title: `${baseServiceTitle} (Зуб FDI #${currentToothNum})`,
+						priceRub: unitPriceRub,
+						unitPriceRub: unitPriceRub,
+						quantity: "1",
+						status: "completed",
+						notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
+					});
+				}
+			} else {
+				await tx.insert(treatmentItems).values({
+					organizationId: orgId,
+					patientId: targetPatientId,
+					visitId: targetVisitId ?? null,
+					toothCode: null,
+					title: baseServiceTitle,
+					priceRub: unitPriceRub,
+					unitPriceRub: unitPriceRub,
+					quantity: "1",
+					status: "completed",
+					notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
+				});
+			}
 
 			return {
 				patientId: targetPatientId,
@@ -273,7 +367,8 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				operationPriceRub,
 				operationPriceKopecks: operationPriceKopecks.toString(),
 				normId: input.normId,
-				toothNumberFdi: input.toothNumberFdi,
+				toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
+				teeth: targetTeeth,
 				protocolText: input.protocolText,
 				visitUpdated,
 				isOverdraftActive: input.isOverdraftActive,
@@ -288,19 +383,46 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			diagnosis: norm?.title || effectiveNormId,
 		});
 
+		const responsePayload: Record<string, unknown> = {
+			success: true,
+			protocol: result,
+		};
+
+		// Запись в таблицу idempotencyKeys для атомарного кэширования
+		if (idempotencyKey) {
+			await withTenantCtx(orgId, async (tx) => {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 201,
+						},
+					});
+			});
+		}
+
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "UPDATE_SURGICAL_PROTOCOL",
 			payload: {
 				patientId: targetPatientId,
-				toothNumberFdi: input.toothNumberFdi,
+				toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
+				teeth: targetTeeth,
 				protocol: result,
 			},
 		});
 
-		return reply.code(201).send({
-			success: true,
-			protocol: result,
-		});
+		return reply.code(201).send(responsePayload);
 	});
 
 	/**

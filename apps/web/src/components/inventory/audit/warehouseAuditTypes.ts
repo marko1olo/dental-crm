@@ -96,7 +96,7 @@ export interface InventoryAuditTotals {
 	readonly totalExpiredCostRubles: number;
 }
 
-export interface Torg16WriteoffLineItem {
+export interface WarehouseWriteoffLineItem {
 	readonly itemId: string;
 	readonly sku: string;
 	readonly nameRu: string;
@@ -111,9 +111,10 @@ export interface Torg16WriteoffLineItem {
 	readonly defectDescriptionRu: string;
 }
 
-export type WarehouseWriteoffLineItem = Torg16WriteoffLineItem;
+/** @deprecated Use WarehouseWriteoffLineItem */
+export type Torg16WriteoffLineItem = WarehouseWriteoffLineItem;
 
-export interface WarehouseTorg16WriteoffAct {
+export interface WarehouseWriteoffAct {
 	readonly actNumber: string;
 	readonly actDate: string;
 	readonly inventoryDocNumber: string;
@@ -125,10 +126,14 @@ export interface WarehouseTorg16WriteoffAct {
 	readonly molPosition: string;
 	readonly reasonRu: string;
 	readonly commission: readonly WarehouseInventoryCommissionMember[];
-	readonly items: readonly Torg16WriteoffLineItem[];
+	readonly items: readonly WarehouseWriteoffLineItem[];
 	readonly totalQuantity: number;
 	readonly totalCostKopecks: number;
 	readonly totalCostRubles: number;
 }
 
-export type WarehouseWriteoffAct = WarehouseTorg16WriteoffAct;
+/** @deprecated Use WarehouseWriteoffAct */
+export type WarehouseTorg16WriteoffAct = WarehouseWriteoffAct;
+
+export type InventoryAuditStatement = WarehouseInventoryAuditDocument;
+export type InventoryDiscrepancyStatement = WarehouseInventoryAuditDocument;

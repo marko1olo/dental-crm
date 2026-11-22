@@ -11,7 +11,7 @@ import {
 	deriveClinicWorkingHours,
 	findNextDoctorFreeSlotAfterDays,
 	findQuickRepeatSlotsForDoctor,
-} from "../doctorFreeSlotsEngine";
+} from "../freeSlotsModules";
 
 describe("Doctor Free Slots — Tally, Working Hours & Repeat Slots Suite", () => {
 	it("calculates daily chair and doctor occupancy, visit count and revenue tally", () => {

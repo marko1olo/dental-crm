@@ -26,7 +26,7 @@ export type ScheduleShiftDrawerControllerProps = {
   rosterStaffList: RosterStaffMember[];
   rosterCabinets: RosterCabinetDefinition[];
   scheduleDoctors: Array<{ id: string; fullName?: string; role?: string; specialties?: string[] }>;
-  dashboard?: Dashboard;
+  dashboard?: Dashboard | null | undefined;
   savedDoctorShifts: DoctorShift[];
   handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
 };
@@ -80,7 +80,7 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
       const defaultChair =
         defaultCab.chairs?.[0]?.id ||
         dashboard?.clinicSettings?.chairs?.[0]?.id ||
-        "chair-1";
+        "";
 
       const existingShift = savedDoctorShifts.find(
         (s) =>
@@ -94,7 +94,7 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
       } else {
         setEditingDrawerShift({
           id: `shift-${Date.now()}`,
-          doctorId: defaultDoc?.id || "doc-1",
+          doctorId: defaultDoc?.id || scheduleDoctors[0]?.id || "",
           doctorName:
             defaultDoc?.shortName || defaultDoc?.fullName || "Врач",
           doctorRole: (defaultDoc?.role as MedicalStaffRole) || "therapist",

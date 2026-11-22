@@ -3,7 +3,8 @@ import type { Appointment } from "@dental/shared";
 import type { VisitDiaryEntry043, FdiToothRecord, ToothSurface } from "../../emr";
 import type { PaymentMethodTab } from "../../cashbox/cashRegisterSplitsData.js";
 import { useVisitCompletion, assembleVisitStoreCompletedServices } from "../useVisitCompletion";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import type { ClinicalEstimateItem } from "../clinicalVisitWorkflow";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { logger } from "../../../utils/logger";
 import {
@@ -25,7 +26,7 @@ import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 export function useVisitSummaryModalState(
 	props: VisitSummaryModalProps,
-	appLogic: Partial<AppLogicContextType> | null | undefined,
+	appLogic?: AppLogicContextType | Partial<AppLogicContextType> | null | undefined,
 ) {
 	const {
 		isOpen,
@@ -87,9 +88,9 @@ export function useVisitSummaryModalState(
 			...(s.code ? { code: s.code } : {}),
 			...(s.toothNumber !== undefined && s.toothNumber !== null ? { toothNumber: s.toothNumber } : {}),
 		}));
-		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices as readonly ChairsideSummaryServiceItem[] | undefined;
+		const activeVisitServices = (appLogic?.dashboard?.activeVisit as { completedServices?: unknown } | null | undefined)?.completedServices as readonly ChairsideSummaryServiceItem[] | undefined;
 		return resolveChairsideServices(servicesProp, storeServices, activeVisitServices, patient?.id);
-	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit?.completedServices]);
+	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit]);
 
 	const effectiveChairsideServices = useMemo(() => {
 		return [...chairsideServices, ...appendedServices];
@@ -116,12 +117,28 @@ export function useVisitSummaryModalState(
 	]);
 
 	const consumablesReconciliation = useMemo(() => {
+		const dashboardCandidate = appLogic && "dashboard" in appLogic ? appLogic.dashboard : null;
+		const clinicSettingsUnknown =
+			dashboardCandidate && typeof dashboardCandidate === "object" && "clinicSettings" in dashboardCandidate
+				? (dashboardCandidate as { clinicSettings?: unknown }).clinicSettings
+				: null;
+		const priceListCandidate =
+			clinicSettingsUnknown && typeof clinicSettingsUnknown === "object" && "priceList" in clinicSettingsUnknown
+				? (clinicSettingsUnknown as { priceList?: unknown }).priceList
+				: undefined;
+		const catalogCandidate =
+			dashboardCandidate &&
+			typeof dashboardCandidate === "object" &&
+			"serviceCatalog" in dashboardCandidate &&
+			Array.isArray((dashboardCandidate as { serviceCatalog?: unknown }).serviceCatalog)
+				? (dashboardCandidate as { serviceCatalog: unknown[] }).serviceCatalog
+				: undefined;
 		const catalog =
-			(Array.isArray(appLogic?.catalog) ? appLogic.catalog : undefined) ||
-			(Array.isArray(appLogic?.dashboard?.clinicSettings?.priceList) ? appLogic.dashboard.clinicSettings.priceList : undefined) ||
+			catalogCandidate ||
+			(Array.isArray(priceListCandidate) ? priceListCandidate : undefined) ||
 			[];
 		return detectUnbilledConsumables(protocolSource, effectiveChairsideServices, catalog);
-	}, [protocolSource, effectiveChairsideServices, appLogic?.catalog, appLogic?.dashboard?.clinicSettings?.priceList]);
+	}, [protocolSource, effectiveChairsideServices, appLogic]);
 
 	const handleAddAllUnbilledToBill = () => {
 		if (!consumablesReconciliation.hasUnbilled) return;
@@ -146,9 +163,9 @@ export function useVisitSummaryModalState(
 		return resolveEffectiveDepositRub(
 			patientDepositRubProp,
 			patient,
-			appLogic?.dashboard?.activePatient?.balanceRub,
+			(appLogic?.activePatient as { balanceRub?: number } | null | undefined)?.balanceRub,
 		);
-	}, [patientDepositRubProp, patient, appLogic?.dashboard?.activePatient]);
+	}, [patientDepositRubProp, patient, appLogic?.activePatient]);
 
 	const effectiveFamilyBalanceRub = useMemo(() => {
 		return resolveEffectiveFamilyBalanceRub(patientFamilyBalanceRubProp, patient);
@@ -206,7 +223,7 @@ export function useVisitSummaryModalState(
 	}, [patient]);
 
 	const { completeVisit, isCompleting } = useVisitCompletion({
-		visitId: appLogic?.activeVisitId,
+		visitId: (appLogic?.activeVisitId as string | null | undefined) ?? (appLogic?.dashboard?.activeVisit?.id ?? null),
 		patientId: patient?.id,
 		patientName: formattedPatientName,
 		patientPhone: patient?.phone || "",
@@ -293,7 +310,7 @@ export function useVisitSummaryModalState(
 				method: "POST",
 				headers: appLogic?.auth?.scheduleMutationHeaders
 					? appLogic.auth.scheduleMutationHeaders({ "Content-Type": "application/json" })
-					: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					patientId: draft.patientId,
 					doctorUserId: draft.doctorUserId,
@@ -363,7 +380,27 @@ export function useVisitSummaryModalState(
 			if (onCompleteVisit) {
 				await onCompleteVisit();
 			} else {
-				await completeVisit();
+				const mappedAdditionalServices: readonly ClinicalEstimateItem[] = effectiveChairsideServices.map((s) => ({
+					id: s.id || s.serviceId || "proc-1",
+					procedureId: s.id || s.serviceId || "proc-1",
+					code: s.code || "A16.07.002",
+					code804n: s.code || "A16.07.002",
+					name: s.name || s.title || "Медицинская услуга",
+					category: (s.category || "therapy") as ClinicalEstimateItem["category"],
+					priceRub: s.priceRub ?? s.unitPriceRub ?? 0,
+					priceKopecks: Math.round((s.priceRub ?? s.unitPriceRub ?? 0) * 100),
+					quantity: s.quantity || 1,
+					discountPercent: 0,
+					totalRub: s.totalRub ?? ((s.priceRub ?? s.unitPriceRub ?? 0) * (s.quantity || 1)),
+					totalKopecks: Math.round((s.totalRub ?? ((s.priceRub ?? s.unitPriceRub ?? 0) * (s.quantity || 1))) * 100),
+					durationMinutes: 30,
+					warrantyMonths: 12,
+					lifetimeMonths: 24,
+					...(s.toothNumber !== undefined ? { toothNumber: Number(s.toothNumber) || undefined } : {}),
+				}));
+				await completeVisit({
+					additionalServices: mappedAdditionalServices,
+				});
 			}
 			onClose();
 		} catch (err) {

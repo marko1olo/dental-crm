@@ -5,7 +5,7 @@ import type { GeneratedDocument, Patient } from "@dental/shared";
 export interface DocumentIssueModalHeaderProps {
 	doc: GeneratedDocument;
 	documentLabels?: Record<string, string> | undefined;
-	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | undefined;
+	patientName?: ((patients: Patient[] | undefined, id: string | null | undefined) => string) | string | undefined;
 	patients?: Patient[] | undefined;
 	onClose: () => void;
 }
@@ -24,7 +24,9 @@ export const DocumentIssueModalHeader: React.FC<DocumentIssueModalHeaderProps> =
 						</h3>
 						<p className="m-0 text-xs text-[var(--muted)]">
 							{documentLabels?.[doc.kind] ?? doc.kind} · Пациент:{" "}
-							{typeof patientName === "function" ? patientName(patients, doc.patientId) : "Пациент"}
+							{typeof patientName === "function"
+								? patientName(patients, doc.patientId)
+								: (typeof patientName === "string" ? patientName : "Пациент")}
 						</p>
 					</div>
 				</div>

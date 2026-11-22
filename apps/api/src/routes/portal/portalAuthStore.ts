@@ -1,9 +1,10 @@
+import { createHash } from "node:crypto";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass } from "../../db/rls.js";
-import { patients, portalOtpCodes } from "../../db/schema.js";
+import { patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import {
 	type AuthenticatedPortalPatient,
@@ -11,11 +12,37 @@ import {
 	type PortalOtpPolicy,
 } from "./types.js";
 
-// In-memory revocation stores for active portal session invalidation
+// In-memory revocation cache for synchronous token checks, backed by PostgreSQL portal_revoked_tokens
 export const revokedPortalTokens = new Set<string>();
 export const portalRevokedBeforeByPatient = new Map<string, number>();
 
-// In-memory store for pending registration OTP codes (new patients)
+/**
+ * Записывает отозванный токен в PostgreSQL и локальный кэш
+ */
+export async function persistRevokedToken(
+	token: string,
+	patientId: string,
+	organizationId: string,
+	expiresAt: Date,
+): Promise<void> {
+	revokedPortalTokens.add(token);
+	const tokenHash = createHash("sha256").update(token).digest("hex");
+	try {
+		await db
+			.insert(portalRevokedTokens)
+			.values({
+				tokenHash,
+				patientId,
+				organizationId,
+				expiresAt,
+			})
+			.onConflictDoNothing();
+	} catch {
+		// Игнорируем дубликат
+	}
+}
+
+// In-memory store for pending registration OTP codes (kept for backwards-compatibility in tests)
 export interface PendingRegistrationOtpEntry {
 	phoneSuffix: string;
 	rawPhone: string;

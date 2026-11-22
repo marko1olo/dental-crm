@@ -40,26 +40,3 @@ export async function handleGetBactericidalEquipments(
 		};
 	});
 }
-
-export async function handleDeleteBactericidalEquipment(
-	req: FastifyRequest<{ Params: { id: string } }>,
-	reply: FastifyReply,
-) {
-	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-		req,
-		reply,
-		"bactericidal equipment delete",
-	);
-	if (!organizationId) return;
-
-	const { id } = req.params;
-	await db
-		.delete(bactericidalEquipments)
-		.where(
-			and(
-				eq(bactericidalEquipments.id, id),
-				eq(bactericidalEquipments.organizationId, organizationId),
-			),
-		);
-	return { success: true, id };
-}

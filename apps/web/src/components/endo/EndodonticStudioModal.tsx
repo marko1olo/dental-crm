@@ -357,9 +357,13 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			}
 		} catch { /* soft */ }
 
-		if (materialsEstimate.materials.length > 0) {
+		const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
+			? window.location.origin
+			: "";
+
+		if (origin && materialsEstimate.materials.length > 0) {
 			const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
-			fetch("/api/inventory/deduct", {
+			fetch(`${origin}/api/inventory/deduct`, {
 				method: "POST",
 				headers: getDenteAuthHeaders({
 					"Content-Type": "application/json",
@@ -398,10 +402,10 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				console.error("[EndoStudioModal] onSaveCanals handler failed:", err);
 				showToast("Предупреждение: локальный обработчик сохранения завершился с ошибкой", "warning", 3000);
 			}
-		} else if (props.patientId) {
+		} else if (props.patientId && origin) {
 			try {
 				const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
-				const res = await fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
+				const res = await fetch(`${origin}/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
 					method: "POST",
 					headers: getDenteAuthHeaders({
 						"Content-Type": "application/json",

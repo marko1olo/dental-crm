@@ -3,7 +3,7 @@
  * Unified exports for DENTE Smart Clinical Playbooks (Wave 132 / Mandates 8b, 8e, 8x, 8ap).
  */
 
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import {
 	calculateCandidateMatchScore,
 	evaluateDentalPathologyUrgency,

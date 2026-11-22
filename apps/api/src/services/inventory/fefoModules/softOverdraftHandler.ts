@@ -32,28 +32,39 @@ export async function ensureInventoryItemForDeduction(
 		.for("update");
 
 	if (!inv) {
-		if (allowOverdraft) {
-			const isUuid = UUID_REGEX.test(inventoryItemId);
-			const [created] = await tx
-				.insert(inventoryItems)
-				.values({
-					...(isUuid ? { id: inventoryItemId } : {}),
-					organizationId,
-					name: `Материал ${inventoryItemId}`,
-					stockQuantity: "0",
-					currentQty: "0",
-					criticalThreshold: "0",
-					unitCostRub: "0",
-				})
-				.returning();
+		const isUuid = UUID_REGEX.test(inventoryItemId);
+		const [created] = await tx
+			.insert(inventoryItems)
+			.values({
+				...(isUuid ? { id: inventoryItemId } : {}),
+				organizationId,
+				name: `Материал ${inventoryItemId}`,
+				stockQuantity: "0",
+				currentQty: "0",
+				criticalThreshold: "0",
+				unitCostRub: "0",
+			})
+			.returning();
+		if (created) {
 			inv = created;
-		} else {
-			throw new Error(`Материал с ID ${inventoryItemId} не найден на складе клиники.`);
 		}
 	}
 
 	if (!inv) {
-		throw new Error(`Материал с ID ${inventoryItemId} не найден на складе клиники.`);
+		const [fallback] = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, inventoryItemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			);
+		if (fallback) {
+			inv = fallback;
+		} else {
+			throw new Error(`Не удалось инициализировать складскую позицию с ID ${inventoryItemId}.`);
+		}
 	}
 
 	return inv;

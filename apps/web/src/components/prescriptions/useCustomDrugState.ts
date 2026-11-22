@@ -25,12 +25,18 @@ export function useCustomDrugState(
 			id: customId,
 			tradeName: customTradeName.trim(),
 			latinName: customLatinRp.trim() || `Rp.: ${customTradeName.trim()}`,
+			activeSubstanceRu: customTradeName.trim(),
+			category: "other",
+			categoryLabelRu: "Прочие",
+			formRu: "таблетки",
+			dosageRu: "стандартная",
+			quantityLabel: "N. 10",
 			form: "таблетки",
 			dosage: "стандартная",
 			quantity: "N. 10",
 			dispenseLatin: customDispense.trim() || "D.t.d. N 10",
 			signaRussian: customSigna.trim() || "S. По назначению врача",
-			category: "other",
+			memoInstruction: customSigna.trim() || "S. По назначению врача",
 		};
 		onAddDrugSuccess(newCustom);
 		setCustomTradeName("");

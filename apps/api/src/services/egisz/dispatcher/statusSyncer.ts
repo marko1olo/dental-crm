@@ -134,7 +134,14 @@ export async function syncPendingStatuses(
 				updatedCount++;
 			}
 		} catch (err: unknown) {
-			console.error(`[EgiszOutboxDispatcher] Outbox status sync failed for row ${row.id}:`, err);
+			process.stderr.write(
+				`${JSON.stringify({
+					level: "error",
+					tag: "EgiszOutboxDispatcher",
+					message: `Outbox status sync failed for row ${row.id}`,
+					error: err instanceof Error ? err.message : String(err),
+				})}\n`,
+			);
 		}
 	}
 
@@ -189,7 +196,14 @@ export async function syncPendingStatuses(
 				updatedCount++;
 			}
 		} catch (err: unknown) {
-			console.error(`[EgiszOutboxDispatcher] Status sync failed for log ${log.id}:`, err);
+			process.stderr.write(
+				`${JSON.stringify({
+					level: "error",
+					tag: "EgiszOutboxDispatcher",
+					message: `Status sync failed for log ${log.id}`,
+					error: err instanceof Error ? err.message : String(err),
+				})}\n`,
+			);
 		}
 	}
 

@@ -1016,4 +1016,59 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.equal(extractTaxYearFromDate("2025-01-01"), 2025);
 		assert.equal(extractTaxYearFromDate("2025-06-15T12:30:00"), 2025);
 	});
+
+	it("prevents double-refund deduction when cashbox creates negative refund record alongside refunded original payment", () => {
+		const payments: TaxDeductionPaymentItem[] = [
+			// 1. Unrelated treatment that was paid and kept: 50 000 ₽
+			{
+				id: "pay-treatment",
+				dateIso: "2024-03-01",
+				receiptNumber: "001",
+				fiscalDocumentNumber: "101",
+				fiscalSign: "111",
+				serviceName: "Лечение кариеса",
+				amountRub: 50000,
+				taxCode: "1",
+				status: "paid",
+			},
+			// 2. Initial payment that got refunded: +10 000 ₽, status: "refunded"
+			{
+				id: "pay-original-refunded",
+				dateIso: "2024-04-10",
+				receiptNumber: "002",
+				fiscalDocumentNumber: "102",
+				fiscalSign: "112",
+				serviceName: "Профгигиена",
+				amountRub: 10000,
+				taxCode: "1",
+				status: "refunded",
+			},
+			// 3. Cashbox 54-FZ refund transaction record: -10 000 ₽, status: "refunded"
+			{
+				id: "pay-cashbox-refund",
+				dateIso: "2024-04-15",
+				receiptNumber: "003",
+				fiscalDocumentNumber: "103",
+				fiscalSign: "113",
+				serviceName: "Возврат денежных средств (54-ФЗ возврат прихода)",
+				amountRub: -10000,
+				taxCode: "1",
+				status: "refunded",
+			},
+		];
+
+		const summary = calculateTaxDeductionSummary(payments);
+		const y2024 = summary.yearsSummary.find((y) => y.taxYear === 2024)!;
+		assert.ok(y2024);
+		// Net paid must be exactly 50 000 ₽ (NOT 50k - 20k = 30k!)
+		assert.equal(y2024.code01Rub, 50000);
+		assert.equal(y2024.code01Kopecks, 5000000);
+		assert.equal(y2024.totalRub, 50000);
+		assert.equal(y2024.totalKopecks, 5000000);
+
+		const normalized = normalizePaymentsForTaxCertificate(payments, 2024);
+		assert.equal(normalized.length, 1);
+		assert.equal(normalized[0]!.id, "pay-treatment");
+		assert.equal(normalized[0]!.amountRub, 50000);
+	});
 });

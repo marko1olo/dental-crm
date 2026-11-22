@@ -44,7 +44,7 @@ export function useVisitSpeechTranscription({
 			const text = assembly.transcript.trim();
 			if (text) {
 				visitDraftUserEditedRef.current = true;
-				setTranscript((curr: any) => {
+				setTranscript((curr: string) => {
 					const safe = typeof curr === "string" ? curr : "";
 					return safe.replace(/\s+/g, " ").includes(text.replace(/\s+/g, " ")) ? safe : [safe.trim(), text].filter(Boolean).join("\n");
 				});

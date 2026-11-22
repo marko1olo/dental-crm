@@ -146,6 +146,7 @@ export const users = pgTable(
 		canManageMoney: boolean("can_manage_money").notNull().default(false),
 		canManageImports: boolean("can_manage_imports").notNull().default(false),
 		specialties: jsonb("specialties"),
+		allowedClinicIds: jsonb("allowed_clinic_ids").$type<string[] | null>(),
 		uiPreferences: jsonb("ui_preferences"),
 		workingHours: jsonb("working_hours"),
 		currentSessionId: text("current_session_id"),
@@ -209,8 +210,8 @@ export const portalOtpCodes = pgTable(
 			.notNull()
 			.references(() => organizations.id),
 		patientId: uuid("patient_id")
-			.notNull()
 			.references(() => patients.id),
+		phone: text("phone"),
 		codeHash: text("code_hash").notNull(),
 		/** "sms" — реальная отправка шлюзом; "developer_log" — только вне production. */
 		channel: text("channel").notNull(),
@@ -231,11 +232,39 @@ export const portalOtpCodes = pgTable(
 				table.patientId,
 				table.createdAt,
 			),
+			idxPortalOtpPhone: index("portal_otp_codes_phone_idx").on(
+				table.organizationId,
+				table.phone,
+				table.createdAt,
+			),
 			idxPortalOtpExpires: index("portal_otp_codes_expires_idx").on(
 				table.expiresAt,
 			),
 		};
 	},
+);
+
+export const portalRevokedTokens = pgTable(
+	"portal_revoked_tokens",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		tokenHash: text("token_hash").notNull().unique(),
+		patientId: uuid("patient_id").references(() => patients.id),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		revokedAt: timestamp("revoked_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	},
+	(table) => ({
+		idxExpiresAt: index("portal_revoked_tokens_expires_idx").on(table.expiresAt),
+		idxPatient: index("portal_revoked_tokens_patient_idx").on(
+			table.organizationId,
+			table.patientId,
+		),
+	}),
 );
 
 export const clinicWorkflows = pgTable(

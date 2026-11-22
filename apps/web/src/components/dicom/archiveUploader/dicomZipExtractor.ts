@@ -56,7 +56,7 @@ export async function extractZipArchive(
 					}
 					const fileData = unzipped[filename];
 					if (fileData && isDicomEntry(filename, fileData)) {
-						const file = new File([fileData], filename);
+						const file = new File([fileData.buffer as ArrayBuffer], filename);
 						const imageId = loader.wadouri.fileManager.add(file);
 						results.push({ imageId, file });
 					}

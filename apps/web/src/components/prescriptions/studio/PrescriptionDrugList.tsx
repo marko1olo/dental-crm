@@ -81,7 +81,7 @@ export const PrescriptionDrugList: React.FC<PrescriptionDrugListProps> = ({
 				{filteredDrugs.map((drug) => {
 					const isSelected = selectedDrugIds.includes(drug.id);
 					const isConflicting =
-						(hasPenicillinAllergy && drug.category === "antibiotic" && /амокси/i.test(drug.activeSubstanceRu)) ||
+						(hasPenicillinAllergy && drug.category === "antibiotic" && /амокси/i.test(drug.activeSubstanceRu || "")) ||
 						(hasNsaidAllergy && drug.category === "nsaid");
 					return (
 						<button

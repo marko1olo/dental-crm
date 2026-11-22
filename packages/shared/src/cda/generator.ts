@@ -1,19 +1,17 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * UNIFIED EGISZ REMD CDA R2 XML GENERATOR (МИНЗДРАВ РФ)
- * Central routing and generation facade for SEMD 101, 104, and 130.
+ * Central routing and generation facade for SEMD 101, 104, and 043-1u.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import { canonicalizeCdaXml } from "./c14n.js";
 import { generateSemd101Xml } from "./generator101.js";
 import { generateSemd104Xml } from "./generator104.js";
-import { generateSemd130Xml } from "./generator130.js";
 import { generateSemd043_1uXml } from "./generator043_1u.js";
 import {
 	cdaSemd101Schema,
 	cdaSemd104Schema,
-	cdaSemd130Schema,
 	cdaSemd043_1uSchema,
 } from "./schemas.js";
 
@@ -28,7 +26,6 @@ import type {
 	CdaGenerationResult,
 	CdaSemd101Params,
 	CdaSemd104Params,
-	CdaSemd130Params,
 	CdaSemd043_1uParams,
 } from "./types.js";
 import { validateCdaParams } from "./validator.js";
@@ -54,9 +51,6 @@ export function generateCdaXml(params: unknown): CdaGenerationResult {
 	if (docParams.docKind === "104") {
 		const parsed = cdaSemd104Schema.parse(params);
 		xml = generateSemd104Xml(parsed as CdaSemd104Params);
-	} else if (docParams.docKind === "130") {
-		const parsed = cdaSemd130Schema.parse(params);
-		xml = generateSemd130Xml(parsed as CdaSemd130Params);
 	} else if (
 		docParams.docKind === "043-1u" ||
 		docParams.docKind === "0431u" ||

@@ -226,11 +226,10 @@ export class OiisGatewayClient {
 		if (this.config.isSandbox && !process.env.EGISZ_REAL_HTTP) {
 			return {
 				transactionId,
-				status: "Registered",
-				remdDocumentId: `REMD-REG-${transactionId.slice(-8)}`,
-				statusCodeNsi: "1",
-				statusDescription: "Документ успешно зарегистрирован в РЭМД ЕГИСЗ Минздрава РФ",
-				registrationDate: new Date().toISOString(),
+				status: "Sent",
+				statusCodeNsi: "0",
+				statusDescription: "Документ передан в шлюз ЕГИСЗ и ожидает обработки оператором РЭМД",
+				registrationDate: undefined,
 			};
 		}
 

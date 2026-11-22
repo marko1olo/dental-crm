@@ -66,6 +66,9 @@ export async function telephonyOutboundCallHandler(
 		logger: request.log,
 	});
 
+	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
+
 	if (!outboundResult.dispatched) {
 		await withTenantCtx(orgId, async () => {
 			await db.insert(communicationEvents).values({
@@ -76,6 +79,7 @@ export async function telephonyOutboundCallHandler(
 				direction: "outbound",
 				status: "needs_call",
 				message: `Исходящий вызов на ${callerPhone.e164} отклонён: АТС не подключена`,
+				idempotencyKey,
 			});
 		});
 
@@ -100,6 +104,7 @@ export async function telephonyOutboundCallHandler(
 			direction: "outbound",
 			status: "queued",
 			message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}] через ${outboundResult.provider}`,
+			idempotencyKey,
 		});
 	});
 

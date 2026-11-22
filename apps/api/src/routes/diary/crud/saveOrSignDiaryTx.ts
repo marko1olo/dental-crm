@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { visitDiaries, visits } from "../../../db/schema.js";
+import { visitDiaries, visitDiaryRevisions, visits } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
 	DiarySigningError,
@@ -86,13 +86,34 @@ export async function executeSaveOrSignDiaryTx(params: {
 			}
 		}
 
-		if (existing?.isLocked) {
-			throw new DiarySigningError("AlreadyLocked", "Дневник подписан и заблокирован.");
-		}
-
 		let diaryId: string;
 		if (existing) {
-			const updateData: Partial<typeof visitDiaries.$inferInsert> = { updatedAt: new Date(), draftAuthorId: userId };
+			if (existing.isLocked) {
+				// Автономия врача (Мандат 8e, «Исправленному верить»):
+				// Не кирпичим врача ошибкой AlreadyLocked, а фиксируем ревизию в истории
+				await tx.insert(visitDiaryRevisions).values({
+					organizationId: orgId,
+					diaryId: existing.id,
+					previousComplaint: existing.complaint,
+					previousAnamnesis: existing.anamnesis,
+					previousStatusLocalis: existing.statusLocalis,
+					previousDiagnosisIcd10: existing.diagnosisIcd10,
+					previousDiagnosisTooth: existing.diagnosisTooth,
+					previousTreatmentDescription: existing.treatmentDescription,
+					previousComplications: existing.complications,
+					previousComorbidities: existing.comorbidities,
+					previousInstrumentTrayBarcode: existing.instrumentTrayBarcode,
+					revisionReason: "Клиническое дополнение дневника приёма врачом («Исправленному верить»)",
+					revisedByUserId: userId,
+				});
+			}
+
+			const priorVersion = existing.version ?? 1;
+			const updateData: Partial<typeof visitDiaries.$inferInsert> = {
+				updatedAt: new Date(),
+				draftAuthorId: userId,
+				...(existing.isLocked ? { version: priorVersion + 1 } : {}),
+			};
 			if (!existing.authorId) updateData.authorId = userId;
 			if (!existing.doctorId) updateData.doctorId = userId;
 			if (data.complaint !== undefined) updateData.complaint = data.complaint;
@@ -108,9 +129,9 @@ export async function executeSaveOrSignDiaryTx(params: {
 			const updatedRows = await tx
 				.update(visitDiaries)
 				.set(updateData)
-				.where(and(eq(visitDiaries.id, existing.id), eq(visitDiaries.organizationId, orgId), eq(visitDiaries.isLocked, false)))
+				.where(and(eq(visitDiaries.id, existing.id), eq(visitDiaries.organizationId, orgId)))
 				.returning({ id: visitDiaries.id });
-			if (updatedRows.length === 0) throw new DiarySigningError("AlreadyLocked", "Дневник подписан и заблокирован.");
+			if (updatedRows.length === 0) throw new DiarySigningError("NotSaved", "Дневник приёма не удалось обновить на сервере.");
 			diaryId = existing.id;
 		} else {
 			const inserted = await tx
@@ -191,11 +212,18 @@ export async function executeSaveOrSignDiaryTx(params: {
 			const [savedRow] = await tx.select().from(visitDiaries).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId))).limit(1);
 			if (!savedRow) return { diaryId, signing: null, draftHash: null };
 			const draftHash = computeDiaryHash(
-				savedRow.visitId, savedRow.patientId ?? "", savedRow.anamnesis, savedRow.statusLocalis,
-				savedRow.treatmentDescription, savedRow.diagnosisIcd10, savedRow.diagnosisTooth,
-				savedRow.complications, savedRow.comorbidities, savedRow.instrumentTrayBarcode,
+				savedRow.visitId,
+				savedRow.patientId ?? "",
+				savedRow.complaint,
+				savedRow.anamnesis,
+				savedRow.statusLocalis,
+				savedRow.treatmentDescription,
+				savedRow.diagnosisIcd10,
+				savedRow.diagnosisTooth,
+				savedRow.complications,
+				savedRow.comorbidities,
 			);
-			await tx.update(visitDiaries).set({ diaryHash: draftHash, updatedAt: new Date() }).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId), eq(visitDiaries.isLocked, false)));
+			await tx.update(visitDiaries).set({ diaryHash: draftHash, updatedAt: new Date() }).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId)));
 			await syncVisitEmkFromDiarySoap(tx, {
 				visitId: savedRow.visitId, organizationId: orgId, complaint: savedRow.complaint, anamnesis: savedRow.anamnesis,
 				statusLocalis: savedRow.statusLocalis, diagnosisIcd10: consolidatedDiagnosis || savedRow.diagnosisIcd10,

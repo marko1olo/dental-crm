@@ -13,8 +13,8 @@ const __dirname = path.dirname(__filename);
 const webSrcRoot = path.resolve(__dirname, "../../..");
 
 describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
-	it("1. DmsGuaranteeLetterModal.tsx: must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
-		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsGuaranteeLetterModal.tsx");
+	it("1. DmsGuaranteeLetterModal.tsx: purged duplicate modal; DmsStudioModal.tsx must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
+		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsStudioModal.tsx");
 		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
 		const content = fs.readFileSync(filePath, "utf-8");
 		assert.equal(content.includes("Иванова Елена"), false);
@@ -32,8 +32,8 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		assert.equal(content.includes("Иванова М. А."), false);
 	});
 
-	it("3. DmsGuaranteeLetterModal.tsx: must NOT contain synthetic names", () => {
-		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsGuaranteeLetterModal.tsx");
+	it("3. DmsStudioModal.tsx: must NOT contain synthetic names", () => {
+		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsStudioModal.tsx");
 		assert.ok(fs.existsSync(filePath));
 		const content = fs.readFileSync(filePath, "utf-8");
 		assert.equal(content.includes("Иванов Сергей Александрович"), false);

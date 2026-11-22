@@ -7,7 +7,7 @@ export interface PatientSearchResultsDropdownProps {
   searchResults: Array<{ patient: Patient; isFuzzy?: boolean | undefined; suggestedName?: string | undefined }>;
   highlightedIndex: number;
   selectPatient: (p: Patient) => void;
-  dashboard?: Dashboard | undefined;
+  dashboard?: Dashboard | null | undefined;
   searchQuery: string;
   setShowInlineNewPatient: (show: boolean) => void;
   setIsTypeaheadOpen: (open: boolean) => void;

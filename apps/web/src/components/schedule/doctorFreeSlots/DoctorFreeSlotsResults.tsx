@@ -1,6 +1,6 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
-import type { DoctorFreeSlot } from "../doctorFreeSlotsEngine";
+import type { DoctorFreeSlot } from "@dental/shared";
 import type { useDoctorFreeSlotsController } from "./useDoctorFreeSlotsController";
 
 export interface DoctorFreeSlotsResultsProps {

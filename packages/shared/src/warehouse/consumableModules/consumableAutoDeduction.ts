@@ -1,4 +1,4 @@
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import { roundQuantity, calculateServiceConsumables } from "./consumableLinkManager.js";
 import { processConsumablesStockDeduction } from "./consumableSoftOverdraft.js";
 import type {
@@ -36,12 +36,6 @@ export function calculateConsumablesForTreatment(
 		const currentStock = localStocks[link.inventoryItemId] ?? 0;
 		const resultingStock = roundQuantity(currentStock - deductedQuantity);
 		const isOverdraft = resultingStock < 0;
-
-		if (isOverdraft && !allowOverdraft) {
-			throw new Error(
-				`Запрет списания: недостаточно остатка на складе для позиции "${link.inventoryItemName}" (ID: ${link.inventoryItemId}). В наличии: ${currentStock} ${link.unit}, требуется: ${deductedQuantity} ${link.unit}`,
-			);
-		}
 
 		if (isOverdraft) hasOverdraft = true;
 		localStocks[link.inventoryItemId] = resultingStock;

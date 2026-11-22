@@ -14,7 +14,7 @@ export function QuickAddChairColorPicker({
 		<div className="space-y-1.5">
 			<span
 				id="quick-add-chair-colors-label"
-				className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+				className="block text-xs font-semibold text-[var(--muted)]"
 			>
 				Цветовой маркер в сетке
 			</span>

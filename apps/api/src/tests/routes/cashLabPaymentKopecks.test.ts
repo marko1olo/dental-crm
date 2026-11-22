@@ -66,6 +66,7 @@ describe("Связка наряда лаборатории с кассой (amou
 				name: "Расчетный счет ЗТЛ",
 				type: "account",
 				balanceRub: 100000,
+				balanceKopecks: 10000000,
 			}).onConflictDoNothing();
 
 			await db.insert(labOrders).values({

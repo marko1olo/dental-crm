@@ -73,7 +73,7 @@ export interface EgiszRegistrationInfo {
 export function formatOutboxRowForJournal(row: EgiszOutboxJournalDbRow) {
 	const rawAdminProfile = row.patientAdministrativeProfile as Record<string, unknown> | null;
 	const patientSnils = typeof rawAdminProfile?.snils === "string" ? rawAdminProfile.snils : "";
-	const patientCardNumber = typeof rawAdminProfile?.cardNumber === "string" ? rawAdminProfile.cardNumber : "043/у";
+	const patientCardNumber = typeof rawAdminProfile?.cardNumber === "string" ? rawAdminProfile.cardNumber : "ЭМК";
 	const patientPolisOms = typeof rawAdminProfile?.polisOms === "string" ? rawAdminProfile.polisOms : undefined;
 
 	let uiStatus: "draft" | "signed" | "sent" | "registered" | "accepted_by_egisz" | "rejected_by_egisz" | "error" = "draft";
@@ -86,7 +86,7 @@ export function formatOutboxRowForJournal(row: EgiszOutboxJournalDbRow) {
 	const docTypeTitles: Record<string, string> = {
 		"105": "Протокол консультации стоматолога (СЭМД 105)", "108": "Стоматологический протокол приёма (СЭМД 108)",
 		"302": "Консультация стоматолога (СЭМД 302)", "303": "Протокол стоматологического вмешательства (СЭМД 303)",
-		"102": "Амбулаторный стоматологический протокол (СЭМД 102)", "1151156": "Справка об оплате мед. услуг для ФНС (КНД 1151156)",
+		"102": "Амбулаторный стоматологический протокол (СЭМД 102)", "1151156": "Справка об оплате медицинских услуг для налогового вычета",
 	};
 	const docTypeName = docTypeTitles[row.docTypeNsiCode] || `СЭМД ЕГИСЗ (код ${row.docTypeNsiCode})`;
 
@@ -117,7 +117,7 @@ export function formatOutboxRowForJournal(row: EgiszOutboxJournalDbRow) {
 	}
 
 	const doctorSignature = row.doctorSignaturePkcs7 ? {
-		signatureBase64: row.doctorSignaturePkcs7, certificateSerialNumber: row.doctorCertSerial || "00E4A28B12345678",
+		signatureBase64: row.doctorSignaturePkcs7, certificateSerialNumber: row.doctorCertSerial || "",
 		certificateSubject: row.doctorCertSubject || row.doctorFullName || "Врач-стоматолог",
 		signedAt: toSafeIsoString(row.doctorSignedAt || row.createdAt), algorithmOid: "1.2.643.7.1.1.1.1",
 	} : undefined;

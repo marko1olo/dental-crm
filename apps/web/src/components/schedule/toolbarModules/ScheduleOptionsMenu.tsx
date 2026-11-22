@@ -37,6 +37,10 @@ export interface ScheduleOptionsMenuProps {
 	onOpenPatientSearch?: (() => void) | undefined;
 	onEmergencyCitoBooking?: (() => void) | undefined;
 	onOpenTomorrowReminders?: (() => void) | undefined;
+	onOpenRecallsHub?: (() => void) | undefined;
+	recallsCount?: number | undefined;
+	onOpenPreventiveInspection?: (() => void) | undefined;
+	preventiveInspectionCount?: number | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	gridStepMinutes?: number | undefined;
 }
@@ -63,6 +67,10 @@ export function ScheduleOptionsMenu({
 	onOpenPatientSearch,
 	onEmergencyCitoBooking,
 	onOpenTomorrowReminders,
+	onOpenRecallsHub,
+	recallsCount,
+	onOpenPreventiveInspection,
+	preventiveInspectionCount,
 	onGridStepChange,
 	gridStepMinutes,
 }: ScheduleOptionsMenuProps) {
@@ -204,6 +212,30 @@ export function ScheduleOptionsMenu({
 					>
 						<span>Добавить кресло (+ Кресло)</span>
 					</button>
+
+					{/* Реколлы и профосмотры */}
+					{(onOpenRecallsHub || onOpenPreventiveInspection) && (
+						<button
+							type="button"
+							onClick={() => {
+								onClose();
+								(onOpenRecallsHub ?? onOpenPreventiveInspection)?.();
+							}}
+							className="w-full py-1.5 px-2.5 rounded-md hover:bg-[var(--paper-soft)] text-left flex items-center justify-between text-[var(--ink)] cursor-pointer"
+							data-testid="schedule-options-recalls-hub-btn"
+							title="Реколлы и плановые профосмотры пациентов"
+						>
+							<span className="flex items-center gap-1.5">
+								<Clock size={13} className="text-[var(--muted)]" />
+								<span>Реколлы и профосмотры</span>
+							</span>
+							{((recallsCount ?? preventiveInspectionCount) ?? 0) > 0 && (
+								<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">
+									{recallsCount ?? preventiveInspectionCount}
+								</span>
+							)}
+						</button>
+					)}
 
 					{/* Лист ожидания */}
 					{onOpenWaitlist && (

@@ -520,4 +520,95 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(json.success, true);
 		assert.ok(json.data);
 	});
+
+	it("POST /api/periodontogram/snapshots/:id/close preserves psrData in indices", async () => {
+		const createRes = await app.inject({
+			method: "POST",
+			url: `/api/perio/${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Осмотр с PSR перед закрытием",
+				psrData: { S1: { code: 2, asterisk: false } },
+				indices: { psrData: { S1: { code: 2, asterisk: false } } },
+			},
+		});
+
+		assert.equal(createRes.statusCode, 200);
+		const createJson = JSON.parse(createRes.body);
+		const snapshotId = createJson.data?.id;
+		assert.ok(snapshotId, "Draft snapshot ID must exist");
+
+		const closeRes = await app.inject({
+			method: "POST",
+			url: `/api/periodontogram/snapshots/${snapshotId}/close`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: { notes: "Закрытие осмотра" },
+		});
+
+		assert.equal(closeRes.statusCode, 200);
+		const closeJson = JSON.parse(closeRes.body);
+		assert.equal(closeJson.success, true);
+		assert.ok(closeJson.data?.indices?.psrData, "psrData must be preserved upon close");
+		assert.equal(closeJson.data?.indices?.psrData?.S1?.code, 2);
+	});
+
+	it("POST /api/periodontogram/snapshots/:id/close returns cached 200 OK on idempotency retry instead of 409", async () => {
+		const createRes = await app.inject({
+			method: "POST",
+			url: `/api/perio/${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Осмотр для проверки идемпотентности закрытия",
+			},
+		});
+
+		assert.equal(createRes.statusCode, 200);
+		const createJson = JSON.parse(createRes.body);
+		const snapshotId = createJson.data?.id;
+		assert.ok(snapshotId, "Draft snapshot ID must exist");
+
+		const testIdemKey = "01933a00-1111-7000-8000-000000000099";
+
+		// Первая попытка закрытия снимка с Idempotency-Key
+		const closeRes1 = await app.inject({
+			method: "POST",
+			url: `/api/periodontogram/snapshots/${snapshotId}/close`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": testIdemKey,
+			},
+			payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
+		});
+
+		assert.equal(closeRes1.statusCode, 200);
+		const closeJson1 = JSON.parse(closeRes1.body);
+		assert.equal(closeJson1.success, true);
+
+		// Повторный сетевой ретрай с тем же Idempotency-Key: должен вернуть 200 OK из кэша вместо 409 SnapshotAlreadyClosed!
+		const closeRes2 = await app.inject({
+			method: "POST",
+			url: `/api/periodontogram/snapshots/${snapshotId}/close`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": testIdemKey,
+			},
+			payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
+		});
+
+		assert.equal(closeRes2.statusCode, 200, "Retry with same Idempotency-Key must return 200 OK");
+		assert.equal(closeRes2.headers["idempotency-replayed"], "true");
+		const closeJson2 = JSON.parse(closeRes2.body);
+		assert.equal(closeJson2.success, true);
+	});
 });

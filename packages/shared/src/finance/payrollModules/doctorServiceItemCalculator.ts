@@ -8,6 +8,7 @@ import type { DoctorCompletedServiceItem, DoctorPayrollCalculationInput, DoctorP
 import type { DoctorSpecialtyCommissionRule } from "./payrollPresetTypes.js";
 import { computeItemCostsAndCommission } from "./doctorServiceCostHelper.js";
 import { createServiceStornoItem } from "./doctorStornoHelper.js";
+import { percentageOfKopecks, type Kopecks } from "../../money.js";
 
 export interface ProcessedDoctorServicesSummary {
 	totalGross: number;
@@ -87,10 +88,10 @@ export function processDoctorServiceItems(
 
 		if (item.category === "retail_hygiene") {
 			const itemRetailPercent = item.customCommissionPercent ?? input.categoryRates?.retail_hygiene ?? preset.retailProductsPercentage;
-			earnedRetail += Math.round((effectiveGrossKop * itemRetailPercent) / 100);
+			earnedRetail += percentageOfKopecks(effectiveGrossKop as Kopecks, Math.round(itemRetailPercent * 100));
 		} else {
 			const netItemBase = Math.max(0, effectiveGrossKop - itemLabCost - itemMaterialCost);
-			earnedBase += Math.round((netItemBase * itemCommissionPercent) / 100);
+			earnedBase += percentageOfKopecks(netItemBase as Kopecks, Math.round(itemCommissionPercent * 100));
 		}
 	}
 

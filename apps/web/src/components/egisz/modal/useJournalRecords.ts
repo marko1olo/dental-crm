@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { EgiszClinicInfo } from "../egiszRemdEngine";
 import { type RemdDocumentRecord, type RemdDocumentStatus } from "../egiszJournalData";
 import { fetchOutboxRecordsFromBackend } from "../egiszPackageSender";
@@ -59,16 +60,25 @@ export function useJournalRecords(
 	}, [clinic]);
 
 	const handleBatchSendShift = useCallback(async (setIsSending: (v: boolean) => void) => {
-		const pending = records.filter((r) => r.status === "draft" || r.status === "error" || r.status === "rejected_by_egisz");
-		if (pending.length === 0) return showToast("Все документы смены уже переданы в ЕГИСЗ", "info");
 		setIsSending(true);
 		try {
-			setRecords((p) => p.map((r) => pending.some((x) => x.id === r.id) ? { ...r, status: "sent" as const } : r));
-			showToast("Пакет смены успешно отправлен в очередь ЕГИСЗ без блокировки приёма", "success");
+			const res = await fetch("/api/egisz/outbox/dispatch", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			});
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
+				throw new Error(errJson?.message || `Ошибка сервера (${res.status})`);
+			}
+			const outboxDocs = await fetchOutboxRecordsFromBackend(clinic);
+			setRecords(outboxDocs || []);
+			showToast("Пакетная отправка очереди ЕГИСЗ запущена на сервере", "success");
+		} catch (err) {
+			showToast(`Ошибка отправки очереди ЕГИСЗ: ${err instanceof Error ? err.message : String(err)}`, "error");
 		} finally {
 			setIsSending(false);
 		}
-	}, [records]);
+	}, [clinic]);
 
 	return {
 		records, setRecords, isLoadingJournal, journalFilter, setJournalFilter,

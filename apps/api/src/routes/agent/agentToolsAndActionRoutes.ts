@@ -155,7 +155,13 @@ export async function registerAgentToolsAndActionRoutes(
 						callId,
 						body.modifiedArgs,
 					);
-					return reply.code(200).send({
+					if (!result.ok && (result.error?.includes("Конфликт") || result.error?.includes("уже подтверждено"))) {
+						return reply.code(409).send({
+							ok: false,
+							error: result.error,
+						});
+					}
+					return reply.code(result.ok ? 200 : 400).send({
 						ok: result.ok,
 						result: result.ok ? result.data : undefined,
 						error: result.error,

@@ -60,12 +60,16 @@ export function useHygieneCalculations() {
 	});
 	const silnessResult = useMemo(() => {
 		let totalScore = 0;
+		let count = 0;
 		for (const t of SILNESS_LOE_TEETH) {
-			const s = silnessScores[t] ?? { vestibular: 0, oral: 0, mesial: 0, distal: 0 };
-			const toothAvg = (s.vestibular + s.oral + s.mesial + s.distal) / 4;
-			totalScore += toothAvg;
+			const s = silnessScores[t];
+			if (s) {
+				const toothAvg = (s.vestibular + s.oral + s.mesial + s.distal) / 4;
+				totalScore += toothAvg;
+				count++;
+			}
 		}
-		const avg = Math.round((totalScore / SILNESS_LOE_TEETH.length) * 10) / 10;
+		const avg = count > 0 ? Math.round((totalScore / count) * 10) / 10 : 0;
 		let evaluation: "excellent" | "good" | "moderate" | "poor" = "excellent";
 		let ratingText = "Отличная гигиена (налет отсутствует)";
 		let badgeClass = "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300";

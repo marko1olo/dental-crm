@@ -80,7 +80,7 @@ export function useStaffCommissionsState() {
 				method: "GET",
 				headers: denteAdminSecretRequestHeaders(
 					undefined,
-					(authRef.current as { settingsAdminSecretSession?: string } | undefined)?.settingsAdminSecretSession,
+					authRef.current?.settingsAdminSecretDomain,
 				),
 			});
 			const payload = (await response.json().catch((err) => {
@@ -168,7 +168,7 @@ export function useStaffCommissionsState() {
 				method: "PUT",
 				headers: denteAdminSecretRequestHeaders(
 					{ "Content-Type": "application/json" },
-					authRef.current?.settingsAdminSecretSession,
+					authRef.current?.settingsAdminSecretDomain,
 				),
 				body: JSON.stringify({
 					commissionPct: pct,

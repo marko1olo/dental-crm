@@ -142,12 +142,12 @@ test("DicomViewerModal: 1-клик Норма, опциональный ИИ б�
 
 	// Проверка кнопки Нормы
 	assert.ok(
-		source.includes('data-testid="btn-dicom-norma-043"'),
-		"DicomViewerModal обязан содержать кнопку 'btn-dicom-norma-043'",
+		source.includes('data-testid="btn-dicom-norma-emk"') || source.includes('data-testid="btn-dicom-norma-043"'),
+		"DicomViewerModal обязан содержать кнопку 'btn-dicom-norma-emk'",
 	);
 	assert.ok(
-		source.includes("handleInsertNormaTo043"),
-		"DicomViewerModal обязан иметь функцию handleInsertNormaTo043",
+		source.includes("handleInsertNormaToEmk") || source.includes("handleInsertNormaTo043"),
+		"DicomViewerModal обязан иметь функцию handleInsertNormaToEmk",
 	);
 
 	// Проверка меню протоколов

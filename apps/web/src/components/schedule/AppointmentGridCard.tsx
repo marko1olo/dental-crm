@@ -46,9 +46,8 @@ interface ScheduleLabOrderMatch extends MinimalLabOrderForSchedule {
 	readonly appointmentId?: string | null;
 }
 
-interface DashboardWithLabOrders {
-	readonly labOrders?: readonly ScheduleLabOrderMatch[];
-	readonly patients?: unknown;
+interface DashboardWithLabOrders extends Omit<Partial<Dashboard>, "labOrders"> {
+	readonly labOrders?: readonly ScheduleLabOrderMatch[] | undefined;
 }
 
 /**
@@ -69,9 +68,9 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 
 	const extAppt = a as AppointmentWithGridMeta;
 	const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
-	const resolveNameFn = getPatientName || patientNameFn || ((_patients: unknown, _id?: string | null) => "Пациент");
+	const resolveNameFn = getPatientName || patientNameFn;
 	const rawResolvedName = patObj?.fullName || extAppt.patient?.fullName || extAppt.patientName ||
-		(resolveNameFn ? resolveNameFn((dashboard as DashboardWithLabOrders | undefined)?.patients, a.patientId ?? null) : undefined);
+		(resolveNameFn ? resolveNameFn(dashboard.patients, a.patientId ?? null) : undefined);
 	const rawName = rawResolvedName && rawResolvedName.trim() && rawResolvedName.trim() !== "Пациент"
 		? rawResolvedName.trim() : (patObj?.fullName || (a.patientId ? `Пациент (${a.patientId.slice(0, 6)})` : "Пациент"));
 	const pName = formatPatientDisplayFio(rawName);

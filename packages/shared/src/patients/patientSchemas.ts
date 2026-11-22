@@ -161,6 +161,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	utmContent: z.string().trim().max(240).nullable().optional(),
 	utmTerm: z.string().trim().max(240).nullable().optional(),
 	leadSource: z.string().trim().max(240).nullable().optional(),
+	advertisingSource: z.string().trim().max(240).nullable().optional(),
 	telegramUserId: z.string().trim().max(80).nullable().optional(),
 	telegramUsername: z.string().trim().max(120).nullable().optional(),
 	portalSessionRevokedAt: z.string().nullable().optional(),
@@ -270,6 +271,8 @@ export const patientSchema = z.object({
 	odontogram: z.record(z.unknown()).nullable().optional(),
 	clinicalNotes: z.string().nullable().optional(),
 	mkb10: z.string().nullable().optional(),
+	allergies: z.union([z.array(z.string()), z.string()]).nullable().optional(),
+	somaticNotes: z.string().nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -308,6 +311,8 @@ export const createPatientSchema = z.object({
 	weightKg: z.number().positive().max(500).nullable().optional(),
 	isAnonymous: z.boolean().optional().default(false),
 	anonymousCode: z.string().trim().max(80).optional().nullable(),
+	allergies: z.union([z.array(z.string()), z.string()]).nullable().optional(),
+	somaticNotes: z.string().nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
@@ -325,6 +330,8 @@ export const updatePatientSchema = z.object({
 	weightKg: z.number().positive().max(500).nullable().optional(),
 	isAnonymous: z.boolean().optional(),
 	anonymousCode: z.string().trim().max(80).optional().nullable(),
+	allergies: z.union([z.array(z.string()), z.string()]).nullable().optional(),
+	somaticNotes: z.string().nullable().optional(),
 	familyGroupId: z.string().uuid().nullable().optional(),
 });
 

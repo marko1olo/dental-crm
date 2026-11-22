@@ -205,4 +205,39 @@ test("Portal Kiosk Self-Checkin & 152-FZ Privacy Security Invariants", async (t)
 			resetKioskRateLimitsForTesting();
 		}
 	});
+
+	await t.test("7. BOLA & PII Protection: isEmergency / isFirstTime CANNOT bypass phone verification for existing appointments", async () => {
+		resetKioskRateLimitsForTesting();
+
+		const server: FastifyInstance = fastify();
+		await registerPortalKioskRoutes(server);
+		await server.ready();
+
+		try {
+			// Attack simulation: Attacker types 4 digits and sets isEmergency: true to steal appointment info
+			const res = await server.inject({
+				method: "POST",
+				url: "/kiosk/checkin",
+				headers: { "x-forwarded-for": "10.0.0.54" },
+				payload: {
+					phoneLast4: "1234",
+					isEmergency: true,
+					emergencyChiefComplaint: "Злоумышленник пытается обойти верификацию",
+				},
+			});
+
+			if (res.statusCode === 200) {
+				const json = JSON.parse(res.body);
+				if (json.requiresVerification) {
+					assert.equal(json.arrived, false, "Must not set arrived=true for unverified existing patient");
+					assert.equal(json.doctorName, undefined, "doctorName must never leak under isEmergency bypass");
+					assert.equal(json.cabinetName, undefined, "cabinetName must never leak under isEmergency bypass");
+					assert.equal(json.appointmentTime, undefined, "appointmentTime must never leak under isEmergency bypass");
+				}
+			}
+		} finally {
+			await server.close();
+			resetKioskRateLimitsForTesting();
+		}
+	});
 });

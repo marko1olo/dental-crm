@@ -431,6 +431,7 @@ describe("RED TEAM: Invoice & Cashbox Payment ACID Concurrency Suite (PostgreSQL
 				invoiceId: nonExistentUuid,
 				amountRub: 1000,
 				method: "card",
+				clientMutationId: `error-hardening-${Date.now()}`,
 			},
 		});
 

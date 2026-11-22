@@ -21,7 +21,7 @@ import {
 	normalizeMoneyValue,
 } from "../migration/valueNormalize.js";
 import { taxPaymentSnapshotTotalRub } from "./taxPaymentSnapshot.js";
-import { buildKnd1151156Xml, type Knd1151156XmlContext } from "./taxXml.js";
+import { buildKnd1151156Xml, type Knd1151156XmlContext } from "../routes/documents/sharedDocUtils/index.js";
 
 /**
  * Деньги в документах и при переносе — до копейки.

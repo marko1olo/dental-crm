@@ -61,7 +61,7 @@ export function SettingsDesktopLayout({
 	return (
 		<motion.section
 			className="settings-zone panel"
-			style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px 20px 100px 20px", position: "relative", overflowY: "auto" }}
+			style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px 20px 100px 20px", position: "relative", overflowY: "auto", overflowX: "clip", maxWidth: "100vw" }}
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}

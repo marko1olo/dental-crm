@@ -54,7 +54,7 @@ export function runtimeSettingsForRequestedOrganization(
 				clinicReviewUrl: envConfig.clinicReviewUrl ?? currentSettings.clinicReviewUrl,
 				clinicMapsUrl: envConfig.clinicMapsUrl ?? currentSettings.clinicMapsUrl,
 			},
-			clinicId: envConfig.clinicId ?? envConfig.organizationId,
+			clinicId: envConfig.clinicId ?? null,
 			envConfig,
 		};
 	}
@@ -62,7 +62,7 @@ export function runtimeSettingsForRequestedOrganization(
 	if (!requestedBotConfigId && (!requestedOrganizationId || requestedOrganizationId === currentSettings.organizationId)) {
 		return {
 			settings: currentSettings,
-			clinicId: currentSettings.organizationId,
+			clinicId: null,
 			envConfig: clinicBotEnvConfigFor(currentSettings),
 		};
 	}
@@ -92,7 +92,7 @@ export function resolveTelegramRuntimeContext(
 		context: {
 			settings,
 			organizationId: settings.organizationId,
-			clinicId: runtimeSettings.clinicId ?? settings.organizationId,
+			clinicId: runtimeSettings.clinicId ?? null,
 			botConfigId: runtimeSettings.envConfig?.botConfigId ?? telegramBotConfigId(settings, botUsername),
 			botUsername,
 			botToken,

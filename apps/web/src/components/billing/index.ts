@@ -10,6 +10,5 @@ export type { BankInstallmentQrModalProps } from "../payments/BankInstallmentQrM
 export * from "./InvoicesView.js";
 export * from "./installmentsEngine.js";
 export * from "./PatientInstallmentsModal.js";
-export * from "./RetailProductsModal.js";
 export * from "./sbpQrEngine.js";
 export * from "./SbpDynamicQrCard.js";

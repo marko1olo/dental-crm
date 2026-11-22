@@ -4,13 +4,11 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import { medicalWasteLogs } from "../../../db/schema.js";
 
-type TxType = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 export async function saveShiftWasteRecords(
-	tx: TxType,
+	tx: TenantDb,
 	organizationId: string,
 	body: Record<string, unknown>,
 	operatorId: string | null,

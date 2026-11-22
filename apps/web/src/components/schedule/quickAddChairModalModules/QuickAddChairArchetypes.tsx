@@ -17,7 +17,7 @@ export function QuickAddChairArchetypes({
 		<div className="space-y-1.5">
 			<span
 				id="quick-add-chair-archetypes-label"
-				className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+				className="block text-xs font-semibold text-[var(--muted)]"
 			>
 				Типовые кресла
 			</span>

@@ -41,7 +41,14 @@ export class LanDiscoveryHeartbeatManager {
 		if (this.timerId) { clearTimeout(this.timerId); this.timerId = null; }
 		if (this.netCleanup) { this.netCleanup(); this.netCleanup = null; }
 		if (this.visibilityCleanup) { this.visibilityCleanup(); this.visibilityCleanup = null; }
-		if (this.batteryCleanup) { try { this.batteryCleanup(); } catch {} this.batteryCleanup = null; }
+		if (this.batteryCleanup) {
+			try {
+				this.batteryCleanup();
+			} catch (batteryErr) {
+				logger.debug("[LanDiscovery] Battery cleanup error:", batteryErr);
+			}
+			this.batteryCleanup = null;
+		}
 	}
 
 	public setDocumentHidden(hidden: boolean): void {

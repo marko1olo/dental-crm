@@ -37,10 +37,11 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 
 		// Пакетное списание расходников стерилизации со склада клиники в единой транзакции (Мандаты 8e, 8n, 8bo)
 		for (const steril of result.insertedSteril) {
+			const cycleCount = (steril as { packagedItemsCount?: number }).packagedItemsCount ?? (typeof body.packagedItemsCount === "number" ? body.packagedItemsCount : 1);
 			await executeSterilizationConsumablesDeduction({
 				organizationId,
 				userId: resolvedUserId,
-				count: 14,
+				count: Math.max(1, cycleCount),
 				packagingType: steril.packagingType,
 				indicatorType: steril.indicatorType,
 				cycleNumber: steril.cycleNumber,

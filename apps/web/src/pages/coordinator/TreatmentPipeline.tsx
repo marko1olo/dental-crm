@@ -29,19 +29,20 @@ export const TreatmentPipeline: React.FC = () => {
 
 	const [presenterDoctorOverride, setPresenterDoctorOverride] = useState<string>("");
 
-	const clinicName = branding.clinicName || appLogic?.dashboard?.organization?.name || "";
-	const clinicLegalName = branding.clinicLegalName || appLogic?.dashboard?.organization?.legalName || clinicName;
-	const clinicInn = branding.clinicInn || appLogic?.dashboard?.organization?.inn || "";
-	const clinicOgrn = branding.clinicOgrn || appLogic?.dashboard?.organization?.ogrn || "";
-	const clinicAddress = branding.clinicAddress || appLogic?.dashboard?.organization?.address || "";
+	const clinicSettingsProfile = appLogic?.dashboard?.clinicSettings?.profile;
+	const clinicName = branding.clinicName || clinicSettingsProfile?.clinicName || "";
+	const clinicLegalName = branding.clinicLegalName || clinicSettingsProfile?.legalName || clinicName;
+	const clinicInn = branding.clinicInn || clinicSettingsProfile?.inn || "";
+	const clinicOgrn = branding.clinicOgrn || clinicSettingsProfile?.ogrn || "";
+	const clinicAddress = branding.clinicAddress || clinicSettingsProfile?.address || "";
 	const areRequisitesMissing = !clinicInn || !clinicOgrn || !clinicAddress;
 
 	const effectiveDoctorName = useMemo(() => {
 		if (presenterDoctorOverride) return presenterDoctorOverride;
 		if (state.selectedCardForPresenter?.doctorName) return state.selectedCardForPresenter.doctorName;
-		if (appLogic?.dashboard?.activeDoctor?.fullName) return appLogic.dashboard.activeDoctor.fullName;
+		if (appLogic?.activeDoctor?.fullName) return appLogic.activeDoctor.fullName;
 		return "Врач не назначен";
-	}, [presenterDoctorOverride, state.selectedCardForPresenter?.doctorName, appLogic?.dashboard?.activeDoctor?.fullName]);
+	}, [presenterDoctorOverride, state.selectedCardForPresenter?.doctorName, appLogic?.activeDoctor?.fullName]);
 
 	const dropoutRiskCount = state.data?.summary.analytics?.dropoutRiskCount ?? 0;
 
@@ -181,7 +182,7 @@ export const TreatmentPipeline: React.FC = () => {
 						patientId={state.selectedCardForPresenter.patientId}
 						patientPhone={state.selectedCardForPresenter.patientPhone || ""}
 						doctorFullName={effectiveDoctorName}
-						doctorSpecialty={appLogic?.dashboard?.activeDoctor?.specialty || ""}
+						doctorSpecialty={appLogic?.activeDoctor && "specialty" in appLogic.activeDoctor ? String((appLogic.activeDoctor as { specialty?: unknown }).specialty ?? "") : ""}
 						clinicName={clinicName}
 						clinicAddress={clinicAddress}
 						planId={state.selectedCardForPresenter.id}

@@ -60,7 +60,7 @@ export function ClinicalSafetyRulesCard({
 
 					{settings.autoDeductAnestheticsPackage && (
 						<div className="pt-2 space-y-2">
-							<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+							<div className="text-[11px] font-bold text-[var(--muted)]">
 								Состав технологической карты (1 инъекция):
 							</div>
 

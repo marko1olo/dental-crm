@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { logger } from "../../../utils/logger.js";
 import { showToast } from "../../../components/GlobalToast";
 import {
 	readDenteClinicToken,
@@ -215,18 +216,18 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 							if (!res.ok) {
 								const errData = (await res.json().catch(() => ({}))) as { message?: string };
 								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
-								console.warn("[Telephony] SIP transfer error:", errMsg);
+								logger.warn("[Telephony] SIP transfer error:", errMsg);
 								showToast(errMsg, "error");
 							} else {
 								showToast(`Звонок успешно переведён на ${targetExtension}`, "success");
 							}
 						})
 						.catch((err) => {
-							console.warn("[Telephony] SIP transfer network error:", err);
+							logger.warn("[Telephony] SIP transfer network error:", err);
 							showToast("Сетевая ошибка при переводе звонка", "error");
 						});
 				} catch (err) {
-					console.warn("[Telephony] SIP transfer dispatch error:", err);
+					logger.warn("[Telephony] SIP transfer dispatch error:", err);
 				}
 				return;
 			}
@@ -270,18 +271,18 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 							if (!res.ok) {
 								const errData = (await res.json().catch(() => ({}))) as { message?: string };
 								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
-								console.warn("[Telephony] Attended SIP transfer error:", errMsg);
+								logger.warn("[Telephony] Attended SIP transfer error:", errMsg);
 								showToast(errMsg, "error");
 							} else {
 								showToast(`Звонок переведён на ${targetExtension}`, "success");
 							}
 						})
 						.catch((err) => {
-							console.warn("[Telephony] Attended SIP transfer network error:", err);
+							logger.warn("[Telephony] Attended SIP transfer network error:", err);
 							showToast("Сетевая ошибка при переводе звонка", "error");
 						});
 				} catch (err) {
-					console.warn("[Telephony] Attended SIP transfer dispatch error:", err);
+					logger.warn("[Telephony] Attended SIP transfer dispatch error:", err);
 				}
 			}
 			set({

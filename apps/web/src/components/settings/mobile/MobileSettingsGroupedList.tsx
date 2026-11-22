@@ -25,7 +25,7 @@ export const MobileSettingsGroupedList: React.FC<MobileSettingsGroupedListProps>
 		<div className="space-y-5 mt-2 px-4">
 			{filteredGroups.map((group) => (
 				<div key={group.id} className="space-y-1.5">
-					<h2 className="px-2 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
+					<h2 className="px-2 text-[12px] font-bold text-[var(--muted)]">
 						{group.header}
 					</h2>
 

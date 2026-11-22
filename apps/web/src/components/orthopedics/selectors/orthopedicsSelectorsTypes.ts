@@ -25,4 +25,10 @@ export interface OrthopedicsZtlSelectorsProps {
 	readonly onSelectArticulatorType?: ((type: "bio_art" | "kavo_protar" | "average_anatomical") => void) | undefined;
 	readonly hasFacebow?: boolean | undefined;
 	readonly onToggleFacebow?: ((hasFacebow: boolean) => void) | undefined;
+	readonly guidanceType?: "canine_guidance" | "group_function" | "mutually_protected" | "balanced_articulation" | undefined;
+	readonly onSelectGuidanceType?: ((type: "canine_guidance" | "group_function" | "mutually_protected" | "balanced_articulation") => void) | undefined;
+	readonly sagittalCondylarAngleDeg?: number | undefined;
+	readonly onChangeSagittalAngle?: ((deg: number) => void) | undefined;
+	readonly bennettAngleDeg?: number | undefined;
+	readonly onChangeBennettAngle?: ((deg: number) => void) | undefined;
 }

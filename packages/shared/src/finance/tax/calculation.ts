@@ -49,7 +49,6 @@ export function isTaxDeductionRefund(
 	if (p.isRefund === true) return true;
 	if (p.isReturn === true) return true;
 	if (p.operationType === "refund" || p.operationType === "return") return true;
-	if (p.status === "refunded" || p.status === "returned") return true;
 	if (typeof p.amountRub === "number" && p.amountRub < 0) return true;
 	if (typeof p.amountKopecks === "number" && p.amountKopecks < 0) return true;
 	const sName = (p.serviceName || "").toLowerCase();
@@ -99,6 +98,7 @@ export function normalizePaymentsForTaxCertificate(
 		let code01RefundKop = 0;
 		let code02RefundKop = 0;
 		const positiveItems: TaxDeductionPaymentItem[] = [];
+		const hasExplicitRefundEntries = items.some(isTaxDeductionRefund);
 
 		for (const p of items) {
 			const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
@@ -110,6 +110,10 @@ export function normalizePaymentsForTaxCertificate(
 					code01RefundKop += absKop;
 				}
 			} else if (absKop > 0) {
+				const isRefundedStatus = (p as { status?: string }).status === "refunded" || (p as { status?: string }).status === "returned";
+				if (isRefundedStatus && !hasExplicitRefundEntries) {
+					continue;
+				}
 				positiveItems.push(p);
 			}
 		}
@@ -121,6 +125,13 @@ export function normalizePaymentsForTaxCertificate(
 
 		let remainingRefund01 = code01RefundKop;
 		let remainingRefund02 = code02RefundKop;
+
+		// Prioritize netting refunds against payments marked as refunded first
+		positiveItems.sort((a, b) => {
+			const aRef = (a as { status?: string }).status === "refunded" ? 0 : 1;
+			const bRef = (b as { status?: string }).status === "refunded" ? 0 : 1;
+			return aRef - bRef;
+		});
 
 		for (const item of positiveItems) {
 			const cat = item.taxCode || resolveTaxDeductionCategoryShared(item.code804n, item.serviceName);
@@ -174,14 +185,19 @@ export function calculateTaxDeductionSummary(
 		}
 	>();
 
+	// Group payments by tax year first to check per-year refund representation
+	const paymentsByYear = new Map<number, TaxDeductionPaymentItem[]>();
 	for (const p of payments) {
 		const year = extractTaxYearFromDate(p.dateIso);
 		if (Number.isNaN(year)) continue;
-		const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-		const absKop = getTaxDeductionAbsKopecks(p);
-		const isRefund = isTaxDeductionRefund(p);
+		const list = paymentsByYear.get(year) || [];
+		list.push(p);
+		paymentsByYear.set(year, list);
+	}
 
-		const current = yearMap.get(year) || {
+	for (const [year, yearItems] of paymentsByYear.entries()) {
+		const hasExplicitRefundEntries = yearItems.some(isTaxDeductionRefund);
+		const current = {
 			code01PosKop: 0,
 			code01RefKop: 0,
 			code02PosKop: 0,
@@ -189,19 +205,30 @@ export function calculateTaxDeductionSummary(
 			receiptsCount: 0,
 		};
 
-		if (isRefund) {
-			if (cat === "2") {
-				current.code02RefKop += absKop;
+		for (const p of yearItems) {
+			const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
+			const absKop = getTaxDeductionAbsKopecks(p);
+			const isRefund = isTaxDeductionRefund(p);
+
+			if (isRefund) {
+				if (cat === "2") {
+					current.code02RefKop += absKop;
+				} else {
+					current.code01RefKop += absKop;
+				}
 			} else {
-				current.code01RefKop += absKop;
+				const isRefundedStatus = (p as { status?: string }).status === "refunded" || (p as { status?: string }).status === "returned";
+				if (isRefundedStatus && !hasExplicitRefundEntries) {
+					// Orphaned refunded item without negative refund transaction: ignore
+					continue;
+				}
+				if (cat === "2") {
+					current.code02PosKop += absKop;
+				} else {
+					current.code01PosKop += absKop;
+				}
+				current.receiptsCount += 1;
 			}
-		} else {
-			if (cat === "2") {
-				current.code02PosKop += absKop;
-			} else {
-				current.code01PosKop += absKop;
-			}
-			current.receiptsCount += 1;
 		}
 		yearMap.set(year, current);
 	}

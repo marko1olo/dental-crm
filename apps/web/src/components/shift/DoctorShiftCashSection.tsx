@@ -1,5 +1,5 @@
 import React from "react";
-import type { DoctorShiftCashSummary } from "./DoctorShiftCloseModal";
+import type { DoctorShiftCashSummary } from "./doctorShiftClose/doctorShiftCloseTypes";
 import { printEncashmentStatement } from "./shiftPrintStatements";
 import { DoctorShiftCashHeader } from "./cashSection/DoctorShiftCashHeader";
 import { DoctorShiftCashChannelsGrid } from "./cashSection/DoctorShiftCashChannelsGrid";

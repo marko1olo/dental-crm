@@ -1,5 +1,5 @@
 import React from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { showToast } from "../../GlobalToast";
@@ -85,7 +85,7 @@ export function EmkAnesthesiaSection({
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
+					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify({
 					scenarioId: "anaphylactic_shock",

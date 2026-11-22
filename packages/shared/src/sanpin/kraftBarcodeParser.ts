@@ -216,3 +216,58 @@ export function parseAndValidateKraftBarcode(
 		errorMessage: isExpired ? `Срок годности стерильного пакета истёк ${Math.abs(daysRemaining)} дн. назад (годен до ${expDateIso}).` : undefined,
 	};
 }
+
+export function attachKraftPackageToDiary(
+	diaryOrText: string,
+	parsedKraft: ParsedKraftBarcode,
+): string;
+export function attachKraftPackageToDiary<
+	T extends {
+		appliedMaterials?: string | null | undefined;
+		treatmentDescription?: string | null | undefined;
+	},
+>(
+	diaryOrText: T,
+	parsedKraft: ParsedKraftBarcode,
+): T;
+export function attachKraftPackageToDiary(
+	diaryOrText:
+		| string
+		| {
+				appliedMaterials?: string | null | undefined;
+				treatmentDescription?: string | null | undefined;
+		  },
+	parsedKraft: ParsedKraftBarcode,
+):
+	| string
+	| {
+			appliedMaterials?: string | null | undefined;
+			treatmentDescription?: string | null | undefined;
+	  } {
+	const snippet = parsedKraft.formattedProtocolRecord043 || parsedKraft.formattedSterilizationDiaryRecord;
+	const barcode = parsedKraft.batchId || parsedKraft.rawInput;
+
+	if (typeof diaryOrText === "string") {
+		if (barcode && diaryOrText.includes(barcode)) {
+			return diaryOrText;
+		}
+		const trimmed = diaryOrText.trim();
+		if (!trimmed) {
+			return snippet;
+		}
+		return `${trimmed}\n\n${snippet}`;
+	}
+
+	const existing = diaryOrText.treatmentDescription ?? "";
+	if (barcode && existing.includes(barcode)) {
+		return diaryOrText;
+	}
+	const updatedDesc = existing.trim() ? `${existing.trim()}\n\n${snippet}` : snippet;
+	return {
+		...diaryOrText,
+		treatmentDescription: updatedDesc,
+	};
+}
+
+export const attachKraftPackageTo043Diary = attachKraftPackageToDiary;
+

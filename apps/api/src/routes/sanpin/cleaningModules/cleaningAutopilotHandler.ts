@@ -4,9 +4,10 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import { and, gte, lte, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { generalCleaningLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -36,36 +37,61 @@ export async function handlePostCleaningAutopilotMonth(req: FastifyRequest, repl
 		cleaningDays.push(day);
 	}
 
-	const entriesToInsert: Array<typeof generalCleaningLogs.$inferInsert> = [];
+	const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+	const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
 
-	for (const day of cleaningDays) {
-		const scheduledDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-		const actualDate = new Date(year, month, day, 8, 0, 0);
-		const isPastOrToday = actualDate <= now;
+	const created = await withTenantCtx(organizationId, async (tx) => {
+		const existing = await tx
+			.select({
+				scheduledDate: generalCleaningLogs.scheduledDate,
+				roomName: generalCleaningLogs.roomName,
+			})
+			.from(generalCleaningLogs)
+			.where(
+				and(
+					eq(generalCleaningLogs.organizationId, organizationId),
+					gte(generalCleaningLogs.scheduledDate, monthStart),
+					lte(generalCleaningLogs.scheduledDate, monthEnd),
+				),
+			);
 
-		for (const room of DEFAULT_CLINIC_ROOMS) {
-			entriesToInsert.push({
-				organizationId,
-				cleaningType: "general",
-				scheduledDate: scheduledDateStr,
-				actualDateTime: actualDate,
-				roomName: room.name,
-				treatedAreaM2: room.area,
-				disinfectantName: "Аламинол 1.5%",
-				activeIngredient: "ЧАС + Глутаровый альдегид",
-				solutionConcentrationPercent: "1.5",
-				applicationMethod: "wiping",
-				exposureTimeMinutes: 60,
-				uvIrradiationMinutes: 60,
-				ventilationMinutes: 15,
-				operatorId: getRequestIdentity(req).userId ?? null,
-				status: isPastOrToday ? "completed" : "scheduled",
-				notes: "График генеральных уборок (интервал 7 дней)",
-			});
+		const existingKeys = new Set(existing.map((e) => `${e.scheduledDate}::${e.roomName}`));
+
+		const entriesToInsert: Array<typeof generalCleaningLogs.$inferInsert> = [];
+
+		for (const day of cleaningDays) {
+			const scheduledDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+			const actualDate = new Date(year, month, day, 8, 0, 0);
+			const isPastOrToday = actualDate <= now;
+
+			for (const room of DEFAULT_CLINIC_ROOMS) {
+				const key = `${scheduledDateStr}::${room.name}`;
+				if (existingKeys.has(key)) continue;
+
+				entriesToInsert.push({
+					organizationId,
+					cleaningType: "general",
+					scheduledDate: scheduledDateStr,
+					actualDateTime: actualDate,
+					roomName: room.name,
+					treatedAreaM2: room.area,
+					disinfectantName: "Аламинол 1.5%",
+					activeIngredient: "ЧАС + Глутаровый альдегид",
+					solutionConcentrationPercent: "1.5",
+					applicationMethod: "wiping",
+					exposureTimeMinutes: 60,
+					uvIrradiationMinutes: 60,
+					ventilationMinutes: 15,
+					operatorId: getRequestIdentity(req).userId ?? null,
+					status: isPastOrToday ? "completed" : "scheduled",
+					notes: "График генеральных уборок (интервал 7 дней)",
+				});
+			}
 		}
-	}
 
-	const created = await db.insert(generalCleaningLogs).values(entriesToInsert).returning();
+		if (entriesToInsert.length === 0) return [];
+		return tx.insert(generalCleaningLogs).values(entriesToInsert).returning();
+	});
 
 	for (const log of created) {
 		wsBroker.broadcastToOrganization(organizationId, {
@@ -75,7 +101,9 @@ export async function handlePostCleaningAutopilotMonth(req: FastifyRequest, repl
 	}
 
 	return reply.code(201).send({
-		message: `График генеральных уборок сформирован на месяц (${created.length} записей, интервал 7 дней)`,
+		message: created.length > 0
+			? `График генеральных уборок сформирован на месяц (${created.length} записей, интервал 7 дней)`
+			: "График генеральных уборок на этот месяц уже сформирован.",
 		count: created.length,
 	});
 }

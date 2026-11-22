@@ -2,6 +2,7 @@ import type {
 	AcceptVisitDraftResponse,
 	Dashboard,
 	DentalSpecialty,
+	Patient,
 	SpeechChunkUploadInput,
 	SpeechGatewayHealthReport,
 	SpeechGatewayStatus,
@@ -11,6 +12,9 @@ import type {
 	SpeechRecordingStrategy,
 	SpeechTranscriptionResponse,
 	SpeechTranscriptPolishResponse,
+	StaffMember,
+	VisitCloseChecklist,
+	VisitCloseChecklistItem,
 	VisitDraftAutosaveResponse,
 	VisitFlowResult,
 	VisitNoteDraft,
@@ -19,64 +23,54 @@ import type React from "react";
 import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
 import type { VisitStore } from "../../../store/visitStore";
 
+export interface ClinicalAuthClient {
+	denteClinicalMutationHeaders: (headers?: Record<string, string>) => Record<string, string>;
+	denteClinicalReadHeaders: (headers?: Record<string, string>) => Record<string, string>;
+	getHeaders?: (() => HeadersInit) | undefined;
+}
+
 export interface UseVisitLogicParams {
 	dashboard?: Dashboard | null;
 	query?: string;
 	setError: (err: string | null) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setQuery?: (query: string) => void;
 	selectedPatientId?: string;
-	// biome-ignore lint/suspicious/noExplicitAny: patient documents
-	documentPatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: active patient entity
-	activePatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment entity
-	activeAppointment?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor entity
-	activeDoctor?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: chair entity
-	activeChair?: any;
+	documentPatient?: Patient | null | undefined;
+	activePatient?: Patient | null | undefined;
+	activeAppointment?: unknown;
+	activeDoctor?: StaffMember | null | undefined;
+	activeChair?: unknown;
 	paymentPatientContextReady?: boolean;
 	paymentPatientContextMessage?: string;
 	loadDashboard?: () => Promise<void>;
-	// biome-ignore lint/suspicious/noExplicitAny: drafts
-	clinicProfileDraft?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: drafts
-	patientCoreDraft?: any;
+	clinicProfileDraft?: unknown;
+	patientCoreDraft?: unknown;
 	documentPatientMatchesActiveVisit?: boolean;
 	activeOrganizationId?: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: import kind
-	importSourceKind?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: import setter
-	setImportSourceKind?: (val: any) => void;
+	importSourceKind?: unknown;
+	setImportSourceKind?: (val: unknown) => void;
 	importText?: string;
 	setImportText?: React.Dispatch<React.SetStateAction<string>>;
-	// biome-ignore lint/suspicious/noExplicitAny: import preview
-	setImportPreview?: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: import commit
-	setImportCommit?: (val: any) => void;
+	setImportPreview?: (val: unknown) => void;
+	setImportCommit?: (val: unknown) => void;
 }
 
 export type VisitStoreSlice = VisitStore;
 
 export interface UseVisitSpeechParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
 	activeOrganizationId: string | null;
 	isOnline: boolean;
 	selectedSpecialty: DentalSpecialty;
 	appendVisitDictationText: (value: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: import setter
-	setImportSourceKind?: ((val: any) => void) | undefined;
+	setImportSourceKind?: ((val: unknown) => void) | undefined;
 	setImportText?: React.Dispatch<React.SetStateAction<string>> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: import preview
-	setImportPreview?: ((val: any) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: import commit
-	setImportCommit?: ((val: any) => void) | undefined;
+	setImportPreview?: ((val: unknown) => void) | undefined;
+	setImportCommit?: ((val: unknown) => void) | undefined;
 }
 
 export interface UseVisitSpeechRecordingParams {
@@ -91,13 +85,10 @@ export interface UseVisitSpeechRecordingParams {
 	submitSpeechChunk: (input: SpeechChunkUploadInput) => Promise<SpeechTranscriptionResponse>;
 	applySpeechTranscription: (result: SpeechTranscriptionResponse) => void;
 	refreshPendingSpeechChunkState: () => Promise<void>;
-	// biome-ignore lint/suspicious/noExplicitAny: import setter
-	setImportSourceKind?: ((val: any) => void) | undefined;
+	setImportSourceKind?: ((val: unknown) => void) | undefined;
 	setImportText?: React.Dispatch<React.SetStateAction<string>> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: import preview
-	setImportPreview?: ((val: any) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: import commit
-	setImportCommit?: ((val: any) => void) | undefined;
+	setImportPreview?: ((val: unknown) => void) | undefined;
+	setImportCommit?: ((val: unknown) => void) | undefined;
 }
 
 export interface UseVisitSpeechRecordingReturn {
@@ -125,10 +116,8 @@ export interface UseVisitSpeechReturn extends UseVisitSpeechRecordingReturn {
 	speechUploadPromisesRef: React.MutableRefObject<Set<Promise<void>>>;
 	appliedSpeechChunkKeysRef: React.MutableRefObject<Set<string>>;
 	speechProviderRuntimeById: Map<string, SpeechProviderRuntimeStatus>;
-	// biome-ignore lint/suspicious/noExplicitAny: provider health object
-	speechProviderHealthById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: active provider health
-	activeSpeechProviderHealth: any;
+	speechProviderHealthById: Map<string, Record<string, unknown>>;
+	activeSpeechProviderHealth: Record<string, unknown> | null;
 	loadSpeechGatewayStatus: (options?: { silent?: boolean }) => Promise<SpeechGatewayStatus | null>;
 	loadSpeechGatewayHealthReport: (options?: { silent?: boolean }) => Promise<void>;
 	loadSpeechProviderRuntimeStatuses: (options?: { silent?: boolean }) => Promise<void>;
@@ -156,8 +145,7 @@ export interface UseVisitSpeechReturn extends UseVisitSpeechRecordingReturn {
 }
 
 export interface UseVisitAutosaveParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
 	isOnline: boolean;
@@ -177,16 +165,14 @@ export interface UseVisitAutosaveReturn {
 }
 
 export interface UseVisitOfflineQueueParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	activeOrganizationId: string | null;
 	setDraft: (draft: VisitNoteDraft | null) => void;
 	setVisitNoteForm: React.Dispatch<React.SetStateAction<VisitNoteForm>>;
-	// biome-ignore lint/suspicious/noExplicitAny: receipt
-	setLastVisitSaveReceipt: (receipt: any) => void;
+	setLastVisitSaveReceipt: (receipt: AcceptVisitDraftResponse["saveReceipt"] | null) => void;
 	setPendingVisitSaveCount: (count: number) => void;
 	setLastPendingVisitSaveAt: (at: string | null) => void;
 	isPendingVisitSyncing: boolean;
@@ -222,25 +208,19 @@ export interface UseVisitOfflineQueueReturn {
 }
 
 export interface UseVisitNotesParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
-	// biome-ignore lint/suspicious/noExplicitAny: active patient entity
-	activePatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: active doctor entity
-	activeDoctor?: any;
+	activePatient?: Patient | null | undefined;
+	activeDoctor?: StaffMember | null | undefined;
 	speechGatewayStatus: SpeechGatewayStatus | null;
 	scrollToVisitArea: (selector: string) => void;
 }
 
 export interface UseVisitNotesReturn {
-	// biome-ignore lint/suspicious/noExplicitAny: checklist
-	visitCloseChecklist: any;
-	// biome-ignore lint/suspicious/noExplicitAny: warnings
-	visitWarnings: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: warning
-	primaryVisitWarning: any;
+	visitCloseChecklist: VisitCloseChecklist | null;
+	visitWarnings: VisitCloseChecklistItem[];
+	primaryVisitWarning: VisitCloseChecklistItem | null;
 	savedVisitNoteForm: VisitNoteForm;
 	isVisitNoteDirty: boolean;
 	hasVisitNoteFormText: boolean;
@@ -272,7 +252,7 @@ export interface UseVisitSpeechTranscriptionParams {
 	dashboard: Dashboard | null;
 	activeOrganizationId: string | null;
 	isOnline: boolean;
-	loadSpeechGatewayStatus: (options?: { silent?: boolean }) => Promise<any>;
+	loadSpeechGatewayStatus: (options?: { silent?: boolean }) => Promise<SpeechGatewayStatus | null>;
 	loadSpeechRecordingRecovery: (options?: { silent?: boolean }) => Promise<void>;
 	applySpeechTranscription: (result: SpeechTranscriptionResponse) => void;
 	refreshPendingSpeechChunkState: () => Promise<void>;

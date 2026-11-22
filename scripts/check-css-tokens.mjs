@@ -106,6 +106,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const webSrc = join(repoRoot, "apps/web/src");
@@ -609,4 +610,9 @@ if (ranked.length === 0 && rankedLight.length === 0 && staleDebt.length === 0) {
 	);
 	process.exit(0);
 }
+
+printFailureManifesto("CSS_TOKENS", {
+	details: `Неразрешённых CSS токенов: ${ranked.length} имён (${occurrences} мест), со светлым запасом в Dark Mode: ${rankedLight.length} имён, расхождений долга: ${staleDebt.length}.`,
+});
+
 process.exit(1);

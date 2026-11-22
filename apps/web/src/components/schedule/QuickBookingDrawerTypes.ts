@@ -58,8 +58,8 @@ export interface QuickBookingDrawerProps {
   onClose: () => void;
   initialSlot?: QuickBookingSlotInfo | null | undefined;
   editingAppointment?: Appointment | null | undefined;
-  dashboard?: Dashboard | undefined;
-  auth?: { user?: { id?: string; name?: string; role?: string } | null } | unknown;
+  dashboard?: Dashboard | null | undefined;
+  auth?: { user?: { id?: string; name?: string; role?: string } | null } | null | unknown;
   onAppointmentCreated?: ((appointment: Appointment) => void) | undefined;
   onAppointmentUpdated?: ((appointment: Appointment) => void) | undefined;
   loadDashboard?: (() => Promise<void | unknown>) | undefined;

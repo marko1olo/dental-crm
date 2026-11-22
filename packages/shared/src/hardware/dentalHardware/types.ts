@@ -150,4 +150,6 @@ export interface TwainDeviceCatalogEntry {
 	readonly type: "sensor" | "scanner" | "camera" | "document_scanner";
 	readonly connected: boolean;
 	readonly supportedModalities: readonly string[];
+	readonly connectionHint?: string | undefined;
+	readonly hotFolderFallback?: string | undefined;
 }

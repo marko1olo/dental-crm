@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AlertTriangle, Check, Send, X } from "lucide-react";
-import { type EmkDefectTag, EMK_DEFECT_TAGS_CATALOG } from "@dental/shared";
+import { type EmkDefectTag, EMK_DEFECT_TAGS_CATALOG } from "./cmoAuditEngine.js";
 import { showToast } from "../../GlobalToast";
 import type { RejectionModalProps } from "./types";
 

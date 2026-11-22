@@ -22,8 +22,9 @@ describe("Dental DICOM & Radiology Measurements SSOT Persistence", () => {
 
 	before(async () => {
 		await withFixtureTenant(orgId, async () => {
-			await db.insert(schema.organizations).values({ id: orgId, name: "Клиника измерений" });
-			await db.insert(schema.patients).values({ id: patientId, organizationId: orgId, fullName: "Пациент Рентгенов" });
+			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
+			await db.insert(schema.organizations).values({ id: orgId, name: "Клиника измерений" }).onConflictDoNothing();
+			await db.insert(schema.patients).values({ id: patientId, organizationId: orgId, fullName: "Пациент Рентгенов" }).onConflictDoNothing();
 		});
 	});
 
@@ -31,6 +32,7 @@ describe("Dental DICOM & Radiology Measurements SSOT Persistence", () => {
 		await withFixtureTenant(orgId, async () => {
 			await db.delete(schema.imagingAnnotations).where(eq(schema.imagingAnnotations.organizationId, orgId));
 			await db.delete(schema.imagingViewerSessions).where(eq(schema.imagingViewerSessions.organizationId, orgId));
+			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
 			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
 			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
 			await db.delete(schema.organizations).where(eq(schema.organizations.id, orgId));

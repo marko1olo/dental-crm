@@ -272,6 +272,7 @@ export const documentKind = pgEnum("document_kind", [
 	"payment_receipt",
 	"installment_payment_schedule",
 	"post_visit_recommendations",
+	"bravery_diploma",
 	"outpatient_medical_card_025u",
 	"dental_medical_card_043u",
 	"orthodontic_medical_card_043_1u",

@@ -15,7 +15,11 @@ export async function probeCandidateServer(
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
-		try { signal = AbortSignal.timeout(timeoutMs); } catch {}
+		try {
+			signal = AbortSignal.timeout(timeoutMs);
+		} catch (abortErr) {
+			logger.debug("[LanDiscovery] AbortSignal.timeout failed or not supported:", abortErr);
+		}
 	}
 	let controller: AbortController | null = null;
 	if (!signal && typeof AbortController !== "undefined") {

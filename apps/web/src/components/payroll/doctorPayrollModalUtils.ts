@@ -5,6 +5,7 @@ import {
 	type PayrollDoctorProfile,
 	type DoctorPayrollSummary,
 } from "./payrollCatalogData";
+import { formatKopecksToRubles, percentageOfKopecks, type Kopecks } from "@dental/shared";
 
 export function getDefaultPayrollPeriod(): { start: string; end: string } {
 	const now = new Date();
@@ -50,7 +51,7 @@ export function exportDoctorPayrollToCsv(
 	periodDates: { labelRu: string; startIso: string; endIso: string }
 ): void {
 	const header = "Табельный ID;Врач;Специальность;Период;Оплата приёма (руб);Вычет Лаб (руб);Вычет Мат (руб);Чистая база (руб);Ставка %;Начислено (руб);К выплате (руб)\n";
-	const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) => `${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${(s.totalGrossKopecks / 100).toFixed(2)};${(s.totalLabCostKopecks / 100).toFixed(2)};${(s.totalMaterialCostKopecks / 100).toFixed(2)};${(s.totalNetBaseKopecks / 100).toFixed(2)};${d.commissionPercent}%;${(s.doctorAccruedKopecks / 100).toFixed(2)};${(s.payoutKopecks / 100).toFixed(2)}`);
+	const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) => `${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${formatKopecksToRubles(s.totalGrossKopecks)};${formatKopecksToRubles(s.totalLabCostKopecks)};${formatKopecksToRubles(s.totalMaterialCostKopecks)};${formatKopecksToRubles(s.totalNetBaseKopecks)};${d.commissionPercent}%;${formatKopecksToRubles(s.doctorAccruedKopecks)};${formatKopecksToRubles(s.payoutKopecks)}`);
 	const blob = new Blob(["\uFEFF" + header + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
@@ -93,7 +94,8 @@ export function calculateOrderNetAndFee(
 	customPercent: number | null
 ): { netBase: number; fee: number } {
 	const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-	const fee = doctor?.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? doctor?.commissionPercent ?? 25)) / 100);
+	const pct = customPercent ?? doctor?.commissionPercent ?? 25;
+	const fee = doctor?.payoutModel === "chair_rental" ? netBase : percentageOfKopecks(netBase as Kopecks, Math.round(pct * 100));
 	return { netBase, fee };
 }
 

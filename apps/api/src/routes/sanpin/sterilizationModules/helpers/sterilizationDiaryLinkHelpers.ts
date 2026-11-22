@@ -5,6 +5,7 @@ export function computeDiaryHashForTrayLink(row: DiaryHashInput): string {
 	return computeDiaryHash(
 		row.visitId,
 		row.patientId ?? "",
+		row.complaint,
 		row.anamnesis,
 		row.statusLocalis,
 		row.treatmentDescription,
@@ -12,7 +13,6 @@ export function computeDiaryHashForTrayLink(row: DiaryHashInput): string {
 		row.diagnosisTooth,
 		row.complications,
 		row.comorbidities,
-		row.instrumentTrayBarcode,
 	);
 }
 

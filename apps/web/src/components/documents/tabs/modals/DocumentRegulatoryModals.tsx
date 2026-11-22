@@ -1,5 +1,5 @@
 import React from "react";
-import { SanpinStudioModal } from "../../../sanpin/SanpinStudioModal";
+import { SanpinStudioModal } from "../../../sanpin";
 import { TaxDeductionCertificateModal } from "../../DocumentsStudioModal";
 import { EgiszRemdHubModal } from "../../../egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "../../sickLeave/SickLeaveElnModal";

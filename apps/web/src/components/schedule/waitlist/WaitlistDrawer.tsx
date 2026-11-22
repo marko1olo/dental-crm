@@ -24,13 +24,13 @@ import { WaitlistAddPatientForm } from "./modules/WaitlistAddPatientForm";
 export interface WaitlistDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  targetSlot?: TargetSlotInfo | null;
-  onBookSlot?: (patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void;
+  targetSlot?: TargetSlotInfo | null | undefined;
+  onBookSlot?: ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void) | undefined;
   updateNewAppointmentDraft?: (<K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void) | undefined;
   focusNewAppointmentEditor?: (() => void) | undefined;
   onAppointmentCreated?: (() => void) | undefined;
-  dashboard?: Dashboard | Partial<Dashboard> | Record<string, unknown> | null | undefined;
-  auth?: AppLogicContextType["auth"];
+  dashboard?: Dashboard | null | undefined;
+  auth?: AppLogicContextType["auth"] | null | undefined;
 }
 
 export function WaitlistDrawer(props: WaitlistDrawerProps) {
@@ -103,7 +103,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
   const titleId = useId();
   if (!isOpen) return null;
 
-  const clinicName = dashboard?.clinicSettings?.name || "Стоматология DENTE";
+  const clinicName = dashboard?.clinicSettings?.profile?.clinicName || "Стоматология DENTE";
   const staffDoctors = (dashboard?.clinicSettings?.staff || []).filter(
     (s: { role?: string }) => s.role === "doctor" || s.role === "dentist",
   );

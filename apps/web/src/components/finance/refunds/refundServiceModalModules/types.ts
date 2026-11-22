@@ -6,6 +6,7 @@ export type RefundTabMode = "form" | "receipt";
 export interface RefundServiceItem {
 	readonly id: string;
 	readonly name: string;
+	readonly code?: string | undefined;
 	readonly code804n?: string | undefined;
 	readonly toothNumber?: number | undefined;
 	readonly priceRub: number;

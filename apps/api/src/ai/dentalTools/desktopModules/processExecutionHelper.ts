@@ -27,11 +27,35 @@ export function resolveDiagnosticCommand(args: RunWorkstationCommandInput): stri
 	return args.commandLine || "";
 }
 
+export type CommandExecutionResult =
+	| {
+			success: false;
+			status?: "failed" | undefined;
+			error: string;
+	  }
+	| {
+			success: true;
+			status: "background";
+			taskId: string;
+			pid?: number | undefined;
+			waitMsElapsed: number;
+			message: string;
+	  }
+	| {
+			success: boolean;
+			status: "completed";
+			exitCode: number | null;
+			durationMs: number;
+			stdout: string;
+			stderr: string;
+			rawOutput: string;
+	  };
+
 export function executeCommandWithTimeout(
 	command: string,
 	workingDir: string,
 	waitMs: number,
-): Promise<any> {
+): Promise<CommandExecutionResult> {
 	const startTime = Date.now();
 	return new Promise((resolve) => {
 		let child: ChildProcess;

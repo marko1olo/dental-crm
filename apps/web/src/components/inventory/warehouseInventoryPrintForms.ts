@@ -1,5 +1,5 @@
-import type { WarehouseInventoryAuditDocument, WarehouseTorg16WriteoffAct } from "./audit/warehouseAuditTypes.js";
-import { kopecksToRubles } from "@dental/shared";
+import type { WarehouseInventoryAuditDocument, WarehouseWriteoffAct } from "./audit/warehouseAuditTypes.js";
+import { formatKopecksToRubles } from "@dental/shared";
 import { calculateInventoryAuditTotals } from "./audit/warehouseAuditTotalsCalculator.js";
 import { numberToRussianWordsKopecks } from "./audit/warehouseAuditMath.js";
 
@@ -14,7 +14,7 @@ export { exportInventoryTo1C } from "./audit/warehouseAudit1CExport.js";
  * generateWarehouseWriteoffActHtml — Канонический акт списания материалов по результатам инвентаризации.
  * Мандаты 8e (Врачебная автономия), 8n (Соло-клиника), 8x (Без советских бланков ТОРГ-16 и ОКУД 0330216).
  */
-export function generateWarehouseWriteoffActHtml(act: WarehouseTorg16WriteoffAct): string {
+export function generateWarehouseWriteoffActHtml(act: WarehouseWriteoffAct): string {
 	const words = numberToRussianWordsKopecks(act.totalCostKopecks);
 	const rows = act.items.map((it, idx) => `
     <tr>
@@ -24,9 +24,9 @@ export function generateWarehouseWriteoffActHtml(act: WarehouseTorg16WriteoffAct
       <td style="text-align: center;">${it.batchNumber}</td>
       <td style="text-align: center;">${it.expiryDate}</td>
       <td style="text-align: center;">${it.unitRu}</td>
-      <td style="text-align: right;">${kopecksToRubles(it.unitCostKopecks).toFixed(2)}</td>
+      <td style="text-align: right;">${formatKopecksToRubles(it.unitCostKopecks)}</td>
       <td style="text-align: right; font-weight: bold;">${it.quantity}</td>
-      <td style="text-align: right; font-weight: bold;">${it.totalCostRubles.toFixed(2)}</td>
+      <td style="text-align: right; font-weight: bold;">${formatKopecksToRubles(it.totalCostKopecks)}</td>
       <td>${it.defectDescriptionRu || act.reasonRu || "Истек срок годности"}</td>
     </tr>`).join("");
 
@@ -79,7 +79,7 @@ export function generateWarehouseWriteoffActHtml(act: WarehouseTorg16WriteoffAct
       <tr style="font-weight: bold; background: #f8fafc;">
         <td colspan="7" style="text-align: right;">ВСЕГО ПО АКТУ:</td>
         <td style="text-align: right;">${act.totalQuantity}</td>
-        <td style="text-align: right; color: #0f766e;">${act.totalCostRubles.toFixed(2)}</td>
+        <td style="text-align: right; color: #0f766e;">${formatKopecksToRubles(act.totalCostKopecks)}</td>
         <td></td>
       </tr>
     </tbody>
@@ -123,11 +123,11 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
       <td style="text-align: center;">${it.expiryDate}</td>
       <td style="text-align: center;">${it.unitRu}</td>
       <td style="text-align: center;">${it.okeiCode}</td>
-      <td style="text-align: right;">${kopecksToRubles(it.unitCostKopecks).toFixed(2)}</td>
+      <td style="text-align: right;">${formatKopecksToRubles(it.unitCostKopecks)}</td>
       <td style="text-align: right; font-weight: bold;">${it.actualQuantity}</td>
-      <td style="text-align: right; font-weight: bold;">${kopecksToRubles(it.actualTotalKopecks).toFixed(2)}</td>
+      <td style="text-align: right; font-weight: bold;">${formatKopecksToRubles(it.actualTotalKopecks)}</td>
       <td style="text-align: right;">${it.bookQuantity}</td>
-      <td style="text-align: right;">${kopecksToRubles(it.bookTotalKopecks).toFixed(2)}</td>
+      <td style="text-align: right;">${formatKopecksToRubles(it.bookTotalKopecks)}</td>
     </tr>`).join("");
 
 	const signs = `<div>Материально ответственное лицо (МОЛ): ____________________ / <b>${doc.molFullName}</b> (${doc.molPosition}) /</div>`;
@@ -190,9 +190,9 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
       <tr style="font-weight: bold; background: #fafafa;">
         <td colspan="8" style="text-align: right;">ИТОГО ПО ОПИСИ:</td>
         <td style="text-align: right;">${totals.totalActualQuantity}</td>
-        <td style="text-align: right;">${totals.totalActualCostRubles.toFixed(2)}</td>
+        <td style="text-align: right;">${formatKopecksToRubles(totals.totalActualCostKopecks)}</td>
         <td style="text-align: right;">${totals.totalBookQuantity}</td>
-        <td style="text-align: right;">${totals.totalBookCostRubles.toFixed(2)}</td>
+        <td style="text-align: right;">${formatKopecksToRubles(totals.totalBookCostKopecks)}</td>
       </tr>
     </tbody>
   </table>
@@ -219,9 +219,9 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 
 	const rows = discrepancies.map((it, idx) => {
 		const surplusQty = it.discrepancyType === "surplus" ? it.discrepancyQuantity : 0;
-		const surplusSum = it.discrepancyType === "surplus" ? kopecksToRubles(it.discrepancyCostKopecks).toFixed(2) : "0.00";
+		const surplusSum = it.discrepancyType === "surplus" ? formatKopecksToRubles(it.discrepancyCostKopecks) : "0.00";
 		const shortageQty = it.discrepancyType === "shortage" ? Math.abs(it.discrepancyQuantity) : 0;
-		const shortageSum = it.discrepancyType === "shortage" ? kopecksToRubles(Math.abs(it.discrepancyCostKopecks)).toFixed(2) : "0.00";
+		const shortageSum = it.discrepancyType === "shortage" ? formatKopecksToRubles(Math.abs(it.discrepancyCostKopecks)) : "0.00";
 
 		return `
     <tr>
@@ -231,7 +231,7 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
       <td style="text-align: center;">${it.batchNumber}</td>
       <td style="text-align: center;">${it.expiryDate}</td>
       <td style="text-align: center;">${it.unitRu}</td>
-      <td style="text-align: right;">${kopecksToRubles(it.unitCostKopecks).toFixed(2)}</td>
+      <td style="text-align: right;">${formatKopecksToRubles(it.unitCostKopecks)}</td>
       <td style="text-align: right; background: #ecfdf5; font-weight: bold;">${surplusQty > 0 ? surplusQty : "-"}</td>
       <td style="text-align: right; background: #ecfdf5; font-weight: bold;">${surplusQty > 0 ? surplusSum : "-"}</td>
       <td style="text-align: right; background: #fef2f2; font-weight: bold;">${shortageQty > 0 ? shortageQty : "-"}</td>
@@ -295,9 +295,9 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
       <tr style="font-weight: bold; background: #fafafa;">
         <td colspan="7" style="text-align: right;">ИТОГО РАСХОЖДЕНИЙ:</td>
         <td style="text-align: right; color: #059669;">${totals.totalSurplusQuantity}</td>
-        <td style="text-align: right; color: #059669;">${totals.totalSurplusCostRubles.toFixed(2)}</td>
+        <td style="text-align: right; color: #059669;">${formatKopecksToRubles(totals.totalSurplusCostKopecks)}</td>
         <td style="text-align: right; color: #dc2626;">${totals.totalShortageQuantity}</td>
-        <td style="text-align: right; color: #dc2626;">${totals.totalShortageCostRubles.toFixed(2)}</td>
+        <td style="text-align: right; color: #dc2626;">${formatKopecksToRubles(totals.totalShortageCostKopecks)}</td>
       </tr>
     </tbody>
   </table>
@@ -305,7 +305,7 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
   <div style="margin-top: 10px; font-size: 10pt;">
     <b>Итого излишек прописью:</b> ${numberToRussianWordsKopecks(totals.totalSurplusCostKopecks)}<br>
     <b>Итого недостача прописью:</b> ${numberToRussianWordsKopecks(totals.totalShortageCostKopecks)}<br>
-    <b>Итоговое сальдо сверки:</b> ${totals.netDiscrepancyCostRubles >= 0 ? "+" : ""}${totals.netDiscrepancyCostRubles.toFixed(2)} руб.
+    <b>Итоговое сальдо сверки:</b> ${totals.netDiscrepancyCostKopecks >= 0 ? "+" : ""}${formatKopecksToRubles(totals.netDiscrepancyCostKopecks)} руб.
   </div>
 
   <div class="footer-box">
@@ -316,6 +316,8 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </html>`;
 }
 
+export const generateInventoryAuditStatementHtml = generateInv3Html;
+export const generateInventoryDiscrepancyStatementHtml = generateInv19Html;
 export const generateInventoryAuditActHtml = generateInv3Html;
 export const generateDiscrepancyStatementHtml = generateInv19Html;
 export const generateMaterialWriteoffActHtml = generateWarehouseWriteoffActHtml;

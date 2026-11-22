@@ -10,6 +10,7 @@ import {
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
+	rublesToKopecks,
 } from "@dental/shared";
 import {
 	DocumentRenderContext,
@@ -96,7 +97,7 @@ export function taxDeductionCertificate(
 		const dateIso = p.fiscalReceiptIssuedAt || p.paidAt || (typeof document.issuedAt === "string" ? document.issuedAt : new Date().toISOString());
 		const receiptNumber = p.fiscalReceiptNumber || `ЧЕК-${idx + 1}`;
 		const amountRub = typeof p.amountRub === "number" ? p.amountRub : 0;
-		const amountKopecks = Math.round(amountRub * 100);
+		const amountKopecks = rublesToKopecks(amountRub);
 
 		return {
 			id: p.id,
@@ -119,7 +120,7 @@ export function taxDeductionCertificate(
 
 	if (items.length === 0 && document.totalAmountRub && document.totalAmountRub > 0) {
 		const amountRub = document.totalAmountRub;
-		const amountKopecks = Math.round(amountRub * 100);
+		const amountKopecks = rublesToKopecks(amountRub);
 		items.push({
 			id: document.id,
 			dateIso: issueDateIso,

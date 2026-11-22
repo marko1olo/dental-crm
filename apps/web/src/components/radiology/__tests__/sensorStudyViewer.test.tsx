@@ -64,14 +64,14 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 			const html = renderToString(
 				React.createElement(RadiologyClinicalHud, {
 					patientName: "Алексеев П.С.",
-					medicalCardNumber: "043/у-2026/102",
+					medicalCardNumber: "ЭМК №2026-102",
 					studyDate: "02.10.2026 14:15:00",
 					toothFdi: "16",
 				}),
 			);
 
 			assert.ok(html.includes("Алексеев П.С."));
-			assert.ok(html.includes("043/у-2026/102"));
+			assert.ok(html.includes("ЭМК №2026-102"));
 			assert.ok(html.includes('data-testid="hud-tooth-fdi"'));
 			assert.ok(html.includes("16"));
 			assert.ok(html.includes("Режим (Зуб FDI)"));

@@ -31,6 +31,7 @@ import {
 	isValidAuthCode,
 	kopecksToSberAmount,
 	SBER_POS_ERROR_CODES,
+	formatKopecksToRub,
 } from "@dental/shared";
 import { hardwarePrinter } from "./HardwarePrinter.js";
 import { showToast } from "../../components/GlobalToast.js";
@@ -375,7 +376,7 @@ export class SberbankTerminalService {
 				});
 
 				showToast(
-					`Оплата ${(cleanAmountKop / 100).toLocaleString("ru-RU")} ₽ через терминал Сбербанка одобрена (RRN: ${response.rrn})`,
+					`Оплата ${formatKopecksToRub(cleanAmountKop)} через терминал Сбербанка одобрена (RRN: ${response.rrn})`,
 					"success",
 				);
 
@@ -500,8 +501,8 @@ export class SberbankTerminalService {
 					const data = (await proxyRes.json()) as SberPosTransactionResponse;
 					return data;
 				}
-			} catch {
-				// Proxy unreachable
+			} catch (proxyErr) {
+				logger.debug("[SberbankTerminalService] Fallback proxy unreachable:", proxyErr);
 			}
 
 			const failureMessage =
@@ -527,9 +528,11 @@ export class SberbankTerminalService {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ terminalId: this.config.terminalId, activeTransactionId: this.activeTransactionId }),
-			}).catch(() => {});
-		} catch {
-			// Ignore network failure on cancel broadcast
+			}).catch((cancelErr) => {
+				logger.debug("[SberbankTerminalService] Cancel request failed:", cancelErr);
+			});
+		} catch (cancelErr) {
+			logger.debug("[SberbankTerminalService] Cancel broadcast failed:", cancelErr);
 		}
 	}
 }

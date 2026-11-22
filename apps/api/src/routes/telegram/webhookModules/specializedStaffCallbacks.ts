@@ -6,7 +6,7 @@
 import {
 	denteTelegramWebhookResponseSchema,
 } from "@dental/shared";
-import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramLegacyMemoryStore.js";
+import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramWebhookEventsService.js";
 import {
 	answerTelegramCallbackQuery,
 	editTelegramMessageText,
@@ -56,7 +56,7 @@ export async function handleIntercomAckCallback(
 	});
 
 	if (intercomAckResult.handled) {
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,
@@ -120,7 +120,7 @@ export async function handleCockpitCallback(
 	});
 
 	if (cockpitCallbackResult.handled) {
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,
@@ -208,7 +208,7 @@ export async function handlePresetNavCallback(
 			});
 		}
 
-		const event = recordDenteTelegramWebhookEvent({
+		const event = await recordDenteTelegramWebhookEvent({
 			updateId: update.update_id,
 			organizationId: runtime.organizationId,
 			botConfigId: runtime.botConfigId,

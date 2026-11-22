@@ -10,6 +10,7 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import { db } from "../db/client.js";
 import {
 	electronicPrescriptionItems,
@@ -76,6 +77,14 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 			"create prescription",
 		);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID)",
+			});
+		}
 
 		const parsed = z
 			.object({
@@ -267,6 +276,10 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 
 			return presc;
 		});
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		return reply.code(201).send({
 			success: true,

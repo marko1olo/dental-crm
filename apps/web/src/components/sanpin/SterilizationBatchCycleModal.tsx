@@ -53,7 +53,9 @@ export function SterilizationBatchCycleModal({
 	const resolvedOperator = useMemo(() => {
 		if (propOperatorName?.trim()) return propOperatorName.trim();
 		if (defaultOperatorName?.trim()) return defaultOperatorName.trim();
-		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
+		const authAny = appLogic?.auth as { currentUser?: { fullName?: string; name?: string }; activeWorkspaceProfile?: { title?: string } } | undefined;
+		const userAny = appLogic as { user?: { name?: string } } | null | undefined;
+		const fromAuth = authAny?.currentUser?.fullName || authAny?.currentUser?.name || userAny?.user?.name || authAny?.activeWorkspaceProfile?.title;
 		if (fromAuth?.trim()) return fromAuth.trim();
 		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
 		return cached?.fullName?.trim() || cached?.name?.trim() || "Дежурная медсестра ЦСО";

@@ -2,7 +2,7 @@
  * itemContracts.ts — Типы позиций и сводок этапов планов лечения DENTE.
  */
 
-import type { Kopecks } from "../../../utils/money.js";
+import type { Kopecks } from "../../../money.js";
 import type { PlanTierKey, PlanStageKind, PlanItemStatus } from "./stageTierContracts.js";
 
 export interface TreatmentPlanItemInput {

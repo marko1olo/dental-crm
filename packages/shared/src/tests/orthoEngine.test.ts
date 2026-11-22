@@ -17,6 +17,7 @@ import {
 	UPPER_TEETH,
 	generateOrthodonticSoapNote,
 } from "../orthodontics/orthoEngine.js";
+import { normalizeAngleClass } from "../orthodontics/types.js";
 
 const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}⚡★✔🔴🟢🟡]/u;
 
@@ -365,6 +366,29 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 				assert.equal(RAW_EMOJI_REGEX.test(opt.shortLabel), false);
 				assert.equal(RAW_EMOJI_REGEX.test(opt.desc), false);
 			}
+		});
+
+		it("correctly normalizes legacy Angle class keys and prevents clinical malocclusion forgery", () => {
+			// Backward compatibility mapping
+			assert.equal(normalizeAngleClass("class_2_1"), "class_2_div_1");
+			assert.equal(normalizeAngleClass("class_2_2"), "class_2_div_2");
+			assert.equal(normalizeAngleClass("class_1"), "class_1");
+			assert.equal(normalizeAngleClass("class_3"), "class_3");
+			assert.equal(normalizeAngleClass(null), "class_1");
+
+			// Clinical test: legacy class_2_1 must NOT be overwritten with class_1 neutral occlusion
+			const note = generateOrthodonticSoapNote({
+				bracketSystem: "damon_q2",
+				angleClass: "class_2_1" as any,
+			});
+			assert.ok(
+				note.includes("II класс 1 подкласс (дистальный прикус, протрузия)"),
+				"Must preserve Class II Div 1 diagnosis without fallback to Class I",
+			);
+			assert.ok(
+				!note.includes("I класс по Энглю (нейтральный прикус)"),
+				"Must not forge Class I neutral bite for Class II patient",
+			);
 		});
 	});
 });

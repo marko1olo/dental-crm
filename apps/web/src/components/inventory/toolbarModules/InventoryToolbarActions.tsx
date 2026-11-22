@@ -21,7 +21,7 @@ export interface InventoryToolbarActionsProps {
 	readonly handleQuickWriteoffStandardKit: () => void;
 	readonly handleQuickWriteoffAnestheticCarpule: () => void;
 	readonly handleQuickWriteoffSterilizationKit: () => void;
-	readonly handleQuickWriteoffCarpules?: () => Promise<any> | void;
+	readonly handleQuickWriteoffCarpules?: () => Promise<void> | void;
 	readonly handleQuickWriteoffVisitBundle: (bundle: "therapy" | "surgery") => void;
 	readonly handleQuickWriteoffShiftBundle: (bundle: "therapy" | "orthopedics" | "surgery") => void;
 	readonly setIsInboundInvoiceModalOpen: (open: boolean) => void;

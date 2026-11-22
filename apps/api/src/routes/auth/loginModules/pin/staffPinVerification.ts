@@ -125,6 +125,7 @@ export function resolveDemoUser(
 			canManageMoney: false,
 			canManageImports: false,
 			specialties: null,
+			allowedClinicIds: [],
 			uiPreferences: null,
 			workingHours: null,
 			currentSessionId: null,

@@ -11,7 +11,7 @@ import type {
 
 export interface UseEgiszRemdStateProps {
 	readonly initialPayload?: Partial<EgiszDentalCdaPayload> | undefined;
-	readonly initialXmlPayload?: any | undefined;
+	readonly initialXmlPayload?: unknown;
 	readonly initialFnsPayload?: Partial<FnsTaxCertificatePayload> | undefined;
 	readonly activeDocType: "cda_semd" | "fns_tax";
 	readonly doctorSig?: GostSignatureInfo | undefined;

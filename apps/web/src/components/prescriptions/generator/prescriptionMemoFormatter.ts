@@ -22,7 +22,7 @@ export function formatPatientPrescriptionMemo(
 		const details = med.activeSubstanceRu
 			? ` (${med.activeSubstanceRu}${med.formRu ? `, ${med.formRu}` : ""})`
 			: "";
-		const cleanSigna = med.signaRu
+		const cleanSigna = (med.signaRu || "")
 			.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "")
 			.trim();
 		return `${idx + 1}. ${tradeName}${details}:\n   Способ применения: ${cleanSigna}`;

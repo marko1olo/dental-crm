@@ -119,6 +119,11 @@ describe("Invoice Line Items Restoration & Persistence SSOT", () => {
 			assert.ok(Array.isArray(mockReply.sentBody.invoice.items), "invoice.items must be an array");
 			assert.equal(mockReply.sentBody.invoice.items.length, 2, "Must return 2 items inside invoice");
 			assert.equal(mockReply.sentBody.invoice.items[0].title, "Лечение кариеса эмали 1.6");
+			assert.match(
+				mockReply.sentBody.invoice.items[0].id,
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+				"Invoice item ID must be a real database UUID (not synthetic inv-item-*)",
+			);
 			assert.equal(mockReply.sentBody.invoice.totalAmountRub, 4300, "Must calculate total sum 4300 ₽");
 
 			const invoiceId = mockReply.sentBody.invoice.id;

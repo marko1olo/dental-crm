@@ -1,6 +1,6 @@
 import type { ImagingStudy } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy } from "./imagingMappers.js";
 
@@ -8,7 +8,7 @@ export async function updateImagingStudyAiSummaryInDb(
 	organizationId: string,
 	id: string,
 	summary: string,
-	targetDb: typeof db = db,
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy> {
 	const [record] = await targetDb
 		.update(schema.imagingStudies)
@@ -41,7 +41,7 @@ export async function updateImagingStudyInDb(
 		aiSummary?: string | null | undefined;
 		storagePath?: string | null | undefined;
 	},
-	targetDb: typeof db = db,
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy | null> {
 	const [record] = await targetDb
 		.update(schema.imagingStudies)

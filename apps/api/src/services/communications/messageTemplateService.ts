@@ -26,6 +26,44 @@ export interface MessageTemplateFilter {
 	isActive?: boolean | undefined;
 }
 
+export type DbCommunicationChannel = (typeof schema.communicationChannel.enumValues)[number];
+export type DbCommunicationIntent = (typeof schema.communicationIntent.enumValues)[number];
+
+export function normalizeTemplateChannel(
+	channel?: MessageTemplateChannel | string | null,
+): DbCommunicationChannel {
+	if (!channel) return "telegram";
+	const valid = schema.communicationChannel.enumValues;
+	if (valid.includes(channel as DbCommunicationChannel)) {
+		return channel as DbCommunicationChannel;
+	}
+	return "telegram";
+}
+
+export function normalizeTemplateIntent(
+	scenarioOrIntent?: MessageTemplateScenario | string | null,
+): DbCommunicationIntent {
+	if (!scenarioOrIntent) return "general";
+	const valid = schema.communicationIntent.enumValues;
+	if (valid.includes(scenarioOrIntent as DbCommunicationIntent)) {
+		return scenarioOrIntent as DbCommunicationIntent;
+	}
+	switch (scenarioOrIntent) {
+		case "appointment_reminder_24h":
+			return "appointment_confirmation";
+		case "post_op_checkup_043":
+			return "post_visit_instruction";
+		case "ztl_ready_alert":
+			return "document_ready";
+		case "retention_recall_6m":
+			return "recall";
+		case "debt_notification":
+			return "payment_reminder";
+		default:
+			return "general";
+	}
+}
+
 /**
  * Ensures standard clinical templates are seeded for an organization.
  * SSOT: Каноническая таблица communication_templates (Мандат 8bf).
@@ -45,8 +83,8 @@ export async function ensureDefaultMessageTemplatesSeeded(
 			await db.insert(schema.communicationTemplates).values({
 				organizationId,
 				title: seed.title,
-				channel: seed.channel as any,
-				intent: seed.intent as any,
+				channel: normalizeTemplateChannel(seed.channel),
+				intent: normalizeTemplateIntent(seed.intent),
 				audienceRole: "patient",
 				body: seed.templateText,
 				variablesJson: JSON.stringify(seed.variables),
@@ -74,12 +112,14 @@ export async function getMessageTemplates(
 	];
 
 	if (filter.channel && filter.channel !== "all") {
-		conditions.push(eq(schema.communicationTemplates.channel, filter.channel as any));
+		const validChannel = normalizeTemplateChannel(filter.channel);
+		conditions.push(eq(schema.communicationTemplates.channel, validChannel));
 	}
 
 	const intentFilter = filter.scenario ?? filter.intent;
 	if (intentFilter && intentFilter !== "all") {
-		conditions.push(eq(schema.communicationTemplates.intent, intentFilter as any));
+		const validIntent = normalizeTemplateIntent(intentFilter);
+		conditions.push(eq(schema.communicationTemplates.intent, validIntent));
 	}
 
 	if (filter.isActive !== undefined) {
@@ -173,8 +213,8 @@ export async function createMessageTemplate(
 		.values({
 			organizationId,
 			title: input.title.trim(),
-			channel: (input.channel ?? "telegram") as any,
-			intent: (input.intent ?? "general") as any,
+			channel: normalizeTemplateChannel(input.channel),
+			intent: normalizeTemplateIntent(input.intent),
 			audienceRole: "patient",
 			body: input.templateText,
 			variablesJson: JSON.stringify(extractedVariables),
@@ -210,8 +250,8 @@ export async function updateMessageTemplate(
 	const updateData: Partial<typeof schema.communicationTemplates.$inferInsert> = {};
 
 	if (input.title !== undefined) updateData.title = input.title.trim();
-	if (input.channel !== undefined) updateData.channel = input.channel as any;
-	if (input.intent !== undefined) updateData.intent = input.intent as any;
+	if (input.channel !== undefined) updateData.channel = normalizeTemplateChannel(input.channel);
+	if (input.intent !== undefined) updateData.intent = normalizeTemplateIntent(input.intent);
 	if (input.templateText !== undefined) {
 		updateData.body = input.templateText;
 		const vars =

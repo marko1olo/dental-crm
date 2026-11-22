@@ -11,6 +11,8 @@ export interface DentalLabOrderRecord {
 	readonly technicianName?: string | undefined;
 	readonly teethFdi: readonly number[];
 	readonly teeth?: readonly (number | string)[] | undefined;
+	readonly abutmentTeethFdi?: readonly number[] | undefined;
+	readonly ponticTeethFdi?: readonly number[] | undefined;
 	readonly constructionType: DentalLabConstructionType;
 	readonly materialRu: string;
 	readonly material?: string | undefined;
@@ -52,6 +54,13 @@ export interface DentalLabOrderRecord {
 		readonly calcifications?: boolean | undefined;
 		readonly translucencyLevel?: string | undefined;
 		readonly stumpShade?: string | undefined;
+	} | undefined;
+	readonly occlusionProfile?: {
+		readonly articulatorType?: "bio_art" | "kavo_protar" | "average_anatomical" | string | undefined;
+		readonly facebow?: boolean | undefined;
+		readonly guidanceType?: "canine_guidance" | "group_function" | "mutually_protected" | "balanced_articulation" | string | undefined;
+		readonly sagittalCondylarAngleDeg?: number | undefined;
+		readonly bennettAngleDeg?: number | undefined;
 	} | undefined;
 	readonly createdAt: string;
 	readonly updatedAt: string;

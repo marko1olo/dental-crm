@@ -3,7 +3,7 @@
  * Layer 0: Pure Data Contracts & Type Definitions
  */
 
-import type { Kopecks } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
 import type { ToothSurface } from "../../documents/forms043u.js";
 
 export type AnatomicalCanalCount = 1 | 2 | 3 | 4;

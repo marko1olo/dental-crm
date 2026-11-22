@@ -25,6 +25,7 @@ export interface CloseSettlementPeriodParams {
 	readonly ndflKop: number;
 	readonly netPayoutKop: number;
 	readonly markPaid?: boolean;
+	readonly doctorReconciled?: boolean;
 	readonly idempotencyKey?: string;
 }
 

@@ -5,7 +5,7 @@ import type {
 	calculateDoctorShiftEarnings,
 } from "@dental/shared";
 import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
-import type { DoctorShiftEmrSummary } from "../../shift/DoctorShiftCloseModal";
+import type { DoctorShiftEmrSummary } from "../../shift/doctorShiftClose/doctorShiftCloseTypes";
 
 export type DoctorShiftTab =
 	| "all"

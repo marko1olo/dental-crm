@@ -4,7 +4,6 @@
  */
 export * from "./snils.js";
 export * from "./dates.js";
-export * from "./money.js";
 export * from "./inn.js";
 export * from "./cryptoHelper.js";
 export * from "./timingSafeSecretEqual.js";

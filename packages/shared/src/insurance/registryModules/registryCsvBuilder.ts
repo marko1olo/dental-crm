@@ -1,4 +1,4 @@
-import { kopecksToNumericString } from "../../utils/money.js";
+import { kopecksToNumericString } from "../../money.js";
 import type { DmsRegistryData } from "./registryTypes.js";
 import { calculateDmsRegistryTotals } from "./registryKopeckCalculator.js";
 import { escapeCsvCell } from "./registrySanitizer.js";

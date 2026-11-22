@@ -15,8 +15,8 @@
  */
 
 import { z } from "zod";
-import type { Kopecks } from "../../utils/money.js";
-import { formatKopecksRu } from "../../utils/money.js";
+import type { Kopecks } from "../../money.js";
+import { formatKopecksRu } from "../../money.js";
 
 export const patientFinancialBalanceSchema = z.object({
 	patientId: z.string().min(1),

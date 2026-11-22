@@ -43,6 +43,10 @@ export type DoctorPayoutVisit = {
 	readonly paymentCount: number;
 	readonly services: DoctorPayoutVisitService[];
 	readonly materials: DoctorPayoutVisitMaterial[];
+	readonly labCostRub?: number | undefined;
+	readonly materialsCostRub?: number | undefined;
+	readonly netRevenueRub?: number | undefined;
+	readonly earnedRub?: number | undefined;
 };
 
 export type DoctorPayoutLabOrder = {

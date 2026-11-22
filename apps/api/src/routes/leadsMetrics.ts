@@ -61,7 +61,7 @@ export async function calculateLeadPipelineMetrics(
 		}
 
 		if (lead.expectedRevenueKopecks != null) {
-			const kopecks = Number(lead.expectedRevenueKopecks);
+			const kopecks = Number(BigInt(lead.expectedRevenueKopecks));
 			if (kopecks > 0) {
 				pipelineExpectedRevenueKopecks += kopecks;
 			}
