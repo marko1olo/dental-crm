@@ -1,8 +1,8 @@
 # Red Team Inquisition & 4-State Visual Proof: Radiology, RVG, OPG & CBCT/DICOM
 
-> **Статус:** [ПРОВЕРЕНО: ЧИСТО / ПОЛНАЯ ПОБЕДА]  
-> **Дата:** 26.10.2026  
-> **Мандаты:** Мандат 8b (Строго $\le 120$ строк на файл, фасады $\le 15$ строк), Мандат 8e (Автономия врача), Мандат 8n (Суверенитет соло-врача и клиники), Мандат 8ze (Apple HIG & Touch Ergonomics), Мандат 8wy (Двухрежимный закон).  
+> Статус: [ПРОВЕРЕНО: ЧИСТО / ПОЛНАЯ ПОБЕДА]  
+> Дата: 26.10.2026  
+> Мандаты: Мандат 8b (Строго $\le 120$ строк на файл, фасады $\le 15$ строк), Мандат 8e (Автономия врача), Мандат 8n (Суверенитет соло-врача и клиники), Мандат 8ze (Apple HIG & Touch Ergonomics), Мандат 8wy (Двухрежимный закон).  
 
 ---
 
@@ -11,7 +11,7 @@
 В рамках рентген-инквизиции полностью ликвидированы 4 гигантских математических монолита (>700 строк каждый) в модуле лучевой диагностики (`apps/web/src/components/radiology/`):
 
 1. **`cbctCurvedOverlayRenderers.ts` (ранее 730 строк):**
-   - Сжат до тонкого фасада **4 строки** ($\le 15$ строк).
+   - Сжат до тонкого фасада 4 строки ($\le 15$ строк).
    - Декомпозирован в подпакет `apps/web/src/components/radiology/mpr/curvedOverlay/` (12 модулей, каждый строго $\le 120$ строк):
      - `types.ts` (77 строк)
      - `screenSpaceMeasurements.ts` (45 строк)
@@ -27,7 +27,7 @@
      - `drawCrossSectionOverlay.ts` (12 строк)
 
 2. **`cbctCrossSectionResliceMath.ts` (ранее 725 строк):**
-   - Сжат до тонкого фасада **12 строк** ($\le 15$ строк).
+   - Сжат до тонкого фасада 12 строк ($\le 15$ строк).
    - Декомпозирован в подпакет `apps/web/src/components/radiology/crossSection/` (7 модулей, каждый строго $\le 120$ строк):
      - `types.ts` (101 строка)
      - `basisMath.ts` (113 строк)
@@ -38,7 +38,7 @@
      - `alveolarRidgeMath.ts` (94 строки)
 
 3. **`cbctObliqueMath.ts` (ранее 722 строки):**
-   - Сжат до тонкого фасада **13 строк** ($\le 15$ строк).
+   - Сжат до тонкого фасада 13 строк ($\le 15$ строк).
    - Декомпозирован в подпакет `apps/web/src/components/radiology/oblique/` (9 модулей, каждый строго $\le 120$ строк):
      - `types.ts` (45 строк)
      - `angleLabelsMath.ts` (45 строк)
@@ -51,7 +51,7 @@
      - `volumeResetMath.ts` (25 строк)
 
 4. **`cbctVolume3DMath.ts` (ранее 711 строк):**
-   - Сжат до тонкого фасада **7 строк** ($\le 15$ строк).
+   - Сжат до тонкого фасада 7 строк ($\le 15$ строк).
    - Декомпозирован в подпакет `apps/web/src/components/radiology/mpr/volume3DMath/` (8 модулей, каждый строго $\le 120$ строк):
      - `types.ts` (43 строки)
      - `clippingMath.ts` (29 строк)
@@ -67,10 +67,10 @@
 ## 2. Верификация компилятора, кодировок и тестов
 
 - **Vitest Suite (`apps/web/src/components/radiology/__tests__/`):**
-  - **80 test files passed (100%)**
-  - **1154 tests passed (0 failed)**
+  - 80 test files passed (100%)
+  - 1154 tests passed (0 failed)
   - Тесты охватывают: Frenet Frame Spline interpolation, 2-Seed Fast Marching Nerve Segmentation, Romexis Parity cross-sections, GPU Raymarching LUT, DICOM multi-frame parser, Zakharov alveolar ridge automation.
-- **Line Budget Enforcement (Mandate 8b):**
+- Line Budget Enforcement (Mandate 8b):
   - Все 36 модулей строго $\le 120$ строк.
   - Все 4 фасада строго $\le 15$ строк.
 - **Encoding Audit (`npm run check:encoding`):**

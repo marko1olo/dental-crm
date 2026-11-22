@@ -3,10 +3,10 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
-- **feature_key**: `пациенты::поддержка_форматов_heic_heif`
-- **Наименование**: Прямая загрузка изображений HEIC/HEIF с iPhone
-- **Конкуренты-аналоги**: IDENT
-- **Продуктовый модуль**: Пациенты / Файлы
+- feature_key: `пациенты::поддержка_форматов_heic_heif`
+- Наименование: Прямая загрузка изображений HEIC/HEIF с iPhone
+- Конкуренты-аналоги: IDENT
+- Продуктовый модуль: Пациенты / Файлы
 
 ---
 
@@ -53,9 +53,9 @@
 ---
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
-- **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
-- **Доказательство в кодовой базе**: packages/shared/src/imaging/colorCalibration.ts; apps/web/src/services/imaging/heicDecoder.ts; apps/api/src/services/imaging/serverHeicDecoder.ts
-- **Задействованные модули нашего проекта**:
+- Текущий статус: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
+- Доказательство в кодовой базе: packages/shared/src/imaging/colorCalibration.ts; apps/web/src/services/imaging/heicDecoder.ts; apps/api/src/services/imaging/serverHeicDecoder.ts
+- Задействованные модули нашего проекта:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/Пациенты View.tsx`
   - Backend: `apps/api/src/routes/`
   - Schema: `apps/api/src/db/schema.ts`
@@ -78,6 +78,6 @@
 ---
 
 ## 13. Системные ссылки и навигация
-- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
-- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+- Главный реестр документации: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- Портал базы знаний: [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- Реестр паритета фич: [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

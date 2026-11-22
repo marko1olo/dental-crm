@@ -4,22 +4,22 @@
 > ⚠️ **Высшая Конституция:** [THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [Системная Конституция (.agents/AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)  
 > 🛑 **Клиническая Автономия Врача:** [Мандат 8e (Zero-Friction)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) | [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)  
 >
-> **КРИТИЧЕСКИ ВАЖНО ДЛЯ НОВОГО АГЕНТА/АРХИТЕКТОРА:**  
-> Этот документ содержит исчерпывающее руководство по результатам масштабного конкурентного аудита и дип-документирования монорепозитория **Dental CRM (DENTE)**. Прочти его перед началом планирования и внедрения фич.
+> КРИТИЧЕСКИ ВАЖНО ДЛЯ НОВОГО АГЕНТА/АРХИТЕКТОРА:  
+> Этот документ содержит исчерпывающее руководство по результатам масштабного конкурентного аудита и дип-документирования монорепозитория Dental CRM (DENTE). Прочти его перед началом планирования и внедрения фич.
 
 ---
 
 ## 1. Чем занимался предшествующий агент (Резюме этапа)
 
-1. **Режим работы**: Был активирован режим **«Документируем, не внедряем»** (Аддендум 2). Продуктовый код CRM не подвергался деструктивным правкам, не создавались сырые миграции. Конечный продукт этапа — **полный монолит системной документации**.
-2. **Аудит источника конкурентов**: Полностью разобран 2961-строчный текстовый дамп возможностей конкурентов (**IDENT**, **DentalPRO**, **iStom**).
-3. **Извлечение и систематизация**: Извлечено **63 уникальных канонических фичи**, для каждой присвоен свой `feature_key`, статус в нашей CRM, оценка ценности (1–5), сложность и привязка к исходным строкам.
-4. **Сквозной аудит нашей Dental CRM**:
-   - Задокументированы все **48 бэкенд-файлов API-маршрутов** (`apps/api/src/routes/*.ts`).
-   - Задокументирована база данных PostgreSQL 18 (Drizzle ORM `schema.ts`, все энумы и **31 вид юридических документов**).
+1. Режим работы: Был активирован режим «Документируем, не внедряем» (Аддендум 2). Продуктовый код CRM не подвергался деструктивным правкам, не создавались сырые миграции. Конечный продукт этапа — полный монолит системной документации.
+2. Аудит источника конкурентов: Полностью разобран 2961-строчный текстовый дамп возможностей конкурентов (IDENT, DentalPRO, iStom).
+3. Извлечение и систематизация: Извлечено 63 уникальных канонических фичи, для каждой присвоен свой `feature_key`, статус в нашей CRM, оценка ценности (1–5), сложность и привязка к исходным строкам.
+4. Сквозной аудит нашей Dental CRM:
+   - Задокументированы все 48 бэкенд-файлов API-маршрутов (`apps/api/src/routes/*.ts`).
+   - Задокументирована база данных PostgreSQL 18 (Drizzle ORM `schema.ts`, все энумы и 31 вид юридических документов).
    - Задокументированы все фронтенд-компоненты (`apps/web/src`), 14 представлений (`AppView`), 3-уровневая архитектура (Tier 1/2/3), 3D DICOM MPR просмотрщик, WebWorker КТ-реконструкции, шлюз речевой диктовки и 170+ смоук-тестов.
    - Зафиксированы 6 обязательных pre-commit гейтов качества кода (`check-encoding.mjs`, `check-css-tokens.mjs`, `check-dynamic-imports.mjs`, `check-applogic-stub-overrides.mjs`, `check-fetch-response-guard.mjs`, `check-env-contract.mjs`).
-5. **Создание инфраструктуры правил**: Все документы привязаны к конституциям агентов ([GEMINI.md](file:///C:/Clinic_MVP/dental-crm/GEMINI.md), [CLAUDE.md](file:///C:/Clinic_MVP/dental-crm/CLAUDE.md), [.clauderules](file:///C:/Clinic_MVP/dental-crm/.clauderules), [AGENTS.md](file:///C:/Clinic_MVP/dental-crm/AGENTS.md), [.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)).
+5. Создание инфраструктуры правил: Все документы привязаны к конституциям агентов ([GEMINI.md](file:///C:/Clinic_MVP/dental-crm/GEMINI.md), [CLAUDE.md](file:///C:/Clinic_MVP/dental-crm/CLAUDE.md), [.clauderules](file:///C:/Clinic_MVP/dental-crm/.clauderules), [AGENTS.md](file:///C:/Clinic_MVP/dental-crm/AGENTS.md), [.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)).
 
 ---
 
@@ -41,13 +41,13 @@
 
 ## 3. Как Нейросети-Архитектору работать с этими материалами
 
-1. **Перед взятием фичи в разработку**:
+1. Перед взятием фичи в разработку:
    - Открой [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) и найди необходимый `feature_key` (например, `маркетинг::фильтр_потерянных_пациентов_в_отчете`).
    - Перейди в файл спецификации `FEATURE_SPECS/<feature_key>.md`. В нем содержатся пользовательская проблема, подробный сценарий, UI-детали, сущности БД и доказательства из выгрузки конкурентов.
-2. **Оценка готового бэкенд/фронтенд кода**:
+2. Оценка готового бэкенд/фронтенд кода:
    - Открой [BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md). Для каждой фичи описаны варианты реализации с указанием конкретных файлов (`apps/web/src/ScheduleView.tsx`, `apps/api/src/routes/patients.ts`).
    - Используй [API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md) и [DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md) для проверки существующих типов и эндпоинтов — в 70% случаев база данных или API уже имеют нужные структуры, нужно лишь дописать фронтенд UI.
-3. **Проверка при внедрении (The Iron Gate)**:
+3. Проверка при внедрении (The Iron Gate):
    - Перед коммитом обязательно запусти весь комплекс валидаторов:
      * `npm run check:encoding` (строгий UTF-8, защита от можибаки и U+FFFD)
      * `npm run check:css-tokens` (проверка `var(--x)` во всех темах)

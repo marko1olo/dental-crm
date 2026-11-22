@@ -1,7 +1,7 @@
 # Санитарный контроль смены и Автоклавирование: Канонический SSOT Хаб (Волна 31.2)
 
-> 🏛️ **Статус верификации:** 100% PASS (Exit Code 0), 0 неразрешенных CSS токенов, 0 мультяшных эмодзи.  
-> 📜 **Мандаты:** 8b/8zi (Sweet Spot 350–420 строк для модалок, 250–320 строк для каталогов), 8e (Автономия врача и персонала), 8n (Соло-суверенитет и Soft Negative Stock), 8am (Ровно 1 Primary CTA #0d9488: «Зафиксировать цикл автоклавирования»), 8x (Ликвидация советского канцелярита и номеров приказов), 8ap (Анти-вранье: запрет номеров законов в коде и моков), Apple HIG (Bottom Sheet на смартфонах, Grouped List Cards).
+> 🏛️ Статус верификации: 100% PASS (Exit Code 0), 0 неразрешенных CSS токенов, 0 мультяшных эмодзи.  
+> 📜 Мандаты: 8b/8zi (Sweet Spot 350–420 строк для модалок, 250–320 строк для каталогов), 8e (Автономия врача и персонала), 8n (Соло-суверенитет и Soft Negative Stock), 8am (Ровно 1 Primary CTA #0d9488: «Зафиксировать цикл автоклавирования»), 8x (Ликвидация советского канцелярита и номеров приказов), 8ap (Анти-вранье: запрет номеров законов в коде и моков), Apple HIG (Bottom Sheet на смартфонах, Grouped List Cards).
 
 ---
 
@@ -9,12 +9,12 @@
 
 1. **`SanpinStudioModal.tsx`** (414 строк — строго в каноническом Sweet Spot 350–420 строк):
    - Единая студия автоклавирования и санитарного контроля DENTE CRM с 3 вкладками:
-     1. **Журнал автоклавирования**: реестр циклов (дата и время, цикл, автоклав, параметры 134°C / 2.1 бар / 5 мин, статус Стерильно, индикаторы 5 класса, ответственный).
-     2. **Крафт-пакеты и маркировка**: типы упаковки со сроками годности (50 суток), печать наклеек, контроль предстерилизационной очистки (азопирам и фенолфталеин: 100% норма).
-     3. **Журнал генеральных уборок и УФ**: учет работы бактерицидных облучателей и рециркуляторов (Дезар-4, Дезар-7, Пегас) и график генеральных уборок.
+     1. Журнал автоклавирования: реестр циклов (дата и время, цикл, автоклав, параметры 134°C / 2.1 бар / 5 мин, статус Стерильно, индикаторы 5 класса, ответственный).
+     2. Крафт-пакеты и маркировка: типы упаковки со сроками годности (50 суток), печать наклеек, контроль предстерилизационной очистки (азопирам и фенолфталеин: 100% норма).
+     3. Журнал генеральных уборок и УФ: учет работы бактерицидных облучателей и рециркуляторов (Дезар-4, Дезар-7, Пегас) и график генеральных уборок.
    - Быстрый запуск цикла в 2 клика: выбор режима (134°C / 2 атм / 5 мин), автоклава (Автоклав №1 / №2) и оператора-медсестры.
-   - Ровно **ОДНА Primary CTA кнопка** `#0d9488` (`var(--primary)`): «Зафиксировать цикл автоклавирования».
-   - **0 заблокированных кнопок** (Мандат 8e): кнопки никогда не disabled.
+   - Ровно ОДНА Primary CTA кнопка `#0d9488` (`var(--primary)`): «Зафиксировать цикл автоклавирования».
+   - 0 заблокированных кнопок (Мандат 8e): кнопки никогда не disabled.
    - Пакетное списание расходников со склада в бэке (Soft Negative Stock, Мандат 8n) без поштучного сканирования штрих-кодов у кресла врача.
    - На смартфонах: нативный Apple HIG Bottom Sheet, drag handle 36×5px, тач-таргеты $\ge 44\times 44$px, Grouped List Cards вместо сжатой таблицы, липкий футер в Natural Thumb Zone.
 
@@ -47,10 +47,10 @@
 
 ## 3. Машинные гейты и верификация (Red Team Fixer — Домен №39)
 
-- `npx tsx --test packages/shared/src/tests/sanpinAutoInventory.test.ts`: **14/14 pass (100% GREEN, Exit Code 0)**
-- `npx tsx --test packages/shared/src/tests/sanpinInventoryAutopilot.test.ts`: **14/14 pass (100% GREEN, Exit Code 0)**
-- `npx tsx --test packages/shared/src/tests/sanpin.test.ts`: **30/30 pass (100% GREEN, Exit Code 0)**
-- `npx tsx --test apps/web/src/tests/sterilization043QuickScannerLink.test.ts`: **9/9 pass (100% GREEN, Exit Code 0)**
-- `npx tsx --test apps/web/src/components/sanpin/__tests__/*.test.ts*`: **310/310 pass (100% GREEN, Exit Code 0)**
-- `npx tsc -p packages/shared/tsconfig.json --noEmit`: **0 ошибок (Exit Code 0)**
-- `npm run check:encoding`: **20 140 файлов проверено, 0 замечаний (Strict UTF-8 without BOM)**
+- `npx tsx --test packages/shared/src/tests/sanpinAutoInventory.test.ts`: 14/14 pass (100% GREEN, Exit Code 0)
+- `npx tsx --test packages/shared/src/tests/sanpinInventoryAutopilot.test.ts`: 14/14 pass (100% GREEN, Exit Code 0)
+- `npx tsx --test packages/shared/src/tests/sanpin.test.ts`: 30/30 pass (100% GREEN, Exit Code 0)
+- `npx tsx --test apps/web/src/tests/sterilization043QuickScannerLink.test.ts`: 9/9 pass (100% GREEN, Exit Code 0)
+- `npx tsx --test apps/web/src/components/sanpin/__tests__/*.test.ts*`: 310/310 pass (100% GREEN, Exit Code 0)
+- `npx tsc -p packages/shared/tsconfig.json --noEmit`: 0 ошибок (Exit Code 0)
+- `npm run check:encoding`: 20 140 файлов проверено, 0 замечаний (Strict UTF-8 without BOM)

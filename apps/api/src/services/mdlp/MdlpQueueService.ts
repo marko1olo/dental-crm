@@ -8,6 +8,10 @@ import {
 	sortQueueByFefo,
 	validateQueueForDisposal,
 } from "@dental/shared";
+import { and, eq, or } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { mdlpItems } from "../../db/schema.js";
+import { mdlpLogger } from "./logger.js";
 
 export interface AddToQueueInput {
 	rawBarcode: string;
@@ -31,6 +35,135 @@ export class MdlpQueueService {
 			this.queues.set(orgId, queue);
 		}
 		return queue;
+	}
+
+	private async persistItemToDb(orgId: string, item: MdlpCarpuleQueueItem): Promise<void> {
+		try {
+			const [existing] = await db
+				.select()
+				.from(mdlpItems)
+				.where(
+					and(
+						eq(mdlpItems.organizationId, orgId),
+						eq(mdlpItems.sgtin, item.sgtin),
+					),
+				)
+				.limit(1);
+
+			if (existing) {
+				await db
+					.update(mdlpItems)
+					.set({
+						status: "queued",
+						rawBarcode: item.rawBarcode,
+						patientId: item.patientId ?? existing.patientId,
+						visitId: item.visitId ?? existing.visitId,
+						doctorId: item.doctorId ?? existing.doctorId,
+						costRub: item.costRub != null ? String(item.costRub) : existing.costRub,
+						updatedAt: new Date(),
+					})
+					.where(eq(mdlpItems.id, existing.id));
+			} else {
+				await db.insert(mdlpItems).values({
+					organizationId: orgId,
+					sgtin: item.sgtin,
+					gtin: item.gtin,
+					serialNumber: item.serialNumber,
+					rawBarcode: item.rawBarcode,
+					tradeName: item.drugInfo?.tradeName ?? "Медицинский препарат (МДЛП)",
+					inn: item.drugInfo?.inn ?? null,
+					series: item.series ?? null,
+					expirationDate: item.expirationDate,
+					status: "queued",
+					costRub: item.costRub != null ? String(item.costRub) : null,
+					patientId: item.patientId ?? null,
+					visitId: item.visitId ?? null,
+					doctorId: item.doctorId ?? null,
+				});
+			}
+		} catch (err) {
+			mdlpLogger.warn(err, `[MdlpQueueService] DB persistence failed for SGTIN ${item.sgtin}`);
+		}
+	}
+
+	private async removeQueuedItemFromDb(orgId: string, itemIdOrSgtin: string): Promise<void> {
+		try {
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemIdOrSgtin);
+			const identifierCondition = isUuid
+				? or(eq(mdlpItems.id, itemIdOrSgtin), eq(mdlpItems.sgtin, itemIdOrSgtin))
+				: eq(mdlpItems.sgtin, itemIdOrSgtin);
+
+			await db
+				.update(mdlpItems)
+				.set({
+					status: "in_stock",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(mdlpItems.organizationId, orgId),
+						eq(mdlpItems.status, "queued"),
+						identifierCondition,
+					),
+				);
+		} catch (err) {
+			mdlpLogger.warn(err, `[MdlpQueueService] DB remove failed for ${itemIdOrSgtin}`);
+		}
+	}
+
+	private async clearQueuedItemsInDb(orgId: string): Promise<void> {
+		try {
+			await db
+				.update(mdlpItems)
+				.set({
+					status: "in_stock",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(mdlpItems.organizationId, orgId),
+						eq(mdlpItems.status, "queued"),
+					),
+				);
+		} catch (err) {
+			mdlpLogger.warn(err, `[MdlpQueueService] DB clear failed for org ${orgId}`);
+		}
+	}
+
+	public async hydrateFromDb(orgId: string): Promise<MdlpCarpuleQueueItem[]> {
+		try {
+			const rows = await db
+				.select()
+				.from(mdlpItems)
+				.where(
+					and(
+						eq(mdlpItems.organizationId, orgId),
+						eq(mdlpItems.status, "queued"),
+					),
+				);
+
+			if (rows.length > 0) {
+				const queue = this.getOrgQueue(orgId);
+				for (const row of rows) {
+					const exists = queue.some((q) => q.sgtin === row.sgtin);
+					if (!exists) {
+						const item = createCarpuleQueueItem(row.rawBarcode || row.sgtin, {
+							costRub: row.costRub ? Number(row.costRub) : null,
+							patientId: row.patientId ?? undefined,
+							visitId: row.visitId ?? undefined,
+							doctorId: row.doctorId ?? undefined,
+						});
+						queue.push(item);
+					}
+				}
+				const sorted = sortQueueByFefo(queue);
+				this.queues.set(orgId, sorted);
+				return sorted;
+			}
+		} catch (err) {
+			mdlpLogger.warn(err, `[MdlpQueueService] DB hydration failed for org ${orgId}`);
+		}
+		return this.getOrgQueue(orgId);
 	}
 
 	/**
@@ -63,6 +196,8 @@ export class MdlpQueueService {
 			warnings.push(`Препарат с SGTIN ${item.sgtin} уже присутствует в очереди.`);
 		} else {
 			queue.push(item);
+			// Async persist in background
+			this.persistItemToDb(orgId, item).catch(() => {});
 		}
 
 		if (item.isExpired) {
@@ -87,6 +222,17 @@ export class MdlpQueueService {
 		};
 	}
 
+	public async addToQueueAsync(orgId: string, input: AddToQueueInput): Promise<{
+		success: boolean;
+		item: MdlpCarpuleQueueItem;
+		stats: MdlpCarpuleQueueStats;
+		warnings: string[];
+	}> {
+		const res = this.addToQueue(orgId, input);
+		await this.persistItemToDb(orgId, res.item);
+		return res;
+	}
+
 	/**
 	 * Removes a specific item from the queue by ID or SGTIN.
 	 */
@@ -102,12 +248,24 @@ export class MdlpQueueService {
 
 		this.queues.set(orgId, filtered);
 		const removed = filtered.length < initialLen;
+		if (removed) {
+			this.removeQueuedItemFromDb(orgId, itemIdOrSgtin).catch(() => {});
+		}
 
 		return {
 			success: true,
 			removed,
 			stats: calculateQueueStats(filtered),
 		};
+	}
+
+	public async removeFromQueueAsync(
+		orgId: string,
+		itemIdOrSgtin: string,
+	): Promise<{ success: boolean; removed: boolean; stats: MdlpCarpuleQueueStats }> {
+		const res = this.removeFromQueue(orgId, itemIdOrSgtin);
+		await this.removeQueuedItemFromDb(orgId, itemIdOrSgtin);
+		return res;
 	}
 
 	/**
@@ -144,6 +302,19 @@ export class MdlpQueueService {
 		};
 	}
 
+	public async getQueueAsync(
+		orgId: string,
+		options: { sortByFefo?: boolean; cabinetId?: string | null } = {},
+	): Promise<{
+		items: MdlpCarpuleQueueItem[];
+		batches: readonly MdlpCarpuleBatch[];
+		stats: MdlpCarpuleQueueStats;
+		validation: { isValid: boolean; errors: string[]; warnings: string[] };
+	}> {
+		await this.hydrateFromDb(orgId);
+		return this.getQueue(orgId, options);
+	}
+
 	/**
 	 * Clears the queue for an organization.
 	 */
@@ -151,7 +322,14 @@ export class MdlpQueueService {
 		const queue = this.getOrgQueue(orgId);
 		const count = queue.length;
 		this.queues.set(orgId, []);
+		this.clearQueuedItemsInDb(orgId).catch(() => {});
 		return { success: true, clearedCount: count };
+	}
+
+	public async clearQueueAsync(orgId: string): Promise<{ success: boolean; clearedCount: number }> {
+		const res = this.clearQueue(orgId);
+		await this.clearQueuedItemsInDb(orgId);
+		return res;
 	}
 }
 

@@ -3,13 +3,13 @@
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)  
 > ⚠️ **Высшая Конституция:** [THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [Системная Конституция (.agents/AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)  
 > 📐 **Стандарты Эргономики и UI:** [UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md) | [FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md) | [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)  
-> **Стек клиентской части:** React `19.2.7`, TypeScript, Vite, CSS Variables (`var(--paper)`, `var(--ink)`, `var(--glass-panel)`), Lucide Icons, Web Workers (3D DICOM MPR), 800 модулей компонентов в [`apps/web/src/components/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/).
+> Стек клиентской части: React `19.2.7`, TypeScript, Vite, CSS Variables (`var(--paper)`, `var(--ink)`, `var(--glass-panel)`), Lucide Icons, Web Workers (3D DICOM MPR), 800 модулей компонентов в [`apps/web/src/components/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/).
 
 ---
 
 ## 🏛️ 1. Архитектурный Каркас и 3-Уровневая Модель (3-Tier Interaction Architecture)
 
-Интерфейс веб-клиента DENTE (`apps/web/src/`) строго спроектирован по канонам **Universal 3-Tier Interaction Doctrine** и **Studio Clinical HIG** (десктопная плотность панели пилота 28–36px для рабочих мест врачей, тач-таргеты $\ge 44\times 44\text{px}$ для мобильных устройств и планшетов у кресла):
+Интерфейс веб-клиента DENTE (`apps/web/src/`) строго спроектирован по канонам Universal 3-Tier Interaction Doctrine и Studio Clinical HIG (десктопная плотность панели пилота 28–36px для рабочих мест врачей, тач-таргеты $\ge 44\times 44\text{px}$ для мобильных устройств и планшетов у кресла):
 
 ```mermaid
 graph TD
@@ -46,7 +46,7 @@ graph TD
 
 ## 🧭 2. Полный Реестр 14 Главных Представлений (App Views Registry)
 
-В соответствии с конфигурацией корневого роутера (`apps/web/src/workspaceShell.tsx`, `apps/web/src/workspacePreload.ts`, `apps/web/src/App.tsx`) в системе развернуто ровно **14 основных представлений**:
+В соответствии с конфигурацией корневого роутера (`apps/web/src/workspaceShell.tsx`, `apps/web/src/workspacePreload.ts`, `apps/web/src/App.tsx`) в системе развернуто ровно 14 основных представлений:
 
 | # | Идентификатор | Хеш роута | Название раздела | Корневой компонент | Основная роль и назначение |
 |---|---|---|---|---|---|
@@ -73,9 +73,9 @@ graph TD
 * **[`ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)** — Полноэкранная студия дентального фотопротокола (12 стандартных проекций: анфас, профиль, окклюзия в/ч и н/ч, 1:1 макро).
 * **[`VitaShadeSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/VitaShadeSelector.tsx)** — Интерактивный селектор расцветки зубов с предпросмотром эмали.
 * **[`vitaShadesCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/vitaShadesCatalog.ts)** — Полный классификатор шкал VITA:
-  - **VITA Classical:** A1, A2, A3, A3.5, A4, B1, B2, B3, B4, C1, C2, C3, C4, D2, D3, D4.
-  - **VITA 3D-Master:** 29 градаций светлоты, насыщенности и цветового тона (L, M, R).
-  - **Bleach Shades:** 0M1, 0M2, 0M3 для эстетической реставрации и виниров.
+  - VITA Classical: A1, A2, A3, A3.5, A4, B1, B2, B3, B4, C1, C2, C3, C4, D2, D3, D4.
+  - VITA 3D-Master: 29 градаций светлоты, насыщенности и цветового тона (L, M, R).
+  - Bleach Shades: 0M1, 0M2, 0M3 для эстетической реставрации и виниров.
 * **[`BeforeAfterComparisonView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterComparisonView.tsx)** — Двухканальный слайдер сравнения «До / После» лечения с привязкой зубов FDI.
 * **[`IncisalAlignmentGuideOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx)** — Калибровочные направляющие окклюзионной и режущей плоскости, зрачковой линии и средней линии лица.
 * **[`PhotoCalibrationDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/PhotoCalibrationDrawer.tsx)** — Точная подгонка баланса белого и масштабирование по эталонному маркеру.
@@ -87,12 +87,12 @@ graph TD
   - Коллапс и обморок (положение Тренделенбурга, ингаляция кислорода).
   - Гипертонический криз и острый коронарный синдром.
   - Токсическая реакция на местный анестетик (протокол липидной реанимации Intralipid 20%).
-* **[`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts)** & **[`emergencyRescuePresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescuePresets.ts)** — Автоматические калькуляторы реанимационных дозировок, состав аптечки «АнтиШок».
+* **[`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts) & [`emergencyRescuePresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescuePresets.ts)** — Автоматические калькуляторы реанимационных дозировок, состав аптечки «АнтиШок».
 * **[`WarrantyPassportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/WarrantyPassportModal.tsx)** — Электронный гарантийный паспорт пациента и студия гарантийных обязательств (Мандат 8b: строго $\le 120$ строк на модуль; Мандат 8e: 0 disabled кнопок, 0 ₽ рекламации без мастер-паролей):
   - **[`warrantyEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyEngine.ts)** — Канонический мастер-фасад гарантийных вычислений и сертификатов.
-  - **[`warrantyCalculation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCalculation.ts)** & **[`warrantyRiskEvaluator.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRiskEvaluator.ts)** — Клинический расчет сроков по СтАР и Закону РФ № 2300-1 (без потемкинских симуляторов деградации).
-  - **[`warrantyCertificateHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateHtml.ts)** & **[`warrantyCertificateSections.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateSections.ts)** — Генерация печатного бланка паспорта А4/А5 со строками FDI, QR и контрольным хешем SHA-256.
-  - **[`warrantyRemediation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediation.ts)** & **[`warrantyRemediationActHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediationActHtml.ts)** — 1-клик оформление рекламаций (0 ₽, 100% скидка, списание материалов со склада).
+  - **[`warrantyCalculation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCalculation.ts) & [`warrantyRiskEvaluator.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRiskEvaluator.ts)** — Клинический расчет сроков по СтАР и Закону РФ № 2300-1 (без потемкинских симуляторов деградации).
+  - **[`warrantyCertificateHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateHtml.ts) & [`warrantyCertificateSections.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateSections.ts)** — Генерация печатного бланка паспорта А4/А5 со строками FDI, QR и контрольным хешем SHA-256.
+  - **[`warrantyRemediation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediation.ts) & [`warrantyRemediationActHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediationActHtml.ts)** — 1-клик оформление рекламаций (0 ₽, 100% скидка, списание материалов со склада).
   - **[`warrantyPatientMemo.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyPatientMemo.ts)** — Официальная памятка пациента для WhatsApp/TG с 0 эмодзи (Мандат 8d).
 
 ### 3.3. Пациентский Портал, Кабинет и Self-Checkin (`components/portal/`, `components/patient-portal/`)
@@ -114,8 +114,8 @@ graph TD
   - Панорамная кривая зубной дуги ([`dentalCurveEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/dentalCurveEngine.ts)) и вычисление срезов Cross-Section.
   - Трассировка нижнечелюстного канала нерва ([`cbctCaliperNerveMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/cbctCaliperNerveMath.ts)) с предупреждением об опасной зоне < 2 мм.
   - Денситометрия кости Хаунсфилда по шкале Миша ([`boneDensityMischMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/boneDensityMischMath.ts)): D1 (>1250 HU), D2 (850–1250 HU), D3 (350–850 HU), D4 (150–350 HU).
-* **[`CbctViewportHud.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctViewportHud.tsx)** & **[`CbctLeftToolDock.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctLeftToolDock.tsx)** — Инструменты калибровки, линейка, транспортир, плотность HU, пресеты окон (Bone, Tooth, Soft Tissue).
-* **[`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)** & **[`VisiographStudioCanvas.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographStudioCanvas.tsx)** — Прямой захват 16-битных прицельных снимков с датчиков радиовизиографа с инверсией, фильтрами резкости и юридическим водяным знаком клиники.
+* **[`CbctViewportHud.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctViewportHud.tsx) & [`CbctLeftToolDock.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctLeftToolDock.tsx)** — Инструменты калибровки, линейка, транспортир, плотность HU, пресеты окон (Bone, Tooth, Soft Tissue).
+* **[`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx) & [`VisiographStudioCanvas.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographStudioCanvas.tsx)** — Прямой захват 16-битных прицельных снимков с датчиков радиовизиографа с инверсией, фильтрами резкости и юридическим водяным знаком клиники.
 
 ### 3.5. Голосовой Ввод и Звуковой Шлюз (`components/audio/`, `components/voice/`)
 * **[`AudioStreamManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/audio/AudioStreamManager.ts)** — Потоковый захват микрофона через AudioWorklet без блокировки UI-потока.

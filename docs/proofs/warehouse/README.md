@@ -1,23 +1,23 @@
 # Red Team Audit: Склад материалов, инвентаризация и списание расходников (Warehouse & Consumables)
 
-> **Статус:** [ПРОВЕРЕНО: ЧИСТО]  
-> **Дата аудита:** 2026-10-27  
-> **Инквизитор:** RED TEAM ИНКВИЗИТОР №3 (Склад, расходники, мягкий овердрафт)  
-> **Конституция:** [`THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) (Мандаты 8b, 8e, 8n, 8x, 8wy, 8ze, 8al, 8am, 8an, 8zk)
+> Статус: [ПРОВЕРЕНО: ЧИСТО]  
+> Дата аудита: 2026-10-27  
+> Инквизитор: RED TEAM ИНКВИЗИТОР №3 (Склад, расходники, мягкий овердрафт)  
+> Конституция: [`THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) (Мандаты 8b, 8e, 8n, 8x, 8wy, 8ze, 8al, 8am, 8an, 8zk)
 
 ---
 
 ## 1. Выполненные архитектурные требования и снос бюрократии
 
-1. **Ликвидация советской бюрократии и номенклатурного мусора (Мандаты 8e, 8n, 8x):**
+1. Ликвидация советской бюрократии и номенклатурного мусора (Мандаты 8e, 8n, 8x):
    - Устранены формы советского складского учета (ТОРГ-16, ИНВ-3, ИНВ-19, многоместные комиссии инвентаризации).
    - Никаких блокировок при нулевом остатке — полная поддержка отрицательного баланса (Soft Negative Stock).
    - Никаких паспортных данных, ИНН или комиссионных актов для списания клинических расходников.
    - Списание анестетиков и расходников осуществляется бесшовно крупными пакетами по технологической карте визита в 1 клик при завершении приёма либо через пакетное списание за смену (`ShiftBatchDeductionModal.tsx` / `BatchWriteoffModal.tsx`).
-2. **Soft Negative Stock (Мандат 8n: Doctor Autonomy):**
+2. Soft Negative Stock (Мандат 8n: Doctor Autonomy):
    - Дефицит товара на складе ($\le 0$) никогда не блокирует сохранение или проведение клинического приёма врача (кнопки «Сохранить», «Списать», «Завершить приём» НИКОГДА не дизейблятся, API не падает с ошибками).
    - При списании в минус остаток уходит в тихий мягкий овердрафт с янтарным бейджем. Задержка оприходования накладной не останавливает работу кабинета.
-3. **Модульная декомпозиция CSS (Мандат 8b):**
+3. Модульная декомпозиция CSS (Мандат 8b):
    - Монолит `apps/web/src/styles/modules/inventory.css` (341 строка) декомпозирован на 5 модульных файлов в `apps/web/src/styles/inventoryStyles/` (строго $\le 120$ строк в каждом):
      * [`desktopStockTableLayout.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/inventoryStyles/desktopStockTableLayout.css) (67 строк) — сетка и контейнер таблицы
      * [`desktopStockTableColumns.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/inventoryStyles/desktopStockTableColumns.css) (62 строки) — ширина и выравнивание колонок
@@ -26,10 +26,10 @@
      * [`desktopStockActions.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/inventoryStyles/desktopStockActions.css) (71 строка) — кнопки списания/прихода и меню
    - Файл `inventory.css` стал чистым шлюзом импорта (12 строк $\le 25$ строк).
    - 0 незарегистрированных токенов (`npm run check:css-tokens`: 0 ошибок).
-4. **Canonical Single Source of Truth (SSOT) Aliases:**
+4. Canonical Single Source of Truth (SSOT) Aliases:
    - Канонический склад: [`apps/web/src/components/InventoryView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/InventoryView.tsx).
    - Экспортированы алиасы `WarehouseView = InventoryView` и `StockBalanceTable = InventoryStockTable` для гарантированной обратной совместимости.
-5. **Apple HIG и мобильная эргономика (Мандаты 8ze, 8al, 8am):**
+5. Apple HIG и мобильная эргономика (Мандаты 8ze, 8al, 8am):
    - Сенсорный минимум всех интерактивных элементов $\ge 44\times 44\text{px}$.
    - На смартфонах — Grouped List Cards (Apple Health / iOS Settings style).
    - 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
@@ -54,10 +54,10 @@
 
 ## 3. Результаты автоматизированного тестирования (PASS, 100% GREEN)
 
-- `apps/web/src/components/warehouse/warehouseModularFacade.test.ts`: **4 passed tests (0 failing, Exit Code: 0)**
+- `apps/web/src/components/warehouse/warehouseModularFacade.test.ts`: 4 passed tests (0 failing, Exit Code: 0)
   * Проверка размера фасада `inventory.css` ($\le 25$ строк)
   * Проверка экспорта `WarehouseView`
   * Проверка экспорта `StockBalanceTable`
-- `apps/web/src/components/inventory/__tests__/`: **184 passed tests across 63 suites (0 failing, Exit Code: 0)**
-- `npm run check:css-tokens`: **0 unresolved tokens (Exit Code: 0)**
-- `npm run check:encoding`: **21,188 clean files (Exit Code: 0)**
+- `apps/web/src/components/inventory/__tests__/`: 184 passed tests across 63 suites (0 failing, Exit Code: 0)
+- `npm run check:css-tokens`: 0 unresolved tokens (Exit Code: 0)
+- `npm run check:encoding`: 21,188 clean files (Exit Code: 0)

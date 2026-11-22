@@ -14,10 +14,10 @@
 
 Все скриншоты сняты Playwright в реальном браузере Chromium с живого приложения `http://127.0.0.1:5173/?patients=1#patient-studio` и лично проверены через `read_file` по 7 смертным грехам интерфейса:
 
-1. ☀️ **PC Light (1440×900)**: `01_patient_studio_pc_light_1440x900.png` (55.6 KB) — идеальная светлая тема, контрастность WCAG AAA, 0 наездов иконок, 1 Primary CTA.
-2. 🌙 **PC Dark (1440×900)**: `02_patient_studio_pc_dark_1440x900.png` (67.6 KB) — глубокая темная тема без слепящих белых пятен, тонированные карточки `var(--paper)`.
-3. 📱 **Mobile Light (390×844)**: `03_patient_studio_mobile_light_390x844.png` (114.3 KB) — нативный iOS Bottom Sheet (Drag Handle 36×5px, `rounded-t-[24px]`), тач-таргеты $\ge 44\times 44$px, Natural Thumb Zone, 0px горизонтального скролла.
-4. 📱 **Mobile Dark (390×844)**: `04_patient_studio_mobile_dark_390x844.png` (115.9 KB) — безупречная сенсорная эргономика в темной теме, Primary CTA во всю ширину нижней трети экрана.
+1. ☀️ PC Light (1440×900): `01_patient_studio_pc_light_1440x900.png` (55.6 KB) — идеальная светлая тема, контрастность WCAG AAA, 0 наездов иконок, 1 Primary CTA.
+2. 🌙 PC Dark (1440×900): `02_patient_studio_pc_dark_1440x900.png` (67.6 KB) — глубокая темная тема без слепящих белых пятен, тонированные карточки `var(--paper)`.
+3. 📱 Mobile Light (390×844): `03_patient_studio_mobile_light_390x844.png` (114.3 KB) — нативный iOS Bottom Sheet (Drag Handle 36×5px, `rounded-t-[24px]`), тач-таргеты $\ge 44\times 44$px, Natural Thumb Zone, 0px горизонтального скролла.
+4. 📱 Mobile Dark (390×844): `04_patient_studio_mobile_dark_390x844.png` (115.9 KB) — безупречная сенсорная эргономика в темной теме, Primary CTA во всю ширину нижней трети экрана.
 
 ## 🧪 Тестовое покрытие (100% PASS)
 

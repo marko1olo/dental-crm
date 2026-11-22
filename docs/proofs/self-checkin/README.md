@@ -32,4 +32,4 @@
 - `selfCheckinDecomposition.test.tsx`: 7/7 tests passed (100%)
 - `MobileSelfCheckinModal.test.tsx`: 7/7 tests passed (100%)
 - `selfCheckinAutonomyInquisition.test.ts`: 6/6 tests passed (100%)
-- **Total**: 20/20 unit and regression tests passing.
+- Total: 20/20 unit and regression tests passing.

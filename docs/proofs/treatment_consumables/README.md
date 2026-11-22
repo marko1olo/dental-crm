@@ -1,9 +1,9 @@
 # Red Team Audit: Treatment Consumables & BOM SSOT Engine Decomposition
 
-> **Статус:** [ПРОВЕРЕНО: ЧИСТО]  
-> **Дата аудита:** 2026-10-27  
-> **Инквизитор:** RED TEAM ИНКВИЗИТОР (Склад расходных материалов, BOM SSOT & Soft Negative Stock)  
-> **Конституция:** [`THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) (Мандаты 8b, 8e, 8n, 8x, 8ap, 8wy, 8ze, 8al, 8am, 8an, 8zk, 8au)
+> Статус: [ПРОВЕРЕНО: ЧИСТО]  
+> Дата аудита: 2026-10-27  
+> Инквизитор: RED TEAM ИНКВИЗИТОР (Склад расходных материалов, BOM SSOT & Soft Negative Stock)  
+> Конституция: [`THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) (Мандаты 8b, 8e, 8n, 8x, 8ap, 8wy, 8ze, 8al, 8am, 8an, 8zk, 8au)
 
 ---
 
@@ -26,13 +26,13 @@
 
 ## 2. Клинические и складские инварианты
 
-1. **Мандат 8e (Автономия врача) & Мандат 8n (Суверенитет соло-практики):**
-   - Кнопка «Завершить приём», проведение чекаута и сохранение дневника визита **НИКОГДА** не блокируются из-за отсутствия остатков на складе.
+1. Мандат 8e (Автономия врача) & Мандат 8n (Суверенитет соло-практики):
+   - Кнопка «Завершить приём», проведение чекаута и сохранение дневника визита НИКОГДА не блокируются из-за отсутствия остатков на складе.
    - Расходные материалы уходят в фоновый мягкий овердрафт (`Soft Negative Stock`, `allowOverdraft = true`).
    - Списание осуществляется крупными пакетами на процедуру / смену в 1 клик без ручного посекундного кликания медсестры у кресла.
-2. **Точные целочисленные копейки (Мандат 8k):**
+2. Точные целочисленные копейки (Мандат 8k):
    - Себестоимость материалов рассчитывается исключительно в целочисленных копейках (`costPriceKopecks`, `BIGINT`).
-3. **Строго 0 карнавальных эмодзи (Мандат 8d):**
+3. Строго 0 карнавальных эмодзи (Мандат 8d):
    - Печатные акты списания А4 и чеки формируются в чистой строгой клинической типографике без смайликов и дев-сленга.
 
 ---
@@ -47,9 +47,9 @@
 - `packages/shared/src/warehouse/__tests__/wave134AutoVisitBomEngine.test.ts` (11 тестов)
 - `packages/shared/src/finance/__tests__/wave135ClinicExpenses.test.ts` (9 тестов)
 
-**Результат:** 6 test files, 54 tests passed, Exit Code 0, время выполнения: 2.92 с.  
-**TypeScript Typecheck:** `npm run build -w @dental/shared` и `npm run typecheck -w @dental/shared` — Exit Code 0, 0 ошибок.  
-**Machine Gates:** `npm run check:encoding` (22 287 файлов чисто) и `npm run check:css-tokens` (0 неразрешенных токенов) — Exit Code 0.
+Результат: 6 test files, 54 tests passed, Exit Code 0, время выполнения: 2.92 с.  
+TypeScript Typecheck: `npm run build -w @dental/shared` и `npm run typecheck -w @dental/shared` — Exit Code 0, 0 ошибок.  
+Machine Gates: `npm run check:encoding` (22 287 файлов чисто) и `npm run check:css-tokens` (0 неразрешенных токенов) — Exit Code 0.
 
 ---
 

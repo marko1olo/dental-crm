@@ -1,4 +1,4 @@
-import { getAllAnesthetics } from "@dental/shared";
+import { createCarpuleQueueItem, getAllAnesthetics } from "@dental/shared";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
@@ -65,6 +65,26 @@ const mdlpQueueRemoveBodySchema = z.object({
 	itemId: z.string().trim().min(1, "Идентификатор позиции в очереди обязателен."),
 });
 
+const mdlpActItemSchema = z.object({
+	id: z.string().trim().optional(),
+	rawBarcode: z.string().trim().optional().nullable(),
+	sgtin: z.string().trim().optional().nullable(),
+	gtin: z.string().trim().optional().nullable(),
+	serialNumber: z.string().trim().optional().nullable(),
+	series: z.string().trim().optional().nullable(),
+	expirationDate: z.string().trim().optional().nullable(),
+	costRub: z.number().finite().nonnegative().optional().nullable(),
+	tradeName: z.string().trim().optional().nullable(),
+	inn: z.string().trim().optional().nullable(),
+	patientId: z.string().uuid().optional().nullable(),
+	patientName: z.string().trim().optional().nullable(),
+	visitId: z.string().uuid().optional().nullable(),
+	doctorId: z.string().uuid().optional().nullable(),
+	doctorName: z.string().trim().optional().nullable(),
+	cabinetId: z.string().trim().optional().nullable(),
+	status: z.string().trim().optional().nullable(),
+});
+
 const mdlpActGenerateBodySchema = z.object({
 	actNumber: z.string().trim().optional(),
 	actDate: z.string().trim().optional(),
@@ -86,7 +106,7 @@ const mdlpActGenerateBodySchema = z.object({
 	crptReceiptNumber: z.string().trim().optional(),
 	notes: z.string().trim().optional(),
 	useQueue: z.boolean().optional().default(true),
-	items: z.array(z.any()).optional(),
+	items: z.array(mdlpActItemSchema).optional(),
 });
 
 const mdlpItemsQuerySchema = z.object({
@@ -236,10 +256,11 @@ export async function registerMdlpRoutes(
 		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp get queue");
 		if (!orgId) return;
 
-		const result = mdlpQueueService.getQueue(orgId);
+		const result = await mdlpQueueService.getQueueAsync(orgId);
 		return reply.send({
 			success: true,
 			...result,
+			queue: result.items,
 		});
 	};
 
@@ -260,7 +281,7 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		const result = mdlpQueueService.addToQueue(orgId, parsedBody.data);
+		const result = await mdlpQueueService.addToQueueAsync(orgId, parsedBody.data);
 		return reply.send(result);
 	};
 
@@ -280,7 +301,7 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		const result = mdlpQueueService.removeFromQueue(orgId, parsedBody.data.itemId);
+		const result = await mdlpQueueService.removeFromQueueAsync(orgId, parsedBody.data.itemId);
 		return reply.send(result);
 	};
 
@@ -292,7 +313,7 @@ export async function registerMdlpRoutes(
 		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp queue clear");
 		if (!orgId) return;
 
-		const result = mdlpQueueService.clearQueue(orgId);
+		const result = await mdlpQueueService.clearQueueAsync(orgId);
 		return reply.send(result);
 	};
 
@@ -324,7 +345,22 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		const result = mdlpDisposalService.generateDisposalAct(orgId, parsedBody.data);
+		const itemsMapped = parsedBody.data.items?.map((it) =>
+			createCarpuleQueueItem(it.rawBarcode || it.sgtin || "", {
+				costRub: it.costRub,
+				patientId: it.patientId ?? undefined,
+				patientName: it.patientName ?? undefined,
+				visitId: it.visitId ?? undefined,
+				doctorId: it.doctorId ?? undefined,
+				doctorName: it.doctorName ?? undefined,
+				cabinetId: it.cabinetId ?? undefined,
+			}),
+		);
+
+		const result = mdlpDisposalService.generateDisposalAct(orgId, {
+			...parsedBody.data,
+			items: itemsMapped,
+		});
 		return reply.send({
 			success: true,
 			actData: result.actData,

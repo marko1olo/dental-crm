@@ -216,6 +216,7 @@ export const DirectSurgeryLauncher: React.FC = () => {
 
 	return (
 		<ChairsideSurgeryHubModal
+			key={`${effectivePatient.id ?? "anon"}-${initialTooth ?? "all"}-${initialScenario ?? "default"}`}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientName={effectivePatient.fullName}

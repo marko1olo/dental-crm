@@ -1,9 +1,9 @@
 # Red Team Visual Proof & Architecture Report: AI Clinical Calculators Decomposition
 
-> **Mandate 8b (Anti-Monolith File Limits):** Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `clinicalCalculators.ts` $\le 15$ lines.  
-> **Mandate 8e (Doctor Autonomy):** Zero blocked buttons, instant normal status in 1 click, debounced autosave, EBM safety.  
-> **Mandate 8x (Human Clinical Domain):** Zero Soviet decree numbers in UI copy ("Медицинская карта приёма", "Прайс-лист услуг").  
-> **Mandate 8ze (4-State Canonical Visual Proof):** Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
+> Mandate 8b (Anti-Monolith File Limits): Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `clinicalCalculators.ts` $\le 15$ lines.  
+> Mandate 8e (Doctor Autonomy): Zero blocked buttons, instant normal status in 1 click, debounced autosave, EBM safety.  
+> Mandate 8x (Human Clinical Domain): Zero Soviet decree numbers in UI copy ("Медицинская карта приёма", "Прайс-лист услуг").  
+> Mandate 8ze (4-State Canonical Visual Proof): Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
 
 ---
 
@@ -28,15 +28,15 @@ The 1,128-line monolith `apps/api/src/ai/dentalTools/clinicalCalculators.ts` has
 
 ## 2. Test Verification & Code Quality Gates
 
-- **Vitest Unit & Integration Suite:**
+- Vitest Unit & Integration Suite:
   - Command: `npx vitest run apps/api/src/ai/dentalTools.test.ts apps/api/src/tests/agentHarness.test.ts`
-  - Result: **33/33 tests passed (Exit Code 0)**.
-- **Encoding Gate:**
+  - Result: 33/33 tests passed (Exit Code 0).
+- Encoding Gate:
   - Command: `npm run check:encoding`
-  - Result: **22,393 files checked, 0 issues (Exit Code 0)**.
-- **CSS Design Tokens Gate:**
+  - Result: 22,393 files checked, 0 issues (Exit Code 0).
+- CSS Design Tokens Gate:
   - Command: `npm run check:css-tokens`
-  - Result: **1,566 CSS files, 0 unresolved tokens (Exit Code 0)**.
+  - Result: 1,566 CSS files, 0 unresolved tokens (Exit Code 0).
 
 ---
 

@@ -1,8 +1,8 @@
 # Patients Directory, EMR & Domain Language SSOT Visual Proofs
 
 ## 1. Overview & Mandates
-- **Domain**: Patients Directory, Comprehensive Patient Card (`PatientCardModal` SSOT), Outpatient Clinical Records (`outpatientRecord*`, `MedicalCardPrintModal`), Representative Relationships.
-- **Mandates**: 8e (Doctor Autonomy & Non-blocking UI), 8n (Solo-Doctor & 1-3 Chairs Sovereignty), 8am (Single Primary CTA), 8ap (Purge of Foreign Brands & Pure Domain Language), Apple HIG Mobile Bottom Sheet.
+- Domain: Patients Directory, Comprehensive Patient Card (`PatientCardModal` SSOT), Outpatient Clinical Records (`outpatientRecord*`, `MedicalCardPrintModal`), Representative Relationships.
+- Mandates: 8e (Doctor Autonomy & Non-blocking UI), 8n (Solo-Doctor & 1-3 Chairs Sovereignty), 8am (Single Primary CTA), 8ap (Purge of Foreign Brands & Pure Domain Language), Apple HIG Mobile Bottom Sheet.
 
 ---
 
@@ -18,16 +18,16 @@
 ---
 
 ## 3. Red Team Inspection & Fixes Checklist
-1. **Foreign Brand Purge (Mandate 8ap)**:
+1. Foreign Brand Purge (Mandate 8ap):
    - Completely eradicated `STOMX_REPRESENTATIVE_CATALOG` and `StomxRepresentativeType` from active interfaces.
    - Replaced with canonical `DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG` and `RepresentativeRelationshipType` across `@dental/shared` and `apps/web`.
-2. **Order Numbers Purge (Mandates 8x, 8ap)**:
+2. Order Numbers Purge (Mandates 8x, 8ap):
    - Soviet order number `043/у` removed from filenames and UI text.
    - Canonical clean domain nomenclature: `outpatientRecordTypes`, `outpatientRecordMath`, `outpatientRecordDefaultData`, `outpatientRecordExportEngines`, `outpatientRecordTabSections`, `MedicalCardPrintModal`. UI label: «Медицинская карта приёма» / «Дневник визита».
-3. **Consolidation of Duplicate Patient Modals (Mandates 8b, 8s)**:
+3. Consolidation of Duplicate Patient Modals (Mandates 8b, 8s):
    - `PatientCardModal.tsx` confirmed as unified SSOT.
    - `PatientDetailModal.tsx` and `PatientDetailsModal.tsx` reduced to thin backward-compatibility facades (<= 10 lines).
-4. **Doctor Autonomy & Button Wrap Elimination (Mandates 8e, 8am, Apple HIG)**:
+4. Doctor Autonomy & Button Wrap Elimination (Mandates 8e, 8am, Apple HIG):
    - Single Primary CTA `#0d9488` (`bg-[var(--teal)] text-white`), neutral secondary buttons.
    - Fixed word-wrap on "Сохранить" via `whitespace-nowrap min-w-[130px]`.
    - Touch targets on mobile >= 44x44px.

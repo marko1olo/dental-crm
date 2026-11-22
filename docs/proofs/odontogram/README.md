@@ -17,21 +17,21 @@
 
 ## 🎯 Architectural Invariants & Autopsy Summary
 
-1. **Toolbar Consolidation & Anti-Desktop-Squeeze (Mandates 8b, 8al, 8aw):**
+1. Toolbar Consolidation & Anti-Desktop-Squeeze (Mandates 8b, 8al, 8aw):
    - Плавный перенос на 2 строки на мобильных устройствах (390px) без сжатия кнопок в частокол и без горизонтального скролла страницы.
    - Переключатели режимов (Анатомия / 2D / Таблица) и прикуса (Взрослый / Детский / Сменный) в формате Apple Segmented Control.
 
-2. **Single Primary CTA Button Rule (Мандат 8am):**
+2. Single Primary CTA Button Rule (Мандат 8am):
    - Строго 1 Primary CTA: `Физиологическая норма` (`#0d9488`, иконка щита, белый текст). Искоренен дев-сленг «1 клик» по Мандату 8zg.
    - Все остальные кнопки — нейтральные Secondary с `var(--line)`.
 
-3. **Wheeler 2.5D Anatomical Integrity & Pediatric Dentition (Мандат 8bj):**
+3. Wheeler 2.5D Anatomical Integrity & Pediatric Dentition (Мандат 8bj):
    - Честная анатомия Wheeler/Hess: дифференциальные ширины зубов (резцы 48px, клыки 54px, премоляры 60px, моляры 68px).
    - Честные молочные моляры (54, 55, 64, 65 с 3 корнями сверху, 74, 75, 84, 85 с 2 корнями снизу).
    - Временный прикус: 20 молочных зубов (51..85), сменный прикус: 20 молочных + 4 постоянных моляра (16, 26, 36, 46).
    - Окклюзионная плоскость смыкания (`order-2`) соосно отцентрована между челюстями.
    - Заголовки челюстей в чистом sentence case без капслока.
 
-4. **Apple HIG Touch Ergonomics (390×844):**
+4. Apple HIG Touch Ergonomics (390×844):
    - Хитбоксы кнопок $\ge 44\times 44$px в сенсорных зонах.
    - 0px горизонтального дрифта (`overflow-x: clip; max-width: 100vw;`).

@@ -1,7 +1,7 @@
 # 📦 Домен 3: Склад, Пакетное Списание Материалов и Мягкий Овердрафт (DENTE CRM)
 
-> **Статус проверки**: ✅ [ПРОВЕРЕНО: ЧИСТО / RED TEAM PASS]  
-> **Авторитет**: Mandate 8e (Автономия врача), Mandate 8n (Суверенитет соло-практики & Soft Negative Stock), Mandate 8am (Ровно 1 Primary CTA), Mandates 8ze/8al (Apple HIG, 4-State Visual Proof), Mandate 8b (Sweet Spot 200–350L).
+> Статус проверки: ✅ [ПРОВЕРЕНО: ЧИСТО / RED TEAM PASS]  
+> Авторитет: Mandate 8e (Автономия врача), Mandate 8n (Суверенитет соло-практики & Soft Negative Stock), Mandate 8am (Ровно 1 Primary CTA), Mandates 8ze/8al (Apple HIG, 4-State Visual Proof), Mandate 8b (Sweet Spot 200–350L).
 
 ---
 
@@ -20,13 +20,13 @@
 
 ## 🏛️ Архитектурные Решения и Достигнутые Инварианты
 
-1. **Схлопывание микро-шредера в 3 канонических SSOT (Мандат 8b)**:
+1. Схлопывание микро-шредера в 3 канонических SSOT (Мандат 8b):
    - `apps/web/src/components/inventory/WarehouseStockTable.tsx` (321 строка): каноническая таблица склада.
    - `apps/web/src/components/inventory/WarehouseBatchWriteoffModal.tsx` (299 строк): 1-клик списание смены.
    - `apps/web/src/components/inventory/WarehouseInboundInvoiceModal.tsx` (337 строк): оприходование накладных с погашением дефицита.
-2. **Мягкий овердрафт без блокировки врача (Мандат 8n & 8e)**:
+2. Мягкий овердрафт без блокировки врача (Мандат 8n & 8e):
    - Fastify роут `stockLedgerRoutes.ts` безусловно разрешает списание при нулевом или недостаточном остатке (`isAllowedOverdraft = true`).
    - Операция фиксируется как отрицательный остаток (`stockQuantity < 0`), выставляется `isOverdraft: true`, снабжение видит дефицит, приём пациента не блокируется.
    - Оприходование накладной поставщика автоматически гасит накопленный овердрафт.
-3. **Apple HIG и Touch Ergonomics на смартфонах (Мандаты 8ze, 8al)**:
+3. Apple HIG и Touch Ergonomics на смартфонах (Мандаты 8ze, 8al):
    - Вместо сплющенной 7-колоночной десктопной таблицы на мобильных устройствах (< 768px) активируется `MobileInventoryItemCard`: карточки 16px, цветные полосы остатка, сенсорные кнопки быстрого списания `-1`, липкий Bottom Bar с Primary CTA `+ Приход`.

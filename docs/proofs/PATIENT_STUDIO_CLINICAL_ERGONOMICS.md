@@ -38,19 +38,19 @@
 ---
 
 ## 2. Единая система кнопок (Mandate 8am & Section 825 THE HAMMER)
-- **Высота кнопок**: на десктопе строго 36px (`h-9 min-h-[36px] px-3.5 rounded-xl`), на мобильных устройствах $\ge 44\text{px}$, фильтры 32px (`h-8`).
-- **Иерархия кнопок**: ровно ОДНА главная кнопка (Primary CTA — `bg-[var(--teal)] text-white font-semibold`), все вторичные кнопки оформлены единообразно (`border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]`).
+- Высота кнопок: на десктопе строго 36px (`h-9 min-h-[36px] px-3.5 rounded-xl`), на мобильных устройствах $\ge 44\text{px}$, фильтры 32px (`h-8`).
+- Иерархия кнопок: ровно ОДНА главная кнопка (Primary CTA — `bg-[var(--teal)] text-white font-semibold`), все вторичные кнопки оформлены единообразно (`border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]`).
 
 ---
 
 ## 3. Ликвидация смертных грехов UI
-- **Грех №2 (Обрезание слов многоточиями)**: вкладки Segmented Control содержат полные русские названия:
+- Грех №2 (Обрезание слов многоточиями): вкладки Segmented Control содержат полные русские названия:
   - `Обзор и анамнез`
   - `Визиты и ЭМК`
   - `Планы лечения`
   - `Снимки и КТ`
   - `Счета и оплата`
-- **Грех №5 (Капслок и кричащие заголовки)**:
+- Грех №5 (Капслок и кричащие заголовки):
   - Вместо `ЛЕНТА ПРИЕМОВ И СОБЫТИЙ ID: 01a00000` -> спокойный `История визитов и событий` с бейджем счетчика и отдельным чипом ID.
   - Вместо `⚠️ СТОП-ФАКТОР / АЛЛЕРГИЯ:` -> деликатный бейдж `🛡️ Аллергия на пенициллины (Амоксиклав)`.
 
@@ -58,7 +58,7 @@
 
 ## 4. 4-State Visual Proof (Скриншот-доказательства)
 Инструментально подтверждено на реальном приложении:
-1. ☀️ **PC Light (1440×900)**: `docs/proofs/patient-studio/patient_studio_pc_light_1440x900.png`
-2. 🌙 **PC Dark (1440×900)**: `docs/proofs/patient-studio/patient_studio_pc_dark_1440x900.png`
-3. 📱 **Mobile Light (390×844)**: `docs/proofs/patient-studio/patient_studio_mobile_light_390x844.png`
-4. 📱 **Mobile Dark (390×844)**: `docs/proofs/patient-studio/patient_studio_mobile_dark_390x844.png`
+1. ☀️ PC Light (1440×900): `docs/proofs/patient-studio/patient_studio_pc_light_1440x900.png`
+2. 🌙 PC Dark (1440×900): `docs/proofs/patient-studio/patient_studio_pc_dark_1440x900.png`
+3. 📱 Mobile Light (390×844): `docs/proofs/patient-studio/patient_studio_mobile_light_390x844.png`
+4. 📱 Mobile Dark (390×844): `docs/proofs/patient-studio/patient_studio_mobile_dark_390x844.png`

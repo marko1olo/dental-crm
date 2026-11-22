@@ -1,9 +1,9 @@
 # Red Team Audit: Dental Formula & Clinical Consents Decomposition
 
-> **Статус:** [ПРОВЕРЕНО: ЧИСТО]  
-> **Дата аудита:** 2026-10-27  
-> **Мандаты:** Мандат 8b (декомпозиция монолитов $\le 120$ строк, фасады $\le 15$ строк), Мандат 8e (автономия врача и физиологическая норма в 1 клик), Мандаты 8x и 8ap (чистый русский клинический язык без птичьего канцелярита и советских номеров приказов в UI), Мандаты 8al и 8am (Apple HIG, 4-state visual proof, единый Primary CTA), Мандат 8au (чистота артефактов).  
-> **Конституция:** `C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md` и `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
+> Статус: [ПРОВЕРЕНО: ЧИСТО]  
+> Дата аудита: 2026-10-27  
+> Мандаты: Мандат 8b (декомпозиция монолитов $\le 120$ строк, фасады $\le 15$ строк), Мандат 8e (автономия врача и физиологическая норма в 1 клик), Мандаты 8x и 8ap (чистый русский клинический язык без птичьего канцелярита и советских номеров приказов в UI), Мандаты 8al и 8am (Apple HIG, 4-state visual proof, единый Primary CTA), Мандат 8au (чистота артефактов).  
+> Конституция: `C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md` и `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
 
 ---
 
@@ -67,27 +67,27 @@
 
 ## 3. Результаты Unit, Integration & Machine Gates Тестирования
 
-1. **Зубная формула (Unit Tests):**
+1. Зубная формула (Unit Tests):
    ```bash
    npx vitest run packages/shared/src/tests/dentalFormulaRendering.test.ts
    # 3 passed in 1.98s (Exit Code 0)
    ```
-2. **Рендеринг согласий и документов (Document Templates Tests):**
+2. Рендеринг согласий и документов (Document Templates Tests):
    ```bash
    npx vitest run apps/api/src/documents/renderDocument.test.ts
    # 18 passed in 5.30s (Exit Code 0)
    ```
-3. **Автономия врача и защита согласий (Clinical Autonomy Proofs):**
+3. Автономия врача и защита согласий (Clinical Autonomy Proofs):
    ```bash
    npx vitest run apps/api/src/tests/routes/consentsAutonomyProof.test.ts
    # 3 passed in 0.82s (Exit Code 0)
    ```
-4. **Machine Gate: Кодировка UTF-8 без BOM:**
+4. Machine Gate: Кодировка UTF-8 без BOM:
    ```bash
    npm run check:encoding
    # 22,283 files checked, 0 errors (Exit Code 0)
    ```
-5. **Machine Gate: CSS Tokens:**
+5. Machine Gate: CSS Tokens:
    ```bash
    npm run check:css-tokens
    # 1,566 CSS files checked, 0 unresolved tokens (Exit Code 0)

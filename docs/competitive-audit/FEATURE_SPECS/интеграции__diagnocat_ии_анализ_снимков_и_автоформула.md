@@ -3,10 +3,10 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
-- **feature_key**: `интеграции::diagnocat_ии_анализ_снимков_и_автоформула`
-- **Наименование**: Прямая интеграция с Diagnocat ИИ для заполнения одонтограммы
-- **Конкуренты-аналоги**: IDENT
-- **Продуктовый модуль**: ИИ Диагностика
+- feature_key: `интеграции::diagnocat_ии_анализ_снимков_и_автоформула`
+- Наименование: Прямая интеграция с Diagnocat ИИ для заполнения одонтограммы
+- Конкуренты-аналоги: IDENT
+- Продуктовый модуль: ИИ Диагностика
 
 ---
 
@@ -53,9 +53,9 @@
 ---
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
-- **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
-- **Доказательство в кодовой базе**: apps/api/src/db/diagnocatAiFindingsQuery.ts; proof_diagnocat_ai_findings.png
-- **Задействованные модули нашего проекта**:
+- Текущий статус: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
+- Доказательство в кодовой базе: apps/api/src/db/diagnocatAiFindingsQuery.ts; proof_diagnocat_ai_findings.png
+- Задействованные модули нашего проекта:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/ИИ ДиагностикаView.tsx`
   - Backend: `apps/api/src/routes/`
   - Schema: `apps/api/src/db/schema.ts`
@@ -78,6 +78,6 @@
 ---
 
 ## 13. Системные ссылки и навигация
-- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
-- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+- Главный реестр документации: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- Портал базы знаний: [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- Реестр паритета фич: [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

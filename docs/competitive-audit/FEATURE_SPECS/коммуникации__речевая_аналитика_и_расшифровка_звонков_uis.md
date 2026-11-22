@@ -3,10 +3,10 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
-- **feature_key**: `коммуникации::речевая_аналитика_и_расшифровка_звонков_uis`
-- **Наименование**: Расшифровка звонков с таймкодами и привязкой созданных событий
-- **Конкуренты-аналоги**: IDENT
-- **Продуктовый модуль**: Коммуникации / Звонки
+- feature_key: `коммуникации::речевая_аналитика_и_расшифровка_звонков_uis`
+- Наименование: Расшифровка звонков с таймкодами и привязкой созданных событий
+- Конкуренты-аналоги: IDENT
+- Продуктовый модуль: Коммуникации / Звонки
 
 ---
 
@@ -53,9 +53,9 @@
 ---
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
-- **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
-- **Доказательство в кодовой базе**: apps/api/src/db/uisCallSpeechTranscriptsQuery.ts; proof_uis_call_speech_transcripts.png
-- **Задействованные модули нашего проекта**:
+- Текущий статус: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
+- Доказательство в кодовой базе: apps/api/src/db/uisCallSpeechTranscriptsQuery.ts; proof_uis_call_speech_transcripts.png
+- Задействованные модули нашего проекта:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/Коммуникации View.tsx`
   - Backend: `apps/api/src/routes/`
   - Schema: `apps/api/src/db/schema.ts`
@@ -78,6 +78,6 @@
 ---
 
 ## 13. Системные ссылки и навигация
-- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
-- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+- Главный реестр документации: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- Портал базы знаний: [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- Реестр паритета фич: [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

@@ -3,10 +3,10 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
-- **feature_key**: `коммуникации::смс_от_uis`
-- **Наименование**: Двусторонние СМС через UIS с режимом «Чат» и суточным лимитом
-- **Конкуренты-аналоги**: IDENT
-- **Продуктовый модуль**: Коммуникации
+- feature_key: `коммуникации::смс_от_uis`
+- Наименование: Двусторонние СМС через UIS с режимом «Чат» и суточным лимитом
+- Конкуренты-аналоги: IDENT
+- Продуктовый модуль: Коммуникации
 
 ---
 
@@ -54,9 +54,9 @@ UIS SMS API v2 Gateway (`https://api.uiscom.ru/v2/sms/send`).
 ---
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
-- **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
-- **Доказательство в кодовой базе**: apps/api/src/db/uisSmsChatQuotasQuery.ts; proof_uis_sms_chat_quotas.png
-- **Задействованные модули нашего проекта**:
+- Текущий статус: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
+- Доказательство в кодовой базе: apps/api/src/db/uisSmsChatQuotasQuery.ts; proof_uis_sms_chat_quotas.png
+- Задействованные модули нашего проекта:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/КоммуникацииView.tsx`
   - Backend: `apps/api/src/routes/`
   - Schema: `apps/api/src/db/schema.ts`
@@ -79,6 +79,6 @@ UIS SMS API v2 Gateway (`https://api.uiscom.ru/v2/sms/send`).
 ---
 
 ## 13. Системные ссылки и навигация
-- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
-- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+- Главный реестр документации: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- Портал базы знаний: [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- Реестр паритета фич: [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

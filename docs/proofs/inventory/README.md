@@ -1,13 +1,13 @@
 # DENTE Dental CRM — Модуль Склада и Материального Учета (Warehouse & Inventory)
 
-> 📦 **Архитектурный статус**: 100% Red Team Verification PASS (SSOT Modal Consolidation, Simulator Purge & Apple HIG)  
-> **Мандаты**: 8b (Строгий лимит модулей <= 120 строк SSOT), 8e (Автономия врача), 8n (Суверенитет соло-практики и малой клиники), 8aa (Пакетный материальный учет & Soft Negative Stock), 8am (Дизайн-код кнопок и 1 Primary CTA), 8al (4-State Visual Proof), 8x (Живой клинический язык без канцелярита).
+> 📦 Архитектурный статус: 100% Red Team Verification PASS (SSOT Modal Consolidation, Simulator Purge & Apple HIG)  
+> Мандаты: 8b (Строгий лимит модулей <= 120 строк SSOT), 8e (Автономия врача), 8n (Суверенитет соло-практики и малой клиники), 8aa (Пакетный материальный учет & Soft Negative Stock), 8am (Дизайн-код кнопок и 1 Primary CTA), 8al (4-State Visual Proof), 8x (Живой клинический язык без канцелярита).
 
 ---
 
 ## 1. Архитектурная декомпозиция монолитов (Мандат 8b <= 110-120 строк)
 
-1. **Роуты списания материалов склада (apps/api/src/routes/inventory/)**:
+1. Роуты списания материалов склада (apps/api/src/routes/inventory/):
    - `writeOffRoutes.ts` (16 строк) — сверхкомпактный фасад роутов (Мандат 8b <= 30 строк).
    - Модули в `apps/api/src/routes/inventory/writeOffModules/` (все строго <= 110 строк):
      - `index.ts` (12L) — единый реестр экспортов.
@@ -20,12 +20,12 @@
      - `writeOffVisitBundleExecution.ts` (51L) — `executeQuickPackageWriteOff`.
      - `writeOffAuditTrail.ts` (76L) — аудит списания по визитам и сменным отчетам.
 
-2. **Модули оптимизации слабого оборудования (apps/web/src/styles/hardwareStyles/)**:
+2. Модули оптимизации слабого оборудования (apps/web/src/styles/hardwareStyles/):
    - `low-spec-hardware.css` (24 строки) — модульный `@import` фасад.
    - Модули в `apps/web/src/styles/hardwareStyles/` (17 файлов, все строго <= 102 строк):
      - `hardwarePerformanceTokens.css` (80L), `hardwareBlurSuppression.css` (68L), `hardwareShadowSuppression.css` (86L), `hardwareModalOverlays.css` (98L), `hardwareSurfaceBackgrounds.css` (74L), `hardwareDrawerBackdrops.css` (100L), `hardwareLightingSuppression.css` (84L), `hardwareAmbientGlow.css` (79L), `hardwareTransformFlattening.css` (102L), `hardwareTableContainment.css` (101L), `hardwareCardContainment.css` (93L), `hardwareGpuLayerControl.css` (71L), `hardwareOdontogramOptimization.css` (67L), `hardwareSvgFilterSuppression.css` (74L), `hardwareImagingCompositor.css` (32L), `hardwareBarcodeScanner.css` (58L), `hardwarePosPrinters.css` (59L).
 
-3. **Сервисы списания расходников (apps/api/src/services/treatmentConsumables/)**:
+3. Сервисы списания расходников (apps/api/src/services/treatmentConsumables/):
    - `unifiedStockDeductionEngine.ts` (106 строк), `unifiedItemResolver.ts` (54 строки), `unifiedStockDeductionTypes.ts` (53 строки) — единый движок FEFO и овердрафта.
    - `quickWriteoffService.ts` (99 строк) & `quickWriteoff/quickWriteoffPresets.ts` (56 строк) — 1-клик наборы у кресла.
    - `bundleWriteoffService.ts` (109 строк) & `bundleWriteoff/` (`shiftBundlePresets.ts`, `orthopedicsBundlePresets.ts`, `visitBundlePresets.ts`) — пакеты смены и визитов.
@@ -34,14 +34,14 @@
    - `shiftBatchWriteoffService.ts` (10 строк) & `shiftBatch/` (`shiftSummaryQueries.ts`, `shiftBatchExecution.ts`, `shiftBatchTypes.ts`, `shiftBatchPresets.ts`).
    - `stockDeduction.ts` (16 строк) & `stockDeductionModules/` (`procedureBomDbResolver.ts`, `statutoryBomResolver.ts`, `stockDeductionStepExecutor.ts`, `stockDeductionIdempotency.ts`, `inventoryItemMatcher.ts`, etc.) — 100% файлов <= 120 строк.
 
-2. **Складские операции (apps/api/src/services/warehouse/)**:
+2. Складские операции (apps/api/src/services/warehouse/):
    - `warehouseOperations.ts` (26 строк) — канонический фасад.
    - `quickCarpuleDisposal.ts` (107 строк) — утилизация пустых карпул (СанПиН 3.3686-21).
    - `softOverdraftDeduct.ts` (96 строк) — списание в тихий овердрафт без блокировок.
    - `warehouseDeductHandlers.ts` (103 строки) & `warehouseDeductVisitHandler.ts` (80 строк).
    - `warehouseSchemas.ts` (62 строки).
 
-3. **Фронтенд-компоненты склада (apps/web/src/components/inventory/)**:
+3. Фронтенд-компоненты склада (apps/web/src/components/inventory/):
    - `InboundWaybillModal.tsx` (115 строк) & `inboundWaybill/` (`InboundWaybillHeader.tsx`, `InboundWaybillRequisites.tsx`, `InboundWaybillTable.tsx`, `InboundWaybillTableRow.tsx`, `InboundWaybillFooter.tsx`, `useInboundWaybillTotals.ts`, `inboundWaybillApi.ts`, `inboundWaybillPrintAct.ts`, `inboundWaybillPresets.ts`, `inboundWaybillTypes.ts`).
    - `WarehouseBatchWriteoffModal.tsx` (98 строк) & `batchWriteoff/` (`BatchWriteoffHeader.tsx`, `BatchWriteoffShiftTab.tsx`, `BatchWriteoffPackagesTab.tsx`, `BatchWriteoffProcedureTab.tsx`, `BatchWriteoffFooter.tsx`, `batchWriteoffPrintAct.ts`, `batchWriteoffTypes.ts`).
    - `InventoryViewMobileLayout.tsx` (98 строк) & `viewModules/` (`inventoryMobileTypes.ts`, `inventoryModalsState.ts`).
@@ -51,22 +51,22 @@
 
 ## 2. Тихий фоновый мягкий овердрафт (Soft Negative Stock / Mandate 8aa / Mandate 8n)
 
-- Нулевой или недостаточный остаток на складе **НИКОГДА** не прерывает приём пациента и не блокирует сохранение протоколов врача.
+- Нулевой или недостаточный остаток на складе НИКОГДА не прерывает приём пациента и не блокирует сохранение протоколов врача.
 - Списание в тихом режиме уходит в отрицательные значения с пассивным мягким бейджем «Требуется закупка» в бэкофисе для своевременного формирования дозаказа поставщику.
 
 ---
 
 ## 3. Верификация тестов
 
-- **Backend Tests**: `npx tsx --test apps/api/src/tests/routes/inventory*.test.ts` — **13 passing (100%), 0 failing**.
-- **Frontend Tests**: `node --max-old-space-size=2048 --import tsx --import ./apps/web/testCssStub.mjs --test "apps/web/src/components/inventory/__tests__/*.test.ts*"` — **184 passing (100%), 0 failing**.
-- **Line Limit Check**: 0 файлов превышают лимит 120 строк в целевом домене.
+- Backend Tests: `npx tsx --test apps/api/src/tests/routes/inventory*.test.ts` — 13 passing (100%), 0 failing.
+- Frontend Tests: `node --max-old-space-size=2048 --import tsx --import ./apps/web/testCssStub.mjs --test "apps/web/src/components/inventory/__tests__/*.test.ts*"` — 184 passing (100%), 0 failing.
+- Line Limit Check: 0 файлов превышают лимит 120 строк в целевом домене.
 
 ---
 
 ## 5. Декомпозиция монолитов defaultBomSeeds.ts & deductionEngine.ts (Мандат 8b <= 120 строк)
 
-1. **Технологические карты процедурных расходов (apps/api/src/services/inventory/bomSeeds/)**:
+1. Технологические карты процедурных расходов (apps/api/src/services/inventory/bomSeeds/):
    - `defaultBomSeeds.ts` (5L) — ультракомпактный канонический фасад (Мандат 8b <= 15 строк).
    - Модули по клиническим профилям (все строго <= 120 строк):
      - `types.ts` (49L) — интерфейсы `BomSeedMaterialItem`, `DefaultBomSeedEntry`, `SeedBomCatalogOptions`.
@@ -102,7 +102,7 @@
      - `seedRunner.ts` (104L) — идемпотентный сидер `seedDefaultInventoryBoms`.
      - `index.ts` (12L) — корневой barrel-фасад.
 
-2. **Движок партионного списания FEFO (apps/api/src/services/inventory/fefoModules/)**:
+2. Движок партионного списания FEFO (apps/api/src/services/inventory/fefoModules/):
    - `fefo/deductionEngine.ts` (5L) — ультракомпактный фасад (Мандат 8b <= 15 строк).
    - Модули движка списания (все строго <= 120 строк):
      - `types.ts` (15L) — переэкспорт контрактов движка.
@@ -121,18 +121,18 @@
      - `fefoServiceClass.ts` (46L) — класс `FefoStockService` со всеми методами.
      - `index.ts` (14L) — корневой barrel-фасад.
 
-3. **Свежие 4-State Visual Proofs склада (100% живой интерфейс, ликвидация хаоса кнопок)**:
-   - ☀️ **PC Light (1440×900)**: [`01_inventory_stock_pc_light_1440x900.png`](./01_inventory_stock_pc_light_1440x900.png) (183.2 KB) — таблица 33 позиций, ровно 1 Primary CTA в тулбаре (`+ Оприходовать накладную`), вторичные монохромные кнопки без разнобоя и радужных иконок, единый блок действий в строках таблицы: компактный степпер `[- 1 +]` + кнопка `[↑ Списать]` + меню `[...]` (поштучное оприходование вынесено в меню строки).
-   - 🌙 **PC Dark (1440×900)**: [`02_inventory_stock_pc_dark_1440x900.png`](./02_inventory_stock_pc_dark_1440x900.png) (181.8 KB) — глубокая эргономичная темная тема, высокий контраст, отсутствие слепящих белых рамок.
-   - 📱 **Mobile Light (390×844)**: [`03_inventory_stock_mobile_light_390x844.png`](./03_inventory_stock_mobile_light_390x844.png) (171.3 KB) — Grouped List Cards по Apple HIG, сенсорная область кнопок >= 44x44px, Floating Bottom Bar с ровно одной Primary CTA (`+ Приход`).
-   - 📱 **Mobile Dark (390×844)**: [`04_inventory_stock_mobile_dark_390x844.png`](./04_inventory_stock_mobile_dark_390x844.png) (169.8 KB) — мобильная темная тема без глитчей и горизонтального скролла.
+3. Свежие 4-State Visual Proofs склада (100% живой интерфейс, ликвидация хаоса кнопок):
+   - ☀️ PC Light (1440×900): [`01_inventory_stock_pc_light_1440x900.png`](./01_inventory_stock_pc_light_1440x900.png) (183.2 KB) — таблица 33 позиций, ровно 1 Primary CTA в тулбаре (`+ Оприходовать накладную`), вторичные монохромные кнопки без разнобоя и радужных иконок, единый блок действий в строках таблицы: компактный степпер `[- 1 +]` + кнопка `[↑ Списать]` + меню `[...]` (поштучное оприходование вынесено в меню строки).
+   - 🌙 PC Dark (1440×900): [`02_inventory_stock_pc_dark_1440x900.png`](./02_inventory_stock_pc_dark_1440x900.png) (181.8 KB) — глубокая эргономичная темная тема, высокий контраст, отсутствие слепящих белых рамок.
+   - 📱 Mobile Light (390×844): [`03_inventory_stock_mobile_light_390x844.png`](./03_inventory_stock_mobile_light_390x844.png) (171.3 KB) — Grouped List Cards по Apple HIG, сенсорная область кнопок >= 44x44px, Floating Bottom Bar с ровно одной Primary CTA (`+ Приход`).
+   - 📱 Mobile Dark (390×844): [`04_inventory_stock_mobile_dark_390x844.png`](./04_inventory_stock_mobile_dark_390x844.png) (169.8 KB) — мобильная темная тема без глитчей и горизонтального скролла.
 
 ---
 
 ## 6. Унификация дизайн-системы кнопок и ликвидация дубликатов (Мандаты 8am, 8e, 8al)
 
 1. **Ликвидация «кнопочного базара» в тулбаре склада (`InventoryToolbarActions.tsx`, `InventoryOperationsMenu.tsx`)**:
-   - Ровно **ОДНА Primary CTA кнопка**: `[+ Оприходовать накладную]` (`btn-primary`, `var(--teal)`).
+   - Ровно ОДНА Primary CTA кнопка: `[+ Оприходовать накладную]` (`btn-primary`, `var(--teal)`).
    - Все остальные кнопки тулбара (`[Списать смену]`, `[Операции ∨]`, `[+ Позиция]`, `[Нормы расхода]`) переведены строго на `btn-secondary` (`var(--paper)`, `border-[var(--line)]`, `text-[var(--ink)]`), высота строго 36px (`h-9`), скругление `rounded-xl`.
    - Иконки кнопок унифицированы в спокойный монохромный `text-[var(--ink-muted)]` — полностью удалены ядовитые желтые эмодзи/молнии (`fill-amber-500`) и цветные кубики.
 2. **Ликвидация 6 дублирующих кнопок в строках таблицы (`StockRowActionsCell.tsx`, `StockRowMenuButtons.tsx`)**:
@@ -142,5 +142,4 @@
      * Меню дополнительных операций `[...]`, в которое перенесено редкое поштучное оприходование (`[↓ Оприходовать (+N)]`).
      * При истечении срока годности кнопка «Акт утилизации» приведена к каноническому токену `btn-danger dente-btn-danger` без кислотной заливки.
    - Ширина колонки «Действия» оптимизирована с 280px до 200px, что устранило паразитный скролл и высвободило полезное пространство экрана.
-
 

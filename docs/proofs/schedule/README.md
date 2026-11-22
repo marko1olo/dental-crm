@@ -5,11 +5,11 @@
   1. `apps/web/src/components/schedule/doctorFreeSlotsEngine.ts` (714 строк) распилен на 6 сфокусированных математических и фильтрационных модулей в `freeSlotsModules/` с чистым 13-строчным фасадом.
   2. `apps/web/src/components/schedule/useWaitlistDrawerOperations.ts` (689 строк) распилен на 7 доменных хуков в `waitlistModules/` с компактным фасадом 101 строка.
   3. `apps/web/src/components/schedule/grid/useScheduleAppointmentInteractions.ts` (672 строки) распилен на 6 сфокусированных интеракционных хуков в `interactionModules/` с фасадом 69 строк.
-- **Суверенитет соло-врача и ноль бюрократии (Мандаты 8e, 8n):**
+- Суверенитет соло-врача и ноль бюрократии (Мандаты 8e, 8n):
   - Без обязательных ассистентов в расписании (все роли опциональны).
   - Автопростановка 1-го кресла и врача в 0 кликов. Запись постоянного пациента в 2 клика.
   - Non-blocking debounced автосейв, отсутствие блокировок `disabled={...}` на кнопках «Сохранить», «В кресло», «Чек».
-- **Apple HIG Touch Ergonomics на мобильных (390×844) & Design System (Мандаты 8al, 8am, 8ze):**
+- Apple HIG Touch Ergonomics на мобильных (390×844) & Design System (Мандаты 8al, 8am, 8ze):
   - Мобильный Agenda View на смартфонах $\le 768$px с крупным таймлайном, цветными статусами и свободными окнами.
   - Сенсорные области тач-таргетов $\ge 44\times 44$px (`pointer-coarse:min-h-[44px]`).
   - Ровно ОДНА Primary CTA кнопка на видимый мобильный контекст: «+ Новая запись» (высота 52px, Natural Thumb Zone, плавающая нижняя панель с blur-эффектом).
@@ -55,23 +55,23 @@
 
 ## 3. Доказательства работоспособности (Proof & Verification)
 
-1. **Unit & Integration Tests:**
+1. Unit & Integration Tests:
    - Команда: `npx vitest run apps/web/src/components/schedule/`
-   - Результат: **84 passed test files, 762 passed tests, 0 failed** (Exit Code 0).
+   - Результат: 84 passed test files, 762 passed tests, 0 failed (Exit Code 0).
    - Все 16 тестов в `doctorFreeSlotsEngine.test.ts` зеленые.
    - Все 18 тестов в `waitlistCancellation.test.ts` зеленые.
    - Все 11 тестов в `WaitlistQuickFillModal.test.tsx` зеленые.
    - Все тесты в `scheduleDurationAndLatenessQuickAdjustWave58.test.tsx` и `scheduleAppointmentDecompositionInquisition.test.tsx` зеленые.
 
-2. **Машинные гейты компиляции:**
-   - `npm run check:encoding` $\to$ **Exit Code 0** (21 968 файлов проверено, замечаний нет).
-   - `npm run check:css-tokens` $\to$ **Exit Code 0** (1 565 файлов проверено, 0 неразрешенных var, 0 ошибок).
+2. Машинные гейты компиляции:
+   - `npm run check:encoding` $\to$ Exit Code 0 (21 968 файлов проверено, замечаний нет).
+   - `npm run check:css-tokens` $\to$ Exit Code 0 (1 565 файлов проверено, 0 неразрешенных var, 0 ошибок).
 
-3. **4-State Red Team Visual Proofs (сняты на живом сервере Vite 127.0.0.1:5173 через Playwright Chrome):**
-   - ☀️ **01 PC Light (1440×900):** [`01_schedule_grid_pc_light_1440x900.png`](01_schedule_grid_pc_light_1440x900.png) (188 222 байт).
-   - 🌙 **02 PC Dark (1440×900):** [`02_schedule_grid_pc_dark_1440x900.png`](02_schedule_grid_pc_dark_1440x900.png) (154 784 байт).
-   - 📱 **03 Mobile Light (390×844):** [`03_schedule_agenda_mobile_light_390x844.png`](03_schedule_agenda_mobile_light_390x844.png) (141 721 байт).
-   - 📱 **04 Mobile Dark (390×844):** [`04_schedule_agenda_mobile_dark_390x844.png`](04_schedule_agenda_mobile_dark_390x844.png) (163 712 байт).
+3. 4-State Red Team Visual Proofs (сняты на живом сервере Vite 127.0.0.1:5173 через Playwright Chrome):
+   - ☀️ 01 PC Light (1440×900): [`01_schedule_grid_pc_light_1440x900.png`](01_schedule_grid_pc_light_1440x900.png) (188 222 байт).
+   - 🌙 02 PC Dark (1440×900): [`02_schedule_grid_pc_dark_1440x900.png`](02_schedule_grid_pc_dark_1440x900.png) (154 784 байт).
+   - 📱 03 Mobile Light (390×844): [`03_schedule_agenda_mobile_light_390x844.png`](03_schedule_agenda_mobile_light_390x844.png) (141 721 байт).
+   - 📱 04 Mobile Dark (390×844): [`04_schedule_agenda_mobile_dark_390x844.png`](04_schedule_agenda_mobile_dark_390x844.png) (163 712 байт).
    - Личный просмотр через `read_file`: 0 сплэш-скринов, ровно 1 Primary CTA «+ Запись» / «+ Новая запись», 0px горизонтального скролла, безупречная токенизация Dark Mode (изумрудно-обсидиановые тона).
 
 ---
@@ -79,9 +79,9 @@
 ## 4. Консолидация модалок быстрой записи и SSOT Расписания (Mandate 8b, 8e, 8n, 8ap, 8am)
 
 ### А. Ликвидация дублирования и Sweet Spot размера файлов (Мандат 8b / 8zi)
-- **Канонический компонент:** `apps/web/src/components/schedule/QuickBookingDrawer.tsx` консолидирован в **392 строки** (целевой диапазон 300–500 строк).
+- Канонический компонент: `apps/web/src/components/schedule/QuickBookingDrawer.tsx` консолидирован в 392 строки (целевой диапазон 300–500 строк).
 - В единый модуль собраны: шапка с CITO-бейдж пульсацией, шторка с overlay, клавиатурные акселераторы (Esc, Ctrl+Enter), интеграция с пациентом/креслом/длительностью, и футер.
-- **Унификация модалок:** `AppointmentBookingModal.tsx` преобразован в чистый фасадный ре-экспорт `QuickBookingDrawer as AppointmentBookingModal`, исключив параллельный 288-строчный дубль.
+- Унификация модалок: `AppointmentBookingModal.tsx` преобразован в чистый фасадный ре-экспорт `QuickBookingDrawer as AppointmentBookingModal`, исключив параллельный 288-строчный дубль.
 - `QuickBookingDrawerHeader.tsx` и `QuickBookingDrawerFooter.tsx` сохранены как фасадные ре-экспорты для 100% обратной совместимости.
 
 ### Б. Автономия соло-врача и малого кабинета (Мандаты 8e, 8n)
@@ -99,10 +99,10 @@
 - Сенсорный минимум $\ge 44\times 44$px для всех интерактивных элементов на мобильных экранах.
 
 ### Д. Доказательства (4-State Red Team Visual Proofs)
-- ☀️ **PC Light (1440×900):** [`proof_schedule_quickbooking_01_pc_light_1440x900.png`](proof_schedule_quickbooking_01_pc_light_1440x900.png) (68 KB).
-- 🌙 **PC Dark (1440×900):** [`proof_schedule_quickbooking_02_pc_dark_1440x900.png`](proof_schedule_quickbooking_02_pc_dark_1440x900.png) (74 KB).
-- 📱 **Mobile Light (390×844):** [`proof_schedule_quickbooking_03_mobile_light_390x844.png`](proof_schedule_quickbooking_03_mobile_light_390x844.png) (55 KB).
-- 📱 **Mobile Dark (390×844):** [`proof_schedule_quickbooking_04_mobile_dark_390x844.png`](proof_schedule_quickbooking_04_mobile_dark_390x844.png) (55 KB).
+- ☀️ PC Light (1440×900): [`proof_schedule_quickbooking_01_pc_light_1440x900.png`](proof_schedule_quickbooking_01_pc_light_1440x900.png) (68 KB).
+- 🌙 PC Dark (1440×900): [`proof_schedule_quickbooking_02_pc_dark_1440x900.png`](proof_schedule_quickbooking_02_pc_dark_1440x900.png) (74 KB).
+- 📱 Mobile Light (390×844): [`proof_schedule_quickbooking_03_mobile_light_390x844.png`](proof_schedule_quickbooking_03_mobile_light_390x844.png) (55 KB).
+- 📱 Mobile Dark (390×844): [`proof_schedule_quickbooking_04_mobile_dark_390x844.png`](proof_schedule_quickbooking_04_mobile_dark_390x844.png) (55 KB).
 - **Результат инструментальной автопсии через `read_file`:** 0 дефектов верстки, идеальная адаптивность нижней шторки (Apple HIG Bottom Sheet), 0px горизонтального скролла, безупречная темная тема.
 
 ---
@@ -110,8 +110,8 @@
 ## 5. Red Team Инквизиция 3-секундного бронирования и суверенитета соло-практики (Мандаты 8n, 8e, 8al, 8am, 8ap, 8aq)
 
 ### А. Архитектурная декомпозиция и устранение дублирования (Мандаты 8b, 8zi, 8aq)
-- **Декомпозиция фасада модалок:** Файл `ScheduleViewModals.tsx` сокращен с 291 строки до 190 строк (лимит `<= 250` строго соблюден) за счет выноса 120-строчной логики бронирования из листа ожидания в отдельный изолированный модуль `scheduleModalsModules/waitlistSlotBookingHandler.ts`.
-- **Единый SSOT бронирования:** Быстрая шторка `QuickBookingDrawer.tsx` закреплена в качестве безальтернативного канонического инструмента записи за 3–5 секунд (выбор слота $\to$ пациент $\to$ длительность $\to$ сохранение).
+- Декомпозиция фасада модалок: Файл `ScheduleViewModals.tsx` сокращен с 291 строки до 190 строк (лимит `<= 250` строго соблюден) за счет выноса 120-строчной логики бронирования из листа ожидания в отдельный изолированный модуль `scheduleModalsModules/waitlistSlotBookingHandler.ts`.
+- Единый SSOT бронирования: Быстрая шторка `QuickBookingDrawer.tsx` закреплена в качестве безальтернативного канонического инструмента записи за 3–5 секунд (выбор слота $\to$ пациент $\to$ длительность $\to$ сохранение).
 
 ### Б. Суверенитет соло-врача и малого кабинета (Мандат 8n)
 - В `QuickAssistantSelector.tsx` реализовано автоматическое скрытие блока выбора ассистента при `isSoloClinic || !assistants || assistants.length === 0`.
@@ -136,14 +136,14 @@
 - `check:encoding`: 23 824 файлов проверено, 0 ошибок (UTF-8 strict).
 
 ### Е. 4-State Proofs (Лично отсмотрены через `read_file`):
-1. ☀️ **PC Light (1440×900):** [`schedule_pc_light_1440x900.png`](schedule_pc_light_1440x900.png) (121 710 байт).
-2. 🌙 **PC Dark (1440×900):** [`schedule_pc_dark_1440x900.png`](schedule_pc_dark_1440x900.png) (128 312 байт).
-3. ☀️ **PC Light Quick Booking (1440×900):** [`schedule_quick_booking_pc_light_1440x900.png`](schedule_quick_booking_pc_light_1440x900.png) (101 031 байт).
-4. 🌙 **PC Dark Quick Booking (1440×900):** [`schedule_quick_booking_pc_dark_1440x900.png`](schedule_quick_booking_pc_dark_1440x900.png) (99 194 байт).
-5. 📱 **Mobile Light Agenda (390×844):** [`schedule_mobile_light_390x844.png`](schedule_mobile_light_390x844.png) (148 781 байт).
-6. 📱 **Mobile Dark Agenda (390×844):** [`schedule_mobile_dark_390x844.png`](schedule_mobile_dark_390x844.png) (145 994 байт).
-7. 📱 **Mobile Quick Booking Bottom Sheet Light (390×844):** [`schedule_mobile_quick_booking_bottom_sheet_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_390x844.png) (117 393 байт).
-8. 📱 **Mobile Quick Booking Bottom Sheet Dark (390×844):** [`schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png) (117 728 байт).
+1. ☀️ PC Light (1440×900): [`schedule_pc_light_1440x900.png`](schedule_pc_light_1440x900.png) (121 710 байт).
+2. 🌙 PC Dark (1440×900): [`schedule_pc_dark_1440x900.png`](schedule_pc_dark_1440x900.png) (128 312 байт).
+3. ☀️ PC Light Quick Booking (1440×900): [`schedule_quick_booking_pc_light_1440x900.png`](schedule_quick_booking_pc_light_1440x900.png) (101 031 байт).
+4. 🌙 PC Dark Quick Booking (1440×900): [`schedule_quick_booking_pc_dark_1440x900.png`](schedule_quick_booking_pc_dark_1440x900.png) (99 194 байт).
+5. 📱 Mobile Light Agenda (390×844): [`schedule_mobile_light_390x844.png`](schedule_mobile_light_390x844.png) (148 781 байт).
+6. 📱 Mobile Dark Agenda (390×844): [`schedule_mobile_dark_390x844.png`](schedule_mobile_dark_390x844.png) (145 994 байт).
+7. 📱 Mobile Quick Booking Bottom Sheet Light (390×844): [`schedule_mobile_quick_booking_bottom_sheet_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_390x844.png) (117 393 байт).
+8. 📱 Mobile Quick Booking Bottom Sheet Dark (390×844): [`schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png) (117 728 байт).
 - Вердикт автопсии: 0 дефектов, 0 наездов, 0 обрезаний слов многоточиями, 100% соблюдение эргономики Apple HIG.
 
 ---
@@ -178,11 +178,9 @@
   - `scheduleViewModulesDecomposition.test.tsx`: 5 passed (0 failed).
 
 ### Е. Машинные гейты приёмки
-- `npm run check:encoding` -> **Exit Code 0** (20 991 файлов проверено).
-- `npm run check:buttons` -> **Exit Code 0** (4 858 TSX/JSX, 1 359 CSS проверено, 0 нарушений).
-- `npm run check:react-hooks` -> **Exit Code 0** (3 244 файлов с хуками, 0 нарушений).
-- `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2862 колонки, 0 дрифта).
+- `npm run check:encoding` -> Exit Code 0 (20 991 файлов проверено).
+- `npm run check:buttons` -> Exit Code 0 (4 858 TSX/JSX, 1 359 CSS проверено, 0 нарушений).
+- `npm run check:react-hooks` -> Exit Code 0 (3 244 файлов с хуками, 0 нарушений).
+- `npm run check:migration-drift` -> Exit Code 0 (213 таблиц, 2862 колонки, 0 дрифта).
 - 4-State Proofs: `schedule_pc_light_1440x900.png`, `schedule_pc_dark_1440x900.png`, `schedule_mobile_light_390x844.png`, `schedule_mobile_dark_390x844.png` лично осмотрены через `read_file` — верстка чистая, Apple HIG соблюден.
-
-
 

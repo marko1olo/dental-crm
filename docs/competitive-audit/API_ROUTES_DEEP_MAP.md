@@ -22,14 +22,14 @@
 
 ## 🌟 Архитектурные принципы шлюза Fastify 5.3+
 
-1. **Строгая типизация и Zod-контракты**: Все входящие `body`, `querystring` и `params` валидируются на границе контроллера. Схемы синхронизированы с фронтендом через пакет [`packages/shared/src/`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/).
-2. **Изоляция арендаторов через RLS**: Каждый входящий запрос проходит через плагин идентификации [`getRequestIdentity`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/security/identity.ts) и оборачивается в транзакционный контекст `withTenantCtx`, выставляющий параметр `app.current_tenant = organizationId` в сессии PostgreSQL 18.
-3. **Защита автономии врача (Мандат 8e)**:
+1. Строгая типизация и Zod-контракты: Все входящие `body`, `querystring` и `params` валидируются на границе контроллера. Схемы синхронизированы с фронтендом через пакет [`packages/shared/src/`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/).
+2. Изоляция арендаторов через RLS: Каждый входящий запрос проходит через плагин идентификации [`getRequestIdentity`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/security/identity.ts) и оборачивается в транзакционный контекст `withTenantCtx`, выставляющий параметр `app.current_tenant = organizationId` в сессии PostgreSQL 18.
+3. Защита автономии врача (Мандат 8e):
    - Эндпоинты сохранения визита, дневника 043/у и добавления услуг никогда не возвращают `403/422` из-за незаполненных второстепенных полей.
    - Истечение 30 дней с момента создания плана лечения не блокирует выставление счетов, нарядов ЗТЛ или проведение оплат.
    - Врач имеет право на скидки до 100% без согласований начмеда.
-4. **Копеечная точность расчётов (Мандат 8b)**: Все финансовые поля маршрутов биллинга оперируют целочисленными копейками (1 рубль = 100 копеек, `Kopecks = number`).
-5. **Асинхронные очереди и отказоустойчивость**: Тяжелые операции (выгрузка в РЭМД ЕГИСЗ HL7 CDA R3, фискализация чеков 54-ФЗ, фоновый импорт баз сторонних МИС, обработка 3D DICOM) вынесены в очереди задач с автоматическими повторами.
+4. Копеечная точность расчётов (Мандат 8b): Все финансовые поля маршрутов биллинга оперируют целочисленными копейками (1 рубль = 100 копеек, `Kopecks = number`).
+5. Асинхронные очереди и отказоустойчивость: Тяжелые операции (выгрузка в РЭМД ЕГИСЗ HL7 CDA R3, фискализация чеков 54-ФЗ, фоновый импорт баз сторонних МИС, обработка 3D DICOM) вынесены в очереди задач с автоматическими повторами.
 
 ---
 
@@ -56,8 +56,8 @@
 
 ## 1. Пациенты, Картотека и Семейный баланс
 
-> **Обработчики:** [`apps/api/src/routes/patients.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients.ts), [`leads.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/leads.ts), [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts), [`crmLeakDetector.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/crmLeakDetector.ts), [`loyalty.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyalty.ts), [`patientDuplicates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientDuplicates.ts), [`patientRelationships.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientRelationships.ts), [`patientRecall.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientRecall.ts), [`referrals.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts).  
-> **Таблицы БД:** `patients`, `crm_leads`, `family_groups`, `patient_bonus_balances`, `patient_drug_allergies`, `patient_relationships`, `patient_duplicate_merge_queues`, `crm_leak_detector_leads`.
+> Обработчики: [`apps/api/src/routes/patients.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients.ts), [`leads.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/leads.ts), [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts), [`crmLeakDetector.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/crmLeakDetector.ts), [`loyalty.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyalty.ts), [`patientDuplicates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientDuplicates.ts), [`patientRelationships.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientRelationships.ts), [`patientRecall.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientRecall.ts), [`referrals.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts).  
+> Таблицы БД: `patients`, `crm_leads`, `family_groups`, `patient_bonus_balances`, `patient_drug_allergies`, `patient_relationships`, `patient_duplicate_merge_queues`, `crm_leak_detector_leads`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -80,8 +80,8 @@
 
 ## 2. Расписание, Приёмы и Дневник смен
 
-> **Обработчики:** [`apps/api/src/routes/schedule.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/schedule.ts), [`diary.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts), [`dayConfirmations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dayConfirmations.ts), [`waitlist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/waitlist.ts), [`waitlistMatches.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/waitlistMatches.ts), [`yandexCalendar.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/yandexCalendar.ts), [`clinicWorkflows.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinicWorkflows.ts).  
-> **Таблицы БД:** `appointments`, `chairs`, `clinic_chairs`, `appointment_waitlists`, `yandex_calendar_syncs`, `clinic_workflows`.
+> Обработчики: [`apps/api/src/routes/schedule.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/schedule.ts), [`diary.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts), [`dayConfirmations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dayConfirmations.ts), [`waitlist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/waitlist.ts), [`waitlistMatches.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/waitlistMatches.ts), [`yandexCalendar.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/yandexCalendar.ts), [`clinicWorkflows.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinicWorkflows.ts).  
+> Таблицы БД: `appointments`, `chairs`, `clinic_chairs`, `appointment_waitlists`, `yandex_calendar_syncs`, `clinic_workflows`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -100,8 +100,8 @@
 
 ## 3. Клинический контур, ЭМК 043/у, Одонтограмма и Пародонтограмма
 
-> **Обработчики:** [`apps/api/src/routes/visits.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts), [`clinical.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinical.ts), [`clinicalImplants.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinicalImplants.ts), [`surgery/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/surgery/index.ts), [`odontogram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram.ts), [`periodontogram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/periodontogram.ts), [`orthodontics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics.ts), [`toothHistory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/toothHistory.ts), [`treatmentConsumables.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentConsumables.ts), [`outpatient.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/outpatient.ts), [`prescriptions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/prescriptions.ts), [`pharmacology.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pharmacology.ts), [`anesthesia.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts), [`copilot.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot.ts).  
-> **Таблицы БД:** `visits`, `visit_diaries`, `clinical_teeth_catalog`, `patient_tooth_defects`, `periodontogram_snapshots`, `periodontogram_teeth`, `periodontogram_sites`, `anesthesia_logs`, `treatment_consumables`, `treatment_plans`, `treatment_plan_stages`, `treatment_plan_items_new`, `patient_implant_installations`.
+> Обработчики: [`apps/api/src/routes/visits.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts), [`clinical.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinical.ts), [`clinicalImplants.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinicalImplants.ts), [`surgery/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/surgery/index.ts), [`odontogram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram.ts), [`periodontogram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/periodontogram.ts), [`orthodontics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics.ts), [`toothHistory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/toothHistory.ts), [`treatmentConsumables.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentConsumables.ts), [`outpatient.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/outpatient.ts), [`prescriptions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/prescriptions.ts), [`pharmacology.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pharmacology.ts), [`anesthesia.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts), [`copilot.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot.ts).  
+> Таблицы БД: `visits`, `visit_diaries`, `clinical_teeth_catalog`, `patient_tooth_defects`, `periodontogram_snapshots`, `periodontogram_teeth`, `periodontogram_sites`, `anesthesia_logs`, `treatment_consumables`, `treatment_plans`, `treatment_plan_stages`, `treatment_plan_items_new`, `patient_implant_installations`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -124,8 +124,8 @@
 
 ## 4. Голосовой ввод, Speech Gateway & AI Copilot
 
-> **Обработчики:** [`apps/api/src/routes/speech.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/speech.ts), [`speechLive.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/speechLive.ts), [`ai.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/ai.ts).  
-> **Таблицы БД:** `copilot_sessions`, `copilot_messages`, `copilot_pending_actions`, `ai_prompt_logs`.
+> Обработчики: [`apps/api/src/routes/speech.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/speech.ts), [`speechLive.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/speechLive.ts), [`ai.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/ai.ts).  
+> Таблицы БД: `copilot_sessions`, `copilot_messages`, `copilot_pending_actions`, `ai_prompt_logs`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -139,8 +139,8 @@
 
 ## 5. 3D DICOM MPR Viewer, Рентгенология & Diagnocat AI
 
-> **Обработчики:** [`apps/api/src/routes/imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts), [`dicomweb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dicomweb.ts), [`imaging_planning.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging_planning.ts), [`xray.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/xray.ts), [`integrations/diagnocat.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/diagnocat.ts).  
-> **Таблицы БД:** `imaging_studies`, `imaging_series`, `imaging_instances`, `patient_ct_plannings`, `diagnocat_reports`, `xray_scans`.
+> Обработчики: [`apps/api/src/routes/imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts), [`dicomweb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dicomweb.ts), [`imaging_planning.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging_planning.ts), [`xray.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/xray.ts), [`integrations/diagnocat.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/diagnocat.ts).  
+> Таблицы БД: `imaging_studies`, `imaging_series`, `imaging_instances`, `patient_ct_plannings`, `diagnocat_reports`, `xray_scans`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -157,8 +157,8 @@
 
 ## 6. Финансы, Касса 54-ФЗ, СБП QR, Эквайринг и Зарплата Т-13/Т-51
 
-> **Обработчики:** [`apps/api/src/routes/billing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/billing.ts), [`cashbox.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox.ts), [`cashInstallmentsRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashInstallmentsRoutes.ts), [`cashLabPaymentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashLabPaymentRoutes.ts), [`expenses.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/expenses.ts), [`financialPnl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/financialPnl.ts), [`invoices.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoices.ts), [`sbpQr.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sbpQr.ts), [`sberbank.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sberbank.ts), [`payments/sberPosWebhookRoute.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/payments/sberPosWebhookRoute.ts), [`fiscal/fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts), [`fiscal/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/index.ts).  
-> **Таблицы БД:** `payments`, `patient_invoices`, `cash_boxes`, `cash_shifts`, `fiscal_receipt_queue`, `doctor_payroll_statements`, `sberbank_transactions`.
+> Обработчики: [`apps/api/src/routes/billing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/billing.ts), [`cashbox.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox.ts), [`cashInstallmentsRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashInstallmentsRoutes.ts), [`cashLabPaymentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashLabPaymentRoutes.ts), [`expenses.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/expenses.ts), [`financialPnl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/financialPnl.ts), [`invoices.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoices.ts), [`sbpQr.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sbpQr.ts), [`sberbank.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sberbank.ts), [`payments/sberPosWebhookRoute.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/payments/sberPosWebhookRoute.ts), [`fiscal/fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts), [`fiscal/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/index.ts).  
+> Таблицы БД: `payments`, `patient_invoices`, `cash_boxes`, `cash_shifts`, `fiscal_receipt_queue`, `doctor_payroll_statements`, `sberbank_transactions`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -178,8 +178,8 @@
 
 ## 7. Склад, СанПиН 3.3686-21, Стерилизация и МДЛП Честный ЗНАК
 
-> **Обработчики:** [`apps/api/src/routes/inventory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory.ts), [`warehouse.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/warehouse.ts), [`sanpin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin.ts), [`sterilization.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sterilization.ts), [`mdlp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mdlp.ts).  
-> **Таблицы БД:** `inventory_items`, `warehouses`, `stock_batches`, `inventory_transactions`, `sterilizer_equipments`, `sterilization_logs`, `bactericidal_irradiator_logs`, `mdlp_items`.
+> Обработчики: [`apps/api/src/routes/inventory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory.ts), [`warehouse.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/warehouse.ts), [`sanpin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin.ts), [`sterilization.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sterilization.ts), [`mdlp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mdlp.ts).  
+> Таблицы БД: `inventory_items`, `warehouses`, `stock_batches`, `inventory_transactions`, `sterilizer_equipments`, `sterilization_logs`, `bactericidal_irradiator_logs`, `mdlp_items`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -198,8 +198,8 @@
 
 ## 8. Зуботехническая лаборатория (ЗТЛ), Ортопедия и VITA Shade
 
-> **Обработчики:** [`apps/api/src/routes/lab.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab.ts).  
-> **Таблицы БД:** `dental_lab_orders`, `lab_items`, `lab_order_events`.
+> Обработчики: [`apps/api/src/routes/lab.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab.ts).  
+> Таблицы БД: `dental_lab_orders`, `lab_items`, `lab_order_events`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -213,8 +213,8 @@
 
 ## 9. Юридический документооборот, УКЭП КриптоПро, Справки НДФЛ и ЕГИСЗ
 
-> **Обработчики:** [`apps/api/src/routes/documents.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents.ts), [`documentTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documentTemplates.ts), [`documents/*.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/), [`cryptoProNativeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts), [`egisz.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egisz.ts), [`egisz/n3HealthRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egisz/n3HealthRoutes.ts), [`files.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/files.ts).  
-> **Таблицы БД:** `documents`, `document_templates`, `document_template_variables`, `signed_outpatient_cards`, `egisz_outbox`.
+> Обработчики: [`apps/api/src/routes/documents.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents.ts), [`documentTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documentTemplates.ts), [`documents/*.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/), [`cryptoProNativeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts), [`egisz.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egisz.ts), [`egisz/n3HealthRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egisz/n3HealthRoutes.ts), [`files.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/files.ts).  
+> Таблицы БД: `documents`, `document_templates`, `document_template_variables`, `signed_outpatient_cards`, `egisz_outbox`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -232,8 +232,8 @@
 
 ## 10. Омниканальные коммуникации, Чаты, Боты (Telegram, WhatsApp, VK) и АТС
 
-> **Обработчики:** [`apps/api/src/routes/communications.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communications.ts), [`communicationsOutbox.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationsOutbox.ts), [`communicationReceipts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationReceipts.ts), [`messageTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/messageTemplates.ts), [`chat.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/chat.ts), [`telegram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telegram.ts), [`whatsapp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/whatsapp.ts), [`whatsappWebhook.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/whatsappWebhook.ts), [`vk.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/vk.ts), [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts).  
-> **Таблицы БД:** `communication_events`, `communication_tasks`, `message_templates`, `outbound_message_queue`, `chat_dialogs`, `chat_messages`, `telegram_bot_configs`.
+> Обработчики: [`apps/api/src/routes/communications.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communications.ts), [`communicationsOutbox.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationsOutbox.ts), [`communicationReceipts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationReceipts.ts), [`messageTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/messageTemplates.ts), [`chat.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/chat.ts), [`telegram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telegram.ts), [`whatsapp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/whatsapp.ts), [`whatsappWebhook.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/whatsappWebhook.ts), [`vk.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/vk.ts), [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts).  
+> Таблицы БД: `communication_events`, `communication_tasks`, `message_templates`, `outbound_message_queue`, `chat_dialogs`, `chat_messages`, `telegram_bot_configs`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -250,8 +250,8 @@
 
 ## 11. Пациентский портал, PWA Кабинет, Онлайн-запись и Self-Checkin
 
-> **Обработчики:** [`apps/api/src/routes/patientPortal.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientPortal.ts), [`portal.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal.ts), [`portalBudgetRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portalBudgetRoutes.ts), [`publicBooking.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking.ts), [`publicAppointmentActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicAppointmentActions.ts), [`publicEstimates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicEstimates.ts).  
-> **Таблицы БД:** `portal_otp_codes`, `treatment_plans`, `appointments`, `patient_consents`.
+> Обработчики: [`apps/api/src/routes/patientPortal.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientPortal.ts), [`portal.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal.ts), [`portalBudgetRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portalBudgetRoutes.ts), [`publicBooking.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking.ts), [`publicAppointmentActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicAppointmentActions.ts), [`publicEstimates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicEstimates.ts).  
+> Таблицы БД: `portal_otp_codes`, `treatment_plans`, `appointments`, `patient_consents`.
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -268,7 +268,7 @@
 
 ## 12. Аналитика, Отчеты, Персонал и Настройки
 
-> **Обработчики:** [`apps/api/src/routes/analytics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics.ts), [`dashboard.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dashboard.ts), [`reports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports.ts), [`staff.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff.ts), [`settings.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/settings.ts), [`workspaceProfile.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/workspaceProfile.ts), [`pricelist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pricelist.ts), [`marketing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts).
+> Обработчики: [`apps/api/src/routes/analytics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics.ts), [`dashboard.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/dashboard.ts), [`reports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports.ts), [`staff.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff.ts), [`settings.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/settings.ts), [`workspaceProfile.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/workspaceProfile.ts), [`pricelist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pricelist.ts), [`marketing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts).
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -283,7 +283,7 @@
 
 ## 13. Интеграции, Умные импорты (Smart Imports) и Репликация
 
-> **Обработчики:** [`apps/api/src/routes/smartImports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/smartImports.ts), [`migration.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/migration.ts), [`migrationRuns.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/migrationRuns.ts), [`imports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imports.ts), [`ingestion.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/ingestion.ts), [`commerceMl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/commerceMl.ts), [`integrations/flexbe.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/flexbe.ts), [`integrations/prodoctorov.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/prodoctorov.ts), [`sync/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sync/index.ts), [`export.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/export.ts).
+> Обработчики: [`apps/api/src/routes/smartImports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/smartImports.ts), [`migration.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/migration.ts), [`migrationRuns.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/migrationRuns.ts), [`imports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imports.ts), [`ingestion.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/ingestion.ts), [`commerceMl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/commerceMl.ts), [`integrations/flexbe.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/flexbe.ts), [`integrations/prodoctorov.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/prodoctorov.ts), [`sync/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sync/index.ts), [`export.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/export.ts).
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |
@@ -298,7 +298,7 @@
 
 ## 14. Системное ядро, WebSocket, Безопасность и Фоновые задачи
 
-> **Обработчики:** [`apps/api/src/routes/system.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/system.ts), [`tasks.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/tasks.ts), [`audit.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/audit.ts), [`health.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/health.ts), [`auth.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth.ts), [`websocket.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/websocket.ts), [`mobileOta.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mobileOta.ts).
+> Обработчики: [`apps/api/src/routes/system.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/system.ts), [`tasks.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/tasks.ts), [`audit.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/audit.ts), [`health.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/health.ts), [`auth.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth.ts), [`websocket.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/websocket.ts), [`mobileOta.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mobileOta.ts).
 
 | Метод | Эндпоинт | Назначение | RBAC / Доступ | Ключевые параметры и схемы |
 | :--- | :--- | :--- | :--- | :--- |

@@ -16,6 +16,7 @@ import {
 	surgicalQuickDeductSchema,
 	evaluateWarehouseOverdraft,
 	rublesToKopecks,
+	kopecksToRubles,
 	computePayloadHash,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -296,12 +297,14 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
-			// Фиксация в счете/смете пациента (Мандат 8wy, SSOT)
+			// Фиксация в счете/смете пациента (Мандат 8wy, 8bm, SSOT)
 			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 0;
 			const unitPriceRub = input.services?.[0]?.priceRub ?? normPrice;
 			const teethMultiplier = targetTeeth.length > 1 ? targetTeeth.length : 1;
-			const operationPriceRub = unitPriceRub * teethMultiplier;
-			const operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
+			const unitPriceKopecks = BigInt(rublesToKopecks(unitPriceRub));
+			const operationPriceKopecks = unitPriceKopecks * BigInt(teethMultiplier);
+			const operationPriceRub = kopecksToRubles(operationPriceKopecks);
+			const unitPriceRubClean = kopecksToRubles(unitPriceKopecks);
 			const baseServiceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
 
 			let linkedInvoiceId: string | null = null;
@@ -311,18 +314,31 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					.from(patientInvoices)
 					.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.visitId, targetVisitId)))
 					.limit(1);
-				if (existingInvoice) linkedInvoiceId = existingInvoice.id;
+				if (existingInvoice) {
+					linkedInvoiceId = existingInvoice.id;
+					const currentTotalKopecks = BigInt(rublesToKopecks(Number(existingInvoice.totalAmountRub || 0)));
+					const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
+					const updatedTotalRub = kopecksToRubles(newTotalKopecks);
+					await tx
+						.update(patientInvoices)
+						.set({
+							totalAmountRub: updatedTotalRub,
+							totalRub: String(updatedTotalRub),
+						})
+						.where(and(eq(patientInvoices.id, existingInvoice.id), eq(patientInvoices.organizationId, orgId)));
+				}
 			}
 
 			if (!linkedInvoiceId) {
+				const invoiceTotalRub = kopecksToRubles(operationPriceKopecks);
 				const [newInvoice] = await tx
 					.insert(patientInvoices)
 					.values({
 						organizationId: orgId,
 						patientId: targetPatientId,
 						visitId: targetVisitId ?? null,
-						totalAmountRub: operationPriceRub,
-						totalRub: String(operationPriceRub),
+						totalAmountRub: invoiceTotalRub,
+						totalRub: String(invoiceTotalRub),
 						status: "issued",
 						issuedAt: new Date(),
 					})
@@ -336,10 +352,13 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 						organizationId: orgId,
 						patientId: targetPatientId,
 						visitId: targetVisitId ?? null,
+						invoiceId: linkedInvoiceId ?? null,
 						toothCode: String(currentToothNum),
 						title: `${baseServiceTitle} (Зуб FDI #${currentToothNum})`,
-						priceRub: unitPriceRub,
-						unitPriceRub: unitPriceRub,
+						priceRub: unitPriceRubClean,
+						unitPriceRub: unitPriceRubClean,
+						priceKopecks: unitPriceKopecks,
+						unitPriceKopecks: unitPriceKopecks,
 						quantity: "1",
 						status: "completed",
 						notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
@@ -350,10 +369,13 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					organizationId: orgId,
 					patientId: targetPatientId,
 					visitId: targetVisitId ?? null,
+					invoiceId: linkedInvoiceId ?? null,
 					toothCode: null,
 					title: baseServiceTitle,
-					priceRub: unitPriceRub,
-					unitPriceRub: unitPriceRub,
+					priceRub: unitPriceRubClean,
+					unitPriceRub: unitPriceRubClean,
+					priceKopecks: unitPriceKopecks,
+					unitPriceKopecks: unitPriceKopecks,
 					quantity: "1",
 					status: "completed",
 					notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
@@ -366,6 +388,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				invoiceId: linkedInvoiceId,
 				operationPriceRub,
 				operationPriceKopecks: operationPriceKopecks.toString(),
+				amountKopecks: operationPriceKopecks.toString(),
 				normId: input.normId,
 				toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
 				teeth: targetTeeth,

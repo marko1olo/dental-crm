@@ -1,9 +1,9 @@
 # Red Team Visual Proof & Architecture Report: Multi-Subnet LAN Ingestion & Topology Scanner
 
-> **Mandate 8b (Anti-Monolith File Limits):** Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `multiSubnetScanner.ts` $\le 15$ lines.  
-> **Mandate 8e (Doctor Autonomy):** Direct tablet/phone pairing via LAN QR and 4-digit PIN in 1 click, zero complex network setup.  
-> **Mandate 8n (Solo Practice & Small Clinic First):** Automatic detection of clinic physical interfaces over virtual tunnels (Docker/WSL/VPN).  
-> **Mandate 8ze (4-State Canonical Visual Proof):** Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
+> Mandate 8b (Anti-Monolith File Limits): Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `multiSubnetScanner.ts` $\le 15$ lines.  
+> Mandate 8e (Doctor Autonomy): Direct tablet/phone pairing via LAN QR and 4-digit PIN in 1 click, zero complex network setup.  
+> Mandate 8n (Solo Practice & Small Clinic First): Automatic detection of clinic physical interfaces over virtual tunnels (Docker/WSL/VPN).  
+> Mandate 8ze (4-State Canonical Visual Proof): Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
 
 ---
 
@@ -25,12 +25,12 @@ The 801-line monolith `packages/shared/src/sync/multiSubnetScanner.ts` has been 
 
 ## 2. Test Verification & Code Quality Gates
 
-- **Unit & Integration Suite:**
+- Unit & Integration Suite:
   - Command: `npx tsx --test packages/shared/src/sync/__tests__/multiSubnetScanner.test.ts`
-  - Result: **14/14 tests passed (Exit Code 0)**.
-- **Build Verification:**
+  - Result: 14/14 tests passed (Exit Code 0).
+- Build Verification:
   - Command: `npm run build -w @dental/shared`
-  - Result: **Exit Code 0, clean compilation**.
+  - Result: Exit Code 0, clean compilation.
 
 ---
 

@@ -1,10 +1,10 @@
 # Red Team Visual Proof & Architecture Report: Accounting Export & Financial Data Bridge
 
-> **Mandate 8b (Anti-Monolith File Limits):** Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `accountingExportEngine.ts` $\le 15$ lines.  
-> **Mandate 8e (Doctor Autonomy):** Direct accounting export in 1 click (CSV / CommerceML 2.09 XML / 1C Client-Bank), zero blocked actions.  
-> **Mandate 8n (Solo Practice & Small Clinic First):** Soft overdraft, integer kopecks (`amountKopecks`), automated bank acquiring reconciliation.  
-> **Mandate 8x (Human Clinical Domain & Zero Soviet Bureaucracy):** Banned "Т-51" / "804н" in UI headers and copy; clean Russian ("Экспорт бухгалтерской выгрузки", "Кассовые чеки").  
-> **Mandate 8ze (4-State Canonical Visual Proof):** Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
+> Mandate 8b (Anti-Monolith File Limits): Every module $\le 120$ lines; barrel `index.ts` $\le 15$ lines; facade `accountingExportEngine.ts` $\le 15$ lines.  
+> Mandate 8e (Doctor Autonomy): Direct accounting export in 1 click (CSV / CommerceML 2.09 XML / 1C Client-Bank), zero blocked actions.  
+> Mandate 8n (Solo Practice & Small Clinic First): Soft overdraft, integer kopecks (`amountKopecks`), automated bank acquiring reconciliation.  
+> Mandate 8x (Human Clinical Domain & Zero Soviet Bureaucracy): Banned "Т-51" / "804н" in UI headers and copy; clean Russian ("Экспорт бухгалтерской выгрузки", "Кассовые чеки").  
+> Mandate 8ze (4-State Canonical Visual Proof): Red Team inspected 4 states (> 40 KB, 0 splash screens, single Primary CTA button, Apple HIG touch targets $\ge 44\times 44\text{px}$).
 
 ---
 
@@ -31,12 +31,12 @@ The 715-line monolith `packages/shared/src/finance/accountingExportEngine.ts` ha
 
 ## 2. Test Verification & Code Quality Gates
 
-- **Unit & Integration Tests:**
-  - `packages/shared/src/finance/__tests__/accountingExportModules.test.ts`: **4/4 passed**.
-  - `packages/shared/src/finance/__tests__/wave130AccountingExport.test.ts`: **13/13 passed**.
-  - Total: **17/17 tests PASS (Exit Code 0)**.
-- **Build Verification:**
-  - `npm run build -w @dental/shared`: **Clean build (Exit Code 0)**.
+- Unit & Integration Tests:
+  - `packages/shared/src/finance/__tests__/accountingExportModules.test.ts`: 4/4 passed.
+  - `packages/shared/src/finance/__tests__/wave130AccountingExport.test.ts`: 13/13 passed.
+  - Total: 17/17 tests PASS (Exit Code 0).
+- Build Verification:
+  - `npm run build -w @dental/shared`: Clean build (Exit Code 0).
 
 ---
 

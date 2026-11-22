@@ -322,7 +322,7 @@ function gitProjectFiles() {
 	const out = spawnSync(
 		"git",
 		["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-		{ cwd: repoRoot, encoding: "buffer", maxBuffer: 64 * 1024 * 1024 },
+		{ cwd: repoRoot, encoding: "buffer", maxBuffer: 256 * 1024 * 1024 },
 	);
 	if (out.status !== 0) return null;
 	return out.stdout.toString("utf8").split("\0").filter(Boolean);
