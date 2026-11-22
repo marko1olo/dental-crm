@@ -50,10 +50,8 @@ export const SelfCheckinPhoneInput: React.FC<SelfCheckinPhoneInputProps> = memo(
 				style={{
 					textAlign: "center",
 					fontSize: "12px",
-					fontWeight: 700,
+					fontWeight: 600,
 					color: "var(--muted)",
-					textTransform: "uppercase",
-					letterSpacing: "0.08em",
 					marginBottom: "6px",
 				}}
 			>

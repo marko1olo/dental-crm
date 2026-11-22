@@ -414,7 +414,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					</div>
 
 					<TreatmentPlansList
-						items={effectiveItems as unknown as TreatmentPlansListProps["items"]}
+						items={effectiveItems}
 						onOpenPlan={(planId) => handleOpenPresenter(planId, selectedTier)}
 						onNewPlanItem={() => handleOpenPresenter(activePlan?.id, selectedTier)}
 					/>

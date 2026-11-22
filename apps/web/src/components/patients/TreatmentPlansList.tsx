@@ -17,9 +17,11 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 			return items.filter((item) => {
 				if (statusFilter !== "all" && item.status !== statusFilter) return false;
 				if (query) {
-					const nameMatch = (item.snapshotServiceName || "").toLowerCase().includes(query);
-					const toothMatch = item.toothCode ? String(item.toothCode).toLowerCase().includes(query) : false;
-					if (!nameMatch && !toothMatch) return false;
+					const name = (("snapshotServiceName" in item && typeof item.snapshotServiceName === "string" && item.snapshotServiceName) ||
+						("name" in item && typeof item.name === "string" && item.name) || "").toLowerCase();
+					const tooth = (("toothCode" in item && item.toothCode) ||
+						("toothNumber" in item && item.toothNumber !== undefined && item.toothNumber !== null ? String(item.toothNumber) : "")).toLowerCase();
+					if (!name.includes(query) && !tooth.includes(query)) return false;
 				}
 				return true;
 			});
@@ -30,7 +32,9 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 			let completedRub = 0;
 			let pendingRub = 0;
 			for (const it of items) {
-				const cost = Math.max(0, (it.unitPriceRub || 0) - (it.discountRub || 0));
+				const unitPrice = it.unitPriceRub ?? ("priceRub" in it && typeof it.priceRub === "number" ? it.priceRub : 0) ?? 0;
+				const discount = it.discountRub ?? 0;
+				const cost = Math.max(0, unitPrice - discount);
 				totalRub += cost;
 				if (it.status === "completed") completedRub += cost;
 				else if (it.status === "in_progress" || it.status === "approved" || it.status === "proposed") {

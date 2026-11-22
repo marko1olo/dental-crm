@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Eye, Package, ShieldCheck } from "lucide-react";
 import type { ClinicalVisitItem, ClinicalAttachedScan } from "./types";
-import { PlanScanViewerModal, type PatientDiagnosticScan } from "../../portal/scans/PlanScanViewerModal";
+import { PlanScanViewerModal, type PatientDiagnosticScan } from "../../imaging/PlanScanViewerModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
 
 interface DrawerScansAndMaterialsSectionProps {

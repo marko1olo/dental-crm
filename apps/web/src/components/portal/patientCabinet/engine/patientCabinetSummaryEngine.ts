@@ -1,3 +1,4 @@
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { PatientAppointment, PatientInvoiceItem } from "./patientCabinetTypes.js";
 import type { PatientCabinetSummary, PatientPersonalCabinetData } from "./patientCabinetProfileTypes.js";
 import { calculateCheckupDaysRemaining } from "./patientCabinetFormatters.js";
@@ -29,10 +30,10 @@ export function createEmptyPatientCabinetData(
 export function calculateCabinetSummary(data: PatientPersonalCabinetData): PatientCabinetSummary {
 	const totalInvoices = data.invoices.length;
 	const unpaidInvoices = data.invoices.filter((inv) => inv.status === "unpaid" || inv.status === "partially_paid");
-	const totalUnpaidKop = unpaidInvoices.reduce((sum, inv) => sum + Math.round((inv.remainingAmountRub || 0) * 100), 0);
-	const totalPaidKop = data.invoices.reduce((sum, inv) => sum + Math.round((inv.paidAmountRub || 0) * 100), 0);
-	const totalUnpaidAmountRub = totalUnpaidKop / 100;
-	const totalPaidAmountRub = totalPaidKop / 100;
+	const totalUnpaidKop = unpaidInvoices.reduce((sum, inv) => sum + rublesToKopecks(inv.remainingAmountRub || 0), 0);
+	const totalPaidKop = data.invoices.reduce((sum, inv) => sum + rublesToKopecks(inv.paidAmountRub || 0), 0);
+	const totalUnpaidAmountRub = kopecksToRubles(totalUnpaidKop);
+	const totalPaidAmountRub = kopecksToRubles(totalPaidKop);
 
 	const nowIso = new Date().toISOString();
 	const upcomingAppointments = data.appointments.filter(

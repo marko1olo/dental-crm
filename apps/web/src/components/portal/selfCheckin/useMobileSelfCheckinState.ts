@@ -9,7 +9,7 @@
  * - Zero blocking alerts, Mandate 8e physiological norm compliance
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { generateQrCodeSvg } from "@dental/shared/fiscal/qrGenerator";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
@@ -36,6 +36,7 @@ export interface UseMobileSelfCheckinStateProps {
 	readonly cabinetName?: string | undefined;
 	readonly queueTicket?: string | undefined;
 	readonly initialStep?: CheckinStep | undefined;
+	readonly onClose?: (() => void) | undefined;
 	readonly onCheckinSuccess?: ((result: {
 		patientId: string;
 		signedConsents: string[];
@@ -119,6 +120,50 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 	}, [effectivePhone, isDemo]);
 	const [phoneDigits, setPhoneDigits] = useState(defaultLast4);
 	const [showOptionalDocs, setShowOptionalDocs] = useState(false);
+
+	// Inactivity Timeout (20s on completed -> onClose, 45s idle -> return to start screen)
+	useEffect(() => {
+		if (step === "completed") {
+			const completedTimer = setTimeout(() => {
+				props.onClose?.();
+				setStep("phone_auth");
+				setPhoneDigits(defaultLast4);
+			}, 20000);
+			return () => clearTimeout(completedTimer);
+		}
+
+		let idleTimer = setTimeout(() => {
+			setStep("phone_auth");
+			setPhoneDigits(defaultLast4);
+			setAuthError(null);
+			setFirstTimeName("");
+		}, 45000);
+
+		const handleActivity = () => {
+			clearTimeout(idleTimer);
+			idleTimer = setTimeout(() => {
+				setStep("phone_auth");
+				setPhoneDigits(defaultLast4);
+				setAuthError(null);
+				setFirstTimeName("");
+			}, 45000);
+		};
+
+		if (typeof window !== "undefined") {
+			window.addEventListener("pointerdown", handleActivity);
+			window.addEventListener("keydown", handleActivity);
+			window.addEventListener("touchstart", handleActivity);
+		}
+
+		return () => {
+			clearTimeout(idleTimer);
+			if (typeof window !== "undefined") {
+				window.removeEventListener("pointerdown", handleActivity);
+				window.removeEventListener("keydown", handleActivity);
+				window.removeEventListener("touchstart", handleActivity);
+			}
+		};
+	}, [step, props.onClose, defaultLast4]);
 
 	const displayQueueTicket = useMemo(() => {
 		return effectiveQueueTicket || (isDemo ? "Талон № А-07" : "Талон терминала");

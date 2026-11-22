@@ -62,9 +62,7 @@ const DEMO_ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
 	},
 ];
 
-export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = isDemoShowcaseMode()
-	? DEMO_ALEXEY_WARRANTIES
-	: [];
+export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = DEMO_ALEXEY_WARRANTIES;
 
 export async function fetchPatientWarranties(patientId: string): Promise<PatientWarrantyCard[]> {
 	if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {

@@ -41,7 +41,7 @@ import {
 	type GeneratedDocumentSummary,
 	type PatientPrescriptionItem,
 } from "../patientCabinet/patientCabinetEngine.js";
-import { calculateDentalHealthIndex } from "../patientFriendlyOdontogramEngine.js";
+import { calculateDentalHealthIndex } from "../patientCabinet/patientDentalFormulaEngine.js";
 
 describe("Patient Portal End-to-End Journey — Alexey Voronov Full Lifecycle", () => {
 	const data = { ...PATIENT_CABINET_PRESET_ALEXEY };

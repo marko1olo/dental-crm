@@ -4,10 +4,11 @@ import { usePatientStore } from "../../../store/patientStore";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
+import type { Patient } from "@dental/shared";
 import type { PatientHeaderRecord } from "./patientHeaderTypes";
 
 export interface PatientHeaderActionsMenuProps {
-	readonly resolvedPatient: PatientHeaderRecord | null | undefined;
+	readonly resolvedPatient: PatientHeaderRecord | Patient | null | undefined;
 	readonly fullName: string;
 	readonly phone: string;
 	readonly clinicLegalName?: string | undefined;

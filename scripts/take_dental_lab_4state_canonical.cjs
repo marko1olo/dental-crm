@@ -12,8 +12,8 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ORCH_ID = "1a5ac924-43af-42a0-a684-00dbb822c536";
-const SUBAGENT_ID = "e11aca57-3fd4-4ad6-b6cd-48664d10630d";
+const ORCH_ID = "d8f4b35b-af3a-4c9f-91df-6a9f31e6364c";
+const SUBAGENT_ID = "dc9d758d-c7d2-4da0-9b76-f07a2aa5b491";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/dental_lab");
 const OUT_LAB = path.resolve(__dirname, "../docs/proofs/lab");
 const OUT_ORCH = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${ORCH_ID}`);

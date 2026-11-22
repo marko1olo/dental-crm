@@ -9,8 +9,8 @@ import {
 	type PatientToothInfo,
 	type PatientToothStatus,
 	calculateDentalHealthIndex,
-} from "../PatientFriendlyOdontogram";
-import { PatientToothDetailBox } from "../PatientToothDetailBox";
+} from "./patientDentalFormulaEngine.js";
+import { PatientToothDetailBox } from "./PatientToothDetailBox.js";
 import { PatientHealthIndexCard } from "../patientOdontogram/PatientHealthIndexCard";
 import { PatientStatusFilterBar } from "../patientOdontogram/PatientStatusFilterBar";
 import { PatientPlanAnatomicalNode } from "./PatientPlanAnatomicalNode";

@@ -22,7 +22,7 @@ export const TelegramEmrTab: React.FC<TelegramEmrTabProps> = ({
 	<main className="tg-tab-content">
 		<div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 shadow-lg backdrop-blur-md">
 			<div className="flex items-center justify-between mb-2">
-				<div className="text-xs font-bold uppercase tracking-wider text-slate-400">План лечения</div>
+				<div className="text-xs font-medium text-slate-400">План лечения</div>
 				<span className="text-xs font-bold text-teal-400">75% выполнено</span>
 			</div>
 			<div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden mb-3">
@@ -46,7 +46,7 @@ export const TelegramEmrTab: React.FC<TelegramEmrTabProps> = ({
 
 		<div className="bg-gradient-to-br from-teal-950/60 to-slate-900 border border-teal-500/40 rounded-2xl p-4 shadow-md">
 			<div className="flex items-center justify-between mb-2">
-				<span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">Ближайший визит</span>
+				<span className="text-xs font-medium text-teal-400">Ближайший визит</span>
 				<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
 					Подтвержден
 				</span>

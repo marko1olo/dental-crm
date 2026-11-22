@@ -6,7 +6,7 @@
 
 import React, { memo } from "react";
 import { Heart, ShieldCheck, X, Zap } from "lucide-react";
-import { type PatientToothInfo, getPatientToothStatusColor } from "./patientFriendlyOdontogramEngine";
+import { type PatientToothInfo, getPatientToothStatusColor } from "./patientDentalFormulaEngine.js";
 
 export interface PatientToothDetailBoxProps {
 	readonly selectedTooth: PatientToothInfo;

@@ -1,5 +1,5 @@
 import React from "react";
-import type { DocumentIssueSignatureMode, GeneratedDocument, Patient } from "@dental/shared";
+import { type DocumentIssueSignatureMode, type GeneratedDocument, type Patient, documentSourceStatusLabels } from "@dental/shared";
 import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
 import type { DocumentState } from "../../../../store/documentStore";
 import { DocumentAuditFactsModal } from "../../../documents/tabs/DocumentAuditFactsModal";
@@ -10,7 +10,7 @@ import type { TabletSignatureData } from "./usePatientDocumentsLogic";
 
 interface PatientDocumentsModalsWrapperProps {
 	patient: Patient;
-	appLogic?: Partial<AppLogicContextType> | undefined;
+	appLogic?: AppLogicContextType | Partial<AppLogicContextType> | null | undefined;
 	docStore: DocumentState;
 	isFastPrintOpen: boolean;
 	setIsFastPrintOpen: (open: boolean) => void;
@@ -46,20 +46,19 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 			: (typeof patient.notes === "string" ? patient.notes : undefined);
 
 	const clinicProfile = dashboard?.clinicSettings?.profile;
-	const org = dashboard?.organization;
-	const clinicSummary: ClinicSummary | undefined = (clinicProfile || org) ? {
-		name: clinicProfile?.clinicName ?? (typeof org?.name === "string" ? org.name : undefined),
-		inn: clinicProfile?.inn ?? (typeof org?.inn === "string" ? org.inn : undefined),
-		ogrn: clinicProfile?.ogrn ?? (typeof org?.ogrn === "string" ? org.ogrn : undefined),
-		address: clinicProfile?.address ?? (typeof org?.address === "string" ? org.address : undefined),
-		phone: clinicProfile?.phone ?? (typeof org?.phone === "string" ? org.phone : undefined),
-		licenseNumber: clinicProfile?.medicalLicenseNumber ?? clinicProfile?.licenseNumber ?? undefined,
-		legalName: clinicProfile?.legalEntityName ?? (typeof org?.legalName === "string" ? org.legalName : undefined),
+	const clinicSummary: ClinicSummary | undefined = clinicProfile ? {
+		name: clinicProfile.clinicName,
+		inn: clinicProfile.inn ?? undefined,
+		ogrn: clinicProfile.ogrn ?? undefined,
+		address: clinicProfile.address ?? undefined,
+		phone: clinicProfile.phone ?? undefined,
+		licenseNumber: clinicProfile.medicalLicenseNumber ?? undefined,
+		legalName: clinicProfile.legalName ?? undefined,
 	} : undefined;
 
-	const doctorSummary = dashboard?.activeDoctor ? {
-		fullName: dashboard.activeDoctor.fullName ?? undefined,
-		specialty: dashboard.activeDoctor.specialty ?? undefined,
+	const doctorSummary = appLogic?.activeDoctor ? {
+		fullName: appLogic.activeDoctor.fullName ?? undefined,
+		specialty: (appLogic.activeDoctor as { specialty?: string }).specialty ?? undefined,
 	} : undefined;
 
 	return (
@@ -68,9 +67,9 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 				documentAuditFacts={docStore.documentAuditFacts}
 				documentLabels={appLogic?.documentLabels}
 				documentStatusLabels={appLogic?.documentStatusLabels}
-				formatShortDate={appLogic?.formatShortDate}
+				formatShortDate={appLogic?.formatShortDate ? (d) => appLogic.formatShortDate?.(String(d || "")) ?? "" : undefined}
 				documentSourceStatusClassNames={appLogic?.documentSourceStatusClassNames}
-				documentSourceStatusLabels={appLogic?.documentSourceStatusLabels}
+				documentSourceStatusLabels={documentSourceStatusLabels}
 				documentIssueSignatureModeLabels={appLogic?.documentIssueSignatureModeLabels ?? {}}
 				documentVoidReasonLabels={appLogic?.documentVoidReasonLabels ?? {}}
 				loadDocumentAuditFacts={appLogic?.loadDocumentAuditFacts ?? (() => {})}
@@ -83,12 +82,12 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 			<DocumentIssueConfirmationModal
 				documentIssueConfirmation={activeIssueDoc}
 				documentLabels={appLogic?.documentLabels}
-				patientName={appLogic?.patientName}
+				patientName={typeof appLogic?.patientName === "function" ? (patients, id) => (appLogic.patientName as (pts: Patient[] | undefined, i: string | null | undefined) => string)(patients, id ?? "") : undefined}
 				patients={dashboard?.patients}
-				money={appLogic?.money}
+				money={typeof appLogic?.money === "function" ? (val) => appLogic.money?.(val as number) ?? "" : undefined}
 				documentIssueSignatureMode={docStore.documentIssueSignatureMode}
 				setDocumentIssueSignatureMode={docStore.setDocumentIssueSignatureMode}
-				normalizedDocumentIssueSignatureMode={appLogic?.normalizedDocumentIssueSignatureMode ?? ((m: string) => m as DocumentIssueSignatureMode)}
+				normalizedDocumentIssueSignatureMode={typeof appLogic?.normalizedDocumentIssueSignatureMode === "function" ? (appLogic.normalizedDocumentIssueSignatureMode as (m: string) => DocumentIssueSignatureMode) : ((m: string) => m as DocumentIssueSignatureMode)}
 				documentIssueSignatureModeLabels={appLogic?.documentIssueSignatureModeLabels ?? {}}
 				documentIssueSignedAt={docStore.documentIssueSignedAt}
 				setDocumentIssueSignedAt={docStore.setDocumentIssueSignedAt}
@@ -102,7 +101,7 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 				setDocumentIssueStaffRole={docStore.setDocumentIssueStaffRole}
 				documentIssueNote={docStore.documentIssueNote}
 				setDocumentIssueNote={docStore.setDocumentIssueNote}
-				activeDoctor={dashboard?.activeDoctor}
+				activeDoctor={appLogic?.activeDoctor}
 				documentIssueIdentityChecked={docStore.documentIssueIdentityChecked}
 				setDocumentIssueIdentityChecked={docStore.setDocumentIssueIdentityChecked}
 				documentIssueDocumentOpenedAndChecked={docStore.documentIssueDocumentOpenedAndChecked}
@@ -142,8 +141,8 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 					isOpen={Boolean(tabletSignDoc)}
 					onClose={() => setTabletSignDoc(null)}
 					patient={patient}
-					doctorFullName={dashboard?.activeDoctor?.fullName ?? undefined}
-					clinicName={dashboard?.clinicSettings?.profile?.clinicName || (typeof dashboard?.organization?.name === "string" ? dashboard.organization.name : undefined) || "Стоматологическая клиника"}
+					doctorFullName={appLogic?.activeDoctor?.fullName ?? undefined}
+					clinicName={clinicProfile?.clinicName || "Стоматологическая клиника"}
 					onConsentSigned={() => {
 						void onTabletSignatureConfirm({
 							signatureSvg: "",

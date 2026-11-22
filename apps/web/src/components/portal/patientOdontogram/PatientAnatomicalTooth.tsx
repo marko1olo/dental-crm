@@ -7,7 +7,7 @@ import React, { memo } from "react";
 import { Check, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
 import { toothDataToGate0Flags } from "../../odontogram/gate0/gate0ToothFlagsConverter";
-import { getPatientToothStatusColor } from "../patientFriendlyOdontogramEngine";
+import { getPatientToothStatusColor } from "../patientCabinet/patientDentalFormulaEngine.js";
 import {
 	type PatientAnatomicalToothProps,
 	resolveToothAnatomicalVisual,
@@ -66,19 +66,19 @@ export const PatientAnatomicalTooth: React.FC<PatientAnatomicalToothProps> = mem
 					toothNumber={toothNumber}
 					layers={toothDataToGate0Flags({
 						toothNumber,
-						state: visual.state as any,
-						material: visual.material as any,
+						state: visual.state,
+						...(visual.material !== undefined ? { material: visual.material } : {}),
 					})}
 					zoom={0.62}
 					showBadge={false}
 				/>
 			</div>
 
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "14px" }}>
-				{tooth.status === "healthy" && <Check size={12} strokeWidth={2.5} style={{ color: "#10b981" }} />}
-				{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} style={{ color: "#f59e0b" }} />}
-				{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} style={{ color: "#ef4444" }} />}
-				{tooth.status === "missing_or_implant" && <ShieldCheck size={11} strokeWidth={2.5} style={{ color: "#0284c7" }} />}
+			<div className="flex items-center justify-center min-h-[14px]">
+				{tooth.status === "healthy" && <Check size={12} strokeWidth={2.5} className="text-emerald-500" />}
+				{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} className="text-amber-500" />}
+				{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} className="text-rose-500" />}
+				{tooth.status === "missing_or_implant" && <ShieldCheck size={11} strokeWidth={2.5} className="text-sky-500" />}
 			</div>
 		</button>
 	);

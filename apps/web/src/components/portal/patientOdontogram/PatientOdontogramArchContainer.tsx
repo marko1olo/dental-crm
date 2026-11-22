@@ -4,7 +4,7 @@
  */
 
 import React, { memo } from "react";
-import type { PatientToothInfo, PatientToothStatus } from "../patientFriendlyOdontogramEngine";
+import type { PatientToothInfo, PatientToothStatus } from "../patientCabinet/patientDentalFormulaEngine.js";
 import { PatientOdontogramQuadrant } from "./PatientOdontogramQuadrant";
 import { PATIENT_ODONTOGRAM_CSS } from "./patientOdontogramStyles";
 

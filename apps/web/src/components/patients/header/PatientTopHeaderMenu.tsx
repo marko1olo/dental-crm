@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { CalendarCheck, Check, Edit3, FileText, Gift, Save, ShieldCheck, Users } from "lucide-react";
+import type { Patient } from "@dental/shared";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
 import type { PatientHeaderRecord } from "../headerModules/patientHeaderTypes";
 
 export interface PatientTopHeaderMenuProps {
-	readonly selectedPatient: PatientHeaderRecord | null | undefined;
+	readonly selectedPatient: PatientHeaderRecord | Patient | null | undefined;
 	readonly onClose: () => void;
 	readonly onSave: () => void;
 	readonly onOpenCard: () => void;

@@ -3,17 +3,17 @@ import type { GeneratedDocument, DocumentKind, DocumentStatus } from "@dental/sh
 import { CheckCircle2, FileSignature, FileText, Printer, ShieldCheck } from "lucide-react";
 import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../../../documents/documentAutonomy";
 
-interface PatientDocumentItemCardProps {
+export interface PatientDocumentItemCardProps {
 	doc: GeneratedDocument;
-	documentLabels?: Record<string, string>;
-	documentStatusLabels?: Record<string, string>;
-	formatShortDate?: (d: string | number | Date) => string;
-	money?: (val: number) => string;
+	documentLabels?: Record<string, string> | undefined;
+	documentStatusLabels?: Record<string, string> | undefined;
+	formatShortDate?: ((d: string | number | Date) => string) | undefined;
+	money?: ((val: number) => string) | undefined;
 	onAuditDoc: (docId: string) => void;
 	onOpenDocHtml: (docId: string) => void;
 	onDownloadPdf: (docId: string) => void;
-	onTabletSign: (doc: GeneratedDocument) => void;
-	onRequestIssue: (doc: GeneratedDocument) => void;
+	onTabletSign?: ((doc: GeneratedDocument) => void) | undefined;
+	onRequestIssue?: ((doc: GeneratedDocument) => void) | undefined;
 }
 
 export const PatientDocumentItemCard: React.FC<PatientDocumentItemCardProps> = ({
@@ -101,11 +101,11 @@ export const PatientDocumentItemCard: React.FC<PatientDocumentItemCardProps> = (
 				</button>
 				{isDraft && (
 					<>
-						<button type="button" onClick={() => onTabletSign(doc)} className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs" data-testid={`btn-patient-tablet-sign-${doc.id}`}>
+						<button type="button" onClick={() => onTabletSign?.(doc)} className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs" data-testid={`btn-patient-tablet-sign-${doc.id}`}>
 							<FileSignature size={13} />
 							<span>Подписать (ПЭП)</span>
 						</button>
-						<button type="button" onClick={() => onRequestIssue(doc)} className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs" data-testid={`btn-patient-issue-doc-${doc.id}`}>
+						<button type="button" onClick={() => onRequestIssue?.(doc)} className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs" data-testid={`btn-patient-issue-doc-${doc.id}`}>
 							<FileSignature size={13} />
 							<span>Выдать</span>
 						</button>

@@ -18,10 +18,7 @@ export function formatRubles(rub: number): string {
 	return whole.toLocaleString("ru-RU") + "\u00A0₽";
 }
 
-export function formatKopecksToRub(kopecks: number): string {
-	const rub = kopecks / 100;
-	return rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "\u00A0₽";
-}
+export { formatKopecksToRub } from "@dental/shared";
 
 export function formatRussianDateIso(isoDate: string): string {
 	if (!isoDate) return "—";

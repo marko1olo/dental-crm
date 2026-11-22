@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { MessageSquare, MoreHorizontal, Plus, Stethoscope } from "lucide-react";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
+import type { Patient } from "@dental/shared";
 import { PatientTopHeaderMenu } from "./PatientTopHeaderMenu";
 import type { PatientHeaderRecord } from "../headerModules/patientHeaderTypes";
 
@@ -15,7 +16,7 @@ export interface PatientTopHeaderActionsProps {
 	readonly onExecuteSomaticNorm: () => void;
 	readonly isDirty: boolean;
 	readonly saveState: string;
-	readonly selectedPatient: PatientHeaderRecord | null | undefined;
+	readonly selectedPatient: PatientHeaderRecord | Patient | null | undefined;
 	readonly savePillNode?: React.ReactNode;
 }
 

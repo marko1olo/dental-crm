@@ -1,4 +1,4 @@
-import type { Patient, Dashboard } from "@dental/shared";
+import { type Patient, type Dashboard, rublesToKopecks } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
@@ -60,7 +60,7 @@ export async function persistPatientCardModalToApi(
 	}
 	const diaryNotes = patientData.doctorClinicalNotes?.trim() || formatSafetyProfileToDiaryText(safetyProfile);
 	const covLimitRub = typeof patientData.dmsCoverageLimitRub === "number" ? patientData.dmsCoverageLimitRub : (patientData.dmsCoverageLimitRub ? Number(patientData.dmsCoverageLimitRub) : null);
-	const covLimitKop = patientData.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? Math.round(covLimitRub * 100) : null);
+	const covLimitKop = patientData.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? rublesToKopecks(covLimitRub) : null);
 	try {
 		const resCore = await fetch(`/api/patients/${patientData.id}`, {
 			method: "PUT",
@@ -115,7 +115,7 @@ export async function executePatientCardModalSaveAutonomy({
 	updatedSafety: PatientClinicalSafetyProfile;
 	updatePatientCoreDraft: (field: keyof PatientCoreDraft, value: string) => void;
 	updatePatientAdministrativeProfileDraft: (field: keyof PatientAdministrativeProfileDraft, value: string | number[]) => void;
-	setDashboard?: (updater: (curr: Dashboard | null | undefined) => Dashboard | null | undefined) => void;
+	setDashboard?: ((updater: (curr: Dashboard | null) => Dashboard | null) => void) | undefined;
 }) {
 	if (updatedGeneral.fullName?.trim()) updatePatientCoreDraft("fullName", updatedGeneral.fullName.trim());
 	if (updatedGeneral.phone !== undefined) updatePatientCoreDraft("phone", updatedGeneral.phone ?? "");
@@ -155,7 +155,7 @@ export async function executePatientCardModalSaveAutonomy({
 			}),
 		});
 		const covLimitRub = typeof updatedGeneral.dmsCoverageLimitRub === "number" ? updatedGeneral.dmsCoverageLimitRub : (updatedGeneral.dmsCoverageLimitRub ? Number(updatedGeneral.dmsCoverageLimitRub) : null);
-		const covLimitKop = updatedGeneral.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? Math.round(covLimitRub * 100) : null);
+		const covLimitKop = updatedGeneral.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? rublesToKopecks(covLimitRub) : null);
 		const adminDraft = buildAdministrativeDraftFromGeneralInfo(updatedGeneral, covLimitRub, covLimitKop);
 		const adminPayload = {
 			...buildPatientAdministrativeProfilePayload(adminDraft),

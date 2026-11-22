@@ -7,7 +7,7 @@ export const SAMPLE_FISCAL_RECEIPT_1: FiscalReceipt54Fz = {
 	fdNumber: "48291",
 	fpdNumber: "3892014821",
 	ofdName: "ООО «Платформа ОФД»",
-	fnsUrl: "https://receipt.nalog.ru/v1/check/48291",
+	fnsUrl: "https://ofd.ru/check?fn=9960440301824190&fd=48291&fpd=3892014821&s=14500.00&n=1",
 	totalAmountRub: 14500,
 	vatRateRu: "Без НДС (пп. 2 п. 2 ст. 149 НК РФ)",
 	paymentMethod: "sbp",

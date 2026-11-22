@@ -19,6 +19,7 @@ import type {
 	TreatmentPlanTierId,
 	TreatmentPlanItem,
 } from "../../../treatment-plans/types";
+import type { AnyTreatmentPlanItem } from "../../plansList/treatmentPlansListTypes";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import {
@@ -34,7 +35,7 @@ import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
 export interface UseTreatmentPlansHydrationParams {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string | undefined;
-	items?: readonly TreatmentPlanItem[] | undefined;
+	items?: readonly (TreatmentPlanItem | AnyTreatmentPlanItem)[] | undefined;
 	plans?: readonly PatientTreatmentPlanDto[] | PatientTreatmentPlanDto[] | undefined;
 	tiers?: readonly TreatmentTierOption[] | TreatmentTierOption[] | undefined;
 }
@@ -141,34 +142,43 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	const effectiveItems: TreatmentPlanItem[] = useMemo(() => {
 		if (propItems && propItems.length > 0) {
 			return propItems.map((it, idx) => {
-				const unitPrice = typeof it.unitPriceRub === "number"
-					? it.unitPriceRub
-					: (typeof it.priceRub === "number" ? it.priceRub : 0);
-				const discount = typeof it.discountRub === "number" ? it.discountRub : 0;
-				const quantity = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
-				const name = it.name || "Услуга плана лечения";
-				const category = it.category || "Терапия";
-				const code804n = it.code804n || undefined;
-				const serviceCode = it.serviceCode || it.id || "SRV-ITEM";
+				const raw = it as Record<string, unknown>;
+				const unitPrice = typeof raw.unitPriceRub === "number"
+					? raw.unitPriceRub
+					: (typeof raw.priceRub === "number"
+						? raw.priceRub
+						: (typeof raw.snapshotUnitPriceRub === "number" ? raw.snapshotUnitPriceRub : 0));
+				const discount = typeof raw.discountRub === "number" ? raw.discountRub : 0;
+				const quantity = typeof raw.quantity === "number" && raw.quantity > 0 ? raw.quantity : 1;
+				const name = (typeof raw.name === "string" && raw.name)
+					|| (typeof raw.snapshotServiceName === "string" && raw.snapshotServiceName)
+					|| "Услуга плана лечения";
+				const category = (typeof raw.category === "string" && raw.category)
+					|| (typeof raw.snapshotServiceCategory === "string" && raw.snapshotServiceCategory)
+					|| "Терапия";
+				const code804n = (typeof raw.code804n === "string" ? raw.code804n : undefined)
+					|| (typeof raw.snapshotCode804n === "string" ? raw.snapshotCode804n : undefined);
+				const serviceCode = (typeof raw.serviceCode === "string" && raw.serviceCode)
+					|| (typeof raw.serviceId === "string" ? raw.serviceId : raw.id)
+					|| "SRV-ITEM";
 
 				const itemRecord: TreatmentPlanItem = {
-					...it,
-					id: it.id || `item-${idx}`,
-					toothNumber: typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber) ? it.toothNumber : undefined,
+					id: typeof raw.id === "string" ? raw.id : `item-${idx}`,
+					toothNumber: typeof raw.toothNumber === "number" && !Number.isNaN(raw.toothNumber) ? raw.toothNumber : undefined,
 					code804n,
-					serviceCode,
+					serviceCode: String(serviceCode),
 					name,
 					category,
-					stageKind: it.stageKind || "stage_1_therapy",
-					stageNumber: it.stageNumber || 1,
+					stageKind: (raw.stageKind as TreatmentPlanItem["stageKind"]) || "stage_1_therapy",
+					stageNumber: typeof raw.stageNumber === "number" ? raw.stageNumber : 1,
 					priceRub: unitPrice,
 					unitPriceRub: unitPrice,
 					discountRub: discount,
 					quantity,
-					isCompleted: it.isCompleted === true || it.status === "completed",
-					status: it.status || "proposed",
-					doctorName: it.doctorName || null,
-					doctorSpecialty: it.doctorSpecialty || null,
+					isCompleted: raw.isCompleted === true || raw.status === "completed",
+					status: (raw.status as TreatmentPlanItem["status"]) || "proposed",
+					doctorName: typeof raw.doctorName === "string" ? raw.doctorName : null,
+					doctorSpecialty: typeof raw.doctorSpecialty === "string" ? raw.doctorSpecialty : null,
 				};
 				return itemRecord;
 			});

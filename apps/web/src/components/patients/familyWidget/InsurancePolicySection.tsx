@@ -1,6 +1,6 @@
 import { Building2, FileCheck, ShieldCheck } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import { formatOmsPolicy } from "../../../utils/inputSanitation";
+import { formatDmsPolicy } from "../../../utils/inputSanitation";
 import { showToast } from "../../GlobalToast";
 
 export interface InsurancePolicySectionProps {
@@ -21,8 +21,10 @@ export const InsurancePolicySection: React.FC<InsurancePolicySectionProps> = Rea
 
 	const handleSave = () => {
 		setIsEditing(false);
+		const cleanPolicy = policy.trim();
+		setPolicy(cleanPolicy);
 		if (onUpdatePolicy) {
-			onUpdatePolicy(policy);
+			onUpdatePolicy(cleanPolicy);
 			showToast("Полис ДМС / ОМС обновлен", "success");
 		}
 	};
@@ -49,7 +51,7 @@ export const InsurancePolicySection: React.FC<InsurancePolicySectionProps> = Rea
 					<input
 						type="text"
 						value={policy}
-						onChange={(e) => setPolicy(formatOmsPolicy(e.target.value))}
+						onChange={(e) => setPolicy(formatDmsPolicy(e.target.value))}
 						placeholder="Номер полиса ДМС / ОМС"
 						className="flex-1 h-7 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						autoFocus

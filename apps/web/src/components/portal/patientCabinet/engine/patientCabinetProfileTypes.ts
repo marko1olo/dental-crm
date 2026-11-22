@@ -1,4 +1,4 @@
-import type { PatientToothInfo } from "../../PatientFriendlyOdontogram.js";
+import type { PatientToothInfo } from "../patientDentalFormulaEngine.js";
 import type { PatientAppointment, PatientInvoiceItem, PatientTreatmentPlan, PatientWarrantyCard } from "./patientCabinetTypes.js";
 import type { GeneratedDocumentSummary, PatientCabinetFamilyMember, PatientDiagnosticScan, PatientPrescriptionItem, PatientStatutoryConsent, ThreeTierTreatmentPlanModel } from "./patientCabinetConsentAndDocTypes.js";
 import type { SomaticHealthProfile, SomaticRiskAlert } from "../../selfCheckin/SomaticQuestionnaireEngine.js";

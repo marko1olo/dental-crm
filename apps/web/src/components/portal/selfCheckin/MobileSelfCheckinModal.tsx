@@ -84,6 +84,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		cabinetName,
 		queueTicket,
 		initialStep,
+		onClose,
 		onCheckinSuccess,
 	});
 

@@ -5,11 +5,9 @@ globalThis.React = React;
 import { renderToString } from "react-dom/server";
 import {
 	DEFAULT_PATIENT_SCANS,
-	PatientPlanView,
+	PlanScanViewerModal,
 	type PatientDiagnosticScan,
-} from "../PatientPlanView.js";
-import { PlanScanViewerModal } from "../scans/PlanScanViewerModal.js";
-import { PlanBeforeAfterGallery } from "../scans/PlanBeforeAfterGallery.js";
+} from "../../imaging/PlanScanViewerModal.js";
 import { getPresetBeforeAfterGalleries } from "../patientPortalEngine.js";
 
 describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route Rule 7)", () => {
@@ -47,50 +45,6 @@ describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route R
 			assert.strictEqual(pair.beforeSlot.imageUrl, "");
 			assert.strictEqual(pair.afterSlot.imageUrl, "");
 		}
-	});
-
-	it("PatientPlanView: Renders real clinical radiology images with no synthetic SVG markup", () => {
-		const html = renderToString(<PatientPlanView scans={DEFAULT_PATIENT_SCANS} />);
-
-		// Real clinical scans rendered as <img>
-		assert.ok(html.includes('src="/radiology/sample_rvg_tooth16.jpg"'));
-		assert.ok(html.includes('src="/radiology/sample_trg_cephalogram.jpg"'));
-
-		// Zero SVG data URLs in entire rendered output
-		assert.ok(!html.includes("data:image/svg+xml"));
-	});
-
-	it("PatientPlanView: Displays honest empty state with Camera icon when scans array is empty", () => {
-		const html = renderToString(<PatientPlanView scans={[]} />);
-
-		// Empty state container rendered
-		assert.ok(html.includes('data-testid="plan-scans-empty-state"'));
-		assert.ok(html.includes("Диагностические снимки не прикреплены"));
-		assert.ok(html.includes("В карте пациента пока нет загруженных"));
-
-		// No fake scans or SVG images rendered
-		assert.ok(!html.includes("sample_rvg_tooth16"));
-		assert.ok(!html.includes("data:image/svg+xml"));
-	});
-
-	it("PatientPlanView: Renders placeholder when a scan has empty previewUrl", () => {
-		const pendingScan: PatientDiagnosticScan = {
-			id: "scan-pending-1",
-			titleRu: "В процессе обработки КТ",
-			modality: "cbct",
-			modalityRu: "Конусно-лучевая КТ",
-			dateRu: "06.09.2026",
-			doseMicroSv: 45.0,
-			previewUrl: "",
-			conclusionRu: "Идет реконструкция срезов DICOM",
-		};
-
-		const html = renderToString(<PatientPlanView scans={[pendingScan]} />);
-
-		// Placeholder container rendered
-		assert.ok(html.includes('data-testid="scan-placeholder-scan-pending-1"'));
-		assert.ok(html.includes("Снимок обрабатывается"));
-		assert.ok(!html.includes("data:image/svg+xml"));
 	});
 
 	it("PlanScanViewerModal: Renders diagnostic scan viewer with zoom, invert negative, and dose", () => {
@@ -150,24 +104,5 @@ describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route R
 
 		assert.ok(html.includes('data-testid="modal-scan-empty-placeholder"'));
 		assert.ok(html.includes("Файл снимка не прикреплен"));
-	});
-
-	it("PlanBeforeAfterGallery: Renders photo protocol gallery with wiper slider and VITA shades", () => {
-		const html = renderToString(<PlanBeforeAfterGallery />);
-
-		assert.ok(html.includes('data-testid="plan-before-after-gallery"'));
-		assert.ok(html.includes('data-testid="before-after-wiper-container"'));
-		assert.ok(html.includes('data-testid="before-after-slider-input"'));
-		assert.ok(html.includes("VITA 3D-Master"));
-		assert.ok(html.includes("Клинический фотопротокол"));
-		assert.ok(!html.includes("data:image/svg+xml"));
-	});
-
-	it("PlanBeforeAfterGallery: Renders honest empty state when cases array is empty", () => {
-		const html = renderToString(<PlanBeforeAfterGallery cases={[]} />);
-
-		assert.ok(html.includes('data-testid="plan-before-after-empty"'));
-		assert.ok(html.includes("Клинический фотопротокол формируется"));
-		assert.ok(!html.includes("data:image/svg+xml"));
 	});
 });

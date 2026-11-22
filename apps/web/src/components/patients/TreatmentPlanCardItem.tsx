@@ -1,15 +1,31 @@
 import React, { useMemo } from "react";
-import type { TreatmentPlanItem } from "@dental/shared";
+import type { AnyTreatmentPlanItem } from "./plansList/treatmentPlansListTypes";
 import { Shield, Stethoscope } from "lucide-react";
 import { money } from "../../utils/financeUtils";
 
 export interface TreatmentPlanCardItemProps {
-	readonly item: TreatmentPlanItem;
+	readonly item: AnyTreatmentPlanItem;
 	readonly onOpenPlan?: ((planId: string) => void) | undefined;
 }
 
 export const TreatmentPlanCardItem: React.FC<TreatmentPlanCardItemProps> = React.memo(
 	function TreatmentPlanCardItem({ item, onOpenPlan }) {
+		const serviceName =
+			("snapshotServiceName" in item && typeof item.snapshotServiceName === "string" && item.snapshotServiceName) ||
+			("name" in item && typeof item.name === "string" && item.name) ||
+			"Услуга плана лечения";
+
+		const toothDisplay =
+			("toothCode" in item && item.toothCode) ||
+			("toothNumber" in item && item.toothNumber !== undefined && item.toothNumber !== null ? String(item.toothNumber) : null);
+
+		const displayPrice =
+			item.unitPriceRub !== undefined && item.unitPriceRub !== null
+				? money(item.unitPriceRub)
+				: "priceRub" in item && typeof item.priceRub === "number"
+					? money(item.priceRub)
+					: "—";
+
 		const statusColorClass = useMemo(() => {
 			switch (item.status) {
 				case "completed":
@@ -48,7 +64,7 @@ export const TreatmentPlanCardItem: React.FC<TreatmentPlanCardItemProps> = React
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 						<span className="font-bold text-xs text-[var(--ink)] truncate">
-							{item.snapshotServiceName || "Услуга плана лечения"}
+							{serviceName}
 						</span>
 					</div>
 					<span
@@ -57,18 +73,16 @@ export const TreatmentPlanCardItem: React.FC<TreatmentPlanCardItemProps> = React
 						{statusLabel}
 					</span>
 				</div>
-				{item.toothCode ? (
+				{toothDisplay ? (
 					<div className="text-xs text-[var(--muted)]">
 						Зуб / область:{" "}
-						<strong className="text-[var(--ink)]">{item.toothCode}</strong>
+						<strong className="text-[var(--ink)]">{toothDisplay}</strong>
 					</div>
 				) : null}
 				<div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-[var(--line)] text-xs">
 					<div className="flex items-center gap-2">
 						<span className="text-[var(--ink)] font-bold font-mono text-xs">
-							{item.unitPriceRub !== undefined && item.unitPriceRub !== null
-								? money(item.unitPriceRub)
-								: "—"}
+							{displayPrice}
 						</span>
 						<span className="inline-flex items-center gap-0.5 text-[10px] text-[var(--primary)] font-medium">
 							<Shield className="w-2.5 h-2.5" /> Согласовано

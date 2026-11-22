@@ -103,27 +103,20 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		assert.ok(html.includes("min-height:44px") || html.includes("min-height: 44px"), "Enforces touch-friendly >=44px buttons");
 	});
 
-	it("3.2 PatientPlanView: Uses real patient card number in emergency WhatsApp link", async () => {
-		const { PatientPlanView } = await import("../../PatientPlanView.js");
+	it("3.2 buildWhatsAppLink: Uses real patient card number in emergency WhatsApp link", async () => {
+		const { buildWhatsAppLink } = await import("../patientCareInstructionsEngine.js");
 		const data = {
 			...PATIENT_CABINET_PRESET_ALEXEY,
 			fullName: "Воронов Алексей Владимирович",
 			cardNumber: "043/у-2026/891",
 		};
 
-		const html = renderToStaticMarkup(
-			createElement(PatientPlanView, {
-				fullCabinetData: data,
-				emergencyWhatsappNumber: "+79991234567",
-			}),
+		const link = buildWhatsAppLink(
+			"+79991234567",
+			`Здравствуйте! Я пациент клиники DENTE (${data.fullName}, карта № ${data.cardNumber}). После недавнего лечения возникли вопросы.`,
 		);
 
-		assert.ok(html.includes("patient-plan-view"), "Renders patient plan view");
-		// Verify encoded card number in whatsapp link
-		const encodedCard = encodeURIComponent("043/у-2026/891");
-		assert.ok(
-			html.includes(encodedCard) || html.includes("043%2F%D1%83-2026%2F891") || html.includes("891"),
-			"WhatsApp hotline link must include real patient card number from fullCabinetData",
-		);
+		assert.ok(link.startsWith("https://wa.me/79991234567?text="));
+		assert.ok(link.includes("043%2F%D1%83-2026%2F891") || link.includes("891"));
 	});
 });

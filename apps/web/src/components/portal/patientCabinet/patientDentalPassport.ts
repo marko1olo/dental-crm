@@ -7,6 +7,7 @@
  * - Интерактивный зубной паспорт с историей лечения, материалами, оттенками VITA и активными гарантиями
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type {
 	PatientInvoiceItem,
 	PatientPersonalCabinetData,
@@ -81,7 +82,7 @@ export function calculatePatientTaxDeduction(
 				title.includes("остеопластик") ||
 				title.includes("аугментация");
 
-			const itemKop = Math.round(item.totalRub * 100);
+			const itemKop = rublesToKopecks(item.totalRub || 0);
 			if (isExpensive) {
 				code02Kop += itemKop;
 			} else {
@@ -90,8 +91,8 @@ export function calculatePatientTaxDeduction(
 		}
 	}
 
-	const code01SpentRub = Math.round(code01Kop / 100);
-	const code02SpentRub = Math.round(code02Kop / 100);
+	const code01SpentRub = kopecksToRubles(code01Kop);
+	const code02SpentRub = kopecksToRubles(code02Kop);
 	const totalSpentRub = code01SpentRub + code02SpentRub;
 
 	const maxCode01LimitRub = 150000;

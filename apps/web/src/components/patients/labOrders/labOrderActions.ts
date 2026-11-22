@@ -1,5 +1,5 @@
 import { generateUuidV7 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { denteAdminSecretRequestHeaders, type AppointmentScheduleDraft } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { type Canonical5LabStatus, buildLabAppointmentDraft } from "../../lab/labMath";
 import type { LabOrder } from "../LabOrdersPanel";
@@ -51,8 +51,8 @@ export async function transitionLabOrderStatus(orderId: string, targetStatus: Ca
 }
 
 export interface LabAppointmentAppLogic {
-	updateNewAppointmentDraft?: (field: string, value: unknown) => void;
-	setShowCreateForm?: (show: boolean) => void;
+	updateNewAppointmentDraft?: (<K extends keyof AppointmentScheduleDraft>(field: K, value: AppointmentScheduleDraft[K]) => void) | undefined;
+	setShowCreateForm?: ((show: boolean) => void) | undefined;
 }
 
 export function scheduleLabAppointment(

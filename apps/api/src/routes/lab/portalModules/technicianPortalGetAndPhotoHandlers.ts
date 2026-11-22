@@ -2,9 +2,23 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { getLabOrderByToken } from "../../../db/labQuery.js";
 import { labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+
+function formatPatientInitials(fullName?: string | null, fallbackId?: string): string {
+	if (!fullName || !fullName.trim()) {
+		return fallbackId ? `Пациент №${fallbackId}` : "Пациент";
+	}
+	const parts = fullName.trim().split(/\s+/);
+	if (parts.length === 1) {
+		return parts[0] ?? "Пациент";
+	}
+	const lastName = parts[0] ?? "Пациент";
+	const initials = parts.slice(1).map((p) => `${p.charAt(0).toUpperCase()}.`).join(" ");
+	return `${lastName} ${initials}`.trim();
+}
 
 export async function handleGetPortalOrder(
 	request: FastifyRequest<{ Params: { token: string } }>,
@@ -22,9 +36,17 @@ export async function handleGetPortalOrder(
 			});
 		}
 
+		const shortId = order.orderNumber || (order.id ? order.id.slice(0, 8).toUpperCase() : "");
+		const patientInitials = formatPatientInitials(order.patientFullName, shortId);
+
 		return {
 			id: order.id,
-			patientFullName: order.patientFullName,
+			orderNumber: order.orderNumber,
+			// 152-ФЗ / Врачебная тайна: технику отдаются СТРОГО обезличенные данные (Фамилия И. О. или номер карты)
+			patientName: patientInitials,
+			patientFullName: patientInitials,
+			patientInitials,
+			cardNumber: shortId,
 			toothFdi: order.toothFdi,
 			material: order.material,
 			colorVita: order.colorVita,
@@ -80,15 +102,17 @@ export async function handlePostPortalOrderPhoto(
 			});
 		}
 
-		await db
-			.update(labOrders)
-			.set({ attachedImageUrl: photoUrl, updatedAt: new Date() })
-			.where(
-				and(
-					eq(labOrders.id, order.id),
-					eq(labOrders.organizationId, order.organizationId),
-				),
-			);
+		await withTenantCtx(order.organizationId, async (tx) => {
+			await tx
+				.update(labOrders)
+				.set({ attachedImageUrl: photoUrl, updatedAt: new Date() })
+				.where(
+					and(
+						eq(labOrders.id, order.id),
+						eq(labOrders.organizationId, order.organizationId),
+					),
+				);
+		});
 
 		wsBroker.broadcastToOrganization(order.organizationId, {
 			type: "LAB_ORDER_UPDATED",

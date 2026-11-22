@@ -5,7 +5,7 @@
 
 import React, { memo } from "react";
 import { ShieldCheck } from "lucide-react";
-import type { DentalHealthIndexResult } from "../patientFriendlyOdontogramEngine";
+import type { DentalHealthIndexResult } from "../patientCabinet/patientDentalFormulaEngine.js";
 
 export interface PatientHealthIndexCardProps {
 	readonly healthIndex: DentalHealthIndexResult;

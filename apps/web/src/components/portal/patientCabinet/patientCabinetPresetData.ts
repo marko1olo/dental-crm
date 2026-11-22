@@ -38,7 +38,6 @@ export const PATIENT_CABINET_PRESET_ELENA: PatientPersonalCabinetData = {
 			paymentMethod: "sbp",
 			paidAtIso: "2026-08-15T14:30:00Z",
 			fiscalReceiptNumber: "ФД-993821",
-			fiscalReceiptUrl: "https://receipt.nalog.ru/v1/check/inv-9201-01",
 			items: [
 				{
 					code: "A16.07.003",

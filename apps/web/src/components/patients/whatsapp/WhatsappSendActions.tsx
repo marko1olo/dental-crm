@@ -30,7 +30,7 @@ export function WhatsappSendActions({
 					data-testid="patient-whatsapp-send-submit"
 					disabled={busy}
 					onClick={onSend}
-					className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+					className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-medium rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
 				>
 					<Send size={14} />
 					<span>{busy ? "Отправляю…" : `Отправить в ${channelLabel}`}</span>
@@ -41,7 +41,7 @@ export function WhatsappSendActions({
 						<button
 							type="button"
 							onClick={onOpenWebWhatsApp}
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-emerald-600 dark:text-emerald-300 border border-[var(--glass-border)] hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-medium rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] active:scale-95 text-[var(--ink)] border border-[var(--line)] inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 							title="Открыть в веб-версии WhatsApp"
 						>
 							<MessageSquare size={14} />
@@ -53,7 +53,7 @@ export function WhatsappSendActions({
 							href={`https://t.me/+${cleanPhone}`}
 							target="_blank"
 							rel="noreferrer"
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-sky-600 dark:text-sky-300 border border-[var(--glass-border)] hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-medium rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] active:scale-95 text-[var(--ink)] border border-[var(--line)] inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 							title="Написать пациенту в Telegram"
 						>
 							<span>Telegram</span>
@@ -62,7 +62,7 @@ export function WhatsappSendActions({
 
 						<a
 							href={`sms:+${cleanPhone}?body=${encodeURIComponent(message.trim() || "")}`}
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-indigo-600 dark:text-indigo-300 border border-[var(--glass-border)] hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-medium rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] active:scale-95 text-[var(--ink)] border border-[var(--line)] inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 							title="Отправить SMS"
 						>
 							<span>SMS</span>
@@ -70,7 +70,7 @@ export function WhatsappSendActions({
 
 						<a
 							href={`tel:+${cleanPhone}`}
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-teal-600 dark:text-teal-300 border border-[var(--glass-border)] hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-medium rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] active:scale-95 text-[var(--ink)] border border-[var(--line)] inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 							title={`Позвонить на ${phoneHint}`}
 						>
 							<Phone size={14} />

@@ -12,9 +12,21 @@ import {
 	mapStageToCanonicalPgStatus,
 	CANONICAL_PG_LAB_STATUSES,
 	type CanonicalPgLabStatus,
+	formatKopecksToRub,
+	toExactKopecks,
+	percentageOfKopecks,
 } from "@dental/shared";
 
-export type DentalLabStage = "created" | "scan_sent" | "in_production" | "fitting_ready" | "in_clinic" | "seated";
+export type DentalLabStage =
+	| "created"
+	| "scan_sent"
+	| "in_production"
+	| "shipped"
+	| "fitting_ready"
+	| "in_clinic"
+	| "seated"
+	| "cancelled"
+	| "rejected_remake";
 
 export interface DentalLabStageMeta {
 	readonly id: DentalLabStage;
@@ -40,13 +52,65 @@ export const CANONICAL_LAB_STAGES: readonly DentalLabStageMeta[] = Object.freeze
 	{ id: "seated", stepNumber: 5, labelRu: "Зафиксировано во рту", shortLabel: "Зафиксировано", descriptionRu: "5. Припасован и зафиксирован: постоянная цементировка конструкции завершена, гарантия активирована", colorClass: "text-[var(--muted,#64748b)]", bgToken: "var(--paper-strong, rgba(100, 116, 139, 0.12))", borderToken: "var(--line, #cbd5e1)", textToken: "var(--ink-muted, #64748b)", isFinal: true, badgeClass: "badge-muted", title: "Зафиксировано во рту" },
 ]);
 
+/** Дополнительные статусы производства и логистики ЗТЛ */
+export const AUXILIARY_LAB_STAGES: readonly DentalLabStageMeta[] = Object.freeze([
+	{
+		id: "shipped",
+		stepNumber: 3.5,
+		labelRu: "В пути / Передано курьеру",
+		shortLabel: "В пути",
+		descriptionRu: "Заказ-наряд передан курьерской службе для доставки в клинику",
+		colorClass: "text-[var(--accent,#3b82f6)]",
+		bgToken: "var(--paper-soft, rgba(59, 130, 246, 0.12))",
+		borderToken: "var(--accent, #3b82f6)",
+		textToken: "var(--accent, #3b82f6)",
+		badgeClass: "badge-blue",
+		title: "В пути / Передано курьеру",
+	},
+	{
+		id: "cancelled",
+		stepNumber: 0,
+		labelRu: "Отменён",
+		shortLabel: "Отменён",
+		descriptionRu: "Заказ-наряд аннулирован клиникой или лабораторией",
+		colorClass: "text-[var(--danger,#ef4444)]",
+		bgToken: "var(--danger-soft, rgba(239, 68, 68, 0.12))",
+		borderToken: "var(--danger, #ef4444)",
+		textToken: "var(--danger, #ef4444)",
+		isFinal: true,
+		badgeClass: "badge-danger",
+		title: "Отменён",
+	},
+	{
+		id: "rejected_remake",
+		stepNumber: 0,
+		labelRu: "Брак / Переделка",
+		shortLabel: "Переделка",
+		descriptionRu: "Возврат в лабораторию на гарантийную переделку или исправление брака",
+		colorClass: "text-[var(--warning-ink,#b45309)]",
+		bgToken: "var(--warning-soft, rgba(245, 158, 11, 0.15))",
+		borderToken: "var(--warning-line, #f59e0b)",
+		textToken: "var(--warning-ink, #b45309)",
+		badgeClass: "badge-amber",
+		title: "Брак / Переделка",
+	},
+]);
+
+export const ALL_LAB_STAGES: readonly DentalLabStageMeta[] = Object.freeze([
+	...CANONICAL_LAB_STAGES,
+	...AUXILIARY_LAB_STAGES,
+]);
+
 export function mapDbStatusToStage(status: string | null | undefined): DentalLabStage {
 	switch (status) {
 		case "draft": case "sent": case "scan_sent": return "scan_sent";
 		case "in_progress": case "in_production": return "in_production";
-		case "shipped": case "fitting_ready": case "refitting": return "fitting_ready";
+		case "shipped": return "shipped";
+		case "fitting": case "fitting_ready": case "refitting": return "fitting_ready";
 		case "received": case "in_clinic": case "ready": case "ready_in_clinic": return "in_clinic";
 		case "completed": case "seated": case "fitted": return "seated";
+		case "cancelled": return "cancelled";
+		case "rejected_remake": case "rework": return "rejected_remake";
 		default: return "scan_sent";
 	}
 }
@@ -54,10 +118,13 @@ export function mapDbStatusToStage(status: string | null | undefined): DentalLab
 export const STAGE_TO_DB_STATUS: Record<DentalLabStage, CanonicalPgLabStatus> = {
 	scan_sent: "sent",
 	in_production: "in_progress",
-	fitting_ready: "received",
-	in_clinic: "received",
+	fitting_ready: "fitting",
+	in_clinic: "ready_in_clinic",
 	seated: "completed",
 	created: "sent",
+	shipped: "shipped",
+	cancelled: "cancelled",
+	rejected_remake: "rejected_remake",
 };
 
 export interface OrthopedicMaterialMeta {
@@ -240,11 +307,7 @@ export function addWorkingDaysRu(startDate: Date | string, workingDays: number):
 	return current;
 }
 
-export function formatKopecks(kopecks: number | bigint): string {
-	const n = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
-	return `${Math.round(n / 100).toLocaleString("ru-RU")} ₽`;
-}
-
+export const formatKopecks = (kopecks: number | bigint): string => formatKopecksToRub(kopecks);
 export const formatKopecksToRubles = formatKopecks;
 
 export function calcNetRevenueKopecks(patientPriceKopecks: number, labCostKopecks: number): number {
@@ -252,7 +315,7 @@ export function calcNetRevenueKopecks(patientPriceKopecks: number, labCostKopeck
 }
 
 export function getStageMeta(stageId: DentalLabStage): DentalLabStageMeta {
-	return CANONICAL_LAB_STAGES.find((s) => s.id === stageId) ?? CANONICAL_LAB_STAGES[0]!;
+	return ALL_LAB_STAGES.find((s) => s.id === stageId) ?? CANONICAL_LAB_STAGES[0]!;
 }
 
 export function getMaterialMeta(materialId: string): OrthopedicMaterialMeta {
@@ -351,12 +414,17 @@ export function calculateZtlPayrollNetRevenue(
 ): DoctorNetRevenueCalculation {
 	const effectiveLabCost = isWarranty ? 0 : Math.max(0, labCostKopecks);
 	const netRevenue = Math.max(0, orthoGrossKopecks - effectiveLabCost);
+	const safeDoctorPct = Math.min(100, Math.max(0, Number.isFinite(doctorPercent) ? doctorPercent : 25));
+	const doctorWageKopecks = percentageOfKopecks(
+		toExactKopecks(Math.round(netRevenue)),
+		Math.round(safeDoctorPct * 100),
+	);
 	return {
 		orthoGrossKopecks,
 		labCostKopecks: effectiveLabCost,
 		netRevenueKopecks: netRevenue,
-		doctorPercent,
-		doctorWageKopecks: Math.round((netRevenue * doctorPercent) / 100),
+		doctorPercent: safeDoctorPct,
+		doctorWageKopecks,
 	};
 }
 

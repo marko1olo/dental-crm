@@ -28,9 +28,9 @@ export interface PatientHeaderRecord {
 	consentStatus?: "issued" | "draft" | "none" | string | undefined;
 	cardNumber?: string | number | undefined;
 	medicalCardNumber?: string | number | undefined;
-	allergies?: string | null | undefined;
+	allergies?: string | string[] | null | undefined;
 	anamnesis?: {
-		allergies?: string | null | undefined;
+		allergies?: string | string[] | null | undefined;
 		clinicalSafetyProfile?: Record<string, unknown> | null | undefined;
 	} | null | undefined;
 	[key: string]: unknown;

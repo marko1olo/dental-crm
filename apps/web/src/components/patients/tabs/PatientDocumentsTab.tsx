@@ -101,7 +101,7 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 
 				<PatientDocumentsModalsWrapper
 					patient={patient}
-					appLogic={appLogic ?? undefined}
+					appLogic={appLogic}
 					docStore={docStore}
 					isFastPrintOpen={logic.isFastPrintOpen}
 					setIsFastPrintOpen={logic.setIsFastPrintOpen}

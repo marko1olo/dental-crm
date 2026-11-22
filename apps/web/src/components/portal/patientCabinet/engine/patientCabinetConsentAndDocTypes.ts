@@ -114,4 +114,4 @@ export interface PatientCabinetFamilyMember {
 	readonly nextAppointmentDoctor?: string | undefined;
 }
 
-export type { PatientDiagnosticScan } from "../../scans/PlanScanViewerModal.js";
+export type { PatientDiagnosticScan } from "../../../imaging/PlanScanViewerModal.js";

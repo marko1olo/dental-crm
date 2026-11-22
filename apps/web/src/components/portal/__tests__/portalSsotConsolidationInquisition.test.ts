@@ -17,9 +17,8 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 		"1. Canonical portal directory contains all required core modules as authoritative SSOT (Mandate 8s)",
 		() => {
 			const expectedFiles = [
-				"PatientFriendlyOdontogram.tsx",
-				"PatientPlanView.tsx",
-				"PatientPortalTreatmentStageCard.tsx",
+				"patientDualNamingEngine.ts",
+				"patientGuaranteesAndStandards.ts",
 				"patientPortalEngine.ts",
 				"patientPortalPresets.ts",
 				"patientPortalTypes.ts",
@@ -49,16 +48,16 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"portal/index.ts must not have backwards dependency on ../patient-portal",
 			);
 			assert.ok(
-				portalIndexSource.includes('export * from "./PatientFriendlyOdontogram.js"'),
-				"portal/index.ts must export PatientFriendlyOdontogram directly",
+				portalIndexSource.includes('export * from "./patientPortalEngine"'),
+				"portal/index.ts must export patientPortalEngine directly",
 			);
 			assert.ok(
-				portalIndexSource.includes('export * from "./PatientPlanView.js"'),
-				"portal/index.ts must export PatientPlanView directly",
+				portalIndexSource.includes('export * from "./patientDualNamingEngine"'),
+				"portal/index.ts must export patientDualNamingEngine directly",
 			);
 			assert.ok(
-				portalIndexSource.includes('export * from "./PatientPortalTreatmentStageCard.js"'),
-				"portal/index.ts must export PatientPortalTreatmentStageCard directly",
+				portalIndexSource.includes('export * from "./patientGuaranteesAndStandards"'),
+				"portal/index.ts must export patientGuaranteesAndStandards directly",
 			);
 			assert.ok(
 				!portalIndexSource.includes("./patientWebapp/"),
@@ -89,11 +88,7 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"utf-8",
 			);
 			assert.ok(
-				modalSource.includes('import { PatientPlanView } from "../PatientPlanView'),
-				"PatientCabinetModal must import PatientPlanView from ../PatientPlanView",
-			);
-			assert.ok(
-				!modalSource.includes("../../patient-portal/PatientPlanView"),
+				!modalSource.includes("../../patient-portal/"),
 				"PatientCabinetModal must not import from ../../patient-portal/",
 			);
 
@@ -102,8 +97,8 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"utf-8",
 			);
 			assert.ok(
-				engineSource.includes('from "../PatientFriendlyOdontogram.js"'),
-				"patientCabinetEngine must import from ../PatientFriendlyOdontogram.js",
+				engineSource.includes('from "./patientDentalFormulaEngine.js"'),
+				"patientCabinetEngine must import from ./patientDentalFormulaEngine.js",
 			);
 			assert.ok(
 				!engineSource.includes("../../patient-portal/"),
@@ -113,12 +108,12 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 	);
 
 	await t.test(
-		"5. Zero cartoon emojis in all portal canonical and facade components (Mandate 8d pt 7)",
+		"5. Zero cartoon emojis in all portal canonical modules (Mandate 8d pt 7)",
 		() => {
 			const filesToCheck = [
-				path.join(portalDir, "PatientFriendlyOdontogram.tsx"),
-				path.join(portalDir, "PatientPlanView.tsx"),
-				path.join(portalDir, "PatientPortalTreatmentStageCard.tsx"),
+				path.join(portalDir, "patientDualNamingEngine.ts"),
+				path.join(portalDir, "patientGuaranteesAndStandards.ts"),
+				path.join(portalDir, "patientPortalEngine.ts"),
 				path.join(portalDir, "index.ts"),
 			];
 

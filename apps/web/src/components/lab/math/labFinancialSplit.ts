@@ -1,4 +1,10 @@
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import {
+	rublesToKopecks,
+	kopecksToRubles,
+	percentageOfKopecks,
+	kopecksSub,
+	toExactKopecks,
+} from "@dental/shared";
 
 export interface LabFinancialSplitResult {
 	clinicAmountRub: number;
@@ -20,8 +26,11 @@ export function calculateLabFinancialSplit(
 	const safeDoctorPct = Math.min(100, Math.max(0, Number.isFinite(doctorSharePct) ? doctorSharePct : 50));
 
 	const totalKopecks = rublesToKopecks(safeTotalRub);
-	const doctorKopecks = Math.round((totalKopecks * safeDoctorPct) / 100);
-	const clinicKopecks = totalKopecks - doctorKopecks;
+	const doctorKopecks = percentageOfKopecks(
+		totalKopecks,
+		Math.round(safeDoctorPct * 100),
+	);
+	const clinicKopecks = kopecksSub(totalKopecks, doctorKopecks);
 
 	const clinicAmountRub = kopecksToRubles(clinicKopecks);
 	const doctorAmountRub = kopecksToRubles(doctorKopecks);
@@ -32,6 +41,6 @@ export function calculateLabFinancialSplit(
 		clinicKopecks,
 		doctorKopecks,
 		totalKopecks,
-		isBalanced: clinicKopecks + doctorKopecks === totalKopecks,
+		isBalanced: toExactKopecks(clinicKopecks + doctorKopecks) === totalKopecks,
 	};
 }

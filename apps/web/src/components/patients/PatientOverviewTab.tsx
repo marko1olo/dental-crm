@@ -10,15 +10,18 @@ import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWi
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 
 export interface PatientOverviewTabProps {
-	readonly showHeaderCard?: boolean;
+	readonly showHeaderCard?: boolean | undefined;
+	readonly patientBalance?: number | undefined;
 }
 
-export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
+export function PatientOverviewTab(props: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
 	const { selectedPatient } = appLogic;
 
 	if (!selectedPatientId || !selectedPatient) return null;
+
+	const effectiveBalance = props.patientBalance ?? Number(selectedPatient.balanceRub ?? 0);
 
 	return (
 		<div data-testid="patient-overview-tab" className="flex flex-col gap-3">
@@ -26,9 +29,7 @@ export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 				<div className="flex flex-col gap-3">
 					<PatientFamilyAndInsuranceWidget
 						patient={selectedPatient}
-						patientBalance={Number(selectedPatient?.patientBalanceRub ?? 0) || 0}
-						insurancePolicyNumber={selectedPatient?.omsPolicyNumber || undefined}
-						onUpdateInsurancePolicy={(policy) => appLogic?.updatePatient?.(selectedPatientId, { omsPolicyNumber: policy })}
+						patientBalance={effectiveBalance}
 					/>
 					<PatientNoShowRisk patientId={selectedPatientId} />
 				</div>

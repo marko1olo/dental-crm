@@ -12,7 +12,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { getAppointmentCalendarDates, OverviewTab } from "../tabs/OverviewTab.js";
 import { DEMO_PATIENT_CABINET } from "../patientCabinetPresets.js";
 import { calculateCabinetSummary } from "../patientCabinetEngine.js";
-import { calculateDentalHealthIndex } from "../../patientFriendlyOdontogramEngine.js";
+import { calculateDentalHealthIndex } from "../patientDentalFormulaEngine.js";
 
 describe("Patient Cabinet Dynamic Calendar Export Invariants", () => {
 	it("1. getAppointmentCalendarDates parses standard date and time string", () => {

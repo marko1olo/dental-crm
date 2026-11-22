@@ -12,7 +12,7 @@ export interface PatientStudyItem {
 	id: string;
 	title?: string | undefined;
 	previewUrl?: string | undefined;
-	toothCode?: string | number | undefined;
+	toothCode?: string | number | null | undefined;
 	capturedAt?: string | undefined;
 }
 

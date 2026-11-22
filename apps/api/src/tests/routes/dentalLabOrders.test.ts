@@ -1,0 +1,57 @@
+/**
+ * dentalLabOrders.test.ts — ЗТЛ заказ-наряды, валидация Idempotency-Key и синхронизация статусов.
+ */
+
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+	calculateLabOrderCostAndMarkup,
+	calculateLabOrderTurnaround,
+} from "../../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
+import { mapDbStatusToStage } from "../../../../web/src/components/lab/dentalLabCatalogData.js";
+import { calculateLabFinancialSplit } from "../../../../web/src/components/lab/math/labFinancialSplit.js";
+
+describe("Dental Lab Orders SSOT & Idempotency Invariants", () => {
+	it("1. mapDbStatusToStage correctly maps cancelled, rejected_remake, and shipped without default fallback", () => {
+		assert.equal(mapDbStatusToStage("cancelled"), "cancelled");
+		assert.equal(mapDbStatusToStage("rejected_remake"), "rejected_remake");
+		assert.equal(mapDbStatusToStage("rework"), "rejected_remake");
+		assert.equal(mapDbStatusToStage("shipped"), "shipped");
+		assert.equal(mapDbStatusToStage("in_progress"), "in_production");
+		assert.equal(mapDbStatusToStage("ready"), "in_clinic");
+		assert.equal(mapDbStatusToStage("completed"), "seated");
+		assert.equal(mapDbStatusToStage("sent"), "scan_sent");
+	});
+
+	it("2. calculateLabFinancialSplit computes exact kopeck split without float drift", () => {
+		const split = calculateLabFinancialSplit(15000, 30);
+		assert.equal(split.totalKopecks, 1500000);
+		assert.equal(split.doctorKopecks, 450000);
+		assert.equal(split.clinicKopecks, 1050000);
+		assert.equal(split.isBalanced, true);
+	});
+
+	it("3. calculateLabOrderCostAndMarkup preserves integer kopecks and calculates margins", () => {
+		const result = calculateLabOrderCostAndMarkup({
+			materialOrConstruction: "crown_zirconia",
+			priceRub: 25000,
+			unitsCount: 2,
+		});
+
+		assert.equal(result.unitsCount, 2);
+		assert.equal(result.estimatedCostKopecks, 1500000); // 7500 rub * 2 = 15000 rub = 1500000 kopecks
+		assert.equal(result.suggestedPriceKopecks, 2500000); // 25000 rub = 2500000 kopecks
+		assert.equal(result.grossMarginKopecks, 1000000); // 10000 rub = 1000000 kopecks
+		assert.equal(result.grossMarginPercent, 40);
+	});
+
+	it("4. calculateLabOrderTurnaround calculates business days excluding weekends", () => {
+		const standard = calculateLabOrderTurnaround("crown_zirconia", false);
+		assert.equal(standard.turnaroundBusinessDays, 5);
+		assert.equal(standard.isUrgent, false);
+
+		const urgent = calculateLabOrderTurnaround("crown_zirconia", true);
+		assert.equal(urgent.turnaroundBusinessDays, 3);
+		assert.equal(urgent.isUrgent, true);
+	});
+});

@@ -1,12 +1,12 @@
 /**
- * DENTE CRM — Patient-Friendly 2D Odontogram Engine & Health Index
- * (DOMAIN: PATIENT PORTAL & CLINICAL TRANSPARENCY)
+ * DENTE CRM — Patient Dental Formula Engine & Health Index
+ * (DOMAIN: PORTAL PATIENT CABINET - DENTAL FORMULA & HEALTH INDEX)
  *
  * Clinical types, tooth names, formulas, and sanitation metrics for ordinary patients:
  * - Color-coded status helpers: healthy, in treatment, needs attention, missing/implant.
  * - Dynamic 32-tooth state computation from treatment plan stages & active warranties.
  * - Dental Health & Sanitation Index calculation.
- * - Strict <= 800 lines ceiling.
+ * - Strict <= 500 lines ceiling (Mandate 8b).
  */
 
 import {
@@ -47,7 +47,6 @@ export function fromCanonicalToothStateToPatientStatus(
 		default:
 			return "healthy";
 	}
-	return "healthy";
 }
 
 export function toCanonicalToothStateFromPatientStatus(
@@ -85,7 +84,7 @@ export interface DentalHealthIndexResult {
 	readonly needsTreatmentCount: number;
 	readonly missingOrImplantCount: number;
 	readonly sanitationPercent: number; // 0..100%
-	readonly formattedIndexRu: string; // "Индекс санации: 78% • Вылечено 22 зуба • Требуют внимания 2 зуба"
+	readonly formattedIndexRu: string;
 	readonly badgeStatus: "excellent" | "good" | "needs_attention";
 	readonly statusLabelRu: string;
 	readonly encouragingNoteRu: string;
@@ -328,7 +327,6 @@ export const DEFAULT_PATIENT_TEETH: readonly PatientToothInfo[] = [
 
 /**
  * Creates standard physiological adult dentition norm (32 healthy teeth, Mandates 8e & 8y).
- * In production mode, patients without recorded pathologies default to this physiological norm.
  */
 export function createDefaultHealthyAdultTeeth(): PatientToothInfo[] {
 	return ALL_ADULT_FDI_TEETH.map((fdiCode) => ({
@@ -342,7 +340,6 @@ export function createDefaultHealthyAdultTeeth(): PatientToothInfo[] {
 
 /**
  * Calculates the patient's Dental Health & Sanitation Index.
- * Formula: % of healthy, cured and restored teeth vs total teeth in chart.
  */
 export function calculateDentalHealthIndex(
 	teeth: readonly PatientToothInfo[] = createDefaultHealthyAdultTeeth(),
@@ -353,7 +350,6 @@ export function calculateDentalHealthIndex(
 	const needsTreatmentCount = teeth.filter((t) => t.status === "needs_treatment").length;
 	const missingOrImplantCount = teeth.filter((t) => t.status === "missing_or_implant").length;
 
-	// Санированные зубы = здоровые/вылеченные + качественно замещенные имплантами
 	const sanitatedTeeth = healthyCount + missingOrImplantCount;
 	const sanitationPercent = Math.min(100, Math.max(0, Math.round((sanitatedTeeth / totalTeeth) * 100)));
 

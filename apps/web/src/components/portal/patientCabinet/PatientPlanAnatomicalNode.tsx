@@ -6,7 +6,7 @@
 import React, { memo } from "react";
 import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
 import { toothDataToGate0Flags } from "../../odontogram/gate0/gate0ToothFlagsConverter";
-import type { PatientToothInfo } from "../patientFriendlyOdontogramEngine";
+import type { PatientToothInfo } from "./patientDentalFormulaEngine.js";
 import { resolveToothAnatomicalVisual } from "../patientOdontogram/patientOdontogramTypes";
 
 export interface PatientPlanAnatomicalNodeProps {
@@ -47,8 +47,8 @@ export const PatientPlanAnatomicalNode: React.FC<PatientPlanAnatomicalNodeProps>
 					toothNumber={toothNum}
 					layers={toothDataToGate0Flags({
 						toothNumber: toothNum,
-						state: visual.state as any,
-						material: visual.material as any,
+						state: visual.state,
+						...(visual.material !== undefined ? { material: visual.material } : {}),
 					})}
 					zoom={0.5}
 					showBadge={false}

@@ -2,10 +2,11 @@ import React, { useMemo } from "react";
 import type { PatientCoreDraft } from "../../../AppConstants";
 import { PatientTopHeaderIdentity } from "./PatientTopHeaderIdentity";
 import { PatientTopHeaderActions } from "./PatientTopHeaderActions";
+import type { Patient } from "@dental/shared";
 import { formatPatientBirthAndAge, type PatientHeaderRecord } from "../headerModules/patientHeaderTypes";
 
 export interface PatientTopHeaderProps {
-	readonly selectedPatient: PatientHeaderRecord | null | undefined;
+	readonly selectedPatient: PatientHeaderRecord | Patient | null | undefined;
 	readonly patientBalance: number;
 	readonly patientCoreDraft?: PatientCoreDraft | null | undefined;
 	readonly patientCoreSaveState: string;
@@ -45,14 +46,17 @@ export function PatientTopHeader({
 			.join("")
 			.toUpperCase() || "П";
 
+	const birthDateIso = "birthDateIso" in selectedPatient ? selectedPatient.birthDateIso : undefined;
 	const birthDateStr = formatPatientBirthAndAge(
-		patientCoreDraft?.birthDate || selectedPatient.birthDate || selectedPatient.birthDateIso,
+		patientCoreDraft?.birthDate || selectedPatient.birthDate || birthDateIso,
 	);
 	const phone = patientCoreDraft?.phone || selectedPatient.phone || "";
-	const cardNumber = selectedPatient.cardNumber
-		? `Карта № ${selectedPatient.cardNumber}`
-		: selectedPatient.medicalCardNumber
-			? `Карта № ${selectedPatient.medicalCardNumber}`
+	const cNum = "cardNumber" in selectedPatient ? selectedPatient.cardNumber : undefined;
+	const mNum = "medicalCardNumber" in selectedPatient ? selectedPatient.medicalCardNumber : undefined;
+	const cardNumber = cNum
+		? `Карта № ${cNum}`
+		: mNum
+			? `Карта № ${mNum}`
 			: selectedPatient.id
 				? (selectedPatient.id.includes("-")
 					? `Карта № ${selectedPatient.id.slice(0, 8).toUpperCase()}`
@@ -60,8 +64,10 @@ export function PatientTopHeader({
 				: "Карта";
 
 	const allergyText = useMemo(() => {
-		const raw = selectedPatient.allergies || selectedPatient.anamnesis?.allergies || "";
-		return typeof raw === "string" && raw.trim() && !raw.toLowerCase().includes("нет") ? raw.trim() : null;
+		const anamnesisAllergies = "anamnesis" in selectedPatient && selectedPatient.anamnesis ? selectedPatient.anamnesis.allergies : undefined;
+		const raw = selectedPatient.allergies || anamnesisAllergies || "";
+		const str = Array.isArray(raw) ? raw.join(", ") : String(raw || "");
+		return str.trim() && !str.toLowerCase().includes("нет") ? str.trim() : null;
 	}, [selectedPatient]);
 
 	return (

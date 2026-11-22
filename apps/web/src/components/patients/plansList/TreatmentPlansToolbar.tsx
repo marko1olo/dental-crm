@@ -1,10 +1,9 @@
 import { Plus, Search, X } from "lucide-react";
 import React from "react";
-import type { TreatmentPlanItem } from "@dental/shared";
-import type { TreatmentPlanStatusFilter } from "./treatmentPlansListTypes";
+import type { AnyTreatmentPlanItem, TreatmentPlanStatusFilter } from "./treatmentPlansListTypes";
 
 export interface TreatmentPlansToolbarProps {
-	readonly items: readonly TreatmentPlanItem[];
+	readonly items: readonly AnyTreatmentPlanItem[];
 	readonly statusFilter: TreatmentPlanStatusFilter;
 	readonly onStatusFilterChange: (status: TreatmentPlanStatusFilter) => void;
 	readonly searchQuery: string;

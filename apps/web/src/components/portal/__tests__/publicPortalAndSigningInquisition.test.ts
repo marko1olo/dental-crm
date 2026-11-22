@@ -19,7 +19,7 @@ import {
 import {
 	formatDualServiceName,
 	type DualServiceFormatResult,
-} from "../PatientPortalTreatmentStageCard.js";
+} from "../patientDualNamingEngine.js";
 import {
 	SAMPLE_PORTAL_PROFILE,
 	SAMPLE_PORTAL_TREATMENT_PLAN,
@@ -198,8 +198,8 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e) & Patient Digital S
 });
 
 describe("Red Team Inquisition: Treatment Stage Cards & Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
-	it("PatientPortalTreatmentStageCard.tsx eliminates dark fallbacks and uses semantic theme variables", () => {
-		const source = readSource("components/portal/PatientPortalTreatmentStageCard.tsx");
+	it("TreatmentPlanStageCard.tsx eliminates dark fallbacks and uses semantic theme classes", () => {
+		const source = readSource("components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanStageCard.tsx");
 
 		// Mixed-theme dark fallback checks
 		assert.ok(
@@ -215,10 +215,7 @@ describe("Red Team Inquisition: Treatment Stage Cards & Zero Cartoon Emojis (Man
 			"Forbidden hardcoded slate-700 (#334155) fallback",
 		);
 
-		// Token verification
-		assert.ok(source.includes("var(--pc-surface, var(--paper-strong))"), "Must use --paper-strong fallback");
-		assert.ok(source.includes("var(--pc-bg, var(--paper))"), "Must use --paper fallback");
-		assert.ok(source.includes("var(--pc-border, var(--line))"), "Must use --line fallback");
+		assert.ok(source.includes("pc-stage-card"), "Must use pc-stage-card CSS class");
 	});
 
 	it("maps Order 804n codes with zero cartoon emojis and transparent warranty guarantees", () => {

@@ -137,7 +137,7 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 							type="text"
 							value={groupName}
 							onChange={(e) => setGroupName(e.target.value)}
-							placeholder="Название (например, Семья Ивановых)"
+							placeholder="Название (например, Семейный счёт)"
 							className="h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:border-[var(--primary)] outline-none flex-1"
 							data-testid="input-create-family-group-name"
 						/>

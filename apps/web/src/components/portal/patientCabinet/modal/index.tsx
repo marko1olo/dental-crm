@@ -37,7 +37,6 @@ export * from "./PatientCabinetNavTabs.js";
 export * from "./PatientCabinetAppointmentsTab.js";
 export * from "./PatientCabinetTreatmentPlansTab.js";
 export { mapServerPortalMeToCabinetData } from "../patientCabinetMapper.js";
-export { PatientPlanView } from "../../PatientPlanView.js";
 
 export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) => {
 	const { isOpen = true, onClose } = props;

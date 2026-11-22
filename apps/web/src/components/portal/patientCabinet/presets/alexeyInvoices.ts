@@ -43,7 +43,6 @@ export const ALEXEY_INVOICES: readonly PatientInvoiceItem[] = [
 		paymentMethod: "sbp",
 		paidAtIso: "2026-08-10T12:45:00Z",
 		fiscalReceiptNumber: "ФД-982410",
-		fiscalReceiptUrl: "https://receipt.nalog.ru/v1/check/inv-2026-074",
 		items: [
 			{
 				code: "A16.07.003",
@@ -76,7 +75,6 @@ export const ALEXEY_INVOICES: readonly PatientInvoiceItem[] = [
 		paymentMethod: "pos_terminal",
 		paidAtIso: "2026-06-25T16:15:00Z",
 		fiscalReceiptNumber: "ФД-773120",
-		fiscalReceiptUrl: "https://receipt.nalog.ru/v1/check/inv-2026-052",
 		items: [
 			{
 				code: "A16.07.054",

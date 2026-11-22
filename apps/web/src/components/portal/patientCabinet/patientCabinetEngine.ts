@@ -36,6 +36,6 @@ export {
 	type PatientToothInfo,
 	DEFAULT_PATIENT_TEETH,
 	computePatientTeethFromStages,
-} from "../PatientFriendlyOdontogram.js";
+} from "./patientDentalFormulaEngine.js";
 
 export { generateQrCodeSvg };

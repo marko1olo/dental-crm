@@ -15,7 +15,7 @@ export function generateDetailedReceiptHtml(
 	const receiptNum = invoice.fiscalReceiptNumber || `ФД-${invoice.invoiceNumber}`;
 	const formattedDate = formatRussianDateIso(invoice.paidAtIso?.slice(0, 10) || invoice.issueDateIso);
 	const qrCodeSvg = generateQrCodeSvg(
-		`https://receipt.nalog.ru/v1/check/${invoice.id}?t=${invoice.paidAtIso || invoice.issueDateIso}&s=${invoice.totalAmountRub}&fn=${fnNumber.slice(0, 10)}&i=98241&fp=319841209&n=1`,
+		`t=${(invoice.paidAtIso || invoice.issueDateIso).replace(/[-:]/g, "").slice(0, 15)}&s=${Number(invoice.totalAmountRub).toFixed(2)}&fn=${fnNumber}&i=98241&fp=319841209&n=1`,
 		{ size: 140 },
 	);
 

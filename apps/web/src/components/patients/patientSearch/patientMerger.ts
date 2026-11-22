@@ -1,4 +1,5 @@
 import type { Patient } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { MergedPatientResult } from "./types";
 import type { PatientClinicalSafetyProfile } from "../safetyMath";
 
@@ -63,9 +64,11 @@ export function mergePatientRecordsNonDestructive(
 	reason: string = "Объединение дубликата карты",
 ): MergedPatientResult {
 	if (primary.id === duplicate.id) throw new Error("Невозможно объединить карточку саму с собой");
-	const primBalKop = Math.round(Number(primary.balanceRub ?? (primary as PatientWithMergeContext).balance ?? 0) * 100);
-	const dupBalKop = Math.round(Number(duplicate.balanceRub ?? (duplicate as PatientWithMergeContext).balance ?? 0) * 100);
-	const combinedBalanceRub = (primBalKop + dupBalKop) / 100;
+	const primBalRub = Number(primary.balanceRub ?? (primary as PatientWithMergeContext).balance ?? 0);
+	const dupBalRub = Number(duplicate.balanceRub ?? (duplicate as PatientWithMergeContext).balance ?? 0);
+	const primBalKop = rublesToKopecks(Number.isFinite(primBalRub) ? primBalRub : 0);
+	const dupBalKop = rublesToKopecks(Number.isFinite(dupBalRub) ? dupBalRub : 0);
+	const combinedBalanceRub = kopecksToRubles(primBalKop + dupBalKop);
 
 	const unitedAllergies = unionAllergies(primary, duplicate);
 	const { unitedProfile, safetyFlags } = unionSafetyProfile(primary, duplicate);

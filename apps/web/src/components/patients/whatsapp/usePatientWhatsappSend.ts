@@ -29,7 +29,7 @@ export function usePatientWhatsappSend({ patientId, patientPhone, patientName }:
 	const pid = (patientId ?? "").trim();
 	const nameHint = (patientName ?? "").trim() || "Пациент";
 	const phoneHint = (patientPhone ?? "").trim();
-	const clinicName = dashboard?.clinicSettings?.name || "клиника DENTE";
+	const clinicName = dashboard?.clinicSettings?.profile?.clinicName || "клиника DENTE";
 
 	const cleanPhone = useMemo(() => {
 		const raw = (patientPhone ?? "").replace(/\D/g, "");

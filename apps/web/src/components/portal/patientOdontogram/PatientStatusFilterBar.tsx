@@ -4,7 +4,7 @@
  */
 
 import React, { memo } from "react";
-import type { DentalHealthIndexResult, PatientToothStatus } from "../patientFriendlyOdontogramEngine";
+import type { DentalHealthIndexResult, PatientToothStatus } from "../patientCabinet/patientDentalFormulaEngine.js";
 
 export interface PatientStatusFilterBarProps {
 	readonly statusFilter: "all" | PatientToothStatus;

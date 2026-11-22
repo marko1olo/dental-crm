@@ -66,7 +66,7 @@ export function PatientDetailsPanel({
 				</div>
 			)}
 
-			{selectedPatient && <PatientOverviewTab />}
+			{selectedPatient && <PatientOverviewTab patientBalance={patientBalance} />}
 
 			{selectedPatient && (
 				<PatientPassportCollapsible

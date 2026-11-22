@@ -3,12 +3,11 @@
  * (LAYER 4: PRESENTATION SUBCOMPONENT)
  *
  * Renders treatment plans, FDI 11..48 odontogram, 63-FZ PEP approval,
- * SBP stage payment triggers, and clinical scans accordion view (PatientPlanView).
+ * SBP stage payment triggers, and clinical scans accordion view.
  */
 
 import React from "react";
 import { TreatmentPlanTab } from "../tabs/TreatmentPlanTab.js";
-import { PatientPlanView } from "../../PatientPlanView.js";
 import type {
 	PatientCabinetSummary,
 	PatientDentalPassport,
@@ -69,7 +68,7 @@ export const PatientCabinetTreatmentPlansTab: React.FC<PatientCabinetTreatmentPl
 							display: "flex",
 							justifyContent: "space-between",
 							alignItems: "center",
-							marginBottom: "8px",
+							marginBottom: "12px",
 						}}
 					>
 						<strong style={{ fontSize: "0.9375rem" }}>
@@ -84,22 +83,59 @@ export const PatientCabinetTreatmentPlansTab: React.FC<PatientCabinetTreatmentPl
 							Скрыть подробности
 						</button>
 					</div>
-					<PatientPlanView
-						plan={data.treatmentPlans[0]}
-						nextAppointment={
-							summary.nextAppointment
-								? {
-										id: summary.nextAppointment.id,
-										dateIso: summary.nextAppointment.dateIso,
-										timeRu: summary.nextAppointment.timeRu,
-										doctorName: summary.nextAppointment.doctorName,
-										roomNumber: summary.nextAppointment.roomNumber,
-									}
-								: undefined
-						}
-						fullCabinetData={data}
-						scans={data.scans}
-					/>
+					{data.scans && data.scans.length > 0 ? (
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+								gap: "12px",
+							}}
+						>
+							{data.scans.map((scan) => (
+								<div
+									key={scan.id}
+									className="pc-card"
+									style={{
+										padding: "12px",
+										borderRadius: "12px",
+										border: "1px solid var(--pc-border, #334155)",
+										backgroundColor: "var(--pc-surface, #1e293b)",
+										display: "flex",
+										flexDirection: "column",
+										gap: "8px",
+									}}
+								>
+									<div style={{ fontWeight: 600, fontSize: "14px" }}>{scan.titleRu}</div>
+									<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+										{scan.modalityRu || scan.modality} &bull; {scan.dateRu || scan.dateIso}
+									</div>
+									{scan.previewUrl && (
+										<img
+											src={scan.previewUrl}
+											alt={scan.titleRu}
+											loading="lazy"
+											style={{
+												width: "100%",
+												height: "140px",
+												objectFit: "contain",
+												borderRadius: "8px",
+												backgroundColor: "#020617",
+											}}
+										/>
+									)}
+									{scan.conclusionRu && (
+										<div style={{ fontSize: "12px", color: "var(--pc-text-main)" }}>
+											{scan.conclusionRu}
+										</div>
+									)}
+								</div>
+							))}
+						</div>
+					) : (
+						<div style={{ padding: "16px", textAlign: "center", color: "var(--pc-text-muted)" }}>
+							Снимки не прикреплены.
+						</div>
+					)}
 				</div>
 			)}
 		</>

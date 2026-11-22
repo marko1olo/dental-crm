@@ -19,14 +19,14 @@ export type {
 /**
  * Standard business turnaround days map by construction/material type (safe canonical fallback).
  */
-const MATERIAL_TURNAROUND_DAYS_MAP: Record<string, { standardDays: number; urgentDays: number; baseCostRub: number }> = {
-	crown_zirconia: { standardDays: 5, urgentDays: 3, baseCostRub: 7500 },
-	crown_emax: { standardDays: 5, urgentDays: 3, baseCostRub: 8500 },
-	metal_ceramic: { standardDays: 6, urgentDays: 4, baseCostRub: 3800 },
-	clasp_denture: { standardDays: 8, urgentDays: 5, baseCostRub: 13000 },
-	aligners: { standardDays: 4, urgentDays: 2, baseCostRub: 5500 },
-	implant_abutment: { standardDays: 4, urgentDays: 2, baseCostRub: 6000 },
-	pmma_cad: { standardDays: 2, urgentDays: 1, baseCostRub: 2500 },
+const MATERIAL_TURNAROUND_DAYS_MAP: Record<string, { standardDays: number; urgentDays: number; baseCostRub: number; baseCostKopecks: number }> = {
+	crown_zirconia: { standardDays: 5, urgentDays: 3, baseCostRub: 7500, baseCostKopecks: 750000 },
+	crown_emax: { standardDays: 5, urgentDays: 3, baseCostRub: 8500, baseCostKopecks: 850000 },
+	metal_ceramic: { standardDays: 6, urgentDays: 4, baseCostRub: 3800, baseCostKopecks: 380000 },
+	clasp_denture: { standardDays: 8, urgentDays: 5, baseCostRub: 13000, baseCostKopecks: 1300000 },
+	aligners: { standardDays: 4, urgentDays: 2, baseCostRub: 5500, baseCostKopecks: 550000 },
+	implant_abutment: { standardDays: 4, urgentDays: 2, baseCostRub: 6000, baseCostKopecks: 600000 },
+	pmma_cad: { standardDays: 2, urgentDays: 1, baseCostRub: 2500, baseCostKopecks: 250000 },
 };
 
 /**
@@ -194,7 +194,7 @@ export function calculateLabOrderCostAndMarkup(params: {
 			? rublesToKopecks(params.customCostPerUnit)
 			: matchedPreset
 				? rublesToKopecks(matchedPreset.suggestedCostRub)
-				: rublesToKopecks(MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 0);
+				: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostKopecks ?? 0);
 
 	const defaultPricePerUnitKopecks = matchedPreset
 		? rublesToKopecks(matchedPreset.suggestedPriceRub)

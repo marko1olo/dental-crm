@@ -3,7 +3,7 @@
  * (DOMAIN: PORTAL PATIENT CABINET - LAYER 0 TYPES)
  */
 
-import type { PatientToothInfo } from "../PatientFriendlyOdontogram.js";
+import type { PatientToothInfo } from "./patientDentalFormulaEngine.js";
 
 export interface SbpBankMember {
 	readonly id: string;
