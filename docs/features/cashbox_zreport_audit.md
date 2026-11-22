@@ -1,7 +1,7 @@
 # Аудит и архитектурная спецификация: Фискальная касса, закрытие смены и суточный Z-отчет (54-ФЗ)
 
-> **Статус:** Внедрено в боевой UI, декомпозиция $\le 120$ строк выполнена, 29/29 тестов passing, 4-state Visual Proof верифицирован.  
-> **Мандаты:** 8b (модули $\le 120$ строк, фасады $\le 80$ строк), 8e & 8n (автономия кассира и врача, 0 блокировок), 8x & 8ap (отсутствие советского канцелярита и дев-сленга), 8am (ровно 1 Primary CTA), 8ze & Apple HIG (touch targets $\ge 44\times 44\text{px}$).
+> Статус: Внедрено в боевой UI, декомпозиция $\le 120$ строк выполнена, 29/29 тестов passing, 4-state Visual Proof верифицирован.  
+> Мандаты: 8b (модули $\le 120$ строк, фасады $\le 80$ строк), 8e & 8n (автономия кассира и врача, 0 блокировок), 8x & 8ap (отсутствие советского канцелярита и дев-сленга), 8am (ровно 1 Primary CTA), 8ze & Apple HIG (touch targets $\ge 44\times 44\text{px}$).
 
 ---
 
@@ -24,7 +24,7 @@
 - `CashDrawerReconciliationPanel.tsx` (94 строки): панель сверки с кнопкой «✓ Совпадает с кассой» и мягкими статусами.
 - `FiscalReceiptTapeViewer.tsx` (84 строки): моноширинная лента чеков с вторичной кнопкой печати.
 - `index.ts` (11 строк): открытый интерфейс пакета.
-- **Фасад:** `CashShiftReconciliationComponents.tsx` (21 строка).
+- Фасад: `CashShiftReconciliationComponents.tsx` (21 строка).
 
 ### Пакет `apps/web/src/components/finance/fiscal/shiftClose/`
 - `types.ts` (36 строк): типы Z-отчета и вкладок.
@@ -36,7 +36,7 @@
 - `ShiftCloseFooter.tsx` (56 строк): адаптивный подвал с защитой `safe-area-inset-bottom` и 1 Primary CTA.
 - `ShiftCloseModalView.tsx` (94 строки): презентационный шелл модалки с глубиной ровно 1 (Anti-Matryoshka).
 - `index.ts` (11 строк): открытый интерфейс пакета.
-- **Фасад:** `ShiftCloseZReportModal.tsx` (47 строк).
+- Фасад: `ShiftCloseZReportModal.tsx` (47 строк).
 
 ---
 
@@ -48,10 +48,10 @@
 
 ## 4. Верификация Red Team (4-State Visual Proofs)
 Все скриншоты сняты в браузере Chromium на живом сервере Vite и Fastify API, лично проверены агентом через `read_file` и сохранены в `docs/proofs/cashbox/`:
-- `01_zreport_pc_light.png` (1440×900) — **498 556 байт** (☀️ PC Light)
-- `02_zreport_pc_dark.png` (1440×900) — **503 429 байт** (🌙 PC Dark)
-- `03_zreport_mobile_light.png` (390×844) — **138 424 байта** (📱 Mobile Light)
-- `04_zreport_mobile_dark.png` (390×844) — **140 699 байт** (📱 Mobile Dark)
+- `01_zreport_pc_light.png` (1440×900) — 498 556 байт (☀️ PC Light)
+- `02_zreport_pc_dark.png` (1440×900) — 503 429 байт (🌙 PC Dark)
+- `03_zreport_mobile_light.png` (390×844) — 138 424 байта (📱 Mobile Light)
+- `04_zreport_mobile_dark.png` (390×844) — 140 699 байт (📱 Mobile Dark)
 
 Все файлы $\gg 20\text{KB}$, отсутствует капс, паразитный скролл 0px, слова не обрезаются многоточиями, ровно 1 Primary CTA кнопка на видимый экран.
 
@@ -60,4 +60,4 @@
 ## 5. Автотесты
 - `apps/web/src/components/finance/__tests__/cashboxShiftAndFiscalDecomposition.test.ts` (19 passing)
 - `apps/web/src/components/schedule/__tests__/adminShiftFlowAndBatchRemindersAutonomy.test.ts` (10 passing)
-- **Результат: 29 passed, 0 failed.**
+- Результат: 29 passed, 0 failed.

@@ -2,15 +2,15 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 >
-> ⚠️ **HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):**
+> ⚠️ HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):
 > Этот документ является зафиксированным историческим отчётом этапа L43–L44 от 31 июля 2026 года.
 > Все задачи закрыты (коммиты `28b2cef0f`, `3f7dbcd6b`).
-> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
+> КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
 > Актуальный рабочий статус и активный бэклог: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**, **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** и **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**.
 
-**Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
-**Base after L42 handoff:** `320382c3b`  
-**This slice commits (see git log):**
+Repo: `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
+Base after L42 handoff: `320382c3b`  
+This slice commits (see git log):
 
 | Item | Commit | Files |
 |------|--------|--------|
@@ -38,7 +38,7 @@ Now (same helper as `saveWorkspaceFlags`, no AppHelpers import = no cycle):
 
 Local solo/clinic/enterprise fallback unchanged.
 
-**Proof:** source contract — no `Failed to apply preset` in file; RU strings present. Bundled in `28b2cef0f`.
+Proof: source contract — no `Failed to apply preset` in file; RU strings present. Bundled in `28b2cef0f`.
 
 ### L44 — Schedule / Settings panel wire
 
@@ -68,7 +68,7 @@ Web message-first still open (operator-facing):
 4. `OdontogramModule`, `SettingsPricesTab`, `InsuranceContractsPanel`, `PatientFamilyCard`.
 5. API re-scan `Failed to` in `apps/api/src/routes` after L42 (internal Query throws lower priority).
 
-**Skip:** console.error EN, test fixtures, technical filter regexes.
+Skip: console.error EN, test fixtures, technical filter regexes.
 
 ### Recommended first bite
 
@@ -78,7 +78,7 @@ Patient reclamations / task tickets message-first → pathspec commit → BACKLO
 
 ## Hard rules (Iron Gate)
 
-- Pathspec `git add -- <files>` only — **never** stage `.data`, `.dente-data`, `scratch/pgdata`
+- Pathspec `git add -- <files>` only — never stage `.data`, `.dente-data`, `scratch/pgdata`
 - AUTH-first → safeParse → business/DB
 - 400 ValidationError RU ≠ 500/404
 - No mocks for inject proofs
@@ -124,4 +124,4 @@ Expect clean working tree (or dirty local data only — do not stage) and `HEAD 
 > Next: PatientReclamations / TaskTickets / Schedule appointment errors message-first RU.  
 > Pathspec commits. Push/pull main. No mocks. No AppHelpers import from useWorkspaceProfile.
 
-**End of handoff.**
+End of handoff.

@@ -1,6 +1,6 @@
 # ОТЧЁТ ИНКВИЗИЦИИ 5: FITTS'S LAW & TOUCH TARGET AUDITOR
 
-> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> 📖 НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:
 > - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 > - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 > - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
@@ -8,11 +8,11 @@
 > - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
 > - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-**Роль:** Инквизитор 5 — Fitts's Law & Touch Target Auditor  
-**Субагент ID:** `c62c7de2-9b83-4bf6-b61a-095c9cdd56f4`  
-**Целевая область:** Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
-**Основание:** `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md` и `THE_HAMMER_MASTER_PROMPT.md` (Разделы I, II, IV)  
-**Нормативы контроля:**  
+Роль: Инквизитор 5 — Fitts's Law & Touch Target Auditor  
+Субагент ID: `c62c7de2-9b83-4bf6-b61a-095c9cdd56f4`  
+Целевая область: Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
+Основание: `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md` и `THE_HAMMER_MASTER_PROMPT.md` (Разделы I, II, IV)  
+Нормативы контроля:  
 - Мобильные тач-таргеты (Mobile 390px): строго $\ge 44\times 44\text{px}$ ($\ge 48\text{px}$ для работы в медицинских перчатках).  
 - Десктопные клик-таргеты (PC 1440px): строго $\ge 24\times 24\text{px}$.  
 - Безопасный зазор между соседними интерактивными зонами: $\ge 8\text{px}$ (защита от промахов).

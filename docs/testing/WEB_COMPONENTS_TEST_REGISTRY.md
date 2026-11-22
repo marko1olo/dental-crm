@@ -1,22 +1,22 @@
 # 🧪 WEB COMPONENTS & ZUSTAND BEHAVIORAL TEST REGISTRY
 
-> 🧭 **Статус**: Канонический реестр поведенческих тестов React 19 компонентов и Zustand-сторов DENTE Dental CRM.  
-> **Мандаты**: Мандат 8d / 8zq (Реактивная гидратация состояния без F5), Мандат 8e (Автономия врача: 0 disabled кнопок), Мандат 8ze / 8al (Apple HIG: тач-таргеты $\ge 44\times 44$px).
+> 🧭 Статус: Канонический реестр поведенческих тестов React 19 компонентов и Zustand-сторов DENTE Dental CRM.  
+> Мандаты: Мандат 8d / 8zq (Реактивная гидратация состояния без F5), Мандат 8e (Автономия врача: 0 disabled кнопок), Мандат 8ze / 8al (Apple HIG: тач-таргеты $\ge 44\times 44$px).
 
 ---
 
 ## 1. АРХИТЕКТУРА И ПРИНЦИПЫ ТЕСТИРОВАНИЯ (REACT 19 + ZUSTAND)
 
-1. **Реальный поведенческий рендеринг (Behavioral DOM Tests)**:
+1. Реальный поведенческий рендеринг (Behavioral DOM Tests):
    - Запрет на «строковые тесты» (`fs.readFileSync`), проверяющие наличие ключевых слов в исходном коде.
    - Тесты выполняются через реальный JSX-рендеринг в рантайме React 19 (`@testing-library/react` / Node.js test runner) с симуляцией событий пользователя (`fireEvent.click`, `fireEvent.change`).
-2. **Сессионная изоляция и защита от перекрестного загрязнения**:
+2. Сессионная изоляция и защита от перекрестного загрязнения:
    - При смене активного пациента (`selectedPatientId`) сторы `visitStore`, `useAppStore` и связанные сущности обязаны сбрасывать локальные данные (выбранные зубы, черновики протоколов, завершенные услуги). Пациент Б никогда не видит данные пациента А.
-3. **Реактивная гидратация без F5 (Мандат 8d / 8zq)**:
+3. Реактивная гидратация без F5 (Мандат 8d / 8zq):
    - Любая мутация в модальном окне или шторке (`treatmentPlanStore`, `billingStore`, `scheduleStore`) мгновенно реактивно гидрирует родительские экраны и дэшборд без перезагрузки браузера.
-4. **Соблюдение правил хуков React 19**:
+4. Соблюдение правил хуков React 19:
    - Ноль нарушений `react-hooks/rules-of-hooks` во всех 4230+ веб-файлах (`npm run check:react-hooks` ➔ Exit Code 0).
-5. **Совместимость импортов в Node.js / TSX**:
+5. Совместимость импортов в Node.js / TSX:
    - Использование `import React from "react"` вместо `import type React from "react"` в компонентах, рендерящихся в тестовом окружении без глобального JSX-трансформера.
 
 ---
@@ -39,15 +39,15 @@
 ## 3. УСТРАНЕННЫЕ ДЕФЕКТЫ КОМПОНЕНТОВ
 
 1. **`QuickActionsBatchOps.tsx`**:
-   - *Дефект:* `ReferenceError: React is not defined` при рендере в среде `node --test` / `tsx`.
-   - *Причина:* Компонент импортировал `import type React from "react"`, стирая символ `React` на шаге транспиляции JSX.
-   - *Решение:* Заменено на канонический `import React from "react"`.
+   - Дефект: `ReferenceError: React is not defined` при рендере в среде `node --test` / `tsx`.
+   - Причина: Компонент импортировал `import type React from "react"`, стирая символ `React` на шаге транспиляции JSX.
+   - Решение: Заменено на канонический `import React from "react"`.
 2. **`ScheduleMobileBottomBar.tsx`**:
-   - *Дефект:* Нарушение Apple HIG в мобильном представлении расписания (высота тач-таргета не была гарантирована).
-   - *Решение:* Внедрены классы `w-full h-[52px] min-h-[44px] rounded-2xl bg-[var(--teal,#0d9488)]` и безопасный отступ `style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}`.
+   - Дефект: Нарушение Apple HIG в мобильном представлении расписания (высота тач-таргета не была гарантирована).
+   - Решение: Внедрены классы `w-full h-[52px] min-h-[44px] rounded-2xl bg-[var(--teal,#0d9488)]` и безопасный отступ `style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}`.
 3. **`VisitDiaryActionsFooter.tsx` & `VisitDiaryReviseAndLockFooters.tsx` & `CryptoProSigner.tsx`**:
-   - *Дефект:* `ReferenceError: React is not defined` из-за использования `import type React`.
-   - *Решение:* Заменено на `import React from "react"`.
+   - Дефект: `ReferenceError: React is not defined` из-за использования `import type React`.
+   - Решение: Заменено на `import React from "react"`.
 
 ---
 

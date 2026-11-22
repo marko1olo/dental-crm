@@ -2,15 +2,15 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 >
-> ⚠️ **HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):**
+> ⚠️ HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):
 > Этот документ является зафиксированным историческим отчётом этапа L40–L41 от 31 июля 2026 года.
 > Все задачи закрыты (коммиты `36dc0ce02`, `803858558`).
-> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
+> КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
 > Актуальный рабочий статус и активный бэклог: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**, **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** и **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**.
 
-**Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
+Repo: `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **HEAD = origin/main = `803858558`**  
-**Previous base:** `bca70f14a` (workspace profile stamp)
+Previous base: `bca70f14a` (workspace profile stamp)
 
 ---
 
@@ -29,10 +29,10 @@ Push: `bca70f14a..803858558` → `origin/main`. Pull: already up to date.
 API already returned RU `ValidationError.message` (body Zod earlier: `a0eb58194`).  
 **Without UI reading `payload.message`, feature = DECLINED** (status-only English toast).
 
-**Pattern (copy this):**
+Pattern (copy this):
 1. Prefer Cyrillic `payload.message` over `payload.error` / HTTP status English.
 2. Keep special cases that change operator action (e.g. `StaffAuthRequired` → PIN shift).
-3. Store mutators **rethrow** RU `Error` so UI can `showToast`.
+3. Store mutators rethrow RU `Error` so UI can `showToast`.
 4. Convert path already OK via `bookingFailureMessage` — do not break it.
 
 ### ScannerView (`accessFailureMessage`)
@@ -73,15 +73,15 @@ Order:
 | noauth steril/lead | 401 |
 | Iron Gate | gitleaks clean on both commits |
 
-**Live mint:** `.tmp/mint-demo-token.mjs`  
-**Secret for smoke:** `AUTH_TOKEN_SECRET=dev-auth-token-secret-for-tests`  
+Live mint: `.tmp/mint-demo-token.mjs`  
+Secret for smoke: `AUTH_TOKEN_SECRET=dev-auth-token-secret-for-tests`  
 (console may mojibake Cyrillic; file UTF-8 + `MESSAGE_CYR=True` is ground truth)
 
 ---
 
 ## BACKLOG state
 
-Open `[ ]` / `[~]` gameplay lines after stamp: **none**.
+Open `[ ]` / `[~]` gameplay lines after stamp: none.
 
 Stamped:
 ```
@@ -103,7 +103,7 @@ Scan artifact: `.tmp/scan_next_gaps.py` → `.tmp/next_gap_scan.txt`
 
 ### P1 candidates (ordered)
 
-**A. Web message-first (operator-facing, same class as L40–41)**  
+A. Web message-first (operator-facing, same class as L40–41)  
 Files without message-first helper (sample from scan):
 - `apps/web/src/components/finance/FamilyWalletPanel.tsx`
 - `apps/web/src/ScheduleView.tsx`
@@ -123,17 +123,17 @@ Files without message-first helper (sample from scan):
 - `apps/api/src/routes/lab.ts` — `"Failed to create lab order"`
 - `apps/api/src/routes/inventory.ts` — `"Failed to create/update item"`
 
-Internal `throw new Error("Failed to …")` in `db/*Query.ts` is lower priority if route maps to RU; prefer fixing **reply.send({ error: "Failed…" })** first.
+Internal `throw new Error("Failed to …")` in `db/*Query.ts` is lower priority if route maps to RU; prefer fixing reply.send({ error: "Failed…" }) first.
 
-**C. Do not waste cycles on**
+C. Do not waste cycles on
 - console.error English
 - test `as` casts on `response.json()`
-- technical filter regexes that *mention* "Failed to fetch"
+- technical filter regexes that mention "Failed to fetch"
 
 ### Recommended first bite for next agent
 
-1. **FamilyWalletPanel** or **PatientReclamations/TaskTickets** — wire `payload.message` Cyrillic like `leadsFailureMessage` / `workspaceProfileServerDetail`.
-2. Or **files.ts + waitlist.ts** EN 500 → RU `message` + inject 400/500 body proof.
+1. FamilyWalletPanel or PatientReclamations/TaskTickets — wire `payload.message` Cyrillic like `leadsFailureMessage` / `workspaceProfileServerDetail`.
+2. Or files.ts + waitlist.ts EN 500 → RU `message` + inject 400/500 body proof.
 3. Stamp new BACKLOG lines before commit; pathspec only.
 4. Smoke with `AUTH_TOKEN_SECRET=dev-auth-token-secret-for-tests`.
 5. Commit → push origin main → pull → HEAD==origin/main.
@@ -143,7 +143,7 @@ Internal `throw new Error("Failed to …")` in `db/*Query.ts` is lower priority 
 
 ## Hard rules (Iron Gate)
 
-- Pathspec `git add -- <files>` only — **never** `git add .` / stage `.data`, `.dente-data`, `scratch/pgdata`
+- Pathspec `git add -- <files>` only — never `git add .` / stage `.data`, `.dente-data`, `scratch/pgdata`
 - AUTH-first → safeParse → business/DB
 - 400 ValidationError RU ≠ 500/404
 - No mocks for inject proofs
@@ -189,4 +189,4 @@ Expect: `803858558` and `## main...origin/main` (dirty tree local data OK, do no
 > Prefer operator-visible RU `payload.message` over EN status. Pathspec commits. Push/pull main. Document handoff.  
 > Subagents discover/critique OK. No mocks. Smoke with AUTH_TOKEN_SECRET=dev-auth-token-secret-for-tests.
 
-**End of handoff.**
+End of handoff.

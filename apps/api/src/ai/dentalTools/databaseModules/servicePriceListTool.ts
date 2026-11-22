@@ -32,6 +32,8 @@ export interface SearchServicesResult {
 		readonly title: string;
 		readonly category: string;
 		readonly priceRub: number | null;
+		readonly priceKopecks: number | null;
+		readonly basePriceKopecks: number | null;
 		readonly source: ServiceCatalogSource;
 	}[];
 }
@@ -71,6 +73,8 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 				title: item.title,
 				category: item.category,
 				priceRub: item.basePriceRub ?? item.priceRub,
+				priceKopecks: item.priceKopecks != null ? Number(item.priceKopecks) : null,
+				basePriceKopecks: item.basePriceKopecks != null ? Number(item.basePriceKopecks) : null,
 				source: "clinic_pricelist" as const,
 			})),
 		};
@@ -93,6 +97,8 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 			title: m.title,
 			category: m.category,
 			priceRub: null,
+			priceKopecks: null,
+			basePriceKopecks: null,
 			source: "standard_catalog" as const,
 		})),
 	};

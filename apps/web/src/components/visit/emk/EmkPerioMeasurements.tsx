@@ -189,7 +189,7 @@ export function EmkPerioMeasurements({
 							className={`min-h-[36px] min-w-[36px] px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 								isSel
 									? "bg-[var(--primary)] text-white shadow-2xs"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 						>
 							#{toothNum}
@@ -206,7 +206,7 @@ export function EmkPerioMeasurements({
 					onClick={() => setPocketDepthMm(4)}
 					className={`secondary-button min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
 						pocketDepthMm === 4
-							? "border-amber-500 bg-amber-500/20 text-amber-900 dark:text-amber-200"
+							? "border-[var(--warning)] bg-[var(--warning-soft)] text-[var(--warning)]"
 							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="emk-perio-pocket-moderate-btn"
@@ -220,7 +220,7 @@ export function EmkPerioMeasurements({
 					onClick={() => setPocketDepthMm(6)}
 					className={`secondary-button min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
 						pocketDepthMm >= 6
-							? "border-rose-500 bg-rose-500/20 text-rose-900 dark:text-rose-200"
+							? "border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]"
 							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="emk-perio-pocket-severe-btn"
@@ -234,12 +234,12 @@ export function EmkPerioMeasurements({
 					onClick={() => setHasBop((prev) => !prev)}
 					className={`secondary-button min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 						hasBop
-							? "border-rose-500 bg-rose-500/15 text-rose-800 dark:text-rose-300"
+							? "border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]"
 							: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="emk-perio-bop-btn"
 				>
-					<span className={`w-2 h-2 rounded-full ${hasBop ? "bg-rose-500" : "bg-slate-300"}`} />
+					<span className={`w-2 h-2 rounded-full ${hasBop ? "bg-[var(--danger)]" : "bg-[var(--line)]"}`} />
 					<span>Кровоточивость (BOP+)</span>
 				</button>
 
@@ -249,7 +249,7 @@ export function EmkPerioMeasurements({
 					onClick={() => setMobilityLevel((prev) => ((prev + 1) % 4) as 0 | 1 | 2 | 3)}
 					className={`secondary-button min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
 						mobilityLevel > 0
-							? "border-amber-500 bg-amber-500/15 text-amber-800 dark:text-amber-300"
+							? "border-[var(--warning)] bg-[var(--warning-soft)] text-[var(--warning)]"
 							: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="emk-perio-mobility-btn"

@@ -14,6 +14,7 @@ import { serviceCatalogItems } from "../../db/schema.js";
 import { defaultCopilotActionManager } from "../copilotActionManager.js";
 import { executeDentalTool } from "../dentalTools.js";
 import { estimateTextTokens } from "../tokenCounter.js";
+import { aiLogger } from "../aiLogger.js";
 import type { AgentHarnessParams, AgentHarnessResult } from "./harnessTypes.js";
 
 function parseToothStateFromPrompt(text: string): "caries" | "pulpitis" | "periodontitis" | "filling" | "crown" | "implant" | "missing" | "root" | "mobility" | "healthy" {
@@ -166,7 +167,7 @@ export async function runDeterministicClinicalFallback(
 					}
 				}
 			} catch (dbErr) {
-				console.warn("[reactFallbackRunner] Price list query error:", dbErr);
+				aiLogger.warn("reactFallbackRunner", "Price list query error", dbErr);
 			}
 		}
 

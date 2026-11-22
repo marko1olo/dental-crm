@@ -1,16 +1,16 @@
 # EGISZ REMD & FNS Tax Deduction Modules Architectural Decomposition Report
 
-> **Standard:** Mandate 8b ($\le 120$ lines per file), Mandate 8e (Doctor Autonomy & Non-blocking Outbox Queue), Mandate 8x & 8ap (Clinical Terminology, Zero Regulatory Slang in UI), Apple HIG Touch Ergonomics (390×844 Mobile Sheet, Natural Thumb Zone).
+> Standard: Mandate 8b ($\le 120$ lines per file), Mandate 8e (Doctor Autonomy & Non-blocking Outbox Queue), Mandate 8x & 8ap (Clinical Terminology, Zero Regulatory Slang in UI), Apple HIG Touch Ergonomics (390×844 Mobile Sheet, Natural Thumb Zone).
 
 ---
 
 ## 1. Executive Summary & Verification Gates
 
 - **Total Files in `apps/web/src/components/egisz/`:** 152 files (including modular stylesheets).
-- **Files Exceeding 120 Lines:** **0 files** (100% compliant with Mandate 8b).
-- **Cyclopean Monolith Elimination:** `egiszRemd.css` (originally 3,271 lines) decomposed into modular cohesive styles in `remdStyles/` ($\le 120$ lines each), with a 14-line root facade.
-- **Test Suite Results:** **85 passing tests, 0 failing, 0 skipped** (`npx vitest run apps/web/src/components/egisz/`).
-- **TypeScript Compilation:** Zero errors in `apps/web/src/components/egisz/`.
+- Files Exceeding 120 Lines: 0 files (100% compliant with Mandate 8b).
+- Cyclopean Monolith Elimination: `egiszRemd.css` (originally 3,271 lines) decomposed into modular cohesive styles in `remdStyles/` ($\le 120$ lines each), with a 14-line root facade.
+- Test Suite Results: 85 passing tests, 0 failing, 0 skipped (`npx vitest run apps/web/src/components/egisz/`).
+- TypeScript Compilation: Zero errors in `apps/web/src/components/egisz/`.
 - **4-State Visual Proof Inspected via `read_file`:**
   - ☀️ `docs/proofs/egisz/01_egisz_hub_pc_light.png` (1440×900) — EGISZ REMD Hub Studio Light
   - 🌙 `docs/proofs/egisz/02_egisz_hub_pc_dark.png` (1440×900) — EGISZ REMD Hub Studio Dark
@@ -91,18 +91,18 @@ The cyclopean monolithic stylesheet `egiszRemd.css` has been decomposed into hig
 
 ## 3. Clinical & Ergonomic Compliance Verification
 
-1. **Mandate 8e (Doctor Autonomy):**
+1. Mandate 8e (Doctor Autonomy):
    - No primary buttons ("Отправить в Минздрав", "Отложить отправку", "Печать", "1-Клик Валидация") are disabled by missing CryptoPro or missing UKEP.
-   - Non-blocking banner is displayed when CryptoPro is not detected: *"Криптопровайдер не обнаружен, документ сохранен в черновики бэкофиса"*.
+   - Non-blocking banner is displayed when CryptoPro is not detected: "Криптопровайдер не обнаружен, документ сохранен в черновики бэкофиса".
    - Async background outbox queue pattern allows the doctor to finish consultations and billing without waiting for state gateways.
 
-2. **Mandate 8x & 8ap (Anti-Jargon):**
+2. Mandate 8x & 8ap (Anti-Jargon):
    - Elimination of Soviet regulatory codes in UI:
      - "Форма 043/у" $\to$ "Медицинская карта приёма"
      - "Справка об оплате мед. услуг для ИФНС" $\to$ "Справка для налогового вычета"
      - "Касса 54-ФЗ" $\to$ "Касса и чеки"
 
-3. **Apple HIG Touch Ergonomics:**
+3. Apple HIG Touch Ergonomics:
    - On screens $\le 768\text{px}$, modal renders as native Bottom Sheet with tactile drag handle (`egisz-mobile-drag-handle`).
    - Touch targets $\ge 44\times 44\text{px}$ across all buttons and tabs.
    - Fixed Floating Bottom Bar with primary CTA in the Natural Thumb Zone.

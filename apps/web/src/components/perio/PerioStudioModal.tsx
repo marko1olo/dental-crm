@@ -65,36 +65,21 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		handleUpdateDepth, handleToggleBop, handleTogglePlaque, handleToggleSuppuration,
 		handleUpdateGingivalMargin, handleUpdateMobility, handleUpdateFurcation, clearTimers,
 	} = usePerioKeyboardNavigation({
-		isOpen,
-		selectedToothNum,
-		selectedSiteKey,
-		probingSequence,
-		setTeeth,
-		setSelectedToothNum,
-		setSelectedSiteKey,
+		isOpen, selectedToothNum, selectedSiteKey, probingSequence,
+		setTeeth, setSelectedToothNum, setSelectedSiteKey,
 	});
 
 	const handleClose = useCallback(() => {
 		clearTimers();
-		// Zero-Leak Draft Invariant (Мандат 8d / 8zq):
-		// При закрытии гарантирован полный сброс локального черновика к дефолту,
-		// предотвращающий утечку данных прошлого пациента следующему
+		// Zero-Leak Draft Invariant (Мандат 8d / 8zq): полный сброс черновика к дефолту
 		setTeeth(normalizePerioDentition(initialTeeth));
-		setScreeningMap({
-			S1: { code: 0, asterisk: false },
-			S2: { code: 0, asterisk: false },
-			S3: { code: 0, asterisk: false },
-			S4: { code: 0, asterisk: false },
-			S5: { code: 0, asterisk: false },
-			S6: { code: 0, asterisk: false },
-		});
+		setScreeningMap({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } });
 		setSelectedProtocolId("prophy_airflow_ultrasound");
 		setSelectedToothNum(initialSelectedTooth);
 		setSelectedSiteKey("distoBuccal");
 		setSyncStatus("idle");
 		setShowIndicesPanel(false);
 		setIsDetailedExpanded(initialTier3Expanded);
-
 		if (onClose) onClose();
 	}, [clearTimers, initialTeeth, initialSelectedTooth, initialTier3Expanded, onClose]);
 
@@ -102,10 +87,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	useEffect(() => {
 		if (!isOpen || !isModal) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				e.stopPropagation();
-				handleClose();
-			}
+			if (e.key === "Escape") { e.stopPropagation(); handleClose(); }
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
@@ -475,13 +457,9 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					onToggleDetailedExpanded={() => setIsDetailedExpanded((prev) => !prev)}
 					teeth={teeth} selectedToothNum={selectedToothNum} onSelectToothNum={setSelectedToothNum}
 					selectedSiteKey={selectedSiteKey} onSelectSiteKey={setSelectedSiteKey}
-					onUpdateMobility={handleUpdateMobility}
-					onUpdateFurcation={handleUpdateFurcation}
-					onUpdateDepth={handleUpdateDepth}
-					onUpdateGingivalMargin={handleUpdateGingivalMargin}
-					onToggleBop={handleToggleBop}
-					onTogglePlaque={handleTogglePlaque}
-					onToggleSuppuration={handleToggleSuppuration}
+					onUpdateMobility={handleUpdateMobility} onUpdateFurcation={handleUpdateFurcation}
+					onUpdateDepth={handleUpdateDepth} onUpdateGingivalMargin={handleUpdateGingivalMargin}
+					onToggleBop={handleToggleBop} onTogglePlaque={handleTogglePlaque} onToggleSuppuration={handleToggleSuppuration}
 				/>
 			</div>
 

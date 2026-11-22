@@ -1,8 +1,8 @@
 # FASTIFY API CONCURRENCY, ACID TRANSACTIONS & MULTI-TENANT RESILIENCE SPECIFICATION
 
-> 🏛️ **DENTE CRM BACKEND CONCURRENCY & TRANSACTIONAL INTEGRITY ARCHITECTURE**  
-> **Стандарты:** Мандаты 8b, 8e, 8n, 8v, 8zp, 8zq. PostgreSQL 18.4 (`127.0.0.1:5432`), Fastify API (:4100).  
-> **Презумпция брака:** 100%. Все сетевые ручки и финансово-складские транзакции проверены на состояние гонки (Race Condition), взаимные блокировки (Deadlock 40P01) и двойные списания (Double Spend).
+> 🏛️ DENTE CRM BACKEND CONCURRENCY & TRANSACTIONAL INTEGRITY ARCHITECTURE  
+> Стандарты: Мандаты 8b, 8e, 8n, 8v, 8zp, 8zq. PostgreSQL 18.4 (`127.0.0.1:5432`), Fastify API (:4100).  
+> Презумпция брака: 100%. Все сетевые ручки и финансово-складские транзакции проверены на состояние гонки (Race Condition), взаимные блокировки (Deadlock 40P01) и двойные списания (Double Spend).
 
 ---
 
@@ -33,9 +33,9 @@
 ## 2. АРХИТЕКТУРНЫЕ ИНВАРИАНТЫ И РЕАЛИЗАЦИЯ
 
 ### 2.1. Конкурентное бронирование приёмов (Anti-Double-Booking & Slot Conflict)
-- **Файл сьюты:** [`apps/api/src/tests/concurrencyAppointmentBooking.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyAppointmentBooking.test.ts)
-- **Проблема:** При одновременной записи двух пациентов на одно кресло или к одному врачу через Fastify API оба запроса могли завершиться успехом, создав фантомную двойную запись (Double Booking).
-- **Решение:**
+- Файл сьюты: [`apps/api/src/tests/concurrencyAppointmentBooking.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyAppointmentBooking.test.ts)
+- Проблема: При одновременной записи двух пациентов на одно кресло или к одному врачу через Fastify API оба запроса могли завершиться успехом, создав фантомную двойную запись (Double Booking).
+- Решение:
   1. В транзакции создания приёма накладывается блокировка и проверяются пересечения временных интервалов (`startsAt < existing.endsAt AND endsAt > existing.startsAt`) для:
      - Стоматологического кресла (`chairId`)
      - Лечащего врача (`doctorUserId`)
@@ -55,9 +55,9 @@
 ---
 
 ### 2.2. Идемпотентность кассы и счетов (Multi-Click Storm & Split Debits)
-- **Файл сьюты:** [`apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts)
-- **Проблема:** Нетерпеливый пациент или кассир нажимает кнопку «Оплатить» 10 раз за секунду, либо сеть дублирует сетевые пакеты. Без распределенной защиты списываются кратные суммы (Double Spend).
-- **Решение:**
+- Файл сьюты: [`apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts)
+- Проблема: Нетерпеливый пациент или кассир нажимает кнопку «Оплатить» 10 раз за секунду, либо сеть дублирует сетевые пакеты. Без распределенной защиты списываются кратные суммы (Double Spend).
+- Решение:
   1. Защита на основе `idempotency-key` (UUIDv7) и `clientMutationId`.
   2. Fastify роут оплаты счетов `/api/invoices/:id/pay` перенаправляет вызов в `paymentCreationPipeline.ts`.
   3. В случае повторного параллельного вызова:
@@ -68,7 +68,7 @@
        idempotency-replayed: true
        ```
      - В базе данных создается строго 1 запись платежа, статус счета `patientInvoices` переходит в `paid`.
-  4. **Сплит-платежи и исчерпание баланса (HTTP 402):**
+  4. Сплит-платежи и исчерпание баланса (HTTP 402):
      - При 10 параллельных запросах на списание 4 000 ₽ при доступном балансе семьи 6 000 ₽ побеждает ровно 1 запрос.
      - Остальные 9 запросов получают `HTTP 402 Insufficient Funds` («Недостаточно средств на семейном счете»).
      - Итоговый баланс в базе составляет ровно 2 000.00 ₽ (200 000 копеек), погрешность округления `0.0000 коп` (Exact Kopeck Integrity).
@@ -76,16 +76,16 @@
 ---
 
 ### 2.3. Склад: Мягкий овердрафт у кресла (Soft Negative Stock & Deadlock Immunity)
-- **Файл сьюты:** [`apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts)
-- **Проблема:** По правилам Мандата 8e и 8n софт служит врачу, а не врач софту. Если у кресла заканчивается анестетик Ультракаин или костный трансплантат Bio-Oss, система не имеет права заблокировать операцию или выдать ошибку 400/500 врачу. Склад должен тихо уйти в минус (Soft Negative Stock), а списание пройти пакетом.
-- **Решение:**
+- Файл сьюты: [`apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts)
+- Проблема: По правилам Мандата 8e и 8n софт служит врачу, а не врач софту. Если у кресла заканчивается анестетик Ультракаин или костный трансплантат Bio-Oss, система не имеет права заблокировать операцию или выдать ошибку 400/500 врачу. Склад должен тихо уйти в минус (Soft Negative Stock), а списание пройти пакетом.
+- Решение:
   1. Роут `/api/inventory/:orgId/soft-overdraft-deduct` и PATCH `/api/inventory/:orgId/:itemId/stock` поддерживают мягкий овердрафт:
      - 20 параллельных приёмов списывают 20 единиц дефицитного материала (начальный остаток 1 шт.).
      - Все 20 запросов возвращают `HTTP 200 OK`.
      - 19 запросов получают флаг `"isOverdraft": true`.
      - Физический остаток в БД `inventoryItems.stockQuantity` становится строго `-19.000`.
      - В аудит-журнале `inventoryTransactions` фиксируется 20 записей (из них 19 с `isOverdraft: true`).
-  2. **Иммунитет к взаимным блокировкам (Deadlock Immunity):**
+  2. Иммунитет к взаимным блокировкам (Deadlock Immunity):
      - При многопозиционных списаниях списков материалов в противоположных порядках (`[A, B, C]` и `[C, B, A]`) транзакции сортируют UUID материалов перед взятием `SELECT ... FOR UPDATE`.
      - 20 параллельных транзакций в противоположных направлениях завершаются со 100% успехом без ошибок `40P01 deadlock detected`.
 

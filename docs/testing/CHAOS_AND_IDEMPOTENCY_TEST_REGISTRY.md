@@ -1,6 +1,6 @@
 # CHAOS, CONCURRENCY & IDEMPOTENCY TEST REGISTRY (DENTE DENTAL CRM)
 
-> 🛡️ **RED TEAM ИНВАРИАНТ ВЫЖИВАЕМОСТИ В ХАОСЕ (MANDATE 8d / 8e / 8n / 8zp):**
+> 🛡️ RED TEAM ИНВАРИАНТ ВЫЖИВАЕМОСТИ В ХАОСЕ (MANDATE 8d / 8e / 8n / 8zp):
 > Реестр автоматизированных стресс-тестов хаоса, конкурентности, офлайн-очередей и аппаратной фискализации.
 > Канонический файл реализации: [`apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts).
 
@@ -22,25 +22,25 @@
 ## 2. АРХИТЕКТУРНЫЕ ИНВАРИАНТЫ В КОДЕ
 
 ### 2.1. Идемпотентность и защита от дабл-кликов (`idempotencyPlugin.ts`)
-- **Заголовки:** `x-idempotency-key` или `idempotency-key` с валидацией UUIDv7.
-- **Хеширование:** Канонический SHA-256 хеш тела запроса (`computePayloadHash(@dental/shared)`).
-- **In-flight Lock:** При одновременных запросах первый выставляет статус `in-flight` в оперативной памяти и БД, параллельные получают `409 Conflict` со служебным заголовком `Retry-After: 1`.
-- **Replay Protection:** Завершенная операция кэшируется в таблице `idempotency_keys` и возвращается при повторных вызовах с заголовком `x-idempotency-status: replayed`.
+- Заголовки: `x-idempotency-key` или `idempotency-key` с валидацией UUIDv7.
+- Хеширование: Канонический SHA-256 хеш тела запроса (`computePayloadHash(@dental/shared)`).
+- In-flight Lock: При одновременных запросах первый выставляет статус `in-flight` в оперативной памяти и БД, параллельные получают `409 Conflict` со служебным заголовком `Retry-After: 1`.
+- Replay Protection: Завершенная операция кэшируется в таблице `idempotency_keys` и возвращается при повторных вызовах с заголовком `x-idempotency-status: replayed`.
 
 ### 2.2. Офлайн-шлюз и разрешение конфликтов (`SyncGatewayService`)
-- **Эндпоинт:** `POST /api/sync/gateway` и `POST /api/sync/push`.
-- **Транзакционность:** Пакет обрабатывается в рамках единого тенант-контекста `withTenantCtx(orgId)`.
-- **CRDT LWW (Last-Write-Wins):** Клинические сущности и зубная формула используют сравнение меток времени `resolveOdontogramToothConflict` с сохранением полной истории в `tooth_state_history`.
+- Эндпоинт: `POST /api/sync/gateway` и `POST /api/sync/push`.
+- Транзакционность: Пакет обрабатывается в рамках единого тенант-контекста `withTenantCtx(orgId)`.
+- CRDT LWW (Last-Write-Wins): Клинические сущности и зубная формула используют сравнение меток времени `resolveOdontogramToothConflict` с сохранением полной истории в `tooth_state_history`.
 
 ### 2.3. Аппаратная кассовая очередь (`fiscalReceiptQueue`)
-- **Таблица:** `fiscal_receipt_queue` с индексами `(organization_id, status)` и `(payment_id)`.
-- **Статусы:** `pending_print`, `printing`, `printed`, `hardware_offline`, `offline_pending`, `failed`, `dead_letter`.
-- **Zero-Ruble Bypass:** `totalRub <= 0` переводит запись сразу в `status: "printed"` с `retryCount: 0`. Врач и администратор никогда не блокируются кассовым аппаратом при гарантийных манипуляциях (Мандат 8e).
+- Таблица: `fiscal_receipt_queue` с индексами `(organization_id, status)` и `(payment_id)`.
+- Статусы: `pending_print`, `printing`, `printed`, `hardware_offline`, `offline_pending`, `failed`, `dead_letter`.
+- Zero-Ruble Bypass: `totalRub <= 0` переводит запись сразу в `status: "printed"` с `retryCount: 0`. Врач и администратор никогда не блокируются кассовым аппаратом при гарантийных манипуляциях (Мандат 8e).
 
 ### 2.4. Защита API-контрактов от SQL 22P02 и CWE-209 (`apiContractsAndErrorHardening.test.ts`)
-- **Проблема CWE-209:** При передаче строки, не являющейся UUID (`not-a-uuid`), Drizzle ORM выполнял прямой каст `WHERE id = 'not-a-uuid'::uuid`. PostgreSQL 18 падал с ошибкой `22P02: invalid input syntax for type uuid`, возвращая 500 Internal Server Error с утечкой структуры БД.
-- **Решение:** Во всех публичных контроллерах (`documents`, `consents`, `family`, `labOrders`, `xray`, `anesthesia`, `visits`, `billing`, `appointments`) внедрена предварительная валидация `UUID_REGEX.test(id)` с возвратом чистого структурированного ответа `400 Bad Request` (`ValidationError`).
-- **Тестовый сьют:** [`apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts) — **37 pass, 0 fail (4.3s)**.
+- Проблема CWE-209: При передаче строки, не являющейся UUID (`not-a-uuid`), Drizzle ORM выполнял прямой каст `WHERE id = 'not-a-uuid'::uuid`. PostgreSQL 18 падал с ошибкой `22P02: invalid input syntax for type uuid`, возвращая 500 Internal Server Error с утечкой структуры БД.
+- Решение: Во всех публичных контроллерах (`documents`, `consents`, `family`, `labOrders`, `xray`, `anesthesia`, `visits`, `billing`, `appointments`) внедрена предварительная валидация `UUID_REGEX.test(id)` с возвратом чистого структурированного ответа `400 Bad Request` (`ValidationError`).
+- Тестовый сьют: [`apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts) — 37 pass, 0 fail (4.3s).
 
 ---
 
@@ -52,7 +52,7 @@ npx tsx --test apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts
 # 2. Харденинг публичных роутов от SQL 22P02 и CWE-209
 npx tsx --test apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts
 ```
-**Целевое время прогона каждого сьюта:** $\le 5$ секунд (при строгом нормативе $\le 10$ секунд).  
-**Результаты:**
-- `idempotencyAndOfflineStorm.test.ts`: **6 pass, 0 fail (3.6s)** ➔ Exit Code 0.
-- `apiContractsAndErrorHardening.test.ts`: **37 pass, 0 fail (4.3s)** ➔ Exit Code 0.
+Целевое время прогона каждого сьюта: $\le 5$ секунд (при строгом нормативе $\le 10$ секунд).  
+Результаты:
+- `idempotencyAndOfflineStorm.test.ts`: 6 pass, 0 fail (3.6s) ➔ Exit Code 0.
+- `apiContractsAndErrorHardening.test.ts`: 37 pass, 0 fail (4.3s) ➔ Exit Code 0.

@@ -8,6 +8,7 @@ import { z } from "zod";
 import type { DocumentKind } from "@dental/shared";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { createGeneratedDocumentInDb } from "../../../db/documentQuery.js";
+import { aiLogger } from "../../aiLogger.js";
 
 const DOCUMENT_KIND_MAP: Record<string, DocumentKind> = {
 	form_043: "dental_medical_card_043u",
@@ -74,7 +75,7 @@ export async function handlePrintDocument(args: PrintDocumentInput, context: Den
 			}
 		} catch (docErr) {
 			// Graceful fallback to UUID if DB write fails in standalone/isolated execution
-			console.warn("[printDocumentTool] DB write failed, falling back to ephemeral UUID:", docErr);
+			aiLogger.warn("printDocumentTool", "DB write failed, falling back to ephemeral UUID", docErr);
 		}
 	}
 

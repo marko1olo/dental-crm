@@ -2,35 +2,35 @@
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 >
-> ⚠️ **ИСТОРИЧЕСКИЙ СРАВНИТЕЛЬНЫЙ АУДИТ (HISTORICAL BENCHMARK REPORT):**  
+> ⚠️ ИСТОРИЧЕСКИЙ СРАВНИТЕЛЬНЫЙ АУДИТ (HISTORICAL BENCHMARK REPORT):  
 > Этот отчёт фиксирует исследование сторонней кодовой базы Dentalpin OSS.  
-> **АКТУАЛЬНЫЙ СТАТУС (2026-09-04):**  
-> 1. Все ценные клинические алгоритмы (пародонтологические индексы PCR/BOP, нормализация телефонов E.164, 2FA подтверждение смет) **УЖЕ ВНЕДРЕНЫ В @dental/shared И @dental/web**.  
-> 2. Чужеродные региональные модули (испанская бухгалтерия A3asesor/Sage, индийский налог India GST, стационарные опросники) **ОТБРАКОВАНЫ ПО МАНДАТУ 8i (СУВЕРЕНИТЕТ АМБУЛАТОРНОГО СТОМАТОЛОГИЧЕСКОГО КОНТЕКСТА)**.  
-> 3. Повторная или дополнительная интеграция модулей Dentalpin **ЗАПРЕЩЕНА**.
+> АКТУАЛЬНЫЙ СТАТУС (2026-09-04):  
+> 1. Все ценные клинические алгоритмы (пародонтологические индексы PCR/BOP, нормализация телефонов E.164, 2FA подтверждение смет) УЖЕ ВНЕДРЕНЫ В @dental/shared И @dental/web.  
+> 2. Чужеродные региональные модули (испанская бухгалтерия A3asesor/Sage, индийский налог India GST, стационарные опросники) ОТБРАКОВАНЫ ПО МАНДАТУ 8i (СУВЕРЕНИТЕТ АМБУЛАТОРНОГО СТОМАТОЛОГИЧЕСКОГО КОНТЕКСТА).  
+> 3. Повторная или дополнительная интеграция модулей Dentalpin ЗАПРЕЩЕНА.
 
 ---
 
-> **Authoritative Technical Report**  
-> **Date**: 2026-08-27  
-> **Target Project**: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  
-> **Reference Project**: Dentalpin OSS (`C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`, v2.0.0)  
-> **Scope**: Complete 35-Module Matrix, Architectural Superiority Audit, High-Value Ingestion Targets & Action Plan.
+> Authoritative Technical Report  
+> Date: 2026-08-27  
+> Target Project: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  
+> Reference Project: Dentalpin OSS (`C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`, v2.0.0)  
+> Scope: Complete 35-Module Matrix, Architectural Superiority Audit, High-Value Ingestion Targets & Action Plan.
 
 ---
 
 ## 1. Executive Summary
 
-A comprehensive, zero-skimming architectural audit was conducted comparing **Dentalpin (v2.0.0)** — an open-source modular dental clinic management system built with FastAPI, SQLAlchemy 2.0 async, Nuxt 3 / Vue 3 — against **DENTE Dental CRM** — an enterprise-grade medical platform built on Fastify, TypeScript, React 19, PostgreSQL with Row-Level Security (RLS), and dedicated medical-device bridges.
+A comprehensive, zero-skimming architectural audit was conducted comparing Dentalpin (v2.0.0) — an open-source modular dental clinic management system built with FastAPI, SQLAlchemy 2.0 async, Nuxt 3 / Vue 3 — against DENTE Dental CRM — an enterprise-grade medical platform built on Fastify, TypeScript, React 19, PostgreSQL with Row-Level Security (RLS), and dedicated medical-device bridges.
 
 ### Key Conclusions
-1. **DENTE Clinical & Regulatory Superiority**: DENTE operates in a fundamentally different tier regarding clinical depth, radiological computing, and governmental regulatory compliance. Where Dentalpin provides generic CRUD and baseline 2D charts, DENTE delivers a complete **Planmeca Romexis 6-class 3D CBCT implantology engine**, full **ЕГИСЗ/РЭМД** electronic medical record integration with **УКЭП ГОСТ** digital signing, official **ЭМК 043/у ГОСТ** records with somatic risk screening, **Честный Знак МДЛП** cryptographic medication tracking, **54-ФЗ / ФФД 1.2** fiscal cash register drivers, and **ISQ osseointegration densitometry**.
-2. **Dentalpin Ingestion Value**: Dentalpin possesses several exceptionally well-architected modular subsystems that DENTE should systematically ingest. The most valuable assets are:
-   - **Agentic Core & Tool Registry** (`core/agents/`): A declarative, permission-scoped, single-chokepoint tool execution engine with guardrails and human-in-the-loop approval workflows.
-   - **PHI Redaction & Rehydration Gateway** (`core/agents/redaction.py`): A deterministic symbol-table boundary ensuring zero Protected Health Information (PHI / ПДн 152-ФЗ) reaches cloud LLM providers in cleartext.
-   - **2FA Public Budget / Estimate Signing** (`modules/budget/public_router.py`): A friction-free patient-facing tokenized link for treatment plan estimates requiring SMS/DOB/phone factor verification, on-screen signature capture, and immutable PDF issuance.
-   - **WhatsApp Kapso Meta Cloud Adapter** (`modules/whatsapp_kapso/`): A clean, multi-tenant `ChannelAdapter` implementation for WhatsApp Business API with template mapping.
-   - **6-Point Periodontal Indices Engine** (`modules/periodontogram/indices.py`): Automated clinical math for BOP, O'Leary PCR, and PSR indices.
+1. DENTE Clinical & Regulatory Superiority: DENTE operates in a fundamentally different tier regarding clinical depth, radiological computing, and governmental regulatory compliance. Where Dentalpin provides generic CRUD and baseline 2D charts, DENTE delivers a complete Planmeca Romexis 6-class 3D CBCT implantology engine, full ЕГИСЗ/РЭМД electronic medical record integration with УКЭП ГОСТ digital signing, official ЭМК 043/у ГОСТ records with somatic risk screening, Честный Знак МДЛП cryptographic medication tracking, 54-ФЗ / ФФД 1.2 fiscal cash register drivers, and ISQ osseointegration densitometry.
+2. Dentalpin Ingestion Value: Dentalpin possesses several exceptionally well-architected modular subsystems that DENTE should systematically ingest. The most valuable assets are:
+   - Agentic Core & Tool Registry (`core/agents/`): A declarative, permission-scoped, single-chokepoint tool execution engine with guardrails and human-in-the-loop approval workflows.
+   - PHI Redaction & Rehydration Gateway (`core/agents/redaction.py`): A deterministic symbol-table boundary ensuring zero Protected Health Information (PHI / ПДн 152-ФЗ) reaches cloud LLM providers in cleartext.
+   - 2FA Public Budget / Estimate Signing (`modules/budget/public_router.py`): A friction-free patient-facing tokenized link for treatment plan estimates requiring SMS/DOB/phone factor verification, on-screen signature capture, and immutable PDF issuance.
+   - WhatsApp Kapso Meta Cloud Adapter (`modules/whatsapp_kapso/`): A clean, multi-tenant `ChannelAdapter` implementation for WhatsApp Business API with template mapping.
+   - 6-Point Periodontal Indices Engine (`modules/periodontogram/indices.py`): Automated clinical math for BOP, O'Leary PCR, and PSR indices.
 
 ---
 
@@ -95,36 +95,36 @@ A comprehensive, zero-skimming architectural audit was conducted comparing **Den
 ```
 
 ### 1. 3D CBCT Radiology & Implant Studio (Planmeca Romexis 6 Class)
-- **DENTE**: Integrated high-performance WebGL/WebGPU 3D Multi-Planar Reconstruction (MPR) engine supporting Axial, Coronal, Sagittal, and Panoramic / Oblique reformatted slices. Features real-time Window Width / Window Level (W/L) Hounsfield density controls, mandibular nerve canal tracing, 3D dental implant library placement with safety margin collision detection, bone density profiling, and direct Planmeca Romexis / Sirona Sidexis launchers.
-- **Dentalpin**: Completely lacks 3D imaging and DICOM processing. The `media` module only handles static 2D JPEG/PNG image uploads.
+- DENTE: Integrated high-performance WebGL/WebGPU 3D Multi-Planar Reconstruction (MPR) engine supporting Axial, Coronal, Sagittal, and Panoramic / Oblique reformatted slices. Features real-time Window Width / Window Level (W/L) Hounsfield density controls, mandibular nerve canal tracing, 3D dental implant library placement with safety margin collision detection, bone density profiling, and direct Planmeca Romexis / Sirona Sidexis launchers.
+- Dentalpin: Completely lacks 3D imaging and DICOM processing. The `media` module only handles static 2D JPEG/PNG image uploads.
 
 ### 2. ЕГИСЗ / РЭМД (Russian Federal Healthcare Integration)
-- **DENTE**: Native generation of HL7 CDA R2 XML medical documents compliant with Ministry of Health (Минздрав РФ) schemas. Integrated with Qualified Electronic Signatures (УКЭП) using CryptoPro CSP / ГОСТ Р 34.10-2012 / 34.11-2012 algorithms. Automated transmission of electronic medical record protocols to the Federal Integrated Medical Information System (РЭМД ЕГИСЗ).
-- **Dentalpin**: No support for Russian healthcare regulation; limited to regional Spanish (VeriFactu) and Indian (GST) tax reporting.
+- DENTE: Native generation of HL7 CDA R2 XML medical documents compliant with Ministry of Health (Минздрав РФ) schemas. Integrated with Qualified Electronic Signatures (УКЭП) using CryptoPro CSP / ГОСТ Р 34.10-2012 / 34.11-2012 algorithms. Automated transmission of electronic medical record protocols to the Federal Integrated Medical Information System (РЭМД ЕГИСЗ).
+- Dentalpin: No support for Russian healthcare regulation; limited to regional Spanish (VeriFactu) and Indian (GST) tax reporting.
 
 ### 3. ЭМК 043/у ГОСТ, СтАР Protocols & Somatic Risk Screening
-- **DENTE**: Exact digital reproduction of official Russian Medical Card Form 043/у (Приказ Минздрава СССР №1030 / Минздрава РФ). Standardized clinical diagnostic pathways approved by the Russian Dental Association (СтАР), mandatory ICD-10 diagnostic coding, and automated somatic risk evaluation (cardiovascular risk, diabetes, bleeding diathesis, allergy warnings, pregnancy trimester precautions). Includes SanPiN sterilization records and azopyram testing journals.
-- **Dentalpin**: Generic SOAP text notes without regulatory clinical form validation or somatic risk safety gates.
+- DENTE: Exact digital reproduction of official Russian Medical Card Form 043/у (Приказ Минздрава СССР №1030 / Минздрава РФ). Standardized clinical diagnostic pathways approved by the Russian Dental Association (СтАР), mandatory ICD-10 diagnostic coding, and automated somatic risk evaluation (cardiovascular risk, diabetes, bleeding diathesis, allergy warnings, pregnancy trimester precautions). Includes SanPiN sterilization records and azopyram testing journals.
+- Dentalpin: Generic SOAP text notes without regulatory clinical form validation or somatic risk safety gates.
 
 ### 4. Честный Знак МДЛП (National Track & Trace System)
-- **DENTE**: End-to-end integration with the Russian National Drug Track & Trace System (ГИС МДЛП). Hardware 2D DataMatrix barcode scanning with CryptoTail validation, automated batch and expiration control, and one-click withdrawal from circulation (вывод из оборота) for anesthetics, bone grafts, membranes, and pharmaceutical products upon clinical application.
-- **Dentalpin**: Basic inventory tracking with no cryptographic serial verification or governmental pharmaceutical gateway.
+- DENTE: End-to-end integration with the Russian National Drug Track & Trace System (ГИС МДЛП). Hardware 2D DataMatrix barcode scanning with CryptoTail validation, automated batch and expiration control, and one-click withdrawal from circulation (вывод из оборота) for anesthetics, bone grafts, membranes, and pharmaceutical products upon clinical application.
+- Dentalpin: Basic inventory tracking with no cryptographic serial verification or governmental pharmaceutical gateway.
 
 ### 5. Фискализация ФНС РФ (54-ФЗ, ФФД 1.2, СБП, Сбербанк)
-- **DENTE**: Direct hardware integration with fiscal cash registers (ATOL DTO 10, Shtrikh-M, Evotor) adhering strictly to 54-ФЗ and Format of Fiscal Data (ФФД 1.2). Supports itemized marking code transmission (Tag 1162 / 1163), advances and full payments, fast payment system (СБП) dynamic QR generation, and Sberbank POS terminal integration (Arcus2 / Pilot NTK).
-- **Dentalpin**: General invoicing without support for Russian fiscal hardware or payment systems.
+- DENTE: Direct hardware integration with fiscal cash registers (ATOL DTO 10, Shtrikh-M, Evotor) adhering strictly to 54-ФЗ and Format of Fiscal Data (ФФД 1.2). Supports itemized marking code transmission (Tag 1162 / 1163), advances and full payments, fast payment system (СБП) dynamic QR generation, and Sberbank POS terminal integration (Arcus2 / Pilot NTK).
+- Dentalpin: General invoicing without support for Russian fiscal hardware or payment systems.
 
 ### 6. ISQ Денситометрия & Остеоинтеграция
-- **DENTE**: Specialized surgical implantology module measuring and tracking Implant Stability Quotients (ISQ 1..100 via Osstell / Penguin RFA). Evaluates bone quality per Lekholm & Zarb classification (Types I–IV), graphs stability recovery curves, and automatically governs clinical loading safety gates (Immediate vs Early vs Delayed loading).
-- **Dentalpin**: No implant tracking or osseointegration telemetry.
+- DENTE: Specialized surgical implantology module measuring and tracking Implant Stability Quotients (ISQ 1..100 via Osstell / Penguin RFA). Evaluates bone quality per Lekholm & Zarb classification (Types I–IV), graphs stability recovery curves, and automatically governs clinical loading safety gates (Immediate vs Early vs Delayed loading).
+- Dentalpin: No implant tracking or osseointegration telemetry.
 
 ### 7. Многослойный 5-поверхностный Одонтограм
-- **DENTE**: Anatomically accurate interactive dental chart supporting individual 5-surface tooth tracking (MODBL: Mesial, Occlusal, Distal, Buccal, Lingual). Visualizes multi-canal endodontic treatments (root anatomy, gutta-percha obturation depth, broken instrument alerts), periodontal pockets, mobility (I–III), crowns, veneers, inlays, bridges, implants, and pediatric/mixed dentition.
-- **Dentalpin**: Simplified 2D SVG tooth outline with single-condition status flags per tooth.
+- DENTE: Anatomically accurate interactive dental chart supporting individual 5-surface tooth tracking (MODBL: Mesial, Occlusal, Distal, Buccal, Lingual). Visualizes multi-canal endodontic treatments (root anatomy, gutta-percha obturation depth, broken instrument alerts), periodontal pockets, mobility (I–III), crowns, veneers, inlays, bridges, implants, and pediatric/mixed dentition.
+- Dentalpin: Simplified 2D SVG tooth outline with single-condition status flags per tooth.
 
 ### 8. Enterprise Multi-Tenancy & Offline Data Resilience
-- **DENTE**: Multi-tenant architecture enforced at the database level via native PostgreSQL 18.4 Row Level Security (RLS) policies (`withTenantCtx`). Includes an offline resilience engine (IndexedDB / ServiceWorker cache) allowing full clinic operation during internet disconnects with automatic bidirectional conflict resolution upon reconnection.
-- **Dentalpin**: Single database with application-level clinic_id filters in queries without native database RLS enforcement or offline sync.
+- DENTE: Multi-tenant architecture enforced at the database level via native PostgreSQL 18.4 Row Level Security (RLS) policies (`withTenantCtx`). Includes an offline resilience engine (IndexedDB / ServiceWorker cache) allowing full clinic operation during internet disconnects with automatic bidirectional conflict resolution upon reconnection.
+- Dentalpin: Single database with application-level clinic_id filters in queries without native database RLS enforcement or offline sync.
 
 ---
 
@@ -153,60 +153,60 @@ A comprehensive, zero-skimming architectural audit was conducted comparing **Den
 ```
 
 ### Target 1: Agentic Copilot Core, Tool Registry & Guardrails
-- **Origin**: `dentalpin/backend/app/core/agents/`
-- **Concept**: A declarative, central registry (`ToolRegistry`) where every tool is qualified by module (`module.tool`), enforces required permissions (`permissions: ["agenda.appointments.write"]`), categorizes actions (`READ`, `WRITE`, `DESTRUCTIVE`), and routes through a unified chokepoint.
-- **Guardrails Engine**:
+- Origin: `dentalpin/backend/app/core/agents/`
+- Concept: A declarative, central registry (`ToolRegistry`) where every tool is qualified by module (`module.tool`), enforces required permissions (`permissions: ["agenda.appointments.write"]`), categorizes actions (`READ`, `WRITE`, `DESTRUCTIVE`), and routes through a unified chokepoint.
+- Guardrails Engine:
   - Automatically intercepts `DESTRUCTIVE` actions and forces `REQUIRE_APPROVAL` in supervised mode.
   - Per-session sliding window rate-limiting (e.g., max 10 actions/minute, 100 actions/session).
   - Unbreakable audit logging of every tool attempt, argument payload, execution time, and error.
-- **Implementation in DENTE**:
+- Implementation in DENTE:
   - Create `apps/api/src/ai/agents/toolRegistry.ts`
   - Create `apps/api/src/ai/agents/guardrails.ts`
   - Define standard clinical tools: `patients.find_patient`, `emr.get_card`, `catalog.suggest_icd10_plan`, `agenda.book_appointment`.
 
 ### Target 2: PHI Redaction & Rehydration Gateway (152-ФЗ / HIPAA Compliant)
-- **Origin**: `dentalpin/backend/app/core/agents/redaction.py`
-- **Concept**: A deterministic, bidirectional `SymbolTable` that intercepts messages sent to cloud LLMs (OpenAI, Anthropic, Gemini, Grok).
+- Origin: `dentalpin/backend/app/core/agents/redaction.py`
+- Concept: A deterministic, bidirectional `SymbolTable` that intercepts messages sent to cloud LLMs (OpenAI, Anthropic, Gemini, Grok).
   - Masks patient full names (`NAME_a1b2c3`), phone numbers (`PHONE_d4e5f6`), emails (`EMAIL_789abc`), national IDs/SNILS (`NATID_112233`), and UUID references (`PATIENT_445566`).
   - LLM executes reasoning and tool calls entirely in token space.
   - Tool arguments are de-tokenized before database query execution.
   - LLM response text is rehydrated into readable text for the doctor.
-- **Implementation in DENTE**:
+- Implementation in DENTE:
   - Create `apps/api/src/ai/privacy/phiRedactor.ts`
   - Create `apps/api/src/ai/privacy/symbolTable.ts`
   - Guarantees 100% compliance with Federal Law 152-ФЗ "On Personal Data" without sacrificing AI capabilities.
 
 ### Target 3: 2FA Public Treatment Plan / Estimate Approval Link
-- **Origin**: `dentalpin/backend/app/modules/budget/public_router.py`
-- **Concept**: Friction-free patient estimate delivery and remote signature workflow:
+- Origin: `dentalpin/backend/app/modules/budget/public_router.py`
+- Concept: Friction-free patient estimate delivery and remote signature workflow:
   1. Patient receives a short link (via SMS/WhatsApp/Telegram): `https://clinic.dente.ru/p/plan/{token}`
-  2. Initial hit (`/meta`) returns clinic branding, doctor name, and total amount — with **zero sensitive patient PII**.
+  2. Initial hit (`/meta`) returns clinic branding, doctor name, and total amount — with zero sensitive patient PII.
   3. Patient passes 2FA knowledge verification: enters last 4 digits of phone number, date of birth, or SMS verification code.
   4. On verification, server issues a signed, token-scoped HTTP-only JWT cookie.
   5. Patient reviews multi-stage clinical treatment plan, breakdown of procedures, and warranty terms.
   6. Patient signs directly on screen (Canvas signature) or clicks digital acceptance.
   7. Server records cryptographic audit trail (IP hash, User-Agent, timestamp, signature blob) and issues an immutable signed PDF.
-- **Implementation in DENTE**:
+- Implementation in DENTE:
   - Add `apps/api/src/routes/documents/publicPlanRouter.ts`
   - Add `apps/web/src/components/portal/PublicPlanViewer.tsx`
 
 ### Target 4: WhatsApp Business API via Kapso Meta Cloud Adapter
-- **Origin**: `dentalpin/backend/app/modules/whatsapp_kapso/`
-- **Concept**: Modular `ChannelAdapter` architecture cleanly decoupling messaging logic from third-party vendor APIs.
+- Origin: `dentalpin/backend/app/modules/whatsapp_kapso/`
+- Concept: Modular `ChannelAdapter` architecture cleanly decoupling messaging logic from third-party vendor APIs.
   - Multi-tenant encrypted credentials stored per clinic.
   - Automated switching between template messages (appointment reminders, 2FA links) and freeform session messages.
   - Structured webhook callbacks for message delivery tracking (SENT, DELIVERED, READ, FAILED).
-- **Implementation in DENTE**:
+- Implementation in DENTE:
   - Create `apps/api/src/services/communications/adapters/whatsappKapsoAdapter.ts`
 
 ### Target 5: 6-Point Periodontogram Automatic Clinical Indices Calculation
-- **Origin**: `dentalpin/backend/app/modules/periodontogram/indices.py`
-- **Concept**: Pure-function clinical periodontal mathematical engine:
-  - **O'Leary Plaque Control Record (PCR)**: `PCR = (Plaque Sites / Total Evaluated Sites) * 100%`
-  - **Bleeding on Probing Index (BOP / Ainamo)**: `BOP = (Bleeding Sites / Total Evaluated Sites) * 100%`
-  - **Periodontal Screening and Recording (PSR / CPITN)**: Automated sextant score calculation (Codes 0..4, * for furcation/mobility).
-  - **Clinical Attachment Level (CAL)**: `CAL = Probing Pocket Depth (PPD) + Gingival Margin Recession (GR)`.
-- **Implementation in DENTE**:
+- Origin: `dentalpin/backend/app/modules/periodontogram/indices.py`
+- Concept: Pure-function clinical periodontal mathematical engine:
+  - O'Leary Plaque Control Record (PCR): `PCR = (Plaque Sites / Total Evaluated Sites) * 100%`
+  - Bleeding on Probing Index (BOP / Ainamo): `BOP = (Bleeding Sites / Total Evaluated Sites) * 100%`
+  - Periodontal Screening and Recording (PSR / CPITN): Automated sextant score calculation (Codes 0..4, * for furcation/mobility).
+  - Clinical Attachment Level (CAL): `CAL = Probing Pocket Depth (PPD) + Gingival Margin Recession (GR)`.
+- Implementation in DENTE:
   - Port calculation functions into `packages/clinical-math/src/periodontalIndices.ts`.
 
 ---
@@ -225,6 +225,6 @@ A comprehensive, zero-skimming architectural audit was conducted comparing **Den
 
 ## 6. Verification & Sign-off
 
-- **Methodology**: 100% Zero-Skimming Census across all 35 modules in Dentalpin and all corresponding domains in DENTE Dental CRM.
-- **Architectural Validation**: Verified against Russian medical regulations (Минздрав РФ, 152-ФЗ, 54-ФЗ, МДЛП, ЕГИСЗ) and international dental standards (FDI, ADA, ISO 3950).
-- **Report Status**: **COMPLETE & AUTHORITATIVE**.
+- Methodology: 100% Zero-Skimming Census across all 35 modules in Dentalpin and all corresponding domains in DENTE Dental CRM.
+- Architectural Validation: Verified against Russian medical regulations (Минздрав РФ, 152-ФЗ, 54-ФЗ, МДЛП, ЕГИСЗ) and international dental standards (FDI, ADA, ISO 3950).
+- Report Status: COMPLETE & AUTHORITATIVE.

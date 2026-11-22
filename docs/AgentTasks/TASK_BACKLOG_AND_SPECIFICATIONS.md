@@ -1,10 +1,10 @@
 # 📋 ИНДУСТРИАЛЬНЫЙ ТАСК-ТРЕКЕР И ТЕХНИЧЕСКИЕ СПЕЦИФИКАЦИИ (ROADMAP)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)  
-> **Проект:** Dental CRM (DENTE)  
-> **Ревизия старта:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
-> **Статус:** **ВСЕ 3 ЭПИКА ВЫПОЛНЕНЫ И ЗАКРЫТЫ (`ПРОВЕРЕНО`)**  
-> **Стандарт разработки:** `.agents/AGENTS.md` (Мандаты 8b, 8e, 8g, 8h, 8i, 8k, 8n: zero-mocks, no-sycophancy, test proof, doctor autonomy)  
+> Проект: Dental CRM (DENTE)  
+> Ревизия старта: `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
+> Статус: **ВСЕ 3 ЭПИКА ВЫПОЛНЕНЫ И ЗАКРЫТЫ (`ПРОВЕРЕНО`)**  
+> Стандарт разработки: `.agents/AGENTS.md` (Мандаты 8b, 8e, 8g, 8h, 8i, 8k, 8n: zero-mocks, no-sycophancy, test proof, doctor autonomy)  
 
 ---
 
@@ -124,7 +124,7 @@
 - [apps/api/src/services/imaging/DicomProcessorService.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/DicomProcessorService.ts) — чистый сервис обработки DICOM метаданных.
 - [apps/api/src/services/clinical/DiarySigningCeremonyService.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/clinical/DiarySigningCeremonyService.ts) — церемония подписания дневника Form 043/u.
 - [apps/api/src/services/imports/SmartPricelistImportService.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imports/SmartPricelistImportService.ts) — интеллектуальный импорт прейскуранта 804н.
-- Всего в `apps/api/src/services/` реализовано **39 специализированных сервисов**.
+- Всего в `apps/api/src/services/` реализовано 39 специализированных сервисов.
 
 ### 2.2.3. Критерии приёмки (Definition of Done)
 - [x] Роуты выполняют валидацию DTO через Zod и делегируют операции сервисным классам.
@@ -159,7 +159,7 @@
 Хук `useAppLogic.tsx` декомпозирован на изолированные доменные хуки в `apps/web/src/hooks/domains/`.
 
 ### 3.1.2. Доказательства реализации в коде
-- [apps/web/src/hooks/domains/](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/) — создано **40 доменных хуков**:
+- [apps/web/src/hooks/domains/](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/) — создано 40 доменных хуков:
   `useModalOrchestrator.ts`, `useScheduleFilterController.ts`, `useNavigationRouter.ts`, `usePatientLogic.ts`, `useClinicalVisitLogic.ts`, `useBillingDocumentLogic.ts`, `useFinanceLogic.ts`, `useImagingLogic.ts`, `useTelegramLogic.ts`, `useStaffSettingsLogic.ts` и др.
 - Контракт обратной совместимости: `useAppLogic.tsx` собирает интерфейс из доменных хуков без регрессий внешних вызовов.
 
@@ -225,33 +225,33 @@
 В соответствии с Высшей Конституцией (THE HAMMER) проведен аудит клинических требований и отбраковка чужеродного бюрократического блоата.
 
 ### 📌 1. Физиологическая норма в 1 клик («Соматически здоров / норма») (Мандат 8e) [РЕАЛИЗОВАНО]
-- **Доказательства в коде:**
+- Доказательства в коде:
   * [apps/web/src/components/visit/VisitAnamnesisTab.tsx:216](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/VisitAnamnesisTab.tsx#L216) — кнопка «Соматически здоров / норма (1-клик)».
   * [apps/web/src/components/visit/VisitDiarySection.tsx:725](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/VisitDiarySection.tsx#L725) — быстрое заполнение нормы дневника Формы 043/у.
   * [apps/web/src/components/patient/PatientAnamnesisModal.tsx:135, 284](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patient/PatientAnamnesisModal.tsx#L135) — шаблон соматической нормы.
   * [apps/web/src/components/documents/PrimaryIntakePackageModal.tsx:251](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/PrimaryIntakePackageModal.tsx#L251) — пакетная норма анкеты пациента.
   * [apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx:709](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx#L709) — экспресс-норма в мобильном чекине.
-- **Статус:** `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
+- Статус: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
 
 ### 📌 2. Касса 54-ФЗ без обязательного ИНН с физических лиц (Мандаты 8e, 8n) [РЕАЛИЗОВАНО]
-- **Доказательства в коде:**
+- Доказательства в коде:
   * [apps/web/src/components/finance/PaymentModal.tsx](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/PaymentModal.tsx) — прием оплаты наличными, картой, СБП без требования ввода ИНН пациента-физлица.
   * [apps/api/src/services/billing/fiscal54fzService.ts:181, 597](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/billing/fiscal54fzService.ts#L181) — `cashierInn` опционален, тег покупателя 1228 не навязывается физическим лицам.
-- **Статус:** `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
+- Статус: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
 
 ### 📌 3. 10-секундная CITO запись без обязательного ассистента (Мандаты 8e, 8n) [РЕАЛИЗОВАНО]
-- **Доказательства в коде:**
+- Доказательства в коде:
   * [apps/web/src/components/schedule/NewAppointmentForm.tsx:983](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/NewAppointmentForm.tsx#L983) — чип `Без ассистента` активен по умолчанию.
   * [apps/web/src/components/schedule/AppointmentModal.tsx:324](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/AppointmentModal.tsx#L324) — `assistantUserId: isSoloDoctor ? null : ...` (соло-врач автономен).
   * [apps/web/src/VisitView.tsx:898](file:///C:/Clinic_MVP/dental-crm/apps/web/src/VisitView.tsx#L898) — кнопка «Быстрый приём (CITO)» с мгновенным переходом к лечению.
-- **Статус:** `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
+- Статус: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
 
 ### 📌 4. Мягкий овердрафт склада без блокировки операции (Мандаты 8e, 8n) [РЕАЛИЗОВАНО]
-- **Доказательства в коде:**
+- Доказательства в коде:
   * [apps/web/src/components/surgery/surgeryProtocols.ts:163](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/surgery/surgeryProtocols.ts#L163) — `evaluateWarehouseOverdraft`: при нехватке материалов выдается предупреждение, но `canProceed = true` (операция не блокируется).
   * [apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx:123](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx#L123) — списание карпул в 1 клик с мягким минусовым балансом.
   * [packages/shared/src/inventory/consumables.ts:199](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/inventory/consumables.ts#L199) — `allowOverdraft: z.boolean().default(true)`.
-- **Статус:** `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
+- Статус: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]`.
 
 ---
 
@@ -259,29 +259,29 @@
 
 В соответствии с Мандатами 8e (Doctor Autonomy), 8g (Rule != Task), 8i (Outpatient Bounded Context), 8k (CRM != Simulator) и 8n (Scale Sovereignty):
 
-1. ❌ **Требование обязательного выбора ассистента при создании записи:**
-   - **Вердикт:** `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e, 8n]`.
-   - **Обоснование:** В кабинете соло-врача и небольших клиниках врач работает один. Требование ассистента парализует регистратуру.
-2. ❌ **Обязательный запрос ИНН у пациентов при оплате через кассу 54-ФЗ:**
-   - **Вердикт:** `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e, 8n]`.
-   - **Обоснование:** По 54-ФЗ ИНН обязателен исключительно для юридических лиц и ИП. Требование ИНН с граждан — грубое нарушение закона и создание барьера на кассе.
-3. ❌ **Блокировка сохранения протокола 043/у из-за незаполненных соматических полей (пульс, температура):**
-   - **Вердикт:** `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e]`.
-   - **Обоснование:** Врач лечит зубы, а не заполняет стационарный журнал. Второстепенные поля заполняются нормой по умолчанию в 1 клик.
-4. ❌ **Процедурные симуляторы ручного ввода 192 замеров зубодесневых карманов на терапевтическом приёме:**
-   - **Вердикт:** `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8k]`.
-   - **Обоснование:** CRM создана для снижения трения, а не для симуляции физического мира. Пародонтальный статус фиксируется пакетными клиническими пресетами («Норма 1–2 мм», «Гингивит», «Пародонтит легкий/средний/тяжелый»).
-5. ❌ **Стационарные бланки 025/у, протоколы коечного фонда и трансфузиологии:**
-   - **Вердикт:** `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8i]`.
-   - **Обоснование:** DENTE CRM — амбулаторная стоматология. Любые элементы общей больничной бюрократии признаны контекстным загрязнением (Context Bleed) и отбракованы.
+1. ❌ Требование обязательного выбора ассистента при создании записи:
+   - Вердикт: `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e, 8n]`.
+   - Обоснование: В кабинете соло-врача и небольших клиниках врач работает один. Требование ассистента парализует регистратуру.
+2. ❌ Обязательный запрос ИНН у пациентов при оплате через кассу 54-ФЗ:
+   - Вердикт: `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e, 8n]`.
+   - Обоснование: По 54-ФЗ ИНН обязателен исключительно для юридических лиц и ИП. Требование ИНН с граждан — грубое нарушение закона и создание барьера на кассе.
+3. ❌ Блокировка сохранения протокола 043/у из-за незаполненных соматических полей (пульс, температура):
+   - Вердикт: `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8e]`.
+   - Обоснование: Врач лечит зубы, а не заполняет стационарный журнал. Второстепенные поля заполняются нормой по умолчанию в 1 клик.
+4. ❌ Процедурные симуляторы ручного ввода 192 замеров зубодесневых карманов на терапевтическом приёме:
+   - Вердикт: `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8k]`.
+   - Обоснование: CRM создана для снижения трения, а не для симуляции физического мира. Пародонтальный статус фиксируется пакетными клиническими пресетами («Норма 1–2 мм», «Гингивит», «Пародонтит легкий/средний/тяжелый»).
+5. ❌ Стационарные бланки 025/у, протоколы коечного фонда и трансфузиологии:
+   - Вердикт: `[ОТКЛОНЕНО ПО КОНСТИТУЦИИ: МАНДАТ 8i]`.
+   - Обоснование: DENTE CRM — амбулаторная стоматология. Любые элементы общей больничной бюрократии признаны контекстным загрязнением (Context Bleed) и отбракованы.
 
 ---
 
 ## 🎯 АКТУАЛЬНЫЙ СТАТУС И ОСТАТОЧНЫЙ БЭКЛОГ (ZERO DEAD-ENDS)
 
-- **Все 63 канонические фичи конкурентов** ([FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)) и **все 9 киллер-модулей** ([BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)) полностью реализованы в production.
-- **Все задачи Спринта 1–4, Спринта 5 и Спринта 6 закрыты на 100%.**
-- **Текущий фокус системы (Continuous Operations):**
+- Все 63 канонические фичи конкурентов ([FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)) и все 9 киллер-модулей ([BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)) полностью реализованы в production.
+- Все задачи Спринта 1–4, Спринта 5 и Спринта 6 закрыты на 100%.
+- Текущий фокус системы (Continuous Operations):
   1. Мониторинг производительности рендеринга и мгновенного открытия снимков визиографа (<50 мс).
   2. Поддержание непрерывных гейтов компиляции (Exit Code 0) и чистоты кодировки UTF-8 (0 ошибок `check:encoding`).
   3. Сохранение идеальной визуальной тишины по стандартам Studio Mac HIG (тулбары 32–36px, плотность данных, 0 мультяшных эмодзи в документах).

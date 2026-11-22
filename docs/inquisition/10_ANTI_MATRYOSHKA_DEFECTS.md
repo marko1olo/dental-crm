@@ -2,33 +2,33 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> 📖 НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:
 > - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 > - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 > - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
 > - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
 > - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
 
-**Роль:** Инквизитор 10 — Anti-Matryoshka Auditor  
-**Субагент ID:** `34317db8-7517-48f8-b39f-b7787493630f` / `087ac851-e2df-4478-9264-73584ab8d78a`  
-**Целевая область:** Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
-**Основание:** `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md`, `THE_HAMMER_MASTER_PROMPT.md` и Мандат 8e  
-**Презумпция брака:** 100% подтверждена. Поиск вложенных рамок, карточек в карточках и избыточных подложек.
+Роль: Инквизитор 10 — Anti-Matryoshka Auditor  
+Субагент ID: `34317db8-7517-48f8-b39f-b7787493630f` / `087ac851-e2df-4478-9264-73584ab8d78a`  
+Целевая область: Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
+Основание: `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md`, `THE_HAMMER_MASTER_PROMPT.md` и Мандат 8e  
+Презумпция брака: 100% подтверждена. Поиск вложенных рамок, карточек в карточках и избыточных подложек.
 
 ---
 
 ## 🪆 ДОКТРИНА АНТИ-МАТРЁШКИ И СТАНДАРТЫ СЛОЁВ APPLE HIG
 
-1. **Закон строго монолитных панелей (Max Modal Depth = 1):**
+1. Закон строго монолитных панелей (Max Modal Depth = 1):
    - Глубина модальных окон СТРОГО равна 1.
    - Модальные окна поверх модальных окон категорически ЗАПРЕЩЕНЫ. Все вложенные сценарии открываются через боковой sheet (Drawer), аккордеон или смену шага без наслоения окон.
-2. **Запрет на карточки внутри карточек («Card-in-Card Anti-Pattern»):**
+2. Запрет на карточки внутри карточек («Card-in-Card Anti-Pattern»):
    - Запрещено помещать обрамленные боксы внутрь уже обрамленных карточек.
    - Разделение блоков контента выполняется исключительно:
      * Тональным смещением фона: `var(--paper)` $\rightarrow$ `var(--paper-strong)`.
      * Тонкими волосяными разделителями: `1px solid var(--glass-border)`.
      * Внутренними отступами (`gap`, `space-y`) без двойных границ (`border`) и теней (`shadow`).
-3. **Печатные документы — монолитные листы, а не карточки:**
+3. Печатные документы — монолитные листы, а не карточки:
    - Бланки 043/у, рецепты 107-1/у, ИДС 1051н и сметы оформляются как чистый печатный лист типографики А4/А5 без серых плашек и рамок вокруг абзацев.
 
 ---

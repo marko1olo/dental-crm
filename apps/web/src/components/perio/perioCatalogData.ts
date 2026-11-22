@@ -17,15 +17,13 @@ import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export {
-	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
-	calculatePsrSextants, createDefaultPerioTeeth, formatPsrSextantsSummary,
-	generateComprehensivePerioProtocolText, isFurcationEligibleTooth, PERIO_SITE_KEYS,
-	type PerioChartSummary, type PerioToothRecord, PSR_SEXTANTS, type PsrSextantResult,
+	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices, calculatePsrSextants,
+	createDefaultPerioTeeth, formatPsrSextantsSummary, generateComprehensivePerioProtocolText,
+	isFurcationEligibleTooth, PERIO_SITE_KEYS, type PerioChartSummary, type PerioToothRecord, PSR_SEXTANTS, type PsrSextantResult,
 };
 export {
-	probingDepthTone, probingDepthClinicalTone, probingDepthClasses,
-	probingDepthClinicalClasses, probingDepthHex, probingDepthClinicalHex,
-	TONE_TO_CLASS, TONE_TO_HEX, type HeatmapTone,
+	probingDepthTone, probingDepthClinicalTone, probingDepthClasses, probingDepthClinicalClasses,
+	probingDepthHex, probingDepthClinicalHex, TONE_TO_CLASS, TONE_TO_HEX, type HeatmapTone,
 } from "./perioHeatmap";
 
 // 1. ШКАЛА СЕКСТАНТОВ PSR / CPITN (ВОЗ / СтАР)
@@ -53,11 +51,11 @@ export interface PsrCodeMeta {
 }
 
 export const PSR_CODES_CATALOG: Record<PsrCode, PsrCodeMeta> = {
-	0: { code: 0, labelRu: "Код 0: Здоров", criteriaRu: "Цветная полоса зонда видна полностью, нет кровоточивости, глубина кармана < 3.5 мм", actionRu: "Профилактический осмотр через 6 месяцев, интактный пародонт", colorHex: "var(--success,#10b981)", badgeClass: "bg-[var(--success-soft,rgba(16,185,129,0.15))] text-[var(--success,#10b981)] border border-[var(--success,#10b981)]/30" },
-	1: { code: 1, labelRu: "Код 1: Кровоточивость", criteriaRu: "Кровоточивость при зондировании BOP, карманы < 3.5 мм, зубного камня нет", actionRu: "Обучение гигиене, полировка пастой / AirFlow, удаление биопленки", colorHex: "var(--warning,#f59e0b)", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border border-[var(--warning,#f59e0b)]/30" },
-	2: { code: 2, labelRu: "Код 2: Зубной камень", criteriaRu: "Над-/поддесневой зубной камень, нависающие края пломб, карманы < 3.5 мм", actionRu: "Профгигиена: УЗ-скейлинг + AirFlow + полировка + фторирование", colorHex: "var(--primary)", badgeClass: "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30" },
-	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "var(--warning,#d97706)", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.2))] text-[var(--warning,#d97706)] border border-[var(--warning,#d97706)]/30" },
-	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "var(--danger,#e11d48)", badgeClass: "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/40" },
+	0: { code: 0, labelRu: "Код 0: Здоров", criteriaRu: "Цветная полоса зонда видна полностью, нет кровоточивости, глубина кармана < 3.5 мм", actionRu: "Профилактический осмотр через 6 месяцев, интактный пародонт", colorHex: "#10b981", badgeClass: "bg-[var(--success-soft,rgba(16,185,129,0.15))] text-[var(--success,#10b981)] border border-[var(--success,#10b981)]/30" },
+	1: { code: 1, labelRu: "Код 1: Кровоточивость", criteriaRu: "Кровоточивость при зондировании BOP, карманы < 3.5 мм, зубного камня нет", actionRu: "Обучение гигиене, полировка пастой / AirFlow, удаление биопленки", colorHex: "#f59e0b", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border border-[var(--warning,#f59e0b)]/30" },
+	2: { code: 2, labelRu: "Код 2: Зубной камень", criteriaRu: "Над-/поддесневой зубной камень, нависающие края пломб, карманы < 3.5 мм", actionRu: "Профгигиена: УЗ-скейлинг + AirFlow + полировка + фторирование", colorHex: "#0d9488", badgeClass: "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30" },
+	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "#d97706", badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.2))] text-[var(--warning,#d97706)] border border-[var(--warning,#d97706)]/30" },
+	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "#e11d48", badgeClass: "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/40" },
 };
 export const PSR_CODE_DEFINITIONS = PSR_CODES_CATALOG;
 export type PsrCodeDefinition = PsrCodeMeta;
@@ -135,29 +133,11 @@ export const PERIO_TREATMENT_PROTOCOLS: readonly PerioTreatmentProtocol[] = [
 // 3. СПИСАНИЕ РАСХОДНИКОВ ПАКЕТОМ В БЭКЕ (SOFT NEGATIVE STOCK, МАНДАТ 8n)
 export interface PeriodontalConsumableItem { itemId: string; itemName: string; quantity: number; notes: string; }
 export const PERIODONTAL_CONSUMABLES_CATALOG: Record<"hygiene" | "vector" | "splinting" | "recession" | "curettage" | "norm", PeriodontalConsumableItem[]> = {
-	hygiene: [
-		{ itemId: "mat_airflow_powder", itemName: "Порошок для воздушно-абразивной обработки (глицин)", quantity: 1, notes: "Снятие биопленки" },
-		{ itemId: "mat_prophy_paste", itemName: "Полировочная паста для профессиональной гигиены", quantity: 1, notes: "Финишная полировка" },
-		{ itemId: "mat_fluoride_varnish", itemName: "Фторлак / реминерализующий гель", quantity: 1, notes: "Глубокое фторирование" },
-	],
-	vector: [
-		{ itemId: "mat_vector_polish", itemName: "Полировочная суспензия для корней (гидроксиапатит)", quantity: 1, notes: "Полировка цемента корня" },
-		{ itemId: "mat_chlorhexidine_005", itemName: "Хлоргексидина биглюконат 0.05%", quantity: 1, notes: "Ирригация карманов" },
-		{ itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Защитная десневая повязка" },
-	],
-	splinting: [
-		{ itemId: "mat_fiber_splint", itemName: "Стекловолоконная лента для шинирования", quantity: 1, notes: "Шинирующая арматура" },
-		{ itemId: "mat_flowable_composite", itemName: "Текучий светоотверждаемый композит", quantity: 1, notes: "Фиксация шины" },
-	],
-	recession: [
-		{ itemId: "mat_prolene_60", itemName: "Микрохирургический шовный материал 6-0", quantity: 1, notes: "Микрохирургические швы" },
-		{ itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Изоляция операционного поля" },
-	],
-	curettage: [
-		{ itemId: "mat_chlorhexidine_005", itemName: "Хлоргексидина биглюконат 0.05% (100 мл)", quantity: 1, notes: "Антисептическая ирригация" },
-		{ itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Защитная десневая повязка" },
-		{ itemId: "mat_perio_gel_antiseptic", itemName: "Антибактериальный дентальный гель", quantity: 1, notes: "Инстилляция в карманы" },
-	],
+	hygiene: [{ itemId: "mat_airflow_powder", itemName: "Порошок для воздушно-абразивной обработки (глицин)", quantity: 1, notes: "Снятие биопленки" }, { itemId: "mat_prophy_paste", itemName: "Полировочная паста для профессиональной гигиены", quantity: 1, notes: "Финишная полировка" }, { itemId: "mat_fluoride_varnish", itemName: "Фторлак / реминерализующий гель", quantity: 1, notes: "Глубокое фторирование" }],
+	vector: [{ itemId: "mat_vector_polish", itemName: "Полировочная суспензия для корней (гидроксиапатит)", quantity: 1, notes: "Полировка цемента корня" }, { itemId: "mat_chlorhexidine_005", itemName: "Хлоргексидина биглюконат 0.05%", quantity: 1, notes: "Ирригация карманов" }, { itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Защитная десневая повязка" }],
+	splinting: [{ itemId: "mat_fiber_splint", itemName: "Стекловолоконная лента для шинирования", quantity: 1, notes: "Шинирующая арматура" }, { itemId: "mat_flowable_composite", itemName: "Текучий светоотверждаемый композит", quantity: 1, notes: "Фиксация шины" }],
+	recession: [{ itemId: "mat_prolene_60", itemName: "Микрохирургический шовный материал 6-0", quantity: 1, notes: "Микрохирургические швы" }, { itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Изоляция операционного поля" }],
+	curettage: [{ itemId: "mat_chlorhexidine_005", itemName: "Хлоргексидина биглюконат 0.05% (100 мл)", quantity: 1, notes: "Антисептическая ирригация" }, { itemId: "mat_perio_dressing_coepak", itemName: "Лечебная пародонтальная повязка", quantity: 1, notes: "Защитная десневая повязка" }, { itemId: "mat_perio_gel_antiseptic", itemName: "Антибактериальный дентальный гель", quantity: 1, notes: "Инстилляция в карманы" }],
 	norm: [],
 };
 
@@ -373,13 +353,7 @@ export function applyExpressPerioPreset(teeth: readonly PerioToothRecord[], pres
 			updatedTeeth: applyHealthyPeriodontiumPreset(teeth),
 			protocolText: preset?.defaultProtocolRu ?? (PERIO_TREATMENT_PROTOCOLS[0]?.protocolTextRu || ""),
 			title: "Профгигиена AirFlow + УЗ",
-			service: {
-				code: "A16.07.051",
-				serviceCode: "A16.07.051",
-				name: "Комплексная профессиональная гигиена полости рта (УЗ + AirFlow)",
-				priceKopecks: 550000,
-				category: "Пародонтология",
-			},
+			service: { code: "A16.07.051", serviceCode: "A16.07.051", name: "Комплексная профессиональная гигиена полости рта (УЗ + AirFlow)", priceKopecks: 550000, category: "Пародонтология" },
 		};
 	}
 	if (presetId === "gingivitis_express") {
@@ -405,7 +379,22 @@ export function applyTherapistPathologyPreset(teeth: readonly PerioToothRecord[]
 }
 
 export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToProtocol?: (text: string) => void): void {
-	const { protocolText, service } = result;
+	const { protocolText, service, updatedTeeth } = result;
+
+	// Дефект 6: Анатомическая привязка зубов в смету (teethNumbers)
+	const affectedTeeth = (updatedTeeth || []).filter((t) => {
+		if (t.isMissing) return false;
+		if ((t.mobility ?? 0) > 0 || (t.furcation ?? 0) > 0) return true;
+		for (const key of PERIO_SITE_KEYS) {
+			const site = t[key];
+			if (site && (site.probingDepthMm > 3 || site.bleedingOnProbing || site.suppuration || site.calculus)) {
+				return true;
+			}
+		}
+		return false;
+	});
+	const affectedTeethNumbers = affectedTeeth.map((t) => t.toothNumber);
+
 	if (protocolText) {
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -418,8 +407,21 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 			const priceKopecks = service.priceKopecks || (service.price ? rublesToKopecks(service.price) : 0);
 			const store = useVisitStore.getState();
 			const code = service.serviceCode || service.code;
-			store.addCompletedService({ serviceId: code, serviceCode: code, code, title: service.name, name: service.name, priceKopecks, amountKopecks: priceKopecks });
-			store.applyServicesToToothState({ services: [{ code, name: service.name, priceKopecks }] });
+			store.addCompletedService({
+				serviceId: code,
+				serviceCode: code,
+				code,
+				title: service.name,
+				name: service.name,
+				priceKopecks,
+				amountKopecks: priceKopecks,
+				toothNumber: affectedTeethNumbers[0] ?? undefined,
+				teethNumbers: affectedTeethNumbers,
+			});
+			store.applyServicesToToothState({
+				services: [{ code, name: service.name, priceKopecks }],
+				toothNumber: affectedTeethNumbers[0] ?? undefined,
+			});
 		} catch { /* safe */ }
 	}
 	if (typeof window !== "undefined") {
@@ -429,7 +431,9 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 				detail: {
 					services: [{ code: service.serviceCode || service.code, name: service.name, nameRu: service.name, priceKopecks, amountKopecks: priceKopecks, quantity: 1, category: service.category || "Пародонтология", stageKind: "hygiene", isPrimary: true }],
-					toothNumber: undefined, teethNumbers: [], stageKind: "hygiene",
+					toothNumber: affectedTeethNumbers[0] ?? undefined,
+					teethNumbers: affectedTeethNumbers,
+					stageKind: "hygiene",
 				},
 			}));
 		}

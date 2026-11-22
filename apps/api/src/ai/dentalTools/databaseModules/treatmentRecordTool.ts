@@ -69,6 +69,9 @@ export async function handleTreatmentRecord(args: TreatmentRecordInput, context:
 			priceRub: totalPrice,
 			unitPriceRub: args.priceRub,
 			discountRub: 0,
+			priceKopecks: kopecks,
+			unitPriceKopecks: unitKopecks,
+			discountKopecks: 0n,
 			status: "completed",
 		})
 		.returning({ id: treatmentItems.id });

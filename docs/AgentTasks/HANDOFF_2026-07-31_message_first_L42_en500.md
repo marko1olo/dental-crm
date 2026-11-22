@@ -2,15 +2,15 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 >
-> ⚠️ **HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):**
+> ⚠️ HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):
 > Этот документ является зафиксированным историческим отчётом этапа L42 от 31 июля 2026 года.
 > Все задачи закрыты (коммиты `afb0fa8f0`, `32ea7bcce`).
-> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
+> КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
 > Актуальный рабочий статус и активный бэклог: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**, **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** и **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**.
 
-**Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
+Repo: `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **HEAD = origin/main = `32ea7bcce`**  
-**Previous base:** `803858558` (L40–41 stamp)
+Previous base: `803858558` (L40–41 stamp)
 
 ---
 
@@ -28,7 +28,7 @@ Push: `803858558..32ea7bcce` → `origin/main`. Pull: already up to date. HEAD==
 Operator UI message-first needs **Cyrillic `payload.message`** on failures.  
 English `reply.send({ error: "Failed to …" })` leaks into toasts when UI prefers `error` or dumps body.
 
-**Pattern (API 500 branch):**
+Pattern (API 500 branch):
 ```ts
 return reply.code(500).send({
   error: "PascalCaseCode",
@@ -80,7 +80,7 @@ No mocks. Live Fastify inject for waitlist AUTH-first only (source contract cove
 
 L40–41 remain stamped at `36dc0ce02` / docs `803858558`.
 
-Open `[ ]` / `[~]` gameplay lines after L42: **none** from this slice.
+Open `[ ]` / `[~]` gameplay lines after L42: none from this slice.
 
 ---
 
@@ -90,7 +90,7 @@ Handoff A still open (web message-first). Scan: `.tmp/next_gap_scan.txt`.
 
 ### P1 candidates (ordered)
 
-**A. Web message-first (operator-facing)**  
+A. Web message-first (operator-facing)  
 - `ScheduleView.tsx`
 - `PatientReclamationsWidget.tsx` / `PatientTaskTicketsWidget.tsx` / archive-blacklist
 - `PatientFamilyCard.tsx`
@@ -99,25 +99,25 @@ Handoff A still open (web message-first). Scan: `.tmp/next_gap_scan.txt`.
 - auth: ClinicLogin / UserLogin / Register / AcceptInvite
 - `hooks/useWorkspaceProfile.ts` L224 still has English `Failed to apply preset: …` (save path already message-first)
 
-**FamilyWalletPanel** — already has `refusalToast` Cyrillic-first; defer unless scan still flags bare `!res.ok`.
+FamilyWalletPanel — already has `refusalToast` Cyrillic-first; defer unless scan still flags bare `!res.ok`.
 
-**B. Remaining API EN in reply bodies**  
+B. Remaining API EN in reply bodies  
 Re-scan `apps/api/src/routes` for `Failed to` / bare English 500 after this slice. Internal `throw new Error("Failed…")` in `db/*Query.ts` is lower priority if routes map to RU.
 
-**C. Skip**  
+C. Skip  
 console.error EN, test casts, technical filter regexes.
 
 ### Recommended first bite
 
-1. **useWorkspaceProfile preset path** (L224 EN) or **PatientReclamations/TaskTickets** — wire `payload.message` like `leadsFailureMessage`.
-2. Or **ScheduleView** if appointment create/update still status-only EN toasts.
+1. useWorkspaceProfile preset path (L224 EN) or PatientReclamations/TaskTickets — wire `payload.message` like `leadsFailureMessage`.
+2. Or ScheduleView if appointment create/update still status-only EN toasts.
 3. Stamp BACKLOG → pathspec commit → push → handoff.
 
 ---
 
 ## Hard rules (Iron Gate)
 
-- Pathspec `git add -- <files>` only — **never** stage `.data`, `.dente-data`, `scratch/pgdata`
+- Pathspec `git add -- <files>` only — never stage `.data`, `.dente-data`, `scratch/pgdata`
 - AUTH-first → safeParse → business/DB
 - 400 ValidationError RU ≠ 500/404
 - No mocks for inject proofs
@@ -160,4 +160,4 @@ Expect: `32ea7bcce` and `## main...origin/main` (dirty local data OK, do not sta
 > Next: web message-first from HANDOFF NEXT (ScheduleView / reclamations / useWorkspaceProfile preset EN).  
 > Pathspec commits. Push/pull main. No mocks. Smoke AUTH_TOKEN_SECRET=dev-auth-token-secret-for-tests.
 
-**End of handoff.**
+End of handoff.

@@ -1,7 +1,7 @@
 # 19. WORKSPACE SHELL & SIDEBAR ERGONOMICS REPORT
 
-> **Канонический статус**: Завершён  
-> **Мандаты**: 8b (Anti-Monolith $\le 120$ строк), 8am (Единый дизайн-код и шапки), 8ze (Touch Ergonomics), 8wy (Zero-Mocks, 100% реальные токены), VCS Law (§2).
+> Канонический статус: Завершён  
+> Мандаты: 8b (Anti-Monolith $\le 120$ строк), 8am (Единый дизайн-код и шапки), 8ze (Touch Ergonomics), 8wy (Zero-Mocks, 100% реальные токены), VCS Law (§2).
 
 ---
 
@@ -11,7 +11,7 @@
 1. **Визуальный шум и перегрузка `.sidebar-quick-tools`**:
    - Кнопки быстрых действий («Клинические задачи» и «Профосмотры») имели толстые рамки, тяжёлые тени (`shadow-2xs`) и выглядели как массивные инородные кирпичи, выбиваясь из общей иерархии боковой панели.
    - В свернутом состоянии (`collapsed=true`) текст исчезал, но кнопки сохраняли прямоугольную форму без центрирования и тултипов.
-2. **Селекторная ловушка и обрезание текста в collapsed-режиме**:
+2. Селекторная ловушка и обрезание текста в collapsed-режиме:
    - В `sidebar.css` селектор `[data-collapsed="true"] .sidebar` искал потомка `.sidebar` внутри контейнера с атрибутом `data-collapsed`. При нахождении атрибута прямо на `aside.sidebar` селектор не срабатывал. В результате в компактном рельсе под иконками отображались неаккуратно обрезанные многоточиями строки («Смена Пока...», «Записи График...»).
 3. **Дисбаланс подвала (`.sidebar-footer`)**:
    - Кнопка сворачивания (`.sidebar-collapse-button`) и виджет переключения тем (`ThemeQuickAccessWidget`) в свернутом виде не имели строго фиксированных размеров 32×32px, что приводило к смещению по вертикали.
@@ -48,14 +48,14 @@
 
 ## 3. Машинные гейты и верификация (Proof & Verification)
 
-- **Unit-тесты (vitest)**:
+- Unit-тесты (vitest):
   - `apps/web/src/__tests__/workspaceSidebarErgonomics.test.ts` (2 tests) — PASSED.
   - `apps/web/src/components/theme/__tests__/ThemeInquisitionAndSilenceAudit.test.ts` (5 tests) — PASSED.
   - `apps/web/src/tests/scaleSovereigntyRoleSwitcher.test.tsx` (10 tests) — PASSED.
   - Итого: 17 unit-тестов, 0 failing.
 - **Гейт кодировки (`npm run check:encoding`)**: 21 388 файлов проверено, 0 замечаний.
 - **Гейт CSS-токенов (`node scripts/check-css-tokens.mjs`)**: 1 487 файлов, 0 неразрешенных переменных.
-- **4-состояный визуальный пруф (Red Team Visual Proof)**:
+- 4-состояный визуальный пруф (Red Team Visual Proof):
   - ☀️ PC Light (1440×900, expanded): `scratch/sidebar_pc_light_expanded.png` (226 KB)
   - ☀️ PC Light (1440×900, collapsed): `scratch/sidebar_pc_light_collapsed.png` (135 KB)
   - 🌙 PC Dark (1440×900, expanded): `scratch/sidebar_pc_dark_expanded.png` (153 KB)

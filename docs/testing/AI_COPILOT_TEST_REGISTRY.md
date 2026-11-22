@@ -1,19 +1,19 @@
 # 🤖 DENTE AI COPILOT & WORKSTATION HARNESS TEST REGISTRY
 
-> 🏛️ **SSOT И СТАНДАРТ ТЕСТИРОВАНИЯ ИИ-АССИСТЕНТА:**  
+> 🏛️ SSOT И СТАНДАРТ ТЕСТИРОВАНИЯ ИИ-АССИСТЕНТА:  
 > Канонический реестр верификации соло-копайлота DENTE CRM и Workstation-Харнесса по Конституции [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md), Мандатам 8e (автономия врача), 8n (соло-практика), 8x (клинический язык без канцелярита) и 8z (запрет моков).
 > 
-> 🎯 **СТРОГО ОДИН МУДРЫЙ СОЛО-АГЕНТ:**  
+> 🎯 СТРОГО ОДИН МУДРЫЙ СОЛО-АГЕНТ:  
 > Внутри софта клиники работает ровно один умный chairside copilot за плечом врача (ноль внутренних роев и микро-агентов внутри софта).
 
 ---
 
 ## 1. СТРУКТУРА ТЕСТОВОГО СЬЮТА (`copilotAutonomousHarness.test.ts`)
 
-- **Путь к тесту:** [`apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts)
-- **Команда запуска:** `npx tsx --test apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts`
-- **Время выполнения:** $\le 6$ секунд (Strict Gate: $\le 10$ с).
-- **Результат прогона:** **17 passed, 0 failed (100% PASS)**.
+- Путь к тесту: [`apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts)
+- Команда запуска: `npx tsx --test apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts`
+- Время выполнения: $\le 6$ секунд (Strict Gate: $\le 10$ с).
+- Результат прогона: 17 passed, 0 failed (100% PASS).
 
 ```mermaid
 flowchart TD

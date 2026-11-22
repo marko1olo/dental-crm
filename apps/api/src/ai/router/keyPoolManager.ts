@@ -8,6 +8,7 @@ import {
 	type ModelHealthInfo,
 	AgentRouterAllKeysExhaustedError,
 } from "./routerTypes.js";
+import { aiLogger } from "../aiLogger.js";
 
 /**
  * Sanitizes arbitrary error text or logs, masking secret API keys
@@ -185,8 +186,9 @@ export class KeyPoolManager {
 		const fails = (this.keyFailures.get(key) || 0) + 1;
 		this.keyFailures.set(key, fails);
 
-		console.warn(
-			`[AgentRouter] Key ${maskApiKey(key)} placed on ${Math.ceil(cooldownMs / 1000)}s cooldown. Reason: ${reason} (failure count: ${fails})`,
+		aiLogger.warn(
+			"keyPoolManager",
+			`Key ${maskApiKey(key)} placed on ${Math.ceil(cooldownMs / 1000)}s cooldown. Reason: ${reason} (failure count: ${fails})`,
 		);
 	}
 

@@ -1,6 +1,6 @@
 # 📅 SCHEDULE & 3-SECOND QUICK BOOKING: RED TEAM TEST REGISTRY
 
-> 🏛️ **CANONICAL INQUISITION SSOT (MANDATES 8e, 8n, 8d/8zp, APPLE HIG):**  
+> 🏛️ CANONICAL INQUISITION SSOT (MANDATES 8e, 8n, 8d/8zp, APPLE HIG):  
 > Реестр тестирования и инквизиции модуля расписания, быстрой записи у кресла (Chairside Quick Booking) и мобильного представления Agenda View клиники DENTE CRM.  
 > Соответствует Конституции [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/MOBILE_DESIGN_APPLE_HIG.md`](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md).
 
@@ -8,14 +8,14 @@
 
 ## 🧭 КЛЮЧЕВЫЕ АРХИТЕКТУРНЫЕ ИНВАРИАНТЫ
 
-1. **Суверенитет соло-врача (Мандат 8n):**
+1. Суверенитет соло-врача (Мандат 8n):
    - Соло-врач (1–2 кресла) работает без ассистента. В селекторах быстрой записи ассистент скрыт по умолчанию (`isSoloClinic === true` или пустой ростер), поле строго опционально (`assistantUserId === null`).
-2. **Автономия врача и запрет блокировок (Мандат 8e):**
-   - Кнопка «Забронировать слот» / «Записать на приём» (`quick-drawer-save-btn`) **НИКОГДА** не блокируется (`disabled={false}`).
+2. Автономия врача и запрет блокировок (Мандат 8e):
+   - Кнопка «Забронировать слот» / «Записать на приём» (`quick-drawer-save-btn`) НИКОГДА не блокируется (`disabled={false}`).
    - При отсутствии пациента — мягкий фокус на поле поиска с понятной подсказкой, без тупиков и без создания фиктивных мусорных пациентов.
-3. **Идемпотентность транзакций (Мандаты 8d / 8zp):**
+3. Идемпотентность транзакций (Мандаты 8d / 8zp):
    - Каждое создание и изменение записи сопровождается клиентским `Idempotency-Key` (RFC 9562 UUIDv7) в заголовках HTTP-запроса и теле мутации (`idempotencyKey`, `clientMutationId`). Защита от дубликатов при двойном клике.
-4. **Мобильная повестка дня Apple HIG (Мандаты 8b, 8al, 8aw):**
+4. Мобильная повестка дня Apple HIG (Мандаты 8b, 8al, 8aw):
    - Экран $\le 768$px: суверенный 1-колоночный вертикальный таймлайн (Agenda View) с 0px горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
    - Сегментный переключатель `[ Сетка | Лента ]` и Apple iOS 7-дневная полоса `[ Сегодня | Завтра | + День ]` без срезания слов и наезда плашек.
    - Закрепленная плашка Floating Bottom Bar высотой 52px в нижней трети экрана (Natural Thumb Zone) с учетом `env(safe-area-inset-bottom)`.
@@ -40,18 +40,18 @@
 
 Скриншоты сняты на живом стеке (Fastify API `http://127.0.0.1:4100` + Vite Web `http://127.0.0.1:5173`) и лично проинспектированы через `read_file` по 8 осям:
 
-1. **☀️ PC Light (1440×900):**  
+1. ☀️ PC Light (1440×900):  
    - Файл: [`docs/proofs/schedule/01_schedule_grid_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/01_schedule_grid_pc_light_1440x900.png) (131 КБ)  
-   - Статус: **ИДЕАЛЬНО**. Ровно 1 Primary CTA («✓ Забронировать слот»), нулевой клиппинг на чипах кабинетов, контрастные статусы приёмов.
-2. **🌙 PC Dark (1440×900):**  
+   - Статус: ИДЕАЛЬНО. Ровно 1 Primary CTA («✓ Забронировать слот»), нулевой клиппинг на чипах кабинетов, контрастные статусы приёмов.
+2. 🌙 PC Dark (1440×900):  
    - Файл: [`docs/proofs/schedule/02_schedule_grid_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/02_schedule_grid_pc_dark_1440x900.png) (125 КБ)  
-   - Статус: **ИДЕАЛЬНО**. 100% темные токены без слепящих белых пятен, WCAG AAA контраст, читаемые карточки визитов.
-3. **📱 Mobile Light (390×844):**  
+   - Статус: ИДЕАЛЬНО. 100% темные токены без слепящих белых пятен, WCAG AAA контраст, читаемые карточки визитов.
+3. 📱 Mobile Light (390×844):  
    - Файл: [`docs/proofs/schedule/03_schedule_agenda_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/03_schedule_agenda_mobile_light_390x844.png) (158 КБ)  
    - Статус: **ИДЕАЛЬНО**. Apple Drag Handle 36×5px, аккуратный переключатель `[ Сетка | Лента ]`, 0px горизонтального дрифта (`overflow-x: clip`), Floating Bottom Bar в зоне большого пальца.
-4. **📱 Mobile Dark (390×844):**  
+4. 📱 Mobile Dark (390×844):  
    - Файл: [`docs/proofs/schedule/04_schedule_agenda_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/04_schedule_agenda_mobile_dark_390x844.png) (161 КБ)  
-   - Статус: **ИДЕАЛЬНО**. Глубокий темный фон, четкие разделители карточек, полная адаптивность под экран iPhone 390×844.
+   - Статус: ИДЕАЛЬНО. Глубокий темный фон, четкие разделители карточек, полная адаптивность под экран iPhone 390×844.
 
 ---
 

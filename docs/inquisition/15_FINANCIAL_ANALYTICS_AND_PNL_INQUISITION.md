@@ -1,13 +1,13 @@
 # 15. Financial Analytics, P&L & Clinic Efficiency Inquisition
 
-> **Role**: Supreme Red Team Inquisitor for Financial Analytics, PnL & Clinic Efficiency  
-> **Mandates Enforced**: Mandate 8b (Max 120 lines per file), Mandate 8ap (Anti-Fabrication & Zero Regex-Scoring), Mandate 8x (Zero Law Numbers in UI), Mandate 8ze & Apple HIG (Mobile Ergonomics, Touch Targets $\ge 44\times 44$px, Row Height $\ge 52$px, 0px Horizontal Scroll), Mandate 8an (VCS Law).
+> Role: Supreme Red Team Inquisitor for Financial Analytics, PnL & Clinic Efficiency  
+> Mandates Enforced: Mandate 8b (Max 120 lines per file), Mandate 8ap (Anti-Fabrication & Zero Regex-Scoring), Mandate 8x (Zero Law Numbers in UI), Mandate 8ze & Apple HIG (Mobile Ergonomics, Touch Targets $\ge 44\times 44$px, Row Height $\ge 52$px, 0px Horizontal Scroll), Mandate 8an (VCS Law).
 
 ---
 
 ## 1. Monolith File Decomposition Summary (Mandate 8b)
 
-All test files exceeding the 120-line architectural ceiling in `apps/web/src/components/analytics/` were decomposed into modular, isolated, single-responsibility suites. Current status: **0 files > 120 lines** across the entire analytics module.
+All test files exceeding the 120-line architectural ceiling in `apps/web/src/components/analytics/` were decomposed into modular, isolated, single-responsibility suites. Current status: 0 files > 120 lines across the entire analytics module.
 
 | Original Monolith (Deleted) | Original Lines | Decomposed Modular Replacement Files | Lines Each |
 | :--- | :--- | :--- | :--- |
@@ -22,17 +22,17 @@ All test files exceeding the 120-line architectural ceiling in `apps/web/src/com
 ## 2. Unit Test Verification (Zero Mocks, 100% Pass)
 
 Command: `npx tsx --test apps/web/src/components/analytics/__tests__/*.test.ts*`
-- **Total Tests**: 49
-- **Passed**: 49 (100%)
-- **Failed**: 0
-- **Duration**: ~2.5–3.9 seconds
+- Total Tests: 49
+- Passed: 49 (100%)
+- Failed: 0
+- Duration: ~2.5–3.9 seconds
 
 Key Verified Subsystems:
-1. **Integer Kopeck Money Math**: Zero floating point roundoff errors; exact conversions to rubles with thousands separators.
-2. **Chair Utilization Engine**: Precise 15-minute SanPiN sanitation buffer enforcement, chair rental margins, and chair-hour revenue.
-3. **Doctor Productivity Ranking**: Net revenue sorting, attendance rate calculation, and complex plan share.
-4. **8-Stage Funnel & 5 Departments**: Pure mathematical aggregation without pseudo-scientific regex parsers.
-5. **Medical Privacy Shield**: Patient masking (initials only, masked phone, neutral plan titles).
+1. Integer Kopeck Money Math: Zero floating point roundoff errors; exact conversions to rubles with thousands separators.
+2. Chair Utilization Engine: Precise 15-minute SanPiN sanitation buffer enforcement, chair rental margins, and chair-hour revenue.
+3. Doctor Productivity Ranking: Net revenue sorting, attendance rate calculation, and complex plan share.
+4. 8-Stage Funnel & 5 Departments: Pure mathematical aggregation without pseudo-scientific regex parsers.
+5. Medical Privacy Shield: Patient masking (initials only, masked phone, neutral plan titles).
 
 ---
 
@@ -51,8 +51,8 @@ Screenshots captured from live Vite application (`http://127.0.0.1:5173/?demo=1#
 
 ## 4. Compliance Verdict
 
-- [x] **Mandate 8b**: 0 files $> 120$ lines in `apps/web/src/components/analytics/`.
-- [x] **Mandate 8ap**: Zero regex scoring or note parsing; clean database aggregates only.
-- [x] **Mandate 8x**: Clean semantic UI without raw statute numbers ("38-ФЗ", "54-ФЗ", "804н", "043/у").
-- [x] **Apple HIG Mobile**: 390×844 ergonomics verified with touch targets $\ge 44$px and 0px horizontal overflow.
-- [x] **Red Team Visual Proof**: All 4 states captured and inspected via `read_file`.
+- [x] Mandate 8b: 0 files $> 120$ lines in `apps/web/src/components/analytics/`.
+- [x] Mandate 8ap: Zero regex scoring or note parsing; clean database aggregates only.
+- [x] Mandate 8x: Clean semantic UI without raw statute numbers ("38-ФЗ", "54-ФЗ", "804н", "043/у").
+- [x] Apple HIG Mobile: 390×844 ergonomics verified with touch targets $\ge 44$px and 0px horizontal overflow.
+- [x] Red Team Visual Proof: All 4 states captured and inspected via `read_file`.

@@ -8,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { executeDentalTool, type DentalToolContext } from "./dentalTools.js";
 import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import { copilotPendingActions } from "../db/schema/copilot.js";
+import { aiLogger } from "./aiLogger.js";
 
 export interface PendingAction {
 	readonly sessionId: string;
@@ -421,7 +422,7 @@ export class CopilotActionManager {
 						);
 				});
 			} catch (err: unknown) {
-				console.warn("[CopilotService] Failed to reject pending action in DB:", err);
+				aiLogger.warn("CopilotActionManager", "Failed to reject pending action in DB", err);
 			}
 		}
 

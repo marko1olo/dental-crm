@@ -215,7 +215,7 @@ export function EmkPerioSection({
 			{/* Верхняя строка тулбара */}
 			<div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2 min-w-0">
-					<div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+					<div className="w-7 h-7 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
 						<Activity size={16} />
 					</div>
 					<div>
@@ -236,7 +236,7 @@ export function EmkPerioSection({
 						title="Открыть подробную пародонтограмму (6 точек на зуб)"
 						data-testid="emk-perio-open-chart-btn"
 					>
-						<BarChart2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<BarChart2 size={13} className="text-[var(--primary)] shrink-0" />
 						<span className="hidden sm:inline">Подробная карта</span>
 					</button>
 

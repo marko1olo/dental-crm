@@ -1,6 +1,6 @@
 # ОТЧЁТ ИНКВИЗИЦИИ 9: TYPOGRAPHY, EMOJIS & FORMATTING SNIPER
 
-> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> 📖 НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:
 > - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 > - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 > - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
@@ -8,11 +8,11 @@
 > - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
 > - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-**Роль:** Инквизитор 9 — Typography & Formatting Sniper  
-**Субагент ID:** `ffcb0522-f1cf-4171-aa3b-8ea98c25381d` / `3d6b3d5e-534d-41e0-b537-cdc3b40e9a8b`  
-**Целевая область:** Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
-**Основание:** `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md` и `THE_HAMMER_MASTER_PROMPT.md`  
-**Презумпция брака:** 100% подтверждена. Нулевая толерантность к мультяшным эмодзи, разорванным числам и англицизмам.
+Роль: Инквизитор 9 — Typography & Formatting Sniper  
+Субагент ID: `ffcb0522-f1cf-4171-aa3b-8ea98c25381d` / `3d6b3d5e-534d-41e0-b537-cdc3b40e9a8b`  
+Целевая область: Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  
+Основание: `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md` и `THE_HAMMER_MASTER_PROMPT.md`  
+Презумпция брака: 100% подтверждена. Нулевая толерантность к мультяшным эмодзи, разорванным числам и англицизмам.
 
 ---
 
@@ -34,7 +34,7 @@
 
 ### [СКРИНШОТ 3]: `docs/proofs/audit/audit_modal_informed_consent_1051n_light_pc_1440.png` & `_mobile_390.png`
 - **[ПИКСЕЛЬНЫЙ БРАК]:**
-  1. **МУЛЬТЯШНЫЕ ЭМОДЗИ В ЮРИДИЧЕСКОМ ДОКУМЕНТЕ (Приказ 1051н):**
+  1. МУЛЬТЯШНЫЕ ЭМОДЗИ В ЮРИДИЧЕСКОМ ДОКУМЕНТЕ (Приказ 1051н):
      - `🔪 Хирургическая операция` — кухонный нож в хирургическом протоколе!
      - `💉 Местная анестезия` — шприц в медицинском согласии.
      - `🦴 Костная пластика` — мультяшная собачья кость!
@@ -49,7 +49,7 @@
 
 ### [СКРИНШОТ 4]: `docs/proofs/audit/audit_modal_prescription_107_1y_light_pc_1440.png` & `_mobile_390.png`
 - **[ПИКСЕЛЬНЫЙ БРАК]:**
-  1. **МУЛЬТЯШНЫЕ ЭМОДЗИ В РЕЦЕПТУРНОМ БЛАНКЕ 107-1/у:**
+  1. МУЛЬТЯШНЫЕ ЭМОДЗИ В РЕЦЕПТУРНОМ БЛАНКЕ 107-1/у:
      - `💊 Амоксиклав` — таблетка.
      - `🧴 Хлоргексидин` — бутылка с лосьоном.
      - `💊 Найз (Нимесулид)` — пилюля.
@@ -62,7 +62,7 @@
 
 ### [СКРИНШОТ 5]: `docs/proofs/audit/audit_modal_post_op_patient_memo_light_pc_1440.png` & `_mobile_390.png`
 - **[ПИКСЕЛЬНЫЙ БРАК]:**
-  1. **МУЛЬТЯШНЫЕ ЭМОДЗИ В ПАМЯТКЕ ПАЦИЕНТА:**
+  1. МУЛЬТЯШНЫЕ ЭМОДЗИ В ПАМЯТКЕ ПАЦИЕНТА:
      - `🧊 Холод к щеке` — кубик льда.
      - `🧚 Зубная фея` в памятке после лечения кариеса!
      - `🥛 Не полоскать` — стакан молока.

@@ -1,6 +1,6 @@
 # ТОТАЛЬНЫЙ АУДИТ ПОДЛИННОСТИ, ИСТОЧНИКОВ И ПОЛНОТЫ СКРИНШОТ-ПАЙПЛАЙНА DENTE CRM
 
-> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> 📖 НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:
 > - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 > - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 > - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
@@ -8,11 +8,11 @@
 > - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
 > - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-**Роль:** Screenshot Pipeline & Authenticity Auditor  
-**Субагент ID:** `4e511bbd-6c17-48f8-a0eb-832f22b7a950`  
-**Дата аудита:** 2026-08-30  
-**Стандарт:** The Hammer Supreme Constitution (T.A.R.S. 100% Brutal Honesty — Zero Mocks, Zero Sycophancy)  
-**Целевая область:** Все скрипты в `scripts/` и `apps/web/scripts/`
+Роль: Screenshot Pipeline & Authenticity Auditor  
+Субагент ID: `4e511bbd-6c17-48f8-a0eb-832f22b7a950`  
+Дата аудита: 2026-08-30  
+Стандарт: The Hammer Supreme Constitution (T.A.R.S. 100% Brutal Honesty — Zero Mocks, Zero Sycophancy)  
+Целевая область: Все скрипты в `scripts/` и `apps/web/scripts/`
 
 ---
 
@@ -51,10 +51,10 @@
 
 1. **Ликвидация подавителей ошибок `.catch()`:**
    - Полностью зачищены все 48 вхождений silent catch в скриптах скриншотов. Любой сбой селектора, тайм-аут или рендер < 30KB вызывает немедленный `process.exit(1)`.
-2. **Ликвидация клонирования файлов (Hash Cloning):**
+2. Ликвидация клонирования файлов (Hash Cloning):
    - Удалены все операции `copyFileSync` для создания псевдо-дубликатов (`${prefix}.png`, `*_live.png`). Каждый снимок уникален по содержимому и MD5-хешу.
-3. **Зачистка мертвых папок brain:**
+3. Зачистка мертвых папок brain:
    - Захардкоженные GUID устаревших сессий удалены, настроена репликация в канонические `docs/screenshots`, `docs/proofs/audit`, `docs/proofs/cbct` и динамический `process.env.BRAIN_DIR`.
-4. **Обязательный Preflight Server Check:**
+4. Обязательный Preflight Server Check:
    - Все скрипты перед запуском браузера проверяют доступность серверов (`http://127.0.0.1:5173`, `http://127.0.0.1:4100`).
 

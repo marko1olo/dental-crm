@@ -1,6 +1,6 @@
 # 📋 СВОДНЫЙ РЕЕСТР ДЕФЕКТОВ И ДОСЬЕ ИНКВИЗИЦИИ (NIGHT WATCH DEFECT REGISTRY)
 
-> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> 📖 НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:
 > - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 > - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
 > - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
@@ -8,8 +8,8 @@
 > - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
 > - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-**КОНСТИТУЦИЯ:** `C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`  
-**ПРИКАЗ ДЛЯ ВСЕХ ВЕРСТАЛЬЩИКОВ И РАЗРАБОТЧИКОВ:** Читать данный файл ЦЕЛИКОМ от первой до последней строки перед внесением любых изменений в код и стили. Любые исправления обязаны строго закрывать указанные строки и файлы с сохранением стандартов 80/10/10, законов Фиттса, Хика, Миллера, стандартов Apple HIG, Мандата 8e и презумпции брака.
+КОНСТИТУЦИЯ: `C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`  
+ПРИКАЗ ДЛЯ ВСЕХ ВЕРСТАЛЬЩИКОВ И РАЗРАБОТЧИКОВ: Читать данный файл ЦЕЛИКОМ от первой до последней строки перед внесением любых изменений в код и стили. Любые исправления обязаны строго закрывать указанные строки и файлы с сохранением стандартов 80/10/10, законов Фиттса, Хика, Миллера, стандартов Apple HIG, Мандата 8e и презумпции брака.
 
 ---
 
