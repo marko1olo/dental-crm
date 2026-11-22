@@ -37,11 +37,11 @@ interface LeadsKanbanDesktopContainerProps {
 	onDragStart: (e: React.DragEvent, id: string) => void;
 	onEditLead: (lead: Lead) => void;
 	onStatusChange: (
-		e: React.SyntheticEvent | Event | unknown,
+		e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,
 		id: string,
 		status: Lead["status"],
 		options?: { reason?: string; dropReason?: string },
-	) => void;
+	) => void | Promise<void>;
 	onCreatePatient: (lead: Lead) => void;
 	onSchedule: (id: string) => void;
 	onQuickSchedule: (id: string) => void;

@@ -16,22 +16,23 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { crmLeads, organizations, patientCommunicationConsents, patients } from "../../db/schema.js";
-import { DEMO_SHOWCASE_SEED_LEADS } from "../../routes/leadsModules/demoSeedLeads.js";
-import { calculateLeadPipelineMetrics } from "../../routes/leadsMetrics.js";
-import { registerLeadsRoutes } from "../../routes/leads.js";
-import { authTokenSecret } from "../../security/authSecret.js";
+import { db } from "../db/client.js";
+import { crmLeads, organizations, patientCommunicationConsents, patients, users } from "../db/schema.js";
+import { DEMO_SHOWCASE_SEED_LEADS } from "../routes/leadsModules/demoSeedLeads.js";
+import { calculateLeadPipelineMetrics } from "../routes/leadsMetrics.js";
+import { registerLeadsRoutes } from "../routes/leads.js";
+import { authTokenSecret } from "../security/authSecret.js";
 import {
 	CLINIC_TOKEN_HEADER,
 	STAFF_TOKEN_HEADER,
-} from "../../security/identity.js";
-import { signToken } from "../../utils/cryptoHelper.js";
+} from "../security/identity.js";
+import { signToken } from "../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
-} from "../support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+} from "./support/fixtureOrganizations.js";
+import { createTenantTestApp } from "./support/tenantTestApp.js";
 
 const NAMESPACE = "redteamFixerDomain31";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -83,6 +84,14 @@ describe("RED TEAM FIXER SURGEON — DOMAIN 31 LEADS & CONVERSION", () => {
 			await tx.insert(organizations).values({
 				id: ORG_ID,
 				name: "Стоматология Ред Тим Домен 31",
+			});
+
+			await tx.insert(users).values({
+				id: DOCTOR_USER_ID,
+				organizationId: ORG_ID,
+				fullName: "Доктор Редтим",
+				role: "doctor",
+				isActive: true,
 			});
 
 			await tx.insert(crmLeads).values({
@@ -188,11 +197,9 @@ describe("RED TEAM FIXER SURGEON — DOMAIN 31 LEADS & CONVERSION", () => {
 	});
 
 	it("3. Pipeline metrics calculate expectedRevenue from BigInt expectedRevenueKopecks without float drift", async () => {
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			const metrics = await calculateLeadPipelineMetrics(tx as any, ORG_ID);
-			assert.ok(metrics.pipelineExpectedRevenueKopecks >= 15000000, "Must include 15000000 kopecks");
-			assert.equal(metrics.pipelineExpectedRevenueRub, 150000, "Must format to 150 000 Rub");
-		});
+		const metrics = await calculateLeadPipelineMetrics(db, ORG_ID);
+		assert.ok(metrics.pipelineExpectedRevenueKopecks >= 15000000, "Must include 15000000 kopecks");
+		assert.equal(metrics.pipelineExpectedRevenueRub, 150000, "Must format to 150 000 Rub");
 	});
 
 	it("4. Mandate 8ap domain purity: zero third-party trademarks in demo seed leads", () => {

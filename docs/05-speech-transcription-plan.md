@@ -4,9 +4,9 @@
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Date: 2026-05-16
 
-> ⚠️ **КЛИНИЧЕСКИЙ РЕГЛАМЕНТ И СИСТЕМНЫЕ СВЯЗИ (MANDATE 8e):**
+> ⚠️ КЛИНИЧЕСКИЙ РЕГЛАМЕНТ И СИСТЕМНЫЕ СВЯЗИ (MANDATE 8e):
 > Речевая транскрипция подчиняется абсолютным правилам эргономики [THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и Мандату 8e (Zero-Friction Doctor Autonomy). 
-> - **Связанная системная документация:**
+> - Связанная системная документация:
 >   - [Clinical Protocols Registry](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md) — структурирование транскриптов в SOAP 043/у и клинические протоколы.
 >   - [Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) — валидация клинических рисков и триггеры оповещений без блокировки сохранения.
 >   - [Documents Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) — выгрузка ЭМК 043/у в PDF, водяные знаки «ЧЕРНОВИК» и версионный аудит «ИСПРАВЛЕННОМУ ВЕРИТЬ».
