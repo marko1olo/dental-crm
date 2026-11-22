@@ -86,13 +86,14 @@ export async function executeGenerateInvoiceTransaction(params: {
 				const matchingCatalog = catalogRows.find(
 					(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
 				);
-				const qty = Number(it.quantity) || 1;
-				const grossKop = Number(it.effectiveUnitPriceKopecks) * qty;
-				const discountKop = Number(it.effectiveDiscountKopecks) || 0;
-				const discountPct =
-					grossKop > 0 && discountKop > 0
-						? Math.min(100, Math.max(0, (discountKop * 100) / grossKop))
-						: 0;
+				const qty = Number.isFinite(Number(it.quantity)) && Number(it.quantity) > 0 ? Number(it.quantity) : 1;
+				const unitPriceKop = Number.isFinite(Number(it.effectiveUnitPriceKopecks)) ? Math.max(0, Math.round(Number(it.effectiveUnitPriceKopecks))) : 0;
+				const grossKop = unitPriceKop * qty;
+				const discountKop = Number.isFinite(Number(it.effectiveDiscountKopecks)) ? Math.max(0, Math.round(Number(it.effectiveDiscountKopecks))) : 0;
+				const safeGrossKop = Math.max(0, grossKop);
+				const safeDiscountKop = Math.min(safeGrossKop, discountKop);
+				const discountBasisPoints = safeGrossKop > 0 ? Math.round((safeDiscountKop * 10000) / safeGrossKop) : 0;
+				const discountPct = Math.min(100, Math.max(0, discountBasisPoints / 100));
 
 				return {
 					organizationId: orgId,
@@ -100,9 +101,9 @@ export async function executeGenerateInvoiceTransaction(params: {
 					priceListItemId: matchingCatalog?.id ?? null,
 					name: it.nameRu,
 					quantity: String(it.quantity),
-					unitPriceKopecks: Number(it.effectiveUnitPriceKopecks),
+					unitPriceKopecks: unitPriceKop,
 					discountPercent: discountPct.toFixed(2),
-					totalPriceKopecks: Number(it.effectiveLineNetKopecks),
+					totalPriceKopecks: Number.isFinite(Number(it.effectiveLineNetKopecks)) ? Math.max(0, Math.round(Number(it.effectiveLineNetKopecks))) : Math.max(0, safeGrossKop - safeDiscountKop),
 					serviceCode: it.code804n ?? matchingCatalog?.code ?? null,
 					toothCode: it.toothNumber ? String(it.toothNumber) : null,
 				};

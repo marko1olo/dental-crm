@@ -21,12 +21,17 @@ import {
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+	advanceDepositTaggings,
+	appointments,
+	cashBoxes,
+	cashBoxShifts,
+	cashOperations,
+	familyGroups,
 	fiscalReceiptQueue,
 	patientInvoices,
 	payments,
-	visits,
-	appointments,
 	users,
+	visits,
 } from "../../db/schema.js";
 
 export class PartialRefundValidationError extends Error {
@@ -248,6 +253,130 @@ export class PartialRefundService {
 				);
 			}
 
+			// [SEV-1.5] Синхронизация с кассовым контуром (ликвидация split-brain с cashbox)
+			const isCashRefund = input.paymentMethod === "cash";
+			const isDepositRefund = input.paymentMethod === "advance_deposit";
+
+			const [targetBox] = await tx
+				.select()
+				.from(cashBoxes)
+				.where(
+					and(
+						eq(cashBoxes.organizationId, input.organizationId),
+						eq(cashBoxes.type, isCashRefund ? "main" : "cashless"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			let activeShiftId: string | null = null;
+			if (targetBox) {
+				const [activeShift] = await tx
+					.select()
+					.from(cashBoxShifts)
+					.where(
+						and(
+							eq(cashBoxShifts.organizationId, input.organizationId),
+							eq(cashBoxShifts.cashBoxId, targetBox.id),
+							eq(cashBoxShifts.status, "open"),
+						),
+					)
+					.for("update")
+					.limit(1);
+
+				activeShiftId = activeShift?.id ?? null;
+
+				const curBalRub = Number(targetBox.balanceRub || 0);
+				const refundRub = calcResult.totalRefundRub;
+				const refundKop = calcResult.totalRefundKop;
+				const curBalKop = Number(targetBox.balanceKopecks || rublesToKopecks(curBalRub));
+
+				if (isCashRefund) {
+					const newBalRub = Math.max(0, curBalRub - refundRub);
+					const newBalKop = Math.max(0, curBalKop - refundKop);
+
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceRub: newBalRub,
+							balanceKopecks: newBalKop,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(cashBoxes.id, targetBox.id),
+								eq(cashBoxes.organizationId, input.organizationId),
+							),
+						);
+
+					if (activeShift) {
+						await tx
+							.update(cashBoxShifts)
+							.set({
+								expenseTotalRub: sql`round((${cashBoxShifts.expenseTotalRub} + ${refundRub})::numeric, 2)`,
+								updatedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(cashBoxShifts.id, activeShift.id),
+									eq(cashBoxShifts.organizationId, input.organizationId),
+								),
+							);
+					}
+
+					await tx.insert(cashOperations).values({
+						organizationId: input.organizationId,
+						cashBoxId: targetBox.id,
+						shiftId: activeShiftId,
+						operationType: "withdrawal",
+						amountRub: refundRub,
+						balanceBeforeRub: curBalRub,
+						balanceAfterRub: newBalRub,
+						reasonText: `Частичный возврат по счёту ${invoice.id}: ${calcResult.reasonLabelRu}`,
+						patientId: input.patientId,
+						invoiceId: invoice.id,
+					});
+				} else if (isDepositRefund) {
+					// Восстановление баланса авансового депозита
+					await tx.insert(advanceDepositTaggings).values({
+						organizationId: input.organizationId,
+						patientId: input.patientId,
+						patientName: input.patientName || "Пациент клиники",
+						depositAmountRub: refundRub.toFixed(2),
+						taggedTargetType: "deposit_refund",
+						taggedTargetName: `Частичный возврат по счёту ${invoice.id} на депозит`,
+						allocationStatus: "unallocated",
+					});
+
+					await tx.insert(cashOperations).values({
+						organizationId: input.organizationId,
+						cashBoxId: targetBox.id,
+						shiftId: activeShiftId,
+						operationType: "expense",
+						amountRub: refundRub,
+						balanceBeforeRub: curBalRub,
+						balanceAfterRub: curBalRub,
+						reasonText: `Частичный возврат на депозит по счёту ${invoice.id}: ${calcResult.reasonLabelRu}`,
+						patientId: input.patientId,
+						invoiceId: invoice.id,
+					});
+				} else {
+					// Безналичный возврат
+					await tx.insert(cashOperations).values({
+						organizationId: input.organizationId,
+						cashBoxId: targetBox.id,
+						shiftId: activeShiftId,
+						operationType: "expense",
+						amountRub: refundRub,
+						balanceBeforeRub: curBalRub,
+						balanceAfterRub: curBalRub,
+						reasonText: `Частичный безналичный возврат по счёту ${invoice.id}: ${calcResult.reasonLabelRu}`,
+						patientId: input.patientId,
+						invoiceId: invoice.id,
+					});
+				}
+			}
+
 			// 1. Insert negative payment record into payments table
 			const [insertedPayment] = await tx
 				.insert(payments)
@@ -258,11 +387,11 @@ export class PartialRefundService {
 					documentId: invoice.id,
 					clientMutationId: input.clientMutationId ?? undefined,
 					amountRub: -calcResult.totalRefundRub,
-					method: input.paymentMethod === "cash" ? "cash" : "card",
+					method: input.paymentMethod === "cash" ? "cash" : input.paymentMethod === "advance_deposit" ? "family_wallet" : "card",
 					status: "refunded",
 					paidAt: new Date(),
-					fiscalReceiptNumber: calcResult.refundOperationNumber,
-					fiscalReceiptIssuedAt: calcResult.dateIso,
+					fiscalReceiptNumber: null,
+					fiscalReceiptIssuedAt: null,
 					note: `Частичный возврат [Счёт: ${invoice.id}]: ${calcResult.reasonLabelRu}. Сумма: -${calcResult.totalRefundRub} ₽. Вычет врача: -${calcResult.totalDoctorClawbackRub} ₽`,
 				})
 				.returning({ id: payments.id });
@@ -280,7 +409,10 @@ export class PartialRefundService {
 					visitId: invoice.visitId ?? undefined,
 					receiptType: "income_return",
 					status: "pending_print",
-					payloadJson: calcResult.fiscal54FzPayload,
+					payloadJson: {
+						...calcResult.fiscal54FzPayload,
+						fiscalReceiptNumber: null,
+					},
 				})
 				.returning({ id: fiscalReceiptQueue.id });
 

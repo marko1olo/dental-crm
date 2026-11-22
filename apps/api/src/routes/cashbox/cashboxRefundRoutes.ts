@@ -139,13 +139,16 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					// [DEF-REFUND-02] Защита от Over-Refund по исходному платежу
 					const [refundHistory] = await tx
 						.select({
-							alreadyRefundedRub: sql<number>`coalesce(sum(abs(${payments.amountRub})), 0)`,
+							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
 						})
 						.from(payments)
 						.where(
 							and(
 								eq(payments.organizationId, orgId),
-								sql`${payments.amountRub} < 0`,
+								or(
+									sql`${payments.amountKopecks} < 0`,
+									sql`${payments.amountRub} < 0`,
+								),
 								or(
 									eq(payments.id, linkedPayment.id),
 									linkedPayment.documentId ? eq(payments.documentId, linkedPayment.documentId) : sql`false`,
@@ -154,8 +157,10 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 							),
 						);
 
-					const origPaidKop = rublesToKopecks(Number(linkedPayment.amountRub || 0));
-					const prevRefundKop = rublesToKopecks(Number(refundHistory?.alreadyRefundedRub || 0));
+					const origPaidKop = linkedPayment.amountKopecks !== null && linkedPayment.amountKopecks !== undefined
+						? Number(linkedPayment.amountKopecks)
+						: rublesToKopecks(Number(linkedPayment.amountRub || 0));
+					const prevRefundKop = Number(refundHistory?.alreadyRefundedKop || 0);
 					const availableToRefundKop = origPaidKop - prevRefundKop;
 
 					if (refundKop > availableToRefundKop) {
@@ -183,19 +188,22 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					// [DEF-REFUND-02] Защита от Over-Refund по исходному счёту
 					const [invoiceRefunds] = await tx
 						.select({
-							alreadyRefundedRub: sql<number>`coalesce(sum(abs(${payments.amountRub})), 0)`,
+							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
 						})
 						.from(payments)
 						.where(
 							and(
 								eq(payments.organizationId, orgId),
 								eq(payments.documentId, linkedInvoice.id),
-								sql`${payments.amountRub} < 0`,
+								or(
+									sql`${payments.amountKopecks} < 0`,
+									sql`${payments.amountRub} < 0`,
+								),
 							),
 						);
 
 					const invoiceTotalKop = rublesToKopecks(Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0));
-					const prevRefundKop = rublesToKopecks(Number(invoiceRefunds?.alreadyRefundedRub || 0));
+					const prevRefundKop = Number(invoiceRefunds?.alreadyRefundedKop || 0);
 					const availableToRefundKop = invoiceTotalKop - prevRefundKop;
 
 					if (refundKop > availableToRefundKop) {
@@ -357,7 +365,8 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 							await tx
 								.update(familyGroups)
 								.set({
-									balance: sql`(${familyGroups.balance}::numeric + ${amountRub})::numeric(12,2)`,
+									balanceKopecks: sql`(COALESCE(${familyGroups.balanceKopecks}, ROUND(COALESCE(${familyGroups.balance}, 0) * 100)::bigint) + ${refundKop}::bigint)`,
+									balance: sql`(((COALESCE(${familyGroups.balanceKopecks}, ROUND(COALESCE(${familyGroups.balance}, 0) * 100)::bigint) + ${refundKop}::bigint)::numeric / 100)::numeric(12,2))`,
 									updatedAt: new Date(),
 								})
 								.where(
@@ -432,13 +441,14 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						documentId: linkedInvoice?.id || (linkedPayment?.documentId ?? null),
 						clientMutationId: effectiveMutationId || null,
 						amountRub: -amountRub,
+						amountKopecks: -BigInt(refundKop),
 						method: normalizePaymentMethod(refundMethod),
 						status: "refunded",
 						paidAt: new Date(),
 						fiscalReceiptNumber: refundReceiptNumber,
 						fiscalReceiptIssuedAt: null,
 						payerFullName: operatorId ? "Кассир" : (linkedPayment?.payerFullName || "Кассир"),
-						note: reasonText || (isDepositRefund ? `Возврат на депозит на сумму -${amountRub} ₽` : `Возврат денежных средств (54-ФЗ возврат прихода) на сумму -${amountRub} ₽`),
+						note: reasonText || (isDepositRefund ? `Возврат на депозит на сумму -${amountRub} ₽` : `Возврат денежных средств на сумму -${amountRub} ₽`),
 					})
 					.returning({ id: payments.id });
 

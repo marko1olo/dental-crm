@@ -217,3 +217,5 @@ export const cashboxPaymentRequestSchema = z.object({
 	),
 	printFormat: z.string().trim().optional(),
 });
+
+export type CashboxPaymentRequest = z.infer<typeof cashboxPaymentRequestSchema>;

@@ -18,10 +18,25 @@ export async function invoicePayHandler(
 		});
 	}
 	const body = request.body || {};
-	const mutationId =
-		(typeof body.clientMutationId === "string" && body.clientMutationId.trim())
+	const rawMutationId =
+		typeof body.clientMutationId === "string" && body.clientMutationId.trim()
 			? body.clientMutationId.trim()
-			: (request.headers["idempotency-key"] as string | undefined)?.trim() || `pay-${invoiceId}-${Date.now()}`;
+			: typeof request.headers["idempotency-key"] === "string" &&
+				  (request.headers["idempotency-key"] as string).trim()
+				? (request.headers["idempotency-key"] as string).trim()
+				: typeof request.headers["x-idempotency-key"] === "string" &&
+					  (request.headers["x-idempotency-key"] as string).trim()
+					? (request.headers["x-idempotency-key"] as string).trim()
+					: null;
+
+	if (!rawMutationId) {
+		return reply.code(400).send({
+			error: "IdempotencyKeyRequired",
+			message:
+				"Для проведения оплаты счёта обязателен уникальный ключ идемпотентности (заголовок Idempotency-Key или поле clientMutationId).",
+		});
+	}
+	const mutationId = rawMutationId;
 	let patientId = body.patientId;
 	let amountRub = body.amountRub;
 	if (!patientId || amountRub === undefined) {
