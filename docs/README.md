@@ -1,10 +1,10 @@
 # 📚 DENTE Dental CRM — Documentation Hub & Knowledge Base
 
-> **Центральный шлюз документации проекта DENTE Dental CRM**  
-> ⚠️ **Высшая Конституция (Supreme Law):** **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
-> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: 8d — Бремя доказательства, 8e — Автономия врача, 8f–8n — T.A.R.S. честность, Rule != Task, динамический синхрон, «Работает — не трогай» DoD, ЦРМ != симулятор реальности, свежий контекст субагентов, Red Team аудит, соло-врач приоритет №1 и Zero Dead-Ends)  
-> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1:** Соло-врач (1–2 кресла, аренда, ИП/самозанятый) и небольшая частная клиника (1–3 кресла). До больших сетей нам ещё расти и расти! Вся первичная эргономика, 0-клик сценарии, 100% автономия, касса 54-ФЗ без ИНН физлиц, расписание без обязательного ассистента — строго под соло-врача и маленькую клинику. Сети закладываются «на вырост» без тупиков (Zero Dead-Ends), но НИКОГДА не усложняют жизнь соло-врачу.  
-> 🗺️ **Главный Индекс и Матрица Навигации:** **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**  
+> Центральный шлюз документации проекта DENTE Dental CRM  
+> ⚠️ Высшая Конституция (Supreme Law): **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
+> 📜 Системная Конституция: **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: 8d — Бремя доказательства, 8e — Автономия врача, 8f–8n — T.A.R.S. честность, Rule != Task, динамический синхрон, «Работает — не трогай» DoD, ЦРМ != симулятор реальности, свежий контекст субагентов, Red Team аудит, соло-врач приоритет №1 и Zero Dead-Ends)  
+> 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1: Соло-врач (1–2 кресла, аренда, ИП/самозанятый) и небольшая частная клиника (1–3 кресла). До больших сетей нам ещё расти и расти! Вся первичная эргономика, 0-клик сценарии, 100% автономия, касса 54-ФЗ без ИНН физлиц, расписание без обязательного ассистента — строго под соло-врача и маленькую клинику. Сети закладываются «на вырост» без тупиков (Zero Dead-Ends), но НИКОГДА не усложняют жизнь соло-врачу.  
+> 🗺️ Главный Индекс и Матрица Навигации: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**  
 
 ---
 
@@ -66,7 +66,7 @@
 *   **[GAP_REPORT_2026-07-27.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/GAP_REPORT_2026-07-27.md)** — Актуальный отчёт по ликвидации функциональных разрывов.
 *   **[STOMX_REVERSE_ENGINEERING_BIBLE.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md)** — Полная библия реверс-инжиниринга StomX (133 API, 68 RBAC, 89 дефектов зубов, 448 протоколов 043/у, 49 бланков, УКЭП).
 *   **[01_CLINICAL_EHR_AND_ODONTOGRAM_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/01_CLINICAL_EHR_AND_ODONTOGRAM_RAILS.md)** — Рельсы миграции клинического контура (55 зубов/челюстей, 91 дефект, 1841 статья МКБ-10).
-*   **Глубокие карты системы:**
+*   Глубокие карты системы:
     *   **[API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)** — Каталог всех 48 файлов бэкенд-маршрутов Fastify.
     *   **[DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)** — Детальный разбор таблиц, энумов и связей PostgreSQL 18.
     *   **[FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md)** — Каталог компонентов React 19, вьюпортов и модальных окон.
@@ -107,7 +107,7 @@
 *   **[TASK_BACKLOG_AND_SPECIFICATIONS.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md)** — Общий реестр задач агентов и спецификации модулей.
 *   **[TASK_BACKLOG_SPRINT_5.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_5.md)** — Задачи Спринта 5.
 *   **[TASK_BACKLOG_SPRINT_6.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_6.md)** — Задачи Спринта 6.
-*   **Операционные передачи задач (Agent Handoffs):**
+*   Операционные передачи задач (Agent Handoffs):
     *   **[HANDOFF_2026-07-31_current.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_current.md)** — Актуальный статус передачи.
     *   **[HANDOFF_2026-07-31_message_first_L40_41.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_message_first_L40_41.md)** — Этап L40-L41.
     *   **[HANDOFF_2026-07-31_message_first_L42_en500.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_message_first_L42_en500.md)** — Этап L42.
@@ -148,8 +148,8 @@
 
 ## 🚨 Фундаментальные Принципы Разработки
 
-1. **Никаких моков (Zero Mocks):** Все API и UI привязаны к реальным данным PostgreSQL 18. Заглушки, `// TODO`, плейсхолдеры запрещены.
-2. **Мандат 8e: Запрет на палки в колёса врачам и персоналу:**
+1. Никаких моков (Zero Mocks): Все API и UI привязаны к реальным данным PostgreSQL 18. Заглушки, `// TODO`, плейсхолдеры запрещены.
+2. Мандат 8e: Запрет на палки в колёса врачам и персоналу:
    - Никаких неактивных (`disabled`) кнопок без объяснения причины.
    - Физиологическая норма («Соматически здоров / Осмотр в норме») заполняется в 1 клик.
    - Свобода сохранения черновиков 043/у с debounced autosave.
@@ -157,7 +157,7 @@
    - Свобода скидок врача до 100% на переделки без мастер-паролей.
    - Касса 54-ФЗ без требования ИНН с физлиц, комбинированная оплата в 1 клик.
    - Медсестра списывает пустые карпулы анестетиков в 1 клик без комиссии из 3 человек.
-3. **Стандарты Apple & Mac HIG (Studio Clinical HIG):**
+3. Стандарты Apple & Mac HIG (Studio Clinical HIG):
    - Десктопная плотность (тулбары 32–36px, хоткеи Cmd/Ctrl+K, Esc, 150ms Hover HUD).
    - Мобильная эргономика (тач-таргеты >= 44x44px, нативный Segmented Control вместо 2500px скролла).
    - Максимальная глубина модалок — СТРОГО 1 (Анти-Матрёшка).
