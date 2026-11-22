@@ -15,7 +15,7 @@ export {
 } from "./labRestorationNormalizers.js";
 
 export { CANONICAL_DENTAL_LAB_PRESETS } from "./labCanonicalPresetsData.js";
-export { createLabItemSchema } from "./labItemSchemas.js";
+export { createLabItemSchema, updateLabItemSchema } from "./labItemSchemas.js";
 import { createLabItemSchema } from "./labItemSchemas.js";
 
 export const labOrderPriceRubSchema = nonNegativeMoneyRubSchema
@@ -79,7 +79,7 @@ export const createLabOrderSchema = z.object({
 		.string()
 		.optional()
 		.nullable()
-		.transform((val) => (val && val !== "doc-current" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null))
+		.transform((val) => (val && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null))
 		.optional(),
 	doctorName: z.string().trim().optional().nullable(),
 	toothFdi: toothFdiSchema.optional().nullable(),

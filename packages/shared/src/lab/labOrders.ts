@@ -6,6 +6,7 @@
 
 import { z } from "zod";
 import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
+import { kopecksToRubles } from "../money.js";
 
 // ─── WORK TYPES & PROSTHETIC CONSTRUCTIONS ────────────────────────────────────
 
@@ -61,6 +62,7 @@ export const labOrderStatusSchema = z.enum([
 	"received",
 	"ready",
 	"ready_in_clinic",
+	"fitting",
 	"refitting",
 	"fitted",
 	"completed",
@@ -325,13 +327,14 @@ export function canTransitionLabOrderStatus(
 
 	const transitions: Record<LabOrderStatus, LabOrderStatus[]> = {
 		draft: ["sent", "cancelled"],
-		sent: ["in_progress", "ready", "ready_in_clinic", "shipped", "received", "cancelled"],
-		in_progress: ["ready", "ready_in_clinic", "shipped", "received", "cancelled", "rejected_remake", "refitting"],
-		shipped: ["received", "ready", "ready_in_clinic", "cancelled", "rejected_remake", "refitting"],
-		ready: ["received", "ready_in_clinic", "fitted", "completed", "cancelled", "rejected_remake"],
-		ready_in_clinic: ["received", "ready", "fitted", "completed", "cancelled", "rejected_remake", "refitting"],
-		received: ["fitted", "in_progress", "ready", "ready_in_clinic", "completed", "rejected_remake", "refitting", "cancelled"],
-		refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
+		sent: ["in_progress", "ready", "ready_in_clinic", "fitting", "shipped", "received", "cancelled"],
+		in_progress: ["ready", "ready_in_clinic", "fitting", "shipped", "received", "cancelled", "rejected_remake", "refitting"],
+		shipped: ["received", "ready", "ready_in_clinic", "fitting", "cancelled", "rejected_remake", "refitting"],
+		ready: ["received", "ready_in_clinic", "fitting", "fitted", "completed", "cancelled", "rejected_remake"],
+		ready_in_clinic: ["received", "ready", "fitting", "fitted", "completed", "cancelled", "rejected_remake", "refitting"],
+		fitting: ["fitted", "ready_in_clinic", "ready", "received", "refitting", "completed", "cancelled", "rejected_remake"],
+		received: ["fitted", "in_progress", "ready", "ready_in_clinic", "fitting", "completed", "rejected_remake", "refitting", "cancelled"],
+		refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitting", "completed", "cancelled"],
 		fitted: ["completed", "in_progress", "received", "rejected_remake", "refitting", "cancelled"],
 		completed: ["rejected_remake", "refitting"],
 		cancelled: ["draft", "sent"],
@@ -363,15 +366,15 @@ export function calculateLabFinancialSplitKopecks(
 	const safeTotalKopecks = Math.max(0, Math.round(Number.isFinite(totalKopecks) ? totalKopecks : 0));
 	const safeDoctorPct = Math.min(100, Math.max(0, Number.isFinite(doctorSharePct) ? doctorSharePct : 50));
 
-	const doctorKopecks = Math.round((safeTotalKopecks * safeDoctorPct) / 100);
+	const doctorKopecks = Math.round(safeTotalKopecks * (safeDoctorPct * 0.01));
 	const clinicKopecks = safeTotalKopecks - doctorKopecks;
 
 	return {
 		clinicKopecks,
 		doctorKopecks,
 		totalKopecks: safeTotalKopecks,
-		clinicAmountRub: Number((clinicKopecks / 100).toFixed(2)),
-		doctorAmountRub: Number((doctorKopecks / 100).toFixed(2)),
+		clinicAmountRub: kopecksToRubles(clinicKopecks),
+		doctorAmountRub: kopecksToRubles(doctorKopecks),
 		isBalanced: clinicKopecks + doctorKopecks === safeTotalKopecks,
 	};
 }
@@ -673,6 +676,7 @@ export const CANONICAL_PG_LAB_STATUSES = [
 	"received",
 	"completed",
 	"cancelled",
+	"rejected_remake",
 ] as const;
 
 export const canonicalPgLabStatusSchema = z.enum(CANONICAL_PG_LAB_STATUSES);
@@ -893,6 +897,7 @@ export const LAB_ORDER_STATUS_LABELS_RU: Record<LabOrderStatus, string> = {
 	received: "Доставлен в клинику",
 	ready: "Готов в ЗТЛ",
 	ready_in_clinic: "Готов в клинике",
+	fitting: "На примерке у пациента",
 	refitting: "На переделке / коррекции",
 	fitted: "Припасован / Сдан пациенту",
 	completed: "Завершен / Установлен",
@@ -1186,7 +1191,7 @@ export const formatLabOrderFormZtl1A4Protocol = (
 			expectedDate: order.expectedDate || undefined,
 			receivedDate: order.receivedDate || undefined,
 			status: "sent",
-			priceRub: typeof order.labCostKopecks === "number" ? Math.round(order.labCostKopecks / 100) : (order.priceRub || undefined),
+			priceRub: typeof order.labCostKopecks === "number" ? kopecksToRubles(order.labCostKopecks) : (order.priceRub || undefined),
 			notes: order.notes || undefined,
 		},
 		clinicName || "Стоматологическая клиника DENTE",
@@ -1320,6 +1325,9 @@ export function normalizeVitaShade(shade: string): string {
 	if (!shade) return "";
 	let s = shade.trim().toUpperCase();
 
+	// Sanitize Chromascop prefixes (Мандат 8ap / SEV-3)
+	s = s.replace(/^(?:CHROMASCOP|ХРОМАСКОП|CHROMA|ХРОМА)[\s\-_:]*/i, "");
+
 	// Transliterate Cyrillic homoglyphs using explicit Unicode code points:
 	// \u0410: А -> A, \u0412: В -> B, \u0411: Б -> B, \u0421: С -> C, \u0414: Д -> D,
 	// \u041C: М -> M, \u0420: Р -> R, \u041B: Л -> L, \u041E: О -> O
@@ -1377,9 +1385,14 @@ export const LAB_ORDER_STATUS_LABELS = {
 	in_progress: "В работе у техника",
 	shipped: "Отправлен в клинику",
 	received: "Получен клиникой",
+	ready: "Готов в лаборатории",
+	ready_in_clinic: "Готов в клинике",
+	fitting: "На примерке у пациента",
+	fitted: "Припасован / Сдан пациенту",
 	refitting: "На примерке / доработке",
 	completed: "Установлен / завершен",
 	cancelled: "Отменен",
+	rejected_remake: "Брак / На переделку",
 } as const;
 
 export type LabOrderStatusKey = keyof typeof LAB_ORDER_STATUS_LABELS;

@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import type { DentalLabOrderRecord } from "./labOrderRecordTypes";
 
 export interface PartialDeliveryParams {
@@ -46,7 +47,7 @@ export function processPartialDeliveryAndRework(params: PartialDeliveryParams): 
 		...order,
 		teethFdi: readyTeeth, teeth: readyTeeth, deliveredTeeth: readyTeeth, reworkTeeth,
 		isPartialDelivery: true, patientPriceKopecks: deliveredPatientPriceKop,
-		priceRub: Math.round(deliveredPatientPriceKop / 100), ztlCostKopecks: deliveredZtlCostKop,
+		priceRub: kopecksToRubles(deliveredPatientPriceKop), ztlCostKopecks: deliveredZtlCostKop,
 		status: "ready_in_clinic",
 		clinicalNotes: `${order.clinicalNotes || ""}\n• ЧАСТИЧНАЯ ПРИЕМКА: Зубы [${readyTeeth.join(", ")}] готовы в клинике к фиксации. Зубы [${reworkTeeth.join(", ")}] направлены на гарантийную переделку.`.trim(),
 		updatedAt: now,

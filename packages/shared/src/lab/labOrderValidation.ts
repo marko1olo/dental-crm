@@ -9,6 +9,7 @@
  */
 
 import { isValidVitaShade } from "./labOrders.js";
+import { kopecksToRubles, rublesToKopecks } from "../money.js";
 
 export type LabSlaRiskLevel = "safe" | "warning_approaching" | "critical_under_24h" | "breached_overdue";
 
@@ -226,7 +227,7 @@ export function buildFittingAppointmentDraft({
 		patientId: effectivePatientId,
 		patientName: formPatientName,
 		patientPhone: "",
-		doctorId: formDoctorId || "doc-current",
+		doctorId: formDoctorId || null,
 		doctorName: formDoctorName || "Врач-ортопед",
 		serviceTitle: `Примерка и фиксация: ${material} (зуб ${toothLabel})`,
 		serviceCode: "A16.07.004",
@@ -264,9 +265,9 @@ export function buildLabOrderApiPayload(params: BuildLabOrderPayloadParams) {
 		: "Пациент";
 	const qrPayload = `DNT-LAB:${gostOrderNumber || "ORDER"}|${tokenizedInitials}|${toothFdiStr}|${finalShade}`;
 
-	const effectivePriceKopecks = priceKopecks ?? totalLabPriceKopecks ?? (totalLabPriceRub != null ? Math.round(totalLabPriceRub * 100) : 0);
-	const effectiveLabCostKopecks = labCostKopecks ?? (params.labCostRub != null ? Math.round(params.labCostRub * 100) : (params.costRub != null ? Math.round(params.costRub * 100) : 0));
-	const effectivePriceRub = totalLabPriceRub ?? (effectivePriceKopecks / 100);
+	const effectivePriceKopecks = priceKopecks ?? totalLabPriceKopecks ?? (totalLabPriceRub != null ? rublesToKopecks(totalLabPriceRub) : 0);
+	const effectiveLabCostKopecks = labCostKopecks ?? (params.labCostRub != null ? rublesToKopecks(params.labCostRub) : (params.costRub != null ? rublesToKopecks(params.costRub) : 0));
+	const effectivePriceRub = totalLabPriceRub ?? kopecksToRubles(effectivePriceKopecks);
 
 	return {
 		patientId: effectivePatientId,

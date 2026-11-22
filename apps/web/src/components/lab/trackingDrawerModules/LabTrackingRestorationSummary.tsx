@@ -1,4 +1,5 @@
 import React from "react";
+import { formatKopecksToRub } from "@dental/shared";
 import { money } from "../../../AppHelpers";
 import { DentalLabFinancialGate } from "../DentalLabFinancialGate";
 import type { FinancialGateCheckResult, DoctorClinicalOverride } from "../dentalLabFinancialGateEngine";
@@ -52,7 +53,7 @@ export function LabTrackingRestorationSummary({
 					</div>
 					<div>
 						<span className="text-[var(--muted)] block">Стоимость ЗТЛ:</span>
-						<strong className="text-sm font-bold text-[var(--teal)] font-mono">{money(financialSplit.totalKopecks / 100)}</strong>
+						<strong className="text-sm font-bold text-[var(--teal)] font-mono">{formatKopecksToRub(financialSplit.totalKopecks)}</strong>
 					</div>
 				</div>
 			</div>
@@ -79,7 +80,7 @@ export function LabTrackingRestorationSummary({
 					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)]">
 						<span className="text-[11px] text-[var(--muted)] block">Стоимость ЗТЛ:</span>
 						<span className="text-base font-extrabold text-[var(--ink)] font-mono">
-							{money(financialSplit.totalKopecks / 100)}
+							{formatKopecksToRub(financialSplit.totalKopecks)}
 						</span>
 					</div>
 					<div className="p-3 bg-[var(--teal-surface)] rounded-xl border border-[var(--teal-soft)]">

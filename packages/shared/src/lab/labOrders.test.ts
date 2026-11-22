@@ -345,8 +345,8 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 	});
 
 	test("CANONICAL_PG_LAB_STATUSES and bidirectional stage-status mappers satisfy Postgres 0231 CHECK constraint", () => {
-		// Strict 12 statuses matching PostgreSQL CHECK constraint (0231)
-		assert.equal(CANONICAL_PG_LAB_STATUSES.length, 12);
+		// Strict 13 statuses matching PostgreSQL CHECK constraint (0231)
+		assert.equal(CANONICAL_PG_LAB_STATUSES.length, 13);
 		const expectedPgStatuses: readonly CanonicalPgLabStatus[] = [
 			"draft",
 			"sent",
@@ -360,6 +360,7 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 			"received",
 			"completed",
 			"cancelled",
+			"rejected_remake",
 		];
 		expectedPgStatuses.forEach((st) => {
 			assert.ok(CANONICAL_PG_LAB_STATUSES.includes(st));
