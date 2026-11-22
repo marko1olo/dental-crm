@@ -1,20 +1,20 @@
 # УНИВЕРСАЛЬНЫЙ МУЛЬТИВЕНДОРНЫЙ ХАБ СТОМАТОЛОГИЧЕСКИХ СКАНЕРОВ (DENTE UNIVERSAL SCANNER HUB)
 
-> **ДОКУМЕНТ:** Архитектурная спецификация универсального приёма, нормализации и 3D-визуализации интраоральных сканов любых мировых производителей: **3Shape TRIOS, Medit (i500/i600/i700/i900), iTero (Align), Dentsply Sirona (CEREC/Primescan), Carestream/DEXIS (CS 3600/3700/3800), Shining 3D (Aoralscan), Panda, Runyes, Eighteeth** и произвольных STL/PLY/OBJ файлов.  
-> **СТАТУС:** Канонический стандарт реализован в `@dental/shared/hardware` (`intraoralScannerTypes.ts`, `intraoralScannerClassifier.ts`) и `@dental/shared/geometry` (`dentalMeshMath.ts`), бэкенд-пайплайна `@dental/api` и вьюера `@dental/web`.
+> ДОКУМЕНТ: Архитектурная спецификация универсального приёма, нормализации и 3D-визуализации интраоральных сканов любых мировых производителей: 3Shape TRIOS, Medit (i500/i600/i700/i900), iTero (Align), Dentsply Sirona (CEREC/Primescan), Carestream/DEXIS (CS 3600/3700/3800), Shining 3D (Aoralscan), Panda, Runyes, Eighteeth и произвольных STL/PLY/OBJ файлов.  
+> СТАТУС: Канонический стандарт реализован в `@dental/shared/hardware` (`intraoralScannerTypes.ts`, `intraoralScannerClassifier.ts`) и `@dental/shared/geometry` (`dentalMeshMath.ts`), бэкенд-пайплайна `@dental/api` и вьюера `@dental/web`.
 
 ---
 
 ## 1. ФУНДАМЕНТАЛЬНЫЙ ПРИНЦИП: НОЛЬ ВЕНДОР-ЛОКА (ZERO-VENDOR-LOCK)
 
 Стоматологическая клиника не должна зависеть от одного производителя оборудования. В одной клинике могут одновременно работать:
-- Терапевт с визиографом **XVSensor** или **Vatech**;
-- Ортопед со сканером **3Shape TRIOS 4**;
-- Ортодонт со сканером **iTero Element 5D** (для элайнеров Invisalign);
-- Хирург со сканером **Medit i700** (для навигационных хирургических шаблонов);
-- Врач общего приёма с бюджетным сканером **Runyes** или **Shining 3D Aoralscan**.
+- Терапевт с визиографом XVSensor или Vatech;
+- Ортопед со сканером 3Shape TRIOS 4;
+- Ортодонт со сканером iTero Element 5D (для элайнеров Invisalign);
+- Хирург со сканером Medit i700 (для навигационных хирургических шаблонов);
+- Врач общего приёма с бюджетным сканером Runyes или Shining 3D Aoralscan.
 
-**DENTE CRM обязана принимать сканы из ЛЮБОГО источника в 1 клик (или 0 кликов в фоне).**
+DENTE CRM обязана принимать сканы из ЛЮБОГО источника в 1 клик (или 0 кликов в фоне).
 
 ```mermaid
 flowchart TD
@@ -94,7 +94,7 @@ flowchart TD
 | **Превью-изображения (Previews)** | `.png`, `.jpg`, `.jpeg` | `/(screenshot\|screen_shot\|preview\|thumb\|chart\|снимок\|фото)/i` |
 | **Заказ-наряд (Lab Order)** | `.pdf` | `/(order\|lab\|наряд\|заказ\|паспорт)/i` |
 
-Если по имени файла определить челюсть невозможно — применяется **геометрический анализ нормалей и кривизны зубной дуги**:
+Если по имени файла определить челюсть невозможно — применяется геометрический анализ нормалей и кривизны зубной дуги:
 - У верхней челюсти дуга эллиптическая (полукруглая с небным сводом $Z < 0$);
 - У нижней челюсти дуга параболическая (U-образная с пустотой под язык).
 
@@ -198,8 +198,8 @@ export async function registerUniversalScanRoutes(app: FastifyInstance) {
 1. **`PLYLoader`** — для PLY с вершинным цветом (3Shape, Medit, Carestream, Runyes).
 2. **`STLLoader`** — для бинарных STL окклюзии, прикуса и 3D-печати.
 3. **`OBJLoader` + `MTLLoader`** — для текстурированных мешей с внешними картами JPEG.
-4. **Автоматическое масштабирование и центрирование:**
-   - Перевод единиц: стоматологические сканы всегда экспортируются в **миллиметрах** ($1\text{ единица} = 1.0\text{ мм}$).
+4. Автоматическое масштабирование и центрирование:
+   - Перевод единиц: стоматологические сканы всегда экспортируются в миллиметрах ($1\text{ единица} = 1.0\text{ мм}$).
    - Центроид челюсти выравнивается в начало координат $(0, 0, 0)$ для плавного вращения `OrbitControls`.
 
 ---
@@ -238,8 +238,8 @@ export async function registerUniversalScanRoutes(app: FastifyInstance) {
 }
 ```
 
-- Как только любой сканер завершает экспорт $\to$ демон за 1 секунду перехватывает архив $\to$ шлет в CRM $\to$ у врача в карточке пациента мгновенно загорается зеленая плашка **«Поступил 3D скан челюстей»**.
-- **0 кликов, 0 рутины, полная универсальность!**
+- Как только любой сканер завершает экспорт $\to$ демон за 1 секунду перехватывает архив $\to$ шлет в CRM $\to$ у врача в карточке пациента мгновенно загорается зеленая плашка «Поступил 3D скан челюстей».
+- 0 кликов, 0 рутины, полная универсальность!
 
 ---
 
@@ -250,7 +250,7 @@ export async function registerUniversalScanRoutes(app: FastifyInstance) {
 ### 8.1. `packages/shared/src/hardware/intraoralScannerTypes.ts`
 - **Вендоры (`IntraoralScannerVendor`):** `'3shape' | 'medit' | 'itero' | 'sirona' | 'shining3d' | 'panda' | 'runyes' | 'carestream' | 'eighteeth' | 'generic'`.
 - **Роли файлов (`IntraoralScanFileRole`):** `'upper_jaw' | 'lower_jaw' | 'buccal_bite_1' | 'buccal_bite_2' | 'preparation_die' | 'pre_op_jaw' | 'scanbody' | 'face_scan' | 'order_metadata' | 'screenshot_preview'`.
-- **Иммутабельные геометрии:** `Vector3 = readonly [number, number, number]`, `Matrix4x4 = readonly [number, ... 16 чисел]`.
+- Иммутабельные геометрии: `Vector3 = readonly [number, number, number]`, `Matrix4x4 = readonly [number, ... 16 чисел]`.
 - **Микронные пороги окклюзионного контакта (`OCCLUSION_THRESHOLDS_MICRONS`):**
   * Твердый контакт / коллизия: `< 50 мкм` (`hard_contact`).
   * Физиологический контакт: `50 – 150 мкм` (`physiological_contact`).
@@ -275,6 +275,6 @@ export async function registerUniversalScanRoutes(app: FastifyInstance) {
 - **Анализ поднутрений `analyzeUndercuts`:** детектирование отрицательных углов уклона относительно пути введения протеза.
 
 ### 8.4. Тестовое покрытие
-- Сьют `packages/shared/src/hardware/__tests__/intraoralScannerEngine.test.ts`: **40/40 тестов пройдены (100% green)**.
-- Гейт компилятора: `npm run typecheck -w @dental/shared` — **Exit Code 0 (ноль ошибок)**.
+- Сьют `packages/shared/src/hardware/__tests__/intraoralScannerEngine.test.ts`: 40/40 тестов пройдены (100% green).
+- Гейт компилятора: `npm run typecheck -w @dental/shared` — Exit Code 0 (ноль ошибок).
 

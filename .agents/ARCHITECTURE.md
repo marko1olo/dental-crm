@@ -1,18 +1,18 @@
 # 🏗️ DENTE Dental CRM — System Architecture
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+> ⚠️ ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW): [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
-> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
-> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:
+> Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла).
 > До сетевых холдингов нам ещё расти и расти! Архитектура оптимизирована под минимальное трение: быстрый запуск, отсутствие промежуточных блокировок, 1-клик сценарии у кресла.
 >
-> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):**
+> 🛑 ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):
 > Система масштабируется от 1 кресла до крупной сети без архитектурных переделок. Сетевые модули (мультитенантность, аудит главврача) заложены без захламления базового интерфейса соло-врача.
 >
-> 🏛️ **УНИВЕРСАЛЬНАЯ 3-УРОВНЕВАЯ АРХИТЕКТУРА ИНТЕРФЕЙСА (CORE ROUTE §10):**
-> - **Tier 1 (Горячий путь / 0 кликов):** Доминантный холст зубной формулы, итоги к оплате, статус визита, экстренные аллерго-алерты.
-> - **Tier 2 (Тёплый контекст / 1 клик):** Выдвижные шторки и аккордеоны параметров (поверхности MOD, дозировки препаратов, детальные свойства выбранного зуба).
-> - **Tier 3 (Холодный бэк-офис / Кабинет):** Полноэкранные студии (3D DICOM MPR, выгрузка ЕГИСЗ РЭМД с УКЭП, зарплатная ведомость Т-51).
+> 🏛️ УНИВЕРСАЛЬНАЯ 3-УРОВНЕВАЯ АРХИТЕКТУРА ИНТЕРФЕЙСА (CORE ROUTE §10):
+> - Tier 1 (Горячий путь / 0 кликов): Доминантный холст зубной формулы, итоги к оплате, статус визита, экстренные аллерго-алерты.
+> - Tier 2 (Тёплый контекст / 1 клик): Выдвижные шторки и аккордеоны параметров (поверхности MOD, дозировки препаратов, детальные свойства выбранного зуба).
+> - Tier 3 (Холодный бэк-офис / Кабинет): Полноэкранные студии (3D DICOM MPR, выгрузка ЕГИСЗ РЭМД с УКЭП, зарплатная ведомость Т-51).
 
 This document describes the structure, data flows, and architectural conventions of the DENTE Dental CRM project.
 
@@ -41,7 +41,7 @@ This document describes the structure, data flows, and architectural conventions
 
 The project is structured as an npm workspaces monorepo:
 *   `apps/api/` — Backend server (Fastify, TypeScript, tsx execution).
-*   `apps/web/` — Web Frontend client (Vite, **React 19**, Tailwind CSS, TypeScript).
+*   `apps/web/` — Web Frontend client (Vite, React 19, Tailwind CSS, TypeScript).
 *   `packages/shared/` — Common types, schemas, and helper functions shared by both frontend and backend.
 *   `scripts/` — Smoke test scenarios, database tooling, and validation scripts.
 
@@ -49,38 +49,38 @@ The project is structured as an npm workspaces monorepo:
 
 ## ⚡ Backend Server (`apps/api`)
 
-The backend is built with **Fastify** and uses **Drizzle ORM** for PostgreSQL interaction.
+The backend is built with Fastify and uses Drizzle ORM for PostgreSQL interaction.
 
 ### 🛣️ API Routes Highway Architecture
 All backend endpoints are modularized under `apps/api/src/routes/` and registered in `apps/api/src/server.ts`.
 For an exhaustive, machine-verified catalog of all 771 endpoints with method, path, handler, Zod schema, RBAC guards, and DB tables, see **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)**.
 
 #### Functional Domains (14 Subsystems):
-1.  **Auth & Identity:** Staff credentials, PIN switch, sessions, and guest patient OTP portal (`routes/auth.ts`, `routes/portal.ts`, `routes/staff.ts`).
-2.  **Patients & CRM:** Full patient records, relations, duplicate merge queue, CRM leak detector (210-day churn), and loyalty/referral programs (`routes/patients.ts`, `routes/crmLeakDetector.ts`, `routes/loyalty.ts`).
-3.  **Schedule & Booking:** Chair calendar, appointments, morning confirmation queue (`routes/dayConfirmations.ts`), waitlist auto-matching (`routes/waitlistMatches.ts`), and public booking widgets.
-4.  **Clinical EHR & Odontogram:** EHR diaries, versioned corrections ("исправленному верить"), pediatric/permanent tooth charts, anesthesia calculators, implant passports, and treatment plan bundles.
-5.  **Radiology & DICOM:** Direct RVG sensor capture (<50ms preview), DICOM study ingestion, DICOMweb (WADO-RS / QIDO-RS), 3D implant planning, and Diagnocat AI integration.
-6.  **Billing, Cash & 54-FZ:** Idempotent payment processing, 54-FZ fiscal receipt validation and generation, offline KKT retry queue, multi-cashbox shifts, P&L reporting, SBP dynamic QR, and Sber POS terminal webhooks.
-7.  **Warehouse & SanPiN:** 1-click nurse carpule disposal (no 3-person commission), soft overdraft on delayed supplier invoices, 5 canonical registers: 1) Autoclave journal, 2) Cleaning control, 3) UV lamps & disinfection, 4) Medical waste disposal (Class A/B), 5) Equipment fleet, with 1-click batch shift closure, and Chestny Znak (MDLP).
-8.  **Dental Lab (ЗТЛ):** Work orders, status progression, trial fits, "installed" verification, and lab cost deductions from doctor revenue.
-9.  **Documents & Legal:** Headless Chrome/Edge PDF rendering, HTML previews, 13% NDFL tax deduction certificates (FNS KND 1151156), CryptoPro UKEP signing, and EGISZ REMD packages.
-10. **Telephony & Messaging:** UIS/Comagic, Mango, Zadarma webhooks, top ambient call capsules, softphone dialer, WhatsApp Cloud API (WABA), Telegram bot, VK, and MAX.
-11. **AI, Speech & Copilot:** Doctor chairside voice dictation (Yandex / Whisper STT), hallucination filters, clinical Copilot agent, and ambient EMR note synthesis.
-12. **Analytics & Reports:** Revenue trends, attendance ratios, doctor workload, accounts receivable, and executive dashboards.
-13. **Integrations & Data Sync:** 1C Enterprise CommerceML 2.09, Flexbe landing webhooks, Yandex Calendar sync, offline CRDT sync protocol, and migration engine for competitor CRM imports (IDENT, DentalPRO, iStom).
-14. **System, Settings & WebSockets:** Clinic configurations, chairs, branch offices, nomenclature 804n pricelist, audit logs, and real-time WebSocket broker.
+1.  Auth & Identity: Staff credentials, PIN switch, sessions, and guest patient OTP portal (`routes/auth.ts`, `routes/portal.ts`, `routes/staff.ts`).
+2.  Patients & CRM: Full patient records, relations, duplicate merge queue, CRM leak detector (210-day churn), and loyalty/referral programs (`routes/patients.ts`, `routes/crmLeakDetector.ts`, `routes/loyalty.ts`).
+3.  Schedule & Booking: Chair calendar, appointments, morning confirmation queue (`routes/dayConfirmations.ts`), waitlist auto-matching (`routes/waitlistMatches.ts`), and public booking widgets.
+4.  Clinical EHR & Odontogram: EHR diaries, versioned corrections ("исправленному верить"), pediatric/permanent tooth charts, anesthesia calculators, implant passports, and treatment plan bundles.
+5.  Radiology & DICOM: Direct RVG sensor capture (<50ms preview), DICOM study ingestion, DICOMweb (WADO-RS / QIDO-RS), 3D implant planning, and Diagnocat AI integration.
+6.  Billing, Cash & 54-FZ: Idempotent payment processing, 54-FZ fiscal receipt validation and generation, offline KKT retry queue, multi-cashbox shifts, P&L reporting, SBP dynamic QR, and Sber POS terminal webhooks.
+7.  Warehouse & SanPiN: 1-click nurse carpule disposal (no 3-person commission), soft overdraft on delayed supplier invoices, 5 canonical registers: 1) Autoclave journal, 2) Cleaning control, 3) UV lamps & disinfection, 4) Medical waste disposal (Class A/B), 5) Equipment fleet, with 1-click batch shift closure, and Chestny Znak (MDLP).
+8.  Dental Lab (ЗТЛ): Work orders, status progression, trial fits, "installed" verification, and lab cost deductions from doctor revenue.
+9.  Documents & Legal: Headless Chrome/Edge PDF rendering, HTML previews, 13% NDFL tax deduction certificates (FNS KND 1151156), CryptoPro UKEP signing, and EGISZ REMD packages.
+10. Telephony & Messaging: UIS/Comagic, Mango, Zadarma webhooks, top ambient call capsules, softphone dialer, WhatsApp Cloud API (WABA), Telegram bot, VK, and MAX.
+11. AI, Speech & Copilot: Doctor chairside voice dictation (Yandex / Whisper STT), hallucination filters, clinical Copilot agent, and ambient EMR note synthesis.
+12. Analytics & Reports: Revenue trends, attendance ratios, doctor workload, accounts receivable, and executive dashboards.
+13. Integrations & Data Sync: 1C Enterprise CommerceML 2.09, Flexbe landing webhooks, Yandex Calendar sync, offline CRDT sync protocol, and migration engine for competitor CRM imports (IDENT, DentalPRO, iStom).
+14. System, Settings & WebSockets: Clinic configurations, chairs, branch offices, nomenclature 804n pricelist, audit logs, and real-time WebSocket broker.
 
 ### 🛡️ Multi-Tenant Isolation & Identity Guarding
-*   **AsyncLocalStorage & RLS Integration:** Every incoming request is encapsulated inside `withTenantCtx` (`apps/api/src/db/rls.ts`), executing `SET LOCAL app.current_tenant = organizationId`. Native PostgreSQL Row Level Security (RLS) automatically isolates data queries at the database kernel level.
-*   **Encapsulation Boundaries:** Modules requiring dedicated pre-handlers (such as `registerMaxRoutes`, `registerWhatsappRoutes`, `warehouseRoutes`, `inventoryRoutes`) are registered via `app.register(...)` to prevent local hooks from polluting root Fastify route scopes.
-*   **Autonomous Doctor Mandate (Constitution §VII):** Routine clinical and administrative workflows must never be blocked by artificial UI locks. Clinicians have full autonomy over treatment plans, notes editing, discounts up to 100%, and warehouse soft overdrafts.
+*   AsyncLocalStorage & RLS Integration: Every incoming request is encapsulated inside `withTenantCtx` (`apps/api/src/db/rls.ts`), executing `SET LOCAL app.current_tenant = organizationId`. Native PostgreSQL Row Level Security (RLS) automatically isolates data queries at the database kernel level.
+*   Encapsulation Boundaries: Modules requiring dedicated pre-handlers (such as `registerMaxRoutes`, `registerWhatsappRoutes`, `warehouseRoutes`, `inventoryRoutes`) are registered via `app.register(...)` to prevent local hooks from polluting root Fastify route scopes.
+*   Autonomous Doctor Mandate (Constitution §VII): Routine clinical and administrative workflows must never be blocked by artificial UI locks. Clinicians have full autonomy over treatment plans, notes editing, discounts up to 100%, and warehouse soft overdrafts.
 
 ### 🌐 WebSocket Broker (`apps/api/src/services/websocketBroker.ts`)
 The server runs an in-memory client dispatcher for real-time events.
 *   Endpoint: `/api/ws/schedule?orgId=<orgId>&patientId=<patientId>`
 *   Active client connections are mapped to their specific `organizationId` and `patientId` scopes.
-*   **Active Broadcast Messages:**
+*   Active Broadcast Messages:
     *   `TELEPHONY_INCOMING_CALL` — Pushed to reception and registered softphones.
     *   `LAB_ORDER_UPDATED` — Pushed when a dental laboratory updates order statuses.
     *   `SCHEDULE_APPOINTMENT_CHANGE` — Dispatched when appointment cards are created, updated, or moved.
@@ -111,18 +111,18 @@ DENTE integrates automated voice dictation for dental visits.
 
 ## 🗄️ Database Integration Layer (`apps/api/src/db`)
 
-*   **Native PostgreSQL 18.4 Engine:** Connected over TCP at `127.0.0.1:5432` via `pg.Pool`. Requires valid `DATABASE_URL`.
-*   **Modular Drizzle Schema:** `apps/api/src/db/schema.ts` re-exports 18 domain schema modules under `apps/api/src/db/schema/` defining **203 `pgTable`** entities.
-*   **ALS Proxy Client:** The exported `db` client from `apps/api/src/db/client.ts` proxies queries directly to the active `AsyncLocalStorage` transaction opened by `withTenantCtx`, guaranteeing tenant RLS enforcement.
+*   Native PostgreSQL 18.4 Engine: Connected over TCP at `127.0.0.1:5432` via `pg.Pool`. Requires valid `DATABASE_URL`.
+*   Modular Drizzle Schema: `apps/api/src/db/schema.ts` re-exports 18 domain schema modules under `apps/api/src/db/schema/` defining **203 `pgTable`** entities.
+*   ALS Proxy Client: The exported `db` client from `apps/api/src/db/client.ts` proxies queries directly to the active `AsyncLocalStorage` transaction opened by `withTenantCtx`, guaranteeing tenant RLS enforcement.
 
 ---
 
 ## 🖥️ Web Frontend (`apps/web`)
 
-The frontend is a Single Page Application (SPA) built with **React 19** and Vite.
+The frontend is a Single Page Application (SPA) built with React 19 and Vite.
 
 ### 🧠 App State Management
-*   **Zustand Stores:** Dedicated stores for decoupled UI state:
+*   Zustand Stores: Dedicated stores for decoupled UI state:
     *   `appStore.ts` — Active view navigation (`currentView`), omnibar, global alerts.
     *   `patientStore.ts` — Selected patient profile, tooth status cache.
     *   `visitStore.ts` — Active visit diary EHR drafts, auto-save state.

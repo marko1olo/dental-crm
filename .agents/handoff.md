@@ -1,8 +1,8 @@
 # Handoff Report — Wave 200: Final Zero-Shirms Milestone (Ceiling 0), Compiler Gate, Global Test Suite & Verification
 
 ## Observation
-- **Scope**: Final Wave 200 milestone for DENTE Dental CRM (`apps/web/`, `packages/shared/`, `docs/competitive-audit/`).
-- **Target 26 Mounted Components**:
+- Scope: Final Wave 200 milestone for DENTE Dental CRM (`apps/web/`, `packages/shared/`, `docs/competitive-audit/`).
+- Target 26 Mounted Components:
   1. `VisitTimer` — mounted in `VisitView.tsx` (status bar).
   2. `EmergencyRescueModal` — mounted in `VisitView.tsx` (emergency anti-shock kit & options menu).
   3. `VoiceDictationAssistantModal` — mounted in `VisitView.tsx` (AI clinical dictation & command parser).
@@ -29,10 +29,10 @@
   24. `HotFolderIntakeModal` — mounted in `VisitDiagnosticsTab.tsx` (radiology hot folder auto-intake).
   25. `RvgFiltersToolbar` — mounted in `DirectRvgCaptureModal.tsx` (sensor filter toolbar).
   26. `DicomViewport` — mounted in `DicomViewerModal.tsx` (primary CT/DICOM viewport).
-- **Physical Shirm Elimination**:
+- Physical Shirm Elimination:
   - `apps/web/src/components/modals/ClinicalModalsHost.tsx` — deleted via `git rm`.
   - `apps/web/src/components/modals/BackofficeModalsHost.tsx` — deleted via `git rm`.
-- **Mount Guard Invariants**:
+- Mount Guard Invariants:
   - `DEMOUNTED_MODAL_SHIRMS_BACKLOG = []` in `apps/web/src/tests/panelsAreMounted.test.ts`.
   - `DEMOUNTED_MODAL_SHIRMS_CEILING = 0` (absolute zero).
   - 13/13 tests pass in `panelsAreMounted.test.ts`.

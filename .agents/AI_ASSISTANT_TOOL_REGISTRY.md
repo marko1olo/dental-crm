@@ -1,8 +1,8 @@
 # 🛠️ ПОЛНЫЙ РЕЕСТР ИНСТРУМЕНТОВ ИИ-АССИСТЕНТА DENTE (AI ASSISTANT TOOL REGISTRY)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🔨 ВЫСШАЯ КОНСТИТУЦИЯ (THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [📜 Конституция Правил ИИ (.agents/AI_ASSISTANT_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | [🏛️ Спецификация Харнесса (.agents/AI_ASSISTANT_HARNESS_SPEC.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_HARNESS_SPEC.md) | [🏗️ Общая Архитектура (.agents/AI_ASSISTANT_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md) | [🖥️ Десктопный Харнесс и MCP (.agents/AI_ASSISTANT_DESKTOP_MCP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)  
-> **Канонический статус**: Официальный технический реестр, схемы валидации Zod, спецификации параметров JSON Schema, контракты ответов и матрица прав доступа для всех **29 инструментов** стоматологического агентного харнесса DENTE Dental CRM (`apps/api/src/ai/dentalTools/`).  
-> **Стандарты качества**: 100% строгая типизация Zod, отсутствие мокапов, честные SQL-транзакции PostgreSQL 18, разделение профилей рантайма (`web_browser` vs `desktop_native`) и двухфазный Guard подтверждения деструктивных действий (Мандат 8e).
+> Канонический статус: Официальный технический реестр, схемы валидации Zod, спецификации параметров JSON Schema, контракты ответов и матрица прав доступа для всех 29 инструментов стоматологического агентного харнесса DENTE Dental CRM (`apps/api/src/ai/dentalTools/`).  
+> Стандарты качества: 100% строгая типизация Zod, отсутствие мокапов, честные SQL-транзакции PostgreSQL 18, разделение профилей рантайма (`web_browser` vs `desktop_native`) и двухфазный Guard подтверждения деструктивных действий (Мандат 8e).
 
 ---
 
@@ -44,21 +44,21 @@
 
 ### 🚦 СВЯЗЬ ИНСТРУМЕНТАРНОГО ХАРНЕССА С 7-GATES CLINICAL TRIAGE ENGINE
 Каждый входящий запрос предварительно классифицируется через `evaluateClinicalTriage(query)` (`packages/shared/src/ai/clinicalTriageEngine.ts`), активируя профильный шлюз и рекомендуемый набор инструментов:
-- **Gate 2: Emergency SOS** $\rightarrow$ `chairside_emergency_rescue` (анафилаксия, LAST-синдром, NaOCl авария, поломка файла bypass, перфорация).
-- **Gate 3: Hot Path Direct Action** $\rightarrow$ `update_tooth_status`, `create_appointment`, `create_invoice_draft`, `print_document` (мутации с 2-фазным Guard при подтверждении).
-- **Gate 4: Material & Technical Protocol** $\rightarrow$ `compare_dental_materials`, `search_clinic_services_and_prices` (физико-химия, протоколы адгезии, эндомотор).
-- **Gate 5: Ambiguity & Clinical Dilemma** $\rightarrow$ `multidisciplinary_concilium`, `translate_patient_complaint` (дифдиагноз «пульпит vs глубокий кариес», Сценарий А / Б).
-- **Gate 6: Evidence & Pediatric Safety** $\rightarrow$ `calculate_anesthesia`, `check_somatic_risks` (потолок анестезии детям $\le 5$ мг/кг, соматика, аллергии).
-- **Gate 7: Output Polish & Sanitizer** $\rightarrow$ `sanitizeClinicalAiOutput` (выкос сервильной слизи, судейских ярлыков и замена канцелярита по Мандату 8x).
+- Gate 2: Emergency SOS $\rightarrow$ `chairside_emergency_rescue` (анафилаксия, LAST-синдром, NaOCl авария, поломка файла bypass, перфорация).
+- Gate 3: Hot Path Direct Action $\rightarrow$ `update_tooth_status`, `create_appointment`, `create_invoice_draft`, `print_document` (мутации с 2-фазным Guard при подтверждении).
+- Gate 4: Material & Technical Protocol $\rightarrow$ `compare_dental_materials`, `search_clinic_services_and_prices` (физико-химия, протоколы адгезии, эндомотор).
+- Gate 5: Ambiguity & Clinical Dilemma $\rightarrow$ `multidisciplinary_concilium`, `translate_patient_complaint` (дифдиагноз «пульпит vs глубокий кариес», Сценарий А / Б).
+- Gate 6: Evidence & Pediatric Safety $\rightarrow$ `calculate_anesthesia`, `check_somatic_risks` (потолок анестезии детям $\le 5$ мг/кг, соматика, аллергии).
+- Gate 7: Output Polish & Sanitizer $\rightarrow$ `sanitizeClinicalAiOutput` (выкос сервильной слизи, судейских ярлыков и замена канцелярита по Мандату 8x).
 
 ---
 
 ## 🩺 РАЗДЕЛ I: КЛИНИЧЕСКИЕ КАЛЬКУЛЯТОРЫ И ПРОТОКОЛЫ (9 ИНСТРУМЕНТОВ)
 
 ### 1. `calculate_anesthesia`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L20-L170)
-- **Назначение**: Расчет предельно допустимой дозы местного анестетика (артикаин 4% 1:100 000, артикаин 4% 1:200 000, мепивакаин 3% без вазоконстриктора) по массе тела с учетом кардио-рисков и беременности по протоколам СтАР / Malamed.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L20-L170)
+- Назначение: Расчет предельно допустимой дозы местного анестетика (артикаин 4% 1:100 000, артикаин 4% 1:200 000, мепивакаин 3% без вазоконстриктора) по массе тела с учетом кардио-рисков и беременности по протоколам СтАР / Malamed.
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientWeightKg: z.number().min(5).max(300).describe("Масса тела пациента в кг"),
@@ -68,7 +68,7 @@
     plannedCarpules: z.number().min(0.5).max(15).default(1),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     drugName: string;
@@ -91,9 +91,9 @@
 ---
 
 ### 2. `check_somatic_risks`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L175-L330)
-- **Назначение**: Скрининг соматических стоп-факторов: прием антикоагулянтов (варфарин, ксарелто) перед удалением зуба, риск остеонекроза челюсти (MRONJ) при терапии бисфосфонатами/деносумабом, аллергия на бета-лактамы, декомпенсированный диабет (HbA1c > 7.5%) перед имплантацией.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L175-L330)
+- Назначение: Скрининг соматических стоп-факторов: прием антикоагулянтов (варфарин, ксарелто) перед удалением зуба, риск остеонекроза челюсти (MRONJ) при терапии бисфосфонатами/деносумабом, аллергия на бета-лактамы, декомпенсированный диабет (HbA1c > 7.5%) перед имплантацией.
+- Входная Zod-схема:
   ```typescript
   z.object({
     plannedProcedure: z.enum(["extraction", "implantation", "endodontics", "hygiene", "orthodontics", "prosthetics"]),
@@ -103,7 +103,7 @@
     hba1cPercent: z.number().min(4).max(18).optional(),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     procedure: string;
@@ -119,16 +119,16 @@
 ---
 
 ### 3. `get_patient_emr_and_odontogram`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L28-L170)
-- **Назначение**: Запрос паспортных данных, лекарственных аллергий, состояний всех 32 зубов одонтограммы (FDI) и истории последних 5 визитов из реальной базы данных PostgreSQL 18 с изоляцией по `organizationId`.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L28-L170)
+- Назначение: Запрос паспортных данных, лекарственных аллергий, состояний всех 32 зубов одонтограммы (FDI) и истории последних 5 визитов из реальной базы данных PostgreSQL 18 с изоляцией по `organizationId`.
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().uuid().optional().describe("UUID пациента в CRM"),
     query: z.string().min(1).optional().describe("ФИО или номер телефона для поиска"),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     found: boolean;
@@ -142,15 +142,15 @@
 ---
 
 ### 4. `search_clinic_services_and_prices`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L175-L398)
-- **Назначение**: Поиск позиций прейскуранта клиники (`serviceCatalogItems`, `services`) и каталога базовых стоматологических услуг по кодам и ключевым словам. При отсутствии в локальном прайсе мягко фолбечится на нормативный клинический справочник СтАР.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L175-L398)
+- Назначение: Поиск позиций прейскуранта клиники (`serviceCatalogItems`, `services`) и каталога базовых стоматологических услуг по кодам и ключевым словам. При отсутствии в локальном прайсе мягко фолбечится на нормативный клинический справочник СтАР.
+- Входная Zod-схема:
   ```typescript
   z.object({
     codeOrName: z.string().min(2).describe("Код услуги или поисковое слово"),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     found: boolean;
@@ -163,9 +163,9 @@
 ---
 
 ### 5. `generate_form_043_entry`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L335-L540)
-- **Назначение**: Синтез записи дневника приёма в амбулаторной карте по международному стандарту SOAP (Subjective, Objective, Assessment, Plan) на основе клинических рекомендаций СтАР. Поддерживает физиологическую норму в 1 клик (автономия врача).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L335-L540)
+- Назначение: Синтез записи дневника приёма в амбулаторной карте по международному стандарту SOAP (Subjective, Objective, Assessment, Plan) на основе клинических рекомендаций СтАР. Поддерживает физиологическую норму в 1 клик (автономия врача).
+- Входная Zod-схема:
   ```typescript
   z.object({
     toothNumber: z.number().min(11).max(85).describe("Номер зуба по формуле FDI"),
@@ -177,7 +177,7 @@
     isNormDefault: z.boolean().default(true),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     toothNumber: number;
@@ -193,9 +193,9 @@
 ---
 
 ### 6. `multidisciplinary_concilium`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L545-L710)
-- **Назначение**: Комплексное планирование реабилитации пациента с привлечением терапевта, ортопеда, хирурга-имплантолога, пародонтолога и ортодонта. Формирует 4 последовательных этапа (санация $\rightarrow$ хирургия $\rightarrow$ протезирование $\rightarrow$ диспансерное наблюдение).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L545-L710)
+- Назначение: Комплексное планирование реабилитации пациента с привлечением терапевта, ортопеда, хирурга-имплантолога, пародонтолога и ортодонта. Формирует 4 последовательных этапа (санация $\rightarrow$ хирургия $\rightarrow$ протезирование $\rightarrow$ диспансерное наблюдение).
+- Входная Zod-схема:
   ```typescript
   z.object({
     clinicalCaseDescription: z.string().min(10).describe("Анамнез, состояние прикуса, жалобы"),
@@ -207,9 +207,9 @@
 ---
 
 ### 7. `chairside_emergency_rescue`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L715-L895)
-- **Назначение**: Экстренные протоколы у стоматологического кресла: анафилактический шок (адреналин 0.5 мг в/м в бедро), гипохлоритная авария (промывание физраствором, дексаметазон, холод), облом инструмента в корневом канале, перфорация корня/бифуркации (МТА/Биодентин), токсичность местных анестетиков (интралипид 20%).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L715-L895)
+- Назначение: Экстренные протоколы у стоматологического кресла: анафилактический шок (адреналин 0.5 мг в/м в бедро), гипохлоритная авария (промывание физраствором, дексаметазон, холод), облом инструмента в корневом канале, перфорация корня/бифуркации (МТА/Биодентин), токсичность местных анестетиков (интралипид 20%).
+- Входная Zod-схема:
   ```typescript
   z.object({
     emergencyType: z.enum([
@@ -228,9 +228,9 @@
 ---
 
 ### 8. `translate_patient_complaint`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L900-L1010)
-- **Назначение**: Семантический парсер естественной речи пациента («ноет от сладкого», «пульсирует ночью в ухо», «больно накусывать на горячее») в клинические гипотезы МКБ-10 с дифференциально-диагностическими критериями.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L900-L1010)
+- Назначение: Семантический парсер естественной речи пациента («ноет от сладкого», «пульсирует ночью в ухо», «больно накусывать на горячее») в клинические гипотезы МКБ-10 с дифференциально-диагностическими критериями.
+- Входная Zod-схема:
   ```typescript
   z.object({
     complaintText: z.string().min(3).describe("Жалобы словами пациента"),
@@ -241,9 +241,9 @@
 ---
 
 ### 9. `compare_dental_materials`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L1015-L1127)
-- **Назначение**: Сравнительный анализ физико-химических и клинических свойств материалов: Bulk-Fill vs послойная реставрация, самопротравливающие (self-etch) адгезивы 7 поколения vs тотальное протравливание (total-etch), стеклоиономерные цементы vs композиты двойного отверждения.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/clinicalCalculators.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/clinicalCalculators.ts#L1015-L1127)
+- Назначение: Сравнительный анализ физико-химических и клинических свойств материалов: Bulk-Fill vs послойная реставрация, самопротравливающие (self-etch) адгезивы 7 поколения vs тотальное протравливание (total-etch), стеклоиономерные цементы vs композиты двойного отверждения.
+- Входная Zod-схема:
   ```typescript
   z.object({
     materialA: z.string().min(2),
@@ -257,9 +257,9 @@
 ## 🏛️ РАЗДЕЛ II: CRM-ТРАНЗАКЦИИ И БАЗА ДАННЫХ (4 ИНСТРУМЕНТА)
 
 ### 10. `update_tooth_status` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L400-L538)
-- **Назначение**: Запись нового статуса зуба в таблицу `toothStates` PostgreSQL 18 с одновременной фиксацией транзакции в аудиторском журнале `toothStateHistory`.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L400-L538)
+- Назначение: Запись нового статуса зуба в таблицу `toothStates` PostgreSQL 18 с одновременной фиксацией транзакции в аудиторском журнале `toothStateHistory`.
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().uuid().describe("ID пациента"),
@@ -273,9 +273,9 @@
 ---
 
 ### 11. `create_appointment` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L540-L635)
-- **Назначение**: Создание брони визита в расписании клиники (`appointments`) с привязкой к креслу (`chairId`), врачу (`doctorId`) и пациенту (`patientId`).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L540-L635)
+- Назначение: Создание брони визита в расписании клиники (`appointments`) с привязкой к креслу (`chairId`), врачу (`doctorId`) и пациенту (`patientId`).
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().uuid(),
@@ -291,9 +291,9 @@
 ---
 
 ### 12. `create_invoice_draft` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L640-L755)
-- **Назначение**: Формирование счёта в `patientInvoices` и строк услуг в `treatmentItems`. Поддерживает скидку врача (вплоть до 100% на переделки и персонал) без ввода мастер-паролей администратора (Мандат 8e).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L640-L755)
+- Назначение: Формирование счёта в `patientInvoices` и строк услуг в `treatmentItems`. Поддерживает скидку врача (вплоть до 100% на переделки и персонал) без ввода мастер-паролей администратора (Мандат 8e).
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().uuid(),
@@ -312,9 +312,9 @@
 ---
 
 ### 13. `print_document` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L760-L810)
-- **Назначение**: Печать клинических и юридических бланков (дневник приёма амбулаторной карты, Информированное добровольное согласие, договор возмездного оказания услуг, кассовый чек, памятка). В веб-версии отдает намерение на печать (`client_print_intent`), в десктопе — отправляет на системный/термопринтер.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts#L760-L810)
+- Назначение: Печать клинических и юридических бланков (дневник приёма амбулаторной карты, Информированное добровольное согласие, договор возмездного оказания услуг, кассовый чек, памятка). В веб-версии отдает намерение на печать (`client_print_intent`), в десктопе — отправляет на системный/термопринтер.
+- Входная Zod-схема:
   ```typescript
   z.object({
     documentType: z.enum(["form_043", "informed_consent_1051n", "contract_treatment", "invoice_receipt", "post_op_memo"]),
@@ -330,9 +330,9 @@
 ## 💻 РАЗДЕЛ III: НАБОР СИСТЕМНЫХ ИНСТРУМЕНТОВ РАБОЧЕЙ СТАНЦИИ DESKTOP NATIVE (8 ИНСТРУМЕНТОВ)
 
 ### 14 & 15. `read_clinical_file` и `read_local_clinical_file`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L420-L580)
-- **Назначение**: Безопасное чтение файлов исследований, логов, DICOM-манифестов и текстовых протоколов со срезом строк (`startLine`, `endLine`) и проверкой черного списка путей `isPathSafe`. Автоматически детектирует DICOM-заголовок (`DICM` на смещении 128 байт).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L420-L580)
+- Назначение: Безопасное чтение файлов исследований, логов, DICOM-манифестов и текстовых протоколов со срезом строк (`startLine`, `endLine`) и проверкой черного списка путей `isPathSafe`. Автоматически детектирует DICOM-заголовок (`DICM` на смещении 128 байт).
+- Входная Zod-схема:
   ```typescript
   z.object({
     filePath: z.string().min(1).describe("Абсолютный путь к файлу на диске ПК"),
@@ -345,9 +345,9 @@
 ---
 
 ### 16. `write_clinical_file` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L270-L415)
-- **Назначение**: Безопасная запись выписок, протоколов, направлений на КЛКТ и бинарных файлов на локальный диск с автоматическим созданием директорий и защитой от перезаписи системных файлов.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L270-L415)
+- Назначение: Безопасная запись выписок, протоколов, направлений на КЛКТ и бинарных файлов на локальный диск с автоматическим созданием директорий и защитой от перезаписи системных файлов.
+- Входная Zod-схема:
   ```typescript
   z.object({
     targetPath: z.string().min(1),
@@ -361,9 +361,9 @@
 ---
 
 ### 17. `list_patient_study_directory`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L585-L710)
-- **Назначение**: Сканирование изолированной папки снимков пациента (`getTenantDropzonePath`) с автоматической категоризацией модальностей: КЛКТ (DICOM / `.dcm`), визиограф RVG, панорамные ОПТГ, 3D-сканы зубов (`.stl`, `.ply`, `.obj`) и фотопротокол (`.jpg`, `.png`).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L585-L710)
+- Назначение: Сканирование изолированной папки снимков пациента (`getTenantDropzonePath`) с автоматической категоризацией модальностей: КЛКТ (DICOM / `.dcm`), визиограф RVG, панорамные ОПТГ, 3D-сканы зубов (`.stl`, `.ply`, `.obj`) и фотопротокол (`.jpg`, `.png`).
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().optional(),
@@ -374,9 +374,9 @@
 ---
 
 ### 18. `open_patient_dropzone_folder`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L715-L815)
-- **Назначение**: Мгновенное открытие Проводника Windows (`explorer.exe`) в папке снимков пациента для перетаскивания файлов (Drag & Drop) в 1 клик.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L715-L815)
+- Назначение: Мгновенное открытие Проводника Windows (`explorer.exe`) в папке снимков пациента для перетаскивания файлов (Drag & Drop) в 1 клик.
+- Входная Zod-схема:
   ```typescript
   z.object({
     patientId: z.string().min(1),
@@ -387,9 +387,9 @@
 ---
 
 ### 19. `run_workstation_command` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L960-L1130)
-- **Назначение**: Выполнение служебных команд оборудования с параметром `WaitMsBeforeAsync`. Если команда выполняется быстрее таймаута — возвращает результат синхронно; если дольше — автоматически переводит процесс в фоновый режим и возвращает `taskId` для контроля через `manage_task`.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L960-L1130)
+- Назначение: Выполнение служебных команд оборудования с параметром `WaitMsBeforeAsync`. Если команда выполняется быстрее таймаута — возвращает результат синхронно; если дольше — автоматически переводит процесс в фоновый режим и возвращает `taskId` для контроля через `manage_task`.
+- Входная Zod-схема:
   ```typescript
   z.object({
     commandLine: z.string().min(1),
@@ -402,9 +402,9 @@
 ---
 
 ### 20. `manage_task`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1135-L1285)
-- **Назначение**: Системный менеджер фоновых процессов (`WorkstationTaskManager`): просмотр активных задач (`list`), опрос логов (`status`), аварийное прерывание (`kill`) и отправка ввода (`send_input`).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1135-L1285)
+- Назначение: Системный менеджер фоновых процессов (`WorkstationTaskManager`): просмотр активных задач (`list`), опрос логов (`status`), аварийное прерывание (`kill`) и отправка ввода (`send_input`).
+- Входная Zod-схема:
   ```typescript
   z.object({
     action: z.enum(["list", "status", "kill", "send_input"]),
@@ -416,9 +416,9 @@
 ---
 
 ### 21. `schedule`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1290-L1440)
-- **Назначение**: Планировщик однократных таймеров (`durationSeconds`) и периодических регламентных задач по cron (`cronExpression`) для авто-напоминаний ассистента врачу.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1290-L1440)
+- Назначение: Планировщик однократных таймеров (`durationSeconds`) и периодических регламентных задач по cron (`cronExpression`) для авто-напоминаний ассистента врачу.
+- Входная Zod-схема:
   ```typescript
   z.object({
     prompt: z.string().min(1).describe("Текст клинического напоминания или задачи"),
@@ -434,15 +434,15 @@
 ## 🩻 РАЗДЕЛ IV: ВНЕШНИЙ СОФТ КЛИНИКИ И МУЛЬТИМОДАЛЬНЫЙ ЗАХВАТ (2 ИНСТРУМЕНТА)
 
 ### 22. `launch_workstation_app`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1445-L1620)
-- **Назначение**: Запуск внешних медицинских программ просмотра КЛКТ и моделирования с передачей идентификатора пациента или пути к исследованию в параметрах командной строки:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1445-L1620)
+- Назначение: Запуск внешних медицинских программ просмотра КЛКТ и моделирования с передачей идентификатора пациента или пути к исследованию в параметрах командной строки:
   - Planmeca Romexis
   - VATECH EzDent-i / Ez3D Plus
   - VATECH EasyDent V4
   - Dentsply Sirona Sidexis 4
   - 3Shape Dental System
   - Exocad DentalCAD
-- **Входная Zod-схема**:
+- Входная Zod-схема:
   ```typescript
   z.object({
     appId: z.enum(["planmeca_romexis", "vatech_ezdent", "vatech_easydent", "sirona_sidexis", "threeshape_dental", "exocad"]),
@@ -455,9 +455,9 @@
 ---
 
 ### 23. `capture_workstation_screen`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1625-L1770)
-- **Назначение**: Снятие скриншота экрана или области интереса (ROI) окна визиографа/томографа высокого разрешения для оптического распознавания патологий нейросетью без необходимости ручного экспорта файлов.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1625-L1770)
+- Назначение: Снятие скриншота экрана или области интереса (ROI) окна визиографа/томографа высокого разрешения для оптического распознавания патологий нейросетью без необходимости ручного экспорта файлов.
+- Входная Zod-схема:
   ```typescript
   z.object({
     windowTitle: z.string().optional().describe("Заголовок окна (например Romexis или EzDent)"),
@@ -471,13 +471,13 @@
 ## 🔌 РАЗДЕЛ V: АППАРАТНЫЙ МОСТ MODEL CONTEXT PROTOCOL (3 ИНСТРУМЕНТА)
 
 ### 24. `call_local_mcp_tool` 🔴 [ДЕСТРУКТИВНЫЙ ПРИ ОПЕРАЦИЯХ С КАССОЙ И ЧЕКАМИ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1775-L1980)
-- **Назначение**: Вызов функций локальных аппаратных серверов MCP:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1775-L1980)
+- Назначение: Вызов функций локальных аппаратных серверов MCP:
   - **`cash_register_atol`**: статус смены, печать кассового чека с позициями оказанных услуг, закрытие смены (Z-отчет), X-отчет, возврат.
   - **`cash_register_shtrih`**: фискализация чека, отрезка ленты, открытие денежного ящика.
   - **`scanner_2d_datamatrix`**: валидация кодов маркировки «Честный Знак» лекарств и имплантатов.
   - **`twain_sensor`**: захват кадра с USB-радиовизиографа.
-- **Входная Zod-схема**:
+- Входная Zod-схема:
   ```typescript
   z.object({
     serverName: z.enum(["cash_register_atol", "cash_register_shtrih", "scanner_2d_datamatrix", "twain_sensor"]),
@@ -489,9 +489,9 @@
 ---
 
 ### 25. `list_local_mcp_tools`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1985-L2110)
-- **Назначение**: Инспекция доступного аппаратного парка клиники и каталога команд подключенного оборудования.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L1985-L2110)
+- Назначение: Инспекция доступного аппаратного парка клиники и каталога команд подключенного оборудования.
+- Входная Zod-схема:
   ```typescript
   z.object({
     serverName: z.string().optional(),
@@ -501,9 +501,9 @@
 ---
 
 ### 26. `read_local_mcp_resource`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L2115-L2244)
-- **Назначение**: Чтение непрерывной аппаратной телеметрии (состояние ФН фискального накопителя, буфер сканера штрихкодов, готовность TWAIN-датчика).
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts#L2115-L2244)
+- Назначение: Чтение непрерывной аппаратной телеметрии (состояние ФН фискального накопителя, буфер сканера штрихкодов, готовность TWAIN-датчика).
+- Входная Zod-схема:
   ```typescript
   z.object({
     serverName: z.string().min(1),
@@ -516,13 +516,13 @@
 ## 🧭 РАЗДЕЛ VI: СИСТЕМНАЯ НАВИГАЦИЯ, ПОИСК ФАЙЛОВ И КОНФИГУРАЦИЯ КЛИНИКИ (3 ИНСТРУМЕНТА)
 
 ### 27. `search_workstation_files`
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts)
-- **Назначение**: Глубокий поиск файлов на рабочей станции врача (исследования КЛКТ/RVG, дампы, протоколы, прайсы, выгрузки МИС, логи оборудования) с поддержкой поиска по маске (glob), регулярным выражениям (regex), расширениям, диапазону дат модификации и размерам. Оснащен строгой защитой безопасных путей `isPathSafe` и изоляцией арендатора.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/desktopSystemTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/desktopSystemTools.ts)
+- Назначение: Глубокий поиск файлов на рабочей станции врача (исследования КЛКТ/RVG, дампы, протоколы, прайсы, выгрузки МИС, логи оборудования) с поддержкой поиска по маске (glob), регулярным выражениям (regex), расширениям, диапазону дат модификации и размерам. Оснащен строгой защитой безопасных путей `isPathSafe` и изоляцией арендатора.
+- Входная Zod-схема:
   ```typescript
   z.object({
     searchPath: z.string().min(1).describe("Базовая директория поиска на ПК (например C:\\ClinicDropzone или рабочий каталог клиники)"),
-    pattern: z.string().optional().describe("Паттерн поиска по имени (glob или подстрока, например *.dcm, *price*, *043*)"),
+    pattern: z.string().optional().describe("Паттерн поиска по имени (glob или подстрока, например .dcm, price, 043*)"),
     regex: z.string().optional().describe("Регулярное выражение для точной фильтрации имени файла"),
     extensions: z.array(z.string()).optional().describe("Список допустимых расширений (dcm, rvg, xml, json, csv, xlsx, txt, pdf)"),
     maxResults: z.number().int().min(1).max(200).default(50).describe("Максимальное количество возвращаемых файлов"),
@@ -532,7 +532,7 @@
     modifiedAfter: z.string().optional().describe("ISO 8601 дата, модифицированные после которой файлы включаются в выдачу"),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     searchPath: string;
@@ -554,9 +554,9 @@
 ---
 
 ### 28. `configure_clinic_setup` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts)
-- **Назначение**: Комплексная системная настройка клиники «под ключ» через ИИ: регистрационные и юридические данные организации (наименование, ИНН, ОГРН, адреса, телефоны), конфигурация кабинетов и стоматологических установок/кресел, фискальные параметры ККТ (Атол/Штрих-М, СНО, авто-Z-отчет), график работы и длительность стандартного слота приёма.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts)
+- Назначение: Комплексная системная настройка клиники «под ключ» через ИИ: регистрационные и юридические данные организации (наименование, ИНН, ОГРН, адреса, телефоны), конфигурация кабинетов и стоматологических установок/кресел, фискальные параметры ККТ (Атол/Штрих-М, СНО, авто-Z-отчет), график работы и длительность стандартного слота приёма.
+- Входная Zod-схема:
   ```typescript
   z.object({
     organizationId: z.string().uuid().optional().describe("UUID клиники (если не передан — текущая активная)"),
@@ -590,7 +590,7 @@
     confirmApply: z.boolean().default(false).describe("Явное подтверждение применения конфигурации"),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     success: boolean;
@@ -609,9 +609,9 @@
 ---
 
 ### 29. `import_clinic_data_file` 🔴 [ДЕСТРУКТИВНЫЙ — ТРЕБУЕТ ПОДТВЕРЖДЕНИЯ]
-- **Файл реализации**: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts)
-- **Назначение**: Автоматический разбор, сопоставление и импорт структурированных файлов клиники на ПК: прейскурантов (Excel/CSV) с интеллектуальным матчингом к Номенклатуре 804н, реестров пациентов, истории приёмов, остатков склада и выгрузок сторонних МИС (IDENT, DentalPRO, StomX, Инфодент). Поддерживает предварительный режим валидации (`dryRun: true`) без применения мутаций.
-- **Входная Zod-схема**:
+- Файл реализации: [`apps/api/src/ai/dentalTools/crmDatabaseTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/crmDatabaseTools.ts)
+- Назначение: Автоматический разбор, сопоставление и импорт структурированных файлов клиники на ПК: прейскурантов (Excel/CSV) с интеллектуальным матчингом к Номенклатуре 804н, реестров пациентов, истории приёмов, остатков склада и выгрузок сторонних МИС (IDENT, DentalPRO, StomX, Инфодент). Поддерживает предварительный режим валидации (`dryRun: true`) без применения мутаций.
+- Входная Zod-схема:
   ```typescript
   z.object({
     filePath: z.string().min(1).describe("Путь к файлу на ПК или загруженному файлу импорта"),
@@ -622,7 +622,7 @@
     organizationId: z.string().uuid().optional(),
   })
   ```
-- **Схема ответа**:
+- Схема ответа:
   ```typescript
   {
     dataType: string;

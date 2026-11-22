@@ -1,12 +1,12 @@
 # MESSENGERS — WhatsApp Business & MAX (VK Max)
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+> ⚠️ ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW): [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
-> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
-> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:
+> Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла).
 > Мессенджеры служат инструментом моментальной связи с пациентом: шаблоны напоминаний, подтверждение визита в 1 клик, отсутствие блокировок диалога.
 >
-> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):**
+> 🛑 ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):
 > Сбой доставки или отсутствие ответа в мессенджере никогда не блокируют расписание и не отменяют визит автоматически.
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
@@ -120,22 +120,22 @@ Available intents: `appointment_booking`, `appointment_status`, `document_reques
 3. Set Webhook URL: `https://your-domain.com/api/max/webhook`
 4. Add header `x-max-bot-id: <your-bot-id>` in MAX webhook settings
 
-> ⚠️ **MAX requires business registration** (ИП or ООО verified via Госуслуги or banking).
+> ⚠️ MAX requires business registration (ИП or ООО verified via Госуслуги or banking).
 
 ---
 
 ## Решенные архитектурные дефекты (Red Team Triage)
 
-1. **Реальная маршрутизация персонала (DEF-COMM-01)**: В `settingsPropsBuilder.ts` проброшен реальный список активных сотрудников клиники (`staffOptions`). В `WhatsappSettingsPanel`, `MaxSettingsPanel` и `MessengerRoutingRules` выпадающие списки наполняются живыми сотрудниками.
-2. **Вкладка MAX в панели табов (DEF-COMM-02)**: В `SettingsMessengersTab.tsx` возвращена таб-кнопка «MAX (VK Max)» в полосу `messenger-channel-tabs`.
-3. **Ликвидация чужого бренда (DEF-COMM-03)**: В `messengerChannelTypes.ts` искоренено «1C:MAX Интеграция» → переименовано в «MAX (VK Max) — Национальный мессенджер».
-4. **Управление фичами MAX (DEF-COMM-04)**: В `useMaxSettings.ts` и `MaxSettingsPanel.tsx` реализовано интерактивное управление `enabledFeatures` (чат, уведомления, напоминания) с сохранением в БД и расчетом dirty-стейта.
-5. **Надежная адресация MAX (DEF-COMM-05 & DEF-COMM-06)**: В `channelAdapters.ts` ликвидирован хрупкий regex в `notes` — адрес `chatId` извлекается напрямую из реляционной таблицы `messengerInboundEvents` с сохранением обратной совместимости.
-6. **Омниканальный выбор каналов у кресла (DEF-COMM-07 & DEF-COMM-08)**: В `WhatsAppChatPanel.tsx`, `WhatsAppQuickBar.tsx` и `PatientWhatsappSendPanel.tsx` добавлен селектор каналов (WhatsApp / Telegram / MAX / SMS) для врача у кресла.
+1. Реальная маршрутизация персонала (DEF-COMM-01): В `settingsPropsBuilder.ts` проброшен реальный список активных сотрудников клиники (`staffOptions`). В `WhatsappSettingsPanel`, `MaxSettingsPanel` и `MessengerRoutingRules` выпадающие списки наполняются живыми сотрудниками.
+2. Вкладка MAX в панели табов (DEF-COMM-02): В `SettingsMessengersTab.tsx` возвращена таб-кнопка «MAX (VK Max)» в полосу `messenger-channel-tabs`.
+3. Ликвидация чужого бренда (DEF-COMM-03): В `messengerChannelTypes.ts` искоренено «1C:MAX Интеграция» → переименовано в «MAX (VK Max) — Национальный мессенджер».
+4. Управление фичами MAX (DEF-COMM-04): В `useMaxSettings.ts` и `MaxSettingsPanel.tsx` реализовано интерактивное управление `enabledFeatures` (чат, уведомления, напоминания) с сохранением в БД и расчетом dirty-стейта.
+5. Надежная адресация MAX (DEF-COMM-05 & DEF-COMM-06): В `channelAdapters.ts` ликвидирован хрупкий regex в `notes` — адрес `chatId` извлекается напрямую из реляционной таблицы `messengerInboundEvents` с сохранением обратной совместимости.
+6. Омниканальный выбор каналов у кресла (DEF-COMM-07 & DEF-COMM-08): В `WhatsAppChatPanel.tsx`, `WhatsAppQuickBar.tsx` и `PatientWhatsappSendPanel.tsx` добавлен селектор каналов (WhatsApp / Telegram / MAX / SMS) для врача у кресла.
 
 ---
 
 ## Pending
 
-1. **Real token storage**: Production deployments should replace the SHA-256 mask approach with a proper secrets vault (e.g., KMS, Vault, or env-var based lookup).
-2. **VK Send API**: ВКонтакте принимает сообщения через вебхук сообщества; прямая исходящая отправка по API сообществ VK запланирована в следующем релизе.
+1. Real token storage: Production deployments should replace the SHA-256 mask approach with a proper secrets vault (e.g., KMS, Vault, or env-var based lookup).
+2. VK Send API: ВКонтакте принимает сообщения через вебхук сообщества; прямая исходящая отправка по API сообществ VK запланирована в следующем релизе.

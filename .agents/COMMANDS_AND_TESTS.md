@@ -1,12 +1,12 @@
 # 💻 CLI Commands, Smoke Tests & Test Suite Architecture
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+> ⚠️ ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW): [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
-> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
-> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:
+> Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла).
 > До сетевых холдингов нам ещё расти и расти! Все команды сборки, линтеры и смоук-тесты проверяют стабильность монолита и отсутствие трения.
 >
-> 🛑 **СТОП-ЛИНИЯ DEFINITION OF DONE (МАНДАТ 8j) & ZERO DEAD-ENDS (МАНДАТ 8n):**
+> 🛑 СТОП-ЛИНИЯ DEFINITION OF DONE (МАНДАТ 8j) & ZERO DEAD-ENDS (МАНДАТ 8n):
 > Код завершен только при: Exit 0 компиляторов, 0 ошибок кодировки (`check:encoding`), 0 нетипизированных моков, пофайловый `git add <file>`, Dual-Push (`origin` + `gitlab`).
 >
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Мастер-Архитектура Тестирования (docs/testing/MASTER_TESTING_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md) | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
@@ -16,16 +16,16 @@
 ## 🚨 КРИТИЧЕСКИЕ ИНВАРИАНТЫ ДЛЯ СУБАГЕНТОВ (SWARM RED TEAM GATES)
 
 1. **Запрет на глобальный `typecheck` для воркеров (Мандат 8t / 8wx):**
-   - Субагентам роя **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** параллельно запускать глобальный `npm run typecheck`, `tsc -b --noEmit` или полную сборку `npm run build`.
+   - Субагентам роя КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО параллельно запускать глобальный `npm run typecheck`, `tsc -b --noEmit` или полную сборку `npm run build`.
    - Глобальный компилятор поднимает тяжелые процессы `node.exe` на всех ядрах процессора, сжигает RAM хоста и подвешивает систему пользователя (Compiler Thrashing).
    - Субагенты обязаны проверять код строго точечными тестами (`node --test ...` или локальными юнит-тестами). Полный `npm run typecheck` запускает единолично L1 Оркестратор.
-2. **Лимит памяти и таймауты (Anti-Pagefile Ballooning Ceiling):**
+2. Лимит памяти и таймауты (Anti-Pagefile Ballooning Ceiling):
    - Все тестовые команды запускаются со строгим флагом памяти: `--max-old-space-size=2048` (для веб — до 3072 МБ).
    - Таймаут на выполнение любого юнит-теста строго $\le 10$ секунд (`--test-timeout=10000`).
-3. **Изоляция боевых ключей и окружения (Мандат 8af):**
+3. Изоляция боевых ключей и окружения (Мандат 8af):
    - Тесты никогда не используют реальные API-ключи из `.env`. Все внешние интеграции перехвачены мок-хэндлерами.
    - При запуске тестов API обязателен импорт модуля зачистки: `--import ./apps/api/src/tests/support/poolTeardown.ts`.
-4. **Гарантированное закрытие Fastify и пула PostgreSQL (Anti-Hang Law):**
+4. Гарантированное закрытие Fastify и пула PostgreSQL (Anti-Hang Law):
    - Каждый тестовый сьют обязан содержать блок `after(async () => { await app.close(); })`.
    - На уровне раннера `poolTeardown.ts` автоматически вызывает `closeAllTenantTestApps()` и закрывает соединение `endPool()`.
 
@@ -37,7 +37,7 @@
 
 *   `npm run dev` — Запуск Fastify API (`127.0.0.1:4100`) и Vite Web (`127.0.0.1:5173`) серверов параллельно.
 *   `npm run build` — Последовательная компиляция рабочих пространств: `shared` ➔ `api` ➔ `web`.
-*   `npm run typecheck` — **(Только L1 Оркестратор!)** Проверка TypeScript компилятора по 5 этапам: `shared` ➔ `shared:tests` ➔ `api` ➔ `api:tests` ➔ `web`.
+*   `npm run typecheck` — (Только L1 Оркестратор!) Проверка TypeScript компилятора по 5 этапам: `shared` ➔ `shared:tests` ➔ `api` ➔ `api:tests` ➔ `web`.
 *   `npx @biomejs/biome check --write .` — Форматирование и базовый линтинг кодовой базы.
 *   `npm run check:encoding` — Проверка строгого UTF-8 без BOM по 23 960+ файлам (включая `.md`).
 *   `npm run check:react-hooks` — Проверка правил хуков React 19 (ноль условных хуков).
@@ -60,7 +60,7 @@
 
 ## 🧪 Пирамида тестирования из 6 колец (Ring 0..Ring 5)
 
-> 🔬 **КАНОНИЧЕСКИЙ РЕЕСТР ТЕСТИРОВАНИЯ (SSOT):**  
+> 🔬 КАНОНИЧЕСКИЙ РЕЕСТР ТЕСТИРОВАНИЯ (SSOT):  
 > Полная документация архитектуры тестирования зафиксирована в [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md).
 
 ```mermaid

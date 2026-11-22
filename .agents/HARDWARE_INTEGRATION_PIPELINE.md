@@ -1,7 +1,7 @@
 # ПЛАН И РУКОВОДСТВО ПО ВНЕДРЕНИЮ 3D-СКАНЕРОВ RUNYES И ВИЗИОГРАФОВ XVSENSOR В DENTE CRM
 
-> **ДОКУМЕНТ:** Пошаговая инженерная дорожная карта и руководство по интеграции аппаратных данных интраорального сканирования и радиовизиографии в кодовую базу монорепозитория DENTE CRM (`packages/shared`, `apps/api`, `apps/web`).  
-> **ОСНОВАНО НА РЕАЛЬНЫХ ДАННЫХ:** Извлеченные базы данных `workspace2.0.db` и `xvsensor_XPECT.Mammo.db`, CLI-утилиты `AssbinTool.exe` и `MeshSimplify.exe`, доменные модели `dental_domain_models.cs`.
+> ДОКУМЕНТ: Пошаговая инженерная дорожная карта и руководство по интеграции аппаратных данных интраорального сканирования и радиовизиографии в кодовую базу монорепозитория DENTE CRM (`packages/shared`, `apps/api`, `apps/web`).  
+> ОСНОВАНО НА РЕАЛЬНЫХ ДАННЫХ: Извлеченные базы данных `workspace2.0.db` и `xvsensor_XPECT.Mammo.db`, CLI-утилиты `AssbinTool.exe` и `MeshSimplify.exe`, доменные модели `dental_domain_models.cs`.
 
 ---
 
@@ -25,12 +25,12 @@ flowchart LR
 
 ### ЭТАП 1: ОБЩИЕ СХЕМЫ И ТИПЫ (`packages/shared`)
 
-1. **Создание доменных контрактов сканирования:**
+1. Создание доменных контрактов сканирования:
    - Путь: `packages/shared/src/hardware/intraoralScannerTypes.ts`
    - Описание интерфейсов: `IntraoralScanSession`, `IntraoralToothPlan`, `ToothPreparationType`, `ProstheticMaterialType`, `ImplantRetentionCode`.
    - Zod-схемы валидации входящих пакетов: `scanIngestPayloadSchema`.
 
-2. **Маппинг номенклатуры протезирования (FDI 11–48):**
+2. Маппинг номенклатуры протезирования (FDI 11–48):
    - Перенос энумов из `dental_enums.json`:
      - Подготовка: `CROWN_ANATOMIC`, `VENEER`, `INLAY`, `ONLAY`, `IMPLANT`, `PONTIC`.
      - Материалы: `ZIRCONIA`, `E_MAX`, `TITANIUM`, `PMMA`, `COMPOSITE`.
@@ -41,7 +41,7 @@ flowchart LR
 
 ### ЭТАП 2: БЭКЕНД И ФОНОВАЯ ОБРАБОТКА МЕШЕЙ (`apps/api`)
 
-1. **Размещение скомпилированных CLI-утилит:**
+1. Размещение скомпилированных CLI-утилит:
    - Создать папку сервиса: `apps/api/bin/mesh-tools/`
    - Поместить туда извлеченные:
      - `AssbinTool.exe` (конвертер закрытого формата `.ro`)
@@ -50,7 +50,7 @@ flowchart LR
      - Метод `convertRoToPly(inputPath: string): Promise<string>`
      - Метод `decimateMesh(inputPly: string, targetFaces: number = 50000): Promise<string>`
 
-2. **Fastify Роут приёма сканирований:**
+2. Fastify Роут приёма сканирований:
    - Путь: `apps/api/src/routes/clinicalScans.ts`
    - Эндпоинт: `POST /api/clinical/scans/ingest`
    - Логика обработчика:
@@ -65,7 +65,7 @@ flowchart LR
         - Проставляет в зубную карту пациента активные зубы с кодами подготовки и материалами `intraoral_tooth_plans`.
         - Привязывает готовый наряд лаборатории `Сесссс_order.pdf`.
 
-3. **База данных (Drizzle миграция):**
+3. База данных (Drizzle миграция):
    - Добавить миграцию Drizzle: `apps/api/drizzle/XXXX_intraoral_scans_and_rvg.sql` с таблицами:
      - `intraoral_scan_sessions`
      - `intraoral_tooth_plans`
@@ -75,14 +75,14 @@ flowchart LR
 
 ### ЭТАП 3: ФРОНТЕНД — 3D ВЬЮЕР И ИНТЕГРАЦИЯ В ОРТОПЕДИЮ (`apps/web`)
 
-1. **Компонент 3D-просмотрщика челюстей на Three.js:**
+1. Компонент 3D-просмотрщика челюстей на Three.js:
    - Путь: `apps/web/src/components/imaging/DentalJaw3DViewer.tsx`
    - Технологии: `@react-three/fiber` или чистый Three.js + `OrbitControls` + `PLYLoader`.
    - Ключевые требования:
-     - **Вершинные цвета (Vertex Colors):** `vertexColors: true` в материале `MeshStandardMaterial` для фотореалистичного цвета десны и эмали.
-     - **Режим окклюзии (Bite Alignment):** Одновременный показ верхней и нижней челюсти в положении смыкания с выравниванием по матрице прикуса `implant_buccal_1.stl`.
-     - **Послойные тумблеры:** Скрыть/Показать верхнюю челюсть, нижнюю челюсть, скан-боди маркеры имплантов.
-     - **0px задержки:** Сначала мгновенный рендер 2D-превью `screen_shot_front.png`, пока в фоне асинхронно гидратируется 3D-сцена.
+     - Вершинные цвета (Vertex Colors): `vertexColors: true` в материале `MeshStandardMaterial` для фотореалистичного цвета десны и эмали.
+     - Режим окклюзии (Bite Alignment): Одновременный показ верхней и нижней челюсти в положении смыкания с выравниванием по матрице прикуса `implant_buccal_1.stl`.
+     - Послойные тумблеры: Скрыть/Показать верхнюю челюсть, нижнюю челюсть, скан-боди маркеры имплантов.
+     - 0px задержки: Сначала мгновенный рендер 2D-превью `screen_shot_front.png`, пока в фоне асинхронно гидратируется 3D-сцена.
 
 2. **Интеграция в модуль ортопедии (`apps/web/src/components/orthopedics`):**
    - Встроить кнопку «3D Скан челюсти» в `OrthopedicsChairsidePanel.tsx`.
@@ -99,13 +99,13 @@ flowchart LR
 
 ### ЭТАП 4: КЛИНИЧЕСКИЙ ЭДЖ-ДЕМОН (ZERO-CLICK WORKFLOW)
 
-1. **Создание фонового агента для ПК врача:**
+1. Создание фонового агента для ПК врача:
    - Исходник: `C:\Users\Admin\Desktop\_runyes_extract\Dental_Clinic_Extract\crm_ready_modules\crm_ingest_watcher.py`
    - Упаковка в автономный исполняемый файл:
      ```powershell
      pyinstaller --onefile --noconsole --name "dental-sync-daemon" crm_ingest_watcher.py
      ```
-2. **Установка на кресельный моноблок сканера:**
+2. Установка на кресельный моноблок сканера:
    - Мониторит папку: `C:\Users\Dentalia\Desktop\Сканы пациентов\`
    - Автоматический запуск при старте Windows через автозагрузку или службу `sc.exe`.
    - При завершении сканирования файл отправляется в CRM без единого клика со стороны врача.
@@ -114,12 +114,12 @@ flowchart LR
 
 ## 3. СТАТУС ВНЕДРЕНИЯ И ДАЛЬНЕЙШИЕ ДЕЙСТВИЯ (STATUS & NEXT STEPS)
 
-1. **Шаг 1 (ВЫПОЛНЕНО 100%):** Созданы типы, Zod-контракты и 3D-математика в `@dental/shared`:
+1. Шаг 1 (ВЫПОЛНЕНО 100%): Созданы типы, Zod-контракты и 3D-математика в `@dental/shared`:
    - `packages/shared/src/hardware/intraoralScannerTypes.ts` (контракты вендоров, ролей, окклюзии, поднутрений).
    - `packages/shared/src/hardware/intraoralScannerClassifier.ts` (классификатор файлов и группировщик сессий).
    - `packages/shared/src/geometry/dentalMeshMath.ts` (CAD $\leftrightarrow$ WebGL координаты, воксельный расчет окклюзии в микронах, ICP выравнивание).
    - Покрытие тестами: `packages/shared/src/hardware/__tests__/intraoralScannerEngine.test.ts` (40/40 тестов зелёные, `tsc` Exit Code 0).
-2. **Шаг 2:** Создать сервис обработки 3D-файлов `apps/api/src/services/meshProcessingService.ts` с вызовом `MeshSimplify.exe`.
-3. **Шаг 3:** Реализовать Fastify роут `apps/api/src/routes/clinicalScans.ts`.
-4. **Шаг 4:** Создать компонент `DentalJaw3DViewer.tsx` в `apps/web/src/components/imaging/`.
-5. **Шаг 5:** Прогнать сквозной тест на реальном клиническом сэмпле `sample_3d_patient\11111111`.
+2. Шаг 2: Создать сервис обработки 3D-файлов `apps/api/src/services/meshProcessingService.ts` с вызовом `MeshSimplify.exe`.
+3. Шаг 3: Реализовать Fastify роут `apps/api/src/routes/clinicalScans.ts`.
+4. Шаг 4: Создать компонент `DentalJaw3DViewer.tsx` в `apps/web/src/components/imaging/`.
+5. Шаг 5: Прогнать сквозной тест на реальном клиническом сэмпле `sample_3d_patient\11111111`.

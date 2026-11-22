@@ -1,17 +1,17 @@
 # 📞 Telephony Highway, Doctor Sterile Zone & Patient Self-Checkin Portal
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+> ⚠️ ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW): [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
-> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
-> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:
+> Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла).
 > До сетевых холдингов нам ещё расти и расти! Телефония и портал не должны вторгаться в стерильную зону врача у кресла. При звонке всплывает компактная верхняя плашка (Top Ambient Event Capsule) без блокировки рабочего стола.
 >
-> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):**
+> 🛑 ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):
 > Входящий звонок или регистрация пациента через портал не блокируют и не сбрасывают текущие черновики врача/администратора.
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> **Canonical Authority**: Mandates 8, 8c, 8e in [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) and [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md).  
-> **Related Documents**: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) • [BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) • [WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md) • [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) • [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md).
+> Canonical Authority: Mandates 8, 8c, 8e in [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) and [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md).  
+> Related Documents: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) • [BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) • [WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md) • [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) • [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md).
 
 ---
 
@@ -20,8 +20,8 @@
 Интеграционный шлюз DENTE поддерживает облачные АТС (Mango Office, Zadarma, UIS / CoMagic, Яндекс Телефония) в реальном времени связывая входящие вызовы с картотекой пациентов и софтфоном.
 
 ### 1.1. Вебхук входящего звонка (`apps/api/src/routes/telephony.ts`):
-* **Маршрут**: `POST /api/telephony/:organizationId/webhook`
-* **Контракт полезной нагрузки**:
+* Маршрут: `POST /api/telephony/:organizationId/webhook`
+* Контракт полезной нагрузки:
   ```typescript
   interface TelephonyWebhookBody {
     event: "ringing" | "answered" | "ended";
@@ -30,7 +30,7 @@
     call_id?: string;   // Уникальный ID сессии АТС
   }
   ```
-* **Пайплайн сопоставления**:
+* Пайплайн сопоставления:
   1. Очистка номера от спецсимволов: `rawPhone.replace(/\D/g, "")`.
   2. Поиск пациента по суффиксу из последних 10 цифр (`ilike(patients.phone, '%${suffix}')`).
   3. Мгновенная диспетчеризация события `TELEPHONY_INCOMING_CALL` через `wsBroker.broadcastToOrganization(organizationId, payload)`.
@@ -54,8 +54,8 @@
 
 ## 🛡️ 2. Иммунитет стерильной зоны врача (Doctor Sterile Zone Immunity)
 
-> **Клинический инвариант (The Hammer Master Prompt Раздел VII & Фильтр изоляции ролей)**:  
-> Врачебный экран (`VisitView` / роль `doctor`) — это **стерильная зона**. Врач у кресла в перчатках препарирует зуб или проводит хирургическую операцию. Любые всплывающие окна телефонии, неожиданные рингтоны или блокирующие экраны — это прямая угроза пациенту и врачебная диверсия.
+> Клинический инвариант (The Hammer Master Prompt Раздел VII & Фильтр изоляции ролей):  
+> Врачебный экран (`VisitView` / роль `doctor`) — это стерильная зона. Врач у кресла в перчатках препарирует зуб или проводит хирургическую операцию. Любые всплывающие окна телефонии, неожиданные рингтоны или блокирующие экраны — это прямая угроза пациенту и врачебная диверсия.
 
 ### 2.1. Полная изоляция от звонков:
 * **Кодовая гарантия (`IncomingCallPopup.tsx` и `TelephonyHeaderCapsule.tsx`)**:
@@ -79,14 +79,14 @@
 Экран регистратора — зона многозадачности. Администратор одновременно общается по телефону, просматривает расписание и заполняет договор.
 
 ### 3.1. Запрет на блокирующий оверлей (Anti-Modal Barrier):
-* **Компоновка Dynamic Island Capsule**: баннер входящего звонка выезжает сверху (`fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-[9999]`) в виде компактной плашки:
+* Компоновка Dynamic Island Capsule: баннер входящего звонка выезжает сверху (`fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-[9999]`) в виде компактной плашки:
   `[ 🟢 Смирнова А.В. (+7 913 770-41-99) • Ответить | Сброс | ▾ ]`
-* **Категорически запрещен modal lock**: нет затемняющего оверлея `fixed inset-0 bg-black/60`. Фокус ввода в текущей форме не сбрасывается, клавиатура не перехватывается.
+* Категорически запрещен modal lock: нет затемняющего оверлея `fixed inset-0 bg-black/60`. Фокус ввода в текущей форме не сбрасывается, клавиатура не перехватывается.
 
 ### 3.2. 1-Клик действия без потери данных:
-* **Быстрая запись (Quick Booking)**: создание черновика записи в 1 клик (`Острая боль / Экстренный прием` или стандартный слот). **Категорически запрещено требовать обязательного выбора ассистента** при создании записи (Мандат 8e).
-* **Боковая шторка карты пациента (Side Drawer)**: вызов карточки звонящего происходит во всплывающем Drawer без перехода по страницам и **без размонтирования активного дневника 043/у**.
-* **Esc-дисмисс**: нажатие клавиши `Escape` закрывает шторку звонка, не сбрасывая соединение и не прерывая разговор.
+* Быстрая запись (Quick Booking): создание черновика записи в 1 клик (`Острая боль / Экстренный прием` или стандартный слот). Категорически запрещено требовать обязательного выбора ассистента при создании записи (Мандат 8e).
+* Боковая шторка карты пациента (Side Drawer): вызов карточки звонящего происходит во всплывающем Drawer без перехода по страницам и без размонтирования активного дневника 043/у.
+* Esc-дисмисс: нажатие клавиши `Escape` закрывает шторку звонка, не сбрасывая соединение и не прерывая разговор.
 
 ---
 
@@ -95,22 +95,22 @@
 Реализован в соответствии со стандартами Apple Health / iOS HIG (`MobileSelfCheckinModal.tsx` и `SomaticQuestionnaireEngine.ts`). Обеспечивает бесконтактную регистрацию пациента в холле клиники со смартфона за 30 секунд.
 
 ### 4.1. Авторизация и подписание согласий ПЭП (63-ФЗ):
-1. **Беспарольный вход (Phone OTP)**: ввод номера телефона и проверочного кода.
-2. **1-Клик подписание согласий ПЭП (63-ФЗ)**:
+1. Беспарольный вход (Phone OTP): ввод номера телефона и проверочного кода.
+2. 1-Клик подписание согласий ПЭП (63-ФЗ):
    * `ИДС-ТЕР-01` — Информированное добровольное согласие на терапевтическое лечение (ст. 20 № 323-ФЗ).
    * `ИДС-АНЕСТ-01` — Информированное согласие на местное обезболивание (карпульные анестетики).
    * `ПДН-152` — Согласие на обработку персональных данных (Федеральный закон № 152-ФЗ).
-   * Кнопка **«Подписать всё ПЭП (63-ФЗ)»** проставляет валидный электронный штамп времени и цифровой след с кодом подтверждения в 1 тап.
+   * Кнопка «Подписать всё ПЭП (63-ФЗ)» проставляет валидный электронный штамп времени и цифровой след с кодом подтверждения в 1 тап.
 
 ### 4.2. Соматическая анкета: физиологическая норма по умолчанию (Mandate 8e):
-* **Принцип «Норма по умолчанию»**: здоровая взрослая норма не требует ручного заполнения 50 полей.
-* **1-Клик кнопка «Соматически здоров / физиологическая норма»**:
+* Принцип «Норма по умолчанию»: здоровая взрослая норма не требует ручного заполнения 50 полей.
+* 1-Клик кнопка «Соматически здоров / физиологическая норма»:
   ```typescript
   // Заполняет профиль физиологической нормой:
   // Аллергий нет, кардиорисков нет, диабета нет, нарушений гемостаза нет.
   const normData = createPhysiologicalNormSomaticQuestionnaire();
   ```
-* Пациент или врач отмечают **только патологию** (например, «Аллергия на пенициллин» или «Прием антикоагулянтов»).
+* Пациент или врач отмечают только патологию (например, «Аллергия на пенициллин» или «Прием антикоагулянтов»).
 * **Движок оценки рисков (`evaluateSomaticRisks`)**: автоматически формирует семантические алерты для врача у кресла (`allergy`, `cardio`, `hemostasis`, `pregnancy`).
 
 ### 4.3. Генерация талона с QR-кодом:
@@ -136,46 +136,43 @@
 
 ## 🔒 6. Реестр устраненных дефектов Red Team (DEF-POR-01..07)
 
-* **DEF-POR-01 [ЗАКРЫТО]**: Подписание согласий в киоске (`kioskCheckinHandlers.ts`) и в личном кабинете (`portalDocumentsRoutes.ts`) физически создает запись в таблице `generated_documents` (`status: "issued"`, `signatureSvg`, `issuedSnapshotSha256`, `organizationId`, `patientId`) и привязывает `documentId` к `patient_consents`. Документы отображаются в ЭМК врача.
-* **DEF-POR-02 [ЗАКРЫТО]**: В `TreatmentPlanTab.tsx` убран хардкод `"123456"`, генерируется валидный электронный след ПЭП по 63-ФЗ (`ПЭП-63ФЗ-ВЕРИФИЦИРОВАНО:${Date.now()}`), сетевая отправка выбора тарифа и утверждения плана на `/api/portal/treatment-plans/:id/select-tier` и `/api/portal/treatment-plans/:id/approve` с передачей Bearer-токена.
-* **DEF-POR-03 [ЗАКРЫТО]**: В `useCabinetConsentSigning.ts` устранена клиентская песочница, внедрен реальный `fetch` к `/api/portal/consents/:consentId/sign` с Authorization Bearer токеном.
-* **DEF-POR-04 [ЗАКРЫТО]**: Сироты `useSelfCheckinPhoneAuthState.ts` и `SelfCheckinOtpVerification.tsx` физически удалены из репозитория через `git rm`. Единый SSOT телефонной маски перенесен в `useMobileSelfCheckinState.ts`.
-* **DEF-POR-05 [ЗАКРЫТО]**: В `productionUiPurity.test.ts:28` ссылка на файл исправлена на канонический `PublicBookingPage.tsx`.
+* DEF-POR-01 [ЗАКРЫТО]: Подписание согласий в киоске (`kioskCheckinHandlers.ts`) и в личном кабинете (`portalDocumentsRoutes.ts`) физически создает запись в таблице `generated_documents` (`status: "issued"`, `signatureSvg`, `issuedSnapshotSha256`, `organizationId`, `patientId`) и привязывает `documentId` к `patient_consents`. Документы отображаются в ЭМК врача.
+* DEF-POR-02 [ЗАКРЫТО]: В `TreatmentPlanTab.tsx` убран хардкод `"123456"`, генерируется валидный электронный след ПЭП по 63-ФЗ (`ПЭП-63ФЗ-ВЕРИФИЦИРОВАНО:${Date.now()}`), сетевая отправка выбора тарифа и утверждения плана на `/api/portal/treatment-plans/:id/select-tier` и `/api/portal/treatment-plans/:id/approve` с передачей Bearer-токена.
+* DEF-POR-03 [ЗАКРЫТО]: В `useCabinetConsentSigning.ts` устранена клиентская песочница, внедрен реальный `fetch` к `/api/portal/consents/:consentId/sign` с Authorization Bearer токеном.
+* DEF-POR-04 [ЗАКРЫТО]: Сироты `useSelfCheckinPhoneAuthState.ts` и `SelfCheckinOtpVerification.tsx` физически удалены из репозитория через `git rm`. Единый SSOT телефонной маски перенесен в `useMobileSelfCheckinState.ts`.
+* DEF-POR-05 [ЗАКРЫТО]: В `productionUiPurity.test.ts:28` ссылка на файл исправлена на канонический `PublicBookingPage.tsx`.
 * **DEF-POR-06 [ЗАКРЫТО]**: Формат талона киоска саморегистрации синхронизирован с приёмником регистратуры `documentsReceptionQr.ts` (`DENTE:CHECKIN:v1|...`).
-* **DEF-POR-07 [ЗАКРЫТО]**: Из `demoTreatmentPlan.ts` и `patientPortalTypes.ts` полностью удален сленг «804н», заменен на чистый `serviceCode`.
+* DEF-POR-07 [ЗАКРЫТО]: Из `demoTreatmentPlan.ts` и `patientPortalTypes.ts` полностью удален сленг «804н», заменен на чистый `serviceCode`.
 
 ---
 
 ## 🔒 7. Реестр устраненных дефектов телефонии и софтфона Red Team (DEF-TEL-01..06)
 
-* **DEF-TEL-01 [ЗАКРЫТО]**: Стерильная зона врача в `useTelephonyRealtime.ts`: входящие звонки по сокету блокируются не только на приёме (`visit`), но и на всех клинических экранах (`["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]`), а также при совпадении хэша URL (`#odontogram`, `#visit`, и др.) и роли врача (`doctor`).
-* **DEF-TEL-02 [ЗАКРЫТО]**: Ликвидирован параллельный/дублирующий WebSocket в `WorkspaceTopBar.tsx:105-131`. Единственным SSOT является `useTelephonyRealtime`, сохраняющий номер клиники (`virtualNumber`) и маркетинговые UTM-метки.
-* **DEF-TEL-03 [ЗАКРЫТО]**: В `telephonyCallLifecycleHandler.ts:168` устранен пустой `catch {}`. Добавлено логирование с уровнем предупреждения: `request.log.warn({ err }, "[Telephony] Lead creation error")`.
-* **DEF-TEL-04 [ЗАКРЫТО]**: В `StatusBlockTelephony.tsx` устранена тупиковая кнопка «Вызовы» (Zero Dead-Ends, Мандат 8n), клик открывает студию телефонии и софтфон через `#telephony`.
-* **DEF-TEL-05 [ЗАКРЫТО]**: В `useServerCallerLookup.ts` ликвидирован избыточный сетевой CTI фолбек, запросы направляются напрямую в канонический эндпоинт `/api/telephony/lookup` (с сохранением алиаса `/lookup-caller`).
-* **DEF-TEL-06 [ЗАКРЫТО]**: 4-State Visual Proofs сняты на живом сервере и лично осмотрены:
-  * ☀️ **PC Light (1440x900)**: [`01_telephony_incoming_call_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_incoming_call_pc_light_1440x900.png) (168 КБ)
-  * 🌙 **PC Dark (1440x900)**: [`02_telephony_incoming_call_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_incoming_call_pc_dark_1440x900.png) (140 КБ)
-  * 📱 **Mobile Light (390x844)**: [`03_telephony_incoming_call_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_incoming_call_mobile_light_390x844.png) (144 КБ)
-  * 📱 **Mobile Dark (390x844)**: [`04_telephony_incoming_call_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_incoming_call_mobile_dark_390x844.png) (143 КБ)
+* DEF-TEL-01 [ЗАКРЫТО]: Стерильная зона врача в `useTelephonyRealtime.ts`: входящие звонки по сокету блокируются не только на приёме (`visit`), но и на всех клинических экранах (`["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]`), а также при совпадении хэша URL (`#odontogram`, `#visit`, и др.) и роли врача (`doctor`).
+* DEF-TEL-02 [ЗАКРЫТО]: Ликвидирован параллельный/дублирующий WebSocket в `WorkspaceTopBar.tsx:105-131`. Единственным SSOT является `useTelephonyRealtime`, сохраняющий номер клиники (`virtualNumber`) и маркетинговые UTM-метки.
+* DEF-TEL-03 [ЗАКРЫТО]: В `telephonyCallLifecycleHandler.ts:168` устранен пустой `catch {}`. Добавлено логирование с уровнем предупреждения: `request.log.warn({ err }, "[Telephony] Lead creation error")`.
+* DEF-TEL-04 [ЗАКРЫТО]: В `StatusBlockTelephony.tsx` устранена тупиковая кнопка «Вызовы» (Zero Dead-Ends, Мандат 8n), клик открывает студию телефонии и софтфон через `#telephony`.
+* DEF-TEL-05 [ЗАКРЫТО]: В `useServerCallerLookup.ts` ликвидирован избыточный сетевой CTI фолбек, запросы направляются напрямую в канонический эндпоинт `/api/telephony/lookup` (с сохранением алиаса `/lookup-caller`).
+* DEF-TEL-06 [ЗАКРЫТО]: 4-State Visual Proofs сняты на живом сервере и лично осмотрены:
+  * ☀️ PC Light (1440x900): [`01_telephony_incoming_call_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_incoming_call_pc_light_1440x900.png) (168 КБ)
+  * 🌙 PC Dark (1440x900): [`02_telephony_incoming_call_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_incoming_call_pc_dark_1440x900.png) (140 КБ)
+  * 📱 Mobile Light (390x844): [`03_telephony_incoming_call_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_incoming_call_mobile_light_390x844.png) (144 КБ)
+  * 📱 Mobile Dark (390x844): [`04_telephony_incoming_call_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_incoming_call_mobile_dark_390x844.png) (143 КБ)
   * Ликвидированы сироты: `scripts/TelephonyFloatingWidget.original.tsx` и `apps/web/src/appHelpers/telephonyHelpers.ts` (`git rm`).
-* **DEF-TEL-07 [ЗАКРЫТО]**: Добавлены реляционные колонки `provider_call_id` и `provider_name` в `communication_events` с уникальным индексом `(organization_id, provider_call_id)`. В `telephonyWebhookEndedService.ts` слепой `ilike` заменен на атомарный UPSERT (`onConflictDoUpdate`), исключающий дубликаты записей звонков при параллельных запросах.
-* **DEF-TEL-08 [ЗАКРЫТО]**: В `telephonyEngine.ts` расширено окно проверки дрифта таймстампа с 300с до 3600с для завершенных звонков (`ended`/`missed`), что предотвратило ложное отбрасывание длительных разговоров (>5 минут).
-* **DEF-TEL-09 [ЗАКРЫТО]**: Внедрен механизм авто-дропа зависших входящих звонков: на клиенте софтфона таймер переводит звонок в `missed`/`idle` через 90 секунд при отсутствии серверных событий; на бэкенде эндпоинт `/calls/cleanup-stale` закрывает вызовы в статусе `ringing`/`queued` старше 300 секунд.
-* **DEF-TEL-10 [ЗАКРЫТО]**: В `CallAudioPlayer.tsx` и `telephonyRecordingStreamHandler.ts` исключен прямой рендер внешних URL в `<audio src>` и удалена передача токенов в GET query string (`?token=...`). Все записи стримятся через защищенный эндпоинт `/api/telephony/recordings/:eventId/stream` через blob URL с заголовком Bearer-авторизации и проверкой SSRF.
-* **DEF-TEL-11 [ЗАКРЫТО]**: В `telephonyCallUpdateHandler.ts` устранен опасный фолбэк (бывшие строки 143-159), перезаписывавший последний звонок по номеру телефона при несовпадении ID. Обеспечена строгая изоляция клинических заметок регистратора.
-* **DEF-TEL-12 [ЗАКРЫТО]**: В `callerLookupService.ts` реализован сквозной CTI-поиск по E.164, последним 10 цифрам и городским 7-значным номерам для таблиц `patients` и `crmLeads`.
-* **DEF-TEL-13 [ЗАКРЫТО]**: В `telephonyWebhookHandler.ts` внедрено обязательное маскирование номеров телефонов в логах (`maskPhoneDisplay`) согласно требованиям 152-ФЗ.
-* **DEF-TEL-14 [ЗАКРЫТО]**: Полная ликвидация спама в Копилот врача (`missedCallService.ts`). Изъят вызов `defaultCopilotStreamManager.broadcastProactiveAlert` с `urgency: "CRITICAL"` и категорией `clinical_alert` при пропущенных звонках АТС (Мандаты 8e, 8v: пропущенный вызов — операционная задача регистратора со SLA 60с, а не клиническая тревога у кресла). Переписан тест-саботажник `missedCallTask.test.ts`.
-* **DEF-TEL-15 [ЗАКРЫТО]**: Ликвидирован парсинг заметок регулярками `[call_id: ...]` и `ilike` в `telephonyCallUpdateHandler.ts`, `telephonyCallLifecycleHandler.ts`, `telephonyGatewayService.ts`, `telephonyWebhookEndedService.ts`. Поле `message` в `communication_events` очищено от служебного мусора и хранит только чистый человеческий текст. Идентификация и дедупликация звонков переведены строго на индексированную колонку `providerCallId`.
-* **DEF-TEL-16 [ЗАКРЫТО]**: В `phoneNormalization.ts` функция `isValidRussianPhone` доработана для полной поддержки географических городских кодов РФ (ABC зоны 3xx, 4xx, 8xx: Москва 495/499, СПб 812, Екатеринбург 343, Казань 843 и др.) наряду с мобильными кодами DEF (9xx). Покрыто тестами в `strings.test.ts`.
-* **DEF-TEL-17 [ЗАКРЫТО]**: В `initiateOutboundCall.ts` и `telephonyOutboundHandler.ts` снята блокировка набора коротких внутренних номеров персонала: разрешен исходящий вызов на 3-значные SIP Extensions (100–999).
-* **DEF-TEL-18 [ЗАКРЫТО]**: В `telephonyMissedCallsHandler.ts:30` ликвидирован non-null assertion `!` при составлении фильтра статусов звонков (Мандат 8be).
-* **DEF-TEL-19 [ЗАКРЫТО]**: В `telephonyEngine.ts` ликвидирована мульти-тенантная дыра: `resolveWebhookOrgId` проверяет существование `routeOrgId` в таблице `organizations`; при поиске клиники по номеру телефона устранен слепой `.limit(1)`, внедрена проверка коллизии нескольких организаций (при совпадении телефонов филиалов возвращается `null` для предотвращения подмены тенанта).
-* **DEF-TEL-20 [ЗАКРЫТО]**: В `callerLookupService.ts` расчет остатка активного плана лечения переведен строго на копеечные поля `treatmentPlanItemsNew.priceKopecks` и `discountKopecks` с форматированием через `formatKopecksToRub` из `@dental/shared/src/money.ts` (Мандат 8bm); устранен слепой `.limit(1)` в поиске пациентов по номеру телефона, возвращается список семейных карточек `familyMembers`.
-* **DEF-TEL-21 [ЗАКРЫТО]**: В `TelephonyStudioModal.tsx`, `initiateOutboundCall.ts` и `captureLeadFromIncomingCall.ts` добавлен заголовок `Idempotency-Key` (UUID) для защиты от повторных списаний/мутаций при сетевых сбоях (Мандат 8bo).
-* **DEF-TEL-22 [ЗАКРЫТО]**: Ликвидированы «двойные двери» в маршрутизации: `apps/api/src/routes/telephony.ts` преобразован в чистый barrel re-export канонического `apps/api/src/routes/telephony/index.ts`, зарегистрированы симметричные роуты `/outbound` и `/outbound-call`. В `missedCallService.ts` вызовы `console.warn` заменены на структурированный логгер fastify/pino.
-
-
-
+* DEF-TEL-07 [ЗАКРЫТО]: Добавлены реляционные колонки `provider_call_id` и `provider_name` в `communication_events` с уникальным индексом `(organization_id, provider_call_id)`. В `telephonyWebhookEndedService.ts` слепой `ilike` заменен на атомарный UPSERT (`onConflictDoUpdate`), исключающий дубликаты записей звонков при параллельных запросах.
+* DEF-TEL-08 [ЗАКРЫТО]: В `telephonyEngine.ts` расширено окно проверки дрифта таймстампа с 300с до 3600с для завершенных звонков (`ended`/`missed`), что предотвратило ложное отбрасывание длительных разговоров (>5 минут).
+* DEF-TEL-09 [ЗАКРЫТО]: Внедрен механизм авто-дропа зависших входящих звонков: на клиенте софтфона таймер переводит звонок в `missed`/`idle` через 90 секунд при отсутствии серверных событий; на бэкенде эндпоинт `/calls/cleanup-stale` закрывает вызовы в статусе `ringing`/`queued` старше 300 секунд.
+* DEF-TEL-10 [ЗАКРЫТО]: В `CallAudioPlayer.tsx` и `telephonyRecordingStreamHandler.ts` исключен прямой рендер внешних URL в `<audio src>` и удалена передача токенов в GET query string (`?token=...`). Все записи стримятся через защищенный эндпоинт `/api/telephony/recordings/:eventId/stream` через blob URL с заголовком Bearer-авторизации и проверкой SSRF.
+* DEF-TEL-11 [ЗАКРЫТО]: В `telephonyCallUpdateHandler.ts` устранен опасный фолбэк (бывшие строки 143-159), перезаписывавший последний звонок по номеру телефона при несовпадении ID. Обеспечена строгая изоляция клинических заметок регистратора.
+* DEF-TEL-12 [ЗАКРЫТО]: В `callerLookupService.ts` реализован сквозной CTI-поиск по E.164, последним 10 цифрам и городским 7-значным номерам для таблиц `patients` и `crmLeads`.
+* DEF-TEL-13 [ЗАКРЫТО]: В `telephonyWebhookHandler.ts` внедрено обязательное маскирование номеров телефонов в логах (`maskPhoneDisplay`) согласно требованиям 152-ФЗ.
+* DEF-TEL-14 [ЗАКРЫТО]: Полная ликвидация спама в Копилот врача (`missedCallService.ts`). Изъят вызов `defaultCopilotStreamManager.broadcastProactiveAlert` с `urgency: "CRITICAL"` и категорией `clinical_alert` при пропущенных звонках АТС (Мандаты 8e, 8v: пропущенный вызов — операционная задача регистратора со SLA 60с, а не клиническая тревога у кресла). Переписан тест-саботажник `missedCallTask.test.ts`.
+* DEF-TEL-15 [ЗАКРЫТО]: Ликвидирован парсинг заметок регулярками `[call_id: ...]` и `ilike` в `telephonyCallUpdateHandler.ts`, `telephonyCallLifecycleHandler.ts`, `telephonyGatewayService.ts`, `telephonyWebhookEndedService.ts`. Поле `message` в `communication_events` очищено от служебного мусора и хранит только чистый человеческий текст. Идентификация и дедупликация звонков переведены строго на индексированную колонку `providerCallId`.
+* DEF-TEL-16 [ЗАКРЫТО]: В `phoneNormalization.ts` функция `isValidRussianPhone` доработана для полной поддержки географических городских кодов РФ (ABC зоны 3xx, 4xx, 8xx: Москва 495/499, СПб 812, Екатеринбург 343, Казань 843 и др.) наряду с мобильными кодами DEF (9xx). Покрыто тестами в `strings.test.ts`.
+* DEF-TEL-17 [ЗАКРЫТО]: В `initiateOutboundCall.ts` и `telephonyOutboundHandler.ts` снята блокировка набора коротких внутренних номеров персонала: разрешен исходящий вызов на 3-значные SIP Extensions (100–999).
+* DEF-TEL-18 [ЗАКРЫТО]: В `telephonyMissedCallsHandler.ts:30` ликвидирован non-null assertion `!` при составлении фильтра статусов звонков (Мандат 8be).
+* DEF-TEL-19 [ЗАКРЫТО]: В `telephonyEngine.ts` ликвидирована мульти-тенантная дыра: `resolveWebhookOrgId` проверяет существование `routeOrgId` в таблице `organizations`; при поиске клиники по номеру телефона устранен слепой `.limit(1)`, внедрена проверка коллизии нескольких организаций (при совпадении телефонов филиалов возвращается `null` для предотвращения подмены тенанта).
+* DEF-TEL-20 [ЗАКРЫТО]: В `callerLookupService.ts` расчет остатка активного плана лечения переведен строго на копеечные поля `treatmentPlanItemsNew.priceKopecks` и `discountKopecks` с форматированием через `formatKopecksToRub` из `@dental/shared/src/money.ts` (Мандат 8bm); устранен слепой `.limit(1)` в поиске пациентов по номеру телефона, возвращается список семейных карточек `familyMembers`.
+* DEF-TEL-21 [ЗАКРЫТО]: В `TelephonyStudioModal.tsx`, `initiateOutboundCall.ts` и `captureLeadFromIncomingCall.ts` добавлен заголовок `Idempotency-Key` (UUID) для защиты от повторных списаний/мутаций при сетевых сбоях (Мандат 8bo).
+* DEF-TEL-22 [ЗАКРЫТО]: Ликвидированы «двойные двери» в маршрутизации: `apps/api/src/routes/telephony.ts` преобразован в чистый barrel re-export канонического `apps/api/src/routes/telephony/index.ts`, зарегистрированы симметричные роуты `/outbound` и `/outbound-call`. В `missedCallService.ts` вызовы `console.warn` заменены на структурированный логгер fastify/pino.
 

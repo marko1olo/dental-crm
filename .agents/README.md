@@ -6,15 +6,15 @@
 
 ## ⛔ СТРОЖАЙШЕЕ ПРЕДУПРЕЖДЕНИЕ ДЛЯ ВСЕХ ИИ-АГЕНТОВ (CRITICAL WARNING)
 
-> ⚠️ **АРХИВНЫЙ СТАТУС ВЛОЖЕННЫХ ПАПОК:**
-> Все поддиректории вида `.agents/orchestrator_r*`, `.agents/worker_r*`, `.agents/sentinel_r*`, `.agents/archon*`, `.agents/reviewer_*` представляют собой **ИСТОРИЧЕСКИЙ РАБОЧИЙ АРХИВ (SCRATCHPADS & AUDIT LOGS) ПРОШЛЫХ РАУНДОВ**.
+> ⚠️ АРХИВНЫЙ СТАТУС ВЛОЖЕННЫХ ПАПОК:
+> Все поддиректории вида `.agents/orchestrator_r*`, `.agents/worker_r*`, `.agents/sentinel_r*`, `.agents/archon*`, `.agents/reviewer_*` представляют собой ИСТОРИЧЕСКИЙ РАБОЧИЙ АРХИВ (SCRATCHPADS & AUDIT LOGS) ПРОШЛЫХ РАУНДОВ.
 > 
-> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО:**
+> КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО:
 > 1. Брать задачи, «незавершенные» бэклоги или требования из старых файлов `plan.md`, `BRIEFING.md`, `TODO.md` или `handoff.md` внутри этих папок!
 > 2. Считать описанные там промежуточные проблемы актуальными дефектами без живой инструментальной проверки (Мандат 8f — Запрет на выдумывание дефектов по памяти).
 > 3. Запускать повторную реализацию уже внедренных фич (Мандат 8h — No duplicate work).
 >
-> **АКТУАЛЬНЫЙ СТАТУС ПРОЕКТА:**
+> АКТУАЛЬНЫЙ СТАТУС ПРОЕКТА:
 > - Все 63 канонические фичи конкурентов (IDENT, DentalPRO, iStom) имеют статус **`[ДА] [100% ВНЕДРЕНО В КОД]`** (см. [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) и [FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)).
 > - База данных: Нативный PostgreSQL 18.4 TCP на `127.0.0.1:5432` (`.data/pg18`, 203 таблицы в 20 модульных схемах `apps/api/src/db/schema/*.ts`).
 > - Бэкенд: Fastify 5.3.3 (`apps/api/`), 771 маршрут, Zod валидация, ALS-контекст `withTenantCtx`.

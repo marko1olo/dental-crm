@@ -1,10 +1,10 @@
 # Локальная инфраструктура базы данных (PostgreSQL)
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+> ⚠️ ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW): [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🗄️ База Данных (.agents/DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 >
-> ⚠️ **КАНОНИЧЕСКИЙ РЕЕСТР:** Каноническим описанием БД является **[`.agents/DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**.
+> ⚠️ КАНОНИЧЕСКИЙ РЕЕСТР: Каноническим описанием БД является **[`.agents/DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**.
 > Текущая рабочая СУБД: **нативный PostgreSQL 18.4 TCP на `127.0.0.1:5432`** (директория данных `.data/pg18`).
 > Этот документ сохраняет исторические сведения о ручном развертывании и полифилле `uuidv7()`.
 
@@ -13,13 +13,13 @@
 ## 1. Портативный бинарник PostgreSQL
 Локальная база данных работает из изолированной папки `C:\Clinic_MVP\dental-crm\.postgres`. 
 - Историческая сборка: PostgreSQL 14.13 (EnterpriseDB), обновленная до нативного PostgreSQL 18.4 на `127.0.0.1:5432`.
-- **Пароль суперпользователя:** `dental`
-- **Порт:** `5432`
-- **Механизм аутентификации:** `scram-sha-256`
+- Пароль суперпользователя: `dental`
+- Порт: `5432`
+- Механизм аутентификации: `scram-sha-256`
 
 ### Проблема загрузки бинарников
 Изначально при скачивании `pg.zip` скриптом `Launcher.ps1` архив был повреждён (вероятно, из-за внезапной перезагрузки сервера). В результате не хватало директории `share`, и `initdb` падал с ошибками об отсутствующих файлах `timezone` и `postgres.bki`. 
-**Решение:** Мы принудительно удалили битый `.postgres`, скачали архив размером 335 МБ заново и успешно выполнили `initdb`.
+Решение: Мы принудительно удалили битый `.postgres`, скачали архив размером 335 МБ заново и успешно выполнили `initdb`.
 
 ### Запуск демона
 Windows убивает дочерние процессы при закрытии сессии терминала. Поэтому, если запустить `pg_ctl start` вручную и закрыть окно, процесс `postgres.exe` умрёт.
@@ -34,8 +34,8 @@ Windows убивает дочерние процессы при закрытии
 Оригинальная история миграций Drizzle оказалась сломана на шаге `0040`.
 
 ### Причины падения `npm run db:migrate`:
-1. **Дублирование DDL-операций:** 
-   Файл `0040` содержал `ALTER TYPE ADD VALUE` (например, `vk`, `max`, `transactional_reply`) и `CREATE TABLE` (например, `clinic_workflows`), которые **уже были добавлены** в более ранних ручных миграциях. Drizzle сгенерировал авто-миграцию так, как будто этих объектов не существовало в снапшотах.
+1. Дублирование DDL-операций: 
+   Файл `0040` содержал `ALTER TYPE ADD VALUE` (например, `vk`, `max`, `transactional_reply`) и `CREATE TABLE` (например, `clinic_workflows`), которые уже были добавлены в более ранних ручных миграциях. Drizzle сгенерировал авто-миграцию так, как будто этих объектов не существовало в снапшотах.
 2. **Отсутствие функции `uuidv7()`:**
    В `schema.ts` был прописан дефолт генерации ID через `uuidv7()`. В результате `0040` содержал `ALTER TABLE "..." ALTER COLUMN "id" SET DEFAULT uuidv7()`. Однако в PostgreSQL 14 нет встроенной функции `uuidv7()`, а её PL/pgSQL полифилл разработчики забыли добавить в ранние миграции.
 
@@ -71,7 +71,7 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 ```
 
-**2. Автоматизация развёртывания (PowerShell):**
+2. Автоматизация развёртывания (PowerShell):
 ```powershell
 $env:PGPASSWORD="dental"
 

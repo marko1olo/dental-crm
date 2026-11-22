@@ -8,9 +8,9 @@
 
 ## 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1: СОЛО-ВРАЧ И НЕБОЛЬШАЯ КЛИНИКА (1–3 КРЕСЛА, МАНДАТ 8n)
 
-> 🎯 **ДО БОЛЬШИХ СЕТЕВЫХ КЛИНИК НАМ ЕЩЁ РАСТИ И РАСТИ!**
+> 🎯 ДО БОЛЬШИХ СЕТЕВЫХ КЛИНИК НАМ ЕЩЁ РАСТИ И РАСТИ!
 > 
-> Наш главный пользователь — **соло-врач на аренде кресла (ИП, самозанятый)** и **небольшая клиника на 1–3 установки**.
+> Наш главный пользователь — соло-врач на аренде кресла (ИП, самозанятый) и небольшая клиника на 1–3 установки.
 > 1. Вся документарная цепочка ориентирована на нулевое трение: моментальная печать договора со строками `_____` без 403 Forbidden, печать карты Карта приёма со штампом «ЧЕРНОВИК» на любом этапе, отсутствие требований обязательного ассистента или согласования начмеда.
 > 2. Закон отсутствия тупиков (Zero Dead-Ends): отсутствие подключенного модуля УКЭП КриптоПро или ЕГИСЗ не блокирует выдачу пациенту бумажных бланков с синей подписью врача.
 
@@ -21,17 +21,17 @@
 В частной стоматологической клинике администратор и врач не должны наталкиваться на системные запреты при оформлении документов пациента.
 
 ### 🛡️ Нормативные инварианты:
-1. **Печать бланка договора до приёма пациента (Регистратура без 403-ошибок):**
+1. Печать бланка договора до приёма пациента (Регистратура без 403-ошибок):
    * Регистратор имеет право распечатать официальный договор на оказание платных медицинских услуг (Постановление Правительства РФ № 736) с суммой 0 ₽ и строками прочерков `_______` для ручного заполнения паспортных данных пациентом до врачебного осмотра.
-   * Система **НИКОГДА** не блокирует печать договора отсутствием заполненного плана лечения или отсутствием прикрепленного ассистента.
-2. **Печать Карта приёма и смет в любой момент (Черновик vs Подписано):**
+   * Система НИКОГДА не блокирует печать договора отсутствием заполненного плана лечения или отсутствием прикрепленного ассистента.
+2. Печать Карта приёма и смет в любой момент (Черновик vs Подписано):
    * Врач имеет право распечатать Форму Карта приёма, дневник визита, план лечения или предварительную смету на любом этапе приёма:
-     * **Приём в процессе (isDraft: true / status: "draft"):** Документ печатается с полупрозрачным водяным знаком под углом -32° `«ЧЕРНОВИК»` и статусной плашкой `«ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»`.
-     * **Приём завершен (status: "signed" / "completed"):** Документ печатается со штампом `«ПОДПИСАНО ВРАЧОМ»` и реквизитами цифровой подписи (УКЭП).
-3. **Версионный аудит («Исправленному верить»):**
+     * Приём в процессе (isDraft: true / status: "draft"): Документ печатается с полупрозрачным водяным знаком под углом -32° `«ЧЕРНОВИК»` и статусной плашкой `«ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»`.
+     * Приём завершен (status: "signed" / "completed"): Документ печатается со штампом `«ПОДПИСАНО ВРАЧОМ»` и реквизитами цифровой подписи (УКЭП).
+3. Версионный аудит («Исправленному верить»):
    * Отсутствуют необратимые 24-часовые блокировки на исправление карты. При необходимости внесения клинических уточнений врач нажимает «Редактировать дневник».
    * Каждое сохранение инкрементирует счетчик ревизий `revisionCount`. При печати выводится юридическая отметка: `«ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»` с фиксацией ФИО врача, даты и времени правки.
-4. **Автоматизированная верификация жизненного цикла ЭМК:**
+4. Автоматизированная верификация жизненного цикла ЭМК:
    * Полный жизненный цикл протокола SOAP, валидация формулы FDI (11–48 / 51–85), частичные черновики, подписание ПЭП и генерация печатных бланков A4 покрыты 20 тестами в [`apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts).
    * Подробный реестр проверок и 4-состоятельных визуальных пруфов зафиксирован в [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md).
 
@@ -42,8 +42,8 @@
 DENTE CRM компилирует и хранит следующие классы официальной документации РФ:
 
 ### 1. Карта приёма (Медицинская карта стоматологического пациента)
-* **Нормативная база:** Приказ Минздрава России от 15.12.2014 № 834н (Код формы по ОКУД 3108805).
-* **Состав разделов:**
+* Нормативная база: Приказ Минздрава России от 15.12.2014 № 834н (Код формы по ОКУД 3108805).
+* Состав разделов:
   * Паспортная часть: ФИО, пол, дата рождения, возраст (лет/месяцев), паспортные данные, СНИЛС, полис ОМС/ДМС, телефон, адрес регистрации и проживания, лечащий врач.
   * Анамнез жизни и заболевания: соматическая патология, аллергологический анамнез, гепатит/ВИЧ, перенесенные вмешательства, прием антикоагулянтов/бисфосфонатов.
   * Стоматологический статус: прикус, состояние слизистой оболочки рта (СОПР), десневых сосочков, височно-нижнечелюстного сустава (ВНЧС).
@@ -52,8 +52,8 @@ DENTE CRM компилирует и хранит следующие классы
   * Дневники визитов (SOAP): Subjective (жалобы), Objective (локальный статус, ЭОД в мкА, перкуссия), Assessment (диагноз МКБ-10), Plan/Procedure (протокол лечения, анестезия, материалы, рекомендации).
 
 ### 2. Информированные добровольные согласия (ИДС) по Приказу Минздрава РФ № 1051н
-* **Нормативная база:** Ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава России от 12.11.2021 № 1051н.
-* **Канонические шаблоны:**
+* Нормативная база: Ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава России от 12.11.2021 № 1051н.
+* Канонические шаблоны:
   * `CONSENT_THERAPY` (ИДС-01-ТЕР): лечение кариеса, пульпита, периодонтита, эндодонтия, эстетическая реставрация.
   * `CONSENT_SURGERY_IMPLANT` (ИДС-02-ХИР): простое и сложное удаление зубов, синус-лифтинг, костная аугментация, дентальная имплантация.
   * `CONSENT_ORTHODONTICS` (ИДС-03-ОРТ): лечение брекет-системами, элайнерами, ретенционный период.
@@ -61,31 +61,31 @@ DENTE CRM компилирует и хранит следующие классы
   * `CONSENT_HYGIENE_BLEACHING` (ИДС-05-ГИГ): ультразвуковой скейлинг, Air-Flow, глубокое фторирование, клиническое отбеливание.
   * `CONSENT_ANESTHESIA` (ИДС-06-АНЕСТ): местная инфильтрационная, проводниковая и интралигаментарная анестезия.
   * `CONSENT_PERSONAL_DATA` (СОГЛ-ПД-152): согласие на обработку персональных данных (ФЗ № 152-ФЗ).
-* **Динамическая подстановка переменных:** `{{PATIENT_NAME}}`, `{{BIRTH_DATE}}`, `{{PASSPORT}}`, `{{DOCTOR_NAME}}`, `{{CLINIC_NAME}}`, `{{DIAGNOSIS_ICD}}`, `{{TOOTH_NUMBERS}}`, `{{DATE}}`.
+* Динамическая подстановка переменных: `{{PATIENT_NAME}}`, `{{BIRTH_DATE}}`, `{{PASSPORT}}`, `{{DOCTOR_NAME}}`, `{{CLINIC_NAME}}`, `{{DIAGNOSIS_ICD}}`, `{{TOOTH_NUMBERS}}`, `{{DATE}}`.
 
 ### 3. Рецептурные бланки (Приказ Минздрава РФ № 1094н / 4н)
-* **Форма № 107-1/у:** Стандартный рецептурный бланк на лекарственные препараты общего назначения:
+* Форма № 107-1/у: Стандартный рецептурный бланк на лекарственные препараты общего назначения:
   * Антибиотики широкого спектра (Амоксиклав / Аугментин 875/125 мг, Ципролет 500 мг).
   * Нестероидные противовоспалительные средства (Нимесил 100 мг, Ибупрофен 400 мг, Кеторол 10 мг).
   * Антисептики и ротовые ванночки (Хлоргексидин 0.05%, Мирамистин 0.01%).
-* **Форма № 148-1/у-88:** Препараты предметно-количественного учета (ПКУ).
-* **Форма № 148-1/у-04(л):** Льготные рецепты.
-* **Быстрые клинические сеты (DENTAL_FAST_PRESCRIPTION_SETS):**
+* Форма № 148-1/у-88: Препараты предметно-количественного учета (ПКУ).
+* Форма № 148-1/у-04(л): Льготные рецепты.
+* Быстрые клинические сеты (DENTAL_FAST_PRESCRIPTION_SETS):
   * «После удаления / хирургии» (Амоксиклав + Нимесил + Супрастин).
   * «Противовоспалительный» (Ибупрофен + Хлоргексидин).
   * «Антисептический / полоскания» (Мирамистин + Стоматофит).
 
 ### 4. Справка об оплате медицинских услуг для ФНС (КНД 1151156)
-* **Нормативная база:** Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@, пп. 3 п. 1 ст. 219 НК РФ.
-* **Кодификатор видов лечения:**
-  * **Код услуги 01:** Обычное стоматологическое лечение (терапия, гигиена, удаление, несложное протезирование). Совокупный лимит социального налогового вычета — 150 000 ₽ (возврат до 19 500 ₽).
-  * **Код услуги 02:** Дорогостоящее стоматологическое лечение (Постановление Правительства РФ № 458: дентальная имплантация, костно-пластические и реконструктивные операции на челюстях). Сумма вычета **не ограничена** (возврат 13% от полной суммы расходов).
-* **1-клик генерация:** Автоматическая группировка оплат пациента за налоговый период, подстановка ИНН, паспортных данных налогоплательщика и формирование печатного бланка КНД 1151156 со штрихкодом.
+* Нормативная база: Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@, пп. 3 п. 1 ст. 219 НК РФ.
+* Кодификатор видов лечения:
+  * Код услуги 01: Обычное стоматологическое лечение (терапия, гигиена, удаление, несложное протезирование). Совокупный лимит социального налогового вычета — 150 000 ₽ (возврат до 19 500 ₽).
+  * Код услуги 02: Дорогостоящее стоматологическое лечение (Постановление Правительства РФ № 458: дентальная имплантация, костно-пластические и реконструктивные операции на челюстях). Сумма вычета не ограничена (возврат 13% от полной суммы расходов).
+* 1-клик генерация: Автоматическая группировка оплат пациента за налоговый период, подстановка ИНН, паспортных данных налогоплательщика и формирование печатного бланка КНД 1151156 со штрихкодом.
 
 ### 5. Договоры, сметы и акты выполненных услуг (Приказ 804н)
-* **Договор на платные медицинские услуги:** Двусторонний/трехсторонний договор с пациентом / заказчиком (родителем).
-* **3-уровневая презентационная смета:** План лечения (Эконом / Оптимум / Премиум) со скрытием микро-расходников (`isMicroConsumable`).
-* **Акт выполненных услуг:** Формируется автоматически при закрытии приёма по услугам Номенклатуры 804н с фиксацией гарантийных сроков и срока службы.
+* Договор на платные медицинские услуги: Двусторонний/трехсторонний договор с пациентом / заказчиком (родителем).
+* 3-уровневая презентационная смета: План лечения (Эконом / Оптимум / Премиум) со скрытием микро-расходников (`isMicroConsumable`).
+* Акт выполненных услуг: Формируется автоматически при закрытии приёма по услугам Номенклатуры 804н с фиксацией гарантийных сроков и срока службы.
 
 ---
 
@@ -107,7 +107,7 @@ graph LR
 * Альтернативный контур: отправка 4-значного OTP-кода по SMS / мессенджеру с фиксацией номера телефона, IP-адреса и отметки времени.
 
 ### 2. Усиленная квалифицированная электронная подпись (УКЭП) врача:
-* Интеграция с криптопровайдером **КриптоПро CSP** (ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012) через браузерный плагин `cadesplugin` или виртуальный крипто-мост.
+* Интеграция с криптопровайдером КриптоПро CSP (ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012) через браузерный плагин `cadesplugin` или виртуальный крипто-мост.
 * Извлечение личных сертификатов врача (`getPersonalCertificates`), подписание Base64 дайджеста документа (`signBase64WithCertificate`).
 * Формирование синего штампа электронной подписи:
   * Номер сертификата, владелец (ФИО врача), срок действия сертификата, хэш подписи.
@@ -128,25 +128,25 @@ graph LR
 
 ### ⚙️ Этапы выполнения:
 1. **Сбор контекста (`resolveDocumentRenderContext`):** Загрузка реквизитов организации, лицензии клиники, паспортных данных пациента, истории визита и расчетных сумм.
-2. **Компиляция HTML:** Внедрение стилей ГОСТ Р 7.0.97-2016, шрифтов PT Astra Serif / PT Astra Sans (метрические аналоги Times New Roman / Arial для свободного распространения в РФ), штампов и водяных знаков.
+2. Компиляция HTML: Внедрение стилей ГОСТ Р 7.0.97-2016, шрифтов PT Astra Serif / PT Astra Sans (метрические аналоги Times New Roman / Arial для свободного распространения в РФ), штампов и водяных знаков.
 3. **Поиск исполняемого файла (`findPdfBrowserPath`):**
    * Windows: `C:\Program Files\Microsoft\Edge\Application\msedge.exe` или `C:\Program Files\Google\Chrome\Application\chrome.exe`.
    * Linux: `/usr/bin/chromium-browser` или `/usr/bin/google-chrome`.
-4. **Запуск процесса печати:**
+4. Запуск процесса печати:
    ```bash
    msedge.exe --headless=new --disable-gpu --run-all-compositor-stages-before-draw --print-to-pdf-no-header --print-to-pdf=/tmp/output.pdf /tmp/input.html
    ```
-5. **Валидация целостности PDF:**
+5. Валидация целостности PDF:
    * Проверка минимального размера файла ($\ge 512$ байт).
    * Проверка 4-байтовой сигнатуры заголовка: `pdf.subarray(0, 4).equals(Buffer.from("%PDF"))`.
-6. **Очистка временных файлов:** Удаление временных HTML-файлов из изолированной директории.
+6. Очистка временных файлов: Удаление временных HTML-файлов из изолированной директории.
 
 ---
 
 ## 🏛️ 5. Интеграция с ЕГИСЗ (РЭМД / ФРЭМД СЭМД 834н)
 
 Карта приёма и протоколы приёмов поддерживают выгрузку в Федеральный реестр электронных медицинских документов (РЭМД ЕГИСЗ):
-* Формат: структурированный медицинский документ **CDA R3 XML** по валидированной схеме Минздрава России.
+* Формат: структурированный медицинский документ CDA R3 XML по валидированной схеме Минздрава России.
 * Автоматическое маппирование диагнозов МКБ-10, кодов услуг Номенклатуры 804н, СНИЛС врача и пациента, OID медицинских организаций по реестру ФРМО.
 * Подписание присоединенной/отсоединенной электронной подписью УКЭП в формате CMS/PKCS#7.
 
@@ -154,34 +154,34 @@ graph LR
 
 ## 📸 7. Red Team Инквизиция и 4-State Visual Proof
 
-1. **Тотальная ликвидация блокировок кнопок (Мандат 8e):**
+1. Тотальная ликвидация блокировок кнопок (Мандат 8e):
    * Все кнопки в `apps/web/src/components/documents/` очищены от искусственного атрибута `disabled={...}` (включая печать, экспорт, подписание, сохранение, отправку SMS).
    * Защита от дублирующих нажатий реализована через неблокирующий debounced клик, атрибут `aria-busy` и тактильный индикатор `Loader2`.
-2. **Консолидация канонических SSOT и зачистка дубликатов (Мандаты 8s, 8bd):**
+2. Консолидация канонических SSOT и зачистка дубликатов (Мандаты 8s, 8bd):
    * Физически удалены (`git rm`) мертвые дубликаты и сироты: `DocumentsStandaloneLauncher.tsx` (77 строк), `LauncherDocumentsContractsSection.tsx` (101 строка), несмонтированный компонент `PatientContractsSection.tsx` и папка `patientContracts/` (содержавшие птичий язык «ПП РФ № 736»).
    * Канонические эталоны (SSOT): `ConsentStudioModal.tsx`, `DocumentsStudioModal.tsx`, `DirectDocumentsLauncher.tsx`, `FnsTaxCertificateModal.tsx`, `DocumentsView.tsx`.
    * Ликвидирован захардкоженный `0 ₽` по Коду 2 в шаблоне `documentsCatalogData.ts`: суммы Кода 1 и Кода 2 рассчитываются динамически из реальных услуг пациента на основе канонического классификатора `@dental/shared/resolveTaxDeductionCategoryShared`.
    * Искоренен советский канцелярит и птичий язык (Мандат 8x, Мандат 8ap): шифр «КНД 1151156» заменен на человеческий клинический язык «Справка для налогового вычета (13% НДФЛ)» и «Справка об оплате медицинских услуг» в `EgiszCertificatesHubModal.tsx`, `CabinetTaxSheet.tsx`, `TreatmentPlanTab.tsx`, `TaxDeductionHeader.tsx`, `TaxDeduction13Banner.tsx`.
-3. **Машинное покрытие тестами:**
+3. Машинное покрытие тестами:
    * Все 22 тестовых файла в `apps/web/src/components/documents/__tests__/` (199 тестов) и бэкенд-тесты `ndflTaxService.test.ts` завершаются с Exit Code 0 (0 сбоев).
    * Машинные гейты: `npm run check:encoding`, `npm run check:stub-overrides`, `npm run check:fetch-response`, `npm run check:dynamic-imports` — Exit Code 0.
-4. **4-State Visual Proof (Live App Capture):**
+4. 4-State Visual Proof (Live App Capture):
    * Все 4 состояния сняты на живом Vite-сервере и лично отсмотрены через `read_file` по 8 осям контроля:
      - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (143 KB) — десктоп светлая тема, нулевой клиппинг, ровно 1 Primary CTA.
      - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (133 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.
      - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (168 KB) — iPhone светлая тема, нативный Bottom Sheet Apple HIG с drag handle 36×5px и тач-зоной $\ge 44$px.
      - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (143 KB) — iPhone тёмная тема, 0px горизонтального скролла.
-5. **Хирургическая зачистка дефектов ЭМК и клинических протоколов (DEF-EMR-01...08, Мандат 8x, Мандат 8bd):**
+5. Хирургическая зачистка дефектов ЭМК и клинических протоколов (DEF-EMR-01...08, Мандат 8x, Мандат 8bd):
    * Физически удалены через `git rm` 7 несмонтированных файлов-дубликатов в `apps/web/src/components/emr/record/` (`RecordModalHeader.tsx`, `RecordModalBody.tsx`, `RecordNavTabs.tsx`, `RecordCompletenessBar.tsx`, `RecordMoreMenu.tsx`, `useMedicalRecordModal.ts`, `recordModalTypes.ts`).
-   * **DEF-EMR-01:** AI-инструмент генерации протокола SOAP канонизирован как `generate_clinical_protocol_entry` (`generateClinicalProtocolEntryTool` / `generateClinicalProtocolTool`) в `calculatorRegistry.ts`, `clinicalProtocolTool.ts`, `systemPromptBuilder.ts`, `swarmRoles.ts`, `toolDispatcher.ts`.
-   * **DEF-EMR-02:** В `packages/shared/src/documents/renderers/examinationRenderers.ts` ликвидирован синтетический мок зуба 1.6 при пустом массиве дневников. Обеспечен честный пустой стейт без галлюцинаций.
-   * **DEF-EMR-03:** `FastClinicalPrintEngine.tsx` очищен от фиктивных хардкод-данных (UUID, фейковые диагнозы) и канцелярита (`form043u` -> `medical_card`).
-   * **DEF-EMR-04:** В компонентах таймлайна пациента (`PatientHistoryTab.tsx`, `usePatientHistory.ts`) внедрен чистый клинический интерфейс `onExtractRecord` / `handleExtractRecord`.
-   * **DEF-EMR-05:** В `usePatientDocumentsLogic.ts` и `VisitActionFooter.tsx` стейт `"form043u"` переведен на канонический `"medical_card"`.
-   * **DEF-EMR-06:** Экспортные генераторы приведены к чистым именам `generateMedicalRecordXmlCda`, `generateMedicalRecordJsonExport`, `generateMedicalRecordPlainText` в `apps/web/src/components/emr/export/`.
-   * **DEF-EMR-07:** Добавлены чистые клинические алиасы `clinicalServiceProtocols`, `synthesizeProtocolFromClinicalService`, `enrichDiaryFromClinicalServices` в `packages/shared/src/emr/`.
-   * **DEF-EMR-08:** Канонический SSOT генератора бланка зафиксирован в `apps/web/src/components/emr/record/html/recordHtmlGenerator.ts` с заголовком «Медицинская карта приёма № ...».
-   * **4-State Visual Proof (Live App EMR/SOAP):**
+   * DEF-EMR-01: AI-инструмент генерации протокола SOAP канонизирован как `generate_clinical_protocol_entry` (`generateClinicalProtocolEntryTool` / `generateClinicalProtocolTool`) в `calculatorRegistry.ts`, `clinicalProtocolTool.ts`, `systemPromptBuilder.ts`, `swarmRoles.ts`, `toolDispatcher.ts`.
+   * DEF-EMR-02: В `packages/shared/src/documents/renderers/examinationRenderers.ts` ликвидирован синтетический мок зуба 1.6 при пустом массиве дневников. Обеспечен честный пустой стейт без галлюцинаций.
+   * DEF-EMR-03: `FastClinicalPrintEngine.tsx` очищен от фиктивных хардкод-данных (UUID, фейковые диагнозы) и канцелярита (`form043u` -> `medical_card`).
+   * DEF-EMR-04: В компонентах таймлайна пациента (`PatientHistoryTab.tsx`, `usePatientHistory.ts`) внедрен чистый клинический интерфейс `onExtractRecord` / `handleExtractRecord`.
+   * DEF-EMR-05: В `usePatientDocumentsLogic.ts` и `VisitActionFooter.tsx` стейт `"form043u"` переведен на канонический `"medical_card"`.
+   * DEF-EMR-06: Экспортные генераторы приведены к чистым именам `generateMedicalRecordXmlCda`, `generateMedicalRecordJsonExport`, `generateMedicalRecordPlainText` в `apps/web/src/components/emr/export/`.
+   * DEF-EMR-07: Добавлены чистые клинические алиасы `clinicalServiceProtocols`, `synthesizeProtocolFromClinicalService`, `enrichDiaryFromClinicalServices` в `packages/shared/src/emr/`.
+   * DEF-EMR-08: Канонический SSOT генератора бланка зафиксирован в `apps/web/src/components/emr/record/html/recordHtmlGenerator.ts` с заголовком «Медицинская карта приёма № ...».
+   * 4-State Visual Proof (Live App EMR/SOAP):
      - `docs/proofs/emr/01_visit_soap_emk_pc_light_1440x900.png` (188.2 KB) — десктоп светлая тема, вкладка «Дневник приёма», 0px клиппинга, чистый клинический язык.
      - `docs/proofs/emr/02_visit_soap_emk_pc_dark_1440x900.png` (200.9 KB) — десктоп тёмная тема, 100% тёмные токены, WCAG AAA контраст.
      - `docs/proofs/emr/03_visit_soap_emk_mobile_light_390x844.png` (201.2 KB) — iPhone 390×844 светлая тема, Natural Thumb Zone, навигационный бар Apple HIG.
@@ -189,33 +189,33 @@ graph LR
 
 ---
 
-6. **Red Team Инквизиция Домена 3: Документооборот, ИДС, Договоры и Налоговые справки (Мандаты 8e, 8n, 8x, 8am, 8bd):**
+6. Red Team Инквизиция Домена 3: Документооборот, ИДС, Договоры и Налоговые справки (Мандаты 8e, 8n, 8x, 8am, 8bd):
    * **Разблокировка 0 ₽ бланков договоров (`financialGuards.ts:232`):** Проверка `if (payload.estimatedTotalRub === 0) return null;` перенесена ДО проверки обязательности ФИО заказчика. Бланк с нулевой суммой пропускается сервером для ручного заполнения пациентом в регистратуре без 409/403 ошибок.
-   * **Искоренение советских шифров и нормативных актов из UI (Мандат 8x):**
+   * Искоренение советских шифров и нормативных актов из UI (Мандат 8x):
      - В `deepClinicalTypes.ts`: заменено `"Стандарт Минздрава 1051н"` на `"Информированное согласие на лечение"`.
      - В `chairsideConsentEngine.ts`: заменено `"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)"` на `"ЛИЧНОЕ СОГЛАСИЕ ПАЦИЕНТА У КРЕСЛА"`.
      - В `documentsCatalogData.ts`: заменено `"СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ (ФОРМА ПО КНД 1151156)"` на `"СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)"`.
-   * **Унификация геометрии кнопок по Мандату 8am и Apple HIG:**
+   * Унификация геометрии кнопок по Мандату 8am и Apple HIG:
      - В `PaidContractRequiredFieldsPanel.tsx`: удален инлайн `style={{ minHeight: "44px" }}`, класс заменен на `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-xl`.
      - В `CatalogExpressBar.tsx`, `CatalogToolbarActions.tsx`, `CatalogCard.tsx`: кнопки приведены к стандарту `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-xl` с единым Primary CTA.
    * **Физический снос мертвых файлов (`git rm`):**
      - `apps/web/src/components/documents/FnsTaxCertificateModal.tsx` (рудиментарный сиротский реэкспорт).
      - `apps/web/src/components/documents/surgicalOperationProtocolPrintEngine.ts` (1-строчный сиротский реэкспорт).
      - `apps/web/src/components/documents/DocumentQuickRoleScenarios.tsx` (сирота над `roleScenarios`).
-   * **4-State Visual Proof (Live App Домен 3):**
+   * 4-State Visual Proof (Live App Домен 3):
      - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (139.6 KB) — ПК светлая тема, каталог пакетов, чистый клинический язык, 0px клиппинга.
      - `docs/proofs/documents/02_documents_tax_deduction_pc_dark_1440x900.png` (143.6 KB) — ПК тёмная тема, справка для налогового вычета (13% НДФЛ), 100% тёмные токены.
      - `docs/proofs/documents/03_documents_intake_mobile_light_390x844.png` (164.1 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, тач-таргеты $\ge 44$px.
      - `docs/proofs/documents/04_documents_intake_mobile_dark_390x844.png` (141.1 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
 
 
-7. **Хирургическое устранение дефектов документооборота и согласий (DEF-DOC-01...05, Мандаты 8e, 8n, 8am, 8ap):**
+7. Хирургическое устранение дефектов документооборота и согласий (DEF-DOC-01...05, Мандаты 8e, 8n, 8am, 8ap):
    * **DEF-DOC-01 (`DirectConsentLauncher.tsx`):** Мокап пациента («Иванов Иван Иванович») изолирован строго под `isDemoShowcaseMode()`. В стандартном боевом режиме поля остаются чистыми либо гидрируются из активного контекста URL и CustomEvent `dente:open-consent` / `dente:open-consents`.
    * **DEF-DOC-02 (`ConsentStudioModal.tsx`):** При пакетном подписании (`handleBatchSign` и `handlePaperConfirm`) в тело POST-запросов к `/api/patients/:patientId/consents` передается точный `consentType: docId`. В бэкенде `effectiveKind` фиксирует реальный тип (терапия, эндодонтия, хирургия, имплантация, анестезия и др.), исключая взаимное перезатирание статусов согласий под generic-пакетом.
    * **DEF-DOC-03 (`taxCertificateEngine.ts`):** Функция `buildTaxCertificateDocumentData` теперь принимает и разделяет `code01Kopecks` и `code02Kopecks`, динамически вычисляя суммы обычного и дорогостоящего лечения (имплантация, остеопластика по ПП РФ № 458), ликвидировав захардкоженный ноль по Коду 2.
    * **DEF-DOC-04 (`useCanvasSigner.ts`, `consentCatalogData.ts`):** Внедрена валидация формата подписи `renderSignatureElementHtml`. Строки формата `data:image/` или Base64 рендерятся в тег `<img src="..." alt="Подпись" />`, а `<svg` — как векторный SVG, полностью ликвидировав вывод буквенного мусора вместо подписи.
    * **DEF-DOC-05 (`DocumentsStudioModal.tsx`, `ConsentSignersRow.tsx`):** Сигнатура `showToast` расширена до `(message: string, type?: "success" | "error" | "info") => void` с семантической дифференциацией цветов тостов (успех — изумрудный, ошибка — розовый, инфо — бирюзовый).
-   * **4-State Visual Proof (Live App Capture):**
+   * 4-State Visual Proof (Live App Capture):
      - `docs/proofs/documents/01_consent_studio_pc_light_1440x900.png` (95 KB) — ПК светлая тема, 0px клиппинга, ровно 1 Primary CTA.
      - `docs/proofs/documents/02_consent_studio_pc_dark_1440x900.png` (96 KB) — ПК тёмная тема, 100% тёмные токены, WCAG AAA контраст.
      - `docs/proofs/documents/03_consent_studio_mobile_light_390x844.png` (121 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, Natural Thumb Zone.
@@ -227,7 +227,7 @@ graph LR
 
 ---
 
-8. **Хирургическая ликвидация дефектов документооборота и зачистка сирот (DEF-DOC-06...11, Мандаты 8bd, 8be, 8bf, 8ap):**
+8. Хирургическая ликвидация дефектов документооборота и зачистка сирот (DEF-DOC-06...11, Мандаты 8bd, 8be, 8bf, 8ap):
    * **DEF-DOC-06 (`DocumentsView.tsx`):** Загрязнение советскими номерами приказов `dental_medical_card_043u` устранено в пользу канонического `DENTAL_MEDICAL_CARD_KIND` (`"dental_medical_card"`).
    * **DEF-DOC-07 (`DocumentsView.tsx`, `documentsView/types.ts`):** `Record<string, any>` заменен на строго типизированный интерфейс `DocumentsViewProps` (Мандат 8be).
    * **DEF-DOC-08 (`useDigitalSignature.ts`):** Ликвидирован захардкоженный пустой SHA-256 хеш (`e3b0c442...`). Реализовано честное вычисление дайджеста содержимого документа через `crypto.subtle`.
@@ -235,7 +235,7 @@ graph LR
    * **DEF-DOC-10 (`FastClinicalPrintEngine.tsx`):** Ликвидирована россыпь кастов `any`. Внедрены доменные типизированные структуры: `ClinicSummary`, `PrintServiceItem[]`, `ToothNumber[]`, `ClinicalDiagnosis[]`, `PlanStageSummary[]`, `FiscalDataSummary`.
    * **DEF-DOC-11 (`apps/api/src/db/schema/documents.ts`):** Токсичный заголовок `(STOMX REVERSE)` и поле `stomxId` канонизированы в нейтральный `externalTemplateId` с сохранением обратной совместимости по Мандату 8ap.
    * **Физический снос 11 файлов/каталогов (`git rm`):** `partisanMedicalInsertTemplate.tsx`, `partisanInsert/` (6 файлов), сиротский реэкспорт `components/documents/OrthodonticVisitProtocolWidget.tsx`, скрипты генерации `generate_contract_pp736_docx.py`, `generate_act_acceptance_docx.py`, `generate_egisz_refusal_docx.py`, `generate_official_ids_docx.py`, `inspect_docx.cjs`, `probe_docs_nav.cjs`, `_probe_docs.mjs`, `lab_docs_commit_msg.txt`.
-   * **4-State Visual Proof (Live App Каталог Документов):**
+   * 4-State Visual Proof (Live App Каталог Документов):
      - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (133 KB) — ПК светлая тема, 1 Primary CTA «✓ Распечатать пакет приёма и подписать», 0px клиппинга.
      - `docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png` (137 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
      - `docs/proofs/documents/03_documents_catalog_mobile_light_390x844.png` (153 KB) — iPhone 390×844 светлая тема, Apple HIG Bottom Sheet с drag handle, тач-таргеты $\ge 44$px.
@@ -243,11 +243,11 @@ graph LR
 
 ---
 
-9. **Хирургическая ликвидация легаси-редактора визитов и консолидация SSOT ЭМК (DEF-EMR-01...04, Мандаты 8bd, 8be, 8bf, 8e, 8am):**
+9. Хирургическая ликвидация легаси-редактора визитов и консолидация SSOT ЭМК (DEF-EMR-01...04, Мандаты 8bd, 8be, 8bf, 8e, 8am):
    * **DEF-EMR-01 (Физический снос устаревшего `VisitSoapEditor`):** Удален устаревший компонент `apps/web/src/components/visit/VisitSoapEditor.tsx` и весь каталог `apps/web/src/components/visit/soapEditor/` (39 файлов) через `git rm`. Единым каноническим инлайн-редактором дневников визита в ЭМК утвержден `RecordNewDiaryInlineForm.tsx` в связке с `RecordDiariesTab.tsx`.
-   * **DEF-EMR-02 (1-кликовый шлюз ЭМК в карточке пациента):** В тулбар шапки `PatientCardModal.tsx` добавлена нативная кнопка быстрого перехода `[ЭМК]` (`data-testid="btn-patient-open-emr-studio"`), открывающая `MedicalRecordStudioModal` с полной гидратацией данных пациента.
-   * **DEF-EMR-03 (Зачистка госпитального балласта в схеме БД):** Из `visitsSchema.ts` удалены нестоматологические рудименты ЛОР/стационара (`custom_examination_form_catalogs` с `FORM_043U` и `non_dental_examination_forms`). Оформлена миграция `0237_purge_hospital_examination_catalogs.sql`, `check:migration-drift` подтверждает 100% паритет.
-   * **DEF-EMR-04 (4-State Visual Proof):** Сняты и верифицированы реальные скриншоты на живом приложении:
+   * DEF-EMR-02 (1-кликовый шлюз ЭМК в карточке пациента): В тулбар шапки `PatientCardModal.tsx` добавлена нативная кнопка быстрого перехода `[ЭМК]` (`data-testid="btn-patient-open-emr-studio"`), открывающая `MedicalRecordStudioModal` с полной гидратацией данных пациента.
+   * DEF-EMR-03 (Зачистка госпитального балласта в схеме БД): Из `visitsSchema.ts` удалены нестоматологические рудименты ЛОР/стационара (`custom_examination_form_catalogs` с `FORM_043U` и `non_dental_examination_forms`). Оформлена миграция `0237_purge_hospital_examination_catalogs.sql`, `check:migration-drift` подтверждает 100% паритет.
+   * DEF-EMR-04 (4-State Visual Proof): Сняты и верифицированы реальные скриншоты на живом приложении:
      - `docs/proofs/emr/01_patient_card_emr_button_pc_light_1440x900.png` (85.9 KB) — ПК светлая тема карточки пациента с кнопкой [ЭМК]
      - `docs/proofs/emr/02_patient_card_emr_button_pc_dark_1440x900.png` (86.4 KB) — ПК тёмная тема карточки пациента с кнопкой [ЭМК]
      - `docs/proofs/emr/03_emr_studio_inline_diaries_pc_dark_1440x900.png` (96.7 KB) — ПК тёмная тема студии ЭМК с инлайн-формой SOAP
@@ -257,24 +257,24 @@ graph LR
 
 ---
 
-10. **Хирургическая ликвидация дефектов картотеки пациентов, справок ФНС, семейного баланса и реколлов (DEF-PAT-01...05, Мандаты 8bd, 8be, 8bf, 8ap, 8am):**
-   * **DEF-PAT-01 (Честные справки ФНС КНД 1151156 без синтетического хардкода):** В `TaxDeductionRegistryView.tsx` полностью ликвидированы захардкоженные фиктивные даты (`"1985-05-15"`, `"1990-08-20"`) и чеки (`"109823"`, `"389210921"`). Внедрен асинхронный резолвер `resolveParamsForItem(item)` с реальной загрузкой из API (`/api/documents/${item.id}`) и четким предупреждением врача при отсутствии подтвержденных оплат. В `taxRegistryPresets.ts` демо-данные синхронизированы с реалистичными структурами платежей.
-   * **DEF-PAT-02 (Суверенный бренд DENTE в тегах пациентов):** Создан канонический файл `packages/shared/src/patients/dentePatientTagsCatalog.ts` с типом `DentePatientTagPreset` и `DENTE_PATIENT_TAG_PRESETS`. Рудимент `stomxPatientTagsCatalog.ts` с токсичным брендом удален с диска (`git rm`).
-   * **DEF-PAT-03 (Единый SSOT семейного баланса):** Ликвидирован устаревший компонент-дубль `PatientFamilyCard.tsx` и весь каталог `apps/web/src/components/patients/patientFamilyModules/` (9 файлов). Отображение семейных связей и лимитов в `PatientGeneralInfoTab.tsx` и `PatientOverviewTab.tsx` консолидировано вокруг канонического `PatientFamilyAndInsuranceWidget.tsx` и `FamilyWalletModal.tsx`.
-   * **DEF-PAT-04 (Физический снос 10 файлов-сирот реколлов):** Удалены неиспользуемые компоненты: `DirectRecallsLauncher.tsx`, `PatientRecallsDropdownMenu.tsx`, `PatientRecallsFastPresets.tsx`, `PatientRecallsStatusChips.tsx`, `PatientRecallsTableActions.tsx`, `PatientRecallsTableRow.tsx`, `PatientRecallsTableView.tsx`, `PatientRecallsToolbar.tsx`, `PatientRecallsViewToggle.tsx`, `RecallStudioModal.tsx`.
-   * **DEF-PAT-05 (Канонический Stacking Context и Zero-Clipping):** Модалка карточки пациента `PatientCardModal.tsx` переведена на `z-[10050]`, а дочерние окна (`FamilyWalletModal`, `TaxDeductionCertificateModal`, `PediatricBraveryDiplomaModal`, `DmsStudioModal`, `ClinicalPhotoProtocolModal`, `MedicalRecordStudioModal`) — на `z-[10060]`. Это полностью устранило наслоение плавающей кнопки Копайлота (`z-index: 9998`) на кнопку «Сохранить» в мобильном интерфейсе (Zero-Clipping).
-   * **4-State Visual Proof (Live App Карточка Пациента):**
+10. Хирургическая ликвидация дефектов картотеки пациентов, справок ФНС, семейного баланса и реколлов (DEF-PAT-01...05, Мандаты 8bd, 8be, 8bf, 8ap, 8am):
+   * DEF-PAT-01 (Честные справки ФНС КНД 1151156 без синтетического хардкода): В `TaxDeductionRegistryView.tsx` полностью ликвидированы захардкоженные фиктивные даты (`"1985-05-15"`, `"1990-08-20"`) и чеки (`"109823"`, `"389210921"`). Внедрен асинхронный резолвер `resolveParamsForItem(item)` с реальной загрузкой из API (`/api/documents/${item.id}`) и четким предупреждением врача при отсутствии подтвержденных оплат. В `taxRegistryPresets.ts` демо-данные синхронизированы с реалистичными структурами платежей.
+   * DEF-PAT-02 (Суверенный бренд DENTE в тегах пациентов): Создан канонический файл `packages/shared/src/patients/dentePatientTagsCatalog.ts` с типом `DentePatientTagPreset` и `DENTE_PATIENT_TAG_PRESETS`. Рудимент `stomxPatientTagsCatalog.ts` с токсичным брендом удален с диска (`git rm`).
+   * DEF-PAT-03 (Единый SSOT семейного баланса): Ликвидирован устаревший компонент-дубль `PatientFamilyCard.tsx` и весь каталог `apps/web/src/components/patients/patientFamilyModules/` (9 файлов). Отображение семейных связей и лимитов в `PatientGeneralInfoTab.tsx` и `PatientOverviewTab.tsx` консолидировано вокруг канонического `PatientFamilyAndInsuranceWidget.tsx` и `FamilyWalletModal.tsx`.
+   * DEF-PAT-04 (Физический снос 10 файлов-сирот реколлов): Удалены неиспользуемые компоненты: `DirectRecallsLauncher.tsx`, `PatientRecallsDropdownMenu.tsx`, `PatientRecallsFastPresets.tsx`, `PatientRecallsStatusChips.tsx`, `PatientRecallsTableActions.tsx`, `PatientRecallsTableRow.tsx`, `PatientRecallsTableView.tsx`, `PatientRecallsToolbar.tsx`, `PatientRecallsViewToggle.tsx`, `RecallStudioModal.tsx`.
+   * DEF-PAT-05 (Канонический Stacking Context и Zero-Clipping): Модалка карточки пациента `PatientCardModal.tsx` переведена на `z-[10050]`, а дочерние окна (`FamilyWalletModal`, `TaxDeductionCertificateModal`, `PediatricBraveryDiplomaModal`, `DmsStudioModal`, `ClinicalPhotoProtocolModal`, `MedicalRecordStudioModal`) — на `z-[10060]`. Это полностью устранило наслоение плавающей кнопки Копайлота (`z-index: 9998`) на кнопку «Сохранить» в мобильном интерфейсе (Zero-Clipping).
+   * 4-State Visual Proof (Live App Карточка Пациента):
      - `docs/proofs/patients/01_patient_card_modal_pc_light_1440x900.png` (88.0 KB) — ПК светлая тема карточки пациента, 1 Primary CTA «Сохранить» (`var(--teal)`), представители семьи с бейджами согласий.
      - `docs/proofs/patients/02_patient_card_modal_pc_dark_1440x900.png` (88.3 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper-strong)`, WCAG AAA контраст.
      - `docs/proofs/patients/03_patient_card_mobile_light_390x844.png` (116.9 KB) — iPhone 390×844 светлая тема (Apple HIG Bottom Sheet), кнопка «Сохранить» без обрезаний.
      - `docs/proofs/patients/04_patient_card_mobile_dark_390x844.png` (118.9 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
 
-11. **Хирургическая ликвидация сирот студии согласий, потёмкинских стабов и восстановление автономии врача (DEF-DOC-12...15, Мандаты 8bd, 8be, 8bf, 8e, 8x, 8ap):**
-    * **DEF-DOC-12 (Физический снос сирот студии согласий):** Удалены 406 строк мертвого несмонтированного кода в `apps/web/src/components/consents/studio/` (`ConsentBatchSignActions.tsx`, `ConsentDocumentViewer.tsx`, `ConsentSignaturePad.tsx`) через `git rm`. Каноническая работа с соглашениями и документами ведется через `DocumentsStudioModal.tsx`, `documents/studio/` и `ConsentSignersRow.tsx`.
+11. Хирургическая ликвидация сирот студии согласий, потёмкинских стабов и восстановление автономии врача (DEF-DOC-12...15, Мандаты 8bd, 8be, 8bf, 8e, 8x, 8ap):
+    * DEF-DOC-12 (Физический снос сирот студии согласий): Удалены 406 строк мертвого несмонтированного кода в `apps/web/src/components/consents/studio/` (`ConsentBatchSignActions.tsx`, `ConsentDocumentViewer.tsx`, `ConsentSignaturePad.tsx`) через `git rm`. Каноническая работа с соглашениями и документами ведется через `DocumentsStudioModal.tsx`, `documents/studio/` и `ConsentSignersRow.tsx`.
     * **DEF-DOC-13 (Ликвидация Потёмкинского стаба и дубликатов `consentSsotEngine.ts`):** Фиктивная функция `detectConsentScopeMismatch(params: any): any` и дублированный словарь `STATUTORY_CONSENT_KEY_LABELS` заменены на канонический реэкспорт строго типизированной реализации из `consentSummaryHelper.ts` (`detectConsentScopeMismatch`, `ConsentScopeMismatchParams`, `ConsentScopeMismatchResult`).
-    * **DEF-DOC-14 (Восстановление Автономии врача по Мандату 8e):** В `DocumentsA4PrintPreview.tsx` снят блокирующий атрибут `disabled={Boolean(documentCreateSavingKind)}` с Primary CTA кнопки «Сохранить бланк». Сохранен индикатор `aria-busy` и внедрен неблокирующий guard clause в обработчик `onCreateDocument`.
-    * **DEF-DOC-15 (Искоренение советского канцелярита и номеров приказов по Мандатам 8x и 8ap):** В печатных бланках `anesthesiaSheet.ts` и `consentSheet.ts` сырые ссылки на приказ 1051н заменены на благородный клинический текст «Информированное добровольное согласие» и «Информированное согласие». В `consentSummaryHelper.ts` бюрократические ссылки заменены на «По клиническим показаниям».
-    * **4-State Visual Proof (Live App Студия документов и ИДС):**
+    * DEF-DOC-14 (Восстановление Автономии врача по Мандату 8e): В `DocumentsA4PrintPreview.tsx` снят блокирующий атрибут `disabled={Boolean(documentCreateSavingKind)}` с Primary CTA кнопки «Сохранить бланк». Сохранен индикатор `aria-busy` и внедрен неблокирующий guard clause в обработчик `onCreateDocument`.
+    * DEF-DOC-15 (Искоренение советского канцелярита и номеров приказов по Мандатам 8x и 8ap): В печатных бланках `anesthesiaSheet.ts` и `consentSheet.ts` сырые ссылки на приказ 1051н заменены на благородный клинический текст «Информированное добровольное согласие» и «Информированное согласие». В `consentSummaryHelper.ts` бюрократические ссылки заменены на «По клиническим показаниям».
+    * 4-State Visual Proof (Live App Студия документов и ИДС):
       - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (146 KB) — ПК светлая тема, 1 Primary CTA «Распечатать пакет приёма и подписать», 0px клиппинга, чистый клинический язык.
       - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (137 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
       - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (55 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, тач-таргеты >= 44x44px.
@@ -282,7 +282,7 @@ graph LR
 
 ---
 
-12. **Red Team Инквизиция ЭМК, протоколов SOAP и дневников врача (DEF-EMR-01...03, Мандаты 8e, 8n, 8x, 8ap, 8bd):**
+12. Red Team Инквизиция ЭМК, протоколов SOAP и дневников врача (DEF-EMR-01...03, Мандаты 8e, 8n, 8x, 8ap, 8bd):
     * **DEF-EMR-01 (`cbctReportHtmlTemplate.ts:267`):** Устранен хардкод «043/у», заменен на нейтральное клиническое наименование «Медицинская карта».
     * **DEF-EMR-02 (`useMedicalRecordSave.ts`):** Внедрен канонический идентификатор черновика `RECORD_DIARY_DRAFT` (с обратной совместимостью через алиас).
     * **DEF-EMR-03 (`MedicalRecordStudioModal.tsx:246, 290`):** Устаревшие `data-legacy-testid="btn-print-043-card"` и `"badge-043-draft-status"` переведены на семантические `btn-print-medical-record` и `badge-emr-draft-status`.
@@ -295,7 +295,7 @@ graph LR
       - `apps/web/src/components/emr/protocolGenerator/protocolGeneratorPresets.ts`
       - `apps/web/src/components/emr/protocolGenerator/index.ts`
       Каталог `apps/web/src/components/emr/protocolGenerator` полностью ликвидирован. Единый канонический SSOT клинических протоколов зафиксирован в `@dental/shared/src/emr` (`packages/shared/src/emr/emrProtocolPresets.ts`).
-    * **4-State Visual Proof (Live App ЭМК Студия):**
+    * 4-State Visual Proof (Live App ЭМК Студия):
       - `docs/proofs/emr/01_emr_studio_pc_light_1440x900.png` (112.6 KB) — ПК светлая тема студии ЭМК, печать А4 с водяным знаком «ЧЕРНОВИК», 1 Primary CTA «✓ Сохранить и подписать карту приёма» (#0d9488), 0px клиппинга.
       - `docs/proofs/emr/02_emr_studio_pc_dark_1440x900.png` (84.7 KB) — ПК тёмная тема студии ЭМК, вкладка «Паспортная часть», 100% тёмные токены, WCAG AAA.
       - `docs/proofs/emr/03_emr_studio_mobile_light_390x844.png` (51.5 KB) — iPhone 390×844 светлая тема (Apple HIG Bottom Sheet), тактильный Drag Handle, тач-таргеты >= 44x44px.
@@ -303,7 +303,7 @@ graph LR
 
 ---
 
-13. **Red Team Фиксер: Тотальная депаразитизация канцелярита «043/у», сленга «1 клик» и Multi-Tooth SOAP Proofs (DEFECT-EMR-01..06, Мандаты 8e, 8n, 8x, 8zg, 8bd):**
+13. Red Team Фиксер: Тотальная депаразитизация канцелярита «043/у», сленга «1 клик» и Multi-Tooth SOAP Proofs (DEFECT-EMR-01..06, Мандаты 8e, 8n, 8x, 8zg, 8bd):
     * **[DEFECT-EMR-01] (`apps/api/src/routes/dayConfirmations.ts:678`):** Сленг «Подтвердить в 1 клик:» заменен на естественный русский язык пациента «Подтвердить запись:».
     * **[DEFECT-EMR-02] (`apps/api/src/routes/surgery/index.ts:335`):** Убран мусорный хвост «, 1 клик» из складской проводки списания карпул анестетика.
     * **[DEFECT-EMR-03] (`apps/web/src/components/common/ClinicalErrorBoundary.tsx:24`):** Канцелярский заголовок `workspaceName = "Приём 043/у"` заменен на профессиональный медицинский термин `workspaceName = "Медицинская карта приёма"`.
@@ -311,15 +311,15 @@ graph LR
     * **[DEFECT-EMR-05] (`apps/web/src/services/audit/staffActionAuditService.ts:62, 80`):** Заменено «Открытие амбулаторной карты 043/у» на «Открытие медицинской карты пациента» в сервисе телеметрии и аудита действий персонала.
     * **[DEFECT-EMR-06] (`apps/web/src/services/hardware/hardwarePresets.ts:18, 399, 401`):** Зачищен бюрократический код «Формы 043/у» -> «медицинской карты», бейдж аппаратного пресета фотопротокола переведен в «Медкарта».
     * **Ликвидация мертвых дампов Stomt (`apps/web/src/components/emr/templates/dump/`):** Подтверждена 100% ликвидация 6 устаревших файлов-дампов без следа в репозитории.
-    * **Анатомическая целостность протоколов (@dental/shared):** Протоколы терапии и спец-отделений `emrProtocolCatalogTherapy.ts` и `emrProtocolCatalogSpecialty.ts` соединены с `emrProtocolPresets.ts` (29/29 shared unit-тестов PASS).
-    * **4-State Visual Proof (Live App EMR Clinical Protocols & SOAP):**
+    * Анатомическая целостность протоколов (@dental/shared): Протоколы терапии и спец-отделений `emrProtocolCatalogTherapy.ts` и `emrProtocolCatalogSpecialty.ts` соединены с `emrProtocolPresets.ts` (29/29 shared unit-тестов PASS).
+    * 4-State Visual Proof (Live App EMR Clinical Protocols & SOAP):
       - `docs/proofs/emr/01_emr_soap_pc_light_1440x900.png` (93.9 KB) — ПК светлая тема: 448 шаблонов СтАР, FDI чипы зубов, чистый медицинский язык «Медицинская карта приёма № ЭМК-2026-043», 1 Primary CTA noble teal «Сохранить и подписать карту приёма», 0px клиппинга.
       - `docs/proofs/emr/02_emr_soap_pc_dark_1440x900.png` (96.1 KB) — ПК тёмная тема: глубокие сланцевые токены, WCAG AAA контраст, 0px белых пятен.
       - `docs/proofs/emr/03_emr_soap_mobile_light_390x844.png` (171.4 KB) — iPhone 390×844 светлая тема: тактильный Drag Handle, скругление 24px, Natural Thumb Zone нижняя плашка с Primary CTA «Подписать карту» >= 44x44px.
       - `docs/proofs/emr/04_emr_soap_mobile_dark_390x844.png` (171.4 KB) — iPhone 390×844 тёмная тема: 100% тёмные токены, идеальная типографика без наездов.
       - `docs/proofs/emr/05_emr_wheeler_odontogram_pc_light_1440x900.png` (207.3 KB) — Wheeler 2.5D анатомическая одонтограмма, MODBL изоляция поверхностей, быстрый ввод формулы.
       - `docs/proofs/emr/06_emr_wheeler_odontogram_pc_dark_1440x900.png` (264.1 KB) — Wheeler 2.5D одонтограмма в тёмной теме.
-    * **Тестовое покрытие и компилятор:**
+    * Тестовое покрытие и компилятор:
       - 29/29 тестов PASS в `packages/shared` (`emrProtocolEngine.test.ts`, `therapyProtocolEngine.test.ts`).
       - 46/46 тестов PASS в `apps/web` (`emrDiaryAutonomy.test.ts`, `diaryDraftResilience.test.ts`, `redTeamVisitDiaryAutonomyAndSingleCta.test.tsx`).
       - 17/17 тестов PASS в `apps/api` (`diaryMultiToothPersistence.test.ts`, `diaryRefusalText.test.ts`, `diarySigningCeremony.test.ts`).
@@ -327,17 +327,17 @@ graph LR
 
 ---
 
-14. **Red Team Фиксер: Декомпозиция DocumentsStudioModal, ликвидация всех ошибок компилятора в Документах и ЕГИСЗ (Мандаты 8b, 8e, 8n, 8am, 8be, 8bm, 8bd):**
-    * **Декомпозиция DocumentsStudioModal (< 550 строк):** Физически смонтированы и зафиксированы модули `types.ts`, `hooks/index.ts`, `hooks/useDocumentStudioSignAndIssue.ts`, `hooks/useTaxDeduction.ts`, `studio/DocumentsA4Preview.tsx`, `studio/generateA4PrintHtml.ts`, `lib/queryClient.ts`.
+14. Red Team Фиксер: Декомпозиция DocumentsStudioModal, ликвидация всех ошибок компилятора в Документах и ЕГИСЗ (Мандаты 8b, 8e, 8n, 8am, 8be, 8bm, 8bd):
+    * Декомпозиция DocumentsStudioModal (< 550 строк): Физически смонтированы и зафиксированы модули `types.ts`, `hooks/index.ts`, `hooks/useDocumentStudioSignAndIssue.ts`, `hooks/useTaxDeduction.ts`, `studio/DocumentsA4Preview.tsx`, `studio/generateA4PrintHtml.ts`, `lib/queryClient.ts`.
     * **[TS4104 Fix] (`apps/web/src/components/egisz/cdaR2/fnsTaxTypes.ts:42` & `EgiszCertificatesHubModal.tsx`):** Массив платежей `payments` типизирован как `readonly payments: readonly FnsTaxPaymentItem[];`, интерфейсы приведены к `exactOptionalPropertyTypes: true`.
     * **[TS7053 / TS7006 / TS7030 Fix] (`components/documents/`):** Безопасный доступ к `sourceStatus` без невалидных кастов в `documentFilterAutonomy.ts`, `DocumentTemplatesCatalog.tsx`, `DocumentRegistryRow.tsx`; типизация параметров в `XrayReferralFields.tsx`; явный возврат `undefined` в `MobileDocumentPreviewSheet.tsx`; строгая индексация реквизитов в `a4ClinicPatientDefaults.ts`.
     * **[exactOptionalPropertyTypes Fix] (`primaryIntakeModal/`):** Пропсы `existingDocuments`, `onCreateDocument`, `onOpenDocument`, `onSelectDocumentKind` объявлены с `?: T | undefined;` в `types.ts`, `usePrimaryIntakeModalState.ts`, `PrimaryIntakeDocumentActions.tsx`, `PrimaryIntakeDocumentItem.tsx`.
     * **[fflate Module Fix] (`apps/web/src/types/modules.d.ts`):** В декларацию `fflate` добавлена строгая сигнатура `zipSync(data: Record<string, Uint8Array>, opts?: unknown): Uint8Array;`.
     * **[Test Fixtures Parity]:** Фикстура `mockPatient` дополнена копеечным балансом `balanceKopecks: 0n` по Мандату 8bm, фикстура `facts` дополнена полями схемы `documentAuditFactsSchema`, устранен невалидный `paper_handwritten` в пользу `paper_signed`.
-    * **Машинные гейты (Machine Gates):**
+    * Машинные гейты (Machine Gates):
       - `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "components/documents|components/egisz"`: **СТРОГО 0 ОШИБОК**.
-      - Тесты `canonicalDocumentsModalsAndSections.test.tsx`, `documentLegalAuditFactsModal.test.tsx`, `documentLegalIssueModal.test.tsx` завершаются с **Exit Code 0 (PASS)**.
-    * **4-State Visual Proof (Live App Documents Studio):**
+      - Тесты `canonicalDocumentsModalsAndSections.test.tsx`, `documentLegalAuditFactsModal.test.tsx`, `documentLegalIssueModal.test.tsx` завершаются с Exit Code 0 (PASS).
+    * 4-State Visual Proof (Live App Documents Studio):
       - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (146.7 KB) — ПК светлая тема: 0px клиппинга, лист А4, ровно 1 Primary CTA noble teal.
       - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (136.3 KB) — ПК тёмная тема: 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
       - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (178.8 KB) — iPhone 390×844 светлая тема: Apple HIG Bottom Sheet, drag handle 36×5px, тач-таргеты >= 44x44px.
@@ -345,113 +345,113 @@ graph LR
 
 ---
 
-15. **Red Team Фиксер-Хирург Домена 13: Ликвидация системных дефектов документооборота, ACID-транзакции и защита копеек (DEF-DOC13-01...06, Мандаты 8e, 8n, 8am, 8bm, 8bo, 8zp, 8zr):**
-    * **DEF-DOC13-01 (Точный расчет копеек в справке 13% НДФЛ — Мандат 8bm):**
+15. Red Team Фиксер-Хирург Домена 13: Ликвидация системных дефектов документооборота, ACID-транзакции и защита копеек (DEF-DOC13-01...06, Мандаты 8e, 8n, 8am, 8bm, 8bo, 8zp, 8zr):
+    * DEF-DOC13-01 (Точный расчет копеек в справке 13% НДФЛ — Мандат 8bm):
       В `apps/web/src/components/documents/taxCertificateEngine.ts:611-623` ликвидирован целочисленный срез копеек через BigInt-деление `/ 100n` (отбрасывавший дробные суммы, например, 50 копеек). Внедрен точный перевод: `Number(code01KopecksBi) / 100`, `Number(code02KopecksBi) / 100`, `Number(totalKopecksBi) / 100`, `Number(eligibleCode01KopecksBi) / 100`, `Number(estimatedRefund13KopecksBi) / 100`. Копеечная точность покрыта тестом `redTeamDomain13TaxAndButtonsProof.test.ts` (PASS).
-    * **DEF-DOC13-02 (Ликвидация float reduce и строгого неравенства в финансовых гвардах сервера — Мандат 8bm):**
+    * DEF-DOC13-02 (Ликвидация float reduce и строгого неравенства в финансовых гвардах сервера — Мандат 8bm):
       В `apps/api/src/documents/documentGuards/financialGuards.ts:356-445` функция `paidAmountRubForDocument` переведена со сложения чисел с плавающей точкой `.reduce((total, p) => total + p.amountRub, 0)` на точное целочисленное сложение копеек `sumPaymentsRub` через `sumKopecks` и `parseKopecks` из `@dental/shared`. В строках 131-155 строгие проверки `payloadTotalRub !== facts.plannedAmountRub` заменены на сравнение в копейках `!moneyRubEquals(parseKopecks(payloadTotalRub), facts.plannedAmountRub)`, что исключило отказ в выдаче документов из-за погрешностей IEEE-754.
-    * **DEF-DOC13-03 (Неделимость ACID: объединение цепочек мутаций в транзакции — Мандат 8bo):**
+    * DEF-DOC13-03 (Неделимость ACID: объединение цепочек мутаций в транзакции — Мандат 8bo):
       - `apps/api/src/routes/documents/issue.ts:245-316`: выдача документа (`issueGeneratedDocumentInDb`), погашение возвратов (`settleRefundedPaymentsForPatient`) и синхронизация согласия (`syncDocumentToPatientConsent`) объединены в единую атомарную транзакцию `await db.transaction(async (tx) => { ... })`.
       - `apps/api/src/routes/documents/void.ts:131-160`: аннулирование документа (`voidGeneratedDocumentInDb`) и возврат платежей в кассу (`settleRefundedPaymentsForPatient`) объединены в транзакцию `tx`.
       - `apps/api/src/routes/documents/signature.ts:290-376`: сохранение подписи документа, вставка в `documentSignatures` и обновление `patientConsents` объединены в неделимую транзакцию `tx`.
       - `apps/api/src/db/documentQuery.ts`: функции `issueGeneratedDocumentInDb` и `voidGeneratedDocumentInDb` принимают опциональный `tx` в `options`.
       - `apps/api/src/db/billing/refundSettlements.ts`: `applyPaymentRefundSettlementsInDb` принимает `tx`.
       - `apps/api/src/routes/consents/queries.ts`: `syncDocumentToPatientConsent` принимает `tx`.
-    * **DEF-DOC13-04 (Защита от дублей и сквозная идемпотентность — Мандат 8zp):**
+    * DEF-DOC13-04 (Защита от дублей и сквозная идемпотентность — Мандат 8zp):
       В `apps/api/src/plugins/idempotencyPlugin.ts:77` добавлен канонический маршрут `/^\/api\/documents(?:\/[^/]+\/(?:issue|void|signature|sign-ukep))?$/` в `enforceForPaths`. В `apps/web/src/components/documents/hooks/useDocumentStudioSignAndIssue.ts:254-455` клиент передает обязательный заголовок `Idempotency-Key` (UUID) при создании и выдаче документов и согласий.
-    * **DEF-DOC13-05 (Матрица кнопок и токены Мандата 8am):**
+    * DEF-DOC13-05 (Матрица кнопок и токены Мандата 8am):
       - `DocumentIssueModalFooter.tsx`: кнопки стандартизированы под Desktop Standard `h-9 px-3.5 rounded-lg text-sm font-medium`, Mobile `min-h-[44px] h-11 px-4 rounded-xl`, Primary CTA `bg-[var(--primary)] text-white`.
       - `DocumentVoidModalFooter.tsx`: удалены инлайновые `minHeight: 44px`, кнопка аннулирования оформлена как семантический Destructive (`border border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]`).
       - `DocumentAuditModalFooter.tsx`: устранена микро-кнопка, внедрены токены `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5` и Primary CTA `bg-[var(--primary)]`.
       - `DocumentUkepSignButton.tsx`: устранена задержка высот, хардкодные цвета заменены на семантические токены `var(--danger)`, `var(--ink-muted)`, Primary CTA `bg-[var(--primary)] text-white`.
-    * **DEF-DOC13-06 (Сохранение дробных клинических доз — Мандат 8e):**
+    * DEF-DOC13-06 (Сохранение дробных клинических доз — Мандат 8e):
       В `apps/api/src/db/documentQuery.ts:667` ликвидирован `Math.round`: `quantity: Number(item.quantity) || 1`. Дробные дозы (1.5 карпулы артикаина или 0.5 челюсти) больше не округляются до целых.
-    * **Машинные гейты (Machine Gates):**
-      - `node --import tsx --test apps/api/src/documents/*.test.ts`: **78/78 тестов PASS (Exit Code 0)**.
-      - `node --import tsx --test apps/api/src/documents/redTeamDomain13FixerProof.test.ts`: **4/4 теста PASS (Exit Code 0)**.
-      - `npx vitest run apps/web/src/components/documents/__tests__/redTeamDomain13TaxAndButtonsProof.test.ts`: **1/1 тест PASS (Exit Code 0)**.
-      - `npx vitest run apps/web/src/components/documents/__tests__/`: **33/33 теста PASS (Exit Code 0)**.
-      - `npx tsc -p apps/api/tsconfig.json --noEmit` и `npx tsc -p apps/web/tsconfig.json --noEmit`: **0 ошибок компилятора**.
-      - `npm run check:encoding` и `npm run check:buttons`: **Exit Code 0**.
+    * Машинные гейты (Machine Gates):
+      - `node --import tsx --test apps/api/src/documents/*.test.ts`: 78/78 тестов PASS (Exit Code 0).
+      - `node --import tsx --test apps/api/src/documents/redTeamDomain13FixerProof.test.ts`: 4/4 теста PASS (Exit Code 0).
+      - `npx vitest run apps/web/src/components/documents/__tests__/redTeamDomain13TaxAndButtonsProof.test.ts`: 1/1 тест PASS (Exit Code 0).
+      - `npx vitest run apps/web/src/components/documents/__tests__/`: 33/33 теста PASS (Exit Code 0).
+      - `npx tsc -p apps/api/tsconfig.json --noEmit` и `npx tsc -p apps/web/tsconfig.json --noEmit`: 0 ошибок компилятора.
+      - `npm run check:encoding` и `npm run check:buttons`: Exit Code 0.
 
 ---
 
-16. **Red Team Фиксер-Хирург: Ликвидация системных язв ЭМК, целостность SHA-256 протокола и суверенитет автономии врача (DEF-DOC14-01...06, Мандаты 8e, 8v, 8x, 8be, 8bd):**
-    * **DEF-DOC14-01 (Целостность SHA-256 хеша дневника приёма — Мандаты 8e, 8v):**
+16. Red Team Фиксер-Хирург: Ликвидация системных язв ЭМК, целостность SHA-256 протокола и суверенитет автономии врача (DEF-DOC14-01...06, Мандаты 8e, 8v, 8x, 8be, 8bd):
+    * DEF-DOC14-01 (Целостность SHA-256 хеша дневника приёма — Мандаты 8e, 8v):
       В `apps/api/src/services/clinical/signingModules/diaryHashCalculator.ts` в вычисление детерминированного SHA-256 хеша включена секция жалоб (`complaint`, 'S' в SOAP). Из хеша исключен санитарно-технический штрихкод инструментального лотка (`instrumentTrayBarcode`), так как СанПиН-лотки относятся к фоновому циклу автоклавирования, а не к неизменному тексту медицинского протокола приёма. При изменении жалоб хеш гарантированно обновляется.
-    * **DEF-DOC14-02 (Ликвидация блокировки исправления дневников по статусу автоклава — Мандаты 8e, 8v):**
+    * DEF-DOC14-02 (Ликвидация блокировки исправления дневников по статусу автоклава — Мандаты 8e, 8v):
       В `apps/api/src/routes/diary/revisions/diaryReviseTransaction.ts` и `diaryReviseHandler.ts` ликвидировано блокирующее исключение `InvalidTrayBarcode`. Брак цикла стерилизации лотка в автоклаве — это фоновая отчетность медсестры в журнале СанПиН, которая не должна блокировать врачу у кресла внесение исправлений в протокол приёма («Исправленному верить»).
-    * **DEF-DOC14-03 (Чистый клинический стандарт рецептов без канцелярита и фейковых дат — Мандат 8x):**
+    * DEF-DOC14-03 (Чистый клинический стандарт рецептов без канцелярита и фейковых дат — Мандат 8x):
       В `apps/api/src/routes/prescriptions/prescriptionCreateService.ts` и `prescriptionCreateHandler.ts` префикс номера карты пациента заменен с архаичного `043/у-` на канонический `ЭМК-${patient.id.slice(0, 8).toUpperCase()}`. Ликвидирован синтетический фолбек даты рождения `"1990-01-01"`. При отсутствии даты рождения сервер возвращает структурированную ошибку 422 `PatientBirthDateRequired`.
-    * **DEF-DOC14-04 (Дедупликация лекарственных аллергий в личном кабинете):**
+    * DEF-DOC14-04 (Дедупликация лекарственных аллергий в личном кабинете):
       В `apps/api/src/routes/portal/profile/portalProfileMedicalRecords.ts` внедрена проверка существующих записей в `patientDrugAllergies` перед вставкой, что предотвращает дублирование одних и тех же аллергенов при повторном сохранении анкеты здоровья.
-    * **DEF-DOC14-05 (Динамический подписант справки ФНС для налогового вычета — Мандат 8n):**
+    * DEF-DOC14-05 (Динамический подписант справки ФНС для налогового вычета — Мандат 8n):
       В `apps/api/src/routes/portal/portalTaxCertRoutes.ts` хардкод `"Главный бухгалтер клиники"` заменен на динамическое получение должностного лица: подписант из настроек организации (`signatoryName`), либо главный врач/руководитель из учетных записей сотрудников, либо `signatoryTitle`.
-    * **DEF-DOC14-06 (Искоренение as any в шаблонах протоколов — Мандат 8be):**
+    * DEF-DOC14-06 (Искоренение as any в шаблонах протоколов — Мандат 8be):
       В `apps/api/src/routes/templates.ts` полностью убран каст `as any` при сохранении специализации шаблона. Внедрена строгая валидация и нормализация через `DentalSpecialty`.
-    * **Машинные гейты (Machine Gates):**
-      - `npm run typecheck -w @dental/api`: **Exit Code 0 (0 ошибок компилятора)**.
-      - `npx tsx --test apps/api/src/tests/routes/prescriptions.test.ts`: **9/9 тестов PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/services/clinical/DiarySigningCeremonyService.test.ts`: **7/7 тестов PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/tests/routes/visitSoapMultiToothAndDiaryHashAudit.test.ts`: **3/3 теста PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts`: **21/21 тест PASS (Exit Code 0)**.
+    * Машинные гейты (Machine Gates):
+      - `npm run typecheck -w @dental/api`: Exit Code 0 (0 ошибок компилятора).
+      - `npx tsx --test apps/api/src/tests/routes/prescriptions.test.ts`: 9/9 тестов PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/services/clinical/DiarySigningCeremonyService.test.ts`: 7/7 тестов PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/tests/routes/visitSoapMultiToothAndDiaryHashAudit.test.ts`: 3/3 теста PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts`: 21/21 тест PASS (Exit Code 0).
 
 ---
 
-17. **Red Team Фиксер-Хирург: Профиль пациента, ИДС, Семейный кошелек и Справки ФНС (DEF-PAT17-01...05, Мандаты 8bm, 8be, 8x, 8ap, 8bo):**
-    * **DEF-PAT17-01 (Целочисленный BigInt расчет 13% вычета ФНС — Мандат 8bm):**
+17. Red Team Фиксер-Хирург: Профиль пациента, ИДС, Семейный кошелек и Справки ФНС (DEF-PAT17-01...05, Мандаты 8bm, 8be, 8x, 8ap, 8bo):
+    * DEF-PAT17-01 (Целочисленный BigInt расчет 13% вычета ФНС — Мандат 8bm):
       В `apps/api/src/services/familyWallet/familyFnsTaxService.ts:343` ликвидированы `Math.round` и float-деление. Расчет возврата переведен на целочисленный `BigInt`: `Number((BigInt(totalEligibleKopecks) * 13n) / 100n)` с переводом через `kopecksToRubles`, исключив расхождения в копейках.
-    * **DEF-PAT17-02 (Строгая типизация транзакции согласий без any — Мандат 8be):**
+    * DEF-PAT17-02 (Строгая типизация транзакции согласий без any — Мандат 8be):
       В `apps/api/src/routes/consents/queries.ts:246-258` тип параметра `tx?: any` заменен на канонический союз `DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]`, устранен слепой каст `as typeof db`.
-    * **DEF-PAT17-03 (Изоляция расходов пациента в справке ФНС — Приказ № ЕА-7-11/824@):**
+    * DEF-PAT17-03 (Изоляция расходов пациента в справке ФНС — Приказ № ЕА-7-11/824@):
       В `apps/api/src/routes/portal/portalTaxCertRoutes.ts:220` расчет медицинских расходов ограничен строго запрашивающим пациентом (`targetPatientIds = [patientId]`). Исключено незаконное смешивание оплат других членов семьи под именем одного заявителя.
-    * **DEF-PAT17-04 (Семантический нейминг флагов ИДС без номеров приказов — Мандаты 8x, 8ap):**
+    * DEF-PAT17-04 (Семантический нейминг флагов ИДС без номеров приказов — Мандаты 8x, 8ap):
       В `apps/web/src/components/consents/consentSsotEngine.ts:54`, `consentSummaryHelper.ts` и `consentTemplates.ts` внедрен чистый флаг `CONSENT_PRIMARY_INSPECTION` («Информированное добровольное согласие на первичный осмотр и обследование») с сохранением обратной совместимости по алиасу `CONSENT_INSPECTION_1051N`.
-    * **DEF-PAT17-05 (Автоматическая преемственность главы семьи — Мандат 8bo):**
+    * DEF-PAT17-05 (Автоматическая преемственность главы семьи — Мандат 8bo):
       В `apps/api/src/routes/family/familyGroupWriteRoutes.ts:311` при удалении текущего главы семейного кошелька роль главы автоматически передается следующему совершеннолетнему члену группы с сохранением прав списания `ensureFamilyMemberSpendAuthorization`, предотвращая возникновение «безголовых» групп и ошибок 422/400.
-    * **Машинные гейты (Machine Gates):**
-      - `npx tsx --test apps/api/src/tests/routes/redTeamFixerSurgeonPatientDomain.test.ts`: **4/4 тестов PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/services/familyWallet/__tests__/familyWalletService.test.ts`: **5/5 тестов PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/tests/routes/patientPortal.test.ts apps/api/src/tests/routes/portalRoutes.test.ts`: **11/11 тестов PASS (Exit Code 0)**.
-      - `npx vitest run apps/web/src/tests/informedConsent.test.ts`: **12/12 тестов PASS (Exit Code 0)**.
+    * Машинные гейты (Machine Gates):
+      - `npx tsx --test apps/api/src/tests/routes/redTeamFixerSurgeonPatientDomain.test.ts`: 4/4 тестов PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/services/familyWallet/__tests__/familyWalletService.test.ts`: 5/5 тестов PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/tests/routes/patientPortal.test.ts apps/api/src/tests/routes/portalRoutes.test.ts`: 11/11 тестов PASS (Exit Code 0).
+      - `npx vitest run apps/web/src/tests/informedConsent.test.ts`: 12/12 тестов PASS (Exit Code 0).
       - `tsc --noEmit` Exit Code 0 во всех модифицированных файлах API и Web.
-      - `npm run check:encoding`: **Exit Code 0 (20048 файлов проверено)**.
+      - `npm run check:encoding`: Exit Code 0 (20048 файлов проверено).
 
 ---
 
-18. **Red Team Фиксер-Хирург: Ликвидация коммерческого загрязнения в XML ФНС, запрет ручных расчетов денег и депаразитизация дев-сленга (DEF-DOC18-01...03, Мандаты 8x, 8ap, 8bm, 8am, 8zg):**
-    * **DEF-DOC18-01 (Суверенный бренд Dente в XML ФНС — Мандаты 8x, 8ap):**
+18. Red Team Фиксер-Хирург: Ликвидация коммерческого загрязнения в XML ФНС, запрет ручных расчетов денег и депаразитизация дев-сленга (DEF-DOC18-01...03, Мандаты 8x, 8ap, 8bm, 8am, 8zg):
+    * DEF-DOC18-01 (Суверенный бренд Dente в XML ФНС — Мандаты 8x, 8ap):
       В `xmlBuilderCore.ts:51`, `ndflXmlGenerator.ts:260` и `familyTaxBatchEngine.ts:497` ликвидирован чужой бренд `DentalMIS_FNS_Gateway_v2.4.0`. Утверждена суверенная марка `Dente_FNS_Gateway_v1.0.0`.
-    * **DEF-DOC18-02 (Ликвидация ручного деления / 100 при передаче суммы договора — Мандат 8bm):**
+    * DEF-DOC18-02 (Ликвидация ручного деления / 100 при передаче суммы договора — Мандат 8bm):
       В `useDocumentStudioSignAndIssue.ts:332` ручной расчет `options.totalAmountKopecks > 0 ? options.totalAmountKopecks / 100 : 0` заменен на канонический хелпер `kopecksToRubles(options.totalAmountKopecks)` из `@dental/shared`. По правилу бойскаута также очищены сопутствующие деления в `useDocumentsStudioModel.ts` и `usePaidContractStore.ts`.
-    * **DEF-DOC18-03 (Искоренение дев-сленга «1click» и «в 1 клик» — Мандаты 8am, 8zg):**
+    * DEF-DOC18-03 (Искоренение дев-сленга «1click» и «в 1 клик» — Мандаты 8am, 8zg):
       В `CatalogExpressBar.tsx:27` селектор `data-testid="btn-fast-print-intake-package-1click"` переведен в семантический `data-testid="btn-fast-print-intake-package-instant"`. В `PatientDocumentsTab.tsx:99` комментарий очищен в пользу «Мгновенное прикрепление документов».
-    * **Машинные гейты (Machine Gates):**
-      - `node --import tsx --test packages/shared/src/documents/__tests__/ndflXmlGenerator.test.ts`: **14/14 тестов PASS (Exit Code 0)**.
-      - `node --import tsx --test apps/api/src/documents/*.test.ts`: **116/116 тестов PASS (Exit Code 0)**.
-      - `npx vitest run apps/web/src/components/documents/__tests__/`: **202/202 теста PASS (Exit Code 0)**.
-      - `npm run check:diff`: **Exit Code 0 (DIFF SAFETY PASSED, 0 костылей)**.
-      - `npm run build -w @dental/shared` и `npm run typecheck -w @dental/shared`: **Exit Code 0**.
+    * Машинные гейты (Machine Gates):
+      - `node --import tsx --test packages/shared/src/documents/__tests__/ndflXmlGenerator.test.ts`: 14/14 тестов PASS (Exit Code 0).
+      - `node --import tsx --test apps/api/src/documents/*.test.ts`: 116/116 тестов PASS (Exit Code 0).
+      - `npx vitest run apps/web/src/components/documents/__tests__/`: 202/202 теста PASS (Exit Code 0).
+      - `npm run check:diff`: Exit Code 0 (DIFF SAFETY PASSED, 0 костылей).
+      - `npm run build -w @dental/shared` и `npm run typecheck -w @dental/shared`: Exit Code 0.
 
 ---
 
-19. **Red Team Фиксер-Хирург: Домен 21 — Информированные согласия (ИДС), договоры, цифровая подпись ПЭП (63-ФЗ), водяные знаки и BOLA/IDOR изоляция (DEF-DOC21-01...04, Мандаты 8e, 8n, 8bm, 8bo, 8az):**
-    * **DEF-DOC21-01 (Двухрежимные фоновые водяные знаки «ЧЕРНОВИК» и «ПОДПИСАНО ВРАЧОМ» — Мандат 8e):**
+19. Red Team Фиксер-Хирург: Домен 21 — Информированные согласия (ИДС), договоры, цифровая подпись ПЭП (63-ФЗ), водяные знаки и BOLA/IDOR изоляция (DEF-DOC21-01...04, Мандаты 8e, 8n, 8bm, 8bo, 8az):
+    * DEF-DOC21-01 (Двухрежимные фоновые водяные знаки «ЧЕРНОВИК» и «ПОДПИСАНО ВРАЧОМ» — Мандат 8e):
       В `apps/api/src/documents/templates/baseDocument.ts` внедрены векторные полупрозрачные водяные знаки под углом -32°:
       - При `document.status === "draft"` в тело документа внедряется `<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>` с точной полупрозрачностью и поддержкой `-webkit-print-color-adjust: exact`.
       - При `document.status === "issued"` в тело документа внедряется `<div class="watermark-signed" aria-hidden="true">ПОДПИСАНО ВРАЧОМ</div>`.
       - При аннулировании (`voided`) водяные знаки не накладываются, блокируя нелегитимное использование.
-    * **DEF-DOC21-02 (Полноценная поддержка простой электронной подписи ПЭП 63-ФЗ в визуальных штампах — Мандат 8e):**
+    * DEF-DOC21-02 (Полноценная поддержка простой электронной подписи ПЭП 63-ФЗ в визуальных штампах — Мандат 8e):
       В `apps/api/src/documents/templates/signatureRenderUtils.ts` и `apps/api/src/routes/documents/sharedDocUtils/archiveAndPdfRenderer.ts` режим `simple_electronic_signature` включен в распознавание электронных подписей `isSigned`/`isElectronicallySigned`. Для ПЭП автоматически формируется идентификатор `ПЭП-${document.id.slice(0, 8).toUpperCase()}` и генерируется официальный штамп подписи (`gost-stamp-simple` с гербом и отметкой МИС DENTE Clinical CRM) согласно 63-ФЗ.
-    * **DEF-DOC21-03 (Абсолютная ликвидация BOLA/IDOR в маршрутах чтения и выгрузки документов — Мандаты 8e, 8n):**
-      В `apps/api/src/routes/documents/html.ts`, `pdf.ts` и `query.ts` внедрен шлюз `extractPortalPatient(request)`. Если запрос отправлен пациентом портала, доступ к документу разрешается **ТОЛЬКО** при точном совпадении `document.patientId === portalPatient.patientId` (иначе немедленный 403 Forbidden). В листинге `GET /api/documents` выборка для пациента портала принудительно ограничивается его собственными документами.
-    * **DEF-DOC21-04 (Гарантированная фиксация следа ПЭП в document_signatures при подписании черновиков — Мандат 8bo):**
+    * DEF-DOC21-03 (Абсолютная ликвидация BOLA/IDOR в маршрутах чтения и выгрузки документов — Мандаты 8e, 8n):
+      В `apps/api/src/routes/documents/html.ts`, `pdf.ts` и `query.ts` внедрен шлюз `extractPortalPatient(request)`. Если запрос отправлен пациентом портала, доступ к документу разрешается ТОЛЬКО при точном совпадении `document.patientId === portalPatient.patientId` (иначе немедленный 403 Forbidden). В листинге `GET /api/documents` выборка для пациента портала принудительно ограничивается его собственными документами.
+    * DEF-DOC21-04 (Гарантированная фиксация следа ПЭП в document_signatures при подписании черновиков — Мандат 8bo):
       В `apps/api/src/routes/documents/signature.ts` внутри атомарной ACID-транзакции `db.transaction(async tx => ...)` добавлена вставка в таблицу `schema.documentSignatures` для документов, находившихся в статусе `draft`, что устранило потерю юридически значимого следа подписи пациента по 63-ФЗ.
-    * **Машинные гейты (Machine Gates):**
-      - `npx tsx --test apps/api/src/documents/redTeamDomain21WatermarkBolaPep.test.ts`: **4/4 тестов PASS (Exit Code 0)**.
-      - `npx tsx --test apps/api/src/documents/*.test.ts`: **120/120 тестов PASS (Exit Code 0)**.
-      - `npm run typecheck -w @dental/api`: **Exit Code 0 (0 ошибок компилятора TypeScript)**.
-      - `npm run check:encoding`: **Exit Code 0 (20021 файлов проверено, без UTF-8 BOM и mojibake)**.
+    * Машинные гейты (Machine Gates):
+      - `npx tsx --test apps/api/src/documents/redTeamDomain21WatermarkBolaPep.test.ts`: 4/4 тестов PASS (Exit Code 0).
+      - `npx tsx --test apps/api/src/documents/*.test.ts`: 120/120 тестов PASS (Exit Code 0).
+      - `npm run typecheck -w @dental/api`: Exit Code 0 (0 ошибок компилятора TypeScript).
+      - `npm run check:encoding`: Exit Code 0 (20021 файлов проверено, без UTF-8 BOM и mojibake).
 
 ---
 
