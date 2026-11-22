@@ -319,8 +319,23 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 						<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
 							{chairs.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="py-8 text-center text-[var(--ink-muted)]">
-										{loading ? "Загрузка данных о креслах..." : "Нет данных о загрузке за выбранный период"}
+									<td colSpan={7} className="p-0">
+										<div className="py-12 flex flex-col items-center text-center gap-2.5 text-[var(--ink-muted)]">
+											<Armchair
+												size={40}
+												className="text-[var(--ink-muted)] opacity-40 shrink-0"
+											/>
+											<div className="text-sm font-medium text-[var(--ink)]">
+												{loading
+													? "Загрузка данных о креслах..."
+													: "Нет данных о загрузке за выбранный период"}
+											</div>
+											<div className="text-xs text-[var(--ink-muted)] max-w-sm">
+												{loading
+													? "Получение статистики смен и занятости из расписания"
+													: "За выбранный интервал приёмов на креслах не зарегистрировано или смены ещё не начаты"}
+											</div>
+										</div>
 									</td>
 								</tr>
 							) : (
@@ -378,8 +393,21 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 			{/* Мобильные Grouped Cards для 390px */}
 			<div className="sm:hidden space-y-3">
 				{chairs.length === 0 ? (
-					<div className="p-6 text-center text-xs text-[var(--ink-muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
-						{loading ? "Загрузка..." : "Нет данных за период"}
+					<div className="py-12 flex flex-col items-center text-center gap-2.5 p-6 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-[var(--ink-muted)]">
+						<Armchair
+							size={40}
+							className="text-[var(--ink-muted)] opacity-40 shrink-0"
+						/>
+						<div className="text-sm font-medium text-[var(--ink)]">
+							{loading
+								? "Загрузка..."
+								: "Нет данных о загрузке за выбранный период"}
+						</div>
+						<div className="text-xs text-[var(--ink-muted)] max-w-xs">
+							{loading
+								? "Получение статистики..."
+								: "За выбранный период приёмов на креслах не найдено"}
+						</div>
 					</div>
 				) : (
 					chairs.map((chair, idx) => (

@@ -4,7 +4,7 @@
  * Pure Calculation Algorithms for Channel Unit Economics & Conversion Rates.
  */
 
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import type { RomiPerformanceStatus } from "../../marketing/marketingRomiEngine.js";
 import type {
 	ChannelConversionRates,

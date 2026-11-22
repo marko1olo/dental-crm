@@ -18,6 +18,11 @@ export type ReportScope = ReportPeriod & {
 	 * московский за клинику нельзя.
 	 */
 	readonly timeZone?: string | null;
+	readonly logger?: {
+		warn: (obj: unknown, msg?: string) => void;
+		info?: (obj: unknown, msg?: string) => void;
+		error?: (obj: unknown, msg?: string) => void;
+	} | undefined;
 };
 
 export type TimelineGranularity = "day" | "week" | "month";

@@ -14,5 +14,4 @@ export * from "./executiveKpiTypes.js";
 export * from "./executiveSummaryTypes.js";
 export * from "./kpiRevenueMath.js";
 export * from "./kpiUnitEconomicsMath.js";
-export * from "./kpiPnlMath.js";
 export * from "./revenueKpiAggregator.js";

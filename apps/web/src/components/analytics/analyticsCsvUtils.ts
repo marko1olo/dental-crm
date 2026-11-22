@@ -5,6 +5,8 @@
  * Sweet Spot: 60-90 строк (Мандат 8b).
  */
 
+import { formatInitialsOnly } from "@dental/shared";
+
 export function safeDivide(
 	numerator: unknown,
 	denominator: unknown,
@@ -188,7 +190,7 @@ export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unkno
 		rows.push(["--- Дебиторская задолженность (пациенты-должники) ---"]);
 		rows.push(["Пациент", "Сумма долга (руб)", "Срок долга", "Дата первой задолженности"]);
 		for (const r of bundle.receivables.rows) {
-			rows.push([r.patientName, r.debtRub, r.bucket, r.oldestChargeAt ?? "—"]);
+			rows.push([formatInitialsOnly(r.patientName), r.debtRub, r.bucket, r.oldestChargeAt ?? "—"]);
 		}
 		rows.push(["Итого долг", bundle.receivables.totalDebtRub]);
 		rows.push([]);
@@ -198,7 +200,7 @@ export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unkno
 		rows.push(["--- Авансы и переплаты пациентов ---"]);
 		rows.push(["Пациент", "Аванс на счёте (руб)"]);
 		for (const p of bundle.receivables.prepayments) {
-			rows.push([p.patientName, p.prepaidRub]);
+			rows.push([formatInitialsOnly(p.patientName), p.prepaidRub]);
 		}
 		rows.push(["Итого авансов", bundle.receivables.totalPrepaidRub]);
 		rows.push([]);

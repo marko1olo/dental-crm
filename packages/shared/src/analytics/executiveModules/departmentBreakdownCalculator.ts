@@ -4,7 +4,7 @@
  * Mandate 8b: <= 120 lines.
  */
 
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu, kopecksToRubles } from "../../money.js";
 import {
 	EXECUTIVE_DEPARTMENT_DEFINITIONS,
 	type DepartmentPerformanceStatus,
@@ -78,14 +78,14 @@ export function calculateDepartmentBreakdown(
 			shortTitleRu: def.shortTitleRu,
 			planRevenueKopecks: planKop,
 			factRevenueKopecks: factKop,
-			planRevenueRub: Math.round(planKop / 100),
-			factRevenueRub: Math.round(factKop / 100),
+			planRevenueRub: kopecksToRubles(planKop),
+			factRevenueRub: kopecksToRubles(factKop),
 			planRevenueFormatted: formatKopecksRu(planKop),
 			factRevenueFormatted: formatKopecksRu(factKop),
 			planFulfillmentPercent,
 			shareOfTotalRevenuePercent,
 			averageCheckKopecks,
-			averageCheckRub: Math.round(averageCheckKopecks / 100),
+			averageCheckRub: kopecksToRubles(averageCheckKopecks),
 			averageCheckFormatted: formatKopecksRu(averageCheckKopecks),
 			completedVisitsCount: visits,
 			uniquePatientsCount: patients,

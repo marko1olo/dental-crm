@@ -9,6 +9,7 @@ import { db } from "../../db/client.js";
 import {
 	appointments,
 	chairs,
+	idempotencyKeys,
 	organizations,
 	patients,
 	rebookingConversionRules,
@@ -23,6 +24,14 @@ import {
 	calculateRebookingDeltaMinutes,
 	formatDoctorSpecialty,
 } from "./utils.js";
+import {
+	clinicTimeZone,
+	currentMonthPeriod,
+} from "../../services/reports/managerReports.js";
+import {
+	resolvePeriod,
+	resolvePeriodBoundary,
+} from "../reports/reportsShared.js";
 
 /**
  * ====================================================================
@@ -106,33 +115,52 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				}
 			}
 
+			const timeZone = await clinicTimeZone(orgId);
 			const now = new Date();
 			let startDate: Date | undefined;
 			let endDate: Date | undefined;
 
 			const rawStart = qStartDate || qPeriodStart;
 			if (rawStart) {
-				startDate = new Date(rawStart);
+				startDate =
+					resolvePeriodBoundary(rawStart, "from", timeZone) ??
+					new Date(rawStart);
 			}
 			const rawEnd = qEndDate || qPeriodEnd;
 			if (rawEnd) {
-				endDate = new Date(rawEnd);
+				endDate =
+					resolvePeriodBoundary(rawEnd, "to", timeZone) ?? new Date(rawEnd);
 			}
 
 			if (!startDate) {
-				if (range === "today") {
-					startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-					endDate = endDate || new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-				} else if (range === "week") {
-					const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
-					startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-				} else if (range === "month" || range === "last_month") {
-					startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-				} else if (range === "quarter" || range === "last_3_months") {
-					const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
-					startDate = new Date(now.getFullYear(), quarterMonth, 1, 0, 0, 0, 0);
-				} else if (range === "year" || range === "this_year") {
-					startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+				let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
+				if (range === "today") mappedPeriod = "day";
+				else if (range === "week") mappedPeriod = "week";
+				else if (range === "month") mappedPeriod = "month";
+				else if (range === "quarter" || range === "last_3_months")
+					mappedPeriod = "quarter";
+				else if (range === "year" || range === "this_year")
+					mappedPeriod = "year";
+
+				if (mappedPeriod) {
+					const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
+					if (periodRes.ok) {
+						startDate = periodRes.from;
+						if (!endDate) {
+							endDate = range === "today" ? periodRes.to : now;
+						}
+					}
+				} else if (range === "last_month") {
+					const prevMonthDate = new Date(
+						now.getFullYear(),
+						now.getMonth() - 1,
+						15,
+					);
+					const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
+					startDate = prevMonth.from;
+					if (!endDate) {
+						endDate = prevMonth.to;
+					}
 				}
 			}
 			if (!endDate) {
@@ -561,6 +589,15 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const rawIdempotencyKey =
+			(request.headers?.["idempotency-key"] as string | undefined) ??
+			(request.headers?.["x-idempotency-key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+				: undefined);
+		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
 		try {
 			const parseRes = rebookingConversionBodySchema.safeParse(request.body);
 			if (!parseRes.success) {
@@ -627,30 +664,112 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					isSoloDoctor || timeDeltaMinutes <= 15 ? "doctor" : "administrator";
 			}
 
-			const [inserted] = await db
-				.insert(rebookingConversionRules)
-				.values({
-					organizationId: orgId,
-					patientName,
-					rebookedBy,
-					timeDeltaMinutes,
-					creditedRole,
-					appointmentDate,
-				})
-				.returning();
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-			return reply.code(201).send({
-				success: true,
-				data: inserted,
-				attribution: {
-					timeDeltaMinutes,
-					creditedRole,
-					attributionReason:
-						creditedRole === "doctor"
-							? "chairside_rebooking_under_15m"
-							: "frontdesk_rebooking_over_15m",
-				},
+			const txResult = await db.transaction(async (tx) => {
+				if (idempotencyKey) {
+					const [existingKey] = await tx
+						.select()
+						.from(idempotencyKeys)
+						.where(
+							and(
+								eq(idempotencyKeys.clinicId, orgId),
+								eq(idempotencyKeys.key, idempotencyKey),
+							),
+						)
+						.for("update");
+
+					if (existingKey) {
+						if (existingKey.status === "completed" && existingKey.responseBody) {
+							return {
+								replayed: true,
+								conflict: false,
+								code: existingKey.responseCode || 200,
+								body: existingKey.responseBody,
+							};
+						}
+						if (existingKey.status === "in_flight") {
+							return {
+								replayed: false,
+								conflict: true,
+								code: 409,
+								body: null,
+							};
+						}
+					} else {
+						await tx.insert(idempotencyKeys).values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "in_flight",
+						});
+					}
+				}
+
+				const [inserted] = await tx
+					.insert(rebookingConversionRules)
+					.values({
+						organizationId: orgId,
+						patientName,
+						rebookedBy,
+						timeDeltaMinutes,
+						creditedRole,
+						appointmentDate,
+					})
+					.returning();
+
+				const responsePayload: Record<string, unknown> = {
+					success: true,
+					data: inserted,
+					attribution: {
+						timeDeltaMinutes,
+						creditedRole,
+						attributionReason:
+							creditedRole === "doctor"
+								? "chairside_rebooking_under_15m"
+								: "frontdesk_rebooking_over_15m",
+					},
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.update(idempotencyKeys)
+						.set({
+							status: "completed",
+							responseCode: 201,
+							responseBody: responsePayload,
+						})
+						.where(
+							and(
+								eq(idempotencyKeys.clinicId, orgId),
+								eq(idempotencyKeys.key, idempotencyKey),
+							),
+						);
+				}
+
+				return {
+					replayed: false,
+					conflict: false,
+					code: 201,
+					body: responsePayload,
+				};
 			});
+
+			if (txResult.conflict) {
+				return reply.code(409).header("Retry-After", "1").send({
+					success: false,
+					error: "Conflict",
+					message: "Операция фиксации правила повторной записи с данным Idempotency-Key уже выполняется.",
+				});
+			}
+
+			if (txResult.replayed) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+			}
+
+			return reply.code(txResult.code).send(txResult.body);
 		} catch (e) {
 			request.log.error({ err: e }, "Не удалось сохранить правило повторной записи");
 			return reply.code(500).send({

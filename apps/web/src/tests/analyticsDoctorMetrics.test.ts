@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-	computeLocalAnalyticsData,
 	EMPTY_BODY_MESSAGE,
 	formatCompletionRate,
 	formatMarginCell,
@@ -336,90 +335,6 @@ test("мусор в строке врача не превращается в н�
 	assert.equal(doctor.completionRate, null);
 });
 
-test("computeLocalAnalyticsData: честный сплит выручки 54-ФЗ (нал, карта, безнал, аванс)", () => {
-	const data = computeLocalAnalyticsData({
-		patients: [{ id: "p-1" }, { id: "p-2" }],
-		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString() }],
-		payments: [
-			{ id: "pay-1", amount: 10_000, method: "cash", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-2", amount: 25_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-3", amount: 15_000, method: "bank_transfer", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-4", amount: 5_000, method: "family_wallet", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-		],
-		staff: [{ id: "doc-1", name: "Доктор Тестов", role: "doctor" }],
-	});
-
-	assert.equal(data.kpis.totalRevenue, 55_000);
-	assert.equal(data.kpis.cashRevenue, 10_000);
-	assert.equal(data.kpis.cardRevenue, 25_000);
-	assert.equal(data.kpis.cashlessRevenue, 15_000);
-	assert.equal(data.kpis.advanceRevenue, 5_000);
-	assert.equal(data.isEmpty, false);
-});
-
-test("computeLocalAnalyticsData: выработка врачей по услугам 804н и нарядам ЗТЛ", () => {
-	const data = computeLocalAnalyticsData({
-		patients: [{ id: "p-1" }],
-		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString(), status: "completed" }],
-		visits: [{ id: "v-1", appointmentId: "a-1", doctorUserId: "doc-1" }],
-		treatmentItems: [
-			{ id: "ti-1", visitId: "v-1", title: "A16.07.002 Восстановление зуба пломбой" },
-			{ id: "ti-2", visitId: "v-1", title: "A16.07.030 Инфильтрационная анестезия" },
-		],
-		labOrders: [
-			{ id: "lab-1", doctorId: "doc-1", status: "completed" },
-			{ id: "lab-2", doctorId: "doc-1", status: "draft" }, // черновик не считается выполненным
-		],
-		payments: [
-			{ id: "pay-1", amount: 8_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-		],
-		staff: [{ id: "doc-1", name: "Иванов И.И.", role: "doctor" }],
-	});
-
-	assert.equal(data.doctorProfitabilityJson.length, 1);
-	const doc = data.doctorProfitabilityJson[0];
-	assert.ok(doc);
-	assert.equal(doc.revenue, 8_000);
-	assert.equal(doc.services804nCount, 2, "Должно быть учтено ровно 2 оказанные услуги");
-	assert.equal(doc.labOrdersCount, 1, "Должен быть учтен только сданный наряд ЗТЛ со статусом completed");
-});
-
-test("computeLocalAnalyticsData: процент загрузки кресел без симуляторов", () => {
-	const data = computeLocalAnalyticsData({
-		appointments: [
-			{ id: "a-1", chairId: "chair-1", startsAt: new Date().toISOString() },
-			{ id: "a-2", chairId: "chair-1", startsAt: new Date().toISOString() },
-		],
-		chairs: [{ id: "chair-1", name: "Кресло 1" }],
-	});
-
-	assert.equal(data.chairUtilizationJson.length, 1);
-	const chair = data.chairUtilizationJson[0];
-	assert.ok(chair);
-	assert.equal(chair.occupiedMinutes, 120); // 2 приёма * 60 мин
-	assert.ok(typeof chair.utilizationPercent === "number");
-	assert.ok(chair.utilizationPercent >= 0 && chair.utilizationPercent <= 100);
-	assert.ok(data.kpis.chairOccupancyRatePercent !== undefined);
-});
-
-test("computeLocalAnalyticsData: честный isEmpty:true при отсутствии данных", () => {
-	const data = computeLocalAnalyticsData({
-		patients: [],
-		appointments: [],
-		payments: [],
-		visits: [],
-		treatmentItems: [],
-		labOrders: [],
-		treatmentPlanScenarios: [],
-		staff: [],
-	});
-
-	assert.equal(data.isEmpty, true, "Дашборд без данных обязан иметь isEmpty = true для показа честного EmptyState");
-	assert.equal(data.kpis.totalRevenue, 0);
-	assert.equal(data.kpis.cashRevenue, 0);
-	assert.equal(data.kpis.cardRevenue, 0);
-});
-
 test("parseDashboardPayload: парсинг cardRevenue, services804nCount и labOrdersCount с бэкенда", () => {
 	const body = JSON.stringify({
 		success: true,
@@ -466,44 +381,6 @@ test("parseDashboardPayload: парсинг cardRevenue, services804nCount и la
 	assert.ok(doc);
 	assert.equal(doc.services804nCount, 28);
 	assert.equal(doc.labOrdersCount, 5);
-});
-
-test("computeLocalAnalyticsData: детализация 54-ФЗ (СБП, безнал B2B, ДМС) и списания ЗТЛ со сдельной ставкой Net Revenue", () => {
-	const data = computeLocalAnalyticsData({
-		patients: [{ id: "p-1" }],
-		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString(), status: "completed" }],
-		payments: [
-			{ id: "pay-1", amount: 10_000, method: "sbp", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-2", amount: 20_000, method: "bank_transfer", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-3", amount: 30_000, method: "insurance", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-			{ id: "pay-4", amount: 40_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
-		],
-		labOrders: [
-			{ id: "lab-1", doctorId: "doc-1", status: "completed", priceRub: 20_000 },
-			{ id: "lab-2", doctorId: "doc-1", status: "done", price: 5_000 },
-		],
-		staff: [{ id: "doc-1", name: "Ортопед Смирнов", role: "doctor" }],
-	});
-
-	assert.equal(data.kpis.totalRevenue, 100_000);
-	assert.equal(data.kpis.cardRevenue, 40_000);
-	assert.equal(data.kpis.cashlessRevenue, 60_000);
-	assert.equal(data.kpis.sbpRevenue, 10_000);
-	assert.equal(data.kpis.bankTransferRevenue, 20_000);
-	assert.equal(data.kpis.insuranceRevenue, 30_000);
-
-	assert.equal(data.doctorProfitabilityJson.length, 1);
-	const doc = data.doctorProfitabilityJson[0];
-	assert.ok(doc);
-	assert.equal(doc.revenue, 100_000);
-	assert.equal(doc.labOrdersCount, 2);
-	assert.equal(doc.labOrdersCostRub, 25_000);
-	// База Net Revenue = 100_000 - 25_000 = 75_000; комиссия 25% = 18_750
-	assert.equal(doc.doctorPayrollRub, 18_750);
-	// Маржа клиники = 100_000 - 25_000 - 18_750 = 56_250
-	assert.equal(doc.clinicMarginRub, 56_250);
-	// Маржинальность = round(56_250 / 100_000 * 100) = 56%
-	assert.equal(doc.margin, 56);
 });
 
 test("parseDashboardPayload: парсинг расширенных потоков 54-ФЗ и рентабельности врача с бэкенда", () => {
@@ -553,29 +430,6 @@ test("parseDashboardPayload: парсинг расширенных потоко�
 	assert.equal(doc.labOrdersCostRub, 35_000);
 	assert.equal(doc.doctorPayrollRub, 41_250);
 	assert.equal(doc.clinicMarginRub, 123_750);
-});
-
-test("computeLocalAnalyticsData: поддержка amountRub и amountKopecks и отсечение фантомных когорт при невалидных датах", () => {
-	const data = computeLocalAnalyticsData({
-		patients: [{ id: "p-1" }],
-		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: "2026-04-10T10:00:00.000Z", status: "completed" }],
-		payments: [
-			{ id: "pay-1", amountRub: 12_500, method: "card", doctorUserId: "doc-1", paidAt: "2026-04-10T11:00:00.000Z" },
-			{ id: "pay-2", amountKopecks: 750_000, method: "cash", doctorUserId: "doc-1", paidAt: "2026-04-11T12:00:00.000Z" },
-			// Платёж с поврежденной датой не должен создавать фантомных когорт вида "2026-08"
-			{ id: "pay-3", amount: 1_000, method: "card", doctorUserId: "doc-1", createdAt: "invalid-date" },
-		],
-		staff: [{ id: "doc-1", name: "Доктор Петров", role: "doctor" }],
-	});
-
-	assert.equal(data.kpis.totalRevenue, 21_000, "12500 + 7500 + 1000 = 21000 руб");
-	assert.equal(data.kpis.cardRevenue, 13_500, "12500 + 1000 = 13500 руб");
-	assert.equal(data.kpis.cashRevenue, 7_500, "750000 коп = 7500 руб");
-
-	// Когорта должна быть строго одна: 2026-04 (без фантомного 2026-08)
-	assert.equal(data.cohortLtvJson.length, 1);
-	assert.equal(data.cohortLtvJson[0]?.cohort, "2026-04");
-	assert.equal(data.cohortLtvJson[0]?.["Month 12"], 20_000, "12500 + 7500 = 20000 руб в когорте 2026-04");
 });
 
 

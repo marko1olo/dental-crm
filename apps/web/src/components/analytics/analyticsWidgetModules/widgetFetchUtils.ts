@@ -55,25 +55,6 @@ export function parseWidgetListPayload<T>(
 	};
 }
 
-export async function fetchWidgetList<T>(
-	url: string,
-	headers: Record<string, string>,
-	toItem: (row: Record<string, unknown>) => T,
-	signal?: AbortSignal,
-): Promise<WidgetListResult<T>> {
-	try {
-		const response = await fetch(
-			url,
-			signal ? { headers, signal } : { headers },
-		);
-		const raw = await response.text();
-		return parseWidgetListPayload(response.status, raw, toItem);
-	} catch (error) {
-		logger.error(`[analytics widget fetch error] ${url}:`, error);
-		return { ok: false, message: WIDGET_LOAD_ERROR_MESSAGE };
-	}
-}
-
 export function textOr(value: unknown, fallback: string): string {
 	return typeof value === "string" && value.trim().length > 0
 		? value.trim()

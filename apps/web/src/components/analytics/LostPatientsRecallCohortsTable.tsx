@@ -90,7 +90,6 @@ export const LostPatientsRecallCohortsTable: React.FC<
 								<td className="p-2.5 text-right font-semibold text-[var(--ok-fg)]">
 									{formatKopecksToRub(
 										cohort.recallRevenueKopecks,
-										false,
 									)}
 								</td>
 								<td className="p-2.5 text-center">

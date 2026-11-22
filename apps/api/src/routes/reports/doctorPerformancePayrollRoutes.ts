@@ -120,18 +120,54 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 			}
 		}
 
-		return await doctorPayrollReport(scope, filterDoctorId);
+		return await doctorPayrollReport(scope, filterDoctorId, request.log);
 	});
 
 	/**
 	 * Прозрачный расчет оплаты труда ассистентов клиники:
 	 * Отработанные смены, часы, снимки (RVG/ОПТГ), хирургические операции,
 	 * базовая ставка за смену, доплаты, НДФЛ 13% и чистая выплата на руки.
+	 * Требует полномочие payroll.read (requirePayoutAccess с проверкой scope === "all").
 	 */
 	app.get("/api/reports/assistant-payroll", async (request, reply) => {
-		const resolved = await scopeForReport(request, reply, "report assistant payroll");
-		if (!resolved) return;
-		return await assistantPayrollReport(resolved.scope);
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+
+		if (payoutAccess.scope !== "all") {
+			reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "payroll.read",
+				role: payoutAccess.role,
+				message: "Недостаточно прав для просмотра ведомости ассистентов клиники.",
+			});
+			return;
+		}
+
+		const parsed = periodQuerySchema.safeParse(request.query);
+		if (!parsed.success) {
+			badRequest(
+				reply,
+				"Проверьте параметры отчёта: даты, детализацию и пределы.",
+			);
+			return;
+		}
+
+		const timeZone = await clinicTimeZone(payoutAccess.organizationId);
+		const period = resolvePeriod(parsed.data, timeZone);
+		if (!period.ok) {
+			badRequest(reply, period.message);
+			return;
+		}
+
+		const scope = {
+			organizationId: payoutAccess.organizationId,
+			from: period.from,
+			to: period.to,
+			timeZone,
+			logger: request.log,
+		};
+
+		return await assistantPayrollReport(scope);
 	});
 
 	/**

@@ -50,7 +50,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 		handleCopyOffer,
 		handleCloseOffer,
 		toggleMenu,
-	} = useLostPatientOffer(clinicName || undefined);
+	} = useLostPatientOffer(typeof clinicName === "string" ? clinicName : undefined);
 
 	const handleOpenPatientCard = (patientId: string) => {
 		setSelectedPatientId?.(patientId);

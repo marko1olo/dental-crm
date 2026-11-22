@@ -491,14 +491,15 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			// [ANL-04] Чтение фактических расходов клиники по строгим реляционным категориям (PostgreSQL 18 SSOT):
 			// 1) metadata->>'category' (rent, utilities, salaries, marketing, etc.)
 			// 2) reasonCode регламентированного справочника (100: аренда, 1: ФОТ, 10/7: коммуналка/связь, 6: маркетинг, 4: санпин)
+			const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(${cashOperations.amountRub} * 100)::bigint)`;
 			const [actualExpenses] = await db
 				.select({
-					rent: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 then ${cashOperations.amountRub} else 0 end), 0)`,
-					utilities: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'utilities' or ${cashOperations.reasonCode} in (7, 10) then ${cashOperations.amountRub} else 0 end), 0)`,
-					payroll: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('salaries', 'payroll') or ${cashOperations.reasonCode} = 1 then ${cashOperations.amountRub} else 0 end), 0)`,
-					depreciation: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('equipment_lease', 'depreciation') then ${cashOperations.amountRub} else 0 end), 0)`,
-					sanpin: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('sanpin', 'sterilization') or ${cashOperations.reasonCode} = 4 then ${cashOperations.amountRub} else 0 end), 0)`,
-					marketing: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'marketing' or ${cashOperations.reasonCode} = 6 then ${cashOperations.amountRub} else 0 end), 0)`,
+					rentKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					utilitiesKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'utilities' or ${cashOperations.reasonCode} in (7, 10) then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					payrollKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('salaries', 'payroll') or ${cashOperations.reasonCode} = 1 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					depreciationKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('equipment_lease', 'depreciation') then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					sanpinKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('sanpin', 'sterilization') or ${cashOperations.reasonCode} = 4 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					marketingKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'marketing' or ${cashOperations.reasonCode} = 6 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
 				})
 				.from(cashOperations)
 				.where(
@@ -509,12 +510,12 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : Number(actualExpenses?.rent || 0);
-			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : Number(actualExpenses?.utilities || 0);
-			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : Number(actualExpenses?.payroll || 0);
-			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : Number(actualExpenses?.depreciation || 0);
-			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : Number(actualExpenses?.sanpin || 0);
-			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : Number(actualExpenses?.marketing || 0);
+			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : kopecksToRubles(Number(actualExpenses?.rentKopecks || 0));
+			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : kopecksToRubles(Number(actualExpenses?.utilitiesKopecks || 0));
+			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : kopecksToRubles(Number(actualExpenses?.payrollKopecks || 0));
+			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : kopecksToRubles(Number(actualExpenses?.depreciationKopecks || 0));
+			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : kopecksToRubles(Number(actualExpenses?.sanpinKopecks || 0));
+			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : kopecksToRubles(Number(actualExpenses?.marketingKopecks || 0));
 
 			const hourlyEconomics = calculateChairHourlyCost({
 				activeChairsCount,

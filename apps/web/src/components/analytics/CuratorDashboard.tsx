@@ -54,8 +54,8 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	}, [dashboard?.clinicSettings?.staff]);
 
 	const fallbackQueue = useMemo(
-		() => mapDashboardContextToQueue(dashboard?.treatmentPlans ?? [], dashboard?.patients ?? [], dashboard?.clinicSettings?.staff ?? [], staffCurators),
-		[dashboard?.treatmentPlans, dashboard?.patients, dashboard?.clinicSettings?.staff, staffCurators],
+		() => mapDashboardContextToQueue(dashboard?.treatmentPlanItems ?? [], dashboard?.patients ?? [], dashboard?.clinicSettings?.staff ?? [], staffCurators),
+		[dashboard?.treatmentPlanItems, dashboard?.patients, dashboard?.clinicSettings?.staff, staffCurators],
 	);
 
 	const { queueItems, advanceStage } = useCuratorDashboardData(fallbackQueue);

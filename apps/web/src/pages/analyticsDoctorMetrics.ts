@@ -9,4 +9,3 @@
 
 export * from "./analyticsDoctorMetricTypes.js";
 export * from "./analyticsDoctorPayloadParser.js";
-export * from "./analyticsDoctorLocalCompute.js";

@@ -1,4 +1,5 @@
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { kopecksToRubles, sumKopecks, toExactKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { patients, payments } from "../../db/schema.js";
 import {
@@ -28,11 +29,13 @@ export async function calculateCohortLtv(
 	const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
 	const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
 
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+
 	const cohortRaw = await db
 		.select({
 			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
 			patientId: payments.patientId,
-			totalRevenue: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			totalKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -(${paymentKopecks}) else 0 end), 0)::bigint`,
 		})
 		.from(payments)
 		.innerJoin(patients, eq(payments.patientId, patients.id))
@@ -56,23 +59,21 @@ export async function calculateCohortLtv(
 		}
 		const list = cohortMap.get(cm);
 		if (list) {
-			list.push(Number(row.totalRevenue));
+			list.push(toExactKopecks(Number(row.totalKopecks)));
 		}
 	}
 
 	const cohortLtvJson: CohortLtvItem[] = Array.from(cohortMap.entries())
 		.slice(-6)
-		.map(([key, revenues]) => {
+		.map(([key, kopecksList]) => {
 			const [, monthStr] = key.split("-");
 			const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 			const label = (RU_MONTHS as readonly string[])[monthIdx] ?? key;
-			const total = revenues.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
-			const avg = revenues.length > 0 && Number.isFinite(total)
-				? Math.round(total / revenues.length)
-				: 0;
+			const totalKopecks = sumKopecks(kopecksList);
+			const avgKopecks = kopecksList.length > 0 ? Math.round(totalKopecks / kopecksList.length) : 0;
 			return {
 				cohort: label,
-				"Month 12": avg,
+				"Month 12": Math.round(kopecksToRubles(avgKopecks)),
 			};
 		});
 

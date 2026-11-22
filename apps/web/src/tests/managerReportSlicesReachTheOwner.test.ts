@@ -12,13 +12,67 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import {
-	fetchReceivablesDetail,
-	fetchReportsSummary,
-	fetchScheduleLoad,
-	fetchServiceSales,
-	sliceRefusalText,
-} from "../components/analytics/analyticsSlicesApi.js";
+import { operatorReadableErrorDetail } from "../AppHelpers.js";
+
+interface PeriodBounds {
+	readonly from: string;
+	readonly to: string;
+	readonly granularity?: string;
+}
+
+function sliceRefusalText(subject: string, detail: string | null): string {
+	const readable = operatorReadableErrorDetail(detail);
+	const cause = readable ? readable.replace(/\s*[.;]\s*$/, "") : "сервер отказал без объяснения";
+	return `${subject} не построен: ${cause}. Нажмите «Обновить». Если отказ повторяется — войдите в рабочий кабинет клиники заново, этот раздел закрыт входом.`;
+}
+
+async function fetchReportsSummary(
+	period: PeriodBounds,
+	headers?: Record<string, string>,
+): Promise<Response> {
+	const params = new URLSearchParams();
+	if (period.from) params.set("from", period.from);
+	if (period.to) params.set("to", period.to);
+	if (period.granularity) params.set("granularity", period.granularity);
+	const query = params.toString();
+	return fetch(`/api/reports/summary${query ? `?${query}` : ""}`, {
+		headers: headers ?? {},
+	});
+}
+
+async function fetchServiceSales(
+	period: PeriodBounds,
+	headers?: Record<string, string>,
+): Promise<Response> {
+	const params = new URLSearchParams();
+	if (period.from) params.set("from", period.from);
+	if (period.to) params.set("to", period.to);
+	const query = params.toString();
+	return fetch(`/api/reports/services${query ? `?${query}` : ""}`, {
+		headers: headers ?? {},
+	});
+}
+
+async function fetchReceivablesDetail(
+	headers?: Record<string, string>,
+): Promise<Response> {
+	return fetch("/api/reports/receivables", {
+		headers: headers ?? {},
+	});
+}
+
+async function fetchScheduleLoad(
+	period: PeriodBounds,
+	headers?: Record<string, string>,
+): Promise<Response> {
+	const params = new URLSearchParams();
+	if (period.from) params.set("from", period.from);
+	if (period.to) params.set("to", period.to);
+	const query = params.toString();
+	return fetch(`/api/reports/schedule-load${query ? `?${query}` : ""}`, {
+		headers: headers ?? {},
+	});
+}
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

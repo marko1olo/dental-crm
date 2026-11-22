@@ -85,7 +85,7 @@ export function LostPatientsKpiGrid({ kpis }: LostPatientsKpiGridProps) {
 					</span>
 				</div>
 				<div className="text-base font-bold text-[var(--ink)]">
-					{formatKopecksToRub(kpis.estimatedRecallRevenueKopecks, false)}
+					{formatKopecksToRub(kpis.estimatedRecallRevenueKopecks)}
 				</div>
 			</div>
 		</div>

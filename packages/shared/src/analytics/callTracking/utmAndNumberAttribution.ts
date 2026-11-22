@@ -4,7 +4,7 @@
  * UTM Parameters Resolution, Query Parsing & Patient Attribution Presets.
  */
 
-import { parseKopecks } from "../../utils/money.js";
+import { parseKopecks } from "../../money.js";
 import type { UtmParameters, PatientAttributionRecord } from "./types.js";
 
 // ─── 1. UTM PARSER UTILITY ───────────────────────────────────────────────────

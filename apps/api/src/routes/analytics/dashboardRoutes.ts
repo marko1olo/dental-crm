@@ -18,6 +18,11 @@ import {
 // состояний здесь стала бы ТРЕТЬИМ списком, а второй уже разошёлся с `pg_enum` и по
 // регистру, и по составу: воронка показывала нули при любом числе планов (d1ff7ab21).
 import { buildPlanFunnel } from "../../services/biAnalyticsWorker.js";
+import {
+	clinicTimeZone,
+	currentMonthPeriod,
+} from "../../services/reports/managerReports.js";
+import { resolvePeriod } from "../reports/reportsShared.js";
 import { calculateCohortLtv } from "./cohortRoutes.js";
 import type { TierKey } from "./types.js";
 import {
@@ -52,21 +57,26 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 		try {
 			const { range, branchId } = request.query as { range?: string; branchId?: string };
+			const timeZone = await clinicTimeZone(orgId);
 			let startDate: Date | undefined;
 
 			const now = new Date();
-			if (range === "today") {
-				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-			} else if (range === "week") {
-				const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
-				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-			} else if (range === "month" || range === "last_month") {
-				startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-			} else if (range === "quarter" || range === "last_3_months") {
-				const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
-				startDate = new Date(now.getFullYear(), quarterMonth, 1, 0, 0, 0, 0);
-			} else if (range === "year" || range === "this_year") {
-				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+			let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
+			if (range === "today") mappedPeriod = "day";
+			else if (range === "week") mappedPeriod = "week";
+			else if (range === "month") mappedPeriod = "month";
+			else if (range === "quarter" || range === "last_3_months") mappedPeriod = "quarter";
+			else if (range === "year" || range === "this_year") mappedPeriod = "year";
+
+			if (mappedPeriod) {
+				const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
+				if (periodRes.ok) {
+					startDate = periodRes.from;
+				}
+			} else if (range === "last_month") {
+				const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+				const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
+				startDate = prevMonth.from;
 			}
 
 			const withDate = (orgCol: Column, dateCol?: Column) =>
@@ -185,16 +195,18 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// 1) Исключение двойного учета 'online' одновременно в cashless и sbp
 			// 2) Распаковка комбинированных сплит-чеков ('split') по тендерам (касса, карты, СБП, аванс, ДМС)
 			// 3) Строгая сходимость сумм всех тендеров с totalKopecks
+			// 4) Прямое чтение целочисленных копеек coalesce(amountKopecks, round(amountRub * 100))
+			const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 			const [revenueRow] = await db
 				.select({
-					totalKopecks: sql<number>`coalesce(round(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) * 100)::bigint, 0)`,
-					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'cash' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'card' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, round(${payments.amountRub} * 100)::bigint - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
-					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} in ('family_wallet', 'other') then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
-					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'online' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then round(${payments.amountRub} * 100)::bigint else 0 end)), 0)::bigint`,
-					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'insurance' then round(${payments.amountRub} * 100)::bigint when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					totalKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end)::bigint, 0)`,
+					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'cash' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'card' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${paymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
+					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} in ('family_wallet', 'other') then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
+					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'online' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then ${paymentKopExpr} else 0 end)), 0)::bigint`,
+					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'insurance' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
 				})
 				.from(payments)
 				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа, исключая аннулированные счета

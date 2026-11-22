@@ -12,7 +12,7 @@
  */
 
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
-import { formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatCurrency, formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export type AnalyticsPeriod = "day" | "yesterday" | "week" | "month" | "quarter" | "year" | "custom";
 
@@ -112,8 +112,7 @@ export interface ClinicAnalyticsSSOT {
  * Каноническое безопасное форматирование рублей из целочисленных копеек (Мандат 8bm).
  */
 export function formatKopecksToRubles(kopecks: number): string {
-	const rubles = Math.round(kopecksToRubles(kopecks || 0));
-	return `${rubles.toLocaleString("ru-RU")} ₽`;
+	return formatCurrency(kopecksToRubles(kopecks || 0)).replace(/\u00A0/g, " ");
 }
 
 export { kopecksToRubles, formatKopecksToRub };

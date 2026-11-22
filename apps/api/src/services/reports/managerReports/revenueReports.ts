@@ -3,6 +3,7 @@
  */
 
 import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import { kopecksToRubles, sumKopecks, toExactKopecks } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import { appointments, payments } from "../../../db/schema.js";
 import { inClinicZone, postgresKnowsTimeZone } from "./timezone.js";
@@ -45,10 +46,12 @@ export async function revenueTimeline(
 				? sql`date_trunc('week', ${localPaidAt})`
 				: sql`date_trunc('day', ${localPaidAt})`;
 
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+
 	const rows = await db
 		.select({
 			bucket: sql<string>`to_char(${truncated}, 'YYYY-MM-DD')`,
-			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
+			revenueKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -(${paymentKopecks}) else 0 end), 0)::bigint`,
 			paymentCount: sql<number>`count(case when ${payments.status} = 'paid' then 1 end)::int`,
 			payingPatients: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
@@ -68,15 +71,18 @@ export async function revenueTimeline(
 
 	const points: RevenueTimelinePoint[] = rows.map((row) => ({
 		bucket: row.bucket,
-		revenueRub: Number(row.revenueRub),
+		revenueRub: kopecksToRubles(Number(row.revenueKopecks)),
 		paymentCount: Number(row.paymentCount),
 		payingPatients: Number(row.payingPatients),
 	}));
 
+	const kopecksList = rows.map((row) => toExactKopecks(Number(row.revenueKopecks)));
+	const totalKopecks = sumKopecks(kopecksList);
+
 	return {
 		granularity,
 		points,
-		totalRub: points.reduce((total, point) => total + point.revenueRub, 0),
+		totalRub: kopecksToRubles(totalKopecks),
 		isEmpty: points.length === 0,
 	};
 }

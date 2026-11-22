@@ -70,13 +70,13 @@ export function MarketingSegmentsCohortCard({
 					</h2>
 					{rfmSummary && (
 						<div className="hidden sm:flex items-center gap-2 text-[11px] text-[var(--muted)]">
-							<span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1">
+							<span className="px-2 py-0.5 rounded-md bg-[var(--warning-soft)] text-[var(--warning-ink,var(--warn-fg))] font-semibold flex items-center gap-1">
 								<Sparkles size={11} /> VIP: {rfmSummary.vipCount}
 							</span>
-							<span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold">
+							<span className="px-2 py-0.5 rounded-md bg-[var(--success-soft)] text-[var(--success-ink,var(--ok-fg))] font-semibold">
 								База: {rfmSummary.loyalCount}
 							</span>
-							<span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-300 font-semibold">
+							<span className="px-2 py-0.5 rounded-md bg-[var(--danger-soft)] text-[var(--danger-ink,var(--danger))] font-semibold">
 								Спящие: {rfmSummary.sleepingCount}
 							</span>
 						</div>

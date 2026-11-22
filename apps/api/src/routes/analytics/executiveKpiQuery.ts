@@ -6,6 +6,7 @@ import {
 	type ExecutivePeriod,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
+	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
@@ -374,10 +375,12 @@ export async function queryExecutiveKpiAndFunnel(
 	}
 
 	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа, исключая аннулированные счета)
+	// (Мандат 8bm: прямое суммирование копеек без float-дрейфа)
+	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
 	const [paymentsSummary] = await db
 		.select({
-			paidRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} else 0 end), 0)`,
-			refundedRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${payments.amountRub} else 0 end), 0)`,
+			paidRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} else 0 end), 0)::bigint`,
+			refundedRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${paymentKopExpr} else 0 end), 0)::bigint`,
 			payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
@@ -391,8 +394,8 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const paidKopecks = rublesToKopecks(Number(paymentsSummary?.paidRevenueRub || 0));
-	const refundedKopecks = rublesToKopecks(Number(paymentsSummary?.refundedRevenueRub || 0));
+	const paidKopecks = Number(paymentsSummary?.paidRevenueKopecks || 0);
+	const refundedKopecks = Number(paymentsSummary?.refundedRevenueKopecks || 0);
 	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
@@ -400,7 +403,7 @@ export async function queryExecutiveKpiAndFunnel(
 	const paymentMethodRows = await db
 		.select({
 			method: payments.method,
-			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end), 0)::bigint`,
 		})
 		.from(payments)
 		.where(
@@ -414,43 +417,49 @@ export async function queryExecutiveKpiAndFunnel(
 		)
 		.groupBy(payments.method);
 
-	let cashRevenueRub = 0;
-	let cardDmsRevenueRub = 0;
-	let sbpRevenueRub = 0;
-	let depositRevenueRub = 0;
+	let cashKopecks = 0;
+	let cardDmsKopecks = 0;
+	let sbpKopecks = 0;
+	let depositKopecks = 0;
 
 	for (const pm of paymentMethodRows) {
-		const amt = Math.max(0, Number(pm.revenueRub || 0));
+		const amt = Math.max(0, Number(pm.revenueKopecks || 0));
 		const m = (pm.method || "").toLowerCase();
 		if (m === "cash") {
-			cashRevenueRub += amt;
+			cashKopecks += amt;
 		} else if (m === "sbp" || m === "online") {
-			sbpRevenueRub += amt;
+			sbpKopecks += amt;
 		} else if (m === "deposit" || m === "family_wallet" || m === "advance") {
-			depositRevenueRub += amt;
+			depositKopecks += amt;
 		} else {
-			cardDmsRevenueRub += amt;
+			cardDmsKopecks += amt;
 		}
 	}
 
-	const totalMethodsRub = cashRevenueRub + cardDmsRevenueRub + sbpRevenueRub + depositRevenueRub;
+	const totalMethodsKopecks = cashKopecks + cardDmsKopecks + sbpKopecks + depositKopecks;
 	const paymentBreakdown = {
-		cashRub: Math.round(cashRevenueRub),
-		cashPercent: totalMethodsRub > 0 ? Number(((cashRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
-		cardDmsRub: Math.round(cardDmsRevenueRub),
-		cardDmsPercent: totalMethodsRub > 0 ? Number(((cardDmsRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
-		sbpRub: Math.round(sbpRevenueRub),
-		sbpPercent: totalMethodsRub > 0 ? Number(((sbpRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
-		depositRub: Math.round(depositRevenueRub),
-		depositPercent: totalMethodsRub > 0 ? Number(((depositRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
-		totalRub: Math.round(totalMethodsRub),
+		cashRub: Math.round(kopecksToRubles(cashKopecks)),
+		cashPercent: totalMethodsKopecks > 0 ? Math.round((cashKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
+		cardDmsRub: Math.round(kopecksToRubles(cardDmsKopecks)),
+		cardDmsPercent: totalMethodsKopecks > 0 ? Math.round((cardDmsKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
+		sbpRub: Math.round(kopecksToRubles(sbpKopecks)),
+		sbpPercent: totalMethodsKopecks > 0 ? Math.round((sbpKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
+		depositRub: Math.round(kopecksToRubles(depositKopecks)),
+		depositPercent: totalMethodsKopecks > 0 ? Math.round((depositKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
+		totalRub: Math.round(kopecksToRubles(totalMethodsKopecks)),
+		cashKopecks,
+		cardDmsKopecks,
+		sbpKopecks,
+		depositKopecks,
+		totalKopecks: totalMethodsKopecks,
 	};
 
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
+	const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(${cashOperations.amountRub} * 100)::bigint)`;
 	const cashExpenseRows = await db
 		.select({
 			reasonCode: cashOperations.reasonCode,
-			totalRub: sql<number>`coalesce(sum(${cashOperations.amountRub}), 0)`,
+			totalKopecks: sql<number>`coalesce(sum(${cashOperationKopExpr}), 0)::bigint`,
 		})
 		.from(cashOperations)
 		.where(
@@ -463,31 +472,31 @@ export async function queryExecutiveKpiAndFunnel(
 		)
 		.groupBy(cashOperations.reasonCode);
 
-	let cashLabExpensesRub = 0;
-	let cashMaterialsExpensesRub = 0;
-	let cashPayrollExpensesRub = 0;
-	let cashMarketingExpensesRub = 0;
-	let cashRentExpensesRub = 0;
-	let cashOtherOpexExpensesRub = 0;
+	let cashLabExpensesKopecks = 0;
+	let cashMaterialsExpensesKopecks = 0;
+	let cashPayrollExpensesKopecks = 0;
+	let cashMarketingExpensesKopecks = 0;
+	let cashRentExpensesKopecks = 0;
+	let cashOtherOpexExpensesKopecks = 0;
 
 	for (const exp of cashExpenseRows) {
 		const code = exp.reasonCode ?? CASH_EXPENSE_REASON_CODES.UTILITIES;
-		const amt = Number(exp.totalRub || 0);
+		const amtKop = Number(exp.totalKopecks || 0);
 		if (code === CASH_EXPENSE_REASON_CODES.DENTAL_LAB_COSTS) {
-			cashLabExpensesRub += amt;
+			cashLabExpensesKopecks += amtKop;
 		} else if (
 			code === CASH_EXPENSE_REASON_CODES.SUPPLIES_MATERIALS ||
 			code === CASH_EXPENSE_REASON_CODES.EQUIPMENT_LEASE
 		) {
-			cashMaterialsExpensesRub += amt;
+			cashMaterialsExpensesKopecks += amtKop;
 		} else if (code === CASH_EXPENSE_REASON_CODES.SALARIES_PAYROLL) {
-			cashPayrollExpensesRub += amt;
+			cashPayrollExpensesKopecks += amtKop;
 		} else if (code === CASH_EXPENSE_REASON_CODES.MARKETING_ADVERTISING) {
-			cashMarketingExpensesRub += amt;
+			cashMarketingExpensesKopecks += amtKop;
 		} else if (code === CASH_EXPENSE_REASON_CODES.CLINIC_RENT) {
-			cashRentExpensesRub += amt;
+			cashRentExpensesKopecks += amtKop;
 		} else {
-			cashOtherOpexExpensesRub += amt;
+			cashOtherOpexExpensesKopecks += amtKop;
 		}
 	}
 
@@ -506,7 +515,10 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const directLabCostRub = Math.max(cashLabExpensesRub, Number(labOrdersRow?.totalRub || 0));
+	const directLabCostKopecks = Math.max(
+		cashLabExpensesKopecks,
+		rublesToKopecks(Number(labOrdersRow?.totalRub || 0)),
+	);
 
 	const [materialsUsageRow] = await db
 		.select({
@@ -522,21 +534,21 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const directMaterialsCostRub = Math.max(
-		cashMaterialsExpensesRub,
-		Number(materialsUsageRow?.totalCostRub || 0),
+	const directMaterialsCostKopecks = Math.max(
+		cashMaterialsExpensesKopecks,
+		rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0)),
 	);
 
 	const totalCogsKopecks =
-		rublesToKopecks(directLabCostRub) +
-		rublesToKopecks(directMaterialsCostRub) +
-		rublesToKopecks(cashPayrollExpensesRub);
+		directLabCostKopecks +
+		directMaterialsCostKopecks +
+		cashPayrollExpensesKopecks;
 
-	const totalMarketingSpendKopecks = rublesToKopecks(cashMarketingExpensesRub);
+	const totalMarketingSpendKopecks = cashMarketingExpensesKopecks;
 	const totalOpexKopecks =
 		totalMarketingSpendKopecks +
-		rublesToKopecks(cashRentExpensesRub) +
-		rublesToKopecks(cashOtherOpexExpensesRub);
+		cashRentExpensesKopecks +
+		cashOtherOpexExpensesKopecks;
 
 	const netProfitKopecks = Math.round(totalRevenueKopecks - totalCogsKopecks - totalOpexKopecks);
 	const netMarginPercent =
@@ -572,7 +584,7 @@ export async function queryExecutiveKpiAndFunnel(
 	// 8. Исторический когортный LTV и первичная/повторная выручка (исключая аннулированные счета)
 	const [historicalLtvRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end), 0)::bigint`,
 			payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
@@ -585,13 +597,13 @@ export async function queryExecutiveKpiAndFunnel(
 		);
 
 	const histPayingPatients = Number(historicalLtvRow?.payingPatientsCount || 0);
-	const histTotalRevenueKop = rublesToKopecks(Number(historicalLtvRow?.totalRevenueRub || 0));
+	const histTotalRevenueKop = Number(historicalLtvRow?.totalRevenueKopecks || 0);
 	const historicalCohortLtvKopecks =
 		histPayingPatients > 0 ? Math.round(histTotalRevenueKop / histPayingPatients) : 0;
 
 	const [primaryRevenueRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end), 0)::bigint`,
 			patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
@@ -610,7 +622,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const [repeatRevenueRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end), 0)::bigint`,
 			patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
@@ -630,8 +642,8 @@ export async function queryExecutiveKpiAndFunnel(
 		period: execPeriod,
 		totalRevenueKopecks,
 		totalRevenuePlanKopecks: totalRevenueKopecks,
-		primaryRevenueKopecks: rublesToKopecks(Number(primaryRevenueRow?.totalRevenueRub || 0)),
-		repeatRevenueKopecks: rublesToKopecks(Number(repeatRevenueRow?.totalRevenueRub || 0)),
+		primaryRevenueKopecks: Number(primaryRevenueRow?.totalRevenueKopecks || 0),
+		repeatRevenueKopecks: Number(repeatRevenueRow?.totalRevenueKopecks || 0),
 		primaryPatientsCount: Number(primaryRevenueRow?.patientsCount || 0),
 		repeatPatientsCount: Number(repeatRevenueRow?.patientsCount || 0),
 		totalMarketingSpendKopecks,
@@ -651,9 +663,9 @@ export async function queryExecutiveKpiAndFunnel(
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
 		paymentBreakdown,
-		doctorPayrollKopecks: rublesToKopecks(cashPayrollExpensesRub),
-		materialsCostKopecks: rublesToKopecks(directMaterialsCostRub),
-		labCostKopecks: rublesToKopecks(directLabCostRub),
+		doctorPayrollKopecks: cashPayrollExpensesKopecks,
+		materialsCostKopecks: directMaterialsCostKopecks,
+		labCostKopecks: directLabCostKopecks,
 	});
 
 	return {

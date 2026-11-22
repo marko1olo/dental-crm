@@ -4,7 +4,7 @@
  * Mandate 8b: <= 120 lines.
  */
 
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu } from "../../money.js";
 import { EXECUTIVE_FUNNEL_STAGE_DEFINITIONS, type ExecutiveFunnelStage } from "./executiveFunnelDefinitions.js";
 import type { ExecutiveFunnelStageItem, RawFunnelStageInput } from "./executiveFunnelTypes.js";
 

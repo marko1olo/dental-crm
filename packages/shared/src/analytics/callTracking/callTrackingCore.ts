@@ -4,7 +4,7 @@
  * Core Call Tracking Aggregations, 5-Stage Marketing Funnel & Clinic Presets.
  */
 
-import { formatKopecksRu, parseKopecks } from "../../utils/money.js";
+import { formatKopecksRu, parseKopecks } from "../../money.js";
 import type {
 	AdvertisingChannelPerformanceInput,
 	AdvertisingChannelPerformanceMetric,

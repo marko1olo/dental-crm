@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { logger } from "../../utils/logger.js";
 import {
 	type AnalyticsPeriod,
 	type ClinicAnalyticsSSOT,
@@ -51,7 +52,7 @@ export function useClinicAnalyticsSSOT(
 			.catch((err: unknown) => {
 				if (isMounted) {
 					const msg = err instanceof Error ? err.message : "Не удалось загрузить аналитику";
-					console.error("[useClinicAnalyticsSSOT] Error fetching SSOT:", err);
+					logger.error("[useClinicAnalyticsSSOT] Error fetching SSOT:", err);
 					setData(createEmptyAnalyticsState(period));
 					setError(msg);
 					setLoading(false);

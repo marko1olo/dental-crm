@@ -87,21 +87,86 @@ export function resolvePeriod(
 	let fallback = currentMonthPeriod(new Date(), timeZone);
 	if (query.period && query.from === undefined && query.to === undefined) {
 		const now = new Date();
+		let y = now.getFullYear();
+		let m = now.getMonth() + 1; // 1-12
+		let d = now.getDate();
+		let dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Mon, 6 = Sun
+
+		if (timeZone) {
+			try {
+				const parts = new Map(
+					new Intl.DateTimeFormat("en-CA", {
+						timeZone,
+						year: "numeric",
+						month: "2-digit",
+						day: "2-digit",
+					})
+						.formatToParts(now)
+						.map((part) => [part.type, part.value]),
+				);
+				const tzYear = Number(parts.get("year"));
+				const tzMonth = Number(parts.get("month"));
+				const tzDay = Number(parts.get("day"));
+				if (
+					Number.isFinite(tzYear) &&
+					Number.isFinite(tzMonth) &&
+					Number.isFinite(tzDay)
+				) {
+					y = tzYear;
+					m = tzMonth;
+					d = tzDay;
+					const asUtc = new Date(Date.UTC(y, m - 1, d));
+					dayOfWeek = asUtc.getUTCDay() === 0 ? 6 : asUtc.getUTCDay() - 1;
+				}
+			} catch {
+				// fallback к серверному времени при неизвестном поясе
+			}
+		}
+
 		if (query.period === "day") {
-			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+			const dayStr = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+			const startOfDay =
+				resolvePeriodBoundary(dayStr, "from", timeZone) ??
+				new Date(y, m - 1, d, 0, 0, 0, 0);
+			const endOfDay =
+				resolvePeriodBoundary(dayStr, "to", timeZone) ??
+				new Date(y, m - 1, d, 23, 59, 59, 999);
 			fallback = { from: startOfDay, to: endOfDay };
 		} else if (query.period === "week") {
-			const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
-			const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-			fallback = { from: startOfWeek, to: now };
+			const mondayUtc = new Date(Date.UTC(y, m - 1, d - dayOfWeek));
+			const sundayUtc = new Date(Date.UTC(y, m - 1, d - dayOfWeek + 6));
+			const monStr = `${mondayUtc.getUTCFullYear()}-${String(mondayUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(mondayUtc.getUTCDate()).padStart(2, "0")}`;
+			const sunStr = `${sundayUtc.getUTCFullYear()}-${String(sundayUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(sundayUtc.getUTCDate()).padStart(2, "0")}`;
+			const startOfWeek =
+				resolvePeriodBoundary(monStr, "from", timeZone) ??
+				new Date(y, m - 1, d - dayOfWeek, 0, 0, 0, 0);
+			const endOfWeek =
+				resolvePeriodBoundary(sunStr, "to", timeZone) ??
+				new Date(y, m - 1, d - dayOfWeek + 6, 23, 59, 59, 999);
+			fallback = { from: startOfWeek, to: endOfWeek };
 		} else if (query.period === "quarter") {
-			const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
-			const startOfQuarter = new Date(now.getFullYear(), currentQuarterMonth, 1, 0, 0, 0, 0);
-			fallback = { from: startOfQuarter, to: now };
+			const currentQuarterMonth = Math.floor((m - 1) / 3) * 3 + 1;
+			const endQuarterMonth = currentQuarterMonth + 2;
+			const lastDayOfEndMonth = new Date(
+				Date.UTC(y, endQuarterMonth, 0),
+			).getUTCDate();
+			const startQuarterStr = `${y}-${String(currentQuarterMonth).padStart(2, "0")}-01`;
+			const endQuarterStr = `${y}-${String(endQuarterMonth).padStart(2, "0")}-${String(lastDayOfEndMonth).padStart(2, "0")}`;
+			const startOfQuarter =
+				resolvePeriodBoundary(startQuarterStr, "from", timeZone) ??
+				new Date(y, currentQuarterMonth - 1, 1, 0, 0, 0, 0);
+			const endOfQuarter =
+				resolvePeriodBoundary(endQuarterStr, "to", timeZone) ??
+				new Date(y, endQuarterMonth - 1, lastDayOfEndMonth, 23, 59, 59, 999);
+			fallback = { from: startOfQuarter, to: endOfQuarter };
 		} else if (query.period === "year") {
-			const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-			fallback = { from: startOfYear, to: now };
+			const startOfYear =
+				resolvePeriodBoundary(`${y}-01-01`, "from", timeZone) ??
+				new Date(y, 0, 1, 0, 0, 0, 0);
+			const endOfYear =
+				resolvePeriodBoundary(`${y}-12-31`, "to", timeZone) ??
+				new Date(y, 11, 31, 23, 59, 59, 999);
+			fallback = { from: startOfYear, to: endOfYear };
 		}
 	}
 
@@ -171,6 +236,7 @@ export async function scopeForReport(
 			from: period.from,
 			to: period.to,
 			timeZone,
+			logger: request.log,
 		},
 		query: parsed.data,
 	};

@@ -3,6 +3,7 @@
  */
 
 import { and, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
+import { kopecksToRubles } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import {
 	appointments,
@@ -44,18 +45,22 @@ export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const revenueRows = await db
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+	// Устранение декартова произведения при сплит-чеках и множественных позициях счетов:
+	// первичная агрегация оплат по визиту в изолированном подзапросе
+	const visitPaymentsSubquery = db
 		.select({
-			doctorUserId: appointments.doctorUserId,
-			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
+			visitId: sql<string>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`.as("visit_id"),
+			revenueKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -(${paymentKopecks}) else 0 end), 0)::bigint`.as("revenue_kopecks"),
 		})
 		.from(payments)
-		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
 		.leftJoin(
-			visits,
-			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+			patientInvoices,
+			and(
+				eq(payments.documentId, patientInvoices.id),
+				sql`${payments.visitId} is null`,
+			),
 		)
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(
 				eq(payments.organizationId, scope.organizationId),
@@ -65,6 +70,17 @@ export async function doctorPerformance(
 				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
+		.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
+		.as("vp");
+
+	const revenueRows = await db
+		.select({
+			doctorUserId: appointments.doctorUserId,
+			revenueKopecks: sql<string>`coalesce(sum(${visitPaymentsSubquery.revenueKopecks}), 0)::bigint`,
+		})
+		.from(visitPaymentsSubquery)
+		.leftJoin(visits, eq(visitPaymentsSubquery.visitId, visits.id))
+		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.groupBy(appointments.doctorUserId);
 
 	const appointmentRows = await db
@@ -111,24 +127,36 @@ export async function doctorPerformance(
 		return fresh;
 	};
 
-	let rawUnattributedRevenueRub = 0;
-	let unlinkedRefundsSumRub = 0;
+	let rawUnattributedRevenueKopecks = 0;
+	let unlinkedRefundsSumKopecks = 0;
+	const doctorRevenueKopecksMap = new Map<string, number>();
+
 	for (const row of revenueRows) {
-		const amount = Number(row.revenueRub);
+		const kopecks = Number(row.revenueKopecks);
 		if (!row.doctorUserId) {
-			rawUnattributedRevenueRub += amount;
-			if (amount < 0) {
-				unlinkedRefundsSumRub += Math.abs(amount);
+			rawUnattributedRevenueKopecks += kopecks;
+			if (kopecks < 0) {
+				unlinkedRefundsSumKopecks += Math.abs(kopecks);
 			}
 			continue;
 		}
-		ensure(row.doctorUserId).revenueRub += amount;
+		const currentKop = (doctorRevenueKopecksMap.get(row.doctorUserId) ?? 0) + kopecks;
+		doctorRevenueKopecksMap.set(row.doctorUserId, currentKop);
+		ensure(row.doctorUserId).revenueRub = kopecksToRubles(currentKop);
 	}
+
+	const rawUnattributedRevenueRub = kopecksToRubles(rawUnattributedRevenueKopecks);
+	const unlinkedRefundsSumRub = kopecksToRubles(unlinkedRefundsSumKopecks);
 
 	// [ANL-01] Защита от отрицательной нераспределённой выручки при непривязанных к врачам возвратах
 	const hasNegativeUnattributed = rawUnattributedRevenueRub < 0;
-	if (hasNegativeUnattributed) {
-		console.warn(
+	if (hasNegativeUnattributed && scope.logger?.warn) {
+		scope.logger.warn(
+			{
+				organizationId: scope.organizationId,
+				rawUnattributedRevenueRub,
+				unlinkedRefundsSumRub,
+			},
 			`[ANL-01][Audit] Negative unattributed revenue (${rawUnattributedRevenueRub} руб) detected due to doctor-unlinked refunds for org ${scope.organizationId}. Clamped to 0. Total unlinked refunds: ${unlinkedRefundsSumRub} руб.`,
 		);
 	}

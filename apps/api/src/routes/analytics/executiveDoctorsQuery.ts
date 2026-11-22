@@ -7,7 +7,7 @@ import {
 	formatKopecksRu,
 	kopecksToRubles,
 } from "@dental/shared";
-import { and, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -45,13 +45,16 @@ function formatDoctorRoleRu(role?: string | null): string {
 export async function queryExecutiveDepartmentsAndDoctors(
 	orgId: string,
 	startDate: Date,
+	endDate?: Date | undefined,
 ): Promise<ExecutiveDepartmentsAndDoctorsResult> {
+	const effectiveEndDate = endDate ?? new Date();
+
 	// 1. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
 	const departmentRows = await db
 		.select({
 			category: serviceCatalogItems.category,
 			specialty: serviceCatalogItems.specialty,
-			revenueKopecks: sql<number>`coalesce(sum(round(${treatmentItems.priceRub} * 100))::bigint, 0)`,
+			revenueKopecks: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, round(${treatmentItems.priceRub} * 100)::bigint)), 0)::bigint`,
 			revenueRub: sql<number>`coalesce(sum(${treatmentItems.priceRub}), 0)`,
 			visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
 			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
@@ -64,6 +67,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				eq(treatmentItems.organizationId, orgId),
 				ne(treatmentItems.status, "cancelled"),
 				gte(visits.createdAt, startDate),
+				lte(visits.createdAt, effectiveEndDate),
 			),
 		)
 		.groupBy(serviceCatalogItems.category, serviceCatalogItems.specialty);
@@ -95,7 +99,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			key = "therapy";
 		}
 
-		const revKop = Number(row.revenueKopecks || Math.round(Number(row.revenueRub || 0) * 100));
+		const revKop = Number(row.revenueKopecks || 0);
 		deptMap[key].factRevenueKop += revKop;
 		deptMap[key].visits += Number(row.visitsCount || 0);
 		deptMap[key].patients += Number(row.patientsCount || 0);
@@ -129,6 +133,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			and(
 				eq(appointments.organizationId, orgId),
 				gte(appointments.startsAt, startDate),
+				lte(appointments.startsAt, effectiveEndDate),
 			),
 		)
 		.groupBy(users.role, users.specialties);
@@ -215,11 +220,39 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			and(
 				eq(appointments.organizationId, orgId),
 				gte(appointments.startsAt, startDate),
+				lte(appointments.startsAt, effectiveEndDate),
 			),
 		);
 
 	// 3. Топ врачей по выручке, часам в кресле и явке пациентов (100% честный запрос к БД)
-	const doctorRevenueExpr = sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then round(${payments.amountRub} * 100) when ${payments.status} = 'refunded' then -round(${payments.amountRub} * 100) else 0 end), 0)`;
+	// Устранение декартова произведения при сплит-чеках: агрегация оплат по визиту в подзапросе
+	// [ANL-03] Фильтрация оплат строго по дате периода для исключения приписок оплат всех времен
+	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
+	const visitPaymentsSubquery = db
+		.select({
+			visitId: sql<string>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`.as("visit_id"),
+			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) when ${payments.status} = 'refunded' then -coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) else 0 end), 0)::bigint`.as("revenue_kopecks"),
+		})
+		.from(payments)
+		.leftJoin(
+			patientInvoices,
+			and(
+				eq(payments.documentId, patientInvoices.id),
+				sql`${payments.visitId} is null`,
+			),
+		)
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				inArray(payments.status, ["paid", "refunded"]),
+				gte(paymentTimestamp, startDate),
+				lte(paymentTimestamp, effectiveEndDate),
+			),
+		)
+		.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
+		.as("vp");
+
+	const doctorRevenueExpr = sql<number>`coalesce(sum(${visitPaymentsSubquery.revenueKopecks}), 0)::bigint`;
 	const doctorStats = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
@@ -233,21 +266,12 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.from(appointments)
 		.leftJoin(users, eq(appointments.doctorUserId, users.id))
 		.leftJoin(visits, eq(visits.appointmentId, appointments.id))
-		.leftJoin(patientInvoices, eq(patientInvoices.visitId, visits.id))
-		.leftJoin(
-			payments,
-			or(
-				eq(payments.visitId, visits.id),
-				and(
-					eq(payments.documentId, patientInvoices.id),
-					sql`${payments.documentId} is not null`,
-				),
-			),
-		)
+		.leftJoin(visitPaymentsSubquery, eq(visits.id, visitPaymentsSubquery.visitId))
 		.where(
 			and(
 				eq(appointments.organizationId, orgId),
 				gte(appointments.startsAt, startDate),
+				lte(appointments.startsAt, effectiveEndDate),
 			),
 		)
 		.groupBy(appointments.doctorUserId, users.fullName, users.role)
@@ -291,7 +315,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		});
 
 	// 4. Топ процедур по выручке и популярности
-	const procRevenueExpr = sql<number>`coalesce(sum(round(${treatmentItems.priceRub} * 100)), 0)`;
+	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, round(${treatmentItems.priceRub} * 100)::bigint)), 0)::bigint`;
 	const procedureStats = await db
 		.select({
 			id: treatmentItems.serviceId,
@@ -308,6 +332,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				eq(treatmentItems.organizationId, orgId),
 				ne(treatmentItems.status, "cancelled"),
 				gte(visits.createdAt, startDate),
+				lte(visits.createdAt, effectiveEndDate),
 			),
 		)
 		.groupBy(treatmentItems.serviceId, treatmentItems.title, serviceCatalogItems.category)

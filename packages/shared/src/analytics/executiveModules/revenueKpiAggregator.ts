@@ -4,12 +4,11 @@
  * Mandate 8b: <= 120 lines.
  */
 
-import { formatKopecksRu } from "../../utils/money.js";
+import { formatKopecksRu, kopecksToRubles } from "../../money.js";
 import type { ExecutivePeriod } from "./executiveKpiTypes.js";
 import type { CalculateExecutiveKpisParams, ExecutiveKpis } from "./executiveSummaryTypes.js";
 import { calculateRevenueAndChecks } from "./kpiRevenueMath.js";
 import { calculateUnitEconomicsAndChairs } from "./kpiUnitEconomicsMath.js";
-import { calculatePnlAndDoctorIncome } from "./kpiPnlMath.js";
 
 const PERIOD_LABELS: Record<ExecutivePeriod, string> = {
 	day: "Сегодня",
@@ -29,44 +28,68 @@ export function calculateExecutiveKpisSummary(
 ): ExecutiveKpis {
 	const rev = calculateRevenueAndChecks(params);
 	const unit = calculateUnitEconomicsAndChairs(params, rev.revKop, rev.primaryPatients, rev.visits);
-	const pnl = calculatePnlAndDoctorIncome(params, rev.revKop);
+
+	// Mandates 8ap, 8z, 8f: Zero synthetic percentage guesses (no fake 35% materials, 25% lab, 28% payroll).
+	// If actual accounting figures are not provided, return exact 0 kopecks without fabricating clinic expenses.
+	const cogsKop = params.cogsKopecks !== undefined ? Math.max(0, Math.round(params.cogsKopecks)) : 0;
+	const opexKop = params.opexKopecks !== undefined ? Math.max(0, Math.round(params.opexKopecks)) : 0;
+	const netProfitKop = params.netProfitKopecks !== undefined
+		? Math.round(params.netProfitKopecks)
+		: Math.round(rev.revKop - (cogsKop + opexKop));
+	const netProfitRub = kopecksToRubles(netProfitKop);
+	const netMarginPercent = params.netMarginPercent !== undefined
+		? params.netMarginPercent
+		: (rev.revKop > 0 ? Number(((netProfitKop / rev.revKop) * 100).toFixed(1)) : 0.0);
+
+	const materialsKop = params.materialsCostKopecks !== undefined && typeof params.materialsCostKopecks === "number"
+		? Math.max(0, Math.round(params.materialsCostKopecks))
+		: 0;
+	const labKop = params.labCostKopecks !== undefined && typeof params.labCostKopecks === "number"
+		? Math.max(0, Math.round(params.labCostKopecks))
+		: 0;
+	const docPayrollKop = params.doctorPayrollKopecks !== undefined && typeof params.doctorPayrollKopecks === "number"
+		? Math.max(0, Math.round(params.doctorPayrollKopecks))
+		: 0;
+	const docNetIncomeKop = params.doctorNetIncomeKopecks !== undefined && typeof params.doctorNetIncomeKopecks === "number"
+		? Math.max(0, Math.round(params.doctorNetIncomeKopecks))
+		: Math.max(0, docPayrollKop);
 
 	return {
 		period: params.period,
 		periodLabelRu: PERIOD_LABELS[params.period] || "Период",
 		totalRevenueKopecks: rev.revKop,
-		totalRevenueRub: Math.round(rev.revKop / 100),
+		totalRevenueRub: kopecksToRubles(rev.revKop),
 		totalRevenueFormatted: formatKopecksRu(rev.revKop),
 		totalRevenuePlanKopecks: rev.planKop,
-		totalRevenuePlanRub: Math.round(rev.planKop / 100),
+		totalRevenuePlanRub: kopecksToRubles(rev.planKop),
 		totalRevenuePlanFormatted: formatKopecksRu(rev.planKop),
 		overallPlanFulfillmentPercent: rev.overallPlanFulfillmentPercent,
-		netProfitKopecks: pnl.netProfitKop,
-		netProfitRub: pnl.netProfitRub,
-		netProfitFormatted: formatKopecksRu(pnl.netProfitKop),
-		netMarginPercent: pnl.netMarginPercent,
-		cogsKopecks: pnl.cogsKop,
-		cogsFormatted: formatKopecksRu(pnl.cogsKop),
-		opexKopecks: pnl.opexKop,
-		opexFormatted: formatKopecksRu(pnl.opexKop),
-		doctorPayrollKopecks: pnl.docPayrollKop,
-		doctorPayrollRub: Math.round(pnl.docPayrollKop / 100),
-		doctorPayrollFormatted: formatKopecksRu(pnl.docPayrollKop),
-		doctorNetIncomeKopecks: pnl.docNetIncomeKop,
-		doctorNetIncomeRub: Math.round(pnl.docNetIncomeKop / 100),
-		doctorNetIncomeFormatted: formatKopecksRu(pnl.docNetIncomeKop),
-		materialsCostKopecks: pnl.materialsKop,
-		materialsCostRub: Math.round(pnl.materialsKop / 100),
-		materialsCostFormatted: formatKopecksRu(pnl.materialsKop),
-		labCostKopecks: pnl.labKop,
-		labCostRub: Math.round(pnl.labKop / 100),
-		labCostFormatted: formatKopecksRu(pnl.labKop),
+		netProfitKopecks: netProfitKop,
+		netProfitRub,
+		netProfitFormatted: formatKopecksRu(netProfitKop),
+		netMarginPercent,
+		cogsKopecks: cogsKop,
+		cogsFormatted: formatKopecksRu(cogsKop),
+		opexKopecks: opexKop,
+		opexFormatted: formatKopecksRu(opexKop),
+		doctorPayrollKopecks: docPayrollKop,
+		doctorPayrollRub: kopecksToRubles(docPayrollKop),
+		doctorPayrollFormatted: formatKopecksRu(docPayrollKop),
+		doctorNetIncomeKopecks: docNetIncomeKop,
+		doctorNetIncomeRub: kopecksToRubles(docNetIncomeKop),
+		doctorNetIncomeFormatted: formatKopecksRu(docNetIncomeKop),
+		materialsCostKopecks: materialsKop,
+		materialsCostRub: kopecksToRubles(materialsKop),
+		materialsCostFormatted: formatKopecksRu(materialsKop),
+		labCostKopecks: labKop,
+		labCostRub: kopecksToRubles(labKop),
+		labCostFormatted: formatKopecksRu(labKop),
 		totalPatientsCount: rev.totalPatients,
 		primaryPatientsCount: rev.primaryPatients,
 		repeatPatientsCount: rev.repeatPatients,
 		primaryPatientsPercent: rev.primaryPercent,
 		averageCheckKopecks: rev.averageCheckKopecks,
-		averageCheckRub: Math.round(rev.averageCheckKopecks / 100),
+		averageCheckRub: kopecksToRubles(rev.averageCheckKopecks),
 		averageCheckFormatted: formatKopecksRu(rev.averageCheckKopecks),
 		primaryAverageCheckKopecks: rev.primaryAvgCheckKopecks,
 		primaryAverageCheckFormatted: formatKopecksRu(rev.primaryAvgCheckKopecks),

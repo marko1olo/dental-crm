@@ -150,7 +150,7 @@ export function calculateChairHourlyCost(input: ClinicOverheadInput): ChairHourl
 	const actualOccupiedChairHoursPerMonth = Math.round(canonicalResult.effectiveOccupiedChairHours);
 	const hourlyCostNominalRub = Math.round(kopecksToRub(canonicalResult.costPerAvailableChairHourKopecks));
 	const hourlyCostRealOccupiedRub = Math.round(kopecksToRub(canonicalResult.costPerOccupiedChairHourKopecks));
-	const minuteCostRealOccupiedRub = Math.round((hourlyCostRealOccupiedRub / 60) * 100) / 100;
+	const minuteCostRealOccupiedRub = kopecksToRub(canonicalResult.costPerOccupiedMinuteKopecks);
 
 	return {
 		totalMonthlyFixedOverheadRub,
