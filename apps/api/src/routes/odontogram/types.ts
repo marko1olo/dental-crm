@@ -73,11 +73,37 @@ export const clinicalToothStateSchema = z.preprocess(
 	z.enum(CLINICAL_TOOTH_STATE_VALUES),
 );
 
+export const endoWorkingLengthMmSchema = z
+	.union([
+		z.number().min(0, "Рабочая длина не может быть отрицательной").max(35, "Рабочая длина не может превышать 35 мм"),
+		z.string().trim(),
+	])
+	.nullable()
+	.optional()
+	.default("")
+	.refine(
+		(val) => {
+			if (val === undefined || val === null || val === "") return true;
+			if (typeof val === "number") {
+				return !Number.isNaN(val) && Number.isFinite(val) && val >= 0 && val <= 35;
+			}
+			if (typeof val === "string") {
+				const trimmed = val.trim();
+				if (trimmed === "") return true;
+				const normalized = trimmed.replace(",", ".");
+				const num = Number(normalized);
+				return !Number.isNaN(num) && Number.isFinite(num) && num >= 0 && num <= 35;
+			}
+			return false;
+		},
+		{ message: "Рабочая длина корневого канала должна быть числом от 0 до 35 мм" },
+	);
+
 export const endoCanalMeasurementSchema = z.object({
 	id: z.string().optional(),
 	canalName: z.string().trim().min(1).max(50),
 	referencePoint: z.string().trim().max(100).optional().default(""),
-	workingLengthMm: z.union([z.number(), z.string()]).optional().default(""),
+	workingLengthMm: endoWorkingLengthMmSchema,
 	masterApicalFile: z.string().trim().max(100).optional().default(""),
 	masterFile: z.string().trim().max(100).optional().default(""),
 	masterCone: z.string().trim().max(100).optional().default(""),

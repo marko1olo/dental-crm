@@ -273,4 +273,29 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 			assert.ok(content.includes("#root-canals") || content.includes("root_canals=1"), "Must handle root-canals deep link");
 		});
 	});
+
+	describe("8. Keyed Remount & Draft Isolation (Mandates 8bn, 8d/8zq)", () => {
+		it("EndodonticStudioModal mounts with distinct keys across teeth/patients to prevent draft leakage", () => {
+			const directLauncherPath = path.join(endoDir, "DirectEndodonticsLauncher.tsx");
+			const directLauncherContent = fs.readFileSync(directLauncherPath, "utf-8");
+			assert.ok(
+				directLauncherContent.includes('key={`${patientId || "local"}-${toothNumber}`}'),
+				"DirectEndodonticsLauncher must mount EndodonticStudioModal with keyed remount",
+			);
+
+			const modalsLayerPath = path.join(webSrc, "components/odontogram/OdontogramModalsLayer.tsx");
+			const modalsLayerContent = fs.readFileSync(modalsLayerPath, "utf-8");
+			assert.ok(
+				modalsLayerContent.includes('key={`${patientId || "local"}-${endoTooth}`}'),
+				"OdontogramModalsLayer must mount EndodonticStudioModal with keyed remount",
+			);
+
+			const viewModalsPath = path.join(webSrc, "components/odontogram/OdontogramViewModals.tsx");
+			const viewModalsContent = fs.readFileSync(viewModalsPath, "utf-8");
+			assert.ok(
+				viewModalsContent.includes('key={`${patientId || "local"}-${endoDrawerTooth}`}'),
+				"OdontogramViewModals must mount EndodonticStudioModal with keyed remount",
+			);
+		});
+	});
 });

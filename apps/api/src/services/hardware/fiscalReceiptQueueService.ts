@@ -92,6 +92,7 @@ export class FiscalQueueRetryWorker {
 
 	/**
 	 * Retries a single queued fiscal receipt item with statutory 54-FZ validation.
+	 * Executes network I/O outside of PostgreSQL transaction (Outbox Pattern).
 	 */
 	public static async retrySingleReceipt(
 		organizationId: string,
@@ -106,10 +107,10 @@ export class FiscalQueueRetryWorker {
 	}> {
 		const deviceStatus = await LanKktDriverService.checkDeviceStatus(config);
 
-		return await withTenantCtx(organizationId, async (tx) => {
+		// Step 1: Fast transactional query
+		const queueItem = await withTenantCtx(organizationId, async (tx) => {
 			const targetDb = tx ?? db;
-
-			const [queueItem] = await targetDb
+			const [item] = await targetDb
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
@@ -119,38 +120,42 @@ export class FiscalQueueRetryWorker {
 					),
 				)
 				.limit(1);
+			return item || null;
+		});
 
-			if (!queueItem) {
-				return {
-					success: false,
-					status: "hardware_offline",
-					item: null,
-					retryCount: 0,
-					error: "QueueItemNotFound",
-				};
-			}
+		if (!queueItem) {
+			return {
+				success: false,
+				status: "hardware_offline",
+				item: null,
+				retryCount: 0,
+				error: "QueueItemNotFound",
+			};
+		}
 
-			// If already printed, return idempotent success
-			if (queueItem.status === "printed") {
-				return {
-					success: true,
-					status: "printed",
-					item: queueItem,
-					retryCount: queueItem.retryCount,
-					error: null,
-				};
-			}
+		// If already printed, return idempotent success
+		if (queueItem.status === "printed") {
+			return {
+				success: true,
+				status: "printed",
+				item: queueItem,
+				retryCount: queueItem.retryCount,
+				error: null,
+			};
+		}
 
-			const now = new Date();
+		const now = new Date();
 
-			if (!deviceStatus.online || !deviceStatus.paperOk) {
-				const errorMessage =
-					deviceStatus.error ||
-					(!deviceStatus.online
-						? "KKT connection timed out or printer offline in clinic LAN"
-						: "Отсутствует чековая лента (Out of Paper)");
+		if (!deviceStatus.online || !deviceStatus.paperOk) {
+			const errorMessage =
+				deviceStatus.error ||
+				(!deviceStatus.online
+					? "KKT connection timed out or printer offline in clinic LAN"
+					: "Отсутствует чековая лента (Out of Paper)");
 
-				const [updated] = await targetDb
+			const updated = await withTenantCtx(organizationId, async (tx) => {
+				const targetDb = tx ?? db;
+				const [row] = await targetDb
 					.update(fiscalReceiptQueue)
 					.set({
 						status: "hardware_offline",
@@ -165,31 +170,37 @@ export class FiscalQueueRetryWorker {
 						),
 					)
 					.returning();
+				return row || null;
+			});
 
-				return {
-					success: false,
-					status: "hardware_offline",
-					item: updated || null,
-					retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
-					error: errorMessage,
-				};
-			}
+			return {
+				success: false,
+				status: "hardware_offline",
+				item: updated,
+				retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
+				error: errorMessage,
+			};
+		}
 
-			// Execute actual hardware print
-			const payload = parseFfd12Payload(queueItem.payloadJson);
-			let printResult: KktPrintResult;
-			try {
-				printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
-			} catch (err: unknown) {
-				const printErrorMsg = err instanceof Error ? err.message : "LanKktDriver print error";
-				printResult = {
-					success: false,
-					status: "hardware_offline",
-					receiptIssuedAt: now.toISOString(),
-					errorCode: "PRINT_EXCEPTION",
-					errorMessage: printErrorMsg,
-				};
-			}
+		// Step 2: Execute actual hardware print OUTSIDE of database transaction
+		const payload = parseFfd12Payload(queueItem.payloadJson);
+		let printResult: KktPrintResult;
+		try {
+			printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
+		} catch (err: unknown) {
+			const printErrorMsg = err instanceof Error ? err.message : "LanKktDriver print error";
+			printResult = {
+				success: false,
+				status: "hardware_offline",
+				receiptIssuedAt: now.toISOString(),
+				errorCode: "PRINT_EXCEPTION",
+				errorMessage: printErrorMsg,
+			};
+		}
+
+		// Step 3: Fast transactional commit of results
+		return await withTenantCtx(organizationId, async (tx) => {
+			const targetDb = tx ?? db;
 
 			if (!printResult.success || printResult.status === "hardware_offline") {
 				const errorText = printResult.errorMessage || "KKT print execution failed";
@@ -252,7 +263,6 @@ export class FiscalQueueRetryWorker {
 			// If attached to a payment, sync fiscal attributes to the payment record
 			if (queueItem.paymentId) {
 				try {
-					const payload = parseFfd12Payload(queueItem.payloadJson);
 					await targetDb
 						.update(payments)
 						.set({
@@ -288,6 +298,7 @@ export class FiscalQueueRetryWorker {
 
 	/**
 	 * Retries all pending and offline fiscal receipts for an organization.
+	 * Executes network I/O per item outside of PostgreSQL transactions.
 	 */
 	public static async flushOrganizationQueue(
 		organizationId: string,
@@ -300,9 +311,10 @@ export class FiscalQueueRetryWorker {
 	}> {
 		const deviceStatus = await LanKktDriverService.checkDeviceStatus(config);
 
-		return await withTenantCtx(organizationId, async (tx) => {
+		// Step 1: Quick read of pending items
+		const pendingItems = await withTenantCtx(organizationId, async (tx) => {
 			const targetDb = tx ?? db;
-			const pendingItems = await targetDb
+			return await targetDb
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
@@ -317,28 +329,31 @@ export class FiscalQueueRetryWorker {
 					),
 				)
 				.orderBy(fiscalReceiptQueue.createdAt);
+		});
 
-			if (pendingItems.length === 0) {
-				return {
-					totalProcessed: 0,
-					printedCount: 0,
-					failedCount: 0,
-					deviceStatus,
-				};
-			}
+		if (pendingItems.length === 0) {
+			return {
+				totalProcessed: 0,
+				printedCount: 0,
+				failedCount: 0,
+				deviceStatus,
+			};
+		}
 
-			let printedCount = 0;
-			let failedCount = 0;
-			const now = new Date();
+		let printedCount = 0;
+		let failedCount = 0;
+		const now = new Date();
 
-			for (const item of pendingItems) {
-				if (!deviceStatus.online || !deviceStatus.paperOk) {
-					const offlineError =
-						deviceStatus.error ||
-						(!deviceStatus.online
-							? "KKT hardware offline or connection timed out"
-							: "Отсутствует чековая лента (Out of Paper)");
+		for (const item of pendingItems) {
+			if (!deviceStatus.online || !deviceStatus.paperOk) {
+				const offlineError =
+					deviceStatus.error ||
+					(!deviceStatus.online
+						? "KKT hardware offline or connection timed out"
+						: "Отсутствует чековая лента (Out of Paper)");
 
+				await withTenantCtx(organizationId, async (tx) => {
+					const targetDb = tx ?? db;
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
@@ -353,26 +368,30 @@ export class FiscalQueueRetryWorker {
 								eq(fiscalReceiptQueue.organizationId, organizationId),
 							),
 						);
-					failedCount++;
-					continue;
-				}
+				});
+				failedCount++;
+				continue;
+			}
 
-				// Attempt hardware print
-				let printResult: KktPrintResult;
-				const payload = parseFfd12Payload(item.payloadJson);
-				try {
-					printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
-				} catch (err: unknown) {
-					const printErrorMsg = err instanceof Error ? err.message : "LAN print error";
-					printResult = {
-						success: false,
-						status: "hardware_offline",
-						receiptIssuedAt: now.toISOString(),
-						errorCode: "PRINT_ERROR",
-						errorMessage: printErrorMsg,
-					};
-				}
+			// Step 2: Attempt hardware print OUTSIDE database transaction
+			let printResult: KktPrintResult;
+			const payload = parseFfd12Payload(item.payloadJson);
+			try {
+				printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
+			} catch (err: unknown) {
+				const printErrorMsg = err instanceof Error ? err.message : "LAN print error";
+				printResult = {
+					success: false,
+					status: "hardware_offline",
+					receiptIssuedAt: now.toISOString(),
+					errorCode: "PRINT_ERROR",
+					errorMessage: printErrorMsg,
+				};
+			}
 
+			// Step 3: Fast transactional update
+			await withTenantCtx(organizationId, async (tx) => {
+				const targetDb = tx ?? db;
 				if (!printResult.success || printResult.status === "hardware_offline") {
 					await targetDb
 						.update(fiscalReceiptQueue)
@@ -446,15 +465,15 @@ export class FiscalQueueRetryWorker {
 
 					printedCount++;
 				}
-			}
+			});
+		}
 
-			return {
-				totalProcessed: pendingItems.length,
-				printedCount,
-				failedCount,
-				deviceStatus,
-			};
-		});
+		return {
+			totalProcessed: pendingItems.length,
+			printedCount,
+			failedCount,
+			deviceStatus,
+		};
 	}
 
 	/**

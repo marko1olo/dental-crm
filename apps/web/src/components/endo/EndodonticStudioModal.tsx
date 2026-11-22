@@ -69,11 +69,51 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const [copied, setCopied] = useState<boolean>(false);
 	const [showMobileActions, setShowMobileActions] = useState<boolean>(false);
 
+	const resetDraft = useCallback(() => {
+		const targetTooth = props.toothNumber || 16;
+		setActiveTooth(targetTooth);
+		setCanals(props.initialCanals?.length ? [...props.initialCanals] : getDefaultCanalsForTooth(targetTooth));
+		setActiveProtocolId("pulpitis_1visit");
+		setStageStamp("COMPLETED");
+		setRotarySystem(props.initialRotarySystem || NITI_SYSTEM_OPTIONS[0]);
+		setIrrigation(props.initialIrrigation || CANONICAL_IRRIGATION_SOLUTIONS[0]);
+		setRadiologyControl(
+			props.initialRadiologyControl || "Радиовизиография: каналы гомогенно обтурированы до физиологического апекса",
+		);
+		setCopied(false);
+		setShowMobileActions(false);
+	}, [props.toothNumber, props.initialCanals, props.initialRotarySystem, props.initialIrrigation, props.initialRadiologyControl]);
+
+	const handleClose = useCallback(() => {
+		resetDraft();
+		props.onClose();
+	}, [resetDraft, props.onClose]);
+
 	useEffect(() => {
 		const targetTooth = props.toothNumber || 16;
 		setActiveTooth(targetTooth);
 		setCanals(props.initialCanals?.length ? [...props.initialCanals] : getDefaultCanalsForTooth(targetTooth));
-	}, [props.toothNumber, props.initialCanals]);
+		setActiveProtocolId("pulpitis_1visit");
+		setStageStamp("COMPLETED");
+		setRotarySystem(props.initialRotarySystem || NITI_SYSTEM_OPTIONS[0]);
+		setIrrigation(props.initialIrrigation || CANONICAL_IRRIGATION_SOLUTIONS[0]);
+		setRadiologyControl(
+			props.initialRadiologyControl || "Радиовизиография: каналы гомогенно обтурированы до физиологического апекса",
+		);
+		setCopied(false);
+		setShowMobileActions(false);
+	}, [props.toothNumber, props.initialCanals, props.initialRotarySystem, props.initialIrrigation, props.initialRadiologyControl]);
+
+	useEffect(() => {
+		if (!props.isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [props.isOpen, handleClose]);
 
 	useEffect(() => {
 		if (!props.isOpen || !props.patientId || props.initialCanals?.length) return;
@@ -435,8 +475,8 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 		setIsSaving(false);
 		showToast(`Протокол каналов зуба #${activeTooth} успешно зафиксирован!`, "success", 2500);
-		props.onClose();
-	}, [canals, activeTooth, stageStamp, irrigation, rotarySystem, radiologyControl, generatedProtocolText, costEstimate, props]);
+		handleClose();
+	}, [canals, activeTooth, stageStamp, irrigation, rotarySystem, radiologyControl, generatedProtocolText, costEstimate, props, handleClose]);
 
 	if (!props.isOpen) return null;
 
@@ -461,7 +501,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					</div>
 					<button
 						type="button"
-						onClick={props.onClose}
+						onClick={handleClose}
 						className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-xl flex items-center justify-center bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						aria-label="Закрыть"
 					>
@@ -569,7 +609,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 							</select>
 							<button
 								type="button"
-								onClick={props.onClose}
+								onClick={handleClose}
 								className="secondary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 							>
 								Отмена

@@ -189,6 +189,7 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 			{/* Tier 3 Endodontic Studio Modal */}
 			{endoDrawerTooth !== null && (
 				<EndodonticStudioModal
+					key={`${patientId || "local"}-${endoDrawerTooth}`}
 					isOpen={endoDrawerTooth !== null}
 					onClose={onCloseEndoDrawer}
 					toothNumber={endoDrawerTooth}

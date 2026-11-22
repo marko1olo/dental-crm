@@ -298,3 +298,8 @@ reference_repos/
 
 /scripts/commit_*.txt
 /scripts/*.txt
+
+# Large binary backups
+*.tar.gz
+docs/_backup/*/docs_copy/
+

@@ -255,4 +255,103 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 
 		await app.close();
 	});
+
+	it("6. Zod Validation (Defect 3 / SEV-3): Rejects negative working length or invalid strings with 400 Bad Request", async () => {
+		const app = Fastify();
+		await registerOdontogramRoutes(app);
+		await app.ready();
+
+		// Negative number
+		const resNegNum = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				canals: [{ canalName: "MB", workingLengthMm: -5 }],
+			},
+		});
+		assert.equal(resNegNum.statusCode, 400, "Negative working length must be rejected with 400");
+		const jsonNegNum = JSON.parse(resNegNum.payload);
+		assert.equal(jsonNegNum.error, "EndoValidationError");
+
+		// Negative string
+		const resNegStr = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				canals: [{ canalName: "MB", workingLengthMm: "-5.0" }],
+			},
+		});
+		assert.equal(resNegStr.statusCode, 400, "Negative string working length must be rejected with 400");
+
+		// Invalid non-numeric string
+		const resInvalidStr = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				canals: [{ canalName: "MB", workingLengthMm: "invalid_length" }],
+			},
+		});
+		assert.equal(resInvalidStr.statusCode, 400, "Invalid string must be rejected with 400");
+
+		// Exceeding anatomical maximum (>35 mm)
+		const resTooLong = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				canals: [{ canalName: "MB", workingLengthMm: 50 }],
+			},
+		});
+		assert.equal(resTooLong.statusCode, 400, "Working length > 35mm must be rejected with 400");
+
+		await app.close();
+	});
+
+	it("7. Zod Validation (Defect 3 / SEV-3): Accepts valid boundary working length (0 mm obliterated, 35 mm max)", async () => {
+		const app = Fastify();
+		await registerOdontogramRoutes(app);
+		await app.ready();
+
+		const resBoundary = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				canals: [
+					{ canalName: "MB", workingLengthMm: 0, isObliterated: true },
+					{ canalName: "DB", workingLengthMm: "35", isObliterated: false },
+				],
+			},
+		});
+		assert.equal(resBoundary.statusCode, 200, "Boundary working length (0, 35) must be accepted");
+		const jsonBoundary = JSON.parse(resBoundary.payload);
+		assert.equal(jsonBoundary.success, true);
+		assert.equal(jsonBoundary.clinicalData.canals[0].workingLengthMm, 0);
+		assert.equal(jsonBoundary.clinicalData.canals[1].workingLengthMm, 35);
+
+		await app.close();
+	});
 });

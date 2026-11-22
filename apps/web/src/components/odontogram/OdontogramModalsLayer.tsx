@@ -185,6 +185,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{endoTooth !== null && (
 				<React.Suspense fallback={null}>
 					<EndodonticStudioModal
+						key={`${patientId || "local"}-${endoTooth}`}
 						isOpen={true}
 						onClose={() => setEndoTooth(null)}
 						toothNumber={endoTooth}

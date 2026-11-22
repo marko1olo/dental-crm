@@ -147,6 +147,117 @@ export async function checkExistingIdempotentReceipt(
 }
 
 /**
+ * Создание предварительной записи чека в fiscalReceiptQueue перед сетевым обращением к ККТ (Outbox Pattern).
+ */
+export async function bufferPendingFiscalReceipt(
+	tx: DbClientOrTransaction,
+	orgId: string,
+	data: CreateFiscalReceiptPayload,
+	compiled: Ffd12ReceiptPayload,
+): Promise<typeof fiscalReceiptQueue.$inferSelect> {
+	const payloadToStore: Record<string, unknown> = {
+		...compiled,
+		clientMutationId: data.clientMutationId ?? null,
+	};
+
+	const [queueRow] = await tx
+		.insert(fiscalReceiptQueue)
+		.values({
+			organizationId: orgId,
+			visitId: data.visitId || null,
+			receiptType: data.operationType,
+			status: "pending_print",
+			payloadJson: payloadToStore,
+			lastError: null,
+			retryCount: 0,
+			printedAt: null,
+		})
+		.returning();
+
+	if (!queueRow) {
+		throw new Error("Не удалось создать запись в очереди фискализации");
+	}
+
+	return queueRow;
+}
+
+/**
+ * Финализация записи в fiscalReceiptQueue по результатам сетевого ответа ККТ и проводка кассы.
+ */
+export async function finalizeKktPrintAndBuffer(
+	tx: DbClientOrTransaction,
+	orgId: string,
+	queueId: string,
+	data: CreateFiscalReceiptPayload,
+	compiled: Ffd12ReceiptPayload,
+	printResult: PrintResultMetadata,
+): Promise<Record<string, unknown>> {
+	const isOffline = printResult.status === "hardware_offline";
+	const now = new Date();
+
+	const effectiveQrString =
+		printResult.qrString ||
+		(printResult.fnSerial && printResult.fiscalDocumentNumber && printResult.fiscalSign
+			? generateFnQrCodeString({
+					issuedAt: printResult.receiptIssuedAt || now,
+					totalKopecks: data.totalKopecks,
+					fnSerial: printResult.fnSerial,
+					fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+					fiscalSign: printResult.fiscalSign,
+					operationType: FiscalReceiptFactory.resolveTag1054(data.operationType),
+				})
+			: null);
+
+	const payloadToStore: Record<string, unknown> = {
+		...compiled,
+		clientMutationId: data.clientMutationId ?? null,
+		fnSerial: printResult.fnSerial,
+		fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+		fiscalSign: printResult.fiscalSign,
+		ofdVerificationUrl: printResult.ofdVerificationUrl,
+		qrString: effectiveQrString,
+		receiptIssuedAt: printResult.receiptIssuedAt,
+	};
+
+	const [queueRow] = await tx
+		.update(fiscalReceiptQueue)
+		.set({
+			status: (printResult.status as typeof fiscalReceiptQueue.$inferInsert.status) || "pending_print",
+			payloadJson: payloadToStore,
+			lastError: isOffline
+				? printResult.errorMessage || "KKT hardware offline or out of paper"
+				: null,
+			retryCount: isOffline ? 1 : 0,
+			printedAt: isOffline ? null : now,
+			updatedAt: now,
+		})
+		.where(
+			and(
+				eq(fiscalReceiptQueue.id, queueId),
+				eq(fiscalReceiptQueue.organizationId, orgId),
+			),
+		)
+		.returning();
+
+	await applyCashBoxFiscalReceipt(tx, orgId, data, printResult);
+
+	return {
+		success: true,
+		replayed: false,
+		queueId: queueRow?.id || queueId,
+		status: queueRow?.status,
+		fnSerial: printResult.fnSerial,
+		fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+		fiscalSign: printResult.fiscalSign,
+		receiptIssuedAt: printResult.receiptIssuedAt,
+		ofdVerificationUrl: printResult.ofdVerificationUrl,
+		qrString: effectiveQrString,
+		compiledReceipt: compiled,
+		hardwareWarning: isOffline ? printResult.errorMessage : null,
+	};
+}
+
+/**
  * Исполнение печати в ККТ и атомарное сохранение в fiscalReceiptQueue.
  */
 export async function executeKktPrintAndBuffer(

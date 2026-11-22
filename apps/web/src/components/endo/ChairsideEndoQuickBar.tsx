@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronDown, ExternalLink, Plus, SlidersHorizontal, Check } from "lucide-react";
-import { kopecksToRubles, type EndoCanalData } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, type EndoCanalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -89,9 +89,6 @@ export function executeChairsideTransferToDiary({
 				}));
 
 				if (billing.materials.length > 0) {
-					window.dispatchEvent(new CustomEvent("dente-warehouse-material-deducted", {
-						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Обтурация каналов зуба #${activeTooth} (Мандат 8aa Soft Negative Stock)` },
-					}));
 					window.dispatchEvent(new CustomEvent("dente-inventory-writeoff-batch", {
 						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
 					}));
@@ -100,20 +97,24 @@ export function executeChairsideTransferToDiary({
 						? window.location.origin
 						: "";
 					if (baseUrl) {
-						const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+						const idempotencyKey = generateUuidV7();
 						fetch(`${baseUrl}/api/inventory/deduct`, {
 							method: "POST",
 							headers: getDenteAuthHeaders({
 								"Content-Type": "application/json",
-								...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+								"Idempotency-Key": idempotencyKey,
 							}),
 							body: JSON.stringify({
 								materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
 								allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
 								notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
 							}),
-						}).then(async (res) => { if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание завершилось со статусом:", res.status); })
-							.catch((err) => { console.error("[ChairsideEndoQuickBar] Ошибка списания:", err); showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000); });
+						}).then(async (res) => {
+							if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание материалов завершилось со статусом:", res.status);
+						}).catch((err) => {
+							console.error("[ChairsideEndoQuickBar] Ошибка списания материалов:", err);
+							showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000);
+						});
 					}
 				}
 			}
@@ -124,18 +125,26 @@ export function executeChairsideTransferToDiary({
 			? window.location.origin
 			: "";
 		if (baseUrl) {
-			const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+			const idempotencyKey = generateUuidV7();
 			fetch(`${baseUrl}/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 				method: "POST",
 				headers: getDenteAuthHeaders({
 					"Content-Type": "application/json",
-					...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+					"Idempotency-Key": idempotencyKey,
 				}),
 				body: JSON.stringify({
 					toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
 					radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
 				}),
-			}).catch(() => {});
+			}).then(async (res) => {
+				if (!res.ok) {
+					console.warn("[ChairsideEndoQuickBar] Сохранение параметров каналов завершилось со статусом:", res.status);
+					showToast("Не удалось синхронизировать параметры каналов с сервером", "warning", 3500);
+				}
+			}).catch((err) => {
+				console.error("[ChairsideEndoQuickBar] Ошибка сохранения параметров каналов:", err);
+				showToast("Ошибка соединения при сохранении протокола каналов", "warning", 3500);
+			});
 		}
 	}
 

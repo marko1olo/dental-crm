@@ -129,8 +129,15 @@ export const DirectEndodonticsLauncher: React.FC = () => {
 
 	return (
 		<EndodonticStudioModal
-			isOpen={isOpen} onClose={handleClose} toothNumber={toothNumber} toothState="Острый пульпит (K04.0)"
-			patientId={patientId} patientName={patientName} doctorName={doctorName} clinicName="Стоматологическая клиника DENTE"
+			key={`${patientId || "local"}-${toothNumber}`}
+			isOpen={isOpen}
+			onClose={handleClose}
+			toothNumber={toothNumber}
+			toothState="Острый пульпит (K04.0)"
+			patientId={patientId}
+			patientName={patientName}
+			doctorName={doctorName}
+			clinicName="Стоматологическая клиника DENTE"
 		/>
 	);
 };
