@@ -170,7 +170,7 @@ export async function handleGetDoctorMyEarnings(
 	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
 	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 
-	const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+	const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
 		orgId,
 		resolvedDocId,
 		fromStr,
@@ -192,6 +192,7 @@ export async function handleGetDoctorMyEarnings(
 		chairRentalKop: 0,
 		advancePayoutKop: 0,
 		taxRegime: "employee",
+		refundDeductions,
 	});
 
 	// Группировка по назначениям / визитам для appointments
@@ -266,8 +267,13 @@ export async function handleGetDoctorMyEarnings(
 		}
 
 		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu);
-		const netBaseItemKop = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earnedItemKop = calculateDoctorCommissionKopecks(netBaseItemKop, itemCommPercent);
+		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
+		const netBaseItemKop = effectivePaidKop > 0
+			? Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks)
+			: 0;
+		const earnedItemKop = effectivePaidKop > 0
+			? calculateDoctorCommissionKopecks(netBaseItemKop, itemCommPercent)
+			: 0;
 
 		appt.grossRevenueKop += ord.grossKopecks;
 		appt.labCostKop += ord.labCostKopecks;
@@ -344,8 +350,13 @@ export async function handleGetDoctorMyEarnings(
 			};
 			catMap.set(ord.category, cat);
 		}
-		const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earned = calculateDoctorCommissionKopecks(netBase, itemCommPercent);
+		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
+		const netBase = effectivePaidKop > 0
+			? Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks)
+			: 0;
+		const earned = effectivePaidKop > 0
+			? calculateDoctorCommissionKopecks(netBase, itemCommPercent)
+			: 0;
 
 		cat.grossRevenueKop += ord.grossKopecks;
 		cat.labDeductionsKop += ord.labCostKopecks;
@@ -371,10 +382,10 @@ export async function handleGetDoctorMyEarnings(
 	const netBaseRevenueKop = payrollResult.totalNetBaseKop;
 	const totalDoctorEarnedKop = payrollResult.grossPayoutBeforeTaxKop;
 
-	const paidOrders = orders.filter((o) => o.isPaid54Fz);
-	const unpaidOrders = orders.filter((o) => !o.isPaid54Fz);
-	const paidAmountKop = paidOrders.reduce((acc, o) => acc + o.grossKopecks, 0);
-	const unpaidAmountKop = unpaidOrders.reduce((acc, o) => acc + o.grossKopecks, 0);
+	const paidOrders = orders.filter((o) => o.paidKopecks > 0);
+	const unpaidOrders = orders.filter((o) => o.paidKopecks <= 0);
+	const paidAmountKop = paidOrders.reduce((acc, o) => acc + o.paidKopecks, 0);
+	const unpaidAmountKop = unpaidOrders.reduce((acc, o) => acc + Math.max(0, o.grossKopecks - o.paidKopecks), 0);
 
 	const summary = {
 		totalGrossRevenueRub: kopecksToRubles(totalGrossRevenueKop),

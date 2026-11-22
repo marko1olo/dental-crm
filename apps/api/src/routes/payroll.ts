@@ -197,7 +197,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			const doctorSummaries: Record<string, unknown> = {};
 
 			for (const doc of activeDoctors) {
-				const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+				const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
 					fromStr,
@@ -218,9 +218,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					services: completedServices,
 					customBasePercentage: doc.commissionPercent,
 					payoutModel: docPayoutModel,
-					chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+					chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 					advancePayoutKop: 0,
 					taxRegime: doc.taxRegime,
+					refundDeductions,
 				});
 
 				const { closedPeriods } = await fetchClosedPayrollStatements(orgId, doc.id, doc.name);
@@ -324,7 +325,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const basePercent = Number(q.percent) || (resolvedPct ? Number(resolvedPct) : 25);
 
 		// Сбор клинического датасета (смены, приемы, оплаты, услуги, ЗТЛ, материалы)
-		const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+		const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
 			orgId,
 			resolvedDocId,
 			fromStr,
@@ -349,10 +350,11 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					: q.chairRentalKop !== undefined
 						? Number(q.chairRentalKop) || 0
 						: q.payoutModel === "chair_rental"
-							? Math.round(shiftsCount * (Number(q.shiftRateKop) || 400000))
+							? shiftsCount * (Number(q.shiftRateKop) || 400000)
 							: 0,
 			advancePayoutKop: rublesToKopecks(Number(q.advanceRub) || 0),
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
+			refundDeductions,
 		});
 
 		// Закрытые периоды
@@ -480,13 +482,14 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 			await withTenantCtx(orgId, async (tx) => {
 				for (const doc of activeDoctors) {
-					const { shiftsCount, completedServices } = await fetchDoctorPayrollDataset({
+					const { shiftsCount, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
 						orgId,
 						resolvedDocId: doc.id,
 						fromStr: body.periodStart,
 						toStr: body.periodEnd,
 						fromDate,
 						toDate,
+						tx,
 					});
 
 					const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
@@ -501,9 +504,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						services: completedServices,
 						customBasePercentage: doc.commissionPercent,
 						payoutModel: docPayoutModel,
-						chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+						chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 						advancePayoutKop: 0,
 						taxRegime: doc.taxRegime,
+						refundDeductions,
 					});
 
 					const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;

@@ -368,7 +368,7 @@ export async function doctorPayrollReport(
 		let totalAppointmentsCompleted = 0;
 
 		for (const doc of activeDoctors) {
-			const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+			const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
 				orgId: scope.organizationId,
 				resolvedDocId: doc.id,
 				fromStr,
@@ -389,9 +389,10 @@ export async function doctorPayrollReport(
 				services: completedServices,
 				customBasePercentage: doc.commissionPercent,
 				payoutModel: docPayoutModel,
-				chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+				chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 				advancePayoutKop: 0,
 				taxRegime: doc.taxRegime,
+				refundDeductions,
 			});
 
 			const servicesRenderedKopecks = payrollResult.totalGrossRevenueKop;

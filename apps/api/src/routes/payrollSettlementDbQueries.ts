@@ -271,7 +271,8 @@ export async function closeSettlementPeriodInDb(
 						),
 					)
 					.orderBy(sql`${cashBoxes.isMain} desc, ${cashBoxes.displayOrder} asc`)
-					.limit(1);
+					.limit(1)
+					.for("update");
 
 				if (box) {
 					const curBalanceKop = box.balanceKopecks != null
@@ -283,8 +284,8 @@ export async function closeSettlementPeriodInDb(
 					await tx
 						.update(cashBoxes)
 						.set({
-							balanceKopecks: newBalanceKop,
-							balanceRub: newBalanceRub,
+							balanceKopecks: sql`coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${payoutKop}::bigint`,
+							balanceRub: sql`((coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${payoutKop}::bigint)::numeric / 100)::numeric(14, 2)`,
 							updatedAt: now,
 						})
 						.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));

@@ -639,4 +639,131 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 			await purgeFixtureOrganizations([orgId]);
 		}
 	});
+
+	it("8. Prioritizes treatmentItems.priceKopecks BIGINT and collects refunded payment deductions (SEV-1.1 & SEV-1.3)", async () => {
+		const orgId = fixtureUuid("doctorPayrollTest", 60);
+		const doctorId = fixtureUuid("doctorPayrollTest", 61);
+		const patientId = fixtureUuid("doctorPayrollTest", 62);
+		const apptId = fixtureUuid("doctorPayrollTest", 63);
+		const visitId = fixtureUuid("doctorPayrollTest", 64);
+		const treatId = fixtureUuid("doctorPayrollTest", 65);
+		const paymentId = fixtureUuid("doctorPayrollTest", 66);
+		const refundPaymentId = fixtureUuid("doctorPayrollTest", 67);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		const testDate = new Date("2026-10-15T12:00:00Z");
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Клиника Точных Копеек",
+				});
+
+				await tx.insert(users).values({
+					id: doctorId,
+					organizationId: orgId,
+					email: `doctor-kop-${Date.now()}@dente.ru`,
+					passwordHash: "hash",
+					fullName: "Тестов К.П.",
+					role: "doctor",
+					specialties: ["therapy"],
+					isActive: true,
+				});
+
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Пациентов Т.Т.",
+				});
+
+				await tx.insert(appointments).values({
+					id: apptId,
+					organizationId: orgId,
+					patientId,
+					doctorUserId: doctorId,
+					startsAt: testDate,
+					endsAt: new Date("2026-10-15T13:00:00Z"),
+					status: "completed",
+				});
+
+				await tx.insert(visits).values({
+					id: visitId,
+					organizationId: orgId,
+					appointmentId: apptId,
+					patientId,
+					status: "signed",
+				});
+
+				// Услуга с явным priceKopecks (125 050 коп = 1250.50 руб)
+				await tx.insert(treatmentItems).values({
+					id: treatId,
+					organizationId: orgId,
+					patientId,
+					visitId,
+					title: "Эндодонтическое лечение каналов",
+					priceKopecks: 125050n,
+					unitPriceKopecks: 125050n,
+					priceRub: 1250.5,
+					unitPriceRub: 1250.5,
+					quantity: "1",
+				});
+
+				// Фактическая оплата на 125 050 коп (1250.50 руб)
+				await tx.insert(payments).values({
+					id: paymentId,
+					organizationId: orgId,
+					patientId,
+					visitId,
+					amountRub: 1250.5,
+					amountKopecks: 125050n,
+					status: "paid",
+					paidAt: testDate,
+					fiscalReceiptNumber: "ЧЕК-КОПЕЙКИ-001",
+				});
+
+				// Возврат пациенту за ранее выполненную процедуру в этом же периоде
+				await tx.insert(payments).values({
+					id: refundPaymentId,
+					organizationId: orgId,
+					patientId,
+					visitId,
+					amountRub: 500.25,
+					amountKopecks: 50025n,
+					status: "refunded",
+					paidAt: testDate,
+					updatedAt: testDate,
+					fiscalReceiptNumber: "ЧЕК-ВОЗВРАТ-001",
+					note: "Возврат по заявлению пациента",
+				});
+			});
+
+			// Запрос датасета за октябрь 2026
+			const dataset = await fetchDoctorPayrollDataset({
+				orgId,
+				resolvedDocId: doctorId,
+				fromStr: "2026-10-01",
+				toStr: "2026-10-31",
+				fromDate: new Date("2026-10-01T00:00:00Z"),
+				toDate: new Date("2026-10-31T23:59:59Z"),
+			});
+
+			assert.equal(dataset.orders.length, 1);
+			const order = dataset.orders[0]!;
+			// Должен точно прочитать priceKopecks (125 050 коп), без округлений float!
+			assert.equal(order.grossKopecks, 125050, "Order grossKopecks must be exact integer 125050");
+			assert.equal(order.paidKopecks, 125050, "Order paidKopecks must be exact integer 125050");
+			assert.equal(order.isPaid54Fz, true);
+
+			// Возврат должен быть собран в refundDeductions
+			assert.equal(dataset.refundDeductions.length, 1, "Must collect 1 refund deduction");
+			const refund = dataset.refundDeductions[0]!;
+			assert.equal(refund.refundedGrossKop, 50025, "Refunded gross kopecks must be 50025");
+			assert.equal(refund.receiptNumber, "ЧЕК-ВОЗВРАТ-001");
+			assert.equal(refund.doctorId, doctorId);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
 });

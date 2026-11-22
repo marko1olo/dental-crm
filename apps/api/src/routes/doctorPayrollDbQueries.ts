@@ -13,6 +13,7 @@
 
 import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import type { TenantDb } from "../db/client.js";
 import {
 	appointments,
 	doctorCommissions,
@@ -28,7 +29,7 @@ import {
 	users,
 	visits,
 } from "../db/schema.js";
-import { type DoctorCompletedServiceItem, rublesToKopecks } from "@dental/shared";
+import { type DoctorCompletedServiceItem, type DoctorRefundDeductionItem, rublesToKopecks } from "@dental/shared";
 
 export interface PayrollOrderDto {
 	id: string;
@@ -81,6 +82,40 @@ export interface DoctorPayrollDatasetResult {
 	shiftsCount: number;
 	orders: PayrollOrderDto[];
 	completedServices: DoctorCompletedServiceItem[];
+	refundDeductions: DoctorRefundDeductionItem[];
+}
+
+export function getTreatmentItemGrossKopecks(t: {
+	priceKopecks?: bigint | number | null | undefined;
+	priceRub?: number | string | null | undefined;
+	quantity?: number | string | null | undefined;
+}): number {
+	const kop = t.priceKopecks != null ? Number(t.priceKopecks) : 0;
+	if (kop > 0) {
+		return kop;
+	}
+	const qty = Math.max(1, Number(t.quantity || 1));
+	return rublesToKopecks(Number(t.priceRub || 0) * qty);
+}
+
+export function parseClosedPeriodRange(periodStr: string): { start: Date; end: Date } | null {
+	if (/^\d{4}-\d{2}$/.test(periodStr)) {
+		const parts = periodStr.split("-");
+		const year = Number(parts[0]);
+		const month = Number(parts[1]);
+		const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+		const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+		return { start, end };
+	}
+	if (/^\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2}$/.test(periodStr)) {
+		const [s, e] = periodStr.split("..");
+		const start = new Date(`${s}T00:00:00.000Z`);
+		const end = new Date(`${e}T23:59:59.999Z`);
+		if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+			return { start, end };
+		}
+	}
+	return null;
 }
 
 export const SPECIALTY_TITLES: Record<string, string> = {
@@ -129,8 +164,9 @@ export function normalizeClinicalCategory(
 /**
  * Получить список активных докторов клиники с их комиссионными ставками
  */
-export async function fetchActiveDoctorProfiles(orgId: string): Promise<DoctorPayrollProfileDto[]> {
-	const docUsers = await db
+export async function fetchActiveDoctorProfiles(orgId: string, tx?: TenantDb): Promise<DoctorPayrollProfileDto[]> {
+	const dbClient = tx ?? db;
+	const docUsers = await dbClient
 		.select({
 			id: users.id,
 			fullName: users.fullName,
@@ -146,7 +182,7 @@ export async function fetchActiveDoctorProfiles(orgId: string): Promise<DoctorPa
 			),
 		);
 
-	const commRows = await db
+	const commRows = await dbClient
 		.select({
 			userId: doctorCommissions.userId,
 			doctorId: doctorCommissions.doctorId,
@@ -203,13 +239,15 @@ export async function fetchDoctorPayrollDataset(params: {
 	toStr: string;
 	fromDate: Date;
 	toDate: Date;
+	tx?: TenantDb | undefined;
 }): Promise<DoctorPayrollDatasetResult> {
-	const { orgId, resolvedDocId, fromStr, toStr, fromDate, toDate } = params;
+	const { orgId, resolvedDocId, fromStr, toStr, fromDate, toDate, tx } = params;
+	const dbClient = tx ?? db;
 
 	// 1. Фактические смены
 	let shiftsCount = 0;
 	try {
-		const shifts = await db
+		const shifts = await dbClient
 			.select({ id: doctorShiftRosters.id })
 			.from(doctorShiftRosters)
 			.where(
@@ -226,7 +264,7 @@ export async function fetchDoctorPayrollDataset(params: {
 	}
 
 	// 2. Закрытые приемы за период (по дате визита ЛИБО по кассовому методу — факт оплаты в периоде)
-	const paidInPeriodRows = await db
+	const paidInPeriodRows = await dbClient
 		.select({
 			appointmentId: visits.appointmentId,
 		})
@@ -242,6 +280,50 @@ export async function fetchDoctorPayrollDataset(params: {
 				lte(payments.paidAt, toDate),
 			),
 		);
+
+	// 3. Возвраты пациентам за период по услугам врача (Мандат 8e / SEV-1.3)
+	const refundedPaymentRows = await dbClient
+		.select({
+			id: payments.id,
+			visitId: payments.visitId,
+			amountRub: payments.amountRub,
+			amountKopecks: payments.amountKopecks,
+			fiscalReceiptNumber: payments.fiscalReceiptNumber,
+			paidAt: payments.paidAt,
+			updatedAt: payments.updatedAt,
+			note: payments.note,
+		})
+		.from(payments)
+		.innerJoin(visits, eq(payments.visitId, visits.id))
+		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				eq(appointments.doctorUserId, resolvedDocId),
+				eq(payments.status, "refunded"),
+				gte(sql`coalesce(${payments.updatedAt}, ${payments.paidAt})`, fromDate),
+				lte(sql`coalesce(${payments.updatedAt}, ${payments.paidAt})`, toDate),
+			),
+		);
+
+	const refundDeductions: DoctorRefundDeductionItem[] = [];
+	for (const ref of refundedPaymentRows) {
+		const refKop = ref.amountKopecks != null && Number(ref.amountKopecks) > 0
+			? Number(ref.amountKopecks)
+			: rublesToKopecks(Number(ref.amountRub || 0));
+		if (refKop > 0) {
+			refundDeductions.push({
+				serviceId: ref.id,
+				serviceNameRu: "Возврат пациенту по чеку",
+				refundedGrossKop: refKop,
+				receiptNumber: ref.fiscalReceiptNumber ?? undefined,
+				reasonRu: ref.note ?? "Возврат денежных средств пациенту",
+				dateIso: (ref.updatedAt || ref.paidAt || fromDate).toISOString().slice(0, 10),
+				doctorId: resolvedDocId,
+				performerId: resolvedDocId,
+			});
+		}
+	}
 
 	const cashMethodApptIds = Array.from(
 		new Set(
@@ -275,7 +357,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		'К-0'
 	)`;
 
-	const appts = await db
+	const appts = await dbClient
 		.select({
 			id: appointments.id,
 			patientId: appointments.patientId,
@@ -292,11 +374,11 @@ export async function fetchDoctorPayrollDataset(params: {
 	const completedServices: DoctorCompletedServiceItem[] = [];
 
 	if (appts.length === 0) {
-		return { shiftsCount, orders, completedServices };
+		return { shiftsCount, orders, completedServices, refundDeductions };
 	}
 
 	const apptIds = appts.map((a) => a.id);
-	const clinicVisits = await db
+	const clinicVisits = await dbClient
 		.select({ id: visits.id, appointmentId: visits.appointmentId })
 		.from(visits)
 		.where(and(eq(visits.organizationId, orgId), inArray(visits.appointmentId, apptIds)));
@@ -306,7 +388,7 @@ export async function fetchDoctorPayrollDataset(params: {
 
 	// Реальные фактические оплаты (status = 'paid')
 	const paidVisitRows = visitIds.length > 0
-		? await db
+		? await dbClient
 			.select({
 				visitId: payments.visitId,
 				amountRub: payments.amountRub,
@@ -335,12 +417,13 @@ export async function fetchDoctorPayrollDataset(params: {
 
 	// Услуги с категориями из каталога и номером зуба
 	const treats = visitIds.length > 0
-		? await db
+		? await dbClient
 			.select({
 				id: treatmentItems.id,
 				visitId: treatmentItems.visitId,
 				toothCode: treatmentItems.toothCode,
 				priceRub: treatmentItems.priceRub,
+				priceKopecks: treatmentItems.priceKopecks,
 				quantity: treatmentItems.quantity,
 				title: treatmentItems.title,
 				category: serviceCatalogItems.category,
@@ -357,15 +440,14 @@ export async function fetchDoctorPayrollDataset(params: {
 	const totalGrossByVisit = new Map<string, number>();
 	for (const t of treats) {
 		if (t.visitId) {
-			const qty = Math.max(1, Number(t.quantity || 1));
-			const gKop = rublesToKopecks(Number(t.priceRub || 0) * qty);
+			const gKop = getTreatmentItemGrossKopecks(t);
 			totalGrossByVisit.set(t.visitId, (totalGrossByVisit.get(t.visitId) || 0) + gKop);
 		}
 	}
 	const remainingPaidKopByVisit = new Map<string, number>(paidKopByVisit);
 
 	// Заказы ЗТЛ для доктора за период (исключая гарантии, с чтением labCostKopecks Мандат 8bm)
-	const docLabOrders = await db
+	const docLabOrders = await dbClient
 		.select({
 			id: labOrders.id,
 			patientId: labOrders.patientId,
@@ -374,6 +456,8 @@ export async function fetchDoctorPayrollDataset(params: {
 			treatmentPlanId: labOrders.treatmentPlanId,
 			labCostKopecks: labOrders.labCostKopecks,
 			labCostRub: labOrders.labCostRub,
+			completedAt: labOrders.completedAt,
+			createdAt: labOrders.createdAt,
 		})
 		.from(labOrders)
 		.where(
@@ -387,6 +471,53 @@ export async function fetchDoctorPayrollDataset(params: {
 			),
 		);
 
+	// Защита от повторного списания ЗТЛ по закрытым ведомостям врача (SEV-2.4)
+	let eligibleLabOrders = docLabOrders;
+	try {
+		const closedStatements = await dbClient
+			.select({
+				period: doctorPayrollStatements.period,
+			})
+			.from(doctorPayrollStatements)
+			.where(
+				and(
+					eq(doctorPayrollStatements.organizationId, orgId),
+					eq(doctorPayrollStatements.doctorId, resolvedDocId),
+					eq(doctorPayrollStatements.isFinalized, true),
+				),
+			);
+
+		if (closedStatements.length > 0) {
+			const currentMonthKey = fromStr.slice(0, 7);
+			const currentExactKey = `${fromStr.slice(0, 10)}..${toStr.slice(0, 10)}`;
+			const closedRanges: { start: number; end: number }[] = [];
+
+			for (const cs of closedStatements) {
+				if (cs.period === currentMonthKey || cs.period === currentExactKey) {
+					continue;
+				}
+				const parsed = parseClosedPeriodRange(cs.period);
+				if (parsed) {
+					closedRanges.push({
+						start: parsed.start.getTime(),
+						end: parsed.end.getTime(),
+					});
+				}
+			}
+
+			if (closedRanges.length > 0) {
+				eligibleLabOrders = docLabOrders.filter((lo) => {
+					const dateVal = lo.completedAt || lo.createdAt;
+					if (!dateVal) return true;
+					const t = new Date(dateVal).getTime();
+					return !closedRanges.some((cr) => t >= cr.start && t <= cr.end);
+				});
+			}
+		}
+	} catch {
+		eligibleLabOrders = docLabOrders;
+	}
+
 	interface TrackedDoctorLabOrder {
 		id: string;
 		patientId: string;
@@ -396,7 +527,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		remainingCostKop: number;
 	}
 
-	const trackedLabOrders: TrackedDoctorLabOrder[] = docLabOrders.map((lo) => ({
+	const trackedLabOrders: TrackedDoctorLabOrder[] = eligibleLabOrders.map((lo) => ({
 		id: lo.id,
 		patientId: lo.patientId,
 		toothFdi: lo.toothFdi,
@@ -409,7 +540,7 @@ export async function fetchDoctorPayrollDataset(params: {
 
 	// Списание материалов (только списываемые на пациента, без общеклинических накладных)
 	const invDeductions = visitIds.length > 0
-		? await db
+		? await dbClient
 			.select({
 				visitId: inventoryTransactions.visitId,
 				unitCostRub: inventoryTransactions.unitCostRub,
@@ -468,14 +599,15 @@ export async function fetchDoctorPayrollDataset(params: {
 		let remainingMatKop = totalMatKop;
 		for (let i = 0; i < vTreats.length; i++) {
 			const treat = vTreats[i]!;
-			const qty = Math.max(1, Number(treat.quantity || 1));
-			const gKop = rublesToKopecks(Number(treat.priceRub || 0) * qty);
+			const gKop = getTreatmentItemGrossKopecks(treat);
 
 			let allocatedMat = 0;
 			if (i === vTreats.length - 1) {
 				allocatedMat = Math.min(gKop, remainingMatKop);
 			} else {
-				const proportional = Math.round((totalMatKop * gKop) / totalGrossKop);
+				const proportional = totalGrossKop > 0
+					? Number((BigInt(totalMatKop) * BigInt(gKop)) / BigInt(totalGrossKop))
+					: 0;
 				allocatedMat = Math.min(gKop, Math.min(proportional, remainingMatKop));
 			}
 			remainingMatKop = Math.max(0, remainingMatKop - allocatedMat);
@@ -484,8 +616,7 @@ export async function fetchDoctorPayrollDataset(params: {
 	}
 
 	for (const t of treats) {
-		const qty = Math.max(1, Number(t.quantity || 1));
-		const grossKop = rublesToKopecks(Number(t.priceRub || 0) * qty);
+		const grossKop = getTreatmentItemGrossKopecks(t);
 		const visitId = t.visitId;
 		const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
 		const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
@@ -510,7 +641,7 @@ export async function fetchDoctorPayrollDataset(params: {
 				? "partially_paid"
 				: "unpaid";
 		const receiptNum = visitId ? fiscalReceiptByVisit.get(visitId) : undefined;
-		const isPaid54Fz = Boolean(receiptNum) || isPaid || isPartiallyPaid;
+		const isPaid54Fz = Boolean(receiptNum) && actuallyPaidGrossKop > 0;
 
 		const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
 		const appt = appts.find((a) => a.id === linkedApptId);
@@ -584,7 +715,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			materialCostKopecks: matKop,
 			doctorId: resolvedDocId,
 			isPaid54Fz,
-			paidKopecks: actuallyPaidGrossKop > 0 ? actuallyPaidGrossKop : (isPaid54Fz ? grossKop : 0),
+			paidKopecks: Math.max(0, actuallyPaidGrossKop),
 		});
 	}
 
@@ -653,7 +784,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		}
 	}
 
-	return { shiftsCount, orders, completedServices };
+	return { shiftsCount, orders, completedServices, refundDeductions };
 }
 
 /**
@@ -663,8 +794,10 @@ export async function fetchClosedPayrollStatements(
 	orgId: string,
 	resolvedDocId: string,
 	doctorName: string,
+	tx?: TenantDb,
 ): Promise<{ closedPeriods: ClosedPayrollPeriodDto[]; statements: (typeof doctorPayrollStatements.$inferSelect)[] }> {
-	const statements = await db
+	const dbClient = tx ?? db;
+	const statements = await dbClient
 		.select()
 		.from(doctorPayrollStatements)
 		.where(
