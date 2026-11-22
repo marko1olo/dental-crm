@@ -5,12 +5,14 @@ import {
 	type ExecutiveTopProcedureItem,
 	calculateDepartmentBreakdown,
 	formatKopecksRu,
+	kopecksToRubles,
 } from "@dental/shared";
-import { and, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
 	organizations,
+	patientInvoices,
 	payments,
 	serviceCatalogItems,
 	treatmentItems,
@@ -231,7 +233,17 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.from(appointments)
 		.leftJoin(users, eq(appointments.doctorUserId, users.id))
 		.leftJoin(visits, eq(visits.appointmentId, appointments.id))
-		.leftJoin(payments, eq(payments.visitId, visits.id))
+		.leftJoin(patientInvoices, eq(patientInvoices.visitId, visits.id))
+		.leftJoin(
+			payments,
+			or(
+				eq(payments.visitId, visits.id),
+				and(
+					eq(payments.documentId, patientInvoices.id),
+					sql`${payments.documentId} is not null`,
+				),
+			),
+		)
 		.where(
 			and(
 				eq(appointments.organizationId, orgId),
@@ -267,7 +279,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				specialty: formatDoctorRoleRu(d.role),
 				initials: initials || "ВК",
 				revenueKopecks: revKop,
-				revenueRub: Math.round(revKop / 100),
+				revenueRub: kopecksToRubles(revKop),
 				revenueFormatted: formatKopecksRu(revKop),
 				visitsCount,
 				chairHours,
@@ -324,7 +336,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			category: formatCategoryRu(p.category),
 			count: Number(p.count || 0),
 			revenueKopecks: revKop,
-			revenueRub: Math.round(revKop / 100),
+			revenueRub: kopecksToRubles(revKop),
 			revenueFormatted: formatKopecksRu(revKop),
 			sharePercent: share,
 		};

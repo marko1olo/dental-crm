@@ -1,8 +1,8 @@
 /* Шапка, переключатели разделов, фильтры клиники и периодов (<= 120 строк) */
 .analytics-dashboard {
 	padding: 10px 16px; display: flex; flex-direction: column; gap: 10px;
-	height: 100%; overflow-y: auto; color: var(--ink); background: var(--paper);
-	box-sizing: border-box; max-width: 100%;
+	height: 100%; overflow-y: auto; overflow-x: clip; color: var(--ink); background: var(--paper);
+	box-sizing: border-box; max-width: 100vw;
 }
 .analytics-header {
 	display: flex; align-items: center; justify-content: space-between;

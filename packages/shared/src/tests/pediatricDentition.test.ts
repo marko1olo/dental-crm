@@ -6,6 +6,8 @@ import {
 	calculateCariogramRisk,
 	calculateEruptionTimelineByAge,
 	calculatePediatricAnestheticSafety,
+	calculatePediatricCariesIndex,
+	calculatePediatricIndices,
 	generatePediatricCariogramDiaryText,
 	isPrimaryTooth,
 	MIXED_DENTITION_BOTTOM,
@@ -231,5 +233,53 @@ describe("Pediatric & Mixed Dentition Engine (packages/shared)", () => {
 		assert.equal(mepivacaineChild.vasoconstrictorRatio, "none");
 		assert.equal(mepivacaineChild.totalEpinephrineAdministeredMg, 0);
 		assert.equal(mepivacaineChild.maxAllowedTotalDoseMg, 88.0);
+	});
+
+	it("9. Canonical Pediatric dmft / DMFT (кп / КПУ) Caries Intensity Indices & SSOT (calculatePediatricIndices)", () => {
+		// Mixed dentition test:
+		// Primary teeth:
+		// Tooth 54: Caries, surfaces: ["O", "M"]
+		// Tooth 55: Filled, surfaces: ["O"]
+		// Tooth 64: Extracted (prematurely, no physiological resorption)
+		// Tooth 51: Missing with physiological resorption (100%) -> should NOT count in prematurelyExtracted
+		// Permanent teeth:
+		// Tooth 16: Caries, surfaces: ["O"]
+		// Tooth 26: Filled, surfaces: ["O", "B"]
+		const teeth = [
+			{ toothNumber: 54, state: "Caries", surfaces: ["O", "M"] },
+			{ toothNumber: 55, state: "Filled", surfaces: ["O"] },
+			{ toothNumber: 64, state: "Extracted", surfaces: [] },
+			{ toothNumber: 51, state: "Missing", surfaces: [], resorptionStage: 100, isPhysiologicalResorption: true },
+			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
+			{ toothNumber: 26, state: "Filled", surfaces: ["O", "B"] },
+		];
+
+		const res = calculatePediatricIndices(teeth);
+
+		assert.equal(res.dentitionType, "mixed");
+		assert.equal(res.indices.primary.c, 1);
+		assert.equal(res.indices.primary.p, 1);
+		assert.equal(res.indices.primary.prematurelyExtracted, 1);
+		assert.equal(res.indices.primary.kp, 3, "кп = c (1) + p (1) + extracted (1) = 3");
+		assert.equal(res.indices.primary.kpSurfaces, 3, "kpSurfaces = 2 + 1 = 3");
+
+		assert.equal(res.indices.permanent.c, 1);
+		assert.equal(res.indices.permanent.p, 1);
+		assert.equal(res.indices.permanent.u, 0);
+		assert.equal(res.indices.permanent.kpuZ, 2);
+		assert.equal(res.indices.permanent.kpuP, 3, "kpuP = 1 + 2 = 3");
+
+		assert.equal(res.indices.totalMixedIndex, 5, "totalMixedIndex = kpuZ (2) + kp (3) = 5");
+		assert.equal(res.indices.cariesActivity, "medium");
+		assert.ok(res.summaryRu.includes("Индекс сменного прикуса"));
+
+		// Backward compatibility helper
+		const legacy = calculatePediatricCariesIndex({
+			54: "Caries",
+			55: "Filled",
+		});
+		assert.equal(legacy.k, 1);
+		assert.equal(legacy.p, 1);
+		assert.equal(legacy.kpTotal, 2);
 	});
 });

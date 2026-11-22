@@ -4,6 +4,7 @@
  * Computes dashboard indicators from local store / IndexedDB when offline.
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import type {
 	AnalyticsDashboardData,
 	ChairUtilizationPoint,
@@ -93,7 +94,7 @@ function getPaymentAmountRub(p: Record<string, unknown>): number {
 	if (typeof p.amount === "number" && Number.isFinite(p.amount)) return p.amount;
 	if (typeof p.amountRub === "number" && Number.isFinite(p.amountRub)) return p.amountRub;
 	if (typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)) {
-		return Math.round(p.amountKopecks) / 100;
+		return kopecksToRubles(p.amountKopecks);
 	}
 	if (typeof p.amount === "string") {
 		const val = Number(p.amount);

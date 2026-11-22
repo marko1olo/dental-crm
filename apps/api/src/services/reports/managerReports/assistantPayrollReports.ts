@@ -14,6 +14,7 @@ import {
 	ASSISTANT_SHIFT_RULE,
 	type AssistantShiftLogItem,
 	calculateAssistantPeriodPayroll,
+	kopecksToRubles,
 } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import {
@@ -344,17 +345,17 @@ export async function assistantPayrollReport(
 			hoursWorked: shiftLogs.reduce((acc, s) => acc + s.hoursWorked, 0),
 			radiographCount: totalRadiographs,
 			surgeryCount: totalSurgeries,
-			baseShiftPayoutRub: Math.round(calc.baseShiftPayoutKop / 100),
+			baseShiftPayoutRub: kopecksToRubles(calc.baseShiftPayoutKop),
 			baseShiftPayoutKopecks: calc.baseShiftPayoutKop,
-			radiographPayoutRub: Math.round(calc.radiographPayoutKop / 100),
+			radiographPayoutRub: kopecksToRubles(calc.radiographPayoutKop),
 			radiographPayoutKopecks: calc.radiographPayoutKop,
-			surgeryPayoutRub: Math.round(calc.surgeryPayoutKop / 100),
+			surgeryPayoutRub: kopecksToRubles(calc.surgeryPayoutKop),
 			surgeryPayoutKopecks: calc.surgeryPayoutKop,
-			grossPayoutRub: Math.round(calc.totalGrossPayoutKop / 100),
+			grossPayoutRub: kopecksToRubles(calc.totalGrossPayoutKop),
 			grossPayoutKopecks: calc.totalGrossPayoutKop,
-			ndflTaxRub: Math.round(calc.ndfl13TaxKop / 100),
+			ndflTaxRub: kopecksToRubles(calc.ndfl13TaxKop),
 			ndflTaxKopecks: calc.ndfl13TaxKop,
-			payoutRub: Math.round(calc.netPayoutToAssistantKop / 100),
+			payoutRub: kopecksToRubles(calc.netPayoutToAssistantKop),
 			payoutKopecks: calc.netPayoutToAssistantKop,
 		});
 	}
@@ -370,11 +371,11 @@ export async function assistantPayrollReport(
 		totals: {
 			totalShiftsCount,
 			totalAppointmentsAssisted,
-			totalGrossPayoutRub: Math.round(totalGrossPayoutKopecks / 100),
+			totalGrossPayoutRub: kopecksToRubles(totalGrossPayoutKopecks),
 			totalGrossPayoutKopecks,
-			totalNdflTaxRub: Math.round(totalNdflTaxKopecks / 100),
+			totalNdflTaxRub: kopecksToRubles(totalNdflTaxKopecks),
 			totalNdflTaxKopecks,
-			totalPayoutRub: Math.round(totalPayoutKopecks / 100),
+			totalPayoutRub: kopecksToRubles(totalPayoutKopecks),
 			totalPayoutKopecks,
 		},
 		isEmpty: rows.length === 0 || totalPayoutKopecks === 0,

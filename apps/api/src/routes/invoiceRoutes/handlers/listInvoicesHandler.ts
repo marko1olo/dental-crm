@@ -1,9 +1,9 @@
-import { kopecksToRubles, resolveInvoiceTotalAmountRub } from "@dental/shared";
+import { kopecksToRubles, resolveInvoiceTotalAmountRub, rublesToKopecks } from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
+import { invoiceItems, patientInvoices, payments } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "../types.js";
 
@@ -71,6 +71,30 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			.orderBy(desc(invoiceItems.createdAt))
 		: [];
 
+	const paymentSums = invoiceIds.length > 0
+		? await db
+			.select({
+				invoiceId: payments.documentId,
+				paidKopecks: sql<string>`coalesce(sum(coalesce(${payments.amountKopecks}, cast(round(${payments.amountRub} * 100) as bigint))), 0)`.as("paid_kopecks"),
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					inArray(payments.documentId, invoiceIds),
+					eq(payments.status, "paid"),
+				),
+			)
+			.groupBy(payments.documentId)
+		: [];
+
+	const paidKopecksMap = new Map<string, number>();
+	for (const p of paymentSums) {
+		if (p.invoiceId) {
+			paidKopecksMap.set(p.invoiceId, Number(p.paidKopecks) || 0);
+		}
+	}
+
 	const items = rawItems.map((item) => ({
 		id: item.id,
 		serviceId: item.priceListItemId || item.serviceCode || undefined,
@@ -89,6 +113,14 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 
 	const invoices = invoiceRows.map((inv) => {
 		const totalAmount = resolveInvoiceTotalAmountRub({ totalAmountRub: inv.totalAmountRub, totalRub: inv.totalRub });
+		const totalAmountKopecks = rublesToKopecks(totalAmount);
+		const recordedPaidKopecks = paidKopecksMap.get(inv.id);
+		const paidAmountKopecks = recordedPaidKopecks !== undefined
+			? recordedPaidKopecks
+			: (inv.status === "paid" ? totalAmountKopecks : 0);
+		const paidAmountRub = kopecksToRubles(paidAmountKopecks);
+		const remainingAmountKopecks = Math.max(0, totalAmountKopecks - paidAmountKopecks);
+		const remainingAmountRub = kopecksToRubles(remainingAmountKopecks);
 		const year = inv.createdAt ? new Date(inv.createdAt).getFullYear() : new Date().getFullYear();
 		const invoiceNumber = `СЧ-${year}-${inv.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
@@ -119,8 +151,12 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			patientPhone: inv.patientPhone || undefined,
 			visitId: inv.visitId,
 			organizationId: inv.organizationId,
-			totalAmountRub: totalAmount,
-			paidAmountRub: inv.status === "paid" ? totalAmount : 0,
+			totalAmountRub: kopecksToRubles(totalAmountKopecks),
+			totalAmountKopecks,
+			paidAmountRub,
+			paidAmountKopecks,
+			remainingAmountRub,
+			remainingAmountKopecks,
 			status: inv.status,
 			issuedAt: inv.issuedAt?.toISOString() || null,
 			paidAt: inv.paidAt?.toISOString() || null,

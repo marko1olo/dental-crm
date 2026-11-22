@@ -59,50 +59,63 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		const invoiceNumber = `СЧ-${Date.now().toString().slice(-6)}`;
 		const finalAmount = p.isWarranty100 ? 0 : Math.max(0, p.servicePriceRub);
 		const isUuid = Boolean(patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId));
-		let generatedId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `01930000-0000-7000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+
+		if (!isUuid || !patientId) {
+			showToast("Для создания счёта необходимо выбрать пациента с корректным идентификатором.", "error");
+			return;
+		}
+
+		let generatedId = "";
 		let generatedNumber = invoiceNumber;
 
-		if (isUuid) {
-			try {
-				const res = await fetch("/api/invoices", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-						...denteAdminSecretRequestHeaders(),
-					},
-					body: JSON.stringify({
-						patientId,
-						totalAmountRub: finalAmount,
-						status: "issued",
-						items: [
-							{
-								title: p.serviceName || "Стоматологический прием",
-								priceRub: finalAmount,
-								quantity: 1,
-							},
-						],
-					}),
-				});
-				if (res.ok) {
-					const payload = (await res.json()) as { invoice?: { id?: string; number?: string; invoiceNumber?: string } };
-					if (payload?.invoice?.id) {
-						generatedId = payload.invoice.id;
-					}
-					if (payload?.invoice?.number || payload?.invoice?.invoiceNumber) {
-						generatedNumber = payload.invoice.number || payload.invoice.invoiceNumber || invoiceNumber;
-					}
-				}
-			} catch (syncErr: unknown) {
-				console.warn("[InvoicesView] Не удалось создать счет через API, переключение на локальный автономный режим:", syncErr);
+		try {
+			const res = await fetch("/api/invoices", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					totalAmountRub: finalAmount,
+					status: "issued",
+					items: [
+						{
+							title: p.serviceName || "Стоматологический прием",
+							priceRub: finalAmount,
+							quantity: 1,
+						},
+					],
+				}),
+			});
+
+			if (!res.ok) {
+				const errPayload = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				const errMsg = errPayload?.message || errPayload?.error || `Ошибка сервера при создании счёта (${res.status})`;
+				console.error("[InvoicesView] Не удалось создать счёт через API:", res.status, errMsg);
+				showToast(errMsg, "error");
+				return;
 			}
+
+			const payload = (await res.json().catch(() => null)) as {
+				invoice?: { id?: string; number?: string; invoiceNumber?: string };
+				data?: { id?: string; number?: string; invoiceNumber?: string };
+			} | null;
+			const created = payload?.invoice || payload?.data;
+			generatedId = created?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "");
+			generatedNumber = created?.number || created?.invoiceNumber || invoiceNumber;
+		} catch (syncErr: unknown) {
+			console.error("[InvoicesView] Сетевой сбой при создании счёта:", syncErr);
+			showToast("Не удалось связаться с сервером для создания счёта. Проверьте соединение с сетью.", "error");
+			return;
 		}
 
 		const newInv: BillingInvoice = {
 			id: generatedId,
 			number: generatedNumber,
 			invoiceNumber: generatedNumber,
-			patientId: patientId || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : ""),
+			patientId,
 			patientName: p.patientName,
 			doctorName: currentDoctorName,
 			date: new Date().toLocaleDateString("ru-RU"),

@@ -33,7 +33,7 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 			assert.ok(def.managementStrategiesRu.length >= 4);
 			assert.ok(!/[😫🙁🙂😄]/.test(def.emoji), "No raw cartoon emojis in Frankl scale");
 			assert.ok(def.starClassRu.length > 0, "STAR class must be non-empty");
-			assert.ok(def.badgeColor.startsWith("#"));
+			assert.ok(def.badgeColor.startsWith("#") || def.badgeColor.startsWith("var(--"), "badgeColor must be hex or design token var(--)");
 		}
 
 		// Invalid ratings

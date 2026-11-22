@@ -28,7 +28,6 @@
 	color: var(--ink-muted, var(--muted));
 	font-weight: 700;
 	font-size: 0.75rem;
-	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	background: var(--paper-soft);
 }

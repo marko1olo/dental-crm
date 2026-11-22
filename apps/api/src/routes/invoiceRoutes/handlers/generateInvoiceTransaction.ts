@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { validatePlanToInvoice } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { patientInvoices } from "../../../db/schema/billing.js";
+import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems, treatmentPlans } from "../../../db/schema/clinical.js";
 import { buildTreatmentItemsToInsert } from "../invoiceCalculationHelpers.js";
 import type {
@@ -53,6 +53,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 			id: invoiceId,
 			organizationId: orgId,
 			patientId: data.patientId,
+			treatmentPlanId: data.planId ?? null,
 			totalRub: String(totalNetRub),
 			totalAmountRub: totalNetRub,
 			status: "draft",
@@ -79,6 +80,35 @@ export async function executeGenerateInvoiceTransaction(params: {
 			for (const inserted of insertedRows) {
 				createdItemIds.push(inserted.id);
 			}
+
+			// [SEV-1.3] Вставка строк счёта в invoiceItems для полного соответствия ст. 4.7 54-ФЗ
+			const invoiceItemsToInsert = validationReport.items.map((it) => {
+				const matchingCatalog = catalogRows.find(
+					(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
+				);
+				const qty = Number(it.quantity) || 1;
+				const grossKop = Number(it.effectiveUnitPriceKopecks) * qty;
+				const discountKop = Number(it.effectiveDiscountKopecks) || 0;
+				const discountPct =
+					grossKop > 0 && discountKop > 0
+						? Math.min(100, Math.max(0, (discountKop * 100) / grossKop))
+						: 0;
+
+				return {
+					organizationId: orgId,
+					invoiceId,
+					priceListItemId: matchingCatalog?.id ?? null,
+					name: it.nameRu,
+					quantity: String(it.quantity),
+					unitPriceKopecks: Number(it.effectiveUnitPriceKopecks),
+					discountPercent: discountPct.toFixed(2),
+					totalPriceKopecks: Number(it.effectiveLineNetKopecks),
+					serviceCode: it.code804n ?? matchingCatalog?.code ?? null,
+					toothCode: it.toothNumber ? String(it.toothNumber) : null,
+				};
+			});
+
+			await tx.insert(invoiceItems).values(invoiceItemsToInsert);
 		}
 	});
 

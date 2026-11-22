@@ -35,7 +35,7 @@ export const HygieneFedorovTab: React.FC<HygieneFedorovTabProps> = ({
 					<span className="text-xs font-bold text-[var(--ink)]">
 						Kср = {fedorovResult.score.toFixed(1)} балла
 					</span>
-					<span className="text-[11px] px-2 py-0.5 rounded-full font-bold border border-teal-500/30 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300">
+					<span className="text-[11px] px-2 py-0.5 rounded-full font-bold border border-[var(--primary)]/30 bg-[var(--primary-soft)] text-[var(--primary)]">
 						{fedorovResult.ratingText}
 					</span>
 				</div>
@@ -43,7 +43,7 @@ export const HygieneFedorovTab: React.FC<HygieneFedorovTabProps> = ({
 					type="button"
 					data-testid="hygiene-btn-ideal-fedorov"
 					onClick={onSetIdealFedorov}
-					className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer"
+					className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--success)]/30 bg-[var(--success-soft)] text-[var(--success)] hover:opacity-90 cursor-pointer"
 				>
 					✓ Окрашивания нет (1.0)
 				</button>
@@ -70,8 +70,8 @@ export const HygieneFedorovTab: React.FC<HygieneFedorovTabProps> = ({
 										onClick={() => onUpdateTooth(t, val)}
 										className={`h-10 sm:h-7 min-h-[44px] sm:min-h-[28px] text-xs sm:text-[10px] font-bold rounded cursor-pointer transition-colors ${
 											current === val
-												? "bg-purple-600 text-white"
-												: "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+												? "bg-[var(--primary)] text-white shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 										}`}
 										title={`${val} балл: ${val === 1 ? "нет" : val === 2 ? "1/4" : val === 3 ? "1/2" : val === 4 ? "3/4" : "вся"}`}
 										aria-label={`Зуб ${t} балл ${val}`}
@@ -117,8 +117,8 @@ export const HygienePmaTab: React.FC<HygienePmaTabProps> = ({
 					<span
 						className={`text-[11px] px-2 py-0.5 rounded-full font-bold border ${
 							pmaResult.isHealthy
-								? "border-emerald-500/30 bg-emerald-50 text-emerald-700"
-								: "border-rose-500/30 bg-rose-50 text-rose-700"
+								? "border-[var(--success)]/30 bg-[var(--success-soft)] text-[var(--success)]"
+								: "border-[var(--danger)]/30 bg-[var(--danger-soft)] text-[var(--danger)]"
 						}`}
 					>
 						{pmaResult.ratingText}
@@ -128,7 +128,7 @@ export const HygienePmaTab: React.FC<HygienePmaTabProps> = ({
 					type="button"
 					data-testid="hygiene-btn-ideal-pma"
 					onClick={onSetIdealPma}
-					className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer"
+					className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--success)]/30 bg-[var(--success-soft)] text-[var(--success)] hover:opacity-90 cursor-pointer"
 				>
 					✓ Десна здорова (0%)
 				</button>
@@ -155,8 +155,8 @@ export const HygienePmaTab: React.FC<HygienePmaTabProps> = ({
 										onClick={() => onUpdateTooth(t, val)}
 										className={`h-10 sm:h-7 min-h-[44px] sm:min-h-[28px] text-xs sm:text-[10px] font-bold rounded cursor-pointer transition-colors ${
 											current === val
-												? "bg-rose-600 text-white"
-												: "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+												? "bg-[var(--danger)] text-white shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 										}`}
 										aria-label={`Зуб ${t} воспаление ${val}`}
 									>

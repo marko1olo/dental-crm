@@ -217,6 +217,8 @@ export async function handleCreateInvoice(
 	const invoiceStatus = data.status ?? "issued";
 	const now = new Date();
 
+	let insertedItems: Array<typeof invoiceItems.$inferSelect> = [];
+
 	await withTenantCtx(orgId, async (tx) => {
 		await tx.insert(patientInvoices).values({
 			id: invoiceId,
@@ -231,40 +233,41 @@ export async function handleCreateInvoice(
 		});
 
 		if (preparedItems.length > 0) {
-			for (const it of preparedItems) {
-				await tx.insert(invoiceItems).values({
-					organizationId: orgId,
-					invoiceId: invoiceId,
-					priceListItemId: it.serviceId || null,
-					name: it.title,
-					quantity: String(it.quantity),
-					unitPriceKopecks: it.unitKopecks,
-					discountPercent: String(it.discountPercent),
-					totalPriceKopecks: it.netLineKopecks,
-					serviceCode: it.serviceId || null,
-					toothCode: it.toothCode || null,
-				});
+			const itemsToInsert = preparedItems.map((it) => ({
+				organizationId: orgId,
+				invoiceId: invoiceId,
+				priceListItemId: it.serviceId || null,
+				name: it.title,
+				quantity: String(it.quantity),
+				unitPriceKopecks: it.unitKopecks,
+				discountPercent: String(it.discountPercent),
+				totalPriceKopecks: it.netLineKopecks,
+				serviceCode: it.serviceId || null,
+				toothCode: it.toothCode || null,
+			}));
 
-				if (effectiveVisitId) {
-					const itemNotes = data.notes
-						? `${data.notes} | Счёт ${invoiceId}`
-						: `Счёт ${invoiceId}`;
-					await tx.insert(treatmentItems).values({
-						organizationId: orgId,
-						patientId: data.patientId,
-						visitId: effectiveVisitId,
-						serviceId: it.serviceId,
-						toothCode: it.toothCode,
-						title: it.title,
-						quantity: String(it.quantity),
-						unitPriceRub: it.unitPriceRub,
-						priceRub: it.priceRub,
-						discountRub: it.discountRub,
-						status: "completed",
-						plannedDoctorUserId: data.doctorId ?? null,
-						notes: itemNotes,
-					});
-				}
+			insertedItems = await tx.insert(invoiceItems).values(itemsToInsert).returning();
+
+			if (effectiveVisitId) {
+				const itemNotes = data.notes
+					? `${data.notes} | Счёт ${invoiceId}`
+					: `Счёт ${invoiceId}`;
+				const treatmentItemsToInsert = preparedItems.map((it) => ({
+					organizationId: orgId,
+					patientId: data.patientId,
+					visitId: effectiveVisitId,
+					serviceId: it.serviceId,
+					toothCode: it.toothCode,
+					title: it.title,
+					quantity: String(it.quantity),
+					unitPriceRub: it.unitPriceRub,
+					priceRub: it.priceRub,
+					discountRub: it.discountRub,
+					status: "completed" as const,
+					plannedDoctorUserId: data.doctorId ?? null,
+					notes: itemNotes,
+				}));
+				await tx.insert(treatmentItems).values(treatmentItemsToInsert);
 			}
 		}
 	});
@@ -273,21 +276,28 @@ export async function handleCreateInvoice(
 	const generatedNumber = formatInvoiceNumber(data.documentType ?? "invoice", data.patientId);
 	const invoiceNumber = generatedNumber || `СЧ-${year}-${invoiceId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
-	const returnedItems = preparedItems.map((it, idx) => ({
-		id: `inv-item-${invoiceId.slice(0, 8)}-${idx + 1}`,
-		serviceId: it.serviceId,
-		serviceCode: it.serviceId || undefined,
-		code: it.serviceId || undefined,
-		toothCode: it.toothCode,
-		toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
-		title: it.title,
-		name: it.title,
-		quantity: it.quantity,
-		unitPriceRub: it.unitPriceRub,
-		priceRub: it.priceRub,
-		discountRub: it.discountRub,
-		totalAmountRub: it.priceRub,
-	}));
+	const returnedItems = insertedItems.map((it, idx) => {
+		const prep = preparedItems[idx];
+		return {
+			id: it.id,
+			serviceId: it.priceListItemId || it.serviceCode || prep?.serviceId || undefined,
+			serviceCode: it.serviceCode || prep?.serviceId || undefined,
+			code: it.serviceCode || prep?.serviceId || undefined,
+			toothCode: it.toothCode ?? prep?.toothCode ?? null,
+			toothNumber: it.toothCode
+				? Number(it.toothCode) || undefined
+				: prep?.toothCode
+					? Number(prep.toothCode) || undefined
+					: undefined,
+			title: it.name,
+			name: it.name,
+			quantity: Number(it.quantity) || prep?.quantity || 1,
+			unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
+			priceRub: kopecksToRubles(it.totalPriceKopecks),
+			discountRub: prep?.discountRub ?? 0,
+			totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
+		};
+	});
 
 	try {
 		wsBroker.broadcastToOrganization(orgId, {

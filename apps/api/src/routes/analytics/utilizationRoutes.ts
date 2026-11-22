@@ -1,4 +1,4 @@
-import { calculateChairHourlyCost } from "@dental/shared";
+import { calculateChairHourlyCost, kopecksToRubles } from "@dental/shared";
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -15,6 +15,7 @@ import {
 	inventoryTransactions,
 	labOrders,
 	organizations,
+	patientInvoices,
 	payments,
 	treatmentItems,
 	users,
@@ -209,7 +210,11 @@ export async function calculateDoctorProfitability(
 			revenue: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
 		})
 		.from(payments)
-		.leftJoin(visits, eq(payments.visitId, visits.id))
+		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
+		.leftJoin(
+			visits,
+			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+		)
 		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(
@@ -300,7 +305,7 @@ export async function calculateDoctorProfitability(
 		)
 		.groupBy(doctorPayrollStatements.doctorId);
 	const docPayrollMap = new Map(
-		docPayrollRes.map((p) => [p.doctorId, Math.round(Number(p.payrollKopecks || 0) / 100)]),
+		docPayrollRes.map((p) => [p.doctorId, kopecksToRubles(Number(p.payrollKopecks || 0))]),
 	);
 
 	// 2d. Себестоимость списанных материалов по врачам (складские проводки inventoryTransactions по визитам)

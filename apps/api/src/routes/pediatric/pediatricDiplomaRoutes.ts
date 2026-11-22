@@ -1,27 +1,38 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { calculateAge, computePayloadHash } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { generatedDocuments } from "../../db/schema.js";
+import { generatedDocuments, patients } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { ensurePatientInOrganization } from "../odontogram/planHelpers.js";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface BraveryDiplomaRecord {
-	id: string; patientId: string; diplomaNumber: string; patientName: string;
-	patientAgeYears?: number | undefined; doctorName: string; clinicName: string;
-	awardReasonRu: string; awardedDateIso: string; issueDateRu: string; createdAt: string;
+	id: string;
+	patientId: string;
+	diplomaNumber: string;
+	patientName: string;
+	patientAgeYears?: number | undefined;
+	doctorName: string;
+	clinicName: string;
+	awardReasonRu: string;
+	awardedDateIso: string;
+	issueDateRu: string;
+	createdAt: string;
 }
 
 const issueDiplomaSchema = z.object({
-	patientName: z.string().min(1).default("Юный пациент"),
-	patientAgeYears: z.number().optional().default(6),
+	patientName: z.string().min(1).optional(),
+	patientAgeYears: z.number().int().min(1).max(18).optional(),
 	doctorName: z.string().optional().default("Врач-стоматолог детский"),
 	clinicName: z.string().optional().default("Стоматологическая клиника DENTE"),
 	awardReasonRu: z.string().optional().default("За выдающееся мужество, образцовое спокойствие в кресле стоматолога и дружбу с Зубной Феей!"),
 	awardedDateIso: z.string().optional(),
+	idempotencyKey: z.string().optional(),
 });
 
 export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
@@ -38,7 +49,17 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 
 		try {
 			const dbDocs = await db.select().from(generatedDocuments)
-				.where(and(eq(generatedDocuments.organizationId, organizationId), eq(generatedDocuments.patientId, patientId), eq(generatedDocuments.title, "Диплом за храбрость")))
+				.where(
+					and(
+						eq(generatedDocuments.organizationId, organizationId),
+						eq(generatedDocuments.patientId, patientId),
+						or(
+							eq(generatedDocuments.kind, "bravery_diploma"),
+							eq(generatedDocuments.kind, "visit_attendance_certificate"),
+							eq(generatedDocuments.title, "Диплом за храбрость")
+						)
+					)
+				)
 				.orderBy(desc(generatedDocuments.createdAt));
 
 			const mappedFromDb: BraveryDiplomaRecord[] = dbDocs.map((doc) => {
@@ -85,8 +106,77 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
+		// Мандаты 8d, 8bo, 8zp: Идемпотентность по заголовку Idempotency-Key
+		const rawIdempotencyKey =
+			(request.headers?.["idempotency-key"] as string | undefined) ??
+			(request.headers?.["x-idempotency-key"] as string | undefined) ??
+			parsed.data.idempotencyKey;
+		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+			try {
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
+					}
+					if (existingRecord.status === "in_flight") {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция генерации диплома за храбрость с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
+			} catch (idempotencyCheckErr) {
+				request.log.warn({ idempotencyCheckErr, idempotencyKey }, "Idempotency check bypass on read failure");
+			}
+		}
+
 		const now = new Date();
-		const entropy = Math.random().toString(36).substring(2, 6).toUpperCase();
+		let patientBirthDate: string | null = null;
+		let patientDbFullName: string | null = null;
+
+		try {
+			const [patientRow] = await db
+				.select({
+					fullName: patients.fullName,
+					birthDate: patients.birthDate,
+				})
+				.from(patients)
+				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+				.limit(1);
+
+			if (patientRow) {
+				patientBirthDate = patientRow.birthDate;
+				patientDbFullName = patientRow.fullName;
+			}
+		} catch (patientFetchErr) {
+			request.log.warn({ patientFetchErr, patientId }, "Failed to fetch patient details for bravery diploma age calculation");
+		}
+
+		let effectiveAge = parsed.data.patientAgeYears;
+		if (effectiveAge === undefined && patientBirthDate) {
+			const computed = calculateAge(patientBirthDate);
+			if (computed > 0 && computed <= 18) {
+				effectiveAge = computed;
+			}
+		}
+
+		const effectivePatientName =
+			(parsed.data.patientName && parsed.data.patientName.trim()) ||
+			patientDbFullName ||
+			"Юный пациент";
+
+		// Криптографически стойкая энтропия без Math.random
+		const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
 		const diplomaNumber = `ДИПЛОМ-ГЕРОЙ-${now.getFullYear()}-${entropy}`;
 		const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
@@ -94,8 +184,8 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			id: randomUUID(),
 			patientId,
 			diplomaNumber,
-			patientName: parsed.data.patientName,
-			patientAgeYears: parsed.data.patientAgeYears,
+			patientName: effectivePatientName,
+			patientAgeYears: effectiveAge,
 			doctorName: parsed.data.doctorName,
 			clinicName: parsed.data.clinicName,
 			awardReasonRu: parsed.data.awardReasonRu,
@@ -104,17 +194,43 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			createdAt: now.toISOString(),
 		};
 
+		const responsePayload: Record<string, unknown> = { success: true, diploma: diplomaRecord };
+
 		try {
-			await db.insert(generatedDocuments).values({
-				id: diplomaRecord.id,
-				organizationId,
-				patientId,
-				kind: "post_visit_recommendations",
-				status: "issued",
-				title: "Диплом за храбрость",
-				payloadJson: JSON.stringify(diplomaRecord),
+			await db.transaction(async (tx) => {
+				await tx.insert(generatedDocuments).values({
+					id: diplomaRecord.id,
+					organizationId,
+					patientId,
+					kind: "bravery_diploma",
+					status: "issued",
+					title: "Диплом за храбрость",
+					payloadJson: JSON.stringify(diplomaRecord),
+				});
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: organizationId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 201,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 201,
+							},
+						});
+				}
 			});
-			return reply.code(201).send({ success: true, diploma: diplomaRecord });
+
+			return reply.code(201).send(responsePayload);
 		} catch (error) {
 			request.log.error({ error, patientId, diplomaRecord }, "Failed to persist bravery diploma into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить диплом за храбрость в базу данных" });

@@ -7,7 +7,7 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateEgiszDentalCdaXml } from "../../egisz/cdaR2/dentalCdaXmlGenerator.js";
+import { generateEgiszDentalCdaXml } from "../../egisz/egiszRemdEngine.js";
 import { calculateLoyaltyAccrual, calculateTierProgression } from "../../loyalty/loyaltyCatalogData.js";
 import { buildRfc4180Csv } from "../analyticsCsvUtils.js";
 
@@ -42,7 +42,7 @@ test("EGISZ CDA R2 generator produces compliant structured XML with valid root O
 			clinicPhone: "+7 (495) 000-00-00",
 		},
 		doctor: {
-			doctorSnils: "123-456-789 00",
+			doctorSnils: "123-456-789 64",
 			doctorFullName: "Иванов Иван Иванович",
 			specialtyCode: "1",
 			specialtyName: "Стоматолог общей практики",
@@ -52,7 +52,7 @@ test("EGISZ CDA R2 generator produces compliant structured XML with valid root O
 			patientFullName: "Петров Петр Петрович",
 			patientBirthDate: "1990-01-01",
 			patientGender: "male" as const,
-			patientSnils: "987-654-321 00",
+			patientSnils: "112-233-445 95",
 		},
 		diagnoses: [
 			{

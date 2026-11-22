@@ -132,10 +132,22 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 				}
 			} else {
 				// В случае ошибки или первого старта — безопасный клинический стейт
-				applyFallbackData();
+				if (isDemoShowcaseMode()) {
+					applyFallbackData();
+				} else {
+					setSummary(null);
+					setStaffList([]);
+					setRecentEvents([]);
+				}
 			}
 		} catch (_err) {
-			applyFallbackData();
+			if (isDemoShowcaseMode()) {
+				applyFallbackData();
+			} else {
+				setSummary(null);
+				setStaffList([]);
+				setRecentEvents([]);
+			}
 		} finally {
 			setLoading(false);
 		}

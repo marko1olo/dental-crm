@@ -1,7 +1,0 @@
-/**
- * paymentModalStudio.css — Legacy Billing Facade
- * Points to canonical SSOT in components/finance (Mandate 8b).
- */
-
-@import "../finance/paymentModalStudio.css";
-

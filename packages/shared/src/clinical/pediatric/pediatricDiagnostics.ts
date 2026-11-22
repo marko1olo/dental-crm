@@ -167,8 +167,236 @@ export function validatePediatricToothPathology(
 	return { valid: true };
 }
 
+export interface PediatricToothRecord {
+	readonly toothNumber: number;
+	readonly state?: string | null | undefined;
+	readonly surfaces?: unknown;
+	readonly notes?: string | null | undefined;
+	readonly resorptionStage?: number | undefined;
+	readonly isPhysiologicalResorption?: boolean | undefined;
+}
+
+export interface PediatricCariesIndicesResult {
+	readonly dentitionType: "primary" | "mixed" | "permanent";
+	readonly indices: {
+		readonly permanent: {
+			readonly kpuZ: number;
+			readonly kpuP: number;
+			readonly c: number;
+			readonly p: number;
+			readonly u: number;
+		};
+		readonly primary: {
+			readonly kp: number;
+			readonly kpSurfaces: number;
+			readonly c: number;
+			readonly p: number;
+			readonly prematurelyExtracted: number;
+			readonly surfacesC: number;
+			readonly surfacesP: number;
+		};
+		readonly totalMixedIndex: number;
+		readonly cariesActivity: "high" | "medium" | "low";
+	};
+	readonly counts: {
+		readonly primaryTeethCataloged: number;
+		readonly permanentTeethCataloged: number;
+	};
+	readonly summaryRu: string;
+}
+
+export function parseToothSurfacesCount(surfaces: unknown): number {
+	if (Array.isArray(surfaces)) {
+		return surfaces.length > 0 ? surfaces.length : 1;
+	}
+	if (typeof surfaces === "string") {
+		const trimmed = surfaces.trim();
+		if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+			try {
+				const parsed = JSON.parse(trimmed);
+				if (Array.isArray(parsed)) {
+					return parsed.length > 0 ? parsed.length : 1;
+				}
+			} catch {
+				// fallback to comma split
+			}
+		}
+		const parts = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+		return parts.length > 0 ? parts.length : 1;
+	}
+	return 1;
+}
+
+export function parseClinicalNotes(notes: string | null | undefined): Record<string, unknown> | null {
+	if (!notes) return null;
+	const trimmed = notes.trim();
+	if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
+	try {
+		const parsed = JSON.parse(trimmed);
+		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+			return parsed as Record<string, unknown>;
+		}
+	} catch {
+		// Non-JSON notes
+	}
+	return null;
+}
+
+/**
+ * Canonical SSOT for pediatric and mixed caries intensity indices (Мандат 8bf).
+ * Evaluates deciduous (FDI 51..85) and permanent teeth (11..48), taking into account
+ * physiological root resorption, premature tooth loss, tooth surfaces (kpSurfaces / kpuP),
+ * and caries activity according to WHO/clinical standards.
+ */
+export function calculatePediatricIndices(
+	teeth: readonly PediatricToothRecord[],
+): PediatricCariesIndicesResult {
+	let permanentC = 0;
+	let permanentP = 0;
+	let permanentU = 0;
+	let primaryC = 0;
+	let primaryP = 0;
+	let primaryExtracted = 0;
+	let permanentSurfacesC = 0;
+	let permanentSurfacesP = 0;
+	let primarySurfacesC = 0;
+	let primarySurfacesP = 0;
+	let primaryCount = 0;
+	let permanentCount = 0;
+
+	for (const t of teeth) {
+		const isPrimary = isPrimaryTooth(t.toothNumber);
+		if (isPrimary) primaryCount++; else permanentCount++;
+		const state = t.state || "";
+		const surfacesCount = parseToothSurfacesCount(t.surfaces);
+
+		const stateLower = state.toLowerCase();
+		const clin = parseClinicalNotes(t.notes);
+		const resorptionStage = t.resorptionStage ?? (typeof clin?.resorptionStage === "number" ? clin.resorptionStage : undefined);
+		const isPhysiologicalResorption =
+			t.isPhysiologicalResorption ||
+			stateLower === "resorption" ||
+			stateLower === "exfoliated" ||
+			stateLower === "exfoliat" ||
+			(typeof resorptionStage === "number" && resorptionStage > 0) ||
+			Boolean(clin?.isPhysiologicalResorption);
+
+		if (isPrimary) {
+			if (
+				state === "Caries" ||
+				state === "Pulpitis" ||
+				state === "Periodontitis" ||
+				stateLower.includes("caries") ||
+				stateLower.includes("кариес") ||
+				stateLower.includes("pulpitis") ||
+				stateLower.includes("пульпит")
+			) {
+				primaryC++;
+				primarySurfacesC += surfacesCount;
+			} else if (
+				state === "Filled" ||
+				state === "Crown" ||
+				stateLower.includes("filled") ||
+				stateLower.includes("пломба") ||
+				stateLower.includes("restoration")
+			) {
+				primaryP++;
+				primarySurfacesP += surfacesCount;
+			} else if (
+				(state === "Extracted" ||
+					state === "Missing" ||
+					state === "Root" ||
+					stateLower.includes("extracted") ||
+					stateLower.includes("missing")) &&
+				!isPhysiologicalResorption
+			) {
+				primaryExtracted++;
+			}
+		} else {
+			if (
+				state === "Caries" ||
+				state === "Pulpitis" ||
+				state === "Periodontitis" ||
+				stateLower.includes("caries") ||
+				stateLower.includes("кариес") ||
+				stateLower.includes("pulpitis") ||
+				stateLower.includes("пульпит")
+			) {
+				permanentC++;
+				permanentSurfacesC += surfacesCount;
+			} else if (
+				state === "Filled" ||
+				state === "Crown" ||
+				state === "Bridge" ||
+				stateLower.includes("filled") ||
+				stateLower.includes("пломба") ||
+				stateLower.includes("restoration")
+			) {
+				permanentP++;
+				permanentSurfacesP += surfacesCount;
+			} else if (
+				state === "Missing" ||
+				state === "Extracted" ||
+				state === "Root" ||
+				stateLower.includes("missing") ||
+				stateLower.includes("extracted")
+			) {
+				permanentU++;
+			}
+		}
+	}
+
+	const kpuZ = permanentC + permanentP + permanentU;
+	const kpuP = permanentSurfacesC + permanentSurfacesP + permanentU;
+	const kp = primaryC + primaryP + primaryExtracted;
+	const kpSurfaces = primarySurfacesC + primarySurfacesP;
+	const mixedIndex = kpuZ + kp;
+	const dentitionType: "primary" | "mixed" | "permanent" =
+		primaryCount > 0 && permanentCount > 0
+			? "mixed"
+			: primaryCount > 0 && permanentCount === 0
+				? "primary"
+				: "permanent";
+	const cariesActivity: "high" | "medium" | "low" =
+		kpuZ >= 7 || kp >= 5 ? "high" : kpuZ >= 3 || kp >= 2 ? "medium" : "low";
+
+	const activityRu =
+		cariesActivity === "high" ? "высокая" : cariesActivity === "medium" ? "средняя" : "низкая";
+
+	const summaryRu =
+		dentitionType === "mixed"
+			? `Индекс сменного прикуса КПУ(з)+кп: ${mixedIndex} (КПУ(з)=${kpuZ}, кп=${kp}), активность: ${activityRu}`
+			: dentitionType === "primary"
+				? `Индекс временного прикуса кп(з): ${kp} (к=${primaryC}, п=${primaryP}${primaryExtracted > 0 ? `, у=${primaryExtracted}` : ""}), кп(п): ${kpSurfaces}, активность: ${activityRu}`
+				: `Индекс постоянного прикуса КПУ(з): ${kpuZ} (К=${permanentC}, П=${permanentP}, У=${permanentU}), КПУ(п): ${kpuP}, активность: ${activityRu}`;
+
+	return {
+		dentitionType,
+		indices: {
+			permanent: { kpuZ, kpuP, c: permanentC, p: permanentP, u: permanentU },
+			primary: {
+				kp,
+				kpSurfaces,
+				c: primaryC,
+				p: primaryP,
+				prematurelyExtracted: primaryExtracted,
+				surfacesC: primarySurfacesC,
+				surfacesP: primarySurfacesP,
+			},
+			totalMixedIndex: mixedIndex,
+			cariesActivity,
+		},
+		counts: {
+			primaryTeethCataloged: primaryCount,
+			permanentTeethCataloged: permanentCount,
+		},
+		summaryRu,
+	};
+}
+
 /**
  * Calculates primary caries intensity index КП (к = кариозные, п = пломбированные).
+ * Delegates to canonical calculatePediatricIndices (Mandate 8bf).
  */
 export function calculatePediatricCariesIndex(teethStates: Record<number, string>): {
 	k: number;
@@ -176,30 +404,15 @@ export function calculatePediatricCariesIndex(teethStates: Record<number, string
 	kpTotal: number;
 	summaryRu: string;
 } {
-	let k = 0;
-	let p = 0;
-
-	for (const tooth of ALL_PRIMARY_TEETH) {
-		const state = teethStates[tooth];
-		if (!state) continue;
-
-		const lower = state.toLowerCase();
-		if (lower.includes("caries") || lower.includes("кариес")) {
-			k++;
-		} else if (lower.includes("filled") || lower.includes("пломба") || lower.includes("restoration")) {
-			p++;
-		}
-	}
-
-	const kpTotal = k + p;
-	let levelRu = "низкая";
-	if (kpTotal >= 5) levelRu = "высокая";
-	else if (kpTotal >= 3) levelRu = "средняя";
-
+	const records: PediatricToothRecord[] = Object.entries(teethStates).map(([num, state]) => ({
+		toothNumber: Number(num),
+		state,
+	}));
+	const res = calculatePediatricIndices(records);
 	return {
-		k,
-		p,
-		kpTotal,
-		summaryRu: `Индекс КП: ${kpTotal} (К=${k}, П=${p}), интенсивность кариеса: ${levelRu}`,
+		k: res.indices.primary.c,
+		p: res.indices.primary.p,
+		kpTotal: res.indices.primary.c + res.indices.primary.p,
+		summaryRu: res.summaryRu,
 	};
 }

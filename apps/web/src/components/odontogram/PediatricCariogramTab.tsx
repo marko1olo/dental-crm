@@ -13,8 +13,6 @@ export interface PediatricCariogramTabProps {
 	onCariogramInputChange: (input: CariogramInput) => void;
 	cariogramResult: CariogramResult;
 	onInsertCariogramToMedicalCard?: (() => void) | undefined;
-	/** @deprecated Использовать onInsertCariogramToMedicalCard */
-	onInsertCariogramToClinicalNote?: (() => void) | undefined;
 }
 
 export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
@@ -22,9 +20,8 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 	onCariogramInputChange,
 	cariogramResult,
 	onInsertCariogramToMedicalCard,
-	onInsertCariogramToClinicalNote,
 }) => {
-	const handleInsert = onInsertCariogramToMedicalCard || onInsertCariogramToClinicalNote;
+	const handleInsert = onInsertCariogramToMedicalCard;
 	const currentLevel: CariogramRiskLevel = (cariogramInput.cariesRiskLevel as CariogramRiskLevel) || "low";
 
 	const handleSelectRiskLevel = (level: CariogramRiskLevel) => {

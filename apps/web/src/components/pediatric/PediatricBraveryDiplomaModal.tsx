@@ -5,7 +5,6 @@ import { showToast } from "../GlobalToast";
 import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator";
 import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { PediatricBraveryDiplomaPreview } from "./diploma/PediatricBraveryDiplomaPreview";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface PediatricBraveryDiplomaModalProps {
 	readonly isOpen: boolean;
@@ -53,9 +52,10 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		try {
 			await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/bravery-diploma`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: {
 					"Content-Type": "application/json",
-				}),
+				},
+				credentials: "include",
 				body: JSON.stringify({
 					patientName: heroName.trim() || resolved.patientName || "Юный пациент",
 					patientAgeYears,

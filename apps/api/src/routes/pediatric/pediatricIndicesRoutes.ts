@@ -1,12 +1,12 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
+import { calculateFedorovVolodkinaScore, calculatePediatricIndices } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { toothStates } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { parseClinicalDataFromNotes } from "../odontogram/types.js";
-import { PRIMARY_TEETH } from "./pediatricPresets.js";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -48,55 +48,36 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось загрузить состояния зубов для расчета детских индексов КПУ/кп" });
 		}
 
-		let permanentC = 0; let permanentP = 0; let permanentU = 0;
-		let primaryC = 0; let primaryP = 0; let primaryExtracted = 0;
-		let permanentSurfacesC = 0; let permanentSurfacesP = 0;
-		let primaryCount = 0; let permanentCount = 0;
+		const indicesResult = calculatePediatricIndices(teeth);
 
+		const fedorovAssessments: Array<{ toothNumber: number; fedorovScore?: number; debrisScore?: number }> = [];
+		const fedorovTeethSet = new Set([83, 82, 81, 71, 72, 73, 43, 42, 41, 31, 32, 33]);
 		for (const t of teeth) {
-			const isPrimary = PRIMARY_TEETH.has(t.toothNumber);
-			if (isPrimary) primaryCount++; else permanentCount++;
-			const state = t.state;
-			const surfacesCount = Array.isArray(t.surfaces) ? t.surfaces.length : 1;
-
-			const stateLower = (state || "").toLowerCase();
-			const clin = parseClinicalDataFromNotes(t.notes);
-			const resorptionStage = clin?.resorptionStage;
-			const isPhysiologicalResorption =
-				stateLower === "resorption" ||
-				stateLower === "exfoliated" ||
-				stateLower === "exfoliat" ||
-				(typeof resorptionStage === "number" && resorptionStage > 0) ||
-				Boolean(clin?.isPhysiologicalResorption);
-
-			if (isPrimary) {
-				if (state === "Caries" || state === "Pulpitis" || state === "Periodontitis") primaryC++;
-				else if (state === "Filled" || state === "Crown") primaryP++;
-				else if ((state === "Extracted" || state === "Missing" || state === "Root") && !isPhysiologicalResorption) primaryExtracted++;
-			} else {
-				if (state === "Caries" || state === "Pulpitis" || state === "Periodontitis") { permanentC++; permanentSurfacesC += surfacesCount; }
-				else if (state === "Filled" || state === "Crown" || state === "Bridge") { permanentP++; permanentSurfacesP += surfacesCount; }
-				else if (state === "Missing" || state === "Extracted" || state === "Root") permanentU++;
+			if (fedorovTeethSet.has(t.toothNumber)) {
+				const clin = parseClinicalDataFromNotes(t.notes);
+				const clinRecord = clin as Record<string, unknown> | null;
+				const fedorovScore = typeof clinRecord?.fedorovScore === "number" ? clinRecord.fedorovScore : undefined;
+				const debrisScore = typeof clinRecord?.debrisScore === "number" ? clinRecord.debrisScore : undefined;
+				fedorovAssessments.push({
+					toothNumber: t.toothNumber,
+					...(fedorovScore !== undefined ? { fedorovScore } : {}),
+					...(debrisScore !== undefined ? { debrisScore } : {}),
+				});
 			}
 		}
-
-		const kpuZ = permanentC + permanentP + permanentU;
-		const kpuP = permanentSurfacesC + permanentSurfacesP + permanentU;
-		const kp = primaryC + primaryP;
-		const mixedIndex = kpuZ + kp;
-		const dentitionType = primaryCount > 0 && permanentCount > 0 ? "mixed" : primaryCount > 0 && permanentCount === 0 ? "primary" : "permanent";
-		const cariesActivity = kpuZ >= 7 || kp >= 5 ? "high" : kpuZ >= 3 || kp >= 2 ? "medium" : "low";
+		const fedorovVolodkina = calculateFedorovVolodkinaScore(fedorovAssessments);
 
 		return reply.send({
 			success: true,
-			dentitionType,
+			dentitionType: indicesResult.dentitionType,
 			indices: {
-				permanent: { kpuZ, kpuP, c: permanentC, p: permanentP, u: permanentU },
-				primary: { kp, c: primaryC, p: primaryP, prematurelyExtracted: primaryExtracted },
-				totalMixedIndex: mixedIndex,
-				cariesActivity,
+				permanent: indicesResult.indices.permanent,
+				primary: indicesResult.indices.primary,
+				totalMixedIndex: indicesResult.indices.totalMixedIndex,
+				cariesActivity: indicesResult.indices.cariesActivity,
+				fedorovVolodkina,
 			},
-			counts: { primaryTeethCataloged: primaryCount, permanentTeethCataloged: permanentCount },
+			counts: indicesResult.counts,
 		});
 	});
 }
