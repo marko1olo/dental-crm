@@ -1,7 +1,7 @@
 # 📰 10. ДАЙДЖЕСТ-СИСТЕМА, ПАКЕТНАЯ САММАРИЗАЦИЯ И TELEGRAPH/PDF
 
-> **Модули-источники:** `summarizer.py` (1680 строк), `digest_pdf.py` (840 строк)  
-> **Ключевые функции:** `process_summary_batch`, `process_weekly_batch`, `_create_telegraph_page_resilient`, `embed_media_into_summary_html`
+> Модули-источники: `summarizer.py` (1680 строк), `digest_pdf.py` (840 строк)  
+> Ключевые функции: `process_summary_batch`, `process_weekly_batch`, `_create_telegraph_page_resilient`, `embed_media_into_summary_html`
 
 ---
 
@@ -45,7 +45,7 @@
 
 - Создание независимых иллюстрированных статей через `telegraph.Telegraph`.
 - **Встраивание медиа (`embed_media_into_summary_html`):** Если в ходе обсуждения клинического случая врачи публиковали снимки КЛКТ или фотографии этапов лечения, скрипт находит оригинальные файлы из `uploaded_media/` и вставляет их в тело статьи Telegraph.
-- **Отказоустойчивость:** При ошибках сети или таймаутах Telegraph API предусмотрен трехкратный экспоненциальный бэкофф с сохранением резервной HTML-версии на локальный диск.
+- Отказоустойчивость: При ошибках сети или таймаутах Telegraph API предусмотрен трехкратный экспоненциальный бэкофф с сохранением резервной HTML-версии на локальный диск.
 
 ---
 

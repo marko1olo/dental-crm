@@ -1,7 +1,7 @@
 # 💾 08. БАЗЫ ДАННЫХ И СИСТЕМА ХРАНЕНИЯ (SQLITE ARCHITECTURE)
 
-> **Модули-источники:** `database.py` (1630 строк), `distiller.py`, `apply_content_hash_migration.py`  
-> **Физические файлы БД:** `stomat_bot.db` (22 MB), `stomat_wiki.db` (10.8 MB), `stomat_archive.db` (47.5 MB)
+> Модули-источники: `database.py` (1630 строк), `distiller.py`, `apply_content_hash_migration.py`  
+> Физические файлы БД: `stomat_bot.db` (22 MB), `stomat_wiki.db` (10.8 MB), `stomat_archive.db` (47.5 MB)
 
 ---
 
@@ -49,7 +49,7 @@ CREATE TABLE bot_sent_messages (
     UNIQUE(msg_id, chat_id)
 );
 ```
-> **Критическое назначение:** Предотвращает зацикливание и рекурсию. По этой таблице бот определяет, отвечает ли врач на его сообщение, и никогда не реагирует сам на себя.
+> Критическое назначение: Предотвращает зацикливание и рекурсию. По этой таблице бот определяет, отвечает ли врач на его сообщение, и никогда не реагирует сам на себя.
 
 ### 2.3. Таблица `user_memories` (Долговременное клиническое досье)
 *Количество записей: ~429*
@@ -180,7 +180,7 @@ CREATE TABLE archive_messages (
 SQLite по умолчанию блокирует весь файл базы при записи. В асинхронном приложении с десятками параллельных корутин попытка одновременного выполнения `INSERT` вызывает исключение `sqlite3.OperationalError: database is locked`.
 
 В StomChat эта проблема решена на фундаментальном уровне:
-1. **Режим WAL (Write-Ahead Logging):**
+1. Режим WAL (Write-Ahead Logging):
    При старте базы выполняется:
    ```sql
    PRAGMA journal_mode = WAL;
@@ -197,4 +197,4 @@ SQLite по умолчанию блокирует весь файл базы п�
        loop = asyncio.get_running_loop()
        return await loop.run_in_executor(_DB_EXECUTOR, lambda: _sync_write(sql, params))
    ```
-   **Результат:** 100% защита от состояний гонки и повреждения баз данных.
+   Результат: 100% защита от состояний гонки и повреждения баз данных.
