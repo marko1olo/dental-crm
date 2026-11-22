@@ -60,7 +60,7 @@
   npm test -w @dental/web
   # Executes: node --import tsx --import ./testCssStub.mjs --test "src/**/*.test.ts" "src/**/*.test.tsx"
   ```
-- **Targeted Clinical & Ergonomic UI Test Suite:**
+- Targeted Clinical & Ergonomic UI Test Suite:
   ```bash
   node --import tsx --import ./testCssStub.mjs --test "src/components/odontogram/**/*.test.ts" "src/components/visit/**/*.test.ts" "src/tests/nurseProofUx.test.ts" "src/tests/perspectiveOdontogram.test.ts" "src/tests/challenger10ThemesWcagAudit.test.ts"
   ```

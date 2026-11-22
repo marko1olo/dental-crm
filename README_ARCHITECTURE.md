@@ -2,9 +2,9 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-Welcome to the canonical architecture guide for the **DENTE Clinical Dental CRM** project.
+Welcome to the canonical architecture guide for the DENTE Clinical Dental CRM project.
 
-The system is an enterprise-grade full-stack clinical platform built with **React 19**, **Zustand**, and **Tailwind CSS** on the frontend (`@dental/web`), powered by a **Fastify 5** API service and native **PostgreSQL 18.4** (`.data/pg18`, port 5432) via **Drizzle ORM** (`@dental/api`). A strictly typed core domain package (`@dental/shared`) enforces medical, financial, and statutory invariants across the stack.
+The system is an enterprise-grade full-stack clinical platform built with React 19, Zustand, and Tailwind CSS on the frontend (`@dental/web`), powered by a Fastify 5 API service and native PostgreSQL 18.4 (`.data/pg18`, port 5432) via Drizzle ORM (`@dental/api`). A strictly typed core domain package (`@dental/shared`) enforces medical, financial, and statutory invariants across the stack.
 
 ---
 

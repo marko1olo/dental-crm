@@ -2,17 +2,17 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📐 Архитектурный Бэклог (docs/competitive-audit/BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
 >
-> ⚠️ **ПРЕДОСТЕРЕЖЕНИЕ ДЛЯ ИИ-АГЕНТОВ (МАНДАТЫ 8g & 8h):**  
-> Этот файл представляет собой **хронологический лог УЖЕ ВНЕДРЁННЫХ И ЗАКРЫТЫХ задач** (Historical Changelog of Shipped Features).  
-> **ВСЕ 100% описанных ниже эндпоинтов, панелей, компонентов и исправлений УЖЕ РЕАЛИЗОВАНЫ В КОДОВОЙ БАЗЕ** (`apps/api`, `apps/web`, `packages/shared`), покрыты тестами компилятора (`npm run typecheck`) и работают на живом сервере.  
-> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** воспринимать слово «Gap:» как несделанную работу и пытаться реализовывать эти задачи заново! Актуальный статус всех фич проверяйте строго в [`docs/competitive-audit/FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md).
+> ⚠️ ПРЕДОСТЕРЕЖЕНИЕ ДЛЯ ИИ-АГЕНТОВ (МАНДАТЫ 8g & 8h):  
+> Этот файл представляет собой хронологический лог УЖЕ ВНЕДРЁННЫХ И ЗАКРЫТЫХ задач (Historical Changelog of Shipped Features).  
+> ВСЕ 100% описанных ниже эндпоинтов, панелей, компонентов и исправлений УЖЕ РЕАЛИЗОВАНЫ В КОДОВОЙ БАЗЕ (`apps/api`, `apps/web`, `packages/shared`), покрыты тестами компилятора (`npm run typecheck`) и работают на живом сервере.  
+> КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО воспринимать слово «Gap:» как несделанную работу и пытаться реализовывать эти задачи заново! Актуальный статус всех фич проверяйте строго в [`docs/competitive-audit/FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md).
 
 ---
 
 ## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
 
-- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
-- **Ship:**
+- Gap: In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- Ship:
   - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
   - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
   - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
@@ -32,8 +32,8 @@
 
 ## 2026-11-20 — Treatment Plans 3-Tier Pricing Presenter, Real Tier Math, Stage Ledger Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8aw)
 
-- **Gap:** In production, `CLINIC_SERVICE_TIER_CATALOG` returned an empty array `[]`, causing the 3-tier presenter (Economy, ★ Optimum, Premium) to display identical prices across all three tiers («Potemkin Village»). Approving a treatment plan (`PATCH /api/treatment-plans/:id/status`) failed to update items in `treatment_items`, desynchronizing PostgreSQL 18 ledgers. Float math `price * 100` violated Mandate 8bm. Hardcoded crown and implant materials were applied indiscriminately to routine caries and hygiene. Soviet decree codes `A16.07.002` and `B01.065.001` lingered in fallback fallbacks. Tests in `treatmentPlans3TierAutonomy.test.tsx` masked defects with `as any`.
-- **Ship:**
+- Gap: In production, `CLINIC_SERVICE_TIER_CATALOG` returned an empty array `[]`, causing the 3-tier presenter (Economy, ★ Optimum, Premium) to display identical prices across all three tiers («Potemkin Village»). Approving a treatment plan (`PATCH /api/treatment-plans/:id/status`) failed to update items in `treatment_items`, desynchronizing PostgreSQL 18 ledgers. Float math `price * 100` violated Mandate 8bm. Hardcoded crown and implant materials were applied indiscriminately to routine caries and hygiene. Soviet decree codes `A16.07.002` and `B01.065.001` lingered in fallback fallbacks. Tests in `treatmentPlans3TierAutonomy.test.tsx` masked defects with `as any`.
+- Ship:
   - `apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts`: Real 3-tier calculation based on `tier_prices jsonb` and clinical protocol multipliers (Economy = 80%, Optimum = 100%, Premium = 130%) using exact integer kopeck math via `@dental/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`, `sumKopecks`).
   - `apps/api/src/routes/treatmentPlan/handlers/mutations/statusTreatmentPlanHandler.ts`: Transactional synchronization of `treatment_items` upon treatment plan approval (`Approved`) linked by `treatment_plan_item_id`.
   - `packages/shared/src/treatment-plans/engine/contracts/stageTierContracts.ts` & `treatmentPlanTierCalculator.ts`: Dynamic stage tier materials (`getTierMaterialsHeadlineRu`) and advantages (`getTierAdvantagesRu`) contextualized by discipline (therapy/caries -> nano-hybrid composites; surgery -> osseointegration; orthopedics -> E.max / zirconia).
@@ -53,8 +53,8 @@
 
 ## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
 
-- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
-- **Ship:**
+- Gap: In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- Ship:
   - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
   - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
   - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
@@ -74,8 +74,8 @@
 
 ## 2026-11-06 — Cross-Module Playwright E2E Test Invariants, Split-Tender Cashbox, Soft-Negative Warehouse & Wheeler Multiselect Suite (Mandates 8e, 8n, 8ar, 8zq)
 
-- **Gap:** Individual component unit tests could not guarantee that a doctor or administrator can seamlessly complete cross-module transactions: opening a visit, selecting teeth in the Wheeler 2.5D formula, applying physiological norms in 1 click, deducting consumables via procedure tech maps with Soft Negative Stock (Mandate 8n), calculating split tender (cash + card) in integer kopecks, issuing a 54-FZ fiscal receipt, and closing the cash shift without crashes or visual clipping.
-- **Ship:**
+- Gap: Individual component unit tests could not guarantee that a doctor or administrator can seamlessly complete cross-module transactions: opening a visit, selecting teeth in the Wheeler 2.5D formula, applying physiological norms in 1 click, deducting consumables via procedure tech maps with Soft Negative Stock (Mandate 8n), calculating split tender (cash + card) in integer kopecks, issuing a 54-FZ fiscal receipt, and closing the cash shift without crashes or visual clipping.
+- Ship:
   - `apps/web/tests/e2e/cashbox-billing-flow.spec.ts`: End-to-end split tender payment flow (50/50 Cash + POS Card) with integer kopeck validation (`amountKopecks`), 54-FZ fiscal receipt with QR code, patient zero balance reconciliation, cash register shift overview and Z-report evening audit.
   - `apps/web/tests/e2e/warehouse-consumption-flow.spec.ts`: End-to-end consumables batch deduction flow via procedure tech maps («Лечение кариеса» x4), quiet overdraft persistence without blocking errors (Soft Negative Stock per Mandate 8n), 1-click inventory reconciliation, and express inbound supplier waybill.
   - `apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts`: End-to-end multi-selection of dental groups (frontal sector 13–23, 43–33 & tooth click selection) on anatomical Wheeler 2.5D formula, 1-click «✓ Норма» action, wisdom teeth primary edentulism marking (18, 28, 38, 48), and reactive state hydration without page reload (Mandate 8zq).
@@ -88,8 +88,8 @@
 
 ## 2026-10-26 — Clinical Diary & EHR Monolith Decomposition, Soviet Decree Purge & 1-Click Norm (Mandates 8b..8aq, Apple HIG)
 
-- **Gap:** Monolithic cyclopean stylesheet `visit-diary-043.css` (1 088L) and legacy `043/у` bureaucratic bird-language in classes, filenames, and UI strings violated Mandate 8b ($\le 110$ lines) and Mandates 8x & 8ap. Doctors at the chair needed instant 1-click physiological somatic norm without hospital checkboxes, non-blocking buttons (Mandate 8e), and seamless dark theme / mobile touch ergonomics without white holes or clipped words.
-- **Ship:**
+- Gap: Monolithic cyclopean stylesheet `visit-diary-043.css` (1 088L) and legacy `043/у` bureaucratic bird-language in classes, filenames, and UI strings violated Mandate 8b ($\le 110$ lines) and Mandates 8x & 8ap. Doctors at the chair needed instant 1-click physiological somatic norm without hospital checkboxes, non-blocking buttons (Mandate 8e), and seamless dark theme / mobile touch ergonomics without white holes or clipped words.
+- Ship:
   - `apps/web/src/components/visit/diaryStyles/`: Decomposed into 8 modular CSS stylesheets (all strictly $\le 102$ lines, below the 110-line ceiling):
     * `clinicalDiaryTokens.css` (62L): Theme variables, paper/ink palette, glow effects, dark mode mapping.
     * `clinicalDiaryHeader.css` (99L): Clinical diary header, status chips, 1 Primary CTA emerald button.
@@ -114,8 +114,8 @@
 
 ## 2026-10-26 — Tooth Context Drawer, Diagnostic Drawer, Photo Protocol & ICD-10 Modular Architecture (Mandates 8b..8aq, Apple HIG)
 
-- **Gap:** Monolithic cyclopean stylesheets and giant components (`ToothContextDrawer.css` 1602L, `photoProtocol.css` 920L, `icd10Selector.css` 586L, `DiagnosticDrawer.css` 441L, `icd10DentalCatalog.ts` 1400L) severely violated Mandate 8b ($\le 120$ lines per file). On mobile viewports (390×844), 3-column chip grid caused severe text wrap on Russian clinical terms (breaking «Периодонтит» into «Периодонти\nт»). In-app labels contained dev jargon («Мандат 8e») and Soviet decree references.
-- **Ship:**
+- Gap: Monolithic cyclopean stylesheets and giant components (`ToothContextDrawer.css` 1602L, `photoProtocol.css` 920L, `icd10Selector.css` 586L, `DiagnosticDrawer.css` 441L, `icd10DentalCatalog.ts` 1400L) severely violated Mandate 8b ($\le 120$ lines per file). On mobile viewports (390×844), 3-column chip grid caused severe text wrap on Russian clinical terms (breaking «Периодонтит» into «Периодонти\nт»). In-app labels contained dev jargon («Мандат 8e») and Soviet decree references.
+- Ship:
   - `apps/web/src/components/diagnostics/icd10/catalog/`: Decomposed into 21 modular slices (`cariesK02Part1.ts`, `cariesK02Part2.ts`, `pulpitisK04Part1.ts`, `pulpitisK04Part2.ts`, `periapicalK04Part1.ts`, `periapicalK04Part2.ts`, `gingivitisK05.ts`, `periodontitisK05.ts`, `toothLossK08.ts`, `orthodonticK07Part1.ts`, `orthodonticK07Part2.ts`, `nonCariousK03Part1.ts`, `nonCariousK03Part2.ts`, `retentionAndJaws.ts`, `stomatitisAndGingiva.ts`, `salivaryAndMucosa.ts`, `tongueK14.ts`, `icd10RubricMapPart1.ts`, `icd10RubricMapPart2.ts`, `icd10RubricMap.ts`, `index.ts`), all $\le 98$ lines. Facades `icd10CatalogPart1.ts` (24L), `icd10CatalogPart2.ts` (25L), `icd10DentalCatalog.ts` (56L).
   - `apps/web/src/components/diagnostics/icd10/selector/`: Decomposed `Icd10ClinicalSelector.tsx` into 10 modules (`useIcd10SelectorState.ts`, `useIcd10SelectorTypes.ts`, `useIcd10KeyboardNav.ts`, `Icd10SearchBar.tsx`, `Icd10RubricTabs.tsx`, `Icd10QuickPresets.tsx`, `Icd10SeverityBadge.tsx`, `Icd10ResultsList.tsx`, `Icd10SelectedPreview.tsx`, `Icd10ClinicalSelectorView.tsx`), all $\le 114$ lines. Facade `Icd10ClinicalSelector.tsx` (15L).
   - `apps/web/src/components/diagnostics/icd10/styles/`: Decomposed `icd10Selector.css` into 6 modules (`icd10Search.css`, `icd10Rubrics.css`, `icd10Presets.css`, `icd10Results.css`, `icd10Preview.css`, `icd10ToothBinding.css`), all $\le 108$ lines. Facade `icd10Selector.css` (8L).
@@ -132,8 +132,8 @@
 
 ## 2026-10-03 — Multi-Tooth Visit Integrity, 1-Click Undo / Redo History Engine & Clinical Text Sanitizer
 
-- **Gap:** In multi-tooth visits (2–4 teeth), applying protocols sequentially caused subsequent tooth protocols to overwrite prior tooth diagnoses and objective status descriptions. Standard physical norm Z01.2 remained alongside pathologies («Зуб интактен» contradicted «Кариес дентина (MOD)»). No 1-click visit-level Undo existed for doctors to instantly revert accidental protocol overwrites without reloading the page.
-- **Ship:**
+- Gap: In multi-tooth visits (2–4 teeth), applying protocols sequentially caused subsequent tooth protocols to overwrite prior tooth diagnoses and objective status descriptions. Standard physical norm Z01.2 remained alongside pathologies («Зуб интактен» contradicted «Кариес дентина (MOD)»). No 1-click visit-level Undo existed for doctors to instantly revert accidental protocol overwrites without reloading the page.
+- Ship:
   - `apps/web/src/utils/clinicalTextSanitizer.ts`: `mergeMultiToothDiagnoses`, `parseMultiToothDiagnoses`, `formatToothDiagnosis`, `mergeMultiToothObjective`, `mergeMultiToothTreatmentPlan`, `sanitizeClinicalNormContradictions`, `sanitizeVisitNoteFormFields`.
   - `apps/web/src/store/visitStore.ts`: `VisitToothTreatmentRecord` structured storage (`visitToothRecordsByCode`), `undoStack`/`redoStack` with 50-snapshot ceiling, `pushVisitSnapshot`, `undoVisit`, `redoVisit`, `canUndo`/`canRedo`.
   - `apps/web/src/components/visit/emk/EmkToolbar.tsx`: `Undo2` / `Redo2` 1-click buttons (`btn-visit-undo`, `btn-visit-redo`), global shortcuts `Ctrl+Z` / `Cmd+Z` and `Ctrl+Shift+Z` / `Ctrl+Y` with input isolation.
@@ -142,12 +142,12 @@
   - `apps/web/src/lib/clinicalProtocols043.ts`: `mergeIcd10` concatenates distinct tooth ICD-10 codes with `; ` and replaces Z01.2 norm upon pathology.
   - Unit tests: `apps/web/src/components/visit/__tests__/multiToothIntegrityAndUndo.test.ts` (10/10 passing).
   - Screenshots: `docs/screenshots/inquisition_live/proof_multi_tooth_visit_undo_light.png`, `proof_multi_tooth_visit_undo_dark.png`, `proof_emk_toolbar_undo_buttons_light.png`, `proof_emk_toolbar_undo_buttons_dark.png`, `proof_clinical_modal_cavity_buttons_dark.png`.
-- **Verify:** `npx tsx --test apps/web/src/components/visit/__tests__/multiToothIntegrityAndUndo.test.ts` exit 0 (10/10 passing); `npm run check:encoding` exit 0 (7376 files clean).
+- Verify: `npx tsx --test apps/web/src/components/visit/__tests__/multiToothIntegrityAndUndo.test.ts` exit 0 (10/10 passing); `npm run check:encoding` exit 0 (7376 files clean).
 
 ## 2026-09-28 — In-App Clinical Guidance, Keyboard Shortcuts Overlay & Contextual Help Drawers (? / F1, Tier 2 Ergonomics)
 
-- **Gap:** Doctors and receptionists faced a learning curve on complex keyboard workflows (FDI tooth chart navigation, fast 2-click status marking, 3-click cashier splits, autoclave batch tagging, secondary tablet LAN pairing). Existing documentation was in external markdown files; in-app guidance lacked a unified keyboard shortcuts overlay and 0-click contextual cheat sheets, risking doctor cognitive overload or reliance on blocking manuals.
-- **Ship:**
+- Gap: Doctors and receptionists faced a learning curve on complex keyboard workflows (FDI tooth chart navigation, fast 2-click status marking, 3-click cashier splits, autoclave batch tagging, secondary tablet LAN pairing). Existing documentation was in external markdown files; in-app guidance lacked a unified keyboard shortcuts overlay and 0-click contextual cheat sheets, risking doctor cognitive overload or reliance on blocking manuals.
+- Ship:
   - `apps/web/src/lib/keyboardShortcuts.ts`: Complete clinical shortcuts registry (17 shortcuts across 6 categories), `matchesKeyboardShortcut` with cross-layout Cyrillic mappings (`Ctrl+Ы`, `Ctrl+Л`, `Shift+N`), `isTypingInInputElement` form field isolation, `searchShortcuts`, `getShortcutsByCategory`, and `triggerClinicalShortcutEvent`.
   - `apps/web/src/components/help/`: 4 visual 1-page cheat sheets:
     * `OdontogramGuide.tsx`: 2-click tooth marking, FDI 11–48 / 51–85, `Shift+N` 1-click autonorm.
@@ -158,224 +158,224 @@
   - `apps/web/src/components/common/HelpDrawer.tsx`: Slide-over drawer (Warm Context Tier 2) with active guide switching, search filtering across cheat sheets, print support.
   - State & Events: Added `isShortcutsModalOpen`, `isHelpDrawerOpen`, `activeHelpDrawerTab` to `appStore.ts`; integrated in `useDesktopShortcuts.ts` and `App.tsx`; registered searchable actions in `Omnibar.tsx`.
   - Unit tests: `clinicalGuidanceAndShortcuts.test.ts` (24/24 passing).
-- **Verify:** `npm --prefix apps/web run typecheck` exit 0; `npm test -- apps/web/src/tests/clinicalGuidanceAndShortcuts.test.ts` exit 0 (24 passed); `npm run check:encoding` exit 0. Rule 7 3-Tier Ergonomic Architecture verified (Tier 2 Warm Context, max modal depth 1, zero blocking popups on load).
+- Verify: `npm --prefix apps/web run typecheck` exit 0; `npm test -- apps/web/src/tests/clinicalGuidanceAndShortcuts.test.ts` exit 0 (24 passed); `npm run check:encoding` exit 0. Rule 7 3-Tier Ergonomic Architecture verified (Tier 2 Warm Context, max modal depth 1, zero blocking popups on load).
 
 ## 2026-09-27 — Doctor Clinical Preferences & DB Persistence Audit (GET/PUT /api/settings/doctor-preferences, PostgreSQL 18)
 
-- **Gap:** `doctorPreferencesStore.ts` stored preferences (anesthetics, needles, composite materials, adhesives, etchant gels, 6 specialty presets, and Form 043/u templates) exclusively in browser `localStorage` (`dente_doctor_preferences_v1`). A doctor logging in from another computer, tablet, or clearing browser cache lost all clinical favorites and had to reconfigure everything.
-- **Ship:**
+- Gap: `doctorPreferencesStore.ts` stored preferences (anesthetics, needles, composite materials, adhesives, etchant gels, 6 specialty presets, and Form 043/u templates) exclusively in browser `localStorage` (`dente_doctor_preferences_v1`). A doctor logging in from another computer, tablet, or clearing browser cache lost all clinical favorites and had to reconfigure everything.
+- Ship:
   - Migration `0202_doctor_clinical_preferences.sql` creating table `doctor_preferences` with RLS tenant isolation (`tenant_isolation`) and composite index on `(organization_id, COALESCE(doctor_id, ...))`. Applied in PostgreSQL (180/180 migrations).
   - Drizzle schema `doctorPreferences.ts` in `apps/api/src/db/schema/` re-exported via `schema/index.ts`.
   - Database access layer `doctorPreferencesQuery.ts` (`getDoctorPreferencesFromDb`, `saveDoctorPreferencesInDb` with atomic in-place upsert and race condition fallback).
   - Fastify routes `doctorPreferencesRoutes.ts` with `GET /api/settings/doctor-preferences` and `PUT /api/settings/doctor-preferences` registered in `server.ts`.
   - Web client API `doctorPreferencesApi.ts` (`fetchDoctorPreferencesFromApi`, `saveDoctorPreferencesToApi`) and debounced bidirectional sync in `doctorPreferencesStore.ts` (400ms auto-sync on change, auto-load on store initialization).
   - Integration suite `doctorPreferencesPersistence.test.ts` (6/6 tests passing against live PostgreSQL 18: unauth 401, PUT 200, direct `pg.Client` SQL verification, GET readback, upsert in-place idempotency, and cross-tenant isolation).
-- **Verify:** `npx tsx --test apps/api/src/tests/routes/doctorPreferencesPersistence.test.ts` exit 0 (6/6 passed); `npm run check:encoding` exit 0. Total persistence audit verified 99/99 passing tests across lab orders, 043/u diaries, periodontogram, and CBCT/A06.07.012 integration.
+- Verify: `npx tsx --test apps/api/src/tests/routes/doctorPreferencesPersistence.test.ts` exit 0 (6/6 passed); `npm run check:encoding` exit 0. Total persistence audit verified 99/99 passing tests across lab orders, 043/u diaries, periodontogram, and CBCT/A06.07.012 integration.
 
 ## 2026-08-01 — AI recognition jobs history (GET /api/ai/recognition-jobs)
 
-**Gap:** `POST /api/ai/recognition-jobs` already created jobs from Settings → ИИ «Лаборатория нейросетей» and showed only the last `recognitionJob` in memory. `GET /api/ai/recognition-jobs` (`listAiRecognitionJobsFromDb`, requireClinicalReadAccess + org) had **zero web callers**. After reload or preset change staff could not see queue/history or reopen a prior draft.
+Gap: `POST /api/ai/recognition-jobs` already created jobs from Settings → ИИ «Лаборатория нейросетей» and showed only the last `recognitionJob` in memory. `GET /api/ai/recognition-jobs` (`listAiRecognitionJobsFromDb`, requireClinicalReadAccess + org) had zero web callers. After reload or preset change staff could not see queue/history or reopen a prior draft.
 
-**Ship:** `AiRecognitionJobsPanel.tsx` — self-contained GET with `auth.denteClinicalReadHeaders`; table (when/kind/target/status/confidence/source/preview); row expand for resultText + warnings; «В лабораторию» via `setRecognitionJob` so «Передать в карту» works; refresh + auto-reload when workbench posts a new job id. Mounted under workbench in `SettingsAiTab` (`data-testid ai-recognition-jobs-mount`). data-testid: `ai-recognition-jobs-panel`, `ai-recognition-jobs-refresh`, `ai-recognition-jobs-list`, `ai-recognition-jobs-empty`, `ai-recognition-jobs-error`, `ai-recognition-jobs-loading`, `ai-recognition-job-row-*`, `ai-recognition-job-open-*`, `ai-recognition-job-detail-*`, `ai-recognition-job-status-*`.
+Ship: `AiRecognitionJobsPanel.tsx` — self-contained GET with `auth.denteClinicalReadHeaders`; table (when/kind/target/status/confidence/source/preview); row expand for resultText + warnings; «В лабораторию» via `setRecognitionJob` so «Передать в карту» works; refresh + auto-reload when workbench posts a new job id. Mounted under workbench in `SettingsAiTab` (`data-testid ai-recognition-jobs-mount`). data-testid: `ai-recognition-jobs-panel`, `ai-recognition-jobs-refresh`, `ai-recognition-jobs-list`, `ai-recognition-jobs-empty`, `ai-recognition-jobs-error`, `ai-recognition-jobs-loading`, `ai-recognition-job-row-*`, `ai-recognition-job-open-*`, `ai-recognition-job-detail-*`, `ai-recognition-job-status-*`.
 
-**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401/403 (route up); web grep `recognition-jobs` → panel GET + useAppLogic POST.
+Verify: `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401/403 (route up); web grep `recognition-jobs` → panel GET + useAppLogic POST.
 
 ## 2026-08-01 — Public booking admin copy-link (Settings → Отзывы)
 
-**Gap:** `PublicBookingWidget` + `/api/public/booking` (doctors/slots/book) already LIVE; hash `#/portal/booking/<orgId>` parsed by `publicPortalRouteFromHash` — but **admin UI «скопировать ссылку» отсутствовал**. Owner could not hand a working booking URL from the cabinet without hand-building the path (old QrGatewayPanel printed broken `?clinicId=`). Lab-order already copies portal links; booking did not.
+Gap: `PublicBookingWidget` + `/api/public/booking` (doctors/slots/book) already LIVE; hash `#/portal/booking/<orgId>` parsed by `publicPortalRouteFromHash` — but admin UI «скопировать ссылку» отсутствовал. Owner could not hand a working booking URL from the cabinet without hand-building the path (old QrGatewayPanel printed broken `?clinicId=`). Lab-order already copies portal links; booking did not.
 
-**Ship:** `buildPublicBookingPortalUrl(organizationId, origin?)` in `publicPortalRoute.ts` — single builder matching `PUBLIC_BOOKING_PORTAL_PATH`. `PublicBookingLinkPanel.tsx` — reads `dashboard.clinicSettings.profile.organizationId`, readonly URL, clipboard copy + open tab, honest missing-org state. Mounted atop `SettingsMarketingTab` (`data-testid public-booking-link-mount`). data-testid: `public-booking-link-panel`, `public-booking-link-url`, `public-booking-link-copy`, `public-booking-link-open`, `public-booking-link-missing-org`.
+Ship: `buildPublicBookingPortalUrl(organizationId, origin?)` in `publicPortalRoute.ts` — single builder matching `PUBLIC_BOOKING_PORTAL_PATH`. `PublicBookingLinkPanel.tsx` — reads `dashboard.clinicSettings.profile.organizationId`, readonly URL, clipboard copy + open tab, honest missing-org state. Mounted atop `SettingsMarketingTab` (`data-testid public-booking-link-mount`). data-testid: `public-booking-link-panel`, `public-booking-link-url`, `public-booking-link-copy`, `public-booking-link-open`, `public-booking-link-missing-org`.
 
-**Verify:** `npx tsc -p apps/web --noEmit` exit 0; web grep `buildPublicBookingPortalUrl` / `public-booking-link` → panel + Marketing mount + helper.
+Verify: `npx tsc -p apps/web --noEmit` exit 0; web grep `buildPublicBookingPortalUrl` / `public-booking-link` → panel + Marketing mount + helper.
 
 ## 2026-08-01 — Patient card attachments (GET/POST /api/patients/:id/attachments)
 
-**Gap:** `POST /api/patients/:patientId/attachments` already wrote multipart to disk + `attachments.patient_id` + sha256 and `GET /api/attachments/:id/download` worked — but **zero web callers** on patient-level POST. Visit diary photos used `/api/files/visits/...` only. No GET list for patient-level files: upload-without-list was incomplete gameplay (passport/scan/contract had no card UI).
+Gap: `POST /api/patients/:patientId/attachments` already wrote multipart to disk + `attachments.patient_id` + sha256 and `GET /api/attachments/:id/download` worked — but zero web callers on patient-level POST. Visit diary photos used `/api/files/visits/...` only. No GET list for patient-level files: upload-without-list was incomplete gameplay (passport/scan/contract had no card UI).
 
-**Ship:** API `files.ts` — `GET /api/patients/:patientId/attachments` (org+patient scoped, `{files:[{id,url,name,type}]}` mirror of visit list); POST 201 also returns `file` shape alongside legacy `attachment`. Web `PatientAttachmentsPanel.tsx` — list + multipart upload field `file` + download via `fetchAuthedApiFileObjectUrl` (token headers; bare `<a href>` is 401). Headers: `denteAdminSecretRequestHeaders`. Mounted on `PatientsView` after WhatsApp when `selectedPatientId` set. data-testid: `patient-attachments-panel`, `patient-attachments-input`, `patient-attachments-list`, `patient-attachments-empty`, `patient-attachments-error`, `patient-attachment-row-*`, `patient-attachment-download-*`, `patient-attachments-mount`.
+Ship: API `files.ts` — `GET /api/patients/:patientId/attachments` (org+patient scoped, `{files:[{id,url,name,type}]}` mirror of visit list); POST 201 also returns `file` shape alongside legacy `attachment`. Web `PatientAttachmentsPanel.tsx` — list + multipart upload field `file` + download via `fetchAuthedApiFileObjectUrl` (token headers; bare `<a href>` is 401). Headers: `denteAdminSecretRequestHeaders`. Mounted on `PatientsView` after WhatsApp when `selectedPatientId` set. data-testid: `patient-attachments-panel`, `patient-attachments-input`, `patient-attachments-list`, `patient-attachments-empty`, `patient-attachments-error`, `patient-attachment-row-*`, `patient-attachment-download-*`, `patient-attachments-mount`.
 
-**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET/POST without auth → 401/403 (route up); web grep patient attachments → panel + PatientsView mount.
+Verify: `npx tsc -p apps/web --noEmit` exit 0; live GET/POST without auth → 401/403 (route up); web grep patient attachments → panel + PatientsView mount.
 
 ## 2026-08-01 — WhatsApp direct send on patient card (POST /api/whatsapp/send)
 
 **Gap:** `POST /api/whatsapp/send` already called Meta Cloud API (`sendWhatsappTextMessage`), wrote `communication_events` sent|failed, broadcast `INBOX_NEW_MESSAGE` — but **zero web callers**. Settings had only settings/status; outbox is queue/campaign. Admin on patient card could not send one-off WhatsApp without CLI.
 
-**Ship:** `PatientWhatsappSendPanel.tsx` — self-contained compose (message + submit); `denteAdminSecretRequestHeaders` (same path as WhatsApp settings; `requireNonDoctorAccess`); RU errors for 400/403/404/422/502 + server `message`. Mounted on `PatientsView` after consents when `selectedPatientId` set (phone/name hints from selected + draft). data-testid: `patient-whatsapp-send-panel`, `patient-whatsapp-send-message`, `patient-whatsapp-send-submit`, `patient-whatsapp-send-error`, `patient-whatsapp-send-ok`, `patient-whatsapp-send-mount`.
+Ship: `PatientWhatsappSendPanel.tsx` — self-contained compose (message + submit); `denteAdminSecretRequestHeaders` (same path as WhatsApp settings; `requireNonDoctorAccess`); RU errors for 400/403/404/422/502 + server `message`. Mounted on `PatientsView` after consents when `selectedPatientId` set (phone/name hints from selected + draft). data-testid: `patient-whatsapp-send-panel`, `patient-whatsapp-send-message`, `patient-whatsapp-send-submit`, `patient-whatsapp-send-error`, `patient-whatsapp-send-ok`, `patient-whatsapp-send-mount`.
 
-**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST without auth → 401/403 (route up); web grep `whatsapp/send` → panel only.
+Verify: `npx tsc -p apps/web --noEmit` exit 0; live POST without auth → 401/403 (route up); web grep `whatsapp/send` → panel only.
 
 ## 2026-08-01 — Outbox enqueue compose (POST /api/communications/outbox)
 
-**Gap:** API `POST /api/communications/outbox` accepted one-off queue items (template or free body + recipient), but MessageDeliveryConsole only listed/cancelled/retried/dispatched. Staff could not queue a single SMS/email/WhatsApp/Telegram without a campaign or auto-reminders.
+Gap: API `POST /api/communications/outbox` accepted one-off queue items (template or free body + recipient), but MessageDeliveryConsole only listed/cancelled/retried/dispatched. Staff could not queue a single SMS/email/WhatsApp/Telegram without a campaign or auto-reminders.
 
-**Ship:** Compose form «Поставить в очередь» in `MessageDeliveryConsole.tsx` — channel, intent, scope, recipient, optional template or free body, email subject; POST with `denteClinicalMutationHeaders`; server message + journal reload. data-testids: `outbox-enqueue-*`.
+Ship: Compose form «Поставить в очередь» in `MessageDeliveryConsole.tsx` — channel, intent, scope, recipient, optional template or free body, email subject; POST with `denteClinicalMutationHeaders`; server message + journal reload. data-testids: `outbox-enqueue-*`.
 
-**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST enqueue 201.
+Verify: `npx tsc -p apps/web --noEmit` exit 0; live POST enqueue 201.
 
 ## 2026-08-01 — Leads permanent DELETE (Kanban + store)
 
-- **Gap:** `DELETE /api/leads/:id` (leads.ts, requireResolvedStaffOrAdminOrganizationId, org-scoped, LEAD_DELETED WS) already removed a row from `crm_leads`, but **zero web callers**. Kanban could only drag to «Отказ» (status=trash) — card stayed in DB forever; spam/test/wrong inquiries could not be erased from the funnel without SQL/CLI. Store had GET/POST/PATCH/PUT + convert bare fetch; no `deleteLead`.
-- **Ship:** `leadsStore.ts` — `deleteLead(id)` via `DELETE ${API_URL}/leads/:id` + clinic/staff token headers; optimistic remove + rollback; RU `leadsFailureMessage` on failure. `LeadsKanbanView.tsx` — «Удалить» in edit modal (existing lead only, not «new»); confirm explains trash column vs hard-delete; toast on success/error; `data-testid="lead-delete-permanent"`; Trash2 + min 44×44 touch. Distinct from drag-to-«Отказ».
-- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST lead → DELETE 200 `{success:true}` → GET list absent (probe); WS LEAD_DELETED already refreshes board.
+- Gap: `DELETE /api/leads/:id` (leads.ts, requireResolvedStaffOrAdminOrganizationId, org-scoped, LEAD_DELETED WS) already removed a row from `crm_leads`, but zero web callers. Kanban could only drag to «Отказ» (status=trash) — card stayed in DB forever; spam/test/wrong inquiries could not be erased from the funnel without SQL/CLI. Store had GET/POST/PATCH/PUT + convert bare fetch; no `deleteLead`.
+- Ship: `leadsStore.ts` — `deleteLead(id)` via `DELETE ${API_URL}/leads/:id` + clinic/staff token headers; optimistic remove + rollback; RU `leadsFailureMessage` on failure. `LeadsKanbanView.tsx` — «Удалить» in edit modal (existing lead only, not «new»); confirm explains trash column vs hard-delete; toast on success/error; `data-testid="lead-delete-permanent"`; Trash2 + min 44×44 touch. Distinct from drag-to-«Отказ».
+- Verify: `npx tsc -p apps/web --noEmit` exit 0; live POST lead → DELETE 200 `{success:true}` → GET list absent (probe); WS LEAD_DELETED already refreshes board.
 
 ## 2026-08-01 — Form 043/у layout polish + 4-state visual audit (VisitDiaryEditor)
 
-- **Gap:** Form № 043/у (VisitDiaryEditor SOAP diary) had incomplete draft-print path, sub-40px ICD clear touch target, and screenshot harness used path `/visit/:id` (hash router ignores it) plus a page.evaluate theme seed bug (`theme is not defined`). Visual audit could not prove Mobile/PC × Light/Dark.
-- **Ship:** `VisitDiaryEditor.tsx` — unconditional `useAppLogicContext` (Rules of Hooks); draft unlocked header «Печать 043/у» always available; ICD clear → `vde-043__btn--icon` 40×40 + aria-label. `visit-diary-043.css` — theme-safe vars, icon/mic ≥40px touch targets, mobile full-width excludes icon buttons. `scripts/form043-viewport-shots.mjs` — `#visit` hash routing, real demo auth, Edge preferred, theme seed fix `{s,t}`, open odontogram tab + print preview, overflow/touch/theme audit.
-- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; 4 shots clean (form043_mobile_light/dark, form043_pc_light/dark): hasEditor+hasPreview, issues=[], smallTargets=0; report `.dente-ops-shots/form043_audit_report.json` (gitignored).
+- Gap: Form № 043/у (VisitDiaryEditor SOAP diary) had incomplete draft-print path, sub-40px ICD clear touch target, and screenshot harness used path `/visit/:id` (hash router ignores it) plus a page.evaluate theme seed bug (`theme is not defined`). Visual audit could not prove Mobile/PC × Light/Dark.
+- Ship: `VisitDiaryEditor.tsx` — unconditional `useAppLogicContext` (Rules of Hooks); draft unlocked header «Печать 043/у» always available; ICD clear → `vde-043__btn--icon` 40×40 + aria-label. `visit-diary-043.css` — theme-safe vars, icon/mic ≥40px touch targets, mobile full-width excludes icon buttons. `scripts/form043-viewport-shots.mjs` — `#visit` hash routing, real demo auth, Edge preferred, theme seed fix `{s,t}`, open odontogram tab + print preview, overflow/touch/theme audit.
+- Verify: `npx tsc -p apps/web --noEmit` exit 0; 4 shots clean (form043_mobile_light/dark, form043_pc_light/dark): hasEditor+hasPreview, issues=[], smallTargets=0; report `.dente-ops-shots/form043_audit_report.json` (gitignored).
 
 ## 2026-07-31 — Speech chunks inspector (GET /api/speech/chunks)
 
-- **Gap:** `GET /api/speech/chunks?recordingId&visitId&patientId` (speech.ts handleSpeechChunks, requireClinicalReadAccess, scope validateSpeechClinicalScope) already returned per-chunk transcript/status/quality/warnings via `listSpeechTranscriptionChunks`, but **zero web callers**. Visit screen only showed recovery KPI from `GET /api/speech/recordings/recovery` — when recoveryState was missing_chunks / failed_chunks / quality_review the doctor could not see WHICH fragment was empty, failed, or needs edit, nor assemble that recording back into the dictation field from a fragment table.
-- **Ship:** `SpeechChunksInspector.tsx` — self-contained (`useAppLogicContext`: auth clinical read headers, dashboard.activeVisit scope, speechRecordingRecovery, loadSpeechRecordingRecovery, assembleSpeechRecording); collapsible «Фрагменты диктовки»; recovery recording list with state labels; GET chunks on expand/select; table index/status/quality/transcript/when; «Собрать в диктовку» reuses existing assemble (does not write EMR itself). Mounted in `VisitView.tsx` after dictation-box, before VisiographAnalyzer. data-testid: `speech-chunks-inspector`, `speech-chunks-inspector-summary`, `speech-chunks-refresh-recovery`, `speech-chunks-reload`, `speech-chunks-assemble`, `speech-chunks-assemble-note`, `speech-chunks-recordings`, `speech-chunks-recording-*`, `speech-chunks-list`, `speech-chunk-row-*`, `speech-chunks-error`.
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); web grep `/api/speech/chunks` → SpeechChunksInspector only; mount markers SpeechChunksInspector in VisitView.
+- Gap: `GET /api/speech/chunks?recordingId&visitId&patientId` (speech.ts handleSpeechChunks, requireClinicalReadAccess, scope validateSpeechClinicalScope) already returned per-chunk transcript/status/quality/warnings via `listSpeechTranscriptionChunks`, but zero web callers. Visit screen only showed recovery KPI from `GET /api/speech/recordings/recovery` — when recoveryState was missing_chunks / failed_chunks / quality_review the doctor could not see WHICH fragment was empty, failed, or needs edit, nor assemble that recording back into the dictation field from a fragment table.
+- Ship: `SpeechChunksInspector.tsx` — self-contained (`useAppLogicContext`: auth clinical read headers, dashboard.activeVisit scope, speechRecordingRecovery, loadSpeechRecordingRecovery, assembleSpeechRecording); collapsible «Фрагменты диктовки»; recovery recording list with state labels; GET chunks on expand/select; table index/status/quality/transcript/when; «Собрать в диктовку» reuses existing assemble (does not write EMR itself). Mounted in `VisitView.tsx` after dictation-box, before VisiographAnalyzer. data-testid: `speech-chunks-inspector`, `speech-chunks-inspector-summary`, `speech-chunks-refresh-recovery`, `speech-chunks-reload`, `speech-chunks-assemble`, `speech-chunks-assemble-note`, `speech-chunks-recordings`, `speech-chunks-recording-*`, `speech-chunks-list`, `speech-chunk-row-*`, `speech-chunks-error`.
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); web grep `/api/speech/chunks` → SpeechChunksInspector only; mount markers SpeechChunksInspector in VisitView.
 
 ## 2026-07-31 — X-ray scan DELETE (VisiographAnalyzer)
 
-- **Gap:** `DELETE /api/xray/scans/:id` (xray.ts:238, requireClinicalMutationAccess, org-scoped) already removed a row from `xray_scans`, but **zero web callers**. Visiograph history could only open a scan — wrong upload or foreign report stayed in the patient card forever.
-- **Ship:** `VisiographAnalyzer.tsx` — `deleteScan` via `DELETE /api/xray/scans/:id` + `denteClinicalMutationHeaders`; confirm dialog; trash on each history row + «Удалить из архива» on open history view; optimistic filter of `scanHistory`; clear current scan if ids match; human `deleteFailure` separate from history/save failures. data-testid: `xray-scan-delete-${id}`, `xray-scan-open-${id}`, `xray-scan-delete-current`, `xray-scan-delete-failure`.
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); markers Trash2 / method DELETE / denteClinicalMutationHeaders present; API route still 204/404 as before.
+- Gap: `DELETE /api/xray/scans/:id` (xray.ts:238, requireClinicalMutationAccess, org-scoped) already removed a row from `xray_scans`, but zero web callers. Visiograph history could only open a scan — wrong upload or foreign report stayed in the patient card forever.
+- Ship: `VisiographAnalyzer.tsx` — `deleteScan` via `DELETE /api/xray/scans/:id` + `denteClinicalMutationHeaders`; confirm dialog; trash on each history row + «Удалить из архива» on open history view; optimistic filter of `scanHistory`; clear current scan if ids match; human `deleteFailure` separate from history/save failures. data-testid: `xray-scan-delete-${id}`, `xray-scan-open-${id}`, `xray-scan-delete-current`, `xray-scan-delete-failure`.
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); markers Trash2 / method DELETE / denteClinicalMutationHeaders present; API route still 204/404 as before.
 
 ## 2026-07-31 — Diary template CREATE (VisitDiaryTemplateSelector)
 
-- **Gap:** `POST /api/templates` already created custom visit templates (`isBuiltIn: false`, title required, optional category/prefilled*/defaultIcd10) under requireClinicalMutationAccess — but **zero web callers**. Doctor could seed built-ins and delete customs after prior ships, but could not add a clinic-specific protocol from the visit diary screen without SQL/CLI.
-- **Ship:** `VisitDiaryTemplateSelector.tsx` — create form (title required + category/anamnesis/objective/treatment/ICD-10); `createTemplate` via `POST /api/templates` + `denteClinicalMutationHeaders`; open «Свой» / «Создать свой протокол» when unlocked; reload list + select created id; server `message` on error. data-testid: `diary-template-create-open`, `diary-template-create-form`, `diary-template-create-title`, `diary-template-create-submit`, `diary-template-create-cancel`.
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST without session → 401/403 (route up); web grep method POST bare `/api/templates` → selector only.
+- Gap: `POST /api/templates` already created custom visit templates (`isBuiltIn: false`, title required, optional category/prefilled*/defaultIcd10) under requireClinicalMutationAccess — but zero web callers. Doctor could seed built-ins and delete customs after prior ships, but could not add a clinic-specific protocol from the visit diary screen without SQL/CLI.
+- Ship: `VisitDiaryTemplateSelector.tsx` — create form (title required + category/anamnesis/objective/treatment/ICD-10); `createTemplate` via `POST /api/templates` + `denteClinicalMutationHeaders`; open «Свой» / «Создать свой протокол» when unlocked; reload list + select created id; server `message` on error. data-testid: `diary-template-create-open`, `diary-template-create-form`, `diary-template-create-title`, `diary-template-create-submit`, `diary-template-create-cancel`.
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST without session → 401/403 (route up); web grep method POST bare `/api/templates` → selector only.
 
 ## 2026-07-31 — Appointments byStatus table (ManagerReportsPanel)
 
-- **Gap:** `GET /api/reports/summary` already returned `appointments.byStatus` (group-by status counts from managerReports.ts) and the panel type included the field — but the UI only rendered arrival/completion/cancel/noShow **rates**. Owner saw «неявки 9 %» and could not see how many records were still «назначен» / «на приёме» / «подтверждён» — where the day stalls. No second API needed; numbers already in the summary payload.
-- **Ship:** `ManagerReportsPanel.tsx` — `appointmentStatusLabels` (RU for scheduled/confirmed/arrived/in_treatment/completed/cancelled/no_show/rescheduled/waiting); table after rates hint: Статус / Записей / Доля; filter count>0, sort desc; share via formatPercent; unknown status printed raw. data-testid: `manager-reports-appointments-by-status`.
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); no new fetch — data from existing summary load.
+- Gap: `GET /api/reports/summary` already returned `appointments.byStatus` (group-by status counts from managerReports.ts) and the panel type included the field — but the UI only rendered arrival/completion/cancel/noShow rates. Owner saw «неявки 9 %» and could not see how many records were still «назначен» / «на приёме» / «подтверждён» — where the day stalls. No second API needed; numbers already in the summary payload.
+- Ship: `ManagerReportsPanel.tsx` — `appointmentStatusLabels` (RU for scheduled/confirmed/arrived/in_treatment/completed/cancelled/no_show/rescheduled/waiting); table after rates hint: Статус / Записей / Доля; filter count>0, sort desc; share via formatPercent; unknown status printed raw. data-testid: `manager-reports-appointments-by-status`.
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); no new fetch — data from existing summary load.
 
 ## 2026-07-31 — Diary template DELETE (VisitDiaryTemplateSelector)
 
-- **Gap:** `DELETE /api/templates/:id` already enforced org scope, 404 NotFound, 403 CannotDeleteBuiltIn for `isBuiltIn`, and db delete for custom visit templates — but **zero web callers**. Doctor could seed/restore built-ins after seed ship, but could not remove an obsolete custom protocol from the visit diary dropdown without SQL/CLI.
-- **Ship:** `VisitDiaryTemplateSelector.tsx` — `isBuiltIn` on Template; `deleteSelectedTemplate` via `DELETE /api/templates/:id` + `denteClinicalMutationHeaders`; button «Удалить» only when selected template is custom and diary unlocked; Russian confirm; clear selection + reload list; server `message` on error (CannotDeleteBuiltIn). data-testid: `diary-template-delete`.
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live DELETE without session → 401/403 (route up); web grep `diary-template-delete` → selector only.
+- Gap: `DELETE /api/templates/:id` already enforced org scope, 404 NotFound, 403 CannotDeleteBuiltIn for `isBuiltIn`, and db delete for custom visit templates — but zero web callers. Doctor could seed/restore built-ins after seed ship, but could not remove an obsolete custom protocol from the visit diary dropdown without SQL/CLI.
+- Ship: `VisitDiaryTemplateSelector.tsx` — `isBuiltIn` on Template; `deleteSelectedTemplate` via `DELETE /api/templates/:id` + `denteClinicalMutationHeaders`; button «Удалить» only when selected template is custom and diary unlocked; Russian confirm; clear selection + reload list; server `message` on error (CannotDeleteBuiltIn). data-testid: `diary-template-delete`.
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live DELETE without session → 401/403 (route up); web grep `diary-template-delete` → selector only.
 
 ## 2026-07-31 — Diary clinical templates seed (VisitDiaryTemplateSelector)
 
-- **Gap:** `POST /api/templates/seed` already called `ensureClinicalTemplatesSeeded` (insert missing built-ins by title, `isBuiltIn: true`) and returned `{ success, count }`, but **zero web callers**. GET `/api/templates` auto-seeds only when the org list is fully empty; on 503 `ClinicalTemplatesSeedFailed`, partial customs without built-ins, or a failed first visit, the doctor saw a silent empty «Клинический шаблон» dropdown with no recovery — CLI/SQL only.
-- **Ship:** `VisitDiaryTemplateSelector.tsx` — empty/load-failure/503 state with Russian copy + button «Установить встроенные протоколы» (`POST /api/templates/seed` via `denteClinicalMutationHeaders`); non-empty list keeps select + subtle «Восстановить встроенные» (idempotent by title). Reload list after success; toast with count; server `message` on error. data-testid: `diary-template-empty`, `diary-template-seed`, `diary-template-restore`, `diary-template-select`. Mount already in `VisitDiaryEditor` (unlocked diary header).
-- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST seed without session → 403 OrgRequired (route up); web grep `templates/seed` → selector only.
+- Gap: `POST /api/templates/seed` already called `ensureClinicalTemplatesSeeded` (insert missing built-ins by title, `isBuiltIn: true`) and returned `{ success, count }`, but zero web callers. GET `/api/templates` auto-seeds only when the org list is fully empty; on 503 `ClinicalTemplatesSeedFailed`, partial customs without built-ins, or a failed first visit, the doctor saw a silent empty «Клинический шаблон» dropdown with no recovery — CLI/SQL only.
+- Ship: `VisitDiaryTemplateSelector.tsx` — empty/load-failure/503 state with Russian copy + button «Установить встроенные протоколы» (`POST /api/templates/seed` via `denteClinicalMutationHeaders`); non-empty list keeps select + subtle «Восстановить встроенные» (idempotent by title). Reload list after success; toast with count; server `message` on error. data-testid: `diary-template-empty`, `diary-template-seed`, `diary-template-restore`, `diary-template-select`. Mount already in `VisitDiaryEditor` (unlocked diary header).
+- Verify: panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST seed without session → 403 OrgRequired (route up); web grep `templates/seed` → selector only.
 
 ## 2026-07-31 — Staff authority grants panel (Settings → Персонал)
 
-- **Gap:** `PUT /api/settings/staff/:staffId/authority` already wrote column grants (`can_sign_medical_records` / `can_manage_money` / `can_manage_imports`) with roleDerived/grants/effective semantics and 409 on role-revocation, and POST create accepted the three flags in body (zod dropped them silently on create form) — but **zero web callers** on the PUT. Owner could not grant an assistant cash-desk access or import rights without SQL; role-locked flags had no UI.
-- **Ship:** `StaffAuthorityPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); staff list from dashboard; expandable rows; three checkboxes; role-locked disabled; local overrides after PUT (dashboard still returns roleDerived only — debt noted in panel header). Mounted on `SettingsStaffTab` after `StaffCommissionsPanel`. data-testid: `staff-authority-panel`, `staff-authority-list`, `staff-authority-check-*`.
-- **Verify:** panel has zero TS errors under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live PUT without auth → 401 AuthRequired (route up); web grep `/authority` + `staff-authority-panel` → StaffAuthorityPanel only.
+- Gap: `PUT /api/settings/staff/:staffId/authority` already wrote column grants (`can_sign_medical_records` / `can_manage_money` / `can_manage_imports`) with roleDerived/grants/effective semantics and 409 on role-revocation, and POST create accepted the three flags in body (zod dropped them silently on create form) — but zero web callers on the PUT. Owner could not grant an assistant cash-desk access or import rights without SQL; role-locked flags had no UI.
+- Ship: `StaffAuthorityPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); staff list from dashboard; expandable rows; three checkboxes; role-locked disabled; local overrides after PUT (dashboard still returns roleDerived only — debt noted in panel header). Mounted on `SettingsStaffTab` after `StaffCommissionsPanel`. data-testid: `staff-authority-panel`, `staff-authority-list`, `staff-authority-check-*`.
+- Verify: panel has zero TS errors under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live PUT without auth → 401 AuthRequired (route up); web grep `/authority` + `staff-authority-panel` → StaffAuthorityPanel only.
 
 ## 2026-07-31 — Waitlist matches per appointment (schedule gameplay)
 
-- **Gap:** `GET /api/appointments/:appointmentId/waitlist-matches` already returned full ranked candidates (`WaitlistMatch` + reason, same doctor / time / priority / waiting days) for a cancelled or no_show future slot, but **zero web callers**. `FreedSlotsPanel` only showed `topMatches` (limit 3) from `/api/schedule/freed-slots`. Admin opening a cancelled card in the day timeline had no «кому звонить» list beyond the summary strip.
+- Gap: `GET /api/appointments/:appointmentId/waitlist-matches` already returned full ranked candidates (`WaitlistMatch` + reason, same doctor / time / priority / waiting days) for a cancelled or no_show future slot, but zero web callers. `FreedSlotsPanel` only showed `topMatches` (limit 3) from `/api/schedule/freed-slots`. Admin opening a cancelled card in the day timeline had no «кому звонить» list beyond the summary strip.
 - **Ship:** `WaitlistMatchesBlock.tsx` — self-contained (`useAppLogicContext` + clinical read headers); loads full report; phone / «Позвонил» / priority / reason. Mounted on `AppointmentCard` for future `cancelled`|`no_show`, and on `FreedSlotsPanel` expand («Полный подбор» / «Все из очереди»). data-testid: `waitlist-matches-block`, `appointment-card-waitlist-matches`, `freed-slot-full-matches`.
-- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401 AuthRequired; web grep `waitlist-matches` → block + AppointmentCard + FreedSlotsPanel.
+- Verify: `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401 AuthRequired; web grep `waitlist-matches` → block + AppointmentCard + FreedSlotsPanel.
 
 ## 2026-07-31 — Staff commissions GET overview (Settings → Персонал)
 
 
 ## 2026-07-31 — Ход рассылки в CampaignPanel (GET campaigns/:id/progress)
 
-**Проблема.** API `GET /api/communications/campaigns/:campaignId/progress` отдавал
-`byStatus` + `total` по outbox-строкам рассылки, но веб **ни разу** не вызывал
+Проблема. API `GET /api/communications/campaigns/:campaignId/progress` отдавал
+`byStatus` + `total` по outbox-строкам рассылки, но веб ни разу не вызывал
 маршрут. Администратор видел только бейдж «Выполняется» / «Завершена» и кнопку
 «Остановить» — сколько ушло, сколько в очереди, сколько failed, узнать было
 нельзя без ручного фильтра журнала доставки.
 
-**Сделано.** `CampaignPanel`: тип `CampaignProgress`, `loadProgress`, кнопка
+Сделано. `CampaignPanel`: тип `CampaignProgress`, `loadProgress`, кнопка
 «Ход отправки» для running/completed/cancelled, панель метрик (queued/sent/
 delivered/failed/…), автоопрос 8 с пока status=running, обновление после
 launch/cancel, подгрузка вместе с предпросмотром. data-testid:
 `campaign-progress-panel`, `campaign-progress-metrics`, `campaign-progress-btn-*`.
 
-**Проверка.** `npx tsc -p apps/web --noEmit` exit 0; live GET progress без
+Проверка. `npx tsc -p apps/web --noEmit` exit 0; live GET progress без
 секрета → 401/403 (маршрут жив).
 
 
-- **Gap:** `GET /api/settings/staff/commissions` already returned active `doctor_commissions` rates (`userId`, `commissionPct`, `materialCostDeductionPct`, `effectiveFrom`), and PUT `/api/settings/staff/:staffId/commission` was already wired in `DoctorPayoutDashboard` — but **zero web callers** on the GET list. Owner only saw rates inside the monthly payouts table; doctors with no visits that month looked “без ставки” even when a rate row existed.
-- **Ship:** `StaffCommissionsPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); loads GET list, joins staff FIO from dashboard, inline edit via existing PUT; mounted at top of `SettingsStaffTab` (`data-testid staff-commissions-panel`).
-- **Verify:** `npx tsc -p apps/web --noEmit`; live GET `/api/settings/staff/commissions` → 401/403 without admin secret (route up); web grep `settings/staff/commissions` → panel.
+- Gap: `GET /api/settings/staff/commissions` already returned active `doctor_commissions` rates (`userId`, `commissionPct`, `materialCostDeductionPct`, `effectiveFrom`), and PUT `/api/settings/staff/:staffId/commission` was already wired in `DoctorPayoutDashboard` — but zero web callers on the GET list. Owner only saw rates inside the monthly payouts table; doctors with no visits that month looked “без ставки” even when a rate row existed.
+- Ship: `StaffCommissionsPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); loads GET list, joins staff FIO from dashboard, inline edit via existing PUT; mounted at top of `SettingsStaffTab` (`data-testid staff-commissions-panel`).
+- Verify: `npx tsc -p apps/web --noEmit`; live GET `/api/settings/staff/commissions` → 401/403 without admin secret (route up); web grep `settings/staff/commissions` → panel.
 
 ## 2026-07-31 — Patient communication consents gameplay (Patients)
 
 - **Gap:** `GET/PUT /api/communications/consents/:patientId` already stored per-channel service/marketing consent (granted|revoked, defaults service=granted marketing=revoked), but **zero web callers** — staff could not record opt-in/out; campaigns/outbox had no UI source of truth on the patient card.
 - **Ship:** `PatientCommunicationConsentsPanel.tsx` — self-contained (`useAppLogicContext` + clinical read/mutation headers); matrix SMS/WhatsApp/Telegram/email/phone/MAX/VK/in_person × service|marketing; save dirty cells via PUT. Mounted on `PatientsView` when `selectedPatientId` is set (next to communication timelines).
-- **Verify:** `npx tsc -p apps/web --noEmit`; live GET empty patient → 401 AuthRequired or 400; web grep `communications/consents` → panel + PatientsView.
+- Verify: `npx tsc -p apps/web --noEmit`; live GET empty patient → 401 AuthRequired or 400; web grep `communications/consents` → panel + PatientsView.
 
 ## 2026-07-31 — AI visit-note-draft gameplay (Visit)
 
-- **Gap:** `POST /api/ai/visit-note-draft` already built SOAP visit note fields from transcript + specialty (rule + optional neural, `visitNoteDraftRequestSchema` / `visitNoteDraftSchema`), but **zero web callers** — dictation never became a structured visit note on screen.
-- **Ship:** `VisitNoteDraftPanel.tsx` — self-contained (`useAppLogicContext` + `denteClinicalReadHeaders`); transcript + specialty; run → show complaint/anamnesis/objective/diagnosis/plan + quality; copy/apply. Mounted on `VisitView` when `activePatient.id` is set.
-- **Verify:** `npx tsc -p apps/web --noEmit`; live empty body → 400 `VisitNoteDraftValidationError`; web grep `visit-note-draft` → panel + VisitView.
+- Gap: `POST /api/ai/visit-note-draft` already built SOAP visit note fields from transcript + specialty (rule + optional neural, `visitNoteDraftRequestSchema` / `visitNoteDraftSchema`), but zero web callers — dictation never became a structured visit note on screen.
+- Ship: `VisitNoteDraftPanel.tsx` — self-contained (`useAppLogicContext` + `denteClinicalReadHeaders`); transcript + specialty; run → show complaint/anamnesis/objective/diagnosis/plan + quality; copy/apply. Mounted on `VisitView` when `activePatient.id` is set.
+- Verify: `npx tsc -p apps/web --noEmit`; live empty body → 400 `VisitNoteDraftValidationError`; web grep `visit-note-draft` → panel + VisitView.
 
 ## 2026-07-31 — Diary revise gameplay (admin correct signed 043/у)
 
-- **Gap:** `POST /api/diaries/:id/revise` already archived prior SOAP text into `visit_diary_revisions` and updated the locked diary (admin-only `OnlyAdminsCanRevise`), and `GET …/revisions` already fed the revision counter — but the Visit diary editor had **zero web callers** for revise. After ЭЦП lock, admin could not fix a typo in МКБ-10 / SOAP without SQL.
-- **Ship:** `useVisitDiaryLogic.ts` — `beginRevise` / `cancelRevise` / `doRevise` (clinical mutation headers, reason ≥3 chars, message-first RU toasts, keeps `isLocked`, refreshes hash + revisionCount; autosave skips while revising). `VisitDiaryEditor.tsx` — `fieldsDisabled = isLocked && !isRevising` unlocks SOAP/ICD/tooth/complications in revise mode; locked footer «Исправить» (`diary-revise-begin`) + revise panel (reason + cancel/save); header badge «ПРАВКА» while revising.
-- **Verify:** `npx tsc -p apps/web --noEmit` GREEN; live `POST /api/diaries/:id/revise` without admin → 403 `OnlyAdminsCanRevise` (route up); web grep `/revise` → `useVisitDiaryLogic.ts`; `diary-revise-begin` / `diary-revise-panel` in editor; `disabled={isLocked}` on SOAP fields = 0 (all via `fieldsDisabled`).
+- Gap: `POST /api/diaries/:id/revise` already archived prior SOAP text into `visit_diary_revisions` and updated the locked diary (admin-only `OnlyAdminsCanRevise`), and `GET …/revisions` already fed the revision counter — but the Visit diary editor had zero web callers for revise. After ЭЦП lock, admin could not fix a typo in МКБ-10 / SOAP without SQL.
+- Ship: `useVisitDiaryLogic.ts` — `beginRevise` / `cancelRevise` / `doRevise` (clinical mutation headers, reason ≥3 chars, message-first RU toasts, keeps `isLocked`, refreshes hash + revisionCount; autosave skips while revising). `VisitDiaryEditor.tsx` — `fieldsDisabled = isLocked && !isRevising` unlocks SOAP/ICD/tooth/complications in revise mode; locked footer «Исправить» (`diary-revise-begin`) + revise panel (reason + cancel/save); header badge «ПРАВКА» while revising.
+- Verify: `npx tsc -p apps/web --noEmit` GREEN; live `POST /api/diaries/:id/revise` without admin → 403 `OnlyAdminsCanRevise` (route up); web grep `/revise` → `useVisitDiaryLogic.ts`; `diary-revise-begin` / `diary-revise-panel` in editor; `disabled={isLocked}` on SOAP fields = 0 (all via `fieldsDisabled`).
 
 ## 2026-07-31 — Live audit logs GET UI (Settings → Аудит)
 
-- **Gap:** `GET /api/audit/logs` returned the full org audit trail (entityType/entityId/limit filters, immutability 152-ФЗ), but the Settings audit tab only rendered `dashboard.auditEvents` (dashboard slice) — zero web callers for the live route.
-- **Ship:** Created self-contained `apps/web/src/AuditLogsPanel.tsx` — fetches `GET /api/audit/logs` with `denteClinicalReadHeaders`, Russian UI, entity filters, limit, refresh, immutable notice; mounted above `SettingsAuditTab` when `settingsTab === "audit"` in `SettingsView.tsx`.
-- **Verify:** web caller hit on `AuditLogsPanel.tsx`; live API `GET /api/audit/logs` → 401 AuthRequired (route up); `DELETE /api/audit/logs` → 403 AuditLogImmutable; `npx tsc -p apps/web --noEmit` GREEN.
+- Gap: `GET /api/audit/logs` returned the full org audit trail (entityType/entityId/limit filters, immutability 152-ФЗ), but the Settings audit tab only rendered `dashboard.auditEvents` (dashboard slice) — zero web callers for the live route.
+- Ship: Created self-contained `apps/web/src/AuditLogsPanel.tsx` — fetches `GET /api/audit/logs` with `denteClinicalReadHeaders`, Russian UI, entity filters, limit, refresh, immutable notice; mounted above `SettingsAuditTab` when `settingsTab === "audit"` in `SettingsView.tsx`.
+- Verify: web caller hit on `AuditLogsPanel.tsx`; live API `GET /api/audit/logs` → 401 AuthRequired (route up); `DELETE /api/audit/logs` → 403 AuditLogImmutable; `npx tsc -p apps/web --noEmit` GREEN.
 
 
 ## 2026-07-31 — CRM Custom Task Types UI (ClinicalTasksPanel)
 
-- **Gap:** `GET /api/crm/custom-task-types` returned organization-customized task types from `custom_crm_task_types` DDL table, but had zero web callers — doctors were limited to standard hardcoded phase buttons.
-- **Ship:** Updated `ClinicalTasksPanel.tsx` — fetches `/api/crm/custom-task-types` via `denteClinicalReadHeaders` and dynamically renders organization-specific task buttons styled with `type.colorHex`.
-- **Verify:** `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
+- Gap: `GET /api/crm/custom-task-types` returned organization-customized task types from `custom_crm_task_types` DDL table, but had zero web callers — doctors were limited to standard hardcoded phase buttons.
+- Ship: Updated `ClinicalTasksPanel.tsx` — fetches `/api/crm/custom-task-types` via `denteClinicalReadHeaders` and dynamically renders organization-specific task buttons styled with `type.colorHex`.
+- Verify: `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
 
 ## 2026-07-31 — EGISZ Multiple Diagnoses UI (VisitEmkTab)
 
-- **Gap:** `GET /api/egisz/multiple-diagnoses` queried structured accompanying diagnoses (`egiszMultipleDiagnoses` table) for EGISZ REMD CDA R2 compliance, but had zero web callers — doctors could not see or attach accompanying ICD-10 diagnoses to visit exports.
-- **Ship:** Built `EgiszMultipleDiagnosesWidget.tsx` — self-contained widget fetching `/api/egisz/multiple-diagnoses` with `denteClinicalReadHeaders`; mounted inside `VisitEmkTab.tsx` directly above the CDA R2 XML download section.
-- **Verify:** `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
+- Gap: `GET /api/egisz/multiple-diagnoses` queried structured accompanying diagnoses (`egiszMultipleDiagnoses` table) for EGISZ REMD CDA R2 compliance, but had zero web callers — doctors could not see or attach accompanying ICD-10 diagnoses to visit exports.
+- Ship: Built `EgiszMultipleDiagnosesWidget.tsx` — self-contained widget fetching `/api/egisz/multiple-diagnoses` with `denteClinicalReadHeaders`; mounted inside `VisitEmkTab.tsx` directly above the CDA R2 XML download section.
+- Verify: `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
 
 ## 2026-07-31 — EGISZ Doctor SNILS Validation UI (SettingsStaffTab)
 
-- **Gap:** `POST /api/clinical/egisz/validate-doctor-snils` validated doctor SNILS format and 11-digit checksum against state EGISZ/FRMR standards, but had zero web callers — administrators entered doctor credentials blindly without validation.
-- **Ship:** Created `DoctorSnilsValidationWidget.tsx` — self-contained widget calling `POST /api/clinical/egisz/validate-doctor-snils` with staff token headers; mounted in `SettingsStaffTab.tsx` when adding or editing doctor staff.
-- **Verify:** `npm run check:encoding` clean (2820 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
+- Gap: `POST /api/clinical/egisz/validate-doctor-snils` validated doctor SNILS format and 11-digit checksum against state EGISZ/FRMR standards, but had zero web callers — administrators entered doctor credentials blindly without validation.
+- Ship: Created `DoctorSnilsValidationWidget.tsx` — self-contained widget calling `POST /api/clinical/egisz/validate-doctor-snils` with staff token headers; mounted in `SettingsStaffTab.tsx` when adding or editing doctor staff.
+- Verify: `npm run check:encoding` clean (2820 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
 
 ## 2026-07-31 — NDFL Tax Certificate XML Export UI (DocumentsView)
 
-- **Gap:** `GET /api/documents/:id/tax-xml` generated valid KND 1151156 XML for FNS EDO submission, but button in `DocumentsView.tsx` had ambiguous label "Черновой файл ФНС" and lacked explicit ARIA metadata.
-- **Ship:** Updated `DocumentsView.tsx` with explicit action button «Справка НДФЛ в XML (ФНС)», emerald status styling, and full ARIA accessibility guidance.
-- **Verify:** `npm run check:encoding` clean (2819 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
+- Gap: `GET /api/documents/:id/tax-xml` generated valid KND 1151156 XML for FNS EDO submission, but button in `DocumentsView.tsx` had ambiguous label "Черновой файл ФНС" and lacked explicit ARIA metadata.
+- Ship: Updated `DocumentsView.tsx` with explicit action button «Справка НДФЛ в XML (ФНС)», emerald status styling, and full ARIA accessibility guidance.
+- Verify: `npm run check:encoding` clean (2819 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
 
 ## 2026-07-31 — AI personalize UI (Visit + Finance)
 
-- **Gap:** `POST /api/ai/treatment-plan-personalize` and `POST /api/ai/post-visit-personalize` already returned patient-friendly Russian text (rule fallback + optional neural), but **zero web callers** — doctor closed the visit and could only explain the plan / hand a memo manually.
-- **Ship:** `ClinicalAiPersonalizePanel.tsx` — self-contained panel (`useAppLogicContext` + `denteClinicalReadHeaders`); builds `treatmentPlanPayloadSchema`-valid body from `dashboard.treatmentPlanItems` / scenarios + visit note fields; buttons «Объяснить план пациенту» / «Памятка после приёма»; copy + markdownish render.
-- **Mount:** `VisitView.tsx` after ClinicalTasksPanel (complaint/diagnosis/treatmentPlan from visit note); `FinanceView.tsx` after ClinicalRulePanel (`patientId={documentPatient?.id ?? null}`, context=finance).
-- **Verify:** live empty body → 400 ValidationError; valid payload → 200 with `patientFriendlyExplanation` / `allowedAfter`+`telegramSummary`; mounts grep only Visit+Finance.
+- Gap: `POST /api/ai/treatment-plan-personalize` and `POST /api/ai/post-visit-personalize` already returned patient-friendly Russian text (rule fallback + optional neural), but zero web callers — doctor closed the visit and could only explain the plan / hand a memo manually.
+- Ship: `ClinicalAiPersonalizePanel.tsx` — self-contained panel (`useAppLogicContext` + `denteClinicalReadHeaders`); builds `treatmentPlanPayloadSchema`-valid body from `dashboard.treatmentPlanItems` / scenarios + visit note fields; buttons «Объяснить план пациенту» / «Памятка после приёма»; copy + markdownish render.
+- Mount: `VisitView.tsx` after ClinicalTasksPanel (complaint/diagnosis/treatmentPlan from visit note); `FinanceView.tsx` after ClinicalRulePanel (`patientId={documentPatient?.id ?? null}`, context=finance).
+- Verify: live empty body → 400 ValidationError; valid payload → 200 with `patientFriendlyExplanation` / `allowedAfter`+`telegramSummary`; mounts grep only Visit+Finance.
 
 ## 2026-07-31 — Live clinical rules evaluate UI (Visit + Finance)
 
 
-- **Gap:** `POST /api/clinical/rules/evaluate` already counted org-scoped rules from the live treatment plan (`evaluateClinicalRulesInDb`, enforceBlockers → 400 `ClinicalRuleBlocker`), but **zero web callers** — Visit/Finance only painted `dashboard.clinicalRuleEvaluations` snapshot from shift open. Doctor changed the plan → stale warnings until full dashboard reload.
-- **Ship:** `ClinicalRulePanel.tsx` — self-fetch via `useAppLogicContext` + `denteClinicalReadHeaders`; `collectServiceIdsForPatient` mirrors sampleData (plan items + active scenarios); buttons «Пересчитать по плану» / «Проверить с блокировкой» (visit only); blocker 400 is gameplay signal, not generic error.
-- **Mount:** `VisitView.tsx` `patientId` from activePatient / activeVisit; `FinanceView.tsx` `patientId={documentPatient?.id ?? null}`.
-- **Verify:** `npx tsc -p apps/web --noEmit` clean; live POST without body → 400 `ClinicalRuleValidationError` (route up); web caller grep → only `ClinicalRulePanel.tsx`.
+- Gap: `POST /api/clinical/rules/evaluate` already counted org-scoped rules from the live treatment plan (`evaluateClinicalRulesInDb`, enforceBlockers → 400 `ClinicalRuleBlocker`), but zero web callers — Visit/Finance only painted `dashboard.clinicalRuleEvaluations` snapshot from shift open. Doctor changed the plan → stale warnings until full dashboard reload.
+- Ship: `ClinicalRulePanel.tsx` — self-fetch via `useAppLogicContext` + `denteClinicalReadHeaders`; `collectServiceIdsForPatient` mirrors sampleData (plan items + active scenarios); buttons «Пересчитать по плану» / «Проверить с блокировкой» (visit only); blocker 400 is gameplay signal, not generic error.
+- Mount: `VisitView.tsx` `patientId` from activePatient / activeVisit; `FinanceView.tsx` `patientId={documentPatient?.id ?? null}`.
+- Verify: `npx tsc -p apps/web --noEmit` clean; live POST without body → 400 `ClinicalRuleValidationError` (route up); web caller grep → only `ClinicalRulePanel.tsx`.
 
 ## 2026-07-31 — Clinical phase handoff UI (VisitView)
 
-- **Gap:** `POST /api/clinical/phase-completions` + `GET /api/clinical/tasks` wrote to `clinical_tasks` (ClinicalRouter + clinicalTasksQuery) but had **zero web callers** — therapist/surgeon finished a phase and the prosthodontist never saw a task.
-- **Ship:** `apps/web/src/ClinicalTasksPanel.tsx` (self-contained FreedSlotsPanel pattern: `denteClinicalReadHeaders` / `denteClinicalMutationHeaders`).
-- **Mount:** `VisitView.tsx` after ClinicalRulePanel when `activePatient.id` is set; buttons «Завершить терапию — передать на ортопедию» / «Завершить хирургию — передать на ортопедию».
-- **Verify:** `npx tsc -p apps/web --noEmit` clean; live API AuthRequired then staff headers.
+- Gap: `POST /api/clinical/phase-completions` + `GET /api/clinical/tasks` wrote to `clinical_tasks` (ClinicalRouter + clinicalTasksQuery) but had zero web callers — therapist/surgeon finished a phase and the prosthodontist never saw a task.
+- Ship: `apps/web/src/ClinicalTasksPanel.tsx` (self-contained FreedSlotsPanel pattern: `denteClinicalReadHeaders` / `denteClinicalMutationHeaders`).
+- Mount: `VisitView.tsx` after ClinicalRulePanel when `activePatient.id` is set; buttons «Завершить терапию — передать на ортопедию» / «Завершить хирургию — передать на ортопедию».
+- Verify: `npx tsc -p apps/web --noEmit` clean; live API AuthRequired then staff headers.
 
 # DENTE CRM — demon backlog (Lead Security + Full-Stack)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 2026-07-31 — communications/variables в редакторе шаблонов
 
-**БЫЛО:** GET `/api/communications/variables` отдавал каталог подстановок (`key`/`label`/`example`/`phi`) из `templateRenderer.communicationTemplateVariables`, но **zero web callers** — администратор набирал `{patient}` по памяти, мед. переменные не были видны до отказа предпросмотра.
+БЫЛО: GET `/api/communications/variables` отдавал каталог подстановок (`key`/`label`/`example`/`phi`) из `templateRenderer.communicationTemplateVariables`, но zero web callers — администратор набирал `{patient}` по памяти, мед. переменные не были видны до отказа предпросмотра.
 
-**ТЕПЕРЬ:** `MessageDeliveryConsole` грузит каталог вместе со шлюзами/шаблонами; под полем текста — чипы вставки `{key}` (phi помечены «мед.»).
+ТЕПЕРЬ: `MessageDeliveryConsole` грузит каталог вместе со шлюзами/шаблонами; под полем текста — чипы вставки `{key}` (phi помечены «мед.»).
 
 Файлы: `apps/web/src/components/communications/MessageDeliveryConsole.tsx`.
 
@@ -383,8 +383,8 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 
 ## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
 
-- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
-- **Ship:**
+- Gap: In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- Ship:
   - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
   - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
   - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
@@ -452,7 +452,6 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
 
 
-
 [x] P2 | Push main after each green commit | origin main | auth Zod pushed (0789876b9)
 
 
@@ -466,9 +465,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 # SALVAGED FIXES FROM CLOSED PRs
 
 ## Salvaged fix from closed PR #570
-- **Branch**: `code-health-remove-route-comments-3973124828772554239`
-- **Title**: 🧹 [code health improvement] Remove dead route signature comments from templates route
-- **Files Modified**:
+- Branch: `code-health-remove-route-comments-3973124828772554239`
+- Title: 🧹 [code health improvement] Remove dead route signature comments from templates route
+- Files Modified:
   - `apps/api/src/routes/templates.ts` (172 lines added):
     > requireClinicalMutationAccess,
     > requireClinicalReadAccess,
@@ -482,9 +481,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > "Этот протокол приёма не найден в вашей клинике. Так бывает, если его удалили, пока список был открыт на экране. Обновите список протоколов и выберите протокол заново.";
 
 ## Salvaged fix from closed PR #569
-- **Branch**: `fix-shiftview-comments-9977644615051067169`
-- **Title**: 🧹 [code health improvement] Remove historical changelog comments in ShiftView
-- **Files Modified**:
+- Branch: `fix-shiftview-comments-9977644615051067169`
+- Title: 🧹 [code health improvement] Remove historical changelog comments in ShiftView
+- Files Modified:
   - `apps/web/src/ShiftView.tsx` (1145 lines added):
     > import { PatientAvatar } from "./components/PatientAvatar";
     > import { EmptyState } from "./components/EmptyState";
@@ -498,9 +497,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > return Number.isNaN(parsed.getTime())
 
 ## Salvaged fix from closed PR #567
-- **Branch**: `test-levenshtein-distance-3426668440697656332`
-- **Title**: 🧪 [testing improvement] Add tests for levenshteinDistance
-- **Files Modified**:
+- Branch: `test-levenshtein-distance-3426668440697656332`
+- Title: 🧪 [testing improvement] Add tests for levenshteinDistance
+- Files Modified:
   - `apps/api/src/services/ingestion/IdentityResolutionEngine.ts` (72 lines added):
     > export class IdentityResolutionEngine {
     > static levenshteinDistance(a: string, b: string): number {
@@ -514,24 +513,24 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > const cost = a[i - 1] === b[j - 1] ? 0 : 1;
 
 ## Salvaged fix from closed PR #562
-- **Branch**: `code-health/remove-pricelistmatcher-comments-13359801031893125471`
-- **Title**: 🧹 [code health improvement] Remove unnecessary configuration comments in PriceListMatcher
-- **Files Modified**:
+- Branch: `code-health/remove-pricelistmatcher-comments-13359801031893125471`
+- Title: 🧹 [code health improvement] Remove unnecessary configuration comments in PriceListMatcher
+- Files Modified:
   - `apps/api/src/treatment/PriceListMatcher.ts` (2 lines added):
     > { name: "aliases", weight: 0.9 },
     > threshold: 0.4,
 
 ## Salvaged fix from closed PR #559
-- **Branch**: `test-parse-preferred-weekday-11292030645725471312`
-- **Title**: 🧪 Add comprehensive tests for parsePreferredWeekday
-- **Files Modified**:
+- Branch: `test-parse-preferred-weekday-11292030645725471312`
+- Title: 🧪 Add comprehensive tests for parsePreferredWeekday
+- Files Modified:
   - `apps/api/src/services/schedule/waitlistMatching.ts` (1 lines added):
     > if (typeof raw === "number") return null; // intentional bug
 
 ## Salvaged fix from closed PR #558
-- **Branch**: `code-health/remove-oblique-snap-comment-17801685322905399077`
-- **Title**: 🧹 Remove commented-out oblique snap code in Cornerstone3DViewer
-- **Files Modified**:
+- Branch: `code-health/remove-oblique-snap-comment-17801685322905399077`
+- Title: 🧹 Remove commented-out oblique snap code in Cornerstone3DViewer
+- Files Modified:
   - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx` (488 lines added):
     > import {
     > PanoramicRendererWindow,
@@ -545,9 +544,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > ),
 
 ## Salvaged fix from closed PR #557
-- **Branch**: `perf-optimize-doctor-performance-17649089425278093903`
-- **Title**: ⚡ Optimize doctorPerformance queries with Promise.all
-- **Files Modified**:
+- Branch: `perf-optimize-doctor-performance-17649089425278093903`
+- Title: ⚡ Optimize doctorPerformance queries with Promise.all
+- Files Modified:
   - `.data/dental-crm-state.json` (757 lines added):
     > "savedAt": "2026-07-29T22:33:10.883Z",
     > "clinicName": "Стоматология, 1 кабинет",
@@ -569,7 +568,7 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > "lastStatusCode": null,
     > "lastError": null
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -594,9 +593,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > import { db } from './apps/api/src/db/client.js';
 
 ## Salvaged fix from closed PR #555
-- **Branch**: `perf-bulk-insert-patient-imports-4812499985887216910`
-- **Title**: ⚡ Resolve N+1 query in Patient Imports
-- **Files Modified**:
+- Branch: `perf-bulk-insert-patient-imports-4812499985887216910`
+- Title: ⚡ Resolve N+1 query in Patient Imports
+- Files Modified:
   - `apps/api/src/routes/imports.ts` (184 lines added):
     > normalizeDate,
     > import {
@@ -610,22 +609,22 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > фио: "fullName",
 
 ## Salvaged fix from closed PR #552
-- **Branch**: `fix-drop-constraints-logs-16443840779344071698`
-- **Title**: 🧹 Remove leftover console.logs in drop_constraints_pglite.ts
-- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** `apps/api/drop_constraints_pglite.ts`
+- Branch: `fix-drop-constraints-logs-16443840779344071698`
+- Title: 🧹 Remove leftover console.logs in drop_constraints_pglite.ts
+- СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён. `apps/api/drop_constraints_pglite.ts`
   снесён коммитом `8dba4744c` («chore(api): remove obsolete root scratch migration scripts») вместе с
   остальными корневыми scratch-скриптами. Правку применять некуда. Запись оставлена как история
   закрытого PR, а не как задача. Заодно: PGlite в проекте нет — движок нативный PostgreSQL 18.4
   (`.agents/DATABASE.md`).
-- **Files Modified**:
+- Files Modified:
   - `apps/api/drop_constraints_pglite.ts` (2 lines added):
-    > } catch(e) { /* ignore expected error if constraint does not exist */ }
-    > } catch(e) { /* ignore expected error if constraint does not exist */ }
+    > } catch(e) { / ignore expected error if constraint does not exist / }
+    > } catch(e) { / ignore expected error if constraint does not exist / }
 
 ## Salvaged fix from closed PR #550
-- **Branch**: `fix-public-booking-dead-comments-14411843600716509679`
-- **Title**: 🧹 [code health improvement] Remove dead comments explaining past bugs in publicBooking route
-- **Files Modified**:
+- Branch: `fix-public-booking-dead-comments-14411843600716509679`
+- Title: 🧹 [code health improvement] Remove dead comments explaining past bugs in publicBooking route
+- Files Modified:
   - `apps/api/src/routes/publicBooking.ts` (554 lines added):
     > appointments,
     > clinics,
@@ -639,13 +638,13 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > const now = Date.now();
 
 ## Salvaged fix from closed PR #549
-- **Branch**: `code-health/remove-migrate-console-logs-11441343709773525889`
-- **Title**: 🧹 Remove leftover console.logs from migrate.ts
-- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Речь про корневой
+- Branch: `code-health/remove-migrate-console-logs-11441343709773525889`
+- Title: 🧹 Remove leftover console.logs from migrate.ts
+- СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён. Речь про корневой
   `apps/api/migrate.ts` (PGlite-скрипт), снесённый коммитом `8dba4744c`. **Не путать с живым раннером
   `apps/api/src/scripts/migrate.ts`** — это другой файл, он работает через `node-postgres` и никакого
   `new PGlite(...)` в нём нет. Запись оставлена как история закрытого PR.
-- **Files Modified**:
+- Files Modified:
   - `apps/api/migrate.ts` (24 lines added):
     > const client = new PGlite("./dente-db");
     > try {
@@ -659,9 +658,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > `ALTER TABLE "clinics" ADD COLUMN "reporting_settings" jsonb;`,
 
 ## Salvaged fix from closed PR #539
-- **Branch**: `chore/remove-mprmath-comments-876246097547690608`
-- **Title**: 🧹 [Code Health] Remove commented-out explanation in mprMath.ts
-- **Files Modified**:
+- Branch: `chore/remove-mprmath-comments-876246097547690608`
+- Title: 🧹 [Code Health] Remove commented-out explanation in mprMath.ts
+- Files Modified:
   - `apps/web/src/mprMath.ts` (98 lines added):
     > m4[0] = m3[0] ?? 0;
     > m4[1] = m3[1] ?? 0;
@@ -675,9 +674,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > m4[9] = m3[7] ?? 0;
 
 ## Salvaged fix from closed PR #531
-- **Branch**: `fix-leftover-console-log-1848421230680775269`
-- **Title**: 🧹 [code health] Remove leftover console.log in backupWorker
-- **Files Modified**:
+- Branch: `fix-leftover-console-log-1848421230680775269`
+- Title: 🧹 [code health] Remove leftover console.log in backupWorker
+- Files Modified:
   - `apps/api/src/services/backupWorker.ts` (184 lines added):
     > success: boolean;
     > filePath?: string;
@@ -691,9 +690,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > return {
 
 ## Salvaged fix from closed PR #529
-- **Branch**: `performance/workspace-profile-bulk-insert-1738597313535215752`
-- **Title**: ⚡ Optimize workspace patient seeding with bulk inserts
-- **Files Modified**:
+- Branch: `performance/workspace-profile-bulk-insert-1738597313535215752`
+- Title: ⚡ Optimize workspace patient seeding with bulk inserts
+- Files Modified:
   - `apps/api/src/routes/workspaceProfile.ts` (80 lines added):
     > export function workspaceFlagsFromStorage(
     > stored: unknown,
@@ -707,15 +706,15 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > unknown
 
 ## Salvaged fix from closed PR #527
-- **Branch**: `jules-testing-improvement-9506389929483520903`
-- **Title**: 🧪 [testing improvement] Cover edge cases in addressableName formatting
-- **Files Modified**:
+- Branch: `jules-testing-improvement-9506389929483520903`
+- Title: 🧪 [testing improvement] Cover edge cases in addressableName formatting
+- Files Modified:
   - `apps/api/.data/speech-key-health.json` (3 lines added):
     > "savedAt": "2026-07-29T20:33:33.812Z",
     > "successes": 264,
     > "lastUsedAt": 1785357213812,
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -727,9 +726,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > });
 
 ## Salvaged fix from closed PR #526
-- **Branch**: `perf-waitlist-weekdays-true-9605777987176841602`
-- **Title**: ⚡ Optimize wantedWeekdays lookup in waitlist matching
-- **Files Modified**:
+- Branch: `perf-waitlist-weekdays-true-9605777987176841602`
+- Title: ⚡ Optimize wantedWeekdays lookup in waitlist matching
+- Files Modified:
   - `apps/api/src/services/schedule/waitlistMatching.ts` (20 lines added):
     > const rangesArray = Array.isArray(row.preferredTimeRanges) ? row.preferredTimeRanges : [];
     > let dayFits = rangesArray.length === 0;
@@ -743,9 +742,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > if (day !== null) {
 
 ## Salvaged fix from closed PR #523
-- **Branch**: `fix-notification-n1-7166612468703291580`
-- **Title**: ⚡ [performance improvement] fix(api): optimize notification queue database updates
-- **Files Modified**:
+- Branch: `fix-notification-n1-7166612468703291580`
+- Title: ⚡ [performance improvement] fix(api): optimize notification queue database updates
+- Files Modified:
   - `apps/api/src/services/notificationWorker.ts` (124 lines added):
     > import {
     > outgoingNotifications,
@@ -759,9 +758,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > scheduledAt?: Date;
 
 ## Salvaged fix from closed PR #518
-- **Branch**: `fix-colloquial-time-parsing-13653597019292396190`
-- **Title**: 🧹 Fix parsing of colloquial time expressions with 'пол'
-- **Files Modified**:
+- Branch: `fix-colloquial-time-parsing-13653597019292396190`
+- Title: 🧹 Fix parsing of colloquial time expressions with 'пол'
+- Files Modified:
   - `.data/dental-crm-state.json` (74 lines added):
     > "savedAt": "2026-07-29T20:36:33.191Z",
     > "currency": "₽",
@@ -785,7 +784,7 @@ launch/cancel, подгрузка вместе с предпросмотром. 
   - `apps/api/src/ai/localDictationParser.ts` (1 lines added):
     > m = text.match(/(?<=^|[^а-яё])(пол(?:овин[аеу])?[\s\-]*|четверть\s+)([а-яё]+)/i);
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -797,12 +796,12 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > });
 
 ## Salvaged fix from closed PR #517
-- **Branch**: `fix/remove-migrate-console-logs-13955975131268310997`
-- **Title**: 🧹 refactor: remove spammy console logs in migration script
-- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Корневой `apps/api/migrate.ts`
+- Branch: `fix/remove-migrate-console-logs-13955975131268310997`
+- Title: 🧹 refactor: remove spammy console logs in migration script
+- СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён. Корневой `apps/api/migrate.ts`
   (PGlite-скрипт) снесён коммитом `8dba4744c`. Живой раннер — `apps/api/src/scripts/migrate.ts`, это
   другой файл. Запись оставлена как история закрытого PR.
-- **Files Modified**:
+- Files Modified:
   - `apps/api/migrate.ts` (24 lines added):
     > const client = new PGlite("./dente-db");
     > try {
@@ -816,12 +815,12 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > `ALTER TABLE "clinics" ADD COLUMN "reporting_settings" jsonb;`,
 
 ## Salvaged fix from closed PR #516
-- **Branch**: `jules-155648292377404905-a05c3aba`
-- **Title**: 🧹 Remove leftover console.log in migrate.ts
-- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Корневой `apps/api/migrate.ts`
+- Branch: `jules-155648292377404905-a05c3aba`
+- Title: 🧹 Remove leftover console.log in migrate.ts
+- СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён. Корневой `apps/api/migrate.ts`
   снесён коммитом `8dba4744c`. Живой раннер — `apps/api/src/scripts/migrate.ts`. Запись оставлена
   как история закрытого PR.
-- **Files Modified**:
+- Files Modified:
   - `apps/api/migrate.ts` (4 lines added):
     > } catch {}
     > } catch {}
@@ -829,9 +828,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > } catch {}
 
 ## Salvaged fix from closed PR #515
-- **Branch**: `perf/bulk-insert-workspace-seed-10594053989321798642`
-- **Title**: ⚡ perf: optimize N+1 query in workspace visit seeding
-- **Files Modified**:
+- Branch: `perf/bulk-insert-workspace-seed-10594053989321798642`
+- Title: ⚡ perf: optimize N+1 query in workspace visit seeding
+- Files Modified:
   - `apps/api/src/routes/workspaceProfile.ts` (91 lines added):
     > export function workspaceFlagsFromStorage(
     > stored: unknown,
@@ -845,9 +844,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > unknown
 
 ## Salvaged fix from closed PR #514
-- **Branch**: `jules-fix-colloquial-time-parsing-6109630629763180349`
-- **Title**: 🧹 fix(dictation): handle modifiers for colloquial time expressions
-- **Files Modified**:
+- Branch: `jules-fix-colloquial-time-parsing-6109630629763180349`
+- Title: 🧹 fix(dictation): handle modifiers for colloquial time expressions
+- Files Modified:
   - `.data/speech-key-health.json` (8 lines added):
     > "savedAt": "2026-07-29T20:40:44.414Z",
     > "google_speech:26987e457b44": {
@@ -870,9 +869,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > if (text.includes("утра") && h >= 12) h -= 12;
 
 ## Salvaged fix from closed PR #513
-- **Branch**: `fix-setup-fresh-db-password-6372928070570540421`
-- **Title**: 🔒 Fix hardcoded password in setup-fresh-db.ts
-- **Files Modified**:
+- Branch: `fix-setup-fresh-db-password-6372928070570540421`
+- Title: 🔒 Fix hardcoded password in setup-fresh-db.ts
+- Files Modified:
   - `apps/api/src/scripts/setup-fresh-db.ts` (37 lines added):
     > const SQL_FILE = path.resolve(
     > __dirname,
@@ -886,19 +885,19 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > try {
 
 ## Salvaged fix from closed PR #510
-- **Branch**: `fix-dictation-time-parser-17284312605275932740`
-- **Title**: Fix local dictation parsing for 'полпервого' / 'пол первого'
-- **Files Modified**:
+- Branch: `fix-dictation-time-parser-17284312605275932740`
+- Title: Fix local dictation parsing for 'полпервого' / 'пол первого'
+- Files Modified:
   - `apps/api/src/ai/localDictationParser.ts` (2 lines added):
     > m = text.match(/(?:(?:^|\s)(пол(?:овин[аеу])?|четверть)[\s\-]*)(перв|втор|трет|четверт|пят|шест|седьм|восьм|девят|десят|одиннадцат|двенадцат)[а-яё]*/i);
     > const word = (m[2] ?? "").substring(0, 3).toLowerCase();
 
 ## Salvaged fix from closed PR #509
-- **Branch**: `perf-optimize-splitline-8793014319858349775`
-- **Title**: ⚡ [performance improvement] Optimize splitLine with standard split and array join
-- **Files Modified**:
+- Branch: `perf-optimize-splitline-8793014319858349775`
+- Title: ⚡ [performance improvement] Optimize splitLine with standard split and array join
+- Files Modified:
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -932,9 +931,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > current.length = 0;
 
 ## Salvaged fix from closed PR #507
-- **Branch**: `test/waitlist-matching-1887540507137609843`
-- **Title**: 🧪 [testing improvement] Add comprehensive tests for slotFitsRanges
-- **Files Modified**:
+- Branch: `test/waitlist-matching-1887540507137609843`
+- Title: 🧪 [testing improvement] Add comprehensive tests for slotFitsRanges
+- Files Modified:
   - `.data/dental-crm-state.json` (74 lines added):
     > "savedAt": "2026-07-29T20:34:41.144Z",
     > "currency": "₽",
@@ -956,7 +955,7 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > "lastStatusCode": null,
     > "lastError": null
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -968,9 +967,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > });
 
 ## Salvaged fix from closed PR #505
-- **Branch**: `fix-local-dictation-time-parser-2433554812062406363`
-- **Title**: 🐛 [fix] Correct local dictation parser explicit time extraction
-- **Files Modified**:
+- Branch: `fix-local-dictation-time-parser-2433554812062406363`
+- Title: 🐛 [fix] Correct local dictation parser explicit time extraction
+- Files Modified:
   - `apps/api/src/ai/localDictationParser.ts` (4 lines added):
     > const explicitMatches = [...text.matchAll(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:час|утра|дня|вечера))?(?!\s*\d)/gi)];
     > for (const match of explicitMatches) {
@@ -978,9 +977,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > if (isNaN(h)) h = parseWordNumber(match[1] as string) || 0;
 
 ## Salvaged fix from closed PR #503
-- **Branch**: `testing-improve-sms-payload-edge-cases-4152881603525431415`
-- **Title**: 🧪 [testing improvement] Cover SMS payload edge cases
-- **Files Modified**:
+- Branch: `testing-improve-sms-payload-edge-cases-4152881603525431415`
+- Title: 🧪 [testing improvement] Cover SMS payload edge cases
+- Files Modified:
   - `.data/dental-crm-state.json` (74 lines added):
     > "savedAt": "2026-07-29T20:31:08.917Z",
     > "currency": "₽",
@@ -1002,7 +1001,7 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > "lastStatusCode": null,
     > "lastError": null
   - `packages/shared/dist/index.js` (130 lines added):
-    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+    > const kopecksAreExact = (value) => Number.isFinite(value) && Math.abs(value  100 - Math.round(value  100)) < 1e-6;
     > export const moneyRubSchema = z
     > .number()
     > .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
@@ -1014,9 +1013,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
     > });
 
 ## Salvaged fix from closed PR #500
-- **Branch**: `fix/explicit-time-matching-12552457096991234595`
-- **Title**: fix: localDictationParser explicit time matching logic
-- **Files Modified**:
+- Branch: `fix/explicit-time-matching-12552457096991234595`
+- Title: fix: localDictationParser explicit time matching logic
+- Files Modified:
   - `apps/api/src/ai/localDictationParser.ts` (4 lines added):
     > const explicitMatches = [...text.matchAll(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:час|часов|утра|дня|вечера))?(?!\s*\d)/gi)];
     > for (const match of explicitMatches) {

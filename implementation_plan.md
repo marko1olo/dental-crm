@@ -45,8 +45,8 @@ In accordance with the "Global System Census" and "Execution Chain Verification"
 - Inject `const appLogic = useAppLogicContext();` and destructure required state.
 
 ## Verification Plan
-1. **Compilation Check**: `npx tsc -b apps/web --noEmit` must return code 0.
-2. **Prop Audit**: Verify no instances of `<VisitView` with props remain across the entire codebase.
+1. Compilation Check: `npx tsc -b apps/web --noEmit` must return code 0.
+2. Prop Audit: Verify no instances of `<VisitView` with props remain across the entire codebase.
 
 # Phase 9: Settings Domain Monoliths Decomposition
 
@@ -56,7 +56,7 @@ The Settings domain is the last remaining set of massive monolithic files in the
 - SettingsAuditTab.tsx (3,000 lines)
 - SettingsImagingImportTab.tsx (3,500 lines)
 
-These files are single React components containing thousands of lines of JSX, state, and API logic. In accordance with the **Strangler Pattern** and **Domain-Driven Design (DDD)** principles, we must extract these into modular layers (View, Domain Logic, Data).
+These files are single React components containing thousands of lines of JSX, state, and API logic. In accordance with the Strangler Pattern and Domain-Driven Design (DDD) principles, we must extract these into modular layers (View, Domain Logic, Data).
 
 ## CTO Directives & Reconnaissance Mandate
 Subagents have been dispatched to map the AST of SettingsSmartImportTab.tsx and SettingsAuditTab.tsx to identify the largest functional chunks that can be safely extracted. 
@@ -65,7 +65,7 @@ Subagents have been dispatched to map the AST of SettingsSmartImportTab.tsx and 
 (Pending subagent reports...)
 
 ## Verification Plan
-1. **Compilation Check**: npx tsc -b apps/web --noEmit must pass.
-2. **Visual Inspection**: UI must remain completely identical.
-3. **AST Check**: The source files must be significantly reduced in size.
+1. Compilation Check: npx tsc -b apps/web --noEmit must pass.
+2. Visual Inspection: UI must remain completely identical.
+3. AST Check: The source files must be significantly reduced in size.
 

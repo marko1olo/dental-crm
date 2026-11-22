@@ -1,17 +1,17 @@
 # Project: DENTE Dental CRM — 2.5D Odontogram & Gate 0 First Article Inspection
 
 ## Architecture
-- **Monolithic 2.5D Vector Anatomy Model**:
+- Monolithic 2.5D Vector Anatomy Model:
   - Frontal-Occlusal perspective projection with 17.5° tilt ($\cos 17.5^\circ \approx 0.954$, $\sin 17.5^\circ \approx 0.301$), providing simultaneous full-length root visibility and occlusal cusp relief.
   - Wheeler's Dental Anatomy Chapter 12 coordinates: continuous biological crown and root outlines.
   - Zero patchwork stained-glass tiles: non-destructive translucent clinical overlays over monolithic anatomy.
-- **Cupertino Clinical Vector Shaders**:
+- Cupertino Clinical Vector Shaders:
   - Apple HIG porcelain-enamel multi-stop gradient (`#ffffff` -> `#f8fafc` -> `#f1f5f9` -> `#e2e8f0` -> `#cbd5e1`/`#ded5c4`).
   - Hairline 0.8px with `vector-effect="non-scaling-stroke"`.
   - Coaxial radiant endodontic gutta-percha (`#f43f5e` sheath + `#ffffff` 0.8px core).
-- **Mandate 8b Modular Decomposition**:
+- Mandate 8b Modular Decomposition:
   - All components and code files strictly $\le 120$ lines.
-- **Live In-App Visual Test Stand**:
+- Live In-App Visual Test Stand:
   - Mounted directly in `apps/web/src/main.tsx` via `?stand=odontogram-gate0`. Zero fake `*_preview.html` sandboxes.
 
 ## Feature Inventory
