@@ -4,10 +4,10 @@
 The Doctor Payout & Earnings Wallet subsystem provides transparent, real-time calculation of piece-rate compensation for dental practitioners (solo chair renters, self-employed/NPD, and salaried specialists). It replaces opaque payroll sheets and Soviet Goskomstat nomenclature with an intuitive, Apple Wallet-grade clinical interface.
 
 ### Key Mandates Addressed:
-- **Mandate 8b (Anti-Monolith Invariant):** Monolithic stylesheet `apps/web/src/styles/modules/mobile-doctor-payout.css` (856 lines) decomposed into 8 focused modules in `apps/web/src/styles/payoutStyles/` strictly `<= 120 lines` each, leaving a 13-line facade (`<= 25 lines`).
-- **Mandate 8e (Doctor Autonomy & Financial Sovereignty):** Doctors see transparent breakdowns of gross billings, laboratory (ZTL) deductions, category rates, and net receivable funds without administrative gatekeeping.
-- **Mandate 8n (Solo Practice & Chair Rental Primacy):** Full support for chair rental deductions, advance offsets, and self-employed (НПД 0–6%) tax modes.
-- **Mandate 8x & 8ap (Eradication of Soviet Bureaucracy):** Banned bureaucratic form numbers («Форма Т-51», «Т-49», «Табель») across production UI and codebase, replacing them with clear Russian clinical domain terminology («Отчет о доходах врача», «Гонорарная ведомость»).
+- Mandate 8b (Anti-Monolith Invariant): Monolithic stylesheet `apps/web/src/styles/modules/mobile-doctor-payout.css` (856 lines) decomposed into 8 focused modules in `apps/web/src/styles/payoutStyles/` strictly `<= 120 lines` each, leaving a 13-line facade (`<= 25 lines`).
+- Mandate 8e (Doctor Autonomy & Financial Sovereignty): Doctors see transparent breakdowns of gross billings, laboratory (ZTL) deductions, category rates, and net receivable funds without administrative gatekeeping.
+- Mandate 8n (Solo Practice & Chair Rental Primacy): Full support for chair rental deductions, advance offsets, and self-employed (НПД 0–6%) tax modes.
+- Mandate 8x & 8ap (Eradication of Soviet Bureaucracy): Banned bureaucratic form numbers («Форма Т-51», «Т-49», «Табель») across production UI and codebase, replacing them with clear Russian clinical domain terminology («Отчет о доходах врача», «Гонорарная ведомость»).
 
 ---
 
@@ -44,9 +44,9 @@ $$\text{Net Revenue} = (\text{Gross Revenue} - \text{ZTL Lab Deductions} - \text
 
 ## 4. Mobile Ergonomics & Apple HIG Compliance
 
-- **Natural Thumb Zone First:** The primary CTA («Гонорарная ведомость») and refresh controls are positioned in a sticky bottom floating bar (`backdrop-filter: blur(20px)`).
-- **Grouped List Cards:** Multi-column tables replaced by touch-friendly cards with visual status badges, category icons, and $\ge 44\times 44\text{px}$ touch targets.
-- **Zero Horizontal Drift:** Tested on 390×844 viewport with `0px` parasitic horizontal drift (`overflow-x: clip; max-width: 100vw`).
+- Natural Thumb Zone First: The primary CTA («Гонорарная ведомость») and refresh controls are positioned in a sticky bottom floating bar (`backdrop-filter: blur(20px)`).
+- Grouped List Cards: Multi-column tables replaced by touch-friendly cards with visual status badges, category icons, and $\ge 44\times 44\text{px}$ touch targets.
+- Zero Horizontal Drift: Tested on 390×844 viewport with `0px` parasitic horizontal drift (`overflow-x: clip; max-width: 100vw`).
 
 ---
 

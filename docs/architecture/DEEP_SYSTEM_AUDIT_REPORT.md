@@ -1,17 +1,17 @@
 # 🔍 ГЛУБОКИЙ СИСТЕМНЫЙ АУДИТ DENTAL CRM: БЭКЕНД, ФРОНТЕНД, КЛИНИКА И ФИНАНСЫ
 
-> **Навигация:**<br/>
+> Навигация:<br/>
 > 🗺️ **[Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
 > 🏗️ **[Архитектура Системы (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
 > 📚 **[База Знаний и Документация (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
 > 🗄️ **[Реестр Базы Данных (DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
 > ⚠️ **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
 
-**Дата аудита:** 16 августа 2026 (Актуализировано: Сентябрь 2026)<br/>
-**Статус:** Часть критических узлов устранена в production; активный технический долг декомпозиции монолитов взят на контроль<br/>
-**Среда исполнения:** React 19 (`@dental/web`), Node.js Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
-**Команда аудиторов:** Backend Security Auditor, Frontend Architecture Auditor, Clinical & Regulatory Auditor<br/>
-**Методология:** Пофайловый статический анализ, аудит индексов PostgreSQL, трассировка RLS и финансовых проводок, замеры CLS и рендеров React.
+Дата аудита: 16 августа 2026 (Актуализировано: Сентябрь 2026)<br/>
+Статус: Часть критических узлов устранена в production; активный технический долг декомпозиции монолитов взят на контроль<br/>
+Среда исполнения: React 19 (`@dental/web`), Node.js Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
+Команда аудиторов: Backend Security Auditor, Frontend Architecture Auditor, Clinical & Regulatory Auditor<br/>
+Методология: Пофайловый статический анализ, аудит индексов PostgreSQL, трассировка RLS и финансовых проводок, замеры CLS и рендеров React.
 
 ---
 
@@ -45,7 +45,7 @@ const chargeScope = and(
     patientIdFilter,
 );
 ```
-**Результат:** Запрос выбирает строго записи запрашиваемых пациентов, пик ОЗУ при открытии списков пациентов снижен с 1.2 ГБ до нормы (<50 МБ).
+Результат: Запрос выбирает строго записи запрашиваемых пациентов, пик ОЗУ при открытии списков пациентов снижен с 1.2 ГБ до нормы (<50 МБ).
 
 ### 1.2. Выделение сервиса парсинга из `smartImports.ts` (312 КБ)
 Роут `smartImports.ts` содержит 8 500+ строк кода. Необходимо завершить выделение `SmartPricelistImportService.ts` и `PatientBatchImportService.ts` с валидацией через Zod.
@@ -84,9 +84,9 @@ const chargeScope = and(
 
 ## 📋 ПЛАН ДЕЙСТВИЙ (ЭПИКИ 4 И 5) И ТЕКУЩИЙ СТАТУС
 
-1. **TASK-4.1 [УСТРАНЕНО]:** Оптимизация `patientAccountBalancesRub` (`inArray` + индекс `(organization_id, patient_id)`). Проверено в `apps/api/src/db/patientsQuery.ts`.
-2. **TASK-4.2 [ЗАПЛАНИРОВАНО]:** Выделение `SmartImportService.ts` из `smartImports.ts` (312 КБ).
-3. **TASK-4.3 [В ПРОЦЕССЕ]:** Декомпозиция `App.tsx` (монолит сокращен с 5.6k до 4.2k строк, вынесены доменные хуки в `apps/web/src/hooks/domains/`).
-4. **TASK-4.4 [В ПРОЦЕССЕ]:** Декомпозиция `DocumentsView.tsx` (создан `useDocumentWorkflowModule.ts`, идет модульное расщепление бланков).
-5. **TASK-4.5 [УСТРАНЕНО]:** Механизм точного расчета зарплаты врачей с учетом списаний материалов и защитой от минусовых выплат реализован в `apps/api/src/services/finance/doctorPayouts.ts`.
-6. **TASK-4.6 [ЗАПЛАНИРОВАНО]:** iCal/CalDAV экспорт расписания для врачей (Feature #42).
+1. TASK-4.1 [УСТРАНЕНО]: Оптимизация `patientAccountBalancesRub` (`inArray` + индекс `(organization_id, patient_id)`). Проверено в `apps/api/src/db/patientsQuery.ts`.
+2. TASK-4.2 [ЗАПЛАНИРОВАНО]: Выделение `SmartImportService.ts` из `smartImports.ts` (312 КБ).
+3. TASK-4.3 [В ПРОЦЕССЕ]: Декомпозиция `App.tsx` (монолит сокращен с 5.6k до 4.2k строк, вынесены доменные хуки в `apps/web/src/hooks/domains/`).
+4. TASK-4.4 [В ПРОЦЕССЕ]: Декомпозиция `DocumentsView.tsx` (создан `useDocumentWorkflowModule.ts`, идет модульное расщепление бланков).
+5. TASK-4.5 [УСТРАНЕНО]: Механизм точного расчета зарплаты врачей с учетом списаний материалов и защитой от минусовых выплат реализован в `apps/api/src/services/finance/doctorPayouts.ts`.
+6. TASK-4.6 [ЗАПЛАНИРОВАНО]: iCal/CalDAV экспорт расписания для врачей (Feature #42).

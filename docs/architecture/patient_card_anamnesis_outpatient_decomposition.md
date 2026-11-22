@@ -2,16 +2,16 @@
 
 ## 1. Контекст и архитектурная цель
 Ликвидация архитектурного долга и распил монолитов в клиническом контуре пациента:
-- **Fastify API**: `apps/api/src/routes/outpatient.ts` (ранее 779 строк монолита) распилен строго на чистый фасад (45 строк, целевой $\le 80$) и изолированные обработчики в `apps/api/src/routes/outpatient/` (все $\le 120$ строк).
-- **Web Frontend**: `PatientDetailsModal.tsx` (ранее 635 строк монолита) распилен на чистый фасад (68 строк, целевой $\le 80$) и модули в `apps/web/src/components/patient/detailsModal/` (все $\le 120$ строк).
-- **Соматический статус и анамнез**: `AnamnesisRiskFactorsGrid.tsx` (ранее 294 строки), `AnamnesisAllergyChips.tsx` (ранее 154 строки), `usePatientAnamnesisLogic.ts` (ранее 142 строки) декомпозированы в гранулярные модули $\le 120$ строк.
+- Fastify API: `apps/api/src/routes/outpatient.ts` (ранее 779 строк монолита) распилен строго на чистый фасад (45 строк, целевой $\le 80$) и изолированные обработчики в `apps/api/src/routes/outpatient/` (все $\le 120$ строк).
+- Web Frontend: `PatientDetailsModal.tsx` (ранее 635 строк монолита) распилен на чистый фасад (68 строк, целевой $\le 80$) и модули в `apps/web/src/components/patient/detailsModal/` (все $\le 120$ строк).
+- Соматический статус и анамнез: `AnamnesisRiskFactorsGrid.tsx` (ранее 294 строки), `AnamnesisAllergyChips.tsx` (ранее 154 строки), `usePatientAnamnesisLogic.ts` (ранее 142 строки) декомпозированы в гранулярные модули $\le 120$ строк.
 
 ## 2. Клинические стандарты и инварианты
-- **Мандат 8e (Автономия врача)**:
+- Мандат 8e (Автономия врача):
   - 1-клик физиологическая норма: кнопка `✓ Соматически здоров (Норма)` / `btn-somatic-healthy-norm` мгновенно сбрасывает все аллергии и риски в здоровый профиль.
   - Пассивный алерт аллергий `⚠️`: предупреждение отображается информативно без блокировки кнопок.
   - **0 заблокированных кнопок (`disabled`)**: кнопка `Сохранить` (`btn-save-patient-details`) никогда не отключается из-за второстепенных полей или валидаций.
-- **Apple HIG (Сенсорная эргономика на смартфонах 390×844)**:
+- Apple HIG (Сенсорная эргономика на смартфонах 390×844):
   - Модальное окно трансформируется в нативный Apple Bottom Sheet (`rounded-t-[24px]`, тактильный Drag Handle `36×5px`).
   - Все тач-таргеты интерактивных элементов строго $\ge 44\times 44$px.
   - `0px` паразитного горизонтального скролла (`overflow-x: hidden / clip`).
@@ -107,8 +107,8 @@
   - `patientHistory/PatientTimelineScroller.tsx`: 80 строк
 
 ### Пруфы и верификация:
-- **Vitest Suite**: 24 тест-файла, 190/190 тестов пройдены успешно (0 failing).
-- **Визуальные пруфы 4-состояний (docs/proofs/patients/)**:
+- Vitest Suite: 24 тест-файла, 190/190 тестов пройдены успешно (0 failing).
+- Визуальные пруфы 4-состояний (docs/proofs/patients/):
   - `patient_card_pc_light.png` (164 665 байт, 1440×900)
   - `patient_card_pc_dark.png` (169 608 байт, 1440×900)
   - `patient_card_mobile_light.png` (178 818 байт, 390×844)
@@ -116,7 +116,7 @@
   - Лично проверено через `read_file`: отсутствие перекрытий, сенсорные области $\ge 44\times 44$px, 0px горизонтального скролла, полное соответствие Мандатам 8e, 8n, 8x, 8am и Apple HIG.
 
    - `apps/api/src/tests/routes/outpatient.test.ts`: 6/6 PASS (Exit Code 0).
-2. **Кодировка**: `npm run check:encoding`: 19 023 файлов проверено, 0 замечаний (Exit Code 0).
+2. Кодировка: `npm run check:encoding`: 19 023 файлов проверено, 0 замечаний (Exit Code 0).
 3. **4-состояный Red Team скриншот-пруф (`docs/proofs/patients/`)**:
    - ☀️ PC Light (1440×900): `patient_card_desktop_light.png` (51 429 bytes)
    - 🌙 PC Dark (1440×900): `patient_card_desktop_dark.png` (96 226 bytes)

@@ -1,20 +1,20 @@
 # Архитектурная спецификация: Модальная система CRM и Нативные Bottom Sheets
 
-> **Статус:** Принято и внедрено в боевой кодовой базе  
-> **Мандаты:** Мандат 8b (Лимит $\le 120$ строк на файл), Мандат 8e (Автономия врача), Мандат 8am (Ровно 1 Primary CTA), Apple iOS HIG Touch Ergonomics  
-> **Дата:** Октябрь 2026  
+> Статус: Принято и внедрено в боевой кодовой базе  
+> Мандаты: Мандат 8b (Лимит $\le 120$ строк на файл), Мандат 8e (Автономия врача), Мандат 8am (Ровно 1 Primary CTA), Apple iOS HIG Touch Ergonomics  
+> Дата: Октябрь 2026  
 
 ---
 
 ## 1. Контекст и ликвидация монолита (Problem & Root Cause)
 
-Файл стилей `apps/web/src/styles/modules/modals.css` насчитывал **855 строк** смешанного спагетти-кода:
+Файл стилей `apps/web/src/styles/modules/modals.css` насчитывал 855 строк смешанного спагетти-кода:
 1. Базовые оверлеи и оконные контейнеры.
 2. Специфика рентген-просмотрщика DICOM и манипуляций слайдерами.
 3. Зубная клиническая студия (Tooth Clinical Studio) с вкладками, полостями по Блэку и темными темами.
 4. Случайные десктопные модалки на смартфонах без учета Apple iOS HIG.
 
-Монолит был полностью ликвидирован и распилен на **18 изолированных микро-модулей** в каталоге [`apps/web/src/styles/modalStyles/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modalStyles/), при этом **каждый файл строго удовлетворяет лимиту $\le 120$ строк** (диапазон 49–118 строк).
+Монолит был полностью ликвидирован и распилен на 18 изолированных микро-модулей в каталоге [`apps/web/src/styles/modalStyles/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modalStyles/), при этом **каждый файл строго удовлетворяет лимиту $\le 120$ строк** (диапазон 49–118 строк).
 
 Файл `apps/web/src/styles/modules/modals.css` преобразован в чистый `@import` фасад (23 строки, 1267 символов), что полностью удовлетворяет тестам покрытия (`assert.ok(modalsCss.length > 200)`).
 
@@ -48,36 +48,36 @@
 ## 3. Apple iOS HIG Bottom Sheet на мобильных ($\le 768$px)
 
 В соответствии с мандатами мобильной эргономики ликвидирован порок «ужатого десктопа»:
-1. **Нативная трансформация шторки:**
+1. Нативная трансформация шторки:
    - На экранах $\le 768$px модальное окно прижимается к нижней кромке (`bottom: 0`, `top: auto`, `border-radius: 24px 24px 0 0`).
    - Анимация выезда снизу `modal-sheet-slide-up` (0.25s cubic-bezier).
-2. **Тактильный индикатор смахивания (Drag Handle):**
+2. Тактильный индикатор смахивания (Drag Handle):
    - Центрированная плашка $36\times 5$px со скруглением `9999px` и контрастным фоном `var(--line-strong)`.
    - На десктопе индикатор скрыт (`display: none`), на смартфонах отображается автоматически.
-3. **Сенсорные зоны (Touch Target Minimum):**
+3. Сенсорные зоны (Touch Target Minimum):
    - Кнопка закрытия окна и все интерактивные элементы строго $\ge 44\times 44$px (`min-width: 44px; min-height: 44px;`).
-4. **Natural Thumb Zone (Зона большого пальца):**
+4. Natural Thumb Zone (Зона большого пальца):
    - Кнопки в подвале на мобильном перестраиваются в вертикальный стек (`flex-direction: column-reverse`).
    - Кнопка подтверждения (Primary CTA) располагается ближе к зоне досягаемости большого пальца. Высота кнопок $\ge 48$px на всю ширину экрана.
-5. **Safe Area Insets:**
+5. Safe Area Insets:
    - Паддинг внизу модалки рассчитывается как `max(16px, env(safe-area-inset-bottom, 16px))` для предотвращения перекрытия Home Bar на iPhone.
 
 ---
 
 ## 4. Мандаты 8e и 8am: Автономия врача и единый фокус CTA
 
-- **Мандат 8e (Автономия врача):** Кнопки действий («Подтвердить», «Печать», «Сохранить») никогда не блокируются искусственными валидациями. Врач имеет право утвердить смету на бумажном носителе в 1 клик.
-- **Мандат 8am (Единый Primary CTA):** В пределах одного видимого контекста модального окна всегда присутствует строго **одна** главная кнопка `modal-btn-primary`. Второстепенные действия оформляются как `modal-btn-secondary` или `modal-btn-ghost`.
+- Мандат 8e (Автономия врача): Кнопки действий («Подтвердить», «Печать», «Сохранить») никогда не блокируются искусственными валидациями. Врач имеет право утвердить смету на бумажном носителе в 1 клик.
+- Мандат 8am (Единый Primary CTA): В пределах одного видимого контекста модального окна всегда присутствует строго одна главная кнопка `modal-btn-primary`. Второстепенные действия оформляются как `modal-btn-secondary` или `modal-btn-ghost`.
 
 ---
 
 ## 5. Доказательства работоспособности (Red Team Proof)
 
 ### 5.1 Компиляторные и линтерные проверки
-- `npm run check:encoding` $\to$ **Exit Code 0** (21 155 файлов проверено, 0 ошибок).
-- `npm run check:css-tokens` $\to$ **Exit Code 0** (1 340 CSS-файлов, 0 неразрешенных токенов).
-- `npx vitest run apps/web/src/tests/modalPortalsSsrSafety.test.ts` $\to$ **5 passed** (100%).
-- `npx vitest run apps/web/src/components/treatment-plans/__tests__/treatmentPlanEstimatorPaperSignature.test.tsx` $\to$ **3 passed** (100%).
+- `npm run check:encoding` $\to$ Exit Code 0 (21 155 файлов проверено, 0 ошибок).
+- `npm run check:css-tokens` $\to$ Exit Code 0 (1 340 CSS-файлов, 0 неразрешенных токенов).
+- `npx vitest run apps/web/src/tests/modalPortalsSsrSafety.test.ts` $\to$ 5 passed (100%).
+- `npx vitest run apps/web/src/components/treatment-plans/__tests__/treatmentPlanEstimatorPaperSignature.test.tsx` $\to$ 3 passed (100%).
 
 ### 5.2 4-State Visual Proof (Личный визуальный осмотр)
 Скриншоты высокого разрешения сохранены в [`docs/proofs/modals/`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/modals/):

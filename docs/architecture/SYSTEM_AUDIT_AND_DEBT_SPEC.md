@@ -1,21 +1,21 @@
 # 🏛️ DENTAL CRM (DENTE) — ПОЛНАЯ АРХИТЕКТУРНАЯ СПЕЦИФИКАЦИЯ И РЕЕСТР ТЕХНОЛОГИЧЕСКОГО ДОЛГА
 
-> **Навигационный блок:**<br/>
+> Навигационный блок:<br/>
 > 🗺️ **[Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
 > 🏗️ **[Архитектура Системы (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
 > 📚 **[База Знаний и Документация (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
 > 🗄️ **[Реестр Базы Данных (DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
 > ⚠️ **[Высшая Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
 
-**Версия документа:** 2.1.0 (Deep Industrial Specification)<br/>
-**Дата актуализации:** Сентябрь 2026<br/>
-**Среда исполнения:** React 19 (`@dental/web`), Node Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
+Версия документа: 2.1.0 (Deep Industrial Specification)<br/>
+Дата актуализации: Сентябрь 2026<br/>
+Среда исполнения: React 19 (`@dental/web`), Node Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
 
 ---
 
 ## 1. ИСПОЛНИТЕЛЬНОЕ РЕЗЮМЕ И СИСТЕМНЫЙ СРЕЗ
 
-Система **DENTE Dental CRM** — это многопользовательская облачно-локальная медицинская платформа (Fastify v5 + React 19 + PostgreSQL 18.4 + Drizzle ORM). В системе реализованы надежные финансовые и клинические алгоритмы:
+Система DENTE Dental CRM — это многопользовательская облачно-локальная медицинская платформа (Fastify v5 + React 19 + PostgreSQL 18.4 + Drizzle ORM). В системе реализованы надежные финансовые и клинические алгоритмы:
 - Целочисленный расчет в копейках по 54-ФЗ, ФФД 1.2, справки НДФЛ КНД 1151156 XML 5.01;
 - Электронная подпись 043/у с детерминированным SHA-256 хешем и версионным аудитом («Исправленному верить»);
 - 3-уровневое планирование лечения (`treatmentPlanEngine.ts`): Эконом, Оптимум (рекомендованный), Премиум с калькулятором рассрочки и мобильным Segmented Control;
@@ -40,7 +40,7 @@ graph TD
 
 ### 2.2. Детальная карта декомпозиции `useAppLogic.tsx` (819 свойств)
 
-Текущий монолит `useAppLogic.tsx` возвращает **819 свойств** (`apps/web/src/useAppLogic.tsx:4300–5130`). Все они декомпозируются на 8 изолированных доменных хуков:
+Текущий монолит `useAppLogic.tsx` возвращает 819 свойств (`apps/web/src/useAppLogic.tsx:4300–5130`). Все они декомпозируются на 8 изолированных доменных хуков:
 
 ```
 apps/web/src/hooks/domains/
@@ -68,7 +68,7 @@ apps/web/src/hooks/domains/
 
 ### 3.1. Доменное разделение схемы БД (`apps/api/src/db/schema/` — РЕАЛИЗОВАНО В PRODUCTION)
 
-Монолитный `schema.ts` был успешно декомпозирован на **20 модульных доменных файлов** в директории `apps/api/src/db/schema/`, а корневой `apps/api/src/db/schema.ts` стал 7-строчным реэкспорт-прокси (`export * from "./schema/index.js"`), сохраняющим 100% обратную совместимость:
+Монолитный `schema.ts` был успешно декомпозирован на 20 модульных доменных файлов в директории `apps/api/src/db/schema/`, а корневой `apps/api/src/db/schema.ts` стал 7-строчным реэкспорт-прокси (`export * from "./schema/index.js"`), сохраняющим 100% обратную совместимость:
 
 ```
 apps/api/src/db/schema/

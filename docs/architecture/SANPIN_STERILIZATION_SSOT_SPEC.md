@@ -1,8 +1,8 @@
 # Архитектурная спецификация: SanPiN & Sterilization Single Source of Truth (SSOT)
 
-> **Статус**: ПРИНЯТО И ЗАФИКСИРОВАНО В ПРОДЕ  
-> **Дата**: 26-27 октября 2026 г.  
-> **Мандаты**: Mandate 8e (Doctor Autonomy), Mandate 8n (Solo-Doctor Sovereignty), Mandate 8am (Unified Design Code), Mandate 8al / Apple HIG.
+> Статус: ПРИНЯТО И ЗАФИКСИРОВАНО В ПРОДЕ  
+> Дата: 26-27 октября 2026 г.  
+> Мандаты: Mandate 8e (Doctor Autonomy), Mandate 8n (Solo-Doctor Sovereignty), Mandate 8am (Unified Design Code), Mandate 8al / Apple HIG.
 
 ---
 
@@ -77,8 +77,8 @@ POST /api/sanpin/sterilization/quick-norm-cycle
 ## 4. Гейты верификации и автоматизированные тесты
 
 Все машинные гейты пройдены со 100% результатом (Exit Code 0):
-- **Тесты SanPiN фронтенда**: `npx vitest run apps/web/src/components/sanpin/` — 24 тест-сьюта, 258 тестов passed (100%).
-- **Тесты алиасов стерилизации API**: `npx vitest run apps/api/src/tests/routes/sanpinSterilizationSsotAliases.test.ts` — passed (100%).
-- **Кодировки UTF-8**: `npm run check:encoding` — 0 errors (21 637 файлов проверено).
-- **CSS токены**: `npm run check:css-tokens` — 0 errors.
-- **Лимиты строк CSS**: все 36 CSS файлов модуля SanPiN укладываются в лимит $\le 120$ строк (максимальный размер — 103 строки).
+- Тесты SanPiN фронтенда: `npx vitest run apps/web/src/components/sanpin/` — 24 тест-сьюта, 258 тестов passed (100%).
+- Тесты алиасов стерилизации API: `npx vitest run apps/api/src/tests/routes/sanpinSterilizationSsotAliases.test.ts` — passed (100%).
+- Кодировки UTF-8: `npm run check:encoding` — 0 errors (21 637 файлов проверено).
+- CSS токены: `npm run check:css-tokens` — 0 errors.
+- Лимиты строк CSS: все 36 CSS файлов модуля SanPiN укладываются в лимит $\le 120$ строк (максимальный размер — 103 строки).

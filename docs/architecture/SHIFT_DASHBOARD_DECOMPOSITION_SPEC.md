@@ -1,8 +1,8 @@
 # Архитектурная спецификация декомпозиции домена «Кассовая смена и рабочее место кассира/врача»
 
-**Дата**: 26 октября 2026  
-**Статус**: Утверждено Red Team L1 / Завершено  
-**Стандарты**: THE HAMMER Master Prompt, Mandates 8b, 8e, 8n, 8x, 8ap, 8an, Apple iOS HIG
+Дата: 26 октября 2026  
+Статус: Утверждено Red Team L1 / Завершено  
+Стандарты: THE HAMMER Master Prompt, Mandates 8b, 8e, 8n, 8x, 8ap, 8an, Apple iOS HIG
 
 ---
 
@@ -12,9 +12,9 @@
 1. `apps/web/src/styles/modules/shift-dashboard.css` (545+ строк) — десктопный интерфейс смены, очереди ролей, карточки пациентов и виджеты выработки.
 2. `apps/web/src/styles/modules/mobile-shift.css` (567+ строк) — мобильный сенсорный кокпит кассы и смены врача.
 
-Согласно **Мандату 8b (Архитектурный предел размера файлов)**, файлы стилей обязаны быть строго $\le 120$ строк, а входные шлюзы — ультра-тонкими фасадами $\le 15$ строк.
+Согласно Мандату 8b (Архитектурный предел размера файлов), файлы стилей обязаны быть строго $\le 120$ строк, а входные шлюзы — ультра-тонкими фасадами $\le 15$ строк.
 
-Кроме того, по **Мандатам 8e (Врачебная автономия)**, **8n (Суверенитет соло-врача и малой клиники)** и **8x (Живой клинический язык)**:
+Кроме того, по Мандатам 8e (Врачебная автономия), 8n (Суверенитет соло-врача и малой клиники) и 8x (Живой клинический язык):
 - Кнопки смены и кассы («Открыть смену», «Закрыть смену», «Внесение наличных», «Выплата», «Печать Z-отчёта», «Списать расходники») никогда не должны блокироваться (`disabled`) из-за второстепенных полей или пустых списков.
 - Канцелярит («54-ФЗ», «Касса 54ФЗ») вычищен в пользу понятного доменного языка: «Касса и чеки», «Фискальный чек», «Смена кассы».
 - Тотальный запрет на упоминания чужих CRM (StomX, DentalPRO, IDENT, iStom) по Мандату 8ap.
@@ -40,8 +40,8 @@
 
 ### 2.2. Преобразование монолитов в ультра-тонкие фасады ($\le 15$ строк)
 
-- [`apps/web/src/styles/modules/shift-dashboard.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modules/shift-dashboard.css) (**8 строк**): шлюз импорта `shiftLayout.css`, `shiftRevenueCards.css`, `shiftCashTransactions.css`, `shiftConsumables.css`, `shiftDarkTheme.css`, `shiftTodoAndActions.css`, `shiftPatientCockpit.css`.
-- [`apps/web/src/styles/modules/mobile-shift.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modules/mobile-shift.css) (**6 строк**): шлюз импорта `shiftMobileCockpit.css`, `shiftRevenueCards.css`, `shiftConsumables.css`, `shiftCashTransactions.css`, `shiftDarkTheme.css`.
+- [`apps/web/src/styles/modules/shift-dashboard.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modules/shift-dashboard.css) (8 строк): шлюз импорта `shiftLayout.css`, `shiftRevenueCards.css`, `shiftCashTransactions.css`, `shiftConsumables.css`, `shiftDarkTheme.css`, `shiftTodoAndActions.css`, `shiftPatientCockpit.css`.
+- [`apps/web/src/styles/modules/mobile-shift.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/modules/mobile-shift.css) (6 строк): шлюз импорта `shiftMobileCockpit.css`, `shiftRevenueCards.css`, `shiftConsumables.css`, `shiftCashTransactions.css`, `shiftDarkTheme.css`.
 
 ### 2.3. Врачебная и кассовая автономия (Мандаты 8e & 8n)
 

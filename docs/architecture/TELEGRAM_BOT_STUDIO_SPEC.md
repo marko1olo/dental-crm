@@ -62,14 +62,14 @@
 
 ## 3. Ликвидация симуляций и сквозная связность бэкенда (Mandate 8f)
 
-1. **Честная проверка токена бота:**
+1. Честная проверка токена бота:
    - В `apps/web/src/components/settings/telegram/onboarding/useBotOnboardingState.ts` полностью вычищен фейковый `setTimeout(() => setConnectionStatus("connected"), 600)`.
    - При вводе токена и нажатии «Проверить подключение» запрос уходит на реальный Fastify API:
      `POST /api/telegram/bot/verify` с валидацией через Telegram Bot API (`getMe`).
    - Если сервер возвращает ошибку, UI честно выставляет статус `"error"` и выводит реальное сообщение об ошибке.
    - Демо-режим жестко изолирован за проверкой `isDemoShowcaseMode()`.
 
-2. **Сквозная связка роутов:**
+2. Сквозная связка роутов:
    - `GET /api/telegram/setup/status` — реальный статус интеграции из PostgreSQL.
    - `POST /api/telegram/bot/verify` — валидация токена.
    - `POST /api/telegram/bot/save` — атомарное сохранение конфигурации бота.
@@ -79,9 +79,9 @@
 
 ## 4. Эргономика Apple HIG и автономия врача (Mandates 8e, 8n)
 
-1. **Запрет блокировки кнопок (Мандат 8e):**
+1. Запрет блокировки кнопок (Мандат 8e):
    - Кнопка «Проверить подключение» и «Далее» никогда не блокируются в `disabled` состоянии. При незаполненных полях срабатывает мягкая подсветка фокуса.
-2. **Сенсорные зоны (Apple HIG):**
+2. Сенсорные зоны (Apple HIG):
    - Все кнопки и интерактивные чипы имеют сенсорную высоту $\ge 44\text{px}$.
    - Степпер на мобильных экранах ($\le 768\text{px}$) автоматически реорганизуется в компактную матрицу 2×2 с разделителями и текстовым `text-overflow: ellipsis`.
    - В симуляторе телефона чипы быстрых ответов имеют `flex-shrink: 0` и плавный горизонтальный свайп без наездов текста.
@@ -97,7 +97,7 @@
 4. [📱 04 Mobile Dark (390×844)](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telegram_studio/04_telegram_studio_mobile_dark.png) — 104.6 KB
 
 ### Машинные гейты (Machine Verification Gates):
-- `npm run check:encoding` -> **0 замечаний** (21 171 файл проверен).
-- `npm run check:css-tokens` -> **0 неразрешенных токенов**.
-- `npx vitest run apps/web/src/components/settings/telegram/` -> **8/8 passing** (2 test suites).
-- TypeScript check в `settings/telegram` -> **0 ошибок**.
+- `npm run check:encoding` -> 0 замечаний (21 171 файл проверен).
+- `npm run check:css-tokens` -> 0 неразрешенных токенов.
+- `npx vitest run apps/web/src/components/settings/telegram/` -> 8/8 passing (2 test suites).
+- TypeScript check в `settings/telegram` -> 0 ошибок.

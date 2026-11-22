@@ -1,8 +1,8 @@
 # Архитектурная спецификация: Экспресс-оплата и касса DENTE CRM (Apple HIG Checkout)
 
-> **Статус:** Внедрено в продакшн (Wave 311 / Mandate 8b / HIG Touch Ergonomics)  
-> **Авторитет:** Мандаты 8b (лимит файлов $\le 120$ строк), 8d (WCAG AAA), 8e (Автономия врача и кассира), 8n (Суверенитет соло-практики и малой клиники).  
-> **Скриншот-пруфы:** [`docs/proofs/checkout/`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout)
+> Статус: Внедрено в продакшн (Wave 311 / Mandate 8b / HIG Touch Ergonomics)  
+> Авторитет: Мандаты 8b (лимит файлов $\le 120$ строк), 8d (WCAG AAA), 8e (Автономия врача и кассира), 8n (Суверенитет соло-практики и малой клиники).  
+> Скриншот-пруфы: [`docs/proofs/checkout/`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout)
 
 ---
 
@@ -31,29 +31,29 @@
 
 ## 2. Клинические и эргономические инварианты
 
-1. **Мандат 8e (Автономия врача и кассира):**
-   - Кнопка «Принять оплату» **НИКОГДА** не блокируется (`disabled`) из-за незаполненных опциональных полей.
+1. Мандат 8e (Автономия врача и кассира):
+   - Кнопка «Принять оплату» НИКОГДА не блокируется (`disabled`) из-за незаполненных опциональных полей.
    - Врач свободно оформляет 100% гарантийный приём (0 ₽) в 1 клик с закрытием визита без ввода мастер-паролей.
-2. **Мандат 8n (Суверенитет соло-практики и малой клиники):**
+2. Мандат 8n (Суверенитет соло-практики и малой клиники):
    - Запрещено требовать ввод ИНН у пациентов-физлиц. Поле ИНН для физлица строго пассивное/опциональное (для справки налогового вычета 13%).
    - Комбинированная оплата (нал + карта + остаток аванса) выставляется в 1 клик без округлений и потери копеек (`amountKopecks`, целочисленная арифметика).
 3. **Apple HIG Touch Ergonomics на смартфонах ($\le 768\text{px}$):**
-   - Нативный **Bottom Sheet**: плавный выезд снизу (`translate-y-0`), закругление `rounded-t-[24px]`.
-   - Тактильный хэндл **Drag Handle 36×5px** по центру вверху шторки.
-   - Primary CTA кнопка подтверждения высотой **$\ge 52\text{px}$** в **Natural Thumb Zone** (нижняя треть экрана) с учетом `env(safe-area-inset-bottom)`.
+   - Нативный Bottom Sheet: плавный выезд снизу (`translate-y-0`), закругление `rounded-t-[24px]`.
+   - Тактильный хэндл Drag Handle 36×5px по центру вверху шторки.
+   - Primary CTA кнопка подтверждения высотой **$\ge 52\text{px}$ в Natural Thumb Zone** (нижняя треть экрана) с учетом `env(safe-area-inset-bottom)`.
    - Шапка строго в 1 строчку (0 многоэтажных тулбаров).
-   - **0px паразитного горизонтального скролла** (`max-width: 100vw; overflow-x: clip;`).
-   - Крупная доминирующая итоговая сумма **36px–38px bold ui-monospace** по центру.
+   - 0px паразитного горизонтального скролла (`max-width: 100vw; overflow-x: clip;`).
+   - Крупная доминирующая итоговая сумма 36px–38px bold ui-monospace по центру.
 
 ---
 
 ## 3. Доказательная база и Red Team Visual Proof
 
 Визуальная верификация проведена в 4 канонических состояниях интерфейса через headless Chrome:
-- ☀️ **PC Light (1440×900):** [`docs/proofs/checkout/01_checkout_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/01_checkout_pc_light.png) (197 KB)
-- 🌙 **PC Dark (1440×900):** [`docs/proofs/checkout/02_checkout_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/02_checkout_pc_dark.png) (212 KB)
-- 📱 **Mobile Light (390×844):** [`docs/proofs/checkout/03_checkout_mobile_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/03_checkout_mobile_light.png) (195 KB)
-- 📱 **Mobile Dark (390×844):** [`docs/proofs/checkout/04_checkout_mobile_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/04_checkout_mobile_dark.png) (187 KB)
+- ☀️ PC Light (1440×900): [`docs/proofs/checkout/01_checkout_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/01_checkout_pc_light.png) (197 KB)
+- 🌙 PC Dark (1440×900): [`docs/proofs/checkout/02_checkout_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/02_checkout_pc_dark.png) (212 KB)
+- 📱 Mobile Light (390×844): [`docs/proofs/checkout/03_checkout_mobile_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/03_checkout_mobile_light.png) (195 KB)
+- 📱 Mobile Dark (390×844): [`docs/proofs/checkout/04_checkout_mobile_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/checkout/04_checkout_mobile_dark.png) (187 KB)
 
 Все 4 снимка лично проинспектированы через `read_file` — отсутствие 7 смертных грехов дизайна подтверждено инструментально.
 Компиляция, кодировка (`check:encoding`) и CSS-токены (`check:css-tokens`) пройдены с Exit Code 0.

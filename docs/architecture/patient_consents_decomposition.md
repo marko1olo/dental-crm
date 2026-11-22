@@ -1,10 +1,10 @@
 # Архитектура подсистемы информированных согласий и правовых документов (Patient Consents & Statutory Agreements)
 
 ## 1. Контекст и архитектурная цель (Why)
-- **Мандат 8b:** Полная ликвидация God-файлов и монолитов. Строгий потолок: $\le 120$ строк на КАЖДЫЙ файл подсистемы `apps/web/src/components/consents/`.
-- **Мандат 8e & 8n:** Автономия врача и персонала клиники (соло-врач и 1–3 кресла). Кнопки Primary CTA («Подтвердить», «Печать», «Скачать») никогда не блокируются (`disabled={false}`). Подтверждение бумажного оригинала или подписание на планшете/СМС доступно в 1 клик.
-- **Мандат 8x & 8ap:** Чистый русский клинический язык. Полное выжигание сырых номеров приказов и законов из пользовательского интерфейса («Согласие на медицинское вмешательство» вместо «ИДС по приказу 1051н», «Согласие на обработку данных» вместо «ФЗ-152»). Выжигание чужих брендов (StomX, DentalPRO, IDENT).
-- **Мандат 8al & Apple HIG:** Отдельный суверенный сенсорный слой для мобильных устройств (390×844) с Bottom Sheet, тактильным Drag Handle и touch-таргетами $\ge 44\times 44\text{px}$.
+- Мандат 8b: Полная ликвидация God-файлов и монолитов. Строгий потолок: $\le 120$ строк на КАЖДЫЙ файл подсистемы `apps/web/src/components/consents/`.
+- Мандат 8e & 8n: Автономия врача и персонала клиники (соло-врач и 1–3 кресла). Кнопки Primary CTA («Подтвердить», «Печать», «Скачать») никогда не блокируются (`disabled={false}`). Подтверждение бумажного оригинала или подписание на планшете/СМС доступно в 1 клик.
+- Мандат 8x & 8ap: Чистый русский клинический язык. Полное выжигание сырых номеров приказов и законов из пользовательского интерфейса («Согласие на медицинское вмешательство» вместо «ИДС по приказу 1051н», «Согласие на обработку данных» вместо «ФЗ-152»). Выжигание чужих брендов (StomX, DentalPRO, IDENT).
+- Мандат 8al & Apple HIG: Отдельный суверенный сенсорный слой для мобильных устройств (390×844) с Bottom Sheet, тактильным Drag Handle и touch-таргетами $\ge 44\times 44\text{px}$.
 
 ---
 
@@ -67,7 +67,7 @@
   - `ConsentPaperActions.tsx` (78 строк)
   - `ConsentPaperSection.tsx` (108 строк)
   - `ConsentSigningPanel.tsx` (118 строк)
-- **Modal Components:**
+- Modal Components:
   - `ConsentModalHeader.tsx` (55 строк)
   - `ConsentModalBody.tsx` (98 строк)
   - `ConsentFloatingBottomBar.tsx` (44 строки)
@@ -91,11 +91,11 @@
 ---
 
 ## 3. Доказательства работоспособности (Proof & Verification)
-1. **Тесты:** Vitest suite: 9 test files, 92 tests passing 100% (`apps/web/src/components/consents/__tests__/`).
-2. **Типизация:** TypeScript typecheck clean (0 errors in consents).
-3. **Строковый аудит:** `check_consent_sizes.cjs` -> 0 files > 120 lines (122 files verified).
-4. **Визуальный пруф (4-State Real Screenshots):**
-   - ☀️ **PC Light (1440×900):** `docs/proofs/consents/consents_pc_light.png`
-   - 🌙 **PC Dark (1440×900):** `docs/proofs/consents/consents_pc_dark.png`
-   - 📱 **Mobile Light (390×844):** `docs/proofs/consents/consents_mobile_light.png`
-   - 🌙 **Mobile Dark (390×844):** `docs/proofs/consents/consents_mobile_dark.png`
+1. Тесты: Vitest suite: 9 test files, 92 tests passing 100% (`apps/web/src/components/consents/__tests__/`).
+2. Типизация: TypeScript typecheck clean (0 errors in consents).
+3. Строковый аудит: `check_consent_sizes.cjs` -> 0 files > 120 lines (122 files verified).
+4. Визуальный пруф (4-State Real Screenshots):
+   - ☀️ PC Light (1440×900): `docs/proofs/consents/consents_pc_light.png`
+   - 🌙 PC Dark (1440×900): `docs/proofs/consents/consents_pc_dark.png`
+   - 📱 Mobile Light (390×844): `docs/proofs/consents/consents_mobile_light.png`
+   - 🌙 Mobile Dark (390×844): `docs/proofs/consents/consents_mobile_dark.png`
