@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { labOrderEvents } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
@@ -25,16 +25,18 @@ export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: 
 
 	const labOrderId = request.params.id;
 
-	const events = await db
-		.select()
-		.from(labOrderEvents)
-		.where(
-			and(
-				eq(labOrderEvents.organizationId, orgId),
-				eq(labOrderEvents.labOrderId, labOrderId),
-			),
-		)
-		.orderBy(desc(labOrderEvents.createdAt));
+	const events = await withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select()
+			.from(labOrderEvents)
+			.where(
+				and(
+					eq(labOrderEvents.organizationId, orgId),
+					eq(labOrderEvents.labOrderId, labOrderId),
+				),
+			)
+			.orderBy(desc(labOrderEvents.createdAt));
+	});
 
 	return reply.send({ events });
 }
@@ -66,21 +68,24 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 	}
 	const body = parsed.data;
 
-	const [createdEvent] = await db
-		.insert(labOrderEvents)
-		.values({
-			organizationId: orgId,
-			labOrderId,
-			milestone: body.milestone,
-			actorType: body.actorType,
-			actorId: body.actorId ?? null,
-			actorName: body.actorName,
-			notes: body.notes ?? null,
-			barcodeScanned: body.barcodeScanned ?? null,
-			photoUrls: body.photoUrls,
-			cadPreviewGlbUrl: body.cadPreviewGlbUrl ?? null,
-		})
-		.returning();
+	const createdEvent = await withTenantCtx(orgId, async (tx) => {
+		const [ev] = await tx
+			.insert(labOrderEvents)
+			.values({
+				organizationId: orgId,
+				labOrderId,
+				milestone: body.milestone,
+				actorType: body.actorType,
+				actorId: body.actorId ?? null,
+				actorName: body.actorName,
+				notes: body.notes ?? null,
+				barcodeScanned: body.barcodeScanned ?? null,
+				photoUrls: body.photoUrls,
+				cadPreviewGlbUrl: body.cadPreviewGlbUrl ?? null,
+			})
+			.returning();
+		return ev;
+	});
 
 	return reply.status(201).send({ success: true, event: createdEvent });
 }

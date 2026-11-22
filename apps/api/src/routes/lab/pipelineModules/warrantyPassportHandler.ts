@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { generateProstheticWarrantyPassport, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
-import { and, eq, ilike, sql } from "drizzle-orm";
+import { generateProstheticWarrantyPassport, generateUuidV7, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -164,6 +164,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			? orderWithDetails.orderNumber
 			: (orderWithDetails.orderNumber ? `ЛО-${baseYear}-${orderWithDetails.orderNumber}` : `ЗТЛ-${baseYear}-${orderWithDetails.id.slice(0, 6).toUpperCase()}`);
 		const batchCode = result.realBatchNumber || formattedOrderNum;
+		const orgShortHash = orgId.replace(/-/g, "").slice(0, 6).toUpperCase();
+		const certificateNumber = `WP-${orgShortHash}-${formattedOrderNum}`;
 
 		const restorationTypeRaw = primaryItem?.restorationType ?? "crown_monolithic";
 		const restorationType = LAB_WORK_TYPE_LABELS_RU[restorationTypeRaw as keyof typeof LAB_WORK_TYPE_LABELS_RU]
@@ -173,28 +175,58 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 		const shadeStump = primaryItem?.shadeStump || null;
 
 		const itemsPayload = items.length > 0
-			? items.map((it) => ({
-					tooth: it.toothFdi ? String(it.toothFdi) : (orderWithDetails.toothFdi || "—"),
-					material: it.material || frameworkMaterial,
-					color: it.shadeFinal || shade,
-					shadeStump: it.shadeStump || shadeStump,
-					lot: batchCode,
-					restorationType: it.restorationType
+			? items.map((it) => {
+					const toothVal = it.toothFdi ? String(it.toothFdi) : (orderWithDetails.toothFdi || "—");
+					const matVal = it.material || frameworkMaterial;
+					const shadeVal = it.shadeFinal || shade;
+					const workType = it.restorationType
 						? (LAB_WORK_TYPE_LABELS_RU[it.restorationType as keyof typeof LAB_WORK_TYPE_LABELS_RU] || it.restorationType)
-						: restorationType,
-					laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
-					cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-				}))
+						: restorationType;
+					return {
+						id: it.id || generateUuidV7(),
+						name: workType,
+						clinicalWorkTitle: workType,
+						category: "orthopedics",
+						tooth: toothVal,
+						toothNumber: toothVal,
+						material: matVal,
+						materialName: matVal,
+						color: shadeVal,
+						shade: shadeVal,
+						vitaShade: shadeVal,
+						shadeStump: it.shadeStump || shadeStump,
+						lot: batchCode,
+						lotNumber: batchCode,
+						batchCode: batchCode,
+						restorationType: workType,
+						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+						warrantyMonths: 24,
+						serviceLifeMonths: 60,
+					};
+				})
 			: [
 					{
+						id: generateUuidV7(),
+						name: restorationType,
+						clinicalWorkTitle: restorationType,
+						category: "orthopedics",
 						tooth: orderWithDetails.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
+						toothNumber: orderWithDetails.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
 						material: frameworkMaterial,
+						materialName: frameworkMaterial,
 						color: shade,
+						shade: shade,
+						vitaShade: shade,
 						shadeStump,
 						lot: batchCode,
+						lotNumber: batchCode,
+						batchCode: batchCode,
 						restorationType,
 						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
 						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+						warrantyMonths: 24,
+						serviceLifeMonths: 60,
 					},
 				];
 
@@ -207,7 +239,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 		const integrityHashPayload = JSON.stringify({
 			organizationId: orgId,
 			patientId: orderWithDetails.patientId,
-			certificateNumber: formattedOrderNum,
+			certificateNumber,
 			items: itemsPayload,
 			issuedAt: fixationDateIso,
 			expiresAt: expirationDateObj.toISOString().slice(0, 10),
@@ -231,53 +263,31 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			fixationDate: fixationDateIso,
 			isDraft,
 			...(isDraft ? { draftNotice: "[ЧЕРНОВИК: изделие находится на этапе производства/примерки]" } : {}),
-			certificateNumber: formattedOrderNum,
+			certificateNumber,
 			integritySha256,
 		});
 
-		// Сшиваем контур: транзакционно сохраняем сертификат в warrantyCertificates
-		let savedCertificateId: string | null = null;
+		// Безопасный HTTP GET: проверка наличия ранее оформленного сертификата БЕЗ мутации БД
+		let existingCertificateId: string | null = null;
 		if (orderWithDetails.patientId) {
-			await withTenantCtx(orgId, async (tx) => {
-				const [cert] = await tx
-					.insert(warrantyCertificates)
-					.values({
-						organizationId: orgId,
-						patientId: orderWithDetails.patientId!,
-						visitId: orderWithDetails.appointmentId || null,
-						certificateNumber: formattedOrderNum,
-						status: isDraft ? "conditional" : "active",
-						itemsJson: itemsPayload,
-						warrantyMonths: 24,
-						serviceLifeMonths: 60,
-						issuedAt: fixationDateObj,
-						expiresAt: expirationDateObj,
-						nextRecallDate: nextRecallDateObj,
-						integritySha256,
-						notes: isDraft
-							? "Черновик гарантийного паспорта до завершения фиксации изделия"
-							: `Гарантийный паспорт ортопедической конструкции ${formattedOrderNum}. Наряд ЗТЛ: ${orderWithDetails.id}`,
-						createdAt: new Date(),
-						updatedAt: new Date(),
-					})
-					.onConflictDoUpdate({
-						target: warrantyCertificates.certificateNumber,
-						set: {
-							status: isDraft ? "conditional" : "active",
-							itemsJson: itemsPayload,
-							warrantyMonths: 24,
-							serviceLifeMonths: 60,
-							expiresAt: expirationDateObj,
-							nextRecallDate: nextRecallDateObj,
-							integritySha256,
-							updatedAt: new Date(),
-						},
-					})
-					.returning({ id: warrantyCertificates.id });
-				if (cert?.id) {
-					savedCertificateId = cert.id;
-				}
+			const [existingCert] = await withTenantCtx(orgId, async (tx) => {
+				return tx
+					.select({ id: warrantyCertificates.id })
+					.from(warrantyCertificates)
+					.where(
+						and(
+							eq(warrantyCertificates.organizationId, orgId),
+							or(
+								eq(warrantyCertificates.certificateNumber, certificateNumber),
+								eq(warrantyCertificates.certificateNumber, formattedOrderNum),
+							),
+						),
+					)
+					.limit(1);
 			});
+			if (existingCert?.id) {
+				existingCertificateId = existingCert.id;
+			}
 		}
 
 		await auditMedicalAccessFromRequest(request, {
@@ -289,9 +299,10 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 
 		return reply.send({
 			success: true,
+			hasCertificate: Boolean(existingCertificateId),
+			certificateNumber,
+			certificateId: existingCertificateId,
 			passport,
-			certificateNumber: formattedOrderNum,
-			certificateId: savedCertificateId,
 			integritySha256,
 		});
 	} catch (err: unknown) {

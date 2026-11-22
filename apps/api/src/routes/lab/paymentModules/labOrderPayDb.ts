@@ -94,8 +94,8 @@ export async function executeLabOrderPayment(
 			.limit(1);
 
 		const amountToPayRub = kopecksToRub(amountToPayKopecks);
-		const currentBalanceKopecks = typeof targetBox.balanceKopecks === "number" && targetBox.balanceKopecks !== 0
-			? targetBox.balanceKopecks
+		const currentBalanceKopecks = targetBox.balanceKopecks != null
+			? Number(targetBox.balanceKopecks)
 			: rubToKopecks(targetBox.balanceRub);
 		const balanceAfterKopecks = currentBalanceKopecks - amountToPayKopecks;
 		const balanceAfterRub = kopecksToRub(balanceAfterKopecks);

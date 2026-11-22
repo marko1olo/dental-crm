@@ -1,4 +1,4 @@
-import { labOrderMilestoneSchema } from "@dental/shared";
+import { labOrderMilestoneSchema, labPipeline5StageKeySchema } from "@dental/shared";
 import { z } from "zod";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
 
@@ -21,7 +21,14 @@ export function calculateBusinessDaysDueDate(startDate: Date, businessDays = 5):
 }
 
 export const createLabOrderEventSchema = z.object({
-	milestone: labOrderMilestoneSchema.default("submitted"),
+	milestone: z
+		.union([
+			labOrderMilestoneSchema,
+			labPipeline5StageKeySchema,
+			z.literal("installed"),
+			z.string().trim().min(1).max(64),
+		])
+		.default("submitted"),
 	actorType: z
 		.enum(["clinic_doctor", "dental_technician", "courier", "administrator"])
 		.default("clinic_doctor"),

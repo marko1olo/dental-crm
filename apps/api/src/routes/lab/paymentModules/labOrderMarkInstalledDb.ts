@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { labItems, labOrderEvents, labOrders, warrantyCertificates } from "../../../db/schema.js";
@@ -70,32 +71,64 @@ export async function executeLabOrderMarkInstalled(
 				? order.orderNumber
 				: (order.orderNumber ? `ЛО-${baseYear}-${order.orderNumber}` : `ЗТЛ-${baseYear}-${order.id.slice(0, 6).toUpperCase()}`);
 			const batchCode = `LOT-${baseYear}-${order.id.slice(0, 8).toUpperCase()}`;
+			const orgShortHash = orgId.replace(/-/g, "").slice(0, 6).toUpperCase();
+			const certificateNumber = `WP-${orgShortHash}-${formattedOrderNum}`;
 
 			const restorationType = items[0]?.restorationType || "Анатомическая коронка / мостовидный протез";
 			const frameworkMaterial = order.material || "Конструкционный стоматологический материал";
 			const shade = order.colorVita || "По прейскуранту";
 
 			const itemsPayload = items.length > 0
-				? items.map((it) => ({
-						tooth: it.toothFdi ? String(it.toothFdi) : (order.toothFdi || "—"),
-						material: it.material || frameworkMaterial,
-						color: it.shadeFinal || shade,
-						shadeStump: it.shadeStump || null,
-						lot: batchCode,
-						restorationType: it.restorationType || restorationType,
-						laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
-						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-					}))
+				? items.map((it) => {
+						const toothVal = it.toothFdi ? String(it.toothFdi) : (order.toothFdi || "—");
+						const matVal = it.material || frameworkMaterial;
+						const shadeVal = it.shadeFinal || shade;
+						const workType = it.restorationType || restorationType;
+						return {
+							id: it.id || generateUuidV7(),
+							name: workType,
+							clinicalWorkTitle: workType,
+							category: "orthopedics",
+							tooth: toothVal,
+							toothNumber: toothVal,
+							material: matVal,
+							materialName: matVal,
+							color: shadeVal,
+							shade: shadeVal,
+							vitaShade: shadeVal,
+							shadeStump: it.shadeStump || null,
+							lot: batchCode,
+							lotNumber: batchCode,
+							batchCode: batchCode,
+							restorationType: workType,
+							laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+							warrantyMonths: 24,
+							serviceLifeMonths: 60,
+						};
+					})
 				: [
 						{
+							id: generateUuidV7(),
+							name: restorationType,
+							clinicalWorkTitle: restorationType,
+							category: "orthopedics",
 							tooth: order.toothFdi || "—",
+							toothNumber: order.toothFdi || "—",
 							material: frameworkMaterial,
+							materialName: frameworkMaterial,
 							color: shade,
+							shade: shade,
+							vitaShade: shade,
 							shadeStump: null,
 							lot: batchCode,
+							lotNumber: batchCode,
+							batchCode: batchCode,
 							restorationType,
 							laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
 							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+							warrantyMonths: 24,
+							serviceLifeMonths: 60,
 						},
 					];
 
@@ -106,7 +139,7 @@ export async function executeLabOrderMarkInstalled(
 			const hashPayload = JSON.stringify({
 				organizationId: orgId,
 				patientId: order.patientId,
-				certificateNumber: formattedOrderNum,
+				certificateNumber,
 				items: itemsPayload,
 				issuedAt: now.toISOString().slice(0, 10),
 				expiresAt: expirationDate.toISOString().slice(0, 10),
@@ -120,7 +153,7 @@ export async function executeLabOrderMarkInstalled(
 					organizationId: orgId,
 					patientId: order.patientId,
 					visitId: order.appointmentId || null,
-					certificateNumber: formattedOrderNum,
+					certificateNumber,
 					status: "active",
 					itemsJson: itemsPayload,
 					warrantyMonths: 24,
@@ -129,7 +162,7 @@ export async function executeLabOrderMarkInstalled(
 					expiresAt: expirationDate,
 					nextRecallDate,
 					integritySha256,
-					notes: `Гарантийный паспорт ортопедической конструкции ${formattedOrderNum}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
+					notes: `Гарантийный паспорт ортопедической конструкции ${certificateNumber}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
 					createdAt: now,
 					updatedAt: now,
 				})
@@ -143,7 +176,7 @@ export async function executeLabOrderMarkInstalled(
 						expiresAt: expirationDate,
 						nextRecallDate,
 						integritySha256,
-						notes: `Гарантийный паспорт ортопедической конструкции ${formattedOrderNum}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
+						notes: `Гарантийный паспорт ортопедической конструкции ${certificateNumber}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
 						updatedAt: now,
 					},
 				});

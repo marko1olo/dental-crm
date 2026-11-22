@@ -279,13 +279,13 @@ export async function insertLabOrderInDb(
 		.insert(labOrders)
 		.values({
 			organizationId: orgId,
-			orderNumber: effectiveOrderNumber,
 			patientId: effectivePatientId,
 			treatmentPlanId: effectiveTreatmentPlanId,
 			appointmentId: effectiveAppointmentId,
 			doctorId: effectiveDoctorId,
 			doctorName: doctorName || data.doctorName || null,
 			laboratoryName: effectiveLabName,
+			orderNumber: effectiveOrderNumber,
 			secureToken,
 			toothFdi: Array.isArray(effectiveToothFdi)
 				? effectiveToothFdi.join(",")
@@ -350,7 +350,8 @@ export async function insertLabOrderInDb(
 			const effectiveShadeSystem = data.shadeSystem || "VITA_CLASSICAL";
 
 			for (let i = 0; i < validTeeth.length; i++) {
-				const toothNum = validTeeth[i]!;
+				const toothNum = validTeeth[i];
+				if (toothNum === undefined) continue;
 				const toothKopecks = splits[i] ?? 0;
 				const itemPriceRub = kopecksToNumericString(toothKopecks);
 
@@ -372,7 +373,7 @@ export async function insertLabOrderInDb(
 
 	const enrichedOrder = {
 		...createdOrder,
-		orderNumber: createdOrder.orderNumber || effectiveOrderNumber,
+		orderNumber: effectiveOrderNumber,
 		stage: createdOrder.stage ?? effectiveStage,
 		treatmentPlanId: createdOrder.treatmentPlanId ?? null,
 		appointmentId: createdOrder.appointmentId ?? null,

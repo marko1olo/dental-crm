@@ -5,7 +5,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
+import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -19,7 +19,7 @@ const pipelineStageBodySchema = z.object({
 });
 
 export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-	const orgId = await requireResolvedStaffOrAdminOrganizationId(
+	const orgId = await requireResolvedOrganizationId(
 		request,
 		reply,
 		"lab orders pipeline stage update",
@@ -63,13 +63,14 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 		else if (stage === "cad_modeling") dbStatus = "in_progress";
 		else if (stage === "framework_fitting") dbStatus = "in_progress";
 		else if (stage === "ceramic_layering") dbStatus = "in_progress";
-		else if (stage === "ready_fixation") dbStatus = "received";
+		else if (stage === "ready_fixation") dbStatus = "ready_in_clinic";
 
 		const now = new Date();
 		const [updated] = await tx
 			.update(labOrders)
 			.set({
 				status: dbStatus,
+				stage: stage,
 				clinicalNotes: notes ? `${existing.clinicalNotes ? `${existing.clinicalNotes}\n` : ""}[${CANONICAL_5STAGE_LAB_PIPELINE[stage].shortTitleRu}]: ${notes}` : existing.clinicalNotes,
 				dueDate: scheduledDate ? new Date(scheduledDate) : existing.dueDate,
 				updatedAt: now,

@@ -66,14 +66,4 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	 * Локальная защищенная выдача сканов клиники зубному технику или врачу при отсутствии S3.
 	 */
 	app.get("/api/portal/direct-storage/download", handleDirectStorageDownload);
-
-	// Backward-compatible alias for legacy / mock URLs
-	app.put(
-		"/api/portal/mock-storage/upload",
-		{
-			bodyLimit: MAX_SCAN_FILE_SIZE_BYTES + 1024 * 1024,
-		},
-		handleDirectStorageUpload,
-	);
-	app.get("/api/portal/mock-storage/download", handleDirectStorageDownload);
 }

@@ -10,6 +10,9 @@ export const labOrderPatchSchema = z.object({
 	labComments: z.string().trim().max(2000).optional().nullable(),
 	attachedImageUrl: z.string().trim().optional().nullable(),
 	dueDate: z.string().optional().nullable(),
+	frameworkTrialDate: z.string().optional().nullable(),
+	ceramicTrialDate: z.string().optional().nullable(),
+	deliveryDate: z.string().optional().nullable(),
 });
 
 export type LabOrderPatchBody = z.infer<typeof labOrderPatchSchema>;
