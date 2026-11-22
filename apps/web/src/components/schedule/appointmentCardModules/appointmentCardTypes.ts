@@ -49,8 +49,8 @@ export interface GridAppointmentCardProps {
 	patientLookupMap: Map<string, Patient>;
 	staffLookupMap: Map<string, ScheduleStaffMember>;
 	collisionMap: Map<string, ScheduleGridCollision>;
-	patientNameFn?: ((patients: Patient[] | unknown, patientId: string | null) => string) | undefined;
-	getPatientName?: ((patients: Patient[] | unknown, patientId: string | null) => string) | undefined;
+	patientNameFn?: ((patients: Dashboard["patients"], patientId: string | null) => string) | undefined;
+	getPatientName?: ((patients: Dashboard["patients"], patientId: string | null) => string) | undefined;
 	dashboard: Dashboard;
 	timezone?: string | null;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;

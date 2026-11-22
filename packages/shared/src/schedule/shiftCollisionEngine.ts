@@ -184,21 +184,31 @@ export interface ScheduleOverlapTarget {
 	readonly endsAt?: string | Date | undefined;
 }
 
-export type ScheduleOverlapItem =
-	| ScheduledAppointment
-	| {
-			readonly id?: string | undefined;
-			readonly doctorId?: string | null | undefined;
-			readonly doctorUserId?: string | null | undefined;
-			readonly cabinetId?: string | null | undefined;
-			readonly chairId?: string | null | undefined;
-			readonly patientId?: string | null | undefined;
-			readonly startTime?: string | Date | undefined;
-			readonly startsAt?: string | Date | undefined;
-			readonly endTime?: string | Date | undefined;
-			readonly endsAt?: string | Date | undefined;
-			readonly status?: string | undefined;
-	  };
+export interface ScheduleOverlapItem {
+	readonly id?: string | undefined;
+	readonly clinicId?: string | undefined;
+	readonly organizationId?: string | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorUserId?: string | null | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly cabinetId?: string | null | undefined;
+	readonly cabinetName?: string | undefined;
+	readonly chairId?: string | null | undefined;
+	readonly chairName?: string | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly startTime?: string | Date | undefined;
+	readonly startsAt?: string | Date | undefined;
+	readonly startAt?: string | Date | undefined;
+	readonly endTime?: string | Date | undefined;
+	readonly endsAt?: string | Date | undefined;
+	readonly durationMinutes?: number | string | undefined;
+	readonly status?: string | undefined;
+	readonly isEmergency?: boolean | undefined;
+	readonly reason?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+	readonly comment?: string | null | undefined;
+}
 
 /**
  * Checks for scheduling collisions across Doctor, Cabinet, and Patient.
@@ -388,9 +398,14 @@ export function calculateScheduleOverlapGroups(
 
 	function find(i: number): number {
 		let curr = i;
-		while (parent[curr] !== curr) {
-			parent[curr] = parent[parent[curr]!]!;
-			curr = parent[curr]!;
+		while (parent[curr] !== undefined && parent[curr] !== curr) {
+			const p = parent[curr];
+			if (p === undefined) break;
+			const gp = parent[p];
+			if (gp !== undefined) {
+				parent[curr] = gp;
+			}
+			curr = p;
 		}
 		return curr;
 	}
@@ -399,28 +414,43 @@ export function calculateScheduleOverlapGroups(
 		const ra = find(a);
 		const rb = find(b);
 		if (ra === rb) return;
-		if (rank[ra]! < rank[rb]!) {
+		const rankRa = rank[ra] ?? 0;
+		const rankRb = rank[rb] ?? 0;
+		if (rankRa < rankRb) {
 			parent[ra] = rb;
-		} else if (rank[ra]! > rank[rb]!) {
+		} else if (rankRa > rankRb) {
 			parent[rb] = ra;
 		} else {
 			parent[rb] = ra;
-			rank[ra]!++;
+			rank[ra] = rankRa + 1;
 		}
 	}
 
 	// Active intervals sweep-line
 	const active: number[] = [];
 	for (let i = 0; i < items.length; i++) {
-		const cur = items[i]!;
-		while (active.length && items[active[0]!]!.end <= cur.start) {
-			active.shift();
+		const cur = items[i];
+		if (!cur) continue;
+		while (active.length > 0) {
+			const firstActiveIdx = active[0];
+			if (firstActiveIdx === undefined) break;
+			const firstActive = items[firstActiveIdx];
+			if (firstActive && firstActive.end <= cur.start) {
+				active.shift();
+			} else {
+				break;
+			}
 		}
 		for (const j of active) {
 			union(i, j);
 		}
 		active.push(i);
-		active.sort((x, y) => items[x]!.end - items[y]!.end);
+		active.sort((x, y) => {
+			const itemX = items[x];
+			const itemY = items[y];
+			if (!itemX || !itemY) return 0;
+			return itemX.end - itemY.end;
+		});
 	}
 
 	// Materialize groups
@@ -436,11 +466,18 @@ export function calculateScheduleOverlapGroups(
 	}
 
 	for (const [rootIdx, g] of groups.entries()) {
-		g.sort((a, b) => items[a]!.start - items[b]!.start);
+		g.sort((a, b) => {
+			const itemA = items[a];
+			const itemB = items[b];
+			if (!itemA || !itemB) return 0;
+			return itemA.start - itemB.start;
+		});
 		const total = g.length;
 		const rootId = items[rootIdx]?.apt.id || `group-${rootIdx}`;
 		g.forEach((idx, columnIndex) => {
-			result.set(items[idx]!.apt.id, {
+			const item = items[idx];
+			if (!item) return;
+			result.set(item.apt.id, {
 				columnIndex,
 				totalColumns: total,
 				groupRootId: rootId,
@@ -531,10 +568,13 @@ export function findAvailableSlots(
 
 	busySpans.sort((a, b) => a.start - b.start);
 	const mergedBusy: BlockedSpan[] = [];
-	let current = { ...busySpans[0]! };
+	const firstSpan = busySpans[0];
+	if (!firstSpan) return [];
+	let current = { ...firstSpan };
 
 	for (let i = 1; i < busySpans.length; i++) {
-		const next = busySpans[i]!;
+		const next = busySpans[i];
+		if (!next) continue;
 		if (next.start <= current.end) {
 			current.end = Math.max(current.end, next.end);
 		} else {
@@ -580,4 +620,499 @@ export function findAvailableSlots(
 	}
 
 	return freeIntervals;
+}
+
+// ─── 6. CANONICAL TIMEZONE HELPERS & FREE SLOTS SCANNER ──────────────────────
+
+export function timeZoneOffsetMinutes(
+	timeZone: string | null | undefined,
+	at: Date,
+): number {
+	if (!timeZone || timeZone === "UTC" || timeZone === "GMT") return 0;
+	try {
+		const parts = new Intl.DateTimeFormat("en-US", {
+			timeZone,
+			timeZoneName: "shortOffset",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		}).formatToParts(at);
+		const value =
+			parts.find((part) => part.type === "timeZoneName")?.value ?? "";
+		if (value === "GMT" || value === "UTC") return 0;
+		const match = /(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?/.exec(value);
+		if (!match) return 0;
+		const sign = match[1] === "-" ? -1 : 1;
+		return sign * (Number(match[2]) * 60 + Number(match[3] ?? "0"));
+	} catch {
+		return 0;
+	}
+}
+
+export function timeZoneOffsetSuffix(offsetMinutes: number): string {
+	const sign = offsetMinutes < 0 ? "-" : "+";
+	const absolute = Math.abs(offsetMinutes);
+	const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
+	const minutes = String(absolute % 60).padStart(2, "0");
+	return `${sign}${hours}:${minutes}`;
+}
+
+export function buildZonedIsoString(
+	dateKey: string,
+	timeStr: string,
+	timeZone?: string | null,
+): string {
+	const cleanDate = dateKey.slice(0, 10);
+	const [hStr = "00", mStr = "00"] = timeStr.slice(0, 5).split(":");
+	const h = Number(hStr) || 0;
+	const m = Number(mStr) || 0;
+	const padH = String(h).padStart(2, "0");
+	const padM = String(m).padStart(2, "0");
+
+	if (!timeZone || timeZone === "UTC" || timeZone === "GMT") {
+		return `${cleanDate}T${padH}:${padM}:00.000Z`;
+	}
+
+	const [yStr, monStr, dStr] = cleanDate.split("-");
+	const year = Number(yStr) || 2026;
+	const month = Number(monStr) || 1;
+	const day = Number(dStr) || 1;
+
+	const utcGuess = new Date(Date.UTC(year, month - 1, day, h, m, 0));
+	let offsetMinutes = timeZoneOffsetMinutes(timeZone, utcGuess);
+	const correctedInstant = new Date(utcGuess.getTime() - offsetMinutes * 60_000);
+	const correctedOffsetMinutes = timeZoneOffsetMinutes(timeZone, correctedInstant);
+	if (correctedOffsetMinutes !== offsetMinutes) {
+		offsetMinutes = correctedOffsetMinutes;
+	}
+
+	return new Date(utcGuess.getTime() - offsetMinutes * 60_000).toISOString();
+}
+
+export type TimeOfDayFilter = "all" | "morning" | "day" | "evening";
+
+export function getTimeOfDayCategory(hour: number): "morning" | "day" | "evening" {
+	if (hour < 12) return "morning";
+	if (hour < 16) return "day";
+	return "evening";
+}
+
+function parseTimeStringToMinutes(raw?: string | Date | null): number {
+	if (!raw) return 0;
+	const str = typeof raw === "string" ? raw : raw.toISOString();
+	if (str.includes("T")) {
+		const timePart = str.split("T")[1]?.slice(0, 5) || "00:00";
+		const [h = 0, m = 0] = timePart.split(":").map(Number);
+		return (h ?? 0) * 60 + (m ?? 0);
+	}
+	const [h = 0, m = 0] = str.slice(0, 5).split(":").map(Number);
+	return (h ?? 0) * 60 + (m ?? 0);
+}
+
+function formatMinutesToTime(totalMin: number): string {
+	const h = Math.floor(totalMin / 60);
+	const m = totalMin % 60;
+	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+export interface WorkingHoursConfig {
+	startHour?: number;
+	endHour?: number;
+	stepMinutes?: number;
+	workingDays?: readonly number[];
+	breakIntervals?: readonly { startTime: string; endTime: string }[];
+	timezone?: string | null;
+}
+
+export interface FindFreeScheduleIntervalsParams {
+	doctorId?: string | null | undefined;
+	chairId?: string | null | undefined;
+	dateFrom: string;
+	dateTo?: string | null | undefined;
+	durationMinutes: number;
+	existingAppointments: readonly ScheduleOverlapItem[];
+	chairs?: readonly { id: string; name: string; active?: boolean }[];
+	doctors?: readonly { id: string; fullName: string; active?: boolean; specialties?: string[] }[];
+	workingHours?: WorkingHoursConfig;
+	timeOfDayFilter?: "all" | "morning" | "day" | "evening";
+	timezone?: string | null;
+}
+
+export interface FreeScheduleInterval {
+	date: string;
+	startTime: string;
+	endTime: string;
+	startsAtIso: string;
+	endsAtIso: string;
+	timeDisplay: string;
+	durationMinutes: number;
+	doctorId?: string | undefined;
+	doctorName?: string | undefined;
+	chairId?: string | undefined;
+	chairName?: string | undefined;
+	timeOfDay: "morning" | "day" | "evening";
+}
+
+export function findFreeScheduleIntervals(
+	params: FindFreeScheduleIntervalsParams,
+): FreeScheduleInterval[] {
+	const {
+		doctorId,
+		chairId,
+		dateFrom,
+		dateTo = dateFrom,
+		durationMinutes,
+		existingAppointments = [],
+		chairs = [],
+		doctors = [],
+		workingHours = {},
+		timeOfDayFilter = "all",
+		timezone = workingHours.timezone ?? null,
+	} = params;
+
+	if (!dateFrom || durationMinutes <= 0) {
+		return [];
+	}
+
+	const startHour = workingHours.startHour ?? 9;
+	const endHour = workingHours.endHour ?? 20;
+	const stepMinutes = workingHours.stepMinutes ?? 15;
+	const workingDays = workingHours.workingDays ?? [1, 2, 3, 4, 5, 6];
+	const breakIntervals = (workingHours.breakIntervals ?? []).map((b) => ({
+		startMin: parseTimeStringToMinutes(b.startTime),
+		endMin: parseTimeStringToMinutes(b.endTime),
+	}));
+
+	const activeChairs = chairs.filter((c) => c.active !== false);
+	const defaultChair = activeChairs[0] ?? { id: "chair-1", name: "Кабинет 1" };
+	const activeDoctors = doctors.filter((d) => d.active !== false);
+
+	const activeAppointments = existingAppointments.filter((a) => {
+		const s = a?.status;
+		return s !== "cancelled" && s !== "no_show";
+	});
+
+	const fromObj = new Date(`${dateFrom}T00:00:00`);
+	const toObj = new Date(`${dateTo}T00:00:00`);
+	if (Number.isNaN(fromObj.getTime()) || Number.isNaN(toObj.getTime())) {
+		return [];
+	}
+
+	const diffDays = Math.min(60, Math.max(0, Math.round((toObj.getTime() - fromObj.getTime()) / 86400000)));
+	const results: FreeScheduleInterval[] = [];
+
+	for (let d = 0; d <= diffDays; d++) {
+		const dayObj = new Date(fromObj);
+		dayObj.setDate(fromObj.getDate() + d);
+		const dayOfWeek = dayObj.getDay();
+
+		if (workingDays.length > 0 && !workingDays.includes(dayOfWeek)) {
+			continue;
+		}
+
+		const yyyy = dayObj.getFullYear();
+		const mm = String(dayObj.getMonth() + 1).padStart(2, "0");
+		const dd = String(dayObj.getDate()).padStart(2, "0");
+		const dateKey = `${yyyy}-${mm}-${dd}`;
+
+		const dayAppts = activeAppointments
+			.filter((a) => {
+				const raw = a.startsAt || a.startTime || a.startAt || "";
+				const str = typeof raw === "string" ? raw : raw instanceof Date ? raw.toISOString() : "";
+				return str.slice(0, 10) === dateKey;
+			})
+			.map((a) => {
+				const startRaw = a.startsAt || a.startTime || a.startAt || "";
+				const aStartMin = parseTimeStringToMinutes(startRaw);
+
+				const aDur = Number(a.durationMinutes) || 30;
+				let aEndMin = aStartMin + aDur;
+				const endRaw = a.endsAt || a.endTime || "";
+				if (endRaw) {
+					aEndMin = parseTimeStringToMinutes(endRaw);
+				}
+
+				return {
+					doctorUserId: a.doctorUserId || a.doctorId,
+					chairId: a.chairId,
+					startMin: aStartMin,
+					endMin: aEndMin,
+				};
+			});
+
+		const dayStartMin = startHour * 60;
+		const dayEndMin = endHour * 60;
+
+		for (let startMin = dayStartMin; startMin + durationMinutes <= dayEndMin; startMin += stepMinutes) {
+			const endMin = startMin + durationMinutes;
+			const startH = Math.floor(startMin / 60);
+
+			const tod = getTimeOfDayCategory(startH);
+			if (timeOfDayFilter !== "all" && tod !== timeOfDayFilter) {
+				continue;
+			}
+
+			const hasBreak = breakIntervals.some((b) => startMin < b.endMin && endMin > b.startMin);
+			if (hasBreak) {
+				continue;
+			}
+
+			let assignedDoctorId = doctorId || undefined;
+			let assignedDoctorName: string | undefined;
+
+			if (doctorId) {
+				const doctorConflict = dayAppts.some(
+					(a) => a.doctorUserId === doctorId && startMin < a.endMin && endMin > a.startMin,
+				);
+				if (doctorConflict) {
+					continue;
+				}
+				const doc = activeDoctors.find((d) => d.id === doctorId);
+				if (doc) assignedDoctorName = doc.fullName;
+			} else if (activeDoctors.length > 0) {
+				const freeDoctor = activeDoctors.find((doc) => {
+					const conflict = dayAppts.some(
+						(a) => a.doctorUserId === doc.id && startMin < a.endMin && endMin > a.startMin,
+					);
+					return !conflict;
+				});
+				if (!freeDoctor) {
+					continue;
+				}
+				assignedDoctorId = freeDoctor.id;
+				assignedDoctorName = freeDoctor.fullName;
+			}
+
+			let assignedChairId = chairId || undefined;
+			let assignedChairName: string | undefined;
+
+			if (chairId) {
+				const chairConflict = dayAppts.some(
+					(a) => a.chairId === chairId && startMin < a.endMin && endMin > a.startMin,
+				);
+				if (chairConflict) {
+					continue;
+				}
+				const ch = activeChairs.find((c) => c.id === chairId);
+				assignedChairName = ch?.name ?? defaultChair.name;
+			} else {
+				const freeChair = (activeChairs.length > 0 ? activeChairs : [defaultChair]).find((chair) => {
+					const conflict = dayAppts.some(
+						(a) => a.chairId === chair.id && startMin < a.endMin && endMin > a.startMin,
+					);
+					return !conflict;
+				});
+				if (!freeChair) {
+					continue;
+				}
+				assignedChairId = freeChair.id;
+				assignedChairName = freeChair.name;
+			}
+
+			const startTimeStr = formatMinutesToTime(startMin);
+			const endTimeStr = formatMinutesToTime(endMin);
+			const startsAtIso = buildZonedIsoString(dateKey, startTimeStr, timezone);
+			const endsAtIso = buildZonedIsoString(dateKey, endTimeStr, timezone);
+
+			results.push({
+				date: dateKey,
+				startTime: startTimeStr,
+				endTime: endTimeStr,
+				startsAtIso,
+				endsAtIso,
+				timeDisplay: `${startTimeStr} – ${endTimeStr}`,
+				durationMinutes,
+				doctorId: assignedDoctorId,
+				doctorName: assignedDoctorName,
+				chairId: assignedChairId,
+				chairName: assignedChairName,
+				timeOfDay: tod,
+			});
+		}
+	}
+
+	return results;
+}
+
+export interface DoctorBreakInterval {
+	startTime: string;
+	endTime: string;
+}
+
+export interface DoctorFreeSlot {
+	date: string;
+	startsAtIso: string;
+	endsAtIso: string;
+	timeDisplay: string;
+	startTime: string;
+	endTime: string;
+	durationMinutes: number;
+	doctorId: string;
+	chairId: string;
+	chairName: string;
+	timeOfDay: "morning" | "day" | "evening";
+}
+
+export interface DayFreeSlots {
+	date: string;
+	dateFormatted: string;
+	dayOfWeek: string;
+	isDayOff?: boolean | undefined;
+	dayOffReason?: string | undefined;
+	slots: DoctorFreeSlot[];
+}
+
+export interface FindDoctorFreeSlotsParams {
+	doctorId?: string | null | undefined;
+	chairId?: string | null | undefined;
+	startDate: string;
+	horizonDays?: number | undefined;
+	durationMinutes?: number | undefined;
+	timeOfDayFilter?: TimeOfDayFilter | undefined;
+	appointments: readonly ScheduleOverlapItem[];
+	chairs: readonly { id: string; name: string; active?: boolean | undefined }[];
+	clinicStartHour?: number | undefined;
+	clinicEndHour?: number | undefined;
+	stepMinutes?: number | undefined;
+	workingDays?: readonly number[] | undefined;
+	perDayWorkingHours?: Readonly<
+		Record<number, { startHour: number; endHour: number }>
+	> | undefined;
+	breakIntervals?: readonly DoctorBreakInterval[] | undefined;
+	timezone?: string | null | undefined;
+}
+
+export function formatRussianDayHeader(dateStr: string): { dateFormatted: string; dayOfWeek: string } {
+	const dateObj = new Date(`${dateStr}T12:00:00Z`);
+	const formatted = dateObj.toLocaleDateString("ru-RU", {
+		day: "numeric",
+		month: "short",
+		weekday: "short",
+	});
+	const parts = formatted.split(",");
+	return {
+		dateFormatted: formatted,
+		dayOfWeek: parts[0]?.trim() || "",
+	};
+}
+
+export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeSlots[] {
+	const {
+		doctorId,
+		chairId,
+		startDate,
+		horizonDays = 7,
+		durationMinutes = 60,
+		timeOfDayFilter = "all",
+		appointments,
+		chairs,
+		clinicStartHour = 9,
+		clinicEndHour = 20,
+		stepMinutes = 30,
+		workingDays,
+		perDayWorkingHours,
+		breakIntervals = [],
+		timezone = "UTC",
+	} = params;
+
+	const activeChairs = chairs.filter((c) => c.active !== false);
+	const targetChairs = chairId ? activeChairs.filter((c) => c.id === chairId) : activeChairs;
+	const hasRealChairs = (targetChairs[0] || activeChairs[0]) !== undefined;
+
+	const activeAppointments = appointments.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
+	const result: DayFreeSlots[] = [];
+	const startObj = new Date(`${startDate}T00:00:00`);
+
+	for (let d = 0; d < horizonDays; d++) {
+		const currentDay = new Date(startObj);
+		currentDay.setDate(startObj.getDate() + d);
+		const dayOfWeekNum = currentDay.getDay();
+		const dateKey = `${currentDay.getFullYear()}-${String(currentDay.getMonth() + 1).padStart(2, "0")}-${String(currentDay.getDate()).padStart(2, "0")}`;
+		const { dateFormatted, dayOfWeek } = formatRussianDayHeader(dateKey);
+
+		if (!hasRealChairs) {
+			result.push({ date: dateKey, dateFormatted, dayOfWeek, isDayOff: true, dayOffReason: "В клинике нет активных кресел", slots: [] });
+			continue;
+		}
+
+		if (workingDays && !workingDays.includes(dayOfWeekNum)) {
+			result.push({ date: dateKey, dateFormatted, dayOfWeek, isDayOff: true, dayOffReason: "Выходной день врача", slots: [] });
+			continue;
+		}
+
+		const perDayWindow = perDayWorkingHours ? perDayWorkingHours[dayOfWeekNum] : undefined;
+		if (perDayWorkingHours && (!perDayWindow || perDayWindow.endHour <= perDayWindow.startHour)) {
+			result.push({ date: dateKey, dateFormatted, dayOfWeek, isDayOff: true, dayOffReason: "Врач не работает в этот день недели", slots: [] });
+			continue;
+		}
+
+		const dayStartHour = perDayWindow ? Math.max(perDayWindow.startHour, clinicStartHour) : clinicStartHour;
+		const dayEndHour = perDayWindow ? Math.min(perDayWindow.endHour, clinicEndHour) : clinicEndHour;
+
+		const daySlots: DoctorFreeSlot[] = [];
+		const dayAppts = activeAppointments.filter((a) => (typeof a.startsAt === "string" ? a.startsAt.slice(0, 10) : "") === dateKey);
+		const parsedBreaks = breakIntervals.map((b) => {
+			const [bStartH, bStartM] = b.startTime.split(":").map(Number);
+			const [bEndH, bEndM] = b.endTime.split(":").map(Number);
+			return { startMin: (bStartH ?? 0) * 60 + (bStartM ?? 0), endMin: (bEndH ?? 0) * 60 + (bEndM ?? 0) };
+		});
+
+		const parsedDayAppts = dayAppts.map((a) => {
+			const aStart = new Date(a.startsAt || 0).getTime();
+			const fallbackMin = a.durationMinutes ? Number(a.durationMinutes) : 30;
+			const aEnd = a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime()) ? new Date(a.endsAt).getTime() : aStart + (fallbackMin > 0 ? fallbackMin : 30) * 60000;
+			return { doctorUserId: a.doctorUserId, chairId: a.chairId, startMs: aStart, endMs: aEnd };
+		});
+
+		const totalDayMinutes = (dayEndHour - dayStartHour) * 60;
+		for (let offset = 0; offset + durationMinutes <= totalDayMinutes; offset += stepMinutes) {
+			const startMin = dayStartHour * 60 + offset;
+			const endMin = startMin + durationMinutes;
+			const startH = Math.floor(startMin / 60);
+			const startM = startMin % 60;
+			const endH = Math.floor(endMin / 60);
+			const endM = endMin % 60;
+
+			const timeCategory = getTimeOfDayCategory(startH);
+			if (timeOfDayFilter !== "all" && timeCategory !== timeOfDayFilter) continue;
+
+			const hasBreak = parsedBreaks.some((b) => startMin < b.endMin && endMin > b.startMin);
+			if (hasBreak) continue;
+
+			const timeStartStr = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
+			const timeEndStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+
+			const startIso = buildZonedIsoString(dateKey, timeStartStr, timezone);
+			const endIso = buildZonedIsoString(dateKey, timeEndStr, timezone);
+			const startMs = new Date(startIso).getTime();
+			const endMs = new Date(endIso).getTime();
+
+			const hasDoctorConflict = doctorId ? parsedDayAppts.some((a) => a.doctorUserId === doctorId && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs)) : false;
+			if (hasDoctorConflict) continue;
+
+			const availableChair = targetChairs.find((chair) => !parsedDayAppts.some((a) => a.chairId === chair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs)));
+			if (!availableChair) continue;
+
+			daySlots.push({
+				date: dateKey,
+				startsAtIso: startIso,
+				endsAtIso: endIso,
+				startTime: timeStartStr,
+				endTime: timeEndStr,
+				timeDisplay: `${timeStartStr} – ${timeEndStr}`,
+				durationMinutes,
+				doctorId: doctorId || "",
+				chairId: availableChair.id,
+				chairName: availableChair.name,
+				timeOfDay: timeCategory,
+			});
+		}
+
+		result.push({ date: dateKey, dateFormatted, dayOfWeek, isDayOff: false, slots: daySlots });
+	}
+
+	return result;
 }

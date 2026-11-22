@@ -25,7 +25,7 @@ import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { QuickBookingDrawerPatientPart } from "./quickBookingDrawer/QuickBookingDrawerPatientPart";
 import { QuickBookingServiceSection } from "./QuickBookingServiceSection";
-import { AppointmentModalLabSection } from "./AppointmentModalLabSection";
+import { AppointmentModalLabSection, type ActiveLabOrderInput } from "./AppointmentModalLabSection";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { SEED_LAB_ORDERS } from "../lab/dentalLabCatalogData";
 
@@ -265,7 +265,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
   const [isLabSectionOpen, setIsLabSectionOpen] = React.useState<boolean>(() => {
     const rawAppt = initialSlot?.appointment || initialSlot?.editingAppointment;
     const rawLabOrderId = initialSlot?.labOrderId || (rawAppt && "labOrderId" in rawAppt ? (rawAppt as { labOrderId?: string }).labOrderId : undefined);
-    const labOrders = dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; status?: string }> }).labOrders : undefined;
+    const labOrders = dashboard?.labOrders;
     return Boolean(
       rawLabOrderId ||
       labOrders?.some(
@@ -276,7 +276,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
 
   const effectiveOrgId = React.useMemo(() => {
     const clinicProfile = dashboard?.clinicSettings?.profile;
-    const rootOrgId = dashboard && "organizationId" in dashboard ? (dashboard as { organizationId?: string }).organizationId : undefined;
+    const rootOrgId = dashboard && "organizationId" in dashboard && typeof dashboard.organizationId === "string" ? dashboard.organizationId : undefined;
     return (
       clinicProfile?.organizationId ||
       rootOrgId ||
@@ -306,30 +306,28 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     };
   }, [initialSlot, selectedPatient?.id, doctorUserId, chairId, startsAtLocal, durationMinutes, status, reason, comment, effectiveOrgId]);
 
-  const activeLabOrders = React.useMemo(() => {
+  const activeLabOrders = React.useMemo<readonly ActiveLabOrderInput[]>(() => {
     if (!selectedPatient?.id) return [];
-    const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; [key: string]: unknown }> }).labOrders : []) || [];
+    const allLab: readonly ActiveLabOrderInput[] = dashboard?.labOrders ?? [];
     const directMatches = allLab.filter((lo) => lo.patientId === selectedPatient.id);
     if (directMatches.length > 0) return directMatches;
     if (isDemoShowcaseMode()) {
-      return (SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id) as unknown as Array<{ patientId?: string; [key: string]: unknown }>);
+      return SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id);
     }
     return [];
-  }, [dashboard, selectedPatient?.id]);
+  }, [dashboard?.labOrders, selectedPatient?.id]);
 
   // Реактивное раскрытие секции ЗТЛ при выборе пациента с активным нарядом (SEV-1 Fix / Мандат 8e / 8bd)
   React.useEffect(() => {
     if (!selectedPatient?.id) return;
-    const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; status?: string; dueDate?: string | Date; expectedDate?: string | Date }> }).labOrders : []) || [];
-    const fallbackDemo = isDemoShowcaseMode() ? SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id) : [];
+    const allLab: readonly ActiveLabOrderInput[] = dashboard?.labOrders ?? [];
+    const fallbackDemo: readonly ActiveLabOrderInput[] = isDemoShowcaseMode()
+      ? SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id)
+      : [];
     const combined = [...allLab, ...fallbackDemo];
     const hasActiveUpcomingOrder = combined.some((lo) => {
       if (lo.patientId !== selectedPatient.id) return false;
-      const rawStatus = "status" in lo && typeof (lo as { status?: unknown }).status === "string"
-        ? (lo as { status?: string }).status
-        : "stage" in lo && typeof (lo as { stage?: unknown }).stage === "string"
-          ? (lo as { stage?: string }).stage
-          : "";
+      const rawStatus = lo.status || lo.stage || "";
       const st = (rawStatus || "").toLowerCase();
       if (st === "delivered" || st === "completed" || st === "cancelled" || st === "installed" || st === "seated") return false;
       return true;
@@ -337,7 +335,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     if (hasActiveUpcomingOrder || activeLabOrders.length > 0) {
       setIsLabSectionOpen(true);
     }
-  }, [selectedPatient?.id, activeLabOrders.length, dashboard]);
+  }, [selectedPatient?.id, activeLabOrders.length, dashboard?.labOrders]);
 
   return (
     <div className="flex-1 overflow-y-auto p-5 pb-8 space-y-4" data-testid="quick-booking-scroll-body">

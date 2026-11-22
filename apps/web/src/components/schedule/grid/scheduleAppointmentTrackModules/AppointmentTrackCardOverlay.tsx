@@ -81,8 +81,8 @@ export function TrackAppointmentCard({
       patientLookupMap={props.patientLookupMap}
       staffLookupMap={props.staffLookupMap}
       collisionMap={props.collisionMap}
-      patientNameFn={(pts, id) => props.patientName(pts as unknown as Dashboard["patients"], id)}
-      getPatientName={(pts, id) => props.patientName(pts as unknown as Dashboard["patients"], id)}
+      patientNameFn={props.patientName}
+      getPatientName={props.patientName}
       dashboard={props.dashboard}
       timezone={props.timezone}
       toDateTimeLocalValue={props.toDateTimeLocalValue}

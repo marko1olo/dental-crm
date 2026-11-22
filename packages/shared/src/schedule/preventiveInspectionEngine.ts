@@ -33,9 +33,29 @@ export interface PreventiveInspectionCandidate {
 	suggestedChannelMessage: string;
 }
 
+export interface PreventiveInspectionPatient {
+	readonly id: string;
+	readonly fullName?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+}
+
+export interface PreventiveInspectionAppointment {
+	readonly id?: string | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly doctorUserId?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly status?: string | undefined;
+	readonly startsAt?: string | Date | undefined;
+	readonly startTime?: string | Date | undefined;
+	readonly reason?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+	readonly comment?: string | null | undefined;
+}
+
 export interface FindPreventiveInspectionCandidatesParams {
-	patients: readonly any[];
-	appointments: readonly any[];
+	patients: readonly PreventiveInspectionPatient[];
+	appointments: readonly PreventiveInspectionAppointment[];
 	doctors?: readonly { id: string; fullName: string }[] | undefined;
 	referenceDate?: Date | string | undefined;
 	minDaysSinceVisit?: number | undefined; // default 150 (approx 5 months)
@@ -84,13 +104,14 @@ export function findPreventiveInspectionCandidates(
 	for (const a of appointments) {
 		if (a.status === "cancelled" || a.status === "no_show") continue;
 		const startRaw = a.startsAt || a.startTime || "";
-		if (typeof startRaw === "string" && startRaw.slice(0, 10) >= nowIso && a.patientId) {
+		const startStr = typeof startRaw === "string" ? startRaw.slice(0, 10) : startRaw instanceof Date ? startRaw.toISOString().slice(0, 10) : "";
+		if (startStr >= nowIso && a.patientId) {
 			patientsWithFutureAppointments.add(a.patientId);
 		}
 	}
 
 	// 2. Group completed appointments by patient
-	const lastCompletedByPatient = new Map<string, any>();
+	const lastCompletedByPatient = new Map<string, PreventiveInspectionAppointment>();
 	for (const a of appointments) {
 		if (a.status !== "completed") continue;
 		if (!a.patientId) continue;
@@ -99,7 +120,9 @@ export function findPreventiveInspectionCandidates(
 		if (Number.isNaN(startMs) || startMs > nowMs) continue;
 
 		const existing = lastCompletedByPatient.get(a.patientId);
-		if (!existing || new Date(existing.startsAt || existing.startTime).getTime() < startMs) {
+		const existingRaw = existing ? (existing.startsAt || existing.startTime || "") : "";
+		const existingMs = existingRaw ? new Date(existingRaw).getTime() : 0;
+		if (!existing || existingMs < startMs) {
 			lastCompletedByPatient.set(a.patientId, a);
 		}
 	}
@@ -114,7 +137,8 @@ export function findPreventiveInspectionCandidates(
 		const lastAppt = lastCompletedByPatient.get(patient.id);
 		if (!lastAppt) continue;
 
-		const lastDateStr = (lastAppt.startsAt || lastAppt.startTime || "").slice(0, 10);
+		const lastRaw = lastAppt.startsAt || lastAppt.startTime || "";
+		const lastDateStr = typeof lastRaw === "string" ? lastRaw.slice(0, 10) : lastRaw instanceof Date ? lastRaw.toISOString().slice(0, 10) : "";
 		const lastDateObj = new Date(`${lastDateStr}T12:00:00Z`);
 		if (Number.isNaN(lastDateObj.getTime())) continue;
 
