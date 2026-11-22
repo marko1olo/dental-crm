@@ -9,12 +9,12 @@
  * - Mandate 8e: Doctor Autonomy (1-click preset mapping to ICD-10 K00.3..K03.8)
  */
 
-import type { ClinicalDefectPreset, StomxToothDefect } from "./types.js";
+import type { ClinicalDefectPreset, ClinicalToothDefect } from "./types.js";
 
 /**
  * Пигментация эмали твердых тканей.
  */
-export const STOMX_DEFECT_PIGMENTATION: StomxToothDefect = {
+export const CLINICAL_DEFECT_PIGMENTATION: ClinicalToothDefect = {
 	id: 59,
 	name: "пигментация",
 	alias: "Пг",
@@ -26,11 +26,12 @@ export const STOMX_DEFECT_PIGMENTATION: StomxToothDefect = {
 	category: "pathology",
 	description: "Пигментация эмали / пятно",
 };
+export const STOMX_DEFECT_PIGMENTATION = CLINICAL_DEFECT_PIGMENTATION;
 
 /**
  * Клиновидный дефект твердых тканей зуба (K03.1).
  */
-export const STOMX_DEFECT_WEDGE: StomxToothDefect = {
+export const CLINICAL_DEFECT_WEDGE: ClinicalToothDefect = {
 	id: 61,
 	name: "клин дефект",
 	alias: "Кд",
@@ -42,11 +43,12 @@ export const STOMX_DEFECT_WEDGE: StomxToothDefect = {
 	category: "pathology",
 	description: "Клиновидный дефект пришеечной области твердых тканей (K03.1)",
 };
+export const STOMX_DEFECT_WEDGE = CLINICAL_DEFECT_WEDGE;
 
 /**
  * Гипоплазия эмали (K00.4).
  */
-export const STOMX_DEFECT_HYPOPLASIA: StomxToothDefect = {
+export const CLINICAL_DEFECT_HYPOPLASIA: ClinicalToothDefect = {
 	id: 62,
 	name: "гипоплазия",
 	alias: "Г",
@@ -58,11 +60,12 @@ export const STOMX_DEFECT_HYPOPLASIA: StomxToothDefect = {
 	category: "pathology",
 	description: "Гипоплазия эмали (K00.4)",
 };
+export const STOMX_DEFECT_HYPOPLASIA = CLINICAL_DEFECT_HYPOPLASIA;
 
 /**
  * Эндемический флюороз зубов (K00.3).
  */
-export const STOMX_DEFECT_FLUOROSIS: StomxToothDefect = {
+export const CLINICAL_DEFECT_FLUOROSIS: ClinicalToothDefect = {
 	id: 63,
 	name: "флюороз",
 	alias: "Фл",
@@ -74,26 +77,29 @@ export const STOMX_DEFECT_FLUOROSIS: StomxToothDefect = {
 	category: "pathology",
 	description: "Эндемический флюороз зубов (K00.3)",
 };
+export const STOMX_DEFECT_FLUOROSIS = CLINICAL_DEFECT_FLUOROSIS;
 
 /**
- * Массив некариозных дефектов StomX.
+ * Массив некариозных дефектов.
  */
-export const STOMX_NON_CARIES_DEFECTS: readonly StomxToothDefect[] = [
-	STOMX_DEFECT_PIGMENTATION,
-	STOMX_DEFECT_WEDGE,
-	STOMX_DEFECT_HYPOPLASIA,
-	STOMX_DEFECT_FLUOROSIS,
+export const CLINICAL_NON_CARIES_DEFECTS: readonly ClinicalToothDefect[] = [
+	CLINICAL_DEFECT_PIGMENTATION,
+	CLINICAL_DEFECT_WEDGE,
+	CLINICAL_DEFECT_HYPOPLASIA,
+	CLINICAL_DEFECT_FLUOROSIS,
 ] as const;
+export const STOMX_NON_CARIES_DEFECTS = CLINICAL_NON_CARIES_DEFECTS;
 
 /**
- * Элементы некариозных поражений для иерархического дерева дефектов StomX.
+ * Элементы некариозных поражений для иерархического дерева дефектов.
  */
-export const STOMX_NON_CARIES_TREE_ITEMS: readonly StomxToothDefect[] = [
+export const CLINICAL_NON_CARIES_TREE_ITEMS: readonly ClinicalToothDefect[] = [
 	{ id: 59, name: "пигментация", alias: "Пг", color: "red", order: 1090, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 61, name: "клин дефект", alias: "Кд", color: "red", order: 1120, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 62, name: "гипоплазия", alias: "Г", color: "red", order: 1130, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 63, name: "флюороз", alias: "Фл", color: "red", order: 1140, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 ] as const;
+export const STOMX_NON_CARIES_TREE_ITEMS = CLINICAL_NON_CARIES_TREE_ITEMS;
 
 /**
  * Клинические пресеты некариозных поражений твердых тканей зубов

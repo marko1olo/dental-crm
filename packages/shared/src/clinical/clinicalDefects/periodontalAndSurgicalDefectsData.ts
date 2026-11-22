@@ -9,12 +9,12 @@
  * - Mandate 8e: Doctor Autonomy (1-click preset mapping to ICD-10 K05, K06, K08)
  */
 
-import type { ClinicalDefectPreset, StomxToothDefect } from "./types.js";
+import type { ClinicalDefectPreset, ClinicalToothDefect } from "./types.js";
 
 /**
  * 1. Здоровый интактный зуб (Healthy).
  */
-export const STOMX_DEFECT_HEALTHY: StomxToothDefect = {
+export const CLINICAL_DEFECT_HEALTHY: ClinicalToothDefect = {
 	id: 2,
 	name: "здоров",
 	alias: "ok",
@@ -27,11 +27,12 @@ export const STOMX_DEFECT_HEALTHY: StomxToothDefect = {
 	category: "healthy",
 	description: "Здоровый интактный зуб без признаков патологии",
 };
+export const STOMX_DEFECT_HEALTHY = CLINICAL_DEFECT_HEALTHY;
 
 /**
  * 2. Пародонтит (стадии I–III).
  */
-export const STOMX_DEFECT_PARODONTITIS: StomxToothDefect = {
+export const CLINICAL_DEFECT_PARODONTITIS: ClinicalToothDefect = {
 	id: 10,
 	name: "пародонтит",
 	alias: "A",
@@ -73,11 +74,12 @@ export const STOMX_DEFECT_PARODONTITIS: StomxToothDefect = {
 		},
 	],
 };
+export const STOMX_DEFECT_PARODONTITIS = CLINICAL_DEFECT_PARODONTITIS;
 
 /**
  * Рецессия десны по Миллеру (классы 1–4).
  */
-export const STOMX_DEFECT_RECESSION: StomxToothDefect = {
+export const CLINICAL_DEFECT_RECESSION: ClinicalToothDefect = {
 	id: 78,
 	name: "рецессия десны",
 	alias: "Рд",
@@ -127,11 +129,12 @@ export const STOMX_DEFECT_RECESSION: StomxToothDefect = {
 		},
 	],
 };
+export const STOMX_DEFECT_RECESSION = CLINICAL_DEFECT_RECESSION;
 
 /**
  * Гингивит (K05.0, K05.1).
  */
-export const STOMX_DEFECT_GINGIVITIS: StomxToothDefect = {
+export const CLINICAL_DEFECT_GINGIVITIS: ClinicalToothDefect = {
 	id: 82,
 	name: "гингивит",
 	alias: "Гн",
@@ -143,11 +146,12 @@ export const STOMX_DEFECT_GINGIVITIS: StomxToothDefect = {
 	category: "pathology",
 	description: "Катаральный или гипертрофический гингивит (K05.0, K05.1)",
 };
+export const STOMX_DEFECT_GINGIVITIS = CLINICAL_DEFECT_GINGIVITIS;
 
 /**
  * Зубной камень и отложения.
  */
-export const STOMX_DEFECT_CALCULUS: StomxToothDefect = {
+export const CLINICAL_DEFECT_CALCULUS: ClinicalToothDefect = {
 	id: 83,
 	name: "зубной камень",
 	alias: "Зк",
@@ -159,11 +163,12 @@ export const STOMX_DEFECT_CALCULUS: StomxToothDefect = {
 	category: "pathology",
 	description: "Наддесневые и поддесневые зубные отложения",
 };
+export const STOMX_DEFECT_CALCULUS = CLINICAL_DEFECT_CALCULUS;
 
 /**
  * Отсутствующий зуб (outpatient).
  */
-export const STOMX_DEFECT_MISSING: StomxToothDefect = {
+export const CLINICAL_DEFECT_MISSING: ClinicalToothDefect = {
 	id: 1,
 	name: "отсутствует",
 	alias: "О",
@@ -176,11 +181,12 @@ export const STOMX_DEFECT_MISSING: StomxToothDefect = {
 	category: "pathology",
 	description: "Отсутствующий зуб, требующий протезирования/имплантации",
 };
+export const STOMX_DEFECT_MISSING = CLINICAL_DEFECT_MISSING;
 
 /**
  * Запланированное хирургическое удаление.
  */
-export const STOMX_DEFECT_REMOVAL: StomxToothDefect = {
+export const CLINICAL_DEFECT_REMOVAL: ClinicalToothDefect = {
 	id: 1,
 	name: "удаление",
 	alias: "У",
@@ -196,9 +202,10 @@ export const STOMX_DEFECT_REMOVAL: StomxToothDefect = {
 	category: "surgery",
 	description: "Назначено / запланировано удаление зуба",
 };
+export const STOMX_DEFECT_REMOVAL = CLINICAL_DEFECT_REMOVAL;
 
 // --- Ортопедические и реставрационные дефекты ---
-export const STOMX_DEFECT_FILLING: StomxToothDefect = {
+export const CLINICAL_DEFECT_FILLING: ClinicalToothDefect = {
 	id: 3,
 	name: "пломба",
 	alias: "П",
@@ -211,8 +218,9 @@ export const STOMX_DEFECT_FILLING: StomxToothDefect = {
 	category: "restoration",
 	description: "Состоятельная пломба из композита или амальгамы",
 };
+export const STOMX_DEFECT_FILLING = CLINICAL_DEFECT_FILLING;
 
-export const STOMX_DEFECT_CROWN: StomxToothDefect = {
+export const CLINICAL_DEFECT_CROWN: ClinicalToothDefect = {
 	id: 4,
 	name: "коронка",
 	alias: "К",
@@ -225,8 +233,9 @@ export const STOMX_DEFECT_CROWN: StomxToothDefect = {
 	category: "restoration",
 	description: "Искусственная коронка (металлокерамика, цирконий, e.max)",
 };
+export const STOMX_DEFECT_CROWN = CLINICAL_DEFECT_CROWN;
 
-export const STOMX_DEFECT_ARTIFICIAL: StomxToothDefect = {
+export const CLINICAL_DEFECT_ARTIFICIAL: ClinicalToothDefect = {
 	id: 5,
 	name: "искусственный",
 	alias: "И",
@@ -238,8 +247,9 @@ export const STOMX_DEFECT_ARTIFICIAL: StomxToothDefect = {
 	category: "restoration",
 	description: "Искусственный зуб мостовидного или съемного протеза",
 };
+export const STOMX_DEFECT_ARTIFICIAL = CLINICAL_DEFECT_ARTIFICIAL;
 
-export const STOMX_DEFECT_IMPLANT: StomxToothDefect = {
+export const CLINICAL_DEFECT_IMPLANT: ClinicalToothDefect = {
 	id: 13,
 	name: "имплантат",
 	alias: "ИМ",
@@ -252,8 +262,9 @@ export const STOMX_DEFECT_IMPLANT: StomxToothDefect = {
 	category: "restoration",
 	description: "Остеоинтегрированный дентальный имплантат",
 };
+export const STOMX_DEFECT_IMPLANT = CLINICAL_DEFECT_IMPLANT;
 
-export const STOMX_DEFECT_VENEER: StomxToothDefect = {
+export const CLINICAL_DEFECT_VENEER: ClinicalToothDefect = {
 	id: 14,
 	name: "винир",
 	alias: "В",
@@ -265,8 +276,9 @@ export const STOMX_DEFECT_VENEER: StomxToothDefect = {
 	category: "restoration",
 	description: "Керамический или композитный винир",
 };
+export const STOMX_DEFECT_VENEER = CLINICAL_DEFECT_VENEER;
 
-export const STOMX_DEFECT_INLAY: StomxToothDefect = {
+export const CLINICAL_DEFECT_INLAY: ClinicalToothDefect = {
 	id: 15,
 	name: "вкладка",
 	alias: "ВК",
@@ -278,8 +290,9 @@ export const STOMX_DEFECT_INLAY: StomxToothDefect = {
 	category: "restoration",
 	description: "Культевая или восстановительная вкладка (inlay)",
 };
+export const STOMX_DEFECT_INLAY = CLINICAL_DEFECT_INLAY;
 
-export const STOMX_DEFECT_ONLAY: StomxToothDefect = {
+export const CLINICAL_DEFECT_ONLAY: ClinicalToothDefect = {
 	id: 91,
 	name: "накладка",
 	alias: "НК",
@@ -291,8 +304,9 @@ export const STOMX_DEFECT_ONLAY: StomxToothDefect = {
 	category: "restoration",
 	description: "Окклюзионная накладка (onlay/overlay)",
 };
+export const STOMX_DEFECT_ONLAY = CLINICAL_DEFECT_ONLAY;
 
-export const STOMX_DEFECT_SEALANT: StomxToothDefect = {
+export const CLINICAL_DEFECT_SEALANT: ClinicalToothDefect = {
 	id: 64,
 	name: "герм. фиссур",
 	alias: "Гф",
@@ -304,8 +318,9 @@ export const STOMX_DEFECT_SEALANT: StomxToothDefect = {
 	category: "restoration",
 	description: "Герметизация фиссур силантом",
 };
+export const STOMX_DEFECT_SEALANT = CLINICAL_DEFECT_SEALANT;
 
-export const STOMX_DEFECT_FACET: StomxToothDefect = {
+export const CLINICAL_DEFECT_FACET: ClinicalToothDefect = {
 	id: 65,
 	name: "фасетка",
 	alias: "Ф",
@@ -317,9 +332,10 @@ export const STOMX_DEFECT_FACET: StomxToothDefect = {
 	category: "restoration",
 	description: "Фасетка мостовидного протеза",
 };
+export const STOMX_DEFECT_FACET = CLINICAL_DEFECT_FACET;
 
 // --- Рентгенологические аномалии ---
-export const STOMX_DEFECT_DYSTOPIA_RADIOLOGY: StomxToothDefect = {
+export const CLINICAL_DEFECT_DYSTOPIA_RADIOLOGY: ClinicalToothDefect = {
 	id: 16,
 	name: "дистопия",
 	alias: "Д",
@@ -332,8 +348,9 @@ export const STOMX_DEFECT_DYSTOPIA_RADIOLOGY: StomxToothDefect = {
 	category: "radiology",
 	description: "Дистопия зуба по рентгенологическим данным / КЛКТ",
 };
+export const STOMX_DEFECT_DYSTOPIA_RADIOLOGY = CLINICAL_DEFECT_DYSTOPIA_RADIOLOGY;
 
-export const STOMX_DEFECT_RETENTION_RADIOLOGY: StomxToothDefect = {
+export const CLINICAL_DEFECT_RETENTION_RADIOLOGY: ClinicalToothDefect = {
 	id: 17,
 	name: "ретенция",
 	alias: "Rt",
@@ -346,8 +363,9 @@ export const STOMX_DEFECT_RETENTION_RADIOLOGY: StomxToothDefect = {
 	category: "radiology",
 	description: "Ретенция зуба по рентгенологическим данным / КЛКТ",
 };
+export const STOMX_DEFECT_RETENTION_RADIOLOGY = CLINICAL_DEFECT_RETENTION_RADIOLOGY;
 
-export const STOMX_DEFECT_MISSING_RADIOLOGY: StomxToothDefect = {
+export const CLINICAL_DEFECT_MISSING_RADIOLOGY: ClinicalToothDefect = {
 	id: 20,
 	name: "отсутствует",
 	alias: "О",
@@ -360,9 +378,10 @@ export const STOMX_DEFECT_MISSING_RADIOLOGY: StomxToothDefect = {
 	category: "radiology",
 	description: "Отсутствие зуба / зачатка по рентгену",
 };
+export const STOMX_DEFECT_MISSING_RADIOLOGY = CLINICAL_DEFECT_MISSING_RADIOLOGY;
 
 // --- Аномалии положения зуба (ids 38..47) ---
-export const STOMX_POSITION_DEFECTS: readonly StomxToothDefect[] = [
+export const CLINICAL_POSITION_DEFECTS: readonly ClinicalToothDefect[] = [
 	{
 		id: 38,
 		name: "вестибулярное",
@@ -484,9 +503,10 @@ export const STOMX_POSITION_DEFECTS: readonly StomxToothDefect[] = [
 		description: "Ретрузия резцов",
 	},
 ] as const;
+export const STOMX_POSITION_DEFECTS = CLINICAL_POSITION_DEFECTS;
 
 // --- Аномалии прорезывания (ids 48..50) ---
-export const STOMX_ERUPTION_DEFECTS: readonly StomxToothDefect[] = [
+export const CLINICAL_ERUPTION_DEFECTS: readonly ClinicalToothDefect[] = [
 	{
 		id: 48,
 		name: "ретенция",
@@ -526,9 +546,10 @@ export const STOMX_ERUPTION_DEFECTS: readonly StomxToothDefect[] = [
 		description: "Ранее удаленный постоянный или молочный зуб",
 	},
 ] as const;
+export const STOMX_ERUPTION_DEFECTS = CLINICAL_ERUPTION_DEFECTS;
 
 // --- Аномалии количества (ids 51..53) ---
-export const STOMX_AMOUNT_DEFECTS: readonly StomxToothDefect[] = [
+export const CLINICAL_AMOUNT_DEFECTS: readonly ClinicalToothDefect[] = [
 	{
 		id: 51,
 		name: "адентия первичная",
@@ -568,11 +589,12 @@ export const STOMX_AMOUNT_DEFECTS: readonly StomxToothDefect[] = [
 		description: "Сверхкомплектный зуб",
 	},
 ] as const;
+export const STOMX_AMOUNT_DEFECTS = CLINICAL_AMOUNT_DEFECTS;
 
 /**
- * Элементы для иерархического дерева дефектов StomX (пародонтология, хирургия, ортопедия).
+ * Элементы для иерархического дерева дефектов (пародонтология, хирургия, ортопедия).
  */
-export const STOMX_PERIODONTAL_AND_SURGICAL_TREE_ITEMS: readonly StomxToothDefect[] = [
+export const CLINICAL_PERIODONTAL_AND_SURGICAL_TREE_ITEMS: readonly ClinicalToothDefect[] = [
 	{ id: 2, name: "здоров", alias: "ok", color: "green", order: 4, type: "outpatient", key: null, require_treatment: false, crmToothState: "Healthy", category: "healthy" },
 	{
 		id: 10,
@@ -625,6 +647,7 @@ export const STOMX_PERIODONTAL_AND_SURGICAL_TREE_ITEMS: readonly StomxToothDefec
 	{ id: 83, name: "зубной камень", alias: "Зк", color: "red", order: 1276, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 1, name: "удаление", alias: "У", image_alias: "U", display_as: "removal", medplan_only: true, color: "white", key: "removal", order: 9999, type: "outpatient", require_treatment: true, crmToothState: "Missing", category: "surgery" },
 ] as const;
+export const STOMX_PERIODONTAL_AND_SURGICAL_TREE_ITEMS = CLINICAL_PERIODONTAL_AND_SURGICAL_TREE_ITEMS;
 
 /**
  * Клинические пресеты пародонтологии и хирургии

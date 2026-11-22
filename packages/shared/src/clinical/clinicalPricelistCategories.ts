@@ -5,9 +5,14 @@
  * Parity with Russian Clinical Standards (Star, 804n).
  */
 
-import type { StomxCategoryDefinition, StomxPricelistCategory } from "./clinicalPricelistTypes.js";
+import type {
+	ClinicalCategoryDefinition,
+	ClinicalPricelistCategory,
+	StomxCategoryDefinition,
+	StomxPricelistCategory,
+} from "./clinicalPricelistTypes.js";
 
-export const STOMX_SPECIALTY_CATEGORIES: readonly StomxCategoryDefinition[] = [
+export const CLINICAL_SPECIALTY_CATEGORIES: readonly ClinicalCategoryDefinition[] = [
 	{
 		id: "therapy",
 		code: "THERAPY",
@@ -80,25 +85,37 @@ export const STOMX_SPECIALTY_CATEGORIES: readonly StomxCategoryDefinition[] = [
 	},
 ] as const;
 
-export const STOMX_PRICELIST_SPECIALTIES = STOMX_SPECIALTY_CATEGORIES;
+export const CLINICAL_PRICELIST_SPECIALTIES = CLINICAL_SPECIALTY_CATEGORIES;
 
-export const STOMX_CATEGORY_MAP: Readonly<Record<StomxPricelistCategory, StomxCategoryDefinition>> = {
-	therapy: STOMX_SPECIALTY_CATEGORIES[0]!,
-	orthopedics: STOMX_SPECIALTY_CATEGORIES[1]!,
-	surgery: STOMX_SPECIALTY_CATEGORIES[2]!,
-	implantology: STOMX_SPECIALTY_CATEGORIES[3]!,
-	orthodontics: STOMX_SPECIALTY_CATEGORIES[4]!,
-	periodontics: STOMX_SPECIALTY_CATEGORIES[5]!,
-	hygiene: STOMX_SPECIALTY_CATEGORIES[6]!,
-	radiology: STOMX_SPECIALTY_CATEGORIES[7]!,
-	anesthesiology: STOMX_SPECIALTY_CATEGORIES[8]!,
-	ztl: STOMX_SPECIALTY_CATEGORIES[9]!,
+export const CLINICAL_CATEGORY_MAP: Readonly<Record<ClinicalPricelistCategory, ClinicalCategoryDefinition>> = {
+	therapy: CLINICAL_SPECIALTY_CATEGORIES[0]!,
+	orthopedics: CLINICAL_SPECIALTY_CATEGORIES[1]!,
+	surgery: CLINICAL_SPECIALTY_CATEGORIES[2]!,
+	implantology: CLINICAL_SPECIALTY_CATEGORIES[3]!,
+	orthodontics: CLINICAL_SPECIALTY_CATEGORIES[4]!,
+	periodontics: CLINICAL_SPECIALTY_CATEGORIES[5]!,
+	hygiene: CLINICAL_SPECIALTY_CATEGORIES[6]!,
+	radiology: CLINICAL_SPECIALTY_CATEGORIES[7]!,
+	anesthesiology: CLINICAL_SPECIALTY_CATEGORIES[8]!,
+	ztl: CLINICAL_SPECIALTY_CATEGORIES[9]!,
 };
 
-export function getStomxCategoryTitle(category: StomxPricelistCategory): string {
-	return STOMX_CATEGORY_MAP[category]?.titleRu ?? category;
+export function getClinicalCategoryTitle(category: ClinicalPricelistCategory): string {
+	return CLINICAL_CATEGORY_MAP[category]?.titleRu ?? category;
 }
 
-export function isStomxPricelistCategory(value: unknown): value is StomxPricelistCategory {
-	return typeof value === "string" && value in STOMX_CATEGORY_MAP;
+export function isClinicalPricelistCategory(value: unknown): value is ClinicalPricelistCategory {
+	return typeof value === "string" && value in CLINICAL_CATEGORY_MAP;
 }
+
+// Deprecated aliases for backward compatibility (Mandate 8ap)
+/** @deprecated Use CLINICAL_SPECIALTY_CATEGORIES */
+export const STOMX_SPECIALTY_CATEGORIES = CLINICAL_SPECIALTY_CATEGORIES;
+/** @deprecated Use CLINICAL_PRICELIST_SPECIALTIES */
+export const STOMX_PRICELIST_SPECIALTIES = CLINICAL_PRICELIST_SPECIALTIES;
+/** @deprecated Use CLINICAL_CATEGORY_MAP */
+export const STOMX_CATEGORY_MAP = CLINICAL_CATEGORY_MAP;
+/** @deprecated Use getClinicalCategoryTitle */
+export const getStomxCategoryTitle = getClinicalCategoryTitle;
+/** @deprecated Use isClinicalPricelistCategory */
+export const isStomxPricelistCategory = isClinicalPricelistCategory;

@@ -12,15 +12,18 @@
  */
 
 import type {
+	ClinicalAnatomicalSurface,
+	ClinicalAnatomicalTooth,
+	ClinicalPositionAnomaly,
 	StomxAnatomicalSurface,
 	StomxAnatomicalTooth,
 	StomxPositionAnomaly,
 } from "./clinicalDefectsCatalog.js";
 
 /**
- * Аномалии положения зуба (StomX type="anomaly", key="position")
+ * Аномалии положения зуба (type="anomaly", key="position")
  */
-export const STOMX_POSITION_ANOMALIES: readonly StomxPositionAnomaly[] = [
+export const CLINICAL_POSITION_ANOMALIES: readonly ClinicalPositionAnomaly[] = [
 	{
 		id: 38,
 		name: "вестибулярное",
@@ -133,10 +136,13 @@ export const STOMX_POSITION_ANOMALIES: readonly StomxPositionAnomaly[] = [
 	},
 ] as const;
 
+/** @deprecated Use CLINICAL_POSITION_ANOMALIES */
+export const STOMX_POSITION_ANOMALIES = CLINICAL_POSITION_ANOMALIES;
+
 /**
- * 32 постоянных зуба взрослого человека (FDI 11..48) из StomX teeth_adult.json
+ * 32 постоянных зуба взрослого человека (FDI 11..48)
  */
-export const STOMX_ADULT_TEETH: readonly StomxAnatomicalTooth[] = [
+export const DENTAL_ADULT_TEETH: readonly ClinicalAnatomicalTooth[] = [
 	// Квадрант 1: верхний правый (18–11)
 	{ id: 1, name: "18", quoter: 1, quoter_order: 0, is_child: 0, type: "T", horizontal_align: "left", vertical_align: "top", jaw: "upper" },
 	{ id: 2, name: "17", quoter: 1, quoter_order: 1, is_child: 0, type: "T", horizontal_align: "left", vertical_align: "top", jaw: "upper" },
@@ -178,10 +184,14 @@ export const STOMX_ADULT_TEETH: readonly StomxAnatomicalTooth[] = [
 	{ id: 32, name: "38", quoter: 4, quoter_order: 7, is_child: 0, type: "T", horizontal_align: "right", vertical_align: "bottom", jaw: "lower" },
 ] as const;
 
+export const CLINICAL_ADULT_TEETH = DENTAL_ADULT_TEETH;
+/** @deprecated Use DENTAL_ADULT_TEETH or CLINICAL_ADULT_TEETH */
+export const STOMX_ADULT_TEETH = DENTAL_ADULT_TEETH;
+
 /**
- * 20 молочных зубов ребенка (FDI 51..85) из StomX teeth_child.json
+ * 20 молочных зубов ребенка (FDI 51..85)
  */
-export const STOMX_CHILD_TEETH: readonly StomxAnatomicalTooth[] = [
+export const DENTAL_CHILD_TEETH: readonly ClinicalAnatomicalTooth[] = [
 	// Верхний правый (55–51)
 	{ id: 33, name: "55", quoter: 1, quoter_order: 0, is_child: 1, type: "T", horizontal_align: "left", vertical_align: "top", jaw: "upper" },
 	{ id: 34, name: "54", quoter: 1, quoter_order: 1, is_child: 1, type: "T", horizontal_align: "left", vertical_align: "top", jaw: "upper" },
@@ -211,10 +221,14 @@ export const STOMX_CHILD_TEETH: readonly StomxAnatomicalTooth[] = [
 	{ id: 52, name: "75", quoter: 4, quoter_order: 4, is_child: 1, type: "T", horizontal_align: "right", vertical_align: "bottom", jaw: "lower" },
 ] as const;
 
+export const CLINICAL_CHILD_TEETH = DENTAL_CHILD_TEETH;
+/** @deprecated Use DENTAL_CHILD_TEETH or CLINICAL_CHILD_TEETH */
+export const STOMX_CHILD_TEETH = DENTAL_CHILD_TEETH;
+
 /**
- * Анатомические поверхности зубов (StomX + Black/FDI standard)
+ * Анатомические поверхности зубов (Black/FDI standard)
  */
-export const STOMX_ANATOMICAL_SURFACES: readonly StomxAnatomicalSurface[] = [
+export const CLINICAL_ANATOMICAL_SURFACES: readonly ClinicalAnatomicalSurface[] = [
 	{ code: "O", latinCode: "O", nameRu: "Окклюзионная", descRu: "Жевательная поверхность премоляров и моляров" },
 	{ code: "M", latinCode: "M", nameRu: "Мезиальная", descRu: "Передняя контактная грань, обращенная к центру" },
 	{ code: "D", latinCode: "D", nameRu: "Дистальная", descRu: "Задняя контактная грань, обращенная от центра" },
@@ -224,3 +238,7 @@ export const STOMX_ANATOMICAL_SURFACES: readonly StomxAnatomicalSurface[] = [
 	{ code: "A", latinCode: "A", nameRu: "Апикальная / Пришеечная", descRu: "Пришеечная область и корень зуба" },
 	{ code: "I", latinCode: "I", nameRu: "Имплантационная зона", descRu: "Ложе остеоинтеграции имплантата" },
 ] as const;
+
+export const DENTAL_ANATOMICAL_SURFACES = CLINICAL_ANATOMICAL_SURFACES;
+/** @deprecated Use CLINICAL_ANATOMICAL_SURFACES */
+export const STOMX_ANATOMICAL_SURFACES = CLINICAL_ANATOMICAL_SURFACES;

@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
-import { patientInvoices, treatmentItems } from "../../../db/schema.js";
+import { invoiceItems, patientInvoices, treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { kopecksToRub, rubToKopecks } from "./dbTypes.js";
 
@@ -102,7 +102,14 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		};
 	}
 
-	const insertedId = await activeDb.transaction(async (tx) => {
+	const executeTx = async (callback: (tx: typeof defaultDb) => Promise<string>): Promise<string> => {
+		if ("transaction" in activeDb && typeof (activeDb as { transaction?: unknown }).transaction === "function") {
+			return await (activeDb as { transaction: (cb: (tx: typeof defaultDb) => Promise<string>) => Promise<string> }).transaction(callback);
+		}
+		return await callback(activeDb as typeof defaultDb);
+	};
+
+	const insertedId = await executeTx(async (tx) => {
 		const [inserted] = await tx
 			.insert(patientInvoices)
 			.values({
@@ -120,6 +127,20 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		}
 
 		for (const item of processedItems) {
+			// Канонические позиции счета для кассы (Мандат 8bm, ст. 4.7 54-ФЗ)
+			await tx.insert(invoiceItems).values({
+				organizationId: orgId,
+				invoiceId: inserted.id,
+				name: item.title,
+				quantity: String(item.qtyNumber),
+				unitPriceKopecks: Number(item.unitKopecks),
+				discountPercent: "0",
+				totalPriceKopecks: Number(item.lineKopecks),
+				serviceCode: item.serviceCode ?? item.regulatoryCode ?? null,
+				toothCode: item.toothCode ?? null,
+			});
+
+			// Сохраняем также в treatmentItems для клинической истории лечения и плана
 			await tx.insert(treatmentItems).values({
 				organizationId: orgId,
 				patientId,
@@ -131,6 +152,9 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 				priceRub: kopecksToRub(item.lineKopecks),
 				unitPriceRub: kopecksToRub(item.unitKopecks),
 				discountRub: 0,
+				priceKopecks: item.lineKopecks,
+				unitPriceKopecks: item.unitKopecks,
+				discountKopecks: 0n,
 				status: "completed",
 			});
 		}

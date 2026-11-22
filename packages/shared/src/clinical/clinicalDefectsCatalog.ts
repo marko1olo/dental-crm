@@ -13,10 +13,22 @@
  * - Engineering Rule: Anti-monolith <= 800 lines (Facade < 400 lines)
  */
 
-import { STOMX_POSITION_ANOMALIES } from "./clinicalAnomaliesData.js";
-import { STOMX_TOOTH_DEFECTS } from "./clinicalDefectsData.js";
+import {
+	CLINICAL_POSITION_ANOMALIES,
+	STOMX_POSITION_ANOMALIES,
+} from "./clinicalAnomaliesData.js";
+import {
+	CLINICAL_TOOTH_DEFECTS,
+	STOMX_TOOTH_DEFECTS,
+} from "./clinicalDefectsData.js";
 
 import type {
+	ClinicalDefectCategory,
+	ClinicalDefectColor,
+	ClinicalDefectKey,
+	ClinicalDefectType,
+	ClinicalToothDefect,
+	ClinicalToothDefectItem,
 	CrmToothState,
 	StomxDefectCategory,
 	StomxDefectColor,
@@ -27,6 +39,12 @@ import type {
 } from "./clinicalDefects/types.js";
 
 export type {
+	ClinicalDefectCategory,
+	ClinicalDefectColor,
+	ClinicalDefectKey,
+	ClinicalDefectType,
+	ClinicalToothDefect,
+	ClinicalToothDefectItem,
 	CrmToothState,
 	StomxDefectCategory,
 	StomxDefectColor,
@@ -55,6 +73,7 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Impacted",
 	"Retained",
 	"Root",
+	"Mobility",
 	"Mobility_I",
 	"Mobility_II",
 	"Mobility_III",
@@ -66,7 +85,7 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 
 export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
 
-export type StomxPositionAnomalyCode =
+export type ClinicalPositionAnomalyCode =
 	| "В"
 	| "О"
 	| "Д"
@@ -78,10 +97,13 @@ export type StomxPositionAnomalyCode =
 	| "Пр"
 	| "Рт";
 
-export interface StomxPositionAnomaly {
+/** @deprecated Use ClinicalPositionAnomalyCode */
+export type StomxPositionAnomalyCode = ClinicalPositionAnomalyCode;
+
+export interface ClinicalPositionAnomaly {
 	id: number;
 	name: string;
-	alias: StomxPositionAnomalyCode;
+	alias: ClinicalPositionAnomalyCode;
 	latinAlias: string;
 	color: "white";
 	order: number;
@@ -90,7 +112,10 @@ export interface StomxPositionAnomaly {
 	description: string;
 }
 
-export interface StomxAnatomicalTooth {
+/** @deprecated Use ClinicalPositionAnomaly */
+export type StomxPositionAnomaly = ClinicalPositionAnomaly;
+
+export interface ClinicalAnatomicalTooth {
 	id: number;
 	name: string; // FDI code e.g. "18", "55"
 	quoter: 1 | 2 | 3 | 4; // FDI Quadrant 1..4
@@ -102,15 +127,21 @@ export interface StomxAnatomicalTooth {
 	jaw: "upper" | "lower";
 }
 
-export interface StomxAnatomicalSurface {
+/** @deprecated Use ClinicalAnatomicalTooth */
+export type StomxAnatomicalTooth = ClinicalAnatomicalTooth;
+
+export interface ClinicalAnatomicalSurface {
 	code: string;
 	nameRu: string;
 	descRu: string;
 	latinCode: string;
 }
 
+/** @deprecated Use ClinicalAnatomicalSurface */
+export type StomxAnatomicalSurface = ClinicalAnatomicalSurface;
+
 /**
- * Словарь синонимов и алиасов дефектов StomX для универсального нечувствительного поиска.
+ * Словарь синонимов и алиасов дефектов для универсального нечувствительного поиска.
  */
 const ALIAS_NORMALIZATION_MAP: Record<string, string> = {
 	// Здоров
@@ -154,10 +185,10 @@ const ALIAS_NORMALIZATION_MAP: Record<string, string> = {
 };
 
 /**
- * Находит дефект StomX по строковому алиасу (поддерживает русский/латинский регистр, синонимы).
+ * Находит клинический дефект по строковому алиасу (поддерживает русский/латинский регистр, синонимы).
  * В первую очередь проверяет клинические нозологии (type="outpatient"), затем аномалии.
  */
-export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefined {
+export function findClinicalDefectByAlias(alias: string): ClinicalToothDefect | undefined {
 	if (!alias || typeof alias !== "string") {
 		return undefined;
 	}
@@ -168,7 +199,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 	// 1. Поиск по словарю нормализации (приоритет outpatient нозологий)
 	const canonicalAlias = ALIAS_NORMALIZATION_MAP[lower];
 	if (canonicalAlias) {
-		const normOutpatientMatch = STOMX_TOOTH_DEFECTS.find(
+		const normOutpatientMatch = CLINICAL_TOOTH_DEFECTS.find(
 			(d) =>
 				d.type === "outpatient" &&
 				d.alias.toLowerCase() === canonicalAlias.toLowerCase(),
@@ -178,7 +209,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 		}
 
 		// Поиск во вложенных поддефектах (например, AI, AII, AIII или Рд1..Рд4)
-		for (const defect of STOMX_TOOTH_DEFECTS) {
+		for (const defect of CLINICAL_TOOTH_DEFECTS) {
 			if (defect.items) {
 				const sub = defect.items.find(
 					(it) => it.alias.toLowerCase() === canonicalAlias.toLowerCase(),
@@ -197,7 +228,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 			}
 		}
 
-		const normAnyMatch = STOMX_TOOTH_DEFECTS.find(
+		const normAnyMatch = CLINICAL_TOOTH_DEFECTS.find(
 			(d) => d.alias.toLowerCase() === canonicalAlias.toLowerCase(),
 		);
 		if (normAnyMatch) {
@@ -206,7 +237,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 	}
 
 	// 2. Поиск прямого совпадения алиаса среди outpatient нозологий
-	const directOutpatientMatch = STOMX_TOOTH_DEFECTS.find(
+	const directOutpatientMatch = CLINICAL_TOOTH_DEFECTS.find(
 		(d) =>
 			d.type === "outpatient" &&
 			(d.alias.toLowerCase() === lower || d.name.toLowerCase() === lower),
@@ -216,7 +247,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 	}
 
 	// 3. Поиск во вложенных элементах напрямую
-	for (const defect of STOMX_TOOTH_DEFECTS) {
+	for (const defect of CLINICAL_TOOTH_DEFECTS) {
 		if (defect.items) {
 			const sub = defect.items.find(
 				(it) => it.alias.toLowerCase() === lower || (it.name && it.name.toLowerCase() === lower),
@@ -236,7 +267,7 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 	}
 
 	// 4. Любое совпадение (включая аномалии положения)
-	const anyMatch = STOMX_TOOTH_DEFECTS.find(
+	const anyMatch = CLINICAL_TOOTH_DEFECTS.find(
 		(d) => d.alias.toLowerCase() === lower || d.name.toLowerCase() === lower,
 	);
 	if (anyMatch) {
@@ -246,18 +277,21 @@ export function findStomxDefectByAlias(alias: string): StomxToothDefect | undefi
 	return undefined;
 }
 
+/** @deprecated Use findClinicalDefectByAlias */
+export const findStomxDefectByAlias = findClinicalDefectByAlias;
+
 /**
  * Находит аномалию положения зуба по коду (В, О, Д, М, С, И, Т, Тр, Пр, Рт или латинским аналогам).
  */
-export function findStomxPositionAnomaly(
+export function findClinicalPositionAnomaly(
 	codeOrAlias: string,
-): StomxPositionAnomaly | undefined {
+): ClinicalPositionAnomaly | undefined {
 	if (!codeOrAlias || typeof codeOrAlias !== "string") {
 		return undefined;
 	}
 
 	const trimmed = codeOrAlias.trim().toLowerCase();
-	return STOMX_POSITION_ANOMALIES.find(
+	return CLINICAL_POSITION_ANOMALIES.find(
 		(a) =>
 			a.alias.toLowerCase() === trimmed ||
 			a.latinAlias.toLowerCase() === trimmed ||
@@ -265,74 +299,89 @@ export function findStomxPositionAnomaly(
 	);
 }
 
+/** @deprecated Use findClinicalPositionAnomaly */
+export const findStomxPositionAnomaly = findClinicalPositionAnomaly;
+
 /**
- * Преобразует дефект StomX к каноническому состоянию зуба нашей CRM (CrmToothState).
+ * Преобразует дефект к каноническому состоянию зуба нашей CRM (CrmToothState).
  */
-export function mapStomxDefectToCrmToothState(
-	aliasOrDefect: string | StomxToothDefect,
+export function mapClinicalDefectToToothState(
+	aliasOrDefect: string | ClinicalToothDefect,
 ): CrmToothState | undefined {
 	if (typeof aliasOrDefect === "object" && aliasOrDefect !== null) {
 		return aliasOrDefect.crmToothState;
 	}
 
-	const defect = findStomxDefectByAlias(aliasOrDefect);
+	const defect = findClinicalDefectByAlias(aliasOrDefect);
 	return defect?.crmToothState;
 }
 
+/** @deprecated Use mapClinicalDefectToToothState */
+export const mapStomxDefectToCrmToothState = mapClinicalDefectToToothState;
+
 /**
- * Преобразует состояние зуба CRM к соответствующему дефекту StomX.
+ * Преобразует состояние зуба CRM к соответствующему клиническому дефекту.
  */
-export function mapCrmToothStateToStomxDefect(
+export function mapToothStateToClinicalDefect(
 	crmState: CrmToothState,
-): StomxToothDefect | undefined {
+): ClinicalToothDefect | undefined {
 	switch (crmState) {
 		case "Healthy":
-			return findStomxDefectByAlias("ok");
+			return findClinicalDefectByAlias("ok");
 		case "Caries":
-			return findStomxDefectByAlias("С");
+			return findClinicalDefectByAlias("С");
 		case "Pulpitis":
-			return findStomxDefectByAlias("Р");
+			return findClinicalDefectByAlias("Р");
 		case "Periodontitis":
-			return findStomxDefectByAlias("Pt");
+			return findClinicalDefectByAlias("Pt");
 		case "Root":
-			return findStomxDefectByAlias("R");
+			return findClinicalDefectByAlias("R");
 		case "Missing":
-			return findStomxDefectByAlias("О");
+			return findClinicalDefectByAlias("О");
 		case "Filled":
-			return findStomxDefectByAlias("П");
+			return findClinicalDefectByAlias("П");
 		case "Crown":
 		case "Planned_Crown":
-			return findStomxDefectByAlias("К");
+			return findClinicalDefectByAlias("К");
 		case "Implant":
 		case "Planned_Implant":
-			return findStomxDefectByAlias("ИМ");
+			return findClinicalDefectByAlias("ИМ");
 		case "Retained":
-			return findStomxDefectByAlias("Rt");
+			return findClinicalDefectByAlias("Rt");
 		default:
 			return undefined;
 	}
 }
 
+/** @deprecated Use mapToothStateToClinicalDefect */
+export const mapCrmToothStateToStomxDefect = mapToothStateToClinicalDefect;
+
 /**
  * Возвращает дефекты заданной категории.
  */
-export function getStomxDefectsByCategory(
-	category: StomxDefectCategory,
-): StomxToothDefect[] {
-	return STOMX_TOOTH_DEFECTS.filter((d) => d.category === category);
+export function getClinicalDefectsByCategory(
+	category: ClinicalDefectCategory,
+): ClinicalToothDefect[] {
+	return CLINICAL_TOOTH_DEFECTS.filter((d) => d.category === category);
 }
+
+/** @deprecated Use getClinicalDefectsByCategory */
+export const getStomxDefectsByCategory = getClinicalDefectsByCategory;
 
 /**
  * Фильтрует все дефекты, требующие активного стоматологического вмешательства.
  */
-export function filterStomxDefectsRequiringTreatment(): StomxToothDefect[] {
-	return STOMX_TOOTH_DEFECTS.filter((d) => d.require_treatment);
+export function filterClinicalDefectsRequiringTreatment(): ClinicalToothDefect[] {
+	return CLINICAL_TOOTH_DEFECTS.filter((d) => d.require_treatment);
 }
+
+/** @deprecated Use filterClinicalDefectsRequiringTreatment */
+export const filterStomxDefectsRequiringTreatment = filterClinicalDefectsRequiringTreatment;
 
 /**
  * Проверяет, является ли зуб клинически здоровым по набору назначенных дефектов.
  */
-export function isStomxToothHealthy(defects: readonly string[]): boolean {
+export function isClinicalToothHealthy(defects: readonly string[]): boolean {
 	if (!defects || defects.length === 0) {
 		return true;
 	}
@@ -341,6 +390,9 @@ export function isStomxToothHealthy(defects: readonly string[]): boolean {
 	}
 	return false;
 }
+
+/** @deprecated Use isClinicalToothHealthy */
+export const isStomxToothHealthy = isClinicalToothHealthy;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA RE-EXPORTS (Full backwards compatibility)

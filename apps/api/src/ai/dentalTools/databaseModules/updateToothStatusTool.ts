@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
 import { toothStateHistory, toothStates } from "../../../db/schema.js";
+import { normalizeToothState } from "../../../routes/odontogram/types.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { isValidFdiToothNumber } from "./dbTypes.js";
 
@@ -14,8 +15,11 @@ export const updateToothStatusSchema = z.object({
 	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
 	toothNumber: z.number().min(11).max(85).describe("Номер зуба по формуле FDI (11-48 постоянные, 51-85 молочные)"),
 	state: z
-		.enum(["healthy", "caries", "pulpitis", "periodontitis", "filling", "crown", "implant", "extracted", "missing", "root", "mobility"])
-		.describe("Новый клинический статус зуба"),
+		.enum([
+			"healthy", "caries", "pulpitis", "periodontitis", "filling", "crown", "implant", "extracted", "missing", "root", "mobility",
+			"Healthy", "Caries", "Pulpitis", "Periodontitis", "Filled", "Crown", "Implant", "Extracted", "Missing", "Root", "Mobility",
+		])
+		.describe("Новый клинический статус зуба (healthy/caries/filling/crown/implant/extracted/missing/root/mobility)"),
 	surfaces: z.array(z.string()).optional().describe("Пораженные или восстановленные поверхности зуба (O, M, D, V, L)"),
 	notes: z.string().optional().describe("Клинические примечания к состоянию зуба"),
 	confirmed: z.boolean().optional().default(true).describe("Флаг подтверждения врачом/оператором (2-фазный барьер Guard)"),
@@ -48,24 +52,27 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		throw new Error(`Недопустимый номер зуба ${tooth}. Разрешены постоянные зубы FDI 11-48 и молочные зубы FDI 51-85.`);
 	}
 
+	const normalizedState = normalizeToothState(args.state);
+
 	// 2-Phase Confirmation Guard (Мандат 8e)
 	if (args.confirmed === false || (context.requireConfirmation && args.confirmed !== true)) {
 		return {
 			success: false,
 			toothNumber: tooth,
 			previousState: null,
-			newState: args.state,
+			newState: normalizedState,
 			surfaces: args.surfaces ?? null,
 			recordedAt: new Date(),
 			status: "confirmation_required",
-			message: `Требуется подтверждение врача для фиксации статуса зуба ${tooth} ('${args.state}').`,
+			message: `Требуется подтверждение врача для фиксации статуса зуба ${tooth} ('${normalizedState}').`,
 		};
 	}
 
 	const now = new Date();
 	let previousState: string | null = null;
+	let finalSurfaces: string[] | null = null;
 
-	await activeDb.transaction(async (tx) => {
+	async function mutateToothInDb(tx: typeof defaultDb | TenantDb) {
 		const existing = await tx
 			.select()
 			.from(toothStates)
@@ -75,18 +82,34 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		const [existingTooth] = existing;
 		previousState = existingTooth?.state ?? null;
 
+		const existingSurfaces = Array.isArray(existingTooth?.surfaces)
+			? (existingTooth.surfaces as string[])
+			: [];
+
 		if (existingTooth) {
+			// Анатомическая изоляция MODBL: если surfaces опущены, сохраняем существующие.
+			// При передаче новых — объединяем с существующими по стандарту MODBL (Мандат 27, 8ar/8as).
+			finalSurfaces = args.surfaces !== undefined
+				? Array.from(new Set([...existingSurfaces, ...args.surfaces]))
+				: (existingTooth.surfaces as string[] | null);
+
 			await tx
 				.update(toothStates)
-				.set({ state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, updatedAt: now })
+				.set({
+					state: normalizedState,
+					surfaces: finalSurfaces,
+					notes: args.notes !== undefined ? args.notes : existingTooth.notes,
+					updatedAt: now,
+				})
 				.where(eq(toothStates.id, existingTooth.id));
 		} else {
+			finalSurfaces = args.surfaces !== undefined ? args.surfaces : null;
 			await tx.insert(toothStates).values({
 				organizationId: orgId,
 				patientId,
 				toothNumber: tooth,
-				state: args.state,
-				surfaces: args.surfaces ?? null,
+				state: normalizedState,
+				surfaces: finalSurfaces,
 				notes: args.notes ?? null,
 				createdAt: now,
 				updatedAt: now,
@@ -99,24 +122,32 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 			patientId,
 			toothNumber: tooth,
 			previousState,
-			newState: args.state,
+			newState: normalizedState,
 			previousSurfaces: existingTooth?.surfaces ?? null,
-			newSurfaces: args.surfaces ?? null,
+			newSurfaces: finalSurfaces,
 			changedByUserId: context.userId ?? null,
 			reason: args.notes ?? "Обновление через клинический ИИ-ассистент",
 			changedAt: now,
 		});
-	});
+	}
+
+	if ("transaction" in activeDb && typeof activeDb.transaction === "function") {
+		await activeDb.transaction(async (tx) => {
+			await mutateToothInDb(tx);
+		});
+	} else {
+		await mutateToothInDb(activeDb);
+	}
 
 	return {
 		success: true,
 		toothNumber: tooth,
 		previousState,
-		newState: args.state,
-		surfaces: args.surfaces ?? null,
+		newState: normalizedState,
+		surfaces: finalSurfaces,
 		recordedAt: now,
 		status: "executed",
-		message: `Статус зуба ${tooth} успешно зафиксирован: '${args.state}' в электронной одонтограмме.`,
+		message: `Статус зуба ${tooth} успешно зафиксирован: '${normalizedState}' в электронной одонтограмме.`,
 	};
 }
 

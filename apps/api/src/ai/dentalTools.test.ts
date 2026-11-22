@@ -111,7 +111,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 		);
 		assert.strictEqual(validRes.success, true);
 		assert.strictEqual(validRes.toothNumber, 26);
-		assert.strictEqual(validRes.newState, "filling");
+		assert.strictEqual(validRes.newState, "Filled");
 
 		// Некорректный номер зуба 99 должен выбрасывать клиническую ошибку
 		await assert.rejects(async () => {

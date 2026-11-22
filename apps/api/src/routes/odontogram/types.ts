@@ -3,7 +3,7 @@ import {
 	type ClinicalToothState,
 	fdiToothNumberSchema,
 	nonNegativeMoneyRubSchema,
-	normalizeToothState,
+	normalizeToothState as sharedNormalizeToothState,
 } from "@dental/shared";
 import { z } from "zod";
 import type {
@@ -13,12 +13,34 @@ import type {
 
 export { CLINICAL_TOOTH_STATE_VALUES, type ClinicalToothState };
 
-export function normalizeClinicalToothState(val: string): ClinicalToothState {
-	const trimmed = val.trim();
+/**
+ * Единая каноническая функция нормализации клинического состояния зуба.
+ * Поддерживает lowercase ("filling" -> "Filled", "extracted" -> "Missing", "healthy" -> "Healthy",
+ * "caries" -> "Caries", "pulpitis" -> "Pulpitis", "periodontitis" -> "Periodontitis",
+ * "crown" -> "Crown", "implant" -> "Implant", "root" -> "Root", "mobility" -> "Mobility"),
+ * а также степени подвижности (I-IV) и вовлечение фуркации.
+ */
+export function normalizeToothState(rawState: string): ClinicalToothState {
+	if (!rawState || typeof rawState !== "string") return "Healthy";
+	const trimmed = rawState.trim();
 	const lower = trimmed.toLowerCase();
+
+	// Direct lowercase mapping per Defect 1 SSOT
+	if (lower === "filling" || lower === "filled" || lower === "пломба" || lower === "пломбирован") return "Filled";
+	if (lower === "extracted" || lower === "missing" || lower === "удален" || lower === "удалён" || lower === "отсутствует") return "Missing";
+	if (lower === "healthy" || lower === "sound" || lower === "ok" || lower === "norm" || lower === "норма" || lower === "здоров") return "Healthy";
+	if (lower === "caries" || lower === "кариес") return "Caries";
+	if (lower === "pulpitis" || lower === "пульпит") return "Pulpitis";
+	if (lower === "periodontitis" || lower === "периодонтит" || lower === "пародонтит") return "Periodontitis";
+	if (lower === "crown" || lower === "коронка") return "Crown";
+	if (lower === "planned_crown") return "Planned_Crown";
+	if (lower === "implant" || lower === "имплант" || lower === "имплантат") return "Implant";
+	if (lower === "planned_implant") return "Planned_Implant";
+	if (lower === "root" || lower === "корень") return "Root";
+	if (lower === "mobility" || lower === "подвижность") return "Mobility";
 	if (lower === "treatment" || lower === "root_canal_treated") return "Root_Canal_Treated";
-	if (lower === "extracted") return "Extracted";
 	if (lower === "impacted") return "Impacted";
+	if (lower === "retained" || lower === "ретинированный") return "Retained";
 	if (lower === "bridge") return "Bridge";
 	if (lower === "bridge_abutment") return "Bridge_Abutment";
 
@@ -35,11 +57,19 @@ export function normalizeClinicalToothState(val: string): ClinicalToothState {
 
 	const found = CLINICAL_TOOTH_STATE_VALUES.find((s) => s.toLowerCase() === lower);
 	if (found) return found;
-	return normalizeToothState(trimmed);
+
+	const sharedResult = sharedNormalizeToothState(trimmed);
+	if (CLINICAL_TOOTH_STATE_VALUES.includes(sharedResult as ClinicalToothState)) {
+		return sharedResult as ClinicalToothState;
+	}
+
+	return "Healthy";
 }
 
+export const normalizeClinicalToothState = normalizeToothState;
+
 export const clinicalToothStateSchema = z.preprocess(
-	(val) => (typeof val === "string" ? normalizeClinicalToothState(val) : val),
+	(val) => (typeof val === "string" ? normalizeToothState(val) : val),
 	z.enum(CLINICAL_TOOTH_STATE_VALUES),
 );
 

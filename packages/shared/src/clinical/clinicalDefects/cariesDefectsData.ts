@@ -9,12 +9,12 @@
  * - Mandate 8e: Doctor Autonomy (1-click preset mapping to ICD-10 K02)
  */
 
-import type { ClinicalDefectPreset, StomxToothDefect } from "./types.js";
+import type { ClinicalDefectPreset, ClinicalToothDefect } from "./types.js";
 
 /**
- * Кариес зуба (K02) - основной каталог StomX.
+ * Кариес зуба (K02) - канонический доменный дефект DENTE (Мандат 8ap).
  */
-export const STOMX_DEFECT_CARIES: StomxToothDefect = {
+export const CLINICAL_DEFECT_CARIES: ClinicalToothDefect = {
 	id: 6,
 	name: "кариес",
 	alias: "С",
@@ -27,11 +27,12 @@ export const STOMX_DEFECT_CARIES: StomxToothDefect = {
 	category: "pathology",
 	description: "Кариес эмали / дентина (K02)",
 };
+export const STOMX_DEFECT_CARIES = CLINICAL_DEFECT_CARIES;
 
 /**
  * Кариес корня / цемента (K02.2).
  */
-export const STOMX_DEFECT_ROOT_CARIES: StomxToothDefect = {
+export const CLINICAL_DEFECT_ROOT_CARIES: ClinicalToothDefect = {
 	id: 58,
 	name: "кариес корня",
 	alias: "CR",
@@ -44,11 +45,12 @@ export const STOMX_DEFECT_ROOT_CARIES: StomxToothDefect = {
 	category: "pathology",
 	description: "Кариес корня / цемента зуба (K02.2)",
 };
+export const STOMX_DEFECT_ROOT_CARIES = CLINICAL_DEFECT_ROOT_CARIES;
 
 /**
  * Дефект пломбы / рецидивный кариес (K02.8).
  */
-export const STOMX_DEFECT_FILLING_DEFECT: StomxToothDefect = {
+export const CLINICAL_DEFECT_FILLING_DEFECT: ClinicalToothDefect = {
 	id: 60,
 	name: "дефект пломбы",
 	alias: "Дп",
@@ -60,11 +62,12 @@ export const STOMX_DEFECT_FILLING_DEFECT: StomxToothDefect = {
 	category: "pathology",
 	description: "Нарушение краевого прилегания / вторичный кариес пломбы",
 };
+export const STOMX_DEFECT_FILLING_DEFECT = CLINICAL_DEFECT_FILLING_DEFECT;
 
 /**
  * Дефект искусственной коронки.
  */
-export const STOMX_DEFECT_CROWN_DEFECT: StomxToothDefect = {
+export const CLINICAL_DEFECT_CROWN_DEFECT: ClinicalToothDefect = {
 	id: 76,
 	name: "дефект коронки",
 	alias: "Дк",
@@ -76,11 +79,12 @@ export const STOMX_DEFECT_CROWN_DEFECT: StomxToothDefect = {
 	category: "pathology",
 	description: "Скол облицовки или расцементировка коронки",
 };
+export const STOMX_DEFECT_CROWN_DEFECT = CLINICAL_DEFECT_CROWN_DEFECT;
 
 /**
  * Скрытый кариес по данным рентгенографии / КЛКТ.
  */
-export const STOMX_DEFECT_CARIES_RADIOLOGY: StomxToothDefect = {
+export const CLINICAL_DEFECT_CARIES_RADIOLOGY: ClinicalToothDefect = {
 	id: 19,
 	name: "кариес",
 	alias: "С",
@@ -93,28 +97,31 @@ export const STOMX_DEFECT_CARIES_RADIOLOGY: StomxToothDefect = {
 	category: "radiology",
 	description: "Скрытый проксимальный кариес по данным рентгена",
 };
+export const STOMX_DEFECT_CARIES_RADIOLOGY = CLINICAL_DEFECT_CARIES_RADIOLOGY;
 
 /**
- * Массив кариозных дефектов StomX.
+ * Массив кариозных дефектов (канонический доменный реестр).
  */
-export const STOMX_CARIES_DEFECTS: readonly StomxToothDefect[] = [
-	STOMX_DEFECT_CARIES,
-	STOMX_DEFECT_ROOT_CARIES,
-	STOMX_DEFECT_FILLING_DEFECT,
-	STOMX_DEFECT_CROWN_DEFECT,
-	STOMX_DEFECT_CARIES_RADIOLOGY,
+export const CLINICAL_CARIES_DEFECTS: readonly ClinicalToothDefect[] = [
+	CLINICAL_DEFECT_CARIES,
+	CLINICAL_DEFECT_ROOT_CARIES,
+	CLINICAL_DEFECT_FILLING_DEFECT,
+	CLINICAL_DEFECT_CROWN_DEFECT,
+	CLINICAL_DEFECT_CARIES_RADIOLOGY,
 ] as const;
+export const STOMX_CARIES_DEFECTS = CLINICAL_CARIES_DEFECTS;
 
 /**
- * Элементы кариеса для иерархического дерева дефектов StomX.
+ * Элементы кариеса для иерархического дерева дефектов.
  */
-export const STOMX_CARIES_TREE_ITEMS: readonly StomxToothDefect[] = [
+export const CLINICAL_CARIES_TREE_ITEMS: readonly ClinicalToothDefect[] = [
 	{ id: 6, name: "кариес", alias: "С", color: "red", order: 1030, type: "outpatient", key: "require_treatment", require_treatment: true, crmToothState: "Caries", category: "pathology" },
 	{ id: 58, name: "кариес корня", alias: "CR", color: "red", order: 1070, type: "outpatient", key: "require_treatment", require_treatment: true, crmToothState: "Caries", category: "pathology" },
 	{ id: 60, name: "дефект пломбы", alias: "Дп", color: "red", order: 1100, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 76, name: "дефект коронки", alias: "Дк", color: "red", order: 1110, type: "outpatient", key: "require_treatment", require_treatment: true, category: "pathology" },
 	{ id: 19, name: "кариес", alias: "С", color: null, order: 1260, type: "outpatient", key: "rg_klkt", require_treatment: true, crmToothState: "Caries", category: "radiology" },
 ] as const;
+export const STOMX_CARIES_TREE_ITEMS = CLINICAL_CARIES_TREE_ITEMS;
 
 /**
  * Клинические пресеты кариеса по Блэку (Black I..VI) и глубине поражения

@@ -11,7 +11,7 @@
 
 import type { CanonicalToothState } from "../dentalFormulaStates.js";
 
-export type StomxDefectColor =
+export type ClinicalDefectColor =
 	| "green"
 	| "red"
 	| "yellow"
@@ -21,9 +21,15 @@ export type StomxDefectColor =
 	| "purple"
 	| null;
 
-export type StomxDefectType = "outpatient" | "anomaly" | "orthodontic";
+/** @deprecated Use ClinicalDefectColor */
+export type StomxDefectColor = ClinicalDefectColor;
 
-export type StomxDefectKey =
+export type ClinicalDefectType = "outpatient" | "anomaly" | "orthodontic";
+
+/** @deprecated Use ClinicalDefectType */
+export type StomxDefectType = ClinicalDefectType;
+
+export type ClinicalDefectKey =
 	| "require_treatment"
 	| "cured_teeth"
 	| "rg_klkt"
@@ -37,7 +43,10 @@ export type StomxDefectKey =
 	| "removal"
 	| null;
 
-export type StomxDefectCategory =
+/** @deprecated Use ClinicalDefectKey */
+export type StomxDefectKey = ClinicalDefectKey;
+
+export type ClinicalDefectCategory =
 	| "healthy"
 	| "position_anomaly"
 	| "time_cut_anomaly"
@@ -48,35 +57,44 @@ export type StomxDefectCategory =
 	| "radiology"
 	| "surgery";
 
+/** @deprecated Use ClinicalDefectCategory */
+export type StomxDefectCategory = ClinicalDefectCategory;
+
 export type CrmToothState = CanonicalToothState;
 
-export interface StomxToothDefectItem {
+export interface ClinicalToothDefectItem {
 	id: number;
 	alias: string;
 	name?: string | undefined;
-	color: StomxDefectColor;
+	color: ClinicalDefectColor;
 	order: number;
-	type: StomxDefectType;
+	type: ClinicalDefectType;
 	number?: string | undefined;
 }
 
-export interface StomxToothDefect {
+/** @deprecated Use ClinicalToothDefectItem */
+export type StomxToothDefectItem = ClinicalToothDefectItem;
+
+export interface ClinicalToothDefect {
 	id: number;
 	name: string;
 	alias: string;
-	color: StomxDefectColor;
+	color: ClinicalDefectColor;
 	order: number;
-	type: StomxDefectType;
-	key: StomxDefectKey;
+	type: ClinicalDefectType;
+	key: ClinicalDefectKey;
 	require_treatment: boolean;
 	crmToothState?: CrmToothState | undefined;
-	category: StomxDefectCategory;
+	category: ClinicalDefectCategory;
 	description?: string | undefined;
-	items?: StomxToothDefectItem[] | undefined;
+	items?: ClinicalToothDefectItem[] | undefined;
 	medplan_only?: boolean | undefined;
 	display_as?: string | undefined;
 	image_alias?: string | undefined;
 }
+
+/** @deprecated Use ClinicalToothDefect */
+export type StomxToothDefect = ClinicalToothDefect;
 
 // --- Caries Specific Clinical Contracts ---
 export type CariesDepth =

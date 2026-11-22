@@ -1,13 +1,28 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
 import {
+	CLINICAL_ADULT_TEETH,
+	CLINICAL_ANATOMICAL_SURFACES,
+	CLINICAL_CHILD_TEETH,
+	CLINICAL_DEFECTS_TREE,
+	CLINICAL_POSITION_ANOMALIES,
+	CLINICAL_TOOTH_DEFECTS,
+	DENTAL_ADULT_TEETH,
+	DENTAL_CHILD_TEETH,
+	filterClinicalDefectsRequiringTreatment,
 	filterStomxDefectsRequiringTreatment,
+	findClinicalDefectByAlias,
+	findClinicalPositionAnomaly,
 	findStomxDefectByAlias,
 	findStomxPositionAnomaly,
+	getClinicalDefectsByCategory,
 	getStomxDefectsByCategory,
+	isClinicalToothHealthy,
 	isStomxToothHealthy,
+	mapClinicalDefectToToothState,
 	mapCrmToothStateToStomxDefect,
 	mapStomxDefectToCrmToothState,
+	mapToothStateToClinicalDefect,
 	STOMX_ADULT_TEETH,
 	STOMX_ANATOMICAL_SURFACES,
 	STOMX_CHILD_TEETH,
@@ -17,6 +32,23 @@ import {
 } from "../index.js";
 
 describe("StomX Tooth Defects, Position Anomalies & Dental Anatomy Catalog", () => {
+	it("exports canonical CLINICAL_* alongside deprecated STOMX_* constants", () => {
+		assert.strictEqual(STOMX_TOOTH_DEFECTS, CLINICAL_TOOTH_DEFECTS);
+		assert.strictEqual(STOMX_POSITION_ANOMALIES, CLINICAL_POSITION_ANOMALIES);
+		assert.strictEqual(STOMX_DEFECTS_TREE, CLINICAL_DEFECTS_TREE);
+		assert.strictEqual(STOMX_ADULT_TEETH, DENTAL_ADULT_TEETH);
+		assert.strictEqual(CLINICAL_ADULT_TEETH, DENTAL_ADULT_TEETH);
+		assert.strictEqual(STOMX_CHILD_TEETH, DENTAL_CHILD_TEETH);
+		assert.strictEqual(CLINICAL_CHILD_TEETH, DENTAL_CHILD_TEETH);
+		assert.strictEqual(STOMX_ANATOMICAL_SURFACES, CLINICAL_ANATOMICAL_SURFACES);
+		assert.strictEqual(findStomxDefectByAlias, findClinicalDefectByAlias);
+		assert.strictEqual(findStomxPositionAnomaly, findClinicalPositionAnomaly);
+		assert.strictEqual(mapStomxDefectToCrmToothState, mapClinicalDefectToToothState);
+		assert.strictEqual(mapCrmToothStateToStomxDefect, mapToothStateToClinicalDefect);
+		assert.strictEqual(getStomxDefectsByCategory, getClinicalDefectsByCategory);
+		assert.strictEqual(filterStomxDefectsRequiringTreatment, filterClinicalDefectsRequiringTreatment);
+		assert.strictEqual(isStomxToothHealthy, isClinicalToothHealthy);
+	});
 	it("exports complete STOMX_TOOTH_DEFECTS with correct colors, categories and keys", () => {
 		assert.ok(STOMX_TOOTH_DEFECTS.length >= 35, "Must contain all catalog defects");
 

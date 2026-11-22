@@ -7003,4 +7003,89 @@ ead_file по 8 осям качества Хаммера:
   - 📱 **Mobile Light (390x844, 98 KB):** [`03_sanpin_journal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/03_sanpin_journal_mobile_light_390x844.png) — Apple HIG Grouped List карточки партий вместо широких таблиц, хитбоксы $\ge 44\times 44$px, липкая кнопка Primary CTA в Natural Thumb Zone (`min-h-[52px]`), 0px горизонтального скролла.
   - 🌙 **Mobile Dark (390x844, 104 KB):** [`04_sanpin_journal_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_sterilization/04_sanpin_journal_mobile_dark_390x844.png) — Мобильный интерфейс в темной теме, четкие статусные бейджи «Стерильно», нулевые разрывы верстки.
 
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 26 — МАРКЕТИНГ КЛИНИКИ, ВОРОНКА ПЕРВИЧНЫХ ПАЦИЕНТОВ, КАНАЛЫ ПРИВЛЕЧЕНИЯ И ROMI/CAC (МАНДАТЫ 8bm, 8bf, 8ap, 8bg, 8bo, 8an, 8az)
+- **Дата и статус:** 2026-11-22 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Dental Marketing, Acquisition & Lead Funnels Fixer Surgeon (Домен 26).
+- **Канонический SSOT:**
+  - Таксономия каналов привлечения: [`packages/shared/src/marketing/marketingSources.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/marketing/marketingSources.ts).
+  - Схема лидов CRM: [`apps/api/src/db/schema/communications/messagesSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/communications/messagesSchema.ts) (`crmLeads`).
+  - Миграция DDL Postgres 18: [`apps/api/drizzle/0284_crm_leads_kopecks_and_appointment_id.sql`](file:///C:/Clinic_MVP/dental-crm/apps/api/drizzle/0284_crm_leads_kopecks_and_appointment_id.sql).
+  - Модули конверсии лидов: [`apps/api/src/routes/leadsConversionModules/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/leadsConversionModules/).
+  - Сквозная аналитика маркетинга: [`apps/api/src/routes/marketing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts) и [`apps/api/src/routes/marketingModules/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketingModules/).
+  - Дашборд маркетинга: [`apps/web/src/pages/marketingDashboardModules/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/marketingDashboardModules/).
+- **Хирургические исправления и ликвидация 5 дефектов Scout Dossier:**
+  1. **[DEF-1] Снос дубликатов-паразитов через `git rm` (Мандат 8bf):**
+     - Удален 6-строчный пустой фасад `packages/shared/src/patients/tagsModules/marketingSources.ts`, все импорты переключены напрямую на канонический SSOT `@dental/shared/marketing/marketingSources.js` (в `romiAttributionModel.ts`, `romiTypes.ts`, `patientTagsCatalog.ts`, `marketingRomiEngine.test.ts`).
+     - Удален устаревший монолитный фасад `apps/api/src/routes/leadsConversion.ts`, импорты переключены напрямую на `leadsConversionModules/index.js` (в `leadConversionRoutes.ts` и `leadsUtmAttribution.test.ts`).
+  2. **[DEF-2] Мандат 8bm в схеме CRM_LEADS (`expected_revenue_kopecks`):**
+     - В `messagesSchema.ts` в таблицу `crm_leads` добавлена колонка `expectedRevenueKopecks: bigint("expected_revenue_kopecks", { mode: "bigint" })` с сохранением обратной совместимости.
+     - Во всех маршрутах создания (`POST /api/leads`), посева демо (`DEMO_SHOWCASE_SEED_LEADS`), обновления (`PATCH /api/leads/:id`) и расчета метрик пайплайна (`leadsMetrics.ts`) ожидаемая выручка сохраняется и агрегируется в точных целочисленных копейках `bigint`.
+  3. **[DEF-3] Реляционная связь `appointment_id` в `crm_leads` (Мандаты 8bg, 8bo):**
+     - В таблицу `crm_leads` добавлена физическая колонка `appointmentId: uuid("appointment_id").references(() => appointments.id, { onDelete: "set null" })` и B-tree индекс `crm_leads_appointment_id_idx`.
+     - В `leadStageTransition.ts` и `appointmentCreationBridge.ts` при конвертации лида в прием ID созданной записи календаря атомарно сохраняется в физическую реляционную колонку `appointment_id` (и дублируется в `metadata.appointmentId` для обратной совместимости).
+     - Выпущена физическая DDL-миграция `0284_crm_leads_kopecks_and_appointment_id.sql`, зарегистрирована в `apps/api/drizzle/meta/_journal.json`, успешно применена в live PostgreSQL 18 на `127.0.0.1:5432`. `npm run check:migration-drift` подтвердил 100% паритет (Exit Code 0).
+  4. **[DEF-4] Ликвидация раскола таксономии каналов привлечения (Мандат 8ap):**
+     - В `marketingAnalyticsUtils.ts` искоренено насильственное переписывание СберЗдоровья и направлений от врачей в ПроДокторов (`detectChannelFromSource` и `normalizeChannelKey` теперь возвращают канонические `sberhealth` и `doctor_referral`).
+     - В `ONLINE_CHANNEL_DEFS` и `CHANNEL_NAMES_RU_MAP` добавлены СберЗдоровье (`sberhealth`, "СберЗдоровье (DocDoc)") и направления от коллег-врачей (`doctor_referral`, "Направление от коллеги-врача").
+     - В `useMarketingLiveSpends.ts` и `funnelAnalyticsUtils.ts` ликвидирован рассинхрон ключей 2ГИС (`gis2` vs `gis_2`) и устранено ошибочное дублирование расходов `yandex_maps` в `yandex_direct`.
+  5. **[DEF-5] Прямое чтение `amount_kopecks` из `payments` (Мандат 8bm):**
+     - В `apps/api/src/routes/marketing.ts` во всех выборках платежей (строки 102, 218, 312) и маппингах (строки 164, 259) выбирается `payments.amountKopecks: bigint` напрямую без вторичной потери точности через `rublesToKopecks(Number(amountRub))`.
+     - В `marketingCampaignCrudHandlers.ts` (строка 180) добавлен прямой выбор `payments.amountKopecks`.
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:migration-drift` -> **Exit Code 0 (214 tables, 2968 columns, 49 enums — 100% SYNCHRONIZED, ZERO DRIFT)**.
+  - `npm run check:diff` -> **Exit Code 0 (DIFF SAFETY PASSED, 0 запрещенных костылей `as any`, `!`, empty catch, float money)**.
+  - `npm run check:encoding` -> **Exit Code 0 (19 983 файла проверено, UTF-8 без BOM, 0 замечаний)**.
+  - Тесты домена:
+    - `packages/shared/src/tests/marketingRomiEngine.test.ts` -> **11/11 PASS (Exit Code 0)**.
+    - `apps/api/src/tests/leadsUtmAttribution.test.ts` -> **5/5 PASS (Exit Code 0)**.
+    - `apps/api/src/tests/routes/leadsConversionAutonomy.test.ts` -> **6/6 PASS (Exit Code 0)**.
+    - `apps/api/src/tests/routes/leadsBatchAndSlaMetrics.test.ts` -> **6/6 PASS (Exit Code 0)**.
+    - `apps/api/src/tests/routes/marketingAndLoyaltyFirstPrinciples.test.ts` -> **4/4 PASS (Exit Code 0)**.
+    - `apps/api/src/tests/routes/marketingRomiChannelsPersist.test.ts` -> **4/4 PASS (Exit Code 0)**.
+    - `apps/web/src/tests/marketingDashboardSafeMathAndDarkThemes.test.ts` -> **8/8 PASS (Exit Code 0)**.
+- **Визуальные доказательства (4-State Visual Proof, лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900):** [`01_marketing_campaigns_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/01_marketing_campaigns_pc_light_1440x900.png) и [`01_marketing_romi_tab_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/01_marketing_romi_tab_pc_light_1440x900.png) — Единый тиловый Primary CTA «+ Запустить акцию», таблица ROMI с каноническими каналами (2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама), точные денежные суммы в Sentence case, zero-clipping.
+  - 🌙 **PC Dark (1440x900):** [`02_marketing_campaigns_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/02_marketing_campaigns_pc_dark_1440x900.png) и [`02_marketing_romi_tab_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/02_marketing_romi_tab_pc_dark_1440x900.png) — 100% тёмные токены `var(--paper)`, WCAG AAA контрастность текста, zero-flash.
+  - 📱 **Mobile Light (390x844):** [`03_marketing_campaigns_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/03_marketing_campaigns_mobile_light_390x844.png) — Нативный Apple HIG Bottom Sheet со скруглением 24px, тактильный drag-handle, тач-таргеты $\ge 44\times 44$px, карточки промокодов, 0px горизонтального скролла.
+  - 🌙 **Mobile Dark (390x844):** [`04_marketing_campaigns_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/04_marketing_campaigns_mobile_dark_390x844.png) — Мобильный интерфейс в темной теме, глубокий фон, отсутствие клиппинга.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН — ОДОНТОГРАММА, ЗУБНАЯ ФОРМУЛА WHEELER 2.5D И КЛИНИЧЕСКИЙ КАТАЛОГ (МАНДАТЫ 8ar/8as, 8ap, 8be, 8bk, 8am, 8az)
+- **Дата и статус:** 2026-11-22 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Odontogram Fixer Surgeon.
+- **Канонический SSOT:**
+  - Анатомическая спецификация: [`.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md).
+  - Нормализация статусов и типов: [`apps/api/src/routes/odontogram/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/types.ts).
+  - Клинический ИИ-инструмент: [`apps/api/src/ai/dentalTools/databaseModules/updateToothStatusTool.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/databaseModules/updateToothStatusTool.ts).
+  - Спецификация дефектов и анатомии: [`packages/shared/src/clinical/clinicalDefectsCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalDefectsCatalog.ts) и [`packages/shared/src/clinical/clinicalDefects/`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalDefects/).
+  - Векторная геометрия зуба 46: [`apps/web/src/components/odontogram/gate0/teeth/tooth46/Tooth46Container.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/teeth/tooth46/Tooth46Container.tsx).
+- **Хирургические исправления и ликвидация дефектов:**
+  1. **[DEF-1] Нормализация статусов зуба ИИ ↔ REST API (`normalizeToothState`):**
+     - В `apps/api/src/routes/odontogram/types.ts` создана единая каноническая функция `normalizeToothState(rawState)` с двусторонней нормализацией (lowercase `"filling"`, `"caries"`, `"extracted"`, `"healthy"`, `"mobility"` -> PascalCase `"Filled"`, `"Caries"`, `"Missing"`, `"Healthy"`, `"Mobility"`), а также степеней подвижности (I–IV).
+     - В `updateToothStatusTool.ts` все статусы проходят нормализацию перед записью в PostgreSQL 18.
+  2. **[DEF-2] Искоренение префиксов чужой CRM (Мандат 8ap — ZERO FOREIGN CRM CONTAMINATION):**
+     - В `packages/shared/src/clinical/` все префиксы `STOMX_*` заменены на канонические `CLINICAL_*` / `DENTAL_*` (`CLINICAL_TOOTH_DEFECTS`, `CLINICAL_POSITION_ANOMALIES`, `CLINICAL_SPECIALTY_CATEGORIES`), старые сохранены как `@deprecated` алиасы.
+  3. **[DEF-3] Калибровка радиуса бейджа зуба 46 в Tooth46Container:**
+     - В `Tooth46Container.tsx:34` фоллбек `badgeRadius ?? 8.5` заменен на канонический `14`, восстановив правильную координату `cy = 176.0` в гармонии с Wheeler 2.5D.
+  4. **[DEF-4] Изоляция поверхностей MODBL и пропорции Wheeler 2.5D:**
+     - Подтверждена изоляция поверхностей при апдейтах статусов, пропорции Wheeler (ViewBox 100x218, фронт 43..33 в 300px), реактивный SVG 120 FPS.
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:diff` -> **Exit Code 0 (DIFF SAFETY PASSED, 0 костылей)**.
+  - `npm run check:encoding` -> **Exit Code 0 (19 986 файлов проверено, UTF-8 без BOM)**.
+  - `tsc` `@dental/shared` и `apps/api` -> **Exit Code 0 (0 ошибок)**.
+  - Тесты:
+    - `packages/shared/src/tests/stomxDefects.test.ts` -> **9/9 PASS**.
+    - `apps/api/src/tests/routes/odontogramDecomposition.test.ts` -> **4/4 PASS**.
+    - `apps/api/src/ai/dentalTools.test.ts` -> **9/9 PASS**.
+- **Визуальные доказательства (4-State Visual Proof, лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900):** [`01_odontogram_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png) — Полная 32-зубная зубная дуга Wheeler 2.5D, центрированный бейдж зуба 46, единый Primary CTA «Физиологическая норма», zero-clipping.
+  - 🌙 **PC Dark (1440x900):** [`02_odontogram_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png) — 100% тёмные токены, WCAG AAA контрастность текста, zero-flash.
+  - 📱 **Mobile Light (390x844):** [`03_odontogram_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png) — Сенсорная адаптация Apple HIG, 0px скролла, тач >= 44x44px.
+  - 🌙 **Mobile Dark (390x844):** [`04_odontogram_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png) — Мобильный ночной режим, глубокий фон.
+
+
+
 

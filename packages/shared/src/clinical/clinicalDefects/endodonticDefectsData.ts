@@ -9,12 +9,12 @@
  * - Mandate 8e: Doctor Autonomy (1-click preset mapping to ICD-10 K04)
  */
 
-import type { ClinicalDefectPreset, StomxToothDefect } from "./types.js";
+import type { ClinicalDefectPreset, ClinicalToothDefect } from "./types.js";
 
 /**
- * Пульпит зуба (K04.0).
+ * Пульпит зуба (K04.0) — канонический дефект DENTE.
  */
-export const STOMX_DEFECT_PULPITIS: StomxToothDefect = {
+export const CLINICAL_DEFECT_PULPITIS: ClinicalToothDefect = {
 	id: 7,
 	name: "пульпит",
 	alias: "Р",
@@ -27,11 +27,12 @@ export const STOMX_DEFECT_PULPITIS: StomxToothDefect = {
 	category: "pathology",
 	description: "Пульпит зуба (K04.0)",
 };
+export const STOMX_DEFECT_PULPITIS = CLINICAL_DEFECT_PULPITIS;
 
 /**
  * Апикальный периодонтит (K04.4, K04.5).
  */
-export const STOMX_DEFECT_PERIODONTITIS: StomxToothDefect = {
+export const CLINICAL_DEFECT_PERIODONTITIS: ClinicalToothDefect = {
 	id: 8,
 	name: "периодонтит",
 	alias: "Pt",
@@ -44,11 +45,12 @@ export const STOMX_DEFECT_PERIODONTITIS: StomxToothDefect = {
 	category: "pathology",
 	description: "Апикальный периодонтит (K04.4, K04.5)",
 };
+export const STOMX_DEFECT_PERIODONTITIS = CLINICAL_DEFECT_PERIODONTITIS;
 
 /**
  * Разрушенный корень зуба.
  */
-export const STOMX_DEFECT_ROOT: StomxToothDefect = {
+export const CLINICAL_DEFECT_ROOT: ClinicalToothDefect = {
 	id: 9,
 	name: "корень",
 	alias: "R",
@@ -61,11 +63,12 @@ export const STOMX_DEFECT_ROOT: StomxToothDefect = {
 	category: "pathology",
 	description: "Разрушенный корень зуба, подлежащий лечению или удалению",
 };
+export const STOMX_DEFECT_ROOT = CLINICAL_DEFECT_ROOT;
 
 /**
  * Ранее качественно пролеченные корневые каналы.
  */
-export const STOMX_DEFECT_TREATED_CANALS: StomxToothDefect = {
+export const CLINICAL_DEFECT_TREATED_CANALS: ClinicalToothDefect = {
 	id: 90,
 	name: "каналы лечены",
 	alias: "Кл",
@@ -77,11 +80,12 @@ export const STOMX_DEFECT_TREATED_CANALS: StomxToothDefect = {
 	category: "restoration",
 	description: "Ранее качественно обтурированные корневые каналы",
 };
+export const STOMX_DEFECT_TREATED_CANALS = CLINICAL_DEFECT_TREATED_CANALS;
 
 /**
  * Периодонтит / костная деструкция по данным рентгена / КЛКТ.
  */
-export const STOMX_DEFECT_PERIODONTITIS_RADIOLOGY: StomxToothDefect = {
+export const CLINICAL_DEFECT_PERIODONTITIS_RADIOLOGY: ClinicalToothDefect = {
 	id: 18,
 	name: "периодонтит",
 	alias: "Pt",
@@ -94,28 +98,31 @@ export const STOMX_DEFECT_PERIODONTITIS_RADIOLOGY: StomxToothDefect = {
 	category: "radiology",
 	description: "Периодонтит / деструкция кости по данным КЛКТ",
 };
+export const STOMX_DEFECT_PERIODONTITIS_RADIOLOGY = CLINICAL_DEFECT_PERIODONTITIS_RADIOLOGY;
 
 /**
- * Массив эндодонтических дефектов StomX.
+ * Массив эндодонтических дефектов.
  */
-export const STOMX_ENDODONTIC_DEFECTS: readonly StomxToothDefect[] = [
-	STOMX_DEFECT_PULPITIS,
-	STOMX_DEFECT_PERIODONTITIS,
-	STOMX_DEFECT_ROOT,
-	STOMX_DEFECT_TREATED_CANALS,
-	STOMX_DEFECT_PERIODONTITIS_RADIOLOGY,
+export const CLINICAL_ENDODONTIC_DEFECTS: readonly ClinicalToothDefect[] = [
+	CLINICAL_DEFECT_PULPITIS,
+	CLINICAL_DEFECT_PERIODONTITIS,
+	CLINICAL_DEFECT_ROOT,
+	CLINICAL_DEFECT_TREATED_CANALS,
+	CLINICAL_DEFECT_PERIODONTITIS_RADIOLOGY,
 ] as const;
+export const STOMX_ENDODONTIC_DEFECTS = CLINICAL_ENDODONTIC_DEFECTS;
 
 /**
- * Элементы эндодонтии для иерархического дерева дефектов StomX.
+ * Элементы эндодонтии для иерархического дерева дефектов.
  */
-export const STOMX_ENDODONTIC_TREE_ITEMS: readonly StomxToothDefect[] = [
+export const CLINICAL_ENDODONTIC_TREE_ITEMS: readonly ClinicalToothDefect[] = [
 	{ id: 7, name: "пульпит", alias: "Р", color: "red", order: 1040, type: "outpatient", key: "require_treatment", require_treatment: true, crmToothState: "Pulpitis", category: "pathology" },
 	{ id: 8, name: "периодонтит", alias: "Pt", color: "red", order: 1050, type: "outpatient", key: "require_treatment", require_treatment: true, crmToothState: "Periodontitis", category: "pathology" },
 	{ id: 9, name: "корень", alias: "R", color: "red", order: 1060, type: "outpatient", key: "require_treatment", require_treatment: true, crmToothState: "Root", category: "pathology" },
 	{ id: 90, name: "каналы лечены", alias: "Кл", color: "yellow", order: 1155, type: "outpatient", key: "cured_teeth", require_treatment: false, category: "restoration" },
 	{ id: 18, name: "периодонтит", alias: "Pt", color: null, order: 1250, type: "outpatient", key: "rg_klkt", require_treatment: true, crmToothState: "Periodontitis", category: "radiology" },
 ] as const;
+export const STOMX_ENDODONTIC_TREE_ITEMS = CLINICAL_ENDODONTIC_TREE_ITEMS;
 
 /**
  * Клинические пресеты эндодонтических патологий

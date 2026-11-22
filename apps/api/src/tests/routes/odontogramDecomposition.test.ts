@@ -14,7 +14,7 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 	it("1. Public Export Parity: All 8 canonical symbols exported from facade", () => {
 		assert.ok(Array.isArray(CLINICAL_TOOTH_STATE_VALUES));
-		assert.equal(CLINICAL_TOOTH_STATE_VALUES.length, 24);
+		assert.equal(CLINICAL_TOOTH_STATE_VALUES.length, 25);
 		assert.ok(clinicalToothStateSchema);
 		assert.ok(endoCanalMeasurementSchema);
 		assert.ok(endoToothClinicalDataSchema);
@@ -38,7 +38,9 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 		assert.equal(normalizeClinicalToothState("planned_implant"), "Planned_Implant");
 		assert.equal(normalizeClinicalToothState("root"), "Root");
 		assert.equal(normalizeClinicalToothState("retained"), "Retained");
-		assert.equal(normalizeClinicalToothState("extracted"), "Extracted");
+		assert.equal(normalizeClinicalToothState("extracted"), "Missing");
+		assert.equal(normalizeClinicalToothState("mobility"), "Mobility");
+		assert.equal(normalizeClinicalToothState("filling"), "Filled");
 		assert.equal(normalizeClinicalToothState("impacted"), "Impacted");
 		assert.equal(normalizeClinicalToothState("Mobility_II"), "Mobility_II");
 		assert.equal(normalizeClinicalToothState("unknown_junk"), "Healthy");
