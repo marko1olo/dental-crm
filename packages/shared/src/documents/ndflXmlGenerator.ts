@@ -93,6 +93,7 @@ import {
 	normalizePaymentsForTaxCertificate,
 } from "../finance/tax/calculation.js";
 import { resolveTaxDeductionCategoryShared } from "../finance/tax/classification.js";
+import { rublesToKopecks } from "../money.js";
 
 function parseFioParts(fullName: string) {
 	const parts = (fullName || "").trim().split(/\s+/);
@@ -188,11 +189,11 @@ export function mapCertificateParamsToFnsTaxPayload(
 				? p.taxCode
 				: resolveTaxDeductionCategoryShared(p.code804n, p.serviceName)) as "1" | "2",
 			amountRub: p.amountRub,
-			amountKopecks: p.amountKopecks ?? Math.round(p.amountRub * 100),
+			amountKopecks: p.amountKopecks ?? rublesToKopecks(p.amountRub),
 		})),
 		signatory: {
 			signatoryRole: (params.signer?.signerType || "1") as "1" | "2",
-			fullName: parseFioParts(params.signer?.fullName || params.clinic.chiefDoctorName || "Главный врач"),
+			fullName: parseFioParts(params.signer?.fullName || params.clinic.chiefDoctorName || ""),
 		},
 	};
 }
