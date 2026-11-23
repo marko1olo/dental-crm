@@ -12,7 +12,7 @@ import type {
 	ProactiveAlertCardData,
 	WhatsAppApprovalCard,
 } from "./types";
-import { readEventStream } from "./copilotStreamReader";
+import { streamCopilotChat } from "../client/copilotStreamClient";
 import { createStreamEventHandler } from "./copilotStreamEventHandler";
 
 interface UseCopilotStreamParams {
@@ -126,7 +126,6 @@ export function useCopilotStream({
 
 	const streamRequest = useCallback(
 		async (pathStr: string, body: unknown) => {
-			const token = readDenteClinicToken() || readDenteStaffToken() || "";
 			if (abortControllerRef.current) {
 				abortControllerRef.current.abort();
 			}
@@ -134,19 +133,18 @@ export function useCopilotStream({
 			abortControllerRef.current = controller;
 
 			try {
-				const res = await fetch(`${apiBaseUrl}${pathStr}`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-					body: JSON.stringify(body),
+				const raw = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+				const result = await streamCopilotChat({
+					apiBaseUrl,
+					endpoint: pathStr,
+					rawBody: raw,
 					signal: controller.signal,
+					onEvent: handleEvent,
 				});
 
-				if (!res.ok || !res.body) {
+				if (!result.ok) {
 					handleEvent("error", {
-						detail: `HTTP ${res.status}: ${res.statusText}`,
+						detail: result.error || `HTTP ${result.status}: ${result.statusText}`,
 					});
 					showToast(
 						"Сбой соединения со шлюзом ИИ. Нажмите «Повторить» для повторной отправки.",
@@ -161,8 +159,6 @@ export function useCopilotStream({
 					);
 					return;
 				}
-
-				await readEventStream(res.body, handleEvent, controller.signal);
 			} catch (err: unknown) {
 				if ((err as Error).name !== "AbortError") {
 					handleEvent("error", { detail: String(err) });

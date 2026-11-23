@@ -17,6 +17,7 @@ import {
 	evaluateWarehouseOverdraft,
 	rublesToKopecks,
 	kopecksToRubles,
+	parseKopecks,
 	computePayloadHash,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -316,7 +317,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					.limit(1);
 				if (existingInvoice) {
 					linkedInvoiceId = existingInvoice.id;
-					const currentTotalKopecks = BigInt(rublesToKopecks(Number(existingInvoice.totalAmountRub || 0)));
+					const currentTotalKopecks = BigInt(parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0));
 					const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 					const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 					await tx

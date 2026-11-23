@@ -35,7 +35,7 @@ import {
 	validateThreeWayMatching,
 	type PurchaseOrderRecord,
 	type SupplierInvoiceInput,
-} from "../purchaseOrdersEngine.js";
+} from "../../warehouse/purchaseOrderEngine.js";
 
 // Import from inventory index to ensure architectural re-export integrity
 import * as inventoryExports from "../index.js";

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import type { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
 import {
@@ -30,6 +30,11 @@ export interface MaterialDeductionResult {
 	warning?: string | undefined;
 }
 
+/**
+ * @deprecated Mandate 8v (Soft Negative Stock & Doctor Autonomy):
+ * Clinical inventory natively supports soft overdraft (quantity < 0, isOverdraft: true).
+ * Treatment procedures and chairside care are never blocked by warehouse shortages.
+ */
 export class InsufficientStockError extends Error {
 	readonly statusCode = 400;
 	readonly error = "InsufficientStock";
@@ -95,7 +100,7 @@ export async function deductMaterialsForVisit(
 		items: directItems,
 	} = params;
 
-	// 1. Выбираем только незавершённые позиции лечения приёма (защита от повторного списания)
+	// 1. Выбираем только незавершённые (и не отменённые) позиции лечения приёма (защита от повторного списания и утечки отмен)
 	const uncompletedItems = await tx
 		.select()
 		.from(treatmentItems)
@@ -104,6 +109,7 @@ export async function deductMaterialsForVisit(
 				eq(treatmentItems.visitId, visitId),
 				eq(treatmentItems.organizationId, organizationId),
 				ne(treatmentItems.status, "completed"),
+				ne(treatmentItems.status, "cancelled"),
 			),
 		);
 
@@ -168,7 +174,7 @@ export async function deductMaterialsForVisit(
 		};
 	}
 
-	// Помечаем все позиции лечения приёма как completed
+	// Помечаем все неотменённые позиции лечения приёма как completed
 	await tx
 		.update(treatmentItems)
 		.set({ status: "completed" })
@@ -176,6 +182,7 @@ export async function deductMaterialsForVisit(
 			and(
 				eq(treatmentItems.visitId, visitId),
 				eq(treatmentItems.organizationId, organizationId),
+				ne(treatmentItems.status, "cancelled"),
 			),
 		);
 
@@ -237,6 +244,7 @@ export async function deductMaterialsForVisit(
 					eq(inventoryItems.organizationId, organizationId),
 				),
 			)
+			.orderBy(asc(inventoryItems.id))
 			.for("update");
 
 		const inventoryMap = new Map(

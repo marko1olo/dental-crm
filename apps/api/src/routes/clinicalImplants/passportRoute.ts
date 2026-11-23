@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -110,68 +109,21 @@ export function registerPassportRoute(app: FastifyInstance) {
 		const baseSite = org?.website?.trim().replace(/\/$/, "") || "https://dente.clinic";
 		const qrVerificationUrl = `${baseSite}/#/portal/warranty?cert=${canonicalPassportId}`;
 
-		// Сквозная регистрация в гарантийном реестре клиники без 404 (СтАР / Закон РФ № 2300-1)
-		const expDate = new Date(installation.installedAt.getTime());
-		expDate.setFullYear(expDate.getFullYear() + 10);
-		const recallDate = new Date(installation.installedAt.getTime() + 180 * 24 * 60 * 60 * 1000);
-		const integritySha256 = createHash("sha256")
-			.update(
-				JSON.stringify({
-					orgId,
-					patientId: installation.patientId,
-					canonicalPassportId,
-					brand: installation.implantBrand,
-					lot: installation.lotNumber,
-					sn: installation.serialNumber,
-					installedAt: installation.installedAt,
-				}),
+		// Безопасное чтение гарантийного сертификата из реестра клиники (GET-запрос без побочных эффектов записи)
+		const [certificate] = await db
+			.select()
+			.from(warrantyCertificates)
+			.where(
+				and(
+					eq(warrantyCertificates.certificateNumber, canonicalPassportId),
+					eq(warrantyCertificates.organizationId, orgId),
+				),
 			)
-			.digest("hex");
+			.limit(1);
 
-		const implantItemsPayload = [
-			{
-				toothNumber: String(installation.toothNumberFdi),
-				clinicalWorkTitle: `Дентальный имплантат ${installation.implantBrand} Ø${installation.implantDiameterMm}×${installation.implantLengthMm} мм`,
-				materialName: "Медицинский титан Grade 4 / Roxolid",
-				manufacturer: installation.implantBrand,
-				vitaShade: "—",
-				lotNumber: installation.lotNumber || "б/н",
-				serviceCode804n: "A16.07.054",
-			},
-		];
-
-		await db
-			.insert(warrantyCertificates)
-			.values({
-				organizationId: orgId,
-				patientId: installation.patientId,
-				visitId: installation.visitId || null,
-				certificateNumber: canonicalPassportId,
-				status: "active",
-				itemsJson: implantItemsPayload,
-				warrantyMonths: 120,
-				serviceLifeMonths: 240,
-				issuedAt: installation.installedAt,
-				expiresAt: expDate,
-				nextRecallDate: recallDate,
-				integritySha256,
-				notes: `Гарантийный паспорт имплантата ${canonicalPassportId} (${installation.implantBrand} #${installation.toothNumberFdi}).`,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			})
-			.onConflictDoUpdate({
-				target: warrantyCertificates.certificateNumber,
-				set: {
-					status: "active",
-					itemsJson: implantItemsPayload,
-					warrantyMonths: 120,
-					serviceLifeMonths: 240,
-					expiresAt: expDate,
-					nextRecallDate: recallDate,
-					integritySha256,
-					updatedAt: new Date(),
-				},
-			});
+		const adminProf = patient?.administrativeProfile as Record<string, unknown> | null;
+		const rawCardNumber = typeof adminProf?.cardNumber === "string" ? adminProf.cardNumber.trim() : "";
+		const patientCardNumber = rawCardNumber || (patient?.id ? `ЭМК-${patient.id.slice(0, 8).toUpperCase()}` : "CARD-01");
 
 		const passportData = {
 			passportId: canonicalPassportId,
@@ -199,10 +151,11 @@ export function registerPassportRoute(app: FastifyInstance) {
 			surgicalGuideTemplateId: installation.surgicalGuideTemplateId ?? null,
 			clinicName: org?.name ?? "Стоматологическая клиника DENTE",
 			patientName: patient?.fullName ?? "Пациент",
-			patientCardNumber: patient?.id?.slice(0, 8) ?? "CARD-01",
+			patientCardNumber,
 			doctorName,
 			qrVerificationUrl,
 			isqHistory,
+			warrantyCertificate: certificate ?? null,
 			financials: financialsObj,
 			deductedMaterials,
 			notes:

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
 	ImplantStabilityCalculator,
 	createImplantInstallationSchema,
@@ -13,6 +14,7 @@ import {
 	patientImplantInstallations,
 	patients,
 	visits,
+	warrantyCertificates,
 } from "../../db/schema.js";
 import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -284,6 +286,70 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						isBiologicalDipDetected: false,
 					});
 				}
+
+				// Сквозная регистрация в гарантийном реестре клиники при установке имплантата (ACID-транзакция, Мандаты 8bo, 8e)
+				const canonicalPassportId = `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`;
+				const expDate = new Date(installation.installedAt.getTime());
+				expDate.setFullYear(expDate.getFullYear() + 10);
+				const recallDate = new Date(installation.installedAt.getTime() + 180 * 24 * 60 * 60 * 1000);
+				const integritySha256 = createHash("sha256")
+					.update(
+						JSON.stringify({
+							orgId,
+							patientId: installation.patientId,
+							canonicalPassportId,
+							brand: installation.implantBrand,
+							lot: installation.lotNumber,
+							sn: installation.serialNumber,
+							installedAt: installation.installedAt,
+						}),
+					)
+					.digest("hex");
+
+				const implantItemsPayload = [
+					{
+						toothNumber: String(installation.toothNumberFdi),
+						clinicalWorkTitle: `Дентальный имплантат ${installation.implantBrand} Ø${installation.implantDiameterMm}×${installation.implantLengthMm} мм`,
+						materialName: "Медицинский титан Grade 4 / Roxolid",
+						manufacturer: installation.implantBrand,
+						vitaShade: "—",
+						lotNumber: installation.lotNumber || "б/н",
+						serviceCode804n: "A16.07.054",
+					},
+				];
+
+				await tx
+					.insert(warrantyCertificates)
+					.values({
+						organizationId: orgId,
+						patientId: installation.patientId,
+						visitId: installation.visitId || null,
+						certificateNumber: canonicalPassportId,
+						status: "active",
+						itemsJson: implantItemsPayload,
+						warrantyMonths: 120,
+						serviceLifeMonths: 240,
+						issuedAt: installation.installedAt,
+						expiresAt: expDate,
+						nextRecallDate: recallDate,
+						integritySha256,
+						notes: `Гарантийный паспорт имплантата ${canonicalPassportId} (${installation.implantBrand} #${installation.toothNumberFdi}).`,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					})
+					.onConflictDoUpdate({
+						target: warrantyCertificates.certificateNumber,
+						set: {
+							status: "active",
+							itemsJson: implantItemsPayload,
+							warrantyMonths: 120,
+							serviceLifeMonths: 240,
+							expiresAt: expDate,
+							nextRecallDate: recallDate,
+							integritySha256,
+							updatedAt: new Date(),
+						},
+					});
 
 				const deductionSummary = {
 					transactionId: screw.implantTx?.id ?? "",

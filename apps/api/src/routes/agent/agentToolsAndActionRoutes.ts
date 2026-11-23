@@ -14,6 +14,7 @@ import {
 	type DentalToolContext,
 } from "../../ai/dentalTools.js";
 import { defaultCopilotActionManager } from "../../ai/copilotActionManager.js";
+import { ensureValidUuid } from "../../ai/session/copilotSessionTypes.js";
 import { resolveRuntimeMode } from "./agentChatRoutes.js";
 
 export async function registerAgentToolsAndActionRoutes(
@@ -85,7 +86,7 @@ export async function registerAgentToolsAndActionRoutes(
 					visitId?: string;
 				};
 
-				const sessionId = body.sessionId ?? "default-session";
+				const sessionId = ensureValidUuid(body.sessionId);
 				const runtimeMode = resolveRuntimeMode(request, body.runtimeMode);
 				const directToolName = body.toolName || body.tool;
 

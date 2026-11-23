@@ -4,7 +4,7 @@
  * Sweet Spot: ~70 lines.
  */
 
-import { randomUUID } from "node:crypto";
+import { generateUuidV7 } from "@dental/shared";
 
 export type CopilotRole = "user" | "assistant" | "system" | "tool";
 
@@ -50,12 +50,12 @@ export const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Normalizes input sessionId into a valid RFC 4122 UUID.
- * If input is already a valid UUID, returns it. Otherwise returns a new random UUID.
+ * Normalizes input sessionId into a valid RFC 4122/9562 UUID.
+ * If input is already a valid UUID, returns it. Otherwise returns a new monotonic UUIDv7.
  */
 export function ensureValidUuid(id?: string): string {
 	if (id && UUID_REGEX.test(id)) {
 		return id.toLowerCase();
 	}
-	return randomUUID();
+	return generateUuidV7();
 }

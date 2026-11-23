@@ -10,6 +10,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	procedureTechCardItems,
@@ -45,28 +46,30 @@ export async function registerTechCardNormHandlers(
 		);
 		if (!orgId) return;
 
-		const mappings = await db
-			.select({
-				id: treatmentConsumables.id,
-				organizationId: treatmentConsumables.organizationId,
-				catalogItemCode: treatmentConsumables.catalogItemCode,
-				inventoryItemId: treatmentConsumables.inventoryItemId,
-				quantity: treatmentConsumables.quantity,
-				note: treatmentConsumables.note,
-				createdAt: treatmentConsumables.createdAt,
-				updatedAt: treatmentConsumables.updatedAt,
-				itemName: inventoryItems.name,
-				itemCategory: inventoryItems.category,
-				unit: inventoryItems.unit,
-				currentStock: inventoryItems.currentQty,
-				unitCostRub: inventoryItems.unitCostRub,
-			})
-			.from(treatmentConsumables)
-			.leftJoin(
-				inventoryItems,
-				eq(treatmentConsumables.inventoryItemId, inventoryItems.id),
-			)
-			.where(eq(treatmentConsumables.organizationId, orgId));
+		const mappings = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select({
+					id: treatmentConsumables.id,
+					organizationId: treatmentConsumables.organizationId,
+					catalogItemCode: treatmentConsumables.catalogItemCode,
+					inventoryItemId: treatmentConsumables.inventoryItemId,
+					quantity: treatmentConsumables.quantity,
+					note: treatmentConsumables.note,
+					createdAt: treatmentConsumables.createdAt,
+					updatedAt: treatmentConsumables.updatedAt,
+					itemName: inventoryItems.name,
+					itemCategory: inventoryItems.category,
+					unit: inventoryItems.unit,
+					currentStock: inventoryItems.currentQty,
+					unitCostRub: inventoryItems.unitCostRub,
+				})
+				.from(treatmentConsumables)
+				.leftJoin(
+					inventoryItems,
+					eq(treatmentConsumables.inventoryItemId, inventoryItems.id),
+				)
+				.where(eq(treatmentConsumables.organizationId, orgId));
+		});
 
 		return mappings;
 	});
@@ -89,7 +92,7 @@ export async function registerTechCardNormHandlers(
 		}
 
 		const body = parsed.data;
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(orgId, async (tx) => {
 			const [link] = await tx
 				.insert(treatmentConsumables)
 				.values({
@@ -216,7 +219,7 @@ export async function registerTechCardNormHandlers(
 		if (!orgId) return;
 
 		const { id } = request.params;
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(orgId, async (tx) => {
 			const [toDelete] = await tx
 				.select()
 				.from(treatmentConsumables)
@@ -317,11 +320,13 @@ export async function registerTechCardNormHandlers(
 		const parsedQuery = listLinksQuerySchema.safeParse(request.query ?? {});
 		const query = parsedQuery.success ? parsedQuery.data : {};
 
-		const result = await TreatmentConsumablesService.listLinks(
-			db,
-			organizationId,
-			query,
-		);
+		const result = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.listLinks(
+				tx,
+				organizationId,
+				query,
+			);
+		});
 		return result;
 	});
 
@@ -341,11 +346,13 @@ export async function registerTechCardNormHandlers(
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const link = await TreatmentConsumablesService.getLink(
-			db,
-			organizationId,
-			linkId,
-		);
+		const link = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.getLink(
+				tx,
+				organizationId,
+				linkId,
+			);
+		});
 		if (!link) {
 			return reply.status(404).send({
 				error: "LinkNotFound",
@@ -386,11 +393,13 @@ export async function registerTechCardNormHandlers(
 		}
 
 		try {
-			const link = await TreatmentConsumablesService.createLink(
-				db,
-				organizationId,
-				parsedBody.data,
-			);
+			const link = await withTenantCtx(organizationId, async (tx) => {
+				return TreatmentConsumablesService.createLink(
+					tx,
+					organizationId,
+					parsedBody.data,
+				);
+			});
 			return reply.status(201).send(link);
 		} catch (err) {
 			if (err instanceof TreatmentConsumablesServiceError) {
@@ -432,12 +441,14 @@ export async function registerTechCardNormHandlers(
 		}
 
 		try {
-			const link = await TreatmentConsumablesService.updateLink(
-				db,
-				organizationId,
-				linkId,
-				parsedBody.data,
-			);
+			const link = await withTenantCtx(organizationId, async (tx) => {
+				return TreatmentConsumablesService.updateLink(
+					tx,
+					organizationId,
+					linkId,
+					parsedBody.data,
+				);
+			});
 			return link;
 		} catch (err) {
 			if (err instanceof TreatmentConsumablesServiceError) {
@@ -467,11 +478,13 @@ export async function registerTechCardNormHandlers(
 		}
 
 		try {
-			const result = await TreatmentConsumablesService.deleteLink(
-				db,
-				organizationId,
-				linkId,
-			);
+			const result = await withTenantCtx(organizationId, async (tx) => {
+				return TreatmentConsumablesService.deleteLink(
+					tx,
+					organizationId,
+					linkId,
+				);
+			});
 			return result;
 		} catch (err) {
 			if (err instanceof TreatmentConsumablesServiceError) {
@@ -501,11 +514,13 @@ export async function registerTechCardNormHandlers(
 		}
 
 		try {
-			const recipe = await TreatmentConsumablesService.getRecipeForService(
-				db,
-				organizationId,
-				serviceId,
-			);
+			const recipe = await withTenantCtx(organizationId, async (tx) => {
+				return TreatmentConsumablesService.getRecipeForService(
+					tx,
+					organizationId,
+					serviceId,
+				);
+			});
 			return recipe;
 		} catch (err) {
 			if (err instanceof TreatmentConsumablesServiceError) {
@@ -539,12 +554,14 @@ export async function registerTechCardNormHandlers(
 		const q = parsedQuery.success ? parsedQuery.data.q : undefined;
 		const limit = parsedQuery.success ? parsedQuery.data.limit : 30;
 
-		const options = await TreatmentConsumablesService.getLinkOptions(
-			db,
-			organizationId,
-			q,
-			limit,
-		);
+		const options = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.getLinkOptions(
+				tx,
+				organizationId,
+				q,
+				limit,
+			);
+		});
 		return options;
 	});
 }

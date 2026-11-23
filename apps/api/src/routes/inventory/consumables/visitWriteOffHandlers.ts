@@ -13,10 +13,6 @@ import { withTenantCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
-	buildSoftOverdraftResponse,
-	isInsufficientStockError,
-} from "./consumableFefoAllocator.js";
-import {
 	alertsQuerySchema,
 	emergencyWriteoffSchema,
 	stockAvailabilityCheckRequestSchema,
@@ -92,50 +88,41 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
-		try {
-			const result = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.deductForVisit(tx, {
-					organizationId,
-					visitId: parsedBody.data.visitId,
-					clientMutationId:
-						parsedBody.data.clientMutationId ??
-						(request.headers["idempotency-key"] as string | undefined) ??
-						null,
-					...(parsedBody.data.userId !== undefined
-						? { userId: parsedBody.data.userId }
-						: { userId: getRequestIdentity(request).userId }),
-					...(parsedBody.data.transactionType !== undefined
-						? { transactionType: parsedBody.data.transactionType }
-						: {}),
-					...(parsedBody.data.services !== undefined
-						? { services: parsedBody.data.services }
-						: {}),
-					...(parsedBody.data.items !== undefined
-						? { items: parsedBody.data.items }
-						: {}),
-					...(parsedBody.data.carpulesCount !== undefined
-						? { carpulesCount: parsedBody.data.carpulesCount }
-						: {}),
-					...(parsedBody.data.drugName !== undefined
-						? { drugName: parsedBody.data.drugName }
-						: {}),
-					...(parsedBody.data.paperJournalAcknowledged !== undefined
-						? { paperJournalAcknowledged: parsedBody.data.paperJournalAcknowledged }
-						: {}),
-					...(parsedBody.data.allowOverdraft !== undefined
-						? { allowOverdraft: parsedBody.data.allowOverdraft }
-						: {}),
-				});
+		const result = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.deductForVisit(tx, {
+				organizationId,
+				visitId: parsedBody.data.visitId,
+				clientMutationId:
+					parsedBody.data.clientMutationId ??
+					(request.headers["idempotency-key"] as string | undefined) ??
+					null,
+				...(parsedBody.data.userId !== undefined
+					? { userId: parsedBody.data.userId }
+					: { userId: getRequestIdentity(request).userId }),
+				...(parsedBody.data.transactionType !== undefined
+					? { transactionType: parsedBody.data.transactionType }
+					: {}),
+				...(parsedBody.data.services !== undefined
+					? { services: parsedBody.data.services }
+					: {}),
+				...(parsedBody.data.items !== undefined
+					? { items: parsedBody.data.items }
+					: {}),
+				...(parsedBody.data.carpulesCount !== undefined
+					? { carpulesCount: parsedBody.data.carpulesCount }
+					: {}),
+				...(parsedBody.data.drugName !== undefined
+					? { drugName: parsedBody.data.drugName }
+					: {}),
+				...(parsedBody.data.paperJournalAcknowledged !== undefined
+					? { paperJournalAcknowledged: parsedBody.data.paperJournalAcknowledged }
+					: {}),
+				...(parsedBody.data.allowOverdraft !== undefined
+					? { allowOverdraft: parsedBody.data.allowOverdraft }
+					: {}),
 			});
-			return result;
-		} catch (err: unknown) {
-			if (isInsufficientStockError(err)) {
-				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
-				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
-				return reply.status(200).send(buildSoftOverdraftResponse(err, "visit"));
-			}
-			throw err;
-		}
+		});
+		return result;
 	});
 
 	// POST /:organizationId/check-availability — Pre-flight check stock sufficiency
@@ -251,26 +238,17 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
-		try {
-			const result = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.deductManualItems(tx, {
-					organizationId,
-					items: parsedBody.data.items,
-					visitId: parsedBody.data.visitId,
-					userId: parsedBody.data.userId ?? getRequestIdentity(request).userId,
-					notes: parsedBody.data.notes,
-					allowOverdraft: true,
-				});
+		const result = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.deductManualItems(tx, {
+				organizationId,
+				items: parsedBody.data.items,
+				visitId: parsedBody.data.visitId,
+				userId: parsedBody.data.userId ?? getRequestIdentity(request).userId,
+				notes: parsedBody.data.notes,
+				allowOverdraft: true,
 			});
-			return result;
-		} catch (err: unknown) {
-			if (isInsufficientStockError(err)) {
-				return reply
-					.status(200)
-					.send(buildSoftOverdraftResponse(err, "emergency_writeoff"));
-			}
-			throw err;
-		}
+		});
+		return result;
 	});
 
 	// =========================================================================

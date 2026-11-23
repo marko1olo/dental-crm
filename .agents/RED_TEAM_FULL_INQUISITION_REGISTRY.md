@@ -7065,3 +7065,46 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light (390x844): [`03_odontogram_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png) — Сенсорная адаптация Apple HIG, 0px скролла, тач >= 44x44px.
   - 🌙 Mobile Dark (390x844): [`04_odontogram_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png) — Мобильный ночной режим, глубокий фон.
 
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 46 — ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ, СТАБИЛЬНОСТЬ ISQ OSSTELL, ГАРАНТИЙНЫЕ ПАСПОРТА И ХИРУРГИЧЕСКИЙ БИЛЛИНГ [FIXER-IMPLANTS-02: DOMAIN 46] (МАНДАТЫ 8bm, 8e, 8bf, 8v, 8ar, 8az, 8bo, 8an)
+- Дата и статус: 2026-11-23 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Ведущий Инженер-Хирург и Red Team Архитектор Домена 46 (Fixer-Implants-02).
+- Канонический SSOT:
+  - Хирургия и паспорта имплантатов: [`apps/api/src/routes/clinicalImplants/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinicalImplants/) и [`apps/api/src/routes/surgery/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/surgery/).
+  - Единый каталог имплантационных систем: [`packages/shared/src/clinical/implants/catalog.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/implants/catalog.ts).
+  - Типы и DTO хирургии: [`packages/shared/src/types/surgery.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/types/surgery.ts).
+  - Копеечный биллинг и целочисленная касса: [`packages/shared/src/money.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/money.ts).
+  - UI паспорта имплантата: [`apps/web/src/components/implants/ImplantPassportCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/implants/ImplantPassportCard.tsx).
+- Хирургические исправления и ликвидация дефектов:
+  1. **[ДЕФЕКТ 1.1] [SEV-1] Искоренение скрытой мутации БД в GET-эндпоинте паспорта (`passportRoute.ts:143-174`):**
+     - Ликвидирован `insert into warrantyCertificates ... onConflictDoUpdate` из GET-эндпоинта `/api/clinical/implants/:installationId/passport`. Эндпоинт переведен в 100% безопасный `db.select()`.
+     - Создание гарантийного сертификата со сроком 120 месяцев и контрольным SHA-256 хешем целостности перенесено в единую атомарную ACID-транзакцию регистрации установки имплантата (`apps/api/src/routes/clinicalImplants/installationRoute.ts`).
+  2. **[ДЕФЕКТ 1.2] [SEV-1] Устранение фальсификации клинических замеров стабильности ISQ (`isqRoute.ts:80-84`):**
+     - Полностью ликвидирован скрытый хардкод `isqMean != null ? String(isqMean) : "70"`, предотвращен риск ошибочной немедленной нагрузки (Immediate Loading) и отторжения имплантатов.
+     - Внедрен строгий гейт: при отсутствии реальных замеров Osstell RFA возвращается HTTP 400 (`IsqMeasurementValidationError: Невозможно рассчитать среднее значение ISQ: отсутствуют валидные клинические замеры стабильности Osstell RFA`).
+     - В базу данных пишется строго математически рассчитанное среднее значение `isqMean: String(isqMean)`.
+  3. **[ДЕФЕКТ 1.3] [SEV-1] Синхронизация копеечных полей инвойса и позиций счета (Мандат 8bm):**
+     - В `installationBillingAndOdontogram.ts` и `apps/api/src/routes/surgery/index.ts` устранены рублевые искажения: расчет сумм счета переведен на `parseKopecks` и `kopecksToRubles` из `@dental/shared/src/money.ts`.
+     - При установке имплантата в позиции `invoiceItems` записываются строгие `unitPriceKopecks` и `totalPriceKopecks` в копейках, а в `treatmentItems` — `priceKopecks` и `unitPriceKopecks` (`bigint`), синхронизируя начисления со сплит-платежами и кассой 54-ФЗ.
+  4. **[ДЕФЕКТ 2.1] [SEV-2] Внедрение индикатора стабильности ISQ Osstell в UI паспорта имплантата (`ImplantPassportCard.tsx`):**
+     - В паспорт добавлен клинический блок `ISQ Osstell Stability Index` с графической шкалой 1–100, динамической цветовой индикацией (<60 красный `var(--danger)`, 60–69 желтый `var(--warning)`, >=70 зеленый `var(--success)`), бейджем статуса стабильности и рекомендацией по нагрузке.
+  5. **[ДЕФЕКТ 2.2] [SEV-2] Ликвидация позорных заглушек в пресетах (`implantQuickPresets.ts:266-267`):**
+     - Заменены строки `"LOT-РУЧНОЙ-ВВОД"` и `"SN-РУЧНОЙ-ВВОД"` на канонический бланк `«________»` для наклейки оригинального стикера из стерильного блистера.
+  6. **[ДЕФЕКТ 2.3] [SEV-2] Честный номер амбулаторной карты в паспорте имплантата (`passportRoute.ts:202`):**
+     - Заменен срез `patient.id.slice(0, 8)` на реальный номер карты пациента `patient.administrativeProfile?.cardNumber` с фоллбэком `ЭМК-...`.
+  7. **[ДЕФЕКТ 3.1 & 4.1] [SEV-2] Соблюдение дизайн-токенов Мандата 8am и паритет SSOT:**
+     - В `ImplantPassportCard.tsx:59` инлайн `fill="#ffffff"` заменен на токен `fill="var(--paper)"`.
+     - Подтвержден единый SSOT каталог `packages/shared/src/clinical/implants/catalog.ts` и соответствие Apple HIG (сенсорные кнопки $\ge 44\times 44$px).
+- Машинные гейты (100% Exit Code 0):
+  - `npm run check:diff` -> Exit Code 0 (DIFF SAFETY PASSED, 0 костылей, 0 any, 0 float).
+  - `npm run check:encoding` -> Exit Code 0 (19 990 файлов проверено, UTF-8 без BOM).
+  - `npx tsc -p apps/api/tsconfig.json --noEmit` -> Exit Code 0 (0 ошибок в clinicalImplants и surgery).
+  - `npx tsc -p apps/web/tsconfig.json --noEmit` -> Exit Code 0 (0 ошибок в компонентах implants).
+  - Тесты:
+    - `apps/api/src/tests/routes/implantGuidedSurgeryAndPassportRedTeam.test.ts` -> 4/4 PASS (Exit Code 0).
+    - `apps/api/src/tests/routes/surgeryRoutes.test.ts` -> 11/11 PASS (Exit Code 0).
+    - `apps/web/src/components/implants/__tests__/implantTorqueSpecs.test.ts` -> 5/5 PASS (Exit Code 0).
+    - `apps/web/src/components/implants/__tests__/implantologySSOTSuite.test.tsx` -> 8/8 PASS (Exit Code 0).
+
+

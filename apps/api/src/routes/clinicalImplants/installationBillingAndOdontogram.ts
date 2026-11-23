@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks } from "@dental/shared";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
@@ -90,7 +90,7 @@ export async function linkBillingAndOdontogram(
 
 		if (existingInvoice) {
 			linkedInvoiceId = existingInvoice.id;
-			const currentTotalKopecks = BigInt(rublesToKopecks(Number(existingInvoice.totalAmountRub || 0)));
+			const currentTotalKopecks = BigInt(parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0));
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -123,7 +123,7 @@ export async function linkBillingAndOdontogram(
 
 		if (existing) {
 			linkedInvoiceId = existing.id;
-			const currentTotalKopecks = BigInt(rublesToKopecks(Number(existing.totalAmountRub || 0)));
+			const currentTotalKopecks = BigInt(parseKopecks(existing.totalAmountRub ?? existing.totalRub ?? 0));
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -184,6 +184,8 @@ export async function linkBillingAndOdontogram(
 		title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
 		priceRub: kopecksToRubles(operationPriceKopecks),
 		unitPriceRub: kopecksToRubles(operationPriceKopecks),
+		priceKopecks: operationPriceKopecks,
+		unitPriceKopecks: operationPriceKopecks,
 		quantity: "1",
 		status: "completed",
 		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см.${isqMean !== null ? ` ISQ: ${Math.round(isqMean)}.` : ""}`,
@@ -192,6 +194,7 @@ export async function linkBillingAndOdontogram(
 	const financialSummary = {
 		operationPriceRub,
 		operationPriceKopecks: operationPriceKopecks.toString(),
+		amountKopecks: operationPriceKopecks.toString(),
 		totalAmountRub: operationPriceRub,
 		totalAmountKopecks: operationPriceKopecks.toString(),
 		implantCostRub: implantCost,

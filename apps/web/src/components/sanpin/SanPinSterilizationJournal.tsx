@@ -22,6 +22,7 @@ import {
 	type SanPinCycleEntry, type SanPinJournalPeriod, type SanPinSterilizationJournalProps,
 } from "./journalModules";
 import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
+import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
@@ -346,9 +347,6 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 						>
 							<CheckCircle2 size={16} className="text-white" />
 							<span>{isBatchSubmitting ? "Проведение смены..." : "Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)"}</span>
-							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
-							<span className="sr-only">Провести цикл стерилизации</span>
-							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>
 					</div>
 				</div>
@@ -356,29 +354,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 
 			{/* ВКЛАДКА 3: ОБОРУДОВАНИЕ И АВТОКЛАВЫ */}
 			{activeTab === "equipment" && (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-					<div className="rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#1e293b)] p-4 flex flex-col gap-2.5 shadow-2xs">
-						<div className="flex items-center justify-between"><span className="font-bold text-sm text-[var(--ink,#1e293b)]">АК-01 • Melag Vacuklav 23 B+</span><span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">Годен к работе</span></div>
-						<p className="text-xs text-[var(--muted,#64748b)] m-0">Паровой фракционный автоклав Класс B • 22 л (ЦСО №1)</p>
-						<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] text-xs space-y-1">
-							<div className="flex justify-between"><span>Серийный номер:</span><strong className="text-[var(--ink,#1e293b)] font-mono">SN-MV23B-4081</strong></div>
-							<div className="flex justify-between"><span>Поверка манометров:</span><strong className="text-emerald-700 dark:text-emerald-400">До 12.2027</strong></div>
-							<div className="flex justify-between"><span>Плановое ТО:</span><strong className="text-[var(--ink,#1e293b)]">Пройдено (05.2027)</strong></div>
-							<div className="flex justify-between"><span>Bowie-Dick тест:</span><strong className="text-emerald-700 dark:text-emerald-400">Пройден</strong></div>
-						</div>
-					</div>
-
-					<div className="rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#1e293b)] p-4 flex flex-col gap-2.5 shadow-2xs">
-						<div className="flex items-center justify-between"><span className="font-bold text-sm text-[var(--ink,#1e293b)]">АК-02 • W&H Lina 17</span><span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">Годен к работе</span></div>
-						<p className="text-xs text-[var(--muted,#64748b)] m-0">Паровой автоклав Класс B • 17 л (ЦСО №2)</p>
-						<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] text-xs space-y-1">
-							<div className="flex justify-between"><span>Серийный номер:</span><strong className="text-[var(--ink,#1e293b)] font-mono">SN-WHL17-1904</strong></div>
-							<div className="flex justify-between"><span>Поверка манометров:</span><strong className="text-emerald-700 dark:text-emerald-400">До 09.2027</strong></div>
-							<div className="flex justify-between"><span>Плановое ТО:</span><strong className="text-[var(--ink,#1e293b)]">Пройдено (08.2027)</strong></div>
-							<div className="flex justify-between"><span>Вакуум-тест:</span><strong className="text-emerald-700 dark:text-emerald-400">Пройден</strong></div>
-						</div>
-					</div>
-				</div>
+				<SterilizerFleetManager />
 			)}
 
 			{/* Floating Bottom Bar (Natural Thumb Zone для смартфонов, Мандат 8am: 1 Primary CTA) */}

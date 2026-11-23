@@ -14,14 +14,7 @@ import type {
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 import { showToast } from "../../../GlobalToast";
 import { useCopilotStore } from "../../../../store/copilotStore";
-import { readEventStream } from "../../useCopilotModules/copilotStreamReader";
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function toCleanUuid(val?: string | null): string | undefined {
-  if (!val) return undefined;
-  const trimmed = val.trim();
-  return UUID_REGEX.test(trimmed) ? trimmed : undefined;
-}
+import { streamCopilotChat, toCleanUuid } from "../../client/copilotStreamClient";
 
 const TOOTH_STATE_LABELS: Record<string, string> = {
   caries: "Кариес",
@@ -57,37 +50,6 @@ export async function requestAgentSseStream(
   const effectiveMaskPhi = params.maskPhiData ?? useCopilotStore.getState().settings.maskPhiData ?? true;
 
   try {
-    const sseHeaders: Record<string, string> = {
-      ...headers,
-      Accept: "text/event-stream",
-    };
-
-    const cleanPatientId = toCleanUuid(patientId);
-    const cleanVisitId = toCleanUuid(visitId);
-
-    const sseBody = {
-      messages: [{ role: "user", content: promptText }],
-      patientId: cleanPatientId,
-      activeVisitId: cleanVisitId,
-      activeTooth: activeTooth ?? undefined,
-      patientAllergies: params.patientAllergies && params.patientAllergies.length > 0 ? [...params.patientAllergies] : undefined,
-      allergies: params.patientAllergies && params.patientAllergies.length > 0 ? [...params.patientAllergies] : undefined,
-      somaticHistory: params.somaticHistory,
-      stream: true,
-      trustLevel: trustLevel || "balanced",
-      maskPhiData: effectiveMaskPhi,
-    };
-
-    const res = await fetch("/api/agent/chat", {
-      method: "POST",
-      headers: sseHeaders,
-      body: JSON.stringify(sseBody),
-    });
-
-    if (!res.ok || !res.body) {
-      return null;
-    }
-
     let accumulatedThought = "";
     let finalVerdict = "";
     const thoughts: ChairsideThoughtStep[] = [];
@@ -184,8 +146,23 @@ export async function requestAgentSseStream(
       }
     };
 
-    // Canonical unified stream reader (Mandate 8bf: SSOT SSE Parser)
-    await readEventStream(res.body, (event, data) => processEvent(event, data));
+    // Canonical SSOT Copilot Stream Client (Mandates: 8bf, 8e)
+    const streamResult = await streamCopilotChat({
+      messages: [{ role: "user", content: promptText }],
+      patientId,
+      activeVisitId: visitId,
+      activeTooth,
+      patientAllergies: params.patientAllergies,
+      somaticHistory: params.somaticHistory,
+      trustLevel: trustLevel || "balanced",
+      maskPhiData: effectiveMaskPhi,
+      headers,
+      onEvent: (event, data) => processEvent(event, data),
+    });
+
+    if (!streamResult.ok) {
+      return null;
+    }
 
     for (const t of thoughts) {
       if (t.status === "running") {

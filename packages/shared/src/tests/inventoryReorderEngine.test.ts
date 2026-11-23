@@ -22,7 +22,7 @@ import {
 	calculateSuggestedQuantity,
 	computeReorderSuggestion,
 	computeReorderSuggestions,
-} from "../inventory/reorderEngine.js";
+} from "../warehouse/inventoryReorderEngine.js";
 
 describe("Predictive Reorder Engine (DentalPin specification parity)", () => {
 	describe("1. Daily Usage Calculation", () => {

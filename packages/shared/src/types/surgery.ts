@@ -144,6 +144,8 @@ export interface FastImplantPassportData {
 	readonly lengthMm: number;
 	readonly torqueNcm: number;
 	readonly isqDay0?: number | undefined;
+	readonly baselineIsq?: number | undefined;
+	readonly isqMean?: number | undefined;
 	readonly boneDensity: MischBoneDensity;
 	readonly capType?: ImplantCapKind | undefined;
 	readonly lotNumber?: string | undefined;

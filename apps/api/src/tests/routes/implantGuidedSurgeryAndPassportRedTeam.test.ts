@@ -17,6 +17,7 @@ import {
 	treatmentItems,
 	users,
 	visits,
+	warrantyCertificates,
 } from "../../db/schema.js";
 import { registerClinicalImplantRoutes } from "../../routes/clinicalImplants/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -56,6 +57,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			// Очистка предыдущего состояния фикстуры
+			await tx.delete(warrantyCertificates).where(eq(warrantyCertificates.organizationId, ORG_ID));
 			await tx.delete(patientImplantInstallations).where(eq(patientImplantInstallations.organizationId, ORG_ID));
 			await tx.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID));
 			await tx.delete(inventoryTransactions).where(eq(inventoryTransactions.organizationId, ORG_ID));
@@ -269,5 +271,116 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 			);
 
 		assert.equal(countRows.length, 1, "В базе должна остаться ровно 1 запись об установке, дубликат исключен");
+	});
+
+	it("3. Создание гарантийного паспорта в ACID-транзакции установки и безопасный GET без скрытых мутаций", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// Находим установку из предыдущего шага
+		const [installation] = await db
+			.select()
+			.from(patientImplantInstallations)
+			.where(
+				and(
+					eq(patientImplantInstallations.organizationId, ORG_ID),
+					eq(patientImplantInstallations.patientId, PATIENT_ID),
+				),
+			)
+			.limit(1);
+
+		assert.ok(installation, "Установка имплантата должна существовать");
+
+		// Проверяем, что сертификат гарантии УЖЕ создан в БД (в момент установки, а не при GET)
+		const canonicalPassportId = `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`;
+		const [certBeforeGet] = await db
+			.select()
+			.from(warrantyCertificates)
+			.where(
+				and(
+					eq(warrantyCertificates.certificateNumber, canonicalPassportId),
+					eq(warrantyCertificates.organizationId, ORG_ID),
+				),
+			)
+			.limit(1);
+
+		assert.ok(certBeforeGet, "Гарантийный сертификат должен быть создан в момент регистрации установки имплантата");
+		assert.equal(certBeforeGet.status, "active");
+		assert.equal(certBeforeGet.warrantyMonths, 120);
+
+		// Делаем GET запрос паспорта
+		const passportRes = await app.inject({
+			method: "GET",
+			url: `/api/clinical/implants/${installation.id}/passport`,
+			headers: {
+				"x-dente-clinic-token": tokenDoctor,
+				"x-dente-staff-token": tokenDoctor,
+			},
+		});
+
+		assert.equal(passportRes.statusCode, 200);
+		const passportBody = passportRes.json();
+		assert.equal(passportBody.success, true);
+		assert.ok(passportBody.passport.warrantyCertificate, "Паспорт должен возвращать гарантийный сертификат");
+		assert.equal(
+			passportBody.passport.patientCardNumber.startsWith("ЭМК-"),
+			true,
+			`Клинический номер карты должен иметь формат ЭМК-XXXX, получено: ${passportBody.passport.patientCardNumber}`,
+		);
+	});
+
+	it("4. Контроль стабильности ISQ: запрет ложного хардкода 70 и точный расчет среднего", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		const [installation] = await db
+			.select()
+			.from(patientImplantInstallations)
+			.where(
+				and(
+					eq(patientImplantInstallations.organizationId, ORG_ID),
+					eq(patientImplantInstallations.patientId, PATIENT_ID),
+				),
+			)
+			.limit(1);
+
+		assert.ok(installation, "Установка имплантата должна существовать");
+
+		// Тест 4а: Отправка запроса с пустыми/невалидными замерами должна отвергаться с кодом 400
+		const badIsqRes = await app.inject({
+			method: "POST",
+			url: `/api/clinical/implants/${installation.id}/isq`,
+			headers: {
+				"x-dente-clinic-token": tokenDoctor,
+				"x-dente-staff-token": tokenDoctor,
+			},
+			body: {
+				daysPostOp: 0,
+				isqMesiodistal: 0, // невалидное нулевое значение
+				isqBuccolingual: 0,
+			},
+		});
+
+		// Либо Zod схема отвергает 0 (min 1), либо наш гейт isqMean === null возвращает 400
+		assert.equal(badIsqRes.statusCode, 400, "Пустые или нулевые замеры ISQ обязаны возвращать 400 ValidationError");
+
+		// Тест 4б: Отправка реальных замеров (например, 74 и 76)
+		const validIsqRes = await app.inject({
+			method: "POST",
+			url: `/api/clinical/implants/${installation.id}/isq`,
+			headers: {
+				"x-dente-clinic-token": tokenDoctor,
+				"x-dente-staff-token": tokenDoctor,
+			},
+			body: {
+				daysPostOp: 14,
+				isqMesiodistal: 74,
+				isqBuccolingual: 76,
+			},
+		});
+
+		assert.equal(validIsqRes.statusCode, 201);
+		const isqBody = validIsqRes.json();
+		assert.equal(isqBody.success, true);
+		assert.equal(Number(isqBody.measurement.isqMean), 75, "Среднее значение ISQ должно быть строго (74 + 76) / 2 = 75.00");
+		assert.notEqual(isqBody.measurement.isqMean, "70", "Хардкод 70 исключен");
 	});
 });

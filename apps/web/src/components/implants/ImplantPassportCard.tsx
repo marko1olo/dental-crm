@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from "react";
-import { Award, Copy, Printer, QrCode, Send, Share2, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Activity, Award, Copy, Printer, QrCode, Send, Share2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { generateCode128Svg, generateQrCodeSvg } from "@dental/shared";
 import { buildWarrantyPortalUrl } from "../../lib/publicPortalRoute";
 import { showToast } from "../GlobalToast";
@@ -55,7 +55,7 @@ export const AnatomicalJawArchSchema: React.FC<{
 					<>
 						<rect x={x - 12} y={y - 11} width="24" height="22" rx="5" fill="var(--primary)" stroke="var(--primary)" strokeWidth="1.5" />
 						<circle cx={x} cy={isUpper ? y - 13 : y + 13} r="2.5" fill="var(--warning)" />
-						<text x={x} y={y + 3.5} textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="900" fontFamily="monospace">
+						<text x={x} y={y + 3.5} textAnchor="middle" fill="var(--paper)" fontSize="10" fontWeight="900" fontFamily="monospace">
 							{tooth}
 						</text>
 					</>
@@ -256,6 +256,84 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				<div className="min-w-0"><span className="text-[11px] text-[var(--muted)] block">Плотность кости:</span><strong className="font-extrabold text-[var(--ink)] block font-mono">{densityText}</strong></div>
 				<div className="min-w-0"><span className="text-[11px] text-[var(--muted)] block">Формирователь:</span><strong className="font-extrabold text-[var(--ink)] block truncate" title={capTypeRu}>{capTypeRu}</strong></div>
 			</div>
+
+			{/* Клинический блок: Индекс первичной стабильности ISQ Osstell RFA (1–100) */}
+			{(() => {
+				const isq = data.isqDay0 ?? data.baselineIsq ?? (data.isqMean ? Math.round(data.isqMean) : null);
+				if (isq === null || isq === undefined) return null;
+
+				const isLow = isq < 60;
+				const isModerate = isq >= 60 && isq < 70;
+				const isHigh = isq >= 70;
+
+				const statusColorClass = isLow
+					? "text-[var(--danger)] bg-[var(--danger-soft)] border-[var(--danger)]/30"
+					: isModerate
+						? "text-[var(--warning)] bg-[var(--warning-soft)] border-[var(--warning)]/30"
+						: "text-[var(--success)] bg-[var(--success-soft)] border-[var(--success)]/30";
+
+				const statusTitle = isLow
+					? "Низкая стабильность (<60 ISQ) · Отсроченная нагрузка (двухэтапный протокол 3–6 мес.)"
+					: isModerate
+						? "Средняя стабильность (60–69 ISQ) · Ранняя нагрузка (6–8 недель)"
+						: "Высокая первичная стабильность (≥70 ISQ) · Допустима немедленная нагрузка (Immediate Loading)";
+
+				const clampedIsq = Math.min(100, Math.max(1, isq));
+
+				return (
+					<div
+						className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 text-xs"
+						data-testid="passport-isq-stability-block"
+					>
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<div className="flex items-center gap-2">
+								<Activity size={16} className="text-[var(--primary)] shrink-0" />
+								<span className="font-bold tracking-wider text-[var(--muted)] text-[10px]">
+									Индекс стабильности ISQ (Osstell RFA):
+								</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="font-mono text-sm font-black text-[var(--ink)]">
+									ISQ {isq} из 100
+								</span>
+								<span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusColorClass}`}>
+									{isHigh ? "Высокая" : isModerate ? "Средняя" : "Низкая"}
+								</span>
+							</div>
+						</div>
+
+						{/* Графическая шкала 1–100 */}
+						<div className="space-y-1">
+							<div className="relative w-full h-3 rounded-full overflow-hidden flex bg-[var(--paper)] border border-[var(--line)]">
+								{/* Зона <60 (красная) */}
+								<div className="h-full bg-red-500/25 border-r border-[var(--line)]" style={{ width: "60%" }} title="<60 Низкая" />
+								{/* Зона 60–69 (желтая) */}
+								<div className="h-full bg-amber-500/25 border-r border-[var(--line)]" style={{ width: "10%" }} title="60–69 Средняя" />
+								{/* Зона >=70 (зеленая) */}
+								<div className="h-full bg-emerald-500/25" style={{ width: "30%" }} title="≥70 Высокая" />
+
+								{/* Маркер фактического замера */}
+								<div
+									className="absolute top-0 bottom-0 w-1 bg-[var(--ink)] shadow-md"
+									style={{ left: `calc(${clampedIsq}% - 2px)` }}
+									title={`Фактический замер: ISQ ${isq}`}
+								/>
+							</div>
+
+							<div className="flex justify-between text-[9px] text-[var(--muted)] font-mono px-0.5">
+								<span>1 (Низкая &lt;60)</span>
+								<span className="text-center">60 (Средняя 60–69)</span>
+								<span className="text-right">70–100 (Высокая ≥70)</span>
+							</div>
+						</div>
+
+						<div className="text-[11px] text-[var(--ink)] flex items-center gap-1.5 pt-0.5">
+							<span className="text-[var(--muted)]">Клиническое решение:</span>
+							<strong className="font-bold">{statusTitle}</strong>
+						</div>
+					</div>
+				);
+			})()}
 
 			{/* Идентификация изделия */}
 			<div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5 text-xs pt-2 border-t border-[var(--line)]">

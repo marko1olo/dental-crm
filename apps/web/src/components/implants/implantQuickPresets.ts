@@ -263,8 +263,8 @@ export function createDefaultPassportRecord(params: {
 		if (snMatch) stockSerial = snMatch[0];
 	}
 
-	const resolvedLotNumber = params.lotNumber?.trim() || stockLot || "LOT-РУЧНОЙ-ВВОД";
-	const resolvedSerialNumber = params.serialNumber?.trim() || stockSerial || "SN-РУЧНОЙ-ВВОД";
+	const resolvedLotNumber = params.lotNumber?.trim() || stockLot || "«________»";
+	const resolvedSerialNumber = params.serialNumber?.trim() || stockSerial || "«________»";
 	const resolvedArticle = params.catalogArticle || matchedStockItem?.sku || article;
 	const resolvedExpiration = params.expirationDate || matchedStockItem?.expirationDate || "2028-11-30";
 	const resolvedInventoryId = params.inventoryItemId || matchedStockItem?.id;

@@ -4,7 +4,6 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	inventoryItems,
@@ -45,54 +44,56 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 			conditions.push(eq(procedureTechCards.serviceId, serviceId));
 		}
 
-		const cards = await db
-			.select({
-				id: procedureTechCards.id,
-				serviceId: procedureTechCards.serviceId,
-				serviceCode: procedureTechCards.serviceCode,
-				title: procedureTechCards.title,
-				version: procedureTechCards.version,
-				status: procedureTechCards.status,
-				createdAt: procedureTechCards.createdAt,
-			})
-			.from(procedureTechCards)
-			.where(and(...conditions));
+		return await withTenantCtx(organizationId, async (tx) => {
+			const cards = await tx
+				.select({
+					id: procedureTechCards.id,
+					serviceId: procedureTechCards.serviceId,
+					serviceCode: procedureTechCards.serviceCode,
+					title: procedureTechCards.title,
+					version: procedureTechCards.version,
+					status: procedureTechCards.status,
+					createdAt: procedureTechCards.createdAt,
+				})
+				.from(procedureTechCards)
+				.where(and(...conditions));
 
-		const cardIds = cards.map((c) => c.id);
-		const items =
-			cardIds.length > 0
-				? await db
-						.select({
-							id: procedureTechCardItems.id,
-							techCardId: procedureTechCardItems.techCardId,
-							inventoryItemId: procedureTechCardItems.inventoryItemId,
-							itemName: inventoryItems.name,
-							unit: procedureTechCardItems.unit,
-							quantity: procedureTechCardItems.quantity,
-							isMdlpRequired: procedureTechCardItems.isMdlpRequired,
-						})
-						.from(procedureTechCardItems)
-						.innerJoin(
-							inventoryItems,
-							eq(procedureTechCardItems.inventoryItemId, inventoryItems.id),
-						)
-						.where(inArray(procedureTechCardItems.techCardId, cardIds))
-				: [];
+			const cardIds = cards.map((c) => c.id);
+			const items =
+				cardIds.length > 0
+					? await tx
+							.select({
+								id: procedureTechCardItems.id,
+								techCardId: procedureTechCardItems.techCardId,
+								inventoryItemId: procedureTechCardItems.inventoryItemId,
+								itemName: inventoryItems.name,
+								unit: procedureTechCardItems.unit,
+								quantity: procedureTechCardItems.quantity,
+								isMdlpRequired: procedureTechCardItems.isMdlpRequired,
+							})
+							.from(procedureTechCardItems)
+							.innerJoin(
+								inventoryItems,
+								eq(procedureTechCardItems.inventoryItemId, inventoryItems.id),
+							)
+							.where(inArray(procedureTechCardItems.techCardId, cardIds))
+					: [];
 
-		const itemsByCardId = new Map<string, typeof items>();
-		for (const it of items) {
-			const arr = itemsByCardId.get(it.techCardId) ?? [];
-			arr.push(it);
-			itemsByCardId.set(it.techCardId, arr);
-		}
+			const itemsByCardId = new Map<string, typeof items>();
+			for (const it of items) {
+				const arr = itemsByCardId.get(it.techCardId) ?? [];
+				arr.push(it);
+				itemsByCardId.set(it.techCardId, arr);
+			}
 
-		return cards.map((card) => {
-			const cardItems = itemsByCardId.get(card.id) ?? [];
-			return {
-				...card,
-				inventoryItemId: cardItems[0]?.inventoryItemId,
-				items: cardItems,
-			};
+			return cards.map((card) => {
+				const cardItems = itemsByCardId.get(card.id) ?? [];
+				return {
+					...card,
+					inventoryItemId: cardItems[0]?.inventoryItemId,
+					items: cardItems,
+				};
+			});
 		});
 	});
 
@@ -124,37 +125,39 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 			conditions.push(eq(procedureMaterialRules.serviceId, serviceId));
 		}
 
-		const rules = await db
-			.select({
-				id: procedureMaterialRules.id,
-				serviceId: procedureMaterialRules.serviceId,
-				serviceCode: serviceCatalogItems.code,
-				serviceTitle: serviceCatalogItems.title,
-				serviceCategory: serviceCatalogItems.category,
-				specialty: serviceCatalogItems.specialty,
-				inventoryItemId: procedureMaterialRules.inventoryItemId,
-				itemName: inventoryItems.name,
-				category: inventoryItems.category,
-				unit: inventoryItems.unit,
-				stockQuantity: inventoryItems.stockQuantity,
-				unitCostRub: inventoryItems.unitCostRub,
-				criticalThreshold: inventoryItems.criticalThreshold,
-				quantityToDeduct: procedureMaterialRules.quantityToDeduct,
-				requiredQty: procedureMaterialRules.requiredQty,
-				createdAt: procedureMaterialRules.createdAt,
-			})
-			.from(procedureMaterialRules)
-			.innerJoin(
-				serviceCatalogItems,
-				eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
-			)
-			.innerJoin(
-				inventoryItems,
-				eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
-			)
-			.where(and(...conditions));
+		return await withTenantCtx(organizationId, async (tx) => {
+			const rules = await tx
+				.select({
+					id: procedureMaterialRules.id,
+					serviceId: procedureMaterialRules.serviceId,
+					serviceCode: serviceCatalogItems.code,
+					serviceTitle: serviceCatalogItems.title,
+					serviceCategory: serviceCatalogItems.category,
+					specialty: serviceCatalogItems.specialty,
+					inventoryItemId: procedureMaterialRules.inventoryItemId,
+					itemName: inventoryItems.name,
+					category: inventoryItems.category,
+					unit: inventoryItems.unit,
+					stockQuantity: inventoryItems.stockQuantity,
+					unitCostRub: inventoryItems.unitCostRub,
+					criticalThreshold: inventoryItems.criticalThreshold,
+					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+					requiredQty: procedureMaterialRules.requiredQty,
+					createdAt: procedureMaterialRules.createdAt,
+				})
+				.from(procedureMaterialRules)
+				.innerJoin(
+					serviceCatalogItems,
+					eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
+				)
+				.innerJoin(
+					inventoryItems,
+					eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
+				)
+				.where(and(...conditions));
 
-		return rules;
+			return rules;
+		});
 	});
 
 	// POST seed default Order 804n clinical BOM rules
@@ -198,47 +201,49 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			// The service must belong to this org, otherwise another clinic's
-			// material rules (and item names/stock) would leak through the join.
-			const [service] = await db
-				.select({ id: serviceCatalogItems.id })
-				.from(serviceCatalogItems)
-				.where(
-					and(
-						eq(serviceCatalogItems.id, serviceId),
-						eq(serviceCatalogItems.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-			if (!service)
-				return reply.status(404).send({ error: "Service not found" });
+			return await withTenantCtx(organizationId, async (tx) => {
+				// The service must belong to this org, otherwise another clinic's
+				// material rules (and item names/stock) would leak through the join.
+				const [service] = await tx
+					.select({ id: serviceCatalogItems.id })
+					.from(serviceCatalogItems)
+					.where(
+						and(
+							eq(serviceCatalogItems.id, serviceId),
+							eq(serviceCatalogItems.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (!service)
+					return reply.status(404).send({ error: "Service not found" });
 
-			const rules = await db
-				.select({
-					id: procedureMaterialRules.id,
-					serviceId: procedureMaterialRules.serviceId,
-					inventoryItemId: procedureMaterialRules.inventoryItemId,
-					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
-					requiredQty: procedureMaterialRules.requiredQty,
-					createdAt: procedureMaterialRules.createdAt,
-					itemName: inventoryItems.name,
-					unit: inventoryItems.unit,
-					unitCostRub: inventoryItems.unitCostRub,
-					stockQuantity: inventoryItems.stockQuantity,
-				})
-				.from(procedureMaterialRules)
-				.innerJoin(
-					inventoryItems,
-					eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
-				)
-				.where(
-					and(
-						eq(procedureMaterialRules.serviceId, serviceId),
-						eq(inventoryItems.organizationId, organizationId),
-					),
-				);
+				const rules = await tx
+					.select({
+						id: procedureMaterialRules.id,
+						serviceId: procedureMaterialRules.serviceId,
+						inventoryItemId: procedureMaterialRules.inventoryItemId,
+						quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+						requiredQty: procedureMaterialRules.requiredQty,
+						createdAt: procedureMaterialRules.createdAt,
+						itemName: inventoryItems.name,
+						unit: inventoryItems.unit,
+						unitCostRub: inventoryItems.unitCostRub,
+						stockQuantity: inventoryItems.stockQuantity,
+					})
+					.from(procedureMaterialRules)
+					.innerJoin(
+						inventoryItems,
+						eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
+					)
+					.where(
+						and(
+							eq(procedureMaterialRules.serviceId, serviceId),
+							eq(inventoryItems.organizationId, organizationId),
+						),
+					);
 
-			return rules;
+				return rules;
+			});
 		},
 	);
 
@@ -269,39 +274,39 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		}
 		const { serviceId, inventoryItemId, quantityToDeduct } = parsedRule.data;
 
-		// Both the service and the inventory item must belong to this org — else a
-		// caller could wire another clinic's item into their own service rule.
-		const [service] = await db
-			.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code })
-			.from(serviceCatalogItems)
-			.where(
-				and(
-					eq(serviceCatalogItems.id, serviceId),
-					eq(serviceCatalogItems.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		if (!service) return reply.status(404).send({ error: "Service not found" });
-
-		const [item] = await db
-			.select({
-				id: inventoryItems.id,
-				name: inventoryItems.name,
-				unit: inventoryItems.unit,
-			})
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.id, inventoryItemId),
-					eq(inventoryItems.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		if (!item) return reply.status(404).send({ error: "Item not found" });
-
-		const normalizedQty = String(Math.max(0.0001, quantityToDeduct));
-
 		return await withTenantCtx(organizationId, async (tx) => {
+			// Both the service and the inventory item must belong to this org — else a
+			// caller could wire another clinic's item into their own service rule.
+			const [service] = await tx
+				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.id, serviceId),
+						eq(serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!service) return reply.status(404).send({ error: "Service not found" });
+
+			const [item] = await tx
+				.select({
+					id: inventoryItems.id,
+					name: inventoryItems.name,
+					unit: inventoryItems.unit,
+				})
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, inventoryItemId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!item) return reply.status(404).send({ error: "Item not found" });
+
+			const normalizedQty = String(Math.max(0.0001, quantityToDeduct));
+
 			// Sync with canonical procedure_tech_cards
 			let [techCard] = await tx
 				.select()
@@ -438,28 +443,27 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		// Confirm the rule belongs to a service owned by this org before deleting
-		const [rule] = await db
-			.select({
-				id: procedureMaterialRules.id,
-				serviceId: procedureMaterialRules.serviceId,
-				inventoryItemId: procedureMaterialRules.inventoryItemId,
-			})
-			.from(procedureMaterialRules)
-			.innerJoin(
-				serviceCatalogItems,
-				eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
-			)
-			.where(
-				and(
-					eq(procedureMaterialRules.id, ruleId),
-					eq(serviceCatalogItems.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		if (!rule) return reply.status(404).send({ error: "Rule not found" });
-
 		return await withTenantCtx(organizationId, async (tx) => {
+			// Confirm the rule belongs to a service owned by this org before deleting
+			const [rule] = await tx
+				.select({
+					id: procedureMaterialRules.id,
+					serviceId: procedureMaterialRules.serviceId,
+					inventoryItemId: procedureMaterialRules.inventoryItemId,
+				})
+				.from(procedureMaterialRules)
+				.innerJoin(
+					serviceCatalogItems,
+					eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
+				)
+				.where(
+					and(
+						eq(procedureMaterialRules.id, ruleId),
+						eq(serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!rule) return reply.status(404).send({ error: "Rule not found" });
 			if (rule.serviceId && rule.inventoryItemId) {
 				const [techCard] = await tx
 					.select({ id: procedureTechCards.id })

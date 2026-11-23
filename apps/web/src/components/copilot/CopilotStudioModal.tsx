@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain, Minimize2 } from "lucide-react";
+import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain, Minimize2, AlertTriangle } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { showToast } from "../GlobalToast";
@@ -16,7 +16,7 @@ import { useCopilotStore, type CopilotMessage } from "../../store/copilotStore";
 import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
 import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
 import { executeCopilotConfirmation } from "./useCopilotModules/useCopilotActions";
-import { readEventStream } from "./useCopilotModules/copilotStreamReader";
+import { streamCopilotChat, toCleanUuid } from "./client/copilotStreamClient";
 import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
@@ -29,6 +29,7 @@ export interface CopilotStudioModalProps {
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 export interface CopilotChatMessage {
   id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined; actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined; suggestedReplies?: string[] | undefined; toolResult?: unknown | undefined; toolName?: string | undefined;
+  isOfflineFallback?: boolean | undefined;
 }
 const extractSuggestions = (text: string) => {
   const m = text.match(/<<<SUGGESTIONS:\s*(\[[\s\S]*?\])\s*>>>/);
@@ -49,9 +50,9 @@ const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | Copi
     role: mRole, text: cleanText, timestamp: typeof mRec.timestamp === "string" ? mRec.timestamp : "10:00", applied: Boolean(mRec.applied),
     citation: typeof mRec.citation === "string" ? mRec.citation : undefined, actionProposal: parseActionProposal(mRec.actionProposal),
     suggestedReplies: replies, toolResult: mRec.toolResult, toolName: typeof mRec.toolName === "string" ? mRec.toolName : undefined,
+    isOfflineFallback: Boolean(mRec.isOfflineFallback),
   };
 });
-const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
 
 export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, onClose, activeTooth, patientId, patientName, activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess }) => {
   const [activeTab, setActiveTab] = useState<CopilotStudioTab>((initialTab as CopilotStudioTab) || "dialog");
@@ -109,7 +110,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     resetDraft(); onClose();
   }, [messages, threadKey, saveThreadMessages, resetDraft, onClose]);
   const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(() => new Set()), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>(""), [activeToolName, setActiveToolName] = useState<string | null>(null);
-  const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toValidUuid(patientId), visitId: toValidUuid(activeVisitId), autoFallback: true });
+  const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toCleanUuid(patientId), visitId: toCleanUuid(activeVisitId), autoFallback: true });
   const voice = { isListening: unifiedVoice.isRecording, fullText: unifiedVoice.fullTranscript, toggleListening: unifiedVoice.toggleDictation, stopListening: unifiedVoice.stopDictation, clearTranscript: unifiedVoice.clearTranscript };
 
   useEffect(() => {
@@ -170,60 +171,82 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     const historyWindow = messages.filter((m) => m.text && m.text.trim().length > 0).slice(-10).map((m) => ({ role: m.role === "assistant" ? ("assistant" as const) : ("user" as const), content: m.text }));
     const outboundMessages = [...historyWindow, { role: "user" as const, content: query }];
 
+    let streamFailed = false;
+    let accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined;
+    let pendingToolResult: unknown | undefined, pendingToolName: string | undefined;
+
+    type SseEventPayload = { type?: string; text?: string; thought?: string; tool?: string; name?: string; callId?: string; call_id?: string; descriptionRu?: string; args?: Record<string, unknown>; arguments?: Record<string, unknown>; result?: unknown; data?: unknown; payload?: unknown; };
+    const handleSseEvent = (event: string, data: Record<string, unknown>) => {
+      const ev = { type: (data.type as string) || event, ...data } as SseEventPayload;
+      if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
+      else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") { accumulatedThought += ev.text; setCurrentThought(accumulatedThought); }
+      else if (ev.type === "confirmation_required") {
+        const callId = String(ev.callId || `act-${Date.now()}`), toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+        setActiveToolName(toolName);
+        const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+        const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
+        pendingAction = { id: callId, toolName, description: desc, payload: args };
+        addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
+      } else if (ev.type === "tool_call_started" || ev.type === "tool_start") {
+        const toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+        setActiveToolName(toolName);
+        const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+        const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Выполнение инструмента: ${toolName}`;
+        addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
+      } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
+        setActiveToolName(null);
+        pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
+        pendingToolResult = ev.result ?? ev.data ?? ev.payload;
+        const evArgs = ((ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object") ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+        if (evArgs.beforeText || evArgs.afterText || pendingToolName.includes("file") || pendingToolName.includes("workstation")) {
+          const targetFile = String(evArgs.targetEntity || evArgs.path || evArgs.file || "workstation_document.txt");
+          useCopilotStore.getState().setActiveDiff({ id: `diff-${Date.now()}`, title: `Изменения файла: ${targetFile.split(/[/\\]/).pop() || targetFile}`, targetEntity: targetFile, beforeText: String(evArgs.beforeText || "(Исходное состояние файла)"), afterText: String(evArgs.afterText || evArgs.content || (typeof pendingToolResult === "string" ? pendingToolResult : JSON.stringify(pendingToolResult, null, 2)) || "(Обновлённое содержимое)"), applied: false });
+        }
+        addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (typeof ev.args === "object" && ev.args !== null ? (ev.args as Record<string, unknown>) : {}), resultSummary: `Выполнен: ${pendingToolName}` });
+      } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
+        setActiveToolName(null); accumulatedText = ev.text;
+      }
+
+      if (accumulatedText || pendingToolResult) {
+        const { cleanText, suggestions } = extractSuggestions(accumulatedText);
+        const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}) } } : undefined);
+        setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions, toolResult: pendingToolResult ?? m.toolResult, toolName: pendingToolName ?? m.toolName } : m)));
+      }
+    };
+
     try {
-      const res = await fetch("/api/agent/chat", {
-        method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ messages: outboundMessages, patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId), stream: true, runtimeMode: apiRuntimeMode, sessionId: activeThreadId || undefined, temperature: settings.temperature ?? 0.2, contextLimitTokens: settings.contextLimitTokens, showTypingAnimation: settings.showTypingAnimation, trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions, customInstructions: settings.customDoctorInstructions, memoryFacts: memoryFacts.map((m) => m.fact), doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode, activeTooth: typeof activeTooth === "number" ? activeTooth : undefined, modelRoutingMode: settings.modelRoutingMode, byokProvider: settings.byokProvider, byokApiKey: settings.byokApiKey, byokModel: settings.byokModel, maskPhiData: settings.maskPhiData ?? true }),
+      const streamResult = await streamCopilotChat({
+        messages: outboundMessages,
+        patientId,
+        activeVisitId,
+        sessionId: activeThreadId || undefined,
+        activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
+        runtimeMode: apiRuntimeMode,
+        trustLevel: settings.trustLevel,
+        maskPhiData: settings.maskPhiData ?? true,
+        temperature: settings.temperature ?? 0.2,
+        contextLimitTokens: settings.contextLimitTokens,
+        showTypingAnimation: settings.showTypingAnimation,
+        granularPermissions: settings.granularPermissions,
+        customInstructions: settings.customDoctorInstructions,
+        memoryFacts: memoryFacts.map((m) => m.fact),
+        doctorSpecialization: settings.clinicalSpecialization,
+        speedMode: settings.speedMode,
+        modelRoutingMode: settings.modelRoutingMode,
+        byokProvider: settings.byokProvider,
+        byokApiKey: settings.byokApiKey,
+        byokModel: settings.byokModel,
+        onEvent: handleSseEvent,
       });
-      if (res.ok && res.body) {
-        let accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined;
-        let pendingToolResult: unknown | undefined, pendingToolName: string | undefined;
 
-        type SseEventPayload = { type?: string; text?: string; thought?: string; tool?: string; name?: string; callId?: string; call_id?: string; descriptionRu?: string; args?: Record<string, unknown>; arguments?: Record<string, unknown>; result?: unknown; data?: unknown; payload?: unknown; };
-        const handleSseEvent = (event: string, data: Record<string, unknown>) => {
-          const ev = { type: (data.type as string) || event, ...data } as SseEventPayload;
-          if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
-          else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") { accumulatedThought += ev.text; setCurrentThought(accumulatedThought); }
-          else if (ev.type === "confirmation_required") {
-            const callId = String(ev.callId || `act-${Date.now()}`), toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
-            setActiveToolName(toolName);
-            const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-            const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
-            pendingAction = { id: callId, toolName, description: desc, payload: args };
-            addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
-          } else if (ev.type === "tool_call_started" || ev.type === "tool_start") {
-            const toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
-            setActiveToolName(toolName);
-            const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-            const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Выполнение инструмента: ${toolName}`;
-            addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
-          } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
-            setActiveToolName(null);
-            pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
-            pendingToolResult = ev.result ?? ev.data ?? ev.payload;
-            const evArgs = ((ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object") ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-            if (evArgs.beforeText || evArgs.afterText || pendingToolName.includes("file") || pendingToolName.includes("workstation")) {
-              const targetFile = String(evArgs.targetEntity || evArgs.path || evArgs.file || "workstation_document.txt");
-              useCopilotStore.getState().setActiveDiff({ id: `diff-${Date.now()}`, title: `Изменения файла: ${targetFile.split(/[/\\]/).pop() || targetFile}`, targetEntity: targetFile, beforeText: String(evArgs.beforeText || "(Исходное состояние файла)"), afterText: String(evArgs.afterText || evArgs.content || (typeof pendingToolResult === "string" ? pendingToolResult : JSON.stringify(pendingToolResult, null, 2)) || "(Обновлённое содержимое)"), applied: false });
-            }
-            addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (typeof ev.args === "object" && ev.args !== null ? (ev.args as Record<string, unknown>) : {}), resultSummary: `Выполнен: ${pendingToolName}` });
-          } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
-            setActiveToolName(null); accumulatedText = ev.text;
-          }
-
-          if (accumulatedText || pendingToolResult) {
-            const { cleanText, suggestions } = extractSuggestions(accumulatedText);
-            const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}) } } : undefined);
-            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions, toolResult: pendingToolResult ?? m.toolResult, toolName: pendingToolName ?? m.toolName } : m)));
-          }
-        };
-
-        // Canonical unified stream reader (Mandate 8bf: SSOT SSE Parser)
-        await readEventStream(res.body, handleSseEvent);
-
-        if (accumulatedText.trim()) { setIsStreaming(false); return; }
+      if (!streamResult.ok) {
+        streamFailed = true;
+      } else if (accumulatedText.trim()) {
+        setIsStreaming(false);
+        return;
       }
     } catch (err) {
+      streamFailed = true;
       console.warn("[CopilotStudioModal] Streaming error:", err);
       showToast("Сбой соединения со шлюзом ИИ. Нажмите «Повторить» для повторной отправки.", "error", 6000, { label: "Повторить", onAction: () => { void handleSendMessage(query); } });
     }
@@ -232,8 +255,15 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     if (isDemoShowcaseMode()) {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : (fallbackText || "Готов к работе у кресла. Чем могу помочь?"), citation: m.citation || (localProposal ? "Клинический протокол СтАР" : undefined), actionProposal: m.actionProposal ?? localProposal } : m)));
     } else {
-      const fallbackNotice = fallbackText ? `[АВТОНОМНЫЙ РЕЖИМ]: используется локальный клинический словарь (без ИИ)\n\n${fallbackText}` : "[АВТОНОМНЫЙ РЕЖИМ]: используется локальный клинический словарь (без ИИ)";
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackNotice, citation: m.citation, actionProposal: m.actionProposal ?? localProposal } : m)));
+      const isFallbackActive = streamFailed || !accumulatedText.trim();
+      const fallbackCleanText = fallbackText || (isFallbackActive ? "Локальный клинический словарь готов к приёму команд." : "");
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? {
+        ...m,
+        text: m.text.trim() || fallbackCleanText,
+        citation: m.citation,
+        actionProposal: m.actionProposal ?? localProposal,
+        isOfflineFallback: isFallbackActive,
+      } : m)));
     }
   };
 
@@ -352,6 +382,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
               {messages.map((m) => (
                   <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                     <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
+                      {m.isOfflineFallback && (
+                        <div className="copilot-offline-badge mb-2 px-2.5 py-1.5 rounded-xl bg-[var(--warn-soft,rgba(245,158,11,0.12))] border border-[var(--warn,rgba(245,158,11,0.3))] text-[var(--warn,#d97706)] text-[11px] font-semibold flex items-center gap-2 shrink-0">
+                          <AlertTriangle size={14} className="shrink-0 text-[var(--warn,#d97706)]" />
+                          <span>Автономный режим: используется локальный клинический словарь (без ИИ)</span>
+                        </div>
+                      )}
                       <p className="whitespace-pre-wrap m-0">
                         {m.text || (isStreaming ? "Формирование ответа..." : "")}
                         {isStreaming && m.id === messages[messages.length - 1]?.id && m.role === "assistant" && <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse ml-1 align-middle" />}

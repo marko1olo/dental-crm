@@ -67,14 +67,6 @@ export async function deductForVisit(
 				name: params.drugName || "Артикаин 4% с эпинефрином 1:100 000",
 				quantity: params.carpulesCount,
 				unit: "carpule",
-				defaultCostRub: 145,
-			});
-			rawRequiredMaterials.push({
-				key: "mat-anes-needle-g30",
-				name: "Иглы карпульные стоматологические стерильные (0.3x21 мм G30 / 0.4x35 мм G27)",
-				quantity: Math.max(1, Math.ceil(params.carpulesCount / 2)),
-				unit: "pcs",
-				defaultCostRub: 18,
 			});
 		}
 	}

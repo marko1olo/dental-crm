@@ -62,6 +62,13 @@ export function registerIsqRoute(app: FastifyInstance) {
 			input.isqDistopalatal,
 		);
 
+		if (isqMean === null) {
+			return reply.code(400).send({
+				error: "IsqMeasurementValidationError",
+				message: "Невозможно рассчитать среднее значение ISQ: отсутствуют валидные клинические замеры стабильности Osstell RFA.",
+			});
+		}
+
 		const { status, decisionRationale, isBiologicalDip } = ImplantStabilityCalculator.evaluateLoadingProtocol(
 			isqMean,
 			Number(installation.finalInsertionTorqueNcm),
@@ -79,7 +86,7 @@ export function registerIsqRoute(app: FastifyInstance) {
 				isqMesiodistal: input.isqMesiodistal,
 				isqBuccolingual: input.isqBuccolingual,
 				isqDistopalatal: input.isqDistopalatal ?? null,
-				isqMean: isqMean != null ? String(isqMean) : "70",
+				isqMean: String(isqMean),
 				isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
 				stabilityStatus: status,
 				recommendedLoadingDecision: decisionRationale,

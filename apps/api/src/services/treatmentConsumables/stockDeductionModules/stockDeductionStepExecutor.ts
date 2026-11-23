@@ -36,8 +36,8 @@ export async function executeFefoDeductionStep(
 	const inv = entry.item;
 	const ruleUnit = entry.ruleUnit || inv.unit || "pcs";
 	const invUnit = inv.unit || "pcs";
-	const rawMultiplier = Number(inv.packageMultiplier ?? 1);
-	const packageMultiplier = Number.isFinite(rawMultiplier) && rawMultiplier > 0 ? rawMultiplier : undefined;
+	const rawMultiplier = inv.packageMultiplier != null ? Number(inv.packageMultiplier) : null;
+	const packageMultiplier = rawMultiplier != null && Number.isFinite(rawMultiplier) && rawMultiplier > 1 ? rawMultiplier : undefined;
 
 	let convertedRequiredQty: number;
 	if (packageMultiplier && packageMultiplier > 1 && normalizeInventoryUnit(invUnit) === "pack") {
@@ -47,11 +47,11 @@ export async function executeFefoDeductionStep(
 				? "carpule"
 				: "pcs";
 		convertedRequiredQty = convertInventoryUnit(entry.requiredQty, ruleUnit, targetDispensingUnit, {
-			packageMultiplier,
+			...(packageMultiplier ? { packageMultiplier } : {}),
 		});
 	} else {
 		convertedRequiredQty = convertInventoryUnit(entry.requiredQty, ruleUnit, invUnit, {
-			packageMultiplier,
+			...(packageMultiplier ? { packageMultiplier } : {}),
 		});
 	}
 	if (convertedRequiredQty <= 0) {

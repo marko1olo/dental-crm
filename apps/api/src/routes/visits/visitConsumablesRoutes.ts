@@ -15,15 +15,10 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { db as database } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { inventoryTransactions, visits } from "../../db/schema.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import {
-	buildSoftOverdraftResponse,
-	isInsufficientStockError,
-} from "../inventory/consumables/consumableFefoAllocator.js";
 import { executeFefoBatchDeduction } from "../inventory/writeOffModules/writeOffFefoExecution.js";
 
 interface VisitConsumablesRouteParams {
@@ -116,11 +111,13 @@ async function handlePostVisitConsumables(
 	const identity = getRequestIdentity(request);
 	const doctorUserId = identity.userId ?? request.user?.id ?? null;
 
-	const [visit] = await database
-		.select({ id: visits.id })
-		.from(visits)
-		.where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)))
-		.limit(1);
+	const [visit] = await withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select({ id: visits.id })
+			.from(visits)
+			.where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+	});
 
 	if (!visit) {
 		return reply.status(404).send({
@@ -220,12 +217,6 @@ async function handlePostVisitConsumables(
 
 		return reply.status(200).send(result);
 	} catch (error: unknown) {
-		if (isInsufficientStockError(error)) {
-			// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
-			// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
-			return reply.status(200).send(buildSoftOverdraftResponse(error, "visit"));
-		}
-
 		request.log.error(error, "Failed to deduct visit consumables");
 		const msg = error instanceof Error ? error.message : "Не удалось списать расходные материалы";
 		return reply.status(400).send({
@@ -255,16 +246,18 @@ async function handleGetVisitConsumables(
 	if (!context) return;
 	const orgId = context.organizationId;
 
-	const transactions = await database
-		.select()
-		.from(inventoryTransactions)
-		.where(
-			and(
-				eq(inventoryTransactions.organizationId, orgId),
-				eq(inventoryTransactions.visitId, targetVisitId),
-			),
-		)
-		.orderBy(desc(inventoryTransactions.createdAt));
+	const transactions = await withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select()
+			.from(inventoryTransactions)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, orgId),
+					eq(inventoryTransactions.visitId, targetVisitId),
+				),
+			)
+			.orderBy(desc(inventoryTransactions.createdAt));
+	});
 
 	return reply.send({
 		visitId: targetVisitId,

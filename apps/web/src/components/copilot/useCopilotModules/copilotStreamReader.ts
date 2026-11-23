@@ -9,7 +9,7 @@
 export async function readEventStream(
   stream: ReadableStream<Uint8Array>,
   onEvent: (event: string, data: Record<string, unknown>) => void,
-  signal?: AbortSignal,
+  signal?: AbortSignal | undefined,
 ): Promise<void> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
