@@ -1,4 +1,4 @@
-import { Award, Heart } from "lucide-react";
+import { Award, Heart, ShieldCheck } from "lucide-react";
 import { ToothDeciduous } from "../../icons/DentalIcons";
 import type { ProfessionalA4DocumentTab } from "../types";
 import type { DocumentCatalogItem } from "./types";
@@ -7,6 +7,7 @@ export interface PediatricActionHandlers {
 	setIsDiplomaModalOpen: (open: boolean) => void;
 	setIsConsentModalOpen: (open: boolean) => void;
 	setSelectedA4Tab: (tab: ProfessionalA4DocumentTab) => void;
+	setIsParentMemoModalOpen?: ((open: boolean) => void) | undefined;
 }
 
 export function getPediatricItems(
@@ -40,6 +41,25 @@ export function getPediatricItems(
 			isPediatric: true,
 			printSupported: true,
 			onQuickAction: () => h.setIsDiplomaModalOpen(true),
+		},
+		{
+			id: "memo_parents_post_op",
+			titleRu: "Памятка родителям после лечения",
+			category: "pediatric",
+			descriptionRu:
+				"Рекомендации по питанию, контроль онемения губы/щеки после анестезии, гигиена сменного прикуса",
+			badgeRu: "Памятка родителям",
+			regulationRu: "Рекомендации · Уход после анестезии",
+			icon: ShieldCheck,
+			isPediatric: true,
+			printSupported: true,
+			onQuickAction: () => {
+				if (h.setIsParentMemoModalOpen) {
+					h.setIsParentMemoModalOpen(true);
+				} else {
+					h.setSelectedA4Tab("medical_card");
+				}
+			},
 		},
 		{
 			id: "pediatric_treatment_plan",

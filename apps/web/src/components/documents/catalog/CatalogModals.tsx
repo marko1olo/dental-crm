@@ -19,6 +19,8 @@ export interface CatalogModalsProps {
 	mappedTaxPayments?: TaxPaymentRecord[] | undefined;
 	isDiplomaModalOpen: boolean;
 	setIsDiplomaModalOpen: (open: boolean) => void;
+	isParentMemoModalOpen?: boolean | undefined;
+	setIsParentMemoModalOpen?: ((open: boolean) => void) | undefined;
 	isConsentModalOpen: boolean;
 	setIsConsentModalOpen: (open: boolean) => void;
 	isLocalTaxModalOpen: boolean;
@@ -49,6 +51,8 @@ export function CatalogModals(props: CatalogModalsProps): React.JSX.Element {
 		mappedTaxPayments,
 		isDiplomaModalOpen,
 		setIsDiplomaModalOpen,
+		isParentMemoModalOpen,
+		setIsParentMemoModalOpen,
 		isConsentModalOpen,
 		setIsConsentModalOpen,
 		isLocalTaxModalOpen,
@@ -85,6 +89,8 @@ export function CatalogModals(props: CatalogModalsProps): React.JSX.Element {
 				sanitizedPayments={sanitizedPayments}
 				isDiplomaModalOpen={isDiplomaModalOpen}
 				setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+				isParentMemoModalOpen={isParentMemoModalOpen}
+				setIsParentMemoModalOpen={setIsParentMemoModalOpen}
 				isConsentModalOpen={isConsentModalOpen}
 				setIsConsentModalOpen={setIsConsentModalOpen}
 				isLocalTaxModalOpen={isLocalTaxModalOpen}

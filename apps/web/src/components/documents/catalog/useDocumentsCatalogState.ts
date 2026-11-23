@@ -77,6 +77,7 @@ export function useDocumentsCatalogState(props: DocumentsCatalogViewProps) {
 				handleOpenKind,
 				handleOpenTax,
 				setIsDiplomaModalOpen: modals.setIsDiplomaModalOpen,
+				setIsParentMemoModalOpen: modals.setIsParentMemoModalOpen,
 				setIsConsentModalOpen: modals.setIsConsentModalOpen,
 			}),
 		[
@@ -84,6 +85,7 @@ export function useDocumentsCatalogState(props: DocumentsCatalogViewProps) {
 			handleOpenTax,
 			modals.setSelectedA4Tab,
 			modals.setIsDiplomaModalOpen,
+			modals.setIsParentMemoModalOpen,
 			modals.setIsConsentModalOpen,
 		],
 	);

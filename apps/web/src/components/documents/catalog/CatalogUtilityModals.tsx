@@ -4,6 +4,7 @@ import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documen
 import { ConsentStudioModal, TaxDeductionCertificateModal } from "../DocumentsStudioModal";
 import type { TaxDeductionTab } from "../taxCertificateEngine";
 import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
+import { PediatricParentMemoModal } from "../../pediatric";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 
 export interface CatalogUtilityModalsProps {
@@ -19,6 +20,8 @@ export interface CatalogUtilityModalsProps {
 	sanitizedPayments?: TaxPaymentRecord[] | undefined;
 	isDiplomaModalOpen: boolean;
 	setIsDiplomaModalOpen: (open: boolean) => void;
+	isParentMemoModalOpen?: boolean | undefined;
+	setIsParentMemoModalOpen?: ((open: boolean) => void) | undefined;
 	isConsentModalOpen: boolean;
 	setIsConsentModalOpen: (open: boolean) => void;
 	isLocalTaxModalOpen: boolean;
@@ -39,6 +42,8 @@ export function CatalogUtilityModals({
 	sanitizedPayments,
 	isDiplomaModalOpen,
 	setIsDiplomaModalOpen,
+	isParentMemoModalOpen,
+	setIsParentMemoModalOpen,
 	isConsentModalOpen,
 	setIsConsentModalOpen,
 	isLocalTaxModalOpen,
@@ -47,6 +52,17 @@ export function CatalogUtilityModals({
 }: CatalogUtilityModalsProps): React.JSX.Element {
 	return (
 		<>
+			{isParentMemoModalOpen && (
+				<PediatricParentMemoModal
+					isOpen={isParentMemoModalOpen}
+					onClose={() => setIsParentMemoModalOpen?.(false)}
+					patientName={effectivePatientName}
+					patientPhone={patient?.phone || undefined}
+					patientAgeYears={typeof patientAgeYears === "number" ? patientAgeYears : undefined}
+					doctorName={doctorName}
+					clinicName={clinicName}
+				/>
+			)}
 			{isDiplomaModalOpen && (
 				<PediatricBraveryDiplomaModal
 					isOpen={isDiplomaModalOpen}

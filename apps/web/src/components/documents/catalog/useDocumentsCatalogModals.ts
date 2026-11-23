@@ -4,6 +4,7 @@ import type { ProfessionalA4DocumentTab } from "../types";
 
 export function useDocumentsCatalogModals() {
 	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState<boolean>(false);
+	const [isParentMemoModalOpen, setIsParentMemoModalOpen] = useState<boolean>(false);
 	const [isConsentModalOpen, setIsConsentModalOpen] = useState<boolean>(false);
 	const [isLocalTaxModalOpen, setIsLocalTaxModalOpen] =
 		useState<boolean>(false);
@@ -20,6 +21,8 @@ export function useDocumentsCatalogModals() {
 	return {
 		isDiplomaModalOpen,
 		setIsDiplomaModalOpen,
+		isParentMemoModalOpen,
+		setIsParentMemoModalOpen,
 		isConsentModalOpen,
 		setIsConsentModalOpen,
 		isLocalTaxModalOpen,

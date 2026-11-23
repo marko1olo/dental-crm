@@ -9,9 +9,11 @@ import {
 
 describe("VisitPediatricProtocolWidget Presets & Metadata Completeness", () => {
 	it("verifies PEDIATRIC_PROTOCOL_PRESETS metadata completeness (Zero TODOs, 100% typed)", () => {
-		assert.strictEqual(PEDIATRIC_PROTOCOL_PRESETS.length, 6, "Exactly 6 canonical clinical presets");
+		assert.strictEqual(PEDIATRIC_PROTOCOL_PRESETS.length, 8, "Exactly 8 canonical clinical presets");
 		const ids = PEDIATRIC_PROTOCOL_PRESETS.map((p) => p.id);
 		assert.deepStrictEqual(ids, [
+			"adaptation_visit",
+			"icon_infiltration",
 			"caries_primary",
 			"pulpotomy_primary",
 			"silvering_deep_fluoridation",
@@ -23,7 +25,7 @@ describe("VisitPediatricProtocolWidget Presets & Metadata Completeness", () => {
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {
 			assert.ok(preset.titleRu.length > 0);
 			assert.ok(preset.diagnosisIcd10.length > 0);
-			assert.ok(preset.serviceCode804n && preset.serviceCode804n.startsWith("A"));
+			assert.ok(preset.serviceCode804n && (preset.serviceCode804n.startsWith("A") || preset.serviceCode804n.startsWith("B")));
 			assert.ok(preset.materials.length > 0);
 			assert.ok(preset.defaultMaterial.length > 0);
 			assert.ok(preset.defaultToothFindingState.length > 0);

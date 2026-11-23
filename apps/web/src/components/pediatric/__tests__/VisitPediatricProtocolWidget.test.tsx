@@ -202,14 +202,16 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 	it("verifies PEDIATRIC_PROTOCOL_PRESETS metadata completeness (Zero TODOs, 100% typed)", () => {
 		assert.strictEqual(
 			PEDIATRIC_PROTOCOL_PRESETS.length,
-			6,
-			"Exactly 6 canonical clinical presets",
+			8,
+			"Exactly 8 canonical clinical presets",
 		);
 
 		const ids = PEDIATRIC_PROTOCOL_PRESETS.map((p) => p.id);
 		assert.deepStrictEqual(
 			ids,
 			[
+				"adaptation_visit",
+				"icon_infiltration",
 				"caries_primary",
 				"pulpotomy_primary",
 				"silvering_deep_fluoridation",
@@ -217,7 +219,7 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				"extraction_primary_exfoliation",
 				"standard_crown",
 			],
-			"All 6 required preset IDs are present in exact order",
+			"All 8 required preset IDs are present in exact order",
 		);
 
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {
@@ -230,8 +232,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				`${preset.id} has ICD-10 diagnosis code`,
 			);
 			assert.ok(
-				preset.serviceCode804n && preset.serviceCode804n.startsWith("A"),
-				`${preset.id} has Order 804n code starting with A`,
+				preset.serviceCode804n && (preset.serviceCode804n.startsWith("A") || preset.serviceCode804n.startsWith("B")),
+				`${preset.id} has Order 804n code starting with A or B`,
 			);
 			assert.ok(preset.materials.length > 0, `${preset.id} has materials list`);
 			assert.ok(

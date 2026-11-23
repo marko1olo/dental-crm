@@ -14,3 +14,4 @@ export * from "./anesthesiology.js";
 export * from "./franklScale.js";
 export * from "./clinicalProcedures.js";
 export * from "./pediatricDiagnostics.js";
+export * from "./pediatricCatalog.js";

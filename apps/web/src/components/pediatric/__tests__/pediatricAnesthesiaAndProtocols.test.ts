@@ -249,12 +249,14 @@ describe("Subagent 4: 20 Deciduous Teeth (FDI 51-85) Protocols", () => {
 		expect(presetIds).toContain("pulpotomy_primary");
 		expect(presetIds).toContain("standard_crown");
 		expect(presetIds).toContain("extraction_primary_exfoliation");
+		expect(presetIds).toContain("adaptation_visit");
+		expect(presetIds).toContain("icon_infiltration");
 	});
 
 	it("each preset defines valid ICD-10 code and 804n nomenclature service code", () => {
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {
-			expect(preset.diagnosisIcd10).toMatch(/^K0[248]\./);
-			expect(preset.serviceCode804n).toMatch(/^[AB]\d{2}\.\d{2}\.\d{3}/);
+			expect(preset.diagnosisIcd10).toMatch(/^(K0[248]|Z01)\./);
+			expect(preset.serviceCode804n).toMatch(/^[AB]\d{2}\.\d{2,3}(\.\d{3})?/);
 			expect(preset.materials.length).toBeGreaterThan(0);
 			expect(preset.titleRu.length).toBeGreaterThan(5);
 		}

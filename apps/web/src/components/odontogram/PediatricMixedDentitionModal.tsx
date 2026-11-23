@@ -109,17 +109,27 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 				</div>
 
 				<div className="flex items-center justify-between p-4 sm:px-8 border-t border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] text-xs sm:text-sm">
-					<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+					<div className="text-xs sm:text-sm font-medium text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
 						DENTE Dental CRM • Детский и сменный прикус
 					</div>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="dente-btn dente-btn-primary bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] min-h-[44px] sm:min-h-[36px] px-8 py-2 text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all cursor-pointer select-none active:scale-95"
-					>
-						Готово
-					</button>
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={onClose}
+							className="dente-btn dente-btn-secondary border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] min-h-[44px] sm:min-h-[36px] px-5 py-2 text-sm font-medium transition-all cursor-pointer select-none active:scale-95"
+						>
+							Отмена
+						</button>
+
+						<button
+							type="button"
+							onClick={onClose}
+							className="dente-btn dente-btn-primary bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] min-h-[44px] sm:min-h-[36px] px-7 py-2 text-sm font-medium shadow-md shadow-[var(--primary)]/20 transition-all cursor-pointer select-none active:scale-95"
+						>
+							Готово
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
