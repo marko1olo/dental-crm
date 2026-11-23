@@ -22,7 +22,7 @@ export { isToothReferenced } from "./toothHistoryTimeline.js";
 
 export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
-	 * Получение хронологии изменений конкретного зуба (аудит Формы 043/у)
+	 * Получение хронологии изменений конкретного зуба (аудит медицинской карты приёма)
 	 */
 	app.get<{ Params: ToothHistoryParams }>(
 		"/api/patients/:patientId/tooth-states/:toothNumber/history",

@@ -95,15 +95,15 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 	});
 
 	it("5. [Мандат 8ap] Целочисленные копейки: 0 float-ошибок при конвертации и форматировании", () => {
-		assert.equal(formatKopecksToRub(0), "0 ₽");
-		assert.equal(formatKopecksToRub(1540000), "15 400 ₽");
-		assert.equal(formatKopecksToRub(-320000), "-3 200 ₽");
-		assert.equal(formatKopecksToRub(4500000), "45 000 ₽");
+		assert.equal(formatKopecksToRub(0), "0,00 ₽");
+		assert.equal(formatKopecksToRub(1540000), "15 400,00 ₽");
+		assert.equal(formatKopecksToRub(-320000), "−3 200,00 ₽");
+		assert.equal(formatKopecksToRub(4500000), "45 000,00 ₽");
 
 		// Проверка отсутствия float-дрейфа: 1540000 + (-320000) = 1220000 ровно
 		const sum = 1540000 + -320000;
 		assert.equal(sum, 1220000);
-		assert.equal(formatKopecksToRub(sum), "12 200 ₽");
+		assert.equal(formatKopecksToRub(sum), "12 200,00 ₽");
 	});
 
 	it("6. [Нормализация телефона] Поддерживает все форматы РФ (+7, 8, без кода)", () => {
@@ -132,7 +132,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		const balance = calculateFamilyBalanceKopecks(family.members);
 		// Мать: 15 400 руб (1540000), Ребёнок: -3 200 руб (-320000) -> Итого: 12 200 руб (1220000)
 		assert.equal(balance, 1220000);
-		assert.equal(formatKopecksToRub(balance), "12 200 ₽");
+		assert.equal(formatKopecksToRub(balance), "12 200,00 ₽");
 	});
 
 	it("9. [Мандат 8n] Списание долга ребенка с аванса матери в 1 клик без бюрократии", () => {

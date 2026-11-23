@@ -93,5 +93,3 @@ export function generateMedicalRecordXmlCda(data: MedicalRecordData): string {
 </ClinicalDocument>`;
 }
 
-/** Алиас обратной совместимости */
-export const generate043XmlCda = generateMedicalRecordXmlCda;

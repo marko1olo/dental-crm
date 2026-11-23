@@ -66,8 +66,8 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 		assert.equal(normalizePhoneNumber("9161234567"), "79161234567");
 
 		assert.equal(formatPhoneDisplay("79161234567"), "+7 (916) 123-45-67");
-		assert.equal(formatKopecksToRub(1540000), "15 400 ₽");
-		assert.equal(formatKopecksToRub(-320000), "-3 200 ₽");
+		assert.equal(formatKopecksToRub(1540000), "15 400,00 ₽");
+		assert.equal(formatKopecksToRub(-320000), "−3 200,00 ₽");
 
 		// Поиск дубликата по телефону
 		const dupesByPhone = findPatientDuplicates(DEMO_PATIENT_CATALOG, { phone: "89161234567" });

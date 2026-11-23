@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,8 +55,8 @@ describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
 	});
 
 	it("validates family pooled deposit calculations (kopeck precision, 0% commission)", () => {
-		const toKopecks = (rubles: number): number => Math.round(rubles * 100);
-		const toRubles = (kopecks: number): number => kopecks / 100;
+		const toKopecks = (rubles: number): number => rublesToKopecks(rubles);
+		const toRubles = (kopecks: number): number => kopecksToRubles(kopecks);
 
 		const momBalanceRub = 15000.5;
 		const childTreatmentCostRub = 4250.75;

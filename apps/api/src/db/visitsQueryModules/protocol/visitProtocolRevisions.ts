@@ -293,7 +293,12 @@ export async function acceptVisitDraftInDb(
 					version: (existingDiary.version ?? 1) + 1,
 					updatedAt: savedAt,
 				})
-				.where(eq(schema.visitDiaries.id, existingDiary.id));
+				.where(
+					and(
+						eq(schema.visitDiaries.id, existingDiary.id),
+						eq(schema.visitDiaries.organizationId, organizationId),
+					),
+				);
 		} else {
 			const newHash = computeDiaryHash(
 				input.visitId,
@@ -352,7 +357,12 @@ export async function acceptVisitDraftInDb(
 				const [appRow] = await tx
 					.select({ doctorUserId: schema.appointments.doctorUserId })
 					.from(schema.appointments)
-					.where(eq(schema.appointments.id, visit.appointmentId))
+					.where(
+						and(
+							eq(schema.appointments.id, visit.appointmentId),
+							eq(schema.appointments.organizationId, organizationId),
+						),
+					)
 					.limit(1);
 				if (appRow?.doctorUserId) {
 					signingDoctorId = appRow.doctorUserId;

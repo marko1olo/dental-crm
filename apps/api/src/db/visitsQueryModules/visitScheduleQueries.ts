@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import type { OpenVisitForAppointmentResult } from "./types.js";
 
@@ -47,6 +47,7 @@ export async function getVisitByIdInDb(organizationId: string, id: string) {
  * очередь, и второй вызов видит визит первого.
  */
 export type DbClientOrTransaction =
+	| TenantDb
 	| typeof db
 	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 

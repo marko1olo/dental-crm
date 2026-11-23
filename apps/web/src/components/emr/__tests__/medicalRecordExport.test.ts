@@ -5,14 +5,11 @@ import {
 	calculateCpitnIndex,
 	calculateOhiSScore,
 	formatPatientAge,
-	validateForm043uCompleteness,
+	validateMedicalRecordCompleteness,
 	generateMedicalRecordPrintHtml,
 	generateMedicalRecordXmlCda,
 	generateMedicalRecordJsonExport,
 	generateMedicalRecordPlainText,
-	generate043XmlCda,
-	generate043JsonExport,
-	generate043PlainText,
 	escapeHtml,
 	escapeXml,
 } from "../clinicalDiaryMath";
@@ -263,9 +260,9 @@ describe("EMR 043/u Math and Clinical Indices", () => {
 	});
 });
 
-describe("Form 043/u Completeness Validation", () => {
+describe("Medical Record Completeness Validation", () => {
 	it("validates 100% complete form successfully", () => {
-		const res = validateForm043uCompleteness(MOCK_CARD_DATA);
+		const res = validateMedicalRecordCompleteness(MOCK_CARD_DATA);
 		assert.equal(res.isComplete, true);
 		assert.ok(res.completenessScore >= 90);
 		assert.equal(res.missingFields.length, 0);
@@ -282,7 +279,7 @@ describe("Form 043/u Completeness Validation", () => {
 			visitDiaries: [],
 		};
 
-		const res = validateForm043uCompleteness(incompleteData);
+		const res = validateMedicalRecordCompleteness(incompleteData);
 		// Mandate 8e: Doctor is never blocked from saving or exporting
 		assert.equal(res.isComplete, true);
 		assert.ok(res.completenessScore < 90);
@@ -292,7 +289,7 @@ describe("Form 043/u Completeness Validation", () => {
 	});
 });
 
-describe("Form 043/u Document Generators", () => {
+describe("Medical Record Document Generators", () => {
 	it("generates magazine-grade printable HTML conforming to Order 834n", () => {
 		const html = generateMedicalRecordPrintHtml(MOCK_CARD_DATA);
 		assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА ПРИЁМА"), "Contains Medical Card badge");
@@ -318,8 +315,6 @@ describe("Form 043/u Document Generators", () => {
 		assert.ok(xml.includes("<code code=\"DENTAL_STATUS\""), "Contains DENTAL_STATUS section");
 		assert.ok(xml.includes("<code code=\"VISIT_DIARIES\""), "Contains VISIT_DIARIES section");
 		assert.ok(xml.includes("<code code=\"EPICRISIS\""), "Contains EPICRISIS section");
-		// Backward compatibility alias test
-		assert.equal(generate043XmlCda(MOCK_CARD_DATA), xml);
 	});
 
 	it("generates structured JSON export and parses back without loss", () => {
@@ -329,11 +324,6 @@ describe("Form 043/u Document Generators", () => {
 		assert.equal(parsed.exportSchemaVersion, "1.0.0");
 		assert.equal(parsed.passport.medicalCardNumber, "СТ-2026-0843");
 		assert.equal(parsed.visitDiaries.length, 1);
-		// Backward compatibility alias test
-		assert.equal(generate043JsonExport, generateMedicalRecordJsonExport);
-		const aliasParsed = JSON.parse(generate043JsonExport(MOCK_CARD_DATA));
-		assert.equal(aliasParsed.formNumber, parsed.formNumber);
-		assert.equal(aliasParsed.exportSchemaVersion, parsed.exportSchemaVersion);
 	});
 
 	it("generates structured plain text transcript for clipboard copy", () => {
@@ -344,8 +334,6 @@ describe("Form 043/u Document Generators", () => {
 		assert.ok(text.includes("3. СТОМАТОЛОГИЧЕСКИЙ СТАТУС"));
 		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ И ПРОТОКОЛЫ ПРИЁМА"));
 		assert.ok(text.includes("5. ЭПИКРИЗ И КОНТРОЛЬНОЕ НАБЛЮДЕНИЕ"));
-		// Backward compatibility alias test
-		assert.equal(generate043PlainText(MOCK_CARD_DATA), text);
 	});
 
 	it("escapes HTML and XML special characters safely", () => {

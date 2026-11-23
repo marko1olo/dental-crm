@@ -14,12 +14,10 @@ export * from "./math/recordMathStamps.js";
 export { renderFdiFormulaTableHtml } from "./record/html/recordHtmlFdiTable.js";
 export { generateMedicalRecordPrintHtml } from "./record/html/recordHtmlGenerator.js";
 
-export { escapeXml, generateMedicalRecordXmlCda, generate043XmlCda } from "./export/recordExportXml.js";
+export { escapeXml, generateMedicalRecordXmlCda } from "./export/recordExportXml.js";
 export {
 	generateMedicalRecordJsonExport,
 	generateMedicalRecordPlainText,
-	generate043JsonExport,
-	generate043PlainText,
 } from "./export/recordExportJsonText.js";
 
 import {

@@ -98,5 +98,3 @@ export function validateMedicalRecordCompleteness(data: MedicalRecordData): Medi
 	};
 }
 
-/** Алиас для обратной совместимости */
-export const validateForm043uCompleteness = validateMedicalRecordCompleteness;

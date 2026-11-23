@@ -76,7 +76,13 @@ export const MobilePatientHeaderCard: React.FC<MobilePatientHeaderCardProps> = (
 				onBack={onBack}
 				patientCoreDirty={patientCoreDirty}
 				patientCoreSaveState={patientCoreSaveState}
-				savePatientCore={savePatientCore}
+				savePatientCore={
+					savePatientCore
+						? () => {
+								void savePatientCore();
+							}
+						: undefined
+				}
 				onStartVisit={onStartVisit}
 			/>
 

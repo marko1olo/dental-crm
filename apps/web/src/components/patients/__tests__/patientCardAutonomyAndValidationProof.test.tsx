@@ -63,7 +63,7 @@ describe("Patient Card Autonomy & Validation Proof (Mandates 8e, 8n, Apple HIG)"
 	});
 
 	it("5. [Mandate 8ap] Financial balances are formatted in rubles without float errors", () => {
-		assert.equal(formatKopecksToRub(1540000), "15 400 ₽");
-		assert.equal(formatKopecksToRub(0), "0 ₽");
+		assert.equal(formatKopecksToRub(1540000), "15 400,00 ₽");
+		assert.equal(formatKopecksToRub(0), "0,00 ₽");
 	});
 });

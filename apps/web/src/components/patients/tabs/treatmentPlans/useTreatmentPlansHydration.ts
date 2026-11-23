@@ -10,7 +10,9 @@ import {
 	rublesToKopecks,
 	kopecksToRubles,
 	sumKopecks,
+	percentageOfKopecks,
 } from "@dental/shared";
+import { basisPointsFromPercent } from "../../../treatment-plans/planInsuranceCoverage";
 import { buildCanonical3TierPlans } from "../../../treatment-plans/treatmentPlanCatalogData";
 import { generateCompletedWorksActAndWriteOff } from "../../../treatment-plans/treatmentPlanMaterialEngine";
 import type {
@@ -482,9 +484,9 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	const discountedTotalKopecks = useMemo(() => {
 		if (!activeTierData) return 0;
 		const baseKopecks = rublesToKopecks(activeTierData.totalRub);
-		const doctorDiscountKopecks = Math.round(
-			(baseKopecks * Math.min(100, Math.max(0, doctorDiscountPercent))) / 100,
-		);
+		const clampedPercent = Math.min(100, Math.max(0, doctorDiscountPercent));
+		const bp = clampedPercent > 0 ? basisPointsFromPercent(clampedPercent) : null;
+		const doctorDiscountKopecks = bp !== null ? percentageOfKopecks(baseKopecks, bp) : 0;
 		const bonusPointsKopecks = rublesToKopecks(bonusPointsToUseRub);
 		return Math.max(0, baseKopecks - doctorDiscountKopecks - bonusPointsKopecks);
 	}, [activeTierData, doctorDiscountPercent, bonusPointsToUseRub]);

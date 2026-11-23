@@ -138,11 +138,7 @@ export async function getPatientByIdFromDb(
 		   пропала» и заводил дубль.
 		   Тот же класс дефекта уже убран у getPatientsFromDb / createPatientInDb:
 		   подмена памятью только в useInMemory(); живой сбой базы обязан дойти
-		   до маршрута честной ошибкой. */
-		console.error(
-			"[patientsQuery] Не удалось прочитать карточку пациента из базы:",
-			error,
-		);
+		   до маршрута честной ошибкой без неструктурированного спама в stderr. */
 		throw error;
 	}
 }
@@ -301,10 +297,6 @@ export async function getPatientsFromDb(
 		   мог записать на приём не того человека.
 		   Молчаливая подмена данных в медицинской системе опаснее честной
 		   ошибки. Режим работы без базы задаётся выше, в useInMemory(). */
-		console.error(
-			"[patientsQuery] Не удалось прочитать список пациентов из базы:",
-			error,
-		);
 		throw error;
 	}
 }
@@ -360,7 +352,6 @@ export async function createPatientInDb(
 		   не проведётся оплата.
 		   Подмена памятью уместна только в режиме без базы — он выше, в
 		   useInMemory(). Настоящий сбой базы обязан дойти до маршрута. */
-		console.error("[patientsQuery] Не удалось создать пациента в базе:", error);
 		throw error;
 	}
 }
@@ -575,10 +566,6 @@ export async function updatePatientInDb(
 		   правка теряется молча и обнаруживается только после перезагрузки
 		   карточки. Маршрут уже умеет отвечать честно — «Не удалось сохранить
 		   изменения», — но получал успех вместо ошибки. */
-		console.error(
-			"[patientsQuery] Не удалось обновить пациента в базе:",
-			error,
-		);
 		throw error;
 	}
 }
@@ -657,7 +644,6 @@ export async function updatePatientAdministrativeProfileInDb(
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
 		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть как успешное сохранение. */
-		console.error("[patientsQuery] Не удалось обновить профиль пациента в базе:", error);
 		throw error;
 	}
 }

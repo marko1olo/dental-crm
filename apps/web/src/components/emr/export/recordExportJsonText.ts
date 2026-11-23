@@ -13,9 +13,6 @@ export function generateMedicalRecordJsonExport(data: MedicalRecordData): string
 	return JSON.stringify(payload, null, 2);
 }
 
-/** Алиас обратной совместимости */
-export const generate043JsonExport = generateMedicalRecordJsonExport;
-
 /** Генератор чистого текстового представления карты для буфера обмена */
 export function generateMedicalRecordPlainText(data: MedicalRecordData): string {
 	const p = data.passport;
@@ -75,5 +72,3 @@ export function generateMedicalRecordPlainText(data: MedicalRecordData): string 
 	return lines.join("\n");
 }
 
-/** Алиас обратной совместимости */
-export const generate043PlainText = generateMedicalRecordPlainText;

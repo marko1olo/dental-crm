@@ -1,7 +1,7 @@
 import type { CreateDocumentInput } from "@dental/shared";
 
 /**
- * Проверка наличия структурированных данных для медицинских карт (043/у), выписок, справок и направлений.
+ * Проверка наличия структурированных данных для медицинских карт приёма, выписок, справок и направлений.
  */
 export function checkClinicalRecordPayloadMissingReason(
 	input: CreateDocumentInput,
@@ -31,7 +31,7 @@ export function checkClinicalRecordPayloadMissingReason(
 		input.kind === "dental_medical_card_043u" &&
 		!input.payload?.dentalMedicalCard043u
 	) {
-		return "Для медицинской карты 043/у нужны структурированные данные: организация, пациент, номер карты, дата приема, жалобы, анамнез, объективный статус, диагноз, стоматологические строки, лечение и врач.";
+		return "Для медицинской карты приёма нужны структурированные данные: организация, пациент, номер карты, дата приема, жалобы, анамнез, объективный статус, диагноз, стоматологические строки, лечение и врач.";
 	}
 	if (
 		input.kind === "medical_record_copy_request" &&

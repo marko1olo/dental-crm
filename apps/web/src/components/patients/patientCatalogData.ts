@@ -12,7 +12,8 @@
  * - Мандат 8b (Sweet Spot: 250–320 строк).
  */
 
-import { normalizePhone, formatPhoneDisplay as sharedFormatPhoneDisplay } from "@dental/shared";
+import { normalizePhone, formatPhoneDisplay as sharedFormatPhoneDisplay, formatKopecksToRub } from "@dental/shared";
+export { formatKopecksToRub };
 
 export type PatientCategory = "primary" | "regular" | "vip" | "debtor" | "blacklist";
 
@@ -129,14 +130,6 @@ export function formatPhoneDisplay(raw: string | null | undefined): string {
 	return sharedFormatPhoneDisplay(raw);
 }
 
-/**
- * Форматирование копеек в рубли с разделителем тысяч.
- */
-export function formatKopecksToRub(kopecks: number): string {
-	const rubles = Math.floor(kopecks / 100);
-	const formatted = new Intl.NumberFormat("ru-RU").format(rubles);
-	return `${formatted} ₽`;
-}
 
 /**
  * Расчет суммарного семейного баланса родственников.
