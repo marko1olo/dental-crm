@@ -566,4 +566,45 @@
   * `npm run check:encoding`: 19 990 файлов проверено, 0 нарушений (Exit Code 0).
   * `npm run check:diff`: 0 костылей (Exit Code 0).
 
+---
+
+## 🛡️ 24. Red Team Fixer Surgeon: Ликвидация дефектов FEFO списания и синхронизация техкарт BOM (Домен 23 & 44) (Мандаты 8e, 8n, 8v, 8aa, 8bo, 8az)
+
+* **Ликвидация сбоя ReferenceError в резолвере дефицита (`fefoDeficitResolver.ts`)**:
+  * В `apps/api/src/services/inventory/fefoModules/fefoDeficitResolver.ts` переменная `purchaseOrderDraft` вынесена на верхний уровень функции. Устранен `ReferenceError: purchaseOrderDraft is not defined`, вызывавший падение `500 Internal Server Error` при успешном FEFO-списании без дефицита.
+* **Восстановление недостающего импорта eq в унифицированном движке списания (`unifiedStockDeductionEngine.ts`)**:
+  * В `apps/api/src/services/treatmentConsumables/unifiedStockDeductionEngine.ts` добавлен импорт `eq` из `drizzle-orm`. Ликвидирована ошибка `eq is not defined` при вызове списания ТМЦ за смену (`shift-deduct`).
+* **Применение миграции схемы PostgreSQL 18 для альтернативных позиций техкарт**:
+  * Накатана миграция `0287_procedure_tech_card_alternatives.sql` (`alternative_inventory_item_id`, `is_optional`). Таблицы `procedure_tech_card_items` приведены в 100% соответствие со схемой Drizzle.
+* **Машинная верификация**:
+  * `apps/api/src/tests/routes/chairsideVisitBomFefoIntegration.test.ts`: 4/4 PASS (Exit Code 0);
+  * `apps/api/src/tests/routes/inventoryRedTeamBOMAndInvoices.test.ts`: 3/3 PASS (Exit Code 0);
+  * `apps/api/src/tests/routes/pricelistCatalogInquisition.test.ts`: 8/8 PASS (Exit Code 0).
+
+---
+
+## 🛡️ 25. Red Team Fixer Surgeon: Ликвидация прокси FEFO/BOM, целочисленные копеечные DTO и отложенное списание визита (Домен L) (Мандаты 8e, 8n, 8v, 8aa, 8bm, 8bf, 8bk)
+
+* **Ликвидация узких прокси-файлов расстрельного списка (`git rm`)**:
+  - `apps/api/src/services/inventory/fefo/deductionEngine.ts` удален (`git rm`). Вызовы переведены напрямую на канонический шлюз `fefoModules/index.js` в `fefoStockService.ts` и `fefo/index.ts`.
+  - `apps/api/src/services/inventory/defaultBomSeeds.ts` удален (`git rm`). Все потребители (`procedureRuleRoutes.ts`, `applyProcedureConsumablesDeduction.ts`, `statutoryBomResolver.ts`, `inventoryAutoDeduct.test.ts`) переведены на прямой импорт из `./bomSeeds/index.js`.
+* **Целочисленные копеечные поля в DTO и защита от float-погрешностей (Мандат 8bm)**:
+  - В `packages/shared/src/inventory/consumables.ts` схемы `consumableLinkDetailedSchema`, `linkOptionsTreatmentSchema`, `linkOptionsItemSchema`, `stockDeductionRecordSchema`, `requiredMaterialItemSchema`, `inventoryAlertItemSchema`, `inventoryAlertSummarySchema` дополнены целочисленными полями `unitCostKopecks: z.number().int()`, `totalCostKopecks: z.number().int()`, `priceKopecks: z.number().int().optional()`, `totalValuationKopecks: z.number().int()`.
+  - Устаревшие рублевые float-поля помечены `@deprecated`, добавлены типобезопасные конверсионные хелперы `getConsumableUnitCostKopecks`, `getConsumableTotalCostKopecks`, `getConsumablePriceKopecks`, `calculateRecipeEstimatedCostKopecks` без накапливающего деления на 100.
+  - В `recipeRowMapper.ts` строки маппинга переведены на копеечные расчеты `rublesToKopecks`.
+* **Ликвидация жесткого HTTP 400 при списании расходников приёма (Мандаты 8e, 8v, 8aa)**:
+  - В `apps/api/src/routes/visits/visitConsumablesRoutes.ts` перехват ошибки списания в блоке `catch` больше не блокирует завершение приёма пациента и не возвращает HTTP 400. Возвращается статус `200 OK` с полезной нагрузкой `{ success: false, deferred: true, warning: "Списание отложено в бэк-офис", error: "ConsumablesDeductionFailed" }`. Приём у кресла 100% автономен.
+  - В `visitConsumablesRoutes.ts` обеспечена строгая передача `unitCostKopecks` в `executeFefoBatchDeduction`.
+* **Автоматический клиринг овердрафта склада при приходе накладной**:
+  - В `apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts` подтверждено корректное гашение отрицательного остатка: `deficit = currentStock < 0 ? Math.abs(currentStock) : 0`, автоматическое списание дефицита из принятой партии и инкремент счетчика `overdraftResolvedCount`.
+* **Машинные гейты и верификация**:
+  - `packages/shared/src/tests/inventoryReorderEngine.test.ts`: 14/14 PASS (Exit Code 0).
+  - `packages/shared/src/tests/treatmentConsumables.test.ts`: 12/12 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/visitConsumablesSoftOverdraft.test.ts`: 2/2 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/inventoryAutoDeduct.test.ts`: 3/3 PASS (Exit Code 0).
+  - `packages/shared/src/tests/inventoryMaterialsSsot.test.ts`: 7/7 PASS (Exit Code 0).
+  - `packages/shared/src/tests/inventoryFifoTracking.test.ts`: 7/7 PASS (Exit Code 0).
+
+
+
 
