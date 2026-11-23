@@ -34,6 +34,7 @@ export {
 	angle3Points,
 	angleBetweenLines,
 	projectPointOntoLine,
+	resolveOcclusalPlane,
 	calculateCephalometrics,
 	generateOrthodonticProtocolText,
 	generateForm043OrthodonticProtocolText,

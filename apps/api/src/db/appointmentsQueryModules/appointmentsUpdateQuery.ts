@@ -3,7 +3,7 @@ import type {
 	AppointmentStatus,
 	UpdateAppointmentInput,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, lt, or, type SQL } from "drizzle-orm";
 import {
 	updateAppointment as updateAppointmentInMemory,
 } from "../../sampleData.js";
@@ -28,6 +28,7 @@ export async function updateAppointmentInDb(
 		allowEmergencyOverride?: boolean | undefined;
 		allowOverbooking?: boolean | undefined;
 		urgency?: "routine" | "urgent" | "emergency" | undefined;
+		leaseToken?: string | null | undefined;
 	},
 	executor?: DbClientOrTransaction,
 ): Promise<Appointment> {
@@ -172,6 +173,67 @@ export async function updateAppointmentInDb(
 					patientId: newPatientId,
 					excludeAppointmentId: appointmentId,
 				});
+			}
+
+			// -------------------------------------------------------------
+			// SLOT LEASE PROTOCOL (CORE-7):
+			// -------------------------------------------------------------
+			if (input.leaseToken) {
+				const [lease] = await tx
+					.select()
+					.from(schema.scheduleSlotLeases)
+					.where(
+						and(
+							eq(schema.scheduleSlotLeases.organizationId, organizationId),
+							eq(schema.scheduleSlotLeases.leaseToken, input.leaseToken),
+						),
+					)
+					.limit(1);
+
+				if (!lease || lease.expiresAt.getTime() <= Date.now()) {
+					if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+						throw new Error("Срок резервирования слота истек или токен удержания недействителен");
+					}
+				} else {
+					await tx
+						.delete(schema.scheduleSlotLeases)
+						.where(eq(schema.scheduleSlotLeases.id, lease.id));
+				}
+			} else if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+				const leaseResourceConditions: SQL[] = [];
+				if (newDoctorUserId) {
+					leaseResourceConditions.push(
+						eq(schema.scheduleSlotLeases.doctorUserId, newDoctorUserId),
+					);
+				}
+				if (newChairId) {
+					leaseResourceConditions.push(
+						eq(schema.scheduleSlotLeases.chairId, newChairId),
+					);
+				}
+
+				if (leaseResourceConditions.length > 0) {
+					const resourceFilter = or(...leaseResourceConditions);
+					if (resourceFilter) {
+						const [activeLease] = await tx
+							.select({ id: schema.scheduleSlotLeases.id })
+							.from(schema.scheduleSlotLeases)
+							.where(
+								and(
+									eq(schema.scheduleSlotLeases.organizationId, organizationId),
+									gt(schema.scheduleSlotLeases.expiresAt, new Date()),
+									lt(schema.scheduleSlotLeases.startsAt, candidateEnds),
+									gt(schema.scheduleSlotLeases.endsAt, candidateStarts),
+									resourceFilter,
+								),
+							)
+							.limit(1);
+
+						if (activeLease) {
+							throw new Error("Слот временно удерживается другим пользователем");
+						}
+					}
+				}
 			}
 		}
 

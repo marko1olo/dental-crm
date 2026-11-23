@@ -7,8 +7,10 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { imagingStudies } from "../../db/schema/imaging.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { cephAnalysisSaveSchema, patientParamsSchema } from "./types.js";
@@ -40,13 +42,37 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 			}
 
+			// DEF-ORTHO-SEV1-03: Проверка принадлежности снимка ТРГ организации и пациенту
+			if (body.imagingStudyId) {
+				const [study] = await db
+					.select()
+					.from(imagingStudies)
+					.where(
+						and(
+							eq(imagingStudies.id, body.imagingStudyId),
+							eq(imagingStudies.organizationId, orgId),
+							eq(imagingStudies.patientId, patientId),
+						),
+					)
+					.limit(1);
+
+				if (!study) {
+					return reply.code(404).send({
+						error: "ImagingStudyNotFound",
+						message: "Рентгенологическое исследование ТРГ не найдено в профиле пациента или принадлежит другой организации",
+					});
+				}
+			}
+
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const nowIso = new Date().toISOString();
 			const studyId = body.id || `ceph-${Date.now()}`;
 
 			const studyRecord = {
 				id: studyId,
+				organizationId: orgId,
 				patientId,
+				imagingStudyId: body.imagingStudyId ?? null,
 				patientName: body.patientName || patient.fullName,
 				imageUrl: body.imageUrl ?? null,
 				landmarks: body.landmarks ?? {},
@@ -83,6 +109,25 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 					},
 					tx,
 				);
+
+				// Связка со снимком: фиксация ортодонтического заключения в исследовании
+				if (body.imagingStudyId) {
+					const summaryText =
+						body.analysis?.protocol043Text ||
+						body.analysis?.summaryRu ||
+						`Цефалометрический анализ ТРГ (${studyRecord.placedCount} точек)`;
+					await tx
+						.update(imagingStudies)
+						.set({
+							aiSummary: summaryText,
+						})
+						.where(
+							and(
+								eq(imagingStudies.id, body.imagingStudyId),
+								eq(imagingStudies.organizationId, orgId),
+							),
+						);
+				}
 			});
 
 			return reply.send({

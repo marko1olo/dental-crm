@@ -15,9 +15,8 @@ import {
 	Zap,
 } from "lucide-react";
 import type { ChestnyZnakScanSummary } from "@dental/shared";
-import type { MdlpOfflinePackage } from "../mdlpOfflineQueue.js";
 import { EMERGENCY_DISPENSE_PRESETS } from "../mdlpPresetsData.js";
-import type { CrptServerStatus, MdlpScanMode } from "./types.js";
+import type { CrptServerStatus, MdlpOfflinePackage, MdlpScanMode } from "./types.js";
 import { isAcceptanceMode, isCareDispenseMode, isSpoilageMode } from "./types.js";
 import { MdlpEmergencyDrawer } from "./MdlpEmergencyDrawer.js";
 import { MdlpOfflineDrawer } from "./MdlpOfflineDrawer.js";

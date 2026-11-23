@@ -1,11 +1,9 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, or } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { communicationEvents } from "../../../db/schema.js";
-import {
-	type CommunicationChannelCode,
-	resolveChannelCredentials,
-	sendThroughChannel,
-} from "../../../services/communications/channelRouter.js";
+import type { CommunicationChannelCode } from "../../../services/communications/channelRouter.js";
+import { enqueueMessage } from "../../../services/communications/dispatch/dispatcherCore.js";
+import type { CommunicationIntentCode } from "../../../services/communications/dispatch/types.js";
 import { resolveRecipientAddress } from "../../../services/communications/dispatch/channelAdapters.js";
 import { MessageTemplateEngine } from "../../../services/communications/MessageTemplateEngine.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -48,6 +46,18 @@ export async function processSendMessage(
 	}
 
 	const fifteenSecAgo = new Date(Date.now() - 15 * 1000);
+	const duplicateConditions = [
+		and(
+			eq(communicationEvents.message, messageToSend),
+			gt(communicationEvents.createdAt, fifteenSecAgo),
+		),
+	];
+	if (idempotencyKey) {
+		duplicateConditions.push(
+			eq(communicationEvents.idempotencyKey, idempotencyKey),
+		);
+	}
+
 	const recentEvents = await db
 		.select({
 			id: communicationEvents.id,
@@ -60,8 +70,7 @@ export async function processSendMessage(
 				eq(communicationEvents.patientId, patientId),
 				eq(communicationEvents.channel, resolvedChannel),
 				eq(communicationEvents.direction, "outbound"),
-				eq(communicationEvents.message, messageToSend),
-				gt(communicationEvents.createdAt, fifteenSecAgo),
+				or(...duplicateConditions),
 			),
 		)
 		.limit(1);
@@ -76,10 +85,6 @@ export async function processSendMessage(
 			hasMedicalSecrecyWarning: Boolean(warning),
 		};
 	}
-
-	const messageToStore = idempotencyKey
-		? `${messageToSend} [idempotency:${idempotencyKey}]`
-		: messageToSend;
 
 	// 1. Проверяем наличие адреса получателя (телефон, email, telegram chatId, MAX)
 	const recipient = await resolveRecipientAddress(
@@ -97,7 +102,8 @@ export async function processSendMessage(
 				channel: resolvedChannel,
 				direction: "outbound",
 				status: "failed",
-				message: messageToStore,
+				message: messageToSend,
+				idempotencyKey: idempotencyKey ?? null,
 			})
 			.returning();
 
@@ -114,27 +120,22 @@ export async function processSendMessage(
 		};
 	}
 
-	// 2. Получаем учетные данные каналов организации
-	const credentials = await resolveChannelCredentials(orgId);
+	// 2. Постановка в PostgreSQL Transactional Outbox (DEF-17-03 / Mandate 8bo)
+	const dedupeKey = idempotencyKey || `inbox:${orgId}:${patientId}:${resolvedChannel}:${Date.now()}`;
+	const intentCode: CommunicationIntentCode =
+		(data.intent as CommunicationIntentCode) || "general";
+	const enqueueRes = await enqueueMessage({
+		organizationId: orgId,
+		patientId,
+		channel: resolvedChannel as CommunicationChannelCode,
+		intent: intentCode,
+		scope: "service",
+		recipientAddress: recipient.address,
+		body: messageToSend,
+		dedupeKey,
+	});
 
-	// 3. Отправляем сообщение через реальный шлюз канала
-	const sendResult = await sendThroughChannel(
-		{
-			channel: resolvedChannel as CommunicationChannelCode,
-			recipientAddress: recipient.address,
-			subject: null,
-			body: messageToSend,
-			idempotencyKey: idempotencyKey ?? null,
-			intent: data.intent ?? null,
-			templateName: data.templateName ?? null,
-			languageCode: data.languageCode ?? null,
-			templateParameters: data.templateParameters ?? null,
-		},
-		credentials,
-	);
-
-	// 4. Фиксируем фактический результат в базе данных
-	if (!sendResult.ok) {
+	if (!enqueueRes.ok) {
 		const [failedEvent] = await db
 			.insert(communicationEvents)
 			.values({
@@ -143,24 +144,23 @@ export async function processSendMessage(
 				channel: resolvedChannel,
 				direction: "outbound",
 				status: "failed",
-				message: messageToStore,
+				message: messageToSend,
+				idempotencyKey: idempotencyKey ?? null,
 			})
 			.returning();
 
 		return {
 			success: false,
-			status: sendResult.errorClass === "not_configured" ? 400 : 502,
-			error:
-				sendResult.errorClass === "not_configured"
-					? "ChannelNotConfigured"
-					: "DeliveryFailed",
-			message: sendResult.errorMessage,
+			status: 400,
+			error: "EnqueueFailed",
+			message: enqueueRes.reason,
 			event: failedEvent,
 			warning,
 			hasMedicalSecrecyWarning: Boolean(warning),
 		};
 	}
 
+	// 3. Фиксируем событие в communicationEvents с чистым текстом и отдельным idempotencyKey
 	const [inserted] = await db
 		.insert(communicationEvents)
 		.values({
@@ -168,12 +168,13 @@ export async function processSendMessage(
 			patientId,
 			channel: resolvedChannel,
 			direction: "outbound",
-			status: "sent",
-			message: messageToStore,
+			status: "queued",
+			message: messageToSend,
+			idempotencyKey: idempotencyKey ?? null,
 		})
 		.returning();
 
-	// 5. Оповещаем открытые клиенты через WebSocket
+	// 4. Оповещаем открытые клиенты через WebSocket
 	try {
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "INBOX_NEW_MESSAGE",
@@ -190,7 +191,7 @@ export async function processSendMessage(
 	return {
 		success: true,
 		event: inserted,
-		providerMessageId: sendResult.providerMessageId,
+		outboxId: enqueueRes.outboxId,
 		warning,
 		hasMedicalSecrecyWarning: Boolean(warning),
 	};

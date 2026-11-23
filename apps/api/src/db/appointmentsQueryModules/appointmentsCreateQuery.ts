@@ -3,7 +3,7 @@ import type {
 	AppointmentStatus,
 	CreateAppointmentInput,
 } from "@dental/shared";
-import { and, eq, gte, or, sql } from "drizzle-orm";
+import { and, eq, gt, gte, lt, or, sql, type SQL } from "drizzle-orm";
 import {
 	createAppointment as createAppointmentInMemory,
 } from "../../sampleData.js";
@@ -30,6 +30,7 @@ export type CreateAppointmentDbInput = CreateAppointmentInput & {
 	attributionReason?: string | null | undefined;
 	rebookingSourceVisitId?: string | null | undefined;
 	rebookingDeltaMinutes?: number | null | undefined;
+	leaseToken?: string | null | undefined;
 };
 
 export interface RebookingAttributionInput {
@@ -197,6 +198,67 @@ export async function createAppointmentInDb(
 		}
 
 		const isOverbookingRecord = Boolean(input.allowOverbooking || isEmergencyOverrideOverall);
+
+		// -------------------------------------------------------------
+		// SLOT LEASE PROTOCOL (CORE-7):
+		// -------------------------------------------------------------
+		if (input.leaseToken) {
+			const [lease] = await executor
+				.select()
+				.from(schema.scheduleSlotLeases)
+				.where(
+					and(
+						eq(schema.scheduleSlotLeases.organizationId, organizationId),
+						eq(schema.scheduleSlotLeases.leaseToken, input.leaseToken),
+					),
+				)
+				.limit(1);
+
+			if (!lease || lease.expiresAt.getTime() <= Date.now()) {
+				if (!isOverbookingRecord) {
+					throw new Error("Срок резервирования слота истек или токен удержания недействителен");
+				}
+			} else {
+				await executor
+					.delete(schema.scheduleSlotLeases)
+					.where(eq(schema.scheduleSlotLeases.id, lease.id));
+			}
+		} else if (!isOverbookingRecord && input.status !== "cancelled" && input.status !== "no_show") {
+			const leaseResourceConditions: SQL[] = [];
+			if (input.doctorUserId) {
+				leaseResourceConditions.push(
+					eq(schema.scheduleSlotLeases.doctorUserId, input.doctorUserId),
+				);
+			}
+			if (input.chairId) {
+				leaseResourceConditions.push(
+					eq(schema.scheduleSlotLeases.chairId, input.chairId),
+				);
+			}
+
+			if (leaseResourceConditions.length > 0) {
+				const resourceFilter = or(...leaseResourceConditions);
+				if (resourceFilter) {
+					const [activeLease] = await executor
+						.select({ id: schema.scheduleSlotLeases.id })
+						.from(schema.scheduleSlotLeases)
+						.where(
+							and(
+								eq(schema.scheduleSlotLeases.organizationId, organizationId),
+								gt(schema.scheduleSlotLeases.expiresAt, new Date()),
+								lt(schema.scheduleSlotLeases.startsAt, candidateEnds),
+								gt(schema.scheduleSlotLeases.endsAt, candidateStarts),
+								resourceFilter,
+							),
+						)
+						.limit(1);
+
+					if (activeLease) {
+						throw new Error("Слот временно удерживается другим пользователем");
+					}
+				}
+			}
+		}
 
 		// -------------------------------------------------------------
 		// ФИЧА 54: Клинический алгоритм разделения конверсии повторной записи:

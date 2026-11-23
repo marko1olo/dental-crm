@@ -108,7 +108,8 @@ export const OdontogramModule = React.memo(
 	},
 	(prev, next) =>
 		prev.patientId === next.patientId &&
-		prev.pediatricMode === next.pediatricMode,
+		prev.pediatricMode === next.pediatricMode &&
+		prev.dentitionMode === next.dentitionMode,
 );
 
 OdontogramModule.displayName = "OdontogramModule";

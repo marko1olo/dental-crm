@@ -66,19 +66,60 @@ export const deductOrthoMaterialsSchema = z.object({
 	notes: z.string().max(300).optional(),
 });
 
-export const cephAnalysisSaveSchema = z.object({
-	id: z.string().optional(),
-	patientName: z.string().optional(),
-	imageUrl: z.string().nullable().optional(),
-	landmarks: z.record(z.string(), z.object({ x: z.number(), y: z.number() })).optional(),
-	scaleMmPerPixel: z.number().optional(),
-	analysis: z.record(z.string(), z.unknown()).optional(),
-	source: z.string().optional(),
-	backendUsed: z.string().optional(),
-	isCalibratedFallback: z.boolean().optional(),
-	placedCount: z.number().optional(),
-	latencyMs: z.number().optional(),
-});
+export const cephPointSchema = z
+	.object({
+		x: z.number().min(0, "Координата X не может быть отрицательной").max(10000, "Координата X превышает допустимый размер кадра"),
+		y: z.number().min(0, "Координата Y не может быть отрицательной").max(10000, "Координата Y превышает допустимый размер кадра"),
+	})
+	.strict();
+
+export const cephMeasurementSchema = z
+	.object({
+		id: z.string().min(1).max(64),
+		nameRu: z.string().min(1).max(128),
+		normMin: z.number(),
+		normMax: z.number(),
+		unit: z.enum(["deg", "mm"]),
+		value: z.number().nullable(),
+		status: z.enum(["normal", "deviation_high", "deviation_low", "unmeasured"]),
+		clinicalInterpretation: z.string().max(500),
+		category: z.enum([
+			"skeletal_sagittal",
+			"skeletal_vertical",
+			"dental_upper",
+			"dental_lower",
+			"dental_interincisal",
+			"soft_tissue",
+		]),
+	})
+	.strict();
+
+export const cephAnalysisPayloadSchema = z
+	.object({
+		measurements: z.array(cephMeasurementSchema).optional(),
+		diagnosis: z.record(z.string(), z.unknown()).optional(),
+		summaryRu: z.string().max(4000).optional(),
+		protocol043Text: z.string().max(8000).optional(),
+	})
+	.passthrough();
+
+export const cephAnalysisSaveSchema = z
+	.object({
+		id: z.string().max(128).optional(),
+		imagingStudyId: z.string().uuid("Идентификатор снимка ТРГ должен быть UUID").optional(),
+		patientName: z.string().max(150).optional(),
+		imageUrl: z.string().nullable().optional(),
+		landmarks: z.record(z.string(), cephPointSchema).optional(),
+		scaleMmPerPixel: z.number().positive().max(10).optional(),
+		analysis: cephAnalysisPayloadSchema.optional(),
+		source: z.string().max(64).optional(),
+		backendUsed: z.string().max(64).optional(),
+		isCalibratedFallback: z.boolean().optional(),
+		placedCount: z.number().int().min(0).max(100).optional(),
+		latencyMs: z.number().min(0).max(60000).optional(),
+		createdAt: z.string().optional(),
+	})
+	.strict();
 
 export interface OrthoMaterialDeductionResult {
 	success: boolean;

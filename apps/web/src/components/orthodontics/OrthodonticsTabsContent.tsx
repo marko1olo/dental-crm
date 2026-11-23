@@ -17,6 +17,7 @@ import {
 import { AlignerCaseTracker } from "./AlignerCaseTracker";
 import { BiteClassificationCard } from "./BiteClassificationCard";
 import { CephalometricCanvas, SAMPLE_TRG_CEPHALOGRAM_URL, type PointCoord } from "./CephalometricCanvas";
+import { calculateCephalometrics } from "./cephalometricMath";
 import { OrthodonticTimeline } from "./OrthodonticTimeline";
 
 export interface OrthodonticsTabsContentProps {
@@ -304,7 +305,28 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								imageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
 								landmarks={sampleCephLandmarks}
 								onLandmarkChange={(id, pt) => {
-									setSampleCephLandmarks((prev) => ({ ...prev, [id]: pt }));
+									const updated = { ...sampleCephLandmarks, [id]: pt };
+									setSampleCephLandmarks(updated);
+									// DEF-ORTHO-SEV2-03: Реактивный пересчет углов ТРГ и синхронизация с карточками
+									const result = calculateCephalometrics(updated, 0.15);
+									const newTrg: Record<string, number> = {};
+									for (const m of result.measurements) {
+										if (typeof m.value === "number") {
+											if (m.id === "SNA") newTrg.sna = m.value;
+											if (m.id === "SNB") newTrg.snb = m.value;
+											if (m.id === "ANB") newTrg.anb = m.value;
+											if (m.id === "1-NA-Angle") newTrg.u1_na = m.value;
+											if (m.id === "1-NB-Angle") newTrg.l1_nb = m.value;
+											if (m.id === "FMA") newTrg.fma = m.value;
+										}
+									}
+									setProtocol((prev) => ({
+										...prev,
+										trgValues: {
+											...(prev.trgValues || {}),
+											...newTrg,
+										},
+									}));
 								}}
 								className="min-h-[420px] rounded-xl border border-[var(--line)]"
 							/>

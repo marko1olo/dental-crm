@@ -1,9 +1,7 @@
 import type { MutationVector, SyncMutationEnvelope, SyncMutationResult } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
 import type { TenantDb } from "../../../db/rls.js";
 import { syncEntityVectors, syncIdempotencyRecords } from "../../../db/schema.js";
-import { SYNC_TABLE_DDL } from "./constants.js";
 import type { SyncQueueItem, SyncQueueStats } from "./types.js";
 
 /**
@@ -14,17 +12,10 @@ export class SyncQueueManager {
 
 	/**
 	 * Ensures database tables for synchronization and vector clocks exist.
+	 * Schema DDL is managed canonically via Postgres migrations (drizzle).
 	 */
 	public static async ensureSyncTablesExist(): Promise<void> {
-		try {
-			await db.execute(SYNC_TABLE_DDL.CREATE_IDEMPOTENCY_RECORDS_TABLE);
-			await db.execute(SYNC_TABLE_DDL.CREATE_IDEMPOTENCY_ORG_KEY_INDEX);
-			await db.execute(SYNC_TABLE_DDL.CREATE_IDEMPOTENCY_ORG_ENTITY_INDEX);
-			await db.execute(SYNC_TABLE_DDL.CREATE_ENTITY_VECTORS_TABLE);
-			await db.execute(SYNC_TABLE_DDL.CREATE_ENTITY_VECTORS_ORG_KIND_ENTITY_INDEX);
-		} catch {
-			// Ignore if tables or indexes already exist
-		}
+		// Schema DDL is maintained strictly via Postgres migrations
 	}
 
 	/**

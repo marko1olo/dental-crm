@@ -34,6 +34,7 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	/**
 	 * POST /api/lab/orders/:id/scans/upload-url
 	 * Генерация Presigned URL для прямой загрузки тяжелых 3D сканов (STL/PLY/OBJ) в S3 бакет.
+	 * Изоляция организации (organizationId) и заголовок Idempotency-Key (Мандат 8bo / RFC 9562).
 	 */
 	app.post("/api/lab/orders/:id/scans/upload-url", handleLabScanUploadUrl);
 
@@ -52,11 +53,18 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	/**
 	 * PUT /api/portal/direct-storage/upload
 	 * Локальное защищенное хранилище сканов клиники при отсутствии S3 (защита от path traversal, потоковый стриминг на диск).
+	 * Изоляция организации (organizationId) и заголовок Idempotency-Key.
 	 */
 	app.put(
 		"/api/portal/direct-storage/upload",
 		{
 			bodyLimit: MAX_SCAN_FILE_SIZE_BYTES + 1024 * 1024,
+			schema: {
+				headers: {
+					type: "object",
+					description: "Локальная загрузка 3D скана с проверкой organizationId и поддержкой Idempotency-Key",
+				},
+			},
 		},
 		handleDirectStorageUpload,
 	);

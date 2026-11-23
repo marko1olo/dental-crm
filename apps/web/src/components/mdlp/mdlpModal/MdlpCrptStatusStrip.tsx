@@ -1,7 +1,6 @@
 import type React from "react";
 import { AlertTriangle, WifiOff } from "lucide-react";
-import type { MdlpOfflinePackage } from "../mdlpOfflineQueue.js";
-import type { CrptServerStatus } from "./types.js";
+import type { CrptServerStatus, MdlpOfflinePackage } from "./types.js";
 
 export interface MdlpCrptStatusStripProps {
 	readonly crptStatus: CrptServerStatus;

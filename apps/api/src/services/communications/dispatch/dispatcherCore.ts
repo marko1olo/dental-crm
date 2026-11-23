@@ -6,7 +6,7 @@
 
 import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import { communicationOutbox } from "../../../db/schema.js";
 import {
 	type CommunicationChannelCode,
@@ -44,8 +44,69 @@ import type {
 	RowOutcome,
 } from "./types.js";
 
+async function insertOutboxEntry(
+	targetTx: TenantDb,
+	input: EnqueueMessageInput,
+	recipientAddress: string,
+	body: string,
+	scheduledAt: Date,
+): Promise<EnqueueMessageResult> {
+	const [inserted] = await targetTx
+		.insert(communicationOutbox)
+		.values({
+			organizationId: input.organizationId,
+			clinicId: input.clinicId ?? null,
+			patientId: input.patientId ?? null,
+			taskId: input.taskId ?? null,
+			templateId: input.templateId ?? null,
+			campaignId: input.campaignId ?? null,
+			channel: input.channel,
+			intent: input.intent,
+			scope: input.scope ?? "service",
+			recipientAddress,
+			subject: input.subject?.trim() || null,
+			body,
+			status: "queued",
+			scheduledAt,
+			nextAttemptAt: scheduledAt,
+			maxAttempts: input.maxAttempts ?? 5,
+			dedupeKey: input.dedupeKey,
+		})
+		// Повтор постановки — обычное дело при перезапуске планировщика.
+		// Это не ошибка и не повод отправить второе сообщение.
+		.onConflictDoNothing({
+			target: [
+				communicationOutbox.organizationId,
+				communicationOutbox.dedupeKey,
+			],
+		})
+		.returning({ id: communicationOutbox.id });
+
+	if (inserted)
+		return { ok: true as const, outboxId: inserted.id, duplicate: false };
+
+	const [existing] = await targetTx
+		.select({ id: communicationOutbox.id })
+		.from(communicationOutbox)
+		.where(
+			and(
+				eq(communicationOutbox.organizationId, input.organizationId),
+				eq(communicationOutbox.dedupeKey, input.dedupeKey),
+			),
+		)
+		.limit(1);
+
+	return existing
+		? { ok: true as const, outboxId: existing.id, duplicate: true }
+		: {
+				ok: false as const,
+				reason: "Не удалось поставить сообщение в очередь.",
+			};
+}
+
 export async function enqueueMessage(
 	input: EnqueueMessageInput,
+	tx?: TenantDb,
 ): Promise<EnqueueMessageResult> {
 	if (!isMachineDeliverableChannel(input.channel)) {
 		return {
@@ -84,62 +145,17 @@ export async function enqueueMessage(
 	}
 
 	const scheduledAt = input.scheduledAt ?? new Date();
-	// Постановка в очередь — ЗАПИСЬ, а не чтение, и без контекста она не
-	// «возвращала ноль строк», а падала с 42501: в WITH CHECK политики
-	// communication_outbox дизъюнкта обхода нет. Арендатор известен из входа.
-	return withTenantCtx(input.organizationId, async (tx) => {
-		const [inserted] = await tx
-			.insert(communicationOutbox)
-			.values({
-				organizationId: input.organizationId,
-				clinicId: input.clinicId ?? null,
-				patientId: input.patientId ?? null,
-				taskId: input.taskId ?? null,
-				templateId: input.templateId ?? null,
-				campaignId: input.campaignId ?? null,
-				channel: input.channel,
-				intent: input.intent,
-				scope: input.scope ?? "service",
-				recipientAddress,
-				subject: input.subject?.trim() || null,
-				body,
-				status: "queued",
-				scheduledAt,
-				nextAttemptAt: scheduledAt,
-				maxAttempts: input.maxAttempts ?? 5,
-				dedupeKey: input.dedupeKey,
-			})
-			// Повтор постановки — обычное дело при перезапуске планировщика.
-			// Это не ошибка и не повод отправить второе сообщение.
-			.onConflictDoNothing({
-				target: [
-					communicationOutbox.organizationId,
-					communicationOutbox.dedupeKey,
-				],
-			})
-			.returning({ id: communicationOutbox.id });
 
-		if (inserted)
-			return { ok: true as const, outboxId: inserted.id, duplicate: false };
+	// Если передана внешняя транзакция tx, пишем напрямую в неё,
+	// предотвращая Dual-Write разрыв при откате бизнес-транзакции.
+	if (tx) {
+		return insertOutboxEntry(tx, input, recipientAddress, body, scheduledAt);
+	}
 
-		const [existing] = await tx
-			.select({ id: communicationOutbox.id })
-			.from(communicationOutbox)
-			.where(
-				and(
-					eq(communicationOutbox.organizationId, input.organizationId),
-					eq(communicationOutbox.dedupeKey, input.dedupeKey),
-				),
-			)
-			.limit(1);
-
-		return existing
-			? { ok: true as const, outboxId: existing.id, duplicate: true }
-			: {
-					ok: false as const,
-					reason: "Не удалось поставить сообщение в очередь.",
-				};
-	});
+	// Иначе открываем контекст арендатора (RLS).
+	return withTenantCtx(input.organizationId, (tenantTx) =>
+		insertOutboxEntry(tenantTx, input, recipientAddress, body, scheduledAt),
+	);
 }
 
 /**
@@ -605,8 +621,9 @@ export class CommunicationsDispatcher {
 
 	public async enqueue(
 		input: EnqueueMessageInput,
+		tx?: TenantDb,
 	): Promise<EnqueueMessageResult> {
-		return enqueueMessage(input);
+		return enqueueMessage(input, tx);
 	}
 
 	public async getStatus(

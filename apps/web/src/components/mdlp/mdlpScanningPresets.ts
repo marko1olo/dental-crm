@@ -6,9 +6,7 @@ export { createChestnyZnakScannedItem, type ChestnyZnakScannedItem };
 
 export {
 	type MdlpOfflinePackage,
-	loadMdlpOfflineQueue,
-	saveMdlpOfflineQueue,
-} from "./mdlpOfflineQueue.js";
+} from "./mdlpModal/types.js";
 
 export {
 	SAMPLE_BARCODES,

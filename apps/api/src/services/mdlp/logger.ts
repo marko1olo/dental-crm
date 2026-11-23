@@ -12,26 +12,43 @@ export interface MdlpLogger {
 	error: (objOrMsg: unknown, msg?: string) => void;
 }
 
+function formatMdlpLogLine(
+	level: "DEBUG" | "INFO" | "WARN" | "ERROR",
+	objOrMsg: unknown,
+	msg?: string,
+): string {
+	const prefix =
+		level === "WARN" || level === "ERROR" ? `[MDLP ${level}]` : "[MDLP]";
+	const payload =
+		typeof objOrMsg === "string"
+			? objOrMsg
+			: (() => {
+					try {
+						return JSON.stringify(objOrMsg);
+					} catch {
+						return String(objOrMsg);
+					}
+				})();
+	const text = msg ? `${msg} ${payload}` : payload;
+	return `[${new Date().toISOString()}] ${prefix} ${text}\n`;
+}
+
 let activeLogger: MdlpLogger = {
 	debug: (objOrMsg: unknown, msg?: string) => {
 		if (process.env.NODE_ENV !== "test") {
-			// eslint-disable-next-line no-console
-			console.debug(`[${new Date().toISOString()}] [MDLP]`, msg ?? "", objOrMsg);
+			process.stdout.write(formatMdlpLogLine("DEBUG", objOrMsg, msg));
 		}
 	},
 	info: (objOrMsg: unknown, msg?: string) => {
 		if (process.env.NODE_ENV !== "test") {
-			// eslint-disable-next-line no-console
-			console.info(`[${new Date().toISOString()}] [MDLP]`, msg ?? "", objOrMsg);
+			process.stdout.write(formatMdlpLogLine("INFO", objOrMsg, msg));
 		}
 	},
 	warn: (objOrMsg: unknown, msg?: string) => {
-		// eslint-disable-next-line no-console
-		console.warn(`[${new Date().toISOString()}] [MDLP WARN]`, msg ?? "", objOrMsg);
+		process.stderr.write(formatMdlpLogLine("WARN", objOrMsg, msg));
 	},
 	error: (objOrMsg: unknown, msg?: string) => {
-		// eslint-disable-next-line no-console
-		console.error(`[${new Date().toISOString()}] [MDLP ERROR]`, msg ?? "", objOrMsg);
+		process.stderr.write(formatMdlpLogLine("ERROR", objOrMsg, msg));
 	},
 };
 

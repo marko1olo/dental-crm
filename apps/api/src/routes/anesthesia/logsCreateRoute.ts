@@ -114,9 +114,18 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 				try {
 					const allServices = await tx.select().from(serviceCatalogItems).where(and(eq(serviceCatalogItems.organizationId, orgId), eq(serviceCatalogItems.isActive, true))).limit(50);
 					const anesthesiaService = allServices.find((s) => s.order804nCode === "A16.07.030" || s.code === "A16.07.030" || s.title.toLowerCase().includes("анестези")) ?? null;
-					const unitPrice = anesthesiaService ? Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub) : 0;
-					const unitPriceKop = rublesToKopecks(unitPrice);
+					let unitPriceKop = 0;
+					if (anesthesiaService) {
+						if (typeof anesthesiaService.priceKopecks === "bigint" && anesthesiaService.priceKopecks > 0n) {
+							unitPriceKop = Number(anesthesiaService.priceKopecks);
+						} else if (typeof anesthesiaService.basePriceKopecks === "bigint" && anesthesiaService.basePriceKopecks > 0n) {
+							unitPriceKop = Number(anesthesiaService.basePriceKopecks);
+						} else {
+							unitPriceKop = rublesToKopecks(Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub || 0));
+						}
+					}
 					const totalKop = multiplyKopecks(unitPriceKop, data.carpulesAdministered);
+					const unitPriceRub = kopecksToRub(unitPriceKop);
 					const totalRub = kopecksToRub(totalKop);
 					const techTitle = data.technique === "mandibular_block" || data.technique === "tuberal_block" ? "проводниковая" : "инфильтрационная";
 					const [tItem] = await tx.insert(treatmentItems).values({
@@ -127,7 +136,7 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 						toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null,
 						title: `Анестезия ${techTitle} (${data.drugBrandName} 1.7 мл)`,
 						quantity: String(data.carpulesAdministered),
-						unitPriceRub: unitPrice,
+						unitPriceRub,
 						priceRub: totalRub,
 						unitPriceKopecks: BigInt(unitPriceKop),
 						priceKopecks: BigInt(totalKop),

@@ -66,6 +66,78 @@ export function projectPointOntoLine(p: Point2D, a: Point2D, b: Point2D): Point2
 	return { x: a.x + t * ab.x, y: a.y + t * ab.y };
 }
 
+/**
+ * Определение линии окклюзионной плоскости (Occlusal Plane, OP).
+ * DEF-ORTHO-SEV1-01 / DEF-ORTHO-SEV1-02:
+ * Окклюзионная плоскость проходит через перекрытие резцов (середина между U1t и L1t)
+ * и точку смыкания первых моляров (Mo), либо ориентируется по анатомическому наклону к основанию черепа.
+ * Возвращает две точки [p1, p2], где вектор p1 -> p2 направлен вперед (к резцам/лицу).
+ */
+export function resolveOcclusalPlane(landmarks: LandmarkMap): { p1: Point2D; p2: Point2D; forwardUnit: Point2D } | null {
+	const U1t = landmarks.U1t;
+	const L1t = landmarks.L1t;
+	const Mo = landmarks.Mo;
+	const ANS = landmarks.ANS;
+	const PNS = landmarks.PNS;
+	const Po = landmarks.Po;
+	const Or = landmarks.Or;
+
+	if (!U1t || !L1t) return null;
+
+	const incisalMid: Point2D = {
+		x: (U1t.x + L1t.x) / 2,
+		y: (U1t.y + L1t.y) / 2,
+	};
+
+	let posteriorOp: Point2D;
+
+	if (Mo) {
+		// Канон Jacobson/Downs: через смыкание первых моляров (Mo) и резцы (incisalMid)
+		posteriorOp = Mo;
+	} else if (PNS && ANS) {
+		// Анатомический расчет при отсутствии установленной точки Mo:
+		// Окклюзионная плоскость ориентирована согласованно с нёбной плоскостью твердого нёба (PNS -> ANS)
+		const palatalDir = vector(PNS, ANS);
+		const palatalLen = vectorLength(palatalDir);
+		if (palatalLen > 1e-6) {
+			const ux = palatalDir.x / palatalLen;
+			const uy = palatalDir.y / palatalLen;
+			posteriorOp = {
+				x: incisalMid.x - ux * 100,
+				y: incisalMid.y - uy * 100,
+			};
+		} else {
+			posteriorOp = { x: incisalMid.x - 100, y: incisalMid.y };
+		}
+	} else if (Po && Or) {
+		// Ориентация по Франкфуртской горизонтали (Po -> Or)
+		const fhDir = vector(Po, Or);
+		const fhLen = vectorLength(fhDir);
+		if (fhLen > 1e-6) {
+			const ux = fhDir.x / fhLen;
+			const uy = fhDir.y / fhLen;
+			posteriorOp = {
+				x: incisalMid.x - ux * 100,
+				y: incisalMid.y - uy * 100,
+			};
+		} else {
+			posteriorOp = { x: incisalMid.x - 100, y: incisalMid.y };
+		}
+	} else {
+		posteriorOp = { x: incisalMid.x - 100, y: incisalMid.y };
+	}
+
+	const dir = vector(posteriorOp, incisalMid);
+	const len = vectorLength(dir);
+	if (len < 1e-6) return null;
+
+	return {
+		p1: posteriorOp,
+		p2: incisalMid,
+		forwardUnit: { x: dir.x / len, y: dir.y / len },
+	};
+}
+
 // ==========================================
 // 2. РАСЧЕТ ИЗМЕРЕНИЙ ЦЕФАЛОМЕТРИИ
 // ==========================================
@@ -191,19 +263,20 @@ export function calculateCephalometrics(
 	let witsVal: number | null = null;
 	let witsInterp = "Установите точки A, B, U1t, L1t";
 	let witsStatus: CephalometricMeasurement["status"] = "unmeasured";
-	if (A && B && U1t && L1t) {
-		const opMid = { x: (U1t.x + L1t.x) / 2, y: (U1t.y + L1t.y) / 2 };
-		const opDir = vector(opMid, { x: opMid.x + 100, y: opMid.y });
-		const dirLen = vectorLength(opDir);
-		if (dirLen < 1e-6 || !Number.isFinite(scaleMmPerPixel) || scaleMmPerPixel <= 0) {
+	const op = resolveOcclusalPlane(landmarks);
+	if (A && B && op) {
+		if (!Number.isFinite(scaleMmPerPixel) || scaleMmPerPixel <= 0) {
 			witsVal = 0;
-			witsInterp = "Окклюзионная плоскость вырождена (Wits не определен)";
+			witsInterp = "Калибруйте масштаб снимка (Wits в мм не определен)";
 			witsStatus = "unmeasured";
 		} else {
-			const opP2 = { x: opMid.x + opDir.x, y: opMid.y + opDir.y };
-			const aProj = projectPointOntoLine(A, opMid, opP2);
-			const bProj = projectPointOntoLine(B, opMid, opP2);
-			const distPixels = aProj.x - bProj.x;
+			// Честная окклюзионная плоскость Jacobson через моляры Mo и резцы
+			const aProj = projectPointOntoLine(A, op.p1, op.p2);
+			const bProj = projectPointOntoLine(B, op.p1, op.p2);
+			// Вектор смещения от проекции B к проекции A (BO -> AO)
+			const disp = { x: aProj.x - bProj.x, y: aProj.y - bProj.y };
+			// Проекция на направляющий вектор окклюзионной плоскости вперед (к лицу)
+			const distPixels = disp.x * op.forwardUnit.x + disp.y * op.forwardUnit.y;
 			witsVal = Math.round(distPixels * scaleMmPerPixel * 10) / 10;
 			if (Number.isNaN(witsVal) || !Number.isFinite(witsVal)) {
 				witsVal = 0;
@@ -364,10 +437,15 @@ export function calculateCephalometrics(
 	let cantOpVal: number | null = null;
 	let cantOpInterp = "Установите Po, Or, U1t, L1t";
 	let cantOpStatus: CephalometricMeasurement["status"] = "unmeasured";
-	if (Po && Or && U1t && L1t) {
-		cantOpVal = Math.round(angleBetweenLines(Po, Or, U1t, L1t) * 10) / 10;
+	if (Po && Or && op) {
+		// Канон Downs Analysis: угол между Франкфуртской горизонталью FH (Po -> Or) и окклюзионной плоскостью OP (p1 -> p2)
+		cantOpVal = Math.round(angleBetweenLines(Po, Or, op.p1, op.p2) * 10) / 10;
 		cantOpStatus = cantOpVal > 13.1 ? "deviation_high" : cantOpVal < 5.5 ? "deviation_low" : "normal";
-		cantOpInterp = cantOpStatus === "normal" ? "Наклон окклюзионной плоскости в пределах нормы" : "Отклонение наклона окклюзионной плоскости";
+		cantOpInterp = cantOpStatus === "normal"
+			? "Наклон окклюзионной плоскости в норме (Downs 9.3°±3.8°)"
+			: cantOpStatus === "deviation_high"
+				? "Крутой наклон окклюзионной плоскости (высокий Cant of OP)"
+				: "Пологий наклон окклюзионной плоскости (низкий Cant of OP)";
 	}
 	measurements.push({
 		id: "Downs-CantOP",

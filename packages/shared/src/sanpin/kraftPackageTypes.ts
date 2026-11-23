@@ -31,6 +31,13 @@ export type KraftPackageStatus =
 	| "expired"
 	| "recalled";
 
+export const KRAFT_STATUS_LABELS_RU: Record<KraftPackageStatus, string> = {
+	sterile_valid: "Стерильно (годен)",
+	expiring_soon_7d: "Истекает срок",
+	expired: "Просрочен",
+	recalled: "Отозван",
+};
+
 export interface KraftPackageMaterialDefinition {
 	readonly id: KraftPackageMaterialId;
 	readonly nameRu: string;

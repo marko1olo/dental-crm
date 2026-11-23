@@ -63,24 +63,7 @@ export function MedicalWasteControlBar({
 					type="button"
 					onClick={handleQuickShiftWaste}
 					aria-busy={isQuickShiftLoading}
-					className="sanpin-btn touch-manipulation"
-					style={{
-						minHeight: "34px",
-						height: "34px",
-						padding: "0 1.15rem",
-						fontSize: "0.875rem",
-						fontWeight: 800,
-						background: "var(--teal, #0d9488)",
-						color: "#ffffff",
-						border: "none",
-						cursor: "pointer",
-						borderRadius: "8px",
-						boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.45rem",
-						whiteSpace: "nowrap",
-					}}
+					className="h-9 min-h-[36px] px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs transition-colors cursor-pointer"
 					title="Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
 					data-testid="nurse-waste-quick-shift-tab-btn"
 				>

@@ -5,29 +5,59 @@
 
 export interface CephSyncMessage {
 	type: string;
+	patientId?: string | undefined;
 	payload?: unknown;
 }
 
-const CEPH_STORAGE_KEY = "dente_active_ceph_study";
+export function getCephSessionStorageKey(patientId?: string): string {
+	return patientId ? `dente_active_ceph_study_${patientId}` : "dente_active_ceph_study";
+}
+
 const CEPH_CHANNEL_NAME = "dente_ceph_sync";
 
-export function cacheActiveCephStudy(study: unknown): void {
+export function cacheActiveCephStudy(study: { patientId?: string } | unknown, explicitPatientId?: string): void {
 	if (typeof window === "undefined") return;
+	const resolvedPatientId =
+		explicitPatientId ??
+		(study && typeof study === "object" && "patientId" in study && typeof (study as { patientId?: string }).patientId === "string"
+			? (study as { patientId: string }).patientId
+			: undefined);
+
 	try {
-		window.sessionStorage.setItem(CEPH_STORAGE_KEY, JSON.stringify(study));
-		broadcastCephSyncMessage({ type: "CEPH_STUDY_CACHED", payload: study });
+		const key = getCephSessionStorageKey(resolvedPatientId);
+		window.sessionStorage.setItem(key, JSON.stringify(study));
+		broadcastCephSyncMessage({
+			type: "CEPH_STUDY_CACHED",
+			patientId: resolvedPatientId,
+			payload: study,
+		});
 	} catch (e) {
 		console.warn("[CephSyncChannel] Failed to cache active ceph study:", e);
 	}
 }
 
-export function getActiveCephStudy<T = unknown>(): T | null {
+export function getActiveCephStudy<T = unknown>(patientId?: string): T | null {
 	if (typeof window === "undefined") return null;
 	try {
-		const raw = window.sessionStorage.getItem(CEPH_STORAGE_KEY);
+		const key = getCephSessionStorageKey(patientId);
+		const raw = window.sessionStorage.getItem(key);
 		return raw ? (JSON.parse(raw) as T) : null;
 	} catch {
 		return null;
+	}
+}
+
+export function clearActiveCephStudy(patientId?: string): void {
+	if (typeof window === "undefined") return;
+	try {
+		const key = getCephSessionStorageKey(patientId);
+		window.sessionStorage.removeItem(key);
+		broadcastCephSyncMessage({
+			type: "CEPH_STUDY_CLEARED",
+			patientId,
+		});
+	} catch {
+		// ignore
 	}
 }
 

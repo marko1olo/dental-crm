@@ -35,7 +35,7 @@ export function generateTsplLabelCode(
 	if (size === "43x25") {
 		return [
 			"SIZE 43 mm, 25 mm\r\nGAP 2 mm, 0 mm\r\nDIRECTION 1\r\nCLS",
-			'TEXT 15,10,"2",0,1,1,"STERILE"',
+			'TEXT 15,10,"2",0,1,1,"STERILE SANPIN"',
 			`TEXT 220,10,"2",0,1,1,"${record.autoclaveId}/#${record.cycleNumber}"`,
 			`DMATRIX 15,35,90,90,"${record.barcodeDataMatrixPayload}"`,
 			`TEXT 120,40,"2",0,1,1,"${cleanName.slice(0, 15)}"`,
@@ -74,7 +74,7 @@ export function generateZplLabelCode(
 
 	if (size === "43x25") {
 		return [
-			"^XA\n^PW344\n^LL200\n^FO15,10^A0N,20,20^FDSTERILE^FS",
+			"^XA\n^PW344\n^LL200\n^FO15,10^A0N,20,20^FDSTERILE SANPIN^FS",
 			`^FO220,10^A0N,18,18^FD${record.autoclaveId}/#${record.cycleNumber}^FS`,
 			`^FO15,35^BXN,5,200^FD${record.barcodeDataMatrixPayload}^FS`,
 			`^FO115,40^A0N,20,20^FD${cleanName.slice(0, 15)}^FS`,

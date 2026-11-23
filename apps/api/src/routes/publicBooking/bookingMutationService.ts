@@ -12,7 +12,7 @@ import {
 	nameFuzzySimilarity,
 	nameKey,
 } from "../../services/patients/duplicateDetection.js";
-import { FREED_APPOINTMENT_STATUSES } from "../../services/schedule/scheduleConflictService.js";
+import { FREED_APPOINTMENT_STATUSES } from "../appointmentErrors.js";
 import { normalizePhone } from "@dental/shared";
 import { normalizePhoneDigits } from "./slotAvailabilityEngine.js";
 
@@ -416,7 +416,54 @@ export async function executeBookingTransaction(
 		) {
 			return { conflict: false as const, appointment: existing, patientId };
 		}
-		return { conflict: true as const };
+
+		// DEF-40-11: Проверяем, вызван ли конфликт только выбранным креслом.
+		// Если врач и пациент свободны, а занято только текущее selectedChairId — перебираем другие активные кресла!
+		const isDoctorConflict = existing?.doctorUserId === doctorId;
+		const isPatientConflict = Boolean(patientId && existing?.patientId === patientId);
+
+		if (!isDoctorConflict && !isPatientConflict && activeChairs.length > 1) {
+			const otherChairs = [...activeChairs]
+				.filter((c) => c.id !== selectedChairId)
+				.sort((a, b) => a.id.localeCompare(b.id));
+
+			let alternateChairFound = false;
+			for (const altChair of otherChairs) {
+				// Блокируем альтернативное кресло в каноническом порядке
+				await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(and(eq(chairs.organizationId, organizationId), eq(chairs.id, altChair.id)))
+					.limit(1)
+					.for("update");
+
+				const [altOccupied] = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							eq(appointments.chairId, altChair.id),
+							lt(appointments.startsAt, endDate),
+							gt(appointments.endsAt, startDate),
+							notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
+						),
+					)
+					.limit(1);
+
+				if (!altOccupied) {
+					selectedChairId = altChair.id;
+					alternateChairFound = true;
+					break;
+				}
+			}
+
+			if (!alternateChairFound) {
+				return { conflict: true as const };
+			}
+		} else {
+			return { conflict: true as const };
+		}
 	}
 
 	const appointmentComment = [

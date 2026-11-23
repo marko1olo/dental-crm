@@ -69,17 +69,29 @@ export const PEDIATRIC_ANESTHETIC_DOSAGE_LIMITS = {
  * - До 4 лет применение артикаина противопоказано.
  */
 export function calculatePediatricAnestheticSafety(params: {
-	drugType?: "articaine4Percent" | "mepivacaine3Percent" | "lidocaine2Percent";
-	patientWeightKg: number;
-	patientAgeYears: number;
+	drugType?: "articaine4Percent" | "mepivacaine3Percent" | "lidocaine2Percent" | undefined;
+	patientWeightKg?: number | null | undefined;
+	patientAgeYears?: number | null | undefined;
 	carpulesAdministered: number;
-	carpuleVolumeMl?: number;
+	carpuleVolumeMl?: number | undefined;
 }): PediatricAnestheticCalculation {
 	const drugType = params.drugType ?? "articaine4Percent";
 	const spec = PEDIATRIC_ANESTHETIC_DOSAGE_LIMITS[drugType];
-	const weight = Math.max(5, Math.min(100, params.patientWeightKg));
-	const age = params.patientAgeYears;
-	const carpules = Math.max(0, params.carpulesAdministered);
+	const rawWeight = params.patientWeightKg;
+	const weight =
+		typeof rawWeight === "number" && Number.isFinite(rawWeight) && rawWeight > 0
+			? Math.max(5, Math.min(120, rawWeight))
+			: 20;
+	const rawAge = params.patientAgeYears;
+	const age =
+		typeof rawAge === "number" && Number.isFinite(rawAge) && rawAge >= 0
+			? rawAge
+			: 0;
+	const rawCarpules = params.carpulesAdministered;
+	const carpules =
+		typeof rawCarpules === "number" && Number.isFinite(rawCarpules) && rawCarpules > 0
+			? Math.max(0, rawCarpules)
+			: 0;
 	const carpuleVol = params.carpuleVolumeMl ?? spec.carpuleVolumeMl;
 
 	const warnings: string[] = [];

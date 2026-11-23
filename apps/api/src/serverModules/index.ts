@@ -15,7 +15,6 @@ import {
 	TaskQueueService,
 	type WorkerHandle,
 } from "../services/TaskQueueService.js";
-import { persistentOutboxService } from "../services/outbox/persistentOutboxService.js";
 import { dicomCrawlerDaemon } from "../services/dicom/DicomCrawlerDaemon.js";
 import { stopCloudRelayClient } from "../services/cloudRelayClient.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
@@ -138,7 +137,6 @@ export async function startDenteApiServer(): Promise<void> {
 				stopBackupDaemon();
 				stopLanDiscoveryService();
 				defaultDaemonScheduler.stop();
-				persistentOutboxService.stop();
 				dicomCrawlerDaemon.stop();
 				stopCloudRelayClient();
 				stopBiAnalyticsWorker();
@@ -164,7 +162,7 @@ export async function startDenteApiServer(): Promise<void> {
 
 		// Фоновый обработчик персистентных очередей задач (PostgreSQL FOR UPDATE SKIP LOCKED)
 		taskQueueWorker = TaskQueueService.startWorker({
-			queues: ["default", "system", "communications"],
+			queues: ["default", "system", "communications", "sync"],
 			logger: app.log,
 		});
 

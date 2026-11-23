@@ -24,6 +24,7 @@ export {
 	angle3Points,
 	angleBetweenLines,
 	projectPointOntoLine,
+	resolveOcclusalPlane,
 	CEPHALOMETRIC_LANDMARKS,
 	DEFAULT_CEPH_LANDMARKS_PRESET,
 	CLASS_I_NORMAL_LANDMARKS_PRESET,

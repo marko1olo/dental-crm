@@ -136,12 +136,16 @@ export function useOrthodonticsStudioHydration(
 		};
 	}, [patientId, setProtocol]);
 
-	// 3. Реактивная синхронизация ТРГ через BroadcastChannel (DEF-1)
+	// 3. Реактивная синхронизация ТРГ через BroadcastChannel (DEF-ORTHO-SEV1-04: изоляция по patientId)
 	useEffect(() => {
+		if (!patientId) return;
+
 		const cachedStudy = getActiveCephStudy<{
+			patientId?: string;
 			analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
 			measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
-		}>();
+		}>(patientId);
+
 		if (cachedStudy) {
 			const mList = cachedStudy.measurements;
 			if (Array.isArray(mList) && mList.length > 0) {
@@ -160,11 +164,20 @@ export function useOrthodonticsStudioHydration(
 		}
 
 		const unsubscribe = subscribeCephSyncChannel((msg) => {
+			// DEF-ORTHO-SEV1-04: Игнорируем широковещательные сообщения от других пациентов
+			if (msg.patientId && msg.patientId !== patientId) {
+				return;
+			}
+
 			if (msg.type === "CEPH_STUDY_CACHED" || msg.type === "CEPH_ANALYSIS_UPDATED") {
 				const study = msg.payload as {
+					patientId?: string;
 					measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
 					analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
 				};
+				if (study?.patientId && study.patientId !== patientId) {
+					return;
+				}
 				const mList = study?.measurements;
 				if (Array.isArray(mList) && mList.length > 0) {
 					const vals: Record<string, number> = {};
@@ -199,5 +212,5 @@ export function useOrthodonticsStudioHydration(
 		return () => {
 			unsubscribe();
 		};
-	}, [setProtocol]);
+	}, [patientId, setProtocol]);
 }

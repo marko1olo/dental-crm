@@ -35,50 +35,92 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	}
 	registeredSterilizationApps.add(app);
 
-	// Журнал работы стерилизаторов
+	// Журнал работы стерилизаторов: канонические циклы с изоляцией organizationId и Idempotency-Key
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
-	app.post("/api/sanpin/sterilization", handleCreateSterilizationLog);
+	app.post("/api/sanpin/sterilization", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateSterilizationLog(req, reply);
+	});
 	app.get("/api/sanpin/autoclave/cycles", handleGetSterilizationLogs);
-	app.post("/api/sanpin/autoclave/cycles", handleCreateSterilizationLog);
+	app.post("/api/sanpin/autoclave/cycles", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateSterilizationLog(req, reply);
+	});
 	app.get("/api/sterilization/cycles", handleGetSterilizationLogs);
-	app.post("/api/sterilization/cycles", handleCreateSterilizationLog);
+	app.post("/api/sterilization/cycles", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateSterilizationLog(req, reply);
+	});
 	app.get("/api/sanpin/sterilization/cycles", handleGetSterilizationLogs);
-	app.post("/api/sanpin/sterilization/cycles", handleCreateSterilizationLog);
+	app.post("/api/sanpin/sterilization/cycles", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateSterilizationLog(req, reply);
+	});
 
 	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар) — канонический роут и алиасы
-	app.post("/api/sanpin/sterilization/quick-norm", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization/quick-norm-cycle", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/quick-norm", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/quick-norm-cycle", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/shift-batch", handleSterilizationShiftBatch);
-	app.post("/api/sanpin/sterilization-cycles/batch", handleSterilizationShiftBatch);
-	app.post("/api/sanpin/sterilization/shift-batch", handleSterilizationShiftBatch);
+	app.post("/api/sanpin/sterilization/quick-norm", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleQuickNormCycle(req, reply);
+	});
+	app.post("/api/sanpin/sterilization/quick-norm-cycle", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleQuickNormCycle(req, reply);
+	});
+	app.post("/api/sanpin/sterilization-cycles/quick-norm", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleQuickNormCycle(req, reply);
+	});
+	app.post("/api/sanpin/sterilization-cycles/quick-norm-cycle", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleQuickNormCycle(req, reply);
+	});
+	app.post("/api/sanpin/sterilization-cycles/shift-batch", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleSterilizationShiftBatch(req, reply);
+	});
+	app.post("/api/sanpin/sterilization-cycles/batch", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleSterilizationShiftBatch(req, reply);
+	});
+	app.post("/api/sanpin/sterilization/shift-batch", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleSterilizationShiftBatch(req, reply);
+	});
 
 	// Контроль качества предстерилизационной очистки (азопирам, фенолфталеин)
 	app.get("/api/sanpin/sterilization/pso-tests", handleGetPsoTests);
-	app.post("/api/sanpin/sterilization/pso-tests", handleCreatePsoTest);
-	app.post("/api/sanpin/sterilization/pso/quick-norm", handlePsoQuickNorm);
+	app.post("/api/sanpin/sterilization/pso-tests", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreatePsoTest(req, reply);
+	});
+	app.post("/api/sanpin/sterilization/pso/quick-norm", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handlePsoQuickNorm(req, reply);
+	});
 
 	// Ежедневный контроль автоклавов (Bowie-Dick, Вакуум-тест)
 	app.get("/api/sanpin/sterilization/daily-tests", handleGetDailyTests);
-	app.post("/api/sanpin/sterilization/daily-tests", handleCreateDailyTest);
+	app.post("/api/sanpin/sterilization/daily-tests", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateDailyTest(req, reply);
+	});
 
 	// Парк стерилизаторов и автоклавов (оборудование ЦСО)
 	app.get(
 		"/api/sanpin/sterilization/equipments",
 		handleGetSterilizerEquipments,
 	);
-	app.post(
-		"/api/sanpin/sterilization/equipments",
-		handleCreateSterilizerEquipment,
-	);
-	app.put(
+	app.post("/api/sanpin/sterilization/equipments", async (req, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleCreateSterilizerEquipment(req, reply);
+	});
+	app.put<{ Params: { id: string } }>(
 		"/api/sanpin/sterilization/equipments/:id",
-		handleUpdateSterilizerEquipment,
+		async (req, reply) => handleUpdateSterilizerEquipment(req, reply),
 	);
-	app.delete(
+	app.delete<{ Params: { id: string } }>(
 		"/api/sanpin/sterilization/equipments/:id",
-		handleDeleteSterilizerEquipment,
+		async (req, reply) => handleDeleteSterilizerEquipment(req, reply),
 	);
 
 	// Обратная совместимость и алиасы

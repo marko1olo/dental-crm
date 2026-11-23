@@ -3,7 +3,7 @@ import {
 	generateUuidV7,
 	type MdlpDisposalItem,
 } from "@dental/shared";
-import { and, asc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { mdlpItems } from "../../db/schema.js";
 import { mdlpOutboxTable } from "../../db/schema/inventory/mdlpOutboxTable.js";
@@ -56,6 +56,7 @@ export type MdlpOutboxRecord = {
 	crptResponsePayload: Record<string, unknown> | null;
 	createdAt: Date;
 	updatedAt: Date;
+	[key: string]: unknown;
 };
 
 /**
@@ -325,15 +326,15 @@ export class MdlpOutboxService {
 			const ids = records.map((r) => r.id);
 
 			// Атомарно переводим выбранные записи в статус 'in_flight' с отметкой воркера
-			await tx.execute(sql`
-				UPDATE mdlp_outbox
-				SET 
-					status = 'in_flight',
-					locked_at = ${now},
-					locked_by = ${workerId},
-					updated_at = ${now}
-				WHERE id = ANY(${ids}::uuid[])
-			`);
+			await tx
+				.update(mdlpOutboxTable)
+				.set({
+					status: "in_flight",
+					lockedAt: now,
+					lockedBy: workerId,
+					updatedAt: now,
+				})
+				.where(inArray(mdlpOutboxTable.id, ids));
 
 			return records.map((r) => ({
 				...r,

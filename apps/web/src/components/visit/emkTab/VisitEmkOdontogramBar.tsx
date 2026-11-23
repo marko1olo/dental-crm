@@ -55,6 +55,15 @@ export function VisitEmkOdontogramBar({
 		return "adult";
 	});
 
+	React.useEffect(() => {
+		const age =
+			activePatient?.age ??
+			(activePatient?.birthDate ? calculateAge(activePatient.birthDate) : null);
+		if (age !== null && age < 6) setDentitionMode("pediatric");
+		else if (age !== null && age < 12) setDentitionMode("mixed");
+		else setDentitionMode("adult");
+	}, [activePatient?.id, activePatient?.age, activePatient?.birthDate]);
+
 	const effectiveToothStateByCode = React.useMemo(() => {
 		return buildEffectiveToothStateByCode({
 			activePatient: activePatient ?? null,
@@ -455,6 +464,57 @@ export function VisitEmkOdontogramBar({
 			</div>
 			{!isOdontogramCollapsed && (
 				<div className="mt-2.5 pt-2 border-t border-[var(--line)]" data-testid="visit-emk-odontogram-canonical-container">
+					<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+						<span className="text-xs font-semibold text-[var(--ink)]">
+							{dentitionMode === "pediatric"
+								? "Молочный прикус (FDI 51–85)"
+								: dentitionMode === "mixed"
+									? "Сменный прикус (FDI 11–85)"
+									: "Постоянный прикус (FDI 11–48)"}
+						</span>
+						<div
+							role="group"
+							aria-label="Переключение прикуса"
+							className="inline-flex p-0.5 sm:p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] gap-1 text-xs font-medium"
+						>
+							<button
+								type="button"
+								onClick={() => setDentitionMode("adult")}
+								data-testid="emk-dentition-mode-adult"
+								className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg transition-colors cursor-pointer ${
+									dentitionMode === "adult"
+										? "bg-[var(--paper)] text-[var(--ink)] shadow-2xs font-semibold"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Постоянный
+							</button>
+							<button
+								type="button"
+								onClick={() => setDentitionMode("pediatric")}
+								data-testid="emk-dentition-mode-pediatric"
+								className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg transition-colors cursor-pointer ${
+									dentitionMode === "pediatric"
+										? "bg-[var(--paper)] text-[var(--ink)] shadow-2xs font-semibold"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Молочный
+							</button>
+							<button
+								type="button"
+								onClick={() => setDentitionMode("mixed")}
+								data-testid="emk-dentition-mode-mixed"
+								className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg transition-colors cursor-pointer ${
+									dentitionMode === "mixed"
+										? "bg-[var(--paper)] text-[var(--ink)] shadow-2xs font-semibold"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Сменный
+							</button>
+						</div>
+					</div>
 					{activePatient?.id ? (
 						<OdontogramModule
 							patientId={activePatient.id}

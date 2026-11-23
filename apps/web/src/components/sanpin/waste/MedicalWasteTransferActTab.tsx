@@ -75,7 +75,7 @@ export function MedicalWasteTransferActTab({
 				</div>
 
 				<button type="button" onClick={onCreateAndPrintAct} className="waste-btn waste-btn-primary">
-					<Printer size={18} /> Сформировать и Распечатать Акт (А4)
+					<Printer size={18} /> Сформировать и распечатать акт (А4)
 				</button>
 			</div>
 		</div>

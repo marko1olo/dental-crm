@@ -99,9 +99,9 @@ export function saveCephalometricAnalysisToEmr(study: Partial<CephalometricSaved
 	};
 	if (typeof window !== "undefined") {
 		try {
-			const key = study.patientId ? getCephStorageKey(study.patientId) : "dente_latest_ceph_study";
+			// DEF-ORTHO-SEV1-04 (Мандаты 8zq, 8bn): Изоляция ТРГ строго по patientId без глобальных сливов
+			const key = getCephStorageKey(study.patientId);
 			localStorage.setItem(key, JSON.stringify(record));
-			localStorage.setItem("dente_latest_ceph_study", JSON.stringify(record));
 		} catch {
 			// ignore storage errors
 		}
@@ -117,12 +117,28 @@ export function saveCephalometricAnalysisToEmr(study: Partial<CephalometricSaved
 export function loadLatestCephalometricStudy(patientId?: string): CephalometricSavedStudy | null {
 	if (typeof window === "undefined") return null;
 	try {
-		const key = patientId ? getCephStorageKey(patientId) : "dente_latest_ceph_study";
-		const raw = localStorage.getItem(key) ?? localStorage.getItem("dente_latest_ceph_study");
+		// DEF-ORTHO-SEV1-04: Читаем строго ключ указанного patientId без фолбэка на чужих пациентов
+		const key = getCephStorageKey(patientId);
+		const raw = localStorage.getItem(key);
 		if (!raw) return null;
-		return JSON.parse(raw) as CephalometricSavedStudy;
+		const parsed = JSON.parse(raw) as CephalometricSavedStudy;
+		// Дополнительная валидация: если запрошен конкретный patientId, проверяем соответствие
+		if (patientId && parsed.patientId && parsed.patientId !== patientId) {
+			return null;
+		}
+		return parsed;
 	} catch {
 		return null;
+	}
+}
+
+export function clearPatientCephalometricStudy(patientId?: string): void {
+	if (typeof window === "undefined") return;
+	try {
+		const key = getCephStorageKey(patientId);
+		localStorage.removeItem(key);
+	} catch {
+		// ignore
 	}
 }
 
@@ -131,6 +147,6 @@ export function loadPatientCephalometricStudies(patientId: string): Cephalometri
 	return latest ? [latest] : [];
 }
 
-export function getCephStorageKey(patientId: string): string {
-	return `dente_ceph_${patientId}`;
+export function getCephStorageKey(patientId?: string): string {
+	return patientId ? `dente_ceph_${patientId}` : "dente_ceph_anonymous_draft";
 }

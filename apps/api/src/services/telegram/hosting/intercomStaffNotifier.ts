@@ -16,6 +16,7 @@ import {
 	answerTelegramCallbackQuery,
 	sendTelegramTextMessage,
 } from "../../../telegramTransport.js";
+import { enqueueMessage } from "../../communications/dispatch/dispatcherCore.js";
 import { TelegramTokenCrypto } from "./tokenCrypto.js";
 import type {
 	DispatchIntercomParams,
@@ -152,6 +153,19 @@ export class TelegramIntercomStaffNotifier {
 				notifiedCount++;
 			} else {
 				errors.push(`Чат ${link.chatTransportRef}: ${result.errorClass}`);
+
+				// Страховочная доставка через Transactional Outbox при таймауте/сбое Telegram (DEF-17-06)
+				await enqueueMessage({
+					organizationId: params.organizationId,
+					channel: "telegram",
+					intent: "general",
+					scope: "service",
+					recipientAddress: link.chatTransportRef,
+					body: text,
+					dedupeKey: `intercom_push:${params.messageId}:${link.id}`,
+				}).catch((enqueueErr) => {
+					errors.push(`Outbox fallback failed: ${String(enqueueErr)}`);
+				});
 			}
 		}
 

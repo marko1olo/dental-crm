@@ -4,7 +4,7 @@
  * Implements:
  * 1. Sub-50ms external PBX webhook HTTP 200 acknowledgment (< 50ms, typically 2-5ms)
  *    to prevent PBX timeout retries and redundant traffic bursts.
- * 2. Asynchronous queuing through persistentOutboxService (in-memory FIFO + durable journal).
+ * 2. Asynchronous queuing through TaskQueueService (PostgreSQL 18 ACID Outbox & system_background_jobs).
  * 3. Asynchronous background worker: extracts CDR details, matches patients, creates/updates CRM leads,
  *    attaches audio recordings, and notifies clinical desks via WebSocket.
  * 4. Exponential backoff retry on transient DB / network failure: 1s, 5s, 15s, 60s, 300s (up to 5 attempts).
@@ -24,6 +24,8 @@ import {
 	communicationEvents,
 	crmLeads,
 	patients,
+	systemBackgroundJobs,
+	type SystemBackgroundJob,
 } from "../db/schema.js";
 import {
 	detectTelephonyProvider,
@@ -31,11 +33,7 @@ import {
 	resolveWebhookOrgId,
 } from "../routes/telephony/telephonyEngine.js";
 import { handleEndedEvent } from "../routes/telephony/telephonyWebhookEndedService.js";
-import {
-	persistentOutboxService,
-	type OutboxItem,
-	PersistentOutboxService,
-} from "./outbox/persistentOutboxService.js";
+import { TaskQueueService } from "./tasks/TaskQueueService.js";
 import { MissedCallService } from "./telephony/missedCallService.js";
 import {
 	authenticatePbxWebhook,
@@ -80,6 +78,7 @@ export const TELEPHONY_RETRY_SCHEDULE_MS = [
 ];
 
 export interface TelephonyWebhookJobPayload {
+	[key: string]: unknown;
 	organizationId: string;
 	rawPayload: Record<string, unknown>;
 	normalizedCallerPhone: NormalizedPhone;
@@ -94,10 +93,16 @@ export interface TelephonyWebhookJobPayload {
 	detectedMarketingChannel: string;
 	detectedChannelLabel: string;
 	virtualTrunkNumber: string;
-	utmSource?: string | null;
-	utmCampaign?: string | null;
-	utmMedium?: string | null;
+	utmSource?: string | null | undefined;
+	utmCampaign?: string | null | undefined;
+	utmMedium?: string | null | undefined;
 	receivedAtIso: string;
+}
+
+function isTelephonyWebhookJobPayload(val: unknown): val is TelephonyWebhookJobPayload {
+	if (typeof val !== "object" || val === null) return false;
+	const candidate = val as Record<string, unknown>;
+	return typeof candidate.organizationId === "string" && typeof candidate.event === "string";
 }
 
 export interface InstantAckResult {
@@ -111,14 +116,11 @@ export interface InstantAckResult {
 }
 
 export class TelephonyOutboxService {
-	private readonly outbox: PersistentOutboxService;
 	public logger?: { info: (obj: unknown, msg?: string) => void; warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 
 	constructor(
-		outboxInstance: PersistentOutboxService = persistentOutboxService,
 		logger?: { info: (obj: unknown, msg?: string) => void; warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void },
 	) {
-		this.outbox = outboxInstance;
 		this.logger = logger;
 		this.registerOutboxWorker();
 	}
@@ -127,18 +129,27 @@ export class TelephonyOutboxService {
 	 * Registers the asynchronous background worker and DLQ audit alert logger.
 	 */
 	private registerOutboxWorker(): void {
-		this.outbox.registerHandler<TelephonyWebhookJobPayload>(
+		TaskQueueService.registerHandler(
 			TELEPHONY_OUTBOX_TOPIC,
-			async (item) => {
-				await this.processTelephonyWebhook(item.payload);
+			async (ctx) => {
+				if (!isTelephonyWebhookJobPayload(ctx.job.payload)) {
+					throw new Error(`[TelephonyOutboxService] Invalid job payload schema for job ${ctx.job.id}`);
+				}
+				const payload: TelephonyWebhookJobPayload = ctx.job.payload;
+				try {
+					await this.processTelephonyWebhook(payload);
+				} catch (err) {
+					if (ctx.job.retryCount + 1 >= ctx.job.maxRetries && ctx.job.organizationId) {
+						await this.recordDlqAuditAlert(
+							ctx.job.id,
+							ctx.job.organizationId,
+							err instanceof Error ? err.message : String(err),
+						);
+					}
+					throw err;
+				}
 			},
 		);
-
-		// Listen for DLQ routing to record statutory audit alert
-		this.outbox.onDlqAlert(async (item, errorText) => {
-			if (item.topic !== TELEPHONY_OUTBOX_TOPIC) return;
-			await this.recordDlqAuditAlert(item, errorText);
-		});
 	}
 
 	/**
@@ -293,18 +304,13 @@ export class TelephonyOutboxService {
 		// Idempotency key per call session + event
 		const idempotencyKey = `telephony:pbx:${resolvedOrgId}:${callId || `${callerPhone.national10}_${Date.now()}`}:${event}`;
 
-		const enqueueResult = this.outbox.enqueue({
-			topic: TELEPHONY_OUTBOX_TOPIC,
+		const job = await TaskQueueService.enqueue({
 			organizationId: resolvedOrgId,
-			idempotencyKey,
+			queueName: "communications",
+			taskName: TELEPHONY_OUTBOX_TOPIC,
 			payload: jobPayload,
-			maxAttempts: 5,
-			backoffScheduleMs: TELEPHONY_RETRY_SCHEDULE_MS,
-			metadata: {
-				caller: callerPhone.e164,
-				callId,
-				event,
-			},
+			maxRetries: 5,
+			scheduledFor: new Date(),
 		});
 
 		const ackLatencyMs = Date.now() - startMs;
@@ -312,11 +318,11 @@ export class TelephonyOutboxService {
 		return {
 			success: true,
 			queued: true,
-			eventId: enqueueResult.item.id,
+			eventId: job.id,
 			event,
 			organizationId: resolvedOrgId,
 			ackLatencyMs,
-			isDuplicate: enqueueResult.isDuplicate,
+			isDuplicate: false,
 		};
 	}
 
@@ -554,16 +560,17 @@ export class TelephonyOutboxService {
 	/**
 	 * Records a statutory audit event when an event exhausts all 5 retries and enters DLQ.
 	 */
-	private async recordDlqAuditAlert(
-		item: OutboxItem,
+	public async recordDlqAuditAlert(
+		jobId: string,
+		organizationId: string,
 		errorReason: string,
 	): Promise<void> {
 		try {
-			await withTenantCtx(item.organizationId, async () => {
+			await withTenantCtx(organizationId, async () => {
 				await db.insert(auditEvents).values({
-					organizationId: item.organizationId,
+					organizationId,
 					entityType: "telephony_outbox_dlq",
-					entityId: item.id,
+					entityId: jobId,
 					action: "PBX_WEBHOOK_DEAD_LETTER",
 					reason: `Телефония: исчерпаны 5 попыток повтора (${errorReason}). Требуется ручная ревизия вызова.`,
 				});
@@ -571,8 +578,8 @@ export class TelephonyOutboxService {
 		} catch (auditErr) {
 			const activeLogger = this.logger || defaultStructuredLogger;
 			activeLogger.error(
-				{ auditErr, itemId: item.id },
-				`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}`,
+				{ auditErr, jobId },
+				`[TelephonyOutboxService] Failed to insert audit alert for DLQ job ${jobId}`,
 			);
 		}
 	}
@@ -580,35 +587,55 @@ export class TelephonyOutboxService {
 	/**
 	 * Inspects dead-lettered telephony webhooks.
 	 */
-	public getDlqCalls(organizationId?: string): OutboxItem<TelephonyWebhookJobPayload>[] {
-		const items = this.outbox.getDlqItems(TELEPHONY_OUTBOX_TOPIC);
-		if (!organizationId) {
-			return items as OutboxItem<TelephonyWebhookJobPayload>[];
-		}
-		return items.filter(
-			(i) => i.organizationId === organizationId,
-		) as OutboxItem<TelephonyWebhookJobPayload>[];
+	public async getDlqCalls(organizationId?: string): Promise<SystemBackgroundJob[]> {
+		return await TaskQueueService.listJobs({
+			...(organizationId ? { organizationId } : {}),
+			queueName: "communications",
+			status: "dead_letter",
+		});
 	}
 
 	/**
 	 * 1-click manual retry of a dead-lettered telephony call.
 	 */
-	public retryDlqCall(eventId: string): boolean {
-		return this.outbox.retryDlqItem(eventId);
+	public async retryDlqCall(eventId: string, organizationId?: string): Promise<boolean> {
+		try {
+			await TaskQueueService.retryJob(eventId, organizationId);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	/**
 	 * Purges a dead-lettered call from the queue.
 	 */
-	public purgeDlqCall(eventId: string): boolean {
-		return this.outbox.purgeDlqItem(eventId);
+	public async purgeDlqCall(eventId: string): Promise<boolean> {
+		try {
+			await withSuperuserBypass(async (tx) => {
+				await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, eventId));
+			});
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	/**
 	 * Returns current queue telemetry and metrics.
 	 */
-	public getQueueMetrics() {
-		return this.outbox.getMetrics();
+	public async getQueueMetrics(organizationId?: string) {
+		const pending = await TaskQueueService.countJobs({
+			...(organizationId ? { organizationId } : {}),
+			queueName: "communications",
+			status: "pending",
+		});
+		const deadLetter = await TaskQueueService.countJobs({
+			...(organizationId ? { organizationId } : {}),
+			queueName: "communications",
+			status: "dead_letter",
+		});
+		return { pending, inFlight: 0, completed: 0, deadLetter };
 	}
 }
 

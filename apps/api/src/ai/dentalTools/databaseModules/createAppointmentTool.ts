@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod";
+import { createAppointmentInDb } from "../../../db/appointmentsQuery.js";
 import { db as defaultDb } from "../../../db/client.js";
-import { appointments } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 
 export const createAppointmentSchema = z.object({
@@ -68,28 +68,24 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		};
 	}
 
-	const [inserted] = await activeDb
-		.insert(appointments)
-		.values({
-			organizationId: orgId,
+	const created = await createAppointmentInDb(
+		orgId,
+		{
 			patientId,
 			doctorUserId: doctorId,
 			chairId: args.chairId ?? null,
-			startsAt: start,
-			endsAt: end,
+			startsAt: start.toISOString(),
+			endsAt: end.toISOString(),
 			status: "planned",
 			reason: args.serviceTitle ?? "Стоматологический приём",
 			comment: args.notes ?? null,
-		})
-		.returning({ id: appointments.id });
-
-	if (!inserted) {
-		throw new Error("Не удалось создать запись на приём");
-	}
+		},
+		activeDb,
+	);
 
 	return {
 		success: true,
-		appointmentId: inserted.id,
+		appointmentId: created.id,
 		patientId,
 		doctorId,
 		startTime: start.toISOString(),

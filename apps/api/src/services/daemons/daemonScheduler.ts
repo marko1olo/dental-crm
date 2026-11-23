@@ -39,6 +39,11 @@ import {
 	runZtlLookAheadScan,
 	type ZtlLookAheadAlert,
 } from "./ztlLookAheadDaemon.js";
+import {
+	runMdlpOutboxDaemon,
+	type MdlpOutboxDaemonDigest,
+	type MdlpOutboxDaemonOptions,
+} from "./mdlpOutboxDaemon.js";
 
 export type DaemonJobName =
 	| "somatic_radar_0730"
@@ -66,6 +71,7 @@ export interface DaemonSchedulerOptions {
 	enableEmrSavior?: boolean | undefined;
 	enableSanpinAndInventory?: boolean | undefined;
 	enableWeeklyRetention?: boolean | undefined;
+	enableMdlpOutbox?: boolean | undefined;
 	logger?:
 		| {
 				info?: (msg: string) => void;
@@ -114,6 +120,7 @@ export class DaemonScheduler {
 			enableEmrSavior: options?.enableEmrSavior ?? true,
 			enableSanpinAndInventory: options?.enableSanpinAndInventory ?? true,
 			enableWeeklyRetention: options?.enableWeeklyRetention ?? true,
+			enableMdlpOutbox: options?.enableMdlpOutbox ?? true,
 			logger: options?.logger ?? {
 				info: (msg: string) => console.log(`[DaemonScheduler:INFO] ${msg}`),
 				warn: (msg: string) => console.warn(`[DaemonScheduler:WARN] ${msg}`),
@@ -396,6 +403,18 @@ export class DaemonScheduler {
 				}
 			}
 
+			// Continuous background dispatch of MDLP Transactional Outbox (тиков раз в 20-30 сек)
+			if (this.options.enableMdlpOutbox !== false) {
+				try {
+					await runMdlpOutboxDaemon({
+						organizationId: this.options.organizationId || undefined,
+					});
+				} catch (mdlpErr: unknown) {
+					const msg = mdlpErr instanceof Error ? mdlpErr.message : String(mdlpErr);
+					this.log(`MDLP Outbox daemon execution failed: ${msg}`);
+				}
+			}
+
 			return executedJobs;
 		} finally {
 			this.isChecking = false;
@@ -555,7 +574,28 @@ export class DaemonScheduler {
 			scannedAt: now.toISOString(),
 		};
 	}
+
+	public async triggerMdlpOutbox(
+		options?: MdlpOutboxDaemonOptions,
+	): Promise<MdlpOutboxDaemonDigest> {
+		const opts: MdlpOutboxDaemonOptions = {};
+		const effectiveOrgId = options?.organizationId ?? (this.options.organizationId || undefined);
+		if (effectiveOrgId !== undefined) opts.organizationId = effectiveOrgId;
+		if (options?.batchSize !== undefined) opts.batchSize = options.batchSize;
+		if (options?.timeoutMs !== undefined) opts.timeoutMs = options.timeoutMs;
+		if (options?.transport !== undefined) opts.transport = options.transport;
+		if (options?.workerId !== undefined) opts.workerId = options.workerId;
+		return runMdlpOutboxDaemon(opts);
+	}
 }
+
+export {
+	runMdlpOutboxDaemon,
+	type MdlpOutboxDaemonDigest,
+	type MdlpOutboxDaemonOptions,
+	type MdlpTransportFn,
+	type MdlpTransportResult,
+} from "./mdlpOutboxDaemon.js";
 
 /**
  * Singleton instance of DaemonScheduler for API server runtime.

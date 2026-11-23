@@ -1,7 +1,7 @@
 import { type ChestnyZnakScannedItem, createChestnyZnakScannedItem, generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { logger } from "../../utils/logger.js";
-import { type MdlpOfflinePackage, saveMdlpOfflineQueue } from "./mdlpOfflineQueue.js";
+import { type MdlpOfflinePackage } from "./mdlpModal/types.js";
 
 interface MdlpItemRow {
 	rawBarcode?: string | null;
@@ -149,7 +149,6 @@ export async function syncMdlpQueueToBackend(
 			failedCount++;
 		}
 	}
-	saveMdlpOfflineQueue(updated);
 	return { syncedCount, failedCount, updatedQueue: updated };
 }
 

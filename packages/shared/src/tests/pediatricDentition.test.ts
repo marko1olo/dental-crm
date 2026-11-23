@@ -233,6 +233,30 @@ describe("Pediatric & Mixed Dentition Engine (packages/shared)", () => {
 		assert.equal(mepivacaineChild.vasoconstrictorRatio, "none");
 		assert.equal(mepivacaineChild.totalEpinephrineAdministeredMg, 0);
 		assert.equal(mepivacaineChild.maxAllowedTotalDoseMg, 88.0);
+
+		// 5. [DEF-PED-SEV1-01] NaN / undefined / null weight resilience (fallback to safe 20 kg default)
+		const nanWeightChild = calculatePediatricAnestheticSafety({
+			drugType: "articaine4Percent",
+			patientAgeYears: 6,
+			patientWeightKg: Number.NaN,
+			carpulesAdministered: 2, // 136 mg administered > 100 mg (20 kg * 5.0 mg/kg limit)
+		});
+		assert.equal(Number.isNaN(nanWeightChild.maxAllowedTotalDoseMg), false);
+		assert.equal(nanWeightChild.patientWeightKg, 20);
+		assert.equal(nanWeightChild.maxAllowedTotalDoseMg, 100.0);
+		assert.equal(nanWeightChild.totalDoseAdministeredMg, 136.0);
+		assert.equal(nanWeightChild.isOverdose, true);
+		assert.equal(nanWeightChild.isSafe, false);
+
+		const undefinedWeightChild = calculatePediatricAnestheticSafety({
+			drugType: "articaine4Percent",
+			patientAgeYears: 6,
+			patientWeightKg: undefined,
+			carpulesAdministered: 1, // 68 mg <= 100 mg (20 kg * 5.0 mg/kg limit)
+		});
+		assert.equal(undefinedWeightChild.patientWeightKg, 20);
+		assert.equal(undefinedWeightChild.isOverdose, false);
+		assert.equal(undefinedWeightChild.isSafe, true);
 	});
 
 	it("9. Canonical Pediatric dmft / DMFT (кп / КПУ) Caries Intensity Indices & SSOT (calculatePediatricIndices)", () => {

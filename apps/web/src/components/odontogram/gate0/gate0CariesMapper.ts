@@ -20,7 +20,7 @@ export function mapRestorativeToCrownMaterial(mat?: string): CrownMaterial {
 	if (mat === "pfm" || mat === "metal_ceramic" || mat === "pfm_crown") return "pfm";
 	if (mat === "emax" || mat === "ceramic" || mat === "ceramic_emax") return "emax";
 	if (mat === "gold") return "gold";
-	if (mat === "metal") return "metal";
+	if (mat === "metal" || mat === "ssc" || mat === "steel" || mat === "stainless_steel") return "metal";
 	if (mat === "pmma" || mat === "composite" || mat === "temporary") return "pmma";
 	return "zirconia";
 }

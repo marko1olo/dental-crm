@@ -1,5 +1,21 @@
 import type { ChestnyZnakScannedItem } from "@dental/shared";
-import type { MdlpOfflinePackage } from "../mdlpOfflineQueue.js";
+
+/** Пакет очереди списания лекарственных препаратов Честный Знак */
+export interface MdlpOfflinePackage {
+	readonly id: string;
+	readonly createdAt: string;
+	readonly docNum: string;
+	readonly docDate: string;
+	readonly mode: MdlpScanMode;
+	readonly itemsCount: number;
+	readonly totalCostRub: number;
+	readonly items: readonly ChestnyZnakScannedItem[];
+	readonly status: "queued" | "syncing" | "synced";
+	readonly reason: string;
+	readonly patientId?: string | null | undefined;
+	readonly visitId?: string | null | undefined;
+	readonly protocolNumber?: string | undefined; // Медицинская карта приёма
+}
 
 /** Семантические режимы работы модуля учета маркированных препаратов */
 export type MdlpScanMode =

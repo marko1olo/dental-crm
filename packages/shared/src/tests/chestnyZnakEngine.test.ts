@@ -14,7 +14,7 @@ import {
 	safeParseMdlpSchema701Xml,
 	validateMdlpSchema531Params,
 	validateMdlpSchema701Params,
-} from "../mdlp/chestnyZnakEngine.js";
+} from "../mdlp/chestnyZnak/index.js";
 
 describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/tests/chestnyZnakEngine.test.ts)", () => {
 	// ─── 1. GTIN Modulo 10 Checksum Tests ───────────────────────────────────────
@@ -47,7 +47,7 @@ describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/te
 	describe("2. DataMatrix 2D Barcode Parser", () => {
 		test("parses full pharma DataMatrix with GS separator (<GS> / \\x1d)", () => {
 			const raw =
-				"0103664798000016211A2B3C4D5E6F7\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+				"0103664798000016211A2B3C4D5E6F7\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz12345";
 			const refDate = new Date("2026-08-25T00:00:00.000Z");
 			const parsed = parseChestnyZnakBarcode(raw, refDate);
 
@@ -59,7 +59,7 @@ describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/te
 			assert.strictEqual(parsed.cryptoKey, "ABCD");
 			assert.strictEqual(
 				parsed.cryptoSignature,
-				"SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
+				"SIG1234567890abcdefghijklmnopqrstuvwxyz12345",
 			);
 			assert.strictEqual(parsed.isValidGtinChecksum, true);
 			assert.strictEqual(parsed.isExpired, false);
@@ -385,15 +385,15 @@ describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/te
 	describe("5. Scanning Aggregation & Metrics", () => {
 		test("correctly calculates summary statistics from scanned items array", () => {
 			const item1 = createChestnyZnakScannedItem(
-				"010366479800001621SN1A2B3C4D5E6\x1d17280531\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
-				{ costRub: 450 },
+				"010366479800001621SN1A2B3C4D5E6\x1d17280531\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz12345",
+				{ costRub: 450, referenceDate: new Date("2026-08-25") },
 			);
 			const item2 = createChestnyZnakScannedItem(
-				"010340093000001421SN2A2B3C4D5E6\x1d17281231\x1d10LOT2\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
-				{ costRub: 390 },
+				"010340093000001421SN2A2B3C4D5E6\x1d17281231\x1d10LOT2\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz12345",
+				{ costRub: 390, referenceDate: new Date("2026-08-25") },
 			);
 			const item3 = createChestnyZnakScannedItem(
-				"010366479800001621SN3A2B3C4D5E6\x1d17240101\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
+				"010366479800001621SN3A2B3C4D5E6\x1d17240101\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz12345",
 				{ costRub: 450, referenceDate: new Date("2026-08-25") },
 			);
 
@@ -413,11 +413,11 @@ describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/te
 		test("validates statutory GOST R ISO/IEC 16022 DataMatrix code with full crypto tail", () => {
 			// GOST format: AI(01) 14 digits + AI(21) 13 chars + AI(91) 4 chars + AI(92) 44 chars (26 letters + 10 digits + 8 upper = 44)
 			const gostBarcode =
-				"010366479800001621RU13CHARSSN1\x1d91ABCD\x1d92abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGH";
+				"010366479800001621RU13CHARSSN1X\x1d91ABCD\x1d92abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGH";
 			const parsed = parseChestnyZnakBarcode(gostBarcode);
 
 			assert.strictEqual(parsed.gtin, "03664798000016");
-			assert.strictEqual(parsed.serialNumber, "RU13CHARSSN1");
+			assert.strictEqual(parsed.serialNumber, "RU13CHARSSN1X");
 			assert.strictEqual(parsed.cryptoKey, "ABCD");
 			assert.strictEqual(
 				parsed.cryptoSignature,

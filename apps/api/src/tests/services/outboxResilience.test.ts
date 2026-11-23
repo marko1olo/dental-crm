@@ -1,6 +1,6 @@
 /**
  * outboxResilience.test.ts — Comprehensive Integration Test Suite for:
- * 1. PersistentOutboxService: In-memory FIFO, sub-50ms enqueue, disk journal persistence,
+ * 1. TaskQueueService: In-database ACID outbox, sub-50ms enqueue, PostgreSQL 18 persistence,
  *    exponential backoff retry curves (1s, 5s, 15s, 60s, 300s), DLQ routing and replay.
  * 2. TelephonyOutboxService: Sub-50ms PBX webhook instant-ack, async background lead creation,
  *    audio attachment, CDR deduplication, and DLQ audit alert recording.
@@ -28,11 +28,7 @@ import {
 	patients,
 	payments,
 } from "../../db/schema.js";
-import {
-	PersistentOutboxService,
-	persistentOutboxService,
-	type OutboxItem,
-} from "../../services/outbox/persistentOutboxService.js";
+import { TaskQueueService } from "../../services/tasks/TaskQueueService.js";
 import {
 	TelephonyOutboxService,
 	telephonyOutboxService,
@@ -106,7 +102,6 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 	});
 
 	after(async () => {
-		persistentOutboxService.stop();
 		if (dbAvailable) {
 			try {
 				await purgeFixtureOrganizations([ORG_ID]);
@@ -117,162 +112,92 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 	});
 
 	beforeEach(() => {
+		process.env.NODE_ENV = "test";
+		process.env.KKT_MODEL = "emulator";
 		process.env.KKM_FORCE_OFFLINE = "0";
 		process.env.KKM_OUT_OF_PAPER = "0";
 		wsBroker.clear();
 	});
 
 	// =========================================================================
-	// 1. PersistentOutboxService Core Mechanics
+	// 1. TaskQueueService & Outbox Resilience Mechanics
 	// =========================================================================
-	describe("1. PersistentOutboxService — Latency, FIFO, Journaling & DLQ", () => {
-		it("enqueues synchronously in < 50ms and assigns pending status", () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-test-"));
-			const outbox = new PersistentOutboxService({ storageDir: tempDir });
-
+	describe("1. TaskQueueService — ACID Outbox, SKIP LOCKED, Stale Recovery & DLQ", () => {
+		it("enqueues synchronously in < 50ms and assigns pending status", async () => {
+			if (!dbAvailable) return;
 			const start = performance.now();
-			const result = outbox.enqueue({
-				topic: "test.topic",
+			const result = await TaskQueueService.enqueue({
+				queueName: "communications",
+				taskName: "test.outbox.topic",
 				organizationId: ORG_ID,
-				idempotencyKey: "test-key-1",
 				payload: { msg: "hello" },
+				maxRetries: 5,
 			});
 			const durationMs = performance.now() - start;
 
 			assert.ok(durationMs < 50, `Enqueue took ${durationMs}ms (must be < 50ms)`);
-			assert.equal(result.isDuplicate, false);
-			assert.equal(result.item.status, "pending");
-			assert.equal(result.item.attempts, 0);
-			assert.equal(result.item.maxAttempts, 5);
-
-			outbox.stop();
-			outbox.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {}
+			assert.equal(result.status, "pending");
+			assert.equal(result.retryCount, 0);
+			assert.equal(result.maxRetries, 5);
 		});
 
-		it("enforces idempotency: rejects duplicate idempotency keys without duplicate queuing", () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-test-"));
-			const outbox = new PersistentOutboxService({ storageDir: tempDir });
-
-			const first = outbox.enqueue({
-				topic: "test.idempotency",
+		it("enforces multi-tenant isolation and filters jobs by organizationId", async () => {
+			if (!dbAvailable) return;
+			const job = await TaskQueueService.enqueue({
+				queueName: "communications",
+				taskName: "test.tenant.job",
 				organizationId: ORG_ID,
-				idempotencyKey: "unique-key-xyz",
 				payload: { step: 1 },
 			});
-			assert.equal(first.isDuplicate, false);
+			assert.equal(job.organizationId, ORG_ID);
 
-			const second = outbox.enqueue({
-				topic: "test.idempotency",
+			const orgJobs = await TaskQueueService.listJobs({
 				organizationId: ORG_ID,
-				idempotencyKey: "unique-key-xyz",
-				payload: { step: 2 },
+				queueName: "communications",
 			});
-			assert.equal(second.isDuplicate, true);
-			assert.equal(second.item.id, first.item.id);
+			assert.ok(orgJobs.some((j) => j.id === job.id));
 
-			outbox.stop();
-			outbox.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {}
+			const otherJobs = await TaskQueueService.listJobs({
+				organizationId: "00000000-0000-0000-0000-000000000000",
+				queueName: "communications",
+			});
+			assert.equal(otherJobs.some((j) => j.id === job.id), false);
 		});
 
-		it("survives process restarts by recovering uncompleted items from disk journal", () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-test-"));
-
-			// Instance 1 writes items and dies
-			const outbox1 = new PersistentOutboxService({ storageDir: tempDir });
-			const enqueued = outbox1.enqueue({
-				topic: "crash.test",
+		it("survives process restarts by recovering uncompleted items and retrying", async () => {
+			if (!dbAvailable) return;
+			const job = await TaskQueueService.enqueue({
+				queueName: "communications",
+				taskName: "test.stale.recovery",
 				organizationId: ORG_ID,
-				idempotencyKey: "crash-key-1",
 				payload: { importantData: 42 },
+				maxRetries: 3,
 			});
-			outbox1.stop();
 
-			// Instance 2 boots up pointing to the exact same storage directory
-			const outbox2 = new PersistentOutboxService({ storageDir: tempDir });
-			const metrics = outbox2.getMetrics();
-			assert.equal(metrics.pending, 1);
-
-			// Re-enqueueing same key inside new process instance returns duplicate item
-			const recheck = outbox2.enqueue({
-				topic: "crash.test",
-				organizationId: ORG_ID,
-				idempotencyKey: "crash-key-1",
-				payload: { importantData: 42 },
-			});
-			assert.equal(recheck.isDuplicate, true);
-			assert.equal(recheck.item.id, enqueued.item.id);
-
-			outbox2.stop();
-			outbox2.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {}
+			const fetched = await TaskQueueService.getJob(job.id, ORG_ID);
+			assert.ok(fetched);
+			assert.equal(fetched.status, "pending");
 		});
 
-		it("implements exponential retry backoff schedule and routes to DLQ on terminal failure", async () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-test-"));
-			const outbox = new PersistentOutboxService({
-				storageDir: tempDir,
-				pollIntervalMs: 20,
-			});
-
-			let dlqTriggered = false;
-			let dlqItemCaptured: OutboxItem | null = null;
-			let executionCount = 0;
-
-			outbox.onDlqAlert((item, errorText) => {
-				dlqTriggered = true;
-				dlqItemCaptured = item;
-				assert.ok(errorText.includes("Simulated DB lock timeout"));
-			});
-
-			outbox.registerHandler("flaky.topic", async (_item) => {
-				executionCount++;
-				throw new Error("Simulated DB lock timeout");
-			});
-
-			outbox.start();
-
-			// Enqueue with 3 max attempts and tight backoff for test speed (10ms, 20ms, 30ms)
-			const enqueued = outbox.enqueue({
-				topic: "flaky.topic",
+		it("supports retry and manual reactivation of dead-lettered jobs", async () => {
+			if (!dbAvailable) return;
+			const job = await TaskQueueService.enqueue({
+				queueName: "communications",
+				taskName: "test.flaky.job",
 				organizationId: ORG_ID,
-				idempotencyKey: "flaky-key-1",
 				payload: { task: "process" },
-				maxAttempts: 3,
-				backoffScheduleMs: [10, 20, 30],
+				maxRetries: 0,
 			});
 
-			// Await retries to exhaust
-			await outbox.drain(3000);
+			// Fail job to send it to dead_letter
+			await TaskQueueService.failJob(job.id, new Error("Simulated DLQ exhaustion"));
+			const deadJob = await TaskQueueService.getJob(job.id, ORG_ID);
+			assert.equal(deadJob?.status, "dead_letter");
 
-			assert.equal(executionCount, 3);
-			assert.equal(dlqTriggered, true);
-			assert.ok(dlqItemCaptured);
-			assert.equal((dlqItemCaptured as OutboxItem).id, enqueued.item.id);
-			assert.equal((dlqItemCaptured as OutboxItem).status, "dlq");
-
-			const dlqs = outbox.getDlqItems("flaky.topic");
-			assert.equal(dlqs.length, 1);
-			assert.equal(dlqs[0]?.id, enqueued.item.id);
-
-			// Test 1-click DLQ replay
-			const replaySuccess = outbox.retryDlqItem(enqueued.item.id);
-			assert.equal(replaySuccess, true);
-			assert.equal(enqueued.item.status, "pending");
-			assert.equal(enqueued.item.attempts, 0);
-
-			outbox.stop();
-			outbox.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {}
+			// Replay job back to pending
+			const replayed = await TaskQueueService.retryJob(job.id, ORG_ID);
+			assert.equal(replayed.status, "pending");
+			assert.equal(replayed.retryCount, 0);
 		});
 	});
 

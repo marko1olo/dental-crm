@@ -11,7 +11,8 @@
  */
 
 import React, { useState, useRef, useCallback } from "react";
-import { UploadCloud, ZoomIn, ZoomOut, RotateCcw, Ruler } from "lucide-react";
+import { UploadCloud, ZoomIn, ZoomOut, RotateCcw, Ruler, Hand } from "lucide-react";
+import { resolveOcclusalPlane } from "./cephalometric/cephalometricEngine";
 
 export type XrayFilterMode = "normal" | "invert" | "contrast" | "bone_enhance";
 export const SAMPLE_TRG_CEPHALOGRAM_URL = "/radiology/sample_trg_cephalogram.jpg";
@@ -112,6 +113,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isPanning, setIsPanning] = useState<boolean>(false);
 	const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+	const [isHandToolActive, setIsHandToolActive] = useState<boolean>(false);
 
 	// Двухточечная калибровка линейки (DEF-ORTHO-05, 10/50 мм)
 	const [isCalibrating, setIsCalibrating] = useState<boolean>(false);
@@ -128,6 +130,25 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 			onScaleChange(Math.round(calculatedScale * 10000) / 10000);
 		}
 		setIsCalibrating(false);
+	};
+
+	// DEF-ORTHO-SEV2-01: Начало панорамирования (Hand tool, Middle click, Space, Alt)
+	const handlePointerDown = (e: React.PointerEvent) => {
+		if (draggingKey || draggingCalib) return;
+		if (e.button === 1 || isHandToolActive || e.altKey) {
+			e.preventDefault();
+			e.stopPropagation();
+			(e.currentTarget as Element).setPointerCapture(e.pointerId);
+			setIsPanning(true);
+			setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+		}
+	};
+
+	// DEF-ORTHO-SEV2-01: Плавное зумирование колесом мыши (Wheel zoom)
+	const handleWheel = (e: React.WheelEvent) => {
+		e.preventDefault();
+		const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+		setZoom((prev) => Math.min(3.5, Math.max(0.4, Number((prev * zoomFactor).toFixed(2)))));
 	};
 
 	// CSS-фильтры рентгенограммы
@@ -164,7 +185,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 		}
 	};
 
-	// Обработка перемещения точки
+	// Обработка перемещения точки и панорамирования
 	const handlePointerMove = (e: React.PointerEvent) => {
 		if (draggingCalib) {
 			const coords = getSvgCoords(e.clientX, e.clientY);
@@ -191,7 +212,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 		}
 	};
 
-	// Обработка отпускания точки
+	// Обработка отпускания точки и окончания панорамирования
 	const handlePointerUp = (e: React.PointerEvent) => {
 		if (draggingCalib) {
 			try {
@@ -210,13 +231,18 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 			setDraggingKey(null);
 		}
 		if (isPanning) {
+			try {
+				(e.currentTarget as Element).releasePointerCapture(e.pointerId);
+			} catch {
+				/* ignore */
+			}
 			setIsPanning(false);
 		}
 	};
 
 	// Клик по холсту для расстановки активного ориентира
 	const handleCanvasClick = (e: React.MouseEvent) => {
-		if (draggingKey || isPanning || draggingCalib) return;
+		if (draggingKey || isPanning || draggingCalib || isHandToolActive) return;
 		if (activeTargetKey && onLandmarkChange) {
 			const coords = getSvgCoords(e.clientX, e.clientY);
 			if (coords) {
@@ -275,11 +301,18 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 		<div
 			ref={containerRef}
 			data-testid="cephalometric-canvas"
-			className={`w-full h-full relative select-none overflow-hidden bg-[var(--paper-strong)] flex items-center justify-center ${className || ""}`}
+			className={`w-full h-full relative select-none overflow-hidden bg-[var(--paper-strong)] flex items-center justify-center ${
+				isHandToolActive ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""
+			} ${className || ""}`}
 			onDrop={handleDrop}
 			onDragOver={(e) => e.preventDefault()}
+			onPointerDown={handlePointerDown}
 			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
+			onPointerLeave={() => {
+				if (isPanning) setIsPanning(false);
+			}}
+			onWheel={handleWheel}
 		>
 			{!imageUrl ? (
 				<div
@@ -431,6 +464,23 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 										stroke="#22c55e" strokeWidth="1.8"
 									/>
 								)}
+
+								{/* Окклюзионная плоскость OP (Downs / Jacobson Wits) */}
+								{(() => {
+									const op = resolveOcclusalPlane(landmarks);
+									if (!op) return null;
+									return (
+										<line
+											x1={op.p1.x}
+											y1={op.p1.y}
+											x2={op.p2.x}
+											y2={op.p2.y}
+											stroke="#10b981"
+											strokeWidth="2"
+											strokeDasharray="6 3"
+										/>
+									);
+								})()}
 							</g>
 						)}
 
@@ -631,6 +681,20 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 			{/* Тулбар управления масштабом ТРГ (Apple HIG тач-таргеты >= 44x44px) */}
 			{imageUrl && (
 				<div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--paper-strong)]/90 border border-[var(--line)] backdrop-blur-md shadow-lg">
+					<button
+						type="button"
+						data-testid="ceph-hand-pan-toggle"
+						onClick={() => setIsHandToolActive((prev) => !prev)}
+						className={`min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
+							isHandToolActive
+								? "bg-[var(--primary)] text-white shadow-xs"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						}`}
+						title="Режим панорамирования (Рука / Space / Колесико)"
+						aria-label="Режим панорамирования"
+					>
+						<Hand size={18} />
+					</button>
 					<button
 						type="button"
 						onClick={() => setZoom((z) => Math.min(3, z + 0.2))}

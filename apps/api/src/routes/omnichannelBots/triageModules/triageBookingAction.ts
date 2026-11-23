@@ -1,7 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { Appointment } from "@dental/shared";
+import { createAppointmentInDb } from "../../../db/appointmentsQuery.js";
 import { db } from "../../../db/client.js";
 import {
-	appointments,
 	chairs,
 	clinics,
 	organizations,
@@ -65,16 +66,31 @@ export async function handleBookAppointment(
 		return { ok: false, statusCode: 404, error: "PatientNotFound", message: "Пациент не найден." };
 	}
 
-	// 2. Определяем врача
+	// 2. Определяем врача (строго с ролью 'doctor', исключая неврачебный персонал)
 	let selectedDoctorId = doctorUserId;
 	let doctorName = "Дежурный врач";
 	if (selectedDoctorId) {
 		const [doc] = await db
-			.select({ id: users.id, fullName: users.fullName })
+			.select({ id: users.id, fullName: users.fullName, role: users.role })
 			.from(users)
-			.where(and(eq(users.organizationId, orgId), eq(users.id, selectedDoctorId)))
+			.where(
+				and(
+					eq(users.organizationId, orgId),
+					eq(users.id, selectedDoctorId),
+					eq(users.role, "doctor"),
+				),
+			)
 			.limit(1);
-		if (doc) doctorName = doc.fullName;
+		if (doc) {
+			doctorName = doc.fullName;
+		} else {
+			return {
+				ok: false,
+				statusCode: 400,
+				error: "DoctorNotFound",
+				message: "Указанный сотрудник не найден или не является лечащим врачом клиники.",
+			};
+		}
 	} else {
 		const [firstDoc] = await db
 			.select({ id: users.id, fullName: users.fullName })
@@ -82,14 +98,36 @@ export async function handleBookAppointment(
 			.where(
 				and(
 					eq(users.organizationId, orgId),
-					inArray(users.role, ["doctor", "owner", "administrator"]),
+					eq(users.role, "doctor"),
+					eq(users.isActive, true),
 				),
 			)
 			.limit(1);
 		if (firstDoc) {
 			selectedDoctorId = firstDoc.id;
 			doctorName = firstDoc.fullName;
+		} else {
+			const [anyDoc] = await db
+				.select({ id: users.id, fullName: users.fullName })
+				.from(users)
+				.where(and(eq(users.organizationId, orgId), eq(users.role, "doctor")))
+				.limit(1);
+			if (anyDoc) {
+				selectedDoctorId = anyDoc.id;
+				doctorName = anyDoc.fullName;
+			}
 		}
+	}
+
+	const startDate = new Date(startsAt);
+	const endDate = new Date(endsAt);
+	if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || startDate >= endDate) {
+		return {
+			ok: false,
+			statusCode: 400,
+			error: "ValidationError",
+			message: "Некорректный временной интервал приёма.",
+		};
 	}
 
 	// 3. Определяем кресло
@@ -99,29 +137,46 @@ export async function handleBookAppointment(
 		.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
 		.limit(1);
 
-	// 4. Создаем запись в appointments
-	const [newAppt] = await db
-		.insert(appointments)
-		.values({
-			organizationId: orgId,
+	// 4. Создаем запись через канонический SSOT createAppointmentInDb
+	let createdAppt: Appointment | undefined;
+	try {
+		createdAppt = await createAppointmentInDb(orgId, {
 			patientId: patient.id,
 			doctorUserId: selectedDoctorId || null,
 			chairId: chair?.id || null,
-			startsAt: new Date(startsAt),
-			endsAt: new Date(endsAt),
+			startsAt: startDate.toISOString(),
+			endsAt: endDate.toISOString(),
 			status: "planned",
 			reason: reason.trim(),
 			comment: `Записан через омниканальный чат оператора (${channel.toUpperCase()})`,
-		})
-		.returning({ id: appointments.id });
+		});
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (
+			msg.includes("overlap_excl") ||
+			msg.includes("exclusion") ||
+			msg.includes("conflict") ||
+			msg.includes("уже занято") ||
+			msg.includes("уже есть запись") ||
+			msg.includes("удерживается другим пользователем") ||
+			msg.includes("резервирования слота")
+		) {
+			return {
+				ok: false,
+				statusCode: 409,
+				error: "SlotConflict",
+				message: "Выбранное время у врача, кресла или пациента уже занято другой записью или удерживается.",
+			};
+		}
+		throw err;
+	}
 
-	if (!newAppt) {
+	if (!createdAppt) {
 		return { ok: false, statusCode: 500, error: "BookingFailed", message: "Не удалось создать запись на приём." };
 	}
 
 	// 5. Если запрошено авто-подтверждение в чат пациенту
 	if (sendConfirmationToChat) {
-		const startDate = new Date(startsAt);
 		const formattedDate = startDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
 		const formattedTime = startDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -158,7 +213,7 @@ export async function handleBookAppointment(
 
 	return {
 		ok: true,
-		appointmentId: newAppt.id,
+		appointmentId: createdAppt.id,
 		message: `Запись успешно создана на ${new Date(startsAt).toLocaleString("ru-RU")}`,
 	};
 }

@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { db as database } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import {
+	onTenantTxCommit,
+	runDetachedInTenantCtx,
+	withSavepoint,
+	withTenantCtx,
+} from "../../db/rls.js";
 import { appointments } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
@@ -42,51 +46,64 @@ export async function executeVisitCompletionSideEffects({
 							eq(appointments.organizationId, orgId),
 						),
 					);
+				const appointmentId = visit.appointmentId;
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "APPOINTMENT_UPDATED",
+						payload: {
+							appointmentId,
+							visitId: visit.id,
+							status: "completed",
+						},
+					});
+				});
 			}
 
 			// Каноническое списание расходных материалов по техкартам (BOM - Мандаты 8e, 8v, 8bo)
-			// Списание происходит строго 1 раз на сервере в транзакции с RLS
-			await executeAutoBomWriteoff(tx, {
-				organizationId: orgId,
-				visitId: visit.id,
-				userId: doctorId ?? null,
-				allowOverdraft: true,
+			// Списание происходит строго 1 раз на сервере в транзакции с RLS (в SAVEPOINT, чтобы сбой BOM не отравил транзакцию)
+			try {
+				await withSavepoint(tx, async (spTx) =>
+					executeAutoBomWriteoff(spTx, {
+						organizationId: orgId,
+						visitId: visit.id,
+						patientId: visit.patientId,
+						userId: doctorId ?? null,
+						allowOverdraft: true,
+					}),
+				);
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "INVENTORY_STOCK_CHANGED",
+						payload: {
+							visitId: visit.id,
+							action: "auto_deduct",
+						},
+					});
+				});
+			} catch (bomErr) {
+				log.warn(
+					{ error: bomErr, visitId: visit.id },
+					"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
+				);
+			}
+
+			onTenantTxCommit(() => {
+				void runDetachedInTenantCtx(orgId, async () => {
+					await syncRecallOnVisitCompleted(orgId, visit.id);
+				}).catch((err) => {
+					log.warn(
+						{ error: err, visitId: visit.id },
+						"Фоновая синхронизация recall завершилась с ошибкой (не блокирует подписание)",
+					);
+				});
 			});
 		});
-	} catch (bomErr) {
+	} catch (txErr) {
 		log.warn(
-			{ error: bomErr, visitId: visit.id },
-			"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
+			{ error: txErr, visitId: visit.id },
+			"Побочный эффект обновления приёма при завершении визита завершился с предупреждением (не блокирует подписание)",
 		);
 	}
-
-	if (visit.appointmentId) {
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "APPOINTMENT_UPDATED",
-			payload: {
-				appointmentId: visit.appointmentId,
-				visitId: visit.id,
-				status: "completed",
-			},
-		});
-	}
-
-	wsBroker.broadcastToOrganization(orgId, {
-		type: "INVENTORY_STOCK_CHANGED",
-		payload: {
-			visitId: visit.id,
-			action: "auto_deduct",
-		},
-	});
-
-	void withTenantCtx(orgId, async () => {
-		await syncRecallOnVisitCompleted(orgId, visit.id);
-	}).catch((err) => {
-		log.warn(
-			{ error: err, visitId: visit.id },
-			"Фоновая синхронизация recall завершилась с ошибкой (не блокирует подписание)",
-		);
-	});
 
 	try {
 		if (visit.patientId) {

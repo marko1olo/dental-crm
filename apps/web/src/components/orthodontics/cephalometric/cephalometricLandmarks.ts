@@ -33,7 +33,8 @@ export type LandmarkKey =
 	| "U1t"
 	| "U1a"
 	| "L1t"
-	| "L1a";
+	| "L1a"
+	| "Mo";
 
 export interface LandmarkDefinition {
 	key: LandmarkKey;
@@ -118,6 +119,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 	{ key: "U1a", code: "U1-apex", nameRu: "U1 Apex (Корень верхнего резца)", latinName: "Incisor superior apical", anatomicalDescription: "Верхушка корня центрального резца ВЧ", category: "dental", color: "#22c55e" },
 	{ key: "L1t", code: "L1-tip", nameRu: "L1 Tip (Край нижнего резца)", latinName: "Incisor inferior incisal", anatomicalDescription: "Режущий край центрального резца НЧ", category: "dental", color: "#22c55e" },
 	{ key: "L1a", code: "L1-apex", nameRu: "L1 Apex (Корень нижнего резца)", latinName: "Incisor inferior apical", anatomicalDescription: "Верхушка корня центрального резца НЧ", category: "dental", color: "#22c55e" },
+	{ key: "Mo", code: "Mo", nameRu: "Mo (Смыкание моляров)", latinName: "Molaris occlusalis", anatomicalDescription: "Точка фиссурно-бугоркового смыкания первых моляров (дистальный ориентир окклюзионной плоскости)", category: "dental", color: "#22c55e" },
 ];
 
 export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
@@ -144,6 +146,7 @@ export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	U1a: { x: 456, y: 325 },
 	L1t: { x: 471, y: 400 },
 	L1a: { x: 428, y: 495 },
+	Mo: { x: 385, y: 385 },
 };
 
 export const CLASS_I_NORMAL_LANDMARKS_PRESET: LandmarkMap = {
@@ -267,6 +270,10 @@ export const LANDMARK_CLINICAL_ROLES: Record<LandmarkKey, { depends: string; cli
 	L1a: {
 		depends: "Продольная ось нижнего резца: угол 1-NB (25°±2°), угол L1-MP / IMPA (90°±3°), межрезцовый U1-L1",
 		clinicalTip: "Верхушка корня центрального резца нижней челюсти.",
+	},
+	Mo: {
+		depends: "Окклюзионная плоскость OP, Wits-число (Jacobson), наклон окклюзионной плоскости Cant of OP (Downs)",
+		clinicalTip: "Точка фиссурно-бугоркового смыкания первых постоянных моляров (дистальный ориентир окклюзионной плоскости).",
 	},
 };
 

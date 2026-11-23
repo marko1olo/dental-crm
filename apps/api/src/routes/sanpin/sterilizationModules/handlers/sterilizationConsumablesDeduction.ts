@@ -9,11 +9,7 @@ import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "../../../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../../../db/rls.js";
 import { inventoryItems, inventoryTransactions, stockBatches } from "../../../../db/schema.js";
-import {
-	type SterilizationDeductionParams,
-	type SterilizationDeductionResult,
-	resolveConsumablesToDeduct,
-} from "./sterilizationConsumablesTypes.js";
+import { type SterilizationDeductionParams, type SterilizationDeductionResult, resolveConsumablesToDeduct } from "./sterilizationConsumablesTypes.js";
 
 export { type SterilizationDeductionParams, type SterilizationDeductionResult };
 
@@ -95,7 +91,7 @@ export async function executeSterilizationConsumablesDeduction(
 				await tx
 					.update(stockBatches)
 					.set({ remainingQty: String(rem), status: rem <= 0 ? "depleted" : "active", updatedAt: new Date() })
-					.where(eq(stockBatches.id, batch.id));
+					.where(and(eq(stockBatches.id, batch.id), eq(stockBatches.organizationId, orgId)));
 			}
 
 			deductedSummary.push({ itemName: item.name, quantityDeducted: spec.qty, isOverdraft, remainingStock: nextStock });
@@ -116,9 +112,6 @@ export async function executeSterilizationConsumablesDeduction(
 			{ err, orgId: params.organizationId, cycleNumber: params.cycleNumber },
 			"[SanPiN Sterilization Stock Deduction] Soft fallback on stock deduction error",
 		);
-		if (externalTx) {
-			throw err;
-		}
 		return { success: false, deductedItems: [] };
 	}
 }

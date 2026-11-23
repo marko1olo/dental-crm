@@ -9,6 +9,7 @@ import { getDentalToolSetDefinition } from "./kraftCatalogs.js";
 import {
 	getKraftMaterialDefinition,
 	getKraftSizeDefinition,
+	KRAFT_STATUS_LABELS_RU,
 	type KraftBatchOptions,
 	type KraftPackageRecord,
 	type KraftPackageStatus,
@@ -114,6 +115,6 @@ export function calculateKraftBatchStatistics(records: readonly KraftPackageReco
 export function exportKraftBatchToCsv(records: readonly KraftPackageRecord[]): string {
 	const headers = ["ID записи", "Номер партии", "Серийный номер", "Штрихкод 1D", "2D DataMatrix Payload", "Наименование набора", "Дата стерилизации", "Срок годности (до)", "Нормативный срок (суток)", "Осталось дней", "Статус стерильности", "Автоклав", "Номер цикла", "Оператор ЦСО"];
 	const escape = (val: unknown) => `"${String(val ?? "").replace(/"/g, '""')}"`;
-	const rows = records.map((r) => [escape(r.id), escape(r.batchId), escape(r.serialNumber), escape(r.barcode128), escape(r.barcodeDataMatrixPayload), escape(r.toolSetNameRu), escape(r.packDate), escape(r.expDate), escape(r.daysLifespan), escape(r.daysRemaining), escape(r.status), escape(r.autoclaveId), escape(r.cycleNumber), escape(r.operatorName)]);
+	const rows = records.map((r) => [escape(r.id), escape(r.batchId), escape(r.serialNumber), escape(r.barcode128), escape(r.barcodeDataMatrixPayload), escape(r.toolSetNameRu), escape(r.packDate), escape(r.expDate), escape(r.daysLifespan), escape(r.daysRemaining), escape(KRAFT_STATUS_LABELS_RU[r.status] || r.status), escape(r.autoclaveId), escape(r.cycleNumber), escape(r.operatorName)]);
 	return `\uFEFF${[headers.join(";"), ...rows.map((row) => row.join(";"))].join("\r\n")}`;
 }

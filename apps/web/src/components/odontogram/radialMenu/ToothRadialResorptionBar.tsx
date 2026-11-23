@@ -24,7 +24,7 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 			{isPrimary && (
 				<div className="flex flex-col gap-1 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 					<div className="flex items-center justify-between">
-						<span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
+						<span className="text-[10px] font-bold text-[var(--primary)]">
 							Резорбция корней:
 						</span>
 						<span className="text-[10px] text-[var(--muted)]">0–100%</span>
@@ -33,7 +33,7 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 						<button
 							type="button"
 							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_1"); onClose(); }}
-							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--primary-soft,var(--teal-soft))] hover:text-[var(--primary)] transition-all cursor-pointer border border-[var(--line)] text-center flex items-center justify-center shadow-2xs"
 							title="Резорбция I степени (25%) — сохраняет диагноз коронки"
 						>
 							Рез I
@@ -41,7 +41,7 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 						<button
 							type="button"
 							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_2"); onClose(); }}
-							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--primary-soft,var(--teal-soft))] hover:text-[var(--primary)] transition-all cursor-pointer border border-[var(--line)] text-center flex items-center justify-center shadow-2xs"
 							title="Резорбция II степени (50%) — сохраняет диагноз коронки"
 						>
 							Рез II
@@ -49,7 +49,7 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 						<button
 							type="button"
 							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_3"); onClose(); }}
-							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--primary-soft,var(--teal-soft))] hover:text-[var(--primary)] transition-all cursor-pointer border border-[var(--line)] text-center flex items-center justify-center shadow-2xs"
 							title="Резорбция III степени (75%) — сохраняет диагноз коронки"
 						>
 							Рез III
@@ -57,7 +57,7 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 						<button
 							type="button"
 							onClick={() => { onSelectState("Missing", undefined, "exfoliation"); onClose(); }}
-							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 text-center flex items-center justify-center shadow-xs"
+							className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--danger-soft)] text-[var(--danger)] hover:opacity-90 transition-all cursor-pointer border border-[var(--danger-line,var(--line))] text-center flex items-center justify-center shadow-2xs"
 							title="Смена зуба / Эксфолиация (100%) — физиологическое выпадение и прорезывание постоянного"
 						>
 							Смена
@@ -66,8 +66,8 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 				</div>
 			)}
 			{showIropz && (
-				<div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 px-2 py-1 rounded-xl border border-amber-500/30 text-[10px] font-bold">
-					<AlertTriangle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+				<div className="flex items-center gap-1.5 bg-[var(--warning-soft)] text-[var(--warning-ink,var(--ink))] px-2.5 py-1.5 rounded-xl border border-[var(--warning-line,var(--line))] text-[10px] font-medium">
+					<AlertTriangle size={13} className="text-[var(--warning)] shrink-0" />
 					<span>ИРОПЗ &gt; 0.6: Рекомендована коронка (Z51.8)</span>
 				</div>
 			)}

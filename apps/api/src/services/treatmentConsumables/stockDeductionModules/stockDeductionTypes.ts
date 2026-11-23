@@ -46,6 +46,7 @@ export interface ResolvedItemEntry {
 export interface DeductForVisitParams {
 	organizationId: string;
 	visitId: string;
+	patientId?: string | null | undefined;
 	userId?: string | null | undefined;
 	transactionType?: "auto_deduct" | "manual_writeoff" | undefined;
 	clientMutationId?: string | null | undefined;
@@ -55,6 +56,16 @@ export interface DeductForVisitParams {
 	drugName?: string | undefined;
 	paperJournalAcknowledged?: boolean | undefined;
 	allowOverdraft?: boolean | undefined;
+	mdlpItems?: Array<{
+		rawBarcode?: string | null | undefined;
+		sgtin?: string | null | undefined;
+		gtin?: string | null | undefined;
+		serialNumber?: string | null | undefined;
+		costRub?: number | null | undefined;
+		tradeName?: string | null | undefined;
+		inn?: string | null | undefined;
+		series?: string | null | undefined;
+	}> | undefined;
 }
 
 export interface DeductForToothTreatmentParams {

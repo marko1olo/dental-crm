@@ -3,6 +3,7 @@ import type { Tooth46ContainerProps } from "../../tooth46Types";
 import { DEFAULT_TOOTH46_LAYERS } from "../../tooth46Types";
 import { Tooth46ShaderDefs } from "../../Tooth46ShaderDefs";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
+import { CROWN_FILL_MAP } from "../../Tooth46CrownMaps";
 import type { AnatomicalTemplateData, RootResorptionStage } from "../../../anatomicalGeometriesTypes";
 import {
 	PEDIATRIC_UPPER_MOLAR_GEOMETRY,
@@ -64,6 +65,15 @@ export const PediatricToothContainer: React.FC<
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const enamelFill = isDark ? "url(#dente-enamel-porcelain)" : "url(#dente-enamel-porcelain)";
 	const rootFill = isDark ? "url(#dente-root-dentin)" : "url(#dente-root-dentin)";
+
+	const isMetalCrown = a.crownMaterial === "metal";
+	const isZirconiaCrown = Boolean(a.zirconiaCrown || a.crownMaterial === "zirconia");
+	const isCrown = Boolean(isZirconiaCrown || isMetalCrown || a.crownMaterial);
+	const crownFill = isMetalCrown
+		? "url(#dente-crown-metal)"
+		: a.crownMaterial && CROWN_FILL_MAP[a.crownMaterial]
+			? CROWN_FILL_MAP[a.crownMaterial]
+			: "url(#dente-zirconia-crown)";
 
 	// Физиологическая резорбция корней
 	const resorptionStage: RootResorptionStage = a.rootResorptionStage ?? (a.periapicalCondition === "resorption" ? 50 : 0);
@@ -129,17 +139,17 @@ export const PediatricToothContainer: React.FC<
 				)}
 
 				{/* 3. Анатомическая коронка молочного зуба */}
-				{a.crown && !a.missing && (
+				{(a.crown || isCrown) && !a.missing && (
 					<g data-testid="pediatric-crown">
 						<path
 							d={geom.crown}
-							fill={a.zirconiaCrown ? "url(#dente-zirconia-crown)" : enamelFill}
-							stroke={stroke}
-							strokeWidth={1.5}
+							fill={isCrown ? crownFill : enamelFill}
+							stroke={isMetalCrown ? (isDark ? "rgba(203, 213, 225, 0.85)" : "rgba(51, 65, 85, 0.70)") : stroke}
+							strokeWidth={isMetalCrown ? 1.6 : 1.5}
 							strokeLinejoin="round"
 						/>
 						{/* Окклюзионные фиссуры молочного зуба */}
-						{geom.fissures && !a.zirconiaCrown && (
+						{geom.fissures && !isCrown && (
 							<path
 								d={geom.fissures}
 								fill="none"
@@ -176,7 +186,7 @@ export const PediatricToothContainer: React.FC<
 				)}
 
 				{/* 5. Патологии: кариес молочного зуба */}
-				{a.caries && !a.zirconiaCrown && !a.missing && (
+				{a.caries && !isCrown && !a.missing && (
 					<g data-testid="pediatric-caries">
 						{(() => {
 							const surfs = geom.surfaces;
@@ -216,7 +226,7 @@ export const PediatricToothContainer: React.FC<
 				)}
 
 				{/* 6. Реставрация: композитная пломба молочного зуба (Wheeler MODBL-изоляция) */}
-				{a.composite && !a.zirconiaCrown && !a.missing && (
+				{a.composite && !isCrown && !a.missing && (
 					<g data-testid="pediatric-composite">
 						{(() => {
 							const surfs = geom.surfaces;

@@ -24,6 +24,7 @@ import {
 	buildVisitDeductionNote,
 	executeFefoDeductionLoop,
 } from "./stockDeductionOverdraftHandler.js";
+import { mdlpOutboxService } from "../../mdlp/mdlpOutboxService.js";
 
 export async function deductForVisit(
 	tx: DbExecutor,
@@ -91,6 +92,23 @@ export async function deductForVisit(
 			clientMutationId,
 		}),
 	});
+
+	// Атомарная регистрация списания в Transactional Outbox МДЛП «Честный Знак» внутри tx (<15 мс)
+	try {
+		await mdlpOutboxService.enqueueVisitOutbox(tx, {
+			organizationId,
+			visitId: safeVisitId,
+			patientId: params.patientId,
+			doctorId: userId,
+			carpulesCount: params.carpulesCount,
+			drugName: params.drugName,
+			deductions: deductionRes.deductions,
+			mdlpItems: params.mdlpItems,
+			clientMutationId,
+		});
+	} catch (_mdlpErr) {
+		// Ошибка постановки в outbox не блокирует приём врача, но не прерывает ответ
+	}
 
 	return {
 		completedTreatmentItems: targetItems.length,

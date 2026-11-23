@@ -8,7 +8,7 @@ import {
 	organizations,
 	users,
 } from "../../../db/schema.js";
-import { FREED_APPOINTMENT_STATUSES } from "../../../services/schedule/scheduleConflictService.js";
+import { FREED_APPOINTMENT_STATUSES } from "../../appointmentErrors.js";
 import {
 	type PublicSlotDto,
 	CLINIC_LINK_DEAD_MESSAGE,

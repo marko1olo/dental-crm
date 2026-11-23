@@ -125,6 +125,18 @@ export function useCephLandmarks({
 		};
 	}, [patientId, isOpen, imageUrl]);
 
+	// DEF-ORTHO-SEV1-04 (Мандаты 8zq, 8bn): Сброс и перезагрузка состояния при смене patientId
+	const lastPatientIdRef = useRef<string | undefined>(patientId);
+	useEffect(() => {
+		if (lastPatientIdRef.current !== patientId) {
+			lastPatientIdRef.current = patientId;
+			const localStudy = patientId ? loadLatestCephalometricStudy(patientId) : null;
+			setImageUrl(initialImageUrl ?? localStudy?.imageUrl ?? null);
+			setLandmarks(localStudy?.landmarks ?? {});
+			setScaleMmPerPixel(localStudy?.scaleMmPerPixel ?? 0.15);
+		}
+	}, [patientId, initialImageUrl]);
+
 	const [aiBackendPref, setAiBackendPref] = useState<CephAiBackendPreference>("auto");
 	const [isAiInferring, setIsAiInferring] = useState<boolean>(false);
 	const [aiStats, setAiStats] = useState<CephAiStats | null>(() => {
@@ -145,11 +157,11 @@ export function useCephLandmarks({
 	}, [isOpen, aiBackendPref]);
 
 	const aiBackendBadge = useMemo(() => {
-		return "Шаблон (норма)";
+		return "Анатомический шаблон (Норма)";
 	}, []);
 
 	const aiBackendLabel = useMemo(() => {
-		return "Калиброванный анатомический шаблон (норма)";
+		return "Анатомический усредненный шаблон (Норма)";
 	}, []);
 
 	const handleRunAiAutoPlacement = useCallback(async () => {

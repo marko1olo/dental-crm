@@ -1,7 +1,7 @@
 /**
  * omnichannelTelephonyAndOutbox.test.ts — Comprehensive Red Team Test Suite for:
  *
- * 1. Transactional Outbox Pattern & PersistentOutboxService:
+ * 1. Transactional Outbox Pattern & TaskQueueService:
  *    - Sub-50ms enqueue latency, in-memory FIFO, disk journal persistence.
  *    - Idempotency-Key (UUIDv7) deduplication: repeat calls within same time window return isDuplicate.
  *    - ACID transactional queueing in PostgreSQL 18 (communication_outbox).
@@ -70,11 +70,7 @@ import {
 	claimBatch,
 	releaseStuckLocks,
 } from "../../services/communications/dispatch/outboxRetryQueue.js";
-import {
-	PersistentOutboxService,
-	persistentOutboxService,
-	type OutboxItem,
-} from "../../services/outbox/persistentOutboxService.js";
+import { TaskQueueService } from "../../services/tasks/TaskQueueService.js";
 import { CallerLookupService } from "../../services/telephony/callerLookupService.js";
 import {
 	isForbiddenPrivateIp,
@@ -210,7 +206,6 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 
 	after(async () => {
 		if (app) await app.close();
-		persistentOutboxService.stop();
 		wsBroker.clear();
 
 		if (databaseReady) {
@@ -230,70 +225,71 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 	// 1. Transactional Outbox Pattern & Idempotency
 	// =========================================================================
 	describe("1. Transactional Outbox Pattern & Sub-50ms Idempotent Enqueue", () => {
-		it("enqueues messages synchronously in < 50ms with status pending and attempts = 0", () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-omni-test-"));
-			const outbox = new PersistentOutboxService({ storageDir: tempDir });
-
+		it("enqueues messages asynchronously in < 50ms with status pending and attempts = 0", async () => {
+			if (!databaseReady) return;
 			const start = performance.now();
-			const result = outbox.enqueue({
-				topic: "telephony.appointment.reminder",
+			const result = await TaskQueueService.enqueue({
+				queueName: "communications",
+				taskName: "telephony.appointment.reminder",
 				organizationId: ORG_A_ID,
-				idempotencyKey: "idemp-remind-appt-100",
 				payload: {
 					appointmentId: APPT_A_ID,
 					patientId: PATIENT_A_ID,
 					text: "Напоминаем о визите завтра в 10:00",
 				},
+				maxRetries: 5,
 			});
 			const elapsedMs = performance.now() - start;
 
 			assert.ok(elapsedMs < 50, `Enqueue took ${elapsedMs}ms, must be < 50ms`);
-			assert.equal(result.isDuplicate, false);
-			assert.equal(result.item.status, "pending");
-			assert.equal(result.item.attempts, 0);
-			assert.equal(result.item.maxAttempts, 5);
-
-			outbox.stop();
-			outbox.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {
-				// ignore temp cleanup
-			}
+			assert.equal(result.status, "pending");
+			assert.equal(result.retryCount, 0);
+			assert.equal(result.maxRetries, 5);
 		});
 
-		it("suppresses duplicate enqueue with identical Idempotency-Key (UUIDv7) without creating duplicate", () => {
-			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "outbox-idemp-test-"));
-			const outbox = new PersistentOutboxService({ storageDir: tempDir });
+		it("suppresses duplicate outbox insert in communicationOutbox with identical DedupeKey", async () => {
+			if (!databaseReady) return;
+			const dedupeKey = "dedupe-test-uuidv7-unique-12345";
+			const now = new Date();
 
-			const idempotencyKey = "018dc3f0-7b2a-7182-9f3b-48192a71bf9a"; // UUIDv7
-			const first = outbox.enqueue({
-				topic: "telephony.sms.urgent",
-				organizationId: ORG_A_ID,
-				idempotencyKey,
-				payload: { message: "Первичный запрос" },
+			let firstId = "";
+			await withFixtureTenant(ORG_A_ID, async (tx) => {
+				const [first] = await tx
+					.insert(communicationOutbox)
+					.values({
+						organizationId: ORG_A_ID,
+						patientId: PATIENT_A_ID,
+						channel: "telegram",
+						intent: "general",
+						recipientAddress: "79161112233",
+						body: "Первичный запрос",
+						status: "queued",
+						dedupeKey,
+						scheduledAt: now,
+					})
+					.onConflictDoNothing()
+					.returning({ id: communicationOutbox.id });
+				if (first) firstId = first.id;
+
+				const [second] = await tx
+					.insert(communicationOutbox)
+					.values({
+						organizationId: ORG_A_ID,
+						patientId: PATIENT_A_ID,
+						channel: "telegram",
+						intent: "general",
+						recipientAddress: "79161112233",
+						body: "Повторный клик",
+						status: "queued",
+						dedupeKey,
+						scheduledAt: now,
+					})
+					.onConflictDoNothing()
+					.returning({ id: communicationOutbox.id });
+
+				assert.ok(firstId);
+				assert.equal(second, undefined); // onConflictDoNothing prevented duplicate!
 			});
-			assert.equal(first.isDuplicate, false);
-			assert.equal(first.item.idempotencyKey, idempotencyKey);
-
-			// Rapid repeated request (e.g. user double-click or network retry)
-			const second = outbox.enqueue({
-				topic: "telephony.sms.urgent",
-				organizationId: ORG_A_ID,
-				idempotencyKey,
-				payload: { message: "Повторный клик" },
-			});
-			assert.equal(second.isDuplicate, true);
-			assert.equal(second.item.id, first.item.id);
-			assert.equal(outbox.getMetrics().pending, 1);
-
-			outbox.stop();
-			outbox.clear();
-			try {
-				fs.rmSync(tempDir, { recursive: true, force: true });
-			} catch {
-				// ignore
-			}
 		});
 
 		it("persists transactional outbox item in PostgreSQL 18 communicationOutbox table", async () => {

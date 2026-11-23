@@ -10,6 +10,8 @@ import {
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
+import { SyncAdministrativeHandlers } from "./syncAdministrativeHandlers.js";
+import { RouteSyncQueueManager } from "./syncQueueManager.js";
 
 const syncPullQuerySchema = z.object({
 	since: z.string().optional(),
@@ -151,6 +153,17 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		const result = await SyncGatewayService.pullChanges(orgId, body.since);
 		return reply.code(200).send(result);
 	});
+
+	/**
+	 * Административные маршруты управления очередью синхронизации и аудита коллизий.
+	 */
+	app.get("/api/sync/admin/queue/stats", SyncAdministrativeHandlers.getQueueStats);
+	app.get("/api/sync/admin/dlq", SyncAdministrativeHandlers.getDeadLetterQueue);
+	app.post("/api/sync/admin/replay", SyncAdministrativeHandlers.replaySyncJob);
+	app.get("/api/sync/admin/vectors", SyncAdministrativeHandlers.getEntityVectorsAudit);
+	app.post("/api/sync/admin/recover-stale", SyncAdministrativeHandlers.recoverStaleTasks);
 }
 
+export { SyncAdministrativeHandlers } from "./syncAdministrativeHandlers.js";
+export { RouteSyncQueueManager } from "./syncQueueManager.js";
 export default registerSyncRoutes;

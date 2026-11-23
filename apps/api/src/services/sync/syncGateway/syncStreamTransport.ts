@@ -68,15 +68,21 @@ export class SyncStreamTransport {
 		let deliveredCount = 0;
 		const message = JSON.stringify(payload);
 
-		for (const [_, connection] of this.activeConnections) {
+		const deadNodeIds: string[] = [];
+		for (const [nodeId, connection] of this.activeConnections) {
 			if (connection.organizationId === organizationId) {
 				try {
 					connection.send(message);
 					deliveredCount++;
 				} catch {
-					// Discard broken connections silently
+					deadNodeIds.push(nodeId);
 				}
 			}
+		}
+
+		for (const deadId of deadNodeIds) {
+			this.activeConnections.delete(deadId);
+			this.nodeRegistry.delete(deadId);
 		}
 
 		return deliveredCount;

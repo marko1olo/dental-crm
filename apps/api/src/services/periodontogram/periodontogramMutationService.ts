@@ -15,7 +15,7 @@ import {
 	periodontogramTeeth,
 	toothStates,
 } from "../../db/schema.js";
-import { computeSnapshotIndices } from "../periodontogramIndices.js";
+import { computeSnapshotIndices, type PeriodontogramSnapshotIndices } from "../periodontogramIndices.js";
 import {
 	ensurePerioPatientExists,
 	isPerioDemoContext,
@@ -253,13 +253,15 @@ export async function upsertPatientFullPeriodontogram({
 				};
 			} else {
 				if (psrData) {
+					const existingIndices = (activeDraft.indices as PeriodontogramSnapshotIndices) || {};
+					const mergedIndices: PeriodontogramSnapshotIndices = {
+						...existingIndices,
+						psrData,
+					};
 					await tx
 						.update(periodontogramSnapshots)
 						.set({
-							indices: {
-								...((activeDraft.indices as Record<string, unknown>) || {}),
-								psrData,
-							},
+							indices: mergedIndices,
 							updatedAt: new Date(),
 						})
 						.where(eq(periodontogramSnapshots.id, activeDraft.id));

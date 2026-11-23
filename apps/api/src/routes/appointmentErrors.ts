@@ -1,7 +1,8 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import type { FastifyReply } from "fastify";
+import { areIntervalsOverlapping, clinicScheduleDefaultsSchema } from "@dental/shared";
 import { db } from "../db/client.js";
-import { appointments } from "../db/schema.js";
+import { appointments, clinics, organizations } from "../db/schema.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 
 export type SchedulePayloadSchema<T> = {
@@ -191,7 +192,9 @@ export function classifyAppointmentRejection(
 		message.includes("Слот уже занят") ||
 		message.includes("Внимание: на это время уже записан пациент") ||
 		message.includes("23P01") ||
-		message.includes("exclusion constraint")
+		message.includes("exclusion constraint") ||
+		message.includes("удерживается другим пользователем") ||
+		message.includes("резервирования слота")
 	)
 		return "resource_overlap";
 	if (
@@ -240,8 +243,212 @@ export function appointmentRejectionMessage(
 		: appointmentUpdateFallbackMessage;
 }
 
-import { findSuggestedAvailableSlots } from "../services/schedule/scheduleConflictService.js";
-export { findSuggestedAvailableSlots };
+export const FREED_APPOINTMENT_STATUSES = ["cancelled", "no_show"] as const;
+export type FreedAppointmentStatus = (typeof FREED_APPOINTMENT_STATUSES)[number];
+
+const FALLBACK_WORKDAY_WINDOW = { startHour: 8, endHour: 20 } as const;
+const FALLBACK_CLINIC_TIMEZONE = "Europe/Samara";
+
+export interface ClinicWorkdayWindow {
+	readonly startHour: number;
+	readonly endHour: number;
+	readonly timeZone: string;
+}
+
+function clockToHour(value: string | undefined): number | null {
+	const match = /^(\d{1,2}):(\d{2})$/.exec((value ?? "").trim());
+	if (!match) return null;
+	const hour = Number(match[1]);
+	return Number.isFinite(hour) && hour >= 0 && hour <= 23 ? hour : null;
+}
+
+export async function readClinicWorkdayWindow(
+	orgId: string,
+): Promise<ClinicWorkdayWindow> {
+	try {
+		const [orgRow] = await db
+			.select({ clinicSchedule: organizations.clinicSchedule })
+			.from(organizations)
+			.where(eq(organizations.id, orgId))
+			.limit(1);
+		const [clinicRow] = await db
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, orgId))
+			.limit(1);
+
+		const parsed = clinicScheduleDefaultsSchema.safeParse(
+			(orgRow?.clinicSchedule as Record<string, unknown> | null) ?? {},
+		);
+		const startHour = clockToHour(parsed.success ? parsed.data.workdayStart : undefined);
+		const endHour = clockToHour(parsed.success ? parsed.data.workdayEnd : undefined);
+		const timeZone =
+			typeof clinicRow?.timezone === "string" && clinicRow.timezone.trim()
+				? clinicRow.timezone.trim()
+				: FALLBACK_CLINIC_TIMEZONE;
+		return {
+			startHour: startHour ?? FALLBACK_WORKDAY_WINDOW.startHour,
+			endHour: endHour ?? FALLBACK_WORKDAY_WINDOW.endHour,
+			timeZone,
+		};
+	} catch {
+		return { ...FALLBACK_WORKDAY_WINDOW, timeZone: FALLBACK_CLINIC_TIMEZONE };
+	}
+}
+
+function localDatePartsInTimeZone(
+	instant: Date,
+	timeZone: string,
+): { year: number; month: number; day: number; hour: number; minute: number } {
+	const parts = new Intl.DateTimeFormat("en-GB", {
+		timeZone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(instant);
+	const read = (type: Intl.DateTimeFormatPart["type"]): number => {
+		const raw = parts.find((p) => p.type === type)?.value ?? "0";
+		const value = Number(raw);
+		return Number.isFinite(value) ? value : 0;
+	};
+	const hour = read("hour");
+	return {
+		year: read("year"),
+		month: read("month"),
+		day: read("day"),
+		hour: hour === 24 ? 0 : hour,
+		minute: read("minute"),
+	};
+}
+
+export interface ScheduleConflictStructuredLogger {
+	error: (obj: unknown, msg?: string) => void;
+	warn?: (obj: unknown, msg?: string) => void;
+	info?: (obj: unknown, msg?: string) => void;
+}
+
+const defaultStructuredLogger: ScheduleConflictStructuredLogger = {
+	error: (obj: unknown, msg?: string) => {
+		process.stderr.write(
+			`${JSON.stringify({
+				level: "error",
+				msg: msg || "[appointmentErrors]",
+				...(typeof obj === "object" && obj !== null ? obj : { data: obj }),
+			})}\n`,
+		);
+	},
+};
+
+export async function findSuggestedAvailableSlots(
+	orgId: string,
+	params: {
+		doctorUserId?: string | null | undefined;
+		chairId?: string | null | undefined;
+		startsAt: Date | string;
+		endsAt?: Date | string | null | undefined;
+		logger?: ScheduleConflictStructuredLogger | undefined;
+	},
+): Promise<string[]> {
+	try {
+		const reqStart = new Date(params.startsAt);
+		const reqEnd = params.endsAt
+			? new Date(params.endsAt)
+			: new Date(reqStart.getTime() + 30 * 60 * 1000);
+		const durationMs = Math.max(
+			reqEnd.getTime() - reqStart.getTime(),
+			15 * 60 * 1000,
+		);
+
+		const { startHour, endHour, timeZone } = await readClinicWorkdayWindow(orgId);
+		const reqLocal = localDatePartsInTimeZone(reqStart, timeZone);
+		const sameLocalDay = (instant: Date): boolean => {
+			const local = localDatePartsInTimeZone(instant, timeZone);
+			return (
+				local.year === reqLocal.year &&
+				local.month === reqLocal.month &&
+				local.day === reqLocal.day
+			);
+		};
+
+		const dayStart = new Date(reqStart.getTime() - 36 * 60 * 60 * 1000);
+		const dayEnd = new Date(reqEnd.getTime() + 36 * 60 * 60 * 1000);
+
+		const dayAppointments = await db
+			.select({
+				id: appointments.id,
+				doctorUserId: appointments.doctorUserId,
+				chairId: appointments.chairId,
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, orgId),
+					gte(appointments.startsAt, dayStart),
+					lte(appointments.startsAt, dayEnd),
+				),
+			);
+
+		const activeAppts = dayAppointments.filter(
+			(a) => a.status !== "cancelled" && a.status !== "no_show",
+		);
+
+		const formatTime = (d: Date): string => {
+			const local = localDatePartsInTimeZone(d, timeZone);
+			const hh = String(local.hour).padStart(2, "0");
+			const mm = String(local.minute).padStart(2, "0");
+			return `${hh}:${mm}`;
+		};
+
+		const suggested: string[] = [];
+		const stepMs = 30 * 60 * 1000;
+
+		for (let offset = stepMs; offset <= 5 * 60 * 60 * 1000; offset += stepMs) {
+			const candStart = new Date(reqStart.getTime() + offset);
+			const candEnd = new Date(candStart.getTime() + durationMs);
+
+			if (!sameLocalDay(candStart)) break;
+
+			const candLocal = localDatePartsInTimeZone(candStart, timeZone);
+			if (candLocal.hour < startHour || candLocal.hour >= endHour) continue;
+
+			const hasOverlap = activeAppts.some((a) => {
+				const timeOverlaps = areIntervalsOverlapping(
+					candStart,
+					candEnd,
+					a.startsAt,
+					a.endsAt,
+				);
+				if (!timeOverlaps) return false;
+
+				const doctorMatches =
+					params.doctorUserId && a.doctorUserId === params.doctorUserId;
+				const chairMatches =
+					params.chairId && a.chairId === params.chairId;
+				return Boolean(doctorMatches || chairMatches);
+			});
+
+			if (!hasOverlap) {
+				suggested.push(formatTime(candStart));
+				if (suggested.length >= 3) break;
+			}
+		}
+
+		return suggested;
+	} catch (error) {
+		const activeLogger = params.logger ?? defaultStructuredLogger;
+		activeLogger.error(
+			{ err: error, orgId },
+			"[appointmentErrors] findSuggestedAvailableSlots failed",
+		);
+		return [];
+	}
+}
 
 
 export async function appointmentRejectionResponse(

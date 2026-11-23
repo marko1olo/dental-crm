@@ -26,6 +26,7 @@ export interface AutoBomWriteoffServiceItem {
 export interface AutoBomWriteoffParams {
 	organizationId: string;
 	visitId: string;
+	patientId?: string | null | undefined;
 	services?: AutoBomWriteoffServiceItem[] | undefined;
 	userId?: string | null | undefined;
 	transactionType?: "auto_deduct" | "manual_writeoff" | undefined;
@@ -34,6 +35,16 @@ export interface AutoBomWriteoffParams {
 	notes?: string | null | undefined;
 	carpulesCount?: number | null | undefined;
 	drugName?: string | null | undefined;
+	mdlpItems?: Array<{
+		rawBarcode?: string | null | undefined;
+		sgtin?: string | null | undefined;
+		gtin?: string | null | undefined;
+		serialNumber?: string | null | undefined;
+		costRub?: number | null | undefined;
+		tradeName?: string | null | undefined;
+		inn?: string | null | undefined;
+		series?: string | null | undefined;
+	}> | undefined;
 }
 
 export interface AutoBomWriteoffResult extends StockDeductionResult {
@@ -58,11 +69,14 @@ export async function executeAutoBomWriteoff(
 		allowOverdraft = true,
 		carpulesCount = null,
 		drugName = null,
+		patientId = null,
+		mdlpItems,
 	} = params;
 
 	const deductionResult = await deductForVisit(tx, {
 		organizationId,
 		visitId,
+		patientId,
 		services: services.map((s) => ({
 			serviceId: s.serviceId,
 			quantity: s.quantity ?? 1,
@@ -73,6 +87,7 @@ export async function executeAutoBomWriteoff(
 		allowOverdraft,
 		carpulesCount: carpulesCount ?? undefined,
 		drugName: drugName ?? undefined,
+		mdlpItems,
 	});
 
 	return {

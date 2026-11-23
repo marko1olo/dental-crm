@@ -47,18 +47,18 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 		});
 	});
 
-	describe("2. Рендеринг 4 канонических вкладок и ликвидация советского канцелярита (Мандат 8x)", () => {
-		it("рендерит все канонические разделы в хабе", () => {
+	describe("2. Рендеринг канонических параметров и ликвидация советского канцелярита (Мандат 8x)", () => {
+		it("рендерит все канонические разделы в модалке стерилизации", () => {
 			const html = renderToStaticMarkup(
 				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			// 1. Автоклавирование
-			assert.ok(html.includes("Автоклав") || html.includes("Циклы стерилизации"), "Обязан быть раздел Автоклав");
-			// 2. Крафт-пакеты
-			assert.ok(html.includes("Крафт-пакеты"), "Обязан быть раздел Крафт-пакеты");
-			// 3. Уборка и УФ
-			assert.ok(html.includes("Уборка и УФ"), "Обязан быть раздел Уборка и УФ");
+			assert.ok(html.includes("Автоклав") || html.includes("автоклава") || html.includes("стерилизации"), "Обязан быть раздел Автоклав");
+			// 2. Предстерилизационная очистка
+			assert.ok(html.includes("Предстерилизационная очистка") || html.includes("очистки"), "Обязан быть контроль ПСО");
+			// 3. Химический индикатор
+			assert.ok(html.includes("Химический индикатор") || html.includes("Интегратор"), "Обязан быть химический индикатор");
 			// 4. Печать журналов для проверок
 			assert.ok(html.includes("Печать журнала"), "Обязана быть печать журналов");
 
@@ -84,8 +84,8 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 			);
 
 			assert.ok(html.includes("data-testid=\"sanpin-run-cycle-cta\"") || html.includes("data-testid=\"primary-batch-sterilization-btn\""));
-			assert.ok(html.includes("sanpin-primary-cta") || html.includes("#0d9488"));
-			assert.ok(html.includes("Зарегистрировать цикл стерилизации") || html.includes("Зафиксировать цикл"));
+			assert.ok(html.includes("sanpin-primary-cta") || html.includes("#0d9488") || html.includes("var(--primary"));
+			assert.ok(html.includes("Утвердить цикл") || html.includes("Запустить автоклавирование") || html.includes("Зарегистрировать цикл"));
 		});
 
 		it("ни одна кнопка в модалке не заблокирована атрибутом disabled (Мандат 8e)", () => {

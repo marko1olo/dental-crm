@@ -46,8 +46,6 @@ export class SyncGatewayService {
 		authorUserId?: string,
 		options?: SyncProcessOptions,
 	): Promise<SyncPushBatchResponse> {
-		await this.ensureSyncTablesExist();
-
 		const logger = options?.logger;
 		if (logger) {
 			logger.info(
@@ -345,7 +343,6 @@ export class SyncGatewayService {
 		organizationId: string,
 		sinceIso?: string,
 	): Promise<SyncPullResult> {
-		await this.ensureSyncTablesExist();
 		return await SyncStreamTransport.pullChanges(organizationId, sinceIso);
 	}
 }

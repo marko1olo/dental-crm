@@ -1,9 +1,7 @@
-import crypto from "node:crypto";
 import {
 	type DentalAnestheticInfo,
 	type MdlpCarpuleQueueItem,
 	type MdlpDisposalItem,
-	type MdlpDisposalParams,
 	type MdlpParsedBarcode,
 	type MdlpSchema10560Document,
 	type SeniorNurseDisposalActData,
@@ -20,18 +18,6 @@ import { inventoryItems } from "../../db/schema/inventory.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
 import { mdlpLogger } from "./logger.js";
 import { mdlpQueueService } from "./MdlpQueueService.js";
-
-// In-memory fallback ledger for test isolation and offline resilience
-const fallbackMdlpStore = new Map<string, Map<string, Record<string, unknown>>>();
-
-function getFallbackOrgLedger(orgId: string): Map<string, Record<string, unknown>> {
-	let ledger = fallbackMdlpStore.get(orgId);
-	if (!ledger) {
-		ledger = new Map();
-		fallbackMdlpStore.set(orgId, ledger);
-	}
-	return ledger;
-}
 
 export interface MdlpScanResult {
 	parsed: MdlpParsedBarcode;
@@ -129,55 +115,26 @@ export class MdlpDisposalService {
 		}
 
 		let itemRecord: Record<string, unknown> | null = null;
-		const fallbackLedger = getFallbackOrgLedger(orgId);
 
-		try {
-			// Query PostgreSQL database
-			const [existing] = await db
-				.select()
-				.from(mdlpItems)
-				.where(
-					and(
-						eq(mdlpItems.organizationId, orgId),
-						eq(mdlpItems.sgtin, parsed.sgtin),
-					),
-				)
-				.limit(1);
+		// Query PostgreSQL database
+		const [existing] = await db
+			.select()
+			.from(mdlpItems)
+			.where(
+				and(
+					eq(mdlpItems.organizationId, orgId),
+					eq(mdlpItems.sgtin, parsed.sgtin),
+				),
+			)
+			.limit(1);
 
-			if (existing) {
-				itemRecord = existing as Record<string, unknown>;
-			} else if (autoRegister) {
-				const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
-				const [inserted] = await db
-					.insert(mdlpItems)
-					.values({
-						organizationId: orgId,
-						sgtin: parsed.sgtin,
-						gtin: parsed.gtin,
-						serialNumber: parsed.serialNumber,
-						rawBarcode: parsed.rawBarcode,
-						tradeName: drug.tradeName ?? "Неизвестный медицинский препарат",
-						inn: drug.inn ?? "Не указано",
-						series: parsed.series ?? parsed.lot ?? null,
-						expirationDate: parsed.expirationDate,
-						status: "in_stock",
-						costRub: null,
-					})
-					.returning();
-				itemRecord = inserted as Record<string, unknown>;
-			}
-		} catch (_dbErr) {
-			if (process.env.NODE_ENV === "production") {
-				throw new Error(
-					`[MDLP 10560 CRITICAL] Сбой регистрации маркировки в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
-				);
-			}
-			// Fallback in-memory ledger (только для автономных unit-тестов)
-			let existing = fallbackLedger.get(parsed.sgtin);
-			if (!existing && autoRegister) {
-				const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
-				existing = {
-					id: crypto.randomUUID(),
+		if (existing) {
+			itemRecord = existing as Record<string, unknown>;
+		} else if (autoRegister) {
+			const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
+			const [inserted] = await db
+				.insert(mdlpItems)
+				.values({
 					organizationId: orgId,
 					sgtin: parsed.sgtin,
 					gtin: parsed.gtin,
@@ -189,11 +146,9 @@ export class MdlpDisposalService {
 					expirationDate: parsed.expirationDate,
 					status: "in_stock",
 					costRub: null,
-					createdAt: new Date().toISOString(),
-				};
-				fallbackLedger.set(parsed.sgtin, existing);
-			}
-			itemRecord = existing ?? null;
+				})
+				.returning();
+			itemRecord = (inserted as Record<string, unknown>) ?? null;
 		}
 
 		const isRegistered = Boolean(itemRecord);
@@ -242,7 +197,7 @@ export class MdlpDisposalService {
 		const rawItems: MdlpSingleDisposeInput[] = [];
 
 		if (input.useQueue) {
-			const queue = mdlpQueueService.getQueue(orgId);
+			const queue = await mdlpQueueService.getQueueAsync(orgId);
 			if (queue.items.length === 0) {
 				throw new Error("Очередь списания пуста.");
 			}
@@ -267,7 +222,6 @@ export class MdlpDisposalService {
 		}
 
 		const disposalItems: MdlpDisposalItem[] = [];
-		const fallbackLedger = getFallbackOrgLedger(orgId);
 
 		for (const it of rawItems) {
 			let sgtin = it.sgtin?.trim();
@@ -338,175 +292,130 @@ export class MdlpDisposalService {
 		const updatedItems: Record<string, unknown>[] = [];
 
 		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock within an atomic transaction
-		try {
-			await withTenantCtx(orgId, async (tx) => {
-				for (const it of disposalItems) {
-					const warehouseId = input.warehouseId ?? null;
-					let inventoryItemId: string | null = null;
-					let batchId: string | null = null;
-					let inventoryTransactionId: string | null = null;
+		await withTenantCtx(orgId, async (tx) => {
+			for (const it of disposalItems) {
+				const warehouseId = input.warehouseId ?? null;
+				let inventoryItemId: string | null = null;
+				let batchId: string | null = null;
+				let inventoryTransactionId: string | null = null;
 
-					// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
-					try {
-						const [inv] = await tx
-							.select()
-							.from(inventoryItems)
-							.where(
-								and(
-									eq(inventoryItems.organizationId, orgId),
-									or(
-										eq(inventoryItems.barcode, it.gtin),
-										eq(inventoryItems.barcode, it.sgtin),
-										...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
-										...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
-									),
-								),
-							)
-							.limit(1);
-
-						if (inv) {
-							inventoryItemId = inv.id;
-							const fefoRes = await fefoStockService.deductFefo(tx, {
-								organizationId: orgId,
-								inventoryItemId: inv.id,
-								requiredQty: 1,
-								warehouseId: warehouseId ?? undefined,
-								visitId: input.visitId ?? undefined,
-								userId: input.doctorId ?? undefined,
-								allowOverdraft: true,
-								transactionType: "write_off_mdlp",
-								notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
-							});
-
-							const firstBatch = fefoRes.batchesUsed[0];
-							if (firstBatch) {
-								batchId = firstBatch.batchId;
-							}
-						}
-					} catch (stockErr) {
-						mdlpLogger.warn(
-							stockErr,
-							`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}`,
-						);
-					}
-
-					const [existing] = await tx
+				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
+				try {
+					const [inv] = await tx
 						.select()
-						.from(mdlpItems)
+						.from(inventoryItems)
 						.where(
 							and(
-								eq(mdlpItems.organizationId, orgId),
-								eq(mdlpItems.sgtin, it.sgtin),
+								eq(inventoryItems.organizationId, orgId),
+								or(
+									eq(inventoryItems.barcode, it.gtin),
+									eq(inventoryItems.barcode, it.sgtin),
+									...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
+									...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+								),
 							),
 						)
 						.limit(1);
 
-					if (existing) {
-						const [res] = await tx
-							.update(mdlpItems)
-							.set({
-								status: "disposed",
-								disposedAt: now,
-								disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
-								disposalType: "13",
-								patientId: input.patientId ?? existing.patientId,
-								visitId: input.visitId ?? existing.visitId,
-								doctorId: input.doctorId ?? existing.doctorId,
-								warehouseId: warehouseId ?? existing.warehouseId,
-								inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
-								batchId: batchId ?? existing.batchId,
-								inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
-								costRub: it.costRub ? String(it.costRub) : existing.costRub,
-								crptReceiptNumber,
-								schema10560Xml: schemaDoc.xmlContent,
-								schema10560Json: schemaDoc.jsonContent,
-								updatedAt: now,
-							})
-							.where(eq(mdlpItems.id, existing.id))
-							.returning();
-						if (res) updatedItems.push(res as Record<string, unknown>);
-					} else {
-						const [res] = await tx
-							.insert(mdlpItems)
-							.values({
-								organizationId: orgId,
-								sgtin: it.sgtin,
-								gtin: it.gtin,
-								serialNumber: it.serialNumber,
-								rawBarcode: it.sgtin,
-								tradeName: it.tradeName ?? "Медицинский препарат (МДЛП)",
-								inn: it.inn ?? null,
-								series: it.series ?? null,
-								expirationDate: it.expirationDate ?? null,
-								status: "disposed",
-								disposedAt: now,
-								disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
-								disposalType: "13",
-								patientId: input.patientId ?? null,
-								visitId: input.visitId ?? null,
-								doctorId: input.doctorId ?? null,
-								warehouseId,
-								inventoryItemId,
-								batchId,
-								inventoryTransactionId,
-								costRub: it.costRub ? String(it.costRub) : null,
-								crptReceiptNumber,
-								schema10560Xml: schemaDoc.xmlContent,
-								schema10560Json: schemaDoc.jsonContent,
-							})
-							.returning();
-						if (res) updatedItems.push(res as Record<string, unknown>);
+					if (inv) {
+						inventoryItemId = inv.id;
+						const fefoRes = await fefoStockService.deductFefo(tx, {
+							organizationId: orgId,
+							inventoryItemId: inv.id,
+							requiredQty: 1,
+							warehouseId: warehouseId ?? undefined,
+							visitId: input.visitId ?? undefined,
+							userId: input.doctorId ?? undefined,
+							allowOverdraft: true,
+							transactionType: "write_off_mdlp",
+							notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
+						});
+
+						const firstBatch = fefoRes.batchesUsed[0];
+						if (firstBatch) {
+							batchId = firstBatch.batchId;
+						}
 					}
-				}
-			});
-		} catch (_dbErr) {
-			if (process.env.NODE_ENV === "production") {
-				throw new Error(
-					`[MDLP 10560 CRITICAL] Сбой записи списания медикаментов в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
-				);
-			}
-			updatedItems.length = 0;
-			for (const it of disposalItems) {
-				let item = fallbackLedger.get(it.sgtin);
-				if (!item) {
-					item = {
-						id: crypto.randomUUID(),
-						organizationId: orgId,
-						sgtin: it.sgtin,
-						gtin: it.gtin,
-						serialNumber: it.serialNumber,
-						rawBarcode: it.sgtin,
-						tradeName: it.tradeName ?? "Анестетик / Медикамент (МДЛП)",
-						inn: it.inn ?? "Артикаин / Мепивакаин",
-						series: it.series ?? null,
-						expirationDate: it.expirationDate ?? null,
-						status: "in_stock",
-						costRub: it.costRub ?? null,
-						createdAt: now.toISOString(),
-					};
+				} catch (stockErr) {
+					mdlpLogger.warn(
+						stockErr,
+						`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}`,
+					);
 				}
 
-				item.status = "disposed";
-				item.disposedAt = now.toISOString();
-				item.patientId = input.patientId ?? item.patientId;
-				item.visitId = input.visitId ?? item.visitId;
-				item.doctorId = input.doctorId ?? item.doctorId;
-				item.docNum = docNum;
-				item.docDate = docDate;
-				item.schema10560Xml = schemaDoc.xmlContent;
-				item.schema10560Json = schemaDoc.jsonContent;
-				item.crptReceiptNumber = crptReceiptNumber;
-				item.costRub = it.costRub ?? item.costRub;
-				item.notes = input.reason ?? item.notes;
+				const [existing] = await tx
+					.select()
+					.from(mdlpItems)
+					.where(
+						and(
+							eq(mdlpItems.organizationId, orgId),
+							eq(mdlpItems.sgtin, it.sgtin),
+						),
+					)
+					.limit(1);
 
-				fallbackLedger.set(it.sgtin, item);
-				updatedItems.push(item);
+				if (existing) {
+					const [res] = await tx
+						.update(mdlpItems)
+						.set({
+							status: "disposed",
+							disposedAt: now,
+							disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+							disposalType: "13",
+							patientId: input.patientId ?? existing.patientId,
+							visitId: input.visitId ?? existing.visitId,
+							doctorId: input.doctorId ?? existing.doctorId,
+							warehouseId: warehouseId ?? existing.warehouseId,
+							inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
+							batchId: batchId ?? existing.batchId,
+							inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
+							costRub: it.costRub ? String(it.costRub) : existing.costRub,
+							crptReceiptNumber,
+							schema10560Xml: schemaDoc.xmlContent,
+							schema10560Json: schemaDoc.jsonContent,
+							updatedAt: now,
+						})
+						.where(eq(mdlpItems.id, existing.id))
+						.returning();
+					if (res) updatedItems.push(res as Record<string, unknown>);
+				} else {
+					const [res] = await tx
+						.insert(mdlpItems)
+						.values({
+							organizationId: orgId,
+							sgtin: it.sgtin,
+							gtin: it.gtin,
+							serialNumber: it.serialNumber,
+							rawBarcode: it.sgtin,
+							tradeName: it.tradeName ?? "Медицинский препарат (МДЛП)",
+							inn: it.inn ?? null,
+							series: it.series ?? null,
+							expirationDate: it.expirationDate ?? null,
+							status: "disposed",
+							disposedAt: now,
+							disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+							disposalType: "13",
+							patientId: input.patientId ?? null,
+							visitId: input.visitId ?? null,
+							doctorId: input.doctorId ?? null,
+							warehouseId,
+							inventoryItemId,
+							batchId,
+							inventoryTransactionId,
+							costRub: it.costRub ? String(it.costRub) : null,
+							crptReceiptNumber,
+							schema10560Xml: schemaDoc.xmlContent,
+							schema10560Json: schemaDoc.jsonContent,
+						})
+						.returning();
+					if (res) updatedItems.push(res as Record<string, unknown>);
+				}
 			}
-		}
+		});
 
 		// If queue was used, clear processed items from the queue
 		if (input.useQueue) {
-			mdlpQueueService.clearQueue(orgId);
+			await mdlpQueueService.clearQueueAsync(orgId);
 		}
 
 		return {
@@ -582,83 +491,51 @@ export class MdlpDisposalService {
 		const limit = query.limit ?? 50;
 		const offset = query.offset ?? 0;
 
-		try {
-			const conditions = [eq(mdlpItems.organizationId, orgId)];
+		const conditions = [eq(mdlpItems.organizationId, orgId)];
 
-			if (status && status !== "all") {
-				conditions.push(eq(mdlpItems.status, status));
-			}
-			if (query.patientId) {
-				conditions.push(eq(mdlpItems.patientId, query.patientId));
-			}
-			if (query.visitId) {
-				conditions.push(eq(mdlpItems.visitId, query.visitId));
-			}
-			if (query.search && query.search.trim().length > 0) {
-				const pattern = `%${query.search.trim()}%`;
-				conditions.push(
-					or(
-						ilike(mdlpItems.sgtin, pattern),
-						ilike(mdlpItems.gtin, pattern),
-						ilike(mdlpItems.serialNumber, pattern),
-						ilike(mdlpItems.tradeName, pattern),
-						ilike(mdlpItems.inn, pattern),
-						ilike(mdlpItems.series, pattern),
-					)!,
-				);
-			}
-
-			const itemsList = await db
-				.select()
-				.from(mdlpItems)
-				.where(and(...conditions))
-				.orderBy(desc(mdlpItems.createdAt))
-				.limit(limit)
-				.offset(offset);
-
-			const countRows = await db
-				.select({ count: sql<number>`count(*)::int` })
-				.from(mdlpItems)
-				.where(and(...conditions));
-
-			const totalCount = countRows[0]?.count ?? itemsList.length;
-
-			return {
-				total: totalCount,
-				items: itemsList as Record<string, unknown>[],
-			};
-		} catch (_dbErr) {
-			if (process.env.NODE_ENV === "production") {
-				throw new Error(
-					`[MDLP 10560 CRITICAL] Сбой чтения реестра МДЛП из PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
-				);
-			}
-			const fallbackLedger = getFallbackOrgLedger(orgId);
-			let list = Array.from(fallbackLedger.values());
-
-			if (status && status !== "all") {
-				list = list.filter((it) => it.status === status);
-			}
-			if (query.patientId) {
-				list = list.filter((it) => it.patientId === query.patientId);
-			}
-			if (query.visitId) {
-				list = list.filter((it) => it.visitId === query.visitId);
-			}
-			if (query.search && query.search.trim().length > 0) {
-				const q = query.search.toLowerCase();
-				list = list.filter((it) => {
-					const sgtin = String(it.sgtin || "").toLowerCase();
-					const trade = String(it.tradeName || "").toLowerCase();
-					return sgtin.includes(q) || trade.includes(q);
-				});
-			}
-
-			return {
-				total: list.length,
-				items: list.slice(offset, offset + limit),
-			};
+		if (status && status !== "all") {
+			conditions.push(eq(mdlpItems.status, status));
 		}
+		if (query.patientId) {
+			conditions.push(eq(mdlpItems.patientId, query.patientId));
+		}
+		if (query.visitId) {
+			conditions.push(eq(mdlpItems.visitId, query.visitId));
+		}
+		if (query.search && query.search.trim().length > 0) {
+			const pattern = `%${query.search.trim()}%`;
+			const searchCondition = or(
+				ilike(mdlpItems.sgtin, pattern),
+				ilike(mdlpItems.gtin, pattern),
+				ilike(mdlpItems.serialNumber, pattern),
+				ilike(mdlpItems.tradeName, pattern),
+				ilike(mdlpItems.inn, pattern),
+				ilike(mdlpItems.series, pattern),
+			);
+			if (searchCondition) {
+				conditions.push(searchCondition);
+			}
+		}
+
+		const itemsList = await db
+			.select()
+			.from(mdlpItems)
+			.where(and(...conditions))
+			.orderBy(desc(mdlpItems.createdAt))
+			.limit(limit)
+			.offset(offset);
+
+		const countRows = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(mdlpItems)
+			.where(and(...conditions));
+
+		const totalCount = countRows[0]?.count ?? itemsList.length;
+
+		return {
+			total: totalCount,
+			items: itemsList as Record<string, unknown>[],
+		};
 	}
 
 	/**
@@ -678,35 +555,24 @@ export class MdlpDisposalService {
 		registrarConfigured: boolean;
 	}> {
 		const now = new Date().toISOString();
-		const queue = mdlpQueueService.getQueue(orgId);
+		const queue = await mdlpQueueService.getQueueAsync(orgId);
 		const pendingQueueCount = queue.items.length;
 
 		// Проверяем наличие боевого токена или настроек шлюза в окружении
 		const tokenConfigured = Boolean(process.env.MDLP_CLIENT_TOKEN || process.env.CRPT_API_KEY);
 		const registrarConfigured = Boolean(process.env.MDLP_REGISTRAR_IP || process.env.MDLP_REGISTRAR_PORT);
 
-		let registeredCount = 0;
-		let disposedCount = 0;
+		const inStockRows = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(mdlpItems)
+			.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "in_stock")));
+		const registeredCount = inStockRows[0]?.count ?? 0;
 
-		try {
-			const inStockRows = await db
-				.select({ count: sql<number>`count(*)::int` })
-				.from(mdlpItems)
-				.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "in_stock")));
-			registeredCount = inStockRows[0]?.count ?? 0;
-
-			const disposedRows = await db
-				.select({ count: sql<number>`count(*)::int` })
-				.from(mdlpItems)
-				.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "disposed")));
-			disposedCount = disposedRows[0]?.count ?? 0;
-		} catch {
-			const fallback = getFallbackOrgLedger(orgId);
-			for (const item of fallback.values()) {
-				if (item.status === "in_stock") registeredCount++;
-				if (item.status === "disposed") disposedCount++;
-			}
-		}
+		const disposedRows = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(mdlpItems)
+			.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "disposed")));
+		const disposedCount = disposedRows[0]?.count ?? 0;
 
 		if (tokenConfigured || registrarConfigured) {
 			return {

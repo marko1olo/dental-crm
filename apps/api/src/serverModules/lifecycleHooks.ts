@@ -13,6 +13,7 @@ import {
 	startMigrationWorker,
 	stopMigrationWorker,
 } from "../migration/worker.js";
+import { hydrateRevokedPortalTokensFromDb } from "../routes/portal/portalAuthStore.js";
 import { startDenteTelegramOutboxDueWorker } from "../routes/telegram.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
@@ -28,7 +29,6 @@ import { dicomCrawlerDaemon } from "../services/dicom/DicomCrawlerDaemon.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { stopCommunicationDispatchWorker } from "../services/communications/dispatchWorker.js";
-import { persistentOutboxService } from "../services/outbox/persistentOutboxService.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import type { CreateDenteApiAppOptions, HttpErrorLike } from "./types.js";
 
@@ -256,13 +256,17 @@ export async function setupBackgroundWorkers(
 			await dicomCStoreScpServer.stop();
 		}
 		await vatechDirectBridgeService.stop();
-		persistentOutboxService.stop();
 		dicomCrawlerDaemon.stop();
 		stopCloudRelayClient();
 		stopCommunicationDispatchWorker();
 		stopBiAnalyticsWorker();
 		resetLanMeshServiceForTest();
 		resetLanMeshAutoJoinServiceForTest();
+	});
+
+	// Гидратация отозванных токенов портала пациента из PostgreSQL при старте сервера
+	await hydrateRevokedPortalTokensFromDb().catch((err) => {
+		app.log.warn({ err }, "Failed to hydrate revoked portal tokens at startup");
 	});
 
 	// Прогрев регламентных справочников (804н, фармакология, МКБ-10, 043/у)

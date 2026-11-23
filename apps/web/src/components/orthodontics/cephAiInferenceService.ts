@@ -28,9 +28,9 @@ export interface CephAiInferenceResult {
 export function detectOptimalCephBackend(_pref?: CephAiBackendPreference): CephBackendInfo {
 	return {
 		backend: "template_norm",
-		label: "Калиброванный анатомический шаблон нормы (требует ручной подгонки)",
-		labelRu: "Калиброванный анатомический шаблон нормы (требует ручной подгонки)",
-		badge: "Калиброванный анатомический шаблон нормы (требует ручной подгонки)",
+		label: "Анатомический усредненный шаблон (Норма)",
+		labelRu: "Анатомический усредненный шаблон (Норма)",
+		badge: "Анатомический шаблон (Норма)",
 	};
 }
 

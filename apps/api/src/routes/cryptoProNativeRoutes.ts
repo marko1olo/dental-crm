@@ -23,6 +23,7 @@ import {
 } from "../crypto/cryptoProCliEngine.js";
 import { getClinicSettingsFromDb } from "../db/settingsQuery.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 // ─── Request Schemas ────────────────────────────────────────────────────────
 
@@ -448,6 +449,28 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 		const allowed = await checkCryptoAccess(request, reply, "mutation", "crypto sign");
 		if (!allowed) return;
 
+		const tenantContext = await getTenantCryptoContext(request);
+		const organizationId = tenantContext.organizationId;
+		if (!organizationId && !tenantContext.isBypass) {
+			return reply.status(403).send({
+				success: false,
+				code: "TENANT_CONTEXT_REQUIRED",
+				message: "Для операции подписания требуется контекст авторизованной организации",
+			});
+		}
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				success: false,
+				code: "INVALID_IDEMPOTENCY_KEY",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const installed = await isCryptoProInstalled();
 		if (!installed) {
 			return reply.status(503).send({
@@ -558,7 +581,16 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	 * POST /api/crypto/sign & POST /api/cryptopro/native/sign
 	 * Формирование отсоединенной электронной подписи (detached CMS / PKCS#7)
 	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или формы 043/у.
+	 * Требует Idempotency-Key и tenant organizationId изоляцию (Мандат 8bo / RFC 9562).
 	 */
-	app.post("/api/crypto/sign", handleSign);
-	app.post("/api/cryptopro/native/sign", handleSign);
+	// door-validation: none — Валидация криптографического пейлоада и сертификата внутри handleSign
+	app.post("/api/crypto/sign", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleSign(request, reply);
+	});
+	// door-validation: none — Валидация криптографического пейлоада и сертификата внутри handleSign
+	app.post("/api/cryptopro/native/sign", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleSign(request, reply);
+	});
 }

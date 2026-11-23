@@ -192,8 +192,7 @@ export function SterilizationBatchCycleModal({
 						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0"><ShieldCheck size={20} /></div>
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug break-words">Утверждение цикла автоклава</h2>
-							<p className="text-[11px] sm:text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 break-words">Журнал стерилизации • Стандартные пресеты смены</p>
-							<span className="sr-only">Журнал автоклавирования • Контроль очистки инструментов • Журнал кварцевания • Циклы стерилизации (Автоклав) • Крафт-пакеты и маркировка • Журнал генеральных уборок и УФ • Уборка и УФ • Печать журнала • Запустить цикл стерилизации</span>
+							<p className="text-[11px] sm:text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 break-words">Журнал автоклавирования • Стандартные пресеты смены</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -262,7 +261,7 @@ export function SterilizationBatchCycleModal({
 					</div>
 					<div className="p-3 rounded-xl bg-teal-500/5 border border-teal-500/20 flex flex-col gap-1.5">
 						<div className="flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex-wrap gap-1">
-							<span className="inline-flex items-center gap-1.5"><CheckCircle2 size={13} /><span>Химический индикатор 5 класса: Пройден</span><span className="sr-only">Химический индикатор 5 класса пройден • Тест Бови-Дика / Индикаторы: норма</span></span>
+							<span className="inline-flex items-center gap-1.5"><CheckCircle2 size={13} /><span>Химический индикатор 5 класса: Пройден</span></span>
 							<div className="flex items-center gap-1">
 								<button type="button" onClick={() => setIndicatorClass("5")} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border cursor-pointer ${indicatorClass === "5" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] border-[var(--line,#cbd5e1)]"}`}>5 кл. (Интегратор)</button>
 								<button type="button" onClick={() => setIndicatorClass("4")} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border cursor-pointer ${indicatorClass === "4" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] border-[var(--line,#cbd5e1)]"}`}>4 кл.</button>
@@ -277,17 +276,12 @@ export function SterilizationBatchCycleModal({
 				</div>
 				<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
 					<div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
-						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="sanpin-primary-cta h-11 min-h-[44px] w-full sm:w-auto px-4 rounded-xl font-semibold text-xs sm:text-xs text-white bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] order-1 sm:order-2">
+						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sanpin-run-cycle-cta" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="sanpin-primary-cta h-11 min-h-[44px] w-full sm:w-auto px-4 rounded-xl font-semibold text-xs sm:text-xs text-white bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] order-1 sm:order-2">
 							<CheckCircle2 size={16} className="text-white shrink-0" />
-							<span className="truncate sm:whitespace-normal">Запустить автоклавирование смены (2 цикла)</span>
-							<span className="sr-only">Зафиксировать автоклавирование смены</span>
-							<span className="sr-only">Зарегистрировать цикл стерилизации</span>
-							<span className="sr-only">Запустить цикл стерилизации</span>
+							<span className="truncate sm:whitespace-normal">Запустить цикл стерилизации смены</span>
 						</button>
 						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] w-full sm:w-auto px-3.5 rounded-xl font-medium text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] order-2 sm:order-1">
 							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
-							<span className="sr-only">Зафиксировать единичный цикл</span>
-							<span data-testid="sanpin-run-cycle-cta" className="hidden" aria-hidden="true" />
 						</button>
 					</div>
 					<button type="button" onClick={onClose} className="h-10 min-h-[44px] w-full sm:w-auto px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--muted,#64748b)] cursor-pointer order-2 sm:order-1">Отмена</button>

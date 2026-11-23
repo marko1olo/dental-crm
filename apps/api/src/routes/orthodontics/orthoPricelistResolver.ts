@@ -1,6 +1,6 @@
 import type { FastifyBaseLogger } from "fastify";
 import { and, eq, ilike, or } from "drizzle-orm";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { inventoryItems, serviceCatalogItems } from "../../db/schema.js";
 
@@ -8,23 +8,38 @@ export interface ResolvedOrthoServicePrice {
 	serviceId?: string | undefined;
 	serviceCode: string;
 	serviceName: string;
-	priceRub: number;
 	priceKopecks: bigint;
+	amountKopecks: bigint;
+	priceRub: number;
 	isPricelistMatch: boolean;
 }
 
 /**
- * DEF-ORTHO-02 / Ред Тим: Динамический выбор цен процедур ортодонтии из прейскуранта клиники
- * с безопасным фоллбеком на нормативный базовый прайс.
+ * DEF-ORTHO-02 / DEF-ORTHO-SEV3-01 / Мандат 8bm:
+ * Динамический выбор цен процедур ортодонтии из прейскуранта клиники
+ * с безопасным фоллбеком и строгим расчетом в целочисленных копейках (BIGINT, amountKopecks).
  */
 export async function resolveOrthoServicePrice(params: {
 	organizationId: string;
 	serviceCode: string;
 	defaultServiceName: string;
-	fallbackPriceRub: number;
+	fallbackPriceKopecks?: bigint | number | undefined;
+	fallbackPriceRub?: number | undefined;
 	logger?: FastifyBaseLogger | undefined;
 }): Promise<ResolvedOrthoServicePrice> {
-	const { organizationId, serviceCode, defaultServiceName, fallbackPriceRub, logger } = params;
+	const {
+		organizationId,
+		serviceCode,
+		defaultServiceName,
+		fallbackPriceKopecks,
+		fallbackPriceRub = 0,
+		logger,
+	} = params;
+
+	const defaultKopecks =
+		fallbackPriceKopecks !== undefined
+			? BigInt(fallbackPriceKopecks)
+			: BigInt(rublesToKopecks(fallbackPriceRub));
 
 	try {
 		const [found] = await db
@@ -33,6 +48,7 @@ export async function resolveOrthoServicePrice(params: {
 				code: serviceCatalogItems.code,
 				order804nCode: serviceCatalogItems.order804nCode,
 				title: serviceCatalogItems.title,
+				priceKopecks: serviceCatalogItems.priceKopecks,
 				priceRub: serviceCatalogItems.priceRub,
 				basePriceRub: serviceCatalogItems.basePriceRub,
 				isActive: serviceCatalogItems.isActive,
@@ -51,14 +67,21 @@ export async function resolveOrthoServicePrice(params: {
 			.limit(1);
 
 		if (found) {
-			const effectiveRub = Number(found.priceRub ?? found.basePriceRub ?? fallbackPriceRub);
-			const priceKopecks = BigInt(rublesToKopecks(effectiveRub));
+			let priceKopecks: bigint;
+			if (found.priceKopecks != null) {
+				priceKopecks = BigInt(found.priceKopecks);
+			} else {
+				const effectiveRub = Number(found.priceRub ?? found.basePriceRub ?? fallbackPriceRub);
+				priceKopecks = BigInt(rublesToKopecks(effectiveRub));
+			}
+
 			return {
 				serviceId: found.id,
 				serviceCode: found.order804nCode || found.code || serviceCode,
 				serviceName: found.title || defaultServiceName,
-				priceRub: effectiveRub,
 				priceKopecks,
+				amountKopecks: priceKopecks,
+				priceRub: kopecksToRubles(priceKopecks),
 				isPricelistMatch: true,
 			};
 		}
@@ -68,33 +91,47 @@ export async function resolveOrthoServicePrice(params: {
 		}
 	}
 
-	const priceKopecks = BigInt(rublesToKopecks(fallbackPriceRub));
 	return {
 		serviceCode,
 		serviceName: defaultServiceName,
-		priceRub: fallbackPriceRub,
-		priceKopecks,
+		priceKopecks: defaultKopecks,
+		amountKopecks: defaultKopecks,
+		priceRub: kopecksToRubles(defaultKopecks),
 		isPricelistMatch: false,
 	};
 }
 
 export interface ResolvedOrthoMaterialCost {
-	unitCostRub: number;
 	unitCostKopecks: bigint;
+	amountKopecks: bigint;
+	unitCostRub: number;
 	isInventoryMatch: boolean;
 }
 
 /**
- * DEF-ORTHO-02: Динамический выбор стоимости материала ортодонтии из складских остатков клиники
- * с безопасным фоллбеком на нормативную себестоимость.
+ * DEF-ORTHO-02 / DEF-ORTHO-SEV3-01 / Мандат 8bm:
+ * Динамический выбор стоимости материала ортодонтии из складских остатков клиники
+ * с расчетом в копейках unitCostKopecks (BIGINT).
  */
 export async function resolveOrthoMaterialCost(params: {
 	organizationId: string;
 	itemNamePattern: string;
-	fallbackCostRub: number;
+	fallbackCostKopecks?: bigint | number | undefined;
+	fallbackCostRub?: number | undefined;
 	logger?: FastifyBaseLogger | undefined;
 }): Promise<ResolvedOrthoMaterialCost> {
-	const { organizationId, itemNamePattern, fallbackCostRub, logger } = params;
+	const {
+		organizationId,
+		itemNamePattern,
+		fallbackCostKopecks,
+		fallbackCostRub = 0,
+		logger,
+	} = params;
+
+	const defaultKopecks =
+		fallbackCostKopecks !== undefined
+			? BigInt(fallbackCostKopecks)
+			: BigInt(rublesToKopecks(fallbackCostRub));
 
 	try {
 		const [found] = await db
@@ -115,9 +152,11 @@ export async function resolveOrthoMaterialCost(params: {
 		if (found && found.unitCostRub != null) {
 			const parsed = Number(found.unitCostRub);
 			if (Number.isFinite(parsed) && parsed > 0) {
+				const kopecks = BigInt(rublesToKopecks(parsed));
 				return {
+					unitCostKopecks: kopecks,
+					amountKopecks: kopecks,
 					unitCostRub: parsed,
-					unitCostKopecks: BigInt(rublesToKopecks(parsed)),
 					isInventoryMatch: true,
 				};
 			}
@@ -129,8 +168,9 @@ export async function resolveOrthoMaterialCost(params: {
 	}
 
 	return {
-		unitCostRub: fallbackCostRub,
-		unitCostKopecks: BigInt(rublesToKopecks(fallbackCostRub)),
+		unitCostKopecks: defaultKopecks,
+		amountKopecks: defaultKopecks,
+		unitCostRub: kopecksToRubles(defaultKopecks),
 		isInventoryMatch: false,
 	};
 }

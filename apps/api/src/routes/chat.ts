@@ -9,12 +9,8 @@ import {
 	getDailySmsQuota,
 	incrementDailySmsQuota,
 } from "../db/uisSmsChatQuotasQuery.js";
-import {
-	resolveChannelCredentials,
-	sendThroughChannel,
-} from "../services/communications/channelRouter.js";
+import { enqueueMessage } from "../services/communications/dispatch/dispatcherCore.js";
 import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
-import { sendSmsViaUis } from "../services/uis/smsClient.js";
 
 const chatSendSchema = z.object({
 	patientId: z.string().uuid(),
@@ -165,35 +161,27 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				};
 			}
 
-			// Централизованная отправка через channelRouter / smsTransport (SMS.RU / SMSC.RU) с fallback на UIS (DEF-MSG-05)
-			const credentials = await resolveChannelCredentials(organizationId);
-			const sendResult = await sendThroughChannel(
-				{
-					channel: "sms",
-					recipientAddress: patient.phone,
-					subject: null,
-					body: parsed.data.message,
-					idempotencyKey: parsed.data.idempotencyKey ?? null,
-				},
-				credentials,
-			);
+			// Постановка SMS в PostgreSQL Transactional Outbox (DEF-17-03 / Mandate 8bo)
+			const dedupeKey =
+				parsed.data.idempotencyKey ||
+				`chat_sms:${organizationId}:${parsed.data.patientId}:${Date.now()}`;
 
-			if (!sendResult.ok) {
-				const uisFallback = await sendSmsViaUis({
-					patientPhone: patient.phone,
-					message: parsed.data.message,
-				}).catch(() => null);
+			const enqueueRes = await enqueueMessage({
+				organizationId,
+				patientId: parsed.data.patientId,
+				channel: "sms",
+				intent: "general",
+				scope: "service",
+				recipientAddress: patient.phone,
+				body: parsed.data.message,
+				dedupeKey,
+			});
 
-				if (!uisFallback) {
-					request.log.warn(
-						{ errorClass: sendResult.errorClass, errorMessage: sendResult.errorMessage },
-						"[Chat] Сбой отправки SMS через центральный шлюз",
-					);
-					return reply.code(502).send({
-						error: "SmsSendFailed",
-						message: sendResult.errorMessage || "Ошибка при отправке SMS через центральный шлюз.",
-					});
-				}
+			if (!enqueueRes.ok) {
+				return reply.code(400).send({
+					error: "EnqueueFailed",
+					message: enqueueRes.reason || "Ошибка при постановке SMS в очередь отправки.",
+				});
 			}
 
 			await incrementDailySmsQuota(organizationId);
@@ -206,7 +194,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 					patientId: parsed.data.patientId,
 					channel: "sms",
 					direction: "outbound",
-					status: "sent",
+					status: "queued",
 					message: parsed.data.message,
 					idempotencyKey: parsed.data.idempotencyKey ?? null,
 				})

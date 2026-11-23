@@ -1,6 +1,6 @@
 import type React from "react";
 import { CheckCheck, Clock, X } from "lucide-react";
-import type { MdlpOfflinePackage } from "../mdlpOfflineQueue.js";
+import type { MdlpOfflinePackage } from "./types.js";
 
 export interface MdlpOfflineDrawerProps {
 	readonly show: boolean;

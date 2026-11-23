@@ -27,7 +27,7 @@ export function MedicalWasteRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>УТИЛИЗАЦИЯ ОТХОДОВ</h2>
+				<h2>Утилизация отходов</h2>
 				<p title="Учет образования и передачи отходов">Учет образования и передачи отходов клиники</p>
 			</div>
 

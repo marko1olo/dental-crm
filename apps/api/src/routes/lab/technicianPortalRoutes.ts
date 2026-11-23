@@ -8,6 +8,26 @@ import { handlePostPortalOrderStatus } from "./portalModules/technicianPortalSta
 export async function registerTechnicianPortalRoutes(app: FastifyInstance) {
 	// ─── Канонический маршрут портала наряда лаборатории (SSOT) ───
 	app.get("/api/portal/lab-order/:token", handleGetPortalOrder);
-	app.post("/api/portal/lab-order/:token/status", handlePostPortalOrderStatus);
-	app.post("/api/portal/lab-order/:token/photo", handlePostPortalOrderPhoto);
+
+	// POST: Обновление статуса наряда лабораторией по токену
+	// Контекст: withTenantCtx (organizationId), атомарная транзакция db.transaction (tx), Idempotency-Key
+	app.post("/api/portal/lab-order/:token/status", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Обновление статуса наряда ЗТЛ зубным техником с проверкой organizationId и Idempotency-Key",
+			},
+		},
+	}, handlePostPortalOrderStatus);
+
+	// POST: Загрузка фото готовой конструкции по токену
+	// Контекст: withTenantCtx (organizationId), Idempotency-Key
+	app.post("/api/portal/lab-order/:token/photo", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Прикрепление фото конструкции ЗТЛ с проверкой organizationId и Idempotency-Key",
+			},
+		},
+	}, handlePostPortalOrderPhoto);
 }

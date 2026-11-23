@@ -5,8 +5,6 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	type MdlpOfflinePackage,
-	loadMdlpOfflineQueue,
-	saveMdlpOfflineQueue,
 	createShiftCarpulesBatch,
 	EMERGENCY_DISPENSE_PRESETS,
 	submitMdlpBarcodeScan,
@@ -44,7 +42,7 @@ export function useMdlpDisposalActions(
 	// [MDL-02] Статус связи с Честным Знаком проверяется через реальный health-check бэкенда (/api/mdlp/status)
 	const [crptStatus, setCrptStatus] = useState<"online" | "degraded" | "offline">("offline");
 	const [crptMessage, setCrptMessage] = useState<string>("Проверка связи с Честным Знаком...");
-	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>(() => loadMdlpOfflineQueue());
+	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>([]);
 	const [showOfflineDrawer, setShowOfflineDrawer] = useState(false);
 	const [showEmergencyScannerBypass, setShowEmergencyScannerBypass] = useState(false);
 
@@ -92,7 +90,7 @@ export function useMdlpDisposalActions(
 			patientId: patientId ?? undefined, visitId: visitId ?? undefined,
 		};
 		const updated = [newPkg, ...offlineQueue];
-		setOfflineQueue(updated); saveMdlpOfflineQueue(updated);
+		setOfflineQueue(updated);
 		onDeferredDisposalProp?.(newPkg); playMdlpBeep(true);
 		showToast(`Пакет #${pkgId} сохранен в офлайн-буфер (${itemsToQueue.length} упак.)`, "success");
 	};
@@ -242,7 +240,6 @@ export function useMdlpDisposalActions(
 			};
 			const updated = [offlinePkg, ...offlineQueue];
 			setOfflineQueue(updated);
-			saveMdlpOfflineQueue(updated);
 			showToast(
 				`Сбой связи с сервером (${errMessage}). Пакет сохранён в офлайн-буфер (${itemsToDispose.length} упак.)`,
 				"warning",

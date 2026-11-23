@@ -104,7 +104,17 @@ export function parseMdlpExpirationDate(
 			? referenceDate
 			: new Date();
 
-	if (!yymmdd || typeof yymmdd !== "string" || !/^\d{6}$/.test(yymmdd)) {
+	if (yymmdd == null || yymmdd === "") {
+		return {
+			isoDate: null,
+			isExpired: false,
+			daysUntilExpiration: null,
+			isExpiringSoon: false,
+			error: undefined,
+		};
+	}
+
+	if (typeof yymmdd !== "string" || !/^\d{6}$/.test(yymmdd)) {
 		return {
 			isoDate: null,
 			isExpired: false,

@@ -4,6 +4,7 @@ import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { isMachineDeliverableChannel } from "../../services/communications/channelRouter.js";
 import { enqueueMessage } from "../../services/communications/dispatcher.js";
 import { recallCandidateBelongsTo } from "../../services/patients/recallCandidates.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { badRequest, inviteSchema } from "./types.js";
 
 export function registerInviteRoutes(app: FastifyInstance) {
@@ -18,6 +19,17 @@ export function registerInviteRoutes(app: FastifyInstance) {
 			!enforcePermissionWhenStaffKnown(request, reply, "communications.write")
 		)
 			return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const parsed = inviteSchema.safeParse(request.body);
 		if (!parsed.success)
@@ -69,6 +81,14 @@ export function registerInviteRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.post("/api/recalls/invite", handleInvite);
-	app.post("/api/patients/recall-candidates/invite", handleInvite);
+	// door-validation: none — Валидация параметров приглашения пациента выполняется внутри handleInvite
+	app.post("/api/recalls/invite", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleInvite(request, reply);
+	});
+	// door-validation: none — Валидация параметров приглашения пациента выполняется внутри handleInvite
+	app.post("/api/patients/recall-candidates/invite", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key
+		return handleInvite(request, reply);
+	});
 }

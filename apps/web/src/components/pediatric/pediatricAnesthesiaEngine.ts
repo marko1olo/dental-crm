@@ -1,3 +1,4 @@
+import { calculatePediatricAnestheticSafety } from "@dental/shared";
 import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
 
 export type PediatricAnestheticDrugId = "articaine_4" | "mepivacaine_3";
@@ -77,15 +78,24 @@ export function calculatePediatricAnesthesia(params: {
 	readonly articaineContraindicated: boolean; readonly mepivacaineContraindicated: boolean;
 }): PediatricAnesthesiaCalculationResult {
 	const { drug, selectedDrugId, weightKg, carpules, patientAgeYears, articaineContraindicated, mepivacaineContraindicated } = params;
-	const safeWeight = Math.max(5, Math.min(120, weightKg));
-	const maxAllowedTotalDoseMg = Number(Math.min(drug.absoluteMaxDoseMg, safeWeight * drug.maxDoseMgPerKg).toFixed(1));
-	const totalVolumeMl = Number((carpules * drug.standardCarpuleVolumeMl).toFixed(2));
-	const totalDoseAdministeredMg = Number((carpules * drug.mgPerCarpule).toFixed(1));
-	const maxSafeCarpulesCount = Number((maxAllowedTotalDoseMg / drug.mgPerCarpule).toFixed(2));
-	const doseUtilizationPercent = Number(((totalDoseAdministeredMg / (maxAllowedTotalDoseMg || 1)) * 100).toFixed(1));
+	const sharedDrugType = selectedDrugId === "mepivacaine_3" ? "mepivacaine3Percent" : "articaine4Percent";
+	const canonicalSafety = calculatePediatricAnestheticSafety({
+		drugType: sharedDrugType,
+		patientWeightKg: weightKg,
+		patientAgeYears,
+		carpulesAdministered: carpules,
+		carpuleVolumeMl: drug.standardCarpuleVolumeMl,
+	});
 
-	const isOverdose = totalDoseAdministeredMg > maxAllowedTotalDoseMg;
-	const isUnderAge = patientAgeYears < drug.minAgeYears;
+	const safeWeight = canonicalSafety.patientWeightKg;
+	const maxAllowedTotalDoseMg = canonicalSafety.maxAllowedTotalDoseMg;
+	const totalVolumeMl = Number((carpules * drug.standardCarpuleVolumeMl).toFixed(2));
+	const totalDoseAdministeredMg = canonicalSafety.totalDoseAdministeredMg;
+	const maxSafeCarpulesCount = Number((maxAllowedTotalDoseMg / drug.mgPerCarpule).toFixed(2));
+	const doseUtilizationPercent = canonicalSafety.doseUtilizationPercent;
+
+	const isOverdose = canonicalSafety.isOverdose;
+	const isUnderAge = canonicalSafety.isAgeContraindicated;
 	const isContraindicated = (selectedDrugId === "articaine_4" && articaineContraindicated) || (selectedDrugId === "mepivacaine_3" && mepivacaineContraindicated);
 
 	const contraindicationReasonRu = selectedDrugId === "articaine_4" && articaineContraindicated
