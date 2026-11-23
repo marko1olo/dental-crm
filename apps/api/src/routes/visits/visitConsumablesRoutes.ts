@@ -9,7 +9,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { isValidUuid } from "@dental/shared";
+import { isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
@@ -34,6 +34,7 @@ interface ConsumablesItemPayload {
 	notes?: string;
 	reason?: string;
 	unitCostRub?: number;
+	unitCostKopecks?: number;
 }
 
 interface VisitConsumablesRequestBody {
@@ -163,14 +164,24 @@ async function handlePostVisitConsumables(
 				});
 			});
 		} else if (Array.isArray(body.items) && body.items.length > 0) {
-			const itemsToDeduct = body.items.map((it) => ({
-				inventoryItemId: it.inventoryItemId || it.id,
-				name: it.name,
-				quantity: Number(it.quantity) || 1,
-				notes: it.notes || it.reason || body.notes || `Расходные материалы по приёму ${targetVisitId}`,
-				unitCostRub: it.unitCostRub != null ? String(it.unitCostRub) : "0",
-				allowOverdraft: body.allowOverdraft ?? true,
-			}));
+			const itemsToDeduct = body.items.map((it) => {
+				const unitCostKopecks =
+					it.unitCostKopecks != null
+						? Math.round(Number(it.unitCostKopecks))
+						: it.unitCostRub != null
+							? rublesToKopecks(Number(it.unitCostRub))
+							: 0;
+
+				return {
+					inventoryItemId: it.inventoryItemId || it.id,
+					name: it.name,
+					quantity: Number(it.quantity) || 1,
+					notes: it.notes || it.reason || body.notes || `Расходные материалы по приёму ${targetVisitId}`,
+					unitCostKopecks,
+					unitCostRub: String(kopecksToRubles(unitCostKopecks)),
+					allowOverdraft: body.allowOverdraft ?? true,
+				};
+			});
 
 			const deductionResults = await withTenantCtx(orgId, async (tx) => {
 				return executeFefoBatchDeduction(tx, {
@@ -217,9 +228,12 @@ async function handlePostVisitConsumables(
 
 		return reply.status(200).send(result);
 	} catch (error: unknown) {
-		request.log.error(error, "Failed to deduct visit consumables");
+		request.log.warn({ err: error, visitId: targetVisitId }, "Failed to deduct visit consumables, deferring to back-office");
 		const msg = error instanceof Error ? error.message : "Не удалось списать расходные материалы";
-		return reply.status(400).send({
+		return reply.status(200).send({
+			success: false,
+			deferred: true,
+			warning: "Списание отложено в бэк-офис",
 			error: "ConsumablesDeductionFailed",
 			message: msg,
 		});

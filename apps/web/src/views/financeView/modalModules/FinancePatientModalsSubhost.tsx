@@ -111,13 +111,14 @@ export const FinancePatientModalsSubhost: React.FC<
 			)}
 
 			{/* Табель смен и Расчетная ведомость начисления зарплаты (канонический SSOT) */}
-			{(isDoctorPayrollOpen || s.isTimesheetT13Open) && (
+			{(isDoctorPayrollOpen || s.isShiftTimesheetOpen || s.isTimesheetT13Open) && (
 				<DoctorPayrollStudioModal
-					isOpen={Boolean(isDoctorPayrollOpen || s.isTimesheetT13Open)}
+					isOpen={Boolean(isDoctorPayrollOpen || s.isShiftTimesheetOpen || s.isTimesheetT13Open)}
 					onClose={() => {
 						if (onCloseDoctorPayroll) {
 							onCloseDoctorPayroll();
 						}
+						s.setIsShiftTimesheetOpen?.(false);
 						s.setIsTimesheetT13Open?.(false);
 					}}
 					clinicName={clinicName}

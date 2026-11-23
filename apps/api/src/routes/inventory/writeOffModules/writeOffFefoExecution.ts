@@ -5,6 +5,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
+import { kopecksToRubles } from "@dental/shared";
 import { inventoryItems } from "../../../db/schema.js";
 import { fefoStockService, type FefoDeductionResult } from "../../../services/inventory/fefoStockService.js";
 import type { inventoryDeductItemSchema } from "../types.js";
@@ -60,7 +61,19 @@ export async function executeFefoBatchDeduction(
 			} else {
 				const [created] = await tx
 					.insert(inventoryItems)
-					.values({ organizationId, name: searchName, stockQuantity: "0", currentQty: "0", criticalThreshold: "0", unitCostRub: item.unitCostRub != null ? String(item.unitCostRub) : "0" })
+					.values({
+						organizationId,
+						name: searchName,
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "0",
+						unitCostRub:
+							item.unitCostKopecks != null
+								? String(kopecksToRubles(item.unitCostKopecks))
+								: item.unitCostRub != null
+									? String(item.unitCostRub)
+									: "0",
+					})
 					.returning({ id: inventoryItems.id });
 				if (created) itemId = created.id;
 			}

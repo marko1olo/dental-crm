@@ -5,7 +5,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import {
 	toothStateHistory,
 	toothStates,
@@ -21,6 +21,11 @@ import {
 	isTerminalIrreversibleState,
 	normalizeSurfaces,
 } from "../../services/sync/syncGateway/syncConflictResolver.js";
+import {
+	mergeToothSurfaceStates,
+	type ToothSurfaceKey,
+	type ToothSurfaceStateMap,
+} from "@dental/shared";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { ensurePatientInOrganization } from "./planHelpers.js";
 import {
@@ -73,7 +78,7 @@ async function applyToothStateMutation(
 	},
 	skipBroadcast = false,
 ) {
-	const toothNumbers = [...new Set<number>(data.toothNumbers)];
+	const toothNumbers = [...new Set<number>(data.toothNumbers)].sort((a, b) => a - b);
 	if (toothNumbers.length === 0) return [];
 
 	const now = new Date();
@@ -107,7 +112,9 @@ async function applyToothStateMutation(
 					eq(toothStates.patientId, patientId),
 					inArray(toothStates.toothNumber, toothNumbers),
 				),
-			);
+			)
+			.orderBy(toothStates.toothNumber)
+			.for("update");
 
 		type PreviousToothState = {
 			toothNumber: number;
@@ -193,6 +200,7 @@ async function applyToothStateMutation(
 					prevStateLower === "veneer" ||
 					prevStateLower === "inlay" ||
 					prevStateLower === "onlay" ||
+					prevStateLower === "pin" ||
 					prevStateLower === "root_canal_treated" ||
 					Boolean(prevClinical?.hasCrown) ||
 					Boolean(prevClinical?.hasImplant) ||
@@ -247,8 +255,12 @@ async function applyToothStateMutation(
 
 				if (isOrthopedicBase && isPathologyDefect) {
 					// Наложение сопутствующей патологии на зуб с ортопедическим базисом [CLN-03]
+					const existingBaseState =
+						typeof prevClinical?.baseState === "string" && prevClinical.baseState.trim().length > 0
+							? prevClinical.baseState
+							: null;
 					const baseStateName =
-						(prevClinical?.baseState as string) ||
+						existingBaseState ||
 						(prevStateLower === "crown" || prevClinical?.hasCrown
 							? "Crown"
 							: prevStateLower === "implant" || prevClinical?.hasImplant
@@ -264,7 +276,7 @@ async function applyToothStateMutation(
 												: prevStateRaw || "Crown");
 
 					const existingConditions: string[] = Array.isArray(prevClinical?.conditions)
-						? [...(prevClinical.conditions as string[])]
+						? prevClinical.conditions.filter((c): c is string => typeof c === "string")
 						: [];
 					if (!existingConditions.includes(data.state)) {
 						existingConditions.push(data.state);
@@ -296,6 +308,7 @@ async function applyToothStateMutation(
 						lastPathologyAt: incomingUpdatedAt.toISOString(),
 					};
 
+					effectiveState = baseStateName;
 					effectiveClinicalData = compositeClinicalData;
 					historyNewState = `${baseStateName} + ${data.state}`;
 					historyReason =
@@ -308,55 +321,109 @@ async function applyToothStateMutation(
 					effectiveSurfaces = mergedSurfaces;
 
 					const prevFillingSurfaces: string[] = Array.isArray(prevClinical?.fillingSurfaces)
-						? (prevClinical.fillingSurfaces as string[])
+						? normalizeSurfaces(prevClinical.fillingSurfaces)
 						: (isFillingState(prevStateLower) ? prevSurfaces : []);
 					const incomingFillingSurfaces: string[] = isFillingState(incomingLower) ? incomingSurfaces : [];
 					const combinedFillingSurfaces = normalizeSurfaces([
-						...prevFillingSurfaces.filter((s) => !intersection.includes(s)),
+						...(isCariesState(incomingLower)
+							? prevFillingSurfaces.filter((s) => !intersection.includes(s))
+							: prevFillingSurfaces),
 						...incomingFillingSurfaces,
 					]);
 
 					const prevDefectSurfaces: string[] = Array.isArray(prevClinical?.defectSurfaces)
-						? (prevClinical.defectSurfaces as string[])
+						? normalizeSurfaces(prevClinical.defectSurfaces)
 						: (isCariesState(prevStateLower) ? prevSurfaces : []);
 					const incomingDefectSurfaces: string[] = isCariesState(incomingLower) ? incomingSurfaces : [];
+					const curedSurfaceSet = isFillingState(incomingLower)
+						? new Set(incomingSurfaces)
+						: new Set<string>();
 					const combinedDefectSurfaces = normalizeSurfaces([
-						...prevDefectSurfaces,
+						...prevDefectSurfaces.filter((s) => !curedSurfaceSet.has(s)),
 						...incomingDefectSurfaces,
 					]);
 
-					const hasFilling = combinedFillingSurfaces.length > 0 || isFillingState(prevStateLower) || isFillingState(incomingLower);
-					const hasCaries = combinedDefectSurfaces.length > 0 || isCariesState(prevStateLower) || isCariesState(incomingLower);
-					const hasSecondaryCaries =
+					const hasFilling =
+						combinedFillingSurfaces.length > 0 ||
+						isFillingState(incomingLower) ||
+						(isFillingState(prevStateLower) && !isCariesState(incomingLower));
+					const hasCaries =
+						combinedDefectSurfaces.length > 0 ||
+						(isCariesState(incomingLower) && incomingDefectSurfaces.length === 0);
+					const newSecondaryCariesDetected =
 						intersection.length > 0 &&
 						isCariesState(incomingLower) &&
 						(isFillingState(prevStateLower) || prevFillingSurfaces.length > 0);
+					const hasSecondaryCaries = isFillingState(incomingLower)
+						? (combinedDefectSurfaces.length > 0 &&
+							(Boolean(prevClinical?.hasSecondaryCaries) ||
+								combinedDefectSurfaces.some((s) => prevFillingSurfaces.includes(s))))
+						: (newSecondaryCariesDetected || Boolean(prevClinical?.hasSecondaryCaries));
 
-					if (isCariesState(incomingLower)) {
-						effectiveState = data.state;
-					} else if (isFillingState(incomingLower) && combinedDefectSurfaces.length > 0 && intersection.length === 0) {
-						effectiveState = data.state;
+					// Map surfaces into canonical ToothSurfaceStateMap using mergeToothSurfaceStates
+					const prevSurfaceMap: ToothSurfaceStateMap = {};
+					for (const s of prevFillingSurfaces) {
+						const key = s.trim().toUpperCase()[0] as ToothSurfaceKey | undefined;
+						if (key) prevSurfaceMap[key] = "filling";
 					}
+					for (const s of prevDefectSurfaces) {
+						const key = s.trim().toUpperCase()[0] as ToothSurfaceKey | undefined;
+						if (key) prevSurfaceMap[key] = "caries";
+					}
+					const incomingSurfaceMap: ToothSurfaceStateMap = {};
+					if (isFillingState(incomingLower)) {
+						for (const s of incomingSurfaces) {
+							const key = s.trim().toUpperCase()[0] as ToothSurfaceKey | undefined;
+							if (key) incomingSurfaceMap[key] = "filling";
+						}
+					} else if (isCariesState(incomingLower)) {
+						for (const s of incomingSurfaces) {
+							const key = s.trim().toUpperCase()[0] as ToothSurfaceKey | undefined;
+							if (key) {
+								incomingSurfaceMap[key] = intersection.includes(s) ? "secondary_caries" : "caries";
+							}
+						}
+					}
+					const surfaceStateMap = mergeToothSurfaceStates(prevSurfaceMap, incomingSurfaceMap);
+
+					if (combinedFillingSurfaces.length > 0 && combinedDefectSurfaces.length > 0) {
+						effectiveState = "Filled + Caries";
+					} else if (isCariesState(incomingLower)) {
+						effectiveState = data.state;
+					} else if (isFillingState(incomingLower)) {
+						effectiveState =
+							combinedDefectSurfaces.length > 0
+								? "Filled + Caries"
+								: data.state;
+					}
+
+					const resolvedBaseState =
+						isCompositeBase || isFillingState(incomingLower) || combinedFillingSurfaces.length > 0
+							? "Filled"
+							: (typeof prevClinical?.baseState === "string" ? prevClinical.baseState : undefined);
 
 					const compositeClinicalData = {
 						...(prevClinical || {}),
 						...(data.clinicalData || {}),
-						baseState: isCompositeBase ? "Filled" : (prevClinical?.baseState as string | undefined),
+						baseState: resolvedBaseState,
 						fillingSurfaces: combinedFillingSurfaces.length > 0 ? combinedFillingSurfaces : undefined,
 						defectSurfaces: combinedDefectSurfaces.length > 0 ? combinedDefectSurfaces : undefined,
+						surfaceStateMap,
 						hasFilling,
 						hasCaries,
-						hasSecondaryCaries: hasSecondaryCaries || Boolean(prevClinical?.hasSecondaryCaries),
-						compositeCondition: hasSecondaryCaries ? "defective" : (prevClinical?.compositeCondition || "adequate"),
+						hasSecondaryCaries,
+						compositeCondition: hasSecondaryCaries ? "defective" : "adequate",
 						lastPathology: isCariesState(incomingLower) ? data.state : prevClinical?.lastPathology,
 						lastPathologyAt: incomingUpdatedAt.toISOString(),
 					};
 
 					effectiveClinicalData = compositeClinicalData;
-					historyNewState = `${prevStateRaw} [${prevSurfaces.join(",")}] + ${data.state} [${incomingSurfaces.join(",")}]`;
+					historyNewState = effectiveState === "Filled + Caries"
+						? `Filled [${combinedFillingSurfaces.join(",")}] + Caries [${combinedDefectSurfaces.join(",")}]`
+						: `${prevStateRaw} [${prevSurfaces.join(",")}] + ${data.state} [${incomingSurfaces.join(",")}]`;
 					historyReason =
 						data.reason ||
-						`Surface Union Merge (MODBL): сохранена пломба на [${combinedFillingSurfaces.join(",")}], кариес на [${combinedDefectSurfaces.join(",")}]`;
+						`Surface Union Merge (MODBL): сохранена пломба на [${combinedFillingSurfaces.join(",")}], кариес на [${combinedDefectSurfaces.join(",")}] (состояние: ${effectiveState})`;
 				} else if (
 					!isPathologyDefect &&
 					(incomingLower === "crown" ||
@@ -367,7 +434,7 @@ async function applyToothStateMutation(
 				) {
 					// Установка новой ортопедической конструкции или пломбы
 					const prevConditions = Array.isArray(prevClinical?.conditions)
-						? (prevClinical.conditions as string[])
+						? prevClinical.conditions.filter((c): c is string => typeof c === "string")
 						: [];
 					const cured = [...prevConditions];
 					if (prevStateRaw && isPathologyDefect && !cured.includes(prevStateRaw)) {
@@ -380,8 +447,12 @@ async function applyToothStateMutation(
 						baseState: data.state,
 						hasCrown: incomingLower === "crown",
 						hasImplant: incomingLower === "implant",
+						hasFilling: incomingLower === "filled",
+						hasCaries: false,
 						hasSecondaryCaries: false,
+						defectSurfaces: undefined,
 						condition: "adequate",
+						compositeCondition: "adequate",
 						conditions: [],
 						curedConditions: cured,
 						restoredAt: incomingUpdatedAt.toISOString(),
@@ -548,9 +619,11 @@ async function applyToothStateMutation(
 	});
 
 	if (!skipBroadcast) {
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "UPDATE_ODONTOGRAM",
-			payload: { patientId, states: inserted },
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "UPDATE_ODONTOGRAM",
+				payload: { patientId, states: inserted },
+			});
 		});
 	}
 
@@ -815,9 +888,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 
 			const updates = parsed.data.updates;
 			if (updates && updates.length > 0) {
+				const sortedUpdates = [...updates].sort((a, b) => a.toothNumber - b.toothNumber);
 				const allInserted: unknown[] = [];
 				await withTenantCtx(organizationId, async () => {
-					for (const u of updates) {
+					for (const u of sortedUpdates) {
 						const res = await applyToothStateMutation(
 							organizationId,
 							patientId,
@@ -840,9 +914,11 @@ export function registerStatusRoutes(app: FastifyInstance) {
 						allInserted.push(...res);
 					}
 				});
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "UPDATE_ODONTOGRAM",
-					payload: { patientId, states: allInserted },
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "UPDATE_ODONTOGRAM",
+						payload: { patientId, states: allInserted },
+					});
 				});
 				return reply.send({ success: true, states: allInserted });
 			}
@@ -863,9 +939,11 @@ export function registerStatusRoutes(app: FastifyInstance) {
 				},
 			);
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "UPDATE_ODONTOGRAM",
-				payload: { patientId, states: inserted },
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "UPDATE_ODONTOGRAM",
+					payload: { patientId, states: inserted },
+				});
 			});
 			return reply.send({ success: true, states: inserted });
 		},

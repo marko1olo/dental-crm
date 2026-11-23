@@ -2,9 +2,13 @@
  * financialArgumentation.ts — Deterministic Financial Calculations (13% NDFL, Installments & Stages)
  */
 
-import type {
-	TreatmentPlanValidationStage,
-	TreatmentPlanValidateAndCommentResponse,
+import {
+	kopecksToRubles,
+	percentageOfKopecks,
+	rublesToKopecks,
+	splitKopecks,
+	type TreatmentPlanValidationStage,
+	type TreatmentPlanValidateAndCommentResponse,
 } from "@dental/shared";
 
 export function calculateDeterministicFinancialArgumentation(
@@ -48,8 +52,8 @@ export function calculateDeterministicFinancialArgumentation(
 	}
 
 	const code01Eligible = Math.min(code01AmountRub, 150000);
-	const code01RefundRub = Math.round((code01Eligible * 13) / 100);
-	const code02RefundRub = Math.round((code02AmountRub * 13) / 100);
+	const code01RefundRub = kopecksToRubles(percentageOfKopecks(rublesToKopecks(code01Eligible), 1300));
+	const code02RefundRub = kopecksToRubles(percentageOfKopecks(rublesToKopecks(code02AmountRub), 1300));
 	const totalRefundRub = code01RefundRub + code02RefundRub;
 	const netPriceWithRefundRub = Math.max(0, totalRub - totalRefundRub);
 
@@ -60,6 +64,8 @@ export function calculateDeterministicFinancialArgumentation(
 			: `По обычному лечению (Код 01) возврат составляет до 19 500 ₽ в год.`);
 
 	// Рассрочка 0% без переплат (3, 6, 12, 24 мес)
+	// Мандаты 8bm, 8bo: сходимость до копейки без потери рублей через канонический splitKopecks
+	const totalKop = rublesToKopecks(totalRub);
 	const terms = [3, 6, 12, 24];
 	const installments: Record<
 		string,
@@ -71,7 +77,8 @@ export function calculateDeterministicFinancialArgumentation(
 		}
 	> = {};
 	for (const m of terms) {
-		const monthly = totalRub > 0 ? Math.round(totalRub / m) : 0;
+		const splits = totalRub > 0 ? splitKopecks(totalKop, m) : [0];
+		const monthly = totalRub > 0 ? kopecksToRubles(splits[0] ?? 0) : 0;
 		installments[String(m)] = {
 			months: m,
 			monthlyPaymentRub: monthly,
@@ -81,8 +88,8 @@ export function calculateDeterministicFinancialArgumentation(
 	}
 
 	// Поэтапная оплата (30% аванс / 40% хирургия / 30% финал)
-	const stage1AdvanceRub = Math.round((totalRub * 30) / 100);
-	const stage2SurgicalRub = Math.round((totalRub * 40) / 100);
+	const stage1AdvanceRub = kopecksToRubles(percentageOfKopecks(totalKop, 3000));
+	const stage2SurgicalRub = kopecksToRubles(percentageOfKopecks(totalKop, 4000));
 	const stage3FinalRub = Math.max(
 		0,
 		totalRub - stage1AdvanceRub - stage2SurgicalRub,

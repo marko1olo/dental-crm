@@ -30,7 +30,7 @@ import {
 } from "./doctorPayrollDbQueries.js";
 import { handleGetDoctorMyEarnings } from "./doctorMyEarningsHandler.js";
 
-const payrollCalculationsQuerySchema = z.object({
+export const payrollCalculationsQuerySchema = z.object({
 	doctorId: z.string().optional(),
 	from: z.string().optional(),
 	to: z.string().optional(),
@@ -39,6 +39,7 @@ const payrollCalculationsQuerySchema = z.object({
 	startDateIso: z.string().optional(),
 	endDateIso: z.string().optional(),
 	percent: z.union([z.string(), z.number()]).optional(),
+	commissionPercent: z.union([z.string(), z.number()]).optional(),
 	payoutModel: z.enum(["percentage", "chair_rental"]).optional(),
 	shiftRateKop: z.union([z.string(), z.number()]).optional(),
 	chairRentalRub: z.union([z.string(), z.number()]).optional(),
@@ -47,7 +48,7 @@ const payrollCalculationsQuerySchema = z.object({
 	taxRegime: z.enum(["employee", "self_employed"]).optional(),
 });
 
-type PayrollCalculationsQuery = z.infer<typeof payrollCalculationsQuerySchema>;
+export type PayrollCalculationsQuery = z.infer<typeof payrollCalculationsQuerySchema>;
 
 const closeSettlementSchema = z.object({
 	idempotencyKey: z.string().optional(),
@@ -165,8 +166,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
-			const resolvedTargetId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId);
-			if (resolvedTargetId && resolvedTargetId !== payoutAccess.userId) {
+			if (rawDocId && rawDocId !== payoutAccess.userId && rawDocId !== "solo-doctor") {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "payroll.read",
@@ -197,7 +197,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			const doctorSummaries: Record<string, unknown> = {};
 
 			for (const doc of activeDoctors) {
-				const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
+				const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
 					fromStr,
@@ -216,15 +216,21 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					periodStartIso: fromStr.slice(0, 10),
 					periodEndIso: toStr.slice(0, 10),
 					services: completedServices,
-					customBasePercentage: doc.commissionPercent,
+					customBasePercentage:
+						q.commissionPercent !== undefined
+							? Number(q.commissionPercent)
+							: q.percent !== undefined
+								? Number(q.percent)
+								: doc.commissionPercent,
 					payoutModel: docPayoutModel,
 					chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 					advancePayoutKop: 0,
 					taxRegime: doc.taxRegime,
 					refundDeductions,
+					unallocatedLabKop,
 				});
 
-				const { closedPeriods } = await fetchClosedPayrollStatements(orgId, doc.id, doc.name);
+				const { closedPeriods, statements } = await fetchClosedPayrollStatements(orgId, doc.id, doc.name);
 				allClosedPeriods.push(...closedPeriods);
 				allOrders.push(...orders);
 
@@ -236,6 +242,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 				totalClinicAccruedKop += payrollResult.grossPayoutBeforeTaxKop;
 				totalClinicPayoutKop += (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop);
 
+				const isDocPaidRko = Boolean(statements.length > 0 && statements[0]?.isFinalized);
 				doctorSummaries[doc.id] = {
 					doctorId: doc.id,
 					doctorName: doc.name,
@@ -249,11 +256,19 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					advanceKopecks: payrollResult.advancePayoutKop || 0,
 					ndfl13TaxKopecks: payrollResult.ndfl13TaxKop || 0,
 					payoutKopecks: payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop,
-					payoutStatus: "accrued",
+					payoutStatus: isDocPaidRko ? "paid_rko" : "accrued",
+					rkoNumber: isDocPaidRko ? (statements[0]?.rkoNumber || null) : null,
 					servicesCount: orders.length,
 					minimumGuaranteeApplied: payrollResult.minimumGuaranteeApplied,
 				};
 			}
+
+			const allFinalized = activeDoctors.length > 0 && activeDoctors.every((d) => {
+				const s = doctorSummaries[d.id] as { payoutStatus?: string } | undefined;
+				return s?.payoutStatus === "paid_rko";
+			});
+			const someFinalized = Object.values(doctorSummaries).some((s) => (s as { payoutStatus?: string })?.payoutStatus === "paid_rko");
+			const clinicPayoutStatus = allFinalized ? "paid_rko" : (someFinalized ? "partially_paid" : "accrued");
 
 			return reply.send({
 				ok: true,
@@ -271,7 +286,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					advanceKopecks: 0,
 					ndfl13TaxKopecks: 0,
 					payoutKopecks: totalClinicPayoutKop,
-					payoutStatus: "accrued",
+					payoutStatus: clinicPayoutStatus,
+					rkoNumber: null,
 					servicesCount: allOrders.length,
 					minimumGuaranteeApplied: false,
 				},
@@ -322,10 +338,11 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			.limit(1);
 
 		const resolvedPct = activeComm?.commissionPct || activeComm?.commissionPercent;
-		const basePercent = Number(q.percent) || (resolvedPct ? Number(resolvedPct) : 25);
+		const customRate = q.commissionPercent !== undefined ? Number(q.commissionPercent) : (q.percent !== undefined ? Number(q.percent) : undefined);
+		const basePercent = customRate !== undefined && !Number.isNaN(customRate) ? customRate : (resolvedPct ? Number(resolvedPct) : 25);
 
 		// Сбор клинического датасета (смены, приемы, оплаты, услуги, ЗТЛ, материалы)
-		const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
+		const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
 			orgId,
 			resolvedDocId,
 			fromStr,
@@ -355,6 +372,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			advancePayoutKop: rublesToKopecks(Number(q.advanceRub) || 0),
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
 			refundDeductions,
+			unallocatedLabKop,
 		});
 
 		// Закрытые периоды
@@ -418,8 +436,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
-			const resolvedTargetId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId);
-			if (resolvedTargetId && resolvedTargetId !== payoutAccess.userId) {
+			if (body.doctorId && body.doctorId !== payoutAccess.userId && body.doctorId !== "solo-doctor") {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "payroll.read",
@@ -482,7 +499,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 			await withTenantCtx(orgId, async (tx) => {
 				for (const doc of activeDoctors) {
-					const { shiftsCount, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
+					const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
 						orgId,
 						resolvedDocId: doc.id,
 						fromStr: body.periodStart,
@@ -508,6 +525,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						advancePayoutKop: 0,
 						taxRegime: doc.taxRegime,
 						refundDeductions,
+						unallocatedLabKop,
 					});
 
 					const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;

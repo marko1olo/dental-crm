@@ -8,7 +8,7 @@ import {
 	DEFAULT_804N_CONSUMABLE_LINKS,
 	kopecksToRubles,
 } from "@dental/shared";
-import { DEFAULT_SERVICE_BOM_SEEDS } from "../../inventory/defaultBomSeeds.js";
+import { DEFAULT_SERVICE_BOM_SEEDS } from "../../inventory/bomSeeds/index.js";
 import type { RawRequiredMaterial, ServiceDescriptor } from "./stockDeductionTypes.js";
 
 export function resolveStatutoryBomForService(

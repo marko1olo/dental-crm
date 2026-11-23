@@ -8,6 +8,19 @@ import { mkItem, mkStage, type TreatmentTierDefinition } from "./presetHelpers";
 
 export { type TreatmentTierDefinition };
 
+export interface CanonicalStagesOptions {
+	readonly pathologies?: readonly {
+		toothNumber?: number | undefined;
+		state?: string | undefined;
+		mobility?: number | undefined;
+		boneLossLevel?: number | undefined;
+		hasMissingTooth?: boolean | undefined;
+		hasCrownNeed?: boolean | undefined;
+	}[] | undefined;
+	readonly includeSurgery?: boolean | undefined;
+	readonly includeProsthetics?: boolean | undefined;
+}
+
 /** 4 канонических клинических этапа комплексного плана без прибитых зубов */
 export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 	{
@@ -77,6 +90,69 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		],
 	},
 ];
+
+/**
+ * Адаптивная генерация канонических клинических этапов по клиническому контексту пациента
+ * (Мандаты 8e, 8n, 8bd: если у пациента только терапия/кариес, исключаются лишние этапы имплантации и коронок).
+ */
+export function buildAdaptiveCanonicalStages(
+	options?: CanonicalStagesOptions | undefined,
+): readonly TreatmentPlanStage[] {
+	if (!options) {
+		return CANONICAL_CLINICAL_STAGES;
+	}
+
+	const pathologies = options.pathologies ?? [];
+	const hasSpecificPathologies = pathologies.length > 0;
+
+	// Определяем необходимость хирургии/имплантации
+	const needsSurgery =
+		options.includeSurgery ??
+		(hasSpecificPathologies
+			? pathologies.some(
+					(p) =>
+						p.hasMissingTooth === true ||
+						p.state === "Missing" ||
+						p.state === "ToExtract" ||
+						(typeof p.mobility === "number" && p.mobility >= 3),
+				)
+			: true);
+
+	// Определяем необходимость ортопедии/коронок
+	const needsProsthetics =
+		options.includeProsthetics ??
+		(hasSpecificPathologies
+			? pathologies.some(
+					(p) =>
+						p.hasCrownNeed === true ||
+						p.hasMissingTooth === true ||
+						p.state === "Missing" ||
+						p.state === "Crown" ||
+						p.state === "PostAndCore" ||
+						p.state === "Periodontitis",
+				)
+			: true);
+
+	// Этапы 1 и 2: Гигиена и терапия (всегда присутствуют при наличии патологий)
+	const selectedStages: TreatmentPlanStage[] = [];
+	if (CANONICAL_CLINICAL_STAGES[0]) selectedStages.push(CANONICAL_CLINICAL_STAGES[0]);
+	if (CANONICAL_CLINICAL_STAGES[1]) selectedStages.push(CANONICAL_CLINICAL_STAGES[1]);
+
+	if (needsSurgery && CANONICAL_CLINICAL_STAGES[2]) {
+		selectedStages.push(CANONICAL_CLINICAL_STAGES[2]);
+	}
+
+	if (needsProsthetics && CANONICAL_CLINICAL_STAGES[3]) {
+		selectedStages.push(CANONICAL_CLINICAL_STAGES[3]);
+	}
+
+	// Перенумеровываем этапы 1..N для сохранения строгой последовательности
+	return selectedStages.map((stage, idx) => ({
+		...stage,
+		stageNumber: idx + 1,
+		title: stage.title.replace(/^Этап \d+:/, `Этап ${idx + 1}:`),
+	}));
+}
 
 /** 1. Этапы для тарифа «Базовый (Эконом)» */
 export const ECONOMY_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [

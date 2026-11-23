@@ -15,6 +15,7 @@ import type {
 import type { ToothData } from "../types";
 import {
 	CANONICAL_CLINICAL_STAGES,
+	buildAdaptiveCanonicalStages,
 	buildCanonical3TierPlans,
 	applyDoctorDiscountToTiers,
 	generateTreatmentPlanFromDiagnosis,
@@ -332,14 +333,23 @@ export function useStudioPlanLifecycle({
 
 	// 3.1. Генерация плана из реальной зубной формулы пациента
 	const handleGenerateFromTeeth = useCallback(() => {
+		if (!teeth || teeth.length === 0) return;
 		const tiersFromTeeth = buildPresenterTiersFromTeeth(teeth);
 		const optTier = tiersFromTeeth.find((t) => t.tierId === "optimum") || tiersFromTeeth[0];
 		if (optTier && optTier.stages.length > 0) {
 			setStages(optTier.stages);
 			if (optTier.stages[0]?.id) setExpandedStageId(optTier.stages[0].id);
 		} else {
-			setStages(CANONICAL_CLINICAL_STAGES);
-			if (CANONICAL_CLINICAL_STAGES[0]?.id) setExpandedStageId(CANONICAL_CLINICAL_STAGES[0].id);
+			const adaptive = buildAdaptiveCanonicalStages({
+				pathologies: teeth.map((t) => ({
+					toothNumber: t.toothNumber,
+					state: t.state,
+					mobility: t.mobility,
+					boneLossLevel: t.boneLossLevel,
+				})),
+			});
+			setStages(adaptive);
+			if (adaptive[0]?.id) setExpandedStageId(adaptive[0].id);
 		}
 		resetScrollTop();
 	}, [teeth, resetScrollTop]);

@@ -17,21 +17,14 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 	const repoRoot = path.resolve(__dirname, "../../../../../..");
 
 	it("1. Искоренение фиктивной формы 003-В/у в пользу стоматологической выписки 043/у", () => {
-		// 1.1 UI форма MedicalCardExtract003vuForm.tsx
+		// 1.1 UI форма MedicalCardExtract003vuForm.tsx (ликвидирована по Мандату 8bf / 8s в пользу Студии ЭМК)
 		const formFilePath = path.join(
 			repoRoot,
 			"apps/web/src/components/documents/forms/MedicalCardExtract003vuForm.tsx",
 		);
-		const formContent = fs.readFileSync(formFilePath, "utf-8");
 		assert.ok(
-			!formContent.includes("Форма № 003-В/у"),
-			"MedicalCardExtract003vuForm не должна содержать упоминания нестоматологической Формы № 003-В/у",
-		);
-		assert.ok(
-			formContent.includes("Справка о посещении клиники (Выписка из карты)") ||
-			formContent.includes("Выписка из медицинской карты стоматологического пациента (Форма 043/у)") ||
-			formContent.includes("Выписка из медицинской карты"),
-			"MedicalCardExtract003vuForm обязана содержать легитимный стоматологический заголовок выписки",
+			!fs.existsSync(formFilePath),
+			"Устаревшая советская форма 003-В/у ликвидирована в пользу канонической студии ЭМК",
 		);
 
 		// 1.2 Backend query-конфиг documentQuery.ts

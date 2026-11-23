@@ -57,10 +57,10 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 						onClick={onOpenFamilyTaxCertificate}
 						data-testid="btn-family-tax-certificate"
 						className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors self-start sm:self-auto shadow-2xs"
-						title="Оформить единую справку ФНС на семью (КНД 1151156, вычет 13%)"
+						title="Оформить единую справку на вычет для семьи"
 					>
 						<FileCheck className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
-						<span>Справка ФНС на семью (13%)</span>
+						<span>Справка для налогового вычета (13% НДФЛ)</span>
 					</button>
 				)}
 			</div>

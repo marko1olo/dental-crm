@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { kopecksToRubles, rublesToKopecks } from "../money.js";
 
 /**
  * Maximum length for a consumable recipe link note.
@@ -91,9 +92,13 @@ export const consumableLinkDetailedSchema = consumableLinkResponseSchema.extend(
 	itemCategory: z.string().nullable().optional(),
 	itemUnit: z.string().nullable().optional(),
 	stockQuantity: z.number(),
-	unitCostRub: z.number(),
+	/** @deprecated Use unitCostKopecks instead (Mandate 8bm). */
+	unitCostRub: z.number().optional(),
+	unitCostKopecks: z.number().int().optional(),
 	criticalThreshold: z.number(),
-	totalCostRub: z.number(),
+	/** @deprecated Use totalCostKopecks instead (Mandate 8bm). */
+	totalCostRub: z.number().optional(),
+	totalCostKopecks: z.number().int().optional(),
 	isLowStock: z.boolean().optional(),
 });
 
@@ -107,7 +112,9 @@ export const linkOptionsTreatmentSchema = z.object({
 	name: z.string(),
 	code: z.string().nullable().optional(),
 	category: z.string().nullable().optional(),
+	/** @deprecated Use priceKopecks instead (Mandate 8bm). */
 	priceRub: z.number().optional(),
+	priceKopecks: z.number().int().optional(),
 });
 
 export type LinkOptionsTreatment = z.infer<typeof linkOptionsTreatmentSchema>;
@@ -118,7 +125,9 @@ export const linkOptionsItemSchema = z.object({
 	unit: z.string().nullable().optional(),
 	category: z.string().nullable().optional(),
 	stockQuantity: z.number().optional(),
+	/** @deprecated Use unitCostKopecks instead (Mandate 8bm). */
 	unitCostRub: z.number().optional(),
+	unitCostKopecks: z.number().int().optional(),
 	expirationDate: z.string().nullable().optional(),
 });
 
@@ -138,7 +147,9 @@ export const stockDeductionRecordSchema = z.object({
 	inventoryItemId: z.string(),
 	inventoryItemName: z.string(),
 	quantityChanged: z.string().or(z.number()),
+	/** @deprecated Use unitCostKopecks instead (Mandate 8bm). */
 	unitCostRub: z.string().or(z.number()).nullable().optional(),
+	unitCostKopecks: z.number().int().optional(),
 	lotNumber: z.string().nullable().optional(),
 	remainingStock: z.number().optional(),
 });
@@ -249,7 +260,9 @@ export const requiredMaterialItemSchema = z.object({
 	isSufficient: z.boolean(),
 	deficit: numberOrZero(),
 	unit: z.string().nullable().optional(),
+	/** @deprecated Use unitCostKopecks instead (Mandate 8bm). */
 	unitCostRub: numberOrZero().optional(),
+	unitCostKopecks: z.number().int().default(0).optional(),
 });
 
 export type RequiredMaterialItem = z.infer<typeof requiredMaterialItemSchema>;
@@ -274,7 +287,9 @@ export const inventoryAlertItemSchema = z.object({
 	unit: z.string(),
 	stockQuantity: z.number(),
 	criticalThreshold: z.number(),
-	unitCostRub: z.number(),
+	/** @deprecated Use unitCostKopecks instead (Mandate 8bm). */
+	unitCostRub: z.number().optional(),
+	unitCostKopecks: z.number().int().optional(),
 	sku: z.string().nullable().optional(),
 	barcode: z.string().nullable().optional(),
 	lotNumber: z.string().nullable().optional(),
@@ -286,7 +301,9 @@ export type InventoryAlertItem = z.infer<typeof inventoryAlertItemSchema>;
 
 export const inventoryAlertSummarySchema = z.object({
 	totalItems: z.number(),
-	totalValuationRub: z.number(),
+	/** @deprecated Use totalValuationKopecks instead (Mandate 8bm). */
+	totalValuationRub: z.number().optional(),
+	totalValuationKopecks: z.number().int().optional(),
 	lowStockCount: z.number(),
 	outOfStockCount: z.number(),
 	expiredCount: z.number(),
@@ -312,6 +329,54 @@ function numberOrZero() {
 }
 
 /**
+ * Safely extracts unit cost in integer kopecks from consumable items, converting legacy ruble fields if needed.
+ */
+export function getConsumableUnitCostKopecks(item: {
+	unitCostKopecks?: number | null | undefined;
+	unitCostRub?: number | string | null | undefined;
+}): number {
+	if (item.unitCostKopecks != null && Number.isFinite(Number(item.unitCostKopecks))) {
+		return Math.round(Number(item.unitCostKopecks));
+	}
+	if (item.unitCostRub != null && Number.isFinite(Number(item.unitCostRub))) {
+		return rublesToKopecks(Number(item.unitCostRub));
+	}
+	return 0;
+}
+
+/**
+ * Safely extracts total cost in integer kopecks, converting legacy ruble fields if needed.
+ */
+export function getConsumableTotalCostKopecks(item: {
+	totalCostKopecks?: number | null | undefined;
+	totalCostRub?: number | string | null | undefined;
+}): number {
+	if (item.totalCostKopecks != null && Number.isFinite(Number(item.totalCostKopecks))) {
+		return Math.round(Number(item.totalCostKopecks));
+	}
+	if (item.totalCostRub != null && Number.isFinite(Number(item.totalCostRub))) {
+		return rublesToKopecks(Number(item.totalCostRub));
+	}
+	return 0;
+}
+
+/**
+ * Safely extracts price in integer kopecks, converting legacy ruble fields if needed.
+ */
+export function getConsumablePriceKopecks(item: {
+	priceKopecks?: number | null | undefined;
+	priceRub?: number | string | null | undefined;
+}): number {
+	if (item.priceKopecks != null && Number.isFinite(Number(item.priceKopecks))) {
+		return Math.round(Number(item.priceKopecks));
+	}
+	if (item.priceRub != null && Number.isFinite(Number(item.priceRub))) {
+		return rublesToKopecks(Number(item.priceRub));
+	}
+	return 0;
+}
+
+/**
  * Helper: validate that a deduction quantity is finite and strictly positive.
  */
 export function isDeductibleQuantity(value: number): boolean {
@@ -319,20 +384,37 @@ export function isDeductibleQuantity(value: number): boolean {
 }
 
 /**
- * Helper: calculate estimated cost of recipe materials.
+ * Helper: calculate estimated cost of recipe materials in integer kopecks (Mandate 8bm).
  */
-export function calculateRecipeEstimatedCost(
-	materials: Array<{ quantity: number; unitCostRub?: number | null }>,
+export function calculateRecipeEstimatedCostKopecks(
+	materials: Array<{
+		quantity: number;
+		unitCostKopecks?: number | null | undefined;
+		unitCostRub?: number | string | null | undefined;
+	}>,
 ): number {
-	let total = 0;
+	let totalKopecks = 0;
 	for (const mat of materials) {
 		const qty = Number(mat.quantity);
-		const cost = Number(mat.unitCostRub ?? 0);
-		if (Number.isFinite(qty) && qty > 0 && Number.isFinite(cost) && cost > 0) {
-			total += qty * cost;
+		const unitCostKop = getConsumableUnitCostKopecks(mat);
+		if (Number.isFinite(qty) && qty > 0 && unitCostKop > 0) {
+			totalKopecks += Math.round(qty * unitCostKop);
 		}
 	}
-	return Number(total.toFixed(2));
+	return totalKopecks;
+}
+
+/**
+ * Helper: calculate estimated cost of recipe materials in rubles (backwards-compatible facade).
+ */
+export function calculateRecipeEstimatedCost(
+	materials: Array<{
+		quantity: number;
+		unitCostRub?: number | string | null | undefined;
+		unitCostKopecks?: number | null | undefined;
+	}>,
+): number {
+	return kopecksToRubles(calculateRecipeEstimatedCostKopecks(materials));
 }
 
 /**

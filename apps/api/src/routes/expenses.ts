@@ -387,12 +387,13 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	// 4. DELETE /api/v1/expenses/:id & /api/expenses/:id
 	// Мандат безопасности [SEC-06]: удаление расхода разрешено строго ролям owner / admin / administrator
 	// и сопровождается обязательной фиксацией в журнале аудита audit_events.
+	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
 	const handleDeleteExpense = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
 		if (!identity || !identity.organizationId) return;
 		const organizationId = identity.organizationId;
 
-		const { id } = request.params;
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
 
 		const deletedOp = await withTenantCtx(organizationId, async (tx) => {
 			const [op] = await tx
@@ -464,6 +465,8 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 		return { success: true };
 	};
 
+	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
 	server.delete("/api/v1/expenses/:id", handleDeleteExpense);
+	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
 	server.delete("/api/expenses/:id", handleDeleteExpense);
 };

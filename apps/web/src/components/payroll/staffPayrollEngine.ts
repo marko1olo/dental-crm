@@ -513,12 +513,16 @@ export {
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
 	generateStaffPayrollLedgerCsv,
+} from "./exports/payrollCsvExporter.js";
+export {
 	generateDoctorPayslipHtml,
+} from "./exports/doctorPayslipHtmlExporter.js";
+export {
 	generateDoctorPayslipMessengerText,
-	generateStaffPayrollAccountingCsv,
-	generate1CZup31Csv,
+} from "./exports/doctorPayslipMessengerExporter.js";
+export {
 	generateStaffPayrollLedgerHtml,
-} from "./staffPayrollExports.js";
+} from "./exports/staffPayrollLedgerHtmlExporter.js";
 
 import { generateStaffPayrollCsv } from "./exports/payrollCsvExporter.js";
 

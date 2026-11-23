@@ -3,13 +3,21 @@ import { describe, it } from "node:test";
 import {
 	CONSUMABLE_NOTE_MAX_LENGTH,
 	calculateRecipeEstimatedCost,
+	calculateRecipeEstimatedCostKopecks,
 	categorizeInventoryExpiry,
 	consumableLinkCreateSchema,
 	consumableLinkDetailedSchema,
 	consumableLinkResponseSchema,
 	consumableLinkUpdateSchema,
+	getConsumablePriceKopecks,
+	getConsumableTotalCostKopecks,
+	getConsumableUnitCostKopecks,
+	inventoryAlertItemSchema,
+	inventoryAlertSummarySchema,
 	isDeductibleQuantity,
+	linkOptionsItemSchema,
 	linkOptionsResponseSchema,
+	linkOptionsTreatmentSchema,
 	stockAvailabilityCheckRequestSchema,
 	stockAvailabilityCheckResponseSchema,
 	stockDeductionRecordSchema,
@@ -89,7 +97,7 @@ describe("Treatment Consumables Shared Contracts & Calculations", () => {
 			);
 		});
 
-		it("validates consumableLinkDetailedSchema", () => {
+		it("validates consumableLinkDetailedSchema with kopecks fields (Mandate 8bm)", () => {
 			const detailed = {
 				id: "link-1",
 				organizationId: "org-1",
@@ -104,12 +112,55 @@ describe("Treatment Consumables Shared Contracts & Calculations", () => {
 				itemUnit: "карп.",
 				stockQuantity: 45,
 				unitCostRub: 220,
+				unitCostKopecks: 22000,
 				criticalThreshold: 10,
 				totalCostRub: 330,
+				totalCostKopecks: 33000,
 				isLowStock: false,
 			};
 			const res = consumableLinkDetailedSchema.safeParse(detailed);
 			assert.strictEqual(res.success, true);
+		});
+
+		it("validates linkOptions and alerts with integer kopecks fields", () => {
+			const treatment = {
+				id: "srv-1",
+				name: "Консультация",
+				priceRub: 1500,
+				priceKopecks: 150000,
+			};
+			assert.strictEqual(linkOptionsTreatmentSchema.safeParse(treatment).success, true);
+
+			const item = {
+				id: "item-1",
+				name: "Шприц 2 мл",
+				unitCostRub: 15.5,
+				unitCostKopecks: 1550,
+			};
+			assert.strictEqual(linkOptionsItemSchema.safeParse(item).success, true);
+
+			const alertItem = {
+				id: "alert-1",
+				name: "Коффердам",
+				category: "consumables",
+				unit: "упак",
+				stockQuantity: 2,
+				criticalThreshold: 5,
+				unitCostRub: 1200,
+				unitCostKopecks: 120000,
+			};
+			assert.strictEqual(inventoryAlertItemSchema.safeParse(alertItem).success, true);
+
+			const alertSummary = {
+				totalItems: 10,
+				totalValuationRub: 50000,
+				totalValuationKopecks: 5000000,
+				lowStockCount: 2,
+				outOfStockCount: 0,
+				expiredCount: 0,
+				expiringSoonCount: 1,
+			};
+			assert.strictEqual(inventoryAlertSummarySchema.safeParse(alertSummary).success, true);
 		});
 
 		it("validates stock deduction results and warnings", () => {
@@ -184,7 +235,7 @@ describe("Treatment Consumables Shared Contracts & Calculations", () => {
 			assert.strictEqual(isDeductibleQuantity(Number.POSITIVE_INFINITY), false);
 		});
 
-		it("calculateRecipeEstimatedCost computes accurate sums", () => {
+		it("calculateRecipeEstimatedCost and calculateRecipeEstimatedCostKopecks compute accurate sums", () => {
 			const materials = [
 				{ quantity: 0.35, unitCostRub: 1300 },
 				{ quantity: 1, unitCostRub: 220 },
@@ -192,6 +243,25 @@ describe("Treatment Consumables Shared Contracts & Calculations", () => {
 			];
 			const total = calculateRecipeEstimatedCost(materials);
 			assert.strictEqual(total, 745);
+
+			const kopecksTotal = calculateRecipeEstimatedCostKopecks([
+				{ quantity: 0.35, unitCostKopecks: 130000 },
+				{ quantity: 1, unitCostKopecks: 22000 },
+				{ quantity: 2, unitCostKopecks: 3500 },
+			]);
+			assert.strictEqual(kopecksTotal, 74500);
+		});
+
+		it("getConsumableUnitCostKopecks, getConsumableTotalCostKopecks, getConsumablePriceKopecks convert reliably", () => {
+			assert.strictEqual(getConsumableUnitCostKopecks({ unitCostKopecks: 5000 }), 5000);
+			assert.strictEqual(getConsumableUnitCostKopecks({ unitCostRub: 50 }), 5000);
+			assert.strictEqual(getConsumableUnitCostKopecks({ unitCostRub: "50.50" }), 5050);
+
+			assert.strictEqual(getConsumableTotalCostKopecks({ totalCostKopecks: 12500 }), 12500);
+			assert.strictEqual(getConsumableTotalCostKopecks({ totalCostRub: 125 }), 12500);
+
+			assert.strictEqual(getConsumablePriceKopecks({ priceKopecks: 99000 }), 99000);
+			assert.strictEqual(getConsumablePriceKopecks({ priceRub: 990 }), 99000);
 		});
 
 		it("categorizeInventoryExpiry accurately flags expiration states", () => {

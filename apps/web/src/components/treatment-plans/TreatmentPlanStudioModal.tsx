@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage } from "./treatmentPlanTypes";
 import type { ToothData } from "./types";
-import { CANONICAL_CLINICAL_STAGES } from "./treatmentPlanCatalogData";
+import { CANONICAL_CLINICAL_STAGES, buildAdaptiveCanonicalStages } from "./treatmentPlanCatalogData";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
 import { StudioInstallmentTab } from "./studioTabs/StudioInstallmentTab";
@@ -327,7 +327,19 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							onToggleExpandStage={(id) => setExpandedStageId(expandedStageId === id ? null : id)}
 							onSelectDiagnosisPreset={handleSelectDiagnosisPreset}
 							onResetToCanonical={() => {
-								setStages(CANONICAL_CLINICAL_STAGES);
+								if (teeth && teeth.length > 0 && teeth.some((t) => t.state && t.state !== "Healthy")) {
+									const adaptive = buildAdaptiveCanonicalStages({
+										pathologies: teeth.map((t) => ({
+											toothNumber: t.toothNumber,
+											state: t.state,
+											mobility: t.mobility,
+											boneLossLevel: t.boneLossLevel,
+										})),
+									});
+									setStages(adaptive);
+								} else {
+									setStages(CANONICAL_CLINICAL_STAGES);
+								}
 								resetScrollTop();
 							}}
 							isExpressMode={depthMode === "express"}
@@ -337,6 +349,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							onGenerateStageInvoice={handleGenerateStageInvoice}
 							onGenerateFromTeeth={handleGenerateFromTeeth}
 							onAddCustomStage={handleAddCustomStage}
+							patientId={patientId}
+							patientName={patientName}
+							treatmentPlanId={propPlanId ?? undefined}
 						/>
 					)}
 

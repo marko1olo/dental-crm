@@ -65,8 +65,25 @@ export interface PersonalizedPlanResult {
 	};
 }
 
+export interface PlanContextSummary {
+	readonly hasOrtho?: boolean | undefined;
+	readonly hasSurgery?: boolean | undefined;
+	readonly hasTherapy?: boolean | undefined;
+	readonly hasHygiene?: boolean | undefined;
+}
+
+export function extractPlanContextSummary(payload: TreatmentPlanPayload): PlanContextSummary {
+	const text = `${payload.clinicalReason ?? ""} ${payload.diagnosisSummary ?? ""}`.toLowerCase();
+	const hasOrtho = /коронк|протез|винир|циркон|мост|ортопед/i.test(text);
+	const hasSurgery = /имплант|удален|синус|костн|хирург/i.test(text);
+	const hasTherapy = /кариес|пульпит|периодонтит|пломб|реставрац|терапи/i.test(text);
+	const hasHygiene = /гигиен|чистк|налет|камень/i.test(text);
+	return { hasOrtho, hasSurgery, hasTherapy, hasHygiene };
+}
+
 export function buildDeterministicClinicalScenarios(
 	baseTotalRub: number | undefined,
+	context?: PlanContextSummary | undefined,
 ): {
 	readonly economy: ClinicalScenarioPlan;
 	readonly optimum: ClinicalScenarioPlan;
@@ -77,11 +94,58 @@ export function buildDeterministicClinicalScenarios(
 	const optimumTotal = validBase;
 	const premiumTotal = Math.round(validBase * 1.5);
 
+	const hasOrtho = context?.hasOrtho ?? false;
+	const hasSurgery = context?.hasSurgery ?? false;
+
+	if (!hasOrtho && !hasSurgery) {
+		return {
+			economy: {
+				title: "Эконом: Базовая терапевтическая санация",
+				description:
+					"Ликвидация кариозных поражений и воспалений: проверенные светоотверждаемые композиты, стандартная эндодонтия.",
+				materials: "Светоотверждаемый композит Filtek Z250 / Charisma, стандартный эндодонтический силер",
+				estimatedTotalRub: economyTotal,
+				warrantyYears: 1,
+				advantages: [
+					"Доступная стоимость при 100% санации полости рта",
+					"Проверенные временем надежные пломбировочные материалы",
+					"Полное устранение очагов инфекции, кариеса и боли",
+				],
+			},
+			optimum: {
+				title: "Оптимум: Золотой стандарт эстетической терапии",
+				description:
+					"Высокоточная анатомическая реставрация зубов по европейским протоколам: наногибридный композит с подбором прозрачности эмали.",
+				materials: "Нанокомпозит Estelite Asteria / Gradia Direct, машинные никель-титановые файлы",
+				estimatedTotalRub: optimumTotal,
+				warrantyYears: 3,
+				advantages: [
+					"Естественная анатомическая форма бугров и фиссур зуба",
+					"Высокая цветостабильность и незаметная граница пломба-зуб",
+					"Оптимальный баланс прочности, долговечности и эстетики",
+				],
+			},
+			premium: {
+				title: "Премиум: Художественная микрореставрация под увеличением",
+				description:
+					"Премиальная художественная реставрация под дентальным микроскопом: послойное моделирование мамелонов, индивидуальные красители.",
+				materials: "Премиум нанокомпозит Harmonize / Enamel Plus, дентальный микроскоп, коффердам",
+				estimatedTotalRub: premiumTotal,
+				warrantyYears: 5,
+				advantages: [
+					"Максимальная оптическая глубина цвета, неотличимая от живой эмали",
+					"Идеальная микроструктура поверхности с зеркальной полировкой",
+					"Безупречная герметичность и максимальный срок службы реставрации",
+				],
+			},
+		};
+	}
+
 	return {
 		economy: {
 			title: "Эконом: Базовая функциональная реабилитация",
 			description:
-				"Функциональное восстановление жевания: проверенная металлокерамика, стандартные светоотверждаемые композиты, базовые имплантаты Osstem/Dentium.",
+				"Функциональное восстановление жевания: надежная металлокерамика, стандартные светоотверждаемые композиты, проверенная базовая имплантация.",
 			materials: "КХС, керамическая масса Duceram Plus, композит Filtek Z250, титан Grade 4",
 			estimatedTotalRub: economyTotal,
 			warrantyYears: 1,
@@ -402,7 +466,10 @@ ${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedService
 
 	const scenarios = isClinicalScenariosGroup(parsed.scenarios)
 		? parsed.scenarios
-		: buildDeterministicClinicalScenarios(input.payload.estimatedTotalRub);
+		: buildDeterministicClinicalScenarios(
+				input.payload.estimatedTotalRub,
+				extractPlanContextSummary(input.payload),
+			);
 
 	return {
 		patientFriendlyExplanation: explanation,
@@ -432,7 +499,10 @@ export async function personalizeTreatmentPlan(
 		return {
 			patientFriendlyExplanation: `**Почему важно провести лечение:**\nВаш диагноз (${payload.clinicalReason}) требует лечения (${payload.diagnosisSummary}). Откладывание ведёт к осложнениям и значительно большим затратам. Обратитесь к врачу за разъяснениями.`,
 			patientHygieneAdvice: `**Базовые правила домашней гигиены от DENTE:**\n\n${DEFAULT_HYGIENE_GUIDELINES}`,
-			scenarios: buildDeterministicClinicalScenarios(payload.estimatedTotalRub),
+			scenarios: buildDeterministicClinicalScenarios(
+				payload.estimatedTotalRub,
+				extractPlanContextSummary(payload),
+			),
 		};
 	}
 
@@ -527,6 +597,9 @@ export async function personalizeTreatmentPlan(
 	return {
 		patientFriendlyExplanation: `**Ваш план лечения:**\n${payload.plannedStages.map((s, i) => `${i + 1}. **${s.stageName}** — ${s.plannedServices} (${s.plannedTiming})`).join("\n")}\n\nОбратитесь к врачу для подробного разъяснения плана.`,
 		patientHygieneAdvice: `**Базовые правила домашней гигиены от DENTE:**\n\n${DEFAULT_HYGIENE_GUIDELINES}`,
-		scenarios: buildDeterministicClinicalScenarios(payload.estimatedTotalRub),
+		scenarios: buildDeterministicClinicalScenarios(
+			payload.estimatedTotalRub,
+			extractPlanContextSummary(payload),
+		),
 	};
 }

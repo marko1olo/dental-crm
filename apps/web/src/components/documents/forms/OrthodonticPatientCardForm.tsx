@@ -273,7 +273,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 							type="button"
 							className={`btn btn-secondary ${activeSection === "indices" ? "active" : ""}`}
 							onClick={() => setActiveSection("indices")}
-							disabled={disabled}
 						>
 							Биометрические индексы (Тон, Пон)
 						</button>
@@ -281,7 +280,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 							type="button"
 							className={`btn btn-secondary ${activeSection === "cephalometry" ? "active" : ""}`}
 							onClick={() => setActiveSection("cephalometry")}
-							disabled={disabled}
 						>
 							Цефалометрия ТРГ
 						</button>
@@ -289,7 +287,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 							type="button"
 							className={`btn btn-secondary ${activeSection === "anthropometry" ? "active" : ""}`}
 							onClick={() => setActiveSection("anthropometry")}
-							disabled={disabled}
 						>
 							Антропометрия лица
 						</button>
@@ -297,7 +294,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 							type="button"
 							className={`btn btn-secondary ${activeSection === "plan" ? "active" : ""}`}
 							onClick={() => setActiveSection("plan")}
-							disabled={disabled}
 						>
 							Аппаратурный план
 						</button>

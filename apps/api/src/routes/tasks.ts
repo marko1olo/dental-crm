@@ -269,6 +269,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 
 	/**
 	 * Удаление задачи.
+	 * door-validation: none — удаление задачи по URL-параметру :id без тела запроса
 	 */
 	app.delete("/api/tasks/:id", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "tasks delete")))
@@ -276,13 +277,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { id } = request.params as { id?: string };
-		if (!id || !UUID_REGEX.test(id)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Идентификатор задачи должен быть UUID.",
-			});
-		}
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
 
 		try {
 			const deleted = await deleteTaskTicketByIdInDb(orgId, id);

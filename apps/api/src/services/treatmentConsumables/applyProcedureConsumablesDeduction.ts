@@ -29,7 +29,7 @@ import {
 	treatmentConsumableDeductions,
 	treatmentConsumables,
 } from "../../db/schema.js";
-import { DEFAULT_804N_BOM_SEEDS } from "../inventory/defaultBomSeeds.js";
+import { DEFAULT_804N_BOM_SEEDS } from "../inventory/bomSeeds/index.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
 import type { DbTransaction } from "../inventory/fefo/types.js";
 

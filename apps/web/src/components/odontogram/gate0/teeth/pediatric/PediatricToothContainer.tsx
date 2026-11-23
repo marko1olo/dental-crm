@@ -57,8 +57,9 @@ export const PediatricToothContainer: React.FC<
 
 	const geom = getPediatricGeometry(num);
 
-	const r = badgeRadius ?? 14;
-	const cy = badgeCy ?? (isTop ? (r > 10 ? 24.0 : 20.0) : (r > 10 ? 176.0 : 160.0));
+	const isUpperMolar = isTop && (num % 10 === 4 || num % 10 === 5);
+	const r = badgeRadius ?? (isUpperMolar ? 8.0 : 14);
+	const cy = badgeCy ?? (isUpperMolar ? 8.0 : isTop ? (r > 10 ? 24.0 : 20.0) : (r > 10 ? 176.0 : 160.0));
 	const baseHeight = 218;
 	const viewBox = "0 0 100 218";
 

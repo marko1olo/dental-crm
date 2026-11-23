@@ -12,7 +12,7 @@ import {
 	procedureTechCards,
 	serviceCatalogItems,
 } from "../../db/schema.js";
-import { seedDefaultProcedureMaterialRules } from "../../services/inventory/defaultBomSeeds.js";
+import { seedDefaultProcedureMaterialRules } from "../../services/inventory/bomSeeds/index.js";
 import { inventoryRuleBodySchema } from "./types.js";
 
 export const procedureRuleRoutes: FastifyPluginAsync = async (

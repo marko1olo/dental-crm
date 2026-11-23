@@ -14,6 +14,7 @@ export interface FetchDoctorEarningsParams {
 	readonly chairRentalRub: number;
 	readonly advanceRub: number;
 	readonly taxRegime: string;
+	readonly commissionPercent?: number | undefined;
 }
 
 export interface FetchDoctorEarningsWithStatusResult {
@@ -25,7 +26,7 @@ export interface FetchDoctorEarningsWithStatusResult {
 export async function fetchDoctorEarningsWithStatusApi(
 	params: FetchDoctorEarningsParams,
 ): Promise<FetchDoctorEarningsWithStatusResult> {
-	const query = new URLSearchParams({
+	const queryObj: Record<string, string> = {
 		doctorId: params.doctorId,
 		from: params.periodStart,
 		to: params.periodEnd,
@@ -33,7 +34,11 @@ export async function fetchDoctorEarningsWithStatusApi(
 		chairRentalRub: String(params.chairRentalRub),
 		advanceRub: String(params.advanceRub),
 		taxRegime: params.taxRegime,
-	});
+	};
+	if (params.commissionPercent !== undefined) {
+		queryObj.commissionPercent = String(params.commissionPercent);
+	}
+	const query = new URLSearchParams(queryObj);
 
 	const res = await fetch(`/api/v1/payroll/calculations?${query.toString()}`);
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);

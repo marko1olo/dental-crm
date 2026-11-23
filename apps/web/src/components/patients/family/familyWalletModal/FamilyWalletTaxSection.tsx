@@ -91,7 +91,7 @@ function printTaxCertificateHtml(
 </head>
 <body>
 	<h1>СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ</h1>
-	<div class="subtitle">для представления в налоговые органы РФ (13% НДФЛ) • Форма КНД 1151156</div>
+	<div class="subtitle">Справка для налогового вычета (13% НДФЛ)</div>
 
 	<p><strong>Номер справки:</strong> ${cert.certificateNumber}</p>
 	<p><strong>Налоговый период (год):</strong> ${cert.taxYear}</p>
@@ -201,7 +201,7 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 								Справки для налогового вычета (13% НДФЛ)
 							</h3>
 							<p className="text-[11px] text-[var(--muted)] m-0">
-								Генерация справок ФНС КНД 1151156 на всех членов семьи
+								Оформить единую справку на вычет для семьи
 							</p>
 						</div>
 					</div>
@@ -367,7 +367,7 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 												data-testid={`btn-download-xml-${cert.patientId}`}
 												onClick={() => downloadXmlPayload(cert.xmlPayload, cert.xmlFileName)}
 												className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-												title="Скачать официальный XML файл для отправки в налоговую (КНД 1151156)"
+												title="Скачать официальный XML-файл для отправки в налоговую"
 											>
 												<Download className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 												<span className="hidden sm:inline">XML</span>

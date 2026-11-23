@@ -3,6 +3,7 @@
  */
 
 import {
+	classifyProcedure4StageCategory,
 	type TreatmentPlanValidateAndCommentRequest,
 	type TreatmentPlanValidateAndCommentResponse,
 	treatmentPlanValidateAndCommentResponseSchema,
@@ -32,6 +33,92 @@ export async function validateAndCommentTreatmentPlan(
 			: 12,
 	);
 
+	// Dynamic, context-aware 3-tier scenario descriptions based on actual plan items
+	const allItems = request.stages.flatMap((s) => s.items);
+	let hasOrthoProsthetics = false;
+	let hasSurgeryImplant = false;
+	let hasEndoTherapy = false;
+	let hasHygieneSanitation = false;
+
+	for (const item of allItems) {
+		const category = classifyProcedure4StageCategory(
+			item.code804n,
+			item.name,
+			item.category,
+		);
+		if (category === "ortho_prosthetics") hasOrthoProsthetics = true;
+		else if (category === "surgery_implant") hasSurgeryImplant = true;
+		else if (category === "hygiene_sanitation") hasHygieneSanitation = true;
+		else hasEndoTherapy = true;
+	}
+
+	let economyTitle = "Сценарий «Эконом»: базовая санация";
+	let economyDescription =
+		"Качественные светоотверждаемые композитные пломбы и стандартный протокол эндодонтического лечения.";
+	let optimumTitle = "Сценарий «Оптимум»: золотой стандарт";
+	let optimumDescription =
+		"Высокоточная анатомическая реставрация наногибридным композитом и машинная обработка каналов.";
+	let premiumTitle = "Сценарий «Премиум»: художественная микрореставрация";
+	let premiumDescription =
+		"Послойная эстетическая реставрация под дентальным микроскопом с зеркальной полировкой.";
+
+	if (hasOrthoProsthetics && hasSurgeryImplant) {
+		economyTitle = "Сценарий «Эконом»: базовая санация и протезирование";
+		economyDescription =
+			"Проверенная металлокерамика и классические дентальные имплантаты с сохранением 100% санации.";
+		optimumTitle = "Сценарий «Оптимум»: золотой стандарт";
+		optimumDescription =
+			"Цельный диоксид циркония Katana STML CAD/CAM, эндодонтия под увеличением и гидрофильные имплантаты SLA.";
+		premiumTitle = "Сценарий «Премиум»: VIP & цифровая навигация";
+		premiumDescription =
+			"Безметалловые реставрации E.max / Prettau, индивидуальные циркониевые абатменты и 3D навигационные шаблоны.";
+	} else if (hasOrthoProsthetics) {
+		economyTitle = "Сценарий «Эконом»: функциональное протезирование";
+		economyDescription =
+			"Металлокерамические коронки с точным краевым прилеганием и базовая подготовка зубов.";
+		optimumTitle = "Сценарий «Оптимум»: безметалловое протезирование";
+		optimumDescription =
+			"Цельноциркониевые коронки Katana STML CAD/CAM с анатомической передачей формы и цвета.";
+		premiumTitle = "Сценарий «Премиум»: высокоэстетичное протезирование";
+		premiumDescription =
+			"Премиальные коронки и виниры E.max Press с индивидуальной эстетической стратификацией.";
+	} else if (hasSurgeryImplant) {
+		economyTitle = "Сценарий «Эконом»: базовая хирургическая санация";
+		economyDescription =
+			"Атравматичное удаление несохранных зубов и проверенная классическая дентальная имплантация.";
+		optimumTitle = "Сценарий «Оптимум»: современная имплантация";
+		optimumDescription =
+			"Малоинвазивная имплантация с гидрофильной биоактивной поверхностью SLA и костная пластика.";
+		premiumTitle = "Сценарий «Премиум»: навигационная 3D хирургия";
+		premiumDescription =
+			"Цифровое планирование, 3D хирургический шаблон и ускоренная остеоинтеграция.";
+	} else if (!hasEndoTherapy && hasHygieneSanitation) {
+		economyTitle = "Сценарий «Эконом»: базовый гигиенический комплекс";
+		economyDescription =
+			"Ультразвуковое снятие наддесневых зубных отложений и полировка защитной пастой.";
+		optimumTitle = "Сценарий «Оптимум»: комплексная профессиональная гигиена";
+		optimumDescription =
+			"Ультразвуковой скейлинг + бережный AirFlow с мягким порошком глицина и реминерализация.";
+		premiumTitle = "Сценарий «Премиум»: швейцарский протокол GBT";
+		premiumDescription =
+			"Премиальный протокол Guided Biofilm Therapy (AirFlow Prophylaxis Master) с глубоким фторированием.";
+	}
+
+	let budgetOptimizationAdvice: string | undefined;
+	if (
+		request.targetBudgetRub &&
+		deterministicFinance.totalRub > request.targetBudgetRub
+	) {
+		const diffRub = deterministicFinance.totalRub - request.targetBudgetRub;
+		if (hasOrthoProsthetics || hasSurgeryImplant) {
+			budgetOptimizationAdvice = `План (${deterministicFinance.totalRub.toLocaleString("ru-RU")} ₽) превышает целевой бюджет (${request.targetBudgetRub.toLocaleString("ru-RU")} ₽) на ${diffRub.toLocaleString("ru-RU")} ₽. Рекомендуется замена премиальных конструкций на проверенную металлокерамику или базовые имплантационные системы с сохранением обязательной терапии.`;
+		} else if (hasEndoTherapy) {
+			budgetOptimizationAdvice = `План (${deterministicFinance.totalRub.toLocaleString("ru-RU")} ₽) превышает целевой бюджет (${request.targetBudgetRub.toLocaleString("ru-RU")} ₽) на ${diffRub.toLocaleString("ru-RU")} ₽. Рекомендуется поэтапное лечение: устранить активные кариозные очаги в первую очередь, а эстетическую полировку и реставрации выполнить вторым этапом.`;
+		} else {
+			budgetOptimizationAdvice = `План (${deterministicFinance.totalRub.toLocaleString("ru-RU")} ₽) превышает целевой бюджет (${request.targetBudgetRub.toLocaleString("ru-RU")} ₽) на ${diffRub.toLocaleString("ru-RU")} ₽. Рекомендуется оптимизация объема процедур с сохранением ключевого клинического протокола.`;
+		}
+	}
+
 	// Default structured fallback object
 	const defaultResult: TreatmentPlanValidateAndCommentResponse = {
 		clinicalValidation: deterministicValidation,
@@ -55,11 +142,7 @@ export async function validateAndCommentTreatmentPlan(
 		},
 		financialArgumentation: deterministicFinance,
 		copilotSuggestions: {
-			budgetOptimizationAdvice:
-				request.targetBudgetRub &&
-				deterministicFinance.totalRub > request.targetBudgetRub
-					? `План (${deterministicFinance.totalRub.toLocaleString("ru-RU")} ₽) превышает целевой бюджет (${request.targetBudgetRub.toLocaleString("ru-RU")} ₽) на ${(deterministicFinance.totalRub - request.targetBudgetRub).toLocaleString("ru-RU")} ₽. Рекомендуется замена премиальных конструкций на проверенную металлокерамику или стандартные имплантаты Osstem с сохранением обязательной терапии.`
-					: undefined,
+			budgetOptimizationAdvice,
 			suggestedModifications: [
 				{
 					type: "anesthesia_isolation",
@@ -77,23 +160,20 @@ export async function validateAndCommentTreatmentPlan(
 				},
 				{
 					type: "scenario_economy",
-					title: "Сценарий «Эконом»: базовая санация",
-					description:
-						"Замена премиальных конструкций на проверенную металлокерамику и базовые имплантаты Osstem с сохранением 100% санации.",
+					title: economyTitle,
+					description: economyDescription,
 					estimatedDeltaRub: -Math.round(deterministicFinance.totalRub * 0.3),
 				},
 				{
 					type: "scenario_optimum",
-					title: "Сценарий «Оптимум»: золотой стандарт",
-					description:
-						"Цельный диоксид циркония Katana STML CAD/CAM, эндодонтия под микроскопом, гидрофильные имплантаты SLA.",
+					title: optimumTitle,
+					description: optimumDescription,
 					estimatedDeltaRub: 0,
 				},
 				{
 					type: "scenario_premium",
-					title: "Сценарий «Премиум»: VIP & цифровая навигация",
-					description:
-						"Виниры E.max Press с индивидуальным нанесением, абатменты из циркония, 3D шаблоны и микроскоп Leica.",
+					title: premiumTitle,
+					description: premiumDescription,
 					estimatedDeltaRub: Math.round(deterministicFinance.totalRub * 0.5),
 				},
 			],

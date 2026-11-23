@@ -46,7 +46,7 @@ export function mapOutboxRowToRemdRecord(raw: unknown, clinicFallback?: unknown)
 			errorCode: errCode,
 			errorCategory: isFrmr ? "frmr" : is804n ? "804n" : "schema",
 			errorMessage: String(item.lastErrorMessage || "Ошибка валидации документа в РЭМД ЕГИСЗ"),
-			actionableHint: isFrmr ? "Проверьте СНИЛС врача в ФРМР Минздрава РФ." : is804n ? "Укажите код услуги по Приказу 804н." : "Исправьте клинические данные и повторите отправку.",
+			actionableHint: isFrmr ? "Проверьте СНИЛС врача в ФРМР Минздрава РФ." : is804n ? "Укажите код услуги из клинического прейскуранта." : "Исправьте клинические данные и повторите отправку.",
 			occurredAt: updatedAt,
 		};
 	}
@@ -93,7 +93,7 @@ export function mapOutboxRowToRemdRecord(raw: unknown, clinicFallback?: unknown)
 			id: String(rawPatient.id || item.patientId || "patient"), fullName: patientName,
 			birthDate: String(rawPatient.birthDate || item.patientBirthDate || "1990-01-01"),
 			snils: rawPatient.snils ? String(rawPatient.snils) : undefined,
-			cardNumber: String(rawPatient.cardNumber || "043/у"),
+			cardNumber: String(rawPatient.cardNumber || "ЭМК"),
 			polisOms: rawPatient.polisOms ? String(rawPatient.polisOms) : undefined,
 		},
 		doctor: {

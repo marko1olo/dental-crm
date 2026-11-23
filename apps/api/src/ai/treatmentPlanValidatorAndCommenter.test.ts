@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+	kopecksToRubles,
+	rublesToKopecks,
+	splitKopecks,
+} from "@dental/shared";
+import {
 	getAnatomicalRootCanalCount,
 	isDeciduousTooth,
 	runDeterministicClinicalValidation,
@@ -129,9 +134,14 @@ test("Treatment Plan Validator and Commenter Suite", async (t) => {
 		assert.strictEqual(fin.ndflDeduction.totalRefundRub, 33800);
 		assert.strictEqual(fin.ndflDeduction.netPriceWithRefundRub, 260000 - 33800);
 
-		// Installment 12m: 260 000 / 12 = 21 667 руб/мес
-		assert.strictEqual(fin.installments["12"]?.monthlyPaymentRub, Math.round(260000 / 12));
+		// Installment 12m: канонический splitKopecks без потери рублей
+		const expectedSplits = splitKopecks(rublesToKopecks(260000), 12);
+		assert.strictEqual(fin.installments["12"]?.monthlyPaymentRub, kopecksToRubles(expectedSplits[0]));
 		assert.strictEqual(fin.installments["12"]?.overpaymentRub, 0);
+		assert.strictEqual(fin.installments["12"]?.totalPaymentRub, 260000);
+		// Проверка строгой сходимости суммы частей до копейки
+		const totalSplitKop = expectedSplits.reduce((acc, part) => acc + part, 0);
+		assert.strictEqual(totalSplitKop, rublesToKopecks(260000));
 
 		// Staged 30/40/30 split exact balancing
 		assert.strictEqual(

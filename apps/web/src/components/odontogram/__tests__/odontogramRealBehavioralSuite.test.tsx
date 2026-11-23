@@ -14,8 +14,17 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
-import { DirectOdontogramModuleLauncher } from "../DirectOdontogramModuleLauncher";
-import { QuickActionsBatchOps } from "../QuickActionsBatchOps";
+import { OdontogramModule } from "../OdontogramModule";
+import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
+import { QuickActionsBatchOps } from "../OdontogramToolbarQuickActions";
+
+const mockTestAppLogic: Partial<AppLogicContextType> = {
+	odontogramUseSurfaces: true,
+	activePatient: null,
+	activeDoctor: null,
+	auth: null,
+	money: (v: unknown) => `${Number(v) || 0} ₽`,
+};
 import {
 	markIntactDentitionAction,
 	markFrontalHygieneAction,
@@ -40,9 +49,13 @@ import {
 } from "../chart/toothChartTypes";
 import type { ToothData } from "../ToothChart";
 
-describe("DirectOdontogramModuleLauncher & QuickActionsBatchOps (React 19)", () => {
-	it("1. mounts DirectOdontogramModuleLauncher without DOM exceptions (Mandate 8aq)", () => {
-		const html = renderToString(<DirectOdontogramModuleLauncher />);
+describe("OdontogramModule & QuickActionsBatchOps (React 19)", () => {
+	it("1. mounts OdontogramModule without DOM exceptions (Mandate 8aq)", () => {
+		const html = renderToString(
+			<AppLogicProvider value={mockTestAppLogic}>
+				<OdontogramModule patientId="demo-patient-1" />
+			</AppLogicProvider>,
+		);
 		assert.equal(typeof html, "string");
 	});
 

@@ -19,6 +19,10 @@ import {
 	generatePatientCasePresentation,
 	humanizeDentalText,
 	isMicroConsumable,
+	kopecksToRubles,
+	percentageOfKopecks,
+	rublesToKopecks,
+	splitKopecks,
 	type PatientCasePresentation,
 	type RawPlanItem,
 	type TreatmentPlanValidateAndCommentRequest,
@@ -370,6 +374,14 @@ export async function requestTreatmentPlanAiValidationAndComment(
 	} catch (error) {
 		console.warn("[TreatmentPlanCopilot] Falling back to client-side deterministic engine:", error);
 		const totalRub = stages.reduce((acc, s) => acc + s.totalRub, 0);
+		const totalKop = rublesToKopecks(totalRub);
+		const eligibleKop = rublesToKopecks(Math.min(totalRub, 150000));
+		const code01RefundRub = kopecksToRubles(percentageOfKopecks(eligibleKop, 1300));
+		const splits12 = totalRub > 0 ? splitKopecks(totalKop, 12) : [0];
+		const monthlyPaymentRub = totalRub > 0 ? kopecksToRubles(splits12[0] ?? 0) : 0;
+		const stage1AdvanceRub = kopecksToRubles(percentageOfKopecks(totalKop, 3000));
+		const stage2SurgicalRub = kopecksToRubles(percentageOfKopecks(totalKop, 4000));
+		const stage3FinalRub = Math.max(0, totalRub - stage1AdvanceRub - stage2SurgicalRub);
 		const presentation = buildChairsidePatientCasePresentation(stages, options);
 		return {
 			clinicalValidation: {
@@ -403,25 +415,25 @@ export async function requestTreatmentPlanAiValidationAndComment(
 				totalRub,
 				ndflDeduction: {
 					code01AmountRub: Math.min(totalRub, 150000),
-					code01RefundRub: Math.round(Math.min(totalRub, 150000) * 0.13),
+					code01RefundRub,
 					code02AmountRub: 0,
 					code02RefundRub: 0,
-					totalRefundRub: Math.round(Math.min(totalRub, 150000) * 0.13),
-					netPriceWithRefundRub: Math.max(0, totalRub - Math.round(Math.min(totalRub, 150000) * 0.13)),
+					totalRefundRub: code01RefundRub,
+					netPriceWithRefundRub: Math.max(0, totalRub - code01RefundRub),
 					explanation: "Налоговый вычет 13% по ст. 219 НК РФ",
 				},
 				installments: {
 					"12": {
 						months: 12,
-						monthlyPaymentRub: Math.round(totalRub / 12),
+						monthlyPaymentRub,
 						totalPaymentRub: totalRub,
 						overpaymentRub: 0,
 					},
 				},
 				stagedPaymentSchedule: {
-					stage1AdvanceRub: Math.round(totalRub * 0.3),
-					stage2SurgicalRub: Math.round(totalRub * 0.4),
-					stage3FinalRub: totalRub - Math.round(totalRub * 0.3) - Math.round(totalRub * 0.4),
+					stage1AdvanceRub,
+					stage2SurgicalRub,
+					stage3FinalRub,
 					explanation: "Поэтапная оплата 30/40/30",
 				},
 			},

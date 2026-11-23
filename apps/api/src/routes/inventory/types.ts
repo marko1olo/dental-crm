@@ -144,6 +144,7 @@ export const inventoryDeductItemSchema = z.object({
 		.finite({ message: "Количество должно быть числом" })
 		.positive({ message: "Количество для списания должно быть больше 0" }),
 	unitCostRub: z.union([z.number(), z.string()]).optional(),
+	unitCostKopecks: z.number().int().optional(),
 	allowOverdraft: z.boolean().default(true).optional(),
 	reason: z.string().optional(),
 	notes: z.string().optional(),

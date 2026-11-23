@@ -550,8 +550,10 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 			});
 
 			// Суммарная себестоимость ЗТЛ по услугам врача должна составить все 15 000 руб (1 500 000 коп),
-			// предотвращая испарение оставшихся 5 000 руб!
-			const totalLabCost = result.completedServices.reduce((sum, s) => sum + s.labCostKop, 0);
+			// предотвращая испарение оставшихся 5 000 руб (через услуги + unallocatedLabKop)!
+			const totalLabCost =
+				result.completedServices.reduce((sum, s) => sum + s.labCostKop, 0) +
+				(result.unallocatedLabKop ?? 0);
 			assert.equal(totalLabCost, 1500000, "All 1,500,000 kop of lab costs must be preserved and deducted from doctor net revenue");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);

@@ -5,6 +5,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { rublesToKopecks, type ClinicSettings } from "@dental/shared";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
+import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 import type { PayrollServiceOrder } from "../../payroll/payrollCatalogData";
 
 const DoctorPayrollStudioModal = lazyWithRetry(() =>
@@ -97,11 +98,13 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayroll
 			].filter((d): d is { readonly id: string; readonly name: string; readonly specialtyId: string; } => Boolean(d.id && d.name && d.specialtyId))
 		: undefined;
 
+	const brandingClinicName = useDocumentBrandingStore((s) => s.clinicName);
 	const clinicName =
 		(clinicSettings && "profile" in clinicSettings && clinicSettings.profile?.clinicName) ||
 		(clinicSettings && "clinicName" in clinicSettings && typeof clinicSettings.clinicName === "string" ? clinicSettings.clinicName : undefined) ||
 		(clinicSettings && "name" in clinicSettings && typeof clinicSettings.name === "string" ? clinicSettings.name : undefined) ||
-		"ООО «Денте Стоматология»";
+		brandingClinicName ||
+		"Стоматологическая клиника";
 
 	return (
 		<Suspense fallback={null}>

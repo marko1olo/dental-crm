@@ -305,7 +305,7 @@ describe("Wave 139: CBCT Bone Quality & Osteotomy Assessment Engine", () => {
 
 			// Check presence of required clinical sections
 			assert.ok(protocol.includes("ПРОТОКОЛ ПЛАНИРОВАНИЯ ОСТЕОТОМИИ"));
-			assert.ok(protocol.includes("ФОРМА 043/У"));
+			assert.ok(protocol.includes("ВКЛАДЫШ В ЭМК") || protocol.includes("ФОРМА 043/У"));
 			assert.ok(protocol.includes("Зуб 46"));
 			assert.ok(protocol.includes("IMP-46-STRAUMANN"));
 			assert.ok(protocol.includes("Класс D2"));

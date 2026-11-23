@@ -17,10 +17,10 @@ export function AuditTrailHeader({ onClose }: AuditTrailHeaderProps): React.JSX.
 						<span className="audit-title-main">
 							Журнал аудита доступа и безопасности ПДн
 						</span>
-						<span className="audit-badge">152-ФЗ & Приказ ФСТЭК № 21</span>
+						<span className="audit-badge">Безопасность персональных данных</span>
 					</div>
 					<div className="audit-title-sub">
-						Криптографический реестр обращений к 043/у, счетам, экспорту и согласиям
+						Криптографический реестр обращений к медицинским картам, счетам, экспорту и согласиям
 					</div>
 				</div>
 			</div>

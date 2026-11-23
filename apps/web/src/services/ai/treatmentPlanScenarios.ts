@@ -48,6 +48,44 @@ export const COPILOT_SCENARIO_ACTIONS: readonly CopilotScenarioAction[] = [
 ];
 
 /**
+ * Вычисляет цену за единицу услуги для сценария на основе номенклатурного прейскуранта клиники
+ * (Мандаты 8e, 8z, 8bd: сохранение индивидуального прайса врача без затирания жесткими константами).
+ */
+export function resolveScenarioUnitPrice(
+	item: TreatmentPlanItem,
+	tier: "economy" | "optimum" | "premium",
+	fallbackDefaultPrice: number,
+	ratio: number,
+): number {
+	// 1. Индивидуальные тарифные цены из номенклатуры клиники (tierPrices)
+	const tierPrice = item.tierPrices?.[tier];
+	if (typeof tierPrice === "number" && tierPrice > 0) {
+		return tierPrice;
+	}
+
+	// 2. Базовая цена за единицу из плана / прейскуранта клиники
+	const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+	const baseUnitPrice =
+		typeof item.unitPriceRub === "number" && item.unitPriceRub > 0
+			? item.unitPriceRub
+			: item.priceRub > 0
+				? Math.round(item.priceRub / qty)
+				: fallbackDefaultPrice;
+
+	// 3. Тариф «Оптимум» — золотой стандарт базового прейскуранта клиники (1.0x)
+	if (tier === "optimum") {
+		return baseUnitPrice > 0 ? baseUnitPrice : fallbackDefaultPrice;
+	}
+
+	// 4. Пропорциональный расчет коэффициентом (сохраняет индивидуальный уровень цен клиники)
+	if (baseUnitPrice > 0) {
+		return Math.max(100, Math.round(baseUnitPrice * ratio));
+	}
+
+	return fallbackDefaultPrice;
+}
+
+/**
  * 1. Сценарий «Эконом»: Базовая функциональная реабилитация
  */
 export function applyEconomyScenarioToPlan(
@@ -58,13 +96,13 @@ export function applyEconomyScenarioToPlan(
 
 	const updatedStages: TreatmentPlanStage[] = stages.map((stage) => {
 		const updatedItems: TreatmentPlanItem[] = stage.items.map((item) => {
-			// Ортопедия: коронки и мосты -> металлокерамика 16 000 ₽
+			// Ортопедия: коронки и мосты -> металлокерамика (0.75x от базы клиники)
 			if (
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|керамич/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const economyUnitPrice = 16000;
+				const economyUnitPrice = resolveScenarioUnitPrice(item, "economy", 16000, 0.75);
 				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
@@ -93,13 +131,13 @@ export function applyEconomyScenarioToPlan(
 				};
 			}
 
-			// Хирургия: имплантаты -> Osstem 32 000 ₽
+			// Хирургия: имплантаты -> Osstem (0.75x от базы клиники)
 			if (
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const economyUnitPrice = 32000;
+				const economyUnitPrice = resolveScenarioUnitPrice(item, "economy", 32000, 0.75);
 				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
@@ -127,14 +165,14 @@ export function applyEconomyScenarioToPlan(
 				};
 			}
 
-			// Терапия: пломбы -> стандартный световой композит 4 500 ₽
+			// Терапия: пломбы -> стандартный световой композит (0.75x от базы клиники)
 			if (
 				item.category === "Терапия" &&
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const qty = item.quantity || 1;
-				const economyUnitPrice = 4500;
+				const economyUnitPrice = resolveScenarioUnitPrice(item, "economy", 4500, 0.75);
 				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
@@ -199,13 +237,13 @@ export function applyOptimumScenarioToPlan(
 
 	const updatedStages: TreatmentPlanStage[] = stages.map((stage) => {
 		const updatedItems: TreatmentPlanItem[] = stage.items.map((item) => {
-			// Ортопедия: цельный диоксид циркония Katana STML 26 000 ₽
+			// Ортопедия: цельный диоксид циркония Katana STML (1.0x базовая цена клиники)
 			if (
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const optimumUnitPrice = 26000;
+				const optimumUnitPrice = resolveScenarioUnitPrice(item, "optimum", 26000, 1.0);
 				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
@@ -234,13 +272,13 @@ export function applyOptimumScenarioToPlan(
 				};
 			}
 
-			// Хирургия: имплантаты Osstem/Dentium SLA 38 000 ₽
+			// Хирургия: имплантаты Osstem/Dentium SLA (1.0x базовая цена клиники)
 			if (
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const optimumUnitPrice = 38000;
+				const optimumUnitPrice = resolveScenarioUnitPrice(item, "optimum", 38000, 1.0);
 				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
@@ -268,14 +306,14 @@ export function applyOptimumScenarioToPlan(
 				};
 			}
 
-			// Терапия: высокоэстетичный нанокомпозит Estelite Asteria 7 500 ₽
+			// Терапия: высокоэстетичный нанокомпозит Estelite Asteria (1.0x базовая цена клиники)
 			if (
 				item.category === "Терапия" &&
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const qty = item.quantity || 1;
-				const optimumUnitPrice = 7500;
+				const optimumUnitPrice = resolveScenarioUnitPrice(item, "optimum", 7500, 1.0);
 				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
@@ -340,13 +378,13 @@ export function applyPremiumScenarioToPlan(
 
 	const updatedStages: TreatmentPlanStage[] = stages.map((stage) => {
 		const updatedItems: TreatmentPlanItem[] = stage.items.map((item) => {
-			// Ортопедия: E.max Press с индивидуальным нанесением Vita VM9 45 000 ₽
+			// Ортопедия: E.max Press с индивидуальным нанесением Vita VM9 (1.4x от базы клиники)
 			if (
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const premiumUnitPrice = 45000;
+				const premiumUnitPrice = resolveScenarioUnitPrice(item, "premium", 45000, 1.4);
 				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({
@@ -375,13 +413,13 @@ export function applyPremiumScenarioToPlan(
 				};
 			}
 
-			// Хирургия: имплантаты Straumann BLX / Nobel Active 65 000 ₽
+			// Хирургия: имплантаты Straumann BLX / Nobel Active (1.4x от базы клиники)
 			if (
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const qty = item.quantity || 1;
-				const premiumUnitPrice = 65000;
+				const premiumUnitPrice = resolveScenarioUnitPrice(item, "premium", 65000, 1.4);
 				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({
@@ -409,14 +447,14 @@ export function applyPremiumScenarioToPlan(
 				};
 			}
 
-			// Терапия: художественная реставрация под микроскопом Leica 12 000 ₽
+			// Терапия: художественная реставрация под микроскопом Leica (1.4x от базы клиники)
 			if (
 				item.category === "Терапия" &&
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const qty = item.quantity || 1;
-				const premiumUnitPrice = 12000;
+				const premiumUnitPrice = resolveScenarioUnitPrice(item, "premium", 12000, 1.4);
 				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({

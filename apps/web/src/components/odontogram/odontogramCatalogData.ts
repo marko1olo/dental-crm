@@ -3,7 +3,7 @@
  *
  * DENTE Dental CRM — Canonical Odontogram SSOT Catalog & Price Linkage.
  * Single Source of Truth for FDI 11-48 & 51-85, 5 surfaces, 10 chairside statuses,
- * and seamless 1-click visit estimate recommendations (Mandate 8b: 250-350 lines).
+ * and seamless physiological visit estimate recommendations (Mandate 8b: 250-350 lines).
  */
 
 export type OdontogramDentitionMode = "adult" | "pediatric" | "mixed";
@@ -290,7 +290,7 @@ export interface OdontogramToothEntry {
 	notes?: string;
 }
 
-/** Создание карты 100% интактных зубов (физиологическая норма в 1 клик, Мандат 8e) */
+/** Создание карты 100% интактных зубов (физиологическая норма, Мандат 8e) */
 export function createIntactDentition(mode: OdontogramDentitionMode = "adult"): Record<number, OdontogramToothEntry> {
 	const result: Record<number, OdontogramToothEntry> = {};
 	const teethList = mode === "pediatric" ? PEDIATRIC_TEETH_SSOT : ADULT_TEETH_SSOT;

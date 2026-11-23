@@ -4,7 +4,7 @@ import {
 	classifyMisch,
 	extractHUZones,
 	generateDrillProtocol,
-} from "./boneQualityEngine";
+} from "@dental/shared";
 
 describe("Bone Quality and Misch Classification Engine", () => {
 	it("classifies bone density according to Misch criteria", () => {

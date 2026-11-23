@@ -26,6 +26,7 @@ export function calculateDoctorPeriodPayroll(
 		basePercent,
 		input.periodEndIso,
 		serviceSummary.stornoItems.length,
+		serviceSummary.stornoItems,
 	);
 
 	const isChairRental = input.payoutModel === "chair_rental";
@@ -65,7 +66,8 @@ export function calculateDoctorPeriodPayroll(
 		}
 	}
 
-	const preGuaranteePayout = earnedBaseCommission + serviceSummary.earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
+	const unallocatedLabDeduction = Math.max(0, input.unallocatedLabKop ?? 0);
+	const preGuaranteePayout = earnedBaseCommission + serviceSummary.earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop - unallocatedLabDeduction;
 	const { grossPayout, guaranteeApplied } = applyMinimumGuarantee(
 		preGuaranteePayout,
 		preset.minGuaranteeMonthlyKop,
@@ -102,7 +104,8 @@ export function calculateDoctorPeriodPayroll(
 		mainPayoutKop,
 		npd6TaxKop,
 		totalGrossRevenueKop: serviceSummary.totalGross,
-		totalLabDeductionsKop: serviceSummary.totalLab,
+		totalLabDeductionsKop: serviceSummary.totalLab + unallocatedLabDeduction,
+		unallocatedLabDeductionsKop: unallocatedLabDeduction,
 		totalMaterialDeductionsKop: serviceSummary.totalMaterial,
 		totalNetBaseKop: totalNetBase,
 		totalRefundDeductionsKop,

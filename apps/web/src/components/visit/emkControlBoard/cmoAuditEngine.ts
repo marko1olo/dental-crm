@@ -75,7 +75,7 @@ export const EMK_DEFECT_TAGS_CATALOG: readonly EmkDefectTagMeta[] = [
 	},
 	{
 		tag: "missing_804n_services",
-		labelRu: "Пустой наряд-заказ / нет услуг 804н (Раздел 6)",
+		labelRu: "Пустой наряд-заказ / нет услуг из прейскуранта (Раздел 6)",
 		sectionIndex: 6,
 		severity: "critical",
 	},

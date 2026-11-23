@@ -1,4 +1,9 @@
 import { useState, useMemo } from "react";
+import {
+	mergeToothSurfaceStates,
+	type ToothSurfaceKey,
+	type ToothSurfaceStateMap,
+} from "@dental/shared";
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import type { RestorativeMaterialKey } from "../../odontogram/anatomicalGeometriesTypes";
 import { showToast } from "../../GlobalToast";
@@ -44,22 +49,87 @@ export function useToothSurfacesState({ toothData, onUpdateTooth }: UseToothSurf
 		toothData?.state === "Pulpitis" || toothData?.state === "Periodontitis",
 	);
 
+	const computeSurfaceMutation = (next: SurfaceKey[]) => {
+		const clinicalData = toothData?.clinicalData;
+		const hasFillingProp = Boolean(
+			clinicalData && typeof clinicalData === "object" && "hasFilling" in clinicalData && clinicalData.hasFilling,
+		);
+		const isFilled =
+			toothData?.state === "Filled" ||
+			(toothData?.state as string) === "Filled + Caries" ||
+			hasFillingProp;
+
+		if (isFilled) {
+			const rawFillingSurfaces =
+				clinicalData && typeof clinicalData === "object" && "fillingSurfaces" in clinicalData
+					? clinicalData.fillingSurfaces
+					: undefined;
+			const prevFillingSurfaces: SurfaceKey[] = Array.isArray(rawFillingSurfaces)
+				? (rawFillingSurfaces as SurfaceKey[])
+				: currentSurfaces;
+
+			const retainedFillingSurfaces = prevFillingSurfaces.filter((s) =>
+				next.includes(s),
+			);
+			const defectSurfaces = next.filter(
+				(s) => !prevFillingSurfaces.includes(s),
+			);
+
+			const prevMap: ToothSurfaceStateMap = {};
+			for (const s of retainedFillingSurfaces) {
+				prevMap[s as ToothSurfaceKey] = "filling";
+			}
+			const defectMap: ToothSurfaceStateMap = {};
+			for (const s of defectSurfaces) {
+				defectMap[s as ToothSurfaceKey] = "caries";
+			}
+			const surfaceStateMap = mergeToothSurfaceStates(prevMap, defectMap);
+
+			const hasFilling = retainedFillingSurfaces.length > 0;
+			const hasCaries = defectSurfaces.length > 0;
+			const resolvedState: ToothState =
+				hasFilling && hasCaries
+					? ("Filled + Caries" as ToothState)
+					: hasFilling
+						? "Filled"
+						: "Caries";
+
+			return {
+				surfaces: next,
+				state: resolvedState,
+				clinicalData: {
+					...(toothData?.clinicalData || {}),
+					baseState: hasFilling ? "Filled" : undefined,
+					fillingSurfaces: hasFilling ? retainedFillingSurfaces : undefined,
+					defectSurfaces: hasCaries ? defectSurfaces : undefined,
+					hasFilling,
+					hasCaries,
+					surfaceStateMap,
+				},
+			};
+		}
+
+		return {
+			surfaces: next,
+			state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
+			clinicalData: {
+				...(toothData?.clinicalData || {}),
+				defectSurfaces: next.length > 0 ? next : undefined,
+				hasCaries: next.length > 0,
+			},
+		};
+	};
+
 	const handleToggleSurface = (surface: SurfaceKey) => {
 		const next = currentSurfaces.includes(surface)
 			? currentSurfaces.filter((s) => s !== surface)
 			: [...currentSurfaces, surface];
 
-		onUpdateTooth?.({
-			surfaces: next,
-			state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
-		});
+		onUpdateTooth?.(computeSurfaceMutation(next));
 	};
 
 	const handleSetSurfaces = (surfaces: SurfaceKey[]) => {
-		onUpdateTooth?.({
-			surfaces,
-			state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
-		});
+		onUpdateTooth?.(computeSurfaceMutation(surfaces));
 	};
 
 	const handleClearSurfaces = () => {

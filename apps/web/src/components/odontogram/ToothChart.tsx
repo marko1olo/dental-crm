@@ -9,6 +9,7 @@
 
 import React, { useCallback, memo } from "react";
 import { Sparkles, ShieldCheck, HeartPulse, Sparkle } from "lucide-react";
+import { normalizeCanonicalSurfaces, type ToothSurfaceKey } from "@dental/shared";
 import {
 	type ToothChartProps,
 	areToothChartPropsEqual,
@@ -31,6 +32,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	dentitionMode,
 	selectedTeeth = [],
 	activeStamp,
+	activeSurface,
 	onToothClick,
 	onQuickStateChange,
 	onMarkIntactDentition,
@@ -67,9 +69,13 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onApplyFastCariesK021) {
 			onApplyFastCariesK021();
 		} else if (onQuickStateChange && selectedTeeth.length > 0) {
-			onQuickStateChange(selectedTeeth, "Caries", ["Occ"]);
+			const targetSurface: ToothSurfaceKey =
+				(activeSurface ? (normalizeCanonicalSurfaces(activeSurface)[0] as ToothSurfaceKey | undefined) : undefined) ?? "O";
+			for (const toothNum of selectedTeeth) {
+				onQuickStateChange([toothNum], "Caries", [targetSurface]);
+			}
 		}
-	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth]);
+	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth, activeSurface]);
 
 	const handleToothClick = useCallback(
 		(e: React.MouseEvent<HTMLElement> | number, num?: number) => {

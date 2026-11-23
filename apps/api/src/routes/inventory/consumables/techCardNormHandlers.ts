@@ -5,6 +5,7 @@
 
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -209,7 +210,7 @@ export async function registerTechCardNormHandlers(
 		});
 	});
 
-	// DELETE /:id — Delete consumable link with canonical SSOT sync
+	// door-validation: none — удаление нормы расхода по URL-параметру :id без тела запроса
 	server.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
@@ -218,7 +219,7 @@ export async function registerTechCardNormHandlers(
 		);
 		if (!orgId) return;
 
-		const { id } = request.params;
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
 		return await withTenantCtx(orgId, async (tx) => {
 			const [toDelete] = await tx
 				.select()

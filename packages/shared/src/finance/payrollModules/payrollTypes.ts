@@ -68,6 +68,7 @@ export interface DoctorPayrollCalculationInput {
 	readonly advancePayoutKop?: number | undefined;
 	readonly applyMinimumGuarantee?: boolean | undefined;
 	readonly guaranteeDaysRatio?: number | undefined;
+	readonly unallocatedLabKop?: number | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -84,6 +85,7 @@ export interface DoctorPayrollResult {
 	readonly npd6TaxKop?: number | undefined;
 	readonly totalGrossRevenueKop: number;
 	readonly totalLabDeductionsKop: number;
+	readonly unallocatedLabDeductionsKop?: number;
 	readonly totalMaterialDeductionsKop: number;
 	readonly totalNetBaseKop: number;
 	readonly totalRefundDeductionsKop: number;

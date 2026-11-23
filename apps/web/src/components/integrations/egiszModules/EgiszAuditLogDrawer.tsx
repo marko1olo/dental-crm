@@ -19,7 +19,7 @@ const DEMO_AUDIT_LOGS: readonly EgiszAuditLogItem[] = [
 	{
 		id: "log-1",
 		timestamp: "12.10.2026 14:30",
-		formTitle: "Медицинская карта стоматологического больного (043/у)",
+		formTitle: "Электронная медицинская карта стоматологического пациента (ЭМК)",
 		patientName: "Смирнов Алексей Петрович",
 		doctorName: "Кузнецова А. С.",
 		status: "Registered",
@@ -46,7 +46,7 @@ const DEMO_AUDIT_LOGS: readonly EgiszAuditLogItem[] = [
 	{
 		id: "log-4",
 		timestamp: "10.10.2026 16:05",
-		formTitle: "Медицинская карта стоматологического больного (043/у)",
+		formTitle: "Электронная медицинская карта стоматологического пациента (ЭМК)",
 		patientName: "Козлов Иван Михайлович",
 		doctorName: "Кузнецова А. С.",
 		status: "Error",

@@ -6,4 +6,4 @@
 export type * from "./types.js";
 export * from "./dateUtils.js";
 export * from "./batchSelector.js";
-export * from "./deductionEngine.js";
+export * from "../fefoModules/index.js";

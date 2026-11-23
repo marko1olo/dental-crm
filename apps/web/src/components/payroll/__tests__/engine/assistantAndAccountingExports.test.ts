@@ -8,7 +8,7 @@ import { describe, it } from "node:test";
 import {
 	calculateAssistantStaffPayroll,
 	calculateConsolidatedStaffPayroll,
-	generateStaffPayrollAccountingCsv,
+	generateStaffPayrollCsv,
 	type AssistantStaffPayrollInput,
 } from "../../staffPayrollEngine";
 
@@ -86,10 +86,10 @@ describe("Assistant Shifts & Staff Payroll Accounting Document Generation", () =
 			}],
 		});
 
-		const csv = generateStaffPayrollAccountingCsv(summary);
+		const csv = generateStaffPayrollCsv(summary);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("00101"));
 		assert.ok(csv.includes("Смирнов Алексей Петрович"));
-		assert.ok(csv.includes("Начисление"));
+		assert.ok(csv.includes("Гонорарная ведомость начислений персонала клиники"));
 	});
 });

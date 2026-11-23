@@ -75,7 +75,13 @@ export function useToothDrawerState({
 
 	const handleQuickStateSelect = (newState: ToothState) => {
 		setCurrentState(newState);
-		onUpdateTooth?.(toothNumber, { state: newState });
+		const existingSurfaces = toothData?.surfaces;
+		const existingClin = toothData?.clinicalData;
+		onUpdateTooth?.(toothNumber, {
+			state: newState,
+			...(existingSurfaces && existingSurfaces.length > 0 ? { surfaces: [...existingSurfaces] } : {}),
+			...(existingClin ? { clinicalData: existingClin } : {}),
+		});
 		onUpdateToothStatus?.(toothNumber, newState);
 	};
 

@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { describe, it } from "node:test";
 import {
 	DEFAULT_804N_BOM_SEEDS,
-} from "../../services/inventory/defaultBomSeeds.js";
+} from "../../services/inventory/bomSeeds/index.js";
 
 describe("Inventory Clinical Material BOM Auto-Deduction Engine", () => {
 	it("содержит валидные нормы расхода материалов для ключевых клинических процедур", () => {

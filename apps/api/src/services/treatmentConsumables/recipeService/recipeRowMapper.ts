@@ -2,7 +2,7 @@
  * recipeRowMapper.ts — Layer 1: Helper mapping joined procedureMaterialRules row to ConsumableLinkDetailed.
  */
 
-import type { ConsumableLinkDetailed } from "@dental/shared";
+import { rublesToKopecks, type ConsumableLinkDetailed } from "@dental/shared";
 
 export interface ConsumableLinkJoinedRow {
 	id: string;
@@ -49,8 +49,10 @@ export function mapRowToLinkDetailed(
 		itemUnit: r.itemUnit,
 		stockQuantity: stock,
 		unitCostRub: cost,
+		unitCostKopecks: rublesToKopecks(cost),
 		criticalThreshold: threshold,
 		totalCostRub: Number((qty * cost).toFixed(2)),
+		totalCostKopecks: rublesToKopecks(Number((qty * cost).toFixed(2))),
 		isLowStock: stock <= threshold,
 	};
 }

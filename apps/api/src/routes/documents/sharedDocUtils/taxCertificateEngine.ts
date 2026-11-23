@@ -18,6 +18,7 @@ import {
 	parseFio,
 	parseKopecks,
 	preflightValidatePayload,
+	resolveTaxDeductionCategoryShared,
 	sumKopecks,
 	validateFnsNdflXmlStructure,
 	FNS_ORDER_824_NAME,
@@ -322,14 +323,14 @@ type ExtendedClinicProfile = Partial<ClinicProfile> & {
 };
 
 type ExtendedTaxPayment = Partial<Payment> & {
-	code1AmountKopecks?: number;
-	code2AmountKopecks?: number;
+	code1AmountKopecks?: number | bigint;
+	code2AmountKopecks?: number | bigint;
 	code1AmountRub?: number;
 	code2AmountRub?: number;
 	items?: Array<{
 		name?: string;
 		amountRub?: number;
-		amountKopecks?: number;
+		amountKopecks?: number | bigint;
 		code804n?: string;
 		category?: string;
 	}>;
@@ -337,12 +338,12 @@ type ExtendedTaxPayment = Partial<Payment> & {
 		items?: Array<{
 			name?: string;
 			amountRub?: number;
-			amountKopecks?: number;
+			amountKopecks?: number | bigint;
 			code804n?: string;
 			category?: string;
 		}>;
 	} | null;
-	amountKopecks?: number;
+	amountKopecks?: number | bigint;
 	amount?: number | string;
 	serviceName?: string;
 	note?: string;
@@ -555,7 +556,9 @@ export function buildKnd1151156Xml(
 	for (const p of scopedPayments) {
 		const pAny = p as ExtendedTaxPayment;
 
-		const rawAmountKop = typeof pAny.amountKopecks === "number"
+		const rawAmountKop = typeof pAny.amountKopecks === "bigint"
+			? Number(pAny.amountKopecks)
+			: typeof pAny.amountKopecks === "number"
 			? pAny.amountKopecks
 			: pAny.amountRub != null
 				? parseKopecks(pAny.amountRub)
@@ -563,8 +566,20 @@ export function buildKnd1151156Xml(
 					? parseKopecks(pAny.amount)
 					: 0;
 
-		const c1Explicit = pAny.code1AmountKopecks ?? (pAny.code1AmountRub != null ? parseKopecks(pAny.code1AmountRub) : undefined);
-		const c2Explicit = pAny.code2AmountKopecks ?? (pAny.code2AmountRub != null ? parseKopecks(pAny.code2AmountRub) : undefined);
+		const c1Explicit: number | undefined = typeof pAny.code1AmountKopecks === "bigint"
+			? Number(pAny.code1AmountKopecks)
+			: typeof pAny.code1AmountKopecks === "number"
+			? pAny.code1AmountKopecks
+			: pAny.code1AmountRub != null
+			? parseKopecks(pAny.code1AmountRub)
+			: undefined;
+		const c2Explicit: number | undefined = typeof pAny.code2AmountKopecks === "bigint"
+			? Number(pAny.code2AmountKopecks)
+			: typeof pAny.code2AmountKopecks === "number"
+			? pAny.code2AmountKopecks
+			: pAny.code2AmountRub != null
+			? parseKopecks(pAny.code2AmountRub)
+			: undefined;
 		const items = pAny.items || pAny.fiscalReceipt?.items || [];
 
 		if (c1Explicit !== undefined || c2Explicit !== undefined) {
@@ -572,19 +587,22 @@ export function buildKnd1151156Xml(
 			code2Kopecks += c2Explicit ?? Math.max(0, rawAmountKop - (c1Explicit ?? 0));
 		} else if (items.length > 0) {
 			for (const it of items) {
-				const itKop = typeof it.amountKopecks === "number"
+				const itKop = typeof it.amountKopecks === "bigint"
+					? Number(it.amountKopecks)
+					: typeof it.amountKopecks === "number"
 					? it.amountKopecks
 					: it.amountRub != null
 						? parseKopecks(it.amountRub)
 						: 0;
 				if (itKop <= 0) continue;
-				if (it.code804n?.startsWith("A16.07.054") || it.name?.toLowerCase().includes("имплант") || it.name?.toLowerCase().includes("синус")) {
+				const isCode2 = it.category === "2" || (it.category !== "1" && resolveTaxDeductionCategoryShared(it.code804n, it.name) === "2");
+				if (isCode2) {
 					code2Kopecks += itKop;
 				} else {
 					code1Kopecks += itKop;
 				}
 			}
-		} else if (pAny.taxDeductionCode === "2") {
+		} else if (pAny.taxDeductionCode === "2" || (!pAny.taxDeductionCode && resolveTaxDeductionCategoryShared(pAny.code804n, pAny.serviceName) === "2")) {
 			code2Kopecks += rawAmountKop;
 		} else {
 			code1Kopecks += rawAmountKop;

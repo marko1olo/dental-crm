@@ -350,4 +350,45 @@ describe("buildKnd1151156Xml", () => {
 			assert.match(result.error, /руководителя \/ подписанта/);
 		}
 	});
+
+	test("regression: osteoplasty, GBR (НКР) and Bio-Oss items are classified as Code 02 expensive treatment", () => {
+		const docWithBoneGraft: GeneratedDocument = {
+			...baseDocument,
+			payload: {
+				taxPaymentSelection: { selectedPaymentIds: ["payment-bone"] },
+			},
+		};
+		const paymentWithBoneGraft: Payment = createTestPayment({
+			...basePayment,
+			id: "payment-bone",
+			taxDeductionCode: undefined,
+			items: [
+				{
+					name: "Костная пластика челюсти (НКР) с применением гранул Bio-Oss и мембраны Bio-Gide",
+					code804n: "A16.07.041",
+					amountRub: 75000,
+					amountKopecks: 7500000,
+				},
+				{
+					name: "Терапевтическое лечение кариеса",
+					code804n: "A16.07.002",
+					amountRub: 15000,
+					amountKopecks: 1500000,
+				},
+			],
+		});
+
+		const result = buildKnd1151156Xml(
+			docWithBoneGraft,
+			basePatient,
+			{ ...baseContext, payments: [paymentWithBoneGraft] },
+		);
+		assert.strictEqual(result.ok, true);
+		if (!result.ok) return;
+
+		// Code 02: 75 000.00 ₽ (osteoplasty/GBR/Bio-Oss)
+		assert.match(result.xml, /<СведРасхУсл КодУслуг="2" СумОпл="75000\.00"\/>/);
+		// Code 01: 15 000.00 ₽ (therapy)
+		assert.match(result.xml, /<СведРасхУсл КодУслуг="1" СумОпл="15000\.00"\/>/);
+	});
 });

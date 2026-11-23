@@ -26,4 +26,4 @@ export {
 	fefoStockService,
 	receiveBatch,
 	writeOffExpiredOrScrap,
-} from "./fefo/deductionEngine.js";
+} from "./fefoModules/index.js";

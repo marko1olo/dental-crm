@@ -273,6 +273,8 @@ export function isCariesState(state: string | null | undefined): boolean {
 		s === "кариес" ||
 		s === "c" ||
 		s === "с" ||
+		s.includes("caries") ||
+		s.includes("кариес") ||
 		s.startsWith("c1") ||
 		s.startsWith("c2") ||
 		s.startsWith("c3") ||
@@ -296,6 +298,9 @@ export function isFillingState(state: string | null | undefined): boolean {
 		s === "plomba" ||
 		s === "п" ||
 		s === "p" ||
+		s.includes("filled") ||
+		s.includes("filling") ||
+		s.includes("пломба") ||
 		s === "restoration" ||
 		s === "inlay" ||
 		s === "onlay"

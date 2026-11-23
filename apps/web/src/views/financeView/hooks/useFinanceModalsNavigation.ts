@@ -33,7 +33,7 @@ export function useFinanceModalsNavigation() {
 	});
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
-	const [isTimesheetT13Open, setIsTimesheetT13Open] = useState(false);
+	const [isShiftTimesheetOpen, setIsShiftTimesheetOpen] = useState(false);
 	const [isFamilyBillingOpen, setIsFamilyBillingOpen] = useState(false);
 	const [isSplitPaymentOpen, setIsSplitPaymentOpen] = useState(false);
 
@@ -96,8 +96,8 @@ export function useFinanceModalsNavigation() {
 					setIsTaxModalOpen(false);
 					return;
 				}
-				if (isTimesheetT13Open) {
-					setIsTimesheetT13Open(false);
+				if (isShiftTimesheetOpen) {
+					setIsShiftTimesheetOpen(false);
 					return;
 				}
 				if (isFamilyBillingOpen) {
@@ -121,7 +121,7 @@ export function useFinanceModalsNavigation() {
 		isBillingActOpen,
 		isQuickExpenseOpen,
 		isTaxModalOpen,
-		isTimesheetT13Open,
+		isShiftTimesheetOpen,
 		isFamilyBillingOpen,
 		isSplitPaymentOpen,
 	]);
@@ -138,7 +138,8 @@ export function useFinanceModalsNavigation() {
 		isSplitPaymentOpen,
 		isTaxModalOpen,
 		isAccountingExportOpen,
-		isTimesheetT13Open,
+		isShiftTimesheetOpen,
+		isTimesheetT13Open: isShiftTimesheetOpen,
 		setIsAccountingExportOpen,
 		setIsBillingActOpen,
 		setIsCashShiftOpen,
@@ -150,6 +151,7 @@ export function useFinanceModalsNavigation() {
 		setIsQuickExpenseOpen,
 		setIsSplitPaymentOpen,
 		setIsTaxModalOpen,
-		setIsTimesheetT13Open,
+		setIsShiftTimesheetOpen,
+		setIsTimesheetT13Open: setIsShiftTimesheetOpen,
 	};
 }
