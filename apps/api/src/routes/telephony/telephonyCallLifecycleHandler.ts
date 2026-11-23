@@ -240,7 +240,6 @@ export async function handleEndCall(
 						or(
 							eq(communicationEvents.providerCallId, callId),
 							UUID_REGEX.test(callId) ? eq(communicationEvents.id, callId) : sql`false`,
-							ilike(communicationEvents.message, `%${callId}%`),
 						),
 					),
 				)

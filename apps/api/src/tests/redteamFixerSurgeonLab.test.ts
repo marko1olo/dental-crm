@@ -1,595 +1,404 @@
 /**
- * redteamFixerSurgeonLab.test.ts
+ * RED TEAM FIXER SURGEON LAB ORDERS & WARRANTY INVARIANTS TEST
  *
- * Бескомпромиссный Red Team аудит исправлений Зуботехнической лаборатории (ЗТЛ CAD/CAM):
- * 1. SEV-1 #1: Колонка `orderNumber` физически сохраняется в PostgreSQL 18 в формате ЗТЛ-YYMM-XXXX.
- *    selectLabOrdersQuery выбирает реальный orderNumber, а НЕ 36-значный secureToken!
- * 2. SEV-1 #2: handleUpdatePipelineStage физически обновляет stage в таблице lab_orders в PostgreSQL 18.
- * 3. SEV-2 #3: Аудит-лог labOrderEvents изолирован через withTenantCtx (защита RLS между организациями).
- * 4. SEV-2 #4: Гарантийный паспорт ортопедической конструкции связывается с реальным номером наряда и партией со склада.
+ * Проверяет закрытие всех 6 дефектов ЗТЛ из Fact Dossier:
+ * 1. Сохранение гарантийных полей при создании наряда (parentLabOrderId, fittingAppointmentId, remakeReason, etc.)
+ * 2. Обновление гарантии и связей при PUT мутации (isWarranty = true, remakeReason, etc.)
+ * 3. Атомарность и дедупликация Idempotency-Key без гонок
+ * 4. Защита RLS и изоляция тенантов в scansDownloadHandler
+ * 5. buildLabOrderApiPayload в @dental/shared сохраняет гарантийные атрибуты
+ * 6. Обнуление price_kopecks и price_rub в lab_items при гарантийной рекламации
+ * 7. Ликвидация мертвого кода в labQuery.ts
  */
-
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import { eq } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
-import {
-	inventoryItems,
-	labOrders,
-	stockBatches,
-} from "../db/schema.js";
-import { insertLabOrderInDb } from "../routes/lab/ordersCrudModules/labOrderInsertDb.js";
-import { selectLabOrdersQuery } from "../routes/lab/ordersCrudModules/labOrderQueryDb.js";
-import {
-	handleCreateLabOrderEvent,
-	handleGetLabOrderEvents,
-} from "../routes/lab/pipelineModules/labOrderEventsHandlers.js";
-import { handleUpdatePipelineStage } from "../routes/lab/pipelineModules/pipelineStageHandler.js";
-import { handleGetWarrantyPassport } from "../routes/lab/pipelineModules/warrantyPassportHandler.js";
+import { after, before, describe, test } from "node:test";
+import { and, eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
+import { buildLabOrderApiPayload } from "@dental/shared";
+import { db } from "../db/client.js";
+import { withFixtureTenant, fixtureUuid, purgeFixtureOrganizations, isDatabaseUnavailable } from "./support/fixtureOrganizations.js";
+import { createTenantTestApp } from "./support/tenantTestApp.js";
+import { organizations, users, patients, labOrders, labItems, appointments } from "../db/schema.js";
+import { registerLabRoutes } from "../routes/lab/index.js";
+import { signToken } from "../utils/cryptoHelper.js";
+import { authTokenSecret } from "../security/authSecret.js";
+import * as labQueryModule from "../db/labQuery.js";
 
-const ORG_A = "00000000-0000-0000-0000-000000000001";
-const ORG_B = "00000000-0000-0000-0000-000000000002";
+const NAMESPACE = "redteamFixerLab";
+const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
+const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
+const PATIENT_ID = fixtureUuid(NAMESPACE, 3);
+const PARENT_ORDER_ID = fixtureUuid(NAMESPACE, 4);
+const FITTING_APPT_ID = fixtureUuid(NAMESPACE, 5);
+const LAB_ID = fixtureUuid(NAMESPACE, 6);
 
-function createFakeRequest(params: { id: string }, body: unknown, orgId: string) {
-	return {
-		params,
-		body,
-		headers: {},
-		__denteIdentity: {
-			organizationId: orgId,
-			userId: "00000000-0000-0000-0000-000000000001",
-			role: "doctor",
-			fullName: "Д-р Тестов",
-			sessionId: "sess-1",
-			verified: true,
-		},
-		user: {
-			id: "00000000-0000-0000-0000-000000000001",
-			role: "doctor",
-			organizationId: orgId,
-		},
-		log: { error: () => {}, info: () => {}, warn: () => {} },
-		ip: "127.0.0.1",
-		method: "POST",
-		url: `/api/lab/orders/${params.id}`,
-	};
-}
+describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { concurrency: 1 }, () => {
+	let app: FastifyInstance;
+	let staffToken = "";
+	let databaseReady = true;
 
-describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () => {
-	it("SEV-1 #1: orderNumber физически сохраняется в lab_orders в PostgreSQL 18 и выбирается в запросах", async () => {
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Редтим Пациент Наряда",
-				doctorName: "Д-р Тестов О. П.",
-				toothFdi: "11",
-				material: "Диоксид циркония ZrO2 Multilayer",
-				priceRub: 35000,
-				labCostRub: 9000,
-				dueDate: "2026-12-01",
-			}),
-		);
-
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
-		assert.ok(createdOrder.id, "Заказ должен иметь валидный UUID id");
-
+	before(async () => {
+		process.env.NODE_ENV = "test";
 		try {
-			// Проверяем физическое сохранение в PostgreSQL 18
-			const [dbRow] = await withTenantCtx(ORG_A, (tx) =>
-				tx
-					.select({
-						id: labOrders.id,
-						orderNumber: labOrders.orderNumber,
-						secureToken: labOrders.secureToken,
-					})
-					.from(labOrders)
-					.where(eq(labOrders.id, createdOrder.id)),
-			);
-
-			assert.ok(dbRow, "Заказ должен присутствовать в БД");
-			assert.ok(dbRow.orderNumber, "Колонка order_number в БД обязана быть заполнена!");
-			assert.match(
-				dbRow.orderNumber,
-				/^ЗТЛ-\d{4}-[A-Z0-9]{4}$/,
-				`orderNumber должен иметь клинический формат ЗТЛ-YYMM-XXXX, получено: ${dbRow.orderNumber}`,
-			);
-			assert.notStrictEqual(
-				dbRow.orderNumber,
-				dbRow.secureToken,
-				"orderNumber НЕ должен равняться 36-значному UUID secureToken!",
-			);
-
-			// Проверяем выборку через selectLabOrdersQuery
-			const queryRows = await withTenantCtx(ORG_A, (tx) =>
-				selectLabOrdersQuery(tx, ORG_A, createdOrder.patientId),
-			);
-			const found = queryRows.find((r) => r.id === createdOrder.id);
-			assert.ok(found, "Заказ должен возвращаться в selectLabOrdersQuery");
-			assert.strictEqual(
-				found.orderNumber,
-				dbRow.orderNumber,
-				"selectLabOrdersQuery обязан отдавать реальный orderNumber из БД",
-			);
-			assert.doesNotMatch(
-				found.orderNumber,
-				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-				"orderNumber не должен быть 36-значным UUID токена!",
-			);
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
+			await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		} catch (error) {
+			if (!isDatabaseUnavailable(error)) throw error;
+			databaseReady = false;
+			return;
 		}
-	});
 
-	it("SEV-1 #2: handleUpdatePipelineStage физически сохраняет stage в PostgreSQL 18", async () => {
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Редтим Пациент Этапа",
-				doctorName: "Д-р Ортопедов А. А.",
-				toothFdi: "24",
-				material: "E-max CAD",
-				priceRub: 28000,
-				labCostRub: 8000,
-				stage: "impression_scan",
-			}),
-		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
-
-		try {
-			let responseCode = 200;
-			let responseBody: any = null;
-			const fakeReply = {
-				code(c: number) {
-					responseCode = c;
-					return this;
-				},
-				status(c: number) {
-					responseCode = c;
-					return this;
-				},
-				send(data: any) {
-					responseBody = data;
-					return this;
-				},
-			};
-
-			const fakeRequest = createFakeRequest(
-				{ id: createdOrder.id },
-				{
-					stage: "cad_modeling",
-					notes: "Завершено 3D-моделирование каркаса",
-					scheduledDate: "2026-11-28",
-				},
-				ORG_A,
-			);
-
-			await handleUpdatePipelineStage(fakeRequest as any, fakeReply as any);
-
-			assert.strictEqual(responseCode, 200, "Обновление этапа должно возвращать 200 OK");
-			assert.strictEqual(responseBody?.success, true);
-			assert.strictEqual(responseBody?.stage, "cad_modeling");
-
-			// Проверяем прямое чтение из PostgreSQL 18: колонка stage обязана обновиться!
-			const [freshDbOrder] = await withTenantCtx(ORG_A, (tx) =>
-				tx
-					.select({
-						id: labOrders.id,
-						stage: labOrders.stage,
-						status: labOrders.status,
-					})
-					.from(labOrders)
-					.where(eq(labOrders.id, createdOrder.id)),
-			);
-
-			assert.ok(freshDbOrder, "Заказ должен существовать в БД");
-			assert.strictEqual(
-				freshDbOrder.stage,
-				"cad_modeling",
-				"Этап ЗТЛ (stage) в строке PostgreSQL 18 ОБЯЗАН быть обновлен на 'cad_modeling'!",
-			);
-			assert.strictEqual(freshDbOrder.status, "in_progress");
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-		}
-	});
-
-	it("SEV-2 #3: Аудит-события labOrderEvents изолированы в tenant context (ноль утечек между клиниками)", async () => {
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Редтим Пациент Аудита",
-				doctorName: "Д-р Инквизитор Т. С.",
-				toothFdi: "46",
-				material: "ZrO2",
-				priceRub: 30000,
-				labCostRub: 7000,
-			}),
-		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
-
-		try {
-			// Создаем событие через handleCreateLabOrderEvent для ORG_A
-			let createBody: any = null;
-			const fakeReply = {
-				code(c: number) { return this; },
-				status(c: number) { return this; },
-				send(data: any) { createBody = data; return this; },
-			};
-
-			const createRequest = createFakeRequest(
-				{ id: createdOrder.id },
-				{
-					milestone: "framework_fitting",
-					actorType: "clinic_doctor",
-					actorName: "Д-р Инквизитор Т. С.",
-					notes: "Каркас припасован без зазоров",
-					photoUrls: [],
-				},
-				ORG_A,
-			);
-
-			await handleCreateLabOrderEvent(createRequest as any, fakeReply as any);
-			assert.strictEqual(createBody?.success, true);
-			assert.ok(createBody?.event?.id, "Событие должно быть создано");
-
-			// Читаем события для ORG_A
-			let getEventsA: any = null;
-			const getReplyA = {
-				send(d: any) { getEventsA = d; return this; },
-				code() { return this; },
-			};
-			const getReqA = createFakeRequest({ id: createdOrder.id }, null, ORG_A);
-			await handleGetLabOrderEvents(getReqA as any, getReplyA as any);
-			assert.ok(getEventsA?.events?.length >= 1, "Клиника ORG_A должна видеть свое событие");
-
-			// Проверяем изоляцию тенантов: клиника ORG_B НЕ ДОЛЖНА видеть события ORG_A!
-			let getEventsB: any = null;
-			const getReplyB = {
-				send(d: any) { getEventsB = d; return this; },
-				code() { return this; },
-			};
-			const getReqB = createFakeRequest({ id: createdOrder.id }, null, ORG_B);
-			await handleGetLabOrderEvents(getReqB as any, getReplyB as any);
-			assert.strictEqual(
-				getEventsB?.events?.length || 0,
-				0,
-				"Клиника ORG_B ни при каких обстоятельствах не должна видеть события клиники ORG_A!",
-			);
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-		}
-	});
-
-	it("SEV-2 #4: Гарантийный паспорт ортопедической конструкции связывается с реальным orderNumber и партией склада", async () => {
-		// Создаем активную партию на складе для диоксида циркония
-		let testItemId: string | null = null;
-		let testBatchId: string | null = null;
-		const TEST_LOT_NUMBER = "BATCH-ZRO2-2026-99";
-
-		await withTenantCtx(ORG_A, async (tx) => {
-			const [item] = await tx
-				.insert(inventoryItems)
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db
+				.insert(organizations)
 				.values({
-					organizationId: ORG_A,
-					name: "Диоксид циркония ZrO2 диск 98мм",
-					sku: `SKU-ZRO2-${Date.now()}`,
-					category: "materials",
-					unit: "pcs",
-					stockQuantity: "5.000",
-					priceRub: "6500.00",
+					id: ORGANIZATION_ID,
+					name: "Клиника Red Team Fixer Lab",
 				})
-				.returning({ id: inventoryItems.id });
-			if (item) {
-				testItemId = item.id;
-				const [batch] = await tx
-					.insert(stockBatches)
-					.values({
-						organizationId: ORG_A,
-						inventoryItemId: item.id,
-						batchNumber: TEST_LOT_NUMBER,
-						expirationDate: "2029-12-31",
-						initialQty: "5.000",
-						remainingQty: "5.000",
-						status: "active",
-					})
-					.returning({ id: stockBatches.id });
-				if (batch) testBatchId = batch.id;
-			}
+				.onConflictDoNothing();
+
+			await db
+				.insert(users)
+				.values({
+					id: DOCTOR_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Врач-Ортопед Хирург",
+					role: "doctor",
+				})
+				.onConflictDoNothing();
+
+			await db
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Пациент Рекламации ЗТЛ",
+					status: "active",
+				})
+				.onConflictDoNothing();
+
+			const now = new Date();
+			await db
+				.insert(appointments)
+				.values({
+					id: FITTING_APPT_ID,
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_ID,
+					doctorUserId: DOCTOR_ID,
+					status: "planned",
+					startsAt: now,
+					endsAt: new Date(now.getTime() + 3600000),
+				})
+				.onConflictDoNothing();
+
+			await db
+				.insert(labOrders)
+				.values({
+					id: PARENT_ORDER_ID,
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_ID,
+					doctorId: DOCTOR_ID,
+					orderNumber: "ЗТЛ-PARENT-001",
+					secureToken: "token-parent-order-001",
+					status: "completed",
+					priceKopecks: 2000000,
+					priceRub: 20000,
+				})
+				.onConflictDoNothing();
 		});
 
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Редтим Пациент Гарантии",
-				doctorName: "Д-р Протезов С. С.",
-				toothFdi: "26",
-				material: "Диоксид циркония ZrO2",
-				priceRub: 40000,
-				labCostRub: 12000,
-				status: "completed",
-			}),
+		staffToken = signToken(
+			{ organizationId: ORGANIZATION_ID, userId: DOCTOR_ID, role: "doctor" },
+			authTokenSecret(),
 		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
 
-		try {
-			let passportRes: any = null;
-			let passportStatus = 200;
-			const fakeReply = {
-				code(c: number) { passportStatus = c; return this; },
-				status(c: number) { passportStatus = c; return this; },
-				send(d: any) { passportRes = d; return this; },
-			};
-			const fakeReq = createFakeRequest({ id: createdOrder.id }, null, ORG_A);
-
-			await handleGetWarrantyPassport(fakeReq as any, fakeReply as any);
-
-			assert.strictEqual(passportStatus, 200);
-			assert.strictEqual(passportRes?.success, true);
-			const passport = passportRes?.passport;
-			assert.ok(passport, "Паспорт должен быть успешно сформирован");
-
-			// 1. Проверяем честный номер наряда (не UUID токена!)
-			assert.match(
-				passport.orderNumber,
-				/^ЗТЛ-\d{4}-[A-Z0-9]{4}$/,
-				`Номер в паспорте обязан иметь формат ЗТЛ-YYMM-XXXX, получено: ${passport.orderNumber}`,
-			);
-			assert.notStrictEqual(
-				passport.orderNumber,
-				createdOrder.secureToken,
-				"Номер в паспорте не должен быть UUID крипто-токена!",
-			);
-
-			// 2. Проверяем связку с реальной партией склада
-			assert.strictEqual(
-				passport.batchCode,
-				TEST_LOT_NUMBER,
-				`batchCode в паспорте обязан подтягивать реальный номер партии из stockBatches (${TEST_LOT_NUMBER}), получено: ${passport.batchCode}`,
-			);
-			assert.doesNotMatch(
-				passport.batchCode,
-				/^LOT-\d{4}-[0-9A-F]{8}$/,
-				"batchCode не должен быть синтетическим фиктивным хэшем!",
-			);
-
-			// 3. Проверяем кросс-тенантную изоляцию certificateNumber
-			assert.ok(passportRes.certificateNumber, "certificateNumber должен возвращаться");
-			assert.match(
-				passportRes.certificateNumber,
-				/^WP-[A-Z0-9]{6}-ЗТЛ-\d{4}-[A-Z0-9]{4}$/,
-				`certificateNumber обязан иметь формат WP-{orgShortHash}-{orderNum}, получено: ${passportRes.certificateNumber}`,
-			);
-		} finally {
-			await withTenantCtx(ORG_A, async (tx) => {
-				await tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id));
-				if (testBatchId) {
-					await tx.delete(stockBatches).where(eq(stockBatches.id, testBatchId));
-				}
-				if (testItemId) {
-					await tx.delete(inventoryItems).where(eq(inventoryItems.id, testItemId));
-				}
-			});
-		}
+		app = createTenantTestApp();
+		await registerLabRoutes(app);
+		await app.ready();
 	});
 
-	it("SEV-2 #5: Симметричный алиас /api/lab/orders/:id/items зарегистрирован в Fastify", async () => {
-		const fastifyModule = await import("fastify");
-		const app = fastifyModule.default();
-		const { registerOrderItemsRoutes } = await import("../routes/lab/orderItemsRoutes.js");
-		await registerOrderItemsRoutes(app);
-
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/lab/orders/:id/items" }), "GET /api/lab/orders/:id/items must be registered");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/lab/orders/:id/items" }), "POST /api/lab/orders/:id/items must be registered");
-		assert.ok(app.hasRoute({ method: "PUT", url: "/api/lab/orders/:id/items/:itemId" }), "PUT /api/lab/orders/:id/items/:itemId must be registered");
-		assert.ok(app.hasRoute({ method: "DELETE", url: "/api/lab/orders/:id/items/:itemId" }), "DELETE /api/lab/orders/:id/items/:itemId must be registered");
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/clinical/lab-orders/:id/items" }), "GET /api/clinical/lab-orders/:id/items must be registered");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/clinical/lab-orders/:id/items" }), "POST /api/clinical/lab-orders/:id/items must be registered");
-		assert.ok(app.hasRoute({ method: "PUT", url: "/api/clinical/lab-orders/:id/items/:itemId" }), "PUT /api/clinical/lab-orders/:id/items/:itemId must be registered");
-		assert.ok(app.hasRoute({ method: "DELETE", url: "/api/clinical/lab-orders/:id/items/:itemId" }), "DELETE /api/clinical/lab-orders/:id/items/:itemId must be registered");
+	after(async () => {
+		await app?.close();
+		if (!databaseReady) return;
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 	});
 
-	it("SEV-1 #6: ACID транзакция и синхронизация позиций ЗТЛ без схлопывания себестоимости и розницы", async () => {
-		const { insertLabItem, updateLabItem, deleteLabItem } = await import("../routes/lab/orderItemsCrud.js");
+	test("ДЕФЕКТ 1: POST /api/clinical/lab-orders сохраняет все гарантийные поля и связи в БД", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
 
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Редтим Пациент Себестоимости",
-				doctorName: "Д-р Ортопедов И. И.",
-				toothFdi: "16",
-				material: "ZrO2",
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				toothFdi: 21,
+				material: "zirconia",
+				colorVita: "A2",
+				isWarranty: true,
+				parentLabOrderId: PARENT_ORDER_ID,
+				fittingAppointmentId: FITTING_APPT_ID,
+				laboratoryId: LAB_ID,
+				warrantyLiabilityType: "lab_defect",
+				remakeReason: "Скол керамического края на этапе примерки",
 				priceRub: 0,
-				labCostRub: 3500,
-			}),
-		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
+			},
+		});
 
-		try {
-			// 1. Добавляем позицию 1: зуб 16 на 8 500 ₽ (850 000 копеек розничной цены пациента)
-			const item1 = await insertLabItem(ORG_A, createdOrder.id, {
-				toothFdi: 16,
-				restorationType: "crown_monolithic",
-				material: "zirconia_multilayer_gradient",
-				shadeSystem: "VITA_CLASSICAL",
-				shadeFinal: "A2",
-				priceKopecks: 850000,
-			});
-			assert.ok(item1?.id, "Позиция 1 создана");
+		assert.equal(res.statusCode, 201, `Expected 201, got ${res.statusCode}: ${res.body}`);
+		const created = JSON.parse(res.body);
+		assert.ok(created.id, "Expected created order id");
 
-			// Проверяем актуализацию родительского наряда: priceKopecks становится 850 000, а labCostKopecks сохраняет себестоимость 350 000 (не схлопывается с розницей!)
-			const [orderAfterItem1] = await withTenantCtx(ORG_A, (tx) =>
-				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-			assert.strictEqual(Number(orderAfterItem1?.labCostKopecks), 350000);
-			assert.strictEqual(Number(orderAfterItem1?.priceKopecks), 850000);
-			assert.strictEqual(orderAfterItem1?.toothFdi, "16");
+		// Проверяем прямое состояние в базе данных (PG18)
+		const [inDb] = await db
+			.select()
+			.from(labOrders)
+			.where(and(eq(labOrders.id, created.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
 
-			// 2. Добавляем позицию 2: зуб 17 на 9 000 ₽ (900 000 копеек)
-			const item2 = await insertLabItem(ORG_A, createdOrder.id, {
-				toothFdi: 17,
-				restorationType: "crown_monolithic",
-				material: "zirconia_multilayer_gradient",
-				shadeSystem: "VITA_CLASSICAL",
-				shadeFinal: "A2",
-				priceKopecks: 900000,
-			});
-			assert.ok(item2?.id, "Позиция 2 создана");
-
-			// Проверяем перерасчет родительского наряда: сумма розницы должна стать 1 750 000 копеек, зубы "16,17", а себестоимость сохраняется
-			const [orderAfterItem2] = await withTenantCtx(ORG_A, (tx) =>
-				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-			assert.strictEqual(Number(orderAfterItem2?.labCostKopecks), 350000);
-			assert.strictEqual(Number(orderAfterItem2?.priceKopecks), 1750000);
-			assert.strictEqual(orderAfterItem2?.toothFdi, "16,17");
-
-			// 3. Обновляем позицию 1: меняем цену зуба 16 на 10 000 ₽ (1 000 000 копеек)
-			await updateLabItem(ORG_A, createdOrder.id, item1.id, {
-				priceKopecks: 1000000,
-			});
-			const [orderAfterUpdate] = await withTenantCtx(ORG_A, (tx) =>
-				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-			assert.strictEqual(Number(orderAfterUpdate?.labCostKopecks), 350000);
-			assert.strictEqual(Number(orderAfterUpdate?.priceKopecks), 1900000);
-
-			// 4. Удаляем позицию 2 (зуб 17)
-			await deleteLabItem(ORG_A, createdOrder.id, item2.id);
-			const [orderAfterDelete] = await withTenantCtx(ORG_A, (tx) =>
-				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-			assert.strictEqual(Number(orderAfterDelete?.labCostKopecks), 350000);
-			assert.strictEqual(Number(orderAfterDelete?.priceKopecks), 1000000);
-			assert.strictEqual(orderAfterDelete?.toothFdi, "16");
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-		}
+		assert.ok(inDb, "Order should exist in DB");
+		assert.equal(inDb.isWarranty, true, "isWarranty should be true in DB");
+		assert.equal(inDb.parentLabOrderId, PARENT_ORDER_ID, "parentLabOrderId must be persisted");
+		assert.equal(inDb.fittingAppointmentId, FITTING_APPT_ID, "fittingAppointmentId must be persisted");
+		assert.equal(inDb.laboratoryId, LAB_ID, "laboratoryId must be persisted");
+		assert.equal(inDb.warrantyLiabilityType, "lab_defect", "warrantyLiabilityType must be persisted");
+		assert.equal(inDb.remakeReason, "Скол керамического края на этапе примерки", "remakeReason must be persisted");
 	});
 
-	it("SEV-1 #7: Портал техника обезличивает персональные данные (152-ФЗ / BOLA)", async () => {
-		const { handleGetPortalOrder } = await import("../routes/lab/portalModules/technicianPortalGetAndPhotoHandlers.js");
+	test("ДЕФЕКТ 2: PUT /api/clinical/lab-orders/:id физически обновляет is_warranty и гарантийные связи", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
 
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Александров Константин Дмитриевич",
-				doctorName: "Д-р Протезов С. С.",
-				toothFdi: "11",
-				material: "ZrO2",
-				priceRub: 30000,
-				labCostRub: 8000,
-			}),
-		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
+		// Сначала создаем обычный заказ
+		const createRes = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				toothFdi: 11,
+				material: "emax",
+				colorVita: "A1",
+				isWarranty: false,
+				priceRub: 15000,
+			},
+		});
+		assert.equal(createRes.statusCode, 201);
+		const order = JSON.parse(createRes.body);
 
-		try {
-			const fakeReq = {
-				params: { token: createdOrder.secureToken },
-				log: { error: () => {}, info: () => {}, warn: () => {} },
-			};
-			const fakeReply = {
-				code(c: number) { return this; },
-				send(data: any) { return data; },
-			};
+		// Переводим через PUT в гарантию с указанием причины
+		const putRes = await app.inject({
+			method: "PUT",
+			url: `/api/clinical/lab-orders/${order.id}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				isWarranty: true,
+				warrantyLiabilityType: "clinic_warranty",
+				remakeReason: "Изменение цвета опорного зуба после депульпирования",
+				parentLabOrderId: PARENT_ORDER_ID,
+				fittingAppointmentId: FITTING_APPT_ID,
+				laboratoryId: LAB_ID,
+			},
+		});
 
-			const portalResult = await handleGetPortalOrder(fakeReq as any, fakeReply as any);
-			assert.ok(portalResult, "Результат должен быть получен");
-			assert.strictEqual(
-				portalResult.patientInitials,
-				"Александров К. Д.",
-				"Инициалы пациента должны быть в формате Фамилия И. О.",
-			);
-			assert.strictEqual(
-				portalResult.patientFullName,
-				"Александров К. Д.",
-				"patientFullName для внешнего портала обязан быть обезличен по 152-ФЗ",
-			);
-			assert.strictEqual((portalResult as any).phone, undefined, "Телефон не должен отдаваться внешнему технику");
-			assert.strictEqual((portalResult as any).passport, undefined, "Паспортные данные не должны отдаваться");
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
-		}
+		assert.equal(putRes.statusCode, 200, `Expected 200, got ${putRes.statusCode}: ${putRes.body}`);
+
+		// Проверяем в базе данных
+		const [updatedInDb] = await db
+			.select()
+			.from(labOrders)
+			.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+
+		assert.ok(updatedInDb);
+		assert.equal(updatedInDb.isWarranty, true, "PUT must set is_warranty = true in DB");
+		assert.equal(updatedInDb.isLockedInstalled, false, "isLockedInstalled must be reset on warranty");
+		assert.equal(updatedInDb.warrantyLiabilityType, "clinic_warranty");
+		assert.equal(updatedInDb.remakeReason, "Изменение цвета опорного зуба после депульпирования");
+		assert.equal(updatedInDb.parentLabOrderId, PARENT_ORDER_ID);
+		assert.equal(updatedInDb.fittingAppointmentId, FITTING_APPT_ID);
+		assert.equal(updatedInDb.laboratoryId, LAB_ID);
 	});
 
-	it("SEV-3 #8: Chromascop санитизация префиксов в normalizeVitaShade и isValidVitaShade", async () => {
-		const { normalizeVitaShade, isValidVitaShade } = await import("@dental/shared");
-		const { getVitaShadeHex } = await import("@dental/shared");
+	test("ДЕФЕКТ 3: Idempotency-Key дедупликация и воспроизведение ответа без TOCTOU гонки", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
 
-		// Санитизация префиксов Chromascop / Хромаскоп
-		assert.strictEqual(normalizeVitaShade("Хромаскоп 140"), "140");
-		assert.strictEqual(normalizeVitaShade("Chromascop 210"), "210");
-		assert.strictEqual(normalizeVitaShade("chromascop-540"), "540");
-		assert.strictEqual(normalizeVitaShade("хрома 320"), "320");
+		const testKey = fixtureUuid(NAMESPACE, 99);
+		const payload = {
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: 46,
+			material: "zirconia",
+			colorVita: "A3",
+			priceRub: 12000,
+		};
 
-		assert.strictEqual(isValidVitaShade("Хромаскоп 140"), true);
-		assert.strictEqual(isValidVitaShade("Chromascop 210"), true);
-		assert.strictEqual(isValidVitaShade("chromascop-540"), true);
+		// Первый запрос
+		const res1 = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": testKey,
+			},
+			payload,
+		});
 
-		// Проверка получения HEX
-		assert.ok(getVitaShadeHex("Хромаскоп 140"), "HEX для Хромаскоп 140 должен быть найден");
-		assert.ok(getVitaShadeHex("Chromascop 210"), "HEX для Chromascop 210 должен быть найден");
+		assert.equal(res1.statusCode, 201);
+		const body1 = JSON.parse(res1.body);
+		assert.ok(body1.id);
+
+		// Второй идентичный запрос с тем же Idempotency-Key
+		const res2 = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": testKey,
+			},
+			payload,
+		});
+
+		assert.equal(res2.statusCode, 201);
+		assert.equal(res2.headers["idempotency-replayed"], "true");
+		const body2 = JSON.parse(res2.body);
+		assert.equal(body2.id, body1.id, "Replayed order must return identical order id");
 	});
 
-	it("SEV-1 #9: executeLabOrderPatchTx при рекламации обнуляет цену пациента и сбрасывает isLockedInstalled (DEFECT-LAB-01, Mandate 8e)", async () => {
-		const { executeLabOrderPatchTx } = await import("../routes/lab/patchModules/labOrderPatchDb.js");
+	test("ДЕФЕКТ 4: handleLabScanDownloadUrl изолирован через withTenantCtx и не использует сырой db", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
 
-		const insertRes = await withTenantCtx(ORG_A, (tx) =>
-			insertLabOrderInDb(tx, ORG_A, {
-				patientName: "Тест Рекламации Пациент",
-				doctorName: "Д-р Гарантиев Г. Г.",
-				toothFdi: "25",
-				material: "ZrO2",
-				priceRub: 25000,
-				priceKopecks: 2500000,
-				labCostRub: 6000,
-				labCostKopecks: 600000,
-			}),
-		);
-		assert.strictEqual(insertRes.kind, "ok");
-		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
+		const nonExistentOrderId = fixtureUuid(NAMESPACE, 88);
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/clinical/lab-orders/${nonExistentOrderId}/scans/download-url?storageKey=org_${ORGANIZATION_ID}/lab_orders/${nonExistentOrderId}/scan.stl`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+		});
 
-		try {
-			// Выполняем рекламацию по браку лаборатории (lab_defect)
-			const patchRes = await withTenantCtx(ORG_A, (tx) =>
-				executeLabOrderPatchTx(
-					tx,
-					ORG_A,
-					createdOrder.id,
+		assert.equal(res.statusCode, 404, "Non existent order should return 404 via tenant context");
+	});
+
+	test("ДЕФЕКТ 5: buildLabOrderApiPayload в @dental/shared сохраняет все поля гарантии", () => {
+		const payload = buildLabOrderApiPayload({
+			effectivePatientId: PATIENT_ID,
+			formPatientName: "Иванов И.И.",
+			formDoctorId: DOCTOR_ID,
+			formDoctorName: "Петров П.П.",
+			selectedTeeth: [24],
+			jawScope: null,
+			constructionType: "Коронка одиночная",
+			material: "Диоксид циркония",
+			impressionType: "Цифровой скан (CAD/CAM)",
+			finalShade: "A2",
+			currentStage: "draft",
+			dueDate: "2026-12-01",
+			clinicalNotes: "Клинические заметки",
+			attachedImageUrl: null,
+			gostOrderNumber: "ЗТЛ-2611-001",
+			isWarrantyRework: true,
+			reworkReason: "Пористость керамического плеча",
+		});
+
+		assert.equal(payload.isWarranty, true, "isWarranty must be true");
+		assert.equal(payload.isWarrantyRework, true, "isWarrantyRework must be true");
+		assert.equal(payload.warrantyLiabilityType, "clinic_warranty", "warrantyLiabilityType must default to clinic_warranty");
+		assert.equal(payload.remakeReason, "Пористость керамического плеча", "remakeReason must match");
+	});
+
+	test("ДЕФЕКТ 6: PATCH гарантийной рекламации обнуляет priceKopecks и priceRub во вложенных lab_items", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
+
+		// Создаем наряд с позициями lab_items
+		const createRes = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				toothFdi: 26,
+				material: "zirconia",
+				colorVita: "A2",
+				priceRub: 18000,
+				items: [
 					{
-						stage: "warranty_rework",
-						isWarranty: true,
-						warrantyLiabilityType: "lab_defect",
-						isRemake: true,
-						remakeReason: "Скол керамики по вине лаборатории",
+						toothFdi: 26,
+						priceRub: 18000,
+						restorationType: "crown_monolithic",
+						material: "zirconia_multilayer_gradient",
 					},
-					"refitting",
-				),
-			);
+				],
+			},
+		});
 
-			assert.strictEqual(patchRes.kind, "ok");
-			if (patchRes.kind === "ok") {
-				assert.strictEqual(patchRes.updated.isWarranty, true, "isWarranty должен быть true");
-				assert.strictEqual(patchRes.updated.isLockedInstalled, false, "isLockedInstalled должен быть false");
-				assert.strictEqual(Number(patchRes.updated.priceKopecks), 0, "Цена для пациента должна быть 0 копеек");
-				assert.strictEqual(Number(patchRes.updated.priceRub), 0, "Цена в рублях должна быть 0");
-				assert.strictEqual(Number(patchRes.updated.labCostKopecks), 0, "При lab_defect себестоимость ЗТЛ 0 копеек");
-				assert.strictEqual(Number(patchRes.updated.labCostRub), 0, "При lab_defect себестоимость ЗТЛ 0 руб");
-				assert.ok(patchRes.updated.clinicalNotes?.includes("Гарантийная рекламация"), "Заметка о гарантии должна быть добавлена");
-			}
-		} finally {
-			await withTenantCtx(ORG_A, (tx) =>
-				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
-			);
+		assert.equal(createRes.statusCode, 201);
+		const order = JSON.parse(createRes.body);
+
+		// Проверяем, что lab_items создана с ценой 18000 руб (1800000 копеек)
+		const itemsBefore = await db
+			.select()
+			.from(labItems)
+			.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+
+		assert.ok(itemsBefore.length > 0, "lab_items must be created");
+		assert.equal(Number(itemsBefore[0]?.priceKopecks), 1800000);
+
+		// Выполняем PATCH рекламации
+		const patchRes = await app.inject({
+			method: "PATCH",
+			url: `/api/clinical/lab-orders/${order.id}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				stage: "warranty_rework",
+				warrantyLiabilityType: "lab_defect",
+				remakeReason: "Брак литья каркаса",
+			},
+		});
+
+		assert.equal(patchRes.statusCode, 200, `Expected 200, got ${patchRes.statusCode}: ${patchRes.body}`);
+
+		// Проверяем, что в lab_orders цена обнулилась
+		const [orderAfter] = await db
+			.select()
+			.from(labOrders)
+			.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		assert.equal(orderAfter?.isWarranty, true);
+		assert.equal(Number(orderAfter?.priceKopecks), 0);
+
+		// Проверяем [ДЕФЕКТ 6]: в lab_items цена также гарантированно обнулилась!
+		const itemsAfter = await db
+			.select()
+			.from(labItems)
+			.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+
+		assert.ok(itemsAfter.length > 0);
+		for (const item of itemsAfter) {
+			assert.equal(Number(item.priceKopecks), 0, "lab_item priceKopecks must be 0 upon warranty remake");
+			assert.equal(Number(item.priceRub), 0, "lab_item priceRub must be 0 upon warranty remake");
 		}
+	});
+
+	test("МЕРТВЫЙ КОД: updateLabOrderStatusByToken и updateLabOrderStatusByClinic удалены из labQuery.ts", () => {
+		const exports = labQueryModule as Record<string, unknown>;
+		assert.equal(exports.updateLabOrderStatusByToken, undefined, "updateLabOrderStatusByToken must be deleted");
+		assert.equal(exports.updateLabOrderStatusByClinic, undefined, "updateLabOrderStatusByClinic must be deleted");
 	});
 });

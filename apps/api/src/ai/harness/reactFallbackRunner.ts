@@ -46,6 +46,7 @@ export async function runDeterministicClinicalFallback(
 	const promptText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content : "";
 
 	const fallbackVerdict = `[СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК DENTE — АВТОНОМНЫЙ РЕЖИМ]\nШлюз облачной модели временно недоступен (${safeErrMsg}). Локальный контур клиники активен.\nДля работы у кресла используйте быстрые голосовые команды, выбор из прейскуранта или прямое редактирование зубной формулы. Все данные сохраняются в локальной БД PostgreSQL 18.`;
+	let fallbackVerdictText = fallbackVerdict;
 
 	onEvent?.({
 		type: "reasoning",
@@ -147,24 +148,6 @@ export async function runDeterministicClinicalFallback(
 
 				if (items.length > 0 && items[0]) {
 					matchedService = items[0];
-				} else {
-					const firstActive = await activeDb
-						.select({
-							title: serviceCatalogItems.title,
-							priceRub: serviceCatalogItems.priceRub,
-							code: serviceCatalogItems.code,
-						})
-						.from(serviceCatalogItems)
-						.where(
-							and(
-								eq(serviceCatalogItems.organizationId, orgId),
-								eq(serviceCatalogItems.isActive, true),
-							),
-						)
-						.limit(1);
-					if (firstActive.length > 0 && firstActive[0]) {
-						matchedService = firstActive[0];
-					}
 				}
 			} catch (dbErr) {
 				aiLogger.warn("reactFallbackRunner", "Price list query error", dbErr);
@@ -174,6 +157,7 @@ export async function runDeterministicClinicalFallback(
 		if (!matchedService) {
 			const noServiceMsg = "[ПРЕЙСКУРАНТ НЕ НАЙДЕН] Не удалось автоматически подобрать услугу из прейскуранта клиники для формирования счёта в автономном режиме. Пожалуйста, выберите услугу из прейскуранта вручную.";
 			onEvent?.({ type: "reasoning", text: noServiceMsg });
+			fallbackVerdictText = `${fallbackVerdict}\n\n${noServiceMsg}`;
 		} else {
 			const isConfirmAll = trustLevel === "confirm_all";
 			const priceKopecks = rublesToKopecks(Number(matchedService.priceRub));
@@ -221,10 +205,10 @@ export async function runDeterministicClinicalFallback(
 		}
 	}
 
-	onEvent?.({ type: "token", text: fallbackVerdict });
+	onEvent?.({ type: "token", text: fallbackVerdictText });
 	onEvent?.({
 		type: "done",
-		text: fallbackVerdict,
+		text: fallbackVerdictText,
 		toolCallsCount: recordedToolCalls.length,
 		iterations: 1,
 		compacted: hasCompacted,
@@ -232,15 +216,15 @@ export async function runDeterministicClinicalFallback(
 	});
 
 	return {
-		text: fallbackVerdict,
+		text: fallbackVerdictText,
 		toolCalls: recordedToolCalls,
 		iterations: 1,
 		compacted: hasCompacted,
 		summary: currentSummary || undefined,
 		tokenUsage: {
 			promptTokens: 0,
-			completionTokens: estimateTextTokens(fallbackVerdict),
-			totalTokens: estimateTextTokens(fallbackVerdict),
+			completionTokens: estimateTextTokens(fallbackVerdictText),
+			totalTokens: estimateTextTokens(fallbackVerdictText),
 		},
 		plan: activePlan,
 	};

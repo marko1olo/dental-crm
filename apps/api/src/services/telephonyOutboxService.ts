@@ -433,8 +433,35 @@ export class TelephonyOutboxService {
 
 			const matchedPatient = searchPatient[0] || null;
 
-			// 2. Handle RINGING Event: Lead Creation & WebSocket Incoming Alert
+			// 2. Handle RINGING Event: WebSocket Incoming Alert (Zero spam leads on ringing)
 			if (event === "ringing") {
+				const patientDisplayName =
+					matchedPatient?.fullName?.trim() ||
+					"Неизвестный номер";
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "TELEPHONY_INCOMING_CALL",
+					payload: {
+						phone: callerPhone.e164,
+						patientId: matchedPatient?.id || null,
+						patientName: patientDisplayName,
+						callId: callId || null,
+						provider: detectedProvider,
+						timestamp: new Date().toISOString(),
+						virtualNumber: virtualTrunkNumber || null,
+						utmSource: utmSource || null,
+						utmCampaign: utmCampaign || null,
+						utmMedium: utmMedium || null,
+						advertisingChannel: detectedMarketingChannel,
+						leadId: null,
+					},
+				});
+
+				return;
+			}
+
+			// 2b. Handle ANSWERED Event: Create CRM Lead on answered call (Mandates 8e, 8n)
+			if (event === "answered") {
 				let matchedLead: typeof crmLeads.$inferSelect | null = null;
 
 				const utmDetailStr = [
@@ -452,6 +479,8 @@ export class TelephonyOutboxService {
 							sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${organizationId}:${callerPhone.national10}`}))`,
 						);
 
+						const calculatedIdempotencyKey = `telephony:lead:answered:${organizationId}:${callId || callerPhone.national10}`;
+
 						const existingLeads = await tx
 							.select()
 							.from(crmLeads)
@@ -461,6 +490,8 @@ export class TelephonyOutboxService {
 									or(
 										eq(crmLeads.phone, callerPhone.e164),
 										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										callId ? sql`${crmLeads.metadata}->>'callId' = ${callId}` : sql`false`,
+										sql`${crmLeads.metadata}->>'idempotencyKey' = ${calculatedIdempotencyKey}`,
 										sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
 									),
 								),
@@ -480,9 +511,19 @@ export class TelephonyOutboxService {
 								phone: callerPhone.e164,
 								source: detectedMarketingChannel,
 								status: "new",
-								notes: `Автоматический лид из входящего звонка ВАТС (${detectedProvider}). Канал: ${detectedChannelLabel}.${virtualTrunkNumber ? ` Номер ВАТС: ${virtualTrunkNumber}.` : ""}${utmDetailStr ? ` UTM: [${utmDetailStr}].` : ""} ${callId ? `call_id: ${callId}` : "прямой вызов"}`,
+								notes: `Автоматический лид из принятого входящего звонка ВАТС (${detectedProvider}). Канал: ${detectedChannelLabel}.${virtualTrunkNumber ? ` Номер ВАТС: ${virtualTrunkNumber}.` : ""}${utmDetailStr ? ` UTM: [${utmDetailStr}].` : ""} ${callId ? `call_id: ${callId}` : "прямой вызов"}`,
 								audioRecordUrl: recordingUrl || null,
 								transcriptionSnippet: transcriptionSnippet || null,
+								metadata: {
+									idempotencyKey: calculatedIdempotencyKey,
+									utm_source: utmSource || null,
+									utmCampaign: utmCampaign || null,
+									utmMedium: utmMedium || null,
+									advertisingChannel: detectedMarketingChannel,
+									channelLabel: detectedChannelLabel,
+									virtualNumber: virtualTrunkNumber || null,
+									callId: callId || null,
+								},
 								stageEnteredAt: new Date(),
 								priority: "normal",
 							})
@@ -490,29 +531,6 @@ export class TelephonyOutboxService {
 						return insertedLeads[0] ?? null;
 					});
 				}
-
-				const patientDisplayName =
-					matchedPatient?.fullName?.trim() ||
-					matchedLead?.patientName?.trim() ||
-					"Неизвестный номер";
-
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "TELEPHONY_INCOMING_CALL",
-					payload: {
-						phone: callerPhone.e164,
-						patientId: matchedPatient?.id || null,
-						patientName: patientDisplayName,
-						callId: callId || null,
-						provider: detectedProvider,
-						timestamp: new Date().toISOString(),
-						virtualNumber: virtualTrunkNumber || null,
-						utmSource: utmSource || null,
-						utmCampaign: utmCampaign || null,
-						utmMedium: utmMedium || null,
-						advertisingChannel: detectedMarketingChannel,
-						leadId: matchedLead?.id || null,
-					},
-				});
 
 				return;
 			}
@@ -632,12 +650,22 @@ export class TelephonyOutboxService {
 			queueName: "communications",
 			status: "pending",
 		});
+		const inFlight = await TaskQueueService.countJobs({
+			...(organizationId ? { organizationId } : {}),
+			queueName: "communications",
+			status: "processing",
+		});
+		const completed = await TaskQueueService.countJobs({
+			...(organizationId ? { organizationId } : {}),
+			queueName: "communications",
+			status: "completed",
+		});
 		const deadLetter = await TaskQueueService.countJobs({
 			...(organizationId ? { organizationId } : {}),
 			queueName: "communications",
 			status: "dead_letter",
 		});
-		return { pending, inFlight: 0, completed: 0, deadLetter };
+		return { pending, inFlight, completed, deadLetter };
 	}
 }
 

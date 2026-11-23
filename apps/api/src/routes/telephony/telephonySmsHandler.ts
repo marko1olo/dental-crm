@@ -65,7 +65,7 @@ export async function telephonySmsWebhookHandler(
 				.where(
 					and(
 						eq(communicationEvents.organizationId, orgId),
-						ilike(communicationEvents.message, `%${smsId}%`),
+						eq(communicationEvents.providerCallId, smsId),
 					),
 				)
 				.limit(1);
@@ -132,12 +132,13 @@ export async function telephonySmsWebhookHandler(
 
 				await tx.insert(communicationEvents).values({
 					organizationId: orgId,
+					providerCallId: smsId || null,
 					patientId: patientId || null,
 					callerPhone: callerPhone.e164,
 					channel: "sms",
 					direction: "inbound",
 					status: "delivered",
-					message: smsId ? `${messageText} [sms_id: ${smsId}]` : messageText,
+					message: messageText,
 					idempotencyKey,
 				});
 			});

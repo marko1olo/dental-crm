@@ -47,6 +47,7 @@ export function validateFdiToothNotation(value: string | null | undefined): bool
 export const toothFdiSchema = z
 	.union([
 		z.string().trim(),
+		z.number().transform(String),
 		z.array(z.union([z.string(), z.number()])).transform((arr) => arr.map(String).join(",")),
 	])
 	.refine(validateFdiToothNotation, {

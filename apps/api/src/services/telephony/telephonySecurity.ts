@@ -499,12 +499,16 @@ export async function validateSsrfSafeRecordingUrl(
 			}
 		}
 	} catch (_dnsErr) {
+		const isTestEnv =
+			process.env.NODE_ENV === "test" ||
+			Boolean(process.env.NODE_TEST_CONTEXT) ||
+			Boolean(process.env.npm_lifecycle_event?.includes("test"));
 		if (
-			hostname.endsWith(".example.com") ||
-			hostname === "example.com" ||
-			hostname.endsWith(".test") ||
-			hostname.endsWith(".example") ||
-			process.env.NODE_ENV === "test"
+			isTestEnv &&
+			(hostname.endsWith(".example.com") ||
+				hostname === "example.com" ||
+				hostname.endsWith(".test") ||
+				hostname.endsWith(".example"))
 		) {
 			return { valid: true, parsedUrl };
 		}

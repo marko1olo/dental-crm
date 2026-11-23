@@ -58,7 +58,7 @@ export const renderTemplateRouteSchema = z.object({
 	patientId: z.string().uuid().optional(),
 	appointmentId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
-	variables: z.record(z.any()).optional(),
+	variables: z.record(z.string(), z.union([z.string(), z.number(), z.null()]).optional()).optional(),
 	allowPreviewFallback: z.boolean().default(true),
 	violationHandling: z.enum(["block", "strip"]).default("block"),
 });

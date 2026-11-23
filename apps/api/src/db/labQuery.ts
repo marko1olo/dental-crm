@@ -86,27 +86,6 @@ export const LAB_ORDER_TECHNICIAN_TRANSITIONS: Readonly<
 	rejected_remake: ["draft", "sent"],
 } as const;
 
-/** Аудит-метки для статусов, которые требуют временну́ю отметку. */
-function auditTimestampForStatus(
-	status: LabOrderStatus,
-	now: Date,
-): Partial<{
-	sentAt: Date;
-	completedAt: Date;
-	cancelledAt: Date;
-}> {
-	switch (status) {
-		case "sent":
-			return { sentAt: now };
-		case "completed":
-			return { completedAt: now };
-		case "cancelled":
-			return { cancelledAt: now };
-		default:
-			return {};
-	}
-}
-
 /**
  * Публичный портал лаборатории: читает заказ по `secure_token`.
  * Не возвращает `organizationId` в публичном ответе, но включает его
@@ -139,67 +118,6 @@ export async function getLabOrderByToken(token: string) {
 		)
 		.where(eq(labOrders.secureToken, token))
 		.limit(1);
-
-	return result[0] ?? null;
-}
-
-/**
- * Обновление статуса через портал техника.
- *
- * БЫЛО: `WHERE secure_token = ?` — без `organizationId`.
- * СТАЛО: JOIN гарантирует принадлежность заказа к клинике владельца токена
- * через sub-select — но токен `secure_token` уже уникален глобально, поэтому
- * мы вернули organizationId из getLabOrderByToken и передаём его сюда для
- * дополнительной изоляции плюс аудит-меток.
- *
- * Возвращает `null`, если заказ не найден, уже не принадлежит клинике, или
- * переход нарушил машину состояний (обработчик маршрута даст 409).
- */
-export async function updateLabOrderStatusByToken(
-	token: string,
-	organizationId: string,
-	newStatus: LabOrderStatus,
-): Promise<(typeof labOrders.$inferSelect) | null> {
-	const now = new Date();
-	const result = await db
-		.update(labOrders)
-		.set({
-			status: newStatus,
-			...auditTimestampForStatus(newStatus, now),
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(labOrders.secureToken, token),
-				eq(labOrders.organizationId, organizationId),
-			),
-		)
-		.returning();
-
-	return result[0] ?? null;
-}
-
-/**
- * Обновление статуса клиникой (staff / admin) по `id` заказа.
- * Используется в `PUT /api/clinical/lab-orders/:id`.
- */
-export async function updateLabOrderStatusByClinic(
-	id: string,
-	organizationId: string,
-	newStatus: LabOrderStatus,
-): Promise<(typeof labOrders.$inferSelect) | null> {
-	const now = new Date();
-	const result = await db
-		.update(labOrders)
-		.set({
-			status: newStatus,
-			...auditTimestampForStatus(newStatus, now),
-			updatedAt: now,
-		})
-		.where(
-			and(eq(labOrders.id, id), eq(labOrders.organizationId, organizationId)),
-		)
-		.returning();
 
 	return result[0] ?? null;
 }

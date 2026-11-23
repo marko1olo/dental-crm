@@ -288,6 +288,11 @@ export async function executeLabOrderPatchTx(
 			updateValues.labCostKopecks = 0;
 			updateValues.labCostRub = 0;
 		}
+		// [ДЕФЕКТ 6]: Обнуление lab_items при рекламации
+		await tx
+			.update(labItems)
+			.set({ priceKopecks: 0, priceRub: "0.00" })
+			.where(and(eq(labItems.labOrderId, id), eq(labItems.organizationId, orgId)));
 		const liabilityLabel = body.warrantyLiabilityType === "lab_defect"
 			? "Брак лаборатории (0 ₽ ЗТЛ, 0 ₽ пациенту)"
 			: "Гарантия клиники (оплата ЗТЛ клиникой, 0 ₽ пациенту)";

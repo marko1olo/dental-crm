@@ -35,6 +35,16 @@ import { VadDetector } from "./vadDetector";
 export class UnifiedAudioClient {
 	private static instance: UnifiedAudioClient | null = null;
 
+	public static hasInstance(): boolean {
+		return Boolean(UnifiedAudioClient.instance && !UnifiedAudioClient.instance.isDisposed);
+	}
+
+	public static getActiveInstance(): UnifiedAudioClient | null {
+		return UnifiedAudioClient.instance && !UnifiedAudioClient.instance.isDisposed
+			? UnifiedAudioClient.instance
+			: null;
+	}
+
 	public static getInstance(options?: UnifiedAudioClientOptions): UnifiedAudioClient {
 		if (!UnifiedAudioClient.instance || UnifiedAudioClient.instance.isDisposed) {
 			UnifiedAudioClient.instance = new UnifiedAudioClient({
@@ -424,4 +434,48 @@ export class UnifiedAudioClient {
 	public emitOfflineSync(syncedCount: number, badgeMessage: string): void {
 		for (const listener of this.listeners) listener.onOfflineSync?.(syncedCount, badgeMessage);
 	}
+}
+
+export interface UnifiedAudioClientStatus {
+	mode: UnifiedAudioMode;
+	state: UnifiedAudioState;
+	isListening: boolean;
+	hasBrowserSpeech: boolean;
+	providerLabel: string;
+}
+
+export function getUnifiedAudioClientStatus(
+	client?: UnifiedAudioClient | null | undefined,
+): UnifiedAudioClientStatus {
+	const c = client ?? UnifiedAudioClient.getActiveInstance();
+	const hasBrowserSpeech =
+		typeof window !== "undefined" &&
+		("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+	if (!c) {
+		return {
+			mode: hasBrowserSpeech ? "browser_speech" : "gemini_live",
+			state: "idle",
+			isListening: false,
+			hasBrowserSpeech,
+			providerLabel: hasBrowserSpeech ? "Web Speech API" : "Локальный шаблонный ввод",
+		};
+	}
+
+	const mode = c.getMode();
+	const state = c.getState();
+	let providerLabel = "Google Gemini Live";
+	if (mode === "server_whisper") {
+		providerLabel = "Серверный Whisper";
+	} else if (mode === "browser_speech") {
+		providerLabel = hasBrowserSpeech ? "Web Speech API" : "Локальный шаблонный ввод";
+	}
+
+	return {
+		mode,
+		state,
+		isListening: state === "listening",
+		hasBrowserSpeech,
+		providerLabel,
+	};
 }

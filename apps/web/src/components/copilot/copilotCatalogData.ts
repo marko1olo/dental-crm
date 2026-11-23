@@ -4,6 +4,7 @@
  */
 
 import type { SuggestionCategory } from "./types/proactiveHitLTypes";
+import { getUnifiedAudioClientStatus, type UnifiedAudioClient } from "../../services/voice";
 
 export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "mobile_tablet" | "both" | "all";
 
@@ -289,13 +290,17 @@ function isHealthPayloadStructure(payload: unknown): payload is HealthPayloadStr
 }
 
 /** Честная проверка статуса голосовых и ИИ-движков (Zero Fake) */
-export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown>): SpeechEngineHealthReport {
+export function inspectSpeechEngineHealth(
+  healthPayload?: Record<string, unknown> | undefined,
+  audioClient?: UnifiedAudioClient | null | undefined,
+): SpeechEngineHealthReport {
+  const audioStatus = getUnifiedAudioClientStatus(audioClient);
   const speechWin = typeof window !== "undefined" ? (window as SpeechRecognitionWindow) : undefined;
   const hasBrowserSpeech = Boolean(speechWin?.SpeechRecognition || speechWin?.webkitSpeechRecognition);
   const healthObj = isHealthPayloadStructure(healthPayload) ? healthPayload.health : null;
 
   let hasCloudOperational = false;
-  let activeProvider = "Web Speech API (Browser)";
+  let activeProvider = audioStatus.providerLabel;
 
   if (healthObj) {
     for (const [key, val] of Object.entries(healthObj)) {
@@ -323,7 +328,7 @@ export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown
     status: hasBrowserSpeech ? "operational" : "degraded",
     label: hasBrowserSpeech ? "Web Speech API (Нативный)" : "Голосовой ввод недоступен",
     isCloudActive: false,
-    activeProvider: hasBrowserSpeech ? "WebkitSpeechRecognition" : "Локальный шаблонный ввод",
+    activeProvider: hasBrowserSpeech ? audioStatus.providerLabel : "Локальный шаблонный ввод",
     details: hasBrowserSpeech
       ? "Автономное распознавание речи прямо в браузере (ноль задержек, офлайн-режим)"
       : "Служба распознавания речи не поддерживается браузером",

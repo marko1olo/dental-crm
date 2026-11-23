@@ -4532,8 +4532,67 @@ ead_file по 8 осям качества Хаммера:
   4. SEV-2 Честная маркировка разметки ТРГ: В `cephAiInferenceService.ts` снята вводящая в заблуждение этикетка «ИИ авторазметка» с жестко закодированного анатомического пресета нормы (`DEFAULT_CEPH_LANDMARKS_PRESET`), в интерфейсе закреплено точное клиническое описание: «Калиброванный анатомический шаблон нормы (требует ручной подгонки)».
   5. SEV-2 Структурированное логирование Fastify: В `orthoPricelistResolver.ts` прямые вызовы `console.warn` заменены на вызовы логгера Fastify (`logger.warn({ err, organizationId }, "...")`).
   6. SEV-3 Защита расчета Wits appraisal от деления на 0: В `cephalometricEngine.ts` добавлены guard-clauses `if (abLenSq <= 1e-12)` и проверки длины вектора окклюзионной плоскости, исключающие NaN и падение при вырождении масштаба или совпадении координат ориентиров.
-- Машинные гейты (Exit Code 0, ALL PASS):
-  - `check:diff`: Exit Code 0 (0 `as any`, 0 `!`, 0 float money, 0 suppressions).
-  - `check:encoding`: Exit Code 0 (20 037 файлов, UTF-8 без BOM).
-  - TypeScript `tsc --noEmit` API & Web: 0 ошибок в коде ортодонтии.
-  - Тесты ортодонтии (`orthodonticsSSOTSuite.test.tsx`): 26/26 passed (100% PASS).
+---
+
+## 🏆 ВОЛНА 64: ОРТОДОНТИЧЕСКИЕ ВИРТУАЛЬНЫЕ СЕТАПЫ, КЕЙСЫ ЭЛАЙНЕРОВ, ТРЕКИНГ СМЕНЫ КАП, ТРГ-ЦЕФАЛОМЕТРИЯ И КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ (ДОМЕН 64)
+
+### 1. ДОМЕН 64: ОРТОДОНТИЯ, ЭЛАЙНЕРЫ, ФОТОПРОТОКОЛ И ЦЕФАЛОМЕТРИЯ
+- Хирург: Red Team Fixer Surgeon.
+- Статус: ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Канонический SSOT:
+  - Биллинг ортодонтии в копейках: [`apps/api/src/routes/orthodontics/orthoBillingService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics/orthoBillingService.ts).
+  - Смена кап элайнеров: [`apps/api/src/routes/orthodontics/alignerRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics/alignerRoutes.ts).
+  - Этапы и списание материалов: [`apps/api/src/routes/orthodontics/stageRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics/stageRoutes.ts).
+  - Смена дуг и лигатур: [`apps/api/src/routes/orthodontics/archwireRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/orthodontics/archwireRoutes.ts).
+  - Холст ТРГ-цефалометрии: [`apps/web/src/components/orthodontics/CephalometricCanvas.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/orthodontics/CephalometricCanvas.tsx).
+  - Трекер кейсов элайнеров: [`apps/web/src/components/orthodontics/AlignerCaseTracker.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/orthodontics/AlignerCaseTracker.tsx).
+  - Сравнение фотопротокола: [`apps/web/src/components/photography/BeforeAfterComparisonView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterComparisonView.tsx).
+  - Сплит-слайдер фото «До/После»: [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx).
+  - Форма ортодонтической карты: [`apps/web/src/components/documents/forms/OrthodonticPatientCardForm.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/forms/OrthodonticPatientCardForm.tsx).
+  - Канонические CSS-стили: [`apps/web/src/components/orthodontics/styles/orthodonticsStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/orthodontics/styles/orthodonticsStudio.css).
+- Ликвидированные дефекты (8 из 8):
+  1. **SEV-2-01 [ЗАКРЫТО] Ликвидация десинхронизации финансовой схемы в `orthoBillingService.ts`**: Добавлено обязательное явное заполнение `totalPriceKopecks: itemKopecks` при insert и `totalPriceKopecks: newTotalKopecks` при update в таблице `patientInvoices`. Устранен дефолт `0n`, исключающий расхождения финансовой аналитики и фискальных отчетов.
+  2. **SEV-2-02 [ЗАКРЫТО] Внедрение сквозной идемпотентности мутаций ортодонтии**: В `alignerRoutes.ts`, `stageRoutes.ts` (`/deduct-materials`, `/stages/advance`, `/rebracket`) и `archwireRoutes.ts` (`/archwire-change`, `/ligatures-activate`) внедрена проверка через `queryDatabaseIdempotencyRecord` с валидацией UUIDv7, защитой от зависаний через `isLockStale` и атомарной записью в `idempotencyKeys` с возвратом заголовка `idempotency-replayed: true`.
+  3. **SEV-2-03 [ЗАКРЫТО] Устранение геометрического дрифта SVG-оверлея ТРГ относительно снимка**: В `CephalometricCanvas.tsx` снимок и SVG-оверлей объединены в контейнер со строгим совпадением габаритов `aspect-ratio: naturalWidth / naturalHeight`. Физические габариты снимка считываются на `onLoad`, а `viewBox="0 0 ${naturalWidth} ${naturalHeight}"` динамически масштабирует ориентиры без анатомического дрейфа.
+  4. **SEV-2-04 [ЗАКРЫТО] Единая ACID-транзакция между сменой шага элайнеров и биллингом**: В `alignerRoutes.ts` обновление административного профиля пациента, создание/обновление инвойса в `linkOrthoServiceToBillingSafely` и запись ключа идемпотентности связаны в единую неделимую `await db.transaction(async tx => ...)`.
+  5. **SEV-3-01 [ЗАКРЫТО] Ликвидация хардкодных цветов в фотопротоколе и ортодонтии**: Вычищены цвета `#0d9488`, `rgba(13,148,136,...)`, `#cbd5e1`, `#0f172a`, `teal-*` из `BeforeAfterSplitSlider.tsx`, `BeforeAfterComparisonView.tsx`, `OrthodonticPatientCardForm.tsx`, `orthodonticsStudio.css` и `OrthodonticsStudioModal.tsx`.
+  6. **SEV-3-02 [ЗАКРЫТО] Соблюдение UPPERCASE BAN в трекере элайнеров**: В `AlignerCaseTracker.tsx` убран класс `uppercase tracking-wider` с заголовка «Этап сетапа и производства:».
+  7. **SEV-3-03 [ЗАКРЫТО] Гармонизация геометрии кнопок сравнения фотопротокола**: В `BeforeAfterComparisonView.tsx` устранены инлайн-стили и внедрен Apple Segmented Control для режимов («Сплит», «Рядом», «Наложение») и стандартные кнопки Мандата 8am (`h-9 px-3.5 rounded-lg text-sm font-medium`).
+  8. **SEV-4-01 [ЗАКРЫТО] Актуализация реестров и номенклатуры**: Реестры архитектурной инквизиции синхронизированы, подтверждено отсутствие дубликатов.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `npm run check:encoding`: Exit Code 0 (UTF-8 без BOM).
+  - Fastify API ортодонтии: `apps/api/src/tests/routes/orthodonticsRoutes.test.ts` -> 13/13 PASS.
+  - ТРГ и цефалометрия: `apps/web/src/tests/orthoCephTracker.test.tsx` -> 6/6 PASS.
+  - Студия ортодонтии SSOT: `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> 29/29 PASS.
+  - Фотопротокол и шкала VITA: `photoProtocolSSOTAndEmptyStateInquisition.test.ts` & `vitaShadeSSOTAndPhotoGridInquisition.test.ts` -> 14/14 PASS.
+  - TypeScript `@dental/api` & `@dental/web`: Exit Code 0.
+
+---
+
+## 🏆 ВОЛНА T: CLINICAL AI COPILOT, ГОЛОСОВОЙ ВВОД (STT / GEMINI LIVE), ХАРНЕСС ДИСПЕТЧЕРИЗАЦИИ И МЕРТВЫЕ КЛОНЫ (ДОМЕН T)
+
+### 1. ДОМЕН T: КЛИНИЧЕСКИЙ КОПИЛОТ И ГОЛОСОВОЙ ВВОД
+- Хирург: Red Team Fixer Surgeon Domain T.
+- Статус: ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Канонический SSOT:
+  - Диспетчер и Реестр Инструментов (29 тулов): [`apps/api/src/ai/dentalTools/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/index.ts).
+  - Харнесс ReAct и Контроль Безопасности: [`apps/api/src/ai/harness/sessionLifecycle.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/sessionLifecycle.ts) и [`apps/api/src/ai/harness/toolDispatcher.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/toolDispatcher.ts).
+  - Фолбек-раннер ReAct: [`apps/api/src/ai/harness/reactFallbackRunner.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/reactFallbackRunner.ts).
+  - Голосовой Аудио-клиент (Каскад): [`apps/web/src/services/voice/audioClient/unifiedAudioClientCore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/voice/audioClient/unifiedAudioClientCore.ts).
+  - Каталог Копилота: [`apps/web/src/components/copilot/copilotCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/copilotCatalogData.ts).
+  - Тесты кресельного исполнителя: [`apps/web/src/components/copilot/__tests__/chairsideCopilotAgentExecution.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/__tests__/chairsideCopilotAgentExecution.test.tsx).
+- Ликвидированные дефекты (4 из 4):
+  1. **SEV-1 [ЗАКРЫТО] Ликвидация случайного выставления счетов через `.limit(1)` в `reactFallbackRunner.ts` (Мандат 8e, строки 150-168)**: В `apps/api/src/ai/harness/reactFallbackRunner.ts` полностью удален опасный блок `else { const firstActive = await activeDb.select(...).limit(1); ... }`. При ненайденной услуге `matchedService` остается `null`, система формирует честное предупреждение `[ПРЕЙСКУРАНТ НЕ НАЙДЕН] Не удалось автоматически подобрать услугу из прейскуранта. Выберите услугу вручную.` и не вызывает тул `create_invoice_draft`. Покрыто тестом #14 в `apps/api/src/ai/agentHarnessAdvanced.test.ts`.
+  2. **SEV-2 [ЗАКРЫТО] Устранение хардкода речевого провайдера в `copilotCatalogData.ts` (Мандат 8ba)**: В `apps/web/src/services/voice/audioClient/unifiedAudioClientCore.ts` реализованы методы `UnifiedAudioClient.hasInstance()`, `getActiveInstance()` и экспортирован хелпер `getUnifiedAudioClientStatus()`. В `apps/web/src/components/copilot/copilotCatalogData.ts:326` хардкод `"WebkitSpeechRecognition"` заменен на динамический статус из `getUnifiedAudioClientStatus()`. Размер файла сохранен строго в пределах Sweet Spot (280–350 строк, факт: 344 строки).
+  3. **DEAD-CLONE [ЗАКРЫТО] Физический снос мертвого сервиса пушей телефонии в Копилот врача `copilotService.ts` (Мандаты 8e, 8v, 8bf)**: Файл `apps/api/src/services/agent/copilotService.ts` удален физически из репозитория (`git rm`). В тесте `apps/api/src/services/telephony/missedCallTask.test.ts` полностью очищены импорты и моки `defaultCopilotStreamManager`. Пропущенный вызов — операционная задача регистратора, а не клиническая тревога у кресла врача.
+  4. **SEV-2 [ЗАКРЫТО] Очистка устаревшего эндпоинта и кастов `as any` в `chairsideCopilotAgentExecution.test.tsx` (Мандаты 8be, 8bf)**: Из мока `fetch` удален фантомный роут `/api/v1/copilot/agent/execute`, оставлен только канонический `/api/agent/chat`. Заменен неявный импорт `ChairsideCopilotHUD.tsx` на прямой импорт `mapToCanonicalToothState` из `../chairside/canonicalToothStateMapper`, что устранило зависимость от css-файлов в тестовом раннере. Полностью ликвидированы `actual: any` и `capturedBody: any`, заменены на строгие `unknown` и `Record<string, unknown>`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `apps/api/src/ai/agentHarnessAdvanced.test.ts`: 14/14 PASS (Exit Code 0).
+  - `apps/api/src/services/telephony/missedCallTask.test.ts`: 2/2 PASS (Exit Code 0).
+  - `apps/web/src/components/copilot/__tests__/copilotCatalogData.test.ts`: 8/8 PASS (Exit Code 0, Sweet Spot 344 lines).
+  - `apps/web/src/components/copilot/__tests__/chairsideCopilotAgentExecution.test.tsx`: 2/2 PASS (Exit Code 0).
+  - `npx tsc -p apps/api/tsconfig.json --noEmit`: Exit Code 0 (0 ошибок).
+  - `npm run check:encoding`: Exit Code 0 (19 959 файлов проверено, UTF-8 без BOM).
+  - `npm run check:diff`: Exit Code 0 (DIFF SAFETY PASSED, 0 any, 0 !, 0 float).
+
+

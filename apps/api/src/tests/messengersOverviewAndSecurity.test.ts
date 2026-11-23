@@ -10,7 +10,7 @@ import {
 	denteWhatsappBotConfigs,
 	organizations,
 } from "../db/schema.js";
-import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots.js";
+import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots/index.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import {
 	BotTokenVaultAuthenticationError,

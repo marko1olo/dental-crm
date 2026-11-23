@@ -621,3 +621,34 @@ test("13. runDeterministicClinicalFallback executes real tooth tool and register
 	assert.ok(events.some((e) => e.type === "confirmation_required"));
 });
 
+test("14. runDeterministicClinicalFallback: when service is not found in catalog, matchedService is null and returns [ПРЕЙСКУРАНТ НЕ НАЙДЕН] without random .limit(1)", async () => {
+	const events: AgentHarnessEvent[] = [];
+	const recordedToolCalls: Array<{ tool: string; args: Record<string, unknown>; result: unknown }> = [];
+	const params: AgentHarnessParams = {
+		sessionId: "test-sess-fallback-no-match",
+		messages: [{ role: "user", content: "Выстави счёт на процедуру ультра-несуществующая" }],
+		context: {
+			...dummyContext,
+			organizationId: "00000000-0000-0000-0000-000000000000",
+		},
+		trustLevel: "balanced",
+		onEvent: (evt) => {
+			events.push(evt);
+		},
+	};
+	const res = await runDeterministicClinicalFallback(
+		params,
+		"API keys exhausted",
+		recordedToolCalls,
+		undefined,
+		false,
+	);
+	assert.ok(res.text.includes("[ПРЕЙСКУРАНТ НЕ НАЙДЕН]"), "Must include [ПРЕЙСКУРАНТ НЕ НАЙДЕН] notice");
+	assert.strictEqual(
+		res.toolCalls.some((t) => t.tool === "create_invoice_draft"),
+		false,
+		"Must NOT create invoice draft for random service when no service matches",
+	);
+});
+
+

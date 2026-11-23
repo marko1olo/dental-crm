@@ -39,31 +39,6 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 			});
 		}
 		reply.header("Idempotency-Key", idempotencyKey);
-
-		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo)
-		const existingRecord = await withTenantCtx(orgId, async (tx) => {
-			const [rec] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-				.limit(1);
-			return rec ?? null;
-		});
-
-		if (existingRecord) {
-			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-			}
-			if (existingRecord.status === "in_flight") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция создания наряда ЗТЛ с данным Idempotency-Key уже выполняется.",
-				});
-			}
-		}
 	}
 
 	const identity = getRequestIdentity(request);
@@ -91,30 +66,83 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	const currentUserId = identity.userId ?? request.user?.id ?? null;
 
 	const result = await withTenantCtx(orgId, async (tx) => {
-		const insertRes = await insertLabOrderInDb(tx, orgId, data, currentUserId);
-		if (insertRes.kind === "ok" && insertRes.order && idempotencyKey) {
-			const orderPayload: Record<string, unknown> = insertRes.order;
-			await tx
-				.insert(idempotencyKeys)
-				.values({
+		if (idempotencyKey) {
+			const [existingKey] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.for("update");
+
+			if (existingKey) {
+				if (existingKey.status === "completed" && existingKey.responseBody) {
+					return {
+						kind: "replayed" as const,
+						responseCode: existingKey.responseCode || 201,
+						responseBody: existingKey.responseBody,
+					};
+				}
+				if (existingKey.status === "in_flight") {
+					return { kind: "conflict_in_flight" as const };
+				}
+			} else {
+				await tx.insert(idempotencyKeys).values({
 					clinicId: orgId,
 					key: idempotencyKey,
-					status: "completed",
+					status: "in_flight",
 					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: orderPayload,
-					responseCode: 201,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: orderPayload,
-						responseCode: 201,
-					},
 				});
+			}
 		}
+
+		const insertRes = await insertLabOrderInDb(tx, orgId, data, currentUserId);
+		if (insertRes.kind === "ok" && insertRes.order) {
+			if (idempotencyKey) {
+				await tx
+					.update(idempotencyKeys)
+					.set({
+						status: "completed",
+						responseCode: 201,
+						responseBody: insertRes.order as Record<string, unknown>,
+					})
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					);
+			}
+		} else if (idempotencyKey) {
+			await tx
+				.delete(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				);
+		}
+
 		return insertRes;
 	});
+
+	if (result.kind === "replayed") {
+		reply.header("Idempotency-Key", idempotencyKey);
+		reply.header("idempotency-replayed", "true");
+		reply.header("x-idempotency-replayed", "true");
+		return reply.code(result.responseCode).send(result.responseBody);
+	}
+
+	if (result.kind === "conflict_in_flight") {
+		return reply.code(409).header("Retry-After", "1").send({
+			error: "Conflict",
+			message: "Операция создания наряда ЗТЛ с данным Idempotency-Key уже выполняется.",
+		});
+	}
 
 	if (result.kind === "patient_not_found") {
 		return reply.code(404).send({

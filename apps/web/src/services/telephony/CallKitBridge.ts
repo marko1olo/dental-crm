@@ -195,8 +195,9 @@ export class CallKitBridge {
 				callId,
 				status: "ringing",
 			});
-		} catch {
+		} catch (err) {
 			// Telephony store might not be mounted in test environments
+			console.warn("[CallKitBridge] useTelephonyStore.triggerIncomingCall failed:", err);
 		}
 	}
 
@@ -210,9 +211,9 @@ export class CallKitBridge {
 
 		// Sync with Telephony Store
 		try {
-			useTelephonyStore.getState().acceptCall();
+			useTelephonyStore.getState().answerCall();
 		} catch (err: unknown) {
-			console.warn("[CallKitBridge] useTelephonyStore.acceptCall failed:", err);
+			console.warn("[CallKitBridge] useTelephonyStore.answerCall failed:", err);
 		}
 
 		// Connect audio capture & speech dictation stream if enabled

@@ -230,7 +230,9 @@ export class TelephonyAudioStreamManager {
 				for (const track of stream.getAudioTracks()) {
 					try {
 						this.peerConnection.addTrack(track, stream);
-					} catch {}
+					} catch (err) {
+						logger.warn("[TelephonyAudioStreamManager] Failed to add audio track to RTCPeerConnection:", err);
+					}
 				}
 			}
 
@@ -325,7 +327,9 @@ export class TelephonyAudioStreamManager {
 				for (const track of this.localStream.getAudioTracks()) {
 					try {
 						this.peerConnection.addTrack(track, this.localStream);
-					} catch {}
+					} catch (err) {
+						logger.warn("[TelephonyAudioStreamManager] Failed to attach local audio track:", err);
+					}
 				}
 			}
 

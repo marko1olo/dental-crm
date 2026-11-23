@@ -9,11 +9,11 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mapToCanonicalToothState } from "../ChairsideCopilotHUD";
+import { mapToCanonicalToothState } from "../chairside/canonicalToothStateMapper";
 import { executeCopilotAgentRequest } from "../chairside/chairsideAgentExecutor";
 
-const expect = (actual: any) => ({
-  toBe: (expected: any) => {
+const expect = (actual: unknown) => ({
+  toBe: (expected: unknown) => {
     assert.strictEqual(actual, expected);
   },
   toContain: (expected: string) => {
@@ -40,11 +40,11 @@ describe("Chairside Copilot Agent Execution and Canonical State Mapping", () => 
   });
 
   it("2. executeCopilotAgentRequest sends clean patient data without fake penicillin allergy and parses 200 OK data", async () => {
-    let capturedBody: any = null;
+    let capturedBody: Record<string, unknown> | null = null;
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
-      if (String(url).includes("/api/agent/chat") || String(url).includes("/api/v1/copilot/agent/execute")) {
-        capturedBody = JSON.parse(String(init?.body || "{}"));
+      if (String(url).includes("/api/agent/chat")) {
+        capturedBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
         return {
           ok: true,
           status: 200,
@@ -96,9 +96,10 @@ describe("Chairside Copilot Agent Execution and Canonical State Mapping", () => 
       });
 
       // Assertions on captured request body
-      assert.strictEqual(capturedBody.patientId, "pat-real-123");
-      assert.strictEqual(capturedBody.allergies, undefined, "Fake penicillin allergy must NOT be present!");
-      assert.strictEqual(capturedBody.toothNumber, 16);
+      assert.ok(capturedBody, "Request body must be captured");
+      assert.strictEqual(capturedBody["patientId"], "pat-real-123");
+      assert.strictEqual(capturedBody["allergies"], undefined, "Fake penicillin allergy must NOT be present!");
+      assert.strictEqual(capturedBody["toothNumber"], 16);
 
       // Assertions on parsed response
       assert.strictEqual(res.verdict, "Рекомендовано лечение кариеса зуба 16");

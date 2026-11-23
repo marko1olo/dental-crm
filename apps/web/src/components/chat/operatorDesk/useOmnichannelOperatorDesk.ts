@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useWebsocket } from "../../../hooks/useWebsocket";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
@@ -239,6 +240,7 @@ export function useOmnichannelOperatorDesk({
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeConv.channel,
@@ -270,6 +272,7 @@ export function useOmnichannelOperatorDesk({
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeConv.channel,
@@ -304,6 +307,7 @@ export function useOmnichannelOperatorDesk({
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeConv.channel,
@@ -389,6 +393,7 @@ export function useOmnichannelOperatorDesk({
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeConv.channel,
@@ -435,6 +440,7 @@ export function useOmnichannelOperatorDesk({
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeConv.channel,

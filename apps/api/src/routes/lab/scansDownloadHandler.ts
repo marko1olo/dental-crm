@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { labOrders } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -34,11 +34,14 @@ export async function handleLabScanDownloadUrl(
 		});
 	}
 
-	const [order] = await db
-		.select({ id: labOrders.id })
-		.from(labOrders)
-		.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
-		.limit(1);
+	const order = await withTenantCtx(orgId, async (tx) => {
+		const [found] = await tx
+			.select({ id: labOrders.id })
+			.from(labOrders)
+			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+			.limit(1);
+		return found ?? null;
+	});
 
 	if (!order) {
 		return reply.code(404).send({

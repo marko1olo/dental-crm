@@ -107,7 +107,7 @@ export async function telephonyOutboundCallHandler(
 			channel: "phone",
 			direction: "outbound",
 			status: "queued",
-			message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}] через ${outboundResult.provider}`,
+			message: `Исходящий вызов на ${callerPhone.e164} через ${outboundResult.provider}`,
 			idempotencyKey,
 		});
 	});

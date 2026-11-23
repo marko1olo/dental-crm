@@ -80,6 +80,9 @@ export async function telephonyCallsListHandler(
 
 	return reply.send({
 		success: true,
+		data: {
+			calls,
+		},
 		calls,
 	});
 }

@@ -107,7 +107,7 @@ import { registerWaitlistRoutes } from "../routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "../routes/waitlistMatches.js";
 import { registerWebsocketRoutes } from "../routes/websocket.js";
 import { registerWhatsappRoutes } from "../routes/whatsapp.js";
-import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots.js";
+import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots/index.js";
 import { workspaceProfileRoutes } from "../routes/workspaceProfile.js";
 import { registerLanNetworkRoutes } from "../routes/lanNetwork.js";
 import { registerYandexCalendarRoutes } from "../routes/yandexCalendar.js";

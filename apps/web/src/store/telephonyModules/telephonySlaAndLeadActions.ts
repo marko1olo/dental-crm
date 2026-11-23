@@ -98,10 +98,16 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 			},
 		});
 		if (!res.ok) return;
-		const data = (await res.json()) as { calls?: unknown };
-		if (data?.calls && Array.isArray(data.calls)) {
+		const json = (await res.json()) as {
+			success?: boolean;
+			data?: { calls?: unknown };
+			calls?: unknown;
+		};
+		const payload = json?.data ?? json;
+		const rawCallsList = payload?.calls ?? json?.calls;
+		if (rawCallsList && Array.isArray(rawCallsList)) {
 			const existing = get().callHistory;
-			const rawCalls = data.calls as ApiCallRecord[];
+			const rawCalls = rawCallsList as ApiCallRecord[];
 			const mapped: CallHistoryItem[] = rawCalls.map((c) => {
 				const resolvedPhone = c.patientPhone || c.callerPhone || "";
 				const patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")

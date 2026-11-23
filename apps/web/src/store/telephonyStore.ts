@@ -53,14 +53,18 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		const nextMuted = !get().isMuted;
 		try {
 			getSharedTelephonyAudioStreamManager().setMicrophoneMute(nextMuted);
-		} catch {}
+		} catch (err) {
+			console.warn("[TelephonyStore] Failed to toggle microphone mute:", err);
+		}
 		set({ isMuted: nextMuted });
 	},
 	setVolumeLevel: (volumeLevel) => {
 		const clamped = Math.max(0, Math.min(1, volumeLevel));
 		try {
 			getSharedTelephonyAudioStreamManager().setStreamVolume(clamped);
-		} catch {}
+		} catch (err) {
+			console.warn("[TelephonyStore] Failed to set stream volume:", err);
+		}
 		set({ volumeLevel: clamped });
 	},
 	setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
