@@ -1,8 +1,51 @@
-import { Activity, Droplets, Scissors, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Award, Droplets, Scissors, ShieldCheck, Sparkles } from "lucide-react";
 import { DentalCrown } from "../../icons/DentalIcons";
 import type { PediatricProtocolDefinition } from "./types";
 
 export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] = [
+	{
+		id: "adaptation_visit",
+		titleRu: "Адаптационный визит (знакомство)",
+		shortLabelRu: "Адаптация",
+		subtitleRu: "Знакомство с кабинетом, зеркальце, «ветерок», чистка зубок щеточкой, грамота за храбрость",
+		diagnosisIcd10: "Z01.2",
+		diagnosisNameRu: "Стоматологическое обследование / адаптационный прием (Z01.2)",
+		serviceCode: "B01.064.001",
+		serviceName: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
+		serviceCode804n: "B01.064.001",
+		serviceName804n: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
+		defaultSurfaces: [],
+		allowsSurfaces: false,
+		materials: ["Циркулярная щеточка со сладкой пастой", "Защитный реминерализующий лак", "Диплом за храбрость"],
+		defaultMaterial: "Диплом за храбрость",
+		defaultToothFindingState: "Healthy",
+		icon: Award,
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
+	},
+	{
+		id: "icon_infiltration",
+		titleRu: "Инфильтрация кариеса ICON (без бормашины)",
+		shortLabelRu: "ICON (инфильтрация)",
+		subtitleRu: "15% HCl Icon-Etch 2 мин, Icon-Dry 30с, Icon-Infiltrant 3 мин + полимеризация 40с",
+		diagnosisIcd10: "K02.0",
+		diagnosisNameRu: "Кариес эмали / стадия пятна без образования полости (K02.0)",
+		serviceCode: "A16.07.051",
+		serviceName: "Инфильтрация кариозного пятна препаратом Icon (без препарирования)",
+		serviceCode804n: "A16.07.051",
+		serviceName804n: "Инфильтрация кариозного пятна препаратом Icon (без препарирования)",
+		defaultSurfaces: ["V"],
+		allowsSurfaces: true,
+		materials: [
+			"Icon-Etch (15% HCl)",
+			"Icon-Dry (этанол)",
+			"Icon-Infiltrant (TEGDMA матрикс)",
+			"Коффердам / раббердам",
+		],
+		defaultMaterial: "Icon-Infiltrant (TEGDMA матрикс)",
+		defaultToothFindingState: "Watch",
+		icon: Sparkles,
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
+	},
 	{
 		id: "caries_primary",
 		titleRu: "Кариес временного зуба",
