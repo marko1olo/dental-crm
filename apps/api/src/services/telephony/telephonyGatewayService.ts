@@ -114,6 +114,10 @@ export interface AsteriskAmiEventPayload {
 
 export class TelephonyGatewayService {
 	private static forcedFailoverMap = new Map<string, boolean>();
+	private static localPbxStatusCache = new Map<
+		string,
+		{ online: boolean; latencyMs: number; expiresAt: number }
+	>();
 
 	/**
 	 * Resolves default Asterisk PBX config from environment or standard clinic LAN subnet.
@@ -211,7 +215,11 @@ export class TelephonyGatewayService {
 				const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
 				isForcedFailover = Boolean(flags.telephonyForcedFailover);
 				this.forcedFailoverMap.set(organizationId, isForcedFailover);
-			} catch {
+			} catch (err) {
+				defaultStructuredLogger.warn(
+					{ err, organizationId },
+					"[TelephonyGatewayService] Failed to load workspace feature flags for telephony forced failover",
+				);
 				isForcedFailover = false;
 			}
 		}
@@ -229,34 +237,51 @@ export class TelephonyGatewayService {
 			};
 		}
 
-		// Check socket connect
+		// Check socket connect with short probe timeout (400ms) and 15s caching to prevent event loop stalls
 		let localPbxOnline = process.env.PBX_FORCE_ONLINE === "1";
 		let latencyMs = localPbxOnline ? 5 : 0;
 
-		const start = Date.now();
-		if (!localPbxOnline) {
+		const cacheKey = `${cfg.host}:${cfg.wsPort}`;
+		const cached = this.localPbxStatusCache.get(cacheKey);
+
+		if (!localPbxOnline && cached && Date.now() < cached.expiresAt) {
+			localPbxOnline = cached.online;
+			latencyMs = cached.latencyMs;
+		} else if (!localPbxOnline) {
+			const start = Date.now();
 			try {
 				const socket = new net.Socket();
 				localPbxOnline = await new Promise<boolean>((resolve) => {
-				socket.setTimeout(2000);
-				socket.once("connect", () => {
-					latencyMs = Date.now() - start;
-					socket.destroy();
-					resolve(true);
+					socket.setTimeout(400);
+					socket.once("connect", () => {
+						latencyMs = Date.now() - start;
+						socket.destroy();
+						resolve(true);
+					});
+					socket.once("timeout", () => {
+						socket.destroy();
+						resolve(false);
+					});
+					socket.once("error", () => {
+						socket.destroy();
+						resolve(false);
+					});
+					socket.connect(cfg.wsPort, cfg.host);
 				});
-				socket.once("timeout", () => {
-					socket.destroy();
-					resolve(false);
-				});
-				socket.once("error", () => {
-					socket.destroy();
-					resolve(false);
-				});
-				socket.connect(cfg.wsPort, cfg.host);
-			});
-			} catch {
+			} catch (err) {
+				defaultStructuredLogger.warn(
+					{ err, host: cfg.host, port: cfg.wsPort },
+					"[TelephonyGatewayService] Socket probing failed",
+				);
 				localPbxOnline = false;
 			}
+
+			// Cache socket probe result for 15 seconds
+			this.localPbxStatusCache.set(cacheKey, {
+				online: localPbxOnline,
+				latencyMs,
+				expiresAt: Date.now() + 15000,
+			});
 		}
 
 		const activeMode: TelephonyMode = localPbxOnline ? "local_webrtc_sip" : "cloud_webhooks";
@@ -308,10 +333,18 @@ export class TelephonyGatewayService {
 	}
 
 	/**
-	 * Clears in-memory forced failover cache (useful for test isolation).
+	 * Clears in-memory local PBX reachability cache.
+	 */
+	public static clearLocalPbxCache(): void {
+		this.localPbxStatusCache.clear();
+	}
+
+	/**
+	 * Clears in-memory forced failover and socket reachability cache (useful for test isolation).
 	 */
 	public static clearForcedFailoverCache(): void {
 		this.forcedFailoverMap.clear();
+		this.clearLocalPbxCache();
 	}
 
 	/**
@@ -408,8 +441,15 @@ export class TelephonyGatewayService {
 			});
 		} else if (event === "ended") {
 			const callId = payload.uniqueid || payload.channel || null;
-			let isDuplicate = false;
+			const duration =
+				typeof payload.billsec === "number"
+					? payload.billsec
+					: Number.parseInt(String(payload.billsec || "0"), 10) || 0;
+			const durationSeconds = duration > 0 ? duration : null;
+			const recordingUrl = payload.recordingUrl || null;
+
 			await withTenantCtx(organizationId, async () => {
+				let existingId: string | null = null;
 				if (callId) {
 					const existing = await db
 						.select({ id: communicationEvents.id })
@@ -420,19 +460,55 @@ export class TelephonyGatewayService {
 								or(
 									eq(communicationEvents.providerCallId, callId),
 									ilike(communicationEvents.message, `%ID: ${callId}%`),
+									ilike(communicationEvents.message, `%call_id: ${callId}%`),
 								),
 							),
 						)
 						.limit(1);
-					if (existing.length > 0) isDuplicate = true;
+					if (existing.length > 0 && existing[0]) {
+						existingId = existing[0].id;
+					}
 				}
 
-				if (!isDuplicate) {
-					const duration = typeof payload.billsec === "number" ? payload.billsec : Number.parseInt(String(payload.billsec || "0"), 10) || 0;
-
+				if (existingId) {
+					await db
+						.update(communicationEvents)
+						.set({
+							status: "completed",
+							...(durationSeconds !== null ? { durationSeconds } : {}),
+							...(recordingUrl ? { recordingUrl } : {}),
+							...(patient?.id ? { patientId: patient.id } : {}),
+						})
+						.where(eq(communicationEvents.id, existingId));
+				} else if (callId) {
+					await db
+						.insert(communicationEvents)
+						.values({
+							organizationId,
+							providerCallId: callId,
+							providerName: "asterisk",
+							patientId: patient?.id || null,
+							callerPhone: e164,
+							channel: "phone",
+							direction: "inbound",
+							status: "completed",
+							message: `Локальный звонок Asterisk завершён${!patient ? " (первичный абонент)" : ""}`,
+							durationSeconds,
+							recordingUrl,
+						})
+						.onConflictDoUpdate({
+							target: [communicationEvents.organizationId, communicationEvents.providerCallId],
+							set: {
+								status: "completed",
+								...(durationSeconds !== null ? { durationSeconds } : {}),
+								...(recordingUrl ? { recordingUrl } : {}),
+								...(patient?.id ? { patientId: patient.id } : {}),
+							},
+						});
+				} else {
 					await db.insert(communicationEvents).values({
 						organizationId,
-						providerCallId: callId || null,
+						providerCallId: null,
 						providerName: "asterisk",
 						patientId: patient?.id || null,
 						callerPhone: e164,
@@ -440,8 +516,8 @@ export class TelephonyGatewayService {
 						direction: "inbound",
 						status: "completed",
 						message: `Локальный звонок Asterisk завершён${!patient ? " (первичный абонент)" : ""}`,
-						durationSeconds: duration > 0 ? duration : null,
-						recordingUrl: payload.recordingUrl || null,
+						durationSeconds,
+						recordingUrl,
 					});
 				}
 			});

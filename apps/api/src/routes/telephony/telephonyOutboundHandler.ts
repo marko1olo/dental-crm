@@ -73,6 +73,8 @@ export async function telephonyOutboundCallHandler(
 		await withTenantCtx(orgId, async () => {
 			await db.insert(communicationEvents).values({
 				organizationId: orgId,
+				providerCallId: outboundResult.callId,
+				providerName: outboundResult.provider,
 				patientId,
 				callerPhone: callerPhone.e164,
 				channel: "phone",
@@ -98,6 +100,8 @@ export async function telephonyOutboundCallHandler(
 	await withTenantCtx(orgId, async () => {
 		await db.insert(communicationEvents).values({
 			organizationId: orgId,
+			providerCallId: callId,
+			providerName: outboundResult.provider,
 			patientId,
 			callerPhone: callerPhone.e164,
 			channel: "phone",

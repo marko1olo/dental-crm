@@ -313,10 +313,7 @@ export async function cleanupStaleRingingCalls(
 	const cutoff = new Date(Date.now() - timeoutSeconds * 1000);
 	const conditions = [
 		eq(communicationEvents.channel, "phone"),
-		or(
-			eq(communicationEvents.status, "needs_call"),
-			eq(communicationEvents.status, "queued"),
-		),
+		eq(communicationEvents.status, "queued"),
 		sql`${communicationEvents.createdAt} < ${cutoff}`,
 		sql`(${communicationEvents.durationSeconds} IS NULL OR ${communicationEvents.durationSeconds} = 0)`,
 	];

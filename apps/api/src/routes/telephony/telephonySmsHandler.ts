@@ -1,14 +1,14 @@
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { clinics, communicationEvents, crmLeads, patients } from "../../db/schema.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
 import {
 	authenticatePbxWebhook,
 	normalizePhoneNumber,
-	UUID_REGEX,
 } from "../../services/telephony/telephonySecurity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { resolveWebhookOrgId } from "./telephonyEngine.js";
 import {
 	type TelephonySmsWebhookPayload,
 	type TelephonyWebhookPayload,
@@ -32,19 +32,8 @@ export async function telephonySmsWebhookHandler(
 	const messageText = (data.message || data.text || "").trim();
 	if (!callerPhone.isValid || !messageText) return reply.status(400).send({ error: "Missing 'from' or 'message'" });
 
-	let resolvedOrgId: string | null = null;
-	const routeOrgId = request.params.organizationId;
-	if (routeOrgId && UUID_REGEX.test(routeOrgId)) {
-		resolvedOrgId = routeOrgId;
-	} else if (data.to) {
-		const targetPhone = normalizePhoneNumber(data.to);
-		if (targetPhone.isValid) {
-			const matchedClinic = await withSuperuserBypass(async (tx) => {
-				return tx.select({ organizationId: clinics.organizationId }).from(clinics).where(ilike(clinics.phone, `%${targetPhone.national10}%`)).limit(1);
-			});
-			resolvedOrgId = matchedClinic[0]?.organizationId || null;
-		}
-	}
+	const targetPhone = normalizePhoneNumber(data.to);
+	const resolvedOrgId = await resolveWebhookOrgId(request.params.organizationId, targetPhone);
 
 	if (!resolvedOrgId) {
 		return reply.status(404).send({ error: "OrganizationNotFound", message: "Tenant organization could not be resolved" });

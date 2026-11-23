@@ -176,7 +176,9 @@ export class MissedCallService {
 			}
 
 			let patientId: string | null = null;
-			let patientDisplayName: string;
+			let patientDisplayName: string = normalized.isValid
+				? `Пациент (${callerPhoneE164})`
+				: `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
 			let createdLeadRecord: typeof crmLeads.$inferSelect | null = null;
 			let taskId: string | undefined = undefined;
 
@@ -188,35 +190,38 @@ export class MissedCallService {
 					matchedPatient.fullName.trim() || `Пациент (${callerPhoneE164})`;
 
 				// Check existing lead for constant patient — update lastContactedAt without creating duplicates
+				// Uses nested savepoint tx.transaction() to prevent poisoned transaction trap in PostgreSQL
 				try {
-					const existingLeads = await tx
-						.select()
-						.from(crmLeads)
-						.where(
-							and(
-								eq(crmLeads.organizationId, organizationId),
-								or(
-									eq(crmLeads.patientId, matchedPatient.id),
-									eq(crmLeads.phone, callerPhoneE164),
+					createdLeadRecord = await tx.transaction(async (leadTx) => {
+						const existingLeads = await leadTx
+							.select()
+							.from(crmLeads)
+							.where(
+								and(
+									eq(crmLeads.organizationId, organizationId),
+									or(
+										eq(crmLeads.patientId, matchedPatient.id),
+										eq(crmLeads.phone, callerPhoneE164),
+									),
 								),
-							),
-						)
-						.orderBy(desc(crmLeads.createdAt))
-						.limit(1);
+							)
+							.orderBy(desc(crmLeads.createdAt))
+							.limit(1);
 
-					if (existingLeads.length > 0 && existingLeads[0]) {
-						const existingLead = existingLeads[0];
-						const [updatedLead] = await tx
-							.update(crmLeads)
-							.set({
-								lastContactedAt: new Date(),
-								notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${new Date().toLocaleString("ru-RU")}`}`,
-							})
-							.where(eq(crmLeads.id, existingLead.id))
-							.returning();
-						createdLeadRecord = updatedLead || existingLead;
-					} else {
-						const [createdLead] = await tx
+						if (existingLeads.length > 0 && existingLeads[0]) {
+							const existingLead = existingLeads[0];
+							const [updatedLead] = await leadTx
+								.update(crmLeads)
+								.set({
+									lastContactedAt: new Date(),
+									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${new Date().toLocaleString("ru-RU")}`}`,
+								})
+								.where(eq(crmLeads.id, existingLead.id))
+								.returning();
+							return updatedLead || existingLead;
+						}
+
+						const [createdLead] = await leadTx
 							.insert(crmLeads)
 							.values({
 								organizationId,
@@ -230,8 +235,8 @@ export class MissedCallService {
 								lastContactedAt: new Date(),
 							})
 							.returning();
-						createdLeadRecord = createdLead || null;
-					}
+						return createdLead || null;
+					});
 				} catch (err) {
 					const log = params.logger || defaultStructuredLogger;
 					log.warn(
@@ -294,56 +299,57 @@ export class MissedCallService {
 				isNewLead = true;
 
 				try {
-					const existingLeads = await tx
-						.select()
-						.from(crmLeads)
-						.where(
-							and(
-								eq(crmLeads.organizationId, organizationId),
-								eq(crmLeads.phone, callerPhoneE164),
-							),
-						)
-						.orderBy(desc(crmLeads.createdAt))
-						.limit(1);
+					const leadOutcome = await tx.transaction(async (leadTx) => {
+						const existingLeads = await leadTx
+							.select()
+							.from(crmLeads)
+							.where(
+								and(
+									eq(crmLeads.organizationId, organizationId),
+									eq(crmLeads.phone, callerPhoneE164),
+								),
+							)
+							.orderBy(desc(crmLeads.createdAt))
+							.limit(1);
 
-					if (existingLeads.length > 0 && existingLeads[0]) {
-						const existingLead = existingLeads[0];
-						const wasRecent =
-							existingLead.lastContactedAt &&
-							new Date(existingLead.lastContactedAt) > sixtySecondsAgo;
+						if (existingLeads.length > 0 && existingLeads[0]) {
+							const existingLead = existingLeads[0];
+							const wasRecent =
+								existingLead.lastContactedAt &&
+								new Date(existingLead.lastContactedAt) > sixtySecondsAgo;
 
-						const [updatedLead] = await tx
-							.update(crmLeads)
-							.set({
-								lastContactedAt: new Date(),
-								status:
-									existingLead.status === "won" || existingLead.status === "archived"
-										? "new"
-										: existingLead.status,
-								notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${new Date().toLocaleString("ru-RU")})`}`,
-							})
-							.where(eq(crmLeads.id, existingLead.id))
-							.returning();
-						createdLeadRecord = updatedLead || existingLead;
-						patientDisplayName =
-							existingLead.patientName || existingLead.name || `Лид (${callerPhoneE164})`;
-						taskId = existingLead.id;
+							const [updatedLead] = await leadTx
+								.update(crmLeads)
+								.set({
+									lastContactedAt: new Date(),
+									status:
+										existingLead.status === "won" || existingLead.status === "archived"
+											? "new"
+											: existingLead.status,
+									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${new Date().toLocaleString("ru-RU")})`}`,
+								})
+								.where(eq(crmLeads.id, existingLead.id))
+								.returning();
+							const record = updatedLead || existingLead;
+							const displayName =
+								existingLead.patientName || existingLead.name || `Лид (${callerPhoneE164})`;
 
-						if (wasRecent) {
+							if (wasRecent) {
+								return {
+									isDuplicate: true as const,
+									record,
+									displayName,
+								};
+							}
 							return {
-								success: true,
-								duplicate: true,
-								taskId: existingLead.id,
-								patientId: null,
-								patientName: patientDisplayName,
-								phone: callerPhoneE164,
-								isNewLead: true,
-								leadId: existingLead.id,
+								isDuplicate: false as const,
+								record,
+								displayName,
 							};
 						}
-					} else {
+
 						const newLeadName = `Лид ${callerPhoneE164}`;
-						const [createdLead] = await tx
+						const [createdLead] = await leadTx
 							.insert(crmLeads)
 							.values({
 								organizationId,
@@ -357,9 +363,30 @@ export class MissedCallService {
 								lastContactedAt: new Date(),
 							})
 							.returning();
-						createdLeadRecord = createdLead || null;
-						patientDisplayName = newLeadName;
-						taskId = createdLead?.id;
+						return {
+							isDuplicate: false as const,
+							record: createdLead || null,
+							displayName: newLeadName,
+						};
+					});
+
+					if (leadOutcome) {
+						createdLeadRecord = leadOutcome.record;
+						patientDisplayName = leadOutcome.displayName;
+						taskId = leadOutcome.record?.id;
+
+						if (leadOutcome.isDuplicate) {
+							return {
+								success: true,
+								duplicate: true,
+								taskId: leadOutcome.record?.id,
+								patientId: null,
+								patientName: patientDisplayName,
+								phone: callerPhoneE164,
+								isNewLead: true,
+								leadId: leadOutcome.record?.id,
+							};
+						}
 					}
 				} catch (err) {
 					const log = params.logger || defaultStructuredLogger;
@@ -371,19 +398,39 @@ export class MissedCallService {
 				}
 			}
 
-			// 4. Insert into communicationEvents (patientId is null for unknown leads, callerPhone is preserved)
-			await tx.insert(communicationEvents).values({
-				organizationId,
-				providerCallId: callId || null,
-				providerName: params.provider || "telephony",
-				patientId,
-				callerPhone: callerPhoneE164,
-				channel: "phone",
-				direction: "inbound",
-				status: "needs_call",
-				message: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
-				durationSeconds: 0,
-			});
+			// 4. Insert into communicationEvents with onConflictDoNothing for providerCallId idempotency
+			if (callId) {
+				await tx
+					.insert(communicationEvents)
+					.values({
+						organizationId,
+						providerCallId: callId,
+						providerName: params.provider || "telephony",
+						patientId,
+						callerPhone: callerPhoneE164,
+						channel: "phone",
+						direction: "inbound",
+						status: "needs_call",
+						message: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
+						durationSeconds: 0,
+					})
+					.onConflictDoNothing({
+						target: [communicationEvents.organizationId, communicationEvents.providerCallId],
+					});
+			} else {
+				await tx.insert(communicationEvents).values({
+					organizationId,
+					providerCallId: null,
+					providerName: params.provider || "telephony",
+					patientId,
+					callerPhone: callerPhoneE164,
+					channel: "phone",
+					direction: "inbound",
+					status: "needs_call",
+					message: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
+					durationSeconds: 0,
+				});
+			}
 
 			return {
 				result: {

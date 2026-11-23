@@ -9,43 +9,10 @@ import {
 	normalizePhoneToE164,
 } from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
+import type { TelephonyWebhookPayload } from "../../routes/telephony/types.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
-export interface TelephonyWebhookPayload {
-	event?: string | undefined;
-	notification_name?: string | undefined;
-	event_type?: string | undefined;
-	from?: string | undefined;
-	caller_id?: string | undefined;
-	caller_number?: string | undefined;
-	CallerIdNum?: string | undefined;
-	from_number?: string | undefined;
-	to?: string | undefined;
-	called_did?: string | undefined;
-	called_number?: string | undefined;
-	CalledIdNum?: string | undefined;
-	to_number?: string | undefined;
-	call_id?: string | undefined;
-	call_session_id?: string | undefined;
-	CallId?: string | undefined;
-	uniqueid?: string | undefined;
-	entry_id?: string | undefined;
-	recording_url?: string | undefined;
-	record_url?: string | undefined;
-	RecUrl?: string | undefined;
-	link?: string | undefined;
-	duration?: number | string | undefined;
-	duration_seconds?: number | string | undefined;
-	billsec?: number | string | undefined;
-	talk_time?: number | string | undefined;
-	timestamp?: number | string | undefined;
-	call_start?: number | string | undefined;
-	call_end?: number | string | undefined;
-	call_duration?: number | string | undefined;
-	api_key?: string | undefined;
-	vpbx_api_key?: string | undefined;
-	sign?: string | undefined;
-	signature?: string | undefined;
-}
+
+export type { TelephonyWebhookPayload };
 
 export const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-8][0-9a-f]{3}-[89ab0-9][0-9a-f]{3}-[0-9a-f]{12}$/i;
