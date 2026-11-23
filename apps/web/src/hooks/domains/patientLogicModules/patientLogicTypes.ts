@@ -50,7 +50,7 @@ export interface UsePatientLogicProps {
 	query: string;
 	setError: (error: string | null) => void;
 	auth: PatientMutationAuthContext;
-	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
+	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>> | ((dashboard: Dashboard | null) => void);
 	setQuery: (query: string) => void;
 }
 
@@ -77,7 +77,7 @@ export interface UsePatientSearchAndFilterReturn {
 
 export interface UsePatientMutationsProps {
 	dashboard: Dashboard | null | undefined;
-	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
+	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>> | ((dashboard: Dashboard | null) => void);
 	setError: (error: string | null) => void;
 	auth: PatientMutationAuthContext;
 	selectedPatient: Patient | null;

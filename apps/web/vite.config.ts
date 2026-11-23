@@ -4,7 +4,6 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { cbctCasesPlugin } from "./vite-plugin-cbct-cases";
 
 declare const process: {
 	env: Record<string, string | undefined>;
@@ -49,7 +48,6 @@ export default defineConfig({
 	plugins: [
 		react(),
 		tailwindcss(),
-		cbctCasesPlugin(),
 		onnxMimePlugin(),
 		VitePWA({
 			registerType: "autoUpdate",

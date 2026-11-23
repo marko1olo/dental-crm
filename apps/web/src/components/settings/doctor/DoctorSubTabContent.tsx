@@ -8,11 +8,11 @@ import { SettingsAiTab } from "../SettingsAiTab";
 import { SettingsProfileTab } from "../SettingsProfileTab";
 import { SettingsProtocolsTab } from "../SettingsProtocolsTab";
 import { SettingsRulesTab } from "../SettingsRulesTab";
+import type { DoctorSettingsPropsBag } from "./doctorSettingsTypes";
 
 interface DoctorSubTabContentProps {
 	readonly activeSubTab: DoctorSubTab;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	readonly props: Record<string, any>;
+	readonly props: DoctorSettingsPropsBag;
 }
 
 export const DoctorSubTabContent: React.FC<DoctorSubTabContentProps> = ({

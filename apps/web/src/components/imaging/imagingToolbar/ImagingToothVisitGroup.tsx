@@ -24,7 +24,7 @@ export const ImagingToothVisitGroup: React.FC<ImagingToothVisitGroupProps> = ({
 				<select
 					data-testid="study-tooth-selector"
 					aria-label="Привязать снимок к зубу FDI"
-					className="bg-transparent font-bold text-xs text-[var(--teal)] cursor-pointer focus:outline-none"
+					className="bg-transparent font-bold text-xs text-[var(--primary)] cursor-pointer focus:outline-none"
 					style={{
 						border: "none",
 						background: "transparent",
@@ -49,6 +49,16 @@ export const ImagingToothVisitGroup: React.FC<ImagingToothVisitGroupProps> = ({
 							<option key={t} value={String(t)}>#{t}</option>
 						))}
 					</optgroup>
+					<optgroup label="Молочные зубы ВЧ (Q5/Q6)">
+						{[55, 54, 53, 52, 51, 61, 62, 63, 64, 65].map((t) => (
+							<option key={t} value={String(t)}>#{t}</option>
+						))}
+					</optgroup>
+					<optgroup label="Молочные зубы НЧ (Q8/Q7)">
+						{[85, 84, 83, 82, 81, 71, 72, 73, 74, 75].map((t) => (
+							<option key={t} value={String(t)}>#{t}</option>
+						))}
+					</optgroup>
 				</select>
 			</div>
 
@@ -59,13 +69,13 @@ export const ImagingToothVisitGroup: React.FC<ImagingToothVisitGroupProps> = ({
 					type="button"
 					className={`h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 ${
 						isAttachedToCurrentVisit
-							? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold"
-							: "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white hover:brightness-105"
+							? "border-[var(--success)]/40 bg-[var(--success-soft)] text-[var(--success)] font-semibold"
+							: "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
 					}`}
 					title={isAttachedToCurrentVisit ? "Снимок прикреплен к текущему приёму" : "Привязать снимок к приёму"}
 					onClick={() => onAttachToVisit?.(activeAppointment.id)}
 				>
-					<Check size={14} className={isAttachedToCurrentVisit ? "text-emerald-500" : "text-white stroke-[2.5]"} />
+					<Check size={14} className={isAttachedToCurrentVisit ? "text-[var(--success)]" : "text-white stroke-[2.5]"} />
 					<span>{isAttachedToCurrentVisit ? "В приёме" : "В приём"}</span>
 				</button>
 			)}

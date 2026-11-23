@@ -483,7 +483,7 @@ export async function getMediaVaultStorageEstimate(): Promise<MediaVaultQuotaInf
 	return {
 		usageBytes,
 		quotaBytes,
-		usagePercent: Math.min(100, Math.round(usagePercent * 100) / 100),
+		usagePercent: Math.min(100, Number(usagePercent.toFixed(2))),
 		totalMediaCount,
 		syncedCount,
 		pendingCount,

@@ -3,6 +3,7 @@
  * Mandate 8x & 8ap: Plain Russian Clinical UX. Mandate 8b: <= 120 lines.
  */
 
+import { formatKopecksToRubles } from "@dental/shared";
 import {
 	analyzeMischBoneQuality,
 	formatMischProtocolToDiaryText,
@@ -86,7 +87,7 @@ export function performCbctPlanningAudit(params: PerformCbctPlanningAuditParams)
 		code: `A16.07.054.${params.toothFdi}`,
 		nameRu: `Установка дентального имплантата ${params.implantPose.implantSpec.brandName} ${params.implantPose.implantSpec.lineName} Ø${params.implantPose.implantSpec.diameterMm}x${params.implantPose.implantSpec.lengthMm} (позиция #${params.toothFdi})`,
 		priceKopecks: params.implantPose.implantSpec.priceKopecks,
-		priceFormattedRu: `${(params.implantPose.implantSpec.priceKopecks / 100).toLocaleString("ru-RU")} ₽`,
+		priceFormattedRu: `${formatKopecksToRubles(params.implantPose.implantSpec.priceKopecks)} ₽`,
 	};
 
 	return {

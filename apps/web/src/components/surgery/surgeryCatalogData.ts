@@ -5,7 +5,7 @@
  */
 
 import type { SurgicalServiceItem, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
-import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS } from "@dental/shared";
+import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS } from "../implants/implantCatalogData";
 import { DEFAULT_CANONICAL_IMPLANT_STOCK } from "../implants/implantQuickPresets";
 import {
@@ -127,7 +127,7 @@ export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = [
 		const lotNumber = stockItem?.lotNumber || `LOT-${id.slice(0, 3).toUpperCase()}-2024`;
 		const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${id.slice(0, 3).toUpperCase()}-01`;
 		const expirationDate = stockItem?.expirationDate || "2029-12-31";
-		const unitCostRub = Number(sys.implantCostKopecks) / 100;
+		const unitCostRub = kopecksToRubles(sys.implantCostKopecks);
 
 		return {
 			id,
@@ -303,16 +303,16 @@ export function calculateSurgeryFinancials(params: {
 	if (params.scenario === "implant") {
 		const sys = getImplantSystemById(params.implantBrand || "Osstem");
 		const implantCostRub = sys.unitCostRub || 12500;
-		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : Math.round(implantCostRub * 100);
+		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : rublesToKopecks(implantCostRub);
 		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
 		const sutureCost = suture?.unitPriceRub ?? 950;
 		const baseKitCost = 1550;
 		const consumablesCostRub = sutureCost + baseKitCost;
-		const consumablesCostKopecks = Math.round(consumablesCostRub * 100);
-		const operationPriceKopecks = Math.round(priceRub * 100);
+		const consumablesCostKopecks = rublesToKopecks(consumablesCostRub);
+		const operationPriceKopecks = rublesToKopecks(priceRub);
 		const totalDirectCostKopecks = implantCostKopecks + consumablesCostKopecks;
 		const doctorGrossMarginKopecks = Math.max(0, operationPriceKopecks - totalDirectCostKopecks);
-		const doctorGrossMarginRub = Math.round(doctorGrossMarginKopecks / 100);
+		const doctorGrossMarginRub = Math.round(kopecksToRubles(doctorGrossMarginKopecks));
 		return {
 			operationPriceRub: priceRub,
 			implantCostRub,
@@ -342,11 +342,11 @@ export function calculateSurgeryFinancials(params: {
 		consumablesCostRub,
 		doctorGrossMarginRub,
 		netDoctorIncomeRub: doctorGrossMarginRub,
-		operationPriceKopecks: Math.round(priceRub * 100),
+		operationPriceKopecks: rublesToKopecks(priceRub),
 		implantCostKopecks: 0,
-		consumablesCostKopecks: Math.round(consumablesCostRub * 100),
-		doctorGrossMarginKopecks: Math.round(doctorGrossMarginRub * 100),
-		netDoctorIncomeKopecks: Math.round(doctorGrossMarginRub * 100),
+		consumablesCostKopecks: rublesToKopecks(consumablesCostRub),
+		doctorGrossMarginKopecks: rublesToKopecks(doctorGrossMarginRub),
+		netDoctorIncomeKopecks: rublesToKopecks(doctorGrossMarginRub),
 	};
 }
 

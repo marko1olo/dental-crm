@@ -2,7 +2,7 @@
  * DENTE Dental CRM — Smart Sequential Visits & Multi-Stage Clinical Protocols Engine
  *
  * Клинический инвариант:
- * 1. 1-клик быстрое смарт-копирование повторных визитов для многоэтапного стоматологического лечения:
+ * 1. Быстрое копирование визитов для многоэтапного стоматологического лечения:
  *    - Эндодонтия этап 1 -> этап 2 (обтурация) через 7-14 дней
  *    - Хирургия / Имплантация -> снятие швов через 10-14 дней
  *    - Ортодонтия -> активация аппаратуры / замена дуги через 21-28 дней
@@ -16,8 +16,8 @@
  *    - 0 блокирующих модалок, мгновенное создание с 5-секундным Rollback Toast (Gmail Undo Stack).
  */
 
-import type { Appointment } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { generateUuidV7, type Appointment } from "@dental/shared";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
   CLINIC_DAY_END_MINUTES,
   CLINIC_DAY_START_MINUTES,
@@ -258,7 +258,7 @@ export interface CreateSmartSequentialAppointmentParams {
 }
 
 /**
- * 1-клик создание следующего этапа визита с мгновенным Rollback Toast на 5 секунд.
+ * Создание следующего этапа визита с мгновенным Rollback Toast на 5 секунд.
  * Не блокирует экран, не открывает модалки.
  */
 export async function createSmartSequentialAppointment(
@@ -336,7 +336,10 @@ export async function createSmartSequentialAppointment(
     const url = `${apiUrlPrefix}/api/appointments/${parentAppointment.id}/next-stage`;
     const res = await fetch(url, {
       method: "POST",
-      headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+      headers: getDenteAuthHeaders({
+        "Content-Type": "application/json",
+        "Idempotency-Key": generateUuidV7(),
+      }),
       body: JSON.stringify(payload),
     });
 
@@ -384,7 +387,10 @@ export async function createSmartSequentialAppointment(
           const rollbackUrl = `${apiUrlPrefix}/api/appointments/${created.id}/status`;
           const undoRes = await fetch(rollbackUrl, {
             method: "PATCH",
-            headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+            headers: getDenteAuthHeaders({
+              "Content-Type": "application/json",
+              "Idempotency-Key": generateUuidV7(),
+            }),
             body: JSON.stringify({ status: "cancelled", reason: "Отмена врачом (Undo)" }),
           });
           if (undoRes.ok || isDemoOrOffline) {

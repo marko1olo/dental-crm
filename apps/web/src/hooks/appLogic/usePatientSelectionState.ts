@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dashboard } from "@dental/shared";
+import type { ClinicProfileDraft } from "../../AppConstants";
 import { useAppStore } from "../../store/appStore";
 import { usePatientLogic } from "../domains/usePatientLogic";
 import { usePatientIntakeLogic } from "../domains/usePatientIntakeLogic";
+import type { PatientMutationAuthContext } from "../domains/patientLogicModules/patientLogicTypes";
 import { logger } from "../../utils/logger";
 import type { PatientSelectionStateSlice } from "./types";
 import type { VisitNoteForm } from "../../AppHelpers";
@@ -10,9 +12,9 @@ import type { VisitNoteForm } from "../../AppHelpers";
 interface UsePatientSelectionStateProps {
 	dashboard: Dashboard | null;
 	setDashboard: (dashboard: Dashboard | null) => void;
-	auth: any;
+	auth: PatientMutationAuthContext;
 	setError: (err: string | null) => void;
-	clinicProfileDraft: any;
+	clinicProfileDraft: ClinicProfileDraft;
 	activeOrganizationId: string | null;
 }
 

@@ -1,3 +1,4 @@
+import { kopecksToRubles, rublesToKopecks } from '@dental/shared';
 import React from 'react';
 import { CreditCard } from 'lucide-react';
 import { formatMoney } from '../useCopilotFormat';
@@ -20,14 +21,14 @@ export function renderFinancialAndGenericSection(tool: string, obj: Obj, result:
     const rawTotalKopecks = Number(
       obj.amountKopecks ||
         obj.totalKopecks ||
-        (typeof obj.total_rub === 'number' ? obj.total_rub * 100 : 0)
+        (typeof obj.total_rub === 'number' ? rublesToKopecks(obj.total_rub) : 0)
     );
     const rawItems = Array.isArray(obj.items)
       ? (obj.items as Array<Record<string, unknown>>).map((it) => ({
           name: String(it.name || it.procedureName || 'Стоматологическая процедура'),
           tooth: typeof it.tooth === 'number' ? it.tooth : undefined,
           priceRub: Number(
-            it.priceRub || (typeof it.priceKopecks === 'number' ? Math.round(it.priceKopecks / 100) : 0)
+            it.priceRub || (typeof it.priceKopecks === 'number' ? Math.round(kopecksToRubles(it.priceKopecks)) : 0)
           ),
         }))
       : [];

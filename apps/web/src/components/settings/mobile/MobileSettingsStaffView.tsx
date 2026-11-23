@@ -24,9 +24,21 @@ const ROLE_FILTERS = [
 	{ key: "owner", label: "Руководство" },
 ];
 
+export interface MobileStaffAppLogicBag {
+	dashboard?: {
+		clinicSettings?: {
+			staff?: readonly StaffMember[] | undefined;
+		} | undefined;
+	} | undefined;
+	loadDashboard?: (() => Promise<void>) | undefined;
+	auth?: {
+		settingsAccessHeaders?: (() => Record<string, string>) | undefined;
+	} | undefined;
+	[key: string]: unknown;
+}
+
 export interface MobileSettingsStaffViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: app logic props bag
-	readonly appLogic: Record<string, any>;
+	readonly appLogic: MobileStaffAppLogicBag;
 	readonly onBackToSettings: () => void;
 }
 
@@ -44,8 +56,8 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 	const [pinTargetStaff, setPinTargetStaff] = useState<StaffMember | null>(null);
 
 	const { isSubmitting, createStaff, savePin } = useMobileStaffActions({
-		accessHeaders: auth?.settingsAccessHeaders,
-		loadDashboard,
+		...(auth?.settingsAccessHeaders ? { accessHeaders: auth.settingsAccessHeaders } : {}),
+		...(loadDashboard ? { loadDashboard } : {}),
 	});
 
 	const filteredStaff = useMemo(() => {

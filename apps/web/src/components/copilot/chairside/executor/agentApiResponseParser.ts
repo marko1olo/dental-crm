@@ -7,6 +7,7 @@
  * - TABOO: Strictly preserve anesthesia dosage, epinephrine limits and pediatric logic.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type {
   ChairsideThoughtStep,
   ChairsideToothProposal,
@@ -143,10 +144,10 @@ export function parseAgentApiResponse(
           result.servicesProposal = (p.items as RawServiceItem[]).map((it, idx: number) => {
             const priceKopecks = typeof it.priceKopecks === "number"
               ? it.priceKopecks
-              : Math.round((it.priceRub || 0) * 100);
+              : rublesToKopecks(it.priceRub || 0);
             const priceRub = typeof it.priceRub === "number"
               ? it.priceRub
-              : Math.round(priceKopecks / 100);
+              : Math.round(kopecksToRubles(priceKopecks));
             return {
               id: `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
               serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
@@ -219,10 +220,10 @@ export function parseAgentApiResponse(
     result.servicesProposal = (data.servicesProposal as RawServiceItem[]).map((it, idx: number) => {
       const priceKopecks = typeof it.priceKopecks === "number"
         ? it.priceKopecks
-        : Math.round((it.priceRub || 0) * 100);
+        : rublesToKopecks(it.priceRub || 0);
       const priceRub = typeof it.priceRub === "number"
         ? it.priceRub
-        : Math.round(priceKopecks / 100);
+        : Math.round(kopecksToRubles(priceKopecks));
       return {
         id: it.id || `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
         serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",

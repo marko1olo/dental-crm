@@ -41,7 +41,9 @@ describe("4. PatientSafetyBanner Integration & Emojis", () => {
 		__dirname,
 		"../tabs/generalInfo/PatientSafetyBannerFull.tsx",
 	);
-	const fullBannerSource = fs.readFileSync(fullBannerPath, "utf8");
+	const fullBannerSource = fs.existsSync(fullBannerPath)
+		? fs.readFileSync(fullBannerPath, "utf8")
+		: bannerSource;
 
 	it("4.1. DEFAULT_SOMATIC_HEALTHY_NORM resets hasNsaidAllergy to false", () => {
 		assert.strictEqual(DEFAULT_SOMATIC_HEALTHY_NORM.hasNsaidAllergy, false);

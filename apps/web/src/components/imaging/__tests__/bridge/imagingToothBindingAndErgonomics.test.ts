@@ -12,7 +12,9 @@ import {
 } from "../../../radiology/radiologyMeasurementMath.js";
 import {
 	isSupportedToothFdi,
+	getToothNameRu,
 	PERMANENT_TEETH_FDI,
+	PRIMARY_TEETH_FDI,
 } from "../../imagingToothBindingHelper";
 
 describe("Imaging 2D Viewer — FDI Tooth Binding & Outpatient Ergonomics", () => {
@@ -24,6 +26,22 @@ describe("Imaging 2D Viewer — FDI Tooth Binding & Outpatient Ergonomics", () =
 			assert.strictEqual(isSupportedToothFdi("26"), true);
 			assert.strictEqual(isSupportedToothFdi("36"), true);
 			assert.strictEqual(isSupportedToothFdi("48"), true);
+		});
+
+		it("validates all 20 primary teeth across 4 quadrants according to FDI standard (51..85)", () => {
+			assert.strictEqual(PRIMARY_TEETH_FDI.length, 20);
+			assert.strictEqual(isSupportedToothFdi("51"), true);
+			assert.strictEqual(isSupportedToothFdi("55"), true);
+			assert.strictEqual(isSupportedToothFdi("61"), true);
+			assert.strictEqual(isSupportedToothFdi("75"), true);
+			assert.strictEqual(isSupportedToothFdi("85"), true);
+		});
+
+		it("returns full clinical anatomical Russian names for primary teeth (51..85)", () => {
+			assert.strictEqual(getToothNameRu("51"), "Верхний правый молочный центральный резец");
+			assert.strictEqual(getToothNameRu("63"), "Верхний левый молочный клык");
+			assert.strictEqual(getToothNameRu("75"), "Нижний левый молочный второй моляр");
+			assert.strictEqual(getToothNameRu("84"), "Нижний правый молочный первый моляр");
 		});
 
 		it("rejects non-FDI teeth numbers safely", () => {

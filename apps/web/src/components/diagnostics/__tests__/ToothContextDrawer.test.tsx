@@ -3,7 +3,8 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { ToothContextDrawer, TOOTH_EXPRESS_ANESTHESIA_OPTIONS } from "../ToothContextDrawer.js";
-import { ToothSurfacesAndEndoMatrix, BLACK_MACROS } from "../ToothSurfacesAndEndoMatrix.js";
+import { BLACK_MACROS } from "../toothSurfacesConstants.js";
+import { ToothDrawerSurfacesAccordion } from "../toothDrawer/ToothDrawerSurfacesAccordion.js";
 import { AnesthesiaQuickBar, WEIGHT_PRESETS } from "../../anesthesia/AnesthesiaQuickBar.js";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail.js";
 import { ToothPediatricContext, RESORPTION_STAGES } from "../ToothPediatricContext.js";
@@ -51,9 +52,11 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.equal(html, "", "Closed drawer should render empty string without polluting Tier 1");
 	});
 
-	it("ToothSurfacesAndEndoMatrix renders 5-surface cross diagram and Black classification macros", () => {
+	it("ToothDrawerSurfacesAccordion renders 5-surface cross diagram and Black classification macros", () => {
 		const html = renderToString(
-			<ToothSurfacesAndEndoMatrix
+			<ToothDrawerSurfacesAccordion
+				activeSection="surfaces_endo"
+				toggleSection={() => {}}
 				toothNumber={16}
 				toothData={{
 					toothNumber: 16,
@@ -73,9 +76,11 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("ИРОПЗ"), "IROPZ destruction index should be computed");
 	});
 
-	it("ToothSurfacesAndEndoMatrix renders express endo presets (ProTaper, Calasept, Revision) and MOD quick combo buttons", () => {
+	it("ToothDrawerSurfacesAccordion renders express endo presets (ProTaper, Calasept, Revision) and MOD quick combo buttons", () => {
 		const html = renderToString(
-			<ToothSurfacesAndEndoMatrix
+			<ToothDrawerSurfacesAccordion
+				activeSection="surfaces_endo"
+				toggleSection={() => {}}
 				toothNumber={16}
 				toothData={{
 					toothNumber: 16,
@@ -220,9 +225,11 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("Рекомендован Скандонест 3%"), "Should recommend plain mepivacaine");
 	});
 
-	it("ToothSurfacesAndEndoMatrix renders permanent obturation preset and anatomical length button", () => {
+	it("ToothDrawerSurfacesAccordion renders permanent obturation preset and anatomical length button", () => {
 		const html = renderToString(
-			<ToothSurfacesAndEndoMatrix
+			<ToothDrawerSurfacesAccordion
+				activeSection="surfaces_endo"
+				toggleSection={() => {}}
 				toothNumber={21}
 				toothData={{
 					toothNumber: 21,

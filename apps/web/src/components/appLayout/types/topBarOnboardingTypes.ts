@@ -27,7 +27,7 @@ export interface TopBarOnboardingBaseProps {
 	onboardingRoleChoices: readonly StaffRole[];
 	moveOnboardingTo: (step: string | number) => Promise<void> | void;
 	onboardingStep: string | number;
-	onboardingFinishGuidanceId: string;
+	onboardingFinishGuidanceId?: string | null | undefined;
 	specialtyLabels: Record<DentalSpecialty, string>;
 	selectedSpecialty: DentalSpecialty | string;
 	setSelectedSpecialty: (spec: DentalSpecialty | string) => void;
@@ -51,10 +51,10 @@ export interface TopBarOnboardingBaseProps {
 	setNewStaffSpecialty: ((specialty: string) => void) | ((specialty: DentalSpecialty) => void) | Dispatch<SetStateAction<string>> | Dispatch<SetStateAction<DentalSpecialty>>;
 	addStaffMember: ((role?: StaffRole) => Promise<void>) | ((role: StaffRole) => Promise<void>) | (() => Promise<void>);
 	newStaffReadyToCreate: boolean;
-	onboardingStaffCreateGuidanceId: string;
+	onboardingStaffCreateGuidanceId?: string | null | undefined;
 	newChairName: string;
 	setNewChairName: ((name: string) => void) | Dispatch<SetStateAction<string>>;
 	addChair: () => Promise<void>;
 	newChairReadyToCreate: boolean;
-	onboardingChairCreateGuidanceId: string;
+	onboardingChairCreateGuidanceId?: string | null | undefined;
 }

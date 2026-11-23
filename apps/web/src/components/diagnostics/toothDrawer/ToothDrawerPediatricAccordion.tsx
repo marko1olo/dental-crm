@@ -16,6 +16,7 @@ interface ToothDrawerPediatricAccordionProps {
 	onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
 	onOpenParentMemo?: (() => void) | undefined;
+	onOpenEndo?: ((toothNumber: number) => void) | undefined;
 }
 
 export const ToothDrawerPediatricAccordion: React.FC<ToothDrawerPediatricAccordionProps> = ({
@@ -29,6 +30,7 @@ export const ToothDrawerPediatricAccordion: React.FC<ToothDrawerPediatricAccordi
 	onUpdateTooth,
 	onInsertToProtocol,
 	onOpenParentMemo,
+	onOpenEndo,
 }) => {
 	const isExpanded = activeSection === "pediatric";
 
@@ -60,6 +62,7 @@ export const ToothDrawerPediatricAccordion: React.FC<ToothDrawerPediatricAccordi
 						onUpdateTooth={(updates) => onUpdateTooth?.(toothNumber, updates)}
 						onInsertToProtocol={onInsertToProtocol}
 						onOpenParentMemo={onOpenParentMemo}
+						onOpenEndo={onOpenEndo}
 					/>
 				</div>
 			)}

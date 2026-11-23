@@ -10,6 +10,7 @@ export interface OdontogramToolbarQuickActionsProps {
 		| undefined;
 	handleMarkIntactDentition: () => void;
 	handleMarkWisdomTeethMissing: () => void;
+	handleMarkFrontalHygiene?: (() => void) | undefined;
 	handleBatchSelectGroup: (teeth: number[]) => void;
 	setActiveJawModalTarget: (target: "JU" | "JL" | "C") => void;
 	pediatricMode?: boolean | undefined;

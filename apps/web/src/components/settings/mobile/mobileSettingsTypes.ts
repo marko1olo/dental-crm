@@ -1,8 +1,23 @@
 import type React from "react";
 
+export interface MobileSettingsAppLogicBag {
+	dashboard?: {
+		clinicName?: string | undefined;
+		serviceCatalog?: readonly unknown[] | undefined;
+		clinicSettings?: {
+			profile?: {
+				mode?: string | null | undefined;
+				clinicName?: string | undefined;
+			} | undefined;
+			staff?: readonly unknown[] | undefined;
+			chairs?: readonly unknown[] | undefined;
+		} | undefined;
+	} | undefined;
+	[key: string]: unknown;
+}
+
 export interface MobileSettingsRootViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: app logic bag
-	readonly appLogic: Record<string, any>;
+	readonly appLogic: MobileSettingsAppLogicBag;
 	readonly onSelectSection: (sectionId: string) => void;
 }
 

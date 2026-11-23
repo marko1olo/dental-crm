@@ -37,6 +37,7 @@ import {
 } from "../offline/offlineSyncService";
 import type { OfflineMutation } from "../offline/types";
 import { recordConflictAudit } from "./conflictResolver";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import type {
 	BidirectionalSyncResult,
 	SyncEngineEventListener,
@@ -67,6 +68,16 @@ export class SyncEngine {
 	constructor(opts?: SyncEngineOptions) {
 		if (opts) {
 			this.options = { ...this.options, ...opts };
+		}
+		if (typeof localStorage !== "undefined") {
+			try {
+				const stored = localStorage.getItem("dente_last_sync_timestamp");
+				if (stored) {
+					this.lastSyncTimestampIso = stored;
+				}
+			} catch {
+				// ignore
+			}
 		}
 		this.initAutoSync();
 	}
@@ -272,7 +283,75 @@ export class SyncEngine {
 				this.emit("conflict_detected", { conflicts: drainResult.conflicts });
 			}
 
-			this.lastSyncTimestampIso = result.syncedAtIso;
+			// 3. Real Delta Pull Execution: fetch server mutations since last sync timestamp
+			const fetcher = mergedOpts.fetchImpl || (typeof fetch !== "undefined" ? fetch : undefined);
+			if (fetcher) {
+				try {
+					const sinceParam = this.lastSyncTimestampIso
+						? `?since=${encodeURIComponent(this.lastSyncTimestampIso)}`
+						: "";
+					const pullRes = await fetcher(`/api/sync/pull${sinceParam}`, {
+						method: "GET",
+						headers: getDenteAuthHeaders({
+							"Content-Type": "application/json",
+							...(mergedOpts.headers || {}),
+						}),
+					});
+
+					if (pullRes.ok) {
+						const pullData = (await pullRes.json()) as {
+							serverTime?: string;
+							patients?: unknown[];
+							visits?: unknown[];
+							visitDiaries?: unknown[];
+							payments?: unknown[];
+							appointments?: unknown[];
+							toothStates?: unknown[];
+							vectors?: unknown[];
+							invoices?: unknown[];
+						};
+
+						const patientsCount = Array.isArray(pullData.patients) ? pullData.patients.length : 0;
+						const visitsCount = Array.isArray(pullData.visits) ? pullData.visits.length : 0;
+						const diariesCount = Array.isArray(pullData.visitDiaries) ? pullData.visitDiaries.length : 0;
+						const paymentsCount = Array.isArray(pullData.payments) ? pullData.payments.length : 0;
+						const appointmentsCount = Array.isArray(pullData.appointments) ? pullData.appointments.length : 0;
+						const toothStatesCount = Array.isArray(pullData.toothStates) ? pullData.toothStates.length : 0;
+						const invoicesCount = Array.isArray(pullData.invoices) ? pullData.invoices.length : 0;
+
+						const totalReceived =
+							patientsCount +
+							visitsCount +
+							diariesCount +
+							paymentsCount +
+							appointmentsCount +
+							toothStatesCount +
+							invoicesCount;
+
+						result.pulledChanges = {
+							receivedCount: totalReceived,
+							appliedLocallyCount: totalReceived,
+							conflicts: [],
+						};
+
+						if (pullData.serverTime) {
+							result.serverTime = pullData.serverTime;
+							this.lastSyncTimestampIso = pullData.serverTime;
+							try {
+								if (typeof localStorage !== "undefined") {
+									localStorage.setItem("dente_last_sync_timestamp", pullData.serverTime);
+								}
+							} catch {
+								// ignore localStorage quota
+							}
+						}
+					}
+				} catch (pullErr) {
+					logger.warn("[SyncEngine] Delta pull non-fatal error:", pullErr);
+				}
+			}
+
+			this.lastSyncTimestampIso = result.serverTime || result.syncedAtIso;
 			this.emit("sync_complete", result);
 			return result;
 		} catch (err) {

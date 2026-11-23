@@ -34,7 +34,7 @@ export function RadiologyReferralPreviewPane({
 	return (
 		<div className={`w-full md:w-1/2 p-5 md:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-4 ${activeTab === "form" ? "hidden md:flex" : "flex"}`}>
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+				<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
 					<FileText className="w-4 h-4 text-[var(--teal)]" />
 					<span>Официальный бланк направления:</span>
 				</span>
@@ -56,11 +56,11 @@ export function RadiologyReferralPreviewPane({
 			<div className="p-5 md:p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-md font-sans leading-relaxed flex flex-col gap-3.5">
 				<div className="border-b-2 border-[var(--line-strong,var(--line))] pb-2.5 flex justify-between items-start">
 					<div>
-						<div className="font-extrabold text-sm uppercase text-[var(--ink)]">{clinic}</div>
+						<div className="font-bold text-sm text-[var(--ink)]">{clinic}</div>
 						<div className="text-xs text-[var(--muted)]">Лицензия: {license} · {phone}</div>
 					</div>
 					<div className="text-right">
-						<div className="font-black text-sm text-[var(--teal)] uppercase tracking-tight">НАПРАВЛЕНИЕ НА КЛКТ</div>
+						<div className="font-bold text-sm text-[var(--teal)] tracking-tight">Направление на КЛКТ</div>
 						<div className="text-xs text-[var(--muted)] font-semibold">{currentPartner.nameRu}</div>
 					</div>
 				</div>

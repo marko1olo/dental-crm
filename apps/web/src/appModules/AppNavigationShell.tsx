@@ -41,6 +41,35 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 
 	const topBarProps: AppTopBarProps = {
 		...appLogic,
+		continueOnboardingInDraftMode: (view?: string) => {
+			if (typeof appLogic.continueOnboardingInDraftMode === "function") {
+				return appLogic.continueOnboardingInDraftMode(view as AppView | undefined);
+			}
+		},
+		moveOnboardingTo: (step: string | number) => {
+			if (typeof appLogic.moveOnboardingTo === "function") {
+				return appLogic.moveOnboardingTo(step as Parameters<typeof appLogic.moveOnboardingTo>[0]);
+			}
+		},
+		onboardingFinishGuidanceId: appLogic.onboardingFinishGuidanceId ?? "onboarding-finish-guidance",
+		onboardingStaffCreateGuidanceId: appLogic.onboardingStaffCreateGuidanceId ?? "onboarding-staff-create-guidance",
+		onboardingChairCreateGuidanceId: appLogic.onboardingChairCreateGuidanceId ?? "onboarding-chair-create-guidance",
+		telegramReminderLeadTimesDraft: Array.isArray(appLogic.telegramReminderLeadTimesDraft)
+			? appLogic.telegramReminderLeadTimesDraft.map(String).join(",")
+			: String(appLogic.telegramReminderLeadTimesDraft ?? ""),
+		telegramAdminSecretSession: Boolean(appLogic.telegramAdminSecretSession),
+		setTelegramPrivacyModeDraft: (mode: string) => {
+			if (typeof appLogic.setTelegramPrivacyModeDraft === "function") {
+				if (mode === "no_phi_by_default" || mode === "limited_admin_only" || mode === "consented_phi_templates") {
+					appLogic.setTelegramPrivacyModeDraft(mode);
+				}
+			}
+		},
+		telegramHandoffNotice:
+			appLogic.telegramHandoffNotice &&
+			typeof appLogic.telegramHandoffNotice === "object"
+				? appLogic.telegramHandoffNotice
+				: null,
 		dashboard,
 		clinicName: dashboard?.clinicName ?? "",
 		todayIso: dashboard?.todayIso ?? new Date().toISOString().slice(0, 10),
@@ -81,6 +110,26 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 			}
 		},
 		imagingImportSourceKind: (appLogic.imagingImportSourceKind as ImagingSourceKind | undefined) ?? "manual_upload",
+		setImportPreview: (preview: unknown) => {
+			if (typeof appLogic.setImportPreview === "function") {
+				(appLogic.setImportPreview as (p: unknown) => void)(preview);
+			}
+		},
+		setImportCommit: (commit: unknown) => {
+			if (typeof appLogic.setImportCommit === "function") {
+				(appLogic.setImportCommit as (c: unknown) => void)(commit);
+			}
+		},
+		setSmartImportPreview: (preview: unknown) => {
+			if (typeof appLogic.setSmartImportPreview === "function") {
+				(appLogic.setSmartImportPreview as (p: unknown) => void)(preview);
+			}
+		},
+		setSmartImportCommit: (commit: unknown) => {
+			if (typeof appLogic.setSmartImportCommit === "function") {
+				(appLogic.setSmartImportCommit as (c: unknown) => void)(commit);
+			}
+		},
 		setImagingImportSourceKind: (kind: ImagingSourceKind) => {
 			if (typeof appLogic.setImagingImportSourceKind === "function") {
 				(appLogic.setImagingImportSourceKind as (k: ImagingSourceKind) => void)(kind);

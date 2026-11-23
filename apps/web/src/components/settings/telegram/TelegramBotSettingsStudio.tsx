@@ -205,9 +205,8 @@ export function TelegramBotSettingsStudio(
 									<p className="tg-preset-desc">{p.description}</p>
 
 									<div className="tg-preset-features-list">
-										{p.highlightFeatures.slice(0, 3).map((feat, idx) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: feature chips
-											<span key={idx} className="tg-preset-feat-tag">
+										{p.highlightFeatures.slice(0, 3).map((feat) => (
+											<span key={feat} className="tg-preset-feat-tag">
 												{feat}
 											</span>
 										))}

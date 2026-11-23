@@ -4,7 +4,8 @@
  * Мандат 8b: Строго <= 500 строк (Sweet spot 300–400 строк).
  */
 
-import { type Kopecks, parseKopecks, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, kopecksToRubles, rublesToKopecks, percentageOfKopecks } from "@dental/shared";
+import { basisPointsFromPercent } from "../treatment-plans/planInsuranceCoverage";
 import { PLAN_SERVICE_RULES, type PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
 import { type EstimatorRule, type EstimatorSuggestionKey, isDeciduousFdiToothNumber } from "./treatmentEstimatorRules";
@@ -204,7 +205,10 @@ export function exportEstimatorToCashier(
 		const unitPrice = it.price ?? 0;
 		const qty = it.quantity || 1;
 		const gross = unitPrice * qty;
-		const disc = it.discount || (discountPercent > 0 ? kopecksToRubles(Math.round((rublesToKopecks(gross) * discountPercent) / 100)) : 0);
+		const grossKopecks = rublesToKopecks(gross);
+		const bp = discountPercent > 0 ? basisPointsFromPercent(discountPercent) : null;
+		const calculatedDiscountKopecks = bp !== null ? percentageOfKopecks(grossKopecks, bp) : 0;
+		const disc = it.discount || (calculatedDiscountKopecks > 0 ? kopecksToRubles(calculatedDiscountKopecks) : 0);
 		const netPrice = Math.max(0, gross - disc);
 		const stageId = resolveStageIdForItem(it);
 		const isSurg = stageId === "stage_3_surgery";

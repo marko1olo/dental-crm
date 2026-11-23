@@ -567,7 +567,7 @@ export function applyStepZoom(
 	const panX = Number.isFinite(currentTransform?.panX) ? currentTransform.panX : 0;
 	const panY = Number.isFinite(currentTransform?.panY) ? currentTransform.panY : 0;
 
-	const factor = direction === "in" ? 1 + stepPercent / 100 : 1 - stepPercent / 100;
+	const factor = direction === "in" ? 1 + stepPercent * 0.01 : 1 - stepPercent * 0.01;
 	const newZoom = Math.max(safeMin, Math.min(safeMax, curZoom * factor));
 
 	const centerX = viewportDimensions.width / 2;

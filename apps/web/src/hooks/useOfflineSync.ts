@@ -77,6 +77,7 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 
 	const isConnected = isOnline || isLan;
 	const prevConnectedRef = useRef(isConnected);
+	const syncMutexRef = useRef(false);
 	const isSyncing = isStoreSyncing || isServiceSyncing;
 	const isMountedRef = useRef(true);
 
@@ -160,6 +161,21 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 				};
 			}
 
+			// Предотвращение дублирующего состояния гонки параллельного дренажа
+			if (syncMutexRef.current) {
+				return {
+					processedCount: 0,
+					appliedCount: 0,
+					duplicateCount: 0,
+					mergedCount: 0,
+					rejectedCount: 0,
+					failedCount: 0,
+					conflicts: [],
+					errors: [],
+				};
+			}
+
+			syncMutexRef.current = true;
 			setIsServiceSyncing(true);
 			try {
 				const mergedOptions: SyncBatchDrainOptions = {
@@ -175,15 +191,25 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 					...drainOptions,
 				};
 
+				// 1. Единый канонический шлюз синхронизации (Sync Gateway) для Outbox
 				const result = await offlineSyncService.drainOutbox(mergedOptions);
-				// Also flush appointment and payment domain queues
-				await Promise.allSettled([
-					flushOfflineAppointmentsToServer(),
-					flushOfflinePaymentsToServer(),
-				]);
+
+				// 2. Последовательный сброс остаточных доменных очередей без состояния гонки
+				try {
+					await flushOfflineAppointmentsToServer();
+				} catch {
+					// Изолированная обработка без срыва общего ответа
+				}
+				try {
+					await flushOfflinePaymentsToServer();
+				} catch {
+					// Изолированная обработка без срыва общего ответа
+				}
+
 				await refresh();
 				return result;
 			} finally {
+				syncMutexRef.current = false;
 				if (isMountedRef.current) {
 					setIsServiceSyncing(false);
 				}

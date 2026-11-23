@@ -1,4 +1,4 @@
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 
 export interface ZtlWageFinancials {
 	readonly unitsCount: number;
@@ -74,7 +74,7 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 	const patientPriceKopecks = unitPriceKop * count;
 	const ztlCostKopecks = unitCostKop * count;
 	const doctorWageBaseKopecks = Math.max(0, patientPriceKopecks - ztlCostKopecks);
-	const doctorWageKopecks = Math.round((doctorWageBaseKopecks * docPct) / 100);
+	const doctorWageKopecks = calculatePercentDiscountKopecks(doctorWageBaseKopecks, docPct);
 	const clinicMarginKopecks = Math.max(0, doctorWageBaseKopecks - doctorWageKopecks);
 
 	return {

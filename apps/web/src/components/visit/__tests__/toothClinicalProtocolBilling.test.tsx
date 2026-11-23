@@ -24,6 +24,7 @@ import {
 	getDiagnosisBundleByIcd10,
 	createCustomizedBundle,
 	exportCustomizedBundleToCashier54Fz,
+	kopecksToRubles,
 } from "@dental/shared";
 import { useVisitStore } from "../../../store/visitStore";
 
@@ -74,7 +75,7 @@ describe("Canonical Clinical Treatment Packages & Tooth Billing Integration", ()
 		assert.equal(customized.bundleId, CARIES_DIAGNOSIS_BUNDLE.id);
 		assert.ok(customized.items.length > 0, "Bundle must contain services");
 		assert.ok(customized.totalKopecks > 0, "Total kopecks must be positive");
-		assert.equal(customized.totalRub, customized.totalKopecks / 100, "Rubles match kopecks conversion");
+		assert.equal(customized.totalRub, kopecksToRubles(customized.totalKopecks), "Rubles match kopecks conversion");
 
 		for (const item of customized.items) {
 			assert.equal(item.toothCode, "16", "All bundle items bound to tooth 16");

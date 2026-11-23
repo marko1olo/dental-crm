@@ -136,6 +136,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 
 	return (
 		<DentalLabStudioModal
+			key={activePatient?.id || activeAppointment?.patientId || "dental_lab_order"}
 			isOpen={isOpen}
 			onClose={() => {
 				onClose();

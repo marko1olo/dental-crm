@@ -29,6 +29,10 @@ import {
 } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
+import {
 	reconcileAcquiringWithKkt,
 	type AcquiringTerminalTransaction,
 	type KktFiscalElectronicRecord,
@@ -113,7 +117,9 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	useEffect(() => {
 		if (!isOpen || !needsAutoFetch) return;
 		let isMounted = true;
-		fetch("/api/cashbox/shift")
+		fetch("/api/cashbox/shift", {
+			headers: denteClinicalReadHeaders(),
+		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (isMounted && data && typeof data === "object") {
@@ -238,6 +244,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				? countedCashRub
 				: Math.max(0, countedCashRub - changeFundRetainRub);
 
+		const idempotencyKey = crypto.randomUUID();
+
 		const payload = {
 			shiftNumber,
 			cashierFullName,
@@ -253,13 +261,17 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			encashmentAmountRub,
 			force: true, // Cashier autonomy: soft-close does not block
 			allowUnfinishedVisits: true,
-			idempotencyKey: `shift-close-${Date.now()}-${shiftNumber}`,
+			idempotencyKey,
 		};
 
 		try {
 			const res = await fetch("/api/cashbox/shift/close", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					...denteClinicalMutationHeaders(),
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				},
 				body: JSON.stringify(payload),
 			});
 
@@ -413,7 +425,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								{isCashMatched ? (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-semibold">
 										<CheckCircle2 className="w-4 h-4 text-[var(--success-ink)]" />
-										Сходится
+										Сходится ✓
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">

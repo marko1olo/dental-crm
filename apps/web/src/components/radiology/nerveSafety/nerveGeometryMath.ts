@@ -10,6 +10,8 @@ import {
 	MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
 } from "./nerveSafetyTypes.js";
 
+const roundMm = (v: number): number => Number((Math.round(v * 100) * 1e-2).toFixed(2));
+
 export interface ApexToNerve3DResult {
 	readonly distanceToCanalCenterMm: number;
 	readonly netClearanceToCanalWallMm: number;
@@ -39,8 +41,8 @@ export function calculateApexCoordinates(
 	const apexX = entryX + len * Math.sin(angRad);
 	const apexY = entryY + len * Math.cos(angRad);
 	return {
-		x: Math.round(apexX * 100) / 100,
-		y: Math.round(apexY * 100) / 100,
+		x: roundMm(apexX),
+		y: roundMm(apexY),
 	};
 }
 
@@ -100,9 +102,9 @@ export function calculateApexToNerve3DDistance(
 			minDistance = segDist; closestPoint = proj; closestSegIdx = i;
 		}
 	}
-	const distCenterToApex = Math.round(minDistance * 100) / 100;
-	const netClearanceWall = Math.round((distCenterToApex - canalRadiusMm - apexRadiusMm) * 100) / 100;
-	const netClearanceSafety = Math.round((netClearanceWall - safetyMarginMm) * 100) / 100;
+	const distCenterToApex = roundMm(minDistance);
+	const netClearanceWall = roundMm(distCenterToApex - canalRadiusMm - apexRadiusMm);
+	const netClearanceSafety = roundMm(netClearanceWall - safetyMarginMm);
 	const isDanger = netClearanceWall < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
 	const isWarning = !isDanger && netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
 	const status: "safe" | "warning" | "danger" = isDanger ? "danger" : isWarning ? "warning" : "safe";

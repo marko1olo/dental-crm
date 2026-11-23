@@ -129,8 +129,8 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 						</button>
 					))}
 				</div>
-				{/* Secondary Tenders: Split & Deposit */}
-				<div className="grid grid-cols-2 gap-2 pt-1">
+				{/* Secondary Tenders: Split, Deposit & Certificate */}
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
 					{CASHBOX_TENDER_PRESETS.slice(5).map((t) => (
 						<button
 							key={t.id}
@@ -157,7 +157,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							}`}
 						>
 							<span className="text-xs font-semibold">{t.label}</span>
-							<span className="text-[11px] text-[var(--muted)]">{t.description}</span>
+							<span className="text-[11px] text-[var(--muted)]">{t.shortLabel || t.description}</span>
 						</button>
 					))}
 				</div>

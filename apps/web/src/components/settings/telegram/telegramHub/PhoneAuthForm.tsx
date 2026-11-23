@@ -282,21 +282,20 @@ export function PhoneAuthForm({
 					</div>
 
 					<div className="tg-code-input-row">
-						{codeDigits.map((digit, idx) => (
+						{([0, 1, 2, 3, 4] as const).map((slotIndex) => (
 							<input
-								// biome-ignore lint/suspicious/noArrayIndexKey: fixed 5 slots
-								key={idx}
+								key={`digit-slot-${slotIndex}`}
 								ref={(el) => {
-									digitInputRefs.current[idx] = el;
+									digitInputRefs.current[slotIndex] = el;
 								}}
 								type="text"
 								inputMode="numeric"
 								maxLength={1}
 								className="tg-digit-input"
-								value={digit}
-								onChange={(e) => handleDigitChange(idx, e.target.value)}
-								onKeyDown={(e) => handleDigitKeyDown(idx, e)}
-								data-testid={`tg-code-digit-${idx}`}
+								value={codeDigits[slotIndex] ?? ""}
+								onChange={(e) => handleDigitChange(slotIndex, e.target.value)}
+								onKeyDown={(e) => handleDigitKeyDown(slotIndex, e)}
+								data-testid={`tg-code-digit-${slotIndex}`}
 							/>
 						))}
 					</div>

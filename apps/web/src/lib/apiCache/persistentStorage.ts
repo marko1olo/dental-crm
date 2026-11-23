@@ -257,13 +257,15 @@ export async function deleteCatalogFromPersistentStorage(
 		pendingCatalogBatch.clear();
 	} else if (typeof patternOrUrl === "string") {
 		for (const key of pendingCatalogBatch.keys()) {
-			if (key === patternOrUrl || key.includes(patternOrUrl)) {
+			const unscoped = key.replace(/^\[scope:[^\]]+\]/, "");
+			if (key === patternOrUrl || key.includes(patternOrUrl) || unscoped === patternOrUrl || unscoped.includes(patternOrUrl)) {
 				pendingCatalogBatch.delete(key);
 			}
 		}
 	} else {
 		for (const key of pendingCatalogBatch.keys()) {
-			if (patternOrUrl.test(key)) {
+			const unscoped = key.replace(/^\[scope:[^\]]+\]/, "");
+			if (patternOrUrl.test(key) || patternOrUrl.test(unscoped)) {
 				pendingCatalogBatch.delete(key);
 			}
 		}
@@ -287,11 +289,12 @@ export async function deleteCatalogFromPersistentStorage(
 					const cursor = req.result;
 					if (cursor) {
 						const key = String(cursor.key);
+						const unscoped = key.replace(/^\[scope:[^\]]+\]/, "");
 						let shouldDelete = false;
 						if (typeof patternOrUrl === "string") {
-							shouldDelete = key === patternOrUrl || key.includes(patternOrUrl);
+							shouldDelete = key === patternOrUrl || key.includes(patternOrUrl) || unscoped === patternOrUrl || unscoped.includes(patternOrUrl);
 						} else {
-							shouldDelete = patternOrUrl.test(key);
+							shouldDelete = patternOrUrl.test(key) || patternOrUrl.test(unscoped);
 						}
 						if (shouldDelete) {
 							cursor.delete();
@@ -323,10 +326,11 @@ export async function deleteCatalogFromPersistentStorage(
 					const k = window.localStorage.key(i);
 					if (k && k.startsWith(LOCAL_STORAGE_CATALOG_PREFIX)) {
 						const subKey = k.slice(LOCAL_STORAGE_CATALOG_PREFIX.length);
+						const unscoped = subKey.replace(/^\[scope:[^\]]+\]/, "");
 						const matches =
 							typeof patternOrUrl === "string"
-								? subKey === patternOrUrl || subKey.includes(patternOrUrl)
-								: patternOrUrl.test(subKey);
+								? subKey === patternOrUrl || subKey.includes(patternOrUrl) || unscoped === patternOrUrl || unscoped.includes(patternOrUrl)
+								: patternOrUrl.test(subKey) || patternOrUrl.test(unscoped);
 						if (matches) {
 							safeLocalStorageRemoveItem(k);
 						}

@@ -13,17 +13,21 @@
 
 import React from "react";
 import {
+	AlertTriangle,
 	Building2,
 	Check,
+	Clock,
 	FileSpreadsheet,
 	Shield,
 	Split,
 	X,
 	Zap,
 } from "lucide-react";
-import type {
-	DmsBillableItem,
-	PatientPaymentMethod,
+import {
+	type DmsBillableItem,
+	type PatientPaymentMethod,
+	formatKopecksToRub,
+	rublesToKopecks,
 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
@@ -59,7 +63,7 @@ export interface DmsStudioModalProps {
 	}) => void) | undefined;
 }
 
-const formatDisplayRub = (rub: number): string => `${Math.round(rub).toLocaleString("ru-RU")} ₽`;
+const formatDisplayRub = (rub: number): string => formatKopecksToRub(rublesToKopecks(rub));
 
 export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	isOpen,
@@ -112,6 +116,34 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 		onApplySplitToCashbox,
 	});
 
+	const todayIso = new Date().toISOString().slice(0, 10);
+	const letterValidUntil = selectedLetter?.validUntil || selectedLetter?.validTo;
+	const isLetterExpired = Boolean(letterValidUntil && letterValidUntil < todayIso);
+	const isLetterExhausted =
+		selectedLetter?.status === "exhausted" ||
+		(Boolean(selectedLetter) &&
+			letterRemainingLimitRub !== null &&
+			letterRemainingLimitRub <= 0);
+	const isLetterCancelled = selectedLetter?.status === "cancelled";
+
+	let badgeClass = "dms-badge dms-badge-active";
+	let badgeIcon = <Zap size={12} />;
+	let badgeText = "Активен";
+
+	if (isLetterCancelled) {
+		badgeClass = "dms-badge dms-badge-cancelled";
+		badgeIcon = <AlertTriangle size={12} />;
+		badgeText = "Отозван";
+	} else if (isLetterExhausted) {
+		badgeClass = "dms-badge dms-badge-exhausted";
+		badgeIcon = <AlertTriangle size={12} />;
+		badgeText = "Исчерпан";
+	} else if (isLetterExpired) {
+		badgeClass = "dms-badge dms-badge-expired";
+		badgeIcon = <Clock size={12} />;
+		badgeText = "Истёк";
+	}
+
 	if (!isOpen) return null;
 
 	return (
@@ -132,7 +164,10 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 							</h2>
 							<div className="dms-header-meta">
 								{patient.birthDate ? `Дата рождения: ${patient.birthDate} • ` : ""}
-								Полис: {patient.policyNumber || "Не указан"} • Статус: <span className="dms-badge dms-badge-active"><Zap size={12} /> Активен</span>
+								Полис: {patient.policyNumber || "Не указан"} • Статус:{" "}
+								<span className={badgeClass}>
+									{badgeIcon} {badgeText}
+								</span>
 							</div>
 						</div>
 					</div>

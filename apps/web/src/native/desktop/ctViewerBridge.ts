@@ -66,8 +66,8 @@ export async function launchExternalCtViewer(params: LaunchCtViewerParams): Prom
 					canFallbackToInternalStudio: true,
 				};
 			}
-		} catch {
-			// Backend offline or unreachable
+		} catch (err: unknown) {
+			logger.warn("[ctViewerBridge] Backend launch-external-viewer request failed (offline/unreachable):", err);
 		}
 	}
 

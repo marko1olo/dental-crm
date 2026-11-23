@@ -7,7 +7,6 @@
 
 export * from "./types.js";
 export * from "./reconciliationTypes.js";
-export * from "./numberToWordsRu.js";
 export * from "./reconciliationEngine.js";
 export * from "./vouchersEngine.js";
 export {

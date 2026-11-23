@@ -256,6 +256,16 @@ export function useSettingsDerivations() {
 		telegramInlineButtonRowsFromReplyMarkup,
 	});
 
+	const normalizedImportSourceLabels: Record<string, string> | undefined =
+		importSourceLabels
+			? Object.fromEntries(
+					Object.entries(importSourceLabels).map(([key, val]) => [
+						key,
+						typeof val === "string" ? val : (val?.title ?? key),
+					]),
+				)
+			: undefined;
+
 	const migration = deriveMigrationSettings({
 		dashboard,
 		smartImportText,
@@ -267,13 +277,24 @@ export function useSettingsDerivations() {
 		migrationSourceProbe,
 		clinicPublicLookup,
 		smartImportPreview,
-		importSourceLabels,
+		...(normalizedImportSourceLabels
+			? { importSourceLabels: normalizedImportSourceLabels }
+			: {}),
 		ingestionTargetLabels,
 		documentIngestion,
 		importIntake,
 		importPreview,
 		updateClinicProfileDraft,
-		setSmartImportMode,
+		setSmartImportMode: (mode: string) => {
+			if (
+				mode === "patients" ||
+				mode === "imaging" ||
+				mode === "auto" ||
+				mode === "mixed"
+			) {
+				setSmartImportMode(mode);
+			}
+		},
 		runMigrationAutopilot,
 		discoverMigrationSources,
 		pickBrowserMigrationSource,

@@ -62,7 +62,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 			<div className="shift-card space-y-3">
 				<div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-[var(--ink)]">
 					<span className="flex items-center gap-1.5">
-						<Banknote className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<Banknote className="w-4 h-4 text-[var(--primary)]" />
 						Сверка фактической наличности
 					</span>
 					<span className="text-xs text-[var(--muted)]">
@@ -114,7 +114,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 						onClick={() => setIsTerminalReconciled(!isTerminalReconciled)}
 						className={`min-h-[36px] px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
 							isTerminalReconciled
-								? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)]"
+								? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
 								: "border-[var(--line)] text-[var(--muted)]"
 						}`}
 					>
@@ -127,7 +127,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 			{/* Encashment Options */}
 			<div className="shift-card space-y-2.5">
 				<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-					<ArrowDownToLine className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+					<ArrowDownToLine className="w-4 h-4 text-[var(--primary)]" />
 					Инкассация наличной выручки
 				</span>
 
@@ -137,7 +137,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 						onClick={() => setEncashmentOption("retain_change")}
 						className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 							encashmentOption === "retain_change"
-								? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] font-semibold"
+								? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
 								: "border-[var(--line)] text-[var(--muted)]"
 						}`}
 					>
@@ -152,7 +152,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 						onClick={() => setEncashmentOption("full")}
 						className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 							encashmentOption === "full"
-								? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] font-semibold"
+								? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
 								: "border-[var(--line)] text-[var(--muted)]"
 						}`}
 					>
@@ -190,7 +190,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 							className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 							title="Печать промежуточного X-отчёта без гашения"
 						>
-							<Printer className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<Printer className="w-3.5 h-3.5 text-[var(--primary)]" />
 							<span>Промежуточный X-отчёт</span>
 						</button>
 
@@ -210,7 +210,7 @@ export const ShiftDrawerActions: React.FC<ShiftDrawerActionsProps> = ({
 							type="checkbox"
 							checked={printZReport}
 							onChange={(e) => setPrintZReport(e.target.checked)}
-							className="w-4 h-4 accent-[var(--teal,#0d9488)] cursor-pointer rounded"
+							className="w-4 h-4 accent-[var(--primary)] cursor-pointer rounded"
 						/>
 						<span>Печать бумажного Z-отчёта</span>
 					</label>

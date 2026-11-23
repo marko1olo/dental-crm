@@ -5,7 +5,6 @@
 
 import React from "react";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
-import { MedicalCardExtract003vuForm } from "../../forms/MedicalCardExtract003vuForm";
 import { OrthodonticPatientCardForm, OrthodonticCard043_1uForm } from "../../forms/OrthodonticPatientCardForm";
 import { PostVisitRecommendationsForm } from "../../forms/PostVisitRecommendationsForm";
 import { PrescriptionOrderForm } from "../../forms/PrescriptionOrderForm";
@@ -43,7 +42,25 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 					</article>
 				)}
 				{(selectedDocumentKind === "medical_record_extract" || selectedDocumentKind === "medical_card_extract_003vu") && (
-					<MedicalCardExtract003vuForm initialPayload={props.activeDoctor?.fullName ? { attendingDoctorFullName: props.activeDoctor.fullName, patientFullName: (props.documentPatient ?? props.activePatient)?.fullName ?? "" } : undefined} />
+					<article className="document-payload-card" data-testid="medical-record-extract-document-card">
+						<div>
+							<h3 className="text-base font-bold text-[var(--ink)]">Выписка из медицинской карты (ЭМК)</h3>
+							<p className="text-xs text-[var(--ink-muted)] mt-1">Официальная выписка из электронной медицинской карты с историей приёмов, диагнозами и этапами лечения.</p>
+						</div>
+						<div className="mt-4 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col sm:flex-row items-center justify-between gap-3">
+							<div className="text-xs text-[var(--ink-muted)]">
+								Формирование выписки, экспорт и печать осуществляются в единой студии медицинской карты.
+							</div>
+							<button
+								type="button"
+								data-testid="open-medical-record-studio-for-extract-btn"
+								onClick={() => useUiSurfaceStore.getState().openPrimaryModal("medical_record", { patientId: props.activePatient?.id, doctorFullName: props.activeDoctor?.fullName })}
+								className="dente-btn-primary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+							>
+								Открыть медицинскую карту
+							</button>
+						</div>
+					</article>
 				)}
 				{selectedDocumentKind === "orthodontic_medical_card_043_1u" && (
 					<OrthodonticPatientCardForm

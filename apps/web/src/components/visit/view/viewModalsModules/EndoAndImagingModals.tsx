@@ -111,6 +111,7 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 			{/* Модальное окно сплит-сравнения визиографа (EzDent-i Dual View) */}
 			{isVisiographComparisonModalOpen && effectiveActiveModal === "visiograph_comparison" && (
 				<RadiologyConsultationSplit
+					key={activePatient?.id || "visiograph_comparison"}
 					isOpen={Boolean(isVisiographComparisonModalOpen)}
 					asModal={true}
 					onClose={() => setIsVisiographComparisonModalOpen?.(false)}

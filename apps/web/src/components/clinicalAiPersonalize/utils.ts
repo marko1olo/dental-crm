@@ -2,6 +2,7 @@
  * Layer 1: Утилиты, пресеты и расчетные функции для ИИ-персонализации и стилей врача.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type {
 	AiPersonalizeState,
 	AiProtocolPromptSettings,
@@ -189,7 +190,7 @@ export function todayDateLike(): string {
 export function moneyLine(amount: number | null | undefined): number {
 	if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0)
 		return 0;
-	return Math.round(amount * 100) / 100;
+	return kopecksToRubles(rublesToKopecks(amount));
 }
 
 export function lineTotal(item: PlanItem): number {

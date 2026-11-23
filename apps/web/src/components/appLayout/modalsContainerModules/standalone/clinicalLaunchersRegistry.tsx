@@ -13,7 +13,7 @@ import { clearUrlTokens } from "./deepLinkUrl";
 import { EmkComplaintsSection } from "../../../visit/emk/EmkComplaintsSection";
 import { StandaloneEmrMedicalRecordHost } from "./clinical/StandaloneEmrMedicalRecordHost";
 import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTemplatesHost";
-import { DirectOdontogramModuleLauncher } from "../../../odontogram/DirectOdontogramModuleLauncher";
+import { OdontogramModule } from "../../../odontogram/OdontogramModule";
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
 import { DirectRadiologyLauncher } from "../../../radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
@@ -138,7 +138,16 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 					"odontogram-mandible",
 				],
 			},
-			render: () => <DirectOdontogramModuleLauncher />,
+			render: () => (
+				<main
+					data-testid="direct-odontogram-module-launcher"
+					className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col p-2 sm:p-4 box-border max-w-7xl mx-auto"
+				>
+					<OdontogramModule
+						patientId={usePatientStore.getState().selectedPatientId || "demo-patient-1"}
+					/>
+				</main>
+			),
 		},
 
 		// 5b. Живой интерактивный модуль зубной формулы OdontogramModule (SSOT)
@@ -150,7 +159,16 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				searchIncludes: ["stand=module", "stand=odontogram", "odontogram-module=1"],
 				hashIncludes: ["#odontogram-module", "#stand-module"],
 			},
-			render: () => <DirectOdontogramModuleLauncher />,
+			render: () => (
+				<main
+					data-testid="direct-odontogram-module-launcher"
+					className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col p-2 sm:p-4 box-border max-w-7xl mx-auto"
+				>
+					<OdontogramModule
+						patientId={usePatientStore.getState().selectedPatientId || "demo-patient-1"}
+					/>
+				</main>
+			),
 		},
 
 		// 7. Аппаратный захват визиографа Direct RVG (Мандат 8e & [RAD-03])

@@ -33,7 +33,7 @@ export function sampleMemoryPressure(enabled: boolean = true): MemoryMetrics {
 	if (memory && typeof memory.usedJSHeapSize === "number" && typeof memory.jsHeapSizeLimit === "number") {
 		const usedMb = Math.round(memory.usedJSHeapSize / (1024 * 1024));
 		const limitMb = Math.round(memory.jsHeapSizeLimit / (1024 * 1024));
-		const memoryPressureRatio = limitMb > 0 ? Math.round((usedMb / limitMb) * 100) / 100 : null;
+		const memoryPressureRatio = limitMb > 0 ? Number((usedMb / limitMb).toFixed(2)) : null;
 
 		return { usedHeapMb: usedMb, heapLimitMb: limitMb, memoryPressureRatio };
 	}

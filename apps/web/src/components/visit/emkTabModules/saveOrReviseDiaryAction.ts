@@ -36,7 +36,12 @@ export async function executeSaveOrReviseDiary(
 	} = params;
 
 	if (!isUuid(effectiveVisitId) || !isUuid(effectivePatientId)) {
-		return true;
+		showToast(
+			"Не указан корректный идентификатор приёма или пациента для сохранения дневника",
+			"error",
+			5000,
+		);
+		return false;
 	}
 
 	try {
@@ -90,51 +95,83 @@ export async function executeSaveOrReviseDiary(
 				}
 			}
 
-			if (!targetDiaryId) {
-				showToast(
-					"Не найден идентификатор дневника для оформления ревизии («Исправленному верить»)",
-					"error",
-					5000,
-				);
-				return false;
-			}
+			if (targetDiaryId) {
+				const reviseRes = await fetch(`/api/diaries/${targetDiaryId}/revise`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						...getDenteAuthHeaders(),
+					},
+					credentials: "same-origin",
+					body: JSON.stringify({
+						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
+						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
+						statusLocalis:
+							statusLocalisText ||
+							"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+						diagnosisIcd10: diagnosisIcd10Code || undefined,
+						diagnosisTooth: toothRaw,
+						treatmentDescription:
+							treatmentText || "Проведен осмотр, санация / консультация.",
+						revisionReason: "Исправленному верить",
+					}),
+				});
 
-			const reviseRes = await fetch(`/api/diaries/${targetDiaryId}/revise`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"Idempotency-Key": idempotencyKey,
-					...getDenteAuthHeaders(),
-				},
-				credentials: "same-origin",
-				body: JSON.stringify({
-					complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-					anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-					statusLocalis:
-						statusLocalisText ||
-						"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-					diagnosisIcd10: diagnosisIcd10Code || undefined,
-					diagnosisTooth: toothRaw,
-					treatmentDescription:
-						treatmentText || "Проведен осмотр, санация / консультация.",
-					revisionReason: "Исправленному верить",
-				}),
-			});
+				if (!reviseRes.ok) {
+					const errJson = (await reviseRes.json().catch(() => null)) as {
+						error?: string;
+						message?: string;
+					} | null;
+					const errorMsg =
+						errJson?.message ||
+						"Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
+					console.warn(
+						"saveOrReviseDiaryAction: отказ ревизии дневника в /api/diaries/:id/revise",
+						errJson,
+					);
+					showToast(errorMsg, "error", 5000);
+					return false;
+				}
+			} else {
+				// Если прямой diaryId не найден, бэкенд saveOrSignDiaryTx.ts (строки 37-109)
+				// автоматически сопоставляет дневник по visitId и при наличии заблокированного/подписанного
+				// дневника создаёт ревизию в visitDiaryRevisions («Исправленному верить»), устраняя блокировку
+				const diaryRes = await fetch("/api/diaries", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						...getDenteAuthHeaders(),
+					},
+					credentials: "same-origin",
+					body: JSON.stringify({
+						visitId: effectiveVisitId,
+						patientId: effectivePatientId,
+						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
+						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
+						statusLocalis:
+							statusLocalisText ||
+							"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+						diagnosisIcd10: diagnosisIcd10Code || undefined,
+						diagnosisTooth: toothRaw,
+						treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
+						status: "signed",
+					}),
+				});
 
-			if (!reviseRes.ok) {
-				const errJson = (await reviseRes.json().catch(() => null)) as {
-					error?: string;
-					message?: string;
-				} | null;
-				const errorMsg =
-					errJson?.message ||
-					"Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
-				console.warn(
-					"saveOrReviseDiaryAction: отказ ревизии дневника в /api/diaries/:id/revise",
-					errJson,
-				);
-				showToast(errorMsg, "error", 5000);
-				return false;
+				if (!diaryRes.ok) {
+					const errJson = (await diaryRes.json().catch(() => null)) as {
+						error?: string;
+						message?: string;
+					} | null;
+					console.warn(
+						"saveOrReviseDiaryAction: ошибка сохранения ревизии дневника по visitId в /api/diaries",
+						errJson,
+					);
+					showToast(errJson?.message || "Ошибка сохранения ревизии дневника приёма", "error", 5000);
+					return false;
+				}
 			}
 
 			void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
@@ -182,7 +219,7 @@ export async function executeSaveOrReviseDiary(
 				diagnosisIcd10: diagnosisIcd10Code || undefined,
 				diagnosisTooth: toothRaw,
 				treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
-				status: "draft",
+				status: isSignedVisit ? "signed" : "draft",
 			}),
 		});
 

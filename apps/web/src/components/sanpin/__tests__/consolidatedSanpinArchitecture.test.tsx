@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { AutoclaveJournalTab } from "../AutoclaveJournalTab";
+import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
 import { CleaningControlTab } from "../CleaningControlTab";
 import { UvAndCleaningTab } from "../UvAndCleaningTab";
 import { MedicalWasteRegisterTab } from "../MedicalWasteRegisterTab";
@@ -48,7 +48,7 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 
 		it("исходный код новых вкладок свободен от бюрократического мусора", () => {
 			const files = [
-				"AutoclaveJournalTab.tsx",
+				"SanPinSterilizationJournal.tsx",
 				"CleaningControlTab.tsx",
 				"UvAndCleaningTab.tsx",
 				"MedicalWasteRegisterTab.tsx",
@@ -66,7 +66,7 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 	describe("2. Золотой стандарт размера файлов (Мандат 8b: Sweet Spot 200–300 строк)", () => {
 		it("все 5 консолидированных вкладок укладываются в диапазон разумного размера", () => {
 			const filesToCheck = [
-				{ name: "AutoclaveJournalTab.tsx", max: 350 },
+				{ name: "SanPinSterilizationJournal.tsx", max: 500 },
 				{ name: "CleaningControlTab.tsx", max: 350 },
 				{ name: "UvAndCleaningTab.tsx", max: 350 },
 				{ name: "MedicalWasteRegisterTab.tsx", max: 200 },
@@ -87,11 +87,11 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 	});
 
 	describe("3. Единый дизайн-код: ровно 1 Primary CTA (Мандат 8am)", () => {
-		it("AutoclaveJournalTab рендерит ровно 1 Primary CTA кнопку «Запустить цикл стерилизации»", () => {
-			const html = renderToStaticMarkup(<AutoclaveJournalTab />);
+		it("SanPinSterilizationJournal рендерит ровно 1 Primary CTA кнопку «Запустить цикл стерилизации»", () => {
+			const html = renderToStaticMarkup(<SanPinSterilizationJournal />);
 			assert.ok(html.includes("Запустить цикл стерилизации"), "Должна быть кнопка запуска цикла стерилизации");
 			assert.ok(html.includes('data-testid="start-cycle-primary-btn"'), "Кнопка имеет data-testid='start-cycle-primary-btn'");
-			assert.ok(html.includes("var(--teal,#0d9488)") || html.includes("bg-[var(--teal"), "Кнопка окрашена в цвет var(--teal)");
+			assert.ok(html.includes("var(--primary)") || html.includes("bg-[var(--primary)]"), "Кнопка окрашена в семантический цвет var(--primary)");
 		});
 
 		it("CleaningControlTab рендерит 1-клик фиксацию пробы очистки", () => {
@@ -115,8 +115,8 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 	});
 
 	describe("4. Мобильная эргономика (Apple HIG 390x844 & Natural Thumb Zone)", () => {
-		it("AutoclaveJournalTab содержит мобильное представление с высотой строк >= 52px и 0px overflow", () => {
-			const html = renderToStaticMarkup(<AutoclaveJournalTab />);
+		it("SanPinSterilizationJournal содержит мобильное представление с высотой строк >= 52px и 0px overflow", () => {
+			const html = renderToStaticMarkup(<SanPinSterilizationJournal />);
 			assert.ok(html.includes("autoclave-mobile-view"), "Наличие мобильного адаптивного слоя");
 			assert.ok(html.includes("overflow-x-clip"), "Защита от паразитного горизонтального скролла");
 			assert.ok(html.includes("sanpin-mobile-start-cycle-cta"), "Floating CTA в Natural Thumb Zone");

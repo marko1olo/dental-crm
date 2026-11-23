@@ -452,8 +452,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isCreateModalOpen && (
 				<Suspense fallback={null}>
 					<CreatePatientModal
+						key={`create-patient-${Date.now()}`}
 						isOpen={isCreateModalOpen}
-						onClose={() => setIsCreateModalOpen(false)}
+						onClose={() => {
+							setIsCreateModalOpen(false);
+							usePatientStore.getState().resetDraft();
+						}}
 						createPatient={createPatient}
 					/>
 				</Suspense>
@@ -465,7 +469,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						key={selectedPatient.id || "draft"}
 						patient={selectedPatient}
 						isOpen={isPatientCardModalOpen}
-						onClose={() => setIsPatientCardModalOpen(false)}
+						onClose={() => {
+							setIsPatientCardModalOpen(false);
+							usePatientStore.getState().resetDraft();
+						}}
 						onApplySomaticNorm={() =>
 							executePatientSomaticNormAutonomy({
 								selectedPatient,
@@ -476,6 +483,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						}
 						onNavigateToVisit={() => {
 							setIsPatientCardModalOpen(false);
+							usePatientStore.getState().resetDraft();
 							executeOpenPatientVisitAutonomy({
 								selectedPatient,
 								showToastFn: triggerToast,
@@ -498,6 +506,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isLoyaltyModalOpen && (
 				<Suspense fallback={null}>
 					<LoyaltyStudioModal
+						key={selectedPatient?.id || "loyalty_studio"}
 						isOpen={isLoyaltyModalOpen}
 						onClose={() => setIsLoyaltyModalOpen(false)}
 						patientId={selectedPatient?.id}
@@ -513,6 +522,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{showTactileSearch && (
 				<RadiologyPatientSearchModal
+					key="radiology_tactile_search"
 					isOpen={showTactileSearch}
 					onClose={() => setShowTactileSearch(false)}
 					initialFilters={tactileFilters}
@@ -523,6 +533,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isPhotoProtocolOpen && selectedPatient && (
 				<Suspense fallback={null}>
 					<ClinicalPhotoProtocolModal
+						key={selectedPatient.id || "clinical_photo_protocol"}
 						isOpen={isPhotoProtocolOpen}
 						onClose={() => setIsPhotoProtocolOpen(false)}
 						patientId={selectedPatient.id}
@@ -543,6 +554,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isFamilyWalletModalOpen && (
 				<Suspense fallback={null}>
 					<FamilyWalletModal
+						key={selectedPatient?.id || selectedPatientId || "family_wallet"}
 						isOpen={isFamilyWalletModalOpen}
 						onClose={() => setIsFamilyWalletModalOpen(false)}
 						patientId={selectedPatient?.id || selectedPatientId || ""}

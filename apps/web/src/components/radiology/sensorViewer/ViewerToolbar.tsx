@@ -85,8 +85,8 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				style={{ paddingTop: "max(8px, env(safe-area-inset-top, 8px))" }}
 			>
 				<div className="flex items-center gap-2 min-w-0">
-					<span className="px-2 py-0.5 rounded font-black text-[10px] bg-[var(--teal,#0d9488)] text-white uppercase tracking-wider shrink-0">
-						DENTE 2D
+					<span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-[var(--teal,#0d9488)] text-white shrink-0">
+						Dente 2D
 					</span>
 					<div className="flex flex-col min-w-0">
 						<span className="text-white font-semibold text-xs truncate">
@@ -144,8 +144,8 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 		>
 			{/* Left: Brand Badge & Interactive Tools */}
 			<div className="flex items-center gap-2">
-				<span className="px-2 py-0.5 rounded font-black text-[11px] bg-[var(--teal,#0d9488)] text-white uppercase tracking-wider">
-					DENTE 2D
+				<span className="px-2 py-0.5 rounded font-semibold text-[11px] bg-[var(--teal,#0d9488)] text-white">
+					Dente 2D
 				</span>
 
 				{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}

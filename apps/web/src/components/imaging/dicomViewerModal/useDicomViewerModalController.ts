@@ -108,11 +108,12 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 					"Content-Type": "application/json",
 					"Idempotency-Key": crypto.randomUUID(),
 				});
-				const res = await fetch("/api/xray/scans", {
+				const res = await fetch("/api/imaging/studies", {
 					method: "POST",
 					headers,
 					body: JSON.stringify({
 						...(targetPatientId && targetPatientId.length === 36 ? { patientId: targetPatientId } : {}),
+						title: file.name,
 						imageBase64: dataUrl,
 						originalFilename: file.name,
 						mimeType: file.type || "image/jpeg",

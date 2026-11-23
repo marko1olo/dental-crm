@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { Truck, Printer, X, CheckSquare } from "lucide-react";
+import { Truck, Printer, X, CheckSquare, Loader2 } from "lucide-react";
 import type { LabOrdersTableProps } from "./types";
 import { LabOrdersTableHeader } from "./LabOrdersTableHeader";
 import { LabOrdersTableRow } from "./LabOrdersTableRow";
@@ -89,7 +89,7 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 	}, []);
 
 	const handleBatchCourierHandover = useCallback(async () => {
-		if (selectedIds.size === 0 || !onBatchStatusChange) return;
+		if (selectedIds.size === 0 || !onBatchStatusChange || isSubmittingBatch) return;
 		setIsSubmittingBatch(true);
 		try {
 			await onBatchStatusChange([...selectedIds], "sent");
@@ -97,7 +97,7 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 		} finally {
 			setIsSubmittingBatch(false);
 		}
-	}, [selectedIds, onBatchStatusChange]);
+	}, [selectedIds, onBatchStatusChange, isSubmittingBatch]);
 
 	const handlePrintRegistry = useCallback(() => {
 		const selectedOrders = orders.filter((o) => o.id && selectedIds.has(o.id));
@@ -148,8 +148,8 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 					data-testid="lab-orders-batch-action-bar"
 				>
 					<div className="flex items-center gap-2 text-xs font-semibold">
-						<CheckSquare className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-						<span>Выбрано нарядов: <strong className="text-[var(--teal,#0d9488)] font-mono text-sm">{selectedIds.size}</strong></span>
+						<CheckSquare className="w-4 h-4 text-[var(--primary)]" />
+						<span>Выбрано нарядов: <strong className="text-[var(--primary)] font-mono text-sm">{selectedIds.size}</strong></span>
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -157,11 +157,14 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 							<button
 								type="button"
 								onClick={handleBatchCourierHandover}
-								disabled={isSubmittingBatch}
 								data-testid="batch-courier-handover-btn"
-								className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition-all disabled:opacity-50"
+								className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition-all"
 							>
-								<Truck className="w-4 h-4" />
+								{isSubmittingBatch ? (
+									<Loader2 className="w-4 h-4 animate-spin" />
+								) : (
+									<Truck className="w-4 h-4" />
+								)}
 								<span>Сдать курьеру ({selectedIds.size})</span>
 							</button>
 						) : null}

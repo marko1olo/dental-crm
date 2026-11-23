@@ -8,6 +8,11 @@
 
 import {
 	calculateEndoBillingAndMaterialsEstimate,
+	calculateEndoTreatmentCostKopecks,
+	DEFAULT_ENDO_RVG_PRICE_KOPECKS,
+	DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS,
+	generateEndoClinicalProtocolTable,
+	formatEndoClinicalProtocolTable,
 	getDefaultCanalsForTooth,
 	getAnatomicalWorkingLength,
 	kopecksToRubles,
@@ -15,12 +20,14 @@ import {
 	type EndoCanalData,
 	type EndoPatientMemoParams,
 	type EndoToothClinicalData,
+	type EndoBillingCostBreakdown,
 } from "@dental/shared";
 
 export type {
 	EndoCanalData,
 	EndoPatientMemoParams,
 	EndoToothClinicalData,
+	EndoBillingCostBreakdown,
 } from "@dental/shared";
 
 export {
@@ -30,11 +37,13 @@ export {
 	applyRetreatmentEndoProtocol, applyStandardEndoProtocol, CANAL_NAME_OPTIONS, CAOH2_ENDO_PRESET, ENDO_SEALER_OPTIONS,
 	EXPRESS_APICAL_OBTURATION_PRESET, EXTENDED_MAF_ISO_OPTIONS, formatEndoCanalsTable043, formatEndoPatientMemo,
 	formatEndoClinicalDiaryProtocol, generateEndoCanalsTable043, generateEndoProtocol043, getAnatomicalWorkingLength, getDefaultCanalsForTooth,
+	generateEndoClinicalProtocolTable, formatEndoClinicalProtocolTable,
 	getIsoEndoColorInfo, ISO_ENDO_COLORS, ISO_ENDO_COLORS_MAP, MAF_ISO_OPTIONS, OBTURATION_PERMANENT_PRESET,
 	OBTURATION_TECHNIQUE_OPTIONS, PERIODONTITIS_DESTRUCTIVE_PRESET, PERIODONTITIS_TEMP_PRESET, PRIMARY_ENDO_PRESET,
 	PULPITIS_COMPLETE_PRESET, PULPITIS_OBTURATION_PRESET, PULPITIS_VISIT1_PRESET, QUICK_LENGTH_PRESETS,
 	REFERENCE_POINT_OPTIONS, RETREATMENT_ENDO_PRESET, STANDARD_ENDO_PRESET, TAPER_OPTIONS,
-	calculateEndoBillingAndMaterialsEstimate, safeCanalWorkingLengthRatio, isRvgBlockingEndoStage,
+	calculateEndoBillingAndMaterialsEstimate, calculateEndoTreatmentCostKopecks, safeCanalWorkingLengthRatio, isRvgBlockingEndoStage,
+	DEFAULT_ENDO_RVG_PRICE_KOPECKS, DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS,
 	kopecksToRubles, formatKopecksToRub,
 } from "@dental/shared";
 
@@ -154,7 +163,7 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 		const mafMatch = rawMaf.match(/(#\d+)/);
 		const masterApicalFile: string = (mafMatch && mafMatch[1]) ? mafMatch[1] : rawMaf;
 		return {
-			id: c.id || `c-${c.canalName.toLowerCase()}-${Date.now()}-${idx + 1}`,
+			id: c.id || `canal-${toothNumber}-${c.canalName.toLowerCase().replace(/[^a-z0-9]/g, "") || `k${idx + 1}`}`,
 			name: c.canalName,
 			workingLengthMm: Math.max(10, Math.min(35, Math.round(safeLen * 2) / 2)),
 			masterApicalFile,
@@ -262,53 +271,6 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		},
 	},
 };
-
-export interface EndoBillingCostBreakdown {
-	readonly totalKopecks: bigint;
-	readonly totalRubles: number;
-	readonly services: ReadonlyArray<{ readonly code: string; readonly title: string; readonly priceKopecks: bigint; readonly quantity: number }>;
-}
-
-/** Базовый тариф радиовизиографического контроля в копейках (600 руб.) */
-export const DEFAULT_ENDO_RVG_PRICE_KOPECKS = 60_000n;
-/** Базовый тариф использования операционного микроскопа в копейках (3000 руб.) */
-export const DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS = 300_000n;
-
-export function calculateEndoTreatmentCostKopecks(params: {
-	toothNumber: number;
-	canalsCount: number;
-	protocolId: EndoProtocolPresetId;
-	withRvg?: boolean;
-	withMicroscope?: boolean;
-}): EndoBillingCostBreakdown {
-	const count = Math.max(1, params.canalsCount);
-	const isRetreatment = params.protocolId === "retreatment_unsealing";
-	const isTemp = params.protocolId === "periodontitis_temp" || isRetreatment;
-	const estimate = calculateEndoBillingAndMaterialsEstimate({
-		toothNumber: params.toothNumber,
-		stageStamp: isTemp ? "TEMP_CAOH2" : "COMPLETED",
-		isRetreatment,
-		canals: Array.from({ length: count }, (_, i) => ({
-			id: `c-${i}`, canalName: `К${i + 1}`, referencePoint: "Бугор", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04",
-			obturationTechnique: isTemp ? "Временная обтурация Ca(OH)2" : "Гуттаперча + Силер (AH Plus)",
-			sealer: isTemp ? "Каласепт (Ca(OH)2)" : "AH Plus",
-		})),
-	});
-
-	const services: Array<{ code: string; title: string; priceKopecks: bigint; quantity: number }> = [];
-	for (const s of estimate.services804n) {
-		services.push({ code: s.code804n || "A16.07.030", title: s.title, priceKopecks: BigInt(s.totalPriceKopecks), quantity: s.quantity });
-	}
-	if (params.withRvg !== false) {
-		services.push({ code: "A06.07.003", title: "Прицельная радиовизиография контрольная (1 снимок)", priceKopecks: DEFAULT_ENDO_RVG_PRICE_KOPECKS, quantity: 1 });
-	}
-	if (params.withMicroscope) {
-		services.push({ code: "A16.07.030.005", title: "Использование операционного микроскопа в эндодонтии", priceKopecks: DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS, quantity: 1 });
-	}
-
-	const totalKopecks = services.reduce((acc, s) => acc + s.priceKopecks, 0n);
-	return { totalKopecks, totalRubles: kopecksToRubles(totalKopecks), services };
-}
 
 export function sanitizeCanalsForSubmission(
 	inputCanals: EndoCanalData[], activeTooth: number, stageStamp: EndoStageStamp, getAnatomicalWl: (tooth: number, canal?: string) => number,

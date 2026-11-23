@@ -27,8 +27,8 @@ export function CabinetBactericidalTimer({
 	const lampCalc = useMemo(() => calculateLampOperatingHours(operatingHours, 0, maxLampHours), [operatingHours, maxLampHours]);
 
 	const handleLogExposureToSanpin = () => {
-		const sessionHours = Math.round((selectedDurationMinutes / 60) * 100) / 100;
-		const nextHours = Math.round((operatingHours + sessionHours) * 100) / 100;
+		const sessionHours = Number((selectedDurationMinutes / 60).toFixed(2));
+		const nextHours = Number((operatingHours + sessionHours).toFixed(2));
 		setOperatingHours(nextHours);
 		setLastLoggedAt(new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
 

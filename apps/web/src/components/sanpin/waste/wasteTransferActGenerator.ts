@@ -58,10 +58,10 @@ export function generateMedicalWasteTransferAct(params: {
 		const entry = totalsByClass[rec.wasteClass];
 		if (entry) {
 			entry.count += rec.packageCount;
-			entry.totalNetWeightKg = Math.round((entry.totalNetWeightKg + rec.netWeightKg) * 100) / 100;
-			entry.totalGrossWeightKg = Math.round((entry.totalGrossWeightKg + rec.grossWeightKg) * 100) / 100;
+			entry.totalNetWeightKg = Number((entry.totalNetWeightKg + rec.netWeightKg).toFixed(2));
+			entry.totalGrossWeightKg = Number((entry.totalGrossWeightKg + rec.grossWeightKg).toFixed(2));
 		}
-		totalNetWeightKg = Math.round((totalNetWeightKg + rec.netWeightKg) * 100) / 100;
+		totalNetWeightKg = Number((totalNetWeightKg + rec.netWeightKg).toFixed(2));
 		totalPackagesCount += rec.packageCount;
 	}
 

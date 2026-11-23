@@ -26,7 +26,7 @@ export const PerioPresetActions: React.FC<PerioPresetActionsProps> = React.memo(
 	const secondaryPresetClass =
 		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:min-w-0 px-3 sm:px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-medium text-xs sm:text-[11.5px] lg:text-xs border border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)] flex items-center justify-start sm:justify-center gap-1.5 cursor-pointer transition-colors w-full sm:w-auto";
 	const pillClass =
-		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-0 px-3 sm:px-2.5 rounded-full bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] font-medium text-xs sm:text-[11px] lg:text-xs cursor-pointer transition-colors flex items-center justify-center w-full sm:w-auto";
+		"dente-btn-pill touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-0 px-3 sm:px-2.5 rounded-full bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] font-medium text-xs sm:text-[11px] lg:text-xs cursor-pointer transition-colors flex items-center justify-center w-full sm:w-auto";
 
 	return (
 		<div className="flex flex-col gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">

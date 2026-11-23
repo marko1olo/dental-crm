@@ -68,8 +68,23 @@ export function useLoungeQueueState(initialItems?: readonly WaitingLoungeQueueIt
 					for (const pt of data.patients) if (pt?.id) ptsMap.set(pt.id, pt.fullName);
 				}
 
-				const active = data.appointments
-					.filter((a: any) => a?.startsAt?.startsWith(today) && a.status !== "cancelled" && a.status !== "completed")
+				interface LoungeDashboardAppointmentDto {
+					readonly id: string;
+					readonly startsAt?: string | null | undefined;
+					readonly status?: string | null | undefined;
+					readonly chairId?: string | null | undefined;
+					readonly doctorUserId?: string | null | undefined;
+					readonly patientId?: string | null | undefined;
+				}
+
+				const rawAppointments = data.appointments as LoungeDashboardAppointmentDto[];
+				const active = rawAppointments
+					.filter(
+						(a) =>
+							Boolean(a?.startsAt?.startsWith(today)) &&
+							a.status !== "cancelled" &&
+							a.status !== "completed",
+					)
 					.slice(0, 6);
 
 				if (active.length === 0) {
@@ -77,7 +92,7 @@ export function useLoungeQueueState(initialItems?: readonly WaitingLoungeQueueIt
 					return;
 				}
 
-				const mapped: WaitingLoungeQueueItem[] = active.map((a: any, i: number) => {
+				const mapped: WaitingLoungeQueueItem[] = active.map((a, i: number) => {
 					const chairName = a.chairId ? chairsMap.get(a.chairId) : undefined;
 					const doc = a.doctorUserId ? docsMap.get(a.doctorUserId) : undefined;
 					const ptName = a.patientId ? ptsMap.get(a.patientId) : undefined;

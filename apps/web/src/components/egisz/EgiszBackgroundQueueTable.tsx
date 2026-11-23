@@ -10,8 +10,16 @@ export interface EgiszBackgroundQueueTableProps {
 	readonly onBatchSendShift?: (() => void) | undefined;
 }
 
-const getDocTitle = (r: RemdDocumentRecord) => (r as any).docTitle || r.docTypeName || `СЭМД ${(r as any).semdDocCode || r.docTypeCode || "105"}`;
-const getPatientName = (r: RemdDocumentRecord) => (r as any).patientFullName || r.patient?.fullName || "Пациент";
+type RemdQueueRecordView = RemdDocumentRecord & {
+	readonly docTitle?: string | undefined;
+	readonly semdDocCode?: string | undefined;
+	readonly patientFullName?: string | undefined;
+};
+
+const getDocTitle = (r: RemdQueueRecordView): string =>
+	r.docTitle || r.docTypeName || `СЭМД ${r.semdDocCode || r.docTypeCode || "105"}`;
+const getPatientName = (r: RemdQueueRecordView): string =>
+	r.patientFullName || r.patient?.fullName || "Пациент";
 
 export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps> = ({
 	records,

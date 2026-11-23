@@ -52,6 +52,10 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const [activeTooth, setActiveTooth] = useState<number>(props.toothNumber || 16);
 	const toothAnatomicalName = useMemo(() => getToothAnatomicalNameRu(activeTooth), [activeTooth]);
 
+	// Кэш черновиков каналов по номерам зубов (Мандаты 8zq, 8bn: исключение затирания замеров при смене зуба)
+	const draftsByTooth = React.useRef<Map<number, EndoCanalData[]>>(new Map());
+	const prevToothRef = React.useRef<number>(props.toothNumber || 16);
+
 	const [canals, setCanals] = useState<EndoCanalData[]>(() => {
 		if (props.initialCanals && props.initialCanals.length > 0) return [...props.initialCanals];
 		return getDefaultCanalsForTooth(activeTooth);
@@ -70,7 +74,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const [showMobileActions, setShowMobileActions] = useState<boolean>(false);
 
 	const resetDraft = useCallback(() => {
+		draftsByTooth.current.clear();
 		const targetTooth = props.toothNumber || 16;
+		prevToothRef.current = targetTooth;
 		setActiveTooth(targetTooth);
 		setCanals(props.initialCanals?.length ? [...props.initialCanals] : getDefaultCanalsForTooth(targetTooth));
 		setActiveProtocolId("pulpitis_1visit");
@@ -91,8 +97,28 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 	useEffect(() => {
 		const targetTooth = props.toothNumber || 16;
+		const prevTooth = prevToothRef.current;
+
+		if (prevTooth !== targetTooth) {
+			// Сохраняем текущие каналы в кэш перед переключением зуба
+			if (canals.length > 0) {
+				draftsByTooth.current.set(prevTooth, canals);
+			}
+			prevToothRef.current = targetTooth;
+		}
+
 		setActiveTooth(targetTooth);
-		setCanals(props.initialCanals?.length ? [...props.initialCanals] : getDefaultCanalsForTooth(targetTooth));
+
+		// Проверяем наличие сохраненного черновика для целевого зуба
+		const cached = draftsByTooth.current.get(targetTooth);
+		if (cached && cached.length > 0) {
+			setCanals(cached);
+		} else if (props.initialCanals?.length && targetTooth === (props.toothNumber || 16)) {
+			setCanals([...props.initialCanals]);
+		} else {
+			setCanals(getDefaultCanalsForTooth(targetTooth));
+		}
+
 		setActiveProtocolId("pulpitis_1visit");
 		setStageStamp("COMPLETED");
 		setRotarySystem(props.initialRotarySystem || NITI_SYSTEM_OPTIONS[0]);
@@ -176,7 +202,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		const nextNum = canals.length + 1;
 		const canalName = `К${nextNum}`;
 		setCanals((prev) => [...prev, {
-			id: `canal-${Date.now()}-${nextNum}`, canalName, referencePoint: "Бугор зуба",
+			id: `canal-${activeTooth}-k${nextNum}`, canalName, referencePoint: "Бугор зуба",
 			workingLengthMm: getAnatomicalWorkingLength(activeTooth, canalName), masterApicalFile: "#25.04", taper: ".04 (Конусность 4%)",
 			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально", sealer: "AH Plus (эпоксидный герметик)",
 		}]);
@@ -473,6 +499,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);
 		if (props.onSave) props.onSave(sanitized, generatedProtocolText);
 
+		draftsByTooth.current.clear();
 		setIsSaving(false);
 		showToast(`Протокол каналов зуба #${activeTooth} успешно зафиксирован!`, "success", 2500);
 		handleClose();

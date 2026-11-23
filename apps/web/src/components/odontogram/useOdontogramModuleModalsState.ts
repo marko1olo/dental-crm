@@ -1,12 +1,20 @@
 import { useCallback, useState } from "react";
 import type { CheckoutPaymentMethodType } from "../cashbox/cashRegisterCatalogData";
+import type { RadialMenuAnchorData } from "./OdontogramViewModals";
+import type { ToothState } from "./ToothChart";
 import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
+
+export interface OdontogramAiPendingProposal {
+	source: "voice" | "vision" | "sensor";
+	title: string;
+	findings: Array<{ toothNumber: number; state: ToothState; surfaces?: string[] }>;
+}
 
 export function useOdontogramModuleModalsState() {
 	const [menuConfig, setMenuConfig] = useState<ToothActionMenuConfig | null>(
 		null,
 	);
-	const [radialMenuData, setRadialMenuData] = useState<any>(null);
+	const [radialMenuData, setRadialMenuData] = useState<RadialMenuAnchorData | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
 	const [endoTooth, setEndoTooth] = useState<number | null>(null);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(
@@ -19,7 +27,7 @@ export function useOdontogramModuleModalsState() {
 	const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
 	const [isPerioOpen, setIsPerioOpen] = useState(false);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
-	const [_aiPendingProposal, setAiPendingProposal] = useState<any>(null);
+	const [_aiPendingProposal, setAiPendingProposal] = useState<OdontogramAiPendingProposal | null>(null);
 
 	const clearMenu = useCallback(() => {
 		setMenuConfig(null);

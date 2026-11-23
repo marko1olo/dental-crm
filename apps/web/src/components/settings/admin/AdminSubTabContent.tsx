@@ -11,12 +11,11 @@ import { SettingsMessageTemplatesTab } from "../SettingsMessageTemplatesTab";
 import { SettingsMessengersTab } from "../SettingsMessengersTab";
 import { SettingsModulesTab } from "../SettingsModulesTab";
 import { SettingsStaffTab } from "../SettingsStaffTab";
-import type { AdminSubTab } from "./AdminSettingsTypes";
+import type { AdminSettingsPropsBag, AdminSubTab } from "./AdminSettingsTypes";
 
 interface AdminSubTabContentProps {
 	readonly activeSubTab: AdminSubTab;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	readonly props: Record<string, any>;
+	readonly props: AdminSettingsPropsBag;
 }
 
 export const AdminSubTabContent: React.FC<AdminSubTabContentProps> = ({

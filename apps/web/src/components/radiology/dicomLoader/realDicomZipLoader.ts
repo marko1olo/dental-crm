@@ -89,7 +89,7 @@ export async function buildVolumeFromDicomZip(
 	onProgress?.(35, `Распаковано ${items.length} срезов КТ. Построение 3D объема...`);
 
 	const chainedOptions: DicomVolumeIngestionOptions = typeof options === "object" && options !== null ? { ...options } : {};
-	chainedOptions.onProgress = (subPct, msg) => onProgress?.(Math.round(35 + (subPct / 100) * 65), msg);
+	chainedOptions.onProgress = (subPct, msg) => onProgress?.(Math.round(35 + subPct * 0.65), msg);
 
 	return buildVolumeFromDicomBuffers(items, chainedOptions);
 }

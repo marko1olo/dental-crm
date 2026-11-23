@@ -9,6 +9,8 @@
  * invoice and medical diary (Mandates 8e, 8i, 8n).
  */
 
+import { kopecksToRubles } from "@dental/shared";
+
 export interface PlanStageItem {
 	id?: string | undefined;
 	toothNumber?: number | string | null | undefined;
@@ -380,7 +382,7 @@ export function formatStageItemForBilling(it: PlanStageItem): FormattedStageBill
 					? Number.parseInt(it.toothCode, 10)
 					: undefined;
 	const toothCandidate = toothNum !== undefined ? String(toothNum) : (it.toothCode ? String(it.toothCode) : undefined);
-	const priceVal = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? (typeof it.priceKopecks === "number" ? it.priceKopecks / 100 : 0));
+	const priceVal = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? (typeof it.priceKopecks === "number" ? kopecksToRubles(it.priceKopecks) : 0));
 	const discountVal = Number(it.discountRub ?? it.discount ?? 0);
 	const discountPercent = Number(it.discountPercent ?? (priceVal > 0 && discountVal > 0 ? Math.round((discountVal / priceVal) * 100) : 0));
 

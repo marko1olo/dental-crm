@@ -5,7 +5,7 @@
 
 import type { PaidContractServiceItem } from "./contractDataTypes";
 import { numberToWordsRu } from "./numberToWordsRu";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export function formatKopecksToRubAndKop(kopecks: number): {
 	wholeRub: number;
@@ -15,7 +15,7 @@ export function formatKopecksToRubAndKop(kopecks: number): {
 	inWords: string;
 } {
 	const safeKopecks = Number.isFinite(kopecks) ? Math.round(kopecks) : 0;
-	const wholeRub = Math.trunc(Math.abs(safeKopecks) / 100);
+	const wholeRub = Math.trunc(kopecksToRubles(Math.abs(safeKopecks)));
 	const kop = Math.abs(safeKopecks) % 100;
 	const groupedRub = String(wholeRub).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
 	const kopPadded = String(kop).padStart(2, "0");

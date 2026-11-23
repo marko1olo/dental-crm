@@ -8,12 +8,21 @@ import type {
 	PriceTierKind,
 	ServicePricelistItem,
 } from "../servicePricelistPresets";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import {
 	calculateTierPrice,
 	roundPrice,
 } from "./tierPricing";
 import type { BatchMarkupOptions } from "./types";
+
+function applyPercentMarkupToRub(priceRub: number, percentChange: number): number {
+	const factorBasisPoints = Math.max(0, Math.round((100 + percentChange) * 100));
+	const nextKopecks = percentageOfKopecks(
+		rublesToKopecks(Math.max(0, priceRub)),
+		factorBasisPoints,
+	);
+	return kopecksToRubles(nextKopecks);
+}
 
 export function applyBatchPriceMarkup(
 	items: readonly ServicePricelistItem[],
@@ -56,7 +65,7 @@ export function applyBatchPriceMarkup(
 				options.percentChange !== undefined &&
 				Number.isFinite(options.percentChange)
 			) {
-				updatedBasePrice = updatedBasePrice * (1 + options.percentChange / 100);
+				updatedBasePrice = applyPercentMarkupToRub(updatedBasePrice, options.percentChange);
 			}
 			if (
 				options.fixedRubChange !== undefined &&
@@ -81,7 +90,7 @@ export function applyBatchPriceMarkup(
 					options.percentChange !== undefined &&
 					Number.isFinite(options.percentChange)
 				) {
-					newTierPrice = newTierPrice * (1 + options.percentChange / 100);
+					newTierPrice = applyPercentMarkupToRub(newTierPrice, options.percentChange);
 				}
 				if (
 					options.fixedRubChange !== undefined &&

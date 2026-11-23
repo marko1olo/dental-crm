@@ -40,7 +40,10 @@ export async function submitSterilizerData(
 	}
 
 	try {
-		const headers = getSterilizerAuthHeaders();
+		const headers = {
+			...getSterilizerAuthHeaders(),
+			"Idempotency-Key": crypto.randomUUID(),
+		};
 		const payload: CreateSterilizerEquipmentDto | UpdateSterilizerEquipmentDto = {
 			name: formData.name.trim(),
 			brandModel: formData.brandModel.trim(),
@@ -85,7 +88,10 @@ export async function submitSterilizerStatusChange(
 	try {
 		const res = await fetch(`/api/registers/sterilizers/equipments/${equipmentId}`, {
 			method: "PUT",
-			headers: getSterilizerAuthHeaders(),
+			headers: {
+				...getSterilizerAuthHeaders(),
+				"Idempotency-Key": crypto.randomUUID(),
+			},
 			body: JSON.stringify(body),
 		});
 		if (res.ok) {

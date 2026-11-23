@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, FileText, Printer } from "lucide-react";
+import { Activity, Check, FileText, Printer } from "lucide-react";
 import {
 	type FranklRating,
 	type FranklRatingDefinition,
@@ -25,6 +25,7 @@ export interface ToothPediatricContextProps {
 	onUpdateTooth?: ((updates: Partial<ToothData>) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
 	onOpenParentMemo?: (() => void) | undefined;
+	onOpenEndo?: ((toothNumber: number) => void) | undefined;
 }
 
 export interface PediatricResorptionStageOption {
@@ -59,6 +60,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 	onUpdateTooth,
 	onInsertToProtocol,
 	onOpenParentMemo,
+	onOpenEndo,
 }) => {
 	const [isLocalMemoOpen, setIsLocalMemoOpen] = useState(false);
 	const resolvedAgeYears = patientAgeYears ?? (isPrimaryTooth(toothNumber) ? 5 : 7);
@@ -216,6 +218,18 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 					<FileText size={15} />
 					<span>Вставить статус Франкла в карту</span>
 				</button>
+
+				{onOpenEndo && (
+					<button
+						type="button"
+						onClick={() => onOpenEndo(toothNumber)}
+						className="dente-secondary-btn min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30 hover:bg-[var(--teal,#0d9488)]/10"
+						title="Открыть эндодонтический журнал каналов для молочного зуба"
+					>
+						<Activity size={15} />
+						<span>Каналы (Metapex/ZOE)</span>
+					</button>
+				)}
 
 				<button
 					type="button"

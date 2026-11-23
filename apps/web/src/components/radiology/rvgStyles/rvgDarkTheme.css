@@ -8,8 +8,8 @@
 	--paper-strong: #1e293b;
 	--ink: #f8fafc;
 	--muted: #94a3b8;
-	--line: #334155;
-	--line-strong: #475569;
+	--line: rgba(255, 255, 255, 0.12);
+	--line-strong: rgba(255, 255, 255, 0.24);
 }
 .rvg-viewport-pane {
 	background: var(--paper-deep, #050811);
@@ -53,20 +53,20 @@
 	color: #ffffff;
 }
 .rvg-tool-btn.active {
-	background: var(--teal, #0d9488);
+	background: var(--primary);
 	color: #ffffff;
-	border-color: var(--teal, #14b8a6);
+	border-color: var(--primary);
 }
 .rvg-sensor-status-banner {
 	background: var(--paper-soft, rgba(15, 23, 42, 0.96));
-	border-color: var(--line, #334155);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
 }
 .rvg-status-badge {
 	color: #f8fafc;
 }
 .rvg-controls-dock {
 	background: var(--paper, #0b1120);
-	border-left-color: var(--line, #1e293b);
+	border-left-color: var(--line, rgba(255, 255, 255, 0.12));
 	color: var(--ink, #f8fafc);
 }
 .rvg-section-header {
@@ -80,23 +80,23 @@
 .rvg-tooth-btn:hover {
 	background: rgba(20, 184, 166, 0.25);
 	color: #ffffff;
-	border-color: var(--teal, #14b8a6);
+	border-color: var(--primary);
 }
 .rvg-category-btn,
 .rvg-zone-btn,
 .rvg-projection-btn {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: var(--line, #334155);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
 	color: var(--ink, #e2e8f0);
 }
 .rvg-category-btn:hover,
 .rvg-zone-btn:hover,
 .rvg-projection-btn:hover {
 	background: rgba(255, 255, 255, 0.1);
-	border-color: var(--teal, #14b8a6);
+	border-color: var(--primary);
 	color: #ffffff;
 }
 .rvg-capture-footer {
 	background: var(--paper, #070b14);
-	border-top-color: var(--line, #1e293b);
+	border-top-color: var(--line, rgba(255, 255, 255, 0.12));
 }

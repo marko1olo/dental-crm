@@ -81,8 +81,8 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 	const teethMetrics: DsdToothMetric[] = [
 		{ toothFdi: 13, widthMm: canineWidthMm, heightMm: Math.round(centralHeightMm * 0.95 * 10) / 10, ratioWidthToHeight: 0.75, visibleProportionToCentral: 0.38, goldenDeviationPercent: 2 },
 		{ toothFdi: 12, widthMm: lateralWidthMm, heightMm: Math.round(centralHeightMm * 0.88 * 10) / 10, ratioWidthToHeight: 0.72, visibleProportionToCentral: 0.62, goldenDeviationPercent: 1 },
-		{ toothFdi: 11, widthMm: centralWidthMm, heightMm: centralHeightMm, ratioWidthToHeight: ratioWH / 100, visibleProportionToCentral: 1.0, goldenDeviationPercent: 0 },
-		{ toothFdi: 21, widthMm: centralWidthMm, heightMm: centralHeightMm, ratioWidthToHeight: ratioWH / 100, visibleProportionToCentral: 1.0, goldenDeviationPercent: 0 },
+		{ toothFdi: 11, widthMm: centralWidthMm, heightMm: centralHeightMm, ratioWidthToHeight: ratioWH * 0.01, visibleProportionToCentral: 1.0, goldenDeviationPercent: 0 },
+		{ toothFdi: 21, widthMm: centralWidthMm, heightMm: centralHeightMm, ratioWidthToHeight: ratioWH * 0.01, visibleProportionToCentral: 1.0, goldenDeviationPercent: 0 },
 		{ toothFdi: 22, widthMm: lateralWidthMm, heightMm: Math.round(centralHeightMm * 0.88 * 10) / 10, ratioWidthToHeight: 0.72, visibleProportionToCentral: 0.62, goldenDeviationPercent: 1 },
 		{ toothFdi: 23, widthMm: canineWidthMm, heightMm: Math.round(centralHeightMm * 0.95 * 10) / 10, ratioWidthToHeight: 0.75, visibleProportionToCentral: 0.38, goldenDeviationPercent: 2 },
 	];

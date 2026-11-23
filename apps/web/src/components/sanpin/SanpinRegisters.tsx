@@ -14,7 +14,7 @@
 
 import React, { useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { AutoclaveJournalTab } from "./AutoclaveJournalTab";
+import { SanPinSterilizationJournal } from "./SanPinSterilizationJournal";
 import { CleaningControlTab } from "./CleaningControlTab";
 import { UvAndCleaningTab } from "./UvAndCleaningTab";
 import { MedicalWasteRegisterTab } from "./MedicalWasteRegisterTab";
@@ -31,12 +31,11 @@ if (typeof document !== "undefined") import("./SanpinRegisters.css");
 
 export * from "./sanpinNavigationConfig";
 export * from "./sanpinToastMessages";
-export * from "./AutoclaveJournalTab";
+export * from "./SanPinSterilizationJournal";
 export * from "./CleaningControlTab";
 export * from "./UvAndCleaningTab";
 export * from "./MedicalWasteRegisterTab";
 export * from "./SterilizerFleetManager";
-export * from "./SanpinCleaningAndDisinfectionView";
 export * from "./SterilizationBatchCycleModal";
 
 export interface SanpinRegistersProps {
@@ -92,7 +91,7 @@ function SanpinRegistersInner({
 			)}
 
 			{(logic.activeTab === "autoclave" || logic.activeTab === "kraft") && (
-				<AutoclaveJournalTab
+				<SanPinSterilizationJournal
 					key={`autoclave-view-${logic.refreshCounter}`}
 					initialFilterAutoclave={initialFilterAutoclave}
 					onOpenNewCycleModal={() => setIsDirectCycleModalOpen(true)}

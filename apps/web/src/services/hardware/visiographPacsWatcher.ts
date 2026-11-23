@@ -215,6 +215,36 @@ export class VisiographPacsWatcherService {
 	}
 
 	/**
+	 * Handles real-time WebSocket IMAGING_STUDY_INGESTED event from DicomStudyIngestService / VatechDirectBridge.
+	 * Immediately (<50ms) maps into RadiographyScanEvent and dispatches to listeners for chairside doctor autonomy.
+	 */
+	public static handleWebSocketImagingIngested(payload: unknown): RadiographyScanEvent | null {
+		if (!payload || typeof payload !== "object") return null;
+		const p = payload as Record<string, unknown>;
+		const modalityStr = String(p.modality ?? "").toLowerCase();
+		const isIntraoral = modalityStr === "intraoral" || modalityStr === "io" || modalityStr === "rvg" || modalityStr === "periapical" || modalityStr === "bitewing";
+		if (!isIntraoral) return null;
+
+		const studyId = String(p.studyId ?? p.xrayScanId ?? "");
+		if (!studyId) return null;
+
+		const fileUrl = `/api/imaging/studies/${encodeURIComponent(studyId)}/file`;
+		const patientId = typeof p.patientId === "string" ? p.patientId : this.activeConfig.activePatientId;
+		const patientName = typeof p.patientFullName === "string" ? p.patientFullName : undefined;
+		const title = typeof p.title === "string" ? p.title : `Снимок визиографа ${studyId.slice(0, 8)}`;
+
+		return this.dispatchScanEvent({
+			filePath: fileUrl,
+			fileName: `${title}.dcm`,
+			patientId,
+			patientName,
+			modality: "IO",
+			thumbnailDataUri: fileUrl,
+			detectedAt: new Date().toISOString(),
+		});
+	}
+
+	/**
 	 * Starts watching the local visiograph / PACS folder.
 	 */
 	public static async startWatching(

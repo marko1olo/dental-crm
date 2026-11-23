@@ -16,6 +16,7 @@ import type {
 	RestorationCondition,
 } from "./tooth46PresetTypes";
 import type { RootResorptionStage } from "../anatomicalTypes/periodontalResorptionTypes";
+import type { ToothSurfaceKey } from "@dental/shared";
 
 export * from "./tooth46PresetTypes";
 export type { RootResorptionStage };
@@ -65,6 +66,8 @@ export interface Tooth46LayerFlags {
 	rootPerforation?: boolean;
 	canalLedge?: boolean;
 	rootFracture?: boolean;
+	mobility?: 0 | 1 | 2 | 3 | 4 | undefined;
+	furcation?: 0 | 1 | 2 | 3 | undefined;
 	showBadge?: boolean;
 	statusBadge?: string;
 }
@@ -99,6 +102,8 @@ export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
 	implant: false,
 	implantStage: "pure",
 	missing: false,
+	mobility: 0,
+	furcation: 0,
 };
 
 export interface Tooth46ContainerProps {
@@ -114,4 +119,5 @@ export interface Tooth46ContainerProps {
 	toothNumber?: number | undefined;
 	isFlipped?: boolean | undefined;
 	onClick?: ((e: React.MouseEvent<SVGSVGElement>, toothNumber?: number) => void) | undefined;
+	onSurfaceSelect?: ((surface: ToothSurfaceKey) => void) | undefined;
 }

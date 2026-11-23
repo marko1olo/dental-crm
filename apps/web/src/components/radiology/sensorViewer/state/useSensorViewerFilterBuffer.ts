@@ -46,8 +46,8 @@ export function useSensorViewerFilterBuffer(
 			let pixels: Uint8ClampedArray = imgData.data;
 
 			if (brightnessPct !== 0 || contrastPct !== 0) {
-				const bFactor = (brightnessPct + 100) / 100;
-				const cFactor = (contrastPct + 100) / 100;
+				const bFactor = (brightnessPct + 100) * 0.01;
+				const cFactor = (contrastPct + 100) * 0.01;
 				for (let i = 0; i < pixels.length; i += 4) {
 					pixels[i] = Math.min(255, Math.max(0, Math.round(((pixels[i]! - 128) * cFactor + 128) * bFactor)));
 					pixels[i + 1] = Math.min(255, Math.max(0, Math.round(((pixels[i + 1]! - 128) * cFactor + 128) * bFactor)));

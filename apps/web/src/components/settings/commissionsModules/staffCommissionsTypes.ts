@@ -17,6 +17,8 @@
  * - Чистые стили без хардкода цветов (CSS-токены var(--paper), var(--ink)).
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 export interface CommissionRate {
 	readonly userId: string;
 	readonly commissionPct: string;
@@ -173,7 +175,7 @@ export function parseCommissionInput(raw: string): number | null {
 	if (!normalized) return null;
 	const n = Number(normalized);
 	if (!Number.isFinite(n) || n < 0 || n > 100) return null;
-	return Math.round(n * 100) / 100;
+	return kopecksToRubles(rublesToKopecks(n));
 }
 
 /** Форматирует процент для отображения */

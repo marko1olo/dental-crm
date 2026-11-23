@@ -31,7 +31,7 @@ export const SanPinCyclesTable: React.FC<SanPinCyclesTableProps> = ({
 			`}</style>
 
 			{/* DESKTOP TABLE VIEW (1440x900) */}
-			<div className="sanpin-desktop-table" style={{ borderRadius: 8, border: "1px solid var(--line, #e2e8f0)", overflowX: "auto", background: "var(--paper, #ffffff)" }}>
+			<div className="sanpin-desktop-table" style={{ borderRadius: 8, border: "1px solid var(--line)", overflowX: "auto", background: "var(--paper)" }}>
 				<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", tableLayout: "fixed", fontVariantNumeric: "tabular-nums" }}>
 					<colgroup>
 						<col style={{ width: "110px" }} />
@@ -44,7 +44,7 @@ export const SanPinCyclesTable: React.FC<SanPinCyclesTableProps> = ({
 						<col style={{ width: "105px" }} />
 					</colgroup>
 					<thead>
-						<tr style={{ background: "var(--paper-soft, #f8fafc)", borderBottom: "1px solid var(--line, #e2e8f0)" }}>
+						<tr style={{ background: "var(--paper-soft)", borderBottom: "1px solid var(--line)" }}>
 							<th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600 }}>Дата / Цикл</th>
 							<th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600 }}>Автоклав</th>
 							<th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600 }}>Партия / Очистка</th>

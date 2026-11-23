@@ -114,6 +114,7 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const sensorAcq = useDirectRvgSensorAcquisition({
 		initialImageUrl,
 		isDemo,
+		patientId,
 		onTeethDetected: (teeth, suggestedProj) => {
 			setSelectedTeeth(teeth);
 			if (suggestedProj) setProjectionType(suggestedProj);

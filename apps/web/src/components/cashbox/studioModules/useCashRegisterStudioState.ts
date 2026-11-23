@@ -10,7 +10,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { generateUuidV7, formatRubles } from "@dental/shared";
+import { generateUuidV7, formatRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import {
@@ -145,13 +145,17 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const [splitCardRub, setSplitCardRub] = useState<number>(baseDueRub);
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
+	const [splitBonusRub, setSplitBonusRub] = useState<number>(0);
+	const [splitCertRub, setSplitCertRub] = useState<number>(0);
 	const [splitCashReceivedRub, setSplitCashReceivedRub] = useState<number>(0);
 
 	// Exact integer financial computations (BIGINT amountKopecks)
 	const grossKopecks = rubToKopecks(baseDueRub);
 	const isWarrantyCase = isWarranty || method === "warranty";
-	const discountMultiplier = isWarrantyCase ? 0 : Math.max(0, 100 - discountPercent);
-	const effectiveTotalKop = (grossKopecks * BigInt(discountMultiplier)) / 100n;
+	const discountKop = isWarrantyCase
+		? grossKopecks
+		: BigInt(calculatePercentDiscountKopecks(grossKopecks, discountPercent));
+	const effectiveTotalKop = isWarrantyCase ? 0n : grossKopecks - discountKop;
 	const effectiveTotalRub = isWarrantyCase ? 0 : kopecksToRub(effectiveTotalKop);
 
 	// Cash change computation
@@ -165,8 +169,17 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const splitCardKop = rubToKopecks(splitCardRub);
 	const splitSbpKop = rubToKopecks(splitSbpRub);
 	const splitDepositKop = rubToKopecks(splitDepositRub);
+	const splitBonusKop = rubToKopecks(splitBonusRub);
+	const splitCertKop = rubToKopecks(splitCertRub);
 	const appliedDmsKop = appliedDmsSplit ? rubToKopecks(appliedDmsSplit.dmsRub) : 0n;
-	const totalSplitAllocatedKop = splitCashKop + splitCardKop + splitSbpKop + splitDepositKop + (method === "split" ? appliedDmsKop : 0n);
+	const totalSplitAllocatedKop =
+		splitCashKop +
+		splitCardKop +
+		splitSbpKop +
+		splitDepositKop +
+		splitBonusKop +
+		splitCertKop +
+		(method === "split" ? appliedDmsKop : 0n);
 	const splitDiffKop = effectiveTotalKop - totalSplitAllocatedKop;
 	const isSplitBalanced = splitDiffKop === 0n;
 
@@ -262,28 +275,47 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	}, [splitCashReceivedRub, splitCashRub]);
 
 	// Auto-balance remaining split tender in 1 click
-	const handleBalanceSplit = useCallback((field: "cash" | "card" | "sbp" | "deposit") => {
-		const currentKop =
-			field === "cash"
-				? splitCashKop
-				: field === "card"
-					? splitCardKop
-					: field === "sbp"
-						? splitSbpKop
-						: splitDepositKop;
-		const targetKop = currentKop + splitDiffKop;
-		const balancedRub = Math.max(0, kopecksToRub(targetKop));
-		if (field === "cash") {
-			setSplitCashRub(balancedRub);
-			setSplitCashReceivedRub(balancedRub);
-		} else if (field === "card") {
-			setSplitCardRub(balancedRub);
-		} else if (field === "sbp") {
-			setSplitSbpRub(balancedRub);
-		} else if (field === "deposit") {
-			setSplitDepositRub(balancedRub);
-		}
-	}, [splitCashKop, splitCardKop, splitSbpKop, splitDepositKop, splitDiffKop]);
+	const handleBalanceSplit = useCallback(
+		(field: "cash" | "card" | "sbp" | "deposit" | "bonus" | "certificate") => {
+			const currentKop =
+				field === "cash"
+					? splitCashKop
+					: field === "card"
+						? splitCardKop
+						: field === "sbp"
+							? splitSbpKop
+							: field === "deposit"
+								? splitDepositKop
+								: field === "bonus"
+									? splitBonusKop
+									: splitCertKop;
+			const targetKop = currentKop + splitDiffKop;
+			const balancedRub = Math.max(0, kopecksToRub(targetKop));
+			if (field === "cash") {
+				setSplitCashRub(balancedRub);
+				setSplitCashReceivedRub(balancedRub);
+			} else if (field === "card") {
+				setSplitCardRub(balancedRub);
+			} else if (field === "sbp") {
+				setSplitSbpRub(balancedRub);
+			} else if (field === "deposit") {
+				setSplitDepositRub(balancedRub);
+			} else if (field === "bonus") {
+				setSplitBonusRub(balancedRub);
+			} else if (field === "certificate") {
+				setSplitCertRub(balancedRub);
+			}
+		},
+		[
+			splitCashKop,
+			splitCardKop,
+			splitSbpKop,
+			splitDepositKop,
+			splitBonusKop,
+			splitCertKop,
+			splitDiffKop,
+		],
+	);
 
 	const [recentOperations, setRecentOperations] = useState<Array<{
 		id: string;
@@ -390,8 +422,13 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			payload.cashAmountKopecks = Number(splitCashKop);
 			payload.electronicAmountKopecks = Number(splitCardKop + splitSbpKop);
 			payload.depositAmountKopecks = Number(splitDepositKop);
+			payload.bonusAmountKopecks = Number(splitBonusKop);
+			payload.certificateAmountKopecks = Number(splitCertKop);
+			if (splitCertKop > 0n && certificateNumber.trim()) {
+				payload.certificateNumber = certificateNumber.trim();
+			}
 
-			const tenders: Array<{ method: string; amountKopecks: number; amountRub?: number | undefined; guaranteeLetterId?: string | undefined }> = [];
+			const tenders: Array<{ method: string; amountKopecks: number; amountRub?: number | undefined; guaranteeLetterId?: string | undefined; certificateNumber?: string | undefined }> = [];
 			if (splitCashKop > 0n) {
 				tenders.push({ method: "cash", amountKopecks: Number(splitCashKop), amountRub: kopecksToRub(splitCashKop) });
 			}
@@ -403,6 +440,17 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			}
 			if (splitDepositKop > 0n) {
 				tenders.push({ method: "family_wallet", amountKopecks: Number(splitDepositKop), amountRub: kopecksToRub(splitDepositKop) });
+			}
+			if (splitBonusKop > 0n) {
+				tenders.push({ method: "loyalty", amountKopecks: Number(splitBonusKop), amountRub: kopecksToRub(splitBonusKop) });
+			}
+			if (splitCertKop > 0n) {
+				tenders.push({
+					method: "certificate",
+					amountKopecks: Number(splitCertKop),
+					amountRub: kopecksToRub(splitCertKop),
+					...(certificateNumber.trim() ? { certificateNumber: certificateNumber.trim() } : {}),
+				});
 			}
 			if (appliedDmsSplit && appliedDmsSplit.dmsRub > 0) {
 				tenders.push({
@@ -438,6 +486,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 									cardKopecks: Number(splitCardKop),
 									sbpKopecks: Number(splitSbpKop),
 									depositKopecks: Number(splitDepositKop),
+									bonusKopecks: Number(splitBonusKop),
+									certificateKopecks: Number(splitCertKop),
+									certificateNumber: certificateNumber.trim() || undefined,
 								}
 							: undefined,
 					items: [
@@ -801,6 +852,10 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		setSplitSbpRub,
 		splitDepositRub,
 		setSplitDepositRub,
+		splitBonusRub,
+		setSplitBonusRub,
+		splitCertRub,
+		setSplitCertRub,
 		splitCashReceivedRub,
 		setSplitCashReceivedRub,
 		effectiveTotalKop,

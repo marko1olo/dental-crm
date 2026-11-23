@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
 import { isTechnicalBreakAppointment } from "./scheduleCatalogData";
 import { useScheduleStore } from "../../store/scheduleStore";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { showToast } from "../GlobalToast";
@@ -72,7 +72,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       const mutationKey = (payload as { idempotencyKey?: string }).idempotencyKey || generateUuidV7();
       const res = await fetchWithHandling(url, {
         method: isEditing ? "PATCH" : "POST",
-        headers: denteAdminSecretRequestHeaders({
+        headers: denteClinicalMutationHeaders({
           "Content-Type": "application/json",
           "Idempotency-Key": mutationKey,
         }),

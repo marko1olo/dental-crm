@@ -6,7 +6,7 @@ import type { TargetSlotInfo } from "../components/schedule/waitlist/waitlistTyp
 
 /**
  * Подписка расписания на живые обновления.
- * DentalPRO expo26 Realtime Schedule Bar:
+ * DENTE Realtime Schedule Bar:
  * - APPOINTMENT_CREATED, APPOINTMENT_UPDATED
  * - INTERCOM_PING (пациент в холле, вызов у кресла)
  * - HOT_SLOT_FREED (освобождение окна при отмене с подбором листа ожидания)
@@ -66,7 +66,7 @@ export function useScheduleRealtime(
 	useEffect(() => {
 		if (!lastMessage?.type || !SCHEDULE_EVENTS.has(lastMessage.type)) return;
 
-		// DentalPRO expo26 Realtime LAN-интерком: при сигнале о прибытии пациента
+		// DENTE Realtime LAN-интерком: при сигнале о прибытии пациента
 		if (lastMessage.type === "INTERCOM_PING") {
 			const payload = lastMessage.payload as IntercomPingPayload | undefined;
 			if (payload?.preset?.key === "patient_arrived") {

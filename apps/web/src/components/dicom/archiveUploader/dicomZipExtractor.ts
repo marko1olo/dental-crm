@@ -6,6 +6,7 @@ import * as fflate from "fflate";
 import { isDicomEntry, isDicomdirEntry, sortDicomEntries } from "../dicomArchiveFilter";
 import {
 	getDicomImageLoader,
+	type DicomWadoLoader,
 	MAX_SAFE_FILE_SIZE_BYTES,
 	BATCH_PROCESSING_CHUNK_SIZE,
 } from "./dicomStowUploader";
@@ -26,11 +27,13 @@ export async function extractZipArchive(
 	}
 
 	options.onProgress(0, `Распаковка архива ${zipFile.name}...`);
-	let archiveBuffer: Uint8Array | null = new Uint8Array(await zipFile.arrayBuffer());
+	const initialBuffer = new Uint8Array(await zipFile.arrayBuffer());
+	let archiveBuffer: Uint8Array | null = initialBuffer;
 
 	return new Promise<ParsedDicomResult[]>((resolve, reject) => {
-		fflate.unzip(archiveBuffer!, (err, unzipped) => {
+		fflate.unzip(initialBuffer, (err, unzipped) => {
 			archiveBuffer = null;
+			void archiveBuffer;
 			if (err) return reject(err);
 
 			const entries = sortDicomEntries(Object.keys(unzipped));
@@ -46,7 +49,7 @@ export async function extractZipArchive(
 				}
 
 				const batchEnd = Math.min(currentIndex + BATCH_PROCESSING_CHUNK_SIZE, totalFiles);
-				const loader = await getDicomImageLoader();
+				const loader: DicomWadoLoader = await getDicomImageLoader();
 
 				for (let i = currentIndex; i < batchEnd; i++) {
 					const filename = entries[i];

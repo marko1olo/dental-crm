@@ -1,4 +1,5 @@
 import type React from "react";
+import type { StaffProfileExtended } from "@dental/shared";
 import {
 	CalendarDays,
 	Globe,
@@ -8,6 +9,8 @@ import {
 	Send,
 	Users,
 } from "lucide-react";
+import type { WorkspaceProfileItem } from "../access/ActiveWorkspaceProfileCard";
+import type { SettingsAccessHeaders } from "../staffMutationRequest";
 
 export type AdminSubTab =
 	| "clinic"
@@ -21,9 +24,34 @@ export type AdminSubTab =
 	| "marketing"
 	| "bpmn";
 
+export interface AdminSettingsPropsBag {
+	dashboard?: {
+		clinicSettings?: {
+			staff?: StaffProfileExtended[];
+			name?: string;
+			profile?: { mode?: string };
+		};
+		clinicName?: string;
+	};
+	loadDashboard?: (() => Promise<unknown>) | undefined;
+	auth?: {
+		settingsAccessHeaders?: SettingsAccessHeaders;
+		user?: {
+			role?: string;
+		};
+	};
+	activeWorkspaceProfile?: WorkspaceProfileItem | null | undefined;
+	workspaceScopeLabels?: Record<string, string>;
+	staffRoleLabels?: Record<string, string>;
+	clinicModeLabels?: Record<string, { title?: string }>;
+	policyAuditEventLabels?: Record<string, string>;
+	staffOptions?: Array<{ id: string; fullName: string; role?: string | undefined }> | undefined;
+	serverBaseUrl?: string | undefined;
+	[key: string]: unknown;
+}
+
 export interface AdminSettingsSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	readonly props: Record<string, any>;
+	readonly props: AdminSettingsPropsBag;
 	readonly initialTab?: AdminSubTab;
 	readonly onSelectTab?: (tab: string) => void;
 }

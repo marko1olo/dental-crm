@@ -18,6 +18,7 @@ import {
 	type OfflineMutation,
 } from "../services/offline/offlineStorage.js";
 import { logger } from "../utils/logger.js";
+import { getDenteAuthHeaders } from "../lib/denteRequestHeaders.js";
 
 export type AppointmentMutationAction = "CREATE_APPOINTMENT" | "UPDATE_APPOINTMENT" | "CANCEL_APPOINTMENT";
 
@@ -222,9 +223,16 @@ export async function syncAppointmentQueue(
 
 /**
  * Standard server dispatcher to flush offline appointment mutations to /api/appointments.
+ * Protected by mutual exclusion to prevent parallel race conditions with Sync Gateway.
  */
+let isAppointmentFlushing = false;
 export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
-	return syncAppointmentQueue(async (mutation) => {
+	if (isAppointmentFlushing) {
+		return { syncedCount: 0, failedCount: 0 };
+	}
+	isAppointmentFlushing = true;
+	try {
+		return await syncAppointmentQueue(async (mutation) => {
 		const appt = mutation.appointment;
 		let url = "/api/appointments";
 		let method = "POST";
@@ -265,11 +273,10 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 
 		const res = await fetch(url, {
 			method,
-			headers: {
+			headers: getDenteAuthHeaders({
 				"Content-Type": "application/json",
-				"X-Dente-Admin-Secret": "dente-core-secret-2026",
 				"Idempotency-Key": appt.clientReferenceId || mutation.id,
-			},
+			}),
 			body: JSON.stringify(body),
 		});
 
@@ -283,6 +290,9 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 		}
 		return { success: false };
 	});
+	} finally {
+		isAppointmentFlushing = false;
+	}
 }
 
 /**

@@ -1,13 +1,13 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
 	CheckCircle2,
 	Download,
 	FileCheck2,
-	QrCode,
 	RefreshCw,
 	ShieldCheck,
 	X,
 } from "lucide-react";
+import { generateQrCodeSvg } from "@dental/shared";
 
 export type PayerType = "self" | "child" | "spouse";
 
@@ -42,6 +42,8 @@ export interface CabinetTaxSheetProps {
 	readonly clinicInn?: string | undefined;
 	readonly clinicKpp?: string | undefined;
 	readonly clinicLicense?: string | undefined;
+	readonly certificateNumber?: string | undefined;
+	readonly issueDate?: string | undefined;
 	readonly onDownloadTaxCert: () => void;
 	readonly onTriggerHaptic?: (style?: "light" | "medium" | "heavy") => void;
 }
@@ -71,9 +73,24 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 	clinicInn,
 	clinicKpp,
 	clinicLicense,
+	certificateNumber,
+	issueDate,
 	onDownloadTaxCert,
 	onTriggerHaptic,
 }) => {
+	const certNum = certificateNumber || `СПР-${taxYear}/${payerInn ? payerInn.slice(-4) : "001"}`;
+	const certDate = issueDate || new Date().toLocaleDateString("ru-RU");
+
+	const qrPayload = useMemo(() => {
+		const cleanClinicInn = clinicInn ? clinicInn.replace(/\D/g, "") : "7701234567";
+		const cleanPayerInn = payerInn ? payerInn.replace(/\D/g, "") : "";
+		return `FNS|KND1151156|${certNum}|${taxYear}|${cleanClinicInn}|${cleanPayerInn}|SUM:${totalYearExpense}`;
+	}, [certNum, taxYear, clinicInn, payerInn, totalYearExpense]);
+
+	const qrSvg = useMemo(() => {
+		return generateQrCodeSvg(qrPayload, { size: 56, margin: 1 });
+	}, [qrPayload]);
+
 	if (!isOpen) return null;
 
 	return (
@@ -286,7 +303,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 										Справка об оплате медицинских услуг
 									</div>
 									<div className="text-[11px] text-slate-500 dark:text-slate-400">
-										№ ФНС-2026/043-9821 от {new Date().toLocaleDateString("ru-RU")}
+										№ {certNum} от {certDate}
 									</div>
 								</div>
 
@@ -321,9 +338,11 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 
 								{/* QR-код для Личного кабинета налогоплательщика */}
 								<div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
-									<div className="w-14 h-14 bg-white rounded-lg p-1 flex items-center justify-center flex-shrink-0 border border-slate-200">
-										<QrCode size={48} className="text-slate-950" />
-									</div>
+									<div
+										data-testid="tax-sheet-qr"
+										className="w-14 h-14 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0 border border-slate-200 overflow-hidden"
+										dangerouslySetInnerHTML={{ __html: qrSvg }}
+									/>
 									<div className="text-[11px] text-slate-600 dark:text-slate-300 leading-tight">
 										<span className="font-bold text-teal-600 dark:text-teal-400 block mb-0.5">
 											QR-код для быстрой загрузки:

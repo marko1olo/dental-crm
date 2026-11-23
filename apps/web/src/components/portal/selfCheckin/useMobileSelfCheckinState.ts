@@ -121,31 +121,46 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 	const [phoneDigits, setPhoneDigits] = useState(defaultLast4);
 	const [showOptionalDocs, setShowOptionalDocs] = useState(false);
 
-	// Inactivity Timeout (20s on completed -> onClose, 45s idle -> return to start screen)
+	// Inactivity Timeout & Full PII Purge (20s on completed -> onClose, 45s idle -> return to start screen & reset draft)
+	const resetFullCheckinState = () => {
+		setStep("phone_auth");
+		setServerPatientName(null);
+		setServerDoctorName(null);
+		setServerAppointmentTime(null);
+		setServerCabinetName(null);
+		setServerQueueTicket(null);
+		setFirstTimeName("");
+		setPhoneDigits(defaultLast4);
+		setAuthError(null);
+		setConsents(DEFAULT_CONSENTS.map((c) => ({ ...c, isSigned: false, signatureSvg: undefined, signedAtIso: undefined })));
+		setActiveConsentIndex(0);
+		setConsentNotice(null);
+		setSomaticData(INITIAL_SOMATIC_QUESTIONNAIRE);
+		setIsNormApplied(false);
+		setAllergyDetails("");
+		setCardioDetails("");
+		setCoagulationDetails("");
+		setQuickAllergies({ lidocaine: false, penicillin: false, aspirin: false, sulfites: false });
+		setShowOptionalDocs(false);
+	};
+
 	useEffect(() => {
 		if (step === "completed") {
 			const completedTimer = setTimeout(() => {
+				resetFullCheckinState();
 				props.onClose?.();
-				setStep("phone_auth");
-				setPhoneDigits(defaultLast4);
 			}, 20000);
 			return () => clearTimeout(completedTimer);
 		}
 
 		let idleTimer = setTimeout(() => {
-			setStep("phone_auth");
-			setPhoneDigits(defaultLast4);
-			setAuthError(null);
-			setFirstTimeName("");
+			resetFullCheckinState();
 		}, 45000);
 
 		const handleActivity = () => {
 			clearTimeout(idleTimer);
 			idleTimer = setTimeout(() => {
-				setStep("phone_auth");
-				setPhoneDigits(defaultLast4);
-				setAuthError(null);
-				setFirstTimeName("");
+				resetFullCheckinState();
 			}, 45000);
 		};
 
@@ -225,7 +240,10 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 			const endpoint = payload.isEmergency ? "/api/portal/kiosk/emergency-checkin" : "/api/portal/self-checkin";
 			const res = await fetch(endpoint, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				},
 				body: JSON.stringify({
 					organizationId: props.organizationId || undefined,
 					phoneLast4: phoneDigits.slice(-4),
@@ -241,19 +259,20 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 			});
 			if (res.ok) {
 				const json = await res.json();
-				if (json?.patientName) setServerPatientName(json.patientName);
-				if (json?.doctorName) setServerDoctorName(json.doctorName);
-				if (json?.appointmentTime) setServerAppointmentTime(json.appointmentTime);
-				if (json?.cabinetName) setServerCabinetName(json.cabinetName);
-				if (json?.queueTicket) setServerQueueTicket(json.queueTicket);
+				const payloadData = json?.data ?? json;
+				if (payloadData?.patientName) setServerPatientName(payloadData.patientName);
+				if (payloadData?.doctorName) setServerDoctorName(payloadData.doctorName);
+				if (payloadData?.appointmentTime) setServerAppointmentTime(payloadData.appointmentTime);
+				if (payloadData?.cabinetName) setServerCabinetName(payloadData.cabinetName);
+				if (payloadData?.queueTicket) setServerQueueTicket(payloadData.queueTicket);
 
 				setStep("completed");
 				props.onCheckinSuccess?.({
-					patientId: json?.patientId || props.patientId || "",
+					patientId: payloadData?.patientId || props.patientId || "",
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
-					queueTicket: json?.queueTicket || displayQueueTicket,
-					visitStatus: json?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : payload.isFirstTime ? "🆕 В холле / Ожидает первичного осмотра и оформления" : "В холле / Ожидает приёма"),
+					queueTicket: payloadData?.queueTicket || displayQueueTicket,
+					visitStatus: payloadData?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : payload.isFirstTime ? "🆕 В холле / Ожидает первичного осмотра и оформления" : "В холле / Ожидает приёма"),
 				});
 				return;
 			}
@@ -456,6 +475,7 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		handleSignCurrentConsentWithPaper,
 		handleSignAllConsentsWithPep,
 		handleToggleQuickAllergy,
+		resetFullCheckinState,
 	};
 }
 

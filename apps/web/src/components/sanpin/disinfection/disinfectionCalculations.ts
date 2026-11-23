@@ -11,7 +11,7 @@ export function calculateDisinfectantForRoom(params: {
 	exposureMinutes?: number;
 	customRateMlPerM2?: number;
 }): DisinfectionSolutionCalculationResult {
-	const area = Math.max(0, Math.round(Number(params.treatedAreaM2) * 100) / 100);
+	const area = Math.max(0, Number(Number(params.treatedAreaM2).toFixed(2)));
 	const method = params.applicationMethod || "wiping";
 
 	const defaultRate = method === "spraying" ? 200 : 100;
@@ -20,13 +20,13 @@ export function calculateDisinfectantForRoom(params: {
 		: defaultRate;
 
 	const totalSolutionMl = area * rateMlPerM2;
-	const totalSolutionVolumeLiters = Math.round((totalSolutionMl / 1000) * 100) / 100;
+	const totalSolutionVolumeLiters = Number((totalSolutionMl / 1000).toFixed(2));
 
 	const concPercent = Math.max(0.01, Number(params.concentrationPercent) || 1.0);
-	const requiredConcentrateVolumeMl = Math.round(totalSolutionMl * (concPercent / 100) * 10) / 10;
+	const requiredConcentrateVolumeMl = Math.round(totalSolutionMl * (concPercent * 0.01) * 10) / 10;
 	const requiredWaterVolumeLiters = Math.max(
 		0,
-		Math.round(((totalSolutionMl - requiredConcentrateVolumeMl) / 1000) * 100) / 100,
+		Number(((totalSolutionMl - requiredConcentrateVolumeMl) / 1000).toFixed(2)),
 	);
 
 	const exposureMinutes = params.exposureMinutes !== undefined && params.exposureMinutes > 0
@@ -56,14 +56,14 @@ export function calculateDisinfectantForToolImmersion(params: {
 		? params.litersPerSet
 		: 2.0;
 
-	const totalSolutionVolumeLiters = Math.round(setsCount * litersPerSet * 100) / 100;
+	const totalSolutionVolumeLiters = Number((setsCount * litersPerSet).toFixed(2));
 	const totalSolutionMl = totalSolutionVolumeLiters * 1000;
 
 	const concPercent = Math.max(0.01, Number(params.concentrationPercent) || 2.0);
-	const requiredConcentrateVolumeMl = Math.round(totalSolutionMl * (concPercent / 100) * 10) / 10;
+	const requiredConcentrateVolumeMl = Math.round(totalSolutionMl * (concPercent * 0.01) * 10) / 10;
 	const requiredWaterVolumeLiters = Math.max(
 		0,
-		Math.round(((totalSolutionMl - requiredConcentrateVolumeMl) / 1000) * 100) / 100,
+		Number(((totalSolutionMl - requiredConcentrateVolumeMl) / 1000).toFixed(2)),
 	);
 
 	const exposureMinutes = params.exposureMinutes !== undefined && params.exposureMinutes > 0

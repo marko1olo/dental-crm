@@ -334,7 +334,7 @@ export async function exportSnapshotToClinicalRecord(
 
 	try {
 		const summaryTitle = tooth ? `Снимок зуба ${tooth} — Form 043/u` : "Рентгенологический снимок — Form 043/u";
-		const res = await fetch("/api/xray/scans", {
+		const res = await fetch("/api/imaging/studies", {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
@@ -343,13 +343,14 @@ export async function exportSnapshotToClinicalRecord(
 			body: JSON.stringify({
 				patientId: payload.patientId,
 				imageBase64: payload.imageDataUri,
+				title: summaryTitle,
 				originalFilename: `snapshot_${payload.viewKind || "xray"}_${tooth || "jaw"}_${Date.now()}.jpg`,
 				mimeType: "image/jpeg",
 				kind: payload.viewKind || "periapical",
 				toothCode: tooth || null,
 				aiReport: protocol043,
 				aiSummary: summaryTitle,
-				status: "done",
+				status: "available",
 			}),
 		});
 

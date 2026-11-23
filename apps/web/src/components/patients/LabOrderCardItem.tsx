@@ -13,6 +13,13 @@ import {
 	Printer,
 	Sparkles,
 } from "lucide-react";
+import {
+	formatKopecksToRub,
+	mapTo5StageLabStatus,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	type Canonical5LabStatus,
+} from "@dental/shared";
+import { mapDbStatusToStage, getStageMeta } from "../lab/dentalLabCatalogData";
 import type { LabOrder } from "./labOrdersTypes";
 
 export interface LabOrderCardItemProps {
@@ -27,69 +34,83 @@ export interface LabOrderCardItemProps {
 interface StatusMeta {
 	label: string;
 	className: string;
-	nextStatus?: string | undefined;
+	nextStatus?: Canonical5LabStatus | undefined;
 	nextActionLabel?: string | undefined;
 }
 
 function getStatusMeta(status: string): StatusMeta {
-	const s = status.toLowerCase();
-	switch (s) {
-		case "draft":
-			return {
-				label: "Черновик",
-				className: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
-				nextStatus: "sent",
-				nextActionLabel: "Отправить в ЗТЛ",
-			};
+	const s = (status || "").toLowerCase().trim();
+	if (s === "cancelled") {
+		return {
+			label: "Отменен",
+			className: "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-soft)]",
+		};
+	}
+	if (s === "draft") {
+		return {
+			label: "Черновик",
+			className: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
+			nextStatus: "sent",
+			nextActionLabel: "Отправить в ЗТЛ",
+		};
+	}
+
+	if (
+		s === "refitting" ||
+		s === "rejected_remake" ||
+		s === "rework" ||
+		s === "warranty_rework" ||
+		s === "correction_remake"
+	) {
+		return {
+			label: "На переделке в ЗТЛ",
+			className: "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning-soft)]",
+			nextStatus: "ready",
+			nextActionLabel: "Поступил из ЗТЛ",
+		};
+	}
+
+	const canonical5 = mapTo5StageLabStatus(status);
+	const stage = mapDbStatusToStage(status);
+	const stageMeta = getStageMeta(stage);
+
+	switch (canonical5) {
 		case "sent":
-		case "sent_to_lab":
 			return {
 				label: "Отправлен в ЗТЛ",
-				className: "bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)]/25",
+				className: "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--line)]",
 				nextStatus: "in_progress",
 				nextActionLabel: "Взять в работу",
 			};
 		case "in_progress":
-		case "processing":
 			return {
 				label: "В работе в ЗТЛ",
-				className: "bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#92400e)] border-[var(--warning-line,rgba(245,158,11,0.3))]",
-				nextStatus: "received",
-				nextActionLabel: "Получен в клинике",
+				className: "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning-soft)]",
+				nextStatus: "fitting",
+				nextActionLabel: "На примерку",
 			};
-		case "shipped":
 		case "fitting":
-		case "refitting":
-		case "ready_for_fitting":
 			return {
 				label: "Примерка каркаса / керамики",
 				className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]",
-				nextStatus: "received",
+				nextStatus: "ready",
 				nextActionLabel: "Готов в клинике",
 			};
-		case "received":
-		case "ready_in_clinic":
-		case "in_clinic":
+		case "ready":
 			return {
 				label: "Готов в клинике",
-				className: "bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)]/30",
+				className: "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary-soft)]",
 				nextStatus: "completed",
 				nextActionLabel: "Сдать пациенту",
 			};
 		case "completed":
-		case "installed":
 			return {
 				label: "Сдан пациенту",
-				className: "bg-[var(--success-soft,rgba(16,185,129,0.14))] text-[var(--success-ink,#065f46)] border-[var(--success-line,rgba(16,185,129,0.3))]",
-			};
-		case "cancelled":
-			return {
-				label: "Отменен",
-				className: "bg-[var(--danger-soft,rgba(244,63,94,0.12))] text-[var(--danger,#f43f5e)] border-[var(--danger-soft,rgba(244,63,94,0.3))]",
+				className: "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-soft)]",
 			};
 		default:
 			return {
-				label: status,
+				label: stageMeta?.labelRu || status,
 				className: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
 			};
 	}
@@ -108,6 +129,12 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 	const toothDisplay = order.toothFdi ? `Зуб ${order.toothFdi}` : "Ортопедическая конструкция";
 	const formattedDue = order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : null;
 	const formattedCreated = order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU") : null;
+	const priceKop = order.priceKopecks ?? order.amountKopecks;
+	const priceDisplay = priceKop != null
+		? formatKopecksToRub(priceKop)
+		: typeof order.priceRub === "number" && order.priceRub > 0
+			? `${order.priceRub.toLocaleString("ru-RU")} ₽`
+			: null;
 
 	return (
 		<article
@@ -117,14 +144,14 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 			{/* Верхняя строка: Номер наряда, статус и дата */}
 			<div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line-subtle,rgba(0,0,0,0.06))] pb-2.5">
 				<div className="flex items-center gap-2 flex-wrap">
-					<span className="font-mono text-xs font-bold text-[var(--primary,#0d9488)] bg-[var(--primary-soft,rgba(13,148,136,0.1))] px-2 py-0.5 rounded-md border border-[var(--primary,#0d9488)]/20">
+					<span className="font-mono text-xs font-bold text-[var(--primary)] bg-[var(--primary-soft)] px-2 py-0.5 rounded-md border border-[var(--line)]">
 						{orderNum}
 					</span>
 					<span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${statusMeta.className}`}>
 						{statusMeta.label}
 					</span>
 					{order.isWarranty && (
-						<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#92400e)] border border-[var(--warning-line,rgba(245,158,11,0.3))]">
+						<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--line)]">
 							Гарантия
 						</span>
 					)}
@@ -133,7 +160,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 				<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
 					{formattedDue ? (
 						<span className="inline-flex items-center gap-1 font-medium text-[var(--ink)]">
-							<Calendar className="w-3.5 h-3.5 text-[var(--primary,#0d9488)]" />
+							<Calendar className="w-3.5 h-3.5 text-[var(--primary)]" />
 							<span>{`Срок: ${formattedDue}`}</span>
 						</span>
 					) : formattedCreated ? (
@@ -150,7 +177,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 				<div className="space-y-1">
 					<div className="flex items-center gap-2 flex-wrap">
 						<span className="text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Layers className="w-4 h-4 text-[var(--primary,#0d9488)] shrink-0" />
+							<Layers className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							{toothDisplay}
 						</span>
 						{order.material && (
@@ -161,16 +188,16 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 					<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)]">
 						{order.colorVita && (
 							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] font-medium text-[var(--ink)]">
-								<Sparkles className="w-3 h-3 text-[var(--warning,#f59e0b)]" />
+								<Sparkles className="w-3 h-3 text-[var(--warning)]" />
 								<span>{`VITA: ${order.colorVita}`}</span>
 							</span>
 						)}
 						{order.doctorName && (
 							<span>{`Врач: ${order.doctorName}`}</span>
 						)}
-						{typeof order.priceRub === "number" && order.priceRub > 0 && (
-							<span className="font-semibold text-[var(--ink)]">
-								{`${order.priceRub.toLocaleString("ru-RU")} ₽`}
+						{priceDisplay && (
+							<span className="font-semibold text-[var(--ink)] font-mono">
+								{priceDisplay}
 							</span>
 						)}
 					</div>
@@ -187,8 +214,12 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 					<div className="shrink-0 pt-1 sm:pt-0">
 						<button
 							type="button"
-							onClick={() => onStatusTransition(order.id, statusMeta.nextStatus!)}
-							className="w-full sm:w-auto min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30 hover:border-[var(--primary,#0d9488)] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
+							onClick={() => {
+								if (statusMeta.nextStatus) {
+									onStatusTransition(order.id, statusMeta.nextStatus);
+								}
+							}}
+							className="w-full sm:w-auto min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)] hover:border-[var(--primary)] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
 							title={`Перевести статус наряд-заказа: ${statusMeta.nextActionLabel}`}
 						>
 							<CheckCircle2 className="w-3.5 h-3.5" />

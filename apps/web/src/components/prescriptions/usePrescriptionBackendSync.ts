@@ -72,7 +72,7 @@ export function usePrescriptionBackendSync(p: PrescriptionBackendSyncParams) {
 					frequencyTimesPerDay: 2,
 					mealRelation: "after_meal",
 				})),
-				ukepSignature: (p.ukepSignature as any) || null,
+				ukepSignature: p.ukepSignature ?? null,
 			};
 			const res = await savePrescriptionToBackend(payload);
 			if (p.onPrescriptionCreated) p.onPrescriptionCreated(res.prescription);

@@ -20,11 +20,79 @@ import {
 	onCrossTabVisitStatusChange,
 	onCrossTabPatientBalanceChange,
 	onCrossTabClinicalEntityChange,
+	removeCachedEntity,
 } from "../../services/storage";
+import type { ClinicalEntityChangedPayload } from "../../services/storage/storageTypes";
+import { invalidateApiCache } from "../../lib/apiCacheEngine";
+import { logger } from "../../utils/logger";
 import type { OfflineSyncLogicSlice } from "./types";
 
+const ENTITY_CACHE_INVALIDATION_PATTERNS: Readonly<Record<string, readonly RegExp[]>> = {
+	visit: [/^\/api\/(?:visits|appointments|schedule)/i],
+	visit_draft: [/^\/api\/(?:visits|appointments|schedule)/i],
+	appointment: [/^\/api\/(?:appointments|schedule|visits)/i],
+	patient: [/^\/api\/patients/i],
+	odontogram: [/^\/api\/(?:odontogram|visits|patients)/i],
+	payment: [/^\/api\/(?:billing|payments|invoices|finance)/i],
+	billing: [/^\/api\/(?:billing|payments|invoices|finance)/i],
+	invoice: [/^\/api\/(?:billing|payments|invoices|finance)/i],
+	pricelist: [/^\/api\/(?:settings\/price|catalog|price-lists)/i],
+	price: [/^\/api\/(?:settings\/price|catalog|price-lists)/i],
+	catalog: [/^\/api\/(?:settings\/price|catalog|price-lists)/i],
+	templates: [/^\/api\/(?:templates|document-templates|emr\/templates|somatic)/i],
+	template: [/^\/api\/(?:templates|document-templates|emr\/templates|somatic)/i],
+	somatic: [/^\/api\/(?:templates|document-templates|emr\/templates|somatic)/i],
+	inventory: [/^\/api\/inventory/i],
+	lab: [/^\/api\/lab/i],
+	insurance: [/^\/api\/insurance/i],
+	staff: [/^\/api\/(?:settings\/staff|hr\/doctors)/i],
+	doctor: [/^\/api\/(?:settings\/staff|hr\/doctors)/i],
+	clinic: [/^\/api\/(?:settings\/clinic|settings\/branches|workspace\/profile)/i],
+	branch: [/^\/api\/(?:settings\/clinic|settings\/branches|workspace\/profile)/i],
+	pharmacology: [/^\/api\/(?:pharmacology|prescriptions)/i],
+	prescription: [/^\/api\/(?:pharmacology|prescriptions)/i],
+	clinical_rule: [/^\/api\/clinical\/rules/i],
+	clinical_rules: [/^\/api\/clinical\/rules/i],
+};
+
+function invalidateCacheForClinicalEntity(event: ClinicalEntityChangedPayload): void {
+	const rawKind = (event.entityKind ?? event.entityType ?? "").trim().toLowerCase();
+	const entityId = typeof event.entityId === "string" ? event.entityId.trim() : "";
+	const patientId = typeof event.patientId === "string" ? event.patientId.trim() : "";
+
+	if (entityId.length > 0) {
+		invalidateApiCache(entityId);
+	}
+	if (patientId.length > 0) {
+		invalidateApiCache(patientId);
+	}
+
+	if (rawKind.length > 0) {
+		const patterns = ENTITY_CACHE_INVALIDATION_PATTERNS[rawKind];
+		if (patterns) {
+			for (const pattern of patterns) {
+				invalidateApiCache(pattern);
+			}
+		} else {
+			invalidateApiCache(rawKind);
+		}
+		if (entityId.length > 0) {
+			void removeCachedEntity(rawKind, entityId).catch((cacheErr: unknown) => {
+				logger.debug("[OfflineSync] Failed to remove stale cached clinical entity:", cacheErr);
+			});
+		}
+	}
+}
+
+interface OfflineSyncAuthContext {
+	readonly denteClinicalReadHeaders?: (
+		customHeaders?: Record<string, string>,
+		adminSecret?: string,
+	) => Record<string, string>;
+}
+
 interface UseOfflineSyncLogicProps {
-	auth: any;
+	auth?: OfflineSyncAuthContext | null | undefined;
 	setError: (err: string | null) => void;
 }
 
@@ -306,7 +374,17 @@ export function useOfflineSyncLogic({
 				window.dispatchEvent(new CustomEvent("dente:refresh-billing", { detail: payload }));
 			}
 		});
-		const unSubEntity = onCrossTabClinicalEntityChange(() => {});
+		const unSubEntity = onCrossTabClinicalEntityChange((event) => {
+			invalidateCacheForClinicalEntity(event);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent<ClinicalEntityChangedPayload>(
+						"dente:clinical-entity-sync",
+						{ detail: event },
+					),
+				);
+			}
+		});
 		return () => {
 			unSubVisit();
 			unSubBal();

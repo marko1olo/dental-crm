@@ -28,10 +28,10 @@ export function BotPatientQrSection({
 				borderRadius: "12px", border: "1px solid #cbd5e1", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.06)",
 				display: "flex", alignItems: "center", justifyContent: "center",
 			}} title="Сканируйте QR-код для запуска бота">
-				<div
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: safe SVG
-					dangerouslySetInnerHTML={{ __html: generateQrCodeSvg(patientBotLink, { size: 140, margin: 1 }) }}
-					style={{ width: "100%", height: "100%" }}
+				<img
+					src={`data:image/svg+xml;utf8,${encodeURIComponent(generateQrCodeSvg(patientBotLink, { size: 140, margin: 1 }))}`}
+					alt="QR-код запуска бота"
+					style={{ width: "100%", height: "100%", display: "block" }}
 				/>
 			</div>
 

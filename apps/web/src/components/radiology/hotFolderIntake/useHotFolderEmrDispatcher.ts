@@ -110,19 +110,20 @@ export function useHotFolderEmrDispatcher({
 							reader.readAsDataURL(blob);
 						});
 					}
-					const response = await fetch("/api/xray/scans", {
+					const response = await fetch("/api/imaging/studies", {
 						method: "POST",
 						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
 							patientId,
 							imageBase64,
+							title: activeItem.filename || `Снимок Hot Folder ${selectedTeeth.join(", ")}`,
 							originalFilename:
 								activeItem.filename || `hf_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
 							mimeType: "image/jpeg",
-							kind: activeItem.detectedModality === "optg_panoramic" ? "panoramic" : "periapical",
+							kind: activeItem.detectedModality === "optg_panoramic" ? "opg" : "periapical",
 							toothCode: selectedTeeth[0] || null,
 							notes: protocolNote,
-							status: "done",
+							status: "available",
 						}),
 					});
 					if (!response.ok) {

@@ -6,6 +6,7 @@
  * тем же контуром, что и живой раздел «Касса» (демо-режим — та же база).
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 
 export interface LauncherPatient {
@@ -61,11 +62,11 @@ export async function fetchLauncherOutstandingDebtRub(patientId: string): Promis
 	let outstandingKop = 0;
 	for (const inv of json?.data ?? []) {
 		if (inv.status && ["paid", "refunded", "voided"].includes(inv.status)) continue;
-		const total = Math.round((inv.totalRub ?? 0) * 100);
-		const paid = Math.round((inv.paidRub ?? 0) * 100);
+		const total = rublesToKopecks(inv.totalRub ?? 0);
+		const paid = rublesToKopecks(inv.paidRub ?? 0);
 		outstandingKop += Math.max(0, total - paid);
 	}
-	return outstandingKop / 100;
+	return kopecksToRubles(outstandingKop);
 }
 
 /** Семейный счёт пациента из базы; null — семейного счёта у пациента нет. */
@@ -142,9 +143,9 @@ export async function fetchCashInDrawerRub(): Promise<number> {
 		const when = p.paidAt || p.createdAt || "";
 		if (!when.startsWith(dayKey)) continue;
 		if (p.method !== "cash") continue;
-		cashKop += Math.round((p.amountRub ?? 0) * 100);
+		cashKop += rublesToKopecks(p.amountRub ?? 0);
 	}
-	return cashKop / 100;
+	return kopecksToRubles(cashKop);
 }
 
 /** Служебное внесение / изъятие наличных — реальные кассовые операции смены. */

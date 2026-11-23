@@ -169,6 +169,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 			{/* Emergency Rescue / Anaphylaxis Anti-Shock Modal (Мандаты 8c, 8e) */}
 			{(effectiveActiveModal === "emergency_rescue" || isEmergencyModalOpen) && (
 				<EmergencyRescueModal
+					key={activePatient?.id || "emergency_rescue"}
 					isOpen={true}
 					onClose={() => {
 						setIsEmergencyModalOpen(false);
@@ -248,6 +249,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 
 				return (
 					<WarrantyPassportModal
+						key={activePatient?.id || "warranty_passport"}
 						isOpen={isWarrantyModalOpen || effectiveActiveModal === "warranty_passport"}
 						onClose={() => {
 							setIsWarrantyModalOpen(false);
@@ -313,6 +315,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 			{/* Doctor Mobile Shift Modal */}
 			{effectiveActiveModal === "doctor_mobile_shift" && (
 				<DoctorMobileShiftModal
+					key={activeDoctor?.id || "doctor_mobile_shift"}
 					isOpen={isDoctorShiftModalOpen}
 					onClose={() => {
 						setIsDoctorShiftModalOpen(false);
@@ -326,6 +329,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 			{/* Informed Consent Modal */}
 			{effectiveActiveModal === "informed_consent" && (
 				<InformedConsentModal
+					key={activePatient?.id || "informed_consent"}
 					isOpen={isInformedConsentModalOpen}
 					onClose={() => {
 						setIsInformedConsentModalOpen(false);
@@ -388,6 +392,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 			{/* Рецептурный модуль (Приказы 1094н / 107-1/у и 148-1/у-88) — Мандаты 8e, 8x, 8y */}
 			{(effectiveActiveModal === "prescription" || isPrescriptionModalOpen) && (
 				<PrescriptionModal
+					key={activePatient?.id || "prescription"}
 					isOpen={true}
 					onClose={() => {
 						setIsPrescriptionModalOpen?.(false);

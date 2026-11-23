@@ -14,6 +14,7 @@ import {
 	buildChairsidePatientCasePresentation,
 } from "../../../services/ai/treatmentPlanCopilot";
 import { generateTreatmentPlanStages } from "../treatmentPlanStagesEngine";
+import { buildAdaptiveCanonicalStages } from "../treatmentPlanCatalogData";
 import type { TreatmentPlanStage } from "../types";
 import { sampleItemPriced } from "./helpers/copilotTestHelpers";
 
@@ -94,5 +95,18 @@ describe("AI Copilot Scenarios & Chairside Presentation", () => {
 		assert.ok(slide2Summary.some((txt) => txt.includes("Лечение кариеса эмали")));
 		assert.equal(slide2Summary.some((txt) => /слюноотсос|валик/i.test(txt)), false);
 		assert.equal(stageWithConsumables.items.length, 2);
+	});
+
+	it("5. buildAdaptiveCanonicalStages adapts to patient context without forcing implants", () => {
+		const therapyOnly = buildAdaptiveCanonicalStages({
+			pathologies: [{ toothNumber: 16, state: "Caries" }],
+		});
+		assert.equal(therapyOnly.length, 2);
+		assert.equal(therapyOnly.some((s) => s.stageKind === "stage_2_surgery"), false);
+
+		const surgeryPatient = buildAdaptiveCanonicalStages({
+			pathologies: [{ toothNumber: 36, state: "Missing" }],
+		});
+		assert.equal(surgeryPatient.length, 4);
 	});
 });

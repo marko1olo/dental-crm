@@ -51,13 +51,13 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 		<>
 			{/* Bottom compact status bar: strictly 1 line (28px / h-7) */}
 			<footer
-				className="h-7 px-2.5 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between shrink-0 gap-2 overflow-hidden text-[10px] text-zinc-400 select-none w-full min-w-0 max-w-full leading-none"
+				className="h-7 px-2.5 bg-[var(--paper-deep,#070a12)] border-t border-[var(--line,#27272a)] flex items-center justify-between shrink-0 gap-2 overflow-hidden text-[10px] text-[var(--ink-muted,#94a3b8)] select-none w-full min-w-0 max-w-full leading-none"
 				data-testid="cbct-hotkeys-status-bar"
 			>
 				{/* Left: Active Viewport Indicator Chip */}
 				<div className="flex items-center gap-1.5 shrink-0">
 					<div
-						className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 font-mono text-[10px] text-zinc-100 leading-none shrink-0"
+						className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] font-mono text-[10px] text-[var(--ink,#f8fafc)] leading-none shrink-0"
 						title={`Активное окно: ${activeMeta.planeNameRu}. Нажмите Tab для смены.`}
 					>
 						<span
@@ -65,86 +65,86 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							style={{ backgroundColor: activeMeta.planeColor }}
 						/>
 						<span className="font-bold">{activeMeta.planeNameEn}</span>
-						<span className="text-zinc-500 text-[9px]">(Tab ↹)</span>
+						<span className="text-[var(--ink-muted,#94a3b8)] text-[9px]">(Tab ↹)</span>
 					</div>
 				</div>
 
 				{/* Center: Mobile Touch Guide */}
-				<div className="md:hidden flex items-center text-[10px] text-zinc-400 font-medium truncate px-1">
+				<div className="md:hidden flex items-center text-[10px] text-[var(--ink-muted,#94a3b8)] font-medium truncate px-1">
 					<span>1 палец: срезы · 2 пальца: зум</span>
 				</div>
 
 				{/* Center: Desktop Ergonomic Hints (strictly 1 compact line) */}
-				<div className="hidden md:flex items-center gap-1.5 overflow-hidden text-[10px] text-zinc-400 font-mono leading-none min-w-0">
+				<div className="hidden md:flex items-center gap-1.5 overflow-hidden text-[10px] text-[var(--ink-muted,#94a3b8)] font-mono leading-none min-w-0">
 					{/* Mouse: Wheel -> Slices */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Колесо мыши: листание срезов активного окна"
 					>
-						<strong className="text-cyan-400 font-semibold">Колесо:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">Колесо:</strong>
 						<span>срезы</span>
 					</span>
 
 					{/* Mouse: Ctrl+Wheel -> Zoom */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Ctrl + Колесо мыши: зум в точку курсора"
 					>
-						<strong className="text-cyan-400 font-semibold">Ctrl+Колесо:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">Ctrl+Колесо:</strong>
 						<span>зум</span>
 					</span>
 
 					{/* Mouse: Right Click -> W/L */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="ПКМ (Drag): W/L регулировка яркости и контраста HU"
 					>
-						<strong className="text-cyan-400 font-semibold">ПКМ:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">ПКМ:</strong>
 						<span>W/L</span>
 					</span>
 
 					{/* Mouse: Middle Click -> Pan */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="СКМ (Drag): панорамирование / перемещение проекции"
 					>
-						<strong className="text-cyan-400 font-semibold">СКМ:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">СКМ:</strong>
 						<span>панорама</span>
 					</span>
 
 					{/* Keyboard: W/S Slices */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Клавиши W / S или ↑ / ↓: срез активного окна (±1)"
 					>
-						<strong className="text-cyan-400 font-semibold">W/S:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">W/S:</strong>
 						<span>срез</span>
 					</span>
 
 					{/* Keyboard: 1..5 HU Presets */}
 					<span
-						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Клавиши 1..5: пресеты HU (1 — Кость, 2 — Эндо, 3 — Ткани, 4 — Металл, 5 — Пазухи)"
 					>
-						<strong className="text-cyan-400 font-semibold">1..5:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">1..5:</strong>
 						<span>HU пресеты</span>
 					</span>
 
 					{/* Mouse: Double Click -> Maximize / Reset Angle */}
 					<span
-						className="hidden 2xl:inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="hidden 2xl:inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Двойной щелчок: развернуть на весь экран или сбросить наклон осей"
 					>
-						<strong className="text-cyan-400 font-semibold">2×ЛКМ:</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">2×ЛКМ:</strong>
 						<span>развернуть/сброс</span>
 					</span>
 
 					{/* Keyboard/Mouse: Shift+LMB Rotate */}
 					<span
-						className="hidden 2xl:inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
+						className="hidden 2xl:inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,#27272a)] text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0"
 						title="Shift+ЛКМ: вращение осей косого среза (Oblique MPR)"
 					>
-						<strong className="text-cyan-400 font-semibold">Shift+ЛКМ</strong>
+						<strong className="text-[var(--primary,#06b6d4)] font-semibold">Shift+ЛКМ</strong>
 						<span>Вращение</span>
 					</span>
 				</div>
@@ -155,12 +155,12 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						<button
 							type="button"
 							onClick={onToggleMaximize}
-							className="hidden sm:inline-flex px-1.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 font-mono text-[10px] text-zinc-300 hover:text-cyan-300 items-center gap-1 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+							className="hidden sm:inline-flex px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] border border-[var(--line,#27272a)] font-mono text-[10px] text-[var(--ink,#e2e8f0)] hover:text-[var(--primary,#06b6d4)] items-center gap-1 transition-colors whitespace-nowrap cursor-pointer shrink-0"
 							title="Развернуть активное окно на весь экран / свернуть в сетку (Space / F)"
 							data-testid="cbct-status-bar-maximize-btn"
 						>
-							<strong className="text-cyan-400 font-semibold">Space</strong>
-							<Maximize2 className="w-2.5 h-2.5 text-zinc-400" />
+							<strong className="text-[var(--primary,#06b6d4)] font-semibold">Space</strong>
+							<Maximize2 className="w-2.5 h-2.5 text-[var(--ink-muted,#94a3b8)]" />
 							<span>{isMaximized ? "2x2" : "100%"}</span>
 						</button>
 					)}
@@ -171,13 +171,13 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							onClick={onToggleClearView}
 							className={`hidden lg:inline-flex px-1.5 py-0.5 rounded border font-mono text-[10px] items-center gap-1 transition-colors whitespace-nowrap cursor-pointer shrink-0 ${
 								isClearView
-									? "bg-amber-950/60 text-amber-300 border-amber-500/60"
-									: "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-cyan-300 border-zinc-800"
+									? "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)]/60"
+									: "bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] text-[var(--ink,#e2e8f0)] hover:text-[var(--primary,#06b6d4)] border-[var(--line,#27272a)]"
 							}`}
 							title="Временное скрытие всех оверлеев и сеток для осмотра тонких трещин кости (KeyH)"
 							data-testid="cbct-status-bar-clearview-btn"
 						>
-							<strong className={isClearView ? "text-amber-400 font-semibold" : "text-cyan-400 font-semibold"}>H</strong>
+							<strong className={isClearView ? "text-[var(--warning,#f59e0b)] font-semibold" : "text-[var(--primary,#06b6d4)] font-semibold"}>H</strong>
 							<span>{isClearView ? "Clear (ВКЛ)" : "Clear"}</span>
 						</button>
 					)}
@@ -186,11 +186,11 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						<button
 							type="button"
 							onClick={onTogglePanel}
-							className="hidden xl:inline-flex px-1.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 font-mono text-[10px] text-zinc-300 hover:text-cyan-300 items-center gap-1 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+							className="hidden xl:inline-flex px-1.5 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] border border-[var(--line,#27272a)] font-mono text-[10px] text-[var(--ink,#e2e8f0)] hover:text-[var(--primary,#06b6d4)] items-center gap-1 transition-colors whitespace-nowrap cursor-pointer shrink-0"
 							title="Скрыть или показать правую панель планирования (KeyP)"
 							data-testid="cbct-status-bar-panel-btn"
 						>
-							<strong className="text-cyan-400 font-semibold">P</strong>
+							<strong className="text-[var(--primary,#06b6d4)] font-semibold">P</strong>
 							<span>{isPanelOpen ? "Скрыть" : "Панель"}</span>
 						</button>
 					)}
@@ -198,7 +198,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-mono text-[10px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+						className="px-2 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] text-[var(--primary)] border border-[var(--primary)]/60 font-mono text-[10px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer shadow-xs whitespace-nowrap shrink-0"
 						title="Показать полную справку горячих клавиш (? / F1)"
 						data-testid="cbct-status-bar-help-btn"
 					>
@@ -218,23 +218,23 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					onClick={onToggleHelp}
 				>
 					<div
-						className="bg-[var(--paper-deep,#09090b)] border border-[var(--line,#27272a)] rounded-lg shadow-2xl max-w-2xl w-full p-4 flex flex-col gap-4 text-zinc-100 animate-in fade-in zoom-in-95 duration-150"
+						className="bg-[var(--paper-deep,#09090b)] border border-[var(--line,#27272a)] rounded-lg shadow-2xl max-w-2xl w-full p-4 flex flex-col gap-4 text-[var(--ink,#f8fafc)] animate-in fade-in zoom-in-95 duration-150"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)]">
 							<div className="flex items-center gap-2">
-								<Keyboard className="w-5 h-5 text-cyan-400" />
-								<h3 className="text-sm font-bold text-zinc-100">
+								<Keyboard className="w-5 h-5 text-[var(--primary,#06b6d4)]" />
+								<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)]">
 									Горячие клавиши и управление КЛКТ
 								</h3>
-								<span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 font-mono border border-[var(--line,#27272a)]">
+								<span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] text-[var(--ink-muted,#94a3b8)] font-mono border border-[var(--line,#27272a)]">
 									16-bit DICOM
 								</span>
 							</div>
 							<button
 								type="button"
 								onClick={onToggleHelp}
-								className="w-8 h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center border border-[var(--line,#27272a)] transition-colors"
+								className="w-8 h-8 rounded-md bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#ffffff)] flex items-center justify-center border border-[var(--line,#27272a)] transition-colors cursor-pointer"
 								aria-label="Закрыть справку"
 							>
 								<X className="w-4 h-4" />
@@ -244,17 +244,17 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[65vh] overflow-y-auto pr-1">
 							{/* Section 1: Slices */}
 							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
-								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+								<h4 className="text-xs font-bold text-[var(--primary,#06b6d4)] flex items-center gap-1.5">
 									<Sliders className="w-3.5 h-3.5" />
 									<span>Навигация по срезам</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "slices").map((h) => (
 										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
+											<span className="font-mono font-bold text-[var(--primary,#06b6d4)] bg-[var(--paper-soft,rgba(255,255,255,0.06))] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
-											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
+											<span className="text-[var(--ink-muted,#94a3b8)] text-right">{h.actionLabel}</span>
 										</div>
 									))}
 								</div>
@@ -262,17 +262,17 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 
 							{/* Section 2: Zoom & Pan */}
 							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
-								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+								<h4 className="text-xs font-bold text-[var(--primary,#06b6d4)] flex items-center gap-1.5">
 									<MousePointer className="w-3.5 h-3.5" />
 									<span>Масштаб и панорама</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "zoom_pan").map((h) => (
 										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
+											<span className="font-mono font-bold text-[var(--primary,#06b6d4)] bg-[var(--paper-soft,rgba(255,255,255,0.06))] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
-											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
+											<span className="text-[var(--ink-muted,#94a3b8)] text-right">{h.actionLabel}</span>
 										</div>
 									))}
 								</div>
@@ -280,17 +280,17 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 
 							{/* Section 3: Viewports & Tools */}
 							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
-								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+								<h4 className="text-xs font-bold text-[var(--primary,#06b6d4)] flex items-center gap-1.5">
 									<Maximize2 className="w-3.5 h-3.5" />
 									<span>Окна и инструменты</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "viewports").map((h) => (
 										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
+											<span className="font-mono font-bold text-[var(--primary,#06b6d4)] bg-[var(--paper-soft,rgba(255,255,255,0.06))] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
-											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
+											<span className="text-[var(--ink-muted,#94a3b8)] text-right">{h.actionLabel}</span>
 										</div>
 									))}
 								</div>
@@ -298,29 +298,29 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 
 							{/* Section 4: Presets & Modes */}
 							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
-								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+								<h4 className="text-xs font-bold text-[var(--primary,#06b6d4)] flex items-center gap-1.5">
 									<RotateCw className="w-3.5 h-3.5" />
 									<span>Пресеты HU и режимы</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "presets_modes").map((h) => (
 										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
+											<span className="font-mono font-bold text-[var(--primary,#06b6d4)] bg-[var(--paper-soft,rgba(255,255,255,0.06))] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
-											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
+											<span className="text-[var(--ink-muted,#94a3b8)] text-right">{h.actionLabel}</span>
 										</div>
 									))}
 								</div>
 							</div>
 						</div>
 
-						<div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400">
+						<div className="pt-2 border-t border-[var(--line,#27272a)] flex items-center justify-between text-[11px] text-[var(--ink-muted,#94a3b8)]">
 							<span>Нажмите Esc или ? для закрытия окна</span>
 							<button
 								type="button"
 								onClick={onToggleHelp}
-								className="px-3.5 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 font-semibold transition-colors cursor-pointer"
+								className="px-3.5 py-1.5 rounded bg-[var(--paper-soft,rgba(255,255,255,0.06))] hover:bg-[var(--paper,rgba(255,255,255,0.1))] text-[var(--ink,#f8fafc)] border border-[var(--line,#27272a)] font-semibold transition-colors cursor-pointer"
 							>
 								Понятно
 							</button>

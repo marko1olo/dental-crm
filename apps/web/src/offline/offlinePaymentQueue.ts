@@ -21,6 +21,7 @@ import {
 import { routeFiscalReceiptPrint } from "../utils/runtimeRouter.js";
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
+import { getDenteAuthHeaders } from "../lib/denteRequestHeaders.js";
 
 export type PaymentMethodKind = "cash" | "card" | "sbp" | "deposit" | "mixed";
 export type PaymentQueueStatus = "queued" | "processing" | "synced" | "failed";
@@ -39,6 +40,9 @@ export interface SplitPaymentDetail {
 	readonly cardKopecks?: number | undefined;
 	readonly depositKopecks?: number | undefined;
 	readonly sbpKopecks?: number | undefined;
+	readonly bonusKopecks?: number | undefined;
+	readonly certificateKopecks?: number | undefined;
+	readonly certificateNumber?: string | undefined;
 }
 
 export interface OfflinePaymentItem {
@@ -304,9 +308,16 @@ export async function syncOfflinePaymentQueue(
 
 /**
  * Standard server dispatcher to flush offline payments to /api/cashbox/payments.
+ * Protected by mutual exclusion to prevent parallel race conditions with Sync Gateway.
  */
+let isPaymentFlushing = false;
 export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
-	return syncOfflinePaymentQueue(async (payment) => {
+	if (isPaymentFlushing) {
+		return { syncedCount: 0, failedCount: 0 };
+	}
+	isPaymentFlushing = true;
+	try {
+		return await syncOfflinePaymentQueue(async (payment) => {
 		const payload: Record<string, unknown> = {
 			patientId: payment.patientId && payment.patientId !== "pat-walkin" ? payment.patientId : undefined,
 			visitId: payment.visitId,
@@ -331,14 +342,22 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 			if (payment.splitDetails.depositKopecks !== undefined) {
 				payload.depositAmountKopecks = payment.splitDetails.depositKopecks;
 			}
+			if (payment.splitDetails.bonusKopecks !== undefined) {
+				payload.bonusAmountKopecks = payment.splitDetails.bonusKopecks;
+			}
+			if (payment.splitDetails.certificateKopecks !== undefined) {
+				payload.certificateAmountKopecks = payment.splitDetails.certificateKopecks;
+			}
+			if (payment.splitDetails.certificateNumber !== undefined) {
+				payload.certificateNumber = payment.splitDetails.certificateNumber;
+			}
 		}
 
 		const res = await fetch("/api/cashbox/payments", {
 			method: "POST",
-			headers: {
+			headers: getDenteAuthHeaders({
 				"Content-Type": "application/json",
-				"X-Dente-Admin-Secret": "dente-core-secret-2026",
-			},
+			}),
 			body: JSON.stringify(payload),
 		});
 
@@ -352,6 +371,9 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 		}
 		return { success: false };
 	});
+	} finally {
+		isPaymentFlushing = false;
+	}
 }
 
 /**

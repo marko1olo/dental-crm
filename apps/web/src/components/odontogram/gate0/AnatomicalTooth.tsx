@@ -1,4 +1,5 @@
 import React from "react";
+import type { ToothSurfaceKey } from "@dental/shared";
 import type { Tooth46ContainerProps } from "./tooth46Types";
 import { Tooth11Container } from "./teeth/tooth11/Tooth11Container";
 import { Tooth12Container } from "./teeth/tooth12/Tooth12Container";
@@ -27,7 +28,8 @@ import {
 
 export interface AnatomicalToothProps extends Omit<Tooth46ContainerProps, "onClick"> {
 	toothNumber: number;
-	onClick?: (e: React.MouseEvent<SVGSVGElement>, toothNumber: number) => void;
+	onClick?: ((e: React.MouseEvent<SVGSVGElement>, toothNumber: number) => void) | undefined;
+	onSurfaceSelect?: ((surface: ToothSurfaceKey) => void) | undefined;
 }
 
 type ToothComponentType = React.FC<Tooth46ContainerProps & { toothNumber?: number; isFlipped?: boolean }>;
@@ -81,6 +83,7 @@ export function areAnatomicalToothPropsEqual(prev: AnatomicalToothProps, next: A
 	if (prev.isFlipped !== next.isFlipped || prev.showBadge !== next.showBadge || prev.presetId !== next.presetId) return false;
 	if (prev.className !== next.className || prev.badgeRadius !== next.badgeRadius || prev.badgeCy !== next.badgeCy) return false;
 	if (prev.onClick !== next.onClick) return false;
+	if (prev.onSurfaceSelect !== next.onSurfaceSelect) return false;
 	if (prev.layers === next.layers) return true;
 	const prevLayers = prev.layers;
 	const nextLayers = next.layers;
@@ -92,7 +95,7 @@ export function areAnatomicalToothPropsEqual(prev: AnatomicalToothProps, next: A
 }
 
 export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props) => {
-	const { toothNumber, onClick, isFlipped: isFlippedProp, badgeRadius, badgeCy, ...rest } = props;
+	const { toothNumber, onClick, onSurfaceSelect, isFlipped: isFlippedProp, badgeRadius, badgeCy, ...rest } = props;
 	const Component = getToothComponent(toothNumber);
 	if (!Component) return null;
 
@@ -109,6 +112,7 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 			badgeRadius={effectiveBadgeRadius}
 			badgeCy={effectiveBadgeCy}
 			onClick={handleClick}
+			onSurfaceSelect={onSurfaceSelect}
 		/>
 	);
 }, areAnatomicalToothPropsEqual);

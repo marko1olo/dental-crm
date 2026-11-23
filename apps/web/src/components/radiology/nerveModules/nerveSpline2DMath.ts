@@ -70,9 +70,9 @@ export function generateNerveSafetyCorridor2D(pts: Point2D[], marginMm = MANDIBU
 }
 
 export function distancePointToSegment2DMm(point: Point2D, segStart: Point2D, segEnd: Point2D, w = 1000, h = 1000, sp = 0.1): number {
-	const px = (point.x / 100) * w, py = (point.y / 100) * h;
-	const ax = (segStart.x / 100) * w, ay = (segStart.y / 100) * h;
-	const bx = (segEnd.x / 100) * w, by = (segEnd.y / 100) * h;
+	const px = point.x * 0.01 * w, py = point.y * 0.01 * h;
+	const ax = segStart.x * 0.01 * w, ay = segStart.y * 0.01 * h;
+	const bx = segEnd.x * 0.01 * w, by = segEnd.y * 0.01 * h;
 	const abx = bx - ax, aby = by - ay;
 	const l2 = abx * abx + aby * aby;
 	if (l2 === 0) return Number((Math.hypot(px - ax, py - ay) * sp).toFixed(2));

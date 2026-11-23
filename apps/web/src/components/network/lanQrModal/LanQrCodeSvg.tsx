@@ -37,11 +37,15 @@ export const LanQrCodeSvg: React.FC<LanQrCodeSvgProps> = ({
 					</div>
 				) : (
 					<div
-						className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+						className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>img]:w-full [&>img]:h-full"
 						data-testid="lan-qr-svg-container"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: Sanitized pure SVG generated locally by canonical QR engine
-						dangerouslySetInnerHTML={{ __html: qrSvg }}
-					/>
+					>
+						<img
+							src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`}
+							alt="QR-код подключения LAN"
+							className="w-full h-full object-contain"
+						/>
+					</div>
 				)}
 
 				<div className="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-teal-300 border border-slate-700 shadow-xs">

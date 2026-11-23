@@ -10,7 +10,7 @@ export function getPediatricAmoxiclavDosage(weight: number): DosageCalculationRe
 	const singleMg = Math.round(dailyMg / 2);
 	return {
 		drugNameRu: "Амоксиклав (суспензия)",
-		recommendedDosageRu: `${singleMg} мг (суспензия) 2 раза в день`,
+		recommendedDosageRu: `Детская дозировка: ${singleMg} мг (суспензия) 2 раза в день`,
 		standardFrequencyRu: "2 раза в сутки каждые 12 часов во время еды",
 		maxDailyDoseRu: `${dailyMg} мг/сутки (расчет 30–40 мг/кг/сут)`,
 		isPediatric: true,

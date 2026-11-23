@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
-import { parseKopecks } from "@dental/shared";
+import { parseKopecks, kopecksToRubles } from "@dental/shared";
 
 describe("starProtocolValidationEngine — Пересчет сумм в кресле врача", () => {
 	test("Пересчет количества и цен в кресле врача сохраняет копеечную точность без float drift", () => {
@@ -28,14 +28,14 @@ describe("starProtocolValidationEngine — Пересчет сумм в крес
 		const totalDiscountKop = unitDiscountKop * qty;
 		assert.equal(totalDiscountKop, 99999);
 
-		const lineItemPriceRub = totalLineKop / 100;
-		const lineItemDiscountRub = totalDiscountKop / 100;
+		const lineItemPriceRub = kopecksToRubles(totalLineKop);
+		const lineItemDiscountRub = kopecksToRubles(totalDiscountKop);
 
 		assert.equal(lineItemPriceRub, 9000);
 		assert.equal(lineItemDiscountRub, 999.99);
 
 		const stageTotalKopecks = Math.round(lineItemPriceRub * 100);
 		assert.equal(stageTotalKopecks, 900000);
-		assert.equal(stageTotalKopecks / 100, 9000);
+		assert.equal(kopecksToRubles(stageTotalKopecks), 9000);
 	});
 });

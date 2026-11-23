@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { showToast } from "../../GlobalToast";
 import type { DoctorShiftStats } from "../controlBarModules/shiftControlBarTypes";
@@ -69,7 +69,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 	}, [cashRub]);
 
 	const cashDifferenceRub = countedCashRub - cashRub;
-	const isCashBalanced = Math.abs(cashDifferenceRub) < 0.01;
+	const isCashBalanced = rublesToKopecks(countedCashRub) === rublesToKopecks(cashRub);
 	const fiscalDocNumber = "Без фискализации (ККТ не подключена)";
 
 	const calculatedPayoutRub = useMemo(() => {
@@ -77,11 +77,17 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		if (compensationModel === "chair_rental") return Math.max(0, revenue - fixedRentRub - labDeductionsRub);
 		if (compensationModel === "salary_plus_bonus") {
 			const netBase = Math.max(0, revenue - labDeductionsRub);
-			return Math.round(baseSalaryRub + (netBase * commissionPct) / 100);
+			const commissionRub = kopecksToRubles(
+				calculatePercentDiscountKopecks(rublesToKopecks(netBase), commissionPct),
+			);
+			return Math.round(baseSalaryRub + commissionRub);
 		}
 		if (labDeductionsRub === 0 && commissionPct === shiftStats.doctorCommissionPct) return shiftStats.estimatedDoctorPayoutRub;
 		const netBase = Math.max(0, revenue - labDeductionsRub);
-		return Math.round((netBase * commissionPct) / 100);
+		const commissionRub = kopecksToRubles(
+			calculatePercentDiscountKopecks(rublesToKopecks(netBase), commissionPct),
+		);
+		return Math.round(commissionRub);
 	}, [shiftStats, compensationModel, commissionPct, labDeductionsRub, fixedRentRub, baseSalaryRub]);
 
 	const handlePrint = () => {

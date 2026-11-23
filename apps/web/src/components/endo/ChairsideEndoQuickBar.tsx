@@ -218,7 +218,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 		const suggestedName = isUpper
 			? (!existingNames.has("MB2") ? "MB2" : !existingNames.has("DB2") ? "DB2" : `К${nextIdx}`)
 			: (!existingNames.has("DL") ? "DL" : !existingNames.has("DB") ? "DB" : !existingNames.has("MM") ? "MM" : !existingNames.has("Radix") ? "Radix" : `К${nextIdx}`);
-		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: suggestedName, workingLengthMm: getAnatomicalWorkingLength(activeTooth, suggestedName), masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
+		setCanals((prev) => [...prev, { id: `canal-${activeTooth}-${suggestedName.toLowerCase()}`, name: suggestedName, workingLengthMm: getAnatomicalWorkingLength(activeTooth, suggestedName), masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
 	}, [activeTooth, canals]);
 
 	const removeCanal = useCallback((id: string) => {

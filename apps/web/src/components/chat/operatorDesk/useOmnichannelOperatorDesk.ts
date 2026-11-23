@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useWebsocket } from "../../../hooks/useWebsocket";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { showToast } from "../../GlobalToast";
@@ -119,11 +120,12 @@ export function useOmnichannelOperatorDesk({
 		}
 	}, []);
 
-	useEffect(() => {
-		fetchConversations();
-		const interval = setInterval(fetchConversations, 8000);
-		return () => clearInterval(interval);
-	}, [fetchConversations]);
+	const wsUrl = useMemo(() => {
+		const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+		const host = typeof window !== "undefined" ? window.location.host : "localhost:4100";
+		return (import.meta.env.VITE_WS_URL as string | undefined) ?? `${protocol}//${host}/api/ws/schedule`;
+	}, []);
+	const { lastMessage } = useWebsocket(wsUrl);
 
 	// ─── 2. Fetch Messages for Selected Conversation ───
 	const fetchMessages = useCallback(async (conv: InboxConversation, showLoading = true) => {
@@ -166,6 +168,30 @@ export function useOmnichannelOperatorDesk({
 			if (showLoading) setIsLoadingMessages(false);
 		}
 	}, []);
+
+	// Первичная загрузка списка диалогов при монтировании
+	useEffect(() => {
+		fetchConversations();
+	}, [fetchConversations]);
+
+	// Реактивное обновление по WebSocket-событиям вместо таймерного поллинга (DEF-17-07)
+	useEffect(() => {
+		if (!lastMessage) return;
+		const t = lastMessage.type;
+		if (
+			t === "INBOX_NEW_MESSAGE" ||
+			t === "INBOX_CHAT_TAKEOVER" ||
+			t === "INBOX_CHAT_RELEASED" ||
+			t === "MESSENGER_INBOUND_EVENT" ||
+			t === "INTERCOM_ACK" ||
+			t === "STAFF_CHAT_MESSAGE"
+		) {
+			fetchConversations();
+			if (activeConv) {
+				fetchMessages(activeConv, false);
+			}
+		}
+	}, [lastMessage, fetchConversations, activeConv, fetchMessages]);
 
 	const lastFetchedKeyRef = useRef<string | null>(null);
 

@@ -131,7 +131,7 @@ export function ClinicalViewRouter({
 							workspaceKey="visit"
 							{...(dashboard?.activeVisit?.id ? { visitId: dashboard.activeVisit.id } : {})}
 						>
-							<VisitView />
+							<VisitView key={dashboard?.activeVisit?.id || targetPatientId || "visit-root"} />
 						</ClinicalErrorBoundary>
 					)}
 				</Suspense>

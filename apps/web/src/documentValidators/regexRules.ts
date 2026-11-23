@@ -3,8 +3,7 @@
  * для медицинской, юридической и финансовой документации РФ.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: generic document state field
-export function requiredDocumentField(value: any, label: string): string | null {
+export function requiredDocumentField(value: unknown, label: string): string | null {
 	return !value || !String(value).trim() ? label : null;
 }
 

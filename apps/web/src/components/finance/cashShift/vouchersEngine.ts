@@ -10,7 +10,7 @@ import type {
 	Ko2CashOutflowVoucher,
 	ShiftClosingActData,
 } from "./reconciliationTypes";
-import { convertRubToWordsRu } from "./numberToWordsRu";
+import { amountToWordsRu, rubToKopecks } from "@dental/shared";
 
 export function generateKo1Voucher(p: {
 	readonly docNumber: string;
@@ -31,7 +31,7 @@ export function generateKo1Voucher(p: {
 		receivedFrom: p.receivedFrom,
 		basisRu: p.basisRu,
 		amountRub: p.amountRub,
-		amountWordsRu: convertRubToWordsRu(p.amountRub),
+		amountWordsRu: amountToWordsRu(rubToKopecks(p.amountRub)),
 		cashierFullName: p.cashierFullName,
 		chiefAccountantFullName: clinic.chiefAccountantFullName,
 	};
@@ -57,7 +57,7 @@ export function generateKo2Voucher(p: {
 		issuedTo: p.issuedTo,
 		basisRu: p.basisRu,
 		amountRub: p.amountRub,
-		amountWordsRu: convertRubToWordsRu(p.amountRub),
+		amountWordsRu: amountToWordsRu(rubToKopecks(p.amountRub)),
 		recipientPassportRu: p.recipientPassportRu,
 		cashierFullName: p.cashierFullName,
 		chiefAccountantFullName: clinic.chiefAccountantFullName,
@@ -91,7 +91,7 @@ export function generateEncashmentStatement(p: {
 		clinic,
 		cashierFullName: p.cashierFullName,
 		encashmentAmountRub: p.encashmentAmountRub,
-		encashmentAmountWordsRu: convertRubToWordsRu(p.encashmentAmountRub),
+		encashmentAmountWordsRu: amountToWordsRu(rubToKopecks(p.encashmentAmountRub)),
 		denominations: p.denominations,
 		bagNumber: p.bagNumber || "—",
 		sealNumber: p.sealNumber || "—",

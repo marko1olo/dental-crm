@@ -9,8 +9,10 @@ import { ProfilePinSection } from "./profile/ProfilePinSection";
 import { useSettingsProfile } from "./profile/useSettingsProfile";
 
 interface SettingsProfileTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	props: Record<string, any>;
+	props: {
+		activeStaffUser?: StaffProfile | null | undefined;
+		[key: string]: unknown;
+	};
 }
 
 export function SettingsProfileTab({ props }: SettingsProfileTabProps) {

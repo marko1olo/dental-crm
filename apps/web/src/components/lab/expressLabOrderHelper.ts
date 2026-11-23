@@ -7,7 +7,7 @@
  */
 
 import { generateUuidV7, kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
 	ONE_CLICK_LAB_DEFAULTS,
@@ -74,7 +74,7 @@ export async function submitExpressLabOrder({
 			headers: {
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
-				...denteAdminSecretRequestHeaders(),
+				...denteClinicalMutationHeaders(),
 			},
 			body: JSON.stringify({
 				patientId,

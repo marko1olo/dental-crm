@@ -38,6 +38,15 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 			void streamMgr.acquireLocalAudioStream();
 			streamMgr.ensurePeerConnection();
 		}
+		return () => {
+			if (!useTelephonyStore.getState().activeCall) {
+				try {
+					getSharedTelephonyAudioStreamManager().dispose();
+				} catch {
+					// Safe unmount cleanup
+				}
+			}
+		};
 	}, [tel.activeCall]);
 
 	const containerClass = isMobile

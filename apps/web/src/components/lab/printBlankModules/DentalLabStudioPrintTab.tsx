@@ -26,15 +26,15 @@ export const DentalLabStudioPrintTab: React.FC<DentalLabStudioPrintTabProps> = (
 					<p className="text-xs text-[var(--ink-muted)]">Бланк наряда А4/А5 для передачи в зуботехническую лабораторию и курьеру</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<button type="button" onClick={onBackToRegistry} className="px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer">К реестру нарядов</button>
-					<button type="button" data-testid="print-blank-submit-btn" onClick={() => window.print?.()} className="px-4 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold shadow-xs cursor-pointer">Печать бланка</button>
+					<button type="button" onClick={onBackToRegistry} className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer">К реестру нарядов</button>
+					<button type="button" data-testid="print-blank-submit-btn" onClick={() => window.print?.()} className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer">Печать бланка</button>
 				</div>
 			</div>
 			<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-4 sm:p-6 space-y-4 text-xs">
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-[var(--line)] pb-3">
 					<div><span className="text-[var(--ink-muted)] block text-[11px]">Пациент:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.patientName}</strong></div>
 					<div><span className="text-[var(--ink-muted)] block text-[11px]">Врач-ортопед:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.doctorName}</strong></div>
-					<div><span className="text-[var(--ink-muted)] block text-[11px]">Лаборатория:</span><strong className="text-[var(--teal)] text-sm">{currentPrintOrder.laboratoryName}</strong></div>
+					<div><span className="text-[var(--ink-muted)] block text-[11px]">Лаборатория:</span><strong className="text-[var(--primary)] text-sm">{currentPrintOrder.laboratoryName}</strong></div>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-[var(--line)] pb-3">
 					<div><span className="text-[var(--ink-muted)] block text-[11px]">Зубы (FDI):</span><strong className="text-[var(--ink)]">{currentPrintOrder.teeth.join(", ")}</strong></div>

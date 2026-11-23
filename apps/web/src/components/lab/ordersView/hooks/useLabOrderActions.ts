@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { generateUuidV7 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../labMath";
 import { is3DScanUrl } from "../../LabAttachScanModal";
@@ -27,7 +27,7 @@ export function useLabOrderActions(
 				headers: {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...denteAdminSecretRequestHeaders(),
+					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify(payload),
 			});
@@ -75,7 +75,7 @@ export function useLabOrderActions(
 				headers: {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...denteAdminSecretRequestHeaders(),
+					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify({}),
 			});
@@ -102,7 +102,11 @@ export function useLabOrderActions(
 		try {
 			const res = await fetch(`/api/lab/orders/${orderId}`, {
 				method: "PUT",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteClinicalMutationHeaders(),
+				},
 				body: JSON.stringify({ attachedImageUrl: url.trim() }),
 			});
 			if (!res.ok) throw new Error("Ошибка прикрепления файла");
@@ -128,7 +132,7 @@ export function useLabOrderActions(
 				headers: {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...denteAdminSecretRequestHeaders(),
+					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify({
 					orderIds,

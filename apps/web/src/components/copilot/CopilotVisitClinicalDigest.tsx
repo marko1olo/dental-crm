@@ -7,6 +7,7 @@
  * - Apple HIG: Сенсорные таргеты >= 44px на мобильных, плотные 36px на десктопе, аккуратная типографика без капслока.
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import React, { useMemo, useState, useEffect } from "react";
 import { Sparkles, CheckCircle2, Activity, Receipt, FileText, Zap } from "lucide-react";
 import { useVisitStore } from "../../store/visitStore";
@@ -169,8 +170,8 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				name: `Лечение зуба ${f.tooth}: ${f.stateTitle}`,
 				toothNumber: f.tooth,
 				toothCode: String(f.tooth),
-				price: f.priceKopecks / 100,
-				unitPriceRub: f.priceKopecks / 100,
+				price: kopecksToRubles(f.priceKopecks),
+				unitPriceRub: kopecksToRubles(f.priceKopecks),
 			}));
 
 		if (billableServices.length > 0) {
@@ -220,8 +221,8 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				name: `Лечение зуба ${f.tooth}: ${f.stateTitle}`,
 				toothNumber: f.tooth,
 				toothCode: String(f.tooth),
-				price: f.priceKopecks / 100,
-				unitPriceRub: f.priceKopecks / 100,
+				price: kopecksToRubles(f.priceKopecks),
+				unitPriceRub: kopecksToRubles(f.priceKopecks),
 			}));
 
 		if (billableServices.length > 0) {
@@ -241,7 +242,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 
 	// СЦЕНАРИЙ А: Врач расставил зубы на одонтограмме (2 и более зубов)
 	if (findings.length >= 2) {
-		const totalEstimatedRub = findings.reduce((acc, f) => acc + f.priceKopecks, 0) / 100;
+		const totalEstimatedRub = kopecksToRubles(findings.reduce((acc, f) => acc + f.priceKopecks, 0));
 
 		return (
 			<div className="copilot-visit-digest-batch p-4 rounded-2xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/25 space-y-3.5" data-testid="copilot-batch-visit-digest">
@@ -332,7 +333,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 						</div>
 					</div>
 					<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line)]">
-						~{(f.priceKopecks / 100).toLocaleString("ru-RU")} ₽
+						~{kopecksToRubles(f.priceKopecks).toLocaleString("ru-RU")} ₽
 					</span>
 				</div>
 
@@ -362,7 +363,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 									detail: {
 										patientId: patientId || undefined,
 										toothNumber: f.tooth,
-										services: [{ code: `srv-${f.tooth}`, name: `Лечение зуба ${f.tooth}: ${f.stateTitle}`, toothNumber: f.tooth, price: f.priceKopecks / 100 }],
+										services: [{ code: `srv-${f.tooth}`, name: `Лечение зуба ${f.tooth}: ${f.stateTitle}`, toothNumber: f.tooth, price: kopecksToRubles(f.priceKopecks) }],
 									},
 								}),
 							);

@@ -9,7 +9,7 @@ import type { FurcationGrade, MobilityGrade, PerioChartSummary, PerioToothRecord
 import {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
 	calculatePsrSextants, createDefaultPerioTeeth, formatPsrSextantsSummary,
-	generateComprehensivePerioProtocolText, isFurcationEligibleTooth, PERIO_SITE_KEYS,
+	generateComprehensivePerioProtocolText, generateUuidV7, isFurcationEligibleTooth, PERIO_SITE_KEYS,
 	PSR_SEXTANTS, rublesToKopecks,
 } from "@dental/shared";
 import { useVisitStore } from "../../store/visitStore";
@@ -168,13 +168,15 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 
 		const res = await fetch(endpoint, {
 			method: "POST",
-			headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+			headers: getDenteAuthHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
 			const errMsg = `Сбой списания расходников: сервер вернул код ${res.status}`;
 			console.warn("[PerioCatalog] Фоновое пакетное списание материалов завершилось со статусом:", res.status);
-			showToast(errMsg, "warning");
 			return { success: false, deductedCount: 0, messageRu: errMsg };
 		}
 		const data = (await res.json().catch(() => null)) as { isOverdraft?: boolean } | null;
@@ -186,7 +188,6 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 		};
 	} catch (err) {
 		console.warn("[PerioCatalog] Soft overdraft deduct network error:", err);
-		showToast("Сетевой сбой при списании расходных материалов пародонтологии", "warning");
 		return { success: false, deductedCount: 0, messageRu: "Сетевой сбой при списании расходных материалов пародонтологии" };
 	}
 }
@@ -200,10 +201,10 @@ const fillSixSites = (s: ReturnType<typeof makePerioSite>) => ({
 	distoBuccal: s, midBuccal: s, mesioBuccal: s, distoLingual: s, midLingual: s, mesioLingual: s,
 });
 
-export function normalizePerioDentition(incoming?: readonly PerioToothRecord[] | null): PerioToothRecord[] {
+export function normalizePerioDentition(incoming?: readonly (Partial<PerioToothRecord> & { toothNumber: number })[] | null): PerioToothRecord[] {
 	const base = createDefaultPerioTeeth(2);
 	if (!incoming || !Array.isArray(incoming) || incoming.length === 0) return applyHealthyPeriodontiumPreset(base);
-	const incomingMap = new Map<number, PerioToothRecord>();
+	const incomingMap = new Map<number, Partial<PerioToothRecord> & { toothNumber: number }>();
 	for (const t of incoming) {
 		if (t && typeof t.toothNumber === "number") incomingMap.set(t.toothNumber, t);
 	}

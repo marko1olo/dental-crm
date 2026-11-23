@@ -122,7 +122,7 @@ function executionLaneFor(
 
 function clampRuntimeWeight(value: number | null | undefined) {
 	return typeof value === "number" && Number.isFinite(value)
-		? Math.min(1, Math.max(0, Math.round(value * 100) / 100))
+		? Math.min(1, Math.max(0, Number(value.toFixed(2))))
 		: 0;
 }
 

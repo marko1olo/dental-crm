@@ -57,6 +57,8 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 				clinicInn={c.clinicInn}
 				clinicKpp={c.clinicKpp}
 				clinicLicense={c.clinicLicense}
+				certificateNumber={c.certificateNumber}
+				issueDate={c.issueDate}
 				onDownloadTaxCert={c.handleDownloadTaxCert}
 				onTriggerHaptic={c.triggerHaptic}
 			/>

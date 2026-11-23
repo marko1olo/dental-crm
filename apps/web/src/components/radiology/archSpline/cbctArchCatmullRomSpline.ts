@@ -56,14 +56,14 @@ export function fitSmoothDentalArchSpline(
 			const y = 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
 
 			if (Number.isFinite(x) && Number.isFinite(y)) {
-				curve.push({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
+				curve.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
 			}
 		}
 	}
 
 	const lastPt = pts[pts.length - 1]!;
 	if (Number.isFinite(lastPt.x) && Number.isFinite(lastPt.y)) {
-		curve.push({ x: Math.round(lastPt.x * 100) / 100, y: Math.round(lastPt.y * 100) / 100 });
+		curve.push({ x: Number(lastPt.x.toFixed(2)), y: Number(lastPt.y.toFixed(2)) });
 	}
 
 	return curve;

@@ -29,7 +29,7 @@ export function calculateEuclideanDistanceMm(
 	const dx = (p2.x - p1.x) * colSpacingMm;
 	const dy = (p2.y - p1.y) * rowSpacingMm;
 	const distance = Math.hypot(dx, dy);
-	return Number.isFinite(distance) ? Math.round(distance * 100) / 100 : 0;
+	return Number.isFinite(distance) ? Number(distance.toFixed(2)) : 0;
 }
 
 /**

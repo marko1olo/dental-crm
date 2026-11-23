@@ -14,6 +14,9 @@ import {
 	kopecksToNumericString,
 	formatKopecksToRubles as formatKopecksToRublesShared,
 	formatKopecksRu,
+	calculatePercentDiscountKopecks,
+	percentageOfKopecks,
+	type Kopecks,
 } from "@dental/shared";
 
 export {
@@ -112,7 +115,7 @@ export function calculateLoyaltyAccrual(input: LoyaltyAccrualInput): LoyaltyAccr
 	const totalDeductionsKop = discountKop + pointsRedeemedKop + certRedeemedKop;
 	const paidOutOfPocketKop = Math.max(0, input.grossInvoiceKop - totalDeductionsKop), eligibleBaseKop = Math.max(0, paidOutOfPocketKop - excludedKop);
 	const tier = getTierDefinition(input.tierId), cashbackPercent = input.customCashbackPercent ?? tier.cashbackPercent;
-	const accruedPointsKop = Math.round((eligibleBaseKop * cashbackPercent) / 100);
+	const accruedPointsKop = calculatePercentDiscountKopecks(eligibleBaseKop, cashbackPercent);
 	return { grossInvoiceKop: input.grossInvoiceKop, totalDeductionsKop, paidOutOfPocketKop, excludedFromAccrualKop: excludedKop, eligibleBaseKop, cashbackPercent, accruedPointsKop, accruedPointsRub: Math.round(kopecksToRubles(accruedPointsKop)), tierId: tier.id, tierNameRu: tier.nameRu };
 }
 
@@ -128,7 +131,7 @@ export function calculateLoyaltyRedemption(input: LoyaltyRedemptionInput): Loyal
 	const discountKop = Math.max(0, input.discountKop ?? 0), excludedKop = Math.max(0, input.excludedFromRedemptionKop ?? 0);
 	const totalAfterDiscountKop = Math.max(0, input.grossInvoiceKop - discountKop), redeemableBaseKop = Math.max(0, totalAfterDiscountKop - excludedKop);
 	const tier = getTierDefinition(input.tierId), maxCoveragePercent = input.isDoctorOverride ? 100 : (input.customMaxCoveragePercent ?? tier.maxInvoiceCoveragePercent);
-	const maxAllowedRedemptionKop = Math.min(redeemableBaseKop, Math.round((redeemableBaseKop * maxCoveragePercent) / 100)), maxAllowedRedemptionRub = Math.floor(kopecksToRubles(maxAllowedRedemptionKop));
+	const maxAllowedRedemptionKop = Math.min(redeemableBaseKop, calculatePercentDiscountKopecks(redeemableBaseKop, maxCoveragePercent)), maxAllowedRedemptionRub = Math.floor(kopecksToRubles(maxAllowedRedemptionKop));
 	const availablePointsKop = Math.max(0, rublesToKopecks(input.availablePointsBalanceRub)), requestedPointsKop = Math.max(0, rublesToKopecks(input.requestedPointsRub));
 	const actualRedeemedPointsKop = Math.min(availablePointsKop, requestedPointsKop, maxAllowedRedemptionKop), actualRedeemedPointsRub = kopecksToRubles(actualRedeemedPointsKop);
 	const remainingPointsBalanceRub = Math.max(0, input.availablePointsBalanceRub - actualRedeemedPointsRub), remainingPayableKop = Math.max(0, totalAfterDiscountKop - actualRedeemedPointsKop);
@@ -163,7 +166,7 @@ export interface DebitFamilySharedBalanceResult {
 export function debitFamilySharedBalance(input: DebitFamilySharedBalanceInput): DebitFamilySharedBalanceResult {
 	const invoiceAmountKop = Math.max(0, input.invoiceAmountKop), invoiceAmountRub = kopecksToRubles(invoiceAmountKop), availablePointsRub = Math.max(0, input.availableFamilyPointsRub);
 	const coveragePercent = input.allowFullCoverage ? 100 : (input.maxCoveragePercent ?? 30);
-	const maxCoverageKop = Math.round(invoiceAmountKop * (coveragePercent * 0.01));
+	const maxCoverageKop = calculatePercentDiscountKopecks(invoiceAmountKop, coveragePercent);
 	const maxCoverageRub = Math.floor(kopecksToRubles(maxCoverageKop));
 	const maxAllowedRedemptionRub = Math.min(availablePointsRub, maxCoverageRub), requestedRub = input.requestedPointsRub !== undefined ? Math.max(0, input.requestedPointsRub) : maxAllowedRedemptionRub;
 	const debitedPointsRub = Math.min(requestedRub, maxAllowedRedemptionRub), debitedPointsKop = rublesToKopecks(debitedPointsRub);
@@ -293,7 +296,7 @@ export function evaluatePromoCode(
 	if (!preset.applicableCategories.includes("all") && !preset.applicableCategories.some((c) => serviceCategories.includes(c))) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: `Промокод «${preset.code}» применим только к услугам категорий: ${preset.applicableCategories.join(", ")}.`, promoCodePreset: preset };
 	if (preset.excludedServiceCodes.some((ex) => serviceCodes.includes(ex))) return { isValid: false, code: preset.code, titleRu: preset.titleRu, discountKop: 0, discountRub: 0, bonusPointsToAddRub: 0, finalPayableKop: invoiceAmountKop, messageRu: "В счете присутствуют позиции, исключенные из данной маркетинговой акции.", promoCodePreset: preset };
 	let discountKop = 0, bonusPointsToAddRub = 0;
-	if (preset.discountType === "percentage") discountKop = Math.round((invoiceAmountKop * preset.value) / 100);
+	if (preset.discountType === "percentage") discountKop = calculatePercentDiscountKopecks(invoiceAmountKop, preset.value);
 	else if (preset.discountType === "fixed_rub") discountKop = Math.min(invoiceAmountKop, rublesToKopecks(preset.value));
 	else if (preset.discountType === "welcome_bonus_points") bonusPointsToAddRub = preset.value;
 	return { isValid: true, code: preset.code, titleRu: preset.titleRu, discountKop, discountRub: kopecksToRubles(discountKop), bonusPointsToAddRub, finalPayableKop: Math.max(0, invoiceAmountKop - discountKop), messageRu: preset.descriptionRu, promoCodePreset: preset };

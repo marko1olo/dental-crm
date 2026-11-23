@@ -96,7 +96,7 @@ export const CbctVolume3DClippingPanel: React.FC<CbctVolume3DClippingPanelProps>
 					value={Math.round(clipping.clipMin[2] * 100)}
 					onPointerDown={onStartInteraction}
 					onPointerUp={onEndInteraction}
-					onChange={(e) => onClipChange("zMin", Number(e.target.value) / 100)}
+					onChange={(e) => onClipChange("zMin", Number(e.target.value) * 0.01)}
 					className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
 					data-testid="cbct-clip-slider-z-min"
 					aria-label="Срез позвонков (Z-min)"
@@ -117,7 +117,7 @@ export const CbctVolume3DClippingPanel: React.FC<CbctVolume3DClippingPanelProps>
 					value={Math.round(clipping.clipMax[1] * 100)}
 					onPointerDown={onStartInteraction}
 					onPointerUp={onEndInteraction}
-					onChange={(e) => onClipChange("yMax", Number(e.target.value) / 100)}
+					onChange={(e) => onClipChange("yMax", Number(e.target.value) * 0.01)}
 					className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
 					data-testid="cbct-clip-slider-y-max"
 					aria-label="Срез затылка (Y-max)"
@@ -138,7 +138,7 @@ export const CbctVolume3DClippingPanel: React.FC<CbctVolume3DClippingPanelProps>
 					value={Math.round(clipping.clipMax[0] * 100)}
 					onPointerDown={onStartInteraction}
 					onPointerUp={onEndInteraction}
-					onChange={(e) => onClipChange("xMax", Number(e.target.value) / 100)}
+					onChange={(e) => onClipChange("xMax", Number(e.target.value) * 0.01)}
 					className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
 					data-testid="cbct-clip-slider-x"
 					aria-label="Корональный срез (X)"

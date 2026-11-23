@@ -168,7 +168,7 @@ export function VoiceDictationOverlay({
 					>
 						{meterHeights.map((h, idx) => {
 							const barHeight = isRecording
-								? Math.max(6, Math.min(68, Math.round((h / 100) * 68)))
+								? Math.max(6, Math.min(68, Math.round(h * 0.01 * 68)))
 								: 6;
 							return (
 								<div

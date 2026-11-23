@@ -22,10 +22,17 @@ export interface CephalometricSavedStudy {
 	savedAt?: string | undefined;
 }
 
+function getCephApiUrl(path: string): string {
+	const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
+		? window.location.origin
+		: "http://localhost";
+	return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export async function saveCephalometricAnalysisToApi(study: Partial<CephalometricSavedStudy>): Promise<CephalometricSavedStudy | null> {
 	if (!study.patientId || typeof window === "undefined") return null;
 	try {
-		const res = await fetch(`/api/orthodontics/${study.patientId}/ceph-analysis`, {
+		const res = await fetch(getCephApiUrl(`/api/orthodontics/${study.patientId}/ceph-analysis`), {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
@@ -62,7 +69,7 @@ export async function saveCephalometricAnalysisToApi(study: Partial<Cephalometri
 export async function fetchPatientCephalometricStudyFromApi(patientId: string): Promise<CephalometricSavedStudy | null> {
 	if (!patientId || typeof window === "undefined") return null;
 	try {
-		const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
+		const res = await fetch(getCephApiUrl(`/api/orthodontics/${patientId}/ceph-analysis`), {
 			headers: denteAdminSecretRequestHeaders({
 				Accept: "application/json",
 			}),

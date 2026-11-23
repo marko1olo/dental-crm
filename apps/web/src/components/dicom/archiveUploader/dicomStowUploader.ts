@@ -6,12 +6,35 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 
-let dicomImageLoaderPromise: Promise<unknown> | null = null;
+export interface DicomWadoLoader {
+	wadouri: {
+		fileManager: {
+			add: (file: File | Blob) => string;
+			purge?: () => void;
+		};
+	};
+}
 
-export async function getDicomImageLoader() {
+function isDicomWadoLoader(val: unknown): val is DicomWadoLoader {
+	if (!val || typeof val !== "object" || !("wadouri" in val)) return false;
+	const wadouri = val.wadouri;
+	if (!wadouri || typeof wadouri !== "object" || !("fileManager" in wadouri)) return false;
+	const fm = wadouri.fileManager;
+	return Boolean(fm && typeof fm === "object" && "add" in fm && typeof fm.add === "function");
+}
+
+let dicomImageLoaderPromise: Promise<DicomWadoLoader> | null = null;
+
+export async function getDicomImageLoader(): Promise<DicomWadoLoader> {
 	if (!dicomImageLoaderPromise) {
 		dicomImageLoaderPromise = import("@cornerstonejs/dicom-image-loader").then(
-			(mod) => mod.default ?? mod,
+			(mod) => {
+				const candidate: unknown = mod.default ?? mod;
+				if (isDicomWadoLoader(candidate)) {
+					return candidate;
+				}
+				throw new Error("DICOM WADO image loader does not expose wadouri.fileManager");
+			},
 		);
 	}
 	return dicomImageLoaderPromise;
@@ -21,7 +44,7 @@ export function purgeDicomImageLoader(): void {
 	try {
 		if (dicomImageLoaderPromise) {
 			void dicomImageLoaderPromise.then((loader) => {
-				loader?.wadouri?.fileManager?.purge?.();
+				loader.wadouri.fileManager.purge?.();
 			});
 		}
 	} catch {

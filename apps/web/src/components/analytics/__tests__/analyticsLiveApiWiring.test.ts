@@ -7,6 +7,7 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
+import { kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { getDefaultChannelSpendMap } from "../../leads/leadsFunnelEngine.js";
 
@@ -32,7 +33,7 @@ test("marketing attribution live spend schema maps channels cleanly in runtime",
 
 	const mappedSpends: Record<string, number> = {};
 	for (const ch of sampleLiveChannels) {
-		const rub = Math.round((ch.spentKopecks || 0) / 100);
+		const rub = Math.round(kopecksToRubles(ch.spentKopecks || 0));
 		if (ch.key === "gis_2") mappedSpends.gis_2 = rub;
 		else if (ch.key === "prodoctorov") mappedSpends.prodoctorov = rub;
 		else if (ch.key === "yandex_maps") {

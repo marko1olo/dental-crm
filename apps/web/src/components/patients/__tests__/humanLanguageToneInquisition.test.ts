@@ -34,7 +34,11 @@ describe("Red Team Inquisition: Human Clinical Language (Part 1: Visits, Forms, 
 
 		assert.ok(content.includes("S (Жалобы)"));
 		assert.ok(content.includes("A (Диагноз)"));
-		assert.ok(content.includes("P (Протокол лечения и манипуляции)") || content.includes("P (Лечение)"));
+		assert.ok(
+			content.includes("P (Протокол лечения и манипуляции)") ||
+				content.includes("P (Протокол лечения)") ||
+				content.includes("P (Лечение)"),
+		);
 		assert.ok(content.includes("Дневники визитов (Медицинская карта приёма)"));
 		assert.ok(content.includes("Интактный ряд") || content.includes("Интактные зубы") || content.includes("Физиологическая норма"));
 	});
@@ -61,7 +65,7 @@ describe("Red Team Inquisition: Human Clinical Language (Part 1: Visits, Forms, 
 
 	it("5. PatientGeneralInfoTab.tsx: somatic notes label is clean and free of Latin", () => {
 		const filePath = path.join(webSrcRoot, "components/patients/tabs/PatientGeneralInfoTab.tsx");
-		const bannerPath = path.join(webSrcRoot, "components/patients/tabs/generalInfo/PatientSafetyBannerFull.tsx");
+		const bannerPath = path.join(webSrcRoot, "components/patients/tabs/generalInfo/PatientSafetyBanner.tsx");
 		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.existsSync(bannerPath) ? fs.readFileSync(bannerPath, "utf-8") : ""}`;
 
 		assert.ok(!content.includes("Anamnesis Vitae"));

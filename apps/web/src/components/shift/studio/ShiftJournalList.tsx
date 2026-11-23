@@ -42,7 +42,7 @@ export const ShiftJournalList: React.FC<ShiftJournalListProps> = ({
 							onClick={() => onFilterChange(mode)}
 							className={`min-h-[32px] px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
 								filter === mode
-									? "bg-[var(--teal,#0d9488)] text-white"
+									? "bg-[var(--primary)] text-white"
 									: "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]"
 							}`}
 						>
@@ -105,7 +105,7 @@ export const ShiftJournalList: React.FC<ShiftJournalListProps> = ({
 									className="min-h-[32px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
 									title="Распечатать Z-отчёт смены"
 								>
-									<Printer className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+									<Printer className="w-3.5 h-3.5 text-[var(--primary)]" />
 									<span>Z-отчёт</span>
 								</button>
 							)}

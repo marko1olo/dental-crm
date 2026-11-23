@@ -8,6 +8,7 @@
  */
 
 export interface DicomMetadataInput {
+	anonymize?: boolean | undefined;
 	patientId?: string | undefined;
 	patientFullName?: string | undefined;
 	patientBirthDate?: string | undefined;
@@ -262,8 +263,10 @@ export function createDicomSecondaryCaptureFile(
 	const studyDateStr = meta.studyDate || `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
 	const studyTimeStr = meta.studyTime || `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
 
-	const patientNameLatin = transliterateCyrillicToLatin(meta.patientFullName || "UNKNOWN^PATIENT");
-	const doctorNameLatin = transliterateCyrillicToLatin(meta.doctorFullName || "D-r Petrov");
+	const isAnon = Boolean(meta.anonymize);
+	const patientNameLatin = isAnon ? "ANONYMIZED^PATIENT" : transliterateCyrillicToLatin(meta.patientFullName || "UNKNOWN^PATIENT");
+	const patientId = isAnon ? "ANON-0000" : (meta.patientId || "PATIENT-001");
+	const doctorNameLatin = isAnon ? "" : transliterateCyrillicToLatin(meta.doctorFullName || "D-r Petrov");
 
 	builder.appendBytes(buildFileMetaInformationBlock(sopClassUid, sopUid));
 
@@ -276,16 +279,20 @@ export function createDicomSecondaryCaptureFile(
 	builder.appendString(0x0008, 0x0030, "TM", studyTimeStr);
 	builder.appendString(0x0008, 0x0060, "CS", meta.modality || "IO");
 	builder.appendString(0x0008, 0x0070, "LO", "DENTE DENTAL PACS");
-	builder.appendString(0x0008, 0x0080, "LO", meta.clinicName || "DENTE CLINIC");
-	builder.appendString(0x0008, 0x0090, "PN", doctorNameLatin);
+	builder.appendString(0x0008, 0x0080, "LO", isAnon ? "DENTE CLINIC" : (meta.clinicName || "DENTE CLINIC"));
+	if (!isAnon && doctorNameLatin) {
+		builder.appendString(0x0008, 0x0090, "PN", doctorNameLatin);
+	}
 	builder.appendString(0x0008, 0x1030, "LO", meta.toothCode ? `Intraoral Radiography Tooth ${meta.toothCode}` : "Intraoral Radiography");
-	builder.appendString(0x0008, 0x1050, "PN", doctorNameLatin);
+	if (!isAnon && doctorNameLatin) {
+		builder.appendString(0x0008, 0x1050, "PN", doctorNameLatin);
+	}
 
 	// Group 0010
 	builder.appendString(0x0010, 0x0010, "PN", patientNameLatin);
-	builder.appendString(0x0010, 0x0020, "LO", meta.patientId || "PATIENT-001");
-	if (meta.patientBirthDate) builder.appendString(0x0010, 0x0030, "DA", meta.patientBirthDate);
-	if (meta.patientSex) builder.appendString(0x0010, 0x0040, "CS", meta.patientSex);
+	builder.appendString(0x0010, 0x0020, "LO", patientId);
+	if (!isAnon && meta.patientBirthDate) builder.appendString(0x0010, 0x0030, "DA", meta.patientBirthDate);
+	if (!isAnon && meta.patientSex) builder.appendString(0x0010, 0x0040, "CS", meta.patientSex);
 
 	// Group 0018 & 0020
 	builder.appendString(0x0018, 0x0015, "CS", meta.bodyPartExamined || "TEETH");

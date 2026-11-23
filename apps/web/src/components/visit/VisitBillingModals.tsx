@@ -99,6 +99,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 			{/* Canonical Unified SSOT Cash Register Studio & 54-FZ (Cash, Card, SBP, Split, Deposit) */}
 			{isPaymentModalOpen && (
 				<CashRegisterStudioModal
+					key={patientId || visitId || "cashbox_studio"}
 					isOpen={isPaymentModalOpen}
 					onClose={onClosePaymentModal}
 					patientId={patientId}
@@ -136,6 +137,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 			{/* Chairside Consumables Deduction Modal (BOM per FEFO) */}
 			{selectedBomService && (
 				<ConsumablesBatchWriteoffModal
+					key={`${patientId}-${selectedBomService?.id || "bom"}`}
 					isOpen={Boolean(selectedBomService)}
 					onClose={onCloseBomModal}
 					procedureTitle={selectedBomService.title}
@@ -153,6 +155,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 			{/* Chairside DMS Guarantee Letter Modal (Mandates 8e, 8n) */}
 			{isDmsModalOpen && (
 				<DmsStudioModal
+					key={patientId || "dms_studio"}
 					isOpen={isDmsModalOpen}
 					onClose={onCloseDmsModal}
 					initialTab="policies"
@@ -187,6 +190,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 			{/* Chairside Pricelist & Turnkey Bundles Studio (Mandate 8e/8n) */}
 			{isPricelistOpen && (
 				<PricelistStudioModal
+					key={patientId || "pricelist_studio"}
 					isOpen={isPricelistOpen}
 					onClose={onClosePricelist || (() => {})}
 					onApplyBundleToVisit={onApplyBundle}

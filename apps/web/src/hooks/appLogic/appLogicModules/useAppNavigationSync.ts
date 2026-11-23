@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Dashboard } from "@dental/shared";
 import { viewFromHash } from "../../../utils/routeUtils";
 import type { AppView, SettingsTab } from "../../../utils/routeUtils";
 import type { AppLogicNavigationSyncState } from "./appLogicStateTypes";
 
 export interface UseAppNavigationSyncProps {
-	dashboard?: any;
+	dashboard?: Dashboard | null | undefined;
 	currentView: AppView;
 	setCurrentView: (view: AppView | ((prev: AppView) => AppView)) => void;
 	setSettingsTab?: (tab: SettingsTab | string | ((prev: string) => string)) => void;

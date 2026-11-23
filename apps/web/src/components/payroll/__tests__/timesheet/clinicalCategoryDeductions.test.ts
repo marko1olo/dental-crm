@@ -10,8 +10,8 @@ import {
 	calculateDoctorPeriodPayroll,
 	CLINICAL_CATEGORY_COMMISSION_PERCENT,
 	type DoctorStaffPayrollInput,
+	generateDoctorPayslipHtml,
 } from "../../staffPayrollEngine";
-import { generateDoctorPayslipHtml } from "../../staffPayrollExports";
 
 describe("Red Team: Clinical Category Commission & ZTL Deductions", () => {
 	it("4.1 Verifies clinical statutory commission rates across all disciplines", () => {

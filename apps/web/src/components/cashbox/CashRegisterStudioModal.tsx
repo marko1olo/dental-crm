@@ -75,6 +75,7 @@ export interface CashRegisterStudioModalProps {
 	readonly patientAllergies?: unknown;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly patientBonusPoints?: number | undefined;
 	readonly doctorFullName?: string | undefined;
 	readonly serviceTitle?: string | undefined;
 	readonly defaultMethod?: CashboxTenderType | undefined;
@@ -204,6 +205,11 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							setSplitSbpRub={state.setSplitSbpRub}
 							splitDepositRub={state.splitDepositRub}
 							setSplitDepositRub={state.setSplitDepositRub}
+							splitBonusRub={state.splitBonusRub}
+							setSplitBonusRub={state.setSplitBonusRub}
+							splitCertRub={state.splitCertRub}
+							setSplitCertRub={state.setSplitCertRub}
+							patientBonusPoints={props.patientBonusPoints}
 							splitCashReceivedRub={state.splitCashReceivedRub}
 							setSplitCashReceivedRub={state.setSplitCashReceivedRub}
 							splitCashChange={state.splitCashChange}

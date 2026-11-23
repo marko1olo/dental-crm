@@ -72,7 +72,6 @@
 	font-weight: 700;
 	padding: 2px 8px;
 	border-radius: 4px;
-	text-transform: uppercase;
 }
 
 .dente-diagnostic-pill-debug { background: var(--paper-soft); color: var(--muted); }

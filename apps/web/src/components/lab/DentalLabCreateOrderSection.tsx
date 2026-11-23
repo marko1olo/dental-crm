@@ -129,7 +129,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 							type="button"
 							data-testid={`lab-preset-btn-${p.id}`}
 							onClick={() => { setSelectedMaterialId(p.mat); setSelectedShade(p.shade); }}
-							className={`dente-btn-pill px-2.5 py-1 text-[11px] font-semibold rounded-full border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
+							className={`dente-btn-pill px-2.5 py-1 text-[11px] font-semibold rounded-full border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"}`}
 						>
 							{p.label}
 						</button>
@@ -140,7 +140,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 			<div className="space-y-1">
 				<div className="flex items-center justify-between text-xs font-semibold">
 					<span className="text-[var(--ink)]">Зубы FDI: {selectedTeeth.join(", ")}</span>
-					<button type="button" onClick={() => setSelectedTeeth([16])} className="text-[11px] text-[var(--teal)] hover:underline cursor-pointer bg-transparent border-0">Сбросить</button>
+					<button type="button" onClick={() => setSelectedTeeth([16])} className="text-[11px] text-[var(--primary)] hover:underline cursor-pointer bg-transparent border-0">Сбросить</button>
 				</div>
 				<div className="text-[10px] text-[var(--ink-muted)]">Верхняя челюсть</div>
 				<div className="dental-lab-teeth-grid">{UPPER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>

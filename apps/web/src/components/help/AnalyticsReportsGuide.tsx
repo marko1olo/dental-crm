@@ -12,6 +12,7 @@
  */
 
 import React, { useState } from "react";
+import { rublesToKopecks, kopecksToRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import {
 	BarChart3,
 	Calculator,
@@ -53,7 +54,9 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 	const doctorGrossRevenue = selectedPeriod === "today" ? 140000 : selectedPeriod === "week" ? 620000 : 2480000;
 	const labDeductionZtl = selectedPeriod === "today" ? 18000 : selectedPeriod === "week" ? 84000 : 320000;
 	const netCommissionBase = Math.max(0, doctorGrossRevenue - labDeductionZtl);
-	const calculatedPayroll = Math.round((netCommissionBase * doctorRatePercent) / 100);
+	const calculatedPayroll = kopecksToRubles(
+		calculatePercentDiscountKopecks(rublesToKopecks(netCommissionBase), doctorRatePercent),
+	);
 
 	return (
 		<div className="space-y-4 text-xs text-[var(--ink)]">

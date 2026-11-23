@@ -2,16 +2,18 @@ import { saveWorkspaceFlags } from "../../../hooks/useWorkspaceProfile";
 import { useDeepClinicalSettingsStore } from "../../../store/deepClinicalSettingsStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { showToast } from "../../GlobalToast";
-import type { ClinicOperationalMode } from "@dental/shared";
+import type {
+	ClinicOperationalMode,
+	ClinicProfileOnboarding,
+	ClinicScheduleDraft,
+} from "@dental/shared";
 import type { SovereignPresetId } from "./scalePresetsTypesAndConstants";
 
 export interface ApplyScalePresetContext {
 	readonly clinicName?: string | undefined;
 	readonly setOperationalMode: (mode: ClinicOperationalMode) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly updateProfile: (data: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly updateSchedule: (data: any) => void;
+	readonly updateProfile: (data: Partial<ClinicProfileOnboarding>) => void;
+	readonly updateSchedule: (data: Partial<ClinicScheduleDraft>) => void;
 }
 
 export async function applyScalePresetStores(

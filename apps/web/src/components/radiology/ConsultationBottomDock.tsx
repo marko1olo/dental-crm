@@ -95,7 +95,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 				<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold text-slate-300 border-b border-[var(--line)]/70">
 					<div className="flex items-center gap-1.5">
 						<Camera size={13} className="text-[#00C853]" />
-						<span className="tracking-wider uppercase">СНИМКИ ПАЦИЕНТА</span>
+						<span className="font-semibold text-xs">Снимки пациента</span>
 						<span className="text-[#10b981] font-mono">({effectivePatientStudies.length})</span>
 					</div>
 					<span className="text-[10px] text-slate-400 font-normal">
@@ -149,7 +149,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 										)}
 										<span
 											style={{ backgroundColor: badge.bg, color: badge.color }}
-											className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-bold uppercase"
+											className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-medium"
 										>
 											{badge.label}
 										</span>
@@ -222,8 +222,8 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[var(--line)]/70">
 							<div className="flex items-center gap-1.5 text-slate-300">
 								<Scan size={13} className="text-[#38bdf8]" />
-								<span className="tracking-wider uppercase text-cyan-300">
-									КОНТРОЛЬ ПОСЛЕ ОПЕРАЦИИ (СПРАВА)
+								<span className="font-semibold text-xs text-cyan-300">
+									Контроль после операции (справа)
 								</span>
 							</div>
 							<span className="text-[10px] text-slate-400 font-normal">
@@ -264,7 +264,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 											)}
 											<span
 												style={{ backgroundColor: badge.bg, color: badge.color }}
-												className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-bold uppercase"
+												className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-medium"
 											>
 												{badge.label}
 											</span>
@@ -286,7 +286,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[var(--line)]/70">
 							<div className="flex items-center gap-1.5 text-slate-300">
 								<Sparkles size={13} className="text-[#06b6d4]" />
-								<span className="tracking-wider uppercase">АНАТОМИЧЕСКИЙ АТЛАС</span>
+								<span className="font-semibold text-xs">Анатомический атлас</span>
 							</div>
 
 							{/* 8 Disciplines Category Selector (Screenshot 26) */}
@@ -297,7 +297,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 									className="px-2 py-0.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
 									data-testid="btn-discipline-selector"
 								>
-									<span>ДИСЦИПЛИНА:</span>
+									<span>Дисциплина:</span>
 									<strong className="text-[#38bdf8] font-mono">
 										{activeDisciplineMeta.shortLabelRu}
 									</strong>
@@ -321,7 +321,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 										}}
 										data-testid="discipline-dropdown-menu"
 									>
-										<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line)]">
+										<div className="px-2 py-1 text-[10px] font-semibold text-slate-400 border-b border-[var(--line)]">
 											8 клинических дисциплин
 										</div>
 										{DENTAL_DISCIPLINES.map((d) => (

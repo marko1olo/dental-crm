@@ -311,6 +311,15 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		const effectiveVisitId = openVisitId || (dashboard?.activeVisit?.id as string | undefined) || "";
 		const effectivePatientId = activePatient?.id || (dashboard?.activeVisit?.patientId as string | undefined) || "";
 
+		if (!effectiveVisitId || !effectivePatientId) {
+			showToast(
+				"Не выбран активный приём или пациент для сохранения дневника в ЭМК",
+				"error",
+				4000,
+			);
+			return;
+		}
+
 		const saveOk = await executeSaveOrReviseDiary({
 			effectiveVisitId,
 			effectivePatientId,

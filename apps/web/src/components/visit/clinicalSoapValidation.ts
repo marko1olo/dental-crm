@@ -3,13 +3,14 @@
  * Validation of SOAP presets and material deduction receipt generation.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { ClinicalSoapPreset } from "./clinicalSoapTypes.js";
 
 export function calculatePresetMaterialsCost(preset: ClinicalSoapPreset): number {
 	const materials = preset.materialsToDeduct ?? [];
 	return materials.reduce((sum, m) => {
 		const cost = m.unitCostRub ?? 0;
-		return sum + Math.round(cost * m.quantity * 100) / 100;
+		return sum + kopecksToRubles(rublesToKopecks(cost * m.quantity));
 	}, 0);
 }
 

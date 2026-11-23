@@ -251,15 +251,15 @@ export function BotStudioModal({
 										}}
 										title="QR-код для старта пациента в боте"
 									>
-										<div
-											// biome-ignore lint/security/noDangerouslySetInnerHtml: safe SVG
-											dangerouslySetInnerHTML={{
-												__html: generateQrCodeSvg(botLink, {
+										<img
+											src={`data:image/svg+xml;utf8,${encodeURIComponent(
+												generateQrCodeSvg(botLink, {
 													size: 44,
 													margin: 1,
 												}),
-											}}
-											style={{ width: "100%", height: "100%" }}
+											)}`}
+											alt="QR-код старта в боте"
+											style={{ width: "100%", height: "100%", display: "block" }}
 										/>
 									</div>
 								</div>

@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import type { Dashboard } from "@dental/shared";
+import React, { useCallback, useRef } from "react";
 import type {
 	UsePatientMutationsProps,
 	UsePatientMutationsReturn,
@@ -27,6 +28,21 @@ export function usePatientMutations({
 }: UsePatientMutationsProps): UsePatientMutationsReturn {
 	const savedByThisScreenUpdatedAtRef = useRef<string | null>(null);
 
+	const normalizedSetDashboard = useCallback<
+		React.Dispatch<React.SetStateAction<Dashboard | null>>
+	>(
+		(action) => {
+			if (typeof action === "function") {
+				(setDashboard as React.Dispatch<React.SetStateAction<Dashboard | null>>)(
+					action,
+				);
+			} else {
+				(setDashboard as (d: Dashboard | null) => void)(action);
+			}
+		},
+		[setDashboard],
+	);
+
 	const {
 		patientCoreDraftRef,
 		updatePatientCoreDraft,
@@ -34,7 +50,7 @@ export function usePatientMutations({
 		createPatient,
 	} = usePatientCoreSave({
 		dashboard,
-		setDashboard,
+		setDashboard: normalizedSetDashboard,
 		setError,
 		auth,
 		selectedPatient,
@@ -50,7 +66,7 @@ export function usePatientMutations({
 		savePatientAdministrativeProfile,
 	} = usePatientAdministrativeSave({
 		dashboard,
-		setDashboard,
+		setDashboard: normalizedSetDashboard,
 		setError,
 		auth,
 		selectedPatient,

@@ -11,6 +11,7 @@ import { resolveDentalSpecialty, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
+import { deleteOfflineDraft } from "../../../services/offline/storage/idbDraftOps";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 
 /** Канонический ключ черновика дневника приёма (Мандаты 8x/8ap) */
@@ -124,10 +125,14 @@ export function useMedicalRecordSave({
 					}
 
 					if (!anyDiaryFailed) {
-						if (typeof sessionStorage !== "undefined" && effectivePatientId) {
-							try {
-								sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
-							} catch { /* ignore storage error */ }
+						if (effectivePatientId) {
+							void deleteOfflineDraft(`draft:emk:${effectivePatientId}`);
+							void deleteOfflineDraft(`dente:medical_card_autosave:${effectivePatientId}`);
+							if (typeof sessionStorage !== "undefined") {
+								try {
+									sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
+								} catch { /* ignore storage error */ }
+							}
 						}
 						void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
 						void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
@@ -193,10 +198,14 @@ export function useMedicalRecordSave({
 					void denteQueryClient.invalidateQueries({ queryKey: ["patients"] });
 				}
 
-				if (typeof sessionStorage !== "undefined" && effectivePatientId) {
-					try {
-						sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
-					} catch { /* ignore storage error */ }
+				if (effectivePatientId) {
+					void deleteOfflineDraft(`draft:emk:${effectivePatientId}`);
+					void deleteOfflineDraft(`dente:medical_card_autosave:${effectivePatientId}`);
+					if (typeof sessionStorage !== "undefined") {
+						try {
+							sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
+						} catch { /* ignore storage error */ }
+					}
 				}
 
 				if (typeof window !== "undefined") {

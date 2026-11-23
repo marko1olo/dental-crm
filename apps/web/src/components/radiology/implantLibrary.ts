@@ -218,7 +218,7 @@ export function inspectDistanceToMandibularCanal(
 	const dy = implantApex.y - canalCenter.y;
 	const dz = (implantApex.z ?? 0) - (canalCenter.z ?? 0);
 	const distToCenter = Math.hypot(dx, dy, dz);
-	const netClearance = Math.round((distToCenter - canalRadiusMm) * 100) / 100;
+	const netClearance = Number((Math.round((distToCenter - canalRadiusMm) * 100) * 1e-2).toFixed(2));
 
 	let status: "safe" | "warning" | "danger" = "safe";
 	if (netClearance < MIN_SAFETY_CORRIDOR_MM) {
@@ -228,7 +228,7 @@ export function inspectDistanceToMandibularCanal(
 	}
 
 	return {
-		distanceToCenterMm: Math.round(distToCenter * 100) / 100,
+		distanceToCenterMm: Number((Math.round(distToCenter * 100) * 1e-2).toFixed(2)),
 		netClearanceMm: netClearance,
 		safetyStatus: status,
 		isSafe: status === "safe",
@@ -309,7 +309,7 @@ export function inspectImplantBodyToNerve3D(
 		}
 	}
 
-	const netClearance = Math.round((minDistance - canalRadiusMm - implantRadius) * 100) / 100;
+	const netClearance = Number((Math.round((minDistance - canalRadiusMm - implantRadius) * 100) * 1e-2).toFixed(2));
 	let status: "safe" | "warning" | "danger" = "safe";
 	if (netClearance < MIN_SAFETY_CORRIDOR_MM) {
 		status = "danger";
@@ -318,7 +318,7 @@ export function inspectImplantBodyToNerve3D(
 	}
 
 	return {
-		distanceToCenterMm: Math.round(minDistance * 100) / 100,
+		distanceToCenterMm: Number((Math.round(minDistance * 100) * 1e-2).toFixed(2)),
 		netClearanceMm: netClearance,
 		safetyStatus: status,
 		isSafe: status === "safe",

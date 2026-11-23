@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { logger } from "../../../utils/logger.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -32,7 +33,10 @@ export function useMaterialBomsMutations({
 			if (orgId) {
 				const res = await fetch(`/api/inventory/${orgId}/rules/seed-defaults`, {
 					method: "POST",
-					headers: getHeaders({ "Content-Type": "application/json" }),
+					headers: getHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 				}).catch(() => null);
 
 				if (res && res.ok) {
@@ -67,7 +71,10 @@ export function useMaterialBomsMutations({
 			setIsSaving(true);
 			const res = await fetch(`/api/inventory/${orgId}/rules`, {
 				method: "POST",
-				headers: getHeaders({ "Content-Type": "application/json" }),
+				headers: getHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					serviceId: modalState.serviceId, inventoryItemId: modalState.inventoryItemId, quantityToDeduct: qty,
 				}),
@@ -93,7 +100,9 @@ export function useMaterialBomsMutations({
 		try {
 			const res = await fetch(`/api/inventory/${orgId}/rules/${ruleId}`, {
 				method: "DELETE",
-				headers: getHeaders(),
+				headers: getHeaders({
+					"Idempotency-Key": generateUuidV7(),
+				}),
 			});
 			if (res.ok) {
 				showToast("Норма расхода удалена", "success");

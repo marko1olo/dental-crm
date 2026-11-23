@@ -10,7 +10,7 @@ export function calculatePsoSampleRequirements(
 	const count = Math.max(1, Math.floor(Number(batchCount) || 1));
 	const typesCount = Math.max(1, Math.floor(Number(itemTypesCount) || 1));
 	const statutoryPercent = 1;
-	const computedOnePercent = Math.ceil((count * statutoryPercent) / 100);
+	const computedOnePercent = Math.ceil(count * statutoryPercent * 0.01);
 	const baselineFloor = isSurgicalOrCritical ? 5 : 3;
 	const minSampleCount = Math.max(baselineFloor * typesCount, computedOnePercent);
 

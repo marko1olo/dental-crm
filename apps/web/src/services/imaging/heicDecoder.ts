@@ -467,7 +467,7 @@ export async function decodeHeicImage(
 		originalSizeBytes,
 		compressionRatio:
 			originalSizeBytes > 0
-				? Math.round((estimatedSizeBytes / originalSizeBytes) * 100) / 100
+				? Number((estimatedSizeBytes / originalSizeBytes).toFixed(2))
 				: 1,
 		processingDurationMs: durationMs,
 		warnings,

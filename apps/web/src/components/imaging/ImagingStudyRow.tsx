@@ -68,7 +68,7 @@ export const ImagingStudyRow: React.FC<ImagingStudyRowProps> = ({
 				{!imagingStudyHasFile(study) && (
 					<span
 						data-testid="imaging-row-file-missing"
-						style={{ color: "var(--warning-color, #f59e0b)" }}
+						style={{ color: "var(--warning)" }}
 					>
 						Файл снимка не загружен — разбор недоступен
 					</span>

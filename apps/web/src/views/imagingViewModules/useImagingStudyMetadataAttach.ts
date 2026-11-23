@@ -26,8 +26,17 @@ export function useImagingStudyMetadataAttach(
 				body: JSON.stringify({ toothCode: toothCode || null }),
 			});
 			if (res.ok) {
-				const updated = await res.json();
-				props.onStudyUpdated?.(updated);
+				const json = await res.json();
+				const payload = (json && typeof json === "object" && "data" in json) ? (json as { data: ImagingStudy }).data : (json as ImagingStudy);
+				props.onStudyUpdated?.(payload);
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-tooth-scan-bound", {
+							detail: { studyId: selectedImagingStudy.id, toothCode: toothCode || null },
+						}),
+					);
+					window.dispatchEvent(new CustomEvent("dente-xray-updated"));
+				}
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast(toothCode ? `Снимок привязан к зубу ${toothCode}` : "Привязка к зубу снята", "success");
 			}
@@ -49,8 +58,9 @@ export function useImagingStudyMetadataAttach(
 				body: JSON.stringify({ visitId: visitId || null }),
 			});
 			if (res.ok) {
-				const updated = await res.json();
-				props.onStudyUpdated?.(updated);
+				const json = await res.json();
+				const payload = (json && typeof json === "object" && "data" in json) ? (json as { data: ImagingStudy }).data : (json as ImagingStudy);
+				props.onStudyUpdated?.(payload);
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast("Снимок привязан к текущему приёму", "success");
 			}

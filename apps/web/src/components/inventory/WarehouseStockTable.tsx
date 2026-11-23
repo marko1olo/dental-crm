@@ -9,7 +9,9 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronRight, Edit2, MinusCircle, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Edit2, Layers, MinusCircle, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
+import { WarehouseBatchTrackingModal } from "./WarehouseBatchTrackingModal.js";
+import type { InventoryItem } from "./useInventoryLogic.js";
 import { useIsMobile } from "../../hooks/useIsMobile.js";
 import {
 	getExpiryTrafficLight,
@@ -122,6 +124,8 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 	const isMobile = useIsMobile(768);
 	const [localSearch, setLocalSearch] = useState("");
 	const [activeCategory, setActiveCategory] = useState("all");
+	const [batchTrackingModalOpen, setBatchTrackingModalOpen] = useState(false);
+	const [selectedBatchItem, setSelectedBatchItem] = useState<WarehouseStockItem | null>(null);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const effectiveSearch = externalSearch || localSearch;
 
@@ -227,44 +231,55 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 							</button>
 						))}
 					</div>
-					{(onOpenWaybills || onOpenShiftDeduction || onOpenAddModal) && (
-						<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
-							{onOpenShiftDeduction && (
-								<button
-									type="button"
-									onClick={onOpenShiftDeduction}
-									className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity shrink-0 shadow-xs whitespace-nowrap cursor-pointer"
-									data-testid="btn-warehouse-shift-deduction"
-									title="Списать расходники за смену"
-								>
-									<Zap size={14} className="shrink-0" />
-									<span>Списать смену</span>
-								</button>
-							)}
-							{onOpenWaybills && (
-								<button
-									type="button"
-									onClick={onOpenWaybills}
-									className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
-									data-testid="btn-warehouse-waybills"
-								>
-									<Package size={15} className="shrink-0" />
-									<span>+ Приходная накладная</span>
-								</button>
-							)}
-							{onOpenAddModal && !onOpenWaybills && (
-								<button
-									type="button"
-									onClick={onOpenAddModal}
-									className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
-									data-testid="btn-warehouse-add-item"
-								>
-									<PlusCircle size={15} className="shrink-0" />
-									<span>+ Позиция</span>
-								</button>
-							)}
-						</div>
-					)}
+					<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+						<button
+							type="button"
+							onClick={() => {
+								setSelectedBatchItem(null);
+								setBatchTrackingModalOpen(true);
+							}}
+							className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap cursor-pointer"
+							data-testid="btn-warehouse-batch-tracking-toolbar"
+							title="Партионный учёт и контроль сроков FEFO"
+						>
+							<Layers size={14} className="shrink-0 text-[var(--teal,#0d9488)]" />
+							<span>Партии FEFO</span>
+						</button>
+						{onOpenShiftDeduction && (
+							<button
+								type="button"
+								onClick={onOpenShiftDeduction}
+								className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity shrink-0 shadow-xs whitespace-nowrap cursor-pointer"
+								data-testid="btn-warehouse-shift-deduction"
+								title="Списать расходники за смену"
+							>
+								<Zap size={14} className="shrink-0" />
+								<span>Списать смену</span>
+							</button>
+						)}
+						{onOpenWaybills && (
+							<button
+								type="button"
+								onClick={onOpenWaybills}
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
+								data-testid="btn-warehouse-waybills"
+							>
+								<Package size={15} className="shrink-0" />
+								<span>+ Приходная накладная</span>
+							</button>
+						)}
+						{onOpenAddModal && !onOpenWaybills && (
+							<button
+								type="button"
+								onClick={onOpenAddModal}
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
+								data-testid="btn-warehouse-add-item"
+							>
+								<PlusCircle size={15} className="shrink-0" />
+								<span>+ Позиция</span>
+							</button>
+						)}
+					</div>
 				</div>
 			)}
 
@@ -445,6 +460,20 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 													) : (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--success-soft)] text-[var(--success)]">В норме</span>
 													)}
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															setSelectedBatchItem(item);
+															setBatchTrackingModalOpen(true);
+														}}
+														className="secondary-button h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+														title="Партии FEFO"
+														data-testid={`btn-batch-tracking-${item.id}`}
+													>
+														<Layers size={13} className="shrink-0 text-[var(--teal,#0d9488)]" />
+														<span className="text-[11px]">Партии</span>
+													</button>
 													<button type="button" onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }} className="secondary-button p-1 text-xs text-[var(--warning)] hover:opacity-80" title="Списать расходник">
 														<MinusCircle size={14} /><span className="sr-only">Списать (Овердрафт)</span>
 													</button>
@@ -472,6 +501,29 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 					</button>
 				</div>
 			)}
+
+			{/* Модальное окно партионного учёта FEFO (Мандат 8aq: ноль компонентов-сирот) */}
+			<WarehouseBatchTrackingModal
+				isOpen={batchTrackingModalOpen}
+				onClose={() => {
+					setBatchTrackingModalOpen(false);
+					setSelectedBatchItem(null);
+				}}
+				items={items as readonly InventoryItem[]}
+				selectedItem={(selectedBatchItem ?? undefined) as InventoryItem | undefined}
+				onDeductBatch={(batchItem, qty) => {
+					if (onDeductItem) {
+						const target = items.find((i) => i.id === batchItem.id) ?? selectedBatchItem;
+						if (target) onDeductItem(target, qty);
+					}
+				}}
+				onReceiveBatch={(batchItem, qty) => {
+					if (onReceiveItem) {
+						const target = items.find((i) => i.id === batchItem.id) ?? selectedBatchItem;
+						if (target) onReceiveItem(target, qty);
+					}
+				}}
+			/>
 		</div>
 	);
 };

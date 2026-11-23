@@ -24,16 +24,26 @@ export function useToothScanThumbnail(toothNumber: number, selectedPatientId?: s
 		}
 
 		const fetchThumbnail = () => {
-			fetch(`/api/xray/scans?patientId=${encodeURIComponent(selectedPatientId)}`)
+			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(selectedPatientId)}`)
 				.then(async (res) => (res.ok ? res.json() : []))
-				.then((scans) => {
+				.then((json: unknown) => {
 					if (!active) return;
-					const matched = Array.isArray(scans) ? scans.find((s: { toothCode?: string }) => String(s.toothCode ?? "").trim() === toothStr) : null;
-					if (matched) {
+					const rawList: unknown[] = Array.isArray(json)
+						? json
+						: (json && typeof json === "object" && "data" in json && Array.isArray((json as { data: unknown }).data))
+							? (json as { data: unknown[] }).data
+							: [];
+					const matched = rawList.find((s: unknown) => {
+						if (!s || typeof s !== "object") return false;
+						const item = s as { toothCode?: string | null };
+						return String(item.toothCode ?? "").trim() === toothStr;
+					}) as { id: string; imageDataUri?: string; fileUrl?: string; title?: string; originalFilename?: string } | undefined;
+
+					if (matched && matched.id) {
 						setToothScanThumbnail({
 							id: matched.id,
-							url: matched.imageDataUri || matched.fileUrl || `/api/xray/scans/${matched.id}/file`,
-							title: matched.originalFilename || `RVG Зуб #${toothNumber}`,
+							url: matched.imageDataUri || matched.fileUrl || `/api/imaging/studies/${matched.id}/file`,
+							title: matched.title || matched.originalFilename || `RVG Зуб #${toothNumber}`,
 						});
 					} else {
 						setToothScanThumbnail(null);

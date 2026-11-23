@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	calculatePercentDiscountKopecks,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
 import { downloadPatientTaxCertificate1151156 } from "../../patientCabinet/documents/documentsTaxCertificate";
@@ -26,6 +31,8 @@ export interface UseTelegramPortalCabinetOptions {
 	readonly patientId?: string | null | undefined;
 	readonly initialTab?: TelegramCabinetTab;
 	readonly initialTaxSheetOpen?: boolean;
+	readonly initialInvoices?: PatientPersonalCabinetData["invoices"] | undefined;
+	readonly invoices?: PatientPersonalCabinetData["invoices"] | undefined;
 }
 
 export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOptions = {}) {
@@ -50,6 +57,11 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	const [depositBalance, setDepositBalance] = useState<number>(() => (isDemo ? 15000 : 0));
 	const [totalYearExpense, setTotalYearExpense] = useState<number>(() => (isDemo ? 148500 : 0));
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
+	const [invoices, setInvoices] = useState<PatientPersonalCabinetData["invoices"]>(() => {
+		if (options.invoices?.length) return options.invoices;
+		if (options.initialInvoices?.length) return options.initialInvoices;
+		return [];
+	});
 
 	// Реквизиты клиники (динамические)
 	const [clinicName, setClinicName] = useState<string>(() => (isDemo ? "Стоматология ДЕНТЕ" : "Стоматологическая клиника"));
@@ -142,6 +154,21 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 					} catch {
 						// Игнорируем недоступность хранилища в приватном режиме
 					}
+
+					// Честная гидратация счетов пациента из /api/portal/profile
+					void fetch("/api/portal/profile", {
+						headers: { Authorization: `Bearer ${data.token}` },
+					})
+						.then((r) => (r.ok ? r.json() : null))
+						.then((profileData) => {
+							if (isMounted && profileData?.invoices && Array.isArray(profileData.invoices) && profileData.invoices.length > 0) {
+								setInvoices(profileData.invoices);
+							}
+						})
+						.catch(() => {});
+				}
+				if (Array.isArray(data.invoices) && data.invoices.length > 0) {
+					setInvoices(data.invoices);
 				}
 				if (data.patient?.bonusBalanceRub !== undefined) {
 					setBonusBalance(data.patient.bonusBalanceRub);
@@ -281,22 +308,16 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		}
 	}, [propOrganizationId, propPatientId, isDemo, triggerHaptic]);
 
-	// Расчет налогового вычета (ст. 219 НК РФ): Код 01 лимитирован (150k с 2024 г., 120k ранее), Код 02 без лимита
+	// Ориентировочный расчет социального налогового вычета 13% НДФЛ (ст. 219 НК РФ):
+	// Код 01 лимитирован (150 000 ₽ с 2024 г., 120 000 ₽ ранее), Код 02 без лимита
 	const calculatedDeduction = useMemo(() => {
-		const totalKopBi = BigInt(Math.max(0, Math.trunc(totalYearExpense * 100)));
+		const totalRub = Math.max(0, Math.round(totalYearExpense));
 		const limitRub = taxYear >= 2024 ? 150000 : 120000;
-		const limitKopBi = BigInt(limitRub) * 100n;
-
-		if (serviceCode === "2") {
-			// Дорогостоящее лечение (Код 02) — вычет со всей суммы без лимита
-			const refundKopBi = (totalKopBi * 13n) / 100n;
-			return Number(refundKopBi / 100n);
-		}
-
-		// Стандартное лечение (Код 01) — с учетом годового лимита ст. 219 НК РФ
-		const eligibleKopBi = totalKopBi < limitKopBi ? totalKopBi : limitKopBi;
-		const refundKopBi = (eligibleKopBi * 13n) / 100n;
-		return Number(refundKopBi / 100n);
+		const eligibleRub = serviceCode === "2" ? totalRub : Math.min(totalRub, limitRub);
+		// Точный расчет доли 13% через канонический модуль @dental/shared без сырого float:
+		const eligibleKopecks = rublesToKopecks(eligibleRub);
+		const deductionKopecks = calculatePercentDiscountKopecks(eligibleKopecks, 13);
+		return Math.round(kopecksToRubles(deductionKopecks));
 	}, [totalYearExpense, taxYear, serviceCode]);
 
 	// Обработка жалоб на зубы
@@ -361,14 +382,15 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 				reminderSent: false,
 			})),
 			treatmentPlans: [],
-			invoices: isDemo
-				? appointments
+			invoices: invoices.length > 0
+				? invoices
+				: appointments
 						.filter((app) => app.isPast && typeof app.costRub === "number" && app.costRub > 0)
 						.map((app, idx) => ({
 							id: `inv-${app.id || idx}`,
 							invoiceNumber: `Ч-${idx + 1}`,
-							issueDateIso: `${taxYear}-08-14`,
-							paidAtIso: `${taxYear}-08-14`,
+							issueDateIso: `${taxYear}-06-15`,
+							paidAtIso: `${taxYear}-06-15`,
 							titleRu: app.procedureTitle || "Стоматологическое лечение",
 							totalAmountRub: app.costRub ?? 0,
 							paidAmountRub: app.costRub ?? 0,
@@ -384,8 +406,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 									totalRub: app.costRub ?? 0,
 								},
 							],
-						}))
-				: [],
+						})),
 			warranties: [],
 			passport: payerPassport.trim() || undefined,
 		};
@@ -469,6 +490,10 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		clinicInn,
 		clinicKpp,
 		clinicLicense,
+		certificateNumber: `СПР-${taxYear}/${propPatientId ? propPatientId.slice(0, 6).toUpperCase() : (payerInn ? payerInn.slice(-4) : "001")}`,
+		issueDate: new Date().toLocaleDateString("ru-RU"),
+		invoices,
+		setInvoices,
 		triggerHaptic,
 		handleShareReferral,
 		handleDownloadTaxCert,

@@ -5,43 +5,37 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-	generateDeterministicLabOrderNumber,
-	generateDeterministicLabOrderId,
-	createDentalLabOrderRecord,
 	calculateZtlWageFinancials,
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	mapTo5StageLabStatus,
 	type Canonical5LabStatus,
 } from "../dentalLabOrderEngine";
+import {
+	CANONICAL_PG_LAB_STATUSES,
+	STAGE_TO_CANONICAL_PG_STATUS,
+	canTransitionLabOrderStatus,
+} from "@dental/shared";
 
 describe("dentalLabZeroMock — Engine & 5-Stage Canonical Lifecycle", () => {
-	it("generateDeterministicLabOrderNumber и Id производят детерминированные значения", () => {
-		const fixedDate = new Date("2026-10-15T10:00:00Z");
-		const orderNum1 = generateDeterministicLabOrderNumber({ date: fixedDate, sequence: 101 });
-		const orderNum2 = generateDeterministicLabOrderNumber({ date: fixedDate, sequence: 102 });
+	it("CANONICAL_PG_LAB_STATUSES и STAGE_TO_CANONICAL_PG_STATUS валидируют статусы", () => {
+		assert.ok(CANONICAL_PG_LAB_STATUSES.includes("sent"));
+		assert.ok(CANONICAL_PG_LAB_STATUSES.includes("in_progress"));
+		assert.ok(CANONICAL_PG_LAB_STATUSES.includes("fitting"));
+		assert.ok(CANONICAL_PG_LAB_STATUSES.includes("ready_in_clinic"));
+		assert.ok(CANONICAL_PG_LAB_STATUSES.includes("completed"));
 
-		assert.equal(orderNum1, "ЗТЛ-2026-101");
-		assert.equal(orderNum2, "ЗТЛ-2026-102");
-
-		const id1 = generateDeterministicLabOrderId({ date: fixedDate, patientId: "pat-ivanychev-4821", sequence: 101 });
-		assert.ok(id1.startsWith("ztl-ord-"));
-		assert.ok(id1.includes("4821"));
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.sent, "sent");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.in_progress, "in_progress");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.fitting, "fitting");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.ready, "ready_in_clinic");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.completed, "completed");
 	});
 
-	it("createDentalLabOrderRecord создает наряд со 100% детерминированными полями", () => {
-		const record = createDentalLabOrderRecord({
-			patientId: "pat-smirnova-77",
-			patientName: "Смирнова Е.А.",
-			doctorId: "doc-petrov",
-			doctorName: "Д-р Петров С.В.",
-			teethFdi: [16, 17],
-			constructionType: "crown_zirconia",
-			vitaShade: "A2",
-		});
-
-		assert.ok(record.id.startsWith("ztl-ord-"));
-		assert.ok(record.orderNumber.startsWith("ЗТЛ-"));
-		assert.equal(record.patientName, "Смирнова Е.А.");
+	it("canTransitionLabOrderStatus разрешает канонические переходы жизненного цикла", () => {
+		assert.equal(canTransitionLabOrderStatus("sent", "in_progress"), true);
+		assert.equal(canTransitionLabOrderStatus("in_progress", "fitting"), true);
+		assert.equal(canTransitionLabOrderStatus("fitting", "ready"), true);
+		assert.equal(canTransitionLabOrderStatus("ready", "completed"), true);
 	});
 
 	it("в кодовой базе engine отсутствует Math.random()", () => {

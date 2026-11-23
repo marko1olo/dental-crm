@@ -94,6 +94,7 @@ export interface ToothChartProps {
 	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
 	onSurfacesChange?: ((targets: number[], surfaces: readonly string[]) => void) | undefined;
 	useSurfaces?: boolean | undefined;
+	activeSurface?: string | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
 	hideQuadrantSwitcher?: boolean | undefined;

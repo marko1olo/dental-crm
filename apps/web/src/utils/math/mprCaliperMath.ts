@@ -1,7 +1,7 @@
 import type { DicomViewerToolStatePoint } from "@dental/shared";
 
 export const round1 = (value: number) => Math.round(value * 10) / 10;
-export const round2 = (value: number) => Math.round(value * 100) / 100;
+export const round2 = (value: number) => Number((Math.round(value * 100) * 1e-2).toFixed(2));
 export const clamp = (value: number, min: number, max: number) =>
 	Math.min(max, Math.max(min, value));
 export const finiteOrNull = (value: number) =>

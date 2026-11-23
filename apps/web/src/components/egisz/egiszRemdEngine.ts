@@ -74,8 +74,13 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 	const [patFamily = "Пациент", patGiven = "", patPatronymic = ""] = (payload.patient.patientFullName || "Пациент").trim().split(/\s+/);
 	const [docFamily = "Врач", docGiven = "", docPatronymic = ""] = (payload.doctor.doctorFullName || "Врач").trim().split(/\s+/);
 	const gender = payload.patient.patientGender === "male" || payload.patient.patientGender === "female" ? payload.patient.patientGender : "other";
+	const docCode = String(payload.docTypeCode || "108");
+	const validDocKinds = ["101", "103", "108", "104", "109", "043u", "043-1u"] as const;
+	type DocKindType = (typeof validDocKinds)[number];
+	const docKind: DocKindType = validDocKinds.includes(docCode as DocKindType) ? (docCode as DocKindType) : "108";
+
 	const res = generateCdaXml({
-		docKind: "101",
+		docKind,
 		documentId: payload.documentUuid || `DOC-${Date.now()}`,
 		documentVersion: payload.documentVersion || 1,
 		visitDate: payload.encounterDate ? new Date(payload.encounterDate) : new Date(),
@@ -128,7 +133,10 @@ export {
 	generateFnsTaxXmlFilename,
 } from "./engine/egiszFilenames";
 
-export { runEgisz043uPreflight } from "./engine/clinicalPreflightEngine";
+export {
+	runEgiszPreflight,
+	runEgisz043uPreflight,
+} from "./engine/clinicalPreflightEngine";
 
 export {
 	generateForm043uPrintHtml,

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { calculateItemDmsSplit, calculateDmsGuaranteeSplit } from "@dental/shared";
-import { allocateRemainderToTender } from "../cashbox/cashRegisterCatalogData.js";
+import { allocateRemainderToTender } from "../cashbox/fastCheckoutPresetEngine.js";
 
 describe("DMS Cashier & Split Payment Integration (Mandates 8l, 8e, 8n)", () => {
 	it("1.1 Proves integer kopeck split math for 0%, 20%, 50%, and 80% corporate franchises", () => {

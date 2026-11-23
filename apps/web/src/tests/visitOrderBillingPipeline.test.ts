@@ -14,6 +14,7 @@ import {
 	completeClinicalVisitAndAssembleEstimate,
 	extractProceduresFromDiary,
 } from "../components/visit/clinicalVisitWorkflow.js";
+import { kopecksToRubles } from "@dental/shared";
 import {
 	synthesize1ClickSoapDiary,
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
@@ -151,7 +152,8 @@ describe("End-to-End Visit Order & Billing Pipeline (Subagent 12 Audit)", () => 
 		assert.equal(completionResult.totalNetRub, 4800, "totalNetRub must be exactly 4 800 ₽");
 		assert.equal(completionResult.totalNetKop, 480000, "totalNetKop must be exactly 480 000 kop (Mandate 8b)");
 		assert.equal(completionResult.items.length, 3);
-		assert.ok(completionResult.sbpQrUrl.includes("sum=480000"), "SBP QR code must encode exact sum in kopecks 480000");
+		// Mandates 8z, 8k: Ноль синтетического хардкода ссылки в сметном движке (QR генерируется API)
+		assert.equal(completionResult.sbpQrUrl, "");
 		assert.ok(/4[\s\u00A0\u202F]800/.test(completionResult.statusBannerText), "Status banner must display 4 800 ₽");
 	});
 
@@ -174,7 +176,7 @@ describe("End-to-End Visit Order & Billing Pipeline (Subagent 12 Audit)", () => 
 		assert.equal(completionResult.totalDiscountRub, 480);
 		assert.equal(completionResult.totalNetRub, 4320);
 		assert.equal(completionResult.totalNetKop, 432000);
-		assert.ok(completionResult.sbpQrUrl.includes("sum=432000"));
+		assert.equal(completionResult.sbpQrUrl, "");
 	});
 
 	it("6. VisitServiceBillingWidget and clinicalVisitWorkflow strict file bounds (Mandate 8b <= 800 lines)", () => {
@@ -217,13 +219,13 @@ describe("End-to-End Visit Order & Billing Pipeline (Subagent 12 Audit)", () => 
 			code804n: s.code,
 			title: s.nameRu,
 			quantity: s.defaultQuantity || 1,
-			priceRub: (s.priceKopecks || 0) / 100,
-			unitPriceRub: (s.priceKopecks || 0) / 100,
+			priceRub: kopecksToRubles(s.priceKopecks || 0),
+			unitPriceRub: kopecksToRubles(s.priceKopecks || 0),
 			priceKopecks: s.priceKopecks,
 			toothNumber: 16,
 		}));
 
-		let receivedDetail: any = null;
+		let receivedDetail: { replaceExisting?: boolean; services?: { unitPriceRub: number; quantity: number }[] } | null = null;
 		const handler = (e: Event) => {
 			receivedDetail = (e as CustomEvent).detail;
 		};
@@ -246,9 +248,9 @@ describe("End-to-End Visit Order & Billing Pipeline (Subagent 12 Audit)", () => 
 
 		assert.ok(receivedDetail, "Event detail must be received");
 		assert.equal(receivedDetail.replaceExisting, true);
-		assert.equal(receivedDetail.services.length, 3);
-		const totalReceivedRub = receivedDetail.services.reduce(
-			(sum: number, it: any) => sum + it.unitPriceRub * it.quantity,
+		assert.equal(receivedDetail.services?.length, 3);
+		const totalReceivedRub = (receivedDetail.services ?? []).reduce(
+			(sum: number, it) => sum + it.unitPriceRub * it.quantity,
 			0,
 		);
 		assert.equal(totalReceivedRub, 4800, "Event payload must carry exactly 4 800 ₽ of billable services");

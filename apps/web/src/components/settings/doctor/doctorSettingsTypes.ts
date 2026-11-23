@@ -1,9 +1,31 @@
 import type { DoctorSpecialtyKey } from "../../../store/doctorPreferencesStore";
 import type { DoctorSubTab } from "../doctorSettingsTabs";
+import type { StaffProfile } from "../settingsProfileLoad";
+
+export interface DoctorSettingsPropsBag {
+	activeStaffUser?: StaffProfile | null | undefined;
+	soundNotificationsMuted?: boolean | undefined;
+	setSoundNotificationsMuted?: ((muted: boolean) => void) | undefined;
+	testOnlineBookingSound?: (() => void) | undefined;
+	testSlotEndSound?: (() => void) | undefined;
+	appLogic?: {
+		soundNotificationsMuted?: boolean | undefined;
+		setSoundNotificationsMuted?: ((muted: boolean) => void) | undefined;
+		testOnlineBookingSound?: (() => void) | undefined;
+		testSlotEndSound?: (() => void) | undefined;
+		[key: string]: unknown;
+	} | undefined;
+	auth?: {
+		currentUser?: {
+			organizationId?: string | undefined;
+		} | null | undefined;
+		[key: string]: unknown;
+	} | undefined;
+	[key: string]: unknown;
+}
 
 export interface DoctorSettingsSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	readonly props: Record<string, any>;
+	readonly props: DoctorSettingsPropsBag;
 	readonly initialTab?: DoctorSubTab | undefined;
 	readonly onSelectTab?: ((tab: string) => void) | undefined;
 }

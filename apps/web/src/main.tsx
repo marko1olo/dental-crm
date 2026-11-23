@@ -9,6 +9,7 @@ const GuestLabPortal = React.lazy(() =>
 	import("./GuestLabPortal").then((m) => ({ default: m.GuestLabPortal })),
 );
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
+import { usePatientStore } from "./store/patientStore";
 import { publicPortalRouteFromHash } from "./lib/publicPortalRoute";
 import {
 	safeSessionStorageGetItem,
@@ -25,6 +26,11 @@ const PublicBookingPage = React.lazy(() =>
 const PublicBudgetSignPage = React.lazy(() =>
 	import("./pages/public/PublicBudgetSignPage").then((m) => ({
 		default: m.PublicBudgetSignPage,
+	})),
+);
+const PublicConsentSignPage = React.lazy(() =>
+	import("./pages/public/PublicConsentSignPage").then((m) => ({
+		default: m.PublicConsentSignPage,
 	})),
 );
 const PublicWarrantyVerificationPage = React.lazy(() =>
@@ -84,8 +90,11 @@ const PatientPresentationStandaloneView = React.lazy(() =>
 	})),
 );
 const OdontogramStudioStandaloneView = React.lazy(() =>
-	import("./components/odontogram/DirectOdontogramModuleLauncher").then((m) => ({
-		default: m.DirectOdontogramModuleLauncher,
+	import("./components/odontogram/OdontogramModule").then((m) => ({
+		default: () => {
+			const selectedPatientId = usePatientStore.getState().selectedPatientId || "demo-patient-1";
+			return <m.OdontogramModule patientId={selectedPatientId} />;
+		},
 	})),
 );
 const EndodonticStudioStandaloneView = React.lazy(() =>
@@ -379,6 +388,30 @@ function resolveCbctStudioMode(mode: string | undefined): StudioMode | undefined
 	return undefined;
 }
 
+function KioskHost(props: { readonly organizationId: string | null | undefined }) {
+	const [kioskSessionKey, setKioskSessionKey] = React.useState(0);
+	const handleClose = React.useCallback(() => {
+		setKioskSessionKey((prev) => prev + 1);
+		window.location.hash = props.organizationId
+			? `#/portal/kiosk/${encodeURIComponent(props.organizationId)}`
+			: "#/portal/kiosk";
+	}, [props.organizationId]);
+
+	return (
+		<div
+			className="w-screen h-screen overflow-auto flex items-center justify-center p-2 sm:p-4"
+			style={{ backgroundColor: "var(--paper-soft, var(--paper))" }}
+		>
+			<MobileSelfCheckinModal
+				key={`kiosk-session-${kioskSessionKey}`}
+				isOpen={true}
+				organizationId={props.organizationId}
+				onClose={handleClose}
+			/>
+		</div>
+	);
+}
+
 const rootElement = typeof document !== "undefined" ? document.getElementById("root") : null;
 if (!rootElement) {
 	throw new Error("DENTE Startup Failure: #root container element not found in DOM");
@@ -436,20 +469,7 @@ if (publicPortalRoute) {
 							defaultMode="cabinet"
 						/>
 					) : publicPortalRoute.kind === "kiosk" ? (
-						<div
-							className="w-screen h-screen overflow-auto flex items-center justify-center p-2 sm:p-4"
-							style={{ backgroundColor: "var(--paper-soft, var(--paper))" }}
-						>
-							<MobileSelfCheckinModal
-								isOpen={true}
-								organizationId={publicPortalRoute.organizationId}
-								onClose={() => {
-									window.location.hash = publicPortalRoute.organizationId
-										? `#/portal/kiosk/${encodeURIComponent(publicPortalRoute.organizationId)}`
-										: "#/portal/kiosk";
-								}}
-							/>
-						</div>
+						<KioskHost organizationId={publicPortalRoute.organizationId} />
 					) : publicPortalRoute.kind === "tgapp" ? (
 						<TelegramMiniAppView
 							organizationId={publicPortalRoute.organizationId ?? null}
@@ -457,6 +477,12 @@ if (publicPortalRoute) {
 						/>
 					) : publicPortalRoute.kind === "budget" ? (
 						<PublicBudgetSignPage token={publicPortalRoute.token} />
+					) : publicPortalRoute.kind === "consent-sign" ? (
+						<PublicConsentSignPage
+							token={publicPortalRoute.token}
+							patientId={publicPortalRoute.patientId ?? undefined}
+							consentKind={publicPortalRoute.consentKind ?? undefined}
+						/>
 					) : publicPortalRoute.kind === "warranty" ? (
 						<PublicWarrantyVerificationPage
 							certificateNumber={publicPortalRoute.certificateNumber}

@@ -4,6 +4,9 @@ import {
 	generateMdlpSchema444Payload,
 	generateMdlpSchema531Payload,
 	generateMdlpSchema701Payload,
+	kopecksToRubles,
+	rublesToKopecks,
+	calculatePercentDiscountKopecks,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { type MdlpScanMode, isAcceptanceMode, isSpoilageMode } from "./types.js";
@@ -24,7 +27,9 @@ export function useMdlpXmlExport(
 		items.map((it) => ({
 			sgtin: it.sgtin || it.rawBarcode,
 			gtin: it.gtin, serialNumber: it.serialNumber, costRub: it.costRub,
-			vatValueRub: it.costRub ? Math.round(it.costRub * (it.vatRate / 100) * 100) / 100 : 0,
+			vatValueRub: it.costRub
+				? kopecksToRubles(calculatePercentDiscountKopecks(rublesToKopecks(it.costRub), it.vatRate))
+				: 0,
 		}));
 
 	const handleGenerateXml = () => {

@@ -121,8 +121,8 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 		>
 			<div
 				style={{
-					backgroundColor: "var(--pc-surface, #1e293b)",
-					border: "1px solid var(--pc-border, #334155)",
+					backgroundColor: "var(--paper)",
+					border: "1px solid var(--line)",
 					borderRadius: "16px",
 					maxWidth: "540px",
 					width: "100%",
@@ -137,10 +137,11 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 				<div
 					style={{
 						padding: "12px 16px",
-						borderBottom: "1px solid var(--pc-border, #334155)",
+						borderBottom: "1px solid var(--line)",
 						display: "flex",
 						justifyContent: "space-between",
 						alignItems: "center",
+						backgroundColor: "var(--paper-soft)",
 					}}
 				>
 					<div>
@@ -148,13 +149,13 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							style={{
 								margin: 0,
 								fontSize: "14px",
-								fontWeight: 800,
-								color: "var(--pc-text-main, var(--ink, #0f172a))",
+								fontWeight: 700,
+								color: "var(--ink)",
 							}}
 						>
 							{scan.titleRu}
 						</h3>
-						<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+						<span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>
 							{scan.modalityRu} &bull; {scan.dateRu} &bull; Доза: {scan.doseMicroSv} мкЗв
 						</span>
 					</div>
@@ -170,8 +171,9 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							justifyContent: "center",
 							background: "transparent",
 							border: "none",
-							color: "var(--pc-text-muted, #94a3b8)",
+							color: "var(--ink-muted)",
 							cursor: "pointer",
+							borderRadius: "8px",
 						}}
 						aria-label="Закрыть снимок"
 						data-testid="close-scan-modal-btn"
@@ -188,8 +190,8 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							display: "flex",
 							gap: "6px",
 							padding: "8px 16px",
-							backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
-							borderBottom: "1px solid var(--pc-border, #334155)",
+							backgroundColor: "var(--paper-soft)",
+							borderBottom: "1px solid var(--line)",
 							overflowX: "auto",
 						}}
 					>
@@ -204,24 +206,24 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 									style={{
 										padding: "6px 10px",
 										minHeight: "36px",
-										borderRadius: "6px",
-										border: `1px solid ${isActive ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
+										borderRadius: "8px",
+										border: `1px solid ${isActive ? "var(--primary)" : "var(--line)"}`,
 										backgroundColor: isActive
-											? "rgba(13, 148, 136, 0.2)"
-											: "var(--pc-surface, #1e293b)",
+											? "var(--primary-soft, rgba(13, 148, 136, 0.15))"
+											: "var(--paper)",
 										color: isActive
-											? "var(--pc-primary, #0d9488)"
-											: "var(--pc-text-muted, #94a3b8)",
+											? "var(--primary)"
+											: "var(--ink-muted)",
 										fontSize: "12px",
-										fontWeight: isActive ? 700 : 500,
+										fontWeight: isActive ? 600 : 500,
 										cursor: "pointer",
 										whiteSpace: "nowrap",
 										display: "flex",
 										alignItems: "center",
-										gap: "4px",
+										gap: "6px",
 									}}
 								>
-									<Scan size={12} />
+									<Scan size={14} />
 									<span>{s.modalityRu || s.titleRu}</span>
 								</button>
 							);
@@ -236,8 +238,8 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 						alignItems: "center",
 						justifyContent: "space-between",
 						padding: "8px 16px",
-						backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
-						borderBottom: "1px solid var(--pc-border, #334155)",
+						backgroundColor: "var(--paper)",
+						borderBottom: "1px solid var(--line)",
 						flexWrap: "wrap",
 						gap: "6px",
 					}}
@@ -257,10 +259,10 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							style={{
 								padding: "4px 8px",
 								minHeight: "36px",
-								borderRadius: "6px",
-								border: "1px solid var(--pc-border, #334155)",
-								backgroundColor: "var(--pc-surface, #1e293b)",
-								color: "var(--pc-text-main, var(--ink, #0f172a))",
+								borderRadius: "8px",
+								border: "1px solid var(--line)",
+								backgroundColor: "var(--paper-soft)",
+								color: "var(--ink)",
 								fontSize: "12px",
 								cursor: "pointer",
 								display: "flex",
@@ -280,10 +282,10 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							style={{
 								padding: "4px 8px",
 								minHeight: "36px",
-								borderRadius: "6px",
-								border: "1px solid var(--pc-border, #334155)",
-								backgroundColor: "var(--pc-surface, #1e293b)",
-								color: "var(--pc-text-main, var(--ink, #0f172a))",
+								borderRadius: "8px",
+								border: "1px solid var(--line)",
+								backgroundColor: "var(--paper-soft)",
+								color: "var(--ink)",
 								fontSize: "12px",
 								cursor: "pointer",
 								display: "flex",
@@ -303,12 +305,12 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 							style={{
 								padding: "4px 8px",
 								minHeight: "36px",
-								borderRadius: "6px",
-								border: `1px solid ${scanInvert ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
+								borderRadius: "8px",
+								border: `1px solid ${scanInvert ? "var(--primary)" : "var(--line)"}`,
 								backgroundColor: scanInvert
-									? "var(--pc-primary, #0d9488)"
-									: "var(--pc-surface, #1e293b)",
-								color: scanInvert ? "#fff" : "var(--pc-text-main, var(--ink, #0f172a))",
+									? "var(--primary)"
+									: "var(--paper-soft)",
+								color: scanInvert ? "#ffffff" : "var(--ink)",
 								fontSize: "12px",
 								cursor: "pointer",
 								display: "flex",
@@ -330,10 +332,10 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 						style={{
 							padding: "4px 8px",
 							minHeight: "36px",
-							borderRadius: "6px",
+							borderRadius: "8px",
 							border: "none",
 							backgroundColor: "transparent",
-							color: "var(--pc-text-muted, #94a3b8)",
+							color: "var(--ink-muted)",
 							fontSize: "12px",
 							fontWeight: 600,
 							cursor: "pointer",
@@ -347,7 +349,7 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 				<div
 					style={{
 						position: "relative",
-						backgroundColor: "#020617",
+						backgroundColor: "var(--paper-dark, #020617)",
 						height: "300px",
 						display: "flex",
 						alignItems: "center",
@@ -378,7 +380,7 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 								flexDirection: "column",
 								alignItems: "center",
 								gap: "8px",
-								color: "var(--pc-text-muted, #94a3b8)",
+								color: "var(--ink-muted)",
 							}}
 						>
 							<Camera size={36} style={{ opacity: 0.5 }} />
@@ -393,14 +395,14 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 				<div
 					style={{
 						padding: "12px 16px",
-						backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
-						borderTop: "1px solid var(--pc-border, #334155)",
+						backgroundColor: "var(--paper-soft)",
+						borderTop: "1px solid var(--line)",
 						fontSize: "12px",
 					}}
 				>
 					<strong
 						style={{
-							color: "var(--pc-primary, #0d9488)",
+							color: "var(--primary)",
 							display: "block",
 							marginBottom: "2px",
 						}}
@@ -410,7 +412,7 @@ export const PlanScanViewerModal: React.FC<PlanScanViewerModalProps> = ({
 					<p
 						style={{
 							margin: 0,
-							color: "var(--pc-text-main, var(--ink, #0f172a))",
+							color: "var(--ink)",
 							lineHeight: "1.4",
 						}}
 					>

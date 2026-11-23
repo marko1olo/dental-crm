@@ -6,9 +6,11 @@
  * парсинг рублей из разнородных локалей без галлюцинаций нулевых цен.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 /** Копейки не теряем и не выдумываем: 1500,505 ₽ не бывает. */
 export function roundToKopecks(value: number): number {
-	return Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
+	return Number.isFinite(value) ? kopecksToRubles(rublesToKopecks(value)) : 0;
 }
 
 /**

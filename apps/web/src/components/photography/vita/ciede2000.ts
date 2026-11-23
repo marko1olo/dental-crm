@@ -68,9 +68,9 @@ export function calculateShadeDelta(
 	}
 
 	const rawDeltaE00 = colorDistanceDeltaE2000(before.lab, after.lab);
-	const deltaE00 = Number.isFinite(rawDeltaE00) ? Math.round(rawDeltaE00 * 100) / 100 : 0;
+	const deltaE00 = Number.isFinite(rawDeltaE00) ? Number(rawDeltaE00.toFixed(2)) : 0;
 	const rawDeltaE76 = colorDistanceDeltaE76(before.lab, after.lab);
-	const deltaE76 = Number.isFinite(rawDeltaE76) ? Math.round(rawDeltaE76 * 100) / 100 : 0;
+	const deltaE76 = Number.isFinite(rawDeltaE76) ? Number(rawDeltaE76.toFixed(2)) : 0;
 	const rawDeltaL = after.lab.L - before.lab.L;
 	const deltaL = Number.isFinite(rawDeltaL) ? Math.round(rawDeltaL * 10) / 10 : 0;
 

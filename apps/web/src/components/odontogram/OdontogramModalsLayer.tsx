@@ -284,11 +284,31 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 				<div className="w-full mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
 						<PerioStudioModal
+							key={`perio-${patientId || "draft"}`}
 							patientId={patientId}
 							patientName={activePatient?.name}
 							organizationId={auth?.organizationId}
 							doctorId={activeDoctor?.id}
 							doctorName={activeDoctor?.name}
+							onClose={() => {
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(
+										new CustomEvent("dente:toggle-perio", { detail: { open: false } }),
+									);
+								}
+							}}
+							initialTeeth={teethData.map((t) => {
+								const s = String(t.state || "").toLowerCase();
+								const isMissing = s.includes("missing") || s.includes("extracted") || s.includes("absent") || s.includes("удален") || s.includes("отсутств") || (t as { isMissing?: boolean }).isMissing === true;
+								const isImplant = s.includes("implant") || s.includes("имплант") || (t as { isImplant?: boolean }).isImplant === true;
+								return {
+									toothNumber: t.toothNumber,
+									isMissing,
+									isImplant,
+									mobility: (t.mobility as 0 | 1 | 2 | 3) ?? 0,
+									furcation: (t.furcation as 0 | 1 | 2 | 3) ?? 0,
+								};
+							})}
 							onInsertToProtocol={(protocolText) => {
 								try {
 									window.dispatchEvent(

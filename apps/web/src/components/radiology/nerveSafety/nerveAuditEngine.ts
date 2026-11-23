@@ -24,6 +24,8 @@ import {
 	calculateApexToNerve3DDistance,
 } from "./nerveGeometryMath.js";
 
+const roundMm = (v: number): number => Number((Math.round(v * 100) * 1e-2).toFixed(2));
+
 export interface NerveSafetyAuditResult3D extends NerveSafetyAuditResult {
 	readonly apex3D: { readonly x: number; readonly y: number; readonly z: number };
 	readonly closestNervePoint3D: { readonly x: number; readonly y: number; readonly z: number };
@@ -70,9 +72,9 @@ export function auditMandibularNerveSafety(
 			: `БЕЗОПАСНО: запас до стенки канала ${netClearanceWall.toFixed(1)} мм (норма >= 2.0 мм)`;
 
 	return {
-		distanceToCanalCenterMm: Math.round(seg.distance * 100) / 100,
-		netClearanceToCanalWallMm: Math.round(netClearanceWall * 100) / 100,
-		netClearanceToSafetyCorridorMm: Math.round(netClearanceSafety * 100) / 100,
+		distanceToCanalCenterMm: roundMm(seg.distance),
+		netClearanceToCanalWallMm: roundMm(netClearanceWall),
+		netClearanceToSafetyCorridorMm: roundMm(netClearanceSafety),
 		safetyStatus: status, isDangerous: isDanger, isWarning, shouldTriggerAudioAlarm: isDanger,
 		closestImplantPoint: seg.closestPoint, closestNervePoint: { x: closestNerveX, y: closestNerveY },
 		clinicalMessageRu: message,
@@ -147,7 +149,7 @@ export function auditMandibularNerveSafety3D(
 			}
 		}
 	}
-	const netBodyClearance = Math.round((minBodyDist - canalRadiusMm - implantRadius) * 100) / 100;
+	const netBodyClearance = roundMm(minBodyDist - canalRadiusMm - implantRadius);
 	const worstClearance = Math.min(apexResult.netClearanceToCanalWallMm, netBodyClearance);
 	const isDanger = worstClearance < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
 	const isWarning = !isDanger && worstClearance < safetyMarginMm;
@@ -160,7 +162,7 @@ export function auditMandibularNerveSafety3D(
 
 	return {
 		distanceToCanalCenterMm: apexResult.distanceToCanalCenterMm, netClearanceToCanalWallMm: worstClearance,
-		netClearanceToSafetyCorridorMm: Math.round((worstClearance - safetyMarginMm) * 100) / 100,
+		netClearanceToSafetyCorridorMm: roundMm(worstClearance - safetyMarginMm),
 		safetyStatus: status, isDangerous: isDanger, isWarning, shouldTriggerAudioAlarm: false,
 		closestImplantPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)) },
 		closestNervePoint: { x: Number(apexResult.closestNervePoint.x.toFixed(2)), y: Number(apexResult.closestNervePoint.y.toFixed(2)) },
@@ -197,8 +199,8 @@ export function auditMaxillarySinusSafety(implantPose: CrossSectionImplantPose, 
 	const message = `Дно гайморовой пазухи: зазор ${netClearanceWall.toFixed(1)} мм`;
 
 	return {
-		distanceToCanalCenterMm: Math.round(netClearanceWall * 100) / 100, netClearanceToCanalWallMm: Math.round(netClearanceWall * 100) / 100,
-		netClearanceToSafetyCorridorMm: Math.round((netClearanceWall - sinusMarginMm) * 100) / 100,
+		distanceToCanalCenterMm: roundMm(netClearanceWall), netClearanceToCanalWallMm: roundMm(netClearanceWall),
+		netClearanceToSafetyCorridorMm: roundMm(netClearanceWall - sinusMarginMm),
 		safetyStatus: status, isDangerous: status === "danger", isWarning: status === "warning", shouldTriggerAudioAlarm: false,
 		closestImplantPoint: apex, closestNervePoint: { x: apex.x, y: sinusFloorY }, clinicalMessageRu: message,
 	};

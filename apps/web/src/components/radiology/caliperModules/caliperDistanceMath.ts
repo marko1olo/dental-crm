@@ -7,8 +7,8 @@ import type { AlveolarRidgeCaliperMeasurement, Point2D, Point3D } from "./calipe
 export function calculatePhysicalDistanceMm(
 	p1: Point2D, p2: Point2D, imageWidthPx = 1000, imageHeightPx = 1000, pixelSpacingMm = 0.1,
 ): number {
-	const dxPx = ((p2.x - p1.x) / 100) * imageWidthPx;
-	const dyPx = ((p2.y - p1.y) / 100) * imageHeightPx;
+	const dxPx = (p2.x - p1.x) * 0.01 * imageWidthPx;
+	const dyPx = (p2.y - p1.y) * 0.01 * imageHeightPx;
 	return Number((Math.hypot(dxPx, dyPx) * pixelSpacingMm).toFixed(2));
 }
 

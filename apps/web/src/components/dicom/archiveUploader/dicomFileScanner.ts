@@ -4,7 +4,7 @@
 
 import { logger } from "../../../utils/logger";
 import { isDicomEntry, isDicomdirEntry } from "../dicomArchiveFilter";
-import { getDicomImageLoader } from "./dicomStowUploader";
+import { getDicomImageLoader, type DicomWadoLoader } from "./dicomStowUploader";
 import type { ParsedDicomResult } from "./types";
 
 export async function processSingleDicomFile(file: File): Promise<ParsedDicomResult | null> {
@@ -20,7 +20,7 @@ export async function processSingleDicomFile(file: File): Promise<ParsedDicomRes
 					resolve(null);
 					return;
 				}
-				const loader = await getDicomImageLoader();
+				const loader: DicomWadoLoader = await getDicomImageLoader();
 				const imageId = loader.wadouri.fileManager.add(file);
 				resolve({ imageId, file });
 			} catch (e) {

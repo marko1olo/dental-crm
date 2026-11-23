@@ -3,11 +3,22 @@ import type { ServiceCatalogItem } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { BASELINE_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
-import type { CreateServicePayload } from "../pricesTab/types";
+import type { ClinicDashboardResponse, CreateServicePayload } from "../pricesTab/types";
+
+export interface MobilePricesAppLogicBag {
+	dashboard?: ClinicDashboardResponse | undefined;
+	serviceCategoryLabels?: Record<string, string> | undefined;
+	specialtyLabels?: Record<string, string> | undefined;
+	createServiceCatalogItem?: ((payload: CreateServicePayload) => Promise<unknown>) | undefined;
+	updateServiceCatalogItem?: ((id: string, payload: Partial<CreateServicePayload>) => Promise<unknown>) | undefined;
+	deleteServiceCatalogItem?: ((id: string) => Promise<unknown>) | undefined;
+	refreshDashboard?: (() => Promise<unknown>) | undefined;
+	loadClinicSettings?: (() => Promise<unknown>) | undefined;
+	[key: string]: unknown;
+}
 
 interface UseMobilePricesActionsParams {
-	// biome-ignore lint/suspicious/noExplicitAny: appLogic bag
-	appLogic: Record<string, any>;
+	appLogic: MobilePricesAppLogicBag;
 	rawCatalog: readonly ServiceCatalogItem[];
 }
 

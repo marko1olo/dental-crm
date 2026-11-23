@@ -36,9 +36,8 @@ export const SomaticFactorCard: React.FC<SomaticFactorCardProps> = ({ factor }) 
 						Противопоказания:
 					</span>
 					<ul className="list-disc list-inside text-xs text-rose-900 dark:text-rose-200 space-y-0.5 pl-0.5">
-						{factor.prohibitions.map((p, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: fixed prohibition item
-							<li key={idx} className="leading-tight">
+						{factor.prohibitions.map((p) => (
+							<li key={p} className="leading-tight">
 								{p}
 							</li>
 						))}
@@ -52,9 +51,8 @@ export const SomaticFactorCard: React.FC<SomaticFactorCardProps> = ({ factor }) 
 						Рекомендации у кресла:
 					</span>
 					<ul className="list-disc list-inside text-xs text-[var(--ink)] space-y-0.5 pl-0.5">
-						{factor.recommendations.map((r, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: fixed recommendation item
-							<li key={idx} className="leading-tight">
+						{factor.recommendations.map((r) => (
+							<li key={r} className="leading-tight">
 								{r}
 							</li>
 						))}

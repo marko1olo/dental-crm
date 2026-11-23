@@ -98,16 +98,15 @@ export const documentPayloadValidators: Record<
 	medical_intervention_refusal: validateMedicalInterventionRefusal,
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: generic state from document context
 export function validateDocumentPayloadForKind(
 	kind: string,
-	state: any,
+	state: DocumentState | Record<string, unknown> | null | undefined,
 ): DocumentValidationOutput {
 	const validator = documentPayloadValidators[kind];
 	if (!validator) {
 		return { valid: true };
 	}
-	const effectiveState = {
+	const effectiveState: DocumentState = {
 		requiredDocumentField,
 		confirmedDocumentLiteral,
 		...(state || {}),

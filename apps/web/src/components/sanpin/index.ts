@@ -15,7 +15,6 @@ export type { SterilizationBatchCycleModalProps as SanpinStudioModalProps } from
 export type SanpinStudioTab = "autoclave" | "kraft" | "cleaning";
 export * from "./DirectSanpinLauncher";
 export * from "./SanpinRegisters";
-export * from "./SanpinCleaningAndDisinfectionView";
 export * from "./SterilizationBatchCycleModal";
 export { UvAndCleaningTab as SanpinUvAndCleaningRegisterTab } from "./UvAndCleaningTab";
 export * from "./BactericidalRegisterTab";

@@ -240,15 +240,37 @@ export function computeCalibration(
 	};
 }
 
-export function resolveVisiographPixelScaleMm(deviceOrPresetId?: string | null): number {
-	if (!deviceOrPresetId) return DEFAULT_PIXEL_SCALE_MM;
-	const norm = deviceOrPresetId.toLowerCase().trim();
-	const found = DENTAL_SENSOR_PRESETS.find(
-		(p) => p.id === norm || norm.includes(p.id) || p.label.toLowerCase().includes(norm),
-	);
-	if (found) return found.pixelSizeMm;
-	if (norm.includes("6200") || norm.includes("0.019")) return 0.019;
-	return DEFAULT_PIXEL_SCALE_MM;
+export function resolveCalibratedPixelSpacing(
+	dicomPixelSpacing?: [number, number] | number | null | undefined,
+	deviceOrPresetId?: string | null,
+	fallbackScale = 0.04,
+): { pixelSpacingMm: number; isCalibrated: boolean; source: "dicom_tag" | "sensor_preset" | "fallback" } {
+	if (Array.isArray(dicomPixelSpacing) && dicomPixelSpacing.length >= 1) {
+		const val = dicomPixelSpacing[0];
+		if (typeof val === "number" && Number.isFinite(val) && val > 0) {
+			return { pixelSpacingMm: val, isCalibrated: true, source: "dicom_tag" };
+		}
+	}
+	if (typeof dicomPixelSpacing === "number" && Number.isFinite(dicomPixelSpacing) && dicomPixelSpacing > 0) {
+		return { pixelSpacingMm: dicomPixelSpacing, isCalibrated: true, source: "dicom_tag" };
+	}
+	if (deviceOrPresetId && deviceOrPresetId !== "none" && deviceOrPresetId !== "other") {
+		const norm = deviceOrPresetId.toLowerCase().trim();
+		const found = DENTAL_SENSOR_PRESETS.find(
+			(p) => p.id === norm || norm.includes(p.id) || p.label.toLowerCase().includes(norm),
+		);
+		if (found) {
+			return { pixelSpacingMm: found.pixelSizeMm, isCalibrated: true, source: "sensor_preset" };
+		}
+	}
+	return { pixelSpacingMm: fallbackScale, isCalibrated: false, source: "fallback" };
+}
+
+export function resolveVisiographPixelScaleMm(
+	deviceOrPresetId?: string | null,
+	dicomPixelSpacing?: [number, number] | number | null | undefined,
+): number {
+	return resolveCalibratedPixelSpacing(dicomPixelSpacing, deviceOrPresetId, DEFAULT_PIXEL_SCALE_MM).pixelSpacingMm;
 }
 
 export function classifyPeriapicalLesionData(

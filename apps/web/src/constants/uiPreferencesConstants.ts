@@ -212,8 +212,7 @@ export type AdminSecretSessionDomain =
 
 export type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const initialUiPreferences = {} as any;
+export const initialUiPreferences: UiPreferences = defaultUiPreferences;
 
 export const auth = {
 	denteClinicalReadHeaders: (

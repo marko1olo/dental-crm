@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { SAMPLE_PATIENT_RVG_URL } from "../types";
 import {
@@ -17,10 +17,13 @@ import {
 	testSensorConnection,
 } from "../UniversalSensorGateway";
 import type { RvgSensorDeviceOption } from "./types";
+import { VisiographPacsWatcherService } from "../../../services/hardware/visiographPacsWatcher";
+import { useWebsocket } from "../../../hooks/useWebsocket";
 
 export interface UseDirectRvgSensorAcquisitionProps {
 	readonly initialImageUrl?: string | undefined;
 	readonly isDemo: boolean;
+	readonly patientId?: string | undefined;
 	readonly onCaptureReady?: ((imageUrl: string) => void) | undefined;
 	readonly onTeethDetected?: ((teeth: string[], projection?: ProjectionAngleType | undefined) => void) | undefined;
 	readonly onClinicalNoteDetected?: ((note: string) => void) | undefined;
@@ -29,6 +32,7 @@ export interface UseDirectRvgSensorAcquisitionProps {
 export function useDirectRvgSensorAcquisition({
 	initialImageUrl,
 	isDemo,
+	patientId,
 	onCaptureReady,
 	onTeethDetected,
 	onClinicalNoteDetected,
@@ -54,6 +58,53 @@ export function useDirectRvgSensorAcquisition({
 	);
 	const [capturedImage, setCapturedImage] = useState<string>(defaultImage);
 	const [isCatalogOpen, setIsCatalogOpen] = useState<boolean>(false);
+
+	// WebSocket connection for real-time IMAGING_STUDY_INGESTED broadcast (<50ms auto-capture)
+	const wsUrl = useMemo(() => {
+		const configured = import.meta.env?.VITE_WS_URL;
+		if (configured) return configured;
+		if (typeof window === "undefined") return "";
+		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+		return `${protocol}//${window.location.host}/api/ws/schedule`;
+	}, []);
+
+	const { lastMessage } = useWebsocket(wsUrl);
+
+	// Ingest incoming study from WebSocket broker
+	useEffect(() => {
+		if (!lastMessage) return;
+		if (lastMessage.type === "IMAGING_STUDY_INGESTED") {
+			VisiographPacsWatcherService.handleWebSocketImagingIngested(lastMessage.payload);
+		}
+	}, [lastMessage]);
+
+	// Subscribe to Visiograph / PACS watcher events (both local folder watch & WebSocket ingested)
+	useEffect(() => {
+		VisiographPacsWatcherService.bindToActivePatient(patientId);
+		void VisiographPacsWatcherService.startWatching();
+
+		const unsubscribe = VisiographPacsWatcherService.onNewScanDetected((scanEvent) => {
+			if (patientId && scanEvent.patientId && scanEvent.patientId !== patientId) {
+				return;
+			}
+			const imgUrl = scanEvent.filePath || scanEvent.thumbnailDataUri;
+			if (imgUrl) {
+				setCapturedImage(imgUrl);
+				setSensorStatus("captured");
+				setAcquisitionProgress(100);
+				setSensorHealthStatus(`Снимок получен: ${scanEvent.fileName}`);
+				onCaptureReady?.(imgUrl);
+				if (scanEvent.toothCode) {
+					onTeethDetected?.([scanEvent.toothCode]);
+				}
+				showToast(`Снимок визиографа получен: ${scanEvent.fileName}`, "success");
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, [patientId, onCaptureReady, onTeethDetected]);
 
 	// Direct File Upload & Ingestion State
 	const fileInputRef = useRef<HTMLInputElement>(null);

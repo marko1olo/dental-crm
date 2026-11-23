@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
+import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { DentalLabOrderData } from "../../labMath";
 import { useAppStore } from "../../../../store/appStore";
@@ -32,7 +32,7 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 			let res: Response;
 			try {
 				res = await fetch("/api/lab/orders", {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 					...(controller ? { signal: controller.signal } : {}),
 				});
 			} finally {
@@ -47,7 +47,7 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 				throw new Error(`Ошибка загрузки нарядов ЗТЛ: ${res.status}`);
 			}
 			const data = await res.json();
-			const list = Array.isArray(data) ? data : [];
+			const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.orders) ? data.orders : []));
 			if (list.length === 0 && (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true")))) {
 				setOrders([...CANONICAL_DEMO_LAB_ORDERS]);
 				onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);

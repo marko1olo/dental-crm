@@ -21,7 +21,7 @@ export const TreatmentPlanHeroCard: React.FC<TreatmentPlanHeroCardProps> = ({
 	const progressPercent = currentPlan.progressPercent || 0;
 	const radius = 54;
 	const circumference = 2 * Math.PI * radius;
-	const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+	const strokeDashoffset = circumference - (progressPercent * 0.01) * circumference;
 
 	return (
 		<div className="pc-card pc-plan-hero-card" data-testid="pc-plan-progress-hero">

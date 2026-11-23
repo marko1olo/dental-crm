@@ -37,8 +37,6 @@ export function useStaffSettingsLogic({
 		dashboard,
 		newStaffName,
 		setNewStaffName,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		newStaffRole,
 		setNewStaffRole,
 		newStaffSpecialty,
 		setNewStaffSpecialty,

@@ -22,6 +22,7 @@ import {
 	normalizeApiUrl,
 } from "./cacheKeyAndTiming";
 import {
+	clearInFlightRequests,
 	deleteInFlightRequest,
 	getInFlightCount,
 	getInFlightRequest,
@@ -39,6 +40,7 @@ import {
 // ---------------------------------------------------------------------------
 
 let apiCacheInstance: MemoryLruCache<string, CachedApiResponse<unknown>> | null = null;
+let activeCacheScope: string | null = null;
 
 let statsHits = 0;
 let statsMisses = 0;
@@ -47,6 +49,43 @@ let statsInvalidations = 0;
 
 let ttlPruneInterval: ReturnType<typeof setInterval> | null = null;
 let ttlPruneVisibilityCleanup: (() => void) | null = null;
+
+/**
+ * Проверяет, является ли эндпоинт общенациональным нормативным справочником
+ * (не зависящим от тенанта/пользователя).
+ */
+export function isGlobalStatutoryUrl(rawUrl: string): boolean {
+	const normalized = normalizeApiUrl(rawUrl);
+	return (
+		normalized.startsWith("/api/clinical/804n") ||
+		normalized.startsWith("/api/clinical/nomenclature") ||
+		normalized.startsWith("/api/nomenclature") ||
+		normalized.startsWith("/api/clinical/icd10") ||
+		normalized.startsWith("/api/icd10") ||
+		normalized.startsWith("/api/emr/templates") ||
+		normalized.startsWith("/api/templates") ||
+		normalized.startsWith("/api/document-templates") ||
+		normalized.startsWith("/api/somatic-status") ||
+		normalized.startsWith("/api/pharmacology") ||
+		normalized.startsWith("/api/sanpin/references") ||
+		normalized.startsWith("/api/clinical/rules")
+	);
+}
+
+/**
+ * Формирует изолированный ключ кэша с префиксом активной области [scope:XYZ].
+ * Общенациональные нормативные каталоги сохраняются без префикса.
+ */
+export function buildScopedCacheKey(rawUrl: string, scopeKey: string | null = activeCacheScope): string {
+	const normalized = normalizeApiUrl(rawUrl);
+	if (isGlobalStatutoryUrl(normalized)) {
+		return normalized;
+	}
+	if (scopeKey) {
+		return `[scope:${scopeKey}]${normalized}`;
+	}
+	return normalized;
+}
 
 /**
  * Запускает периодическую фоновую очистку просроченных записей по TTL.
@@ -136,7 +175,7 @@ export function getApiCache(): MemoryLruCache<string, CachedApiResponse<unknown>
  * Получает запись из оперативной памяти, если она существует и актуальна.
  */
 export function getCachedApiResponse<T = unknown>(url: string): CachedApiResponse<T> | undefined {
-	const key = normalizeApiUrl(url);
+	const key = buildScopedCacheKey(url);
 	const entry = getApiCache().get(key);
 	if (entry) {
 		statsHits++;
@@ -151,10 +190,11 @@ export function getCachedApiResponse<T = unknown>(url: string): CachedApiRespons
 export function setCachedApiResponse<T = unknown>(
 	url: string,
 	data: T,
-	meta?: { status?: number; statusText?: string; headers?: Record<string, string>; ttlMs?: number | null },
+	meta?: { status?: number | undefined; statusText?: string | undefined; headers?: Record<string, string> | undefined; ttlMs?: number | null | undefined } | undefined,
 ): void {
-	const key = normalizeApiUrl(url);
-	const rule = matchCatalogRule(key);
+	const normalizedUrl = normalizeApiUrl(url);
+	const scopedKey = buildScopedCacheKey(url);
+	const rule = matchCatalogRule(normalizedUrl);
 	const ttlMs: number | null =
 		meta?.ttlMs !== undefined
 			? meta.ttlMs
@@ -172,17 +212,17 @@ export function setCachedApiResponse<T = unknown>(
 		status: meta?.status ?? 200,
 		statusText: meta?.statusText ?? "OK",
 		headers: meta?.headers ?? { "content-type": "application/json; charset=utf-8" },
-		url: key,
+		url: scopedKey,
 		timestamp: Date.now(),
 		ttlMs,
 	};
 
-	getApiCache().set(key, entry as CachedApiResponse<unknown>, ttlMs);
-	void saveCatalogToPersistentStorage(key, entry);
+	getApiCache().set(scopedKey, entry as CachedApiResponse<unknown>, ttlMs);
+	void saveCatalogToPersistentStorage(scopedKey, entry);
 
 	// Synchronize dedicated RAM L1 pointers and persistent mirror for statutory reference catalogs
 	if (Array.isArray(data) && data.length > 0) {
-		if (key === "/api/clinical/804n" || key === "/api/clinical/nomenclature") {
+		if (normalizedUrl === "/api/clinical/804n" || normalizedUrl === "/api/clinical/nomenclature") {
 			void import("../../services/storage/statutoryCatalogCache")
 				.then((m) => {
 					m.setStatutoryCatalogInRam("804n", data as unknown[]);
@@ -193,7 +233,7 @@ export function setCachedApiResponse<T = unknown>(
 					void m.cacheStatutoryCatalog("catalog_804n", data).catch(() => {});
 				})
 				.catch(() => {});
-		} else if (key === "/api/clinical/icd10" || key === "/api/icd10") {
+		} else if (normalizedUrl === "/api/clinical/icd10" || normalizedUrl === "/api/icd10") {
 			void import("../../services/storage/statutoryCatalogCache")
 				.then((m) => {
 					m.setStatutoryCatalogInRam("icd10", data as unknown[]);
@@ -204,7 +244,7 @@ export function setCachedApiResponse<T = unknown>(
 					void m.cacheStatutoryCatalog("catalog_icd10", data).catch(() => {});
 				})
 				.catch(() => {});
-		} else if (key === "/api/emr/templates" || key === "/api/templates") {
+		} else if (normalizedUrl === "/api/emr/templates" || normalizedUrl === "/api/templates") {
 			void import("../../services/storage/statutoryCatalogCache")
 				.then((m) => {
 					m.setStatutoryCatalogInRam("templates", data as unknown[]);
@@ -239,7 +279,8 @@ export function invalidateApiCache(patternOrUrl?: string | RegExp): number {
 		: patternOrUrl;
 
 	for (const key of cache.keys()) {
-		if (regex.test(key)) {
+		const unscopedKey = key.replace(/^\[scope:[^\]]+\]/, "");
+		if (regex.test(key) || regex.test(unscopedKey)) {
 			if (cache.delete(key)) {
 				removedCount++;
 			}
@@ -256,6 +297,49 @@ export function invalidateApiCache(patternOrUrl?: string | RegExp): number {
  */
 export function clearApiCache(): void {
 	invalidateApiCache();
+}
+
+/**
+ * Устанавливает текущий ключ области изоляции кэша (tenant / clinic / session).
+ * При смене области очищает кэш API и очередь in-flight запросов для предотвращения межтенантной утечки.
+ */
+export function setApiCacheScope(scopeKey: string | null): void {
+	if (scopeKey !== activeCacheScope) {
+		clearApiCache();
+		clearInFlightRequests();
+		activeCacheScope = scopeKey;
+	}
+}
+
+/**
+ * Возвращает текущий ключ области изоляции кэша.
+ */
+export function getApiCacheScope(): string | null {
+	return activeCacheScope;
+}
+
+/**
+ * Глубоко клонирует кэшированные данные, чтобы мутации вызывающего кода не портили записи в RAM.
+ */
+function cloneCachedPayload<T>(value: T): T {
+	if (value === null || value === undefined || typeof value !== "object") {
+		return value;
+	}
+	try {
+		if (typeof globalThis.structuredClone === "function") {
+			return globalThis.structuredClone(value);
+		}
+	} catch (cloneErr) {
+		// Fallback to JSON clone if a non-cloneable property slipped into cached object
+		void cloneErr;
+	}
+	try {
+		return JSON.parse(JSON.stringify(value)) as T;
+	} catch (jsonErr) {
+		// Preserve original reference only if value is unserializable
+		void jsonErr;
+		return value;
+	}
 }
 
 /**
@@ -303,7 +387,7 @@ export function createResponseFromCachedEntry<T>(entry: CachedApiResponse<T>): R
 	});
 
 	if (isObjectData) {
-		const customJson = async () => entry.data;
+		const customJson = async () => cloneCachedPayload(entry.data);
 		res.json = customJson;
 		let cachedText: string | null = null;
 		const customText = async () => {
@@ -334,7 +418,8 @@ export async function cachedApiFetch<T = unknown>(
 	init?: RequestInit,
 	options?: CachedFetchOptions,
 ): Promise<T> {
-	const cacheKey = options?.cacheKey ?? normalizeApiUrl(input);
+	const rawUrl = options?.cacheKey ?? normalizeApiUrl(input);
+	const scopedKey = buildScopedCacheKey(rawUrl);
 	const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
 
 	const cacheControl = init?.cache ?? (input instanceof Request ? input.cache : undefined);
@@ -342,25 +427,26 @@ export async function cachedApiFetch<T = unknown>(
 
 	// 1. Проверяем кэш, если не запрошен принудительный обход
 	if (!isBypassed && !options?.forceRefresh && method === "GET") {
-		const cached = getCachedApiResponse<T>(cacheKey);
+		const cached = getCachedApiResponse<T>(rawUrl);
 		if (cached) {
-			return cached.data;
+			return cloneCachedPayload(cached.data);
 		}
 	}
 
-	// 2. Защита от Cache Stampede (дедупликация параллельных запросов в полете)
-	if (method === "GET" && hasInFlightRequest(cacheKey) && !options?.forceRefresh) {
+	// 2. Защита от Cache Stampede (дедупликация параллельных запросов в полете с изоляцией по скоупу)
+	if (method === "GET" && hasInFlightRequest(scopedKey) && !options?.forceRefresh) {
 		statsCoalesced++;
-		return getInFlightRequest<T>(cacheKey) as Promise<T>;
+		return getInFlightRequest<T>(scopedKey) as Promise<T>;
 	}
 
 	// 3. Формируем сетевой запрос
 	statsMisses++;
+	const requestScope = activeCacheScope;
 	const fetchPromise = (async () => {
 		const response = await fetch(input, init);
 
 		if (!response.ok) {
-			throw new Error(`API error ${response.status} ${response.statusText} for ${cacheKey}`);
+			throw new Error(`API error ${response.status} ${response.statusText} for ${rawUrl}`);
 		}
 
 		const contentType = response.headers.get("content-type") || "";
@@ -371,9 +457,9 @@ export async function cachedApiFetch<T = unknown>(
 			data = (await response.text()) as unknown as T;
 		}
 
-		// Сохраняем только при успехе и если кэш не обойден
-		if (!isBypassed && method === "GET") {
-			setCachedApiResponse(cacheKey, data, {
+		// Сохраняем только при успехе, если кэш не обойден и scope не сменился за время запроса
+		if (!isBypassed && method === "GET" && activeCacheScope === requestScope) {
+			setCachedApiResponse(rawUrl, cloneCachedPayload(data), {
 				status: response.status,
 				statusText: response.statusText,
 				headers: headersToRecord(response.headers),
@@ -385,14 +471,14 @@ export async function cachedApiFetch<T = unknown>(
 	})();
 
 	if (method === "GET") {
-		setInFlightRequest(cacheKey, fetchPromise);
+		setInFlightRequest(scopedKey, fetchPromise);
 	}
 
 	try {
 		return await fetchPromise;
 	} finally {
 		if (method === "GET") {
-			deleteInFlightRequest(cacheKey);
+			deleteInFlightRequest(scopedKey);
 		}
 	}
 }
@@ -405,14 +491,14 @@ export async function cachedApiFetchResponse(
 	init?: RequestInit,
 	options?: CachedFetchOptions,
 ): Promise<Response> {
-	const cacheKey = options?.cacheKey ?? normalizeApiUrl(input);
+	const rawUrl = options?.cacheKey ?? normalizeApiUrl(input);
 	const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
 
 	const cacheControl = init?.cache ?? (input instanceof Request ? input.cache : undefined);
 	const isBypassed = options?.bypassCache || cacheControl === "no-store" || cacheControl === "no-cache";
 
 	if (!isBypassed && !options?.forceRefresh && method === "GET") {
-		const cached = getCachedApiResponse(cacheKey);
+		const cached = getCachedApiResponse(rawUrl);
 		if (cached) {
 			return createResponseFromCachedEntry(cached);
 		}
@@ -422,7 +508,7 @@ export async function cachedApiFetchResponse(
 	const data = await cachedApiFetch(input, init, options);
 
 	// Возвращаем Response
-	const cached = getCachedApiResponse(cacheKey);
+	const cached = getCachedApiResponse(rawUrl);
 	if (cached) {
 		return createResponseFromCachedEntry(cached);
 	}

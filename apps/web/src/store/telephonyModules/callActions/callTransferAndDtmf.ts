@@ -57,7 +57,11 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
 			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
 			if (nextL1.state === "idle" && nextL2.state === "idle") {
-				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+				try {
+					getSharedTelephonyAudioStreamManager().dispose();
+				} catch (err) {
+					logger.warn("[Telephony] Failed to dispose audio stream manager on endCall:", err);
+				}
 			}
 
 			set({
@@ -181,10 +185,20 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 						: item,
 				);
 
+				const nextL1 = activeLineId === 1 ? initialLine1 : line1;
+				const nextL2 = activeLineId === 2 ? initialLine2 : line2;
+				if (nextL1.state === "idle" && nextL2.state === "idle") {
+					try {
+						getSharedTelephonyAudioStreamManager().dispose();
+					} catch (err) {
+						logger.warn("[Telephony] Failed to dispose audio stream manager on blind transfer:", err);
+					}
+				}
+
 				set({
 					activeCall: null,
-					line1: activeLineId === 1 ? initialLine1 : line1,
-					line2: activeLineId === 2 ? initialLine2 : line2,
+					line1: nextL1,
+					line2: nextL2,
 					callHistory: updatedHistory,
 					transferState: {
 						isTransferring: true,

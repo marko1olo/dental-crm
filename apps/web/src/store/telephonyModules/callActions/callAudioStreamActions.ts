@@ -103,10 +103,20 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 					: item,
 			);
 
+			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
+			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
+			if (nextL1.state === "idle" && nextL2.state === "idle") {
+				try {
+					getSharedTelephonyAudioStreamManager().dispose();
+				} catch (err) {
+					logger.warn("[Telephony] Failed to dispose audio stream manager on accept:", err);
+				}
+			}
+
 			set({
 				activeCall: null,
-				line1: activeLineId === 1 ? initialLine1 : line1,
-				line2: activeLineId === 2 ? initialLine2 : line2,
+				line1: nextL1,
+				line2: nextL2,
 				callHistory: updatedHistory,
 				transferState: initialTransferState,
 			});
@@ -129,9 +139,9 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
 			if (nextL1.state === "idle" && nextL2.state === "idle") {
 				try {
-					getSharedTelephonyAudioStreamManager().detachRemoteAudio();
+					getSharedTelephonyAudioStreamManager().dispose();
 				} catch (err) {
-					logger.warn("[Telephony] Failed to detach remote audio on reject:", err);
+					logger.warn("[Telephony] Failed to dispose audio stream manager on reject:", err);
 				}
 			}
 
@@ -161,9 +171,9 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
 			if (nextL1.state === "idle" && nextL2.state === "idle") {
 				try {
-					getSharedTelephonyAudioStreamManager().detachRemoteAudio();
+					getSharedTelephonyAudioStreamManager().dispose();
 				} catch (err) {
-					logger.warn("[Telephony] Failed to detach remote audio on dismiss:", err);
+					logger.warn("[Telephony] Failed to dispose audio stream manager on dismiss:", err);
 				}
 			}
 

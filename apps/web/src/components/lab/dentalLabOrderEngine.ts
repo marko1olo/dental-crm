@@ -10,6 +10,4 @@ export * from "./orderEngine/labDateUtils";
 export * from "./orderEngine/labCollisionGuard";
 export * from "./orderEngine/labDeadlineAlertTypes";
 export * from "./orderEngine/labDeadlineAlertEngine";
-export * from "./orderEngine/labOrderRecordTypes";
 export * from "./orderEngine/labPartialDeliveryEngine";
-export * from "./orderEngine/labOrderRecordFactory";

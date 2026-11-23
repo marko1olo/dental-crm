@@ -60,7 +60,19 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
 	}, [effectiveVisitNoteForm, transcript, debounceMs, canSave, computeSignature, executeSave, visitId, activeVisit, organizationId]);
 
-	// Mandate 8e emergency unload flush: useVisitSaveUnloadFlush performs flushPendingStorageWrites(), flushPendingOfflineDrafts(), and navigator.sendBeacon
+	// Фоновый автосейв черновика при наличии несохраненных изменений
+	useEffect(() => {
+		if (!canSave) return;
+		const heartbeatInterval = setInterval(() => {
+			const currentSig = computeSignature(currentFormRef.current, currentTranscriptRef.current);
+			if (currentSig && currentSig !== lastSavedSignatureRef.current) {
+				void executeSave({ silent: true });
+			}
+		}, 20_000);
+		return () => clearInterval(heartbeatInterval);
+	}, [canSave, computeSignature, executeSave]);
+
+	// Unload flush: useVisitSaveUnloadFlush performs flushPendingStorageWrites(), flushPendingOfflineDrafts(), and navigator.sendBeacon
 	useVisitSaveUnloadFlush({ isMountedRef, debounceTimerRef, currentFormRef, currentTranscriptRef, visitId, patientId, organizationId, activeVisitId: activeVisit?.id, activeVisitPatientId: activeVisit?.patientId, activeVisitOrgId: activeVisit?.organizationId, activeVisitRevision: activeVisit?.revision, selectedSpecialty, executeSave });
 
 	const flushPendingSave = useCallback(async () => {

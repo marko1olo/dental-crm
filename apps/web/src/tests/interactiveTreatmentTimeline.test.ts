@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
+import { kopecksToRubles } from "@dental/shared";
 import type { PatientTreatmentPlanStage } from "../components/portal/patientPortalTypes.js";
 
 describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ Suite", () => {
@@ -56,7 +57,7 @@ describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ 
 
 		const sumProceduresKopecks = stage.procedures.reduce((acc, p) => acc + p.totalKopecks, 0);
 		assert.equal(sumProceduresKopecks, stage.costKopecks, "Procedure total kopecks must equal stage cost");
-		assert.equal(stage.costKopecks / 100, stage.costRub, "Kopecks to Rub conversion must be exact");
+		assert.equal(kopecksToRubles(stage.costKopecks), stage.costRub, "Kopecks to Rub conversion must be exact");
 	});
 
 	it("Statutory Informed Consent model fulfills Federal Law 323-FZ Article 20 requirements", () => {

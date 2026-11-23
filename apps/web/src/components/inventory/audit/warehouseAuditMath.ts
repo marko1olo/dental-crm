@@ -28,7 +28,7 @@ export function numberToRussianWordsKopecks(kopecks: number): string {
 	const hundredsMap = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
 
 	function tripletToWords(num: number, isFemale: boolean): string {
-		const h = Math.floor(num / 100);
+		const h = Math.floor(kopecksToRubles(num));
 		const t = Math.floor((num % 100) / 10);
 		const o = num % 10;
 		const parts: string[] = [];

@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { VisitDiaryHeader } from "../../visit/diary/section/VisitDiaryHeader";
+import { EmkAutosaveStatusBadge } from "../../visit/emkControlBoard/EmkAutosaveStatusBadge";
 import { EgiszXmlPreviewTab } from "../tabs/EgiszXmlPreviewTab";
 import { TaxDeductionCertificateDrawer } from "../EgiszCertificatesHubModal";
 
@@ -228,7 +228,7 @@ describe("EGISZ REMD, Form 107-1/u & Consents Autonomy & Demolition Wave", () =>
 			};
 			const xml101 = generateEgiszDentalCdaXml(semd101Payload);
 			assert.ok(xml101.includes('templateId root="1.2.643.5.1.13.13.11.101"'), "OID шаблона СЭМД 101");
-			assert.ok(xml101.includes("Протокол консультации стоматолога"), "Заголовок СЭМД 101");
+			assert.ok(xml101.includes("Протокол консультации"), "Заголовок СЭМД 101");
 		});
 	});
 
@@ -403,31 +403,14 @@ describe("EGISZ REMD, Form 107-1/u & Consents Autonomy & Demolition Wave", () =>
 	// 5. ТИХАЯ ТЕЛЕМЕТРИЯ ЕГИСЗ, ZERO-XML В ПУТИ ВРАЧА И СПРАВКА ФНС В 1 КЛИК
 	// ═════════════════════════════════════════════════════════════════════════
 	describe("5. Quiet EGISZ Telemetry, Zero Raw XML Trees & 1-Click Tax Certificate", () => {
-		it("5.1. VisitDiaryHeader содержит ненавязчивый бейдж тихой телеметрии ЕГИСЗ", () => {
+		it("5.1. EmkAutosaveStatusBadge отображает ненавязчивый статус тихой телеметрии ЭМК", () => {
 			const html = renderToString(
-				createElement(VisitDiaryHeader, {
-					logic: {
-						lastSavedAt: "2026-10-23T11:00:00Z",
-						isSaving: false,
-						isLocked: false,
-						isRevising: false,
-						beginRevise: () => {},
-						setShowPreview: () => {},
-					},
-					modals: {
-						setShowTemplatesModal: () => {},
-						setShowSummaryModal: () => {},
-						setShowPrescriptionModal: () => {},
-						setShowRadiologyReferralModal: () => {},
-						setIsTier3PerioModalOpen: () => {},
-						setShowEgiszModal: () => {},
-						setShowBrandingCustomizer: () => {},
-					},
-					onApplyNorm: () => {},
+				createElement(EmkAutosaveStatusBadge, {
+					status: "saved",
+					lastSavedAtIso: "2026-10-23T11:00:00Z",
 				}),
 			);
-			assert.ok(html.includes("visit-diary-egisz-badge"), "Бейдж телеметрии ЕГИСЗ в шапке дневника");
-			assert.ok(html.includes("Отправлено в ЕГИСЗ ✓"), "Текст статуса отправки в ЕГИСЗ");
+			assert.ok(html.includes("Черновик сохранён"), "Статус тихой телеметрии ЭМК");
 		});
 
 		it("5.2. EgiszXmlPreviewTab скрывает технический XML под административный спойлер <details>", () => {

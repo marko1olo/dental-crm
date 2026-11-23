@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { LabOrderDetailsDrawer } from "../ordersView/LabOrderDetailsDrawer";
+import { DentalLabStudioModal } from "../DentalLabStudioModal";
+import { LabTrackingDrawer } from "../LabTrackingDrawer";
 import type { DentalLabOrderData } from "../dentalLabDefinitions";
 
-describe("LabOrderDetailsDrawer — Warranty Passport Integration for Installed Orders (Defect 5)", () => {
+describe("DentalLabStudioModal & LabTrackingDrawer — Warranty Passport Integration for Installed Orders (SSOT)", () => {
 	const sampleInstalledOrder: DentalLabOrderData = {
 		id: "0192e2b0-8451-789a-bcde-000000000001",
 		patientId: "patient-1",
@@ -25,24 +26,18 @@ describe("LabOrderDetailsDrawer — Warranty Passport Integration for Installed 
 		createdAt: "2026-11-20T10:00:00Z",
 	};
 
-	it("рендерит кнопку «Гарантийный паспорт» для наряда со статусом installed при открытой шторке", () => {
+	it("рендерит кнопку «Гарантийный паспорт» в DentalLabStudioModal для наряда со статусом installed", () => {
 		const html = renderToString(
-			<LabOrderDetailsDrawer
-				isOrderDrawerOpen={true}
-				onCloseOrderDrawer={() => {}}
-				selectedOrderForEdit={sampleInstalledOrder}
-				isPriceMatrixModalOpen={false}
-				onClosePriceMatrixModal={() => {}}
-				onSelectWorkType={() => {}}
-				view3DScanOrder={null}
-				onClose3DScanViewer={() => {}}
-				onOrderSaved={() => {}}
+			<DentalLabStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				editingOrder={sampleInstalledOrder}
 			/>,
 		);
 
 		assert.ok(
 			html.includes("Гарантийный паспорт"),
-			"Кнопка «Гарантийный паспорт» должна присутствовать в разметке шторки для наряда со статусом installed",
+			"Кнопка «Гарантийный паспорт» должна присутствовать в шапке DentalLabStudioModal для наряда со статусом installed",
 		);
 		assert.ok(
 			html.includes("lab-order-installed-warranty-passport-btn"),
@@ -52,17 +47,11 @@ describe("LabOrderDetailsDrawer — Warranty Passport Integration for Installed 
 
 	it("рендерит кнопку «Гарантийный паспорт» в футере LabTrackingDrawer при трекинге установленного наряда", () => {
 		const html = renderToString(
-			<LabOrderDetailsDrawer
-				isTrackingDrawerOpen={true}
-				onCloseTrackingDrawer={() => {}}
-				selectedOrderForTracking={sampleInstalledOrder}
-				selectedOrderForEdit={null}
-				isPriceMatrixModalOpen={false}
-				onClosePriceMatrixModal={() => {}}
-				onSelectWorkType={() => {}}
-				view3DScanOrder={null}
-				onClose3DScanViewer={() => {}}
-				onOrderSaved={() => {}}
+			<LabTrackingDrawer
+				isOpen={true}
+				onClose={() => {}}
+				order={sampleInstalledOrder}
+				onOpenWarrantyPassport={() => {}}
 			/>,
 		);
 
@@ -86,17 +75,11 @@ describe("LabOrderDetailsDrawer — Warranty Passport Integration for Installed 
 		};
 
 		const html = renderToString(
-			<LabOrderDetailsDrawer
-				isTrackingDrawerOpen={true}
-				onCloseTrackingDrawer={() => {}}
-				selectedOrderForTracking={inProgressOrder}
-				selectedOrderForEdit={null}
-				isPriceMatrixModalOpen={false}
-				onClosePriceMatrixModal={() => {}}
-				onSelectWorkType={() => {}}
-				view3DScanOrder={null}
-				onClose3DScanViewer={() => {}}
-				onOrderSaved={() => {}}
+			<LabTrackingDrawer
+				isOpen={true}
+				onClose={() => {}}
+				order={inProgressOrder}
+				onOpenWarrantyPassport={() => {}}
 			/>,
 		);
 

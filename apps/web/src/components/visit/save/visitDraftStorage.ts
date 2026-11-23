@@ -56,6 +56,17 @@ export function saveIsolatedVisitDraft<T = VisitNoteForm>(
 	}
 }
 
+export function clearIsolatedVisitDraft(visitId: string): void {
+	if (!visitId || visitId === "no-active-visit") return;
+	try {
+		if (typeof localStorage !== "undefined") {
+			localStorage.removeItem(getIsolatedVisitDraftKey(visitId));
+		}
+	} catch {
+		// Non-blocking
+	}
+}
+
 export function verifyZeroDraftCollision(visitIdA: string, visitIdB: string): boolean {
 	const keyA = getIsolatedVisitDraftKey(visitIdA);
 	const keyB = getIsolatedVisitDraftKey(visitIdB);

@@ -24,25 +24,16 @@ export function GuestLabPortalCourierWaybill({
 
 	return (
 		<>
-			<div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+			<div className="mb-4 flex justify-between items-center flex-wrap gap-2">
 				<button
 					type="button"
 					data-testid="toggle-courier-waybill-btn"
 					onClick={onToggleWaybill}
-					className="secondary-button"
-					style={{
-						minHeight: "44px",
-						padding: "8px 14px",
-						display: "flex",
-						alignItems: "center",
-						gap: "8px",
-						fontWeight: 600,
-						fontSize: "13px",
-						borderRadius: "8px",
-						background: showWaybill ? "var(--teal-soft)" : undefined,
-						borderColor: showWaybill ? "var(--teal)" : undefined,
-						color: showWaybill ? "var(--teal)" : undefined,
-					}}
+					className={`min-h-[44px] h-11 px-4 text-xs font-semibold rounded-xl border inline-flex items-center gap-2 cursor-pointer transition-colors shrink-0 ${
+						showWaybill
+							? "border-[var(--primary)] text-[var(--primary)] bg-[var(--paper-soft)]"
+							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+					}`}
 				>
 					<FileText size={16} />
 					<span>{showWaybill ? "Скрыть накладную курьера" : "Накладная курьеру (QR + Штрихкод)"}</span>
@@ -53,8 +44,7 @@ export function GuestLabPortalCourierWaybill({
 						type="button"
 						data-testid="courier-waybill-print-btn"
 						onClick={() => window.print()}
-						className="primary-button"
-						style={{ minHeight: "44px", padding: "8px 16px", display: "flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px", borderRadius: "8px" }}
+						className="min-h-[44px] h-11 px-4 text-xs font-semibold rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center gap-2 shadow-sm cursor-pointer transition-colors shrink-0"
 					>
 						<Printer size={16} />
 						<span>Распечатать накладную</span>
@@ -63,36 +53,36 @@ export function GuestLabPortalCourierWaybill({
 			</div>
 
 			{showWaybill && (
-				<div data-testid="courier-waybill-card" style={{ border: "2px dashed var(--teal)", borderRadius: "12px", padding: "20px", background: "var(--paper)", marginBottom: "16px", textAlign: "left" }}>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--line)", paddingBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+				<div data-testid="courier-waybill-card" className="border-2 border-dashed border-[var(--primary)]/50 rounded-2xl p-5 bg-[var(--paper)] mb-4 text-left shadow-xs">
+					<div className="flex justify-between items-start mb-4 border-b border-[var(--line)] pb-3 flex-wrap gap-2.5">
 						<div>
-							<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal)", fontWeight: 700, fontSize: "12px" }}>
+							<div className="flex items-center gap-1.5 text-[var(--primary)] font-bold text-xs">
 								<Truck size={16} /><span>Курьерская накладная передачи в клинику</span>
 							</div>
-							<h4 style={{ margin: "4px 0 0 0", fontSize: "18px", fontWeight: 800 }}>{orderNumberDisplay}</h4>
-							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
-								Заказ № {(order.id ?? "").substring(0, 8).toUpperCase()} · Пациент: <strong>{order.patientFullName || "Пациент не указан"}</strong>
+							<h4 className="m-0 mt-1 text-lg font-bold text-[var(--ink)] tracking-tight">{orderNumberDisplay}</h4>
+							<p className="m-0 mt-0.5 text-xs text-[var(--ink-muted)]">
+								Заказ № {(order.id ?? "").substring(0, 8).toUpperCase()} · Пациент: <strong className="text-[var(--ink)]">{order.patientFullName || "Пациент не указан"}</strong>
 							</p>
 						</div>
-						<span style={{ padding: "4px 8px", borderRadius: "6px", background: "var(--teal-soft)", color: "var(--teal)", fontWeight: 700, fontSize: "11px" }}>
+						<span className="px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--primary)] font-bold text-[11px]">
 							{statusLabel}
 						</span>
 					</div>
 
-					<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", alignItems: "center", marginBottom: "16px" }}>
-						<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-							<div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Штрихкод для сканера регистратуры (Code 128):</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center mb-4">
+						<div className="flex flex-col gap-1.5">
+							<div className="text-xs text-[var(--ink-muted)]">Штрихкод для сканера регистратуры (Code 128):</div>
 							<div data-testid="courier-waybill-barcode" className="guest-portal-code-plate" dangerouslySetInnerHTML={{ __html: generateBarcodeSvg(orderNumberDisplay) }} />
 						</div>
-						<div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" }}>
-							<div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>QR-код для быстрой отметки курьера/приёмки:</div>
+						<div className="flex flex-col gap-1.5 items-start">
+							<div className="text-xs text-[var(--ink-muted)]">QR-код для быстрой отметки курьера/приёмки:</div>
 							<div data-testid="courier-waybill-qr" className="guest-portal-code-plate" dangerouslySetInnerHTML={{ __html: generateQrCodeSvg(`DENTE-ZTL-ORDER:${order.id}:${order.patientFullName || ""}:${order.toothFdi || ""}`) }} />
 						</div>
 					</div>
 
-					<div style={{ fontSize: "12px", color: "var(--text-secondary)", borderTop: "1px solid var(--line)", paddingTop: "10px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-						<div>Зуб (FDI): <strong>{order.toothFdi || "—"}</strong> · Материал: <strong>{materialDisplay}</strong> · Цвет: <strong>{order.colorVita || "—"}</strong></div>
-						<div>Срок сдачи: <strong>{dueDateDisplay}</strong> · Создан: {createdDisplay}</div>
+					<div className="text-xs text-[var(--ink-muted)] border-t border-[var(--line)] pt-2.5 flex justify-between flex-wrap gap-2">
+						<div>Зуб (FDI): <strong className="text-[var(--ink)]">{order.toothFdi || "—"}</strong> · Материал: <strong className="text-[var(--ink)]">{materialDisplay}</strong> · Цвет: <strong className="text-[var(--ink)]">{order.colorVita || "—"}</strong></div>
+						<div>Срок сдачи: <strong className="text-[var(--ink)]">{dueDateDisplay}</strong> · Создан: {createdDisplay}</div>
 					</div>
 				</div>
 			)}

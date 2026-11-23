@@ -1,5 +1,5 @@
 import { roundToKopecks } from "../completedServicesPlan";
-import { rublesToKopecks } from "@dental/shared";
+import { calculatePercentDiscountKopecks, kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
 import type {
 	ClinicalVisitCompletionInput,
@@ -18,17 +18,24 @@ export function assembleClinicalVisitEstimate(
 		allItems.reduce((sum, item) => sum + (item.totalRub ?? item.priceRub * item.quantity), 0),
 	);
 	const discountPercent = Math.min(100, Math.max(0, input.discountPercent ?? 0));
-	const totalDiscount = roundToKopecks(totalGross * (discountPercent / 100));
-	const totalNet = Math.max(0, roundToKopecks(totalGross - totalDiscount));
-	const totalNetKop = rublesToKopecks(totalNet);
+	const totalGrossKop = rublesToKopecks(totalGross);
+	const totalDiscountKop = calculatePercentDiscountKopecks(totalGrossKop, discountPercent);
+	const totalDiscount = kopecksToRub(totalDiscountKop);
+	const totalNetKop = Math.max(0, totalGrossKop - totalDiscountKop);
+	const totalNet = kopecksToRub(totalNetKop);
 
 	const itemsWithDiscount = allItems.map((item) => {
-		const itemGross = item.totalRub ?? item.priceRub * item.quantity;
-		const itemDiscount = discountPercent > 0 ? roundToKopecks(itemGross * (discountPercent / 100)) : (item.discountRub ?? 0);
+		const itemGrossRub = item.totalRub ?? item.priceRub * item.quantity;
+		const itemGrossKop = rublesToKopecks(itemGrossRub);
+		const itemDiscountKop =
+			discountPercent > 0
+				? calculatePercentDiscountKopecks(itemGrossKop, discountPercent)
+				: rublesToKopecks(item.discountRub ?? 0);
+		const itemDiscountRub = kopecksToRub(itemDiscountKop);
 		return {
 			...item,
-			discountRub: itemDiscount,
-			totalRub: Math.max(0, roundToKopecks(itemGross - itemDiscount)),
+			discountRub: itemDiscountRub,
+			totalRub: Math.max(0, kopecksToRub(itemGrossKop - itemDiscountKop)),
 		};
 	});
 

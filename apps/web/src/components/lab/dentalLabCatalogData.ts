@@ -16,6 +16,7 @@ import {
 	toExactKopecks,
 	percentageOfKopecks,
 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export type DentalLabStage =
 	| "created"
@@ -260,12 +261,20 @@ export const UPPER_JAW_TEETH: readonly number[] = Object.freeze([17, 16, 15, 14,
 export const LOWER_JAW_TEETH: readonly number[] = Object.freeze([47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37]);
 export const FDI_QUICK_TEETH: readonly number[] = Object.freeze([...UPPER_JAW_TEETH, ...LOWER_JAW_TEETH]);
 
-export const CLINIC_LABORATORIES: readonly string[] = Object.freeze([
+/** Демо-список зуботехнических лабораторий (изолирован строго за isDemoShowcaseMode, DEF-19-01) */
+export const DEMO_CLINIC_LABORATORIES: readonly string[] = Object.freeze([
 	"Арт-Дент Лаб (CAD/CAM центр)",
 	"Орто-Мастер ЗТЛ (Прецизионная ортопедия)",
 	"Премиум-Смайл Лаб (Эстетическая керамика)",
 	"Собственная зуботехническая лаборатория клиники",
 ]);
+
+/** Возвращает лаборатории клиники с изоляцией демо-данных */
+export function getClinicLaboratories(): readonly string[] {
+	return isDemoShowcaseMode() ? DEMO_CLINIC_LABORATORIES : [];
+}
+
+export const CLINIC_LABORATORIES: readonly string[] = DEMO_CLINIC_LABORATORIES;
 
 export interface DentalLabOrderEntry {
 	readonly id: string;
@@ -372,12 +381,20 @@ export interface PartnerLaboratory {
 	readonly isDefault?: boolean | undefined;
 }
 
-export const PARTNER_LABS: readonly PartnerLaboratory[] = Object.freeze([
+/** Демо-список партнерских лабораторий (изолирован строго за isDemoShowcaseMode, DEF-19-01) */
+export const DEMO_PARTNER_LABS: readonly PartnerLaboratory[] = Object.freeze([
 	{ id: "lab_artdent", name: "Арт-Дент Лаб (CAD/CAM центр)", phone: "+7 (495) 789-01-23", courierCutoffTime: "17:00", city: "Москва", isDefault: true },
 	{ id: "lab_ortho", name: "Орто-Мастер ЗТЛ (Высокоточная ортопедия)", phone: "+7 (916) 555-88-99", courierCutoffTime: "18:00", city: "Москва" },
 	{ id: "lab_premium", name: "Премиум-Смайл Лаб (Эстетическая керамика)", phone: "+7 (985) 123-45-67", courierCutoffTime: "16:30", city: "Москва" },
 	{ id: "lab_inhouse", name: "Собственная лаборатория клиники", phone: "Внутр. 104", courierCutoffTime: "20:00", city: "Клиника" },
 ]);
+
+/** Возвращает партнерские лаборатории с изоляцией демо-данных */
+export function getPartnerLaboratories(): readonly PartnerLaboratory[] {
+	return isDemoShowcaseMode() ? DEMO_PARTNER_LABS : [];
+}
+
+export const PARTNER_LABS: readonly PartnerLaboratory[] = DEMO_PARTNER_LABS;
 
 export interface LabFastPreset {
 	readonly id: string;

@@ -90,7 +90,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			<VisitBillingHeader servicesCount={services.length} doctorName={doctorName} readOnly={readOnly} onAddService={itemActions.handleAddService} onOpenBom={() => setSelectedBomService(services[0] || null)} onPrintEstimate={() => printVisitBillingEstimate({ services, totals, clinicLegalName, patientName, doctorName })} onOpenPricelist={() => setIsPricelistModalOpen(true)} />
 			{totals.isWarranty100 && (
 				<div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200 font-bold" data-testid="warranty-100-active-banner">
-					<div className="flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-600 shrink-0" /><span>Гарантийный приём / 100% скидка врача • К оплате в кассу: 0 ₽</span></div>
+					<div className="flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-600 shrink-0" /><span>{"Гарантийный приём / 100% скидка врача • К оплате в кассу: 0 ₽"}</span></div>
 					<span className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Без фискального трения</span>
 				</div>
 			)}

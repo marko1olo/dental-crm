@@ -27,7 +27,6 @@ import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher"
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectDoctorWalletLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/DoctorWalletLaunchers";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
-import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
@@ -402,7 +401,6 @@ export function AppShell() {
 			<DirectOrthodonticsLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
-			<DirectOdontogramModuleLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />

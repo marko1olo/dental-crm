@@ -32,7 +32,7 @@ export const ShiftSummaryCard: React.FC<ShiftSummaryCardProps> = ({
 		<div className="space-y-4" data-testid="shift-current-section">
 			{/* Hero Revenue Box */}
 			<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center gap-1">
-				<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-xs font-semibold text-[var(--muted)]">
 					Итоговая выручка смены
 				</span>
 				<span
@@ -58,7 +58,7 @@ export const ShiftSummaryCard: React.FC<ShiftSummaryCardProps> = ({
 			<div className="shift-tenders-grid">
 				<div className="shift-tender-card">
 					<div className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-						<Banknote className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<Banknote className="w-4 h-4 text-[var(--primary)]" />
 						<span>Наличные</span>
 					</div>
 					<span className="text-sm font-bold text-[var(--ink)]">
@@ -102,7 +102,7 @@ export const ShiftSummaryCard: React.FC<ShiftSummaryCardProps> = ({
 				<div className="shift-card space-y-2.5">
 					<div className="flex items-center justify-between text-xs font-semibold text-[var(--ink)]">
 						<span className="flex items-center gap-1.5">
-							<Users className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Users className="w-4 h-4 text-[var(--primary)]" />
 							Начисления врачам за смену (Net Revenue)
 						</span>
 						<span className="text-xs text-[var(--muted)]">

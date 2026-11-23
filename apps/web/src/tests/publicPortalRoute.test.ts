@@ -13,6 +13,8 @@ import {
 	TGAPP_PORTAL_PATH,
 	TGAPP_SHORT_PATH,
 	WARRANTY_PORTAL_PATH,
+	CONSENT_SIGN_PORTAL_PATH,
+	buildConsentSignPortalUrl,
 	buildKioskPortalUrl,
 	buildPatientCabinetPortalUrl,
 	buildWarrantyPortalUrl,
@@ -425,6 +427,43 @@ test("ссылка публичной проверки гарантийного 
 	assert.ok(
 		entry.includes('kind === "warranty"'),
 		"main.tsx обязан различать маршрут warranty",
+	);
+});
+
+test("ссылка дистанционного подписания ИДС разбирается в маршрут kind=consent-sign и монтируется в main.tsx", () => {
+	const token = "eyJhbGciOiJIUzI1NiJ9.test-consent-token-sample";
+	const patientId = "00000000-0000-0000-0000-000000000003";
+	const kind = "informed_consent";
+
+	assert.deepEqual(publicPortalRouteFromHash(`#${CONSENT_SIGN_PORTAL_PATH}?token=${token}&patientId=${patientId}&kind=${kind}`), {
+		kind: "consent-sign",
+		token,
+		patientId,
+		consentKind: kind,
+		visitId: undefined,
+	});
+
+	assert.deepEqual(publicPortalRouteFromHash(`/portal/consents/sign?token=${token}`), {
+		kind: "consent-sign",
+		token,
+		patientId: undefined,
+		consentKind: undefined,
+		visitId: undefined,
+	});
+
+	assert.equal(
+		buildConsentSignPortalUrl(token, "https://dente.clinic", patientId, kind),
+		`https://dente.clinic/#${CONSENT_SIGN_PORTAL_PATH}?token=${encodeURIComponent(token)}&patientId=${patientId}&kind=${kind}`,
+	);
+
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<PublicConsentSignPage"),
+		"main.tsx обязан рендерить PublicConsentSignPage для маршрута consent-sign",
+	);
+	assert.ok(
+		entry.includes('kind === "consent-sign"'),
+		"main.tsx обязан различать маршрут consent-sign",
 	);
 });
 

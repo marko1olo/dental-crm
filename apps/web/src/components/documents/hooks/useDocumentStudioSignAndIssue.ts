@@ -408,6 +408,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 					if (effectivePayerInn) createPayload.taxPayerInn = effectivePayerInn;
 				}
 
+				let createdDocId: string | undefined;
 				try {
 					const createHeaders = denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
@@ -422,6 +423,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 						const createdDoc: unknown = await res.json();
 						const docObj = (createdDoc && typeof createdDoc === "object") ? (createdDoc as { id?: string }) : undefined;
 						if (docObj?.id) {
+							createdDocId = docObj.id;
 							const issueHeaders = denteAdminSecretRequestHeaders({
 								"Content-Type": "application/json",
 								"Idempotency-Key": crypto.randomUUID(),
@@ -449,6 +451,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 					consentType: options.currentConsentKey,
 					kind: options.activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
 					title: docTitle,
+					documentId: createdDocId,
 					isSigned: true,
 					signedAt: nowIso,
 					signatureType,
@@ -468,8 +471,8 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 						headers: consentHeaders,
 						body: JSON.stringify(consentPayload),
 					});
-				} catch {
-					/* silent offline fallback */
+				} catch (err) {
+					console.warn("[useDocumentStudioSignAndIssue] Сбой сохранения согласия на сервере:", err);
 				}
 			}
 

@@ -63,6 +63,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 		<>
 			{(routing.isPrescriptionBlankOpen || routing.isPrescriptionForm107Open) && (
 				<PrescriptionModal
+					key={patient?.id || "prescription"}
 					isOpen={true}
 					onClose={() => {
 						routing.setIsPrescriptionBlankOpen?.(false);
@@ -81,12 +82,13 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			)}
 			{routing.isRecallsHubOpen && (
 				<Suspense fallback={null}>
-					<PatientRecallsHubModal isOpen={true} onClose={() => routing.setIsRecallsHubOpen(false)} clinicName={activeWorkspaceProfile?.title || "DENTE Clinic"} />
+					<PatientRecallsHubModal key="patient_recalls_hub" isOpen={true} onClose={() => routing.setIsRecallsHubOpen(false)} clinicName={activeWorkspaceProfile?.title || "DENTE Clinic"} />
 				</Suspense>
 			)}
 			{routing.isWarrantyPassportOpen && (
 				<Suspense fallback={null}>
 					<WarrantyPassportModal
+						key={patient?.id || "warranty_passport"}
 						isOpen={true}
 						onClose={() => routing.setIsWarrantyPassportOpen(false)}
 						patient={patient ? {
@@ -114,6 +116,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			{routing.isLoyaltyProgramOpen && (
 				<Suspense fallback={null}>
 					<LoyaltyStudioModal
+						key={patient?.id || "loyalty_studio"}
 						isOpen={true}
 						onClose={() => routing.setIsLoyaltyProgramOpen(false)}
 						patientId={patient?.id || (isDemoShowcaseMode() ? "pat-demo-01" : undefined)}
@@ -129,6 +132,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			{routing.isFastCheckoutDirectOpen && (
 				<Suspense fallback={null}>
 					<CashRegisterStudioModal
+						key={patient?.id || "cash_register_studio"}
 						isOpen={true}
 						onClose={() => routing.setIsFastCheckoutDirectOpen(false)}
 						mode="checkout"
@@ -151,6 +155,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			{routing.isShiftCloseZReportDirectOpen && (
 				<Suspense fallback={null}>
 					<CashShiftClosingModal
+						key={String(routing.shiftNumber ?? 1)}
 						isOpen={true}
 						onClose={() => routing.setIsShiftCloseZReportDirectOpen(false)}
 						shiftNumber={routing.shiftNumber ?? 1}

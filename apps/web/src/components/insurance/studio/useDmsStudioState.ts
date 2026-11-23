@@ -27,7 +27,10 @@ import {
 	generateUuidV7,
 	kopecksToRubles,
 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
 import { printHtmlViaIframe } from "../../documents/printHtmlViaIframe.js";
@@ -161,7 +164,7 @@ export function useDmsStudioState({
 
 		// 1. Fetch clinic insurance contracts
 		fetch("/api/insurance/contracts", {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : []))
 			.then((data: unknown) => {
@@ -193,7 +196,7 @@ export function useDmsStudioState({
 		// 2. Fetch patient guarantee letters
 		const query = patient?.id ? `?patientId=${encodeURIComponent(patient.id)}` : "";
 		fetch(`/api/insurance/guarantee-letters${query}`, {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : []))
 			.then((data: unknown) => {
@@ -216,7 +219,7 @@ export function useDmsStudioState({
 		// 3. Fetch insurance claims registry (live production mode)
 		const regQuery = selectedInsurerId ? `?insurerKey=${encodeURIComponent(selectedInsurerId)}` : "";
 		fetch(`/api/insurance/registry${regQuery}`, {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data: unknown) => {
@@ -344,7 +347,7 @@ export function useDmsStudioState({
 		try {
 			const res = await fetch("/api/insurance/guarantee-letters", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				}),

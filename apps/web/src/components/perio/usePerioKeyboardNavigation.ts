@@ -21,6 +21,7 @@ export interface UsePerioKeyboardNavigationOptions {
 	readonly selectedToothNum: number;
 	readonly selectedSiteKey: SiteKey;
 	readonly probingSequence: readonly ProbingStep[];
+	readonly teeth?: readonly PerioToothRecord[] | undefined;
 	readonly setTeeth: React.Dispatch<React.SetStateAction<PerioToothRecord[]>>;
 	readonly setSelectedToothNum: (toothNumber: number) => void;
 	readonly setSelectedSiteKey: (siteKey: SiteKey) => void;
@@ -31,6 +32,7 @@ export function usePerioKeyboardNavigation({
 	selectedToothNum,
 	selectedSiteKey,
 	probingSequence,
+	teeth,
 	setTeeth,
 	setSelectedToothNum,
 	setSelectedSiteKey,
@@ -38,12 +40,15 @@ export function usePerioKeyboardNavigation({
 	const twoDigitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingOneRef = useRef<boolean>(false);
 
+	const isSelectedToothMissing = Boolean(teeth?.find((t) => t.toothNumber === selectedToothNum)?.isMissing);
+
 	const clearTimers = useCallback(() => {
 		if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
 		pendingOneRef.current = false;
 	}, []);
 
 	const handleUpdateDepth = useCallback((depth: number) => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => {
 			if (t.toothNumber !== selectedToothNum) return t;
 			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
@@ -62,39 +67,45 @@ export function usePerioKeyboardNavigation({
 				showToast("✓ Полный анатомический цикл зондирования завершён", "success");
 			}
 		}
-	}, [selectedToothNum, selectedSiteKey, probingSequence, setTeeth, setSelectedToothNum, setSelectedSiteKey]);
+	}, [isSelectedToothMissing, selectedToothNum, selectedSiteKey, probingSequence, setTeeth, setSelectedToothNum, setSelectedSiteKey]);
 
 	const handleToggleBop = useCallback(() => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), bleedingOnProbing: !t[selectedSiteKey]?.bleedingOnProbing } }));
-	}, [selectedToothNum, selectedSiteKey, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, selectedSiteKey, setTeeth]);
 
 	const handleTogglePlaque = useCallback(() => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), plaque: !t[selectedSiteKey]?.plaque } }));
-	}, [selectedToothNum, selectedSiteKey, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, selectedSiteKey, setTeeth]);
 
 	const handleToggleSuppuration = useCallback(() => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => {
 			if (t.toothNumber !== selectedToothNum) return t;
 			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
 			return { ...t, [selectedSiteKey]: { ...site, suppuration: !site.suppuration } };
 		}));
-	}, [selectedToothNum, selectedSiteKey, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, selectedSiteKey, setTeeth]);
 
 	const handleUpdateGingivalMargin = useCallback((gm: number) => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => {
 			if (t.toothNumber !== selectedToothNum) return t;
 			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
 			return { ...t, [selectedSiteKey]: { ...site, gingivalMarginMm: gm, calMm: calculateClinicalAttachmentLevel(site.probingDepthMm ?? 2, gm) } };
 		}));
-	}, [selectedToothNum, selectedSiteKey, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, selectedSiteKey, setTeeth]);
 
 	const handleUpdateMobility = useCallback((mobility: 0 | 1 | 2 | 3) => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => (t.toothNumber === selectedToothNum ? { ...t, mobility } : t)));
-	}, [selectedToothNum, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, setTeeth]);
 
 	const handleUpdateFurcation = useCallback((furcation: 0 | 1 | 2 | 3) => {
+		if (isSelectedToothMissing) return;
 		setTeeth((prev) => prev.map((t) => (t.toothNumber === selectedToothNum ? { ...t, furcation } : t)));
-	}, [selectedToothNum, setTeeth]);
+	}, [isSelectedToothMissing, selectedToothNum, setTeeth]);
 
 	const handleNavigateSite = useCallback((direction: "next" | "prev") => {
 		if (probingSequence.length === 0) return;
@@ -121,6 +132,11 @@ export function usePerioKeyboardNavigation({
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const tag = (e.target as HTMLElement)?.tagName;
 			if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+			if (isSelectedToothMissing && ((e.key >= "0" && e.key <= "9") || e.code === "Space" || e.key === " ")) {
+				e.preventDefault();
+				return;
+			}
 
 			if (pendingOneRef.current && e.key >= "0" && e.key <= "5") {
 				e.preventDefault();
@@ -150,7 +166,7 @@ export function usePerioKeyboardNavigation({
 			window.removeEventListener("keydown", handleKeyDown);
 			if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
 		};
-	}, [isOpen, handleUpdateDepth, handleToggleBop, handleNavigateSite, handleNavigateTooth, handleToggleJawAspect]);
+	}, [isOpen, isSelectedToothMissing, handleUpdateDepth, handleToggleBop, handleNavigateSite, handleNavigateTooth, handleToggleJawAspect]);
 
 	return {
 		handleUpdateDepth,

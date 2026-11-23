@@ -101,7 +101,7 @@ test("Informed Consents Library: all 9 statutory Russian dental consent template
 	// 7. Персональные данные (CONSENT_PERSONAL_DATA)
 	assert.ok(CONSENT_PERSONAL_DATA.statutoryBasis.includes("152-ФЗ"));
 	assert.ok(CONSENT_PERSONAL_DATA.sections.some((s) => s.content.includes("ЕГИСЗ") || s.content.includes("ФРЭМД")));
-	assert.ok(CONSENT_PERSONAL_DATA.sections.some((s) => s.content.includes("25 лет") || s.content.includes("043/у")));
+	assert.ok(CONSENT_PERSONAL_DATA.sections.some((s) => s.content.includes("25 лет") && s.content.includes("медицинской карты")));
 
 	// 8. Педиатрия (CONSENT_PEDIATRIC) — несовершеннолетние до 15 лет (1051н, ст. 20 323-ФЗ)
 	assert.ok(CONSENT_PEDIATRIC.statutoryBasis.includes("1051н"));

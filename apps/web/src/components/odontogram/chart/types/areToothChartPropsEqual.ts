@@ -10,6 +10,7 @@ export function areToothChartPropsEqual(
 	if (prev.mixedDentition !== next.mixedDentition) return false;
 	if (prev.dentitionMode !== next.dentitionMode) return false;
 	if (prev.activeStamp !== next.activeStamp) return false;
+	if (prev.activeSurface !== next.activeSurface) return false;
 	if (prev.useSurfaces !== next.useSurfaces) return false;
 	if (prev.hideHeader !== next.hideHeader) return false;
 	if (prev.hideLegend !== next.hideLegend) return false;

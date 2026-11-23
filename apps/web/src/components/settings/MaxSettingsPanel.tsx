@@ -99,10 +99,6 @@ export function MaxSettingsPanel({
 		setBotIdDraft,
 		apiTokenDraft,
 		setApiTokenDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		webhookUrlDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setWebhookUrlDraft,
 		isActiveDraft,
 		setIsActiveDraft,
 		enabledFeaturesDraft,

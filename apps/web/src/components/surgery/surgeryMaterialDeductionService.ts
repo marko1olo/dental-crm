@@ -5,6 +5,7 @@
  * не блокируют операцию врача у кресла.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface SurgicalMaterialDeductionItem {
@@ -73,7 +74,10 @@ export async function quickDeductSurgicalMaterials(
 		try {
 			const res = await fetch("/api/surgery/materials/quick-deduct", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					bundleType,
 					toothNumberFdi: params.toothNumber,

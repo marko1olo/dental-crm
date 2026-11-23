@@ -78,14 +78,14 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 								},
 							});
 
-							// 2. Персистентная загрузка в клинический архив PACS (/api/xray/scans -> imaging_studies)
+							// 2. Персистентная загрузка в клинический архив PACS (/api/imaging/studies)
 							if (patientId) {
 								try {
 									const reader = new FileReader();
 									reader.onload = async () => {
 										const base64Data = reader.result as string;
 										try {
-											const res = await fetch("/api/xray/scans", {
+											const res = await fetch("/api/imaging/studies", {
 												method: "POST",
 												headers: {
 													"Content-Type": "application/json",
@@ -94,6 +94,7 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 												body: JSON.stringify({
 													patientId,
 													imageBase64: base64Data,
+													title: `Прицельный снимок RVG зуба #${toothNumber}`,
 													toothCode: String(toothNumber),
 													kind: "periapical",
 													originalFilename: file.name,
@@ -103,7 +104,7 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 
 											if (res.ok) {
 												const json = (await res.json()) as { id?: string; fileUrl?: string };
-												const persistentUrl = json?.fileUrl || (json?.id ? `/api/xray/scans/${json.id}/file` : null);
+												const persistentUrl = json?.fileUrl || (json?.id ? `/api/imaging/studies/${json.id}/file` : null);
 												if (persistentUrl) {
 													onUpdateTooth?.(toothNumber, {
 														clinicalData: {

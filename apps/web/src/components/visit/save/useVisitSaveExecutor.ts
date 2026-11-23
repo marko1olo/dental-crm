@@ -2,6 +2,8 @@ import { useCallback, type MutableRefObject } from "react";
 import type { DentalSpecialty, VisitDraftAutosave, VisitDraftAutosaveResponse } from "@dental/shared";
 import type { VisitNoteForm } from "../../../AppHelpers";
 import { queuePendingVisitSave, visitNoteDraftFromForm } from "../../../AppHelpers";
+import { enqueueOfflineMutation } from "../../../services/offline/offlineStorage";
+import { mergeClinical043DiariesNonDestructive } from "../../../services/sync/conflictResolver";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { broadcastClinicalEntityChange } from "../../../services/storage";
@@ -73,6 +75,23 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 						doctorSummary: null, transcript: tr,
 						selectedSpecialty: (selectedSpecialty as DentalSpecialty) || "universal",
 					}, effectiveOrgId);
+
+					// Канонический Outbox для syncGateway и CRDT 3-Way merge
+					await enqueueOfflineMutation({
+						entityType: "visit_diary",
+						entityId: effectiveVisitId,
+						action: "update",
+						payload: {
+							visitId: effectiveVisitId,
+							patientId: effectivePatientId,
+							draft: draftPayload,
+							transcript: tr,
+							baseRevision: activeVisit?.revision ?? null,
+							selectedSpecialty: (selectedSpecialty as DentalSpecialty) || "universal",
+							updatedAt: clientSavedAt,
+						},
+						organizationId: effectiveOrgId || undefined,
+					});
 				}
 				lastSavedSignatureRef.current = signature;
 				setSaveState("queued");
@@ -107,6 +126,50 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 						clientSavedAt,
 					}),
 				});
+
+				if (response.status === 409) {
+					const conflictJson = (await response.json().catch(() => null)) as {
+						conflict?: boolean;
+						serverDraft?: VisitDraftAutosave;
+						message?: string;
+					} | null;
+
+					if (conflictJson?.serverDraft?.draft && draftPayload) {
+						const serverDraft = conflictJson.serverDraft.draft;
+						// CRDT 3-Way Merge: объединяем локальный дневник врача и серверную версию без потери данных
+						const mergedDiary = mergeClinical043DiariesNonDestructive(
+							{
+								complaints: draftPayload.complaint ?? "",
+								anamnesis: draftPayload.anamnesis ?? "",
+								objective: draftPayload.objectiveStatus ?? "",
+								diagnosis: draftPayload.diagnosis ?? "",
+								treatment: draftPayload.treatmentPlan ?? "",
+								authorName: "Врач (локально)",
+							},
+							{
+								complaints: serverDraft.complaint ?? "",
+								anamnesis: serverDraft.anamnesis ?? "",
+								objective: serverDraft.objectiveStatus ?? "",
+								diagnosis: serverDraft.diagnosis ?? "",
+								treatment: serverDraft.treatmentPlan ?? "",
+								authorName: "Сервер",
+							},
+						);
+
+						currentFormRef.current = {
+							...currentFormRef.current,
+							complaint: String(mergedDiary.complaints || currentFormRef.current.complaint || ""),
+							anamnesis: String(mergedDiary.anamnesis || currentFormRef.current.anamnesis || ""),
+							objectiveStatus: String(mergedDiary.objective || currentFormRef.current.objectiveStatus || ""),
+							diagnosis: String(mergedDiary.diagnosis || currentFormRef.current.diagnosis || ""),
+							treatmentPlan: String(mergedDiary.treatment || currentFormRef.current.treatmentPlan || ""),
+						};
+
+						showToast("Черновик объединён с серверной версией (3-Way Merge)", "info", 3500);
+						return { success: true };
+					}
+				}
+
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
 				const result = (await response.json()) as VisitDraftAutosaveResponse;

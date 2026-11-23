@@ -3,6 +3,19 @@ import type { DentalSpecialty, StaffRole } from "@dental/shared";
 import { CalendarDays, Plus } from "lucide-react";
 import type { WizardTeamStepProps } from "./types";
 
+function isDirtyIdSelected(
+	dirtyIds: Set<string> | readonly string[] | Record<string, unknown> | null | undefined,
+	id: string,
+): boolean {
+	if (!dirtyIds) return false;
+	if (dirtyIds instanceof Set) return dirtyIds.has(id);
+	if (Array.isArray(dirtyIds)) return dirtyIds.includes(id);
+	if (typeof dirtyIds === "object" && id in dirtyIds) {
+		return Boolean((dirtyIds as Record<string, unknown>)[id]);
+	}
+	return false;
+}
+
 export function WizardTeamStep({
 	dashboard,
 	newStaffName,
@@ -312,14 +325,9 @@ export function WizardTeamStep({
 									);
 								const scheduleSaveState =
 									chairScheduleSaveStates[chair.id] ?? "saved";
-								const scheduleDirty = Boolean(
-									chairScheduleDirtyIds && typeof (chairScheduleDirtyIds as any).has === "function"
-										? (chairScheduleDirtyIds as Set<string>).has(chair.id)
-										: Array.isArray(chairScheduleDirtyIds)
-											? (chairScheduleDirtyIds as string[]).includes(chair.id)
-											: typeof chairScheduleDirtyIds === "object"
-												? Boolean((chairScheduleDirtyIds as any)[chair.id])
-												: false,
+								const scheduleDirty = isDirtyIdSelected(
+									chairScheduleDirtyIds,
+									chair.id,
 								);
 								const scheduleSaving =
 									chairScheduleSavingId === chair.id ||

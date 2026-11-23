@@ -70,7 +70,7 @@ export function scoreBitePlaneCandidates(
 		if (enamelVoxels >= 30) {
 			const meanX = sumX / enamelVoxels;
 			const varX = Math.max(1, sumX2 / enamelVoxels - meanX * meanX);
-			const score = enamelVoxels / (1 + Math.abs(varX - 450) / 100);
+			const score = enamelVoxels / (1 + Math.abs(varX - 450) * 0.01);
 			if (score > bestScore) {
 				bestScore = score;
 				bestZ = candZ;

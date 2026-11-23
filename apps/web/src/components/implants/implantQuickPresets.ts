@@ -8,6 +8,7 @@ import {
 	type FastImplantPassportData,
 	type ImplantCapKind,
 	kopecksToRubles,
+	rublesToKopecks,
 	type MischBoneDensity,
 } from "@dental/shared";
 import type { ImplantStageType } from "./implantBrandTypes";
@@ -297,11 +298,11 @@ export function createDefaultPassportRecord(params: {
 		consumablesCostRub: params.consumablesCostRub ?? (params.consumablesCostKopecks ? Math.round(kopecksToRubles(params.consumablesCostKopecks)) : 0),
 		doctorGrossMarginRub: (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)),
 		netDoctorIncomeRub: Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))),
-		operationPriceKopecks: params.operationPriceKopecks ? BigInt(params.operationPriceKopecks) : BigInt((params.operationPriceRub ?? 45000) * 100),
-		implantCostKopecks: params.implantCostKopecks ? BigInt(params.implantCostKopecks) : BigInt((params.implantCostRub ?? 12500) * 100),
-		consumablesCostKopecks: params.consumablesCostKopecks ? BigInt(params.consumablesCostKopecks) : BigInt((params.consumablesCostRub ?? 0) * 100),
-		doctorGrossMarginKopecks: BigInt(((params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))) * 100),
-		netDoctorIncomeKopecks: BigInt(Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))) * 100),
+		operationPriceKopecks: params.operationPriceKopecks ? BigInt(params.operationPriceKopecks) : BigInt(rublesToKopecks(params.operationPriceRub ?? 45000)),
+		implantCostKopecks: params.implantCostKopecks ? BigInt(params.implantCostKopecks) : BigInt(rublesToKopecks(params.implantCostRub ?? 12500)),
+		consumablesCostKopecks: params.consumablesCostKopecks ? BigInt(params.consumablesCostKopecks) : BigInt(rublesToKopecks(params.consumablesCostRub ?? 0)),
+		doctorGrossMarginKopecks: BigInt(rublesToKopecks((params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)))),
+		netDoctorIncomeKopecks: BigInt(rublesToKopecks(Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))))),
 		isImmediateLoadingFeasible,
 	};
 }

@@ -22,6 +22,7 @@ import {
 	classifyTaxDeduction804n,
 	EXPENSIVE_TREATMENT_804N_CODES,
 	extractTaxYearFromDate,
+	formatKopecksToRubles,
 	generateCode128Svg,
 	generateFamilyTaxDeductionBatch,
 	generateFnsBatchNoMedoplXml,
@@ -38,11 +39,15 @@ import {
 	isTaxDeductionRefund,
 	KND_CERTIFICATE_FORM,
 	KND_REGISTRY_ELECTRONIC_FORMAT,
+	kopecksToRubles,
 	normalizePaymentsForTaxCertificate,
+	percentageOfKopecks,
 	renderOfficialTaxCertificateBatchKnd1151156Html,
 	renderOfficialTaxCertificateKnd1151156Html,
 	resolveTaxDeductionCategoryShared,
+	rublesToKopecks,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	toExactKopecks,
 	type FamilyMemberBatchCertificateSummary,
 	type FamilyMemberPayerConfig,
 	type FamilyTaxDeductionBatchResult,
@@ -310,7 +315,7 @@ export function aggregatePatientPaymentsForTaxYear(
 			typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)
 				? Math.round(p.amountKopecks)
 				: Number.isFinite(p.amountRub)
-					? Math.round(p.amountRub * 100)
+					? rublesToKopecks(p.amountRub)
 					: 0;
 
 		const isRefund = isPaymentRefund(p);
@@ -337,26 +342,26 @@ export function aggregatePatientPaymentsForTaxYear(
 		taxYear >= 2024
 			? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024
 			: ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
-	const statutoryLimitKopecks = statutoryLimitRub * 100;
+	const statutoryLimitKopecks = rublesToKopecks(statutoryLimitRub);
 	const eligibleCode01Kopecks = Math.min(code01Kopecks, statutoryLimitKopecks);
 	const estimatedRefund13Kopecks =
-		Math.round((eligibleCode01Kopecks * 13) / 100) +
-		Math.round((code02Kopecks * 13) / 100);
+		Math.round(eligibleCode01Kopecks * 0.13) +
+		Math.round(code02Kopecks * 0.13);
 
 	return {
 		taxYear,
 		code01Kopecks,
-		code01Rub: code01Kopecks / 100,
+		code01Rub: kopecksToRubles(code01Kopecks),
 		code02Kopecks,
-		code02Rub: code02Kopecks / 100,
+		code02Rub: kopecksToRubles(code02Kopecks),
 		totalNetKopecks,
-		totalNetRub: totalNetKopecks / 100,
+		totalNetRub: kopecksToRubles(totalNetKopecks),
 		totalGrossKopecks,
 		refundedKopecks,
 		eligibleCode01Kopecks,
-		eligibleCode01Rub: eligibleCode01Kopecks / 100,
+		eligibleCode01Rub: kopecksToRubles(eligibleCode01Kopecks),
 		estimatedRefund13Kopecks,
-		estimatedRefund13Rub: estimatedRefund13Kopecks / 100,
+		estimatedRefund13Rub: kopecksToRubles(estimatedRefund13Kopecks),
 		receiptsCount,
 		payments: yearPayments,
 	};
@@ -464,9 +469,9 @@ export function generateTaxCertificateKnd1151156Html(data: TaxCertificateDocumen
 	const issueDateFormatted = formatDateRu(issueDateIso);
 	const barcodeSvg = generateFnsFormKnd1151156BarcodeSvg({ taxYear, certificateNumber });
 
-	const c1Str = (aggregation.code01Kopecks / 100).toFixed(2);
-	const c2Str = (aggregation.code02Kopecks / 100).toFixed(2);
-	const totStr = (aggregation.totalNetKopecks / 100).toFixed(2);
+	const c1Str = formatKopecksToRubles(aggregation.code01Kopecks);
+	const c2Str = formatKopecksToRubles(aggregation.code02Kopecks);
+	const totStr = formatKopecksToRubles(aggregation.totalNetKopecks);
 	const issueDate = issueDateIso.slice(0, 10);
 	const qrPayload = `https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&inn=${encodeURIComponent(clinic.inn)}&cert=${encodeURIComponent(certificateNumber)}&date=${issueDate}&year=${taxYear}&payerInn=${encodeURIComponent(taxpayer.inn || "")}&c1=${c1Str}&c2=${c2Str}&sum=${totStr}`;
 	const qrSvg = generateQrCodeSvg(qrPayload, { size: 110, margin: 2, title: `Справка КНД 1151156 № ${certificateNumber}` });
@@ -524,7 +529,7 @@ export function generateTaxCertificateKnd1151156Html(data: TaxCertificateDocumen
       <div class="total-in-words">
         Сумма прописью: <strong>${totalInWords}</strong><br>
         <span style="font-size: 7.5pt; color: #64748b;">
-          Фискализированных чеков ККТ: ${aggregation.receiptsCount}. Возвратов учтено: ${formatRublesExactRu(aggregation.refundedKopecks / 100)}.
+          Фискализированных чеков ККТ: ${aggregation.receiptsCount}. Возвратов учтено: ${formatRublesExactRu(kopecksToRubles(aggregation.refundedKopecks))}.
           Расчетный возврат НДФЛ 13%: ${formatRublesExactRu(aggregation.estimatedRefund13Rub)}.
         </span>
       </div>
@@ -603,24 +608,25 @@ export function buildTaxCertificateDocumentData(
 		params.totalAmountKopecks > 0
 			? params.totalAmountKopecks
 			: code01Kopecks + code02Kopecks;
-	// Мандат 8bm: Целочисленная арифметика BigInt копеек без неточных float, / 100 и Math.round
+	// Мандат 8bm: Целочисленная арифметика копеек без неточных float
 	const code01KopecksBi = BigInt(Math.max(0, Math.trunc(code01Kopecks)));
 	const code02KopecksBi = BigInt(Math.max(0, Math.trunc(code02Kopecks)));
 	const totalKopecksBi = BigInt(Math.max(0, Math.trunc(totalKopecks)));
 
-	const code01Rub = Number(code01KopecksBi) / 100;
-	const code02Rub = Number(code02KopecksBi) / 100;
-	const totalNetRub = Number(totalKopecksBi) / 100;
+	const code01Rub = kopecksToRubles(code01KopecksBi);
+	const code02Rub = kopecksToRubles(code02KopecksBi);
+	const totalNetRub = kopecksToRubles(totalKopecksBi);
 
 	const statutoryLimitKopecksBi = BigInt(params.taxYear >= 2024 ? 150000 : 120000) * 100n;
 	const eligibleCode01KopecksBi = code01KopecksBi < statutoryLimitKopecksBi ? code01KopecksBi : statutoryLimitKopecksBi;
-	const eligibleCode01Rub = Number(eligibleCode01KopecksBi) / 100;
+	const eligibleCode01Rub = kopecksToRubles(eligibleCode01KopecksBi);
 	const eligibleCode01Kopecks = Number(eligibleCode01KopecksBi);
 
-	// 13% НДФЛ рассчитывается строго целочисленно: (копейки * 13n) / 100n
-	const estimatedRefund13KopecksBi = (eligibleCode01KopecksBi * 13n) / 100n + (code02KopecksBi * 13n) / 100n;
-	const estimatedRefund13Kopecks = Number(estimatedRefund13KopecksBi);
-	const estimatedRefund13Rub = Number(estimatedRefund13KopecksBi) / 100;
+	// 13% НДФЛ рассчитывается строго целочисленно через percentageOfKopecks
+	const estimatedRefund13Kopecks =
+		percentageOfKopecks(toExactKopecks(eligibleCode01Kopecks), 1300) +
+		percentageOfKopecks(toExactKopecks(Number(code02KopecksBi)), 1300);
+	const estimatedRefund13Rub = kopecksToRubles(estimatedRefund13Kopecks);
 
 	const isDemo = isDemoShowcaseMode();
 	const parsePassport = (raw: string | undefined): { series: string; number: string } => {

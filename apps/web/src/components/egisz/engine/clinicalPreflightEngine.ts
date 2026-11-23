@@ -7,7 +7,7 @@ import { checkClinicAndDoctor, checkPatient } from "./clinicalPreflightMoDocPat"
 import { checkClinicalAndSignature } from "./clinicalPreflightClinicalSig";
 import type { EgiszPreflightCheckResult, EgiszPreflightReport } from "./engineTypes";
 
-export function runEgisz043uPreflight(payload: EgiszDentalCdaPayload): EgiszPreflightReport {
+export function runEgiszPreflight(payload: EgiszDentalCdaPayload): EgiszPreflightReport {
 	const checks: EgiszPreflightCheckResult[] = [];
 
 	checkClinicAndDoctor(payload, checks);
@@ -31,3 +31,5 @@ export function runEgisz043uPreflight(payload: EgiszDentalCdaPayload): EgiszPref
 		checks,
 	};
 }
+
+export const runEgisz043uPreflight = runEgiszPreflight;

@@ -75,7 +75,10 @@ describe("Red Team Inquisitor: Patient Registry & Somatic Autonomy", () => {
 
 	it("2. PatientCreationModal / PatientCardModal never disables primary save buttons (Mandate 8e)", () => {
 		const modalPath = path.resolve(patientsDir, "PatientCardModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const footerPath = path.resolve(patientsDir, "patientCardModalModules/PatientCardModalFooter.tsx");
+		const content = fs.existsSync(footerPath)
+			? fs.readFileSync(footerPath, "utf-8")
+			: fs.readFileSync(modalPath, "utf-8");
 
 		assert.ok(content.includes('data-testid="patient-creation-submit-btn"'));
 		assert.ok(content.includes('data-testid="patient-creation-submit-and-visit-btn"'));

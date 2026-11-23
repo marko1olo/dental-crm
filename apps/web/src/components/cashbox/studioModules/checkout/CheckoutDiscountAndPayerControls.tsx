@@ -54,7 +54,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						Скидки врача:
 					</span>
 					{discountPercent > 0 && !isWarranty && (
-						<span className="text-xs font-semibold text-[var(--teal,#0d9488)]" data-testid="badge-discount-active">
+						<span className="text-xs font-semibold text-[var(--primary)]" data-testid="badge-discount-active">
 							Применена скидка {discountPercent}%
 						</span>
 					)}
@@ -82,7 +82,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 							}}
 							className={`px-3 py-1.5 rounded-xl text-xs font-semibold border min-h-[36px] cursor-pointer transition-colors ${
 								discountPercent === d.percent
-									? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] font-bold shadow-xs"
+									? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -121,7 +121,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						<button
 							type="button"
 							onClick={() => setPayerType("legal_entity")}
-							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.1))] hover:bg-[var(--teal-subtle,rgba(13,148,136,0.2))] border border-[var(--teal,#0d9488)]/25 transition-colors cursor-pointer"
+							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--primary)] bg-[var(--primary-soft)] hover:opacity-90 border border-[var(--primary)]/25 transition-colors cursor-pointer"
 							data-testid="toggle-corporate-payer"
 						>
 							Организация / ИП &rarr;
@@ -147,7 +147,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 								onClick={() => setPayerType("legal_entity")}
 								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
 									payerType === "legal_entity"
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] shadow-xs font-bold"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-xs font-semibold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -158,7 +158,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 								onClick={() => setPayerType("sole_proprietor")}
 								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
 									payerType === "sole_proprietor"
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] shadow-xs font-bold"
+										? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-xs font-semibold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -179,7 +179,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 								onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
 								maxLength={payerType === "legal_entity" ? 10 : 12}
 								placeholder={payerType === "legal_entity" ? "Введите 10 цифр ИНН" : "Введите 12 цифр ИНН"}
-								className="w-full px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm min-h-[44px] outline-none focus:border-[var(--teal,#0d9488)] focus:ring-1 focus:ring-[var(--teal,#0d9488)] transition-all font-mono"
+								className="w-full px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm min-h-[44px] outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all font-mono"
 								autoFocus
 							/>
 						</div>

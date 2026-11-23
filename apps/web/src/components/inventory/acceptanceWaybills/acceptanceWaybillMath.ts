@@ -1,4 +1,4 @@
-import { generateUuidV7, kopecksToRubles, rublesToKopecks, formatKopecksRu, formatKopecksToRubles } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks, formatKopecksRu, formatKopecksToRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import type { AcceptanceWaybillItem, AcceptanceWaybillTotals, VatRate } from "../acceptanceWaybillsTypes.js";
 
 export { kopecksToRubles, rublesToKopecks, formatKopecksToRubles };
@@ -21,7 +21,7 @@ export function calculateItemTotals(params: {
 
 	const validRates: readonly VatRate[] = [0, 5, 7, 10, 20];
 	const rate: VatRate = validRates.includes(params.vatRate) ? params.vatRate : 0;
-	const vatKopecks = Math.round((lineSubtotalKopecks * rate) / 100);
+	const vatKopecks = calculatePercentDiscountKopecks(lineSubtotalKopecks, rate);
 	const lineTotalKopecks = lineSubtotalKopecks + vatKopecks;
 
 	return {

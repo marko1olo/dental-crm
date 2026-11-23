@@ -292,7 +292,7 @@ html.dark .document-package-item-sub {
 	color: var(--on-teal) !important;
 }
 
-/* StomX chair palette high contrast override for Olive badge (WCAG AAA) */
+/* DENTE Palette chair high contrast override for Olive badge (WCAG AAA) */
 [data-theme="contrast"] [data-chair-palette*="Олив"],
 [data-chair-palette*="Олив"].contrast-badge,
 [data-theme="contrast"] [data-chair-palette="Олива"] {

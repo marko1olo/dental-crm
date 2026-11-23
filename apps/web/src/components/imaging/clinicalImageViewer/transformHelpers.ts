@@ -63,8 +63,8 @@ export function buildRulerMeasurement(params: {
 		? params.naturalHeight
 		: (params.rect?.height ?? 1200);
 
-	const dxPx = ((params.endX - params.startX) / 100) * naturalW;
-	const dyPx = ((params.endY - params.startY) / 100) * naturalH;
+	const dxPx = (params.endX - params.startX) * 0.01 * naturalW;
+	const dyPx = (params.endY - params.startY) * 0.01 * naturalH;
 	const distPx = Math.hypot(dxPx, dyPx);
 	if (distPx <= 8) return null;
 	const lengthMm = Math.round(distPx * (params.pixelSpacingMm || 0.04) * 10) / 10;

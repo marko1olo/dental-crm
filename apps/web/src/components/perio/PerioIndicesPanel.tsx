@@ -23,6 +23,8 @@ export interface PerioIndicesPanelProps {
 	readonly summary: PerioChartSummary;
 	readonly psrFormula: string;
 	readonly suggestedDiagnosisRu: string;
+	readonly icd10Code?: string | undefined;
+	readonly onInsertDiagnosisToVisit?: ((icd10: string, diagText: string) => void) | undefined;
 }
 
 export const PerioIndicesPanel: React.FC<PerioIndicesPanelProps> = React.memo(({
@@ -34,6 +36,8 @@ export const PerioIndicesPanel: React.FC<PerioIndicesPanelProps> = React.memo(({
 	summary,
 	psrFormula,
 	suggestedDiagnosisRu,
+	icd10Code,
+	onInsertDiagnosisToVisit,
 }) => {
 	if (!isOpen) return null;
 
@@ -158,6 +162,17 @@ export const PerioIndicesPanel: React.FC<PerioIndicesPanelProps> = React.memo(({
 							{summary.deepPocketsCount}
 						</span>
 					</div>
+					{onInsertDiagnosisToVisit && (
+						<button
+							type="button"
+							data-testid="perio-insert-icd-btn"
+							onClick={() => onInsertDiagnosisToVisit(icd10Code || "K05.1", suggestedDiagnosisRu)}
+							className="mt-1 h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--primary)] hover:text-white border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+							title={`Внести ${icd10Code || "K05"} в приём`}
+						>
+							+ Внести диагноз в приём
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

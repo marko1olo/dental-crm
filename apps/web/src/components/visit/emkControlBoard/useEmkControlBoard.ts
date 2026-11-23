@@ -77,18 +77,18 @@ export function useEmkControlBoard() {
 			const visitsList = (data.visits || []).map(
 				(row: RawQualityControlRow): CmoAuditVisitItem => ({
 					id: row.id,
-					organizationId: row.organizationId || "org-1",
+					organizationId: row.organizationId || undefined,
 					patientId: row.patientId,
 					patientFullName:
 						row.patientFullName || row.patientName || "Пациент клиники",
 					patientCardCode: row.patientCardCode || `К-${row.id.slice(0, 6)}`,
 					patientBirthDate: row.patientBirthDate || null,
 					patientPhone: row.patientPhone || null,
-					doctorUserId: row.doctorUserId || row.doctorId || "doc-1",
+					doctorUserId: row.doctorUserId || row.doctorId || "",
 					doctorFullName:
 						row.doctorFullName || row.doctorName || "Лечащий врач",
 					doctorSpecialty: row.doctorSpecialty || "Врач-стоматолог",
-					chairName: row.chairName || "Кресло 1",
+					chairName: row.chairName || undefined,
 					visitDateIso: row.createdAt || new Date().toISOString(),
 					status: (row.status === "completed" || row.status === "cancelled" || row.status === "draft" || row.status === "in_progress" || row.status === "signed") ? row.status : "signed",
 					qualityControlStatus:
@@ -107,7 +107,7 @@ export function useEmkControlBoard() {
 					cmoReviewedByName: row.cmoReviewedByName || null,
 					cmoRemarks: row.cmoRemarks || null,
 					cmoDefectTags: row.cmoDefectTags || [],
-					servicesCount: row.servicesCount ?? (row.diagnosis ? 2 : 0),
+					servicesCount: typeof row.servicesCount === "number" ? row.servicesCount : 0,
 					odontogramTeeth: row.odontogramTeeth || [],
 				}),
 			);

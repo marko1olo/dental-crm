@@ -21,8 +21,8 @@ export function calculateDistanceMm(
 	imageHeightPx = 1000,
 	pixelSpacingMm = 0.1,
 ): number {
-	const dxPx = ((endX - startX) / 100) * imageWidthPx;
-	const dyPx = ((endY - startY) / 100) * imageHeightPx;
+	const dxPx = (endX - startX) * 0.01 * imageWidthPx;
+	const dyPx = (endY - startY) * 0.01 * imageHeightPx;
 	const pixelDistance = Math.hypot(dxPx, dyPx);
 	const distanceMm = pixelDistance * pixelSpacingMm;
 	return Number(distanceMm.toFixed(2));

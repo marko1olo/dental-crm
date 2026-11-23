@@ -155,7 +155,7 @@ export interface DomMemoryEstimate {
 export function estimateDomMemoryLoad(nodeCount: number): DomMemoryEstimate {
 	const count = Math.max(0, nodeCount);
 	const estimatedBytes = count * ESTIMATED_DOM_NODE_BYTES;
-	const estimatedMb = Math.round((estimatedBytes / (1024 * 1024)) * 100) / 100;
+	const estimatedMb = Number((estimatedBytes / (1024 * 1024)).toFixed(2));
 
 	if (count > RECOMMENDED_DOM_MAX_NODES * 2) {
 		return {

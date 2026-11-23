@@ -1,5 +1,9 @@
 import { Point2D, radiansToDegrees } from './vectorGeometry';
 
+function roundToTwoDecimals(val: number): number {
+	return Number(val.toFixed(2)) || 0;
+}
+
 export function calculateInterpupillaryTilt(leftEye: Point2D, rightEye: Point2D): number {
 	const dx = rightEye.x - leftEye.x;
 	const dy = rightEye.y - leftEye.y;
@@ -56,13 +60,13 @@ export function calculateBipupillaryAlignment(
 	const angleDegrees = radiansToDegrees(Math.atan2(dy, dx));
 	const isLevel = Math.abs(angleDegrees) <= levelToleranceDegrees;
 	const center = { x: (leftPupil.x + rightPupil.x) / 2, y: (leftPupil.y + rightPupil.y) / 2 };
-	const angleRounded = Math.round(angleDegrees * 100) / 100 || 0;
+	const angleRounded = roundToTwoDecimals(angleDegrees);
 	return {
 		angleDegrees: angleRounded,
 		center,
 		distancePx: Math.round(distancePx * 10) / 10,
 		isLevel,
-		correctionAngleDegrees: Math.round(-angleRounded * 100) / 100 || 0,
+		correctionAngleDegrees: roundToTwoDecimals(-angleRounded),
 	};
 }
 
@@ -87,7 +91,7 @@ export function calculateIncisalEdgeAlignment(
 		return { cantingAngleDegrees: 0, cantingDirection: 'level', isWithinTolerance: true, cantingMm: 0, descriptionRu: 'Резцовая линия строго горизонтальна' };
 	}
 	const rawAngle = radiansToDegrees(Math.atan2(dy, dx));
-	const cantingAngleDegrees = Math.round((rawAngle - referenceAngleDegrees) * 100) / 100 || 0;
+	const cantingAngleDegrees = roundToTwoDecimals(rawAngle - referenceAngleDegrees);
 	const cantingMm = Math.round(Math.abs(dy * pixelToMmScale) * 10) / 10;
 	const isWithinTolerance = Math.abs(cantingAngleDegrees) <= toleranceDegrees;
 

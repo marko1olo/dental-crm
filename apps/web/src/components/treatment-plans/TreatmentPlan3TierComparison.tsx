@@ -95,7 +95,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	if (!tiers || tiers.length === 0) return null;
 	if (tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0)) {
 		return (
-			<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full ${hideMobileThumbBar ? "pb-4" : "pb-44"} sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
+			<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-4 sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
 				<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
 				<TreatmentPlan3TierEmptyState />
 			</div>

@@ -15,17 +15,22 @@ import {
 	generateComprehensivePerioProtocolText, generateFullMouthProbingSequence,
 	generateUuidV7,
 } from "@dental/shared";
-import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+import { useDraftStore } from "../../store/patientStore";
+import { denteQueryClient } from "../../lib/queryClient";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
-	applyExpressPerioPreset, applyUpperJawNormPreset, applyLowerJawNormPreset,
-	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset, computePsrSummary, deductPeriodontalConsumablesSoftOverdraft,
+	applyExpressPerioPreset, applyPsrSextantCode, applyUpperJawNormPreset, applyLowerJawNormPreset,
+	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset, calculatePsrSextants, computePsrSummary, deductPeriodontalConsumablesSoftOverdraft,
 	dispatchPresetSideEffects, normalizePerioDentition, PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG,
 	PERIO_TREATMENT_PROTOCOLS, type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, type SiteKey,
 } from "./perioCatalogData";
 import { PerioPresetActions } from "./PerioPresetActions";
+import { PerioStudioHeader } from "./PerioStudioHeader";
+import { PerioPsrSextantsGrid } from "./PerioPsrSextantsGrid";
+import { PerioProtocolsAndConclusion } from "./PerioProtocolsAndConclusion";
 import { PerioDetailedProbeSection } from "./PerioDetailedProbeSection";
 import { PerioIndicesPanel } from "./PerioIndicesPanel";
 import { usePerioKeyboardNavigation } from "./usePerioKeyboardNavigation";
@@ -35,8 +40,20 @@ export interface PerioStudioModalProps {
 	readonly isOpen?: boolean | undefined; readonly onClose?: (() => void) | undefined; readonly isModal?: boolean | undefined;
 	readonly patientId?: string | undefined; readonly patientName?: string | undefined; readonly organizationId?: string | undefined;
 	readonly doctorId?: string | undefined; readonly doctorName?: string | undefined; readonly visitId?: string | undefined;
-	readonly initialTeeth?: readonly PerioToothRecord[] | undefined; readonly initialTab?: "psr" | "chart" | undefined; readonly initialSelectedTooth?: number | undefined; readonly initialTier3Expanded?: boolean | undefined;
+	readonly initialTeeth?: readonly (Partial<PerioToothRecord> & { toothNumber: number })[] | readonly PerioToothRecord[] | undefined; readonly initialTab?: "psr" | "chart" | undefined; readonly initialSelectedTooth?: number | undefined; readonly initialTier3Expanded?: boolean | undefined;
 	readonly onChange?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined; readonly onSave?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined; readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined; readonly readOnly?: boolean | undefined; readonly compactMode?: boolean | undefined;
+}
+
+function convertPsrResultsToScreeningMap(results: Record<string, { code: 0 | 1 | 2 | 3 | 4; asterisk: boolean }>): PsrScreeningMap {
+	const map: Partial<PsrScreeningMap> = {};
+	for (const s of PSR_SEXTANTS_CATALOG) {
+		const res = results[s.id];
+		map[s.id] = {
+			code: (res?.code ?? 0) as PsrCode,
+			asterisk: Boolean(res?.asterisk),
+		};
+	}
+	return map as PsrScreeningMap;
 }
 
 export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
@@ -61,17 +78,41 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const pmaResult = useMemo(() => calculatePmaScore(hygieneAssessments), [hygieneAssessments]);
 	const probingSequence = useMemo(() => generateFullMouthProbingSequence(teeth), [teeth]);
 
+	// SEV-1.2: Автоматический пересчет секстантов PSR при клавиатурном и кликовом вводе зондирования
+	const setTeethWithPsrSync: React.Dispatch<React.SetStateAction<PerioToothRecord[]>> = useCallback((action) => {
+		setTeeth((prev) => {
+			const next = typeof action === "function" ? action(prev) : action;
+			const psrResults = calculatePsrSextants(next);
+			setScreeningMap(convertPsrResultsToScreeningMap(psrResults));
+			return next;
+		});
+	}, []);
+
 	const {
 		handleUpdateDepth, handleToggleBop, handleTogglePlaque, handleToggleSuppuration,
 		handleUpdateGingivalMargin, handleUpdateMobility, handleUpdateFurcation, clearTimers,
 	} = usePerioKeyboardNavigation({
-		isOpen, selectedToothNum, selectedSiteKey, probingSequence,
-		setTeeth, setSelectedToothNum, setSelectedSiteKey,
+		isOpen, selectedToothNum, selectedSiteKey, probingSequence, teeth,
+		setTeeth: setTeethWithPsrSync, setSelectedToothNum, setSelectedSiteKey,
 	});
 
 	const handleClose = useCallback(() => {
 		clearTimers();
-		// Zero-Leak Draft Invariant (Мандат 8d / 8zq): полный сброс черновика к дефолту
+		// Zero-Leak Draft Invariant (Мандат 8d / 8zq, 8bn / SEV-4.1): полный сброс черновика к дефолту и очистка кэша
+		const cleanPatientId = patientId?.trim();
+		if (cleanPatientId) {
+			try {
+				localStorage.removeItem(`dente_perio_draft_v2_${cleanPatientId}`);
+				localStorage.removeItem(`dente_perio_draft_${cleanPatientId}`);
+			} catch {
+				// safe
+			}
+		}
+		try {
+			useDraftStore.getState().resetDraft();
+		} catch {
+			// safe
+		}
 		setTeeth(normalizePerioDentition(initialTeeth));
 		setScreeningMap({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } });
 		setSelectedProtocolId("prophy_airflow_ultrasound");
@@ -81,36 +122,44 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setShowIndicesPanel(false);
 		setIsDetailedExpanded(initialTier3Expanded);
 		if (onClose) onClose();
-	}, [clearTimers, initialTeeth, initialSelectedTooth, initialTier3Expanded, onClose]);
+	}, [clearTimers, patientId, initialTeeth, initialSelectedTooth, initialTier3Expanded, onClose]);
+
+	useEffect(() => {
+		if (!initialTeeth?.length) return;
+		type InitialToothItem = (Partial<PerioToothRecord> & { toothNumber: number });
+		const initMap = new Map<number, InitialToothItem>();
+		for (const it of initialTeeth) {
+			initMap.set(it.toothNumber, it);
+		}
+		setTeeth((prev) =>
+			prev.map((t) => {
+				const it = initMap.get(t.toothNumber);
+				return it
+					? { ...t, isMissing: it.isMissing ?? t.isMissing, isImplant: it.isImplant ?? t.isImplant }
+					: t;
+			}),
+		);
+	}, [initialTeeth]);
 
 	// Escape key dismissal for modal mode
 	useEffect(() => {
 		if (!isOpen || !isModal) return;
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") { e.stopPropagation(); handleClose(); }
-		};
+		const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); handleClose(); } };
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, isModal, handleClose]);
 
-	// Debounced Draft Autosave (Мандат 8e / Домен 20) — сохранение каждые 500мс
+	// Debounced Draft Autosave (Мандат 8e / Домен 20 / SEV-4.1) — сохранение каждые 500мс в v2
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
 		if (!cleanPatientId) return;
 		const timer = setTimeout(() => {
 			try {
 				localStorage.setItem(
-					`dente_perio_draft_${cleanPatientId}`,
-					JSON.stringify({
-						teeth,
-						screeningMap,
-						selectedProtocolId,
-						updatedAt: new Date().toISOString(),
-					}),
+					`dente_perio_draft_v2_${cleanPatientId}`,
+					JSON.stringify({ teeth, screeningMap, selectedProtocolId, updatedAt: new Date().toISOString() }),
 				);
-			} catch (e) {
-				console.warn("[PerioStudio] Failed to autosave draft to localStorage:", e);
-			}
+			} catch (e) { console.warn("[PerioStudio] Failed to autosave draft to localStorage:", e); }
 		}, 500);
 		return () => clearTimeout(timer);
 	}, [patientId, teeth, screeningMap, selectedProtocolId]);
@@ -121,7 +170,9 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		const safePatientId = cleanPatientId;
 		let isCancelled = false;
 		try {
-			const draft = localStorage.getItem(`dente_perio_draft_${safePatientId}`);
+			const draftV2 = localStorage.getItem(`dente_perio_draft_v2_${safePatientId}`);
+			const draftV1 = !draftV2 ? localStorage.getItem(`dente_perio_draft_${safePatientId}`) : null;
+			const draft = draftV2 || draftV1;
 			if (draft) {
 				const parsed = JSON.parse(draft);
 				if (Array.isArray(parsed.teeth) && parsed.teeth.length > 0) setTeeth(normalizePerioDentition(parsed.teeth));
@@ -139,34 +190,23 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 		async function fetchPerio() {
 			try {
-				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`, {
-					headers: getDenteAuthHeaders(),
-				});
+				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`, { headers: getDenteAuthHeaders() });
 				if (!res.ok) { console.warn("[PerioStudio] Server responded with error status:", res.status); return; }
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
 				if (Array.isArray(json.data.teeth) && json.data.teeth.length > 0) {
 					const converted = convertSepaDentitionToPerio(json.data.teeth);
-					if (converted && converted.length > 0) setTeeth(normalizePerioDentition(converted));
+					if (converted?.length) setTeeth(normalizePerioDentition(converted));
 				}
 				if (json.data.indices?.psrData && typeof json.data.indices.psrData === "object") {
 					const rawPsr = json.data.indices.psrData as Record<string, unknown>;
 					const validMap: Partial<PsrScreeningMap> = {};
 					const validSextants: PsrSextantId[] = ["S1", "S2", "S3", "S4", "S5", "S6"];
 					for (const sId of validSextants) {
-						const item = rawPsr[sId];
-						if (item && typeof item === "object") {
-							const rec = item as Record<string, unknown>;
-							const code = Number(rec.code ?? 0) as PsrCode;
-							const asterisk = Boolean(rec.asterisk);
-							if ([0, 1, 2, 3, 4].includes(code)) {
-								validMap[sId] = { code, asterisk };
-							}
-						}
+						const item = rawPsr[sId] as Record<string, unknown> | undefined;
+						if (item && [0, 1, 2, 3, 4].includes(Number(item.code))) validMap[sId] = { code: Number(item.code) as PsrCode, asterisk: Boolean(item.asterisk) };
 					}
-					if (Object.keys(validMap).length === 6) {
-						setScreeningMap(validMap as PsrScreeningMap);
-					}
+					if (Object.keys(validMap).length === 6) setScreeningMap(validMap as PsrScreeningMap);
 				}
 			} catch (err) {
 				console.warn("[PerioStudio] Failed to load periodontogram:", err);
@@ -181,25 +221,40 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 	useEffect(() => { if (onChange) onChange(teeth, summary); }, [teeth, summary, onChange]);
 	const updateSextant = useCallback((id: PsrSextantId, code: PsrCode, asterisk?: boolean) => {
-		setScreeningMap((prev) => ({ ...prev, [id]: { code, asterisk: asterisk ?? prev[id]?.asterisk ?? false } }));
-		if (code >= 3) setIsDetailedExpanded(true);
-	}, []);
+		const targetAsterisk = asterisk ?? screeningMap[id]?.asterisk ?? false;
+		setScreeningMap((prev) => ({ ...prev, [id]: { code, asterisk: targetAsterisk } }));
+		setTeeth((prevTeeth) => applyPsrSextantCode(prevTeeth, id, code, targetAsterisk));
+		if (code >= 3 || targetAsterisk) setIsDetailedExpanded(true);
+	}, [screeningMap]);
 	const toggleAsterisk = useCallback((id: PsrSextantId) => {
-		setScreeningMap((prev) => ({ ...prev, [id]: { code: prev[id]?.code ?? 0, asterisk: !prev[id]?.asterisk } }));
-	}, []);
+		const current = screeningMap[id] ?? { code: 0, asterisk: false };
+		const nextAsterisk = !current.asterisk;
+		setScreeningMap((prev) => ({ ...prev, [id]: { code: current.code, asterisk: nextAsterisk } }));
+		setTeeth((prevTeeth) => applyPsrSextantCode(prevTeeth, id, current.code, nextAsterisk));
+		if (nextAsterisk) setIsDetailedExpanded(true);
+	}, [screeningMap]);
 	const handleSetAllIntact = useCallback(() => {
 		setTeeth(normalizePerioDentition(null));
 		setScreeningMap({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } });
 		setSelectedProtocolId(null);
 		showToast("✓ Все секстанты интактны (PSR 0 во всех 6 секстантах)", "success");
 	}, []);
-	const handleApplyUpperJawNorm = useCallback(() => { setTeeth((p) => applyUpperJawNormPreset(p)); showToast("✓ ВЧ (18–28): норма 1–2 мм", "success"); }, []);
-	const handleApplyLowerJawNorm = useCallback(() => { setTeeth((p) => applyLowerJawNormPreset(p)); showToast("✓ НЧ (48–38): норма 1–2 мм", "success"); }, []);
-	const handleApplyZeroBop = useCallback(() => { setTeeth((p) => applyZeroBopPreset(p)); showToast("✓ Все десны без кровоточивости (BOP 0%)", "success"); }, []);
-	const handleApplyZeroCalculus = useCallback(() => { setTeeth((p) => applyZeroCalculusAndPlaquePreset(p)); showToast("✓ Налёт и камень сброшены (0%)", "success"); }, []);
+	const applyPresetAndSync = useCallback((fn: (teeth: PerioToothRecord[]) => PerioToothRecord[], message: string) => {
+		setTeeth((p) => {
+			const updated = fn(p);
+			setScreeningMap(convertPsrResultsToScreeningMap(calculatePsrSextants(updated)));
+			return updated;
+		});
+		showToast(message, "success");
+	}, []);
+	const handleApplyUpperJawNorm = useCallback(() => applyPresetAndSync(applyUpperJawNormPreset, "✓ ВЧ (18–28): норма 1–2 мм"), [applyPresetAndSync]);
+	const handleApplyLowerJawNorm = useCallback(() => applyPresetAndSync(applyLowerJawNormPreset, "✓ НЧ (48–38): норма 1–2 мм"), [applyPresetAndSync]);
+	const handleApplyZeroBop = useCallback(() => applyPresetAndSync(applyZeroBopPreset, "✓ Все десны без кровоточивости (BOP 0%)"), [applyPresetAndSync]);
+	const handleApplyZeroCalculus = useCallback(() => applyPresetAndSync(applyZeroCalculusAndPlaquePreset, "✓ Налёт и камень сброшены (0%)"), [applyPresetAndSync]);
 	const handleApplyPreset = useCallback((presetId: string) => {
 		const res = applyExpressPerioPreset(teeth, presetId);
 		setTeeth(res.updatedTeeth);
+		setScreeningMap(convertPsrResultsToScreeningMap(calculatePsrSextants(res.updatedTeeth)));
 		if (presetId.includes("severe") || presetId.includes("moderate")) setIsDetailedExpanded(true);
 		dispatchPresetSideEffects(res, onInsertToProtocol);
 	}, [teeth, onInsertToProtocol]);
@@ -207,6 +262,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setSelectedProtocolId(protocol.id);
 		const res = applyExpressPerioPreset(teeth, protocol.id === "prophy_airflow_ultrasound" ? "pro_hygiene_express" : protocol.id);
 		setTeeth(res.updatedTeeth);
+		setScreeningMap(convertPsrResultsToScreeningMap(calculatePsrSextants(res.updatedTeeth)));
 		dispatchPresetSideEffects({ ...res, service: { code: protocol.serviceCode, serviceCode: protocol.serviceCode, name: protocol.titleRu, priceKopecks: protocol.priceKopecks, category: "Пародонтология" } }, onInsertToProtocol);
 	}, [teeth, onInsertToProtocol]);
 
@@ -237,20 +293,38 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				}));
 			}
 		};
+		const syncPerioState = () => {
+			if (patientId?.trim()) {
+				try {
+					localStorage.removeItem(`dente_perio_draft_v2_${patientId}`);
+					localStorage.removeItem(`dente_perio_draft_${patientId}`);
+					localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }));
+				} catch (e) { console.warn("[PerioStudio] Failed to write cache:", e); }
+			}
+			setSyncStatus("saved");
+			dispatchPerioSoapSync(teeth);
+			emitSnapshot();
+			// SEV-2.3: Реактивная инвалидация кэша одонтограммы для мгновенного обновления статуса зубов без F5
+			void denteQueryClient.invalidateQueries({ queryKey: ["odontogram", patientId] });
+			void denteQueryClient.invalidateQueries({ queryKey: ["odontogram"] });
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-odontogram-update", { detail: { patientId, teeth } }));
+			}
+		};
+
 		try {
 			if (patientId?.trim()) {
 				const sepaTeeth = convertPerioDentitionToSepa(teeth);
 				const allSites = sepaTeeth.flatMap((t) => (t.sites || []).map((s) => ({
 					toothNumber: t.toothNumber, siteCode: s.siteCode, probingDepthMm: s.probingDepthMm,
-					gingivalMarginMm: s.gingivalMarginMm, bleedingOnProbing: Boolean(s.bleedingOnProbing),
+					gingivalMarginMm: s.gingivalMarginMm,
+					calMm: Math.max(0, (s.probingDepthMm ?? 0) + (s.gingivalMarginMm ?? 0)),
+					bleedingOnProbing: Boolean(s.bleedingOnProbing),
 					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
 				})));
 				const res = await fetch(`/api/periodontogram/${encodeURIComponent(patientId)}`, {
 					method: "POST",
-					headers: getDenteAuthHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					}),
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": generateUuidV7() }),
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
 						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,
@@ -258,29 +332,15 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					}),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера ${res.status}`);
-				try {
-					localStorage.removeItem(`dente_perio_draft_${patientId}`);
-					localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }));
-				} catch (e) { console.warn("[PerioStudio] Failed to write cache:", e); }
 			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
-			setSyncStatus("saved");
-			dispatchPerioSoapSync(teeth);
-			emitSnapshot();
+			syncPerioState();
 			if (onSave) onSave(teeth, summary);
 			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
 			if (isModal) handleClose();
 		} catch (err) {
 			console.error("[PerioStudio] Save failed:", err);
-			if (patientId?.trim()) {
-				try {
-					localStorage.removeItem(`dente_perio_draft_${patientId}`);
-					localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }));
-				} catch (e) { console.warn("[PerioStudio] Failed to write fallback cache:", e); }
-			}
-			setSyncStatus("saved");
-			dispatchPerioSoapSync(teeth);
-			emitSnapshot();
+			syncPerioState();
 			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, { label: "Повторить", onAction: () => { void handleSave(); } });
 			if (onSave) onSave(teeth, summary);
 			if (isModal) handleClose();
@@ -300,51 +360,17 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		<div id={modalId} data-testid="interactive-periodontogram" className="interactive-periodontogram flex flex-col gap-2 select-none relative rounded-t-[24px] sm:rounded-2xl p-3 sm:p-3.5 pb-28 sm:pb-3 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xl w-full max-w-full overflow-x-clip">
 			<div className="w-9 h-1 rounded-full bg-[var(--line)] mx-auto my-0.5 sm:hidden print:hidden" aria-hidden="true" />
 			{/* Шапка студии */}
-			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-2 border-b border-[var(--line)] perio-header-row">
-				<div className="flex items-center gap-2.5 min-w-0">
-					<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
-						<Activity className="w-4 h-4" />
-					</div>
-					<div className="min-w-0">
-						<h2 className="text-sm font-bold text-[var(--ink)] leading-tight flex flex-wrap items-center gap-1.5">
-							Студия пародонтологии и гигиены
-							<span className="text-[11px] px-2 py-0.5 rounded font-bold bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30 whitespace-nowrap shrink-0">{psrSummary.psrFormula}</span>
-						</h2>
-						<p className="text-xs text-[var(--muted)] truncate max-w-xs sm:max-w-sm">{patientName}</p>
-					</div>
-				</div>
-
-				<div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 shrink-0 perio-toolbar-actions">
-					<div className="flex items-center gap-1.5 px-2.5 py-1 min-h-[36px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs whitespace-nowrap shrink-0 perio-indices-badge">
-						<span className="w-2 h-2 rounded-full bg-[var(--success,#10b981)] shrink-0" />
-						<span className="text-[var(--muted)] font-medium">BOP:</span>
-						<span className="font-bold text-[var(--ink)]">{summary.fmbsPercent}%</span>
-						<span className="text-[var(--line)]">|</span>
-						<span className="text-[var(--muted)] font-medium">Карманы:</span>
-						<span className={`font-bold ${summary.deepPocketsCount > 0 ? "text-[var(--danger,#e11d48)]" : "text-[var(--success,#10b981)]"}`}>{summary.deepPocketsCount}</span>
-					</div>
-					<button type="button" onClick={handlePrintProtocol} data-testid="perio-print-protocol-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Печать карты">
-						<Printer className="w-4 h-4 shrink-0" />
-						<span className="hidden sm:inline">Печать</span>
-					</button>
-					<button type="button" onClick={() => setShowIndicesPanel((prev) => !prev)} data-testid="perio-calc-indices-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Индексы">
-						<Info className="w-4 h-4 shrink-0" />
-						<span className="hidden sm:inline">Индексы</span>
-					</button>
-					<div className="hidden sm:inline-flex shrink-0 perio-desktop-primary-cta">
-						<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-draft-btn" title="Сохранить пародонтограмму" className="min-h-[36px] h-9 px-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer transition-all perio-primary-cta-btn">
-							<Check className="w-4 h-4 shrink-0" />
-							{syncStatus === "saving" ? "Сохранение..." : "Сохранить пародонтограмму"}
-							<span className="sr-only">Сохранить периодонтограмму</span>
-						</button>
-					</div>
-					{isModal && onClose && (
-						<button type="button" onClick={handleClose} data-testid="perio-modal-close-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 rounded-xl bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center shrink-0 cursor-pointer transition-colors ml-auto sm:ml-0 perio-close-btn" aria-label="Закрыть">
-							<X className="w-4 h-4" />
-						</button>
-					)}
-				</div>
-			</div>
+			<PerioStudioHeader
+				psrFormula={psrSummary.psrFormula}
+				patientName={patientName}
+				summary={summary}
+				syncStatus={syncStatus}
+				isModal={isModal}
+				onPrintProtocol={handlePrintProtocol}
+				onToggleIndices={() => setShowIndicesPanel((prev) => !prev)}
+				onSave={handleSave}
+				onClose={onClose ? handleClose : undefined}
+			/>
 
 			<PerioIndicesPanel
 				isOpen={showIndicesPanel}
@@ -355,6 +381,18 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				summary={summary}
 				psrFormula={psrSummary.psrFormula}
 				suggestedDiagnosisRu={psrSummary.suggestedDiagnosisRu}
+				icd10Code={psrSummary.icd10Code}
+				onInsertDiagnosisToVisit={(icd, diag) => {
+					try {
+						useVisitStore.getState().setVisitNoteForm((prev) => ({ ...prev, diagnosisIcd10: icd, diagnosis: diag }));
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { diagnosisIcd10: icd, diagnosis: diag, mode: "smart_append" } }));
+						}
+						showToast(`✓ Диагноз ${icd} (${diag}) внесён в приём`, "success");
+					} catch {
+						showToast(`Диагноз ${icd} зафиксирован`, "info");
+					}
+				}}
 			/>
 
 			{/* Клинические пресеты и макро-выбор челюстей */}
@@ -367,88 +405,22 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			</div>
 
 			{/* Сетка 6 секстантов экспресс-скрининга PSR */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 perio-psr-grid">
-				{PSR_SEXTANTS_CATALOG.map((s) => {
-					const cur = screeningMap[s.id] ?? { code: 0, asterisk: false };
-					const meta = PSR_CODES_CATALOG[cur.code];
-					return (
-						<div key={s.id} data-testid={`psr-sextant-card-${s.id}`} className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2 hover:border-[var(--primary)]/40 transition-colors">
-							<div className="flex items-center justify-between gap-2">
-								<div>
-									<span className="font-bold text-xs text-[var(--ink)]">{s.name} ({s.teethRange})</span>
-									<span className="text-[11px] text-[var(--muted)] block">{s.labelRu}</span>
-								</div>
-								<button type="button" onClick={() => toggleAsterisk(s.id)} className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-md font-bold text-xs cursor-pointer transition-all border shrink-0 ${cur.asterisk ? "bg-[var(--danger,#e11d48)] text-white border-[var(--danger,#e11d48)] shadow-xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--danger,#e11d48)]"}`} title="Символ *: вовлечение фуркаций, подвижность II–III ст., рецессия >= 3.5 мм">
-									{cur.asterisk ? "* Фуркация / Рецессия" : "*"}
-								</button>
-							</div>
-							<div className="grid grid-cols-5 gap-2 sm:gap-1.5">
-								{([0, 1, 2, 3, 4] as PsrCode[]).map((code) => (
-									<button key={code} type="button" onClick={() => updateSextant(s.id, code)} aria-pressed={cur.code === code} className={`min-h-[44px] min-w-[44px] sm:min-h-[38px] rounded-xl text-xs font-bold flex flex-col items-center justify-center cursor-pointer transition-all border ${cur.code === code ? "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)] ring-1 ring-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"}`}>
-										<span className="text-sm font-extrabold">{code}</span>
-									</button>
-								))}
-							</div>
-							<div className="text-[11px] text-[var(--muted)] leading-tight pt-0.5" title={meta.criteriaRu}>{meta.labelRu}</div>
-						</div>
-					);
-				})}
-			</div>
+			<PerioPsrSextantsGrid
+				screeningMap={screeningMap}
+				onUpdateSextant={updateSextant}
+				onToggleAsterisk={toggleAsterisk}
+			/>
 
-			{/* 4 канонических протокола гигиены */}
-			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2 perio-protocols-panel">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--ink)]">Клинические комплексы:</span>
-					<span className="text-[11px] text-[var(--muted)]">Пакетное списание расходников</span>
-				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-					{PERIO_TREATMENT_PROTOCOLS.map((proto) => {
-						const isSelected = selectedProtocolId === proto.id;
-						return (
-							<button key={proto.id} type="button" onClick={() => handleSelectProtocol(proto)} className={`min-h-[44px] p-2.5 rounded-xl text-left text-xs border cursor-pointer transition-all flex flex-col justify-between gap-1.5 items-stretch w-full ${isSelected ? "bg-[var(--primary)]/10 text-[var(--ink)] border-[var(--primary)] ring-1 ring-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"}`}>
-								<div className="w-full">
-									<div className="font-bold text-xs leading-tight min-h-[30px] break-words">{proto.titleRu}</div>
-									<div className="text-[11px] text-[var(--muted)] pt-0.5 break-words">{proto.descriptionRu}</div>
-								</div>
-								<div className="w-full flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)]">
-									<span className="text-[11px] font-semibold text-[var(--primary)] shrink-0">{formatKopecksToRub(proto.priceKopecks)}</span>
-									<span className="text-[10px] text-[var(--muted)] font-medium text-right truncate">Клинический протокол</span>
-								</div>
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* Клиническое заключение */}
-			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 perio-conclusion-panel">
-				<div>
-					<div className="flex flex-wrap items-center gap-2">
-						<span className="text-xs font-bold text-[var(--ink)]">Клиническое заключение:</span>
-						<span className="text-xs px-2 py-0.5 rounded font-bold bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30">
-							{psrSummary.suggestedDiagnosisRu} ({psrSummary.icd10Code})
-						</span>
-					</div>
-					<p className="text-xs text-[var(--muted)] pt-1">{psrSummary.hygienePlanRu}</p>
-				</div>
-				<button type="button" onClick={() => {
-					const text = generateComprehensivePerioProtocolText(teeth, summary, {
-						doctorName,
-						customNotes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})\nРекомендации: ${psrSummary.hygienePlanRu}`,
-					});
-					if (onInsertToProtocol) {
-						onInsertToProtocol(text);
-						showToast("✓ Протокол осмотра скопирован в дневник приёма", "success");
-					} else if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-						void navigator.clipboard.writeText(text).then(() => showToast("✓ Протокол осмотра скопирован в буфер обмена", "success")).catch(() => showToast("Не удалось скопировать в буфер обмена", "error"));
-					} else {
-						showToast("✓ Протокол осмотра сформирован", "info");
-					}
-				}} data-testid="perio-insert-protocol-btn" className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[var(--primary)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors perio-insert-btn">
-					<FileText className="w-4 h-4" />
-					Вставить в дневник
-				</button>
-			</div>
+			{/* Клинические комплексы и заключение */}
+			<PerioProtocolsAndConclusion
+				selectedProtocolId={selectedProtocolId}
+				onSelectProtocol={handleSelectProtocol}
+				psrSummary={psrSummary}
+				teeth={teeth}
+				summary={summary}
+				doctorName={doctorName}
+				onInsertToProtocol={onInsertToProtocol}
+			/>
 
 			{/* Анатомическая карта челюстей и углубленное зондирование */}
 			<div className="perio-detailed-wrapper">
@@ -478,8 +450,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	if (isModal) {
 		return (
 			<div
-				className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay"
-				style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
+				className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay bg-slate-950/65 backdrop-blur-xs"
 				data-testid="perio-chart-modal"
 				role="dialog"
 				aria-modal="true"

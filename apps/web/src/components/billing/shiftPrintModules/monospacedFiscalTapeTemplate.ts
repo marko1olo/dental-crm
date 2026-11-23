@@ -2,6 +2,7 @@
  * monospacedFiscalTapeTemplate.ts — Formatted Monospaced Receipt Tape (58mm / 80mm).
  * Mandate 8b: <= 120 lines. Zero Soviet bureaucracy.
  */
+import { kopecksToNumericString, rubToKopecks } from "@dental/shared";
 import {
 	type CashShiftReconciliationResult,
 	type ClinicFiscalDetails,
@@ -39,6 +40,10 @@ export function generateMonospacedTapeText(params: FiscalTapeParams): string {
 		return l + " ".repeat(gap) + r;
 	}
 
+	function fmt(val: number): string {
+		return `${kopecksToNumericString(rubToKopecks(val))} ₽`;
+	}
+
 	const title = reportType === "z_report" ? "ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z)" : "ПРОМЕЖУТОЧНЫЙ ОТЧЕТ (X)";
 
 	return [
@@ -55,30 +60,30 @@ export function generateMonospacedTapeText(params: FiscalTapeParams): string {
 		subLine,
 		center("--- ПРИХОД ---"),
 		row("Чеков прихода:", String(rec.receiptsCount)),
-		row("• Наличные:", `${rec.tenders.cashIncomeRub.toFixed(2)} ₽`),
-		row("• Банковская карта:", `${rec.tenders.cardIncomeRub.toFixed(2)} ₽`),
-		row("• Оплата через СБП:", `${rec.tenders.sbpIncomeRub.toFixed(2)} ₽`),
-		row("• Зачёт аванса / депозита:", `${rec.tenders.advanceOffsetIncomeRub.toFixed(2)} ₽`),
-		row("ИТОГО ПРИХОД:", `${rec.tenders.totalGrossIncomeRub.toFixed(2)} ₽`),
+		row("• Наличные:", fmt(rec.tenders.cashIncomeRub)),
+		row("• Банковская карта:", fmt(rec.tenders.cardIncomeRub)),
+		row("• Оплата через СБП:", fmt(rec.tenders.sbpIncomeRub)),
+		row("• Зачёт аванса / депозита:", fmt(rec.tenders.advanceOffsetIncomeRub)),
+		row("ИТОГО ПРИХОД:", fmt(rec.tenders.totalGrossIncomeRub)),
 		subLine,
 		center("--- ВОЗВРАТ ДЕНЕЖНЫХ СРЕДСТВ ---"),
 		row("Чеков возврата:", String(rec.returnsCount)),
-		row("• Наличными из кассы:", `${rec.tenders.cashReturnRub.toFixed(2)} ₽`),
-		row("• На карту / СБП:", `${(rec.tenders.cardReturnRub + rec.tenders.sbpReturnRub).toFixed(2)} ₽`),
-		row("ИТОГО ВОЗВРАТЫ:", `${rec.tenders.totalReturnsRub.toFixed(2)} ₽`),
+		row("• Наличными из кассы:", fmt(rec.tenders.cashReturnRub)),
+		row("• На карту / СБП:", fmt(rec.tenders.cardReturnRub + rec.tenders.sbpReturnRub)),
+		row("ИТОГО ВОЗВРАТЫ:", fmt(rec.tenders.totalReturnsRub)),
 		divLine,
-		row("ЧИСТАЯ ВЫРУЧКА:", `${rec.tenders.netRevenueRub.toFixed(2)} ₽`),
+		row("ЧИСТАЯ ВЫРУЧКА:", fmt(rec.tenders.netRevenueRub)),
 		divLine,
 		center("--- ДЕНЕЖНЫЙ ЯЩИК ---"),
-		row("Разменный фонд (утро):", `${rec.initialChangeFundRub.toFixed(2)} ₽`),
-		row("Расчетный остаток:", `${rec.calculatedCashInDrawerRub.toFixed(2)} ₽`),
-		row("Фактический пересчет:", `${rec.countedCashInDrawerRub.toFixed(2)} ₽`),
-		row("Расхождение:", `${rec.differenceRub >= 0 ? "+" : ""}${rec.differenceRub.toFixed(2)} ₽`),
+		row("Разменный фонд (утро):", fmt(rec.initialChangeFundRub)),
+		row("Расчетный остаток:", fmt(rec.calculatedCashInDrawerRub)),
+		row("Фактический пересчет:", fmt(rec.countedCashInDrawerRub)),
+		row("Расхождение:", `${rec.differenceRub >= 0 ? "+" : ""}${fmt(rec.differenceRub)}`),
 		row("Статус:", rec.status === "balanced" ? "СВЕРЕНО (0.00)" : rec.status === "surplus" ? "ИЗЛИШЕК" : "НЕДОСТАЧА"),
 		subLine,
 		center("--- ИНКАССАЦИЯ И СЕЙФ ---"),
-		row("Сдано в инкассацию:", `${rec.encashmentAmountRub.toFixed(2)} ₽`),
-		row("Остаток на след. смену:", `${rec.retainedNextShiftChangeFundRub.toFixed(2)} ₽`),
+		row("Сдано в инкассацию:", fmt(rec.encashmentAmountRub)),
+		row("Остаток на след. смену:", fmt(rec.retainedNextShiftChangeFundRub)),
 		divLine,
 		row("РН ККТ:", clinic.kktRegNumber),
 		row("ЗН ККТ:", clinic.kktSerialNumber),

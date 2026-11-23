@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import React from "react";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
 import { LabOrdersPanel } from "../LabOrdersPanel";
 import { LabOrderCardItem } from "../LabOrderCardItem";
+import { calculateZtlPayrollNetRevenue } from "../../lab/dentalLabCatalogData";
 import type { LabOrder } from "../labOrdersTypes";
 
 describe("LabOrdersPanel & LabOrderCardItem — Red Team Clinical Audit (SSOT)", () => {
@@ -75,6 +76,21 @@ describe("LabOrdersPanel & LabOrderCardItem — Red Team Clinical Audit (SSOT)",
 		const html = renderToString(<LabOrderCardItem order={warrantyOrder} />);
 
 		assert.ok(html.includes("Гарантия"), "Must display warranty indicator");
-		assert.ok(html.includes("Примерка каркаса / керамики"), "Must display fitting status");
+		assert.ok(html.includes("На переделке в ЗТЛ"), "Must display refitting status");
+	});
+
+	it("4. Calculates orthopedic doctor net revenue with labCostKopecks deductible and preserves base on warranty rework (DEF-19-05)", () => {
+		// Обычный наряд ЗТЛ: стоимость для пациента 24 000 ₽ (2 400 000 коп), ЗТЛ 7 500 ₽ (750 000 коп), процент ортопеда 25%
+		const regularCalc = calculateZtlPayrollNetRevenue(2400000, 750000, 25, false);
+		assert.equal(regularCalc.orthoGrossKopecks, 2400000, "Gross revenue is 2 400 000 kopecks");
+		assert.equal(regularCalc.labCostKopecks, 750000, "Lab cost is 750 000 kopecks");
+		assert.equal(regularCalc.netRevenueKopecks, 1650000, "Net revenue after lab deduction is 1 650 000 kopecks (2400000 - 750000)");
+		assert.equal(regularCalc.doctorWageKopecks, 412500, "Doctor 25% piecework wage is 412 500 kopecks (4 125 ₽)");
+
+		// Гарантийная переделка (isWarranty: true): себестоимость ЗТЛ относится на клинику, база врача не срезается (0 вычетов с врача)
+		const warrantyCalc = calculateZtlPayrollNetRevenue(2400000, 750000, 25, true);
+		assert.equal(warrantyCalc.labCostKopecks, 0, "Warranty effective lab cost deductible for doctor is 0 kopecks");
+		assert.equal(warrantyCalc.netRevenueKopecks, 2400000, "Doctor wage base is preserved at 2 400 000 kopecks without lab penalty");
+		assert.equal(warrantyCalc.doctorWageKopecks, 600000, "Doctor 25% wage on warranty is 600 000 kopecks (6 000 ₽)");
 	});
 });

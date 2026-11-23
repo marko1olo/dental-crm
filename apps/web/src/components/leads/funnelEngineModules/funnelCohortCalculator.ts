@@ -42,9 +42,10 @@ export function predictShowUpBySource(
 
 		const historicalRate =
 			histBooked > 0 ? safePercent(histShowUp, histBooked) : 0;
-		const predictedShowUpCount = Math.round(
-			(currentBookedForChannel * historicalRate) / 100,
-		);
+		const predictedShowUpCount =
+			histBooked > 0
+				? Math.round((currentBookedForChannel * histShowUp) / histBooked)
+				: 0;
 
 		let confidence: "high" | "medium" | "low" = "low";
 		if (histBooked >= 20) confidence = "high";

@@ -13,20 +13,24 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
+	buildScopedCacheKey,
 	cachedApiFetch,
 	cachedApiFetchResponse,
 	clearApiCache,
 	createResponseFromCachedEntry,
 	getApiCache,
+	getApiCacheScope,
 	getApiCacheStats,
 	getCachedApiResponse,
 	headersToRecord,
 	invalidateApiCache,
 	isCacheableCatalogUrl,
+	isGlobalStatutoryUrl,
 	matchCatalogRule,
 	normalizeApiUrl,
 	notifyApiMutation,
 	resetApiCacheStats,
+	setApiCacheScope,
 	setCachedApiResponse,
 	STATUTORY_CATALOG_RULES,
 	DEFAULT_MUTATION_RULES,
@@ -184,5 +188,102 @@ describe("apiCacheEngine Core & Facade Behavioral Invariant Suite", () => {
 		h.set("Content-Type", "application/json");
 		const fromHeaders = headersToRecord(h);
 		assert.equal(fromHeaders["content-type"], "application/json");
+	});
+
+	it("8. Изоляция скоупов: общенациональные каталоги сохраняются глобально, а приватные эндпоинты изолируются", () => {
+		assert.equal(isGlobalStatutoryUrl("/api/clinical/804n"), true);
+		assert.equal(isGlobalStatutoryUrl("/api/clinical/icd10"), true);
+		assert.equal(isGlobalStatutoryUrl("/api/templates"), true);
+		assert.equal(isGlobalStatutoryUrl("/api/patients/123"), false);
+		assert.equal(isGlobalStatutoryUrl("/api/settings/staff"), false);
+
+		// Без активного скоупа
+		setApiCacheScope(null);
+		assert.equal(buildScopedCacheKey("/api/clinical/804n"), "/api/clinical/804n");
+		assert.equal(buildScopedCacheKey("/api/patients/123"), "/api/patients/123");
+
+		// При установке скоупа Доктора А
+		setApiCacheScope("clinic-1:doc-a");
+		assert.equal(getApiCacheScope(), "clinic-1:doc-a");
+		assert.equal(buildScopedCacheKey("/api/clinical/804n"), "/api/clinical/804n", "Каталог 804н остается глобальным");
+		assert.equal(
+			buildScopedCacheKey("/api/patients/123"),
+			"[scope:clinic-1:doc-a]/api/patients/123",
+			"Приватный эндпоинт пациента получает изолированный префикс",
+		);
+	});
+
+	it("9. Red Team защита на общем ПК: смена пользователя или логаут вычищает приватный кэш до байта", () => {
+		// Шаг 1: Доктор А заходит на общем ПК и открывает приватную медкарту
+		setApiCacheScope("clinic-1:doc-a");
+		const secretPatientRecord = { id: "pat-999", secretDiagnosis: "ВИЧ/Гепатит С", debtKopecks: 150000 };
+		setCachedApiResponse("/api/patients/pat-999", secretPatientRecord);
+
+		// Доктор А видит данные из кэша
+		const docACached = getCachedApiResponse<typeof secretPatientRecord>("/api/patients/pat-999");
+		assert.ok(docACached, "Доктор А должен видеть закэшированные данные");
+		assert.deepEqual(docACached?.data, secretPatientRecord);
+
+		// Шаг 2: Доктор А блокирует станцию или выходит из системы
+		setApiCacheScope(null);
+		assert.equal(getApiCacheScope(), null);
+		assert.equal(
+			getCachedApiResponse("/api/patients/pat-999"),
+			undefined,
+			"После логаута оперативная память должна быть полностью очищена от приватных данных",
+		);
+
+		// Шаг 3: Доктор Б заходит под своим логином
+		setApiCacheScope("clinic-1:doc-b");
+		assert.equal(getApiCacheScope(), "clinic-1:doc-b");
+		assert.equal(
+			getCachedApiResponse("/api/patients/pat-999"),
+			undefined,
+			"Доктор Б категорически НЕ ДОЛЖЕН иметь доступа к кэшу Доктора А!",
+		);
+	});
+
+	it("10. Инвалидация по мутациям корректно зачищает записи со скоуп-префиксами", () => {
+		setApiCacheScope("clinic-1:doc-a");
+		setCachedApiResponse("/api/settings/staff", [{ id: "doc-a", name: "Доктор А" }]);
+		assert.ok(getCachedApiResponse("/api/settings/staff"));
+
+		// Мутация POST /api/settings/staff/update должна инвалидировать запись
+		const invalidated = notifyApiMutation("/api/settings/staff/update", "POST");
+		assert.ok(invalidated >= 1, "Должна быть зафиксирована инвалидация");
+		assert.equal(getCachedApiResponse("/api/settings/staff"), undefined);
+	});
+
+	it("11. Защита от race condition: ответ летящего запроса Доктора А не оседает в кэше Доктора Б", async () => {
+		setApiCacheScope("clinic-1:doc-a");
+		let resolveFetch: (res: Response) => void = () => {};
+
+		globalThis.fetch = () =>
+			new Promise<Response>((resolve) => {
+				resolveFetch = resolve;
+			});
+
+		// Доктор А запустил долгий сетевой запрос к приватному эндпоинту
+		const fetchPromise = cachedApiFetch<{ sensitive: string }>("/api/patients/sensitive");
+
+		// Во время полета запроса произошла смена пользователя на Доктора Б
+		setApiCacheScope("clinic-1:doc-b");
+
+		// Сетевой запрос Доктора А наконец завершился
+		resolveFetch(
+			new Response(JSON.stringify({ sensitive: "данные доктора А" }), {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			}),
+		);
+
+		await fetchPromise;
+
+		// Проверяем: осел ли этот ответ в кэше Доктора Б?
+		assert.equal(
+			getCachedApiResponse("/api/patients/sensitive"),
+			undefined,
+			"Ответ запроса из прошлого скоупа НЕ ДОЛЖЕН оседать в кэше нового скоупа!",
+		);
 	});
 });

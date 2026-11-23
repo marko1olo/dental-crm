@@ -1,4 +1,4 @@
-import { parseKopecks, type Kopecks } from "@dental/shared";
+import { parseKopecks, kopecksToRubles, type Kopecks } from "@dental/shared";
 import type { ToothData } from "../../../odontogram/ToothChart";
 
 export const sampleTeethPresentation: ToothData[] = [
@@ -31,7 +31,7 @@ export function createPlanItem(
 		finalUnitPriceKopecks,
 		totalKopecks,
 		totalDiscountKopecks,
-		priceRub: Math.round(finalUnitPriceKopecks / 100),
+		priceRub: Math.round(kopecksToRubles(finalUnitPriceKopecks)),
 		materials,
 	};
 }

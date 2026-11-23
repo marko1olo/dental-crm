@@ -72,8 +72,8 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 		});
 	}, [qrData, status, sumRub, onPaymentSuccess]);
 
-	const pollSbpStatus = useCallback(async (manual = false) => {
-		if (!qrData || status === "paid") return;
+	const pollSbpStatus = useCallback(async (manual = false): Promise<boolean> => {
+		if (!qrData || status === "paid") return false;
 		if (manual) setIsCheckingSbp(true);
 		try {
 			const res = await fetch(`/api/sbp/status/${encodeURIComponent(qrData.operationId)}`, { credentials: "same-origin" });
@@ -81,7 +81,7 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 				const json = (await res.json().catch(() => null)) as { found?: boolean; status?: string } | null;
 				if (json?.found && json.status && json.status !== "refunded" && json.status !== "voided") {
 					handleConfirmPayment();
-					return;
+					return true;
 				}
 				if (manual) {
 					setSbpCheckMessage("Зачисление от банка пока не подтверждено");
@@ -93,6 +93,7 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 		} finally {
 			if (manual) setIsCheckingSbp(false);
 		}
+		return false;
 	}, [qrData, status, handleConfirmPayment]);
 
 	useEffect(() => {
@@ -115,13 +116,10 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 		return () => clearInterval(pollInterval);
 	}, [status, pollSbpStatus]);
 
-	const handleManualConfirmation = useCallback(() => {
+	const handleManualConfirmation = useCallback(async () => {
 		if (hideManualConfirm) return;
-		void pollSbpStatus(true);
-		// Ручное подтверждение кассира: платёж записывается вызывающей стороной
-		// с clientMutationId = sbp:<operationId>, после чего статус виден серверу.
-		handleConfirmPayment();
-	}, [hideManualConfirm, pollSbpStatus, handleConfirmPayment]);
+		await pollSbpStatus(true);
+	}, [hideManualConfirm, pollSbpStatus]);
 
 	const handleCopyLink = async () => {
 		if (!qrData) return;

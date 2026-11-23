@@ -60,10 +60,15 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly setSplitSbpRub: (val: number) => void;
 	readonly splitDepositRub: number;
 	readonly setSplitDepositRub: (val: number) => void;
+	readonly splitBonusRub?: number | undefined;
+	readonly setSplitBonusRub?: ((val: number) => void) | undefined;
+	readonly splitCertRub?: number | undefined;
+	readonly setSplitCertRub?: ((val: number) => void) | undefined;
+	readonly patientBonusPoints?: number | undefined;
 	readonly splitCashReceivedRub: number;
 	readonly setSplitCashReceivedRub: (val: number) => void;
 	readonly splitCashChange: CashChangeResult | null;
-	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit") => void;
+	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit" | "bonus" | "certificate") => void;
 	readonly installmentMonths: 3 | 6 | 12;
 	readonly setInstallmentMonths: (val: 3 | 6 | 12) => void;
 	readonly fiscalize: boolean;
@@ -119,6 +124,11 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	setSplitSbpRub,
 	splitDepositRub,
 	setSplitDepositRub,
+	splitBonusRub = 0,
+	setSplitBonusRub,
+	splitCertRub = 0,
+	setSplitCertRub,
+	patientBonusPoints = 0,
 	splitCashReceivedRub,
 	setSplitCashReceivedRub,
 	splitCashChange,
@@ -148,14 +158,14 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				<div
 					className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
 					style={{
-						background: "rgba(13, 148, 136, 0.08)",
-						borderColor: "var(--teal, #0d9488)",
+						background: "var(--primary-soft)",
+						borderColor: "var(--primary)",
 						color: "var(--ink)",
 					}}
 					data-testid="cashbox-dms-split-badge"
 				>
 					<div className="flex items-center gap-2">
-						<span className="font-bold text-[var(--teal,#0d9488)]">Полис ДМС:</span>
+						<span className="font-bold text-[var(--primary)]">Полис ДМС:</span>
 						<span>
 							{appliedDmsSplit.insurerName || "Страховая компания"} покрывает{" "}
 							{formatRubles(appliedDmsSplit.dmsRub)}
@@ -168,7 +178,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					</div>
 					<div className="font-semibold text-right">
 						Доплата на кассе:{" "}
-						<span className="font-bold text-[var(--teal,#0d9488)]">
+						<span className="font-bold text-[var(--primary)]">
 							{formatRubles(appliedDmsSplit.patientRub)}
 						</span>
 					</div>
@@ -220,7 +230,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 								window.dispatchEvent(new CustomEvent("dente:open-patient-search"));
 							}
 						}}
-						className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+						className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
 					>
 						Выбрать пациента
 					</button>
@@ -314,6 +324,13 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					setSplitSbpRub={setSplitSbpRub}
 					splitDepositRub={splitDepositRub}
 					setSplitDepositRub={setSplitDepositRub}
+					splitBonusRub={splitBonusRub}
+					setSplitBonusRub={setSplitBonusRub}
+					splitCertificateRub={splitCertRub}
+					setSplitCertificateRub={setSplitCertRub}
+					certificateNumber={certificateNumber}
+					setCertificateNumber={setCertificateNumber}
+					patientBonusPoints={patientBonusPoints}
 					splitCashReceivedRub={splitCashReceivedRub}
 					setSplitCashReceivedRub={setSplitCashReceivedRub}
 					splitCashChange={splitCashChange}

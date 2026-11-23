@@ -10,6 +10,8 @@ import {
 	loadLatestCephalometricStudy,
 	saveCephalometricAnalysisToEmr,
 	clearPatientCephalometricStudy,
+	saveCephalometricAnalysisToApi,
+	fetchPatientCephalometricStudyFromApi,
 } from "../cephalometricPersistence";
 import {
 	cacheActiveCephStudy,
@@ -166,5 +168,39 @@ describe("Домен 45: Ред Тим инварианты ортодонтии
 		expect(backend.backend).toBe("template_norm");
 		expect(backend.label).toContain("Анатомический усредненный шаблон (Норма)");
 		expect(backend.badge).toBe("Анатомический шаблон (Норма)");
+	});
+
+	// DEF-ORTHO-PERSIST-01: Защита fetch от ERR_INVALID_URL в Node.js / JSDOM
+	it("DEF-ORTHO-PERSIST-01: saveCephalometricAnalysisToApi и fetchPatientCephalometricStudyFromApi безопасно разрешают origin без ERR_INVALID_URL", async () => {
+		const interceptedUrls: string[] = [];
+		const originalFetch = globalThis.fetch;
+
+		globalThis.fetch = (async (input: RequestInfo | URL) => {
+			const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
+			interceptedUrls.push(urlStr);
+			return new Response(JSON.stringify({ success: true, study: { id: "ceph-mocked" } }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const saveRes = await saveCephalometricAnalysisToApi({
+				id: "study-origin-test",
+				patientId: "patient-origin-test",
+			});
+			expect(saveRes).not.toBeNull();
+			expect(saveRes?.id).toBe("ceph-mocked");
+			expect(interceptedUrls.length).toBeGreaterThan(0);
+			expect(interceptedUrls[0]).toMatch(/^https?:\/\/[^/]+\/api\/orthodontics\/patient-origin-test\/ceph-analysis$/);
+
+			const fetchRes = await fetchPatientCephalometricStudyFromApi("patient-origin-test");
+			expect(fetchRes).not.toBeNull();
+			expect(fetchRes?.id).toBe("ceph-mocked");
+			expect(interceptedUrls.length).toBe(2);
+			expect(interceptedUrls[1]).toMatch(/^https?:\/\/[^/]+\/api\/orthodontics\/patient-origin-test\/ceph-analysis$/);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });

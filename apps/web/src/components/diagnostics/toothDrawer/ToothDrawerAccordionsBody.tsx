@@ -60,6 +60,7 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 					onUpdateTooth={onUpdateTooth}
 					onInsertToProtocol={onInsertToProtocol}
 					onOpenParentMemo={onOpenParentMemo}
+					onOpenEndo={onOpenEndo}
 				/>
 			)}
 

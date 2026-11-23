@@ -138,12 +138,18 @@ export async function retryDynamicImport<T>(
 	throw lastError;
 }
 
+type LazyComponentConstraint = Parameters<typeof lazy>[0] extends (
+	...args: unknown[]
+) => Promise<{ default: infer C }>
+	? C
+	: never;
+
 /**
  * Безопасная обертка над React.lazy с автоматическим повтором при задержках I/O.
  * Поддерживает как дефолтные экспорты, так и маппинг именованных:
  * lazyWithRetry(() => import("./ScheduleView").then(m => ({ default: m.ScheduleView })))
  */
-export function lazyWithRetry<T extends ComponentType<never>>(
+export function lazyWithRetry<T extends LazyComponentConstraint>(
 	importer: () => Promise<{ default: T }>,
 	options?: LazyRetryOptions,
 ): LazyExoticComponent<T> {

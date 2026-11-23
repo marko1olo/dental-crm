@@ -5,7 +5,6 @@
  * SSOT Deep Link Маршруты и монтируемые лончеры:
  * - #loyalty, ?loyalty=1: DirectLoyaltyLauncher
  * - #telephony, ?telephony=1: DirectTelephonyLauncher
- * - #odontogram, ?odontogram=1: DirectOdontogramModuleLauncher
  * - #orthodontics, #ortho-protocol: DirectOrthodonticsLauncher
  * - #lab, #dental-lab: DirectDentalLabLauncher (<DirectDentalLabLauncher />)
  * - #consents, ?consents=1: DirectConsentLauncher
@@ -31,7 +30,6 @@ export { DirectUkepSigningLauncher } from "../../documents/ukep/DirectUkepSignin
 export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
 export { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
-export { DirectOdontogramModuleLauncher } from "../../odontogram/DirectOdontogramModuleLauncher";
 export { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher";
 export { DirectHygieneLauncher } from "../../hygiene/DirectHygieneLauncher";
 export { DirectPerioLauncher } from "../../perio/DirectPerioLauncher";

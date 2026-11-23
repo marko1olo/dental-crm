@@ -38,7 +38,7 @@ export function DoctorCbctHardwareBar({
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="font-semibold text-[var(--ink)]">Аппаратная адаптация КТ:</span>
 						<span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] border ${tierBadgeColor}`} data-testid="cbct-hardware-tier-badge">
-							{hwProfile.tier} ({hwProfile.score}/100)
+							{`${hwProfile.tier} (${hwProfile.score}/100)`}
 						</span>
 						{hwProfile.isHybridGraphics ? (
 							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30" data-testid="cbct-hybrid-gpu-badge">

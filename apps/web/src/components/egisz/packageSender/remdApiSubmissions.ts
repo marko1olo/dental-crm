@@ -35,7 +35,13 @@ export async function submitCdaPackageToRemd({
 	moSig,
 }: SubmitCdaPackageOptions): Promise<string> {
 	const cleanPatientSnils = (semdPayload.patient.patientSnils || "").replace(/\D/g, "");
-	const effectiveVisitId = semdPayload.documentUuid?.replace(/^urn:uuid:/, "") || `VISIT-${Date.now()}`;
+	const docUuidRaw = semdPayload.documentUuid?.replace(/^urn:uuid:/, "") || "";
+	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(docUuidRaw);
+	const effectiveVisitId = isUuid
+		? docUuidRaw
+		: (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: "00000000-0000-4000-8000-000000000001");
 	const sigEntry = (sig: typeof doctorSig) => sig ? {
 		signatureBase64: sig.signatureBase64,
 		certificateSerialNumber: sig.certificateSerialNumber,

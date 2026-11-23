@@ -151,6 +151,40 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 		setZoom((prev) => Math.min(3.5, Math.max(0.4, Number((prev * zoomFactor).toFixed(2)))));
 	};
 
+	const touchStartDistRef = useRef<number | null>(null);
+	const touchStartZoomRef = useRef<number>(1);
+
+	// Сенсорный жест двух пальцев (Apple HIG Pinch-to-Zoom)
+	const handleTouchStart = (e: React.TouchEvent) => {
+		if (e.touches.length === 2) {
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+			if (t1 && t2) {
+				touchStartDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+				touchStartZoomRef.current = zoom;
+			}
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		if (e.touches.length === 2 && touchStartDistRef.current !== null && touchStartDistRef.current > 0) {
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+			if (t1 && t2) {
+				const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+				const ratio = currentDist / touchStartDistRef.current;
+				const nextZoom = Math.min(3.5, Math.max(0.4, Number((touchStartZoomRef.current * ratio).toFixed(2))));
+				setZoom(nextZoom);
+			}
+		}
+	};
+
+	const handleTouchEnd = (e: React.TouchEvent) => {
+		if (e.touches.length < 2) {
+			touchStartDistRef.current = null;
+		}
+	};
+
 	// CSS-фильтры рентгенограммы
 	const getFilterStyle = (): string => {
 		const parts: string[] = [];
@@ -312,6 +346,10 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 			onPointerLeave={() => {
 				if (isPanning) setIsPanning(false);
 			}}
+			onTouchStart={handleTouchStart}
+			onTouchMove={handleTouchMove}
+			onTouchEnd={handleTouchEnd}
+			onTouchCancel={handleTouchEnd}
 			onWheel={handleWheel}
 		>
 			{!imageUrl ? (

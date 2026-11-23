@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteClinicalReadHeaders, denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData, Canonical5LabStatus } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -70,10 +70,10 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		setError(null);
 		try {
 			const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
-			const res = await fetch(`/api/lab/orders${query}`, { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch(`/api/lab/orders${query}`, { headers: denteClinicalReadHeaders() });
 			if (!res.ok) throw new Error("Не удалось загрузить заказы ЗТЛ");
 			const data = await res.json();
-			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
+			const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.orders) ? data.orders : []));
 			setOrders(list);
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Ошибка загрузки заказов ЗТЛ";

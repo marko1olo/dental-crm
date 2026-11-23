@@ -4,6 +4,7 @@ import {
 	calculateCursorCenteredZoom,
 	calculatePhysicalDistanceMm,
 	type ViewerPoint2D,
+	type ViewerRulerMeasurement,
 } from "../dentalViewerMath.js";
 import type { ViewerTool } from "./types.js";
 
@@ -21,7 +22,7 @@ export interface UseSensorViewerGesturesOptions {
 	readonly setDraftStart: React.Dispatch<React.SetStateAction<ViewerPoint2D | null>>;
 	readonly setDraftCurrent: React.Dispatch<React.SetStateAction<ViewerPoint2D | null>>;
 	readonly setMagnifierPos: React.Dispatch<React.SetStateAction<ViewerPoint2D | null>>;
-	readonly setMeasurements: React.Dispatch<React.SetStateAction<any[]>>;
+	readonly setMeasurements: React.Dispatch<React.SetStateAction<ViewerRulerMeasurement[]>>;
 	readonly setDraftCurvedPoints: React.Dispatch<React.SetStateAction<ViewerPoint2D[]>>;
 	readonly setDraftLesionPoints: React.Dispatch<React.SetStateAction<ViewerPoint2D[]>>;
 	readonly calibratedMmPerPx: number;

@@ -338,7 +338,7 @@ export const CONSENT_ANESTHESIA: ConsentTemplate = {
 		"Не растирать и не массировать место инъекции.",
 	],
 	riskFactors: ["Гематома в области вкола", "Индивидуальная реакция на адреналин"],
-	alternativeTreatments: ["Лечение под седацией ЗАКС", "Общая анестезия в условиях стационара"],
+	alternativeTreatments: ["Лечение под седацией ЗАКС", "Общая анестезия (наркоз)"],
 };
 
 export const CONSENT_PERSONAL_DATA: ConsentTemplate = {
@@ -774,8 +774,14 @@ export function renderConsentTemplate(
 	const lines: string[] = [];
 	lines.push(template.title);
 	lines.push(template.subtitle);
+	if (context.clinicName) lines.push(`Клиника: ${context.clinicName}`);
+	if (context.doctorName) lines.push(`Лечащий врач: ${context.doctorName}`);
 	if (context.patientName) lines.push(`Пациент: ${context.patientName}`);
+	if (context.birthDate) lines.push(`Дата рождения: ${context.birthDate}`);
+	if (context.passport) lines.push(`Паспорт: ${context.passport}`);
+	if (context.diagnosisIcd) lines.push(`Диагноз: ${context.diagnosisIcd}`);
 	if (context.toothNumbers) lines.push(`Зубы: ${context.toothNumbers}`);
+	if (context.date) lines.push(`Дата: ${context.date}`);
 	if (context.guardianName) lines.push(`Законный представитель: ${context.guardianName}`);
 
 	for (const s of renderedSections) {

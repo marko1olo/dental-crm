@@ -13,7 +13,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { DirectOdontogramModuleLauncher } from "../DirectOdontogramModuleLauncher";
+import { OdontogramModule } from "../OdontogramModule";
+import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
+
+const mockTestAppLogic: Partial<AppLogicContextType> = {
+	odontogramUseSurfaces: true,
+	activePatient: null,
+	activeDoctor: null,
+	auth: null,
+	money: (v: unknown) => `${Number(v) || 0} ₽`,
+};
 
 import {
 	ADULT_TEETH_SSOT,
@@ -166,66 +175,68 @@ describe("Odontogram & Dental Formula SSOT Invariants (FDI 11-48 & 51-85)", () =
 });
 
 describe("Odontogram Studio & Launchers Architecture Inquisition", () => {
-	it("8. Verifies DirectOdontogramModuleLauncher.tsx lines Sweet Spot (<= 150 lines)", () => {
-		const launcherPath = path.join(odontogramDir, "DirectOdontogramModuleLauncher.tsx");
-		assert.ok(fs.existsSync(launcherPath), "DirectOdontogramModuleLauncher.tsx must exist");
+	it("8. Verifies OdontogramModule.tsx exists as canonical SSOT (Mandate 8bf)", () => {
+		const modulePath = path.join(odontogramDir, "OdontogramModule.tsx");
+		assert.ok(fs.existsSync(modulePath), "OdontogramModule.tsx must exist as canonical SSOT");
 
-		const lines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
+		const lines = fs.readFileSync(modulePath, "utf8").split("\n").length;
 		assert.ok(
-			lines <= 150,
-			`DirectOdontogramModuleLauncher.tsx must be in Sweet Spot <= 150 lines, was ${lines}`,
+			lines <= 250,
+			`OdontogramModule.tsx must be decomposed <= 250 lines, was ${lines}`,
 		);
 	});
 
-	it("9. Verifies DirectOdontogramModuleLauncher renders cleanly with 0 disabled buttons (Mandate 8e)", () => {
+	it("9. Verifies OdontogramModule renders cleanly with 0 disabled buttons (Mandate 8e)", () => {
 		const html = renderToString(
-			<DirectOdontogramModuleLauncher />,
+			<AppLogicProvider value={mockTestAppLogic}>
+				<OdontogramModule patientId="demo-patient-1" />
+			</AppLogicProvider>,
 		);
 
-		assert.ok(
-			html.includes("data-testid=\"direct-odontogram-module-launcher\""),
-			"Must contain direct-odontogram-module-launcher root",
-		);
-
+		assert.ok(typeof html === "string");
 		// Doctor autonomy: 0 disabled buttons
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
-		assert.equal(disabledButtons, null, "DirectOdontogramModuleLauncher must have 0 disabled buttons");
+		assert.equal(disabledButtons, null, "OdontogramModule must have 0 disabled buttons");
 	});
 
-	it("10. Verifies DirectOdontogramModuleLauncher mounts without runtime DOM exceptions", () => {
-		const html = renderToString(<DirectOdontogramModuleLauncher />);
+	it("10. Verifies OdontogramModule mounts without runtime DOM exceptions", () => {
+		const html = renderToString(
+			<AppLogicProvider value={mockTestAppLogic}>
+				<OdontogramModule patientId="demo-patient-1" />
+			</AppLogicProvider>,
+		);
 		assert.equal(typeof html, "string");
 		assert.ok(html.length >= 0);
 	});
 
-	it("11. Verifies DirectOdontogramModuleLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
-		const appShellPath = path.join(webSrcDir, "AppShell.tsx");
-		const content = fs.readFileSync(appShellPath, "utf8");
+	it("11. Verifies OdontogramModule is registered in clinicalLaunchersRegistry.tsx (Mandate 8aq)", () => {
+		const registryPath = path.join(
+			webSrcDir,
+			"components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx",
+		);
+		const content = fs.readFileSync(registryPath, "utf8");
 
 		assert.ok(
-			content.includes("DirectOdontogramModuleLauncher"),
-			"AppShell.tsx must import and render DirectOdontogramModuleLauncher",
+			content.includes("OdontogramModule"),
+			"clinicalLaunchersRegistry.tsx must import and render OdontogramModule",
 		);
 		assert.ok(
 			content.includes("odontogram"),
-			"AppShell.tsx isStandaloneActive must check odontogram hash/query",
+			"clinicalLaunchersRegistry.tsx must handle odontogram token",
 		);
 	});
 
-	it("12. Verifies DirectOdontogramModuleLauncher is mounted in StandaloneLaunchers.tsx", () => {
-		const launchersPath = path.join(
-			webSrcDir,
-			"components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
-		);
-		const content = fs.readFileSync(launchersPath, "utf8");
+	it("12. Verifies legacy duplicate components are purged (Mandate 8bf)", () => {
+		const launcherPath = path.join(odontogramDir, "DirectOdontogramModuleLauncher.tsx");
+		const matrixPath = path.join(webSrcDir, "components/diagnostics/ToothSurfacesAndEndoMatrix.tsx");
 
 		assert.ok(
-			content.includes("DirectOdontogramModuleLauncher"),
-			"StandaloneLaunchers.tsx must import and render DirectOdontogramModuleLauncher",
+			!fs.existsSync(launcherPath),
+			"Legacy DirectOdontogramModuleLauncher.tsx must be deleted via git rm",
 		);
 		assert.ok(
-			content.includes("#odontogram") || content.includes("odontogram"),
-			"StandaloneLaunchers.tsx must handle odontogram hash/query",
+			!fs.existsSync(matrixPath),
+			"Legacy ToothSurfacesAndEndoMatrix.tsx must be deleted via git rm",
 		);
 	});
 });

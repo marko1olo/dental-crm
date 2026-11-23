@@ -45,10 +45,18 @@ export function DocumentsA4PrintPreview({
 
 	const currentTitle =
 		documentLabels?.[selectedDocumentKind] ?? selectedDocumentKind;
-	const resolvedClinicName =
+	const draftClinicName =
+		typeof clinicProfileDraft?.clinicName === "string"
+			? clinicProfileDraft.clinicName
+			: "";
+	const draftLegalName =
+		typeof clinicProfileDraft?.legalName === "string"
+			? clinicProfileDraft.legalName
+			: "";
+	const resolvedClinicName: string =
 		clinicName ||
-		clinicProfileDraft?.clinicName ||
-		clinicProfileDraft?.legalName ||
+		draftClinicName ||
+		draftLegalName ||
 		"Стоматологическая клиника DENTE";
 
 	if (!isEditingInFocus) {

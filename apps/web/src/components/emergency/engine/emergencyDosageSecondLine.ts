@@ -38,7 +38,7 @@ export function calculateLipidDose(safeWeight: number, isPediatric: boolean): Em
 		routeRu: 'в/в болюсно за 1–2 мин, затем непрерывная инфузия',
 		calculatedDoseMg: bolusMl * 200,
 		calculatedVolumeMl: bolusMl,
-		numberOfAmpoules: Math.ceil(bolusMl / 100),
+		numberOfAmpoules: Math.ceil(bolusMl * 0.01),
 		instructionsRu: `БОЛЮС: ввести ${bolusMl} мл в/в за 1–2 мин. Затем инфузия ${(safeWeight * 0.25).toFixed(1)} мл/мин (${Math.round(safeWeight * 15)} мл/час).`,
 		maxDailyDoseRu: `Максимум 12 мл/кг (${Math.round(safeWeight * 12)} мл суммарно)`,
 		contraindicationsRu: ['Тяжелые нарушения липидного обмена (при LAST жизнеспасающий антидот)'],

@@ -80,8 +80,8 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 						data-testid={submitButtonTestId}
 						onClick={onExecutePayment}
 						aria-busy={isSubmitting}
-						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
-						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
+						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
+						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
 					>
 						<Receipt className="w-4 h-4 shrink-0" />
 						<span className="whitespace-nowrap">
@@ -105,8 +105,8 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 						data-testid={isShiftActive ? "btn-close-shift-z-report" : "btn-open-shift"}
 						onClick={onToggleShift}
 						aria-busy={isSubmitting}
-						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
-						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
+						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
+						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
 					>
 						<ShieldCheck className="w-4 h-4 shrink-0" />
 						<span data-testid="btn-close-shift-z-report-label" className="truncate">
@@ -128,8 +128,8 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 					<button
 						type="button"
 						onClick={onCopyTape}
-						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
-						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all dente-btn-primary"
+						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
+						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all dente-btn-primary"
 					>
 						<Printer className="w-4 h-4 shrink-0" />
 						<span>Распечатать контрольную ленту</span>

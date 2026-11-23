@@ -248,7 +248,7 @@ describe("ScheduleUnifiedToolbar Component", () => {
 		assert.ok(html.includes("Быстрая запись"), "Contains quick booking button");
 	});
 
-	it("renders StomX shift queue status filter chips (Ожидает приёма, На приёме, Ожидает оплаты) per Mandates 8d, 8e, 8n", () => {
+	it("renders DENTE shift queue status filter chips (Ожидает приёма, На приёме, Ожидает оплаты) per Mandates 8d, 8e, 8n", () => {
 		const html = renderToStaticMarkup(
 			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
@@ -275,7 +275,7 @@ describe("ScheduleUnifiedToolbar Component", () => {
 		assert.ok(html.includes("Ожидает оплаты"), "Contains 'Ожидает оплаты' label");
 	});
 
-	it("renders StomX shift queue count badges when queueCounts are provided", () => {
+	it("renders DENTE shift queue count badges when queueCounts are provided", () => {
 		const html = renderToStaticMarkup(
 			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",

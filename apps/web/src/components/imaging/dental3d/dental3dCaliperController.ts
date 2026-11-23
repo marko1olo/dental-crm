@@ -83,7 +83,7 @@ export class Dental3dCaliperController {
 					this.onCaliperMeasured({
 						pointA: { x: this.caliperA.x, y: this.caliperA.y, z: this.caliperA.z },
 						pointB: { x: this.caliperB.x, y: this.caliperB.y, z: this.caliperB.z },
-						distanceMm: Math.round(distMm * 100) / 100, // 0.01 mm precision
+						distanceMm: Number(distMm.toFixed(2)), // 0.01 mm precision
 					});
 				}
 			} else {

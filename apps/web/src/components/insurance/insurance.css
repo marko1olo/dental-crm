@@ -11,10 +11,10 @@
 :root {
 	--dms-teal: var(--primary);
 	--dms-teal-dark: var(--primary-hover, var(--primary));
-	--dms-teal-glow: var(--primary-soft, rgba(13, 148, 136, 0.2));
-	--dms-teal-surface: var(--primary-soft, rgba(13, 148, 136, 0.08));
-	--dms-amber-surface: var(--amber-soft, rgba(245, 158, 11, 0.12));
-	--dms-amber-ink: var(--amber, #d97706);
+	--dms-teal-glow: var(--primary-soft);
+	--dms-teal-surface: var(--primary-soft);
+	--dms-amber-surface: var(--amber-soft);
+	--dms-amber-ink: var(--warning-ink, var(--amber));
 }
 
 /* Модальный бэкдроп */
@@ -548,21 +548,21 @@
 	padding: 0 20px;
 	border-radius: 10px;
 	border: none;
-	background: var(--dms-teal) !important;
-	color: #ffffff !important;
+	background: var(--primary);
+	color: #ffffff;
 	font-weight: 700;
 	font-size: 13px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	cursor: pointer !important;
+	cursor: pointer;
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 	transition: all 0.15s ease;
 }
 
 .dms-primary-cta:hover {
-	background: var(--dms-teal-dark) !important;
+	background: var(--primary-hover, var(--primary));
 	transform: translateY(-1px);
 	box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
 }
@@ -578,8 +578,23 @@
 }
 
 .dms-badge-active {
-	background: var(--dms-teal-surface);
-	color: var(--dms-teal);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+
+.dms-badge-exhausted {
+	background: var(--amber-soft);
+	color: var(--warning-ink, var(--amber));
+}
+
+.dms-badge-expired {
+	background: var(--danger-soft);
+	color: var(--danger);
+}
+
+.dms-badge-cancelled {
+	background: var(--paper-soft);
+	color: var(--muted);
 }
 
 /* Мобильный слой (Apple HIG Touch Ergonomics <= 768px) */

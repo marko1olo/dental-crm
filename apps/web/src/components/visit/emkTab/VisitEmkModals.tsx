@@ -86,11 +86,13 @@ export function VisitEmkModals({
 								data-testid="sbp-qr-svg-container"
 							>
 								{sbpQrSvg ? (
-									<div
-										className="w-full h-full flex items-center justify-center"
-										// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized SVG generated from validated NSPK payload
-										dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
-									/>
+									<div className="w-full h-full flex items-center justify-center">
+										<img
+											src={`data:image/svg+xml;utf8,${encodeURIComponent(sbpQrSvg)}`}
+											alt="QR-код оплаты СБП"
+											className="w-full h-full object-contain"
+										/>
+									</div>
 								) : (
 									<div className="text-xs text-slate-500 font-medium p-4 flex flex-col items-center justify-center gap-1">
 										<Zap className="w-6 h-6 text-teal-600 mb-1" />
@@ -151,6 +153,7 @@ export function VisitEmkModals({
 
 			{/* Полный промышленный каталог клинических протоколов (1 142 шаблона) */}
 			<ClinicalProtocolsCatalogModal
+				key={activePatient?.id || "clinical_protocols_catalog"}
 				isOpen={isSoapTemplatesModalOpen || isStarProtocolsOpen}
 				onClose={() => {
 					setIsSoapTemplatesModalOpen(false);
@@ -174,6 +177,7 @@ export function VisitEmkModals({
 
 			{/* Информированное добровольное согласие (ИДС) */}
 			<InformedConsentModal
+				key={activePatient?.id || "informed_consent"}
 				isOpen={isConsentModalOpen}
 				onClose={() => setIsConsentModalOpen(false)}
 				patientId={activePatient?.id}

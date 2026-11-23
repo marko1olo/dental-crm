@@ -206,7 +206,8 @@
 
 /* 6. Единая Primary CTA кнопка var(--primary) */
 .dental-lab-primary-cta {
-	min-height: 38px;
+	min-height: 36px;
+	height: 36px;
 	width: 100%;
 	background: var(--primary);
 	color: #ffffff;

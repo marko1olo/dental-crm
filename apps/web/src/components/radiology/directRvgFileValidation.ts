@@ -398,7 +398,7 @@ export async function persistRvgScanToServer({
 			? crypto.randomUUID()
 			: `rvg-${patientId}-${Date.now()}`;
 
-		const response = await fetch("/api/xray/scans", {
+		const response = await fetch("/api/imaging/studies", {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
@@ -407,6 +407,7 @@ export async function persistRvgScanToServer({
 			body: JSON.stringify({
 				patientId,
 				imageBase64,
+				title: `Прицельный снимок зуба ${selectedTeeth.join(", ")}`,
 				originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
 				mimeType: "image/jpeg",
 				kind: "periapical",

@@ -16,9 +16,8 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
-import { AutoclaveJournalTab } from "../AutoclaveJournalTab";
+import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
 import { CleaningControlTab } from "../CleaningControlTab";
-import { SanpinCleaningAndDisinfectionView } from "../SanpinCleaningAndDisinfectionView";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SANPIN_DIR = path.resolve(__dirname, "..");
@@ -54,11 +53,6 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 				`CleaningControlTab.tsx (${lines} строк) должен быть около 200–320 строк`,
 			);
 		});
-
-		it("Фасад обратной совместимости SanpinCleaningAndDisinfectionView компактен (до 50 строк)", () => {
-			const f2 = fs.readFileSync(path.join(SANPIN_DIR, "SanpinCleaningAndDisinfectionView.tsx"), "utf-8").split("\n").length;
-			assert.ok(f2 <= 50, `SanpinCleaningAndDisinfectionView.tsx (${f2}L) обязан быть тонким фасадом <= 50L`);
-		});
 	});
 
 	describe("2. SterilizationBatchCycleModal (Запуск цикла стерилизации в 1 клик)", () => {
@@ -78,9 +72,9 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 		});
 	});
 
-	describe("3. AutoclaveJournalTab (Электронный журнал циклов)", () => {
+	describe("3. SanPinSterilizationJournal (Электронный журнал циклов)", () => {
 		it("рендерит десктопную таблицу с колонками и мобильный адаптивный слой", () => {
-			const html = renderToStaticMarkup(<AutoclaveJournalTab />);
+			const html = renderToStaticMarkup(<SanPinSterilizationJournal />);
 
 			assert.ok(html.includes("autoclave-journal-tab"), "Контейнер журнала");
 			assert.ok(html.includes("autoclave-desktop-view"), "Десктопная таблица");
@@ -92,7 +86,7 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 		});
 	});
 
-	describe("4. CleaningControlTab & SanpinCleaningAndDisinfectionView (Очистка, уборка и бактерицидные лампы)", () => {
+	describe("4. CleaningControlTab (Очистка, уборка и бактерицидные лампы)", () => {
 		it("рендерит журнал контроля качества очистки инструментов с 1-клик фиксацией", () => {
 			const html = renderToStaticMarkup(<CleaningControlTab />);
 
@@ -100,13 +94,8 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 			assert.ok(html.includes("Контроль очистки инструментов"), "Заголовок контроля очистки");
 			assert.ok(html.includes("Азопирамовая проба"), "Азопирамовая проба");
 			assert.ok(html.includes("Зафиксировать пробу"), "1-клик фиксация нормы");
-			assert.ok(!html.includes("МУ-287-113"), "Запрещен советский канцелярит МУ-287-113");
-			assert.ok(!html.includes("Форма 366/у"), "Запрещен советский канцелярит 366/у");
-		});
-
-		it("фасад SanpinCleaningAndDisinfectionView корректно делегирует в CleaningControlTab", () => {
-			const html = renderToStaticMarkup(<SanpinCleaningAndDisinfectionView initialSubTab="pso" />);
-			assert.ok(html.includes("cleaning-control-tab"), "Фасад должен возвращать разметку очистки");
+			assert(!html.includes("МУ-287-113"), "Запрещен советский канцелярит МУ-287-113");
+			assert(!html.includes("Форма 366/у"), "Запрещен советский канцелярит 366/у");
 		});
 	});
 });

@@ -107,21 +107,24 @@ export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 				notes: `Азопирамовая и фенолфталеиновая пробы — норма (скрытой крови и щелочи нет). Партия 50 шт. допущена к автоклавированию. [ЭЦП: ${nurseName}]`,
 			};
 
+			const idempotencyKey = crypto.randomUUID();
 			let res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
 			}).catch(() => null);
 
 			if (!res || !res.ok) {
 				res = await fetch("/api/registers/pso/quick-norm", {
-					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload),
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
 				}).catch(() => null);
 			}
 
 			if (res && res.ok) {
 				showToast("Контроль очистки зафиксирован: азопирам и фенолфталеин отрицательно (100% норма)!", "success");
 				await fetchLogs();
-			} else {
+			} else if (isDemoShowcaseMode()) {
 				showToast("Отметка нормы очистки (скрытая кровь и щелочь отсутствуют)", "success");
+			} else {
+				showToast("Ошибка при фиксации контроля очистки на сервере", "error");
 			}
 		} catch {
 			showToast("Сетевая ошибка при отметке партии", "error");

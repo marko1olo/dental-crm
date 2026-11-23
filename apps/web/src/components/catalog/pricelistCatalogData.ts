@@ -11,6 +11,7 @@
 
 import {
 	formatKopecksRu,
+	formatKopecksToRubles as sharedFormatKopecksToRubles,
 	kopecksToRubles,
 	parseKopecks,
 	rublesToKopecks,
@@ -30,7 +31,7 @@ export function formatKopecksToRubles(kopecks: number): string {
 	const safeKopecks = Math.round(Number.isFinite(kopecks) ? kopecks : 0);
 	if (safeKopecks === 0) return `0${RU_MONEY_NBSP}₽`;
 	if (safeKopecks % 100 === 0) {
-		const whole = Math.trunc(Math.abs(safeKopecks) / 100);
+		const whole = Math.trunc(kopecksToRubles(Math.abs(safeKopecks)));
 		const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, RU_MONEY_NBSP);
 		const sign = safeKopecks < 0 ? RU_MONEY_MINUS : "";
 		return `${sign}${grouped}${RU_MONEY_NBSP}₽`;
@@ -41,9 +42,9 @@ export function formatKopecksToRubles(kopecks: number): string {
 export function kopecksToRublesExact(kopecks: number): string {
 	const safeKopecks = Math.round(Number.isFinite(kopecks) ? kopecks : 0);
 	if (safeKopecks % 100 === 0) {
-		return String(safeKopecks / 100);
+		return String(kopecksToRubles(safeKopecks));
 	}
-	return (safeKopecks / 100).toFixed(2);
+	return sharedFormatKopecksToRubles(safeKopecks);
 }
 
 export function parseRublesToKopecks(rublesInput: string | number): number {
@@ -62,7 +63,7 @@ export function parseRublesToKopecks(rublesInput: string | number): number {
 	if (!Number.isFinite(num) || Number.isNaN(num)) {
 		return 0;
 	}
-	return Math.round(num * 100);
+	return rublesToKopecks(num);
 }
 
 export function kopecksToRublesNumber(kopecks: number): number {

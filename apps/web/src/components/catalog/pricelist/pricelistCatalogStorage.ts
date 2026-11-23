@@ -6,7 +6,7 @@
  * Расчеты денег строго через @dental/shared/src/money.ts (Мандат 8b).
  */
 
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	getSpecialtyForCategory,
 	normalizeCategoryFromBackend,
@@ -170,6 +170,7 @@ export async function syncServiceItemToBackend(
 			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...headers,
 			},
 			body: JSON.stringify(payload),
@@ -213,6 +214,7 @@ export async function batchSyncPricelistToBackend(
 			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...headers,
 			},
 			body: JSON.stringify({

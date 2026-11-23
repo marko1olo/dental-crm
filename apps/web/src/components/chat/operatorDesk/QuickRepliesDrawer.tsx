@@ -13,10 +13,9 @@ export function QuickRepliesDrawer({ onSelectReply }: QuickRepliesDrawerProps) {
 				<Sparkles size={11} className="text-[var(--teal)]" />
 				<span>Шаблоны:</span>
 			</span>
-			{CLINICAL_QUICK_REPLIES.map((tpl, idx) => (
+			{CLINICAL_QUICK_REPLIES.map((tpl) => (
 				<button
-					// biome-ignore lint/suspicious/noArrayIndexKey: pure static list
-					key={idx}
+					key={tpl.label}
 					type="button"
 					onClick={() => onSelectReply(tpl.text)}
 					className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-medium border border-[var(--teal)]/25 bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#2dd4bf)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] transition-colors cursor-pointer min-w-max inline-flex items-center"

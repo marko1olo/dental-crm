@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { kopecksToRubles } from "@dental/shared";
 import {
 	EndodonticStudioModal,
 } from "../EndodonticStudioModal";
@@ -132,7 +133,7 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 
 			assert.equal(typeof breakdown1Canal.totalKopecks, "bigint", "Total kopecks must be BigInt");
 			assert.ok(breakdown1Canal.totalKopecks > 0n);
-			assert.equal(breakdown1Canal.totalRubles, Number(breakdown1Canal.totalKopecks / 100n));
+			assert.equal(breakdown1Canal.totalRubles, kopecksToRubles(Number(breakdown1Canal.totalKopecks)));
 
 			for (const s of breakdown1Canal.services) {
 				assert.equal(typeof s.priceKopecks, "bigint", `Service ${s.code} price must be BigInt`);

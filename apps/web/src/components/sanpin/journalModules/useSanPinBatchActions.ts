@@ -75,9 +75,10 @@ export function useSanPinBatchActions(
 						],
 				  };
 
+			const idempotencyKey = crypto.randomUUID();
 			let res = await fetch(primaryUrl, {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify(body),
 			}).catch((err) => {
 				console.warn("[useSanPinBatchActions] Primary autofill request error:", err);
@@ -87,7 +88,7 @@ export function useSanPinBatchActions(
 			if (!res || !res.ok) {
 				res = await fetch(fallbackUrl, {
 					method: "POST",
-					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 					body: JSON.stringify(body),
 				}).catch((err) => {
 					console.warn("[useSanPinBatchActions] Fallback autofill request error:", err);
@@ -134,8 +135,9 @@ export function useSanPinBatchActions(
 				autoclaveId: autoId, itemsDescription: itemsDesc, packagingType: isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive",
 			};
 
+			const idempotencyKey = crypto.randomUUID();
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify(payload),
 			}).catch((err) => {
 				console.warn("[useSanPinBatchActions] Quick batch network error:", err);
@@ -162,8 +164,9 @@ export function useSanPinBatchActions(
 		inFlightRef.current = true;
 		try {
 			setIsAutofilling(true);
+			const idempotencyKey = crypto.randomUUID();
 			const res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
 			}).catch((err) => {
 				console.warn("[useSanPinBatchActions] Quick PSO network error:", err);

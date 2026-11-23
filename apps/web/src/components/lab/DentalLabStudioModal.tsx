@@ -12,7 +12,8 @@ import { Award } from "lucide-react";
 if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
 import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import {
-	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES, PARTNER_LABS,
+	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT,
+	getClinicLaboratories, getPartnerLaboratories,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
 	addWorkingDaysRu, formatKopecksToRubles, calcNetRevenueKopecks, getStageMeta, getMaterialMeta, isOrderOverdue,
 	mapDbStatusToStage, STAGE_TO_DB_STATUS,
@@ -110,10 +111,42 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const currentPatientName = patientInput.trim() || effectivePatientName || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "Пациент");
 	const currentPatientId = matchedPatient?.id || effectivePatientId;
 
-	const [customLabs, setCustomLabs] = useState<string[]>([]);
-	const allLaboratories = useMemo(() => Array.from(new Set([...(CLINIC_LABORATORIES.length > 0 ? CLINIC_LABORATORIES : PARTNER_LABS.map((p) => p.name)), ...customLabs])), [customLabs]);
+	const [customLabs, setCustomLabs] = useState<string[]>(() => {
+		if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
+		try {
+			const saved = localStorage.getItem("dente_custom_lab_names");
+			return saved ? JSON.parse(saved) : [];
+		} catch {
+			return [];
+		}
+	});
 
 	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
+
+	const existingOrderLabs = useMemo(() => {
+		const set = new Set<string>();
+		orders.forEach((o) => {
+			if (o.laboratoryName && typeof o.laboratoryName === "string" && o.laboratoryName.trim()) {
+				set.add(o.laboratoryName.trim());
+			}
+		});
+		return Array.from(set);
+	}, [orders]);
+
+	const baseClinicLabs = useMemo(() => {
+		const clinicLabs = getClinicLaboratories();
+		if (clinicLabs.length > 0) return clinicLabs;
+		return getPartnerLaboratories().map((p) => p.name);
+	}, []);
+
+	const allLaboratories = useMemo(() => {
+		const combined = [...baseClinicLabs, ...existingOrderLabs, ...customLabs].filter(Boolean);
+		const unique = Array.from(new Set(combined));
+		if (unique.length === 0) {
+			return ["Собственная лаборатория клиники"];
+		}
+		return unique;
+	}, [baseClinicLabs, existingOrderLabs, customLabs]);
 	const normalizedInitialTab: LabStudioMainTab = initialTab === "print" || initialTab === "print_blank" ? "print_blank" : initialTab === "registry" ? "registry" : "new_order";
 	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(normalizedInitialTab);
 	useEffect(() => {
@@ -137,7 +170,27 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	});
 	const [selectedMaterialId, setSelectedMaterialId] = useState<string>(() => resolveOrderMaterialId(targetOrder) || "zirconia_multilayer");
 	const [selectedShade, setSelectedShade] = useState<string>(() => resolveOrderShade(targetOrder) || "A2");
-	const [selectedLab, setSelectedLab] = useState<string>(() => resolveOrderLab(targetOrder) || (CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб"));
+	const [selectedLab, setSelectedLab] = useState<string>(() => {
+		const orderLab = resolveOrderLab(targetOrder);
+		if (orderLab) return orderLab;
+		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+			try {
+				const savedDefault = localStorage.getItem("dente_default_lab_name");
+				if (savedDefault) return savedDefault;
+			} catch (storageErr) {
+				console.warn("Could not read default lab from storage", storageErr);
+			}
+		}
+		const defaultClinicLabs = getClinicLaboratories();
+		if (defaultClinicLabs.length > 0) return defaultClinicLabs[0] ?? "";
+		return "";
+	});
+
+	useEffect(() => {
+		if (!selectedLab && allLaboratories.length > 0) {
+			setSelectedLab(allLaboratories[0] ?? "");
+		}
+	}, [allLaboratories, selectedLab]);
 	const [isUrgent, setIsUrgent] = useState(() => Boolean(targetOrder?.isUrgent));
 	const [isWarrantyRework, setIsWarrantyRework] = useState(() => Boolean(targetOrder?.isWarrantyRework || targetOrder?.isWarranty || (targetOrder as DentalLabOrderData)?.isWarrantyRemake));
 	const [isPassportModalOpen, setIsPassportModalOpen] = useState(false);
@@ -183,7 +236,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			const lab = resolveOrderLab(targetOrder);
 			if (lab) {
 				setSelectedLab(lab);
-				setCustomLabs((prev) => (prev.includes(lab) || CLINIC_LABORATORIES.includes(lab) ? prev : [...prev, lab]));
+				setCustomLabs((prev) => (prev.includes(lab) || getClinicLaboratories().includes(lab) ? prev : [...prev, lab]));
 			}
 			const date = resolveOrderDueDate(targetOrder);
 			if (date) setCustomDueDate(date);
@@ -195,7 +248,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	}, [targetOrder]);
 
 	useEffect(() => {
-		if (typeof window === "undefined") return;
+		if (typeof window === "undefined" || typeof localStorage === "undefined") return;
 		try {
 			const saved = localStorage.getItem("dente_active_lab_shade_preset");
 			if (saved) {
@@ -284,6 +337,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							doctorId: typeof item.doctorId === "string" ? item.doctorId : undefined,
 						};
 					}));
+					const firstLab = (list[0] as Record<string, unknown>)?.laboratoryName || (list[0] as Record<string, unknown>)?.labName;
+					if (typeof firstLab === "string" && firstLab.trim()) {
+						setSelectedLab((prev) => prev || firstLab.trim());
+					}
 				}
 			} catch (err) {
 				console.error("Failed to load live lab orders:", err);
@@ -344,6 +401,20 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		};
 		setOrders((prev) => isEditMode ? prev.map((ord) => ord.id === effectiveEntryId ? newEntry : ord) : [newEntry, ...prev]);
 		setSelectedOrderForPrint(newEntry);
+		if (selectedLab && selectedLab.trim()) {
+			if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+				try {
+					localStorage.setItem("dente_default_lab_name", selectedLab.trim());
+					if (!customLabs.includes(selectedLab.trim())) {
+						const updated = [...customLabs, selectedLab.trim()];
+						setCustomLabs(updated);
+						localStorage.setItem("dente_custom_lab_names", JSON.stringify(updated));
+					}
+				} catch (storageErr) {
+					console.warn("Could not save default lab to storage", storageErr);
+				}
+			}
+		}
 		onOrderCreated?.(newEntry);
 		onOrderSaved?.(newEntry);
 		onSaveOrder?.(newEntry);

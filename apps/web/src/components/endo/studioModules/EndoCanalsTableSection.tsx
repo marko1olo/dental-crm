@@ -6,9 +6,9 @@
  * Поддержка десктопной таблицы с быстрым вводом и сенсорных карточек Apple HIG для мобильных устройств.
  */
 
-import React from "react";
-import { SlidersHorizontal, Check, Trash2 } from "lucide-react";
-import type { EndoCanalData } from "@dental/shared";
+import React, { useMemo } from "react";
+import { SlidersHorizontal, Check, Trash2, AlertTriangle } from "lucide-react";
+import { getAnatomicalRootCanalCount, type EndoCanalData } from "@dental/shared";
 import {
 	CANONICAL_MAF_SIZES,
 	CURATED_ISO_MAF_OPTIONS,
@@ -38,6 +38,24 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 		onRemoveCanal,
 	} = props;
 
+	const expectedCanals = useMemo(() => getAnatomicalRootCanalCount(activeTooth), [activeTooth]);
+	const hasAnatomicalVariation = canals.length > expectedCanals;
+
+	const toothGroup = useMemo(() => {
+		const pos = activeTooth % 10;
+		if (pos === 1 || pos === 2) return "резца";
+		if (pos === 3) return "клыка";
+		if (pos === 4 || pos === 5) return "премоляра";
+		return "моляра";
+	}, [activeTooth]);
+
+	const expectedCanalsText = useMemo(() => {
+		if (expectedCanals === 1) return "1–2 канала";
+		if (expectedCanals === 2) return "2–3 канала";
+		if (expectedCanals === 3) return "3–4 канала";
+		return `${expectedCanals} каналов`;
+	}, [expectedCanals]);
+
 	return (
 		<div className="border border-[var(--line)] rounded-2xl bg-[var(--paper)] overflow-hidden shadow-xs">
 			<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between">
@@ -59,6 +77,16 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 					</button>
 				</div>
 			</div>
+
+			{/* Анатомическая подсказка топологии Wheeler */}
+			{hasAnatomicalVariation && (
+				<div className="mx-3 mt-3 p-2.5 rounded-xl bg-[var(--warning-soft,rgba(245,158,11,0.1))] border border-[var(--warning,var(--line))] text-xs text-[var(--ink)] flex items-center gap-2" data-testid="endo-anatomical-variation-hint">
+					<AlertTriangle size={15} className="text-[var(--warning,#f59e0b)] shrink-0" />
+					<span>
+						<strong className="font-semibold">Редкая анатомическая вариация:</strong> для {toothGroup} характерно {expectedCanalsText}. Проверьте КЛКТ.
+					</span>
+				</div>
+			)}
 
 			{/* Desktop View */}
 			<div className="hidden sm:block overflow-x-auto">

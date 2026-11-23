@@ -29,8 +29,6 @@ import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 /*
  * Контракт вкладки: перечислены ТОЛЬКО те пропсы, которые вкладка реально читает.

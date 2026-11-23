@@ -261,8 +261,7 @@ export function buildFinancialPayload(
 				receiptNumber: paymentReceiptNumber.trim(),
 				receiptDate: paymentReceiptDate.trim(),
 				selectedPaymentIds: selectedPaymentReceiptPayments.map(
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					(payment: any) => payment.id,
+					(payment: { id: string }) => payment.id,
 				),
 				totalPaidRub: selectedPaymentReceiptTotalRub,
 				payerFullName: paymentReceiptPayerFullNameValue(),

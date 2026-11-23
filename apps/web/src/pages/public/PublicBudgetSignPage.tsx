@@ -12,28 +12,58 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 } from "lucide-react";
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import { PublicBudgetSignaturePad } from "./PublicBudgetSignaturePad";
 
 export interface BudgetItem {
-	id?: string; title: string; toothNumber?: number | null; quantity?: number;
-	priceRub: number; discountRub?: number; totalRub?: number;
+	id?: string;
+	title: string;
+	toothNumber?: number | null;
+	quantity?: number;
+	priceRub?: number;
+	discountRub?: number;
+	totalRub?: number;
+	priceKopecks?: number;
+	discountKopecks?: number;
+	totalKopecks?: number;
 }
 
 export interface BudgetData {
-	token: string; planId?: string | null; status: "sent" | "viewed" | "accepted" | "rejected";
-	clinicName?: string; clinicPhone?: string | null; clinicAddress?: string | null; doctorName?: string | null;
-	patientFirstName?: string | null; maskedPhone?: string | null; totalPriceRub?: number; discountRub?: number;
-	netTotalRub?: number; currency?: string; items?: BudgetItem[]; requiresVerification: boolean; isVerified: boolean;
-	authMethod?: string; failedAttempts?: number; isLocked?: boolean; lockedUntil?: string | null;
-	signedAt?: string | null; signerName?: string | null; documentHash?: string | null;
+	token: string;
+	planId?: string | null;
+	status: "sent" | "viewed" | "accepted" | "rejected";
+	clinicName?: string;
+	clinicPhone?: string | null;
+	clinicAddress?: string | null;
+	doctorName?: string | null;
+	patientFirstName?: string | null;
+	maskedPhone?: string | null;
+	totalPriceRub?: number;
+	discountRub?: number;
+	netTotalRub?: number;
+	totalPriceKopecks?: number;
+	discountKopecks?: number;
+	netTotalKopecks?: number;
+	currency?: string;
+	items?: BudgetItem[];
+	requiresVerification: boolean;
+	isVerified: boolean;
+	authMethod?: string;
+	failedAttempts?: number;
+	isLocked?: boolean;
+	lockedUntil?: string | null;
+	signedAt?: string | null;
+	signerName?: string | null;
+	documentHash?: string | null;
 }
 
 export interface PublicBudgetSignPageProps {
 	token?: string;
 }
 
-function formatRub(value: number): string {
-	return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
+function formatRub(valueKopecksOrRub: number, isKopecks = true): string {
+	const kopecks = isKopecks ? valueKopecksOrRub : rublesToKopecks(valueKopecksOrRub);
+	return formatKopecksToRub(kopecks);
 }
 
 function formatIsoDateTime(isoString?: string | null): string {
@@ -261,6 +291,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		try {
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
 			};
 			if (sessionToken) {
 				headers["Authorization"] = `Bearer ${sessionToken}`;
@@ -375,8 +406,8 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				<header className="public-budget-print-card bg-white/90 dark:bg-slate-900/80 backdrop-blur border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-lg flex items-center justify-between">
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-							<h1 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_rgba(13,148,136,0.5)]" />
+							<h1 className="text-sm font-bold text-slate-900 dark:text-slate-100">
 								{budget.clinicName || "Стоматологическая клиника ДЕНТЕ"}
 							</h1>
 						</div>
@@ -454,7 +485,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 								<button
 									type="submit"
 									disabled={isVerifying || phoneDigits.length !== 4}
-									className="w-full min-h-[48px] py-3 px-4 rounded-xl font-medium text-sm bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-lg shadow-cyan-600/20 transition flex items-center justify-center gap-2"
+									className="w-full min-h-[48px] py-3 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-sm transition flex items-center justify-center gap-2"
 								>
 									{isVerifying ? (
 										<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -519,9 +550,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 												<span className="text-[11px] text-slate-500 block">Кол-во: {it.quantity || 1} шт.</span>
 											</div>
 											<div className="text-right shrink-0">
-												<span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">{formatRub(it.priceRub * (it.quantity || 1))}</span>
-												{Boolean(it.discountRub) && (
-													<span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">- {formatRub(it.discountRub || 0)}</span>
+												<span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+													{formatKopecksToRub(
+														(it.priceKopecks ?? rublesToKopecks(it.priceRub ?? 0)) * (it.quantity || 1),
+													)}
+												</span>
+												{Boolean(it.discountKopecks || it.discountRub) && (
+													<span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">
+														- {formatKopecksToRub(it.discountKopecks ?? rublesToKopecks(it.discountRub ?? 0))}
+													</span>
 												)}
 											</div>
 										</div>
@@ -535,18 +572,25 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							<div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
 								<div className="flex justify-between text-slate-600 dark:text-slate-400">
 									<span>Сумма по прайсу:</span>
-									<span className="font-medium text-slate-900 dark:text-slate-200">{formatRub(budget.totalPriceRub || 0)}</span>
+									<span className="font-medium text-slate-900 dark:text-slate-200">
+										{formatKopecksToRub(budget.totalPriceKopecks ?? rublesToKopecks(budget.totalPriceRub || 0))}
+									</span>
 								</div>
-								{Boolean(budget.discountRub) && (
+								{Boolean(budget.discountKopecks || budget.discountRub) && (
 									<div className="flex justify-between text-emerald-600 dark:text-emerald-400">
 										<span>Скидка клиники:</span>
-										<span>- {formatRub(budget.discountRub || 0)}</span>
+										<span>- {formatKopecksToRub(budget.discountKopecks ?? rublesToKopecks(budget.discountRub || 0))}</span>
 									</div>
 								)}
 								<div className="flex justify-between items-baseline pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-sm text-slate-900 dark:text-white">
 									<span>Итого к оплате:</span>
-									<span className="text-base text-cyan-600 dark:text-cyan-400 font-bold font-mono">
-										{formatRub(budget.netTotalRub || budget.totalPriceRub || 0)}
+									<span className="text-base text-[var(--primary)] font-bold font-mono">
+										{formatKopecksToRub(
+											budget.netTotalKopecks ??
+												(budget.netTotalRub !== undefined
+													? rublesToKopecks(budget.netTotalRub)
+													: (budget.totalPriceKopecks ?? rublesToKopecks(budget.totalPriceRub || 0))),
+										)}
 									</span>
 								</div>
 							</div>
@@ -616,7 +660,14 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							</div>
 							<div className="flex justify-between text-slate-500 dark:text-slate-400">
 								<span>Согласованная сумма:</span>
-								<span className="text-cyan-600 dark:text-cyan-400 font-semibold font-mono">{formatRub(budget.netTotalRub || budget.totalPriceRub || 0)}</span>
+								<span className="text-[var(--primary)] font-semibold font-mono">
+									{formatKopecksToRub(
+										budget.netTotalKopecks ??
+											(budget.netTotalRub !== undefined
+												? rublesToKopecks(budget.netTotalRub)
+												: (budget.totalPriceKopecks ?? rublesToKopecks(budget.totalPriceRub || 0))),
+									)}
+								</span>
 							</div>
 							{budget.documentHash && (
 								<div className="pt-2 border-t border-slate-200 dark:border-slate-900 text-[10px] text-slate-400 dark:text-slate-500 break-all font-mono">

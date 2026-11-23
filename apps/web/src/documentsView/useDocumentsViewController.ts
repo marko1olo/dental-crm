@@ -229,8 +229,12 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 		if (registryStatusFilter !== "all") list = list.filter((doc) => doc.status === registryStatusFilter);
 		if (registryEdsFilter !== "all") {
 			list = list.filter((doc) => {
-				// biome-ignore lint/suspicious/noExplicitAny: dynamic signedAt fallback
-				const isSignedEds = Boolean(doc.doctorSignedAt || (doc as any).signedAt);
+				const docWithLegacySignedAt = doc as GeneratedDocument & {
+					readonly signedAt?: string | null | undefined;
+				};
+				const isSignedEds = Boolean(
+					doc.doctorSignedAt || docWithLegacySignedAt.signedAt,
+				);
 				const isSignedPaper = Boolean(doc.signatureAttestation && !isSignedEds);
 				if (registryEdsFilter === "signed_eds") return isSignedEds;
 				if (registryEdsFilter === "signed_paper") return isSignedPaper;

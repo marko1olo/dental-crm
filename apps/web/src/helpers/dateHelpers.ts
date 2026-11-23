@@ -5,6 +5,7 @@
 
 import {
 	type Appointment,
+	type ClinicProfile,
 	type CreateAppointmentInput,
 	type Dashboard,
 	type DentalSpecialty,
@@ -124,8 +125,8 @@ export function newAppointmentDraftFromDashboard(
 		scheduleDefaultChairId?: string | null;
 	} = {},
 ): AppointmentScheduleDraft {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const profile = dashboard?.clinicSettings?.profile || ({} as any);
+	const profile: Partial<ClinicProfile> =
+		dashboard?.clinicSettings?.profile ?? {};
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const chairs = dashboard?.clinicSettings?.chairs || [];
 	const patients = dashboard?.patients || [];

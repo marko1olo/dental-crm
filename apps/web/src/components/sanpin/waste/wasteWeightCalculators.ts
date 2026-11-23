@@ -11,7 +11,7 @@ export function calculateWasteNetWeight(grossKg: number, tareKg = 0): number {
 	const g = Math.max(0, Number(grossKg) || 0);
 	const t = Math.max(0, Number(tareKg) || 0);
 	const net = Math.max(0, g - t);
-	return Math.round(net * 100) / 100;
+	return Number(net.toFixed(2));
 }
 
 export function calculateWasteWeights(
@@ -24,8 +24,8 @@ export function calculateWasteWeights(
 		? customTareKg
 		: packaging.defaultTareWeightKg;
 
-	const g = Math.round(Math.max(0, Number(grossKg) || 0) * 100) / 100;
-	const t = Math.round(tareKg * 100) / 100;
+	const g = Number(Math.max(0, Number(grossKg) || 0).toFixed(2));
+	const t = Number(tareKg.toFixed(2));
 	const netKg = calculateWasteNetWeight(g, t);
 
 	return { grossKg: g, tareKg: t, netKg };
@@ -56,8 +56,8 @@ export function calculateWasteWeightsFromGrams(
 		grossGrams: grossG,
 		tareGrams: tareG,
 		netGrams: netG,
-		grossKg: Math.round((grossG / 1000) * 100) / 100,
-		tareKg: Math.round((tareG / 1000) * 100) / 100,
-		netKg: Math.round((netG / 1000) * 100) / 100,
+		grossKg: Number((grossG / 1000).toFixed(2)),
+		tareKg: Number((tareG / 1000).toFixed(2)),
+		netKg: Number((netG / 1000).toFixed(2)),
 	};
 }

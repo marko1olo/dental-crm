@@ -4,7 +4,7 @@
  */
 
 import { useId, useMemo, useRef, useState } from "react";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
@@ -51,9 +51,14 @@ export function applyMarkupToItems(
 	percent: number,
 ): readonly IngestedMappingItem[] {
 	const hasApproved = items.some((i) => i.isApproved);
+	const factorBasisPoints = Math.max(0, Math.round((100 + percent) * 100));
 	return items.map((it) => {
 		if (hasApproved && !it.isApproved) return it;
-		const nextPrice = Math.max(0, Math.round(it.priceRub * (1 + percent / 100)));
+		const markedUpKopecks = percentageOfKopecks(
+			rublesToKopecks(Math.max(0, it.priceRub)),
+			factorBasisPoints,
+		);
+		const nextPrice = Math.max(0, Math.round(kopecksToRubles(markedUpKopecks)));
 		return {
 			...it,
 			priceRub: nextPrice,

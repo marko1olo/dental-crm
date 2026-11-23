@@ -20,7 +20,7 @@ export function getPeriodontalBoneLevelPath(
 	}
 	const isTop = isMaxillaryArch(fdiNumber);
 	const clampedLoss = Math.max(0, Math.min(100, boneLossPercent));
-	const factor = clampedLoss / 100;
+	const factor = clampedLoss * 0.01;
 
 	if (isTop) {
 		const baseY = 96 - factor * 68;

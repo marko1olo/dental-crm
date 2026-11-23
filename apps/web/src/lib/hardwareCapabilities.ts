@@ -5,7 +5,7 @@
  * Decomposed into modular submodules under ./hardwareCapabilities/ per /decomposer skill.
  *
  * Layer 0: types.ts, constants.ts
- * Layer 1: gpuProber.ts, cashRegisterDriver.ts, posTerminalDriver.ts
+ * Layer 1: gpuProber.ts
  * Layer 2: imagingHardwareDriver.ts, hardwareDiscovery.ts, profileEvaluator.ts
  * Layer 3: domAdapter.ts
  * Layer 4: hooks.ts

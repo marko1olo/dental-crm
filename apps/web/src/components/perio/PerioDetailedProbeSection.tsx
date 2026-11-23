@@ -93,7 +93,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 	const activeSiteSuppuration = Boolean(activeSite?.suppuration);
 	const activeSiteGm = activeSite?.gingivalMarginMm ?? 0;
 	const activeSiteDepth = activeSite?.probingDepthMm ?? 2;
-	const activeSiteCal = activeSite?.calMm ?? (activeSiteDepth + activeSiteGm);
+	const activeSiteCal = activeSite?.calMm ?? Math.max(0, activeSiteDepth + activeSiteGm);
 	const isMolar = [18, 17, 16, 26, 27, 28, 38, 37, 36, 46, 47, 48].includes(selectedToothNum);
 
 	const renderArchRow = (label: string, toothNumbers: readonly number[], testPrefix: string) => (
@@ -106,6 +106,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 				{toothNumbers.map((num) => {
 					const t = teethByNumber.get(num);
 					const isSelected = selectedToothNum === num;
+					const isMissing = Boolean(t?.isMissing);
 					const { maxDepth, hasBop, hasPlaque, mobility, tone } = getToothSummary(t);
 					const toneBadge = getToneBadgeClass(tone, maxDepth);
 
@@ -115,24 +116,32 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							type="button"
 							onClick={() => onSelectToothNum(num)}
 							data-testid={`perio-tooth-btn-${num}`}
-							title={`Зуб #${num}: макс. карман ${maxDepth || 2} мм${hasBop ? ", кровоточивость BOP+" : ""}${mobility ? `, подвижность ${mobility}` : ""}`}
+							title={isMissing ? `Зуб #${num} удален. Зондирование заблокировано` : `Зуб #${num}: макс. карман ${maxDepth || 2} мм${hasBop ? ", кровоточивость BOP+" : ""}${mobility ? `, подвижность ${mobility}` : ""}`}
 							className={`touch-manipulation min-h-[44px] min-w-[36px] sm:min-h-[40px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
-								isSelected
-									? "bg-[var(--primary)]/15 border-[var(--primary)] ring-1 ring-[var(--primary)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
+								isMissing
+									? "opacity-50 bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)]"
+									: isSelected
+										? "bg-[var(--primary)]/15 border-[var(--primary)] ring-1 ring-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
-							<span className={`text-[11px] font-bold ${isSelected ? "text-[var(--primary)]" : "text-[var(--ink)]"}`}>
+							<span className={`text-[11px] font-bold ${isMissing ? "text-[var(--muted)] line-through" : isSelected ? "text-[var(--primary)]" : "text-[var(--ink)]"}`}>
 								{num}
 							</span>
 							<div className="flex items-center gap-0.5 mt-0.5">
-								<span className={`text-[10px] px-1 py-0.2 rounded ${toneBadge}`}>
-									{maxDepth || 2}
-								</span>
-								{hasBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" title="BOP+" />}
-								{hasPlaque && !hasBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Налёт" />}
+								{isMissing ? (
+									<span className="text-[10px] text-[var(--muted)]">уд.</span>
+								) : (
+									<>
+										<span className={`text-[10px] px-1 py-0.2 rounded ${toneBadge}`}>
+											{maxDepth || 2}
+										</span>
+										{hasBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" title="BOP+" />}
+										{hasPlaque && !hasBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Налёт" />}
+									</>
+								)}
 							</div>
-							{mobility > 0 && (
+							{!isMissing && mobility > 0 && (
 								<span className="text-[9px] font-extrabold text-[var(--danger,#e11d48)] leading-none mt-0.5">
 									M:{mobility === 1 ? "I" : mobility === 2 ? "II" : "III"}
 								</span>
@@ -182,8 +191,9 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										<button
 											key={m}
 											type="button"
+											disabled={Boolean(activeTooth?.isMissing)}
 											onClick={() => onUpdateMobility(m)}
-											className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${
+											className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
 												activeMob
 													? "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)] ring-1 ring-[var(--primary)]"
 													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
@@ -202,8 +212,9 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 												<button
 													key={f}
 													type="button"
+													disabled={Boolean(activeTooth?.isMissing)}
 													onClick={() => onUpdateFurcation?.(f)}
-													className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${
+													className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
 														activeFurc
 															? "bg-[var(--danger,#e11d48)]/15 text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
 															: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
@@ -218,6 +229,13 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							</div>
 						</div>
 
+						{activeTooth?.isMissing && (
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] flex items-center justify-between">
+								<span className="font-medium">Зуб #{selectedToothNum} удален. Зондирование заблокировано.</span>
+								<span className="text-[10px] font-bold text-[var(--muted)]">Отсутствует</span>
+							</div>
+						)}
+
 						{/* 6 точек зуба */}
 						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 pt-1">
 							{SITES.map((site) => {
@@ -227,7 +245,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								const isPlaque = Boolean(siteData?.plaque);
 								const isSupp = Boolean(siteData?.suppuration);
 								const gm = siteData?.gingivalMarginMm ?? 0;
-								const cal = siteData?.calMm ?? (depth + gm);
+								const cal = siteData?.calMm ?? Math.max(0, depth + gm);
 								const isSelectedSite = selectedSiteKey === site.key;
 								const tone = probingDepthTone(depth, "clinical");
 								const toneBadge = getToneBadgeClass(tone, depth);
@@ -236,9 +254,10 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									<button
 										key={site.key}
 										type="button"
+										disabled={Boolean(activeTooth?.isMissing)}
 										onClick={() => onSelectSiteKey(site.key)}
-										title={`${site.label}: глубина ${depth} мм, рецессия ${gm} мм, CAL ${cal} мм${isBop ? ", BOP+" : ""}${isSupp ? ", нагноение" : ""}`}
-										className={`touch-manipulation min-h-[44px] sm:min-h-[38px] px-2 py-1.5 rounded-xl text-xs cursor-pointer border flex items-center justify-between gap-1 transition-all ${
+										title={activeTooth?.isMissing ? `Зуб #${selectedToothNum} удален` : `${site.label}: глубина ${depth} мм, рецессия ${gm} мм, CAL ${cal} мм${isBop ? ", BOP+" : ""}${isSupp ? ", нагноение" : ""}`}
+										className={`touch-manipulation min-h-[44px] sm:min-h-[38px] px-2 py-1.5 rounded-xl text-xs cursor-pointer border flex items-center justify-between gap-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 											isSelectedSite
 												? "bg-[var(--primary)]/15 text-[var(--primary)] font-bold border-[var(--primary)] ring-1 ring-[var(--primary)]"
 												: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--line-strong)]"
@@ -264,8 +283,9 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									<button
 										key={d}
 										type="button"
+										disabled={Boolean(activeTooth?.isMissing)}
 										onClick={() => onUpdateDepth(d)}
-										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
+										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 											(activeSite?.probingDepthMm ?? 2) === d
 												? "bg-[var(--primary)] text-white border-[var(--primary)]"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
@@ -278,9 +298,10 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							<div className="flex flex-wrap items-center gap-1.5 shrink-0">
 								<button
 									type="button"
+									disabled={Boolean(activeTooth?.isMissing)}
 									onClick={onToggleBop}
 									aria-pressed={activeSiteBop}
-									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
 										activeSiteBop
 											? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
@@ -290,9 +311,10 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								</button>
 								<button
 									type="button"
+									disabled={Boolean(activeTooth?.isMissing)}
 									onClick={onTogglePlaque}
 									aria-pressed={activeSitePlaque}
-									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
 										activeSitePlaque
 											? "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)] ring-1 ring-[var(--warning,#f59e0b)]"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
@@ -302,9 +324,10 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								</button>
 								<button
 									type="button"
+									disabled={Boolean(activeTooth?.isMissing)}
 									onClick={onToggleSuppuration}
 									aria-pressed={activeSiteSuppuration}
-									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
+									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
 										activeSiteSuppuration
 											? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--danger,#e11d48)]"
@@ -323,8 +346,9 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									<button
 										key={gm}
 										type="button"
+										disabled={Boolean(activeTooth?.isMissing)}
 										onClick={() => onUpdateGingivalMargin?.(gm)}
-										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
+										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 											activeSiteGm === gm
 												? "bg-[var(--warning,#f59e0b)] text-white border-[var(--warning,#f59e0b)]"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--warning,#f59e0b)] hover:bg-[var(--paper-soft)]"

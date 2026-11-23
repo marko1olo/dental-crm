@@ -44,17 +44,27 @@ export function useRecallHubActions({
 		channel?: "whatsapp" | "telegram" | "sms" | "phone",
 		note?: string,
 	) => {
-		setCandidates((prev) =>
-			prev.map((c) => (c.id === candidateId ? { ...c, status: newStatus } : c)),
-		);
-		void sendRecallCandidateStatusUpdate({
-			patientId: candidateId,
-			status: newStatus,
-			channel,
-			note,
-		}).catch((err) => {
-			console.error("[RecallActions] Status persist error:", err);
-			showToast("Не удалось сохранить статус осмотра на сервере", "error");
+		setCandidates((prev) => {
+			const candidate = prev.find(
+				(c) => c.id === candidateId || c.patientId === candidateId,
+			);
+			const targetPatientId = candidate?.patientId ?? candidateId;
+
+			void sendRecallCandidateStatusUpdate({
+				patientId: targetPatientId,
+				status: newStatus,
+				channel,
+				note,
+			}).catch((err) => {
+				console.error("[RecallActions] Status persist error:", err);
+				showToast("Не удалось сохранить статус осмотра на сервере", "error");
+			});
+
+			return prev.map((c) =>
+				c.id === candidateId || c.patientId === candidateId
+					? { ...c, status: newStatus }
+					: c,
+			);
 		});
 		if (onStatusChange) onStatusChange(candidateId, newStatus);
 	};

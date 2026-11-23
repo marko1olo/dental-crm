@@ -9,6 +9,7 @@
  * с надежным дефолтом при пустой базе.
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import {
 	loadCanonicalPricelist,
 	type PricelistStudioItem,
@@ -210,7 +211,7 @@ function extractPriceFromLookupItem(item: CatalogLookupItem): number | null {
 		return item.priceRub;
 	}
 	if (typeof item.priceKopecks === "number" && item.priceKopecks > 0) {
-		return Math.round(item.priceKopecks / 100);
+		return Math.round(kopecksToRubles(item.priceKopecks));
 	}
 	return null;
 }

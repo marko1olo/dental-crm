@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 import {
 	calculateZtlWageFinancials,
 	detectLabDeadlineAlert,
-	createDentalLabOrderRecord,
 } from "../dentalLabOrderEngine";
+import { calculateLabOrderFinancialsKopecks, DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
 
 describe("dentalLabOrderEngine — Financials & Deadline Alerts", () => {
 	const fixedToday = "2026-09-25";
@@ -79,22 +79,18 @@ describe("dentalLabOrderEngine — Financials & Deadline Alerts", () => {
 		assert.equal(alertReady.severity, "OK");
 	});
 
-	it("создает полный наряд ЗТЛ через createDentalLabOrderRecord", () => {
-		const order = createDentalLabOrderRecord({
-			patientName: "Кузнецов И.П.",
-			doctorName: "Д-р Орлов А.В.",
-			labName: "ArtDent Премиум Лаб",
-			teethFdi: [21, 22],
-			constructionType: "crown_emax",
-			vitaShade: "A1",
+	it("рассчитывает каноническую стоимость ортопедического наряда через calculateLabOrderFinancialsKopecks", () => {
+		const def = DENTAL_LAB_CONSTRUCTIONS.crown_emax;
+		const fin = calculateLabOrderFinancialsKopecks({
+			unitsCount: 2,
+			pricePerUnitKopecks: def.defaultPatientPriceKopecks,
+			costPerUnitKopecks: def.defaultZtlCostKopecks,
+			doctorPercent: 20,
 		});
 
-		assert.ok(order.id.startsWith("ztl-ord-"));
-		assert.ok(order.orderNumber.startsWith("ЗТЛ-"));
-		assert.equal(order.patientName, "Кузнецов И.П.");
-		assert.equal(order.constructionType, "crown_emax");
-		assert.equal(order.status, "sent_to_lab");
-		assert.equal(order.patientPriceKopecks, 5200000);
-		assert.equal(order.ztlCostKopecks, 1700000);
+		assert.equal(fin.unitsCount, 2);
+		assert.equal(fin.patientPriceTotalKopecks, def.defaultPatientPriceKopecks * 2);
+		assert.equal(fin.labCostTotalKopecks, def.defaultZtlCostKopecks * 2);
+		assert.ok(fin.isBalanced);
 	});
 });

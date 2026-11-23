@@ -8,6 +8,10 @@
 
 // Canonical SSOT Cash Shift Closing, Journal & Fiscal Z-Report
 export { DirectShiftLauncher } from "./DirectShiftLauncher";
+export {
+	ShiftStudioModal,
+	type ShiftStudioModalProps,
+} from "./ShiftStudioModal";
 export * from "./shiftCatalogData";
 
 // Re-exports for Cash Shift Closing & Journal SSOT

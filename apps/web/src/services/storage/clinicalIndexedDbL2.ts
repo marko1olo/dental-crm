@@ -340,7 +340,7 @@ export async function hydrateL1CacheFromL2(
 		logger.warn("[L2Storage] Cold-start hydration encountered error", err);
 	}
 
-	const hydrationTimeMs = Math.round((performance.now() - startTime) * 100) / 100;
+	const hydrationTimeMs = Number((performance.now() - startTime).toFixed(2));
 	notifyL2StatusChanged();
 	return {
 		patientSnapshotsCount,

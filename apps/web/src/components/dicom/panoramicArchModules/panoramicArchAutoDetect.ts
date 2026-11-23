@@ -56,8 +56,8 @@ export function autoDetectPanoramicArch(
 			const points: Point2D[] = detected.map(([x, y]) => ({ x, y }));
 			return orientArchPatientRightFirst(points);
 		}
-	} catch {
-		// Non-blocking fallback per Mandate 8e/8n
+	} catch (err) {
+		console.warn("[autoDetectPanoramicArch] Dental arch auto-detection failed, using anatomical fallback:", err);
 	}
 
 	return createAnatomicalJawControlPoints().map((p) => ({ x: p.x, y: p.y }));

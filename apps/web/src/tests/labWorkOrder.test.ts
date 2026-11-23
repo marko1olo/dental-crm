@@ -30,9 +30,8 @@ import {
 	checkFittingAppointmentCollision,
 	detectLabDeadlineAlert,
 	processPartialDeliveryAndRework,
-	createDentalLabOrderRecord,
-	type DentalLabOrderRecord,
 } from "../components/lab/dentalLabOrderEngine.js";
+import type { DentalLabOrderData } from "../components/lab/math/labDataTypes.js";
 
 describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canonical SSOT)", () => {
 
@@ -371,7 +370,8 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 
 	describe("11. Shade Fidelity & Anatomical Optics Presets (VITA Classical, Bleach, 3D-Master, Translucency, Stump ND1-ND9)", () => {
 		it("accurately preserves VITA Classical, Bleach, and 3D-Master shades with stump preparation", () => {
-			const orderClassical = createDentalLabOrderRecord({
+			const orderClassical: DentalLabOrderData = {
+				id: "ztl-shade-1",
 				orderNumber: "ЗТЛ-SHADE-1",
 				patientId: "pat-1",
 				patientName: "Орлов Виктор",
@@ -382,17 +382,19 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 				colorVita: "A2",
 				shadeSystem: "classical",
 				teeth: [11],
-				stumpShade: "ND2",
+				selectedTeeth: [11],
+				shadeStump: "ND2",
 				translucency: "HT",
+				patientPriceKopecks: 1800000,
 				priceRub: 18000,
-			});
+			};
 
 			assert.equal(orderClassical.colorVita, "A2");
-			assert.equal(orderClassical.stumpShade, "ND2");
+			assert.equal(orderClassical.shadeStump, "ND2");
 			assert.equal(orderClassical.translucency, "HT");
-			assert.equal(orderClassical.anatomicalFeatures?.stumpShade, "ND2");
 
-			const order3d = createDentalLabOrderRecord({
+			const order3d: DentalLabOrderData = {
+				id: "ztl-shade-2",
 				orderNumber: "ЗТЛ-SHADE-2",
 				patientId: "pat-2",
 				patientName: "Орлова Анна",
@@ -403,22 +405,25 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 				colorVita: "2M2",
 				shadeSystem: "3d_master",
 				teeth: [21],
-				stumpShade: "ND1",
+				selectedTeeth: [21],
+				shadeStump: "ND1",
 				translucency: "UTML",
 				mamelons: true,
 				opalescence: true,
+				patientPriceKopecks: 2200000,
 				priceRub: 22000,
-			});
+			};
 
 			assert.equal(order3d.colorVita, "2M2");
 			assert.equal(order3d.shadeSystem, "3d_master");
 			assert.equal(order3d.translucency, "UTML");
-			assert.equal(order3d.anatomicalFeatures?.mamelons, true);
-			assert.equal(order3d.anatomicalFeatures?.opalescence, true);
+			assert.equal(order3d.mamelons, true);
+			assert.equal(order3d.opalescence, true);
 		});
 
 		it("preserves bleach shades and multi-zone stratification specifications", () => {
-			const orderBleach = createDentalLabOrderRecord({
+			const orderBleach: DentalLabOrderData = {
+				id: "ztl-shade-3",
 				orderNumber: "ЗТЛ-SHADE-3",
 				patientId: "pat-3",
 				patientName: "Соколова Екатерина",
@@ -429,8 +434,10 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 				colorVita: "BL2",
 				shadeSystem: "bleach",
 				teeth: [12, 11, 21, 22],
+				selectedTeeth: [12, 11, 21, 22],
+				patientPriceKopecks: 8000000,
 				priceRub: 80000,
-			});
+			};
 
 			assert.equal(orderBleach.colorVita, "BL2");
 			assert.equal(orderBleach.shadeSystem, "bleach");
@@ -440,8 +447,9 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 
 	describe("12. Partial Delivery & Warranty Rework without Deadlock (0 ₽ Law / Mandates 8e, 8n)", () => {
 		it("splits 4-crown bridge where 3 units are accepted and 1 unit requires warranty rework", () => {
-			// Original 4-unit bridge: teeth [14, 15, 16, 17], price 40,000 ₽
-			const originalOrder = createDentalLabOrderRecord({
+			// Original 4-unit bridge: teeth [14, 15, 16, 17], price 40,000 ₽ (4,000,000 kop)
+			const originalOrder: DentalLabOrderData = {
+				id: "ztl-bridge-1",
 				orderNumber: "ЗТЛ-2026-44",
 				patientId: "pat-bridge-1",
 				patientName: "Климов Роман Викторович",
@@ -451,8 +459,12 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 				material: "zirconia_multilayer",
 				colorVita: "A3",
 				teeth: [14, 15, 16, 17],
+				selectedTeeth: [14, 15, 16, 17],
+				toothFdi: "14, 15, 16, 17",
+				patientPriceKopecks: 4000000,
 				priceRub: 40000,
-			});
+				labCostKopecks: 1200000,
+			};
 
 			// 3 units ready (14, 15, 17), 1 unit rework (16) due to margin fit defect
 			const splitResult = processPartialDeliveryAndRework({
@@ -468,25 +480,27 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 			assert.ok(deliveredOrder);
 			assert.equal(deliveredOrder.status, "ready_in_clinic");
 			assert.deepEqual(deliveredOrder.teeth, [14, 15, 17]);
-			assert.equal(deliveredOrder.deliveredTeeth?.length, 3);
+			assert.equal(deliveredOrder.selectedTeeth?.length, 3);
 			assert.equal(deliveredOrder.isPartialDelivery, true);
-			// Proportional price: 40,000 * (3/4) = 30,000 ₽
+			// Proportional price: 40,000 * (3/4) = 30,000 ₽ = 3,000,000 kop
+			assert.equal(deliveredOrder.patientPriceKopecks, 3000000);
 			assert.equal(deliveredOrder.priceRub, 30000);
 
 			// 2. Warranty rework order checks (0 ₽ Law)
 			assert.ok(reworkOrder);
 			assert.equal(reworkOrder.status, "warranty_rework");
 			assert.deepEqual(reworkOrder.teeth, [16]);
-			assert.equal(reworkOrder.reworkTeeth?.length, 1);
+			assert.equal(reworkOrder.selectedTeeth?.length, 1);
 			assert.equal(reworkOrder.isWarrantyRework, true);
 			// Patient price MUST be strictly 0 ₽!
+			assert.equal(reworkOrder.patientPriceKopecks, 0);
 			assert.equal(reworkOrder.priceRub, 0);
 			// Lab defect -> lab cost is 0 ₽
 			assert.equal(reworkOrder.warrantyLiabilityType, "lab_defect");
 			// Traceability to parent
 			assert.equal(reworkOrder.originalOrderId, originalOrder.id);
 			assert.equal(reworkOrder.originalOrderNumber, originalOrder.orderNumber);
-			assert.ok(reworkOrder.orderNumber.includes("-REW-1"));
+			assert.ok(String(reworkOrder.orderNumber).includes("-REW-1"));
 			assert.ok(reworkOrder.reworkReason?.includes("Краевое прилегание"));
 
 			// 3. No deadlock: statuses are clear and summary is generated
@@ -496,7 +510,8 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 		});
 
 		it("handles clinic warranty liability correctly where clinic absorbs lab cost but patient pays 0 ₽", () => {
-			const originalOrder = createDentalLabOrderRecord({
+			const originalOrder: DentalLabOrderData = {
+				id: "ztl-single-1",
 				orderNumber: "ЗТЛ-2026-55",
 				patientId: "pat-single-1",
 				patientName: "Михайлов Артем",
@@ -506,8 +521,12 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 				material: "emax_press",
 				colorVita: "B1",
 				teeth: [24, 25],
+				selectedTeeth: [24, 25],
+				toothFdi: "24, 25",
+				patientPriceKopecks: 3000000,
 				priceRub: 30000,
-			});
+				labCostKopecks: 1000000,
+			};
 
 			const splitResult = processPartialDeliveryAndRework({
 				originalOrder,
@@ -518,8 +537,10 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 			});
 
 			// Patient still pays 0 ₽!
+			assert.equal(splitResult.reworkOrder.patientPriceKopecks, 0);
 			assert.equal(splitResult.reworkOrder.priceRub, 0);
 			assert.equal(splitResult.reworkOrder.warrantyLiabilityType, "clinic_warranty");
+			assert.equal(splitResult.deliveredOrder.patientPriceKopecks, 1500000);
 			assert.equal(splitResult.deliveredOrder.priceRub, 15000);
 		});
 	});

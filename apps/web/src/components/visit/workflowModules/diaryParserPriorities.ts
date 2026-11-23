@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import {
 	roundToKopecks,
 	parseRubAmount,
@@ -19,7 +20,7 @@ export function extractFromOrderServices(
 			s.priceRub ??
 			s.unitPriceRub ??
 			s.price ??
-			(typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0)
+			(typeof s.priceKopecks === "number" ? kopecksToRubles(s.priceKopecks) : 0)
 		);
 		const itemTooth = s.toothNumber ? (parseInt(String(s.toothNumber), 10) || s.toothNumber) : toothNumber;
 		let category: ProcedureCategory = "therapy";

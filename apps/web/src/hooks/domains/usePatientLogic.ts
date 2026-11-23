@@ -23,7 +23,6 @@ export type * from "./patientLogicModules/patientLogicTypes";
  * Канонический фасад картотеки и логики пациентов (Layer 5 Facade).
  * Декомпозирован строго в соответствии со стандартом /decomposer (<= 250 строк).
  */
-// biome-ignore lint/suspicious/noExplicitAny: master facade hook
 export function usePatientLogic({
 	dashboard,
 	query,
@@ -31,7 +30,7 @@ export function usePatientLogic({
 	auth,
 	setDashboard,
 	setQuery,
-}: UsePatientLogicProps | any) {
+}: UsePatientLogicProps) {
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 

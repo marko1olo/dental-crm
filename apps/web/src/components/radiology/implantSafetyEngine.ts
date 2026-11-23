@@ -28,6 +28,7 @@ export * from './fastMarchingNerve.js';
 export * from './implant/canonicalCatalog/index.js';
 export * from './implantCorticalAndSleeveEngine.js';
 
+import { kopecksToRubles } from '@dental/shared';
 import type { Point3D, CbctVoxelVolume } from './cbctMprMath.js';
 import {
   type CrossSectionImplantPose,
@@ -587,7 +588,7 @@ export function buildImplantProstheticSuite(
 	const healingAbutmentPriceKopecks = healingAbutment.priceKopecks;
 	const abutmentPriceKopecks = abutment.priceKopecks;
 	const totalPriceKopecks = implantPriceKopecks + healingAbutmentPriceKopecks + abutmentPriceKopecks;
-	const totalPriceRub = Math.round(totalPriceKopecks / 100);
+	const totalPriceRub = Math.round(kopecksToRubles(totalPriceKopecks));
 
 	const diameterStr = implantSpec.diameterMm.toFixed(1);
 	const lengthStr = implantSpec.lengthMm.toFixed(1);
@@ -597,7 +598,7 @@ export function buildImplantProstheticSuite(
 			code804n: "A16.07.054",
 			name: `Внутрикостная дентальная имплантация: ${implantSpec.brandName} ${implantSpec.lineName} (Ø${diameterStr} × ${lengthStr} мм)`,
 			category: "Хирургия",
-			priceRub: Math.round(implantPriceKopecks / 100),
+			priceRub: Math.round(kopecksToRubles(implantPriceKopecks)),
 			priceKopecks: implantPriceKopecks,
 			stageKind: "stage_2_surgery",
 			phase: 2,

@@ -16,6 +16,7 @@ import {
 	calculateDepartmentBreakdown,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { AnalyticsDashboardData } from "../../pages/analyticsDoctorMetrics.js";
 import {
@@ -105,7 +106,7 @@ export function getDemoExecutiveAnalytics(
 	const primaryRevenueKopecks = Math.round(145500000 * scale);
 	const repeatRevenueKopecks = Math.round(339500000 * scale);
 
-	const totalRevenueRub = Math.round(totalRevenueKopecks / 100);
+	const totalRevenueRub = Math.round(kopecksToRubles(totalRevenueKopecks));
 	const cashRub = Math.round(totalRevenueRub * 0.28);
 	const sbpRub = Math.round(totalRevenueRub * 0.18);
 	const cardDmsRub = totalRevenueRub - cashRub - sbpRub;

@@ -299,7 +299,7 @@ export function usePricelistStudioState({
 			title: bundle.title,
 			category: bundle.category,
 			priceKopecks: bundle.priceKopecks,
-			costKopecks: Math.round(bundle.priceKopecks * 0.25),
+			costKopecks: Math.trunc(bundle.priceKopecks / 4),
 			durationMin: 60,
 			isActive: true,
 			isBundle: true,
@@ -366,7 +366,7 @@ export function usePricelistStudioState({
 						title,
 						category: "therapy",
 						priceKopecks: priceKopecks >= 0 ? priceKopecks : 350000,
-						costKopecks: Math.round(priceKopecks * 0.2),
+						costKopecks: Math.trunc((priceKopecks >= 0 ? priceKopecks : 350000) / 5),
 						durationMin: 30,
 						isActive: true,
 					});

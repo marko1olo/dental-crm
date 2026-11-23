@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	completeClinicalVisitAndAssembleEstimate,
 	type ClinicalEstimateItem,
@@ -65,6 +66,10 @@ export interface UseVisitCompletionReturn {
 	resetCompletion: () => void;
 }
 
+const isUuid = (val: unknown): val is string =>
+	typeof val === "string" &&
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+
 export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisitCompletionReturn {
 	const [isCompleting, setIsCompleting] = useState<boolean>(false);
 	const [completionResult, setCompletionResult] = useState<ClinicalVisitCompletionResult | null>(null);
@@ -82,17 +87,23 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 		async (overrideInput?: Partial<ClinicalVisitCompletionInput>): Promise<ClinicalVisitCompletionResult> => {
 			setIsCompleting(true);
 			try {
-				const effectiveVisitId =
+				const candidateVisitId =
 					overrideInput?.visitId ||
 					options?.visitId ||
-					activeVisit?.id ||
-					`VIS-${Date.now()}`;
+					activeVisit?.id;
+				const effectiveVisitId =
+					candidateVisitId && isUuid(candidateVisitId)
+						? candidateVisitId
+						: generateUuidV7();
 
-				const effectivePatientId =
+				const candidatePatientId =
 					overrideInput?.patientId ||
 					options?.patientId ||
-					activeVisit?.patientId ||
-					"pat-unknown";
+					activeVisit?.patientId;
+				const effectivePatientId =
+					candidatePatientId && isUuid(candidatePatientId)
+						? candidatePatientId
+						: generateUuidV7();
 
 				const effectivePatientName =
 					overrideInput?.patientName ||
@@ -195,7 +206,7 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					isPersistedInDb: boolean;
 				} | null = null;
 
-				if (effectivePatientId && effectivePatientId !== "pat-unknown") {
+				if (effectivePatientId && isUuid(effectivePatientId)) {
 					try {
 						createdInvoice = await createVisitInvoiceInApi({
 							effectiveVisitId,

@@ -35,7 +35,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 	};
 
 	const getScans = async (patientId: string) => {
-		return fetchWithHandling(`/api/xray/scans?patientId=${patientId}`, {
+		return fetchWithHandling(`/api/imaging/studies?patientId=${patientId}`, {
 			headers: getReadHeaders(),
 		});
 	};
@@ -65,7 +65,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 	};
 
 	const saveScan = async (payload: unknown) => {
-		return fetchWithHandling("/api/xray/scans", {
+		return fetchWithHandling("/api/imaging/studies", {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
@@ -75,13 +75,13 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 	};
 
 	const getScan = async (scanId: string) => {
-		return fetchWithHandling(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
+		return fetchWithHandling(`/api/imaging/studies/${encodeURIComponent(scanId)}`, {
 			headers: getReadHeaders(),
 		});
 	};
 
 	const deleteScan = async (scanId: string) => {
-		return fetchWithHandling(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
+		return fetchWithHandling(`/api/imaging/studies/${encodeURIComponent(scanId)}`, {
 			method: "DELETE",
 			headers: getMutationHeaders(),
 		});

@@ -289,5 +289,16 @@ export function toothDataToGate0Flags(tooth: ToothData): Tooth46LayerFlags {
 	}
 
 	applyAuxiliaryOverlays(flags, tooth, clin);
+
+	const rawMobility = clin.mobility ?? tooth.mobility;
+	if (typeof rawMobility === "number" && rawMobility >= 0 && rawMobility <= 4) {
+		flags.mobility = rawMobility as 0 | 1 | 2 | 3 | 4;
+	}
+
+	const rawFurcation = clin.furcation ?? clin.furcationGrade ?? tooth.furcation ?? tooth.furcationGrade;
+	if (typeof rawFurcation === "number" && rawFurcation >= 0 && rawFurcation <= 3) {
+		flags.furcation = rawFurcation as 0 | 1 | 2 | 3;
+	}
+
 	return flags;
 }

@@ -101,7 +101,7 @@ export function evaluateClinicalRiskFactors(
 	}
 
 	const clampedMultiplier = Math.max(0.25, Math.min(1.2, totalMultiplier));
-	const roundedMultiplier = Math.round(clampedMultiplier * 100) / 100;
+	const roundedMultiplier = Number(clampedMultiplier.toFixed(2));
 
 	let riskLevel: "low" | "moderate" | "high" | "critical" = "low";
 	let warrantyStatus: "full" | "conditional" | "reduced" | "void_risk" = "full";

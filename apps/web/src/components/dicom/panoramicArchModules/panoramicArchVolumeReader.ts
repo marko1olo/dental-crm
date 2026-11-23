@@ -37,7 +37,8 @@ function readWithoutThrowing(
 ): ArrayLike<number> | undefined {
 	try {
 		return read();
-	} catch {
+	} catch (err) {
+		console.warn("[panoramicArchVolumeReader] Failed to read volume scalar data array from manager:", err);
 		return undefined;
 	}
 }

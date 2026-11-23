@@ -42,6 +42,11 @@ export function useEgiszRemdState({
 		};
 		const code1Kop = p.payments.filter((x) => x.serviceCode !== "2").reduce((acc, x) => acc + (x.amountKopecks || 0), 0);
 		const code2Kop = p.payments.filter((x) => x.serviceCode === "2").reduce((acc, x) => acc + (x.amountKopecks || 0), 0);
+		const relCode: string | undefined = p.patient.relationshipCode;
+		const patientKinshipCode: "1" | "2" | "3" | "4" | "5" =
+			relCode === "2" || relCode === "3" || relCode === "4" || relCode === "5"
+				? relCode
+				: "1";
 		const fnsResult = buildFnsKnd1151156Xml({
 			taxInspectionCode: "7701",
 			documentDate: typeof p.documentDate === "string" ? p.documentDate.slice(0, 10) : p.documentDate.toISOString().slice(0, 10),
@@ -61,7 +66,7 @@ export function useEgiszRemdState({
 				birthDate: p.taxpayer.birthDate || "1980-01-01",
 			},
 			patient: {
-				patientKinshipCode: (p.patient.relationshipCode || "1") as any,
+				patientKinshipCode,
 				fullName: parseFio(p.patient.fullName),
 				birthDate: p.patient.birthDate,
 				snils: p.patient.snils,

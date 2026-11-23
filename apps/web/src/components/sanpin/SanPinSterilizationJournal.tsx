@@ -91,14 +91,15 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				passedIndicator: true, operatorName,
 				itemsDescription: itemsSummaryInput || `Смена стерилизации (${packagesCount} крафт-пакетов)`,
 			};
+			const idempotencyKey = crypto.randomUUID();
 			let res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify(payload),
 			}).catch(() => null);
 
 			if (!res || !res.ok) {
 				res = await fetch("/api/sanpin/autoclave/cycles", {
-					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 					body: JSON.stringify(payload),
 				}).catch(() => null);
 			}
@@ -161,7 +162,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 						<div className="flex items-center gap-2 flex-wrap">
 							<div className="inline-flex bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] rounded-lg p-0.5 gap-0.5 shrink-0">
 								{(["day", "week", "month"] as const).map((p: SanPinJournalPeriod) => (
-									<button key={p} type="button" onClick={() => setPeriod(p)} className="px-2.5 py-1 text-xs rounded-md font-semibold cursor-pointer touch-manipulation transition-colors shrink-0" style={{ background: period === p ? "var(--teal, #0d9488)" : "transparent", color: period === p ? "#fff" : "var(--muted, #64748b)", border: "none" }}>
+									<button key={p} type="button" onClick={() => setPeriod(p)} className="px-2.5 py-1 text-xs rounded-md font-semibold cursor-pointer touch-manipulation transition-colors shrink-0" style={{ background: period === p ? "var(--primary)" : "transparent", color: period === p ? "#fff" : "var(--muted, #64748b)", border: "none" }}>
 										{p === "day" ? "Сегодня" : p === "week" ? "Неделя" : "Месяц"}
 									</button>
 								))}
@@ -186,7 +187,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 									<Download size={13} className="shrink-0" /><span>CSV</span>
 								</button>
 							</div>
-							<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="sanpin-desktop-cta hidden sm:inline-flex h-9 min-h-[36px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0 whitespace-nowrap" data-testid="start-cycle-primary-btn" title="Пакетная стерилизация смены">
+							<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="sanpin-desktop-cta hidden sm:inline-flex h-9 min-h-[36px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-xs items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0 whitespace-nowrap" data-testid="start-cycle-primary-btn" title="Пакетная стерилизация смены">
 								<Plus size={14} className="text-white shrink-0" /><span>Запустить цикл стерилизации</span>
 							</button>
 						</div>
@@ -210,7 +211,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 									<tr>
 										<td colSpan={8} className="py-10 text-center text-[var(--muted,#64748b)]">
 											<p className="font-semibold text-sm mb-2 text-[var(--ink,#1e293b)]">Нет записей стерилизации за выбранный период</p>
-											<button type="button" onClick={handleShiftBatch1Click} aria-busy={isBatchSubmitting} className="h-8 px-3.5 rounded-lg text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shadow-xs">
+											<button type="button" onClick={handleShiftBatch1Click} aria-busy={isBatchSubmitting} className="h-8 px-3.5 rounded-lg text-xs font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shadow-xs">
 												<CheckCircle2 size={13} /><span>Пакетная стерилизация смены (27 наборов, 134°C)</span>
 											</button>
 										</td>
@@ -251,7 +252,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 						{filteredCycles.length === 0 ? (
 							<div className="p-5 text-center bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)]">
 								<p className="font-semibold text-sm mb-2 text-[var(--ink,#1e293b)]">Нет циклов за выбранный период</p>
-								<button type="button" onClick={handleShiftBatch1Click} aria-busy={isBatchSubmitting} className="h-11 min-h-[44px] w-full rounded-xl font-bold text-sm text-white bg-[var(--teal,#0d9488)] flex items-center justify-center gap-2 cursor-pointer touch-manipulation">
+								<button type="button" onClick={handleShiftBatch1Click} aria-busy={isBatchSubmitting} className="h-11 min-h-[44px] w-full rounded-xl font-bold text-sm text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] flex items-center justify-center gap-2 cursor-pointer touch-manipulation">
 									<CheckCircle2 size={16} /><span>Зафиксировать смену (27 наборов)</span>
 								</button>
 							</div>
@@ -307,7 +308,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 						<div className="flex items-center justify-between"><span className="text-xs font-semibold text-[var(--ink,#1e293b)]">Количество крафт-пакетов:</span><strong className="text-xs text-[var(--teal,#0d9488)]">{packagesCount} упаковок</strong></div>
 						<div className="grid grid-cols-5 gap-2">
 							{PRESET_PACK_COUNTS.map((cnt) => (
-								<button key={cnt} type="button" onClick={() => setPackagesCount(cnt)} className={`py-2 text-xs font-bold rounded-xl border transition-colors min-h-[44px] cursor-pointer touch-manipulation ${packagesCount === cnt ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "border-[var(--line,#e2e8f0)] dark:border-[var(--line)] text-[var(--ink,#1e293b)] hover:bg-[var(--paper-soft)]"}`}>
+								<button key={cnt} type="button" onClick={() => setPackagesCount(cnt)} className={`py-2 text-xs font-bold rounded-xl border transition-colors min-h-[44px] cursor-pointer touch-manipulation ${packagesCount === cnt ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs" : "border-[var(--line,#e2e8f0)] dark:border-[var(--line)] text-[var(--ink,#1e293b)] hover:bg-[var(--paper-soft)]"}`}>
 									{cnt} шт.
 								</button>
 							))}
@@ -360,7 +361,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 			{/* Floating Bottom Bar (Natural Thumb Zone для смартфонов, Мандат 8am: 1 Primary CTA) */}
 			{!isCycleDrawerOpen && activeTab !== "cycle" && (
 				<div className="sanpin-mobile-view fixed left-3 right-3 z-30 p-2 bg-[var(--paper,#fff)]/95 dark:bg-[var(--paper-strong,#0f172a)]/95 backdrop-blur-md rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] shadow-xl flex items-center" style={{ bottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-					<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="w-full h-11 min-h-[44px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation active:scale-[0.99]" data-testid="sanpin-mobile-start-cycle-cta" title="Пакетная стерилизация смены">
+					<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="w-full h-11 min-h-[44px] rounded-xl font-bold text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation active:scale-[0.99]" data-testid="sanpin-mobile-start-cycle-cta" title="Пакетная стерилизация смены">
 						<Plus size={18} className="text-white" /><span>Запустить цикл стерилизации</span>
 					</button>
 				</div>

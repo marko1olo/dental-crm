@@ -190,6 +190,12 @@ export interface VisitStore {
 	 * стенограммы и истории undo/redo при переключении между пациентами.
 	 */
 	resetPatientVisitSession: () => void;
+	/**
+	 * Сброс локального черновика визита (Мандаты 8bn, 8zq — Zero-Leak Draft Invariant).
+	 * Очищает карту зубов, диагнозы, дневник приёма, черновик и стенограмму при закрытии модалок/шторок.
+	 */
+	resetDraft: () => void;
+	clearDraft: () => void;
 	applyAiToothCodes: (
 		detectedCodes: string[],
 		primaryState?: ToothState,

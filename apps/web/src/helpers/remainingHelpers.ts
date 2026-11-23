@@ -3,10 +3,13 @@
  * @description Canonical auth and initial preferences helper.
  */
 
+import {
+	defaultUiPreferences,
+	type UiPreferences,
+} from "../constants/uiPreferencesConstants";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const initialUiPreferences = {} as any;
+export const initialUiPreferences: UiPreferences = defaultUiPreferences;
 
 export const auth = {
 	denteClinicalReadHeaders: (

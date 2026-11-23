@@ -93,9 +93,9 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 					justifyContent: "center",
 					gap: "12px",
 					borderRadius: "12px",
-					border: "1.5px solid var(--teal)",
-					backgroundColor: "var(--teal-soft, rgba(13, 148, 136, 0.1))",
-					color: "var(--teal)",
+					border: "1.5px solid var(--primary)",
+					backgroundColor: "var(--primary-soft, rgba(13, 148, 136, 0.1))",
+					color: "var(--primary)",
 					cursor: "pointer",
 					marginBottom: "10px",
 				}}
@@ -189,8 +189,8 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 					justifyContent: "center",
 					gap: "10px",
 					borderRadius: "12px",
-					backgroundColor: "var(--teal)",
-					color: "var(--on-teal, var(--paper))",
+					backgroundColor: "var(--primary)",
+					color: "var(--on-primary, #ffffff)",
 					border: "none",
 					cursor: "pointer",
 				}}
@@ -219,7 +219,7 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 					marginTop: "8px",
 					fontSize: "13px",
 					fontWeight: 600,
-					color: "var(--teal)",
+					color: "var(--primary)",
 					backgroundColor: "transparent",
 					border: "none",
 					display: "flex",
@@ -228,7 +228,13 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 					gap: "6px",
 					cursor: "pointer",
 				}}
-				onClick={onOneTouchCheckin}
+				onClick={() => {
+					if (phoneDigits.length < 4 && !patientName) {
+						setAuthError("Пожалуйста, поднесите QR-код из SMS/мессенджера к оптическому сканеру терминала или введите 4 цифры телефона.");
+						return;
+					}
+					onOneTouchCheckin();
+				}}
 				title="Быстрый чекин по персональному QR-коду"
 				data-testid="qr-checkin-btn"
 			>

@@ -48,10 +48,10 @@ export function parseWidgetListPayload<T>(
 	}
 	return {
 		ok: true,
-		items: list.flatMap((row) =>
-			// biome-ignore lint/style/noNonNullAssertion: safe assertion after asRecord check
-			asRecord(row) ? [toItem(asRecord(row)!)] : [],
-		),
+		items: list.flatMap((row) => {
+			const record = asRecord(row);
+			return record ? [toItem(record)] : [];
+		}),
 	};
 }
 

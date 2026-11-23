@@ -12,11 +12,13 @@
  * (обычный и неразрывный пробел) отбрасываются. Три знака после запятой — отказ,
  * а не тихое округление: на деньгах округлять за пользователя нельзя.
  */
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 const kopecksMessage =
 	"сумма указывается цифрами, копейки после запятой: 1500,50";
 
 /** Максимальная сумма, при которой копейки представимы точно (2^53 копеек). */
-const MAX_SAFE_RUB = Math.floor(Number.MAX_SAFE_INTEGER / 100);
+const MAX_SAFE_RUB = Math.floor(kopecksToRubles(Number.MAX_SAFE_INTEGER));
 
 export function normalizeRubAmountInput(value: string): number | null {
 	const compactAmount = value.replace(/[\s ]/g, "").replace(",", ".");
@@ -30,7 +32,7 @@ export function normalizeRubAmountInput(value: string): number | null {
 	 * оставляет хвост (1.005 * 100 = 100.49999999999999). Так в системе живёт
 	 * ровно то, что ввели, без плавающего мусора в младших разрядах.
 	 */
-	return Math.round(amountRub * 100) / 100;
+	return kopecksToRubles(rublesToKopecks(amountRub));
 }
 
 export function validateRubAmountInput(
@@ -82,7 +84,7 @@ export function toKopecks(
 
 /** Целые копейки -> рубли */
 export function fromKopecks(kopecks: number): number {
-	return Math.round(kopecks) / 100;
+	return kopecksToRubles(kopecks);
 }
 
 /**
@@ -95,7 +97,7 @@ export function rubAmountForInput(
 ): string {
 	const kopecks = toKopecks(value);
 	if (kopecks === null || kopecks <= 0) return "";
-	const rub = Math.floor(kopecks / 100);
+	const rub = Math.floor(kopecksToRubles(kopecks));
 	const kop = kopecks % 100;
 	if (kop === 0) return String(rub);
 	return `${rub},${String(kop).padStart(2, "0")}`;

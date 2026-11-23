@@ -22,6 +22,7 @@ export interface ClinicalImageViewerProps {
 	viewerStyle?: CSSProperties | undefined;
 	isRulerActive?: boolean | undefined;
 	pixelSpacingMm?: number | undefined;
+	isCalibrated?: boolean | undefined;
 	measurements?: ViewerRulerMeasurement[] | undefined;
 	onMeasurementsChange?: ((measurements: ViewerRulerMeasurement[]) => void) | undefined;
 	isPanActive?: boolean | undefined;

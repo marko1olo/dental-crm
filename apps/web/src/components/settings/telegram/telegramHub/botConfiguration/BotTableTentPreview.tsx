@@ -68,15 +68,15 @@ export function BotTableTentPreview({
 					margin: "4px 0",
 				}}
 			>
-				<div
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: safe SVG
-					dangerouslySetInnerHTML={{
-						__html: generateQrCodeSvg(patientBotLink, {
+				<img
+					src={`data:image/svg+xml;utf8,${encodeURIComponent(
+						generateQrCodeSvg(patientBotLink, {
 							size: isA5 ? 144 : 114,
 							margin: 1,
 						}),
-					}}
-					style={{ width: "100%", height: "100%" }}
+					)}`}
+					alt="QR-код записи через Telegram-бота"
+					style={{ width: "100%", height: "100%", display: "block" }}
 				/>
 			</div>
 

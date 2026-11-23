@@ -4,6 +4,7 @@
  * Compliant with Mandate 8b (<= 120 lines).
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import type { VisitBillingServiceItem } from "../visitBillingTypes.js";
 
 export interface RawBillingEventItem {
@@ -54,7 +55,7 @@ export function parseBillingServicesList(
 ): VisitBillingServiceItem[] {
 	return rawList.map((s, idx) => {
 		const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(0, 8) : `${Date.now()}-${idx}`;
-		const priceRub = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? (typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0));
+		const priceRub = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? (typeof s.priceKopecks === "number" ? kopecksToRubles(s.priceKopecks) : 0));
 		let tooth = s.toothCode ?? s.toothNumber ?? detail?.toothCode ?? detail?.toothNumber;
 		if (!tooth) {
 			const match = (s.title || s.name || s.nameRu || "").match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
@@ -95,7 +96,7 @@ export function parseSingleBillingItem(item: RawBillingEventItem): VisitBillingS
 		item.priceRub ??
 		item.price ??
 		item.basePriceRub ??
-		(typeof item.priceKopecks === "number" ? item.priceKopecks / 100 : 0)
+		(typeof item.priceKopecks === "number" ? kopecksToRubles(item.priceKopecks) : 0)
 	);
 	const discountRub = Number(item.discountRub ?? item.discount ?? 0);
 	const discountPercent = Number(

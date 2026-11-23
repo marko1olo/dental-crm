@@ -4,7 +4,10 @@
  * Folder workup plans, first-frame preview, and series scan mutations.
  */
 
-import type { DicomFolderWorkupPlanResponse } from "@dental/shared";
+import type {
+	DicomFolderWorkupPlanResponse,
+	DicomViewerWorkbenchManifestResponse,
+} from "@dental/shared";
 import {
 	type DicomFirstFramePreviewMetadata,
 	type DicomFirstFramePreviewOptions,
@@ -34,7 +37,9 @@ export interface UseDicomWorkbenchPlanActionsParams {
 	state: ReturnType<typeof useDicomWorkbenchState>;
 	setError: (error: string | null) => void;
 	ohifBaseUrl: string;
-	applyDicomWorkbenchManifest: (manifest: any) => void;
+	applyDicomWorkbenchManifest: (
+		manifest: DicomViewerWorkbenchManifestResponse,
+	) => void;
 }
 
 export function useDicomWorkbenchPlanActions({

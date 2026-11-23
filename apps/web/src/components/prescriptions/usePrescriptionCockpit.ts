@@ -35,7 +35,12 @@ export function usePrescriptionCockpit(props: PrescriptionModalProps) {
 	const warnings = usePrescriptionClinicalWarnings({
 		patient,
 		allergies,
-		diary: diary as any,
+		diary: diary
+			? {
+					diagnosisIcd10: diary.diagnosisIcd10,
+					anamnesis: diary.anamnesisVitae,
+				}
+			: undefined,
 		activeItems: itemsState.activeItems,
 	});
 
@@ -50,7 +55,7 @@ export function usePrescriptionCockpit(props: PrescriptionModalProps) {
 		meta,
 		...ctx,
 		activeItems: itemsState.activeItems,
-	} as any);
+	});
 
 	const sync = usePrescriptionBackendSync({
 		patientId: patient?.id,

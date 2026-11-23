@@ -1,4 +1,5 @@
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
+import type { PatientPersonalCabinetData } from "../../patientCabinet/patientCabinetEngine.js";
 
 export type TelegramCabinetTab =
 	| "teeth"
@@ -43,6 +44,8 @@ export interface TelegramPatientPortalCabinetProps {
 	readonly patientId?: string | null | undefined;
 	readonly initialTab?: TelegramCabinetTab;
 	readonly initialTaxSheetOpen?: boolean;
+	readonly initialInvoices?: PatientPersonalCabinetData["invoices"] | undefined;
+	readonly invoices?: PatientPersonalCabinetData["invoices"] | undefined;
 	readonly onBack?: () => void;
 }
 

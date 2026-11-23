@@ -47,6 +47,7 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 	// он остаётся активным до конца жизни хука.
 	const useFallbackUrl = useRef(false);
 	const openGuardTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const pongWatchdogTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const connect = useCallback(() => {
 		const targetUrl = useFallbackUrl.current && fallbackUrl ? fallbackUrl : url;
@@ -121,7 +122,13 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 
 		socket.onmessage = (event) => {
 			if (closedByUs.current) return;
-			if (event.data === "PONG") return;
+			if (event.data === "PONG") {
+				if (pongWatchdogTimeout.current) {
+					clearTimeout(pongWatchdogTimeout.current);
+					pongWatchdogTimeout.current = null;
+				}
+				return;
+			}
 			try {
 				const data: WebSocketMessage = JSON.parse(event.data);
 				// AUTH_OK — служебное подтверждение подписки, наверх не отдаём.
@@ -134,6 +141,10 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 
 		socket.onclose = () => {
 			if (closedByUs.current) return;
+			if (pongWatchdogTimeout.current) {
+				clearTimeout(pongWatchdogTimeout.current);
+				pongWatchdogTimeout.current = null;
+			}
 			setIsConnected(false);
 			attempts.current += 1;
 			if (reconnectTimeout.current) {
@@ -176,8 +187,31 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			}
 			if (ws.current?.readyState === WebSocket.OPEN) {
 				ws.current.send("PING");
+				// Heartbeat Watchdog: если сервер не ответит PONG за 10 сек, переподключаем
+				if (pongWatchdogTimeout.current) {
+					clearTimeout(pongWatchdogTimeout.current);
+				}
+				pongWatchdogTimeout.current = setTimeout(() => {
+					if (ws.current?.readyState === WebSocket.OPEN) {
+						try {
+							ws.current.close();
+						} catch {
+							// ignore
+						}
+					}
+				}, 10_000);
 			}
 		}, 30000);
+
+		const handleOnline = () => {
+			// Мгновенный авто-реконнект при восстановлении сетевого подключения
+			if (!ws.current || ws.current.readyState === WebSocket.CLOSED || ws.current.readyState === WebSocket.CLOSING) {
+				attempts.current = 0;
+				connect();
+			} else if (ws.current.readyState === WebSocket.OPEN) {
+				ws.current.send("PING");
+			}
+		};
 
 		const handleVisibilityChange = () => {
 			if (typeof document === "undefined" || document.hidden) return;
@@ -190,6 +224,9 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			}
 		};
 
+		if (typeof window !== "undefined") {
+			window.addEventListener("online", handleOnline);
+		}
 		if (typeof document !== "undefined") {
 			document.addEventListener("visibilitychange", handleVisibilityChange);
 		}
@@ -200,6 +237,13 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			if (openGuardTimeout.current) {
 				clearTimeout(openGuardTimeout.current);
 				openGuardTimeout.current = null;
+			}
+			if (pongWatchdogTimeout.current) {
+				clearTimeout(pongWatchdogTimeout.current);
+				pongWatchdogTimeout.current = null;
+			}
+			if (typeof window !== "undefined") {
+				window.removeEventListener("online", handleOnline);
 			}
 			if (typeof document !== "undefined") {
 				document.removeEventListener("visibilitychange", handleVisibilityChange);

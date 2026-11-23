@@ -94,7 +94,11 @@ export function useConsentBackendSync({
 
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/consents`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...getDenteAuthHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+					...getDenteAuthHeaders(),
+				},
 				body: JSON.stringify({
 					kind,
 					consentType: key,

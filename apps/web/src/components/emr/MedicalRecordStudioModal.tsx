@@ -24,6 +24,11 @@ import {
 	validateMedicalRecordCompleteness, formatPatientAge, calculateDmftIndex, calculateCpitnIndex, generateMedicalRecordPrintHtml,
 } from "./clinicalDiaryMath";
 import { generateUuidV7 } from "@dental/shared";
+import {
+	getSynchronousDraft,
+	loadOfflineDraft,
+	saveOfflineDraftDebounced,
+} from "../../services/offline/storage/idbDraftOps";
 import { useRecordExports } from "./record/useRecordExports";
 import { useMedicalRecordSave } from "./record/useMedicalRecordSave";
 import { ClinicalProtocolsCatalogModal } from "../visit/clinicalCatalog/ClinicalProtocolsCatalogModal";
@@ -89,11 +94,16 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		const buildInitialFormData = useCallback((): MedicalRecordData => {
 			let draft: Partial<MedicalRecordData> | null = null;
-			if (patientId && typeof sessionStorage !== "undefined") {
-				try {
-					const raw = sessionStorage.getItem(`dente:medical_card_autosave:${patientId}`);
-					if (raw) draft = JSON.parse(raw);
-				} catch { /* ignore draft parse error */ }
+			if (patientId) {
+				const syncDraft = getSynchronousDraft<Partial<MedicalRecordData>>(`draft:emk:${patientId}`);
+				if (syncDraft?.data) {
+					draft = syncDraft.data;
+				} else if (typeof sessionStorage !== "undefined") {
+					try {
+						const raw = sessionStorage.getItem(`dente:medical_card_autosave:${patientId}`);
+						if (raw) draft = JSON.parse(raw);
+					} catch { /* ignore fallback draft parse error */ }
+				}
 			}
 			return {
 				...DEFAULT_MEDICAL_CARD_DATA,
@@ -109,6 +119,31 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		}, [initialData, resolvedClinic, patientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
+
+		// Async IndexedDB Draft Hydration: восстановление при сбое браузера / Ctrl+W / OOM
+		useEffect(() => {
+			if (!patientId) return;
+			let cancelled = false;
+			void loadOfflineDraft<Partial<MedicalRecordData>>(`draft:emk:${patientId}`).then((idbDraft) => {
+				if (cancelled || !idbDraft?.data) return;
+				setFormData((prev) => {
+					const d = idbDraft.data;
+					return {
+						...prev,
+						...d,
+						clinic: { ...prev.clinic, ...(d.clinic || {}) },
+						passport: { ...prev.passport, ...(d.passport || {}) },
+						anamnesis: { ...prev.anamnesis, ...(d.anamnesis || {}) },
+						dentalStatus: { ...prev.dentalStatus, ...(d.dentalStatus || {}) },
+						visitDiaries: d.visitDiaries?.length ? d.visitDiaries : prev.visitDiaries,
+						epicrisis: { ...prev.epicrisis, ...(d.epicrisis || {}) },
+					};
+				});
+			});
+			return () => {
+				cancelled = true;
+			};
+		}, [patientId]);
 
 		// Zero-Leak Draft (Мандаты 8zq/8bn): Сброс и гидратация formData при смене patientId
 		const lastPatientIdRef = useRef<string | undefined>(patientId);
@@ -141,23 +176,27 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const cpitn = useMemo(() => calculateCpitnIndex(formData.dentalStatus.cpitnIndex), [formData.dentalStatus.cpitnIndex]);
 		const ageText = useMemo(() => formatPatientAge(formData.passport.patientBirthDate, formData.passport.cardOpenedDate), [formData.passport.patientBirthDate, formData.passport.cardOpenedDate]);
 
-		// Debounced автосейв всей карты на лету (Zero Keystroke Loss & Zero-Leak Draft строго под изолированным patientId)
+		// Debounced 3-tier автосейв всей карты в IndexedDB + LocalStorage (Zero Keystroke Loss & Zero-Leak Draft)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		useEffect(() => {
 			if (!patientId) return;
 			if (autosaveRef.current) clearTimeout(autosaveRef.current);
 			autosaveRef.current = setTimeout(() => {
 				try {
-					if (typeof sessionStorage !== "undefined") {
-						const draftKey = `dente:medical_card_autosave:${patientId}`;
-						sessionStorage.setItem(draftKey, JSON.stringify(formData));
-					}
+					saveOfflineDraftDebounced(
+						`draft:emk:${patientId}`,
+						"DIARY_043_DRAFT",
+						patientId,
+						formData,
+						profile?.organizationId,
+						600,
+					);
 				} catch (err) {
-					console.warn("MedicalRecordStudioModal: ошибка автосохранения в sessionStorage", err);
+					console.warn("MedicalRecordStudioModal: ошибка автосохранения в IndexedDB", err);
 				}
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-		}, [formData, patientId]);
+		}, [formData, patientId, profile?.organizationId]);
 
 		// Закрытие выпадающего меню по клику вне
 		useEffect(() => {
@@ -169,11 +208,22 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			return () => document.removeEventListener("mousedown", handleClickOutside);
 		}, [isMoreMenuOpen]);
 
+		const resetDraft = useCallback(() => {
+			setFormData(buildInitialFormData());
+		}, [buildInitialFormData]);
+
+		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс локального состояния черновика при unmount
+		useEffect(() => {
+			return () => {
+				resetDraft();
+			};
+		}, [resetDraft]);
+
 		const handleClose = useCallback(() => {
 			// Zero-Leak Draft (Мандат 8zq): при закрытии сбрасываем локальное состояние черновика
-			setFormData(buildInitialFormData());
+			resetDraft();
 			onClose();
-		}, [buildInitialFormData, onClose]);
+		}, [resetDraft, onClose]);
 
 		useEffect(() => {
 			if (!isOpen) return;

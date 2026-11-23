@@ -3,6 +3,7 @@
  * Number to Russian words converter for contracts & billing (Mandate 8b <= 120 lines)
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import { pluralizeRu } from "../../../lib/russianPlural";
 
 const ONES_M = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
@@ -15,7 +16,7 @@ const TENS = ["", "", "двадцать", "тридцать", "сорок", "п�
 const HUNDREDS = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
 
 function tripletToWords(num: number, isFeminine: boolean): string {
-	const h = Math.trunc(num / 100);
+	const h = Math.trunc(kopecksToRubles(num));
 	const remainder = num % 100;
 	const t = Math.trunc(remainder / 10);
 	const o = remainder % 10;
@@ -36,7 +37,7 @@ export function numberToWordsRu(totalKopecks: number): string {
 		return "ноль рублей 00 копеек";
 	}
 
-	const wholeRubles = Math.trunc(totalKopecks / 100);
+	const wholeRubles = Math.trunc(kopecksToRubles(totalKopecks));
 	const kopecks = Math.trunc(totalKopecks % 100);
 
 	if (wholeRubles === 0) {

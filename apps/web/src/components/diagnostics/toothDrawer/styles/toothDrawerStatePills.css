@@ -7,7 +7,6 @@
 	font-weight: 700;
 	padding: 2px 8px;
 	border-radius: 6px;
-	text-transform: uppercase;
 }
 
 .dente-tooth-state-pill.state-healthy { background: var(--ok-bg); color: var(--ok-fg); }

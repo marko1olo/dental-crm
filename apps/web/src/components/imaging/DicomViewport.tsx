@@ -44,13 +44,25 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		});
 	}, [viewportState, measurements, mouse.draftRulerStart, mouse.draftRulerCurrent, mouse.draftCanalPoints, mouse.draftAnglePoints]);
 
+	const viewportStateRef = useRef(viewportState);
+	viewportStateRef.current = viewportState;
+
 	const {
 		windowWidth, windowCenter, invert, gamma, smooth, maxRes, sharpen, emboss,
 	} = viewportState;
 
 	const updateFilteredBuffer = useCallback(() => {
-		filteredCanvasRef.current = updateDicomFilteredBuffer(rawImageRef.current, filteredCanvasRef.current, viewportState);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		filteredCanvasRef.current = updateDicomFilteredBuffer(rawImageRef.current, filteredCanvasRef.current, {
+			...viewportStateRef.current,
+			windowWidth,
+			windowCenter,
+			invert,
+			gamma,
+			smooth,
+			maxRes,
+			sharpen,
+			emboss,
+		});
 	}, [windowWidth, windowCenter, invert, gamma, smooth, maxRes, sharpen, emboss]);
 
 	useEffect(() => {

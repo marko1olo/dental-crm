@@ -184,7 +184,7 @@ export function calculatePediatricAnesthesiaLimit(
 	// 4% раствор = 40 мг/мл -> 5 мг/кг / 40 мг/мл = 0.125 мл/кг
 	const mgPerMl = drug.concentrationPct * 10; // 40 мг/мл для 4%
 	const maxSafeVolumeMl =
-		Math.round((maxSafeDoseMg / mgPerMl) * 100) / 100;
+		Number((maxSafeDoseMg / mgPerMl).toFixed(2));
 	const maxSafeCarpules =
 		Math.round((maxSafeVolumeMl / drug.volumeMlPerCarpule) * 10) / 10;
 

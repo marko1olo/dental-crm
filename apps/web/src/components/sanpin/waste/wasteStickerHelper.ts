@@ -41,7 +41,7 @@ export function printWasteStickerForLog(log: MedicalWasteLog) {
 		departmentNameRu: "Стоматологическое отделение",
 		packageType: normalizePackageType(log.packageType),
 		packageCount: log.packageCount || 1,
-		grossWeightKg: Math.round(((log.weightKg || 1) + 0.1) * 100) / 100,
+		grossWeightKg: Number(((log.weightKg || 1) + 0.1).toFixed(2)),
 		tareWeightKg: 0.1,
 		netWeightKg: log.weightKg || 1,
 		sealNumber: `ПЛ-Б-${new Date().getFullYear()}-001`,

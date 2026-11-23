@@ -1,4 +1,5 @@
 import React from "react";
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import { AlertCircle, Check } from "lucide-react";
 import type { RefundServiceItem } from "./types";
 
@@ -39,8 +40,10 @@ export const RefundItemsSelectionTable: React.FC<RefundItemsSelectionTableProps>
 				<div className="space-y-2 border border-[var(--border,#e2e8f0)] rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)]">
 					{rawServices.map((srv) => {
 						const isSelected = selectedItemIds.has(srv.id);
+						const netBaseKop = rublesToKopecks(Math.max(0, srv.priceRub - (srv.materialCostRub || 0)));
+						const commissionBasisPoints = Math.max(0, Math.round((srv.commissionPct ?? doctorCommissionPct) * 100));
 						const itemClawback = Math.round(
-							(srv.priceRub - (srv.materialCostRub || 0)) * ((srv.commissionPct ?? doctorCommissionPct) / 100),
+							kopecksToRubles(percentageOfKopecks(netBaseKop, commissionBasisPoints)),
 						);
 
 						return (

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { calculateDoctorShiftEarnings } from "@dental/shared";
+import { calculateDoctorShiftEarnings, kopecksToRubles } from "@dental/shared";
 import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
 import type { DoctorShiftEmrSummary } from "../../shift/doctorShiftClose/doctorShiftCloseTypes";
 import type { DoctorMobileShiftModalProps, UseDoctorMobileShiftReturn } from "./types";
@@ -76,9 +76,9 @@ export function useDoctorMobileShift(props: DoctorMobileShiftModalProps): UseDoc
 		totalAppointments: earnings.totalAppointmentsCount,
 		completedCount: earnings.completedAppointmentsCount,
 		inProgressCount: earnings.inChairAppointmentsCount,
-		totalRevenueRub: Math.round(earnings.grossRevenueKop / 100),
+		totalRevenueRub: Math.round(kopecksToRubles(earnings.grossRevenueKop)),
 		doctorCommissionPct: 25,
-		estimatedDoctorPayoutRub: Math.round(earnings.totalEarnedDealKop / 100),
+		estimatedDoctorPayoutRub: Math.round(kopecksToRubles(earnings.totalEarnedDealKop)),
 		hasActiveOvertime: new Date().getHours() >= 21,
 	}), [earnings]);
 

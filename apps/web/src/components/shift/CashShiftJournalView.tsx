@@ -30,6 +30,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 
 export interface CashShiftItem {
 	id: string;
@@ -86,7 +87,9 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		try {
-			const res = await fetch("/api/cash/shifts").catch(() => null);
+			const res = await fetch("/api/cashbox/shifts", {
+				headers: denteClinicalReadHeaders(),
+			}).catch(() => null);
 			if (res && res.ok) {
 				const json = await res.json().catch(() => null);
 				const list = json?.data ?? json?.shifts;
@@ -114,7 +117,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 			{/* Top Bar / Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xs">
 				<div className="flex items-center gap-3">
-					<div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] shrink-0">
+					<div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
 						<Layers className="w-5 h-5" />
 					</div>
 					<div>
@@ -144,8 +147,8 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							type="button"
 							onClick={() => onOpenShiftCloseModal?.(activeOpenShift.shiftNumber)}
 							data-testid="btn-journal-close-shift"
-							className="min-h-[40px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2"
-							style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+							className="min-h-[40px] px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2"
+							style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 						>
 							<FileText className="w-4 h-4" />
 							<span>Закрыть смену №{activeOpenShift.shiftNumber} (Z-отчёт)</span>
@@ -155,8 +158,8 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							type="button"
 							onClick={onOpenNewShift}
 							data-testid="btn-journal-open-shift"
-							className="min-h-[40px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2"
-							style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+							className="min-h-[40px] px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2"
+							style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 						>
 							<Plus className="w-4 h-4" />
 							<span>Открыть новую смену</span>
@@ -175,7 +178,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							onClick={() => setFilterStatus(filter)}
 							className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
 								filterStatus === filter
-									? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-xs"
+									? "bg-[var(--paper,#ffffff)] text-[var(--primary)] shadow-xs"
 									: "bg-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -212,8 +215,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 								type="button"
 								onClick={onOpenNewShift}
 								data-testid="btn-empty-open-shift"
-								className="mt-2 min-h-[38px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+								className="mt-2 min-h-[38px] px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
 							>
 								<Plus className="w-3.5 h-3.5" />
 								<span>Открыть новую смену</span>
@@ -291,7 +293,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 												className="min-h-[30px] px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[11px] font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors inline-flex items-center gap-1"
 												title="Печать Z-отчёта"
 											>
-												<Printer className="w-3 h-3 text-[var(--teal,#0d9488)]" />
+												<Printer className="w-3 h-3 text-[var(--primary)]" />
 												<span>Z-отчёт</span>
 											</button>
 										) : (
@@ -335,8 +337,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							<button
 								type="button"
 								onClick={onOpenNewShift}
-								className="min-h-[44px] w-full px-4 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2"
-								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+								className="min-h-[44px] w-full px-4 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2"
 							>
 								<Plus className="w-4 h-4" />
 								<span>Открыть новую смену</span>
@@ -405,7 +406,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 									onClick={() => handlePrintReport(shift, shift.status === "closed" ? "Z" : "X")}
 									className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 active:bg-[var(--paper-soft,#f1f5f9)]"
 								>
-									<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+									<Printer className="w-4 h-4 text-[var(--primary)]" />
 									<span>{shift.status === "closed" ? "Печать Z-отчёта" : "Печать X-отчёта"}</span>
 								</button>
 							</div>
@@ -426,7 +427,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 						{/* Header */}
 						<div className="flex items-center justify-between p-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
 							<div className="flex items-center gap-2">
-								<FileText className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+								<FileText className="w-4 h-4 text-[var(--primary)]" />
 								<span className="text-sm font-bold text-[var(--ink,#0f172a)]">
 									{activeShiftForPrint.type === "Z" ? "Фискальный Z-отчёт" : "Промежуточный X-отчёт"}
 								</span>
@@ -524,8 +525,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 								type="button"
 								onClick={() => window.print()}
 								data-testid="btn-execute-shift-print"
-								className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold shadow-sm flex items-center gap-1.5"
-								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+								className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold shadow-sm flex items-center gap-1.5"
 							>
 								<Printer className="w-3.5 h-3.5" />
 								<span>Печать</span>

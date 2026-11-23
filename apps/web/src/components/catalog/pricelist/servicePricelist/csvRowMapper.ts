@@ -9,7 +9,7 @@ import {
 	type PriceTierKind,
 	type ServicePricelistItem,
 } from "../servicePricelistPresets";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { detectCategoryFromServiceCode } from "./serviceCodesAndSynonyms";
 import { parseCategoryFromLabel, parseSpecialtyFromLabel } from "./csvLabelParsers";
 import { CATEGORY_CODE_FALLBACK, type CsvColumnIndices } from "./csvColumnIndices";
@@ -61,10 +61,10 @@ export function mapCsvRow(
 	const rawDms = parsePrice(cols.colDms);
 	const rawPromo = parsePrice(cols.colPromo);
 	const rawNight = parsePrice(cols.colNight);
-	if (!Number.isNaN(rawVip)) tierPrices.vip = Math.round(rawVip * 100) / 100;
-	if (!Number.isNaN(rawDms)) tierPrices.dms = Math.round(rawDms * 100) / 100;
-	if (!Number.isNaN(rawPromo)) tierPrices.promo = Math.round(rawPromo * 100) / 100;
-	if (!Number.isNaN(rawNight)) tierPrices.night_weekend = Math.round(rawNight * 100) / 100;
+	if (!Number.isNaN(rawVip)) tierPrices.vip = kopecksToRubles(rublesToKopecks(rawVip));
+	if (!Number.isNaN(rawDms)) tierPrices.dms = kopecksToRubles(rublesToKopecks(rawDms));
+	if (!Number.isNaN(rawPromo)) tierPrices.promo = kopecksToRubles(rublesToKopecks(rawPromo));
+	if (!Number.isNaN(rawNight)) tierPrices.night_weekend = kopecksToRubles(rublesToKopecks(rawNight));
 
 	const rawMat = cols.colMatCost >= 0 ? parseFloat(row[cols.colMatCost]?.replace(/\s+/g, "").replace(",", ".") || "0") : 0;
 	const rawLab = cols.colLabCost >= 0 ? parseFloat(row[cols.colLabCost]?.replace(/\s+/g, "").replace(",", ".") || "0") : 0;
@@ -74,9 +74,9 @@ export function mapCsvRow(
 		? rawIcd.split(/[,;]+/).map((s) => s.trim()).filter(Boolean)
 		: [];
 
-	const exactBasePriceRub = Math.round(basePriceRub * 100) / 100;
-	const exactMatCostRub = !Number.isNaN(rawMat) && rawMat >= 0 ? Math.round(rawMat * 100) / 100 : 0;
-	const exactLabCostRub = !Number.isNaN(rawLab) && rawLab >= 0 ? Math.round(rawLab * 100) / 100 : 0;
+	const exactBasePriceRub = kopecksToRubles(rublesToKopecks(basePriceRub));
+	const exactMatCostRub = !Number.isNaN(rawMat) && rawMat >= 0 ? kopecksToRubles(rublesToKopecks(rawMat)) : 0;
+	const exactLabCostRub = !Number.isNaN(rawLab) && rawLab >= 0 ? kopecksToRubles(rublesToKopecks(rawLab)) : 0;
 
 	return {
 		item: {

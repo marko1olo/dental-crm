@@ -88,10 +88,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		onCheckinSuccess,
 	});
 
+	const handleModalClose = () => {
+		state.resetFullCheckinState();
+		onClose();
+	};
+
 	if (!isOpen) return null;
 
 	return (
-		<div className="selfcheckin-modal-backdrop" onClick={onClose}>
+		<div className="selfcheckin-modal-backdrop" onClick={handleModalClose}>
 			<AuthArtBackground overlayAlpha={0.35} />
 			<div
 				className="selfcheckin-modal-window"
@@ -101,7 +106,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 				<MobileCheckinHeader
 					clinicName={clinicName}
 					step={state.step}
-					onClose={onClose}
+					onClose={handleModalClose}
 				/>
 
 				{/* Body Content by Current Step */}
@@ -178,7 +183,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 							doctorWaitMessage={state.doctorWaitMessage}
 							checkinQrSvg={state.checkinQrSvg}
 							checkinCode={state.checkinCode}
-							onClose={onClose}
+							onClose={handleModalClose}
 						/>
 					)}
 				</div>

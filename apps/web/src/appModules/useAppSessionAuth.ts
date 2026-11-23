@@ -9,6 +9,7 @@ import type { StaffUser } from "../components/auth/staffPinPad/staffPinPadTypes"
 import type { StaffRole } from "../store/appStoreModules/types";
 import { isDemoUrlActive } from "./appRoutingHelpers";
 import { clearOfflineClinicCaches } from "../lib/offlineStorage";
+import { clearApiCache, setApiCacheScope } from "../lib/apiCache/index";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
 	DENTE_PRIVACY_SHIELD_LOCKED_KEY,
@@ -61,6 +62,8 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 					.then((res) => (res.ok ? res.json() : null))
 					.then((data) => {
 						if (data?.ok && data.clinicToken && data.staffToken) {
+							setApiCacheScope(null);
+							clearApiCache();
 							safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
 							safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
 							setClinicAuthed(true);
@@ -76,6 +79,16 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 		}
 	}, [setSelectedWorkspaceRole]);
 
+	useEffect(() => {
+		if (activeStaffUser?.id) {
+			const clinicToken = readDenteClinicToken();
+			const scopeKey = `${clinicToken ? "clinic" : "demo"}:${activeStaffUser.id}`;
+			setApiCacheScope(scopeKey);
+		} else if (!staffAuthed || !clinicAuthed) {
+			setApiCacheScope(null);
+		}
+	}, [activeStaffUser?.id, staffAuthed, clinicAuthed]);
+
 	const handleLockSession = useCallback(() => {
 		safeLocalStorageSetItem("dente_session_locked", "true");
 		setIsSessionLocked(true);
@@ -83,6 +96,8 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 
 	const handleClinicLogout = useCallback(() => {
 		clearOfflineClinicCaches();
+		setApiCacheScope(null);
+		clearApiCache();
 		safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
@@ -96,6 +111,8 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 	}, []);
 
 	const handleFullStaffLock = useCallback(() => {
+		setApiCacheScope(null);
+		clearApiCache();
 		safeLocalStorageSetItem("dente_session_locked", "true");
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		setStaffAuthed(false);

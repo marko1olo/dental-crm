@@ -20,16 +20,38 @@ const CODE128_PATTERNS = [
 	"114131", "311141", "411131", "211412", "211214", "211232", "2331112",
 ] as const;
 
+const CYRILLIC_TO_LATIN_MAP: Record<string, string> = {
+	А: "A", Б: "B", В: "V", Г: "G", Д: "D", Е: "E", Ё: "E", Ж: "ZH", З: "Z",
+	И: "I", Й: "Y", К: "K", Л: "L", М: "M", Н: "N", О: "O", П: "P", Р: "R",
+	С: "S", Т: "T", У: "U", Ф: "F", Х: "KH", Ц: "TS", Ч: "CH", Ш: "SH", Щ: "SHCH",
+	Ъ: "", Ы: "Y", Ь: "", Э: "E", Ю: "YU", Я: "YA",
+	а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z",
+	и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+	с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch",
+	ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+};
+
+/**
+ * Честная транслитерация кириллицы (ГОСТ 7.79 / ISO 9) для ASCII-кодирования штрихкодов сканеров.
+ */
+export function transliterateCyrillicToAscii(text: string): string {
+	return text
+		.replace(/ЗТЛ/gi, "ZTL")
+		.replace(/ЛО/gi, "LO")
+		.replace(/НАРЯД/gi, "NARYAD")
+		.split("")
+		.map((char) => CYRILLIC_TO_LATIN_MAP[char] ?? char)
+		.join("");
+}
+
 /**
  * Generates an SVG vector barcode for the lab work order using canonical Code 128 (ISO/IEC 15417).
  */
 export function generateBarcodeSvg(data: string, width = 240, height = 50): string {
 	const rawText = (data || "").trim() || "ZTL-ORDER";
-	// Transliterate common Russian lab prefixes so Code 128 bars are cleanly scannable in standard ASCII
-	const barData = rawText
-		.replace(/ЗТЛ/gi, "ZTL")
-		.replace(/ЛО/gi, "LO")
-		.replace(/НАРЯД/gi, "NARYAD")
+	// Честная транслитерация кириллицы без слепого затирания букв дефисами
+	const transliterated = transliterateCyrillicToAscii(rawText);
+	const barData = transliterated
 		.replace(/[^\x20-\x7E]/g, "-")
 		.slice(0, 24) || "ZTL-ORDER";
 

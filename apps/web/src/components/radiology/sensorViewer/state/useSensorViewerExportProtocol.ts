@@ -152,7 +152,7 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				console.warn("[SensorViewerExport] Ошибка получения selectedPatientId:", storeErr);
 			}
 
-			const res = await fetch("/api/xray/scans", {
+			const res = await fetch("/api/imaging/studies", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -160,6 +160,7 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				},
 				body: JSON.stringify({
 					...(patientId && patientId.length === 36 ? { patientId } : {}),
+					title: file.name,
 					imageBase64: dataUrl,
 					originalFilename: file.name,
 					mimeType: file.type || "image/jpeg",

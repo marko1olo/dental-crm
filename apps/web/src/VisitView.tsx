@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useVisitStore } from "./store/visitStore";
 import { VisitIntakeCockpit } from "./components/visit/VisitIntakeCockpit";
 import { VisitPlanStageHandoffBanner } from "./components/visit/VisitPlanStageHandoffBanner";
 import "./styles/VisitView.css";
@@ -34,6 +35,13 @@ export {
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const s = useVisitViewState(rawProps);
+
+	// Zero-Leak Draft (Мандаты 8zq/8bn): очистка черновика визита при unmount
+	useEffect(() => {
+		return () => {
+			useVisitStore.getState().resetDraft();
+		};
+	}, []);
 
 	if (!s.activePatient || s.isQueueCockpitForced) {
 		const handleSelect = (id: string) => {

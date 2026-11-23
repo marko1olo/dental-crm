@@ -44,7 +44,7 @@ test("Wave 111 — Static file verification: Zero synthetic mock patients in pro
 	const cashModalContent = fs.readFileSync(cashModalPath, "utf-8");
 	assert.ok(!cashModalContent.includes("Смирновой"));
 
-	const cashEnginePath = path.join(webComponentsDir, "billing/cashShiftClosingEngine.ts");
+	const cashEnginePath = path.join(webComponentsDir, "finance/cashShift/reconciliationEngine.ts");
 	const cashEngineContent = fs.readFileSync(cashEnginePath, "utf-8");
 	assert.ok(!cashEngineContent.includes("Смирнов А. В."));
 	assert.ok(!cashEngineContent.includes("Кузнецова Е. И."));

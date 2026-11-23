@@ -10,7 +10,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { CashShiftClosingModal } from "./CashShiftClosingModal";
-import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
+import { ShiftStudioModal } from "./ShiftStudioModal";
 
 export const DirectShiftLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -104,11 +104,10 @@ export const DirectShiftLauncher: React.FC = () => {
 	}
 
 	return (
-		<CashRegisterStudioModal
+		<ShiftStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			mode="shift"
-			initialTab="shift"
+			initialTab="current"
 		/>
 	);
 };

@@ -78,6 +78,14 @@ export type PublicPortalRoute =
 			/** Мобильный QR-мост загрузки снимков со смартфона врача у кресла (PHO-01) */
 			readonly kind: "photo-bridge";
 			readonly token: string;
+	  }
+	| {
+			/** Портал дистанционного подписания согласия пациентом (ИДС 1051н). */
+			readonly kind: "consent-sign";
+			readonly token: string;
+			readonly patientId?: string | null | undefined;
+			readonly consentKind?: string | null | undefined;
+			readonly visitId?: string | null | undefined;
 	  };
 
 /**
@@ -129,6 +137,12 @@ export const TGAPP_SHORT_PATH = "/tgapp";
  * `#/portal/warranty?cert=WAR-2026-XXXX` или `#/portal/warranty/WAR-2026-XXXX`.
  */
 export const WARRANTY_PORTAL_PATH = "/portal/warranty/";
+
+/**
+ * Пути дистанционного подписания информированного согласия (ИДС 1051н):
+ * `#/portal/consents/sign?token=<токен>`.
+ */
+export const CONSENT_SIGN_PORTAL_PATH = "/portal/consents/sign";
 
 /**
  * Снимает процентное кодирование с одного сегмента адреса.
@@ -331,6 +345,41 @@ export function publicPortalRouteFromHash(
 		}
 	}
 
+	for (const cPath of [CONSENT_SIGN_PORTAL_PATH, "/consents/sign", "/portal/consent/sign"]) {
+		const cBase = cPath.replace(/\/$/, "");
+		if (
+			path === cBase ||
+			path.startsWith(`${cBase}/`) ||
+			path.startsWith(`${cBase}?`)
+		) {
+			const queryIndex = path.indexOf("?");
+			let token: string | null = null;
+			let patientId: string | null = null;
+			let consentKind: string | null = null;
+			let visitId: string | null = null;
+			if (queryIndex !== -1) {
+				const params = new URLSearchParams(path.slice(queryIndex));
+				token = params.get("token") || params.get("t");
+				patientId = params.get("patientId") || params.get("patient");
+				consentKind = params.get("kind") || params.get("consentKind");
+				visitId = params.get("visitId");
+			}
+			if (!token) {
+				const segment = path.slice(cBase.length).replace(/^\//, "").split(/[/?#&]/)[0] ?? "";
+				token = segment || null;
+			}
+			return token
+				? {
+						kind: "consent-sign",
+						token: decodeSegment(token),
+						patientId: patientId ? decodeSegment(patientId) : undefined,
+						consentKind: consentKind ? decodeSegment(consentKind) : undefined,
+						visitId: visitId ? decodeSegment(visitId) : undefined,
+					}
+				: null;
+		}
+	}
+
 	if (!path.startsWith(LAB_ORDER_PORTAL_PATH)) return null;
 
 	// Хвост после токена отбрасывается: ссылку копируют в мессенджер, и он умеет
@@ -422,5 +471,22 @@ export function buildWarrantyPortalUrl(
 	if (card) queryParts.push(`card=${encodeURIComponent(card)}`);
 	const qs = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
 	const path = `${WARRANTY_PORTAL_PATH.replace(/\/$/, "")}${qs}`;
+	return base ? `${base}/#${path}` : `/#${path}`;
+}
+
+/**
+ * Полный URL страницы дистанционного подписания информированного согласия (ИДС).
+ */
+export function buildConsentSignPortalUrl(
+	token: string,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+	patientId?: string | null,
+	consentKind?: string | null,
+): string {
+	const base = origin.trim().replace(/\/$/, "");
+	const params = new URLSearchParams({ token: token.trim() });
+	if (patientId) params.set("patientId", patientId);
+	if (consentKind) params.set("kind", consentKind);
+	const path = `${CONSENT_SIGN_PORTAL_PATH}?${params.toString()}`;
 	return base ? `${base}/#${path}` : `/#${path}`;
 }

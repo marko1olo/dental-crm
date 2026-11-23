@@ -24,12 +24,17 @@ export function determineAdminSecretUnlockDomain(
 	return "clinical";
 }
 
+export interface UseAuthLogicProps {
+	setError: (error: string | null) => void;
+	loadDashboard: (options?: { adminSecret?: string; silent?: boolean } | undefined) => Promise<unknown>;
+	loadTelegramControlPlane: (options?: { adminSecret?: string; silent?: boolean } | undefined) => Promise<unknown> | void;
+}
+
 export function useAuthLogic({
 	setError,
 	loadDashboard,
 	loadTelegramControlPlane,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-}: any) {
+}: UseAuthLogicProps) {
 	const setErrorRef = useRef(setError);
 	setErrorRef.current = setError;
 	const loadDashboardRef = useRef(loadDashboard);
@@ -62,8 +67,6 @@ export function useAuthLogic({
 		setSettingsAdminSecretSession,
 		scheduleAdminSecretSession,
 		setScheduleAdminSecretSession,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramAdminSecretSession,
 		setTelegramAdminSecretSession,
 	} = useSettingsStore();
 

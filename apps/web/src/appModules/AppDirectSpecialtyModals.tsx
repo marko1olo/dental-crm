@@ -67,6 +67,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isOrthoPhotoDirectModalOpen && (
 				<Suspense fallback={null}>
 					<ClinicalPhotoProtocolModal
+						key={patient?.id || "ortho_photo_protocol"}
 						isOpen={true}
 						onClose={() => routing.setIsOrthoPhotoDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}
@@ -91,6 +92,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isToothDrawerDirectModalOpen && (
 				<Suspense fallback={null}>
 					<ToothContextDrawer
+						key={activeToothNumber || "tooth_context"}
 						isOpen={true}
 						onClose={() => routing.setIsToothDrawerDirectModalOpen(false)}
 						toothNumber={activeToothNumber}
@@ -111,6 +113,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isEmrCardDirectModalOpen && (
 				<Suspense fallback={null}>
 					<MedicalRecordStudioModal
+						key={patient?.id || "emr_card_studio"}
 						isOpen={true}
 						onClose={() => routing.setIsEmrCardDirectModalOpen(false)}
 						patientId={patient?.id || (isDemoShowcaseMode() ? "pat-demo-01" : "")}
@@ -158,6 +161,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isCtSelectorDirectModalOpen && (
 				<Suspense fallback={null}>
 					<CtSelectorModal
+						key={patient?.id || "ct_selector"}
 						isOpen={true}
 						onClose={() => routing.setIsCtSelectorDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}
@@ -168,6 +172,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isVisiographDirectModalOpen && (
 				<Suspense fallback={null}>
 					<DirectRvgCaptureModal
+						key={patient?.id || "direct_rvg_capture"}
 						isOpen={true}
 						onClose={() => routing.setIsVisiographDirectModalOpen(false)}
 						patientId={patient?.id}
@@ -181,6 +186,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			{routing.isConsentDirectModalOpen && (
 				<Suspense fallback={null}>
 					<ConsentStudioModal
+						key={patient?.id || "consent_studio"}
 						isOpen={true}
 						onClose={() => routing.setIsConsentDirectModalOpen(false)}
 						patient={patient || (isDemoShowcaseMode() ? { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" } : undefined)}

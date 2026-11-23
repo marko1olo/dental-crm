@@ -83,11 +83,31 @@ export function calculateMedicationDosage(
 	if (drugId.includes("chlorhexidine")) {
 		return {
 			drugNameRu: "Хлоргексидина биглюконат 0.05%",
-			recommendedDosageRu: "10–15 мл раствора для ротовых ванночек",
+			recommendedDosageRu: "Ротовые ванночки: 10–15 мл раствора",
 			standardFrequencyRu: "3 раза в день по 1 минуте после чистки зубов и еды (7–10 дней)",
 			maxDailyDoseRu: "Местно, не глотать",
 			isPediatric: isChild,
 			warningRu: isChild ? "У детей применять только под контролем взрослых. Не глотать!" : undefined,
+		};
+	}
+
+	if (drugId.includes("holisal") || drugId.includes("cholisal")) {
+		return {
+			drugNameRu: "Холисал гель",
+			recommendedDosageRu: isChild ? "Детям: полоска геля 0.5 см 2–3 раза в день" : "Полоска геля 1 см 2–3 раза в день за 15 минут до еды",
+			standardFrequencyRu: "2–3 раза в день перед едой или на ночь",
+			maxDailyDoseRu: "Местно, полоска геля до 3 раз в день",
+			isPediatric: isChild,
+		};
+	}
+
+	if (drugId.includes("solcoseryl")) {
+		return {
+			drugNameRu: "Солкосерил дентальная адгезивная паста",
+			recommendedDosageRu: "Полоска пасты около 0.5 см тонким слоем на очаг поражения",
+			standardFrequencyRu: "3–5 раз в день после еды и перед сном",
+			maxDailyDoseRu: "Местно, тонким слоем",
+			isPediatric: isChild,
 		};
 	}
 

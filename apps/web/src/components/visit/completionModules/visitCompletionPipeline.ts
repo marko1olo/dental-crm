@@ -225,6 +225,99 @@ export async function executeVisitCompletionEndpoint(
 }
 
 /**
+ * 3.2. Блокировка и фиксация дневника приёма ПЭП (/api/diaries/:id/lock)
+ * Гарантирует завершение цепочки подписания и исключает оставление дневника вечным черновиком.
+ */
+export async function executeDiaryLockUponVisitCompletion(
+	ctx: VisitPostCompletionContext,
+): Promise<void> {
+	if (!isUuid(ctx.effectiveVisitId)) return;
+
+	try {
+		let targetDiaryId: string | null = null;
+		let isAlreadyLocked = false;
+
+		// 1. Поиск дневника по visitId
+		const lookupRes = await fetchWithHandling(`/api/diaries/visit/${ctx.effectiveVisitId}`, {
+			method: "GET",
+			headers: {
+				...getDenteAuthHeaders(),
+			},
+		}).catch(() => null);
+
+		if (lookupRes && typeof lookupRes === "object" && "diary" in lookupRes) {
+			const diary = (lookupRes as { diary?: { id?: string | null; isLocked?: boolean | null } | null }).diary;
+			if (diary?.id && isUuid(diary.id)) {
+				targetDiaryId = diary.id;
+				isAlreadyLocked = Boolean(diary.isLocked);
+			}
+		}
+
+		// 2. Если дневник еще не существует в базе, создаем его со статусом signed
+		if (!targetDiaryId && isUuid(ctx.effectivePatientId)) {
+			const createRes = await fetchWithHandling("/api/diaries", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": `create-diary-complete-${ctx.effectiveVisitId}`,
+					...getDenteAuthHeaders(),
+				},
+				body: JSON.stringify({
+					visitId: ctx.effectiveVisitId,
+					patientId: ctx.effectivePatientId,
+					complaint: ctx.effectiveDiary.anamnesis || "Жалоб на момент осмотра не предъявляет.",
+					anamnesis: ctx.effectiveDiary.anamnesis || "Соматически здоров. Аллергоанамнез не отягощен.",
+					statusLocalis: ctx.effectiveDiary.statusLocalis || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+					diagnosisIcd10: ctx.effectiveDiary.diagnosisIcd10 || "Z01.2",
+					diagnosisTooth: ctx.effectiveDiary.diagnosisTooth || undefined,
+					treatmentDescription: ctx.effectiveDiary.treatmentDescription || "Проведен осмотр, санация / консультация.",
+					status: "signed",
+				}),
+			}).catch(() => null);
+
+			if (createRes && typeof createRes === "object" && "diary" in createRes) {
+				const created = (createRes as { diary?: { id?: string | null; isLocked?: boolean | null } | null }).diary;
+				if (created?.id && isUuid(created.id)) {
+					targetDiaryId = created.id;
+					isAlreadyLocked = Boolean(created.isLocked);
+				}
+			}
+		}
+
+		// 3. Если дневник найден и еще не заблокирован, вызываем /api/diaries/:id/lock
+		if (targetDiaryId && !isAlreadyLocked) {
+			await fetchWithHandling(`/api/diaries/${targetDiaryId}/lock`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": `lock-diary-${targetDiaryId}`,
+					...getDenteAuthHeaders(),
+				},
+				body: JSON.stringify({}),
+			}).catch((lockErr) => {
+				logger.warn("[visitCompletionPipeline] Фоновая блокировка дневника ПЭП завершилась с предупреждением:", lockErr);
+			});
+		}
+
+		// 4. Оповещение подсистем UI
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:diary-saved", {
+					detail: { visitId: ctx.effectiveVisitId, patientId: ctx.effectivePatientId },
+				}),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente:emk-updated", {
+					detail: { visitId: ctx.effectiveVisitId, patientId: ctx.effectivePatientId },
+				}),
+			);
+		}
+	} catch (diaryLockErr) {
+		logger.warn("[visitCompletionPipeline] Ошибка блокировки дневника при завершении визита:", diaryLockErr);
+	}
+}
+
+/**
  * 4. Закрытие выполненных позиций плана лечения (Closed Loop)
  */
 export async function executeTreatmentPlanItemCompletion(
@@ -355,7 +448,7 @@ export async function executeTreatmentPlanItemCompletion(
 export async function executeOdontogramToothHistorySync(
 	ctx: VisitPostCompletionContext,
 ): Promise<void> {
-	if (!ctx.effectivePatientId || ctx.effectivePatientId === "pat-unknown") return;
+	if (!ctx.effectivePatientId || !isUuid(ctx.effectivePatientId)) return;
 
 	try {
 		const visitState = useVisitStore.getState();
@@ -524,9 +617,10 @@ export async function executeVisitPostCompletionPipeline(
 	await executeDraftAutosave(ctx);
 
 	// 2. Завершение визита в API/БД (где сервер выполняет каноническое BOM-списание 1 раз в транзакции RLS),
-	// закрытие позиций плана лечения и синхронизация одонтограммы
+	// блокировка дневника ПЭП (/api/diaries/:id/lock), закрытие позиций плана лечения и синхронизация одонтограммы
 	Promise.allSettled([
 		executeVisitCompletionEndpoint(ctx),
+		executeDiaryLockUponVisitCompletion(ctx),
 		executeTreatmentPlanItemCompletion(ctx),
 		executeOdontogramToothHistorySync(ctx),
 	]).catch((err) => {

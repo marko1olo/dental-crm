@@ -32,11 +32,11 @@ const CbctMprImplantStudioModal = React.lazy(() => import("../radiology/CbctMprI
 export type { DicomViewerModalProps };
 
 export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
-	const { isOpen, title = "Дентальный снимок (RVG / DICOM)", toothFdiCode, patientName, patientId, studyDate, studiesHistory, onInsertToProtocol, onConnectRvg, onUploadDicom, onReferToRadiology } = props;
+	const { isOpen, title = "Дентальный снимок (RVG / DICOM)", toothFdiCode, patientName, patientId, studyId, studyDate, studiesHistory, onInsertToProtocol, onConnectRvg, onUploadDicom, onReferToRadiology } = props;
 	const ctrl = useDicomViewerModalController(props);
 
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || patientName);
-	const defaultScanSrc = props.imageSrc || (isDemo
+	const defaultScanSrc = props.imageSrc || (studyId ? `/api/imaging/studies/${studyId}/file` : null) || (isDemo
 		? (toothFdiCode === "16" ? "/radiology/sample_rvg_tooth16.jpg" : "/radiology/sample_rvg_tooth36_periapical.jpg") : null);
 
 	const activeImage = ctrl.currentImageSrc || defaultScanSrc;

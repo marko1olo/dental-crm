@@ -4,6 +4,5 @@ export * from "./LabOrdersFilterBar";
 export * from "./LabOrdersSegmentedNav";
 export * from "./LabOrdersTable";
 export * from "./LabOrderCardsGrid";
-export * from "./LabOrderDetailsDrawer";
 export * from "./DentalLabOrdersMainContent";
 export * from "./useDentalLabOrders";

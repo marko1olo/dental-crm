@@ -103,7 +103,7 @@ export function validateFiscalReceiptPayload54Fz(input: unknown): FiscalValidati
 		const priceRub = typeof itemObj.priceRub === "number" ? Math.max(0, itemObj.priceRub) : 0;
 		const itemAmountRub = typeof itemObj.amountRub === "number"
 			? Math.max(0, itemObj.amountRub)
-			: Math.round(priceRub * quantity * 100) / 100;
+			: kopecksToRub(rubToKopecks(priceRub * quantity));
 
 		const priceKopecks = rubToKopecks(priceRub);
 		const amountKopecks = rubToKopecks(itemAmountRub);

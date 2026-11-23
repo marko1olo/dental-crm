@@ -14,11 +14,10 @@ import { MobilePricesSearchFilterBar } from "./MobilePricesSearchFilterBar";
 import { MobilePricesList } from "./MobilePricesList";
 import { MobilePricesEmptyState } from "./MobilePricesEmptyState";
 import { MobilePricesFloatingBottomBar } from "./MobilePricesFloatingBottomBar";
-import { useMobilePricesActions } from "./useMobilePricesActions";
+import { type MobilePricesAppLogicBag, useMobilePricesActions } from "./useMobilePricesActions";
 
 export interface MobileSettingsPricesViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: app logic props bag
-	readonly appLogic: Record<string, any>;
+	readonly appLogic: MobilePricesAppLogicBag;
 	readonly onBackToSettings: () => void;
 }
 
@@ -104,7 +103,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 			<PricelistStudioModal
 				isOpen={isServicePricelistModalOpen}
 				onClose={() => setIsServicePricelistModalOpen(false)}
-				clinicName={dashboard?.clinic?.name}
+				{...(dashboard?.clinic?.name ? { clinicName: dashboard.clinic.name } : {})}
 			/>
 		</div>
 	);

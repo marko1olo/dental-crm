@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from "react";
-import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import { calculatePercentDiscountKopecks, kopecksToRub, rubToKopecks } from "@dental/shared";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "../visitBillingTypes.js";
 
 export function useVisitBillingTotals(
@@ -24,7 +24,7 @@ export function useVisitBillingTotals(
 			if (item.isWarranty || (item.discountPercent !== undefined && item.discountPercent >= 100)) {
 				totalItemDiscountKop += itemGrossKop;
 			} else if (item.discountPercent !== undefined && item.discountPercent > 0) {
-				const discKop = Math.round((itemGrossKop * item.discountPercent) / 100);
+				const discKop = calculatePercentDiscountKopecks(itemGrossKop, item.discountPercent);
 				totalItemDiscountKop += Math.min(itemGrossKop, discKop);
 			} else if (item.discountRub !== undefined && item.discountRub > 0) {
 				totalItemDiscountKop += Math.min(itemGrossKop, rubToKopecks(item.discountRub));
@@ -38,7 +38,7 @@ export function useVisitBillingTotals(
 			finalDiscountKop = totalGrossKop;
 			netKop = 0;
 		} else if (globalDiscountPercent > 0 && netKop > 0) {
-			const additionalDiscKop = Math.round((netKop * globalDiscountPercent) / 100);
+			const additionalDiscKop = calculatePercentDiscountKopecks(netKop, globalDiscountPercent);
 			finalDiscountKop += additionalDiscKop;
 			netKop = Math.max(0, netKop - additionalDiscKop);
 		}

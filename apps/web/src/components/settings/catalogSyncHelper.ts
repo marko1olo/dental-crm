@@ -85,10 +85,10 @@ function extractItemTitle(item: SyncableCatalogItemInput): string {
 
 function extractItemPriceRub(item: SyncableCatalogItemInput): number {
 	if (typeof item.basePriceRub === "number" && Number.isFinite(item.basePriceRub)) {
-		return Math.round(item.basePriceRub * 100) / 100;
+		return kopecksToRubles(rublesToKopecks(item.basePriceRub));
 	}
 	if (typeof item.priceRub === "number" && Number.isFinite(item.priceRub)) {
-		return Math.round(item.priceRub * 100) / 100;
+		return kopecksToRubles(rublesToKopecks(item.priceRub));
 	}
 	if (typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)) {
 		return kopecksToRubles(item.priceKopecks);
@@ -101,16 +101,16 @@ function extractItemPriceRub(item: SyncableCatalogItemInput): number {
 
 function extractItemMaterialsCostRub(item: SyncableCatalogItemInput): number {
 	if (typeof item.materialsCostRub === "number" && Number.isFinite(item.materialsCostRub)) {
-		return Math.round(item.materialsCostRub * 100) / 100;
+		return kopecksToRubles(rublesToKopecks(item.materialsCostRub));
 	}
 	if (typeof item.materialCostRub === "number" && Number.isFinite(item.materialCostRub)) {
-		return Math.round(item.materialCostRub * 100) / 100;
+		return kopecksToRubles(rublesToKopecks(item.materialCostRub));
 	}
 	if (typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)) {
 		return kopecksToRubles(item.costKopecks);
 	}
 	if (typeof item.costRub === "number" && Number.isFinite(item.costRub)) {
-		return Math.round(item.costRub * 100) / 100;
+		return kopecksToRubles(rublesToKopecks(item.costRub));
 	}
 	return 0;
 }

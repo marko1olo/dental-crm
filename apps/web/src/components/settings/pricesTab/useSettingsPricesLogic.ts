@@ -94,10 +94,14 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	const [isCodesMenuOpen, setIsCodesMenuOpen] = useState(false);
 	const codesMenuRef = useRef<HTMLDivElement | null>(null);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset pagination when searching
+	const filterKey = `${searchQuery}::${selectedCategoryFilter}`;
+	const prevFilterKeyRef = useRef(filterKey);
 	useEffect(() => {
-		setCategoryLimits({});
-	}, [searchQuery, selectedCategoryFilter]);
+		if (prevFilterKeyRef.current !== filterKey) {
+			prevFilterKeyRef.current = filterKey;
+			setCategoryLimits({});
+		}
+	}, [filterKey]);
 
 	useEffect(() => {
 		if (!isCodesMenuOpen) return;

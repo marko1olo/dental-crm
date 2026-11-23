@@ -168,9 +168,10 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 			if (remainingSlots.length > 0 && remainingSlots[0]) {
 				setSelectedSlotId(remainingSlots[0].id);
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("[MobilePhotoUploadPage] Upload failed:", err);
-			showToast(err.message || "Не удалось загрузить снимок.", "error");
+			const errMsg = err instanceof Error ? err.message : "Не удалось загрузить снимок.";
+			showToast(errMsg || "Не удалось загрузить снимок.", "error");
 		} finally {
 			setIsUploading(false);
 			if (fileInputRef.current) fileInputRef.current.value = "";

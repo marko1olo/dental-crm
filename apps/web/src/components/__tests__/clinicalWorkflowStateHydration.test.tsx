@@ -25,8 +25,17 @@ import { useVisitStore } from "../../store/visitStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
-import { DirectOdontogramModuleLauncher } from "../odontogram/DirectOdontogramModuleLauncher";
+import { OdontogramModule } from "../odontogram/OdontogramModule";
+import { AppLogicProvider, type AppLogicContextType } from "../../contexts/AppLogicContext";
 import { EmkToolbar } from "../visit/emk/EmkToolbar";
+
+const mockTestAppLogic: Partial<AppLogicContextType> = {
+	odontogramUseSurfaces: true,
+	activePatient: null,
+	activeDoctor: null,
+	auth: null,
+	money: (v: unknown) => `${Number(v) || 0} ₽`,
+};
 import { TreatmentPlanStudioModal } from "../treatment-plans/TreatmentPlanStudioModal";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { ScheduleMobileBottomBar } from "../schedule/mobile/ScheduleMobileBottomBar";
@@ -84,8 +93,12 @@ describe("Clinical Workflow — Stage 2: Odontogram Studio & Physiological Norm 
 		useVisitStore.getState().resetVisitToothState();
 	});
 
-	it("3. mounts DirectOdontogramModuleLauncher with patient context and 0 disabled buttons (Mandate 8e)", () => {
-		const html = renderToString(<DirectOdontogramModuleLauncher />);
+	it("3. mounts OdontogramModule with patient context and 0 disabled buttons (Mandate 8e)", () => {
+		const html = renderToString(
+			<AppLogicProvider value={mockTestAppLogic}>
+				<OdontogramModule patientId="demo-patient-1" />
+			</AppLogicProvider>,
+		);
 		assert.ok(typeof html === "string");
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
 		assert.equal(disabledButtons, null, "Odontogram buttons must never be disabled");

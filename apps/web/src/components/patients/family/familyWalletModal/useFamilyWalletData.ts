@@ -4,7 +4,7 @@
  * Mandate 8b: strictly modular and resilient.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
 import { showToast } from "../../../GlobalToast";
 import type {
@@ -36,7 +36,7 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 	const loadFamilyHistory = useCallback(async (familyGroupId: string) => {
 		try {
 			const res = await fetch(`/api/finance/family/${familyGroupId}/history`, {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: getDenteAuthHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -55,10 +55,10 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 		try {
 			const [famRes, relsRes] = await Promise.all([
 				fetch(`/api/finance/family/patient/${patientId}`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: getDenteAuthHeaders(),
 				}),
 				fetch(`/api/patients/${patientId}/relationships`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: getDenteAuthHeaders(),
 				}).catch((err) => {
 					logger.warn("Failed to fetch patient relationships for family wallet", err);
 					return null;
@@ -140,10 +140,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 
 			const batchRes = await fetch("/api/finance/family/permissions", {
 				method: "PATCH",
-				headers: {
+				headers: getDenteAuthHeaders({
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
+				}),
 				body: JSON.stringify({
 					familyGroupId: familyData?.id,
 					patientId,
@@ -166,10 +165,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 							`/api/patients/${patientId}/relationships/${matchingRel.id}`,
 							{
 								method: "PATCH",
-								headers: {
+								headers: getDenteAuthHeaders({
 									"Content-Type": "application/json",
-									...denteAdminSecretRequestHeaders(),
-								},
+								}),
 								body: JSON.stringify({
 									canSpendFamilyWallet: canSpend,
 								}),
@@ -181,10 +179,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 					} else if (member.id !== patientId) {
 						const res = await fetch(`/api/patients/${patientId}/relationships`, {
 							method: "POST",
-							headers: {
+							headers: getDenteAuthHeaders({
 								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
+							}),
 							body: JSON.stringify({
 								relatedPatientId: member.id,
 								relationshipType: "other",
@@ -234,10 +231,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			try {
 				const res = await fetch("/api/finance/family", {
 					method: "POST",
-					headers: {
+					headers: getDenteAuthHeaders({
 						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
+					}),
 					body: JSON.stringify({
 						name: trimmed,
 						headPatientId: patientId,
@@ -292,10 +288,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			try {
 				const res = await fetch(`/api/finance/family/${familyData.id}/members`, {
 					method: "POST",
-					headers: {
+					headers: getDenteAuthHeaders({
 						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
+					}),
 					body: JSON.stringify({
 						patientId: memberPatientId,
 						canSpendFamilyWallet: canSpend,
@@ -346,7 +341,7 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 					`/api/finance/family/${familyData.id}/members/${memberPatientId}`,
 					{
 						method: "DELETE",
-						headers: denteAdminSecretRequestHeaders(),
+						headers: getDenteAuthHeaders(),
 					},
 				);
 

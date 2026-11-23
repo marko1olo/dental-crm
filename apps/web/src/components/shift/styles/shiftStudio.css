@@ -10,8 +10,8 @@
  */
 
 :root {
-	--shift-teal: var(--teal, #0d9488);
-	--shift-teal-hover: var(--teal-hover, #0f766e);
+	--shift-teal: var(--primary);
+	--shift-teal-hover: var(--primary-hover);
 	--shift-teal-subtle: color-mix(in srgb, var(--shift-teal) 12%, transparent);
 	--shift-paper: var(--paper, #ffffff);
 	--shift-paper-soft: var(--paper-soft, #f8fafc);

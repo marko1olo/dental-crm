@@ -172,7 +172,14 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				isQuickPackagesOpen={isQuickPackagesOpen}
 				setIsQuickPackagesOpen={setIsQuickPackagesOpen}
 				isWritingOffCarpules={isWritingOffCarpules}
-				handleQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				handleQuickWriteoffCarpules={(options?: unknown) => {
+					type CarpuleOptions = NonNullable<Parameters<typeof handleQuickWriteoffCarpules>[0]>;
+					const isCarpuleOptions = (val: unknown): val is CarpuleOptions =>
+						Boolean(val && typeof val === "object");
+					return isCarpuleOptions(options)
+						? handleQuickWriteoffCarpules(options)
+						: handleQuickWriteoffCarpules();
+				}}
 				isOpsMenuOpen={isOpsMenuOpen}
 				setIsOpsMenuOpen={setIsOpsMenuOpen}
 				setIsAcceptanceWaybillsOpen={() => setIsInboundWaybillOpen(true)}

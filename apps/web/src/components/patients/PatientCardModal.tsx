@@ -278,7 +278,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								onOpenPhotoStudio={() => setIsPhotoModalOpen(true)}
 							/>
 						) : activeTab === "perio" ? (
-							<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
+							<PerioStudioModal
+								key={`perio-${patientData.id || "draft"}`}
+								isModal={false}
+								patientId={patientData.id ?? undefined}
+								patientName={patientData.fullName ?? undefined}
+							/>
 						) : activeTab === "formula" ? (
 							<PatientDentalFormulaTab patientId={patientData.id || ""} patientBirthDate={patientData.birthDate ?? undefined} patientName={patientData.fullName ?? undefined} />
 						) : activeTab === "radiology" ? (

@@ -8,7 +8,7 @@
  * Хэширование целостности подписи и генератор печати бланка А4.
  */
 
-import { type DocumentKind, resolveTaxDeductionCategoryShared } from "@dental/shared";
+import { type DocumentKind, kopecksToRubles, resolveTaxDeductionCategoryShared } from "@dental/shared";
 import type React from "react";
 import {
 	ClipboardList,
@@ -478,7 +478,7 @@ export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
  */
 export function formatKopecksToRubles(kopecks: number): string {
 	const safeKopecks = Math.max(0, Math.round(kopecks || 0));
-	const rubles = Math.floor(safeKopecks / 100);
+	const rubles = Math.floor(kopecksToRubles(safeKopecks));
 	const remainder = safeKopecks % 100;
 	const formattedRubles = rubles.toLocaleString("ru-RU").replace(/\u00A0/g, " ");
 	return remainder > 0 ? `${formattedRubles},${remainder.toString().padStart(2, "0")} ₽` : `${formattedRubles} ₽`;
@@ -680,7 +680,7 @@ ${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.in
 ИТОГО подтверждённая сумма расходов: ${formatKopecksToRubles(totalKopecks)}
 Расчетная сумма социального налогового вычета (13% НДФЛ к возврату): ${formatKopecksToRubles(refund13Kopecks)}
 
-[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${(totalKopecks / 100).toFixed(2)}]
+[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${kopecksToRubles(totalKopecks).toFixed(2)}]
 
 Справка выдана для предоставления в налоговые органы РФ с целью получения социального налогового вычета.
 Уполномоченное лицо клиники: _________________ / Главный врач / М.П.

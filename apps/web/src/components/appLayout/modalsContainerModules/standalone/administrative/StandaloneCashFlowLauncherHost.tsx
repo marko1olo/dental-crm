@@ -6,6 +6,7 @@
  * /api/cash/cash-withdrawal). Никаких пустых заглушек onCashIn/onCashOut.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { AppLoadingState } from "../../../../../AppBootState";
@@ -52,7 +53,7 @@ export const StandaloneCashFlowLauncherHost: React.FC<{ onClose: () => void; isO
 				"success",
 			);
 			setCashInDrawerRub((prev) =>
-				Math.round(((prev ?? 0) + (direction === "in" ? amountRub : -amountRub)) * 100) / 100,
+				kopecksToRubles(rublesToKopecks((prev ?? 0) + (direction === "in" ? amountRub : -amountRub))),
 			);
 		} else {
 			showToast("Кассовая операция не проведена — сервер вернул ошибку.", "error");

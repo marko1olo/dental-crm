@@ -60,8 +60,6 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .copilot-ddi-severity-pill.danger {

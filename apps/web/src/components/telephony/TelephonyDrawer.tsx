@@ -81,10 +81,10 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 				</div>
 
 				<div className="shrink-0 p-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-2">
-					<button type="button" onClick={handleClose} className="px-4 py-2 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] transition-all min-h-[44px] cursor-pointer">
+					<button type="button" onClick={handleClose} className="px-4 py-2 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] transition-all min-h-[44px] cursor-pointer">
 						Закрыть шторку
 					</button>
-					<button type="button" onClick={handleOpenFullPatientView} className="text-[11px] font-semibold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[44px] px-2" title="Перейти в реестр пациентов">
+					<button type="button" onClick={handleOpenFullPatientView} className="text-xs font-semibold text-[var(--primary)] hover:text-[var(--primary-hover)] inline-flex items-center gap-1.5 cursor-pointer min-h-[44px] px-2.5 rounded-lg hover:bg-[var(--primary-soft,rgba(13,148,136,0.1))] transition-colors" title="Перейти в реестр пациентов">
 						<span>Открыть в реестре</span>
 						<ExternalLink size={12} />
 					</button>

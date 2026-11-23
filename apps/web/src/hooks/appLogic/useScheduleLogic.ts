@@ -14,11 +14,17 @@ import type { ScheduleLogicSlice } from "./types";
 
 interface UseScheduleLogicProps {
 	dashboard: Dashboard | null;
-	setDashboard: (dashboard: Dashboard | null) => void;
-	auth: unknown;
+	setDashboard: (
+		updater: ((prev: Dashboard | null) => Dashboard | null) | Dashboard | null,
+	) => void;
+	auth: {
+		settingsAccessHeaders: (extra?: Record<string, string>) => Record<string, string>;
+		scheduleMutationHeaders: (extra?: Record<string, string>) => Record<string, string>;
+		denteClinicalMutationHeaders?: (extra?: Record<string, string>) => Record<string, string>;
+	};
 	setError: (err: string | null) => void;
 	selectedPatientId: string;
-	setSelectedPatientId: (id: string) => void;
+	setSelectedPatientId: (id: string | null) => void;
 	loadDashboard: () => Promise<void>;
 	selectedSpecialty: string;
 	clinicProfileDraft: ClinicProfileDraft;
@@ -70,7 +76,7 @@ export function useScheduleLogic({
 
 	const newAppointmentDraftUserEditedRef = useRef<boolean>(false);
 	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const chairScheduleDraftsRef = useRef<Record<string, unknown>>({});
+	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
 	const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
 
 	const activeAppointment = useMemo(() => {

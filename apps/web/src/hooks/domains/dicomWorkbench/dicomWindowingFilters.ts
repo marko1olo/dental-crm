@@ -117,7 +117,7 @@ export function normalizeContrastBrightness(
 	const b = Number.isFinite(brightness) ? brightness : 100;
 	const c = Number.isFinite(contrast) ? contrast : 100;
 	return {
-		brightnessFactor: Math.max(0, Math.min(300, b)) / 100,
-		contrastFactor: Math.max(0, Math.min(300, c)) / 100,
+		brightnessFactor: Math.max(0, Math.min(300, b)) * 0.01,
+		contrastFactor: Math.max(0, Math.min(300, c)) * 0.01,
 	};
 }

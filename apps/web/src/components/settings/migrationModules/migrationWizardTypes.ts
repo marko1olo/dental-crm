@@ -8,6 +8,8 @@
  * - Phone duplicate detection & deduplication report builder
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 export {
 	formatBytes,
 	readResponse,
@@ -257,7 +259,7 @@ function parseBalanceValue(raw: string): number {
 	if (!raw) return 0;
 	const cleaned = raw.replace(/\s+/g, "").replace(",", ".").replace(/[^0-9.-]/g, "");
 	const parsed = Number.parseFloat(cleaned);
-	return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : 0;
+	return Number.isFinite(parsed) ? kopecksToRubles(rublesToKopecks(parsed)) : 0;
 }
 
 /**
@@ -352,8 +354,8 @@ export function buildMigrationPreviewAndDeduplication(
 			readyCount,
 			duplicateCount,
 			invalidCount,
-			totalPositiveBalanceRub: Math.round(totalPositiveBalanceRub * 100) / 100,
-			totalDebtBalanceRub: Math.round(totalDebtBalanceRub * 100) / 100,
+			totalPositiveBalanceRub: kopecksToRubles(rublesToKopecks(totalPositiveBalanceRub)),
+			totalDebtBalanceRub: kopecksToRubles(rublesToKopecks(totalDebtBalanceRub)),
 		},
 	};
 }

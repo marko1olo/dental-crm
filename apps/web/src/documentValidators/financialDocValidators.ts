@@ -263,9 +263,9 @@ export function validatePaymentReceipt(
 		selectedPaymentReceiptPayments.length
 			? null
 			: "У каждого выбранного платежа должен быть номер фискального чека.") ??
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(selectedPaymentReceiptPayments.every((payment: any) =>
-			Boolean(payment.fiscalReceiptIssuedAt?.trim()),
+		(selectedPaymentReceiptPayments.every(
+			(payment: { fiscalReceiptIssuedAt?: string | null | undefined }) =>
+				Boolean(payment.fiscalReceiptIssuedAt?.trim()),
 		)
 			? null
 			: "У каждого выбранного платежа должна быть дата фискального чека.") ??

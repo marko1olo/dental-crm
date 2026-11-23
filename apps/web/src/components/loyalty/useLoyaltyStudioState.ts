@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import {
 	calculateTierProgression,
@@ -59,19 +58,12 @@ interface ApiBonusTransactionResponse {
 	readonly description?: string | undefined;
 }
 
-const DEFAULT_FAMILY_MEMBERS: readonly FamilyMember[] = [
-	{ patientId: "pat-p1", fullName: "Иванов Иван (Глава семьи)", roleRu: "Глава семьи", individualPointsBalance: 2500, lifetimeSpentKop: 12000000, isBonusSpendingAllowed: true },
-	{ patientId: "pat-p2", fullName: "Иванова Ольга (Супруга)", roleRu: "Супруга", individualPointsBalance: 1200, lifetimeSpentKop: 8500000, isBonusSpendingAllowed: true },
-	{ patientId: "pat-p3", fullName: "Иванов Артем (Сын)", roleRu: "Ребенок", individualPointsBalance: 300, lifetimeSpentKop: 3200000, isBonusSpendingAllowed: true },
-];
-
 export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 	const {
 		isOpen, patientId, patientName = "Пациент", medicalCardNumber = "№ —",
 		initialPointsBalance = 0, initialLifetimeSpentKop = 0, currentInvoiceAmountKop = 0, onRedeemSuccess,
 	} = params;
 
-	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<"balance" | "family" | "certificates" | "referrals" | "history">("balance");
 	const [pointsBalance, setPointsBalance] = useState<number>(initialPointsBalance);
 	const [lifetimeSpentKop] = useState<number>(initialLifetimeSpentKop);
@@ -82,9 +74,10 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 	const [requestedPointsRub, setRequestedPointsRub] = useState<number>(500);
 	const [isDoctorOverride, setIsDoctorOverride] = useState<boolean>(false);
 	const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string | null>(null);
-	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(() => isDemo ? DEFAULT_FAMILY_MEMBERS : []);
-	const [familyName, setFamilyName] = useState<string>(() => isDemo ? "Семья Ивановых" : "");
-	const [hasFamilyGroup, setHasFamilyGroup] = useState<boolean>(() => isDemo);
+	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>([]);
+	const [familyName, setFamilyName] = useState<string>("");
+	const [familyGroupId, setFamilyGroupId] = useState<string | null>(null);
+	const [hasFamilyGroup, setHasFamilyGroup] = useState<boolean>(false);
 	const [isCreateFamilyOpen, setIsCreateFamilyOpen] = useState<boolean>(false);
 	const [newFamilyGroupName, setNewFamilyGroupName] = useState<string>("");
 	const [relativePatientIdInput, setRelativePatientIdInput] = useState<string>(""), [relativeRoleInput, setRelativeRoleInput] = useState<string>("Супруг / Супруга");
@@ -119,12 +112,13 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 					if (!isCancelled && famData?.members?.length > 0) {
 						setHasFamilyGroup(true);
 						if (famData.name) setFamilyName(famData.name);
+						if (famData.id) setFamilyGroupId(famData.id);
 						setFamilyMembers(famData.members.map((m: ApiFamilyMemberResponse) => ({
 							patientId: m.id || m.patientId || "", fullName: m.fullName || m.name || "Член семьи", roleRu: m.roleRu || m.relation || "Член семьи",
 							individualPointsBalance: Number(m.balancePoints ?? m.individualPointsBalance ?? 0), lifetimeSpentKop: Number(m.lifetimeSpentKop ?? 0), isBonusSpendingAllowed: true,
 						})));
-					} else if (!isCancelled && !isDemoShowcaseMode()) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); }
-				} else if (!isCancelled && !isDemoShowcaseMode()) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); }
+					} else if (!isCancelled) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); setFamilyGroupId(null); }
+				} else if (!isCancelled) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); setFamilyGroupId(null); }
 				const txRes = await fetch(`/api/loyalty/transactions/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (txRes.ok) {
 					const data = await txRes.json();
@@ -146,7 +140,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 
 	// 2. Progression & Family calculations
 	const progression = useMemo(() => calculateTierProgression(lifetimeSpentKop), [lifetimeSpentKop]);
-	const familyPool = useMemo(() => calculateFamilyPoolBalance(`fam-${patientId}`, familyName || `Семья ${patientName.split(" ")[0]}`, familyMembers), [patientId, familyName, familyMembers]);
+	const effectiveFamilyGroupId = familyGroupId || `fam-${patientId}`;
+	const familyPool = useMemo(() => calculateFamilyPoolBalance(effectiveFamilyGroupId, familyName || `Семья ${patientName.split(" ")[0]}`, familyMembers), [effectiveFamilyGroupId, familyName, familyMembers]);
 	const activeEffectiveBalanceRub = (hasFamilyGroup && selectedFamilyMemberId) ? familyPool.totalPooledPoints : pointsBalance;
 
 	const redemption = useMemo(() => calculateLoyaltyRedemption({
@@ -178,6 +173,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		try {
 			const res = await postLoyaltyJson("/api/finance/family", { name: gName, headPatientId: patientId });
 			if (!res.ok) { const errJson = await res.json().catch(() => ({})); showToast(errJson.message || "Не удалось создать семейную группу", "warning"); return; }
+			const created = await res.json().catch(() => ({}));
+			if (created?.id) setFamilyGroupId(created.id);
 			setFamilyName(gName); setHasFamilyGroup(true);
 			setFamilyMembers([{ patientId: patientId || "", fullName: `${patientName} (Глава)`, roleRu: "Глава семьи", individualPointsBalance: pointsBalance, lifetimeSpentKop, isBonusSpendingAllowed: true }]);
 			setIsCreateFamilyOpen(false); showToast(`Семейный счет «${gName}» активирован`, "success");
@@ -188,13 +185,66 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		const input = relativePatientIdInput.trim();
 		if (!input) { showToast("Укажите идентификатор или телефон родственника", "warning"); return; }
 		if (input === patientId) { showToast("Нельзя привязать пациента к самому себе", "warning"); return; }
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input);
+		const targetGroupId = familyGroupId && !familyGroupId.startsWith("fam-") ? familyGroupId : null;
+
 		try {
-			const res = await postLoyaltyJson("/api/loyalty/family/link", { primaryPatientId: patientId, relativePatientId: input, relationRole: relativeRoleInput });
-			if (!res.ok) { const err = await res.json().catch(() => ({})); showToast(err.message || "Пациент не найден в картотеке клиники", "warning"); return; }
-			const data = await res.json(), rel = data.relative;
-			setFamilyMembers((prev) => [...prev, { patientId: rel?.id || input, fullName: rel?.fullName || `Родственник (${input})`, roleRu: relativeRoleInput, individualPointsBalance: Number(rel?.individualPointsBalance || 0), lifetimeSpentKop: 0, isBonusSpendingAllowed: true }]);
-			setRelativePatientIdInput(""); setIsCreateFamilyOpen(false); showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
-		} catch { showToast("Ошибка привязки родственника к семейному счету", "warning"); }
+			if (isUuid && targetGroupId) {
+				const res = await postLoyaltyJson(`/api/finance/family/${encodeURIComponent(targetGroupId)}/members`, {
+					patientId: input,
+					canSpendFamilyWallet: true,
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					showToast(err.message || "Не удалось добавить родственника в семью", "warning");
+					return;
+				}
+				setFamilyMembers((prev) => [
+					...prev,
+					{
+						patientId: input,
+						fullName: `Член семьи (${input.slice(0, 8)})`,
+						roleRu: relativeRoleInput,
+						individualPointsBalance: 0,
+						lifetimeSpentKop: 0,
+						isBonusSpendingAllowed: true,
+					},
+				]);
+				setRelativePatientIdInput("");
+				setIsCreateFamilyOpen(false);
+				showToast("Родственник успешно привязан к семейному счету", "success");
+			} else {
+				const res = await postLoyaltyJson("/api/loyalty/family/link", {
+					primaryPatientId: patientId,
+					relativePatientId: input,
+					relationRole: relativeRoleInput,
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					showToast(err.message || "Пациент не найден в картотеке клиники", "warning");
+					return;
+				}
+				const data = await res.json(), rel = data.relative;
+				if (data.familyGroupId) setFamilyGroupId(data.familyGroupId);
+				setHasFamilyGroup(true);
+				setFamilyMembers((prev) => [
+					...prev,
+					{
+						patientId: rel?.id || input,
+						fullName: rel?.fullName || `Родственник (${input})`,
+						roleRu: relativeRoleInput,
+						individualPointsBalance: Number(rel?.individualPointsBalance || 0),
+						lifetimeSpentKop: 0,
+						isBonusSpendingAllowed: true,
+					},
+				]);
+				setRelativePatientIdInput("");
+				setIsCreateFamilyOpen(false);
+				showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
+			}
+		} catch {
+			showToast("Ошибка привязки родственника к семейному счету", "warning");
+		}
 	};
 
 	const handleVerifyCertificate = () => actionVerifyCertificate({ certSerial, currentInvoiceAmountKop, setCertFeedback, setVerifiedCertificate });

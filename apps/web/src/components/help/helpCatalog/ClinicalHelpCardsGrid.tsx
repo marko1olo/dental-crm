@@ -5,6 +5,7 @@
 
 import React from "react";
 import { useAppStore } from "../../../store/appStore";
+import { isAppView, viewFromHash } from "../../../utils/routeUtils";
 import { ClinicalHelpCardItem } from "./ClinicalHelpCardItem";
 import type { ClinicalGuideMeta, ClinicalGuideTab } from "./helpTypes";
 
@@ -29,7 +30,9 @@ export const ClinicalHelpCardsGrid: React.FC<ClinicalHelpCardsGridProps> = React
 		if (onNavigateView) {
 			onNavigateView(guide.targetView);
 		} else {
-			useAppStore.getState().setCurrentView(guide.targetView as any);
+			useAppStore.getState().setCurrentView(
+				isAppView(guide.targetView) ? guide.targetView : viewFromHash(guide.targetView),
+			);
 		}
 	};
 

@@ -8,10 +8,12 @@ import {
 } from "lucide-react";
 
 export interface PublicBudgetSignaturePadProps {
-	defaultSignerName?: string;
+	defaultSignerName?: string | undefined;
 	isSubmitting: boolean;
-	error?: string | null;
+	error?: string | null | undefined;
 	onSign: (data: { signaturePng: string; signerName: string }) => Promise<void> | void;
+	agreementText?: string | undefined;
+	submitButtonText?: string | undefined;
 }
 
 export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> = ({
@@ -19,6 +21,8 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 	isSubmitting,
 	error,
 	onSign,
+	agreementText = "С планом лечения, условиями гарантии и стоимостью услуг согласен",
+	submitButtonText = "Подписать и согласовать смету",
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -177,7 +181,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 			return;
 		}
 		if (!agreedToTerms) {
-			setLocalError("Необходимо подтвердить ознакомление с планом лечения и сметой.");
+			setLocalError("Необходимо подтвердить согласие с условиями документа.");
 			return;
 		}
 
@@ -193,7 +197,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 			{/* Header bar: Strict legal icon + Ghost Clear Button */}
 			<div className="flex items-center justify-between gap-3">
 				<label className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
-					<FileSignature className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+					<FileSignature className="w-4 h-4 text-[var(--primary)] shrink-0" />
 					<span className="truncate">Подпись пациента (ПЭП)</span>
 				</label>
 				<button
@@ -250,7 +254,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 					value={signerName}
 					onChange={(e) => setSignerName(e.target.value)}
 					placeholder="Иванов И.И."
-					className="w-full text-xs py-2 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-cyan-500 transition"
+					className="w-full text-xs py-2 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-[var(--primary)] transition"
 				/>
 			</div>
 
@@ -260,10 +264,10 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 					type="checkbox"
 					checked={agreedToTerms}
 					onChange={(e) => setAgreedToTerms(e.target.checked)}
-					className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-cyan-600 focus:ring-0 bg-white dark:bg-slate-950"
+					className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-[var(--primary)] focus:ring-0 bg-white dark:bg-slate-950"
 				/>
 				<span>
-					Я подтверждаю согласие с предложенным планом лечения и стоимостью (ст. 20 323-ФЗ, ст. 16 ЗоЗПП и ПП РФ № 736).
+					{agreementText}
 				</span>
 			</label>
 
@@ -274,19 +278,19 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 				</div>
 			)}
 
-			{/* Primary CTA (Natural Thumb Zone, touch target >= 44px) */}
+			{/* Primary CTA (Natural Thumb Zone, touch target >= 44px, Mandate 8e: never disabled for missing stroke) */}
 			<button
 				type="button"
 				onClick={handleSubmit}
-				disabled={isSubmitting || !hasStrokes || pointsCount < 15}
-				className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-medium text-sm bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-cyan-600/20 transition flex items-center justify-center gap-2"
+				disabled={isSubmitting}
+				className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-sm transition flex items-center justify-center gap-2"
 			>
 				{isSubmitting ? (
 					<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 				) : (
 					<>
 						<CheckCircle2 className="w-4 h-4" />
-						<span>Подписать и согласовать смету</span>
+						<span>{submitButtonText}</span>
 					</>
 				)}
 			</button>

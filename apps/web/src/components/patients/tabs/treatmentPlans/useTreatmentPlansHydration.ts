@@ -164,6 +164,11 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 					|| (typeof raw.serviceId === "string" ? raw.serviceId : raw.id)
 					|| "SRV-ITEM";
 
+				const parsedTierPrices: TreatmentPlanItem["tierPrices"] =
+					"tierPrices" in raw && raw.tierPrices && typeof raw.tierPrices === "object"
+						? (raw.tierPrices as TreatmentPlanItem["tierPrices"])
+						: undefined;
+
 				const itemRecord: TreatmentPlanItem = {
 					id: typeof raw.id === "string" ? raw.id : `item-${idx}`,
 					toothNumber: typeof raw.toothNumber === "number" && !Number.isNaN(raw.toothNumber) ? raw.toothNumber : undefined,
@@ -181,6 +186,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 					status: (raw.status as TreatmentPlanItem["status"]) || "proposed",
 					doctorName: typeof raw.doctorName === "string" ? raw.doctorName : null,
 					doctorSpecialty: typeof raw.doctorSpecialty === "string" ? raw.doctorSpecialty : null,
+					...(parsedTierPrices ? { tierPrices: parsedTierPrices } : {}),
 				};
 				return itemRecord;
 			});

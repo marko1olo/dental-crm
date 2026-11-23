@@ -3,7 +3,10 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { ZtlOcclusionDrawer } from "../selectors/ZtlOcclusionDrawer.js";
-import { createDentalLabOrderRecord } from "../../lab/orderEngine/labOrderRecordFactory.js";
+import {
+	partitionBridgeTeethFdi,
+	calculateBridgeRestorationCostKopecks,
+} from "@dental/shared";
 
 describe("Domain 25 Red Team Fixer Surgeon: Web Orthopedics & Occlusion CAD/CAM", () => {
 	it("1. Рендеринг расширенного ZtlOcclusionDrawer со схемой ведения и суставными углами", () => {
@@ -43,33 +46,25 @@ describe("Domain 25 Red Team Fixer Surgeon: Web Orthopedics & Occlusion CAD/CAM"
 		assert.ok(html.includes('value="15"'), "Угол Беннетта должен быть равен 15");
 	});
 
-	it("2. Дифференциация опор и понтиков в createDentalLabOrderRecord", () => {
-		const order = createDentalLabOrderRecord({
-			constructionType: "bridge_zirconia",
-			teethFdi: [14, 15, 16],
-			occlusionProfile: {
-				articulatorType: "kavo_protar",
-				facebow: true,
-				guidanceType: "canine_guidance",
-				sagittalCondylarAngleDeg: 33,
-				bennettAngleDeg: 15,
-			},
-		});
+	it("2. Дифференциация опор и понтиков в каноническом расчете мостовидного протеза ЗТЛ", () => {
+		const teeth = [14, 15, 16];
+		const { abutmentTeethFdi, ponticTeethFdi } = partitionBridgeTeethFdi(teeth);
 
 		// Проверяем разбиение зубов
-		assert.deepEqual(order.abutmentTeethFdi, [14, 16], "14 и 16 зубы должны стать опорами моста");
-		assert.deepEqual(order.ponticTeethFdi, [15], "15 зуб должен стать промежуточной частью (понтиком)");
+		assert.deepEqual(abutmentTeethFdi, [14, 16], "14 и 16 зубы должны стать опорами моста");
+		assert.deepEqual(ponticTeethFdi, [15], "15 зуб должен стать промежуточной частью (понтиком)");
 
-		// Проверяем сохранение окклюзионного профиля
-		assert.ok(order.occlusionProfile, "Профиль окклюзии должен быть сохранен в наряде");
-		assert.equal(order.occlusionProfile.articulatorType, "kavo_protar");
-		assert.equal(order.occlusionProfile.guidanceType, "canine_guidance");
-		assert.equal(order.occlusionProfile.facebow, true);
-		assert.equal(order.occlusionProfile.sagittalCondylarAngleDeg, 33);
-		assert.equal(order.occlusionProfile.bennettAngleDeg, 15);
+		// Проверяем дифференцированную стоимость (опора 24 000 руб = 2 400 000 коп, понтик 70% = 16 800 руб = 1 680 000 коп)
+		// 2 * 2 400 000 + 1 * 1 680 000 = 6 480 000 коп
+		const bridgeCost = calculateBridgeRestorationCostKopecks({
+			abutmentPriceKopecks: 2400000,
+			ponticPriceKopecks: 1680000,
+			abutmentsCount: abutmentTeethFdi.length,
+			ponticsCount: ponticTeethFdi.length,
+		});
 
-		// Проверяем дифференцированную стоимость (опора 24 000 руб, понтик 70% = 16 800 руб)
-		// 2 * 24 000 + 1 * 16 800 = 64 800 руб = 6 480 000 коп
-		assert.equal(order.patientPriceKopecks, 6480000, "Стоимость моста должна быть 64 800 руб");
+		assert.equal(bridgeCost.patientPriceKopecks, 6480000, "Стоимость моста должна быть 64 800 руб (6 480 000 коп)");
+		assert.equal(bridgeCost.abutmentsTotalPatientKopecks, 4800000);
+		assert.equal(bridgeCost.ponticsTotalPatientKopecks, 1680000);
 	});
 });

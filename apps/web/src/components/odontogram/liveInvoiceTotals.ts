@@ -1,4 +1,5 @@
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
+import { basisPointsFromPercent } from "../treatment-plans/planInsuranceCoverage";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
 
 export function computeLiveInvoiceCategoryBreakdown(
@@ -26,6 +27,7 @@ export function computeLiveInvoiceDiscount(
 ): number {
 	if (discountPercent <= 0) return 0;
 	const grossKopecks = rublesToKopecks(grossTotalPrice);
-	const discountKopecks = Math.round((grossKopecks * discountPercent) / 100);
+	const bp = basisPointsFromPercent(discountPercent);
+	const discountKopecks = bp !== null ? percentageOfKopecks(grossKopecks, bp) : 0;
 	return kopecksToRubles(discountKopecks);
 }

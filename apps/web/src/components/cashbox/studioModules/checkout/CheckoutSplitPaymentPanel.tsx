@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { CreditCard, QrCode, Split, Banknote, Wallet } from "lucide-react";
+import { CreditCard, QrCode, Split, Banknote, Wallet, Gift, Sparkles } from "lucide-react";
 import { rublesToKopecks } from "@dental/shared";
 import {
 	type CashChangeResult,
@@ -30,10 +30,17 @@ export interface CheckoutSplitPaymentPanelProps {
 	readonly setSplitSbpRub: (val: number) => void;
 	readonly splitDepositRub: number;
 	readonly setSplitDepositRub: (val: number) => void;
+	readonly splitBonusRub?: number | undefined;
+	readonly setSplitBonusRub?: ((val: number) => void) | undefined;
+	readonly splitCertificateRub?: number | undefined;
+	readonly setSplitCertificateRub?: ((val: number) => void) | undefined;
+	readonly certificateNumber?: string | undefined;
+	readonly setCertificateNumber?: ((val: string) => void) | undefined;
+	readonly patientBonusPoints?: number | undefined;
 	readonly splitCashReceivedRub: number;
 	readonly setSplitCashReceivedRub: (val: number) => void;
 	readonly splitCashChange: CashChangeResult | null;
-	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit") => void;
+	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit" | "bonus" | "certificate") => void;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
 }
@@ -51,6 +58,13 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 	setSplitSbpRub,
 	splitDepositRub,
 	setSplitDepositRub,
+	splitBonusRub = 0,
+	setSplitBonusRub,
+	splitCertificateRub = 0,
+	setSplitCertificateRub,
+	certificateNumber = "",
+	setCertificateNumber,
+	patientBonusPoints = 0,
 	splitCashReceivedRub,
 	setSplitCashReceivedRub,
 	splitCashChange,
@@ -98,6 +112,8 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitCashReceivedRub(restRub);
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
+						setSplitBonusRub?.(0);
+						setSplitCertificateRub?.(0);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -111,6 +127,8 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitCashRub(0);
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
+						setSplitBonusRub?.(0);
+						setSplitCertificateRub?.(0);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -125,6 +143,8 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitCardRub(0);
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
+						setSplitBonusRub?.(0);
+						setSplitCertificateRub?.(0);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -138,6 +158,8 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitCardRub(0);
 						setSplitCashRub(0);
 						setSplitDepositRub(0);
+						setSplitBonusRub?.(0);
+						setSplitCertificateRub?.(0);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -251,6 +273,82 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						data-testid="split-input-deposit"
 						value={splitDepositRub || ""}
 						onChange={(e) => setSplitDepositRub(Math.max(0, Number(e.target.value) || 0))}
+						placeholder="0 ₽"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+					/>
+				</div>
+
+				{/* Gift Certificate Row */}
+				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5" data-testid="split-row-certificate">
+					<div className="flex items-center justify-between">
+						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
+							<Gift className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<span>Сертификат</span>
+						</span>
+						<button
+							type="button"
+							data-testid="btn-split-balance-cert"
+							onClick={() => handleBalanceSplit("certificate")}
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+						>
+							Остаток
+						</button>
+					</div>
+					<div className="space-y-1.5">
+						{setCertificateNumber && (
+							<input
+								type="text"
+								data-testid="split-input-cert-number"
+								value={certificateNumber || ""}
+								onChange={(e) => setCertificateNumber(e.target.value)}
+								placeholder="№ сертификата"
+								className="w-full px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] font-mono text-xs"
+							/>
+						)}
+						<input
+							type="number"
+							data-testid="split-input-certificate"
+							value={splitCertificateRub || ""}
+							onChange={(e) => setSplitCertificateRub?.(Math.max(0, Number(e.target.value) || 0))}
+							placeholder="0 ₽"
+							className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						/>
+					</div>
+				</div>
+
+				{/* Loyalty Bonus Row */}
+				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5" data-testid="split-row-bonus">
+					<div className="flex items-center justify-between">
+						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
+							<Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
+							<span>
+								Бонусы {patientBonusPoints > 0 ? `(${patientBonusPoints} б.)` : ""}
+							</span>
+						</span>
+						<button
+							type="button"
+							data-testid="btn-split-balance-bonus"
+							onClick={() => {
+								if (patientBonusPoints > 0) {
+									const maxAllowed = Math.min(
+										patientBonusPoints,
+										kopecksToRub(BigInt(rublesToKopecks(splitBonusRub)) + splitDiffKop),
+									);
+									setSplitBonusRub?.(Math.max(0, maxAllowed));
+								} else {
+									handleBalanceSplit("bonus");
+								}
+							}}
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+						>
+							{patientBonusPoints > 0 ? "Макс" : "Остаток"}
+						</button>
+					</div>
+					<input
+						type="number"
+						data-testid="split-input-bonus"
+						value={splitBonusRub || ""}
+						onChange={(e) => setSplitBonusRub?.(Math.max(0, Number(e.target.value) || 0))}
 						placeholder="0 ₽"
 						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
 					/>

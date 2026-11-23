@@ -53,9 +53,22 @@ export function useClinicalSemdState(
 	const [nextVisitDate] = useState<string>(effectivePayload?.nextVisitDate ? String(effectivePayload.nextVisitDate) : (isDemo ? "2027-02-28" : ""));
 	const [selectedTooth, setSelectedTooth] = useState<number>(46);
 
+	const resolvedDocUuid = useMemo(() => {
+		if (effectivePayload?.documentUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(effectivePayload.documentUuid)) {
+			return effectivePayload.documentUuid;
+		}
+		const payloadVisitId = (effectivePayload as { visitId?: string })?.visitId;
+		if (payloadVisitId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payloadVisitId)) {
+			return payloadVisitId;
+		}
+		return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: "00000000-0000-4000-8000-000000000001";
+	}, [effectivePayload]);
+
 	const semdPayload: EgiszDentalCdaPayload = useMemo(() => ({
 		docTypeCode: semdDocCode,
-		documentUuid: `DOC-${semdDocCode}-${Date.now()}`,
+		documentUuid: resolvedDocUuid,
 		documentVersion: 1,
 		encounterDate: new Date().toISOString(),
 		clinic, doctor, patient, complaints, anamnesisMorbi, anamnesisVitae,

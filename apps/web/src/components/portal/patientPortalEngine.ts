@@ -20,6 +20,7 @@ import {
 	formatIcsDate,
 	formatPhoneNumber as canonicalFormatPhoneNumber,
 } from "../../utils/formatters";
+import { kopecksToRubles } from "@dental/shared";
 
 export interface PortalFinancialSummary {
 	totalInvoicedRub: number;
@@ -71,9 +72,9 @@ export function calculateFinancialSummary(
 		}
 	}
 
-	const totalInvoicedRub = totalInvoicedKop / 100;
-	const totalPaidRub = totalPaidKop / 100;
-	const totalRemainingRub = totalRemainingKop / 100;
+	const totalInvoicedRub = kopecksToRubles(totalInvoicedKop);
+	const totalPaidRub = kopecksToRubles(totalPaidKop);
+	const totalRemainingRub = kopecksToRubles(totalRemainingKop);
 
 	return {
 		totalInvoicedRub,
@@ -202,7 +203,7 @@ export function generateFnsTaxCertificateData(
 		.filter((inv) => inv.status === "paid" && (inv.paidAtIso || inv.issueDateIso).startsWith(String(year)))
 		.reduce((sum, inv) => sum + Math.round((inv.paidAmountRub || 0) * 100), 0);
 
-	const paidThisYear = paidThisYearKop / 100;
+	const paidThisYear = kopecksToRubles(paidThisYearKop);
 	// Social tax deduction limit in РФ: 150 000 руб (с 2024 г.), возврат 13%
 	const eligibleSum = Math.min(paidThisYear, 150000);
 	const refund13Pct = Math.round(eligibleSum * 0.13);

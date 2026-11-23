@@ -65,11 +65,12 @@ export async function processCanvasDownload(params: CanvasExportParams): Promise
 	const filenameBase = `dente_scan_${toothCode ? `tooth_${toothCode}_` : ""}${Date.now()}`;
 	if (options.format === "dicom") {
 		const dicomBytes = createDicomSecondaryCaptureFile(outputCanvas, {
-			patientId: isAnonymized ? "PATIENT-152FZ" : (patientId || "PATIENT-001"),
-			patientFullName: isAnonymized ? "ANONYMIZED" : rawPatientName,
+			anonymize: isAnonymized,
+			patientId: isAnonymized ? "ANON-0000" : (patientId || "PATIENT-001"),
+			patientFullName: isAnonymized ? "ANONYMIZED^PATIENT" : rawPatientName,
 			toothCode: toothCode || undefined,
 			clinicName: clinicName || DEFAULT_CLINIC_CREDENTIALS.clinicName,
-			doctorFullName: doctorName,
+			doctorFullName: isAnonymized ? undefined : doctorName,
 			scaleMmPerPixel: calibration?.scaleMmPerPixel,
 		});
 		triggerBinaryDownload(dicomBytes, `${filenameBase}.dcm`, "application/dicom");

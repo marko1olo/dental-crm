@@ -3,7 +3,37 @@ import type {
 	AuditEventCategory,
 	AuditSeverity,
 } from './types';
-import type { CreateAuditEntryParams } from '../auditTrailEngine';
+import type {
+	AuditEntityType,
+	AuditPayload,
+	CreateAuditEntryParams,
+} from '../auditTrailEngine';
+
+const VALID_AUDIT_ENTITY_TYPES: ReadonlySet<AuditEntityType> = new Set<AuditEntityType>([
+	'patient',
+	'patient_card_043',
+	'appointment',
+	'invoice_bill',
+	'consent_document',
+	'staff_user',
+	'system_config',
+	'audit_log',
+]);
+
+function normalizeAuditEntityType(val: unknown): AuditEntityType {
+	return typeof val === 'string' && VALID_AUDIT_ENTITY_TYPES.has(val as AuditEntityType)
+		? (val as AuditEntityType)
+		: 'patient';
+}
+
+function normalizeAuditPayloadValue(val: unknown): AuditPayload['oldValue'] {
+	if (val === null || val === undefined) return undefined;
+	if (typeof val === 'string' || typeof val === 'number') return val;
+	if (typeof val === 'object' && !Array.isArray(val)) {
+		return val as Record<string, unknown>;
+	}
+	return String(val);
+}
 
 export function mapRawToAuditEntryParams(raw: Record<string, unknown>): CreateAuditEntryParams {
 	const action = String(raw.actionType || raw.action || raw.eventType || '').toLowerCase();
@@ -65,14 +95,14 @@ export function mapRawToAuditEntryParams(raw: Record<string, unknown>): CreateAu
 			ipAddress: String(raw.ipAddress || raw.ip || '127.0.0.1'),
 		},
 		entity: {
-			entityType: (raw.entityType as any) || 'patient',
+			entityType: normalizeAuditEntityType(raw.entityType),
 			entityId: String(raw.entityId || raw.id || 'unknown'),
 			patientId: raw.patientId ? String(raw.patientId) : undefined,
 		},
 		payload: {
 			actionDescriptionRu: String(raw.reason || details.reason || actionDesc),
-			oldValue: (details.oldState ?? raw.oldValue) as any,
-			newValue: (details.newState ?? raw.newValue) as any,
+			oldValue: normalizeAuditPayloadValue(details.oldState ?? raw.oldValue),
+			newValue: normalizeAuditPayloadValue(details.newState ?? raw.newValue),
 			justificationReason: raw.reason ? String(raw.reason) : undefined,
 		},
 	};

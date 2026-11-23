@@ -82,7 +82,7 @@ export const DmsGuaranteeLettersTab: React.FC<DmsGuaranteeLettersTabProps> = ({
 					type="button"
 					onClick={onAddLetter}
 					className="dms-btn-secondary dente-btn-secondary"
-					style={{ alignSelf: "flex-start", minHeight: "44px" }}
+					style={{ alignSelf: "flex-start" }}
 				>
 					<Plus size={16} /> Прикрепить гарантийное письмо
 				</button>

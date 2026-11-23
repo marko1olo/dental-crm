@@ -1,3 +1,8 @@
+import type React from "react";
+import type {
+	DenteTelegramOutboxItem,
+	StaffMember,
+} from "@dental/shared";
 import {
 	formatDateTime,
 	formatShortDate,
@@ -9,6 +14,7 @@ import {
 	normalizedTelegramOutboxStatusFilter,
 	normalizedTelegramOutboxTemplateFilter,
 	normalizedTelegramPrivacyMode,
+	type onboardingSteps,
 	onboardingTelegramVisualCardKeys,
 	telegramClassificationLabels,
 	telegramDeliveryStatusLabels,
@@ -47,6 +53,8 @@ import {
 	pricelistWarningsText,
 } from "../../../pricelistUiMeta";
 import { recognitionPresets } from "../../../settingsStaticData";
+import type { AppStore } from "../../../store/appStoreModules/types";
+import type { useSettingsStore } from "../../../store/settingsStore";
 import {
 	postVisitCareTopicOptions,
 	telegramFeatureHelp,
@@ -91,24 +99,106 @@ import {
 	treatmentStatusLabels,
 	warningSeverityLabels,
 } from "../../../workspaceUiLabels";
+import type {
+	ModalControllerSlice,
+	OfflineSyncLogicSlice,
+	SettingsAndIntegrationsLogicSlice,
+} from "../types";
 
-// biome-ignore lint/suspicious/noExplicitAny: workflow & integration compatibility builder
-export function buildAppLogicWorkflowCompatibility(params: any) {
-	const {
-		appStore,
-		settingsAndIntegrations,
-		modalController,
-		offlineSync,
-		appLogicBag,
-	} = params;
+type SettingsStoreState = ReturnType<typeof useSettingsStore.getState>;
+
+type WorkflowAppLogicBag = Partial<AppStore> &
+	Partial<SettingsStoreState> & {
+		activeSpeechProviderHealth?: unknown;
+		appendToTranscript?: ((text: string) => void) | undefined;
+		clearTranscriptWithUndo?: (() => void) | undefined;
+		flushPendingSpeechChunks?: (() => Promise<void>) | undefined;
+		hasVisitTranscriptText?: boolean | undefined;
+		isServerVoiceRecording?: boolean | undefined;
+		pendingSpeechChunkCount?: number | undefined;
+		polishTranscript?: (() => Promise<void>) | undefined;
+		speechGatewayCanUpload?: boolean | undefined;
+		speechGatewayHealthReport?: unknown;
+		speechGatewayStatus?: unknown;
+		speechProviderConnectorLabels?: Record<string, string> | undefined;
+		speechProviderHealthById?: Record<string, unknown> | undefined;
+		speechProviderRuntimeById?: Record<string, unknown> | undefined;
+		startImportDictation?: (() => void) | undefined;
+		startVisitDictation?: (() => void) | undefined;
+		undoTranscriptClear?: (() => void) | undefined;
+		browserDirectoryPickerAvailable?: boolean | undefined;
+		browserPickedImagingFolder?: unknown;
+		importSourceLabels?:
+			| Record<string, { title: string; detail?: string }>
+			| undefined;
+		ingestionTargetLabels?: Record<string, string> | undefined;
+		smartImportModeLabels?:
+			| Record<string, { title: string; detail?: string }>
+			| undefined;
+		isTelegramChatLinksLoadingMore?: boolean | undefined;
+		isTelegramLinkCodesLoadingMore?: boolean | undefined;
+		isTelegramLinkCreating?: boolean | undefined;
+		isTelegramLoading?: boolean | undefined;
+		isTelegramOutboxLoadingMore?: boolean | undefined;
+		isTelegramSendingDue?: boolean | undefined;
+		isTelegramSettingsSaving?: boolean | undefined;
+		telegramAdminSecretDraft?: string | undefined;
+		telegramAdminSecretSession?: string | undefined;
+		setTelegramAdminSecretDraft?: ((val: string) => void) | undefined;
+		telegramPrivacyModeHints?: Record<string, string> | undefined;
+		telegramQrSvgToDataUrl?: ((svg: string) => string) | undefined;
+		telegramRevokingLinkId?: string | null | undefined;
+		telegramSendingItemId?: string | null | undefined;
+		telegramTemplateLabels?: Record<string, string> | undefined;
+	};
+
+export interface AppLogicWorkflowCompatibilityParams {
+	readonly appStore: AppStore | Record<string, unknown>;
+	readonly settingsAndIntegrations:
+		| SettingsAndIntegrationsLogicSlice
+		| Record<string, unknown>;
+	readonly modalController: ModalControllerSlice | Record<string, unknown>;
+	readonly offlineSync: OfflineSyncLogicSlice | Record<string, unknown>;
+	readonly appLogicBag: Record<string, unknown>;
+	readonly browserDirectoryInputRef?:
+		| React.RefObject<HTMLInputElement | null>
+		| Record<string, unknown>
+		| undefined;
+	readonly browserMigrationInputRef?:
+		| React.RefObject<HTMLInputElement | null>
+		| Record<string, unknown>
+		| undefined;
+	readonly refreshSpeechRuntimeRef?:
+		| React.MutableRefObject<(() => void) | null>
+		| Record<string, unknown>
+		| undefined;
+}
+
+export function buildAppLogicWorkflowCompatibility(
+	params: AppLogicWorkflowCompatibilityParams,
+) {
+	const appStore = params.appStore as AppStore;
+	const settingsAndIntegrations =
+		params.settingsAndIntegrations as SettingsAndIntegrationsLogicSlice;
+	const modalController = params.modalController as ModalControllerSlice & {
+		onboardingSteps?: typeof onboardingSteps | undefined;
+	};
+	const offlineSync = params.offlineSync as OfflineSyncLogicSlice;
+	const appLogicBag = params.appLogicBag as WorkflowAppLogicBag;
+	const refreshSpeechRuntimeCurrent =
+		params.refreshSpeechRuntimeRef &&
+		"current" in params.refreshSpeechRuntimeRef &&
+		typeof params.refreshSpeechRuntimeRef.current === "function"
+			? (params.refreshSpeechRuntimeRef.current as () => void)
+			: null;
 
 	const { isOnline, browserContinuity, localBridgeReadiness } = offlineSync;
 	const { telegram, telegramSettingsModule } = settingsAndIntegrations;
 
-	const filteredTelegramOutboxItems: any[] = [];
-	const visibleTelegramOutboxItems: any[] = [];
+	const filteredTelegramOutboxItems: DenteTelegramOutboxItem[] = [];
+	const visibleTelegramOutboxItems: DenteTelegramOutboxItem[] = [];
 	const hiddenTelegramOutboxItemCount = 0;
-	const telegramLinkStaffOptions: any[] = [];
+	const telegramLinkStaffOptions: StaffMember[] = [];
 	const telegramSubjectName = () => "";
 
 	const isTranscriptPolishing = false;
@@ -139,7 +229,7 @@ export function buildAppLogicWorkflowCompatibility(params: any) {
 		polishSingleField: async () => {},
 		polishTranscript: appLogicBag.polishTranscript ?? (async () => {}),
 		polishingField: null,
-		refreshSpeechRuntime: params.refreshSpeechRuntimeRef.current ?? (() => {}),
+		refreshSpeechRuntime: refreshSpeechRuntimeCurrent ?? (() => {}),
 		setClearedTranscriptSnapshot,
 		setTranscript,
 		speechGatewayActiveProviderIsLocal: null,
@@ -303,14 +393,20 @@ export function buildAppLogicWorkflowCompatibility(params: any) {
 		setTelegramHandoffNotice: appLogicBag.setTelegramHandoffNotice ?? (() => {}),
 		setTelegramMapsUrlDraft: appLogicBag.setTelegramMapsUrlDraft ?? (() => {}),
 		setTelegramPatientPortalBaseUrlDraft: appLogicBag.setTelegramPatientPortalBaseUrlDraft ?? (() => {}),
-		setTelegramPrivacyModeDraft: appLogicBag.setTelegramPrivacyModeDraft ?? (() => {}),
+		setTelegramPrivacyModeDraft: (mode: string) => {
+			if (typeof appLogicBag.setTelegramPrivacyModeDraft === "function") {
+				if (mode === "no_phi_by_default" || mode === "limited_admin_only" || mode === "consented_phi_templates") {
+					appLogicBag.setTelegramPrivacyModeDraft(mode);
+				}
+			}
+		},
 		setTelegramReminderLeadTimesDraft: appLogicBag.setTelegramReminderLeadTimesDraft ?? (() => {}),
 		setTelegramReviewRequestDelayDraft: appLogicBag.setTelegramReviewRequestDelayDraft ?? (() => {}),
 		setTelegramReviewUrlDraft: appLogicBag.setTelegramReviewUrlDraft ?? (() => {}),
 		setTelegramTokenTtlDraft: appLogicBag.setTelegramTokenTtlDraft ?? (() => {}),
 		setTelegramWelcomeImageUrlDraft: appLogicBag.setTelegramWelcomeImageUrlDraft ?? (() => {}),
 		telegramAdminSecretDraft: appLogicBag.telegramAdminSecretDraft ?? "",
-		telegramAdminSecretSession: appLogicBag.telegramAdminSecretSession ?? "",
+		telegramAdminSecretSession: Boolean(appLogicBag.telegramAdminSecretSession),
 		telegramAllowVoiceIntakeDraft: appLogicBag.telegramAllowVoiceIntakeDraft ?? false,
 		telegramBotConfigId: appLogicBag.telegramBotConfigId ?? "",
 		telegramBotUsernameDraft: appLogicBag.telegramBotUsernameDraft ?? "",
@@ -353,7 +449,7 @@ export function buildAppLogicWorkflowCompatibility(params: any) {
 		telegramPrivacyModeHints: appLogicBag.telegramPrivacyModeHints ?? {},
 		telegramPrivacyModeLabels,
 		telegramQrSvgToDataUrl: appLogicBag.telegramQrSvgToDataUrl ?? (() => ""),
-		telegramReminderLeadTimesDraft: appLogicBag.telegramReminderLeadTimesDraft ?? [],
+		telegramReminderLeadTimesDraft: typeof appLogicBag.telegramReminderLeadTimesDraft === "string" ? appLogicBag.telegramReminderLeadTimesDraft : "",
 		telegramReviewRequestDelayDraft: appLogicBag.telegramReviewRequestDelayDraft ?? 0,
 		telegramReviewUrlDraft: appLogicBag.telegramReviewUrlDraft ?? "",
 		telegramRevokingLinkId: appLogicBag.telegramRevokingLinkId ?? null,
