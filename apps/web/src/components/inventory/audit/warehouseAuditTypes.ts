@@ -65,7 +65,7 @@ export interface WarehouseInventoryAuditDocument {
 	readonly items: readonly WarehouseAuditItemLine[];
 	readonly notes?: string | undefined;
 	readonly organizationNameRu: string;
-	readonly organizationOkpo: string;
+	readonly organizationOkpo?: string | undefined;
 	readonly organizationInn: string;
 }
 
@@ -119,7 +119,7 @@ export interface WarehouseWriteoffAct {
 	readonly actDate: string;
 	readonly inventoryDocNumber: string;
 	readonly organizationNameRu: string;
-	readonly organizationOkpo: string;
+	readonly organizationOkpo?: string | undefined;
 	readonly organizationInn: string;
 	readonly warehouseNameRu: string;
 	readonly molFullName: string;

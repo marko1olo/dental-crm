@@ -537,3 +537,33 @@
   * `npm run check:diff`: 0 костылей (Exit Code 0).
   * `npm run check:encoding`: 19 981 файлов проверено, 0 нарушений (Exit Code 0).
 
+---
+
+## 🛡️ 23. Red Team Fixer Surgeon: Ликвидация дефектов Домена 44 DEF-1 — DEF-6 (Мандаты 8e, 8n, 8v, 8bm, 8bo, 8bf, 8x, 8bi)
+
+* **ДЕФЕКТ №1 (Sev 1, Утечка арендаторов и cross-tenant OOM)**:
+  * В `apps/api/src/routes/inventory/procedureRuleRoutes.ts:79` внедрен обязательный фильтр `.where(inArray(procedureTechCardItems.techCardId, cardIds))` при выборке элементов техкарт. Исключена утечка строк чужих клиник и исчерпание памяти Fastify.
+* **ДЕФЕКТ №2 (Sev 2, Рассинхрон двойных колонок остатков склада)**:
+  * В `apps/api/src/routes/inventory/stockLedgerRoutes.ts:240` обеспечено строго синхронное обновление колонок: `set({ stockQuantity: String(newStock), currentQty: String(newStock), updatedAt: new Date() })`.
+* **ДЕФЕКТ №3 (Sev 2, Самодельный расчет рублей и форматирование)**:
+  * В `packages/shared/src/inventory/materialsAutoDeductionSsot.ts:341-344` ликвидированы ручные операции деления `/ 100` и самодельная конкатенация строк. Импортированы и задействованы канонические SSOT функции `@dental/shared/src/money.ts` (`formatKopecksToRub`, `kopecksToRubles`).
+* **ДЕФЕКТ №4 (Sev 2, Float оценка склада и накопление погрешности)**:
+  * В `apps/api/src/routes/inventory/itemCatalog/itemCatalogQueries.ts:20-29` и `apps/api/src/services/treatmentConsumables/inventoryReports.ts` агрегация суммарной стоимости склада переведена на целочисленные копейки `totalValuationKopecks: bigint` через `rublesToKopecks` и `kopecksToRubles` без накапливающего погрешность `toFixed(2)`.
+* **ДЕФЕКТ №5 (Sev 2, Split-Brain техкарт и норм процедур BOM)**:
+  * В `apps/api/src/routes/inventory/consumables/techCardNormHandlers.ts` (`POST /`, `DELETE /:id`) и `apps/api/src/services/treatmentConsumables/recipeService/recipeMutations.ts` внедрена непрерывная синхронизация с каноническими таблицами `procedure_tech_cards` и `procedure_tech_card_items`. Канонический резолвер `procedureBomResolver.ts` гарантированно видит все создаваемые и модифицируемые нормы списания.
+* **ДЕФЕКТ №6 (Sev 3, Советские рудименты, ОКПО и дев-жаргон)**:
+  * В `apps/web/src/components/inventory/audit/warehouseAuditTypes.ts` поля `organizationOkpo` переведены в опциональные (`readonly organizationOkpo?: string | undefined;`), в `warehouseAuditValidation.ts` снято требование обязательного председателя комиссии для соло-врача и небольших клиник (Мандат 8n).
+  * В `apps/web/src/components/inventory/useInventoryQuickWriteoff.ts:79` заметка с дев-жаргоном заменена на чистую клиническую: `"Списание анестетика по протоколу приёма"`.
+  * В `apps/api/src/services/inventory/fefoModules/fefoDeficitResolver.ts:6` удален неиспользуемый мертвый импорт `InsufficientStockError`.
+* Машинные гейты и верификация:
+  * `vitest run packages/shared/src/inventory/`: 4 файла, 83 теста — 100% PASS (Exit Code 0).
+  * `vitest run packages/shared/src/tests/inventoryMaterialsSsot.test.ts`: 7 тестов — 100% PASS (Exit Code 0).
+  * `npx tsx --test apps/api/src/tests/routes/inventoryDecomposition.test.ts`: 7 тестов — 100% PASS (Exit Code 0).
+  * `npx tsx --test apps/api/src/services/treatmentConsumablesService.test.ts`: 8 тестов — 100% PASS (Exit Code 0).
+  * `npx tsx --test apps/web/src/components/inventory/__tests__/warehouseInventoryEngine.auditValidation.test.ts`: 2 теста — 100% PASS (Exit Code 0).
+  * `npx tsx --test apps/web/src/components/inventory/__tests__/warehouseInventoryEngine.torg16AndExports.test.ts`: 4 теста — 100% PASS (Exit Code 0).
+  * `npx tsx --test apps/web/src/components/inventory/__tests__/warehouseSuite.inventoryAudit.test.ts`: 2 теста — 100% PASS (Exit Code 0).
+  * `npm run check:encoding`: 19 990 файлов проверено, 0 нарушений (Exit Code 0).
+  * `npm run check:diff`: 0 костылей (Exit Code 0).
+
+

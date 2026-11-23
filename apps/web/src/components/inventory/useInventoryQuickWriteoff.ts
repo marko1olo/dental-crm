@@ -76,7 +76,7 @@ export function useInventoryQuickWriteoff({
 		carpulesCount?: number; visitId?: string; cabinetId?: string; chairId?: string; notes?: string;
 	}) => handleQuickWriteoffCarpules({
 		carpulesCount: options?.carpulesCount ?? 1, drugName: "Септанест/Убистезин", ...options,
-		notes: options?.notes ?? "Быстрое списание карпулы анестетика без комиссии",
+		notes: options?.notes ?? "Списание анестетика по протоколу приёма",
 	});
 
 	const handleQuickWriteoffSterilizationKit = async (options?: {

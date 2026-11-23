@@ -24,8 +24,6 @@ export function validateInventoryAuditDraft(doc: Partial<WarehouseInventoryAudit
 	}
 	if (!doc.commission || doc.commission.length === 0) {
 		warnings.push("Опись оформляется ответственным сотрудником (единоличное списание/опись без обязательного требования комиссии из 3 человек).");
-	} else if (!doc.commission.some((c) => c.role === "chairman")) {
-		warnings.push("В составе инвентаризационной комиссии не указан председатель.");
 	}
 
 	if (!doc.items || doc.items.length === 0) {

@@ -27,7 +27,7 @@ export function exportInventoryTo1C(doc: WarehouseInventoryAuditDocument): strin
     <Дата>${doc.auditDate}</Дата>
     <Организация>
       <Наименование>${doc.organizationNameRu}</Наименование>
-      <ОКПО>${doc.organizationOkpo}</ОКПО>
+      <ОКПО>${doc.organizationOkpo || ""}</ОКПО>
       <ИНН>${doc.organizationInn}</ИНН>
     </Организация>
     <Склад>${doc.warehouseNameRu}</Склад>

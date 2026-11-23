@@ -3,14 +3,20 @@
  * Technological Cards (BOM recipes) and material consumption norms per service/procedure.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { inventoryItems, treatmentConsumables } from "../../../db/schema.js";
+import {
+	inventoryItems,
+	procedureTechCardItems,
+	procedureTechCards,
+	serviceCatalogItems,
+	treatmentConsumables,
+} from "../../../db/schema.js";
 import { ReorderSuggestionService } from "../../../services/reorderSuggestionService.js";
 import {
 	TreatmentConsumablesService,
@@ -65,7 +71,7 @@ export async function registerTechCardNormHandlers(
 		return mappings;
 	});
 
-	// POST / — Create or update consumable link for procedure (CRUD)
+	// POST / — Create or update consumable link for procedure (CRUD) with canonical SSOT sync
 	server.post("/", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
@@ -83,33 +89,124 @@ export async function registerTechCardNormHandlers(
 		}
 
 		const body = parsed.data;
-		const [link] = await db
-			.insert(treatmentConsumables)
-			.values({
-				organizationId: orgId,
-				catalogItemCode: body.catalogItemCode,
-				inventoryItemId: body.inventoryItemId,
-				quantity: body.quantity.toFixed(4),
-				note: body.note ?? null,
-			})
-			.onConflictDoUpdate({
-				target: [
-					treatmentConsumables.organizationId,
-					treatmentConsumables.catalogItemCode,
-					treatmentConsumables.inventoryItemId,
-				],
-				set: {
+		return await db.transaction(async (tx) => {
+			const [link] = await tx
+				.insert(treatmentConsumables)
+				.values({
+					organizationId: orgId,
+					catalogItemCode: body.catalogItemCode,
+					inventoryItemId: body.inventoryItemId,
 					quantity: body.quantity.toFixed(4),
 					note: body.note ?? null,
-					updatedAt: new Date(),
-				},
-			})
-			.returning();
+				})
+				.onConflictDoUpdate({
+					target: [
+						treatmentConsumables.organizationId,
+						treatmentConsumables.catalogItemCode,
+						treatmentConsumables.inventoryItemId,
+					],
+					set: {
+						quantity: body.quantity.toFixed(4),
+						note: body.note ?? null,
+						updatedAt: new Date(),
+					},
+				})
+				.returning();
 
-		return reply.status(201).send(link);
+			// Sync with canonical procedure_tech_cards and procedure_tech_card_items (Mandate 8bf & SSOT)
+			const [service] = await tx
+				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code, title: serviceCatalogItems.title })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.organizationId, orgId),
+						or(
+							eq(serviceCatalogItems.code, body.catalogItemCode),
+							eq(serviceCatalogItems.id, body.catalogItemCode),
+						),
+					),
+				)
+				.limit(1);
+
+			const [invItem] = await tx
+				.select({ id: inventoryItems.id, unit: inventoryItems.unit })
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						eq(inventoryItems.id, body.inventoryItemId),
+					),
+				)
+				.limit(1);
+
+			const serviceId = service?.id ?? null;
+			const serviceCode = service?.code ?? body.catalogItemCode;
+
+			let [techCard] = await tx
+				.select()
+				.from(procedureTechCards)
+				.where(
+					and(
+						eq(procedureTechCards.organizationId, orgId),
+						or(
+							serviceId ? eq(procedureTechCards.serviceId, serviceId) : eq(procedureTechCards.serviceCode, serviceCode),
+							eq(procedureTechCards.serviceCode, serviceCode),
+						),
+					),
+				)
+				.limit(1);
+
+			if (!techCard) {
+				[techCard] = await tx
+					.insert(procedureTechCards)
+					.values({
+						organizationId: orgId,
+						serviceId,
+						serviceCode,
+						title: service?.title ? `Техкарта: ${service.title}` : `Техкарта: ${serviceCode}`,
+						status: "active",
+						version: 1,
+					})
+					.returning();
+			}
+
+			if (techCard) {
+				const [existingItem] = await tx
+					.select()
+					.from(procedureTechCardItems)
+					.where(
+						and(
+							eq(procedureTechCardItems.techCardId, techCard.id),
+							eq(procedureTechCardItems.inventoryItemId, body.inventoryItemId),
+						),
+					)
+					.limit(1);
+
+				if (existingItem) {
+					await tx
+						.update(procedureTechCardItems)
+						.set({
+							quantity: body.quantity.toFixed(4),
+							unit: invItem?.unit || "шт",
+							notes: body.note ?? null,
+						})
+						.where(eq(procedureTechCardItems.id, existingItem.id));
+				} else {
+					await tx.insert(procedureTechCardItems).values({
+						techCardId: techCard.id,
+						inventoryItemId: body.inventoryItemId,
+						quantity: body.quantity.toFixed(4),
+						unit: invItem?.unit || "шт",
+						notes: body.note ?? null,
+					});
+				}
+			}
+
+			return reply.status(201).send(link);
+		});
 	});
 
-	// DELETE /:id — Delete consumable link
+	// DELETE /:id — Delete consumable link with canonical SSOT sync
 	server.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
@@ -119,20 +216,51 @@ export async function registerTechCardNormHandlers(
 		if (!orgId) return;
 
 		const { id } = request.params;
-		const deleted = await db
-			.delete(treatmentConsumables)
-			.where(
-				and(
-					eq(treatmentConsumables.organizationId, orgId),
-					eq(treatmentConsumables.id, id),
-				),
-			)
-			.returning();
+		return await db.transaction(async (tx) => {
+			const [toDelete] = await tx
+				.select()
+				.from(treatmentConsumables)
+				.where(
+					and(
+						eq(treatmentConsumables.organizationId, orgId),
+						eq(treatmentConsumables.id, id),
+					),
+				)
+				.limit(1);
 
-		if (deleted.length === 0) {
-			return reply.status(404).send({ error: "NotFound", message: "Связь не найдена" });
-		}
-		return { success: true, deletedId: id };
+			if (!toDelete) {
+				return reply.status(404).send({ error: "NotFound", message: "Связь не найдена" });
+			}
+
+			await tx
+				.delete(treatmentConsumables)
+				.where(eq(treatmentConsumables.id, id));
+
+			// Also remove from canonical procedure_tech_card_items if techCard exists
+			const [techCard] = await tx
+				.select({ id: procedureTechCards.id })
+				.from(procedureTechCards)
+				.where(
+					and(
+						eq(procedureTechCards.organizationId, orgId),
+						eq(procedureTechCards.serviceCode, toDelete.catalogItemCode),
+					),
+				)
+				.limit(1);
+
+			if (techCard) {
+				await tx
+					.delete(procedureTechCardItems)
+					.where(
+						and(
+							eq(procedureTechCardItems.techCardId, techCard.id),
+							eq(procedureTechCardItems.inventoryItemId, toDelete.inventoryItemId),
+						),
+					);
+			}
+
+			return { success: true, deletedId: id };
+		});
 	});
 
 	// =========================================================================

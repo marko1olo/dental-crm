@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { inventoryQuery } from "../../../db/inventoryQuery.js";
 import type { inventoryItems } from "../../../db/schema.js";
@@ -17,15 +18,17 @@ export const calculateAlertsFromItems = (
 	const expiredItems: typeof items = [];
 	const expiringSoonItems: typeof items = [];
 
-	let totalValuationRub = 0;
+	let totalValuationKopecks = 0n;
 
 	for (const item of items) {
 		const stock = Number(item.stockQuantity ?? 0);
 		const threshold = Number(item.criticalThreshold ?? 0);
 		const cost = Number(item.unitCostRub ?? 0);
 
-		if (Number.isFinite(stock) && Number.isFinite(cost)) {
-			totalValuationRub += Math.max(0, stock) * Math.max(0, cost);
+		if (Number.isFinite(stock) && Number.isFinite(cost) && stock > 0 && cost > 0) {
+			const costKopecks = rublesToKopecks(cost);
+			const lineValuationKopecks = BigInt(Math.round(stock * costKopecks));
+			totalValuationKopecks += lineValuationKopecks;
 		}
 
 		if (stock <= 0) {
@@ -46,7 +49,8 @@ export const calculateAlertsFromItems = (
 	return {
 		summary: {
 			totalItems: items.length,
-			totalValuationRub: Number(totalValuationRub.toFixed(2)),
+			totalValuationRub: kopecksToRubles(totalValuationKopecks),
+			totalValuationKopecks,
 			lowStockCount: lowStockItems.length,
 			outOfStockCount: outOfStockItems.length,
 			expiredCount: expiredItems.length,

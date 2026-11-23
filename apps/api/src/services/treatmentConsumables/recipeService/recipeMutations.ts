@@ -4,7 +4,13 @@
 
 import { type ConsumableLinkCreate, type ConsumableLinkUpdate, isDeductibleQuantity } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { inventoryItems, procedureMaterialRules, serviceCatalogItems } from "../../../db/schema.js";
+import {
+	inventoryItems,
+	procedureMaterialRules,
+	procedureTechCardItems,
+	procedureTechCards,
+	serviceCatalogItems,
+} from "../../../db/schema.js";
 import { type DbExecutor, TreatmentConsumablesServiceError } from "../types.js";
 import { getLink } from "./recipeQueries.js";
 
@@ -58,6 +64,65 @@ export async function createLink(executor: DbExecutor, organizationId: string, p
 		.returning();
 
 	if (!created) throw new TreatmentConsumablesServiceError("Не удалось сохранить связь", 500, "SaveFailed");
+
+	// Canonical SSOT sync with procedure_tech_cards & procedure_tech_card_items
+	let [techCard] = await executor
+		.select()
+		.from(procedureTechCards)
+		.where(
+			and(
+				eq(procedureTechCards.organizationId, organizationId),
+				eq(procedureTechCards.serviceId, service.id),
+			),
+		)
+		.limit(1);
+
+	if (!techCard) {
+		[techCard] = await executor
+			.insert(procedureTechCards)
+			.values({
+				organizationId,
+				serviceId: service.id,
+				serviceCode: service.code,
+				title: service.title ? `Техкарта: ${service.title}` : `Техкарта: ${service.code ?? service.id}`,
+				status: "active",
+				version: 1,
+			})
+			.returning();
+	}
+
+	if (techCard) {
+		const [existingCardItem] = await executor
+			.select()
+			.from(procedureTechCardItems)
+			.where(
+				and(
+					eq(procedureTechCardItems.techCardId, techCard.id),
+					eq(procedureTechCardItems.inventoryItemId, item.id),
+				),
+			)
+			.limit(1);
+
+		if (existingCardItem) {
+			await executor
+				.update(procedureTechCardItems)
+				.set({
+					quantity: String(payload.quantity),
+					unit: item.unit || "шт",
+					notes: payload.note ?? null,
+				})
+				.where(eq(procedureTechCardItems.id, existingCardItem.id));
+		} else {
+			await executor.insert(procedureTechCardItems).values({
+				techCardId: techCard.id,
+				inventoryItemId: item.id,
+				quantity: String(payload.quantity),
+				unit: item.unit || "шт",
+				notes: payload.note ?? null,
+			});
+		}
+	}
+
 	const detailed = await getLink(executor, organizationId, created.id);
 	if (!detailed) throw new TreatmentConsumablesServiceError("Связь создана, но не найдена", 500, "FetchFailed");
 	return detailed;
@@ -80,6 +145,32 @@ export async function updateLink(executor: DbExecutor, organizationId: string, l
 			.update(procedureMaterialRules)
 			.set({ quantityToDeduct: String(payload.quantity), requiredQty: String(payload.quantity) })
 			.where(and(eq(procedureMaterialRules.id, linkId), eq(procedureMaterialRules.organizationId, organizationId)));
+
+		// Sync with canonical procedure_tech_card_items
+		if (existing.serviceId && existing.inventoryItemId) {
+			const [techCard] = await executor
+				.select({ id: procedureTechCards.id })
+				.from(procedureTechCards)
+				.where(
+					and(
+						eq(procedureTechCards.organizationId, organizationId),
+						eq(procedureTechCards.serviceId, existing.serviceId),
+					),
+				)
+				.limit(1);
+
+			if (techCard) {
+				await executor
+					.update(procedureTechCardItems)
+					.set({ quantity: String(payload.quantity) })
+					.where(
+						and(
+							eq(procedureTechCardItems.techCardId, techCard.id),
+							eq(procedureTechCardItems.inventoryItemId, existing.inventoryItemId),
+						),
+					);
+			}
+		}
 	}
 
 	const updated = await getLink(executor, organizationId, linkId);
@@ -88,6 +179,42 @@ export async function updateLink(executor: DbExecutor, organizationId: string, l
 }
 
 export async function deleteLink(executor: DbExecutor, organizationId: string, linkId: string) {
+	const [rule] = await executor
+		.select({
+			id: procedureMaterialRules.id,
+			serviceId: procedureMaterialRules.serviceId,
+			inventoryItemId: procedureMaterialRules.inventoryItemId,
+		})
+		.from(procedureMaterialRules)
+		.where(and(eq(procedureMaterialRules.id, linkId), eq(procedureMaterialRules.organizationId, organizationId)))
+		.limit(1);
+
+	if (!rule) throw new TreatmentConsumablesServiceError("Связь не найдена", 404, "LinkNotFound");
+
+	if (rule.serviceId && rule.inventoryItemId) {
+		const [techCard] = await executor
+			.select({ id: procedureTechCards.id })
+			.from(procedureTechCards)
+			.where(
+				and(
+					eq(procedureTechCards.organizationId, organizationId),
+					eq(procedureTechCards.serviceId, rule.serviceId),
+				),
+			)
+			.limit(1);
+
+		if (techCard) {
+			await executor
+				.delete(procedureTechCardItems)
+				.where(
+					and(
+						eq(procedureTechCardItems.techCardId, techCard.id),
+						eq(procedureTechCardItems.inventoryItemId, rule.inventoryItemId),
+					),
+				);
+		}
+	}
+
 	const [deleted] = await executor
 		.delete(procedureMaterialRules)
 		.where(and(eq(procedureMaterialRules.id, linkId), eq(procedureMaterialRules.organizationId, organizationId)))

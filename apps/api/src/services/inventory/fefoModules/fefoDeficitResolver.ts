@@ -3,7 +3,6 @@
  * Расчет дефицита и подготовка транзакций овердрафта при нехватке партий FEFO (Мандат 8b).
  */
 
-import { InsufficientStockError } from "../materialDeduction.js";
 import type { InventoryTransactionInsert } from "./auditLogging.js";
 
 export function resolveDeficitAndOverdraft(params: {
