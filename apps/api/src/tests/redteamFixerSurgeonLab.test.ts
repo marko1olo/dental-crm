@@ -394,7 +394,7 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 		assert.ok(app.hasRoute({ method: "DELETE", url: "/api/clinical/lab-orders/:id/items/:itemId" }), "DELETE /api/clinical/lab-orders/:id/items/:itemId must be registered");
 	});
 
-	it("SEV-1 #6: ACID транзакция и синхронизация себестоимости ЗТЛ при добавлении, обновлении и удалении позиций", async () => {
+	it("SEV-1 #6: ACID транзакция и синхронизация позиций ЗТЛ без схлопывания себестоимости и розницы", async () => {
 		const { insertLabItem, updateLabItem, deleteLabItem } = await import("../routes/lab/orderItemsCrud.js");
 
 		const insertRes = await withTenantCtx(ORG_A, (tx) =>
@@ -404,14 +404,14 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 				toothFdi: "16",
 				material: "ZrO2",
 				priceRub: 0,
-				labCostRub: 0,
+				labCostRub: 3500,
 			}),
 		);
 		assert.strictEqual(insertRes.kind, "ok");
 		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
 
 		try {
-			// 1. Добавляем позицию 1: зуб 16 на 8 500 ₽ (850 000 копеек)
+			// 1. Добавляем позицию 1: зуб 16 на 8 500 ₽ (850 000 копеек розничной цены пациента)
 			const item1 = await insertLabItem(ORG_A, createdOrder.id, {
 				toothFdi: 16,
 				restorationType: "crown_monolithic",
@@ -422,11 +422,11 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 			});
 			assert.ok(item1?.id, "Позиция 1 создана");
 
-			// Проверяем актуализацию родительского наряда: labCostKopecks и priceKopecks должны стать 850 000
+			// Проверяем актуализацию родительского наряда: priceKopecks становится 850 000, а labCostKopecks сохраняет себестоимость 350 000 (не схлопывается с розницей!)
 			const [orderAfterItem1] = await withTenantCtx(ORG_A, (tx) =>
 				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
 			);
-			assert.strictEqual(Number(orderAfterItem1?.labCostKopecks), 850000);
+			assert.strictEqual(Number(orderAfterItem1?.labCostKopecks), 350000);
 			assert.strictEqual(Number(orderAfterItem1?.priceKopecks), 850000);
 			assert.strictEqual(orderAfterItem1?.toothFdi, "16");
 
@@ -441,11 +441,11 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 			});
 			assert.ok(item2?.id, "Позиция 2 создана");
 
-			// Проверяем перерасчет родительского наряда: сумма должна стать 1 750 000 копеек, зубы "16,17"
+			// Проверяем перерасчет родительского наряда: сумма розницы должна стать 1 750 000 копеек, зубы "16,17", а себестоимость сохраняется
 			const [orderAfterItem2] = await withTenantCtx(ORG_A, (tx) =>
 				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
 			);
-			assert.strictEqual(Number(orderAfterItem2?.labCostKopecks), 1750000);
+			assert.strictEqual(Number(orderAfterItem2?.labCostKopecks), 350000);
 			assert.strictEqual(Number(orderAfterItem2?.priceKopecks), 1750000);
 			assert.strictEqual(orderAfterItem2?.toothFdi, "16,17");
 
@@ -456,7 +456,7 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 			const [orderAfterUpdate] = await withTenantCtx(ORG_A, (tx) =>
 				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
 			);
-			assert.strictEqual(Number(orderAfterUpdate?.labCostKopecks), 1900000);
+			assert.strictEqual(Number(orderAfterUpdate?.labCostKopecks), 350000);
 			assert.strictEqual(Number(orderAfterUpdate?.priceKopecks), 1900000);
 
 			// 4. Удаляем позицию 2 (зуб 17)
@@ -464,7 +464,7 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 			const [orderAfterDelete] = await withTenantCtx(ORG_A, (tx) =>
 				tx.select().from(labOrders).where(eq(labOrders.id, createdOrder.id)),
 			);
-			assert.strictEqual(Number(orderAfterDelete?.labCostKopecks), 1000000);
+			assert.strictEqual(Number(orderAfterDelete?.labCostKopecks), 350000);
 			assert.strictEqual(Number(orderAfterDelete?.priceKopecks), 1000000);
 			assert.strictEqual(orderAfterDelete?.toothFdi, "16");
 		} finally {
@@ -538,5 +538,58 @@ describe("Red Team Fixer Surgeon Lab: ZTL & CAD/CAM Backend Verification", () =>
 		// Проверка получения HEX
 		assert.ok(getVitaShadeHex("Хромаскоп 140"), "HEX для Хромаскоп 140 должен быть найден");
 		assert.ok(getVitaShadeHex("Chromascop 210"), "HEX для Chromascop 210 должен быть найден");
+	});
+
+	it("SEV-1 #9: executeLabOrderPatchTx при рекламации обнуляет цену пациента и сбрасывает isLockedInstalled (DEFECT-LAB-01, Mandate 8e)", async () => {
+		const { executeLabOrderPatchTx } = await import("../routes/lab/patchModules/labOrderPatchDb.js");
+
+		const insertRes = await withTenantCtx(ORG_A, (tx) =>
+			insertLabOrderInDb(tx, ORG_A, {
+				patientName: "Тест Рекламации Пациент",
+				doctorName: "Д-р Гарантиев Г. Г.",
+				toothFdi: "25",
+				material: "ZrO2",
+				priceRub: 25000,
+				priceKopecks: 2500000,
+				labCostRub: 6000,
+				labCostKopecks: 600000,
+			}),
+		);
+		assert.strictEqual(insertRes.kind, "ok");
+		const createdOrder = (insertRes as { kind: "ok"; order: typeof labOrders.$inferSelect }).order;
+
+		try {
+			// Выполняем рекламацию по браку лаборатории (lab_defect)
+			const patchRes = await withTenantCtx(ORG_A, (tx) =>
+				executeLabOrderPatchTx(
+					tx,
+					ORG_A,
+					createdOrder.id,
+					{
+						stage: "warranty_rework",
+						isWarranty: true,
+						warrantyLiabilityType: "lab_defect",
+						isRemake: true,
+						remakeReason: "Скол керамики по вине лаборатории",
+					},
+					"refitting",
+				),
+			);
+
+			assert.strictEqual(patchRes.kind, "ok");
+			if (patchRes.kind === "ok") {
+				assert.strictEqual(patchRes.updated.isWarranty, true, "isWarranty должен быть true");
+				assert.strictEqual(patchRes.updated.isLockedInstalled, false, "isLockedInstalled должен быть false");
+				assert.strictEqual(Number(patchRes.updated.priceKopecks), 0, "Цена для пациента должна быть 0 копеек");
+				assert.strictEqual(Number(patchRes.updated.priceRub), 0, "Цена в рублях должна быть 0");
+				assert.strictEqual(Number(patchRes.updated.labCostKopecks), 0, "При lab_defect себестоимость ЗТЛ 0 копеек");
+				assert.strictEqual(Number(patchRes.updated.labCostRub), 0, "При lab_defect себестоимость ЗТЛ 0 руб");
+				assert.ok(patchRes.updated.clinicalNotes?.includes("Гарантийная рекламация"), "Заметка о гарантии должна быть добавлена");
+			}
+		} finally {
+			await withTenantCtx(ORG_A, (tx) =>
+				tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
+			);
+		}
 	});
 });

@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { generateUuidV7 } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -63,6 +64,7 @@ export async function labOrderMarkInstalledHandler(
 	const result = await executeLabOrderMarkInstalled(orgId, paramsParsed.data.id, {
 		...data,
 		idempotencyKey,
+		logger: request.log,
 	});
 
 	if (result.kind === "order_not_found") {
@@ -90,7 +92,7 @@ export async function labOrderMarkInstalledHandler(
 
 	return reply.send({
 		success: true,
-		message: "Заказ-наряд ЗТЛ успешно сдан пациенту и намертво заблокирован от изменений.",
+		message: "Заказ-наряд ЗТЛ успешно сдан пациенту.",
 		labOrder: result.labOrder,
 	});
 }

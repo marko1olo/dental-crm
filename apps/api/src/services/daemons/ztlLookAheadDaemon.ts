@@ -49,9 +49,13 @@ export const LAB_ORDER_STATUS_RU_MAP: Readonly<Record<string, string>> = {
 	draft: "Черновик (не отправлен)",
 	sent: "Отправлен в лабораторию",
 	in_progress: "В работе (нанесение керамики / фрезеровка)",
+	ready: "Готово в ЗТЛ (ожидает курьера)",
 	shipped: "В пути из ЗТЛ",
 	received: "Принят в клинике (готов к установке)",
+	ready_in_clinic: "В клинике (готов к установке)",
+	fitting: "На примерке",
 	refitting: "На переделке / коррекции",
+	rejected_remake: "Гарантийная переделка",
 	completed: "Установлен / Завершен",
 	cancelled: "Отменен",
 };
@@ -129,7 +133,7 @@ export async function runZtlLookAheadScan(options?: {
 						eq(labOrders.organizationId, appt.organizationId),
 						eq(labOrders.patientId, appt.patientId),
 						// Statuses that mean the order is NOT in the clinic yet
-						inArray(labOrders.status, ["draft", "sent", "in_progress", "shipped", "refitting"]),
+						inArray(labOrders.status, ["draft", "sent", "in_progress", "shipped", "ready", "refitting"]),
 					),
 				);
 

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { TreatmentPlanStageCard } from "../TreatmentPlanStageCard";
+import { TreatmentPlanStageHeader } from "../TreatmentPlanStageHeader";
 import type { TreatmentPlanStage } from "../types";
 import {
 	mockDoctorsConsortium,
@@ -49,11 +49,18 @@ const mockStageWithoutDoctor: TreatmentPlanStage = {
 describe("Multi-Doctor Consortium — TreatmentPlanStageCard", () => {
 	it("3. TreatmentPlanStageCard renders stage doctor badge in header when assigned", () => {
 		const html = renderToString(
-			<TreatmentPlanStageCard
+			<TreatmentPlanStageHeader
 				stage={mockStageWithDoctor}
+				isExpanded={true}
+				onToggleExpanded={() => {}}
+				currentStatus="agreed"
+				isStatusMenuOpen={false}
+				setIsStatusMenuOpen={() => {}}
+				onSelectStatus={() => {}}
 				doctors={mockDoctorsConsortium}
 				onAssignStageDoctor={() => {}}
-				onAssignItemDoctor={() => {}}
+				hasDeficit={false}
+				deficitCount={0}
 			/>,
 		);
 
@@ -63,11 +70,18 @@ describe("Multi-Doctor Consortium — TreatmentPlanStageCard", () => {
 
 	it("4. TreatmentPlanStageCard renders stage doctor selector when stage is unassigned", () => {
 		const html = renderToString(
-			<TreatmentPlanStageCard
+			<TreatmentPlanStageHeader
 				stage={mockStageWithoutDoctor}
+				isExpanded={true}
+				onToggleExpanded={() => {}}
+				currentStatus="agreed"
+				isStatusMenuOpen={false}
+				setIsStatusMenuOpen={() => {}}
+				onSelectStatus={() => {}}
 				doctors={mockDoctorsConsortium}
 				onAssignStageDoctor={() => {}}
-				onAssignItemDoctor={() => {}}
+				hasDeficit={false}
+				deficitCount={0}
 			/>,
 		);
 

@@ -1,11 +1,15 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { db } from "../../../db/client.js";
+import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { withTenantCtx } from "../../../db/rls.js";
 import { getLabOrderByToken } from "../../../db/labQuery.js";
-import { labOrders } from "../../../db/schema.js";
+import { idempotencyKeys, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import {
+	sanitizeClinicalNotesForTechnician,
+	validateLabGuestPortalToken,
+} from "./labPortalTokenSecurity.js";
 
 function formatPatientInitials(fullName?: string | null, fallbackId?: string): string {
 	if (!fullName || !fullName.trim()) {
@@ -36,6 +40,16 @@ export async function handleGetPortalOrder(
 			});
 		}
 
+		const tokenCheck = validateLabGuestPortalToken(token, order.createdAt);
+		if (!tokenCheck.valid) {
+			return reply.code(tokenCheck.expired ? 403 : 401).send({
+				error: tokenCheck.expired ? "TokenExpired" : "InvalidToken",
+				message: tokenCheck.expired
+					? "Срок действия гостевой ссылки наряда ЗТЛ истек."
+					: "Недопустимый токен доступа к наряду ЗТЛ.",
+			});
+		}
+
 		const shortId = order.orderNumber || (order.id ? order.id.slice(0, 8).toUpperCase() : "");
 		const patientInitials = formatPatientInitials(order.patientFullName, shortId);
 
@@ -51,7 +65,7 @@ export async function handleGetPortalOrder(
 			material: order.material,
 			colorVita: order.colorVita,
 			status: order.status,
-			clinicalNotes: order.clinicalNotes,
+			clinicalNotes: sanitizeClinicalNotesForTechnician(order.clinicalNotes),
 			attachedImageUrl: order.attachedImageUrl,
 			dueDate: order.dueDate,
 			createdAt: order.createdAt,
@@ -75,6 +89,22 @@ export async function handlePostPortalOrderPhoto(
 	reply: FastifyReply,
 ) {
 	const token = request.params.token;
+
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.headers?.["Idempotency-Key"] as string | undefined);
+
+	let idempotencyKey = rawIdempotencyKey?.trim();
+	if (!idempotencyKey) {
+		idempotencyKey = generateUuidV7();
+	} else if (!isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
+	reply.header("Idempotency-Key", idempotencyKey);
 
 	const parsedBody = photoBodySchema.safeParse(request.body);
 
@@ -102,6 +132,16 @@ export async function handlePostPortalOrderPhoto(
 			});
 		}
 
+		const tokenCheck = validateLabGuestPortalToken(token, order.createdAt);
+		if (!tokenCheck.valid) {
+			return reply.code(tokenCheck.expired ? 403 : 401).send({
+				error: tokenCheck.expired ? "TokenExpired" : "InvalidToken",
+				message: tokenCheck.expired
+					? "Срок действия гостевой ссылки наряда ЗТЛ истек."
+					: "Недопустимый токен доступа к наряду ЗТЛ.",
+			});
+		}
+
 		await withTenantCtx(order.organizationId, async (tx) => {
 			await tx
 				.update(labOrders)
@@ -112,6 +152,19 @@ export async function handlePostPortalOrderPhoto(
 						eq(labOrders.organizationId, order.organizationId),
 					),
 				);
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: order.organizationId,
+						key: idempotencyKey,
+						status: "completed",
+						responseCode: 200,
+						responseBody: { success: true, attachedImageUrl: photoUrl },
+					})
+					.onConflictDoNothing();
+			}
 		});
 
 		wsBroker.broadcastToOrganization(order.organizationId, {

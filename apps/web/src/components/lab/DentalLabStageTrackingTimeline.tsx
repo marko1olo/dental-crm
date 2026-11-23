@@ -5,10 +5,7 @@ import {
 	mapTo5StageLabStatus,
 	type Canonical5LabStatus,
 } from "./clinicalStages/canonical5Stages";
-import {
-	type Orthopedic6StageKey,
-	checkFittingAppointmentCollision,
-} from "./dentalLabOrderEngine";
+import { checkFittingAppointmentCollision } from "./dentalLabOrderEngine";
 import { TimelineHeader } from "./timelineModules/TimelineHeader";
 import { TimelineStepItem, getStagePartyRu } from "./timelineModules/TimelineStepItem";
 import { TimelineTrialDatesCards } from "./timelineModules/TimelineTrialDatesCards";
@@ -17,7 +14,7 @@ export { getStagePartyRu };
 
 export interface DentalLabStageTrackingTimelineProps {
 	readonly order: DentalLabOrderData;
-	readonly onAdvanceStage?: (orderId: string, newStage: Canonical5LabStatus | Orthopedic6StageKey, notes?: string) => Promise<void> | void;
+	readonly onAdvanceStage?: (orderId: string, newStage: Canonical5LabStatus, notes?: string) => Promise<void> | void;
 	readonly onUpdateTrialDates?: (orderId: string, dates: { frameworkTrialDate?: string; ceramicTrialDate?: string; dueDate?: string }) => Promise<void> | void;
 	readonly compact?: boolean;
 }

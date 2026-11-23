@@ -1,12 +1,16 @@
 import { formatKopecksToRub, generateUuidV7, rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../labMath";
 import { getMaterialMeta } from "../../dentalLabCatalogData";
 
 export function copyLabPortalLink(token?: string): void {
-	if (!token || typeof window === "undefined") return;
-	const url = `${window.location.origin}/#/portal/lab-order/${token}`;
+	if (typeof window === "undefined") return;
+	if (!token || !token.trim()) {
+		showToast("Не удалось скопировать ссылку: у наряда отсутствует защищенный токен ЗТЛ", "error");
+		return;
+	}
+	const url = `${window.location.origin}/#/portal/lab-order/${token.trim()}`;
 	void navigator.clipboard.writeText(url);
 	showToast("Ссылка для техника скопирована в буфер обмена", "success");
 }
@@ -46,7 +50,7 @@ export async function executeLabPayFromCashbox(
 		headers: {
 			"Content-Type": "application/json",
 			"Idempotency-Key": generateUuidV7(),
-			...denteAdminSecretRequestHeaders(),
+			...denteClinicalMutationHeaders(),
 		},
 		body: JSON.stringify({
 			amountKopecks: paymentAmountKopecks,

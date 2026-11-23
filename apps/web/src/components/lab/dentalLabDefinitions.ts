@@ -12,14 +12,9 @@ export {
 	type Canonical5LabStatusItem,
 	CANONICAL_MANUFACTURING_5_STAGES,
 	type CanonicalManufacturing5StageItem,
-	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
-	mapTo6StageOrthopedicLifecycle,
-	type CanonicalOrthopedic6StageId,
-	type CanonicalOrthopedic6StageItem,
 	type DentalLabOrderData,
 } from "./labMath";
 
-export type { CanonicalOrthopedic6StageId as Orthopedic6StageKey } from "./labMath";
 export type { DentalLabWorkflowOrder } from "./dentalLabWorkflowModel";
 
 export {

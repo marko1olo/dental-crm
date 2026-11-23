@@ -1,19 +1,24 @@
 import {
 	CANONICAL_5STAGE_LAB_PIPELINE,
+	CANONICAL_7STAGE_LAB_PIPELINE,
+	generateUuidV7,
+	isValidUuid,
 	labPipeline5StageKeySchema,
+	labPipeline7StageKeySchema,
+	labPipelineStageKeySchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labOrderEvents, labOrders } from "../../../db/schema.js";
+import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
 const pipelineStageBodySchema = z.object({
-	stage: labPipeline5StageKeySchema,
+	stage: labPipelineStageKeySchema,
 	notes: z.string().trim().max(1000).optional().nullable(),
 	scheduledDate: z.string().optional().nullable(),
 });
@@ -24,7 +29,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 		reply,
 		"lab orders pipeline stage update",
 	);
-	if (!orgId) return;
+	if (reply.sent || !orgId) return reply;
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
@@ -38,16 +43,38 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 		});
 	}
 
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.headers?.["Idempotency-Key"] as string | undefined);
+
+	let idempotencyKey = rawIdempotencyKey?.trim();
+	if (!idempotencyKey) {
+		idempotencyKey = generateUuidV7();
+	} else if (!isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
+	if (typeof reply.header === "function") {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const id = request.params.id;
 	const parsed = pipelineStageBodySchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "InvalidPipelineStage",
-			message: "Недопустимый этап зуботехнического цикла (ожидается один из 5 этапов).",
+			message: "Недопустимый этап зуботехнического цикла (ожидается канонический этап ЗТЛ).",
 		});
 	}
 
 	const { stage, notes, scheduledDate } = parsed.data;
+	const stageDef =
+		(CANONICAL_7STAGE_LAB_PIPELINE as Record<string, { shortTitleRu: string; titleRu: string; id: string; step: number; descriptionRu: string; badgeClass: string; iconName: string }>)[stage] ||
+		(CANONICAL_5STAGE_LAB_PIPELINE as Record<string, { shortTitleRu: string; titleRu: string; id: string; step: number; descriptionRu: string; badgeClass: string; iconName: string }>)[stage] ||
+		{ id: stage, step: 1, titleRu: stage, shortTitleRu: stage, descriptionRu: "", badgeClass: "", iconName: "layers" };
 
 	const result = await withTenantCtx(orgId, async (tx) => {
 		const [existing] = await tx
@@ -60,10 +87,11 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 
 		let dbStatus = existing.status;
 		if (stage === "impression_scan") dbStatus = "sent";
-		else if (stage === "cad_modeling") dbStatus = "in_progress";
-		else if (stage === "framework_fitting") dbStatus = "in_progress";
-		else if (stage === "ceramic_layering") dbStatus = "in_progress";
-		else if (stage === "ready_fixation") dbStatus = "ready_in_clinic";
+		else if (stage === "cad_modeling" || stage === "framework_production") dbStatus = "in_progress";
+		else if (stage === "framework_fitting") dbStatus = "fitting";
+		else if (stage === "ceramic_glazing" || stage === "ceramic_layering") dbStatus = "in_progress";
+		else if (stage === "otk_control") dbStatus = "ready";
+		else if (stage === "clinic_delivery" || stage === "ready_fixation") dbStatus = "ready_in_clinic";
 
 		const now = new Date();
 		const [updated] = await tx
@@ -71,7 +99,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 			.set({
 				status: dbStatus,
 				stage: stage,
-				clinicalNotes: notes ? `${existing.clinicalNotes ? `${existing.clinicalNotes}\n` : ""}[${CANONICAL_5STAGE_LAB_PIPELINE[stage].shortTitleRu}]: ${notes}` : existing.clinicalNotes,
+				clinicalNotes: notes ? `${existing.clinicalNotes ? `${existing.clinicalNotes}\n` : ""}[${stageDef.shortTitleRu}]: ${notes}` : existing.clinicalNotes,
 				dueDate: scheduledDate ? new Date(scheduledDate) : existing.dueDate,
 				updatedAt: now,
 			})
@@ -86,6 +114,19 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 			actorName: "Врач-ортопед",
 			notes: notes ?? null,
 		});
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseCode: 200,
+					responseBody: { success: true, stage, orderId: id },
+				})
+				.onConflictDoNothing();
+		}
 
 		return { kind: "ok" as const, updated };
 	});
@@ -105,7 +146,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 	return reply.send({
 		success: true,
 		stage,
-		stageDefinition: CANONICAL_5STAGE_LAB_PIPELINE[stage],
+		stageDefinition: stageDef,
 		order: result.updated,
 	});
 }

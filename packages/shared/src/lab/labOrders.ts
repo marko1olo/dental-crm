@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
-import { kopecksToRubles } from "../money.js";
+import { calculatePercentDiscountKopecks, kopecksToRubles, percentageOfKopecks, toExactKopecks } from "../money.js";
 
 // ─── WORK TYPES & PROSTHETIC CONSTRUCTIONS ────────────────────────────────────
 
@@ -366,7 +366,8 @@ export function calculateLabFinancialSplitKopecks(
 	const safeTotalKopecks = Math.max(0, Math.round(Number.isFinite(totalKopecks) ? totalKopecks : 0));
 	const safeDoctorPct = Math.min(100, Math.max(0, Number.isFinite(doctorSharePct) ? doctorSharePct : 50));
 
-	const doctorKopecks = Math.round(safeTotalKopecks * (safeDoctorPct * 0.01));
+	// Расчет доли врача через канонический money.ts с защитой от потери нечетной копейки
+	const doctorKopecks = calculatePercentDiscountKopecks(safeTotalKopecks, safeDoctorPct);
 	const clinicKopecks = safeTotalKopecks - doctorKopecks;
 
 	return {
@@ -456,7 +457,7 @@ export function calculateLabOrderFinancialsKopecks(params: {
 		: 0;
 
 	const doctorCommissionKopecks = grossMarginKopecks > 0
-		? Math.round((grossMarginKopecks * doctorPct) / 100)
+		? percentageOfKopecks(toExactKopecks(grossMarginKopecks), Math.round(doctorPct * 100))
 		: 0;
 
 	const clinicNetProfitKopecks = grossMarginKopecks - doctorCommissionKopecks;
@@ -546,7 +547,96 @@ export function partitionBridgeTeethFdi(teethFdi: readonly number[]): {
 	return { abutmentTeethFdi: abutments, ponticTeethFdi: pontics };
 }
 
-// ─── CANONICAL 5-STAGE DENTAL LAB PIPELINE ───────────────────────────────────
+// ─── CANONICAL 7-STAGE DENTAL LAB PIPELINE (MANDATE 8S, 8E & TASK-LAB-04) ────
+
+export const labPipeline7StageKeySchema = z.enum([
+	"impression_scan",      // 1. Слепок / Интраоральный скан (отправка STL/PLY скана или слепка с указанием массы)
+	"cad_modeling",        // 2. 3D-моделирование / CAD (согласование виртуального wax-up)
+	"framework_production", // 3. Производство каркаса (фрезеровка ZrO2, титановый абатмент, литье CoCr)
+	"framework_fitting",   // 4. Примерка каркаса (клиническая примерка каркаса в полости рта)
+	"ceramic_glazing",     // 5. Облицовка & Глазурование (нанесение керамики, индивидуализация VITA, глазурь)
+	"otk_control",         // 6. Контроль качества ОТК (лабораторный аудит прилегания, окклюзии и цвета перед сдачей)
+	"clinic_delivery",     // 7. Доставка в клинику (готово к фиксации, оформлен гарантийный паспорт)
+]);
+export type LabPipeline7StageKey = z.infer<typeof labPipeline7StageKeySchema>;
+
+export interface LabPipeline7StageDefinition {
+	id: LabPipeline7StageKey;
+	step: number;
+	titleRu: string;
+	shortTitleRu: string;
+	descriptionRu: string;
+	badgeClass: string;
+	iconName: string;
+}
+
+export const CANONICAL_7STAGE_LAB_PIPELINE: Record<LabPipeline7StageKey, LabPipeline7StageDefinition> = {
+	impression_scan: {
+		id: "impression_scan",
+		step: 1,
+		titleRu: "1. Слепок / Интраоральный скан",
+		shortTitleRu: "Слепок/Скан",
+		descriptionRu: "Отправка STL/PLY цифрового скана или физического слепка с указанием оттискной массы (А-силикон, С-силикон, полиэфир, гидроколлоид, альгинат).",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "scan",
+	},
+	cad_modeling: {
+		id: "cad_modeling",
+		step: 2,
+		titleRu: "2. 3D-моделирование / CAD",
+		shortTitleRu: "CAD-моделирование",
+		descriptionRu: "Цифровое моделирование анатомической формы, согласование виртуального wax-up, проверка окклюзионных контактов.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "layers",
+	},
+	framework_production: {
+		id: "framework_production",
+		step: 3,
+		titleRu: "3. Производство каркаса",
+		shortTitleRu: "Фрезеровка/Литье",
+		descriptionRu: "Фрезерование диоксида циркония ZrO₂, фрезерованный титан или аддитивная 3D-печать каркаса.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "tool",
+	},
+	framework_fitting: {
+		id: "framework_fitting",
+		step: 4,
+		titleRu: "4. Примерка каркаса",
+		shortTitleRu: "Примерка каркаса",
+		descriptionRu: "Клиническая примерка изготовленного каркаса в полости рта, проверка пассивной посадки и краевого прилегания.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "crosshair",
+	},
+	ceramic_glazing: {
+		id: "ceramic_glazing",
+		step: 5,
+		titleRu: "5. Облицовка & Глазурование",
+		shortTitleRu: "Керамика/Глазурь",
+		descriptionRu: "Послойное нанесение керамических масс, индивидуализация (мамелоны, прозрачный край), глазурование и спекание.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "palette",
+	},
+	otk_control: {
+		id: "otk_control",
+		step: 6,
+		titleRu: "6. Контроль качества (ОТК)",
+		shortTitleRu: "Контроль ОТК",
+		descriptionRu: "Инструментальный контроль качества лаборатории: проверка под микроскопом, толщина стенок, прочность фиксации, стерилизация.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "shield-check",
+	},
+	clinic_delivery: {
+		id: "clinic_delivery",
+		step: 7,
+		titleRu: "7. Доставка в клинику",
+		shortTitleRu: "Готово / Фиксация",
+		descriptionRu: "Работа прибыла в клинику, прошла входной контроль, готова к постоянной фиксации, выписан гарантийный паспорт.",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]",
+		iconName: "check-circle",
+	},
+};
+
+// ─── CANONICAL 5-STAGE DENTAL LAB PIPELINE (COMPATIBILITY) ───────────────────
 
 export const labPipeline5StageKeySchema = z.enum([
 	"impression_scan",      // 1. Слепок / Интраоральный скан (отправка STL/PLY скана или слепка с указанием массы)
@@ -556,6 +646,12 @@ export const labPipeline5StageKeySchema = z.enum([
 	"ready_fixation",      // 5. Готово к фиксации (прибыло в клинику, дата и время сдачи, гарантийный паспорт)
 ]);
 export type LabPipeline5StageKey = z.infer<typeof labPipeline5StageKeySchema>;
+
+export const labPipelineStageKeySchema = z.union([
+	labPipeline7StageKeySchema,
+	labPipeline5StageKeySchema,
+]);
+export type LabPipelineStageKey = z.infer<typeof labPipelineStageKeySchema>;
 
 export interface LabPipeline5StageDefinition {
 	id: LabPipeline5StageKey;
@@ -695,8 +791,10 @@ export function mapTo5StageLabStatus(rawStatus?: string | null): Canonical5LabSt
 		s === "cad_modeling" ||
 		s === "milling_wax_up" ||
 		s === "framework_wax_milling" ||
+		s === "framework_production" ||
 		s === "sintering_ceramic_layering" ||
-		s === "ceramic_layering"
+		s === "ceramic_layering" ||
+		s === "ceramic_glazing"
 	) {
 		return "in_progress";
 	}
@@ -720,7 +818,9 @@ export function mapTo5StageLabStatus(rawStatus?: string | null): Canonical5LabSt
 		s === "final_glaze" ||
 		s === "glaze_finish" ||
 		s === "delivered_to_clinic" ||
-		s === "ready_fixation"
+		s === "ready_fixation" ||
+		s === "otk_control" ||
+		s === "clinic_delivery"
 	) {
 		return "ready";
 	}
@@ -771,10 +871,10 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 	const s = rawStage.toLowerCase().trim();
 	if (s === "draft") return "draft";
 	if (s === "cancelled") return "cancelled";
+	if (s === "rejected_remake") return "rejected_remake";
 	if (
 		s === "refitting" ||
 		s === "rework" ||
-		s === "rejected_remake" ||
 		s === "correction_remake" ||
 		s === "warranty_rework" ||
 		s === "переделка" ||
@@ -808,12 +908,13 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 		s === "in_clinic" ||
 		s === "delivered_to_clinic" ||
 		s === "ready_fixation" ||
+		s === "clinic_delivery" ||
 		s === "готов в клинике" ||
 		s === "готовая работа"
 	) {
 		return "ready_in_clinic";
 	}
-	if (s === "ready" || s === "final_glaze" || s === "glaze_finish" || s === "готов в зтл") {
+	if (s === "ready" || s === "final_glaze" || s === "glaze_finish" || s === "otk_control" || s === "готов в зтл" || s === "отк") {
 		return "ready";
 	}
 	if (s === "received" || s === "доставлен в клинику" || s === "получен клиникой") {
@@ -831,8 +932,10 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 		s === "cad_modeling" ||
 		s === "milling_wax_up" ||
 		s === "framework_wax_milling" ||
+		s === "framework_production" ||
 		s === "sintering_ceramic_layering" ||
 		s === "ceramic_layering" ||
+		s === "ceramic_glazing" ||
 		s === "нанесение керамики" ||
 		s === "в работе"
 	) {

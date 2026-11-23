@@ -6,11 +6,12 @@
  */
 
 import React, { useState } from "react";
-import { Check, Sparkles, Calendar, ChevronDown, ChevronUp, Plus, Trash2, FileText, Receipt } from "lucide-react";
+import { Check, Sparkles, Calendar, ChevronDown, ChevronUp, Plus, Trash2, FileText, Receipt, Box } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanItem, TreatmentPlanStage } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
 import { isMicroConsumable } from "../treatmentPlanConsumables";
 import { TreatmentPlan3TierComparison } from "../TreatmentPlan3TierComparison";
+import { dispatchOpenLabOrderForStage } from "../../visit/visitPlanStageHandoffEvents";
 
 export interface StudioTiersAndStagesTabProps {
 	readonly computedTiers: readonly TreatmentPlanTier[];
@@ -28,6 +29,10 @@ export interface StudioTiersAndStagesTabProps {
 	readonly onGenerateStageInvoice?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onGenerateFromTeeth?: () => void;
 	readonly onAddCustomStage?: () => void;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly treatmentPlanId?: string | undefined;
+	readonly onOpenLabOrderForStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 }
 
 const formatStagesCount = (count: number): string => {
@@ -55,6 +60,10 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 	onGenerateStageInvoice,
 	onGenerateFromTeeth,
 	onAddCustomStage,
+	patientId,
+	patientName,
+	treatmentPlanId,
+	onOpenLabOrderForStage,
 }) => {
 	const sanitizedActiveTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 	const [addingToStageId, setAddingToStageId] = useState<string | null>(null);
@@ -100,7 +109,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 							key={p.code}
 							type="button"
 							onClick={() => onSelectDiagnosisPreset(p.code)}
-							className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium text-center cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs sm:text-sm font-medium text-center cursor-pointer transition-colors inline-flex items-center justify-center"
 						>
 							{p.label}
 						</button>
@@ -108,7 +117,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 					<button
 						type="button"
 						onClick={onResetToCanonical}
-						className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium text-center cursor-pointer transition-colors"
+						className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs sm:text-sm font-medium text-center cursor-pointer transition-colors inline-flex items-center justify-center"
 					>
 						Полный комплекс
 					</button>
@@ -158,7 +167,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 										onSelectDiagnosisPreset("K02");
 									}
 								}}
-								className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--primary)] bg-[var(--paper)] hover:bg-[var(--primary-soft)] text-[var(--primary)] text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer"
+								className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--primary)] bg-[var(--paper)] hover:bg-[var(--primary-soft)] text-[var(--primary)] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all cursor-pointer"
 								data-testid="btn-generate-from-formula"
 							>
 								<Sparkles className="w-4 h-4" />
@@ -168,7 +177,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 							<button
 								type="button"
 								onClick={onResetToCanonical}
-								className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer"
+								className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all cursor-pointer"
 								data-testid="btn-canonical-protocol"
 							>
 								<Check className="w-4 h-4 text-[var(--primary)]" />
@@ -184,7 +193,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 										onResetToCanonical();
 									}
 								}}
-								className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer"
+								className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all cursor-pointer"
 								data-testid="btn-add-procedure-empty"
 							>
 								<Plus className="w-4 h-4 text-[var(--muted)]" />
@@ -331,21 +340,55 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 														)}
 													</div>
 												)}
-												{/* Выставление счета на утвержденный этап в кассу (DEF-04) */}
-												{onGenerateStageInvoice && (
-													<div className="pt-2 flex justify-end">
+												{/* Действия с этапом: Наряд в ЗТЛ (Мандат 8aq, TASK-LAB-05) и Счет на этап */}
+												<div className="pt-2 flex flex-wrap items-center justify-end gap-2">
+													<button
+														type="button"
+														onClick={() => {
+															const stagePlanItems = stage.items.map((it) => ({
+																id: it.id,
+																name: it.name,
+																title: it.name,
+																nameRu: it.name,
+																priceRub: it.priceRub,
+																unitPriceRub: it.unitPriceRub,
+																toothNumber: it.toothNumber,
+																quantity: it.quantity,
+																discountRub: it.discountRub,
+															}));
+															onOpenLabOrderForStage?.(stage);
+															dispatchOpenLabOrderForStage(
+																{
+																	title: stage.title,
+																	stageNumber: stage.stageNumber,
+																	items: stagePlanItems,
+																},
+																stagePlanItems,
+																treatmentPlanId,
+																{ id: patientId, fullName: patientName },
+															);
+														}}
+														className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+														title="Создать заказ-наряд в зуботехническую лабораторию для процедур этого этапа"
+														data-testid={`btn-lab-order-stage-${stage.stageNumber}`}
+													>
+														<Box className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+														<span>+ Наряд в ЗТЛ</span>
+													</button>
+
+													{onGenerateStageInvoice && (
 														<button
 															type="button"
 															onClick={() => onGenerateStageInvoice(stage)}
-															className="min-h-[44px] sm:min-h-[34px] px-3.5 py-1.5 rounded-xl border border-[var(--primary)]/40 bg-[var(--primary-soft)] hover:bg-[var(--primary)] hover:text-white text-[var(--primary)] text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+															className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 py-1.5 rounded-xl sm:rounded-lg border border-[var(--primary)]/40 bg-[var(--primary-soft)] hover:bg-[var(--primary)] hover:text-white text-[var(--primary)] text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 															title="Выставить счет на этот этап в кассу"
 															data-testid={`btn-invoice-stage-${stage.stageNumber}`}
 														>
-															<Receipt className="w-3.5 h-3.5" />
+															<Receipt className="w-3.5 h-3.5 shrink-0" />
 															<span>Выставить счет на этап ({formatRubles(stage.totalRub)})</span>
 														</button>
-													</div>
-												)}
+													)}
+												</div>
 											</div>
 										);
 									})()}

@@ -2,7 +2,7 @@ import { Check, Clock } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { DentalLabPriceMatrixHeader } from "./priceMatrixModules/DentalLabPriceMatrixHeader";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import {
 	CANONICAL_LAB_PRICE_MATRIX,
 	type LabPriceMatrixItem,
@@ -30,7 +30,7 @@ export function DentalLabPriceMatrixModal({
 		let isCancelled = false;
 		async function loadPresets() {
 			try {
-				const res = await fetch("/api/clinical/dental-lab/presets", { headers: denteAdminSecretRequestHeaders() });
+				const res = await fetch("/api/clinical/dental-lab/presets", { headers: denteClinicalReadHeaders() });
 				if (!res.ok) return;
 				const data = (await res.json()) as { items?: LabPriceMatrixItem[]; presets?: Array<Record<string, unknown>> };
 				const rawItems = Array.isArray(data?.items)
@@ -59,8 +59,8 @@ export function DentalLabPriceMatrixModal({
 					});
 					setMatrixItems(items);
 				}
-			} catch {
-				// Fallback to CANONICAL_LAB_PRICE_MATRIX
+			} catch (err) {
+				console.warn("[DentalLabPriceMatrixModal] Ошибка загрузки пресетов ЗТЛ:", err);
 			}
 		}
 		void loadPresets();

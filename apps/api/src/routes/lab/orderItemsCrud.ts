@@ -54,8 +54,6 @@ export async function recalculateLabOrderFromItemsTx(
 
 	const priceKopecks = order.isWarranty ? 0 : sumKopecks;
 	const priceRub = order.isWarranty ? 0 : kopecksToRubles(sumKopecks);
-	const labCostKopecks = sumKopecks;
-	const labCostRub = kopecksToRubles(sumKopecks);
 
 	const [updatedOrder] = await tx
 		.update(labOrders)
@@ -63,8 +61,6 @@ export async function recalculateLabOrderFromItemsTx(
 			toothFdi: teethFdi,
 			priceKopecks,
 			priceRub,
-			labCostKopecks,
-			labCostRub,
 			updatedAt: new Date(),
 		})
 		.where(and(eq(labOrders.id, labOrderId), eq(labOrders.organizationId, orgId)))

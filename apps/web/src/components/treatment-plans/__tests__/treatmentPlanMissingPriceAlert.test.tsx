@@ -8,7 +8,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { MissingPriceAlert } from "../MissingPriceAlertHub";
-import { TreatmentPlanStageCard } from "../TreatmentPlanStageCard";
+import { TreatmentPlanStageItemsList } from "../TreatmentPlanStageItemsList";
 import { parseKopecksFromRubString } from "../useMissingPriceAlert";
 import type { TreatmentPlanStage } from "../types";
 import { sampleItemMissingPrice, sampleItemPriced } from "./helpers/copilotTestHelpers";
@@ -51,7 +51,15 @@ describe("MissingPriceAlert Suite — Спокойный инлайн-инпут
 			order804nCodes: ["A16.07.002.099", "A16.07.002.001"],
 		};
 
-		const html = renderToString(<TreatmentPlanStageCard stage={sampleStageWithMissingPrice} defaultExpanded={true} />);
+		const html = renderToString(
+			<TreatmentPlanStageItemsList
+				stage={sampleStageWithMissingPrice}
+				doctors={[]}
+				showMicroConsumables={false}
+				setShowMicroConsumables={() => {}}
+				onAddItem={() => {}}
+			/>,
+		);
 		assert.ok(html.includes("missing-price-alert-item-custom-01") || html.includes("Индивидуальная цена"));
 		assert.equal(html.includes("услуга не найдена в прайс-листе"), false);
 	});

@@ -12778,3 +12778,42 @@
   - `npx tsc -p apps/api/tsconfig.json --noEmit`: Exit Code 0 (0 ошибок);
   - `npm run check:diff`: Exit Code 0 (0 запрещенных паттернов/костылей);
   - `npm run check:encoding`: Exit Code 0 (19 990 файлов проверено, 0 ошибок).
+
+
+---
+
+### 538. Волна 538: Зуботехническая Лаборатория (ЗТЛ), Ортопедия, Заказ-наряды и Мостовидные протезы (Домен M) — Red Team Инквизиция [DEF-LAB-01..06], Ликвидация Схлопывания Себестоимости и Розницы, Разделение Статусов fitting / rejected_remake, Дополнение Look-Ahead Демона, Устранение Мертвого Кода (Мандаты 8e, 8n, 8bm, 8bf, 8be, 8bo, 8az)
+
+- 1. [DEFECT-1 / SEV-1] Ликвидация схлопывания себестоимости клиники и розничной цены пациента (Мандаты 8e, 8n, 8bm):
+  - В `apps/api/src/routes/lab/orderItemsCrud.ts:55-68` устранена опасная архитектурная ошибка, когда в функции `recalculateLabOrderFromItemsTx` себестоимость услуг техника (`labCostKopecks` и `labCostRub`) принудительно перезаписывалась суммой розничных цен позиций пациента (`labCostKopecks = sumKopecks`), что стирало маржу клиники и обнуляло сдельную зарплатную базу ортопеда.
+  - Позиции `lab_items` содержат розничные расценки `priceKopecks` и `priceRub`. В `recalculateLabOrderFromItemsTx` сохранены исходные `order.labCostKopecks` и `order.labCostRub` без перезаписи.
+  - В `apps/api/src/tests/redteamFixerSurgeonLab.test.ts` обновлен интеграционный тест SEV-1 #6: подтверждено, что при добавлении ортопедической коронки к заказу розничная цена `priceKopecks` обновляется корректно (850 000 коп.), а себестоимость `labCostKopecks` остается нетронутой (350 000 коп.).
+
+- 2. [DEFECT-2 / SEV-2] Искоренение мертвого кода и дублирующегося case в switch (Мандат 8bf):
+  - В `apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts:116` физически удален дублирующийся мертвый case `case "ready_fixation": return "completed";`, конфликтовавший с канонической строкой 82, возвращающей статус `"ready_in_clinic"`.
+
+- 3. [DEFECT-3 / SEV-2] Корректный маппинг этапа «Примерка каркаса» (framework_fitting) в статус fitting (Мандаты 8e, 8x):
+  - В `apps/api/src/routes/lab/pipelineModules/pipelineStageHandler.ts:84` исправлен ошибочный сброс этапа `framework_fitting` в общий статус `"in_progress"`: теперь возвращается канонический статус `"fitting"`, зарегистрированный в CHECK-ограничении PostgreSQL 18 `lab_orders_status_check` (миграция 0231).
+  - В `apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts` селекторы `case "framework_fitting":` и `case "каркас/примерка":` перенесены в блок `return "fitting";`.
+
+- 4. [DEFECT-4 / SEV-2] Восстановление статуса гарантийной переделки rejected_remake (Мандаты 8e, 8x):
+  - В `packages/shared/src/lab/labOrders.ts:775` в функции `mapStageToCanonicalPgStatus` восстановлено явное условие `if (s === "rejected_remake") return "rejected_remake";`, устраняющее поглощение статуса гарантийно забракованного наряда общим статусом `"refitting"`.
+  - В `apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts:103` добавлен выделенный `case "rejected_remake": return "rejected_remake";`.
+
+- 5. [DEFECT-5 / SEV-3] Расширение ZTL Look-Ahead демона статусом ready и полная русская локализация (Мандаты 8x, 8ap):
+  - В `apps/api/src/services/daemons/ztlLookAheadDaemon.ts:136` статус `"ready"` добавлен в выборку активных нарядов `inArray(labOrders.status, ["draft", "sent", "in_progress", "shipped", "ready", "refitting"])`, исключая выпадение готовых в лаборатории заказов из мониторинга курьерской доставки к приёму.
+  - Словарь `LAB_ORDER_STATUS_RU_MAP` дополнен русскими локализациями статусов: `ready: "Готово в ЗТЛ (ожидает курьера)"`, `ready_in_clinic: "В клинике (готов к установке)"`, `fitting: "На примерке"`, `rejected_remake: "Гарантийная переделка"`.
+
+- 6. [DEFECT-6 / SEV-3] Тестовое покрытие и инварианты приёмки (Мандаты 8be, 8bk, 8bo):
+  - В `apps/api/src/routes/lab/paymentModules/labOrderMarkInstalledHandler.ts` восстановлен строгий контроль заголовка `Idempotency-Key` (400 IdempotencyKeyRequired).
+  - В `apps/api/src/tests/routes/dentalLabOrders.test.ts` добавлены тесты 5 и 6, верифицирующие маппинг `framework_fitting` в `fitting`, сохранение `rejected_remake` и полноту русских названий статусов в `LAB_ORDER_STATUS_RU_MAP`.
+  - Собраны артефакты `@dental/shared` (`npm run build -w @dental/shared`).
+  - Прогон 46 unit-тестов по нарядам ЗТЛ и ортопедии: **46/46 PASS (100%)**:
+    - `packages/shared/src/tests/labScheduleIntegration.test.ts` (4/4 PASS);
+    - `packages/shared/src/tests/redteamOrthopedicsSurgeon.test.ts` (9/9 PASS);
+    - `apps/api/src/tests/routes/dentalLabOrders.test.ts` (6/6 PASS);
+    - `apps/api/src/tests/routes/dentalLabRoutes.test.ts` (14/14 PASS);
+    - `apps/api/src/tests/redteamFixerSurgeonLab.test.ts` (6/6 PASS);
+    - `apps/api/src/tests/redteamOrthopedicsSurgeonApi.test.ts` (7/7 PASS).
+  - `npm run check:diff`: Exit Code 0 (0 запрещенных паттернов / костылей);
+  - `npm run check:encoding`: Exit Code 0 (все файлы в строгом UTF-8).

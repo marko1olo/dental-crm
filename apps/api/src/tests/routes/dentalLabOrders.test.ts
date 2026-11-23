@@ -10,6 +10,9 @@ import {
 } from "../../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
 import { mapDbStatusToStage } from "../../../../web/src/components/lab/dentalLabCatalogData.js";
 import { calculateLabFinancialSplit } from "../../../../web/src/components/lab/math/labFinancialSplit.js";
+import { mapStageToLabOrderStatus } from "../../routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.js";
+import { mapStageToCanonicalPgStatus } from "@dental/shared";
+import { LAB_ORDER_STATUS_RU_MAP } from "../../services/daemons/ztlLookAheadDaemon.js";
 
 describe("Dental Lab Orders SSOT & Idempotency Invariants", () => {
 	it("1. mapDbStatusToStage correctly maps cancelled, rejected_remake, and shipped without default fallback", () => {
@@ -53,5 +56,20 @@ describe("Dental Lab Orders SSOT & Idempotency Invariants", () => {
 		const urgent = calculateLabOrderTurnaround("crown_zirconia", true);
 		assert.equal(urgent.turnaroundBusinessDays, 3);
 		assert.equal(urgent.isUrgent, true);
+	});
+
+	it("5. mapStageToLabOrderStatus and mapStageToCanonicalPgStatus preserve rejected_remake and map framework_fitting to fitting", () => {
+		assert.equal(mapStageToLabOrderStatus("rejected_remake"), "rejected_remake");
+		assert.equal(mapStageToCanonicalPgStatus("rejected_remake"), "rejected_remake");
+		assert.equal(mapStageToLabOrderStatus("framework_fitting"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("каркас/примерка"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("ready_fixation"), "ready_in_clinic");
+	});
+
+	it("6. ztlLookAheadDaemon LAB_ORDER_STATUS_RU_MAP contains localized Russian descriptions without raw leaks", () => {
+		assert.equal(LAB_ORDER_STATUS_RU_MAP.ready, "Готово в ЗТЛ (ожидает курьера)");
+		assert.equal(LAB_ORDER_STATUS_RU_MAP.ready_in_clinic, "В клинике (готов к установке)");
+		assert.equal(LAB_ORDER_STATUS_RU_MAP.fitting, "На примерке");
+		assert.equal(LAB_ORDER_STATUS_RU_MAP.rejected_remake, "Гарантийная переделка");
 	});
 });

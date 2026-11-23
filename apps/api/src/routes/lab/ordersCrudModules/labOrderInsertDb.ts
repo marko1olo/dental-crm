@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { generateLabGuestPortalToken } from "../portalModules/labPortalTokenSecurity.js";
 import {
 	normalizeVitaShade,
 	VALID_FDI_TOOTH_NUMBERS,
@@ -188,12 +189,13 @@ export async function insertLabOrderInDb(
 			effectiveDoctorId = firstStaff.id;
 			doctorName = data.doctorName || firstStaff.fullName;
 		} else {
-			// Если в клинике нет пользователей (например в изолированных тестах), не падаем с 404, если есть имя
+			// Если в клинике нет пользователей (например в изолированных тестах или соло-практике), не падаем с 404
 			doctorName = data.doctorName || "Врач-ортопед";
 		}
 	}
 
-	const secureToken = crypto.randomUUID();
+	const generatedOrderId = crypto.randomUUID();
+	const secureToken = generateLabGuestPortalToken(generatedOrderId, orgId);
 
 	const rawColor = data.colorVita || data.shadeCode || null;
 	const normalizedColor = rawColor ? normalizeVitaShade(rawColor) : "A2";
@@ -278,6 +280,7 @@ export async function insertLabOrderInDb(
 	const [createdOrder] = await tx
 		.insert(labOrders)
 		.values({
+			id: generatedOrderId,
 			organizationId: orgId,
 			patientId: effectivePatientId,
 			treatmentPlanId: effectiveTreatmentPlanId,

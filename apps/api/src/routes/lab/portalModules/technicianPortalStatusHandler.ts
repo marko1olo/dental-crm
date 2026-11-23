@@ -1,15 +1,17 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { generateUuidV7, isValidUuid } from "@dental/shared";
 import {
 	getLabOrderByToken,
 	LAB_ORDER_TECHNICIAN_TRANSITIONS,
 	type LabOrderStatus,
 } from "../../../db/labQuery.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labOrderEvents, labOrders } from "../../../db/schema.js";
+import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { mapStageOrStatusToMilestone } from "../types.js";
+import { validateLabGuestPortalToken } from "./labPortalTokenSecurity.js";
 
 const VALID_LAB_ORDER_STATUSES = new Set<string>([
 	"draft",
@@ -51,6 +53,22 @@ export async function handlePostPortalOrderStatus(
 ) {
 	const token = request.params.token;
 
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.headers?.["Idempotency-Key"] as string | undefined);
+
+	let idempotencyKey = rawIdempotencyKey?.trim();
+	if (!idempotencyKey) {
+		idempotencyKey = generateUuidV7();
+	} else if (!isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
+	reply.header("Idempotency-Key", idempotencyKey);
+
 	const parsedBody = portalStatusBodySchema.safeParse(request.body);
 
 	if (!token || !parsedBody.success) {
@@ -68,6 +86,16 @@ export async function handlePostPortalOrderStatus(
 			return reply.code(404).send({
 				error: "OrderNotFound",
 				message: "Наряд-заказ не найден или ссылка устарела.",
+			});
+		}
+
+		const tokenCheck = validateLabGuestPortalToken(token, order.createdAt);
+		if (!tokenCheck.valid) {
+			return reply.code(tokenCheck.expired ? 403 : 401).send({
+				error: tokenCheck.expired ? "TokenExpired" : "InvalidToken",
+				message: tokenCheck.expired
+					? "Срок действия гостевой ссылки наряда ЗТЛ истек."
+					: "Недопустимый токен доступа к наряду ЗТЛ.",
 			});
 		}
 
@@ -118,6 +146,19 @@ export async function handlePostPortalOrderStatus(
 				notes: labComments || `Статус изменен лабораторией: ${targetStatus}`,
 				photoUrls: [],
 			});
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: order.organizationId,
+						key: idempotencyKey,
+						status: "completed",
+						responseCode: 200,
+						responseBody: { success: true, status: targetStatus },
+					})
+					.onConflictDoNothing();
+			}
 
 			return res;
 		});

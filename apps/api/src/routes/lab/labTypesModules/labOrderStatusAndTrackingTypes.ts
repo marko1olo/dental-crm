@@ -64,8 +64,6 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "cad_design":
 		case "cad_cam":
 		case "model_cad_design":
-		case "framework_fitting":
-		case "каркас/примерка":
 		case "ceramic_layering":
 		case "нанесение керамики":
 			return "in_progress";
@@ -91,6 +89,8 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "получен клиникой":
 			return "received";
 		case "fitting":
+		case "framework_fitting":
+		case "каркас/примерка":
 		case "fitting_ready":
 		case "fitting_scheduled":
 		case "fitting_in_mouth":
@@ -100,9 +100,10 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "fitted":
 		case "припасован":
 			return "fitted";
+		case "rejected_remake":
+			return "rejected_remake";
 		case "refitting":
 		case "rework":
-		case "rejected_remake":
 		case "correction_remake":
 		case "correction_required":
 		case "warranty_rework":
@@ -113,7 +114,6 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "seated":
 		case "фиксация":
 		case "patient_fixation":
-		case "ready_fixation":
 		case "fixed":
 			return "completed";
 		case "cancelled":
