@@ -26,6 +26,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { RAW_MONEY_MATH_RE } from "./check-staged-safety.mjs";
 import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 /* ------------------------------------------------------------------ *
@@ -314,12 +315,15 @@ export function inspectLine(sample) {
 			});
 		}
 
-		// Проверка 3: Опасное деление на 100 для денег (Мандат 8bm)
-		if (/\b(price|amount|cost|rubles|kopecks|total|balance)\w*\s*\/\s*100\b/i.test(current)) {
+		// Проверка 3: Опасное деление на 100 или скрытое умножение на 0.01 / .01 для денег (Мандат 8bm)
+		if (RAW_MONEY_MATH_RE.test(current)) {
+			const isDiv = /\/\s*100\b/.test(current);
 			defects.push({
-				rule: "MANDATE_8bm_RAW_MONEY_DIVISION",
+				rule: isDiv ? "MANDATE_8bm_RAW_MONEY_DIVISION" : "MANDATE_8bm_RAW_MONEY_MULTIPLICATION",
 				severity: "HIGH",
-				message: "Деление денежной суммы на 100 в обход @dental/shared/src/money.ts (formatKopecksToRub).",
+				message: isDiv
+					? "Деление денежной суммы на 100 в обход @dental/shared/src/money.ts (formatKopecksToRub)."
+					: "Скрытое умножение денег на 0.01 / .01 в обход @dental/shared/src/money.ts (calculatePercentDiscountKopecks).",
 			});
 		}
 
@@ -358,14 +362,11 @@ export function inspectLine(sample) {
 				message: "В блоке обнаружен слепой каст 'as any'. Требуется строгая типизация.",
 			});
 		}
-		if (
-			/\b(price|amount|cost|rubles|kopecks|total|balance)\w*\s*\/\s*100\b/i.test(joinedContext) &&
-			!/\b(price|amount|cost|rubles|kopecks|total|balance)\w*\s*\/\s*100\b/i.test(current)
-		) {
+		if (RAW_MONEY_MATH_RE.test(joinedContext) && !RAW_MONEY_MATH_RE.test(current)) {
 			defects.push({
 				rule: "MANDATE_8bm_CONTEXT_RAW_MONEY_DIVISION",
 				severity: "HIGH",
-				message: "В блоке обнаружено деление денежной суммы на 100 в обход money.ts.",
+				message: "В блоке обнаружен ручной float-расчёт денег (/ 100, * 0.01) в обход money.ts.",
 			});
 		}
 		if (relPath.includes("apps/api/") && /console\.(log|warn|error)\(/.test(joinedContext) && !relPath.includes("scripts/")) {
@@ -531,29 +532,31 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 				const lineNum = i + 1;
 				// Берем окно контекста маршрута (до 25 строк вперед)
 				const routeBody = lines.slice(i, Math.min(lines.length, i + 35)).join("\n");
+				// Очищаем комментарии, чтобы исключить ложные срабатывания на текст комментариев
+				const codeOnlyBody = routeBody.replace(/\/\/[^\r\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 
 				const hasIdempotency =
 					/idempotency|Idempotency-Key|idempotency-key|x-idempotency-key|paymentClientMutationConstraint/i.test(
-						routeBody,
+						codeOnlyBody,
 					);
-				const hasTransaction = /db\.transaction|\btx\./i.test(routeBody);
-				const hasRawMoneyDivision = /\b(price|amount|cost)\w*\s*\/\s*100\b/i.test(routeBody);
-				const usesKopecks = /kopecks|amountKopecks|priceKopecks/i.test(routeBody);
+				const hasTransaction = /db\.transaction|\btx\./i.test(codeOnlyBody);
+				const hasRawMoneyMath = RAW_MONEY_MATH_RE.test(codeOnlyBody);
+				const usesKopecks = /kopecks|amountKopecks|priceKopecks/i.test(codeOnlyBody);
 
 				const issues = [];
-				if (hasRawMoneyDivision) {
-					issues.push("Деление сумм на 100 в обход @dental/shared/src/money.ts (Мандат 8bm)");
+				if (hasRawMoneyMath) {
+					issues.push("Ручные float-расчёты сумм (/ 100, * 0.01) в обход @dental/shared/src/money.ts (Мандат 8bm)");
 				}
 				if (!hasIdempotency) {
 					issues.push("Мутационный эндпоинт без обязательного заголовка Idempotency-Key (Мандат 8bo / RFC 9562)");
 				}
-				const mutationMatches = routeBody.match(/\b(insert|update|delete)\s*\(|\.insert\(|\.update\(|\.delete\(/gi) || [];
+				const mutationMatches = codeOnlyBody.match(/\b(insert|update|delete)\s*\(|\.insert\(|\.update\(|\.delete\(/gi) || [];
 				if (!hasTransaction && mutationMatches.length > 1) {
 					issues.push("Множественные мутации данных без единой атомарной db.transaction() (Мандат 8bo)");
 				}
 				const hasOrgContext =
 					/organizationId|organization_id|orgId|withTenantCtx|requireClinicalMutationContext|requireClinicalReadContext/i.test(
-						routeBody,
+						codeOnlyBody,
 					);
 				if (!hasOrgContext) {
 					issues.push("Мутационный роут без проверки контекста организации/арендатора (BOLA/IDOR риск)");
@@ -985,7 +988,7 @@ function printHelp() {
   npm run audit:dice
 
 Параметры:
-  --samples, -n <N>     Количество случайных сэмплов строк (по умолчанию 20)
+  --samples, -n <N>     Количество случайных сэмплов строк (по умолчанию 100 — суммарно 175 точек)
   --seed, -s <S>        Сид для детерминированного Monte Carlo прогона
   --list, -l <name>     Целевой список: all (дефолт), doors, fields, ui
   --strict              Выход с кодом 1 при наличии хотя бы 1 дефекта

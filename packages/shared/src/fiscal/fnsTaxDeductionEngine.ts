@@ -17,6 +17,7 @@
 import { generateFnsFormKnd1151156BarcodeSvg, generateCode128Svg } from "./barcodeGenerator.js";
 import { generateQrCodeDataUri, generateQrCodeSvg, type QrSvgOptions } from "./qrGenerator.js";
 import { rubToKopecks, kopecksToRub } from "./kopecksArithmetic.js";
+import { formatKopecksToRub } from "../money.js";
 import { escapeXml } from "../cda/c14n.js";
 import {
 	amountToWordsRu,
@@ -226,16 +227,16 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 			<tr>
 				<td style="text-align: center; font-weight: bold;">Код 01</td>
 				<td>Медицинские услуги (терапевтическое, ортодонтическое, эндодонтическое лечение, гигиена)</td>
-				<td class="num-cell">${(targetYear.code01Kopecks / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+				<td class="num-cell">${formatKopecksToRub(targetYear.code01Kopecks)}</td>
 			</tr>
 			<tr>
 				<td style="text-align: center; font-weight: bold;">Код 02</td>
 				<td>Дорогостоящие медицинские услуги (дентальная имплантация, костная пластика, синус-лифтинг)</td>
-				<td class="num-cell">${(targetYear.code02Kopecks / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+				<td class="num-cell">${formatKopecksToRub(targetYear.code02Kopecks)}</td>
 			</tr>
 			<tr style="background-color: #f5f5f5; font-weight: bold;">
 				<td colspan="2" style="text-align: right;">ИТОГО ОПЛАЧЕНО ЗА ${escapeXml(String(params.taxYear))} ГОД:</td>
-				<td class="num-cell">${(targetYear.totalKopecks / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+				<td class="num-cell">${formatKopecksToRub(targetYear.totalKopecks)}</td>
 			</tr>
 		</tbody>
 	</table>

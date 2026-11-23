@@ -3,57 +3,24 @@
  * Compliance with Decree of the Government of the Russian Federation № 458 and Order № 804n
  */
 
+import { resolveTaxDeductionCategoryShared } from "../../finance/tax/classification.js";
+
 /**
  * Классификация медицинской услуги для социального налогового вычета (Приказ № 804н / ПП РФ № 458):
  * - Код "02" (дорогостоящее лечение):
  *   * Дентальная имплантация (A16.07.054)
- *   * Синус-лифтинг (A16.07.055)
+ *   * Синус-лифтинг (A16.07.055, A16.07.096)
  *   * Костная пластика / остеопластика (A16.07.041)
+ *   * Пластика альвеолярного отростка / лоскутные операции (A16.07.040)
  *   * Аугментация альвеолярного отростка (A16.07.006.002)
- *   * Скуловые имплантаты Zygoma (A16.07.056)
+ *   * Скуловые имплантаты Zygoma / ортогнатическая хирургия (A16.07.056)
  *   * Сложное челюстно-лицевое протезирование на имплантатах (A16.07.023)
  * - Код "01" (обычное лечение): терапия, эндодонтия, ортодонтия, профгигиена, стандартная диагностика.
+ *
+ * SSOT: Единый канонический классификатор resolveTaxDeductionCategoryShared из @dental/shared
  */
 export function classifyNdflServiceCode(serviceName?: string, code804n?: string): "1" | "2" {
-	const codeNorm = (code804n || "").trim().toUpperCase();
-	if (
-		codeNorm.startsWith("A16.07.054") ||
-		codeNorm.startsWith("A16.07.055") ||
-		codeNorm.startsWith("A16.07.041") ||
-		codeNorm.startsWith("A16.07.056") ||
-		codeNorm.startsWith("A16.07.023") ||
-		codeNorm.startsWith("A16.07.006.002")
-	) {
-		return "2";
-	}
-
-	const nameNorm = (serviceName || "").toLowerCase();
-	const expensiveKeywords = [
-		"имплант",
-		"имплантац",
-		"синус-лифтинг",
-		"синуслифтинг",
-		"костная пластика",
-		"остеопластик",
-		"аугментаци",
-		"расщепление альвеоляр",
-		"зигома",
-		"zygoma",
-		"all-on-4",
-		"all-on-6",
-		"all on 4",
-		"all on 6",
-		"bio-oss",
-		"bio-gide",
-		"био-осс",
-		"био-гайд",
-	];
-
-	if (expensiveKeywords.some((kw) => nameNorm.includes(kw))) {
-		return "2";
-	}
-
-	return "1";
+	return resolveTaxDeductionCategoryShared(code804n, serviceName);
 }
 
 /**

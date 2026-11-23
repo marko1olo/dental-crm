@@ -55,27 +55,23 @@ function titleSimilarity(s1: string, s2: string): number {
 	const len2 = s2.length;
 	if (Math.abs(len1 - len2) > Math.max(len1, len2) * 0.4) return 0.0;
 
-	// Bounded matrix for short prefixes
-	const d: number[][] = [];
-	for (let i = 0; i <= len1; i++) d[i] = [i];
-	// biome-ignore lint/style/noNonNullAssertion: safe 0-index initialization
-	for (let j = 0; j <= len2; j++) d[0]![j] = j;
+	// Bounded rolling row for short prefixes
+	const maxLen = Math.max(len1, len2);
+	let prevRow: number[] = Array.from({ length: len2 + 1 }, (_, j) => j);
 
 	for (let i = 1; i <= len1; i++) {
+		const currRow: number[] = [i];
 		for (let j = 1; j <= len2; j++) {
 			const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-			// biome-ignore lint/style/noNonNullAssertion: bounded array
-			d[i]![j] = Math.min(
-				d[i - 1]![j]! + 1,
-				d[i]![j - 1]! + 1,
-				d[i - 1]![j - 1]! + cost,
-			);
+			const del = (prevRow[j] ?? i) + 1;
+			const ins = (currRow[j - 1] ?? j) + 1;
+			const sub = (prevRow[j - 1] ?? 0) + cost;
+			currRow[j] = Math.min(del, ins, sub);
 		}
+		prevRow = currRow;
 	}
 
-	// biome-ignore lint/style/noNonNullAssertion: bounded matrix access
-	const dist = d[len1]![len2]!;
-	const maxLen = Math.max(len1, len2);
+	const dist = prevRow[len2] ?? maxLen;
 	return 1 - dist / maxLen;
 }
 

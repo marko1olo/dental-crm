@@ -15,6 +15,8 @@ import { z } from "zod";
 export const consentVerificationMethodSchema = z.enum([
 	"tablet_stylus",
 	"sms_otp",
+	"paper_signed",
+	"patient_portal",
 	"paper_physical",
 ]);
 export type ConsentVerificationMethod = z.infer<typeof consentVerificationMethodSchema>;
@@ -379,7 +381,7 @@ export function generatePaperVerifiedSignatureSvg(options: {
 	const hasScan = Boolean(options.scanFileName);
 	const scanDetail = hasScan
 		? `Скан-копия бланка прикреплена: ${options.scanFileName} (${options.scanFileSizeBytes ? `${Math.round(options.scanFileSizeBytes / 1024)} КБ` : "файл"})`
-		: "Бумажный оригинал подписан пациентом (подшит в архив карты 043/у)";
+		: "Бумажный оригинал подписан пациентом (подшит в архив медицинской карты)";
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
   <rect width="100%" height="100%" fill="#f8fafc" stroke="#0d9488" stroke-width="2" rx="8"/>
@@ -388,7 +390,7 @@ export function generatePaperVerifiedSignatureSvg(options: {
   <text x="20" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" fill="#0f172a">Пациент: ${options.patientFullName} • Дата: ${dtFormatted}</text>
   <text x="20" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#334155">${scanDetail}</text>
   <text x="20" y="88" font-family="monospace" font-size="9.5" fill="#0d9488">SHA-256: ${hashShort}...</text>
-  <text x="20" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" fill="#0d9488">323-ФЗ ст. 20 • Приказ МЗ РФ № 1051н • Форма № 043/у (25 лет хранения)${clinic}</text>
+  <text x="20" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" fill="#0d9488">323-ФЗ ст. 20 • Приказ МЗ РФ № 1051н • Медицинская карта стоматологического пациента (25 лет хранения)${clinic}</text>
 </svg>`;
 }
 

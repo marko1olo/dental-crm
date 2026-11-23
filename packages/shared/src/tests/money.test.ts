@@ -7,6 +7,8 @@ import {
 	multiplyKopecks,
 	parseKopecks,
 	percentageOfKopecks,
+	basisPointsFromPercent,
+	calculatePercentDiscountKopecks,
 	RU_MONEY_MINUS,
 	RU_MONEY_NBSP,
 	rublesToKopecks,
@@ -122,6 +124,21 @@ describe("percentageOfKopecks", () => {
 		// 33.33% от 0.10 — меньше копейки, значит ноль.
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
+	});
+
+	test("basisPointsFromPercent переводит процент в базисные пункты", () => {
+		assert.strictEqual(basisPointsFromPercent(15), 1500);
+		assert.strictEqual(basisPointsFromPercent(12.5), 1250);
+		assert.strictEqual(basisPointsFromPercent(0), 0);
+		assert.strictEqual(basisPointsFromPercent(100), 10000);
+		assert.strictEqual(basisPointsFromPercent(-5), 0);
+	});
+
+	test("calculatePercentDiscountKopecks вычисляет долю без float-дрейфа", () => {
+		assert.strictEqual(calculatePercentDiscountKopecks(100000, 20), 20000);
+		assert.strictEqual(calculatePercentDiscountKopecks(100000n, 15), 15000);
+		assert.strictEqual(calculatePercentDiscountKopecks(0, 10), 0);
+		assert.strictEqual(calculatePercentDiscountKopecks(100000, 0), 0);
 	});
 });
 

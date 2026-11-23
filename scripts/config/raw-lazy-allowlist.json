@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Raw React.lazy Legacy Backlog",
+  "description": "Легаси-файлы apps/web/src, использующие сырой React.lazy вместо канонического lazyWithRetry (apps/web/src/lib/lazyWithRetry.ts). Новые файлы обязаны использовать lazyWithRetry с защитой от сбоев I/O на медленных дисках.",
+  "legacy_backlog": [
+    "apps/web/src/AppShell.tsx",
+    "apps/web/src/CommunicationsView.tsx",
+    "apps/web/src/PatientsView.tsx",
+    "apps/web/src/components/InventoryServiceUsagePanel.tsx",
+    "apps/web/src/components/analytics/ExecutiveDashboard.tsx",
+    "apps/web/src/components/appLayout/modalsContainerModules/AdministrativeModalsSubcontainer.tsx",
+    "apps/web/src/components/communications/communicationsViewModules/CommunicationsActiveChatPane.tsx",
+    "apps/web/src/components/finance/OneCExportButton.tsx",
+    "apps/web/src/components/finance/pnl/dashboardModules/ManagerialPnlModalAssembler.tsx",
+    "apps/web/src/components/imaging/DicomViewerModal.tsx",
+    "apps/web/src/components/inventory/externalModals/InventoryClinicalModals.tsx",
+    "apps/web/src/components/inventory/externalModals/InventoryRegulatoryModals.tsx",
+    "apps/web/src/components/inventory/viewModules/InventoryViewMobileLayout.tsx",
+    "apps/web/src/components/leads/kanbanView/LeadsKanbanAnalyticsModals.tsx",
+    "apps/web/src/components/odontogram/OdontogramModalsLayer.tsx",
+    "apps/web/src/components/odontogram/OdontogramViewModals.tsx",
+    "apps/web/src/components/odontogram/ToothHistoryChronicle.tsx",
+    "apps/web/src/components/patients/patientCardModalModules/PatientCardModalSubModals.tsx",
+    "apps/web/src/components/settings/SettingsAuditTab.tsx",
+    "apps/web/src/components/visit/emkTab/VisitEmkServicesBilling.tsx",
+    "apps/web/src/main.tsx",
+    "apps/web/src/pages/analyticsDashboard/AnalyticsSubDashboards.tsx",
+    "apps/web/src/pages/marketingDashboardModules/MarketingDashboardModals.tsx",
+    "apps/web/src/views/financeView/modalModules/FinanceModalsHost.tsx"
+  ]
+}

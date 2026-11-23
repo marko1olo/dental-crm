@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import type { ChairsideShiftEarningsSummary } from "../doctorShiftEarnings.js";
+import type { ChairsideShiftEarningsSummary } from "@dental/shared";
 
 export interface ShiftHudMetricsGridProps {
 	readonly summary: ChairsideShiftEarningsSummary;

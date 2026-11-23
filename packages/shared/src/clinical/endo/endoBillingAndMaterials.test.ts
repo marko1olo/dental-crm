@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
 	calculateEndoBillingAndMaterialsEstimate,
+	calculateEndoTreatmentCostKopecks,
 	isRvgBlockingEndoStage,
 	safeCanalWorkingLengthRatio,
 } from "./endoBillingAndMaterials.js";
@@ -24,14 +25,14 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		assert.equal(result.services804n.length, 2);
 		assert.equal(result.services804n[0]?.code804n, "A16.07.030.001");
 		assert.equal(result.services804n[0]?.priceRub, 3500);
-		assert.equal(result.services804n[0]?.totalPriceKopecks, 350000);
+		assert.equal(result.services804n[0]?.totalPriceKopecks, 350000n);
 
 		assert.equal(result.services804n[1]?.code804n, "A16.07.008.001");
 		assert.equal(result.services804n[1]?.priceRub, 4000);
-		assert.equal(result.services804n[1]?.totalPriceKopecks, 400000);
+		assert.equal(result.services804n[1]?.totalPriceKopecks, 400000n);
 
 		assert.equal(result.totalServicesPriceRub, 7500);
-		assert.equal(result.totalServicesPriceKopecks, 750000);
+		assert.equal(result.totalServicesPriceKopecks, 750000n);
 
 		// Складские материалы
 		const niti = result.materials.find((m) => m.itemId === "mat-niti-rotary-file");
@@ -181,5 +182,23 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		assert.equal(isRvgBlockingEndoStage("COMPLETED", false), false);
 		assert.equal(isRvgBlockingEndoStage("TEMP_CAOH2", false), false);
 		assert.equal(isRvgBlockingEndoStage("DRAFT", false), false);
+	});
+
+	it("8. Канонический калькулятор calculateEndoTreatmentCostKopecks (Layer 2 SSOT, Мандат 8bm): копеечный расчет в BigInt", () => {
+		const cost = calculateEndoTreatmentCostKopecks({
+			toothNumber: 16,
+			canalsCount: 3,
+			protocolId: "primary_endo",
+			withRvg: true,
+			withMicroscope: true,
+		});
+
+		assert.ok(typeof cost.totalKopecks === "bigint");
+		assert.ok(cost.totalKopecks > 0n);
+		assert.equal(typeof cost.totalRubles, "number");
+		assert.ok(cost.services.length >= 3);
+		// Проверяем наличие RVG и микроскопа
+		assert.ok(cost.services.some((s) => s.code === "A06.07.003"));
+		assert.ok(cost.services.some((s) => s.code === "A16.07.030.005"));
 	});
 });

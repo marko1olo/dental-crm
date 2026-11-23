@@ -45,6 +45,7 @@ export {
 } from "./patientTimelineEngine.js";
 export * from "./patientRelationshipsEngine.js";
 export * from "./dentalFormulaSsot.js";
+export * from "./dentalFormulaSurfaces.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
 export * from "./pediatric/constants.js";

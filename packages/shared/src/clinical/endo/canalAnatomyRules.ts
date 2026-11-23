@@ -450,7 +450,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 	if (!isValidFdiToothNumber(toothNumber)) {
 		return [
 			{
-				id: `canal-${Date.now()}-1`,
+				id: `canal-${toothNumber}-main`,
 				canalName: "Main",
 				referencePoint: "Режущий край (Incisal edge)",
 				workingLengthMm: 21.0,

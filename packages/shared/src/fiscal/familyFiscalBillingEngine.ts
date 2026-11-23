@@ -12,7 +12,7 @@ import {
 import {
 	type SbpDynamicQrResult,
 	calculateSbpMultiTenderSplit,
-} from "./sbpQrEngine.js";
+} from "../messaging/sbpPaymentEngine.js";
 
 export type FamilyRelationshipType = "self" | "spouse" | "parent" | "child";
 

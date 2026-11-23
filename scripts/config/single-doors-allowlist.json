@@ -109,12 +109,92 @@
       "reason": "Маршруты аутентификации клиники и персонала, специфичный парсер токенов и PIN-кодов"
     },
     {
-      "pattern": "* /api/billing*",
-      "reason": "Легаси маршруты биллинга, валидация внутри транзакционных обработчиков"
+      "pattern": "POST /api/billing/payments",
+      "reason": "Легаси маршрут проведения оплаты, валидация внутри транзакционного paymentProcessingService"
     },
     {
-      "pattern": "* /api/payments*",
+      "pattern": "POST /api/billing/invoices/:id/payments",
+      "reason": "Оплата инвойса в биллинге, валидация внутри billingInvoicesHandler"
+    },
+    {
+      "pattern": "POST /api/billing/invoices/:id",
+      "reason": "Обновление инвойса, валидация внутри billingInvoicesHandler"
+    },
+    {
+      "pattern": "POST /api/billing/refunds/partial",
+      "reason": "Частичный возврат средств по счету, валидация внутри refundProcessingService"
+    },
+    {
+      "pattern": "POST /api/billing/fiscal-queue/:id/retry",
+      "reason": "Повторная отправка чека в фискализатор, валидация параметров очереди"
+    },
+    {
+      "pattern": "POST /api/billing/fiscal-queue/retry-all",
+      "reason": "Пакетная повторная отправка чеков в фискализатор"
+    },
+    {
+      "pattern": "POST /api/billing/cash/in",
+      "reason": "Внесение наличных в кассу, валидация в cashTransferService"
+    },
+    {
+      "pattern": "POST /api/billing/cash/out",
+      "reason": "Инкассация наличных из кассы, валидация в cashTransferService"
+    },
+    {
+      "pattern": "POST /api/billing/fiscalize-receipt",
+      "reason": "Прямая фискализация кассового чека, валидация в KktLanPrinterService"
+    },
+    {
+      "pattern": "POST /api/billing/sbp/generate-qr",
+      "reason": "Генерация динамического QR-кода СБП, валидация в SbpPaymentEngine"
+    },
+    {
+      "pattern": "POST /api/billing/sbp/verify-payload",
+      "reason": "Верификация полезной нагрузки СБП, валидация сигнатуры НСПК"
+    },
+    {
+      "pattern": "POST /api/billing/sbp/webhook",
+      "reason": "Входящий вебхук Системы Быстрых Платежей, криптографическая проверка подписи банка"
+    },
+    {
+      "pattern": "POST /api/payments",
       "reason": "Шлюз проведения оплат, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "POST /api/payments/status",
+      "reason": "Проверка статуса эквайринговой транзакции, валидация внутри paymentProcessingService"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/initiate",
+      "reason": "Инициация транзакции на POS-терминале Сбера, валидация в SberPosDriver"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/webhook",
+      "reason": "Вебхук результата оплаты терминала Сбера, HMAC верификация сигнатуры"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/qr/webhook",
+      "reason": "Вебхук оплаты по QR Сбербанка, криптографическая верификация сигнатуры"
+    },
+    {
+      "pattern": "POST /api/payments/sberpos/webhook",
+      "reason": "Алиас вебхука POS Сбербанка, верификация контрольной суммы"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/reconcile-rrn",
+      "reason": "Сверка чека Сбера по номеру ссылки RRN, валидация параметров сверки"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/void",
+      "reason": "Отмена (void) безналичной транзакции до закрытия банковской смены"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/transaction",
+      "reason": "Запрос детального статуса транзакции эквайринга"
+    },
+    {
+      "pattern": "POST /api/payments/sberbank/pos/reversal",
+      "reason": "Реверс операции эквайринга при сбое ККТ"
     },
     {
       "pattern": "* /api/finance*",
@@ -527,6 +607,22 @@
     {
       "pattern": "* /api/templates*",
       "reason": "Сидирование системных шаблонов документов и протоколов"
+    },
+    {
+      "pattern": "DELETE /api/v1/expenses/:id",
+      "reason": "Легаси удаление расхода, авторизация в requireStaffIdentity, параметры в URL"
+    },
+    {
+      "pattern": "DELETE /api/expenses/:id",
+      "reason": "Легаси алиас удаления расхода, параметры в URL"
+    },
+    {
+      "pattern": "DELETE /:id",
+      "reason": "Легаси удаление нормы технологической карты по ID"
+    },
+    {
+      "pattern": "DELETE /api/tasks/:id",
+      "reason": "Легаси удаление задачи по ID из URL"
     }
   ]
 }

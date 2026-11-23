@@ -3,6 +3,7 @@
  * @description Локальный MCP-мост (Model Context Protocol Bridge) для медицинского оборудования.
  */
 
+import type { DentalToolContext } from "../types.js";
 import type { LocalMcpToolInfo } from "./desktopTypes.js";
 import { handleAtolCall, handleShtrihCall } from "./mcpFiscalHandlers.js";
 import { ALL_LOCAL_MCP_TOOLS } from "./mcpRegistry.js";
@@ -37,14 +38,15 @@ export class LocalMcpBridgeManager {
 		serverName: string,
 		toolName: string,
 		args: Record<string, unknown>,
+		context?: DentalToolContext,
 	): Promise<{ success: boolean; data?: unknown; error?: string }> {
 		const name = serverName.toLowerCase();
 		if (name === "kkt_atol") {
-			const res = await handleAtolCall(toolName, args);
+			const res = await handleAtolCall(toolName, args, context);
 			if (res) return res;
 		}
 		if (name === "shtrih_m") {
-			const res = await handleShtrihCall(toolName, args);
+			const res = await handleShtrihCall(toolName, args, context);
 			if (res) return res;
 		}
 		if (name === "datamatrix_scanner") {

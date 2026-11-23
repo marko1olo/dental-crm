@@ -9,7 +9,7 @@ import {
 	generateDynamicSbpQrPayload,
 	type SbpDynamicQrParams,
 	type SbpDynamicQrResult,
-} from "./sbpQrEngine.js";
+} from "../messaging/sbpPaymentEngine.js";
 
 export type QrErrorCorrectionLevel = "L" | "M" | "Q" | "H";
 

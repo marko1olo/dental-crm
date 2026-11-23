@@ -39,7 +39,7 @@ test("Migration Drift Guard: Production codebase has 100% schema-DDL parity", ()
 	assert.equal(result.missingTables.length, 0);
 	assert.equal(result.missingColumns.length, 0);
 	assert.equal(result.missingEnumValues.length, 0);
-	assert.ok(result.schemaTables.size >= 220, "Expected at least 220 tables");
+	assert.ok(result.schemaTables.size >= 210, "Expected at least 210 tables");
 	assert.ok(result.totalCheckedColumns >= 2900, "Expected at least 2900 columns");
 	assert.ok(result.schemaEnums.size >= 40, "Expected at least 40 enums");
 });

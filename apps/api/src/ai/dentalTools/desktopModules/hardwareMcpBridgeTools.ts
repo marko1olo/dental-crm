@@ -25,7 +25,7 @@ export type CallLocalMcpToolInput = z.infer<typeof callLocalMcpToolSchema>;
 export async function handleCallLocalMcpTool(args: CallLocalMcpToolInput, context: DentalToolContext) {
 	if (!checkIsLocalWorkstation(context)) return DESKTOP_DENIED_RESPONSE;
 	try {
-		const res = await localMcpBridge.callTool(args.serverName, args.toolName, args.arguments);
+		const res = await localMcpBridge.callTool(args.serverName, args.toolName, args.arguments, context);
 		return { ...res, serverName: args.serverName, toolName: args.toolName };
 	} catch (err) {
 		return { success: false, serverName: args.serverName, toolName: args.toolName, error: `Ошибка MCP-моста: ${(err as Error).message}` };

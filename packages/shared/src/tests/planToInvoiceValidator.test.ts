@@ -347,6 +347,36 @@ describe("planToInvoiceValidator (Feature #41)", () => {
 		assert.equal(report.blockingReasons.length, 0);
 	});
 
+	it("should allow invoice and work order with price warnings for expired plans with price inflation under doctor autonomy (Mandate 8e)", () => {
+		const items: PlanItemForValidation[] = [
+			{
+				itemId: "item-expired-inflation",
+				toothNumber: 16,
+				code804n: "A16.07.002.001",
+				nameRu: "Пломба Filtek Z250",
+				quantity: 1,
+				planUnitPriceKopecks: 500000, // В плане 5 000 ₽, в каталоге 6 500 ₽ (+30% > 10%)
+			},
+		];
+
+		const payload: PlanToInvoiceValidationPayload = {
+			planId: "PLAN-105-AUTONOMY",
+			patientId: "PAT-005",
+			planCreatedAtIso: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+			isSignedWithPatient: false,
+			isDoctorAutonomy: true,
+			items,
+			catalog: mockCatalog,
+		};
+
+		const report = validatePlanToInvoice(payload);
+
+		assert.equal(report.isPlanExpired, true);
+		assert.equal(report.canGenerateWorkOrder, true, "Автономия врача разблокирует создание наряда ЗТЛ");
+		assert.equal(report.canGenerateInvoice, true, "Автономия врача разблокирует создание счета");
+		assert.equal(report.hasPriceWarnings, true, "Выставляется мягкий информационный флаг предупреждения");
+	});
+
 	it("should allow invoice and work order generation when zero-price or legacy service is authorized by doctor clinical override (Mandate 8e)", () => {
 		const items: PlanItemForValidation[] = [
 			{

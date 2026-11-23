@@ -40,6 +40,7 @@ export interface PayrollOrderDto {
 	patientName: string;
 	medicalCardNumber: string;
 	serviceNameRu: string;
+	serviceCode?: string | undefined;
 	category: string;
 	categoryLabelRu: string;
 	grossKopecks: number;
@@ -83,6 +84,7 @@ export interface DoctorPayrollDatasetResult {
 	orders: PayrollOrderDto[];
 	completedServices: DoctorCompletedServiceItem[];
 	refundDeductions: DoctorRefundDeductionItem[];
+	unallocatedLabKop?: number;
 }
 
 export function getTreatmentItemGrossKopecks(t: {
@@ -387,11 +389,13 @@ export async function fetchDoctorPayrollDataset(params: {
 	const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
 
 	// Реальные фактические оплаты (status = 'paid')
+	// [SEV-3.1] Прямое чтение целочисленных копеек payments.amountKopecks
 	const paidVisitRows = visitIds.length > 0
 		? await dbClient
 			.select({
 				visitId: payments.visitId,
 				amountRub: payments.amountRub,
+				amountKopecks: payments.amountKopecks,
 				fiscalReceiptNumber: payments.fiscalReceiptNumber,
 			})
 			.from(payments)
@@ -408,7 +412,9 @@ export async function fetchDoctorPayrollDataset(params: {
 	const fiscalReceiptByVisit = new Map<string, string>();
 	for (const p of paidVisitRows) {
 		if (!p.visitId) continue;
-		const amtKop = rublesToKopecks(Number(p.amountRub || 0));
+		const amtKop = p.amountKopecks != null && Number(p.amountKopecks) > 0
+			? Number(p.amountKopecks)
+			: rublesToKopecks(Number(p.amountRub || 0));
 		paidKopByVisit.set(p.visitId, (paidKopByVisit.get(p.visitId) || 0) + amtKop);
 		if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
 			fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
@@ -658,7 +664,9 @@ export async function fetchDoctorPayrollDataset(params: {
 		if (patientId) {
 			const candidateOrder = trackedLabOrders.find((lo) => {
 				if (lo.patientId !== patientId || lo.remainingCostKop <= 0) return false;
-				if (t.toothCode && lo.toothFdi && lo.toothFdi.split(/[\s,;-]+/).includes(t.toothCode)) {
+				const targetTooth = t.toothCode?.trim();
+				const toothList = lo.toothFdi ? lo.toothFdi.split(/[\s,;-]+/).map((s) => s.trim()).filter(Boolean) : [];
+				if (targetTooth && toothList.includes(targetTooth)) {
 					return true;
 				}
 				if (lo.appointmentId && lo.appointmentId === linkedApptId && isOrthoService) {
@@ -708,6 +716,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			patientName: appt?.patientName || "Пациент",
 			medicalCardNumber: appt?.cardNumber || "—",
 			serviceNameRu: serviceTitle,
+			serviceCode: t.code ?? undefined,
 			category: cat,
 			categoryLabelRu: catLabelRu,
 			grossKopecks: grossKop,
@@ -719,11 +728,11 @@ export async function fetchDoctorPayrollDataset(params: {
 		});
 	}
 
-	// Учет нераспределенного остатка заказов лаборатории врача за период (DEF-PAY-LAB-01)
+	// Учет нераспределенного остатка заказов лаборатории врача за период (DEF-PAY-LAB-01 / DEFECT 2)
 	let remainingUnallocatedLabKop = trackedLabOrders.reduce((sum, lo) => sum + Math.max(0, lo.remainingCostKop), 0);
 
 	if (remainingUnallocatedLabKop > 0) {
-		// 1. Приоритетно дораспределяем СТРОГО по ортопедическим услугам доктора за период (Мандат 8e / SEV-2)
+		// 1. Приоритетно дораспределяем по ортопедическим услугам доктора за период (сначала по свободной марже)
 		for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
 			const cs = completedServices[i];
 			if (!cs) continue;
@@ -743,7 +752,26 @@ export async function fetchDoctorPayrollDataset(params: {
 			}
 		}
 
-		// 2. Изоляция ЗТЛ от терапии и гигиены (Мандат 8e): нераспределенный остаток фиксируется как балансовая позиция ЗТЛ
+		// 2. Если у ортопедических услуг маржи не хватило, но ортопедические услуги есть — привязываем остаток к последней ортопедической услуге
+		if (remainingUnallocatedLabKop > 0) {
+			for (let i = completedServices.length - 1; i >= 0; i--) {
+				const cs = completedServices[i];
+				if (!cs) continue;
+				if (cs.category === "orthopedics") {
+					const updatedLabKop = cs.labCostKop + remainingUnallocatedLabKop;
+					completedServices[i] = {
+						...cs,
+						labCostKop: updatedLabKop,
+					};
+					const ord = orders.find((o) => o.id === cs.id);
+					if (ord) ord.labCostKopecks = updatedLabKop;
+					remainingUnallocatedLabKop = 0;
+					break;
+				}
+			}
+		}
+
+		// 3. Если у доктора вообще не было ортопедических услуг — создаем балансовую запись расходов ЗТЛ периода (ЗТЛ-БАЛАНС)
 		if (remainingUnallocatedLabKop > 0) {
 			const labItemDateIso = toStr.slice(0, 10);
 			const labItemId = `lab-balance-${resolvedDocId}-${labItemDateIso}`;
@@ -781,10 +809,17 @@ export async function fetchDoctorPayrollDataset(params: {
 				isPaid54Fz: true,
 				paidKopecks: 0,
 			});
+			remainingUnallocatedLabKop = 0;
 		}
 	}
 
-	return { shiftsCount, orders, completedServices, refundDeductions };
+	return {
+		shiftsCount,
+		orders,
+		completedServices,
+		refundDeductions,
+		unallocatedLabKop: remainingUnallocatedLabKop,
+	};
 }
 
 /**
@@ -797,14 +832,17 @@ export async function fetchClosedPayrollStatements(
 	tx?: TenantDb,
 ): Promise<{ closedPeriods: ClosedPayrollPeriodDto[]; statements: (typeof doctorPayrollStatements.$inferSelect)[] }> {
 	const dbClient = tx ?? db;
+	const isAll = resolvedDocId === "all";
 	const statements = await dbClient
 		.select()
 		.from(doctorPayrollStatements)
 		.where(
-			and(
-				eq(doctorPayrollStatements.organizationId, orgId),
-				eq(doctorPayrollStatements.doctorId, resolvedDocId),
-			),
+			isAll
+				? eq(doctorPayrollStatements.organizationId, orgId)
+				: and(
+					eq(doctorPayrollStatements.organizationId, orgId),
+					eq(doctorPayrollStatements.doctorId, resolvedDocId),
+				),
 		)
 		.orderBy(sql`${doctorPayrollStatements.createdAt} DESC`);
 
@@ -812,8 +850,8 @@ export async function fetchClosedPayrollStatements(
 		id: s.id,
 		periodLabelRu: s.period,
 		dateClosedIso: s.createdAt.toISOString().slice(0, 10),
-		doctorName,
-		rkoReceiptNumber: s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`,
+		doctorName: isAll ? (s.doctorId || doctorName) : doctorName,
+		rkoReceiptNumber: isAll ? "" : (s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`),
 		grossKopecks: Number(s.grossRevenueKopecks != null ? s.grossRevenueKopecks : rublesToKopecks(Number(s.grossRevenueRub || 0))),
 		labCostKopecks: Number(s.labCostKopecks != null ? s.labCostKopecks : rublesToKopecks(Number(s.labCostRub || 0))),
 		materialCostKopecks: Number(s.materialsCostKopecks != null ? s.materialsCostKopecks : rublesToKopecks(Number(s.materialsCostRub || 0))),

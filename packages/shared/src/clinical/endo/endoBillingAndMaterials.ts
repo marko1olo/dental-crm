@@ -22,8 +22,10 @@ import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import { getAnatomicalRootCanalCount } from "../toothCanalsBilling/toothCanalAnatomyMap.js";
 import type {
 	Endo804nServiceEstimate,
+	EndoBillingCostBreakdown,
 	EndoCanalData,
 	EndoMaterialConsumableEstimate,
+	EndoProtocolPresetId,
 	EndoStageStamp,
 	EndoTreatmentBillingEstimateResult,
 } from "./types.js";
@@ -69,7 +71,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// 1. При перелечивании — распломбирование корневых каналов (A16.07.082)
 	if (isRetreatment) {
 		const unsealPriceRub = ORDER_804N_UNSEALING.price;
-		const unsealPriceKopecks = rublesToKopecks(unsealPriceRub);
+		const unsealPriceKopecks = BigInt(Math.round(rublesToKopecks(unsealPriceRub)));
 		services804n.push({
 			serviceCode: ORDER_804N_UNSEALING.code,
 			code804n: ORDER_804N_UNSEALING.code,
@@ -79,7 +81,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			priceKopecks: unsealPriceKopecks,
 			quantity: canalCount,
 			totalPriceRub: unsealPriceRub * canalCount,
-			totalPriceKopecks: unsealPriceKopecks * canalCount,
+			totalPriceKopecks: unsealPriceKopecks * BigInt(canalCount),
 			toothNumber,
 			canalCount,
 			isMandatory: true,
@@ -88,7 +90,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 
 	// 2. Механическая и медикаментозная обработка корневых каналов (A16.07.030)
 	const instItem = ORDER_804N_INSTRUMENTATION[canalCount];
-	const instPriceKopecks = rublesToKopecks(instItem.price);
+	const instPriceKopecks = BigInt(Math.round(rublesToKopecks(instItem.price)));
 	services804n.push({
 		serviceCode: instItem.code,
 		code804n: instItem.code,
@@ -107,7 +109,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// 3. Обтурация (постоянная или временная Ca(OH)2)
 	if (stage === "TEMP_CAOH2") {
 		const medPriceRub = ORDER_804N_MEDICATION_CAOH2.price;
-		const medPriceKopecks = rublesToKopecks(medPriceRub);
+		const medPriceKopecks = BigInt(Math.round(rublesToKopecks(medPriceRub)));
 		services804n.push({
 			serviceCode: ORDER_804N_MEDICATION_CAOH2.code,
 			code804n: ORDER_804N_MEDICATION_CAOH2.code,
@@ -117,14 +119,14 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			priceKopecks: medPriceKopecks,
 			quantity: canalCount,
 			totalPriceRub: medPriceRub * canalCount,
-			totalPriceKopecks: medPriceKopecks * canalCount,
+			totalPriceKopecks: medPriceKopecks * BigInt(canalCount),
 			toothNumber,
 			canalCount,
 			isMandatory: true,
 		});
 	} else if (stage === "COMPLETED") {
 		const obtItem = ORDER_804N_OBTURATIONS[canalCount];
-		const obtPriceKopecks = rublesToKopecks(obtItem.price);
+		const obtPriceKopecks = BigInt(Math.round(rublesToKopecks(obtItem.price)));
 		services804n.push({
 			serviceCode: obtItem.code,
 			code804n: obtItem.code,
@@ -154,7 +156,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		unit: "шт",
 		quantity: nitiFraction,
 		costPriceRub: nitiRub,
-		costPriceKopecks: rublesToKopecks(nitiRub),
+		costPriceKopecks: BigInt(Math.round(rublesToKopecks(nitiRub))),
 		notes: `Инструментальная обработка ${canalCount} ${getCanalPluralRu(canalCount)} зуба #${toothNumber} (ресурс инструмента: ${canalCount}/4)`,
 	});
 
@@ -168,7 +170,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		unit: "ml",
 		quantity: hypoMl,
 		costPriceRub: hypoRub, // 24 ₽ за мл (120 ₽ за 5 мл)
-		costPriceKopecks: rublesToKopecks(hypoRub),
+		costPriceKopecks: BigInt(Math.round(rublesToKopecks(hypoRub))),
 		notes: `Ирригация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 	});
 
@@ -182,7 +184,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		unit: "ml",
 		quantity: edtaMl,
 		costPriceRub: edtaRub, // 85 ₽ за 2 мл
-		costPriceKopecks: rublesToKopecks(edtaRub),
+		costPriceKopecks: BigInt(Math.round(rublesToKopecks(edtaRub))),
 		notes: `Хемомеханическая обработка ${canalCount} ${getCanalPluralRu(canalCount)}`,
 	});
 
@@ -198,7 +200,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			unit: "шт",
 			quantity: guttaQty,
 			costPriceRub: guttaRub, // 45 ₽ за 3 шт
-			costPriceKopecks: rublesToKopecks(guttaRub),
+			costPriceKopecks: BigInt(Math.round(rublesToKopecks(guttaRub))),
 			notes: `Трехмерная обтурация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
@@ -212,7 +214,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			unit: "шт",
 			quantity: paperPointsQty,
 			costPriceRub: paperRub,
-			costPriceKopecks: rublesToKopecks(paperRub),
+			costPriceKopecks: BigInt(Math.round(rublesToKopecks(paperRub))),
 			notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
 		});
 
@@ -230,7 +232,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 				unit: "доза",
 				quantity: 1,
 				costPriceRub: 850,
-				costPriceKopecks: 85000,
+				costPriceKopecks: 85000n,
 				notes: "Биокерамическая обтурация каналов",
 			});
 		} else {
@@ -241,7 +243,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 				unit: "доза",
 				quantity: 1,
 				costPriceRub: 420,
-				costPriceKopecks: 42000,
+				costPriceKopecks: 42000n,
 				notes: "Постоянная обтурация каналов",
 			});
 		}
@@ -255,7 +257,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			unit: "доза",
 			quantity: canalCount,
 			costPriceRub: calciumRub,
-			costPriceKopecks: rublesToKopecks(calciumRub),
+			costPriceKopecks: BigInt(Math.round(rublesToKopecks(calciumRub))),
 			notes: `Временная дезинфекция ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
@@ -267,21 +269,21 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			unit: "доза",
 			quantity: 1,
 			costPriceRub: 50,
-			costPriceKopecks: 5000,
+			costPriceKopecks: 5000n,
 			notes: "Герметизация полости зуба на 7–14 дней",
 		});
 	}
 
 	// Итоговые суммы
 	const totalServicesPriceKopecks = services804n.reduce(
-		(sum, s) => sum + s.totalPriceKopecks,
-		0,
+		(sum, s) => sum + BigInt(s.totalPriceKopecks),
+		0n,
 	);
 	const totalServicesPriceRub = kopecksToRubles(totalServicesPriceKopecks);
 
 	const totalMaterialsCostKopecks = materials.reduce(
-		(sum, m) => sum + m.costPriceKopecks,
-		0,
+		(sum, m) => sum + BigInt(m.costPriceKopecks),
+		0n,
 	);
 	const totalMaterialsCostRub = kopecksToRubles(totalMaterialsCostKopecks);
 
@@ -299,6 +301,91 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		totalServicesPriceKopecks,
 		totalMaterialsCostRub,
 		totalMaterialsCostKopecks,
+	};
+}
+
+/** Базовый тариф радиовизиографического контроля в копейках (600 руб.) */
+export const DEFAULT_ENDO_RVG_PRICE_KOPECKS = 60_000n;
+/** Базовый тариф использования операционного микроскопа в копейках (3000 руб.) */
+export const DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS = 300_000n;
+
+/**
+ * Канонический калькулятор стоимости эндодонтического лечения (Layer 2 SSOT).
+ * Рассчитывает общую сумму и детальную спецификацию услуг в копейках (bigint).
+ */
+export function calculateEndoTreatmentCostKopecks(params: {
+	toothNumber: number;
+	canalsCount: number;
+	protocolId: EndoProtocolPresetId | string;
+	withRvg?: boolean | undefined;
+	withMicroscope?: boolean | undefined;
+}): EndoBillingCostBreakdown {
+	const count = Math.max(1, params.canalsCount);
+	const isRetreatment =
+		params.protocolId === "retreatment_unsealing" ||
+		params.protocolId === "retreatment_endo";
+	const isTemp =
+		params.protocolId === "periodontitis_temp" ||
+		params.protocolId === "caoh2" ||
+		isRetreatment;
+
+	const estimate = calculateEndoBillingAndMaterialsEstimate({
+		toothNumber: params.toothNumber,
+		stageStamp: isTemp ? "TEMP_CAOH2" : "COMPLETED",
+		isRetreatment,
+		canals: Array.from({ length: count }, (_, i) => ({
+			id: `canal-${params.toothNumber}-c${i + 1}`,
+			canalName: `К${i + 1}`,
+			referencePoint: "Бугор",
+			workingLengthMm: 21.0,
+			masterApicalFile: "#25",
+			taper: ".04",
+			obturationTechnique: isTemp
+				? "Временная обтурация Ca(OH)2"
+				: "Гуттаперча + Силер (AH Plus)",
+			sealer: isTemp ? "Каласепт (Ca(OH)2)" : "AH Plus",
+		})),
+	});
+
+	const services: Array<{
+		readonly code: string;
+		readonly title: string;
+		readonly priceKopecks: bigint;
+		readonly quantity: number;
+	}> = [];
+
+	for (const s of estimate.services804n) {
+		services.push({
+			code: s.code804n || "A16.07.030",
+			title: s.title,
+			priceKopecks: BigInt(s.totalPriceKopecks),
+			quantity: s.quantity,
+		});
+	}
+
+	if (params.withRvg !== false) {
+		services.push({
+			code: "A06.07.003",
+			title: "Прицельная радиовизиография контрольная (1 снимок)",
+			priceKopecks: DEFAULT_ENDO_RVG_PRICE_KOPECKS,
+			quantity: 1,
+		});
+	}
+
+	if (params.withMicroscope) {
+		services.push({
+			code: "A16.07.030.005",
+			title: "Использование операционного микроскопа в эндодонтии",
+			priceKopecks: DEFAULT_ENDO_MICROSCOPE_PRICE_KOPECKS,
+			quantity: 1,
+		});
+	}
+
+	const totalKopecks = services.reduce((acc, s) => acc + s.priceKopecks, 0n);
+	return {
+		totalKopecks,
+		totalRubles: kopecksToRubles(totalKopecks),
+		services,
 	};
 }
 

@@ -190,12 +190,26 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		// Pos 1 (2,000 ₽): 2/15 of 5,000 cash = 666.67 -> exact kopecks
 		const totalAllocatedCashKop = allocated.reduce((sum, a) => sum + a.cashKopecks, 0);
 		const totalAllocatedCardKop = allocated.reduce((sum, a) => sum + a.cardKopecks, 0);
-		const totalAllocatedAdvKop = allocated.reduce((sum, a) => sum + a.advanceDepositKopecks, 0);
+		const totalAllocatedFamilyKop = allocated.reduce((sum, a) => sum + a.familyDepositKopecks, 0);
 
 		assert.equal(totalAllocatedCashKop, 500000);
 		assert.equal(totalAllocatedCardKop, 700000);
-		assert.equal(totalAllocatedAdvKop, 300000);
-		assert.equal(totalAllocatedCashKop + totalAllocatedCardKop + totalAllocatedAdvKop, 1500000);
+		assert.equal(totalAllocatedFamilyKop, 300000);
+		assert.equal(totalAllocatedCashKop + totalAllocatedCardKop + totalAllocatedFamilyKop, 1500000);
+
+		// Row Sum Invariant: each position row sum strictly matches its item total
+		for (const row of allocated) {
+			const rowSum =
+				row.cashKopecks +
+				row.cardKopecks +
+				row.sbpKopecks +
+				row.advanceDepositKopecks +
+				row.familyDepositKopecks +
+				row.creditKopecks +
+				row.certificateKopecks +
+				row.dmsKopecks;
+			assert.equal(rowSum, row.itemTotalKopecks);
+		}
 	});
 
 	it("8. 1-Click Remainder Balancer: balances exact kopecks to card or SBP without calculator", () => {
@@ -295,6 +309,20 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		assert.equal(totalCardAllocated, 300000);
 		assert.equal(totalCertAllocated, 0);
 		assert.equal(totalDmsAllocated + totalCardAllocated, 1000000);
+
+		// Row Sum Invariant
+		for (const row of allocated) {
+			const rowSum =
+				row.cashKopecks +
+				row.cardKopecks +
+				row.sbpKopecks +
+				row.advanceDepositKopecks +
+				row.familyDepositKopecks +
+				row.creditKopecks +
+				row.certificateKopecks +
+				row.dmsKopecks;
+			assert.equal(rowSum, row.itemTotalKopecks);
+		}
 	});
 
 	it("11. calculate5050Split splits odd amount without losing a single kopeck", () => {
@@ -361,6 +389,235 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		assert.equal(overflowFranchise.dmsCoveredRub, 6000);
 		assert.equal(overflowFranchise.patientCoPayRub, 4000);
 		assert.equal(overflowFranchise.dmsCoveredKopecks + overflowFranchise.patientCoPayKopecks, 1000000);
+	});
+
+	it("15. Mandate 8e: 100% doctor discount preserves all positions in receipt (zero act returns all items with 0 kopecks)", () => {
+		const positions: SplitPaymentPositionItem[] = [
+			{ id: "pos-1", name: "Консультация ортопеда", code804n: "B01.066.001", quantity: 1, priceRub: 2000, discountRub: 2000 },
+			{ id: "pos-2", name: "Гарантийная переделка пломбы", code804n: "A16.07.002", quantity: 1, priceRub: 5000, discountRub: 5000 },
+		];
+
+		const validation = validateAndBalanceSplitPayment({
+			actTotalRub: 0,
+			tenders: {},
+		});
+
+		assert.equal(validation.isBalanced, true);
+		assert.equal(validation.actTotalKopecks, 0);
+
+		const allocated = allocateSplitPaymentAcrossItems(positions, validation);
+
+		// Must return ALL positions, never empty []
+		assert.equal(allocated.length, 2);
+		assert.equal(allocated[0]?.itemId, "pos-1");
+		assert.equal(allocated[0]?.itemName, "Консультация ортопеда");
+		assert.equal(allocated[0]?.itemTotalKopecks, 0);
+		assert.equal(allocated[0]?.itemTotalRub, 0);
+		assert.equal(allocated[0]?.cashKopecks, 0);
+		assert.equal(allocated[0]?.cardKopecks, 0);
+
+		assert.equal(allocated[1]?.itemId, "pos-2");
+		assert.equal(allocated[1]?.itemName, "Гарантийная переделка пломбы");
+		assert.equal(allocated[1]?.itemTotalKopecks, 0);
+		assert.equal(allocated[1]?.itemTotalRub, 0);
+		assert.equal(allocated[1]?.cashKopecks, 0);
+		assert.equal(allocated[1]?.cardKopecks, 0);
+	});
+
+	it("16. Strict 2D Matrix Convergence: prevents row overpayment anomaly (51+50=101 at 100 price)", () => {
+		const positions: SplitPaymentPositionItem[] = [
+			{ id: "pos-1", name: "Услуга А", quantity: 1, priceKopecks: 100, priceRub: 1 },
+			{ id: "pos-2", name: "Услуга Б", quantity: 1, priceKopecks: 100, priceRub: 1 },
+		];
+
+		const validation = validateAndBalanceSplitPayment({
+			actTotalKopecks: 200,
+			tenders: {
+				cashKopecks: 101,
+				cardKopecks: 99,
+			},
+		});
+
+		assert.equal(validation.isBalanced, true);
+
+		const allocated = allocateSplitPaymentAcrossItems(positions, validation);
+		assert.equal(allocated.length, 2);
+
+		// Column sum convergence
+		const sumCash = allocated.reduce((s, a) => s + a.cashKopecks, 0);
+		const sumCard = allocated.reduce((s, a) => s + a.cardKopecks, 0);
+		assert.equal(sumCash, 101);
+		assert.equal(sumCard, 99);
+
+		// Row sum convergence: each row must strictly equal 100 kopecks (NO 101 overpayment!)
+		for (const row of allocated) {
+			const rowSum =
+				row.cashKopecks +
+				row.cardKopecks +
+				row.sbpKopecks +
+				row.advanceDepositKopecks +
+				row.familyDepositKopecks +
+				row.creditKopecks +
+				row.certificateKopecks +
+				row.dmsKopecks;
+			assert.equal(rowSum, 100);
+			assert.equal(rowSum, row.itemTotalKopecks);
+			assert.ok(row.cashKopecks >= 0);
+			assert.ok(row.cardKopecks >= 0);
+			assert.ok(row.cashKopecks <= 100);
+			assert.ok(row.cardKopecks <= 100);
+		}
+	});
+
+	it("17. Property-Based Stress Test: 20 000 iterations verifying strict 2D convergence (row sums and column sums)", () => {
+		// High-performance deterministic PRNG (XorShift32) for reproducible property-based testing
+		let seed = 123456789;
+		function nextRandom(): number {
+			seed ^= seed << 13;
+			seed ^= seed >> 17;
+			seed ^= seed << 5;
+			return (seed >>> 0) / 4294967296;
+		}
+
+		function randomInt(min: number, max: number): number {
+			return Math.floor(nextRandom() * (max - min + 1)) + min;
+		}
+
+		const ITERATIONS = 20000;
+		for (let iter = 0; iter < ITERATIONS; iter++) {
+			// 1. Generate 1 to 15 positions
+			const numPositions = randomInt(1, 15);
+			const positions: SplitPaymentPositionItem[] = [];
+			let grandTotalKop = 0;
+
+			for (let p = 0; p < numPositions; p++) {
+				const priceKop = randomInt(0, 10) === 0 ? 0 : randomInt(1, 50000);
+				const qty = randomInt(1, 3);
+				const itemTotal = priceKop * qty;
+				grandTotalKop += itemTotal;
+
+				positions.push({
+					id: `pos-${iter}-${p}`,
+					name: `Позиция ${p + 1}`,
+					quantity: qty,
+					priceKopecks: priceKop,
+					priceRub: kopecksToRub(priceKop),
+				});
+			}
+
+			// 2. If grandTotalKop === 0
+			if (grandTotalKop === 0) {
+				const valZero = validateAndBalanceSplitPayment({
+					actTotalKopecks: 0,
+					tenders: {},
+				});
+				const allocZero = allocateSplitPaymentAcrossItems(positions, valZero);
+				assert.equal(allocZero.length, positions.length);
+				for (const item of allocZero) {
+					assert.equal(item.itemTotalKopecks, 0);
+					assert.equal(item.cashKopecks, 0);
+					assert.equal(item.cardKopecks, 0);
+				}
+				continue;
+			}
+
+			// 3. Random partition of grandTotalKop into 7 tenders
+			const cuts: number[] = [];
+			for (let c = 0; c < 7; c++) {
+				cuts.push(randomInt(0, grandTotalKop));
+			}
+			cuts.sort((a, b) => a - b);
+
+			const tenderAmounts = [
+				cuts[0] ?? 0,
+				(cuts[1] ?? 0) - (cuts[0] ?? 0),
+				(cuts[2] ?? 0) - (cuts[1] ?? 0),
+				(cuts[3] ?? 0) - (cuts[2] ?? 0),
+				(cuts[4] ?? 0) - (cuts[3] ?? 0),
+				(cuts[5] ?? 0) - (cuts[4] ?? 0),
+				(cuts[6] ?? 0) - (cuts[5] ?? 0),
+				grandTotalKop - (cuts[6] ?? 0),
+			];
+
+			const tendersInput: SplitPaymentTenderInput = {
+				cashKopecks: tenderAmounts[0],
+				cardKopecks: tenderAmounts[1],
+				sbpKopecks: tenderAmounts[2],
+				advanceDepositKopecks: tenderAmounts[3],
+				familyDepositKopecks: tenderAmounts[4],
+				creditKopecks: tenderAmounts[5],
+				certificateOrBonusKopecks: tenderAmounts[6],
+				dmsInsuranceKopecks: tenderAmounts[7],
+			};
+
+			const validation = validateAndBalanceSplitPayment({
+				actTotalKopecks: grandTotalKop,
+				tenders: tendersInput,
+			});
+
+			assert.equal(validation.isBalanced, true);
+
+			const allocated = allocateSplitPaymentAcrossItems(positions, validation);
+			assert.equal(allocated.length, positions.length);
+
+			// 4. Verify Column Sum Conservation:
+			let colCash = 0;
+			let colCard = 0;
+			let colSbp = 0;
+			let colAdv = 0;
+			let colFam = 0;
+			let colCredit = 0;
+			let colCert = 0;
+			let colDms = 0;
+
+			// 5. Verify Row Sum Conservation & Non-negativity:
+			for (let i = 0; i < allocated.length; i++) {
+				const row = allocated[i];
+				assert.ok(row !== undefined);
+
+				const expectedItemTotal = (positions[i]?.priceKopecks ?? 0) * (positions[i]?.quantity ?? 1);
+				assert.equal(row.itemTotalKopecks, expectedItemTotal);
+
+				assert.ok(row.cashKopecks >= 0);
+				assert.ok(row.cardKopecks >= 0);
+				assert.ok(row.sbpKopecks >= 0);
+				assert.ok(row.advanceDepositKopecks >= 0);
+				assert.ok(row.familyDepositKopecks >= 0);
+				assert.ok(row.creditKopecks >= 0);
+				assert.ok(row.certificateKopecks >= 0);
+				assert.ok(row.dmsKopecks >= 0);
+
+				const rowSum =
+					row.cashKopecks +
+					row.cardKopecks +
+					row.sbpKopecks +
+					row.advanceDepositKopecks +
+					row.familyDepositKopecks +
+					row.creditKopecks +
+					row.certificateKopecks +
+					row.dmsKopecks;
+
+				assert.equal(rowSum, row.itemTotalKopecks, `Iteration ${iter}: Row sum must equal itemTotalKopecks`);
+
+				colCash += row.cashKopecks;
+				colCard += row.cardKopecks;
+				colSbp += row.sbpKopecks;
+				colAdv += row.advanceDepositKopecks;
+				colFam += row.familyDepositKopecks;
+				colCredit += row.creditKopecks;
+				colCert += row.certificateKopecks;
+				colDms += row.dmsKopecks;
+			}
+
+			assert.equal(colCash, tenderAmounts[0], `Iteration ${iter}: Column Cash sum mismatch`);
+			assert.equal(colCard, tenderAmounts[1], `Iteration ${iter}: Column Card sum mismatch`);
+			assert.equal(colSbp, tenderAmounts[2], `Iteration ${iter}: Column SBP sum mismatch`);
+			assert.equal(colAdv, tenderAmounts[3], `Iteration ${iter}: Column Advance sum mismatch`);
+			assert.equal(colFam, tenderAmounts[4], `Iteration ${iter}: Column Family sum mismatch`);
+			assert.equal(colCredit, tenderAmounts[5], `Iteration ${iter}: Column Credit sum mismatch`);
+			assert.equal(colCert, tenderAmounts[6], `Iteration ${iter}: Column Certificate sum mismatch`);
+			assert.equal(colDms, tenderAmounts[7], `Iteration ${iter}: Column DMS sum mismatch`);
+		}
 	});
 });
 

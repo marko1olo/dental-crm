@@ -3,7 +3,11 @@
  * Classifies medical services into Code 01 (standard) and Code 02 (expensive treatment).
  */
 
-import { ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024, EXPENSIVE_TREATMENT_804N_CODES } from "./constants.js";
+import {
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
+	EXPENSIVE_TREATMENT_804N_CODES,
+	EXPENSIVE_TREATMENT_804N_PREFIXES,
+} from "./constants.js";
 
 /**
  * Определение кода медицинской услуги для налогового вычета (Код 01 vs Код 02)
@@ -11,17 +15,10 @@ import { ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024, EXPENSIVE_TREATMENT_804N_CODES } f
  */
 export function resolveTaxDeductionCategoryShared(code804n?: string, serviceName?: string): "1" | "2" {
 	if (code804n) {
-		const trimmedCode = code804n.trim();
-		if (EXPENSIVE_TREATMENT_804N_CODES.includes(trimmedCode)) {
-			return "2";
-		}
-		// Проверка по префиксам имплантации/костной пластики/остеопластики
+		const trimmedCode = code804n.trim().toUpperCase();
 		if (
-			trimmedCode.startsWith("A16.07.054") ||
-			trimmedCode.startsWith("A16.07.041") ||
-			trimmedCode.startsWith("A16.07.055") ||
-			trimmedCode.startsWith("A16.07.096") ||
-			trimmedCode.startsWith("A16.07.040")
+			EXPENSIVE_TREATMENT_804N_CODES.includes(trimmedCode) ||
+			EXPENSIVE_TREATMENT_804N_PREFIXES.some((prefix) => trimmedCode.startsWith(prefix))
 		) {
 			return "2";
 		}
@@ -38,13 +35,15 @@ export function resolveTaxDeductionCategoryShared(code804n?: string, serviceName
 			lower.includes("субантральн") ||
 			lower.includes("костная пластика") ||
 			lower.includes("костной пластик") ||
+			lower.includes("лоскутн") ||
 			lower.includes("остеопластик") ||
 			lower.includes("остеотоми") ||
 			lower.includes("остеосинтез") ||
+			lower.includes("ортогнати") ||
 			lower.includes("аугментация") ||
 			lower.includes("аугментаци") ||
 			lower.includes("расщепление гребня") ||
-			lower.includes("расщепление альвеолярного") ||
+			lower.includes("расщепление альвеоляр") ||
 			lower.includes("реконструкция челюсти") ||
 			lower.includes("реконструктивные операции") ||
 			lower.includes("костный трансплантат") ||
@@ -53,7 +52,10 @@ export function resolveTaxDeductionCategoryShared(code804n?: string, serviceName
 			lower.includes("костная ткань") ||
 			lower.includes("костная регенерация") ||
 			lower.includes("нкр") ||
+			lower.includes("bio-gide") ||
 			lower.includes("мембрана bio-gide") ||
+			lower.includes("био-гайд") ||
+			lower.includes("биогайд") ||
 			lower.includes("bio-oss") ||
 			lower.includes("био-осс") ||
 			lower.includes("титановая сетка") ||

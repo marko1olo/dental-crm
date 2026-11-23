@@ -17,7 +17,7 @@ const telegramSource = telegramFiles
 const serverSource = readApiServerSourceSync();
 const sampleFiles = [
 	"apps/api/src/sampleData.ts",
-	"apps/api/src/services/telegram/legacyMemory/outboxDelivery.ts",
+	"apps/api/src/routes/telegram/telegramCanonicalStore.ts",
 ];
 const sampleSource = sampleFiles
 	.filter((path) => existsSync(path))

@@ -281,7 +281,10 @@ export function getStatutoryProgramByKey(key: string): DmsProgramDefinition {
 	return DEFAULT_DMS_PROGRAM_FALLBACK;
 }
 
-export function validateDmsPolicy(policy: Partial<DmsPolicy>, checkDateStr = "2026-08-22"): { isValid: boolean; errors: string[] } {
+export function validateDmsPolicy(
+	policy: Partial<DmsPolicy>,
+	checkDateStr = new Date().toISOString().slice(0, 10),
+): { isValid: boolean; errors: string[] } {
 	const errors: string[] = [];
 	if (!policy.insurerId || !RUSSIAN_DMS_INSURERS.some((i) => i.id === policy.insurerId || i.key === policy.insurerId)) {
 		errors.push("Несуществующий страховщик");

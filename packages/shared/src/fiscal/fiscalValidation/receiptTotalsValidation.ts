@@ -12,6 +12,11 @@ import {
 	taxDeductionCategorySchema,
 } from "../ffd12Types.js";
 import { computePayloadHash, parseIdempotencyKey } from "../../sync/hashing.js";
+import {
+	rublesToKopecks,
+	kopecksToRub,
+	kopecksToNumericString,
+} from "../../money.js";
 import { fiscalReceiptItemSchema } from "./itemValidation.js";
 import type { CashChangeResult } from "./types.js";
 
@@ -26,6 +31,7 @@ export const createFiscalReceiptPayloadSchema = z
 				z.string().trim().min(1).max(128).optional().nullable()
 			),
 		invoiceId: z.string().uuid().optional().nullable(),
+		paymentId: z.string().uuid().optional().nullable(),
 		visitId: z.string().uuid().optional().nullable(),
 		documentId: z.string().uuid().optional().nullable(),
 		cashBoxId: z.string().uuid("Некорректный UUID кассового счёта").optional().nullable(),
@@ -378,15 +384,15 @@ export function calculateCashChange(
 	cashRequiredRub: number,
 	receivedCashRub: number,
 ): CashChangeResult {
-	const requiredKopecks = Math.max(0, Math.round(cashRequiredRub * 100));
-	const receivedKopecks = Math.max(0, Math.round(receivedCashRub * 100));
+	const requiredKopecks = Math.max(0, rublesToKopecks(cashRequiredRub));
+	const receivedKopecks = Math.max(0, rublesToKopecks(receivedCashRub));
 
 	if (receivedKopecks >= requiredKopecks) {
 		const changeKop = receivedKopecks - requiredKopecks;
 		return {
 			cashRequiredRub,
 			receivedCashRub,
-			changeRub: Number((changeKop / 100).toFixed(2)),
+			changeRub: kopecksToRub(changeKop),
 			changeKopecks: changeKop,
 			isShortage: false,
 			shortageRub: 0,
@@ -401,7 +407,7 @@ export function calculateCashChange(
 		changeRub: 0,
 		changeKopecks: 0,
 		isShortage: true,
-		shortageRub: Number((shortageKop / 100).toFixed(2)),
+		shortageRub: kopecksToRub(shortageKop),
 		shortageKopecks: shortageKop,
 	};
 }

@@ -38,8 +38,7 @@ export interface DentalToolContext {
 	requireConfirmation?: boolean | undefined;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic dental tool entry
-export type AnyDentalToolEntry = DentalToolEntry<any, any>;
+export type AnyDentalToolEntry = DentalToolEntry<z.ZodTypeAny, unknown>;
 
 export interface DentalToolEntry<
 	TSchema extends z.ZodTypeAny = z.ZodTypeAny,
@@ -52,10 +51,10 @@ export interface DentalToolEntry<
 	definition: OpenAIToolDefinition;
 	destructive?: boolean;
 	titleRu?: string;
-	handler: (
+	handler(
 		args: z.infer<TSchema>,
 		context: DentalToolContext,
-	) => Promise<TResult>;
+	): Promise<TResult>;
 }
 
 /**

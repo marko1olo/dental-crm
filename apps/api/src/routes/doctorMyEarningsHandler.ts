@@ -14,7 +14,13 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { doctorCommissions, pricelistDoctorPayrolls, users } from "../db/schema.js";
-import { calculateDoctorCommissionKopecks, calculateDoctorPeriodPayroll, kopecksToRubles } from "@dental/shared";
+import {
+	calculateDoctorCommissionKopecks,
+	calculateDoctorPeriodPayroll,
+	kopecksToRubles,
+	percentageOfKopecks,
+	type Kopecks,
+} from "@dental/shared";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { resolveDoctorUserUuid } from "./payrollSettlementDbQueries.js";
 import {
@@ -170,7 +176,7 @@ export async function handleGetDoctorMyEarnings(
 	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
 	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 
-	const { shiftsCount, orders, completedServices, refundDeductions } = await fetchDoctorPayrollDataset({
+	const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
 		orgId,
 		resolvedDocId,
 		fromStr,
@@ -179,13 +185,21 @@ export async function handleGetDoctorMyEarnings(
 		toDate,
 	});
 
+	const enrichedCompletedServices = completedServices.map((cs) => {
+		const commPct = resolveServiceCommissionPercent(cs.category, cs.serviceNameRu, cs.serviceCode);
+		return {
+			...cs,
+			customCommissionPercent: commPct,
+		};
+	});
+
 	const payrollResult = calculateDoctorPeriodPayroll({
 		doctorId: resolvedDocId,
 		doctorName,
 		specialtyId: specId,
 		periodStartIso: fromStr.slice(0, 10),
 		periodEndIso: toStr.slice(0, 10),
-		services: completedServices,
+		services: enrichedCompletedServices,
 		customBasePercentage: basePercent,
 		categoryRates: categoryRatesMap,
 		payoutModel: "percentage",
@@ -193,6 +207,7 @@ export async function handleGetDoctorMyEarnings(
 		advancePayoutKop: 0,
 		taxRegime: "employee",
 		refundDeductions,
+		unallocatedLabKop,
 	});
 
 	// Группировка по назначениям / визитам для appointments
@@ -266,13 +281,15 @@ export async function handleGetDoctorMyEarnings(
 			apptMap.set(apptKey, appt);
 		}
 
-		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu);
+		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu, ord.serviceCode);
 		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
 		const netBaseItemKop = effectivePaidKop > 0
-			? Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks)
+			? (ord.category === "retail_hygiene"
+				? effectivePaidKop
+				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
 			: 0;
 		const earnedItemKop = effectivePaidKop > 0
-			? calculateDoctorCommissionKopecks(netBaseItemKop, itemCommPercent)
+			? percentageOfKopecks(netBaseItemKop as Kopecks, Math.round(itemCommPercent * 100))
 			: 0;
 
 		appt.grossRevenueKop += ord.grossKopecks;
@@ -335,7 +352,7 @@ export async function handleGetDoctorMyEarnings(
 
 	const catMap = new Map<string, CatAccumulator>();
 	for (const ord of orders) {
-		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu);
+		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu, ord.serviceCode);
 		let cat = catMap.get(ord.category);
 		if (!cat) {
 			cat = {
@@ -352,10 +369,12 @@ export async function handleGetDoctorMyEarnings(
 		}
 		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
 		const netBase = effectivePaidKop > 0
-			? Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks)
+			? (ord.category === "retail_hygiene"
+				? effectivePaidKop
+				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
 			: 0;
 		const earned = effectivePaidKop > 0
-			? calculateDoctorCommissionKopecks(netBase, itemCommPercent)
+			? percentageOfKopecks(netBase as Kopecks, Math.round(itemCommPercent * 100))
 			: 0;
 
 		cat.grossRevenueKop += ord.grossKopecks;
@@ -398,7 +417,9 @@ export async function handleGetDoctorMyEarnings(
 		netBaseRevenueKop,
 		totalDoctorEarnedRub: kopecksToRubles(totalDoctorEarnedKop),
 		totalDoctorEarnedKop,
-		averageCommissionPercent: (netBaseRevenueKop > 0 ? Math.round((totalDoctorEarnedKop / netBaseRevenueKop) * 100) : basePercent),
+		averageCommissionPercent: (netBaseRevenueKop > 0
+			? Number((BigInt(totalDoctorEarnedKop) * 100n + BigInt(netBaseRevenueKop) / 2n) / BigInt(netBaseRevenueKop))
+			: basePercent),
 		completedAppointmentsCount: appointments.length,
 		inChairAppointmentsCount: 0,
 		totalAppointmentsCount: appointments.length,

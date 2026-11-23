@@ -10,4 +10,3 @@
  */
 
 export * from "../finance/doctorPayrollEngine.js";
-export * from "../finance/doctorNetSalaryEngine.js";

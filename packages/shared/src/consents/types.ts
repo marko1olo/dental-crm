@@ -10,6 +10,8 @@ import { z } from "zod";
 export const consentVerificationMethodSchema = z.enum([
 	"tablet_stylus",
 	"sms_otp",
+	"paper_signed",
+	"patient_portal",
 	"paper_physical",
 ]);
 export type ConsentVerificationMethod = z.infer<typeof consentVerificationMethodSchema>;

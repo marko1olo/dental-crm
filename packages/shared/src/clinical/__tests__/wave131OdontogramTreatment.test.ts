@@ -272,6 +272,26 @@ describe("Wave 131: Odontogram Multi-Tooth Treatment Engine (DentalPin Reverse-E
 			}
 		});
 
+		it("preserves anatomical MODBL surfaces and fillings when applying crown (Mandate 8ar/8as, DEFECT-LAB-03)", () => {
+			const base = createIntactOdontogram("adult");
+			const filled = applyToothCondition(base, 16, "filling", ["M", "O"]);
+			const filledTooth16 = filled.teeth[16];
+			if (!filledTooth16) throw new Error("Tooth 16 missing");
+			assert.equal(filledTooth16.surfaces.M, "filling");
+			assert.equal(filledTooth16.surfaces.O, "filling");
+			assert.equal(filledTooth16.surfaces.D, "healthy");
+
+			// Устанавливаем искусственную коронку без указания конкретных поверхностей
+			const crowned = applyToothCondition(filled, 16, "crown");
+			const tooth16 = crowned.teeth[16];
+			if (!tooth16) throw new Error("Crowned tooth 16 missing");
+			assert.equal(tooth16.generalCondition, "crown");
+			// Поверхности под коронкой не должны быть стерты!
+			assert.equal(tooth16.surfaces.M, "filling");
+			assert.equal(tooth16.surfaces.O, "filling");
+			assert.equal(tooth16.surfaces.D, "healthy");
+		});
+
 		it("rejects invalid tooth number or surface", () => {
 			const base = createIntactOdontogram("adult");
 			assert.throws(() => applyToothCondition(base, 99, "caries"), /Invalid FDI tooth number/);

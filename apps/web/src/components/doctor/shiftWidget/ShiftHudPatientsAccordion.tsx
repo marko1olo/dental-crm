@@ -3,9 +3,9 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
+import { type ChairsideShiftEarningsSummary, kopecksToRubles } from "@dental/shared";
 import React from "react";
 import { ChevronDown, ChevronUp, Users } from "lucide-react";
-import type { ChairsideShiftEarningsSummary } from "../doctorShiftEarnings.js";
 
 export interface ShiftHudPatientsAccordionProps {
 	readonly summary: ChairsideShiftEarningsSummary;
@@ -53,16 +53,16 @@ export const ShiftHudPatientsAccordion: React.FC<ShiftHudPatientsAccordionProps>
 									</span>
 									{item.labCostKop > 0 && (
 										<span className="text-[9px] text-rose-600">
-											ЗТЛ: −{Math.round(item.labCostKop / 100).toLocaleString("ru-RU")} ₽
+											ЗТЛ: −{Math.round(kopecksToRubles(item.labCostKop)).toLocaleString("ru-RU")} ₽
 										</span>
 									)}
 								</div>
 								<div className="text-right shrink-0">
 									<span className="font-bold font-mono text-emerald-700 dark:text-emerald-400 block">
-										+{Math.round(item.doctorEarnedKop / 100).toLocaleString("ru-RU")} ₽
+										+{Math.round(kopecksToRubles(item.doctorEarnedKop)).toLocaleString("ru-RU")} ₽
 									</span>
 									<span className="text-[9px] text-[var(--muted)] font-mono">
-										{Math.round(item.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
+										{Math.round(kopecksToRubles(item.grossRevenueKop)).toLocaleString("ru-RU")} ₽
 									</span>
 								</div>
 							</div>

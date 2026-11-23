@@ -472,6 +472,8 @@ export function generateEndoCanalsTable043(canals: readonly EndoCanalData[]): st
 }
 
 export const generateEndoCanalsTable = generateEndoCanalsTable043;
+/** Канонический алиас без советского канцелярита "043/у" (Мандаты 8x, 8ap) */
+export const generateEndoClinicalProtocolTable = generateEndoCanalsTable043;
 
 export function formatEndoCanalsTable043(
 	canals: readonly EndoCanalData[],
@@ -492,6 +494,8 @@ export function formatEndoCanalsTable043(
 }
 
 export const formatEndoCanalsTable = formatEndoCanalsTable043;
+/** Канонический алиас без советского канцелярита "043/у" (Мандаты 8x, 8ap) */
+export const formatEndoClinicalProtocolTable = formatEndoCanalsTable043;
 
 /**
  * Каноническая генерация структурированного протокола эндодонтии для медицинской карты приёма / дневника визита.

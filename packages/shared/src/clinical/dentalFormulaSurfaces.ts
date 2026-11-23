@@ -28,6 +28,70 @@ import { isMaxillaryTooth } from "./dentalFormulaFdi.js";
 export const CANONICAL_SURFACES = ["O", "V", "L", "M", "D", "C"] as const;
 export type CanonicalSurfaceKey = (typeof CANONICAL_SURFACES)[number];
 
+/**
+ * Канонический тип поверхности зуба (5 международных граней + пришеечная C).
+ * M — медиальная (mesial)
+ * O — окклюзионная / режущая (occlusal / incisal)
+ * D — дистальная (distal)
+ * V — вестибулярная / щечная / губная (vestibular / buccal / labial)
+ * L — язычная / нёбная (lingual / palatal)
+ * C — цервикальная / пришеечная (cervical)
+ */
+export type ToothSurfaceKey = "M" | "O" | "D" | "V" | "L" | "C";
+
+/**
+ * Канонический клинический статус анатомической поверхности:
+ * - healthy: здоровая / интактная ткань
+ * - caries: кариозное поражение (стадия пятна, поверхностный, средний, глубокий)
+ * - filling: состоятельная реставрация / пломба
+ * - secondary_caries: вторичный кариес по границе ранее установленной пломбы
+ * - defect: дефект реставрации / краевая разгерметизация / скол эмали
+ * - inlay: керамическая/композитная вкладка (Inlay/Onlay/Overlay)
+ * - fracture: перелом / трещина поверхности
+ */
+export type SurfaceClinicalStatus =
+	| "healthy"
+	| "caries"
+	| "filling"
+	| "secondary_caries"
+	| "defect"
+	| "inlay"
+	| "fracture";
+
+/**
+ * Каноническая карта состояний поверхностей зуба.
+ * Изоляция поверхностей (Мандат 8ar/8as): кариес на окклюзии никогда не затирает пломбу на медиальной грани.
+ */
+export type ToothSurfaceStateMap = Partial<Record<ToothSurfaceKey, SurfaceClinicalStatus>>;
+
+/**
+ * Битовые маски поверхностей зуба (0..63) для мгновенной битовой фильтрации и изоляции:
+ * M: 1 << 0 (1)
+ * O: 1 << 1 (2)
+ * D: 1 << 2 (4)
+ * V: 1 << 3 (8)
+ * L: 1 << 4 (16)
+ * C: 1 << 5 (32)
+ */
+export const SURFACE_BIT_MASKS: Readonly<Record<ToothSurfaceKey, number>> = Object.freeze({
+	M: 1 << 0, // 1
+	O: 1 << 1, // 2
+	D: 1 << 2, // 4
+	V: 1 << 3, // 8
+	L: 1 << 4, // 16
+	C: 1 << 5, // 32
+});
+
+/** Канонический порядок перечисления поверхностей (MODVLC) */
+export const CANONICAL_SURFACE_ORDER: readonly ToothSurfaceKey[] = Object.freeze([
+	"M",
+	"O",
+	"D",
+	"V",
+	"L",
+	"C",
+] as const);
+
 /** 5 стандартных поверхностей по международному стандарту ВОЗ/СтАР */
 export const STANDARD_5_SURFACES = ["O", "V", "L", "M", "D"] as const;
 export type Standard5SurfaceKey = (typeof STANDARD_5_SURFACES)[number];
@@ -393,4 +457,156 @@ export function getArchSpecificAspect(
 	}
 	const desc = CANONICAL_SURFACE_DESCRIPTORS[surfaceKey];
 	return { key: desc.key, labelRu: desc.nameRu, shortRu: desc.shortRu };
+}
+
+// ============================================================================
+// 3. БИТОВЫЕ МАСКИ И ОПЕРАЦИИ ИЗОЛЯЦИИ ПОВЕРХНОСТЕЙ (MODBL / WHEELER 2.5D)
+// ============================================================================
+
+/**
+ * Кодирует набор поверхностей в целое число — битовую маску (0..63).
+ */
+export function encodeSurfacesToBitMask(surfaces?: readonly (ToothSurfaceKey | string)[] | null): number {
+	if (!surfaces || surfaces.length === 0) return 0;
+	let mask = 0;
+	for (const s of surfaces) {
+		const norm = normalizeCanonicalSurface(s);
+		if (norm && norm in SURFACE_BIT_MASKS) {
+			mask |= SURFACE_BIT_MASKS[norm as ToothSurfaceKey];
+		}
+	}
+	return mask;
+}
+
+/**
+ * Декодирует битовую маску в канонический массив граней в порядке M, O, D, V, L, C.
+ */
+export function decodeSurfacesFromBitMask(mask: number): ToothSurfaceKey[] {
+	if (!mask || mask <= 0) return [];
+	const result: ToothSurfaceKey[] = [];
+	for (const key of CANONICAL_SURFACE_ORDER) {
+		if ((mask & SURFACE_BIT_MASKS[key]) !== 0) {
+			result.push(key);
+		}
+	}
+	return result;
+}
+
+/**
+ * Слияние карт состояний поверхностей с сохранением анатомической изоляции.
+ * Кариес на окклюзии никогда не затирает пломбу на медиальной или дистальной грани.
+ */
+export function mergeToothSurfaceStates(
+	current: ToothSurfaceStateMap,
+	incoming: ToothSurfaceStateMap,
+): ToothSurfaceStateMap {
+	return {
+		...current,
+		...incoming,
+	};
+}
+
+// ============================================================================
+// 4. РЕЗОЛВЕР УСЛУГ ПО БЛЭКУ (НОМЕНКЛАТУРА 804н МИНЗДРАВА РФ)
+// ============================================================================
+
+export interface BlackRestorationServiceResolution {
+	readonly serviceCode: "A16.07.002.001" | "A16.07.002.002";
+	readonly code804n: "A16.07.002.001" | "A16.07.002.002";
+	readonly nameRu: string;
+	readonly priceKopecks: number; // 450 000 или 550 000 копеек
+	readonly blackClass: "I" | "II" | "III" | "IV" | "V" | "VI";
+	readonly involvesContactSurfaces: boolean;
+	readonly surfaces: readonly ToothSurfaceKey[];
+}
+
+/**
+ * Канонический резолвер услуг по Блэку (Номенклатура Минздрава 804н).
+ * - A16.07.002.001 (450 000 коп.) — Восстановление зуба пломбой I, V, VI класс по Блэку
+ * - A16.07.002.002 (550 000 коп.) — Восстановление зуба пломбой с нарушением контактного пункта зуба (II, III, IV класс по Блэку при поражении M/D граней)
+ */
+export function resolveBlackRestorationService(
+	surfaces: readonly (ToothSurfaceKey | string)[],
+): BlackRestorationServiceResolution {
+	const normalized = normalizeCanonicalSurfaces(surfaces) as ToothSurfaceKey[];
+	const hasMesial = normalized.includes("M");
+	const hasDistal = normalized.includes("D");
+	const hasOcclusal = normalized.includes("O");
+	const hasCervical = normalized.includes("C");
+	const hasVestibular = normalized.includes("V");
+	const hasLingual = normalized.includes("L");
+
+	// Поражение контактных пунктов M или D (II, III, IV класс по Блэку)
+	if (hasMesial || hasDistal) {
+		const blackClass = hasOcclusal ? "II" : "III";
+		return {
+			serviceCode: "A16.07.002.002",
+			code804n: "A16.07.002.002",
+			nameRu: "Восстановление зуба пломбой с нарушением контактного пункта зуба (II, III, IV класс по Блэку)",
+			priceKopecks: 550_000,
+			blackClass,
+			involvesContactSurfaces: true,
+			surfaces: normalized,
+		};
+	}
+
+	// Поражение без вовлечения контактных пунктов: I, V, VI классы
+	let blackClass: "I" | "V" | "VI" = "I";
+	if (hasCervical || (hasVestibular && !hasOcclusal) || (hasLingual && !hasOcclusal)) {
+		blackClass = "V";
+	} else if (hasOcclusal) {
+		blackClass = "I";
+	}
+
+	return {
+		serviceCode: "A16.07.002.001",
+		code804n: "A16.07.002.001",
+		nameRu: "Восстановление зуба пломбой I, V, VI класс по Блэку с использованием материалов из фотополимеров",
+		priceKopecks: 450_000,
+		blackClass,
+		involvesContactSurfaces: false,
+		surfaces: normalized,
+	};
+}
+
+// ============================================================================
+// 5. СОСТАВНОЙ МКБ-10 КОД С КАНОНИЧЕСКИМ ПОРЯДКОМ ГРАНЕЙ (MODVLC)
+// ============================================================================
+
+/**
+ * Формирует составной код диагноза МКБ-10 с каноническим порядком граней M, O, D, V, L, C.
+ * Пример: buildCompositeIcd10Code("K02.1", ["O", "D", "M"]) -> "K02.1/MOD"
+ */
+export function buildCompositeIcd10Code(
+	baseIcd: string,
+	surfaces?: readonly (ToothSurfaceKey | string)[] | null,
+): string {
+	const trimmed = (baseIcd ?? "").trim();
+	if (!trimmed) return "";
+	if (!surfaces || surfaces.length === 0) return trimmed;
+
+	const normalized = normalizeCanonicalSurfaces(surfaces) as ToothSurfaceKey[];
+	if (normalized.length === 0) return trimmed;
+
+	const orderMap: Record<ToothSurfaceKey, number> = {
+		M: 0,
+		O: 1,
+		D: 2,
+		V: 3,
+		L: 4,
+		C: 5,
+	};
+
+	const sorted = normalized
+		.filter((k): k is ToothSurfaceKey => k in orderMap)
+		.sort((a, b) => orderMap[a] - orderMap[b]);
+
+	if (sorted.length === 0) return trimmed;
+	const acronym = sorted.join("");
+
+	if (trimmed.includes(`/${acronym}`) || trimmed.endsWith(`.${acronym}`)) {
+		return trimmed;
+	}
+	const sep = trimmed.endsWith("/") ? "" : "/";
+	return `${trimmed}${sep}${acronym}`;
 }

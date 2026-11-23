@@ -20,7 +20,7 @@ import {
 	calculateLeadTimeDemand,
 	calculateReorderPoint,
 	calculateSuggestedQuantity,
-	computeReorderSuggestion,
+	computeInventoryReorderSuggestion as computeReorderSuggestion,
 	computeReorderSuggestions,
 } from "../warehouse/inventoryReorderEngine.js";
 

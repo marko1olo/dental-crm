@@ -4,6 +4,7 @@
  * Mandate 8b: <= 120 lines.
  */
 
+import { calculatePercentDiscountKopecks } from "../../money.js";
 import { KPI_BONUS_TIERS } from "./payrollRules.js";
 
 /** Pure integer arithmetic: Net Base = Gross − Lab − Materials (Mandate 8n) */
@@ -13,7 +14,7 @@ export function computeNetBaseKopecks(grossKop: number, labKop: number, matKop: 
 
 /** Pure integer arithmetic: Doctor Commission = Base × Percent (Mandate 8b) */
 export function calculateDoctorCommissionKopecks(baseKop: number, percent: number): number {
-	return (baseKop <= 0 || percent <= 0) ? 0 : Math.round((baseKop * percent) / 100);
+	return calculatePercentDiscountKopecks(baseKop, percent);
 }
 
 export interface DoctorChairRentalResult {
@@ -36,7 +37,7 @@ export function computeChairRental(
 	if (chairRentalMode === "split_70_30") {
 		const doctorSplit = Math.max(0, Math.min(100, splitDoctorPercent ?? 70));
 		const clinicSplit = 100 - doctorSplit;
-		chairRentalKop = Math.round((rawNetBase * clinicSplit) / 100);
+		chairRentalKop = calculatePercentDiscountKopecks(rawNetBase, clinicSplit);
 	} else {
 		chairRentalKop = Math.max(0, fixedRentalKop ?? 0);
 	}
@@ -72,7 +73,7 @@ export function computeKpiBonus(
 		}
 	}
 
-	const kpiBonusEarned = isChairRental ? 0 : Math.round((totalNetBase * kpiPercent) / 100);
+	const kpiBonusEarned = isChairRental ? 0 : calculatePercentDiscountKopecks(totalNetBase, kpiPercent);
 	return { kpiPercent, kpiBadge, kpiBonusEarned };
 }
 

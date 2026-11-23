@@ -116,6 +116,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 				visitId: args.visitId ?? null,
 				totalRub: String(totalAmountRub),
 				totalAmountRub,
+				totalPriceKopecks: totalKopecks,
 				status: "pending",
 			})
 			.returning({ id: patientInvoices.id });

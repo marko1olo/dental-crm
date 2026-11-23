@@ -4,6 +4,7 @@
  */
 
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "./kopecksArithmetic.js";
+import { percentageOfKopecks, toExactKopecks } from "../money.js";
 
 export interface ClinicFiscalRequisites {
 	readonly name: string;
@@ -197,7 +198,7 @@ export function calculateFiscalPeriodStatementTotals(
 		: totalElectronicKopecks;
 	const bankFeeKop = bankAcquiringFeeRub !== undefined
 		? rubToKopecks(bankAcquiringFeeRub)
-		: Math.round(bankStatementKop * 0.015); // default standard 1.5% acquiring fee
+		: percentageOfKopecks(toExactKopecks(bankStatementKop), 150); // default standard 1.5% acquiring fee (150 bp)
 	const netBankDepositKop = Math.max(0, bankStatementKop - bankFeeKop);
 	const discrepancyKop = totalElectronicKopecks - bankStatementKop;
 

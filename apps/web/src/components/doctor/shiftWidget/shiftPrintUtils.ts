@@ -4,9 +4,8 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
-import { generateDoctorEarningsPayslipHtml } from "@dental/shared";
+import { type ChairsideShiftEarningsSummary, generateDoctorEarningsPayslipHtml } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
-import type { ChairsideShiftEarningsSummary } from "../doctorShiftEarnings.js";
 
 export function printShiftPayslip(
 	summary: ChairsideShiftEarningsSummary,

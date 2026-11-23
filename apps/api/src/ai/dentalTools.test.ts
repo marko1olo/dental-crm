@@ -171,6 +171,31 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 			{ organizationId: TEST_ORG_ID, runtimeMode: "desktop_native" },
 		);
 		assert.strictEqual(deskRes.actionDirective, "DESKTOP_PRINT_DISPATCHED");
+
+		// Семантические алиасы: dental_medical_card & clinical_record_entry (Мандат 8x)
+		const cardRes = await handlePrintDocument(
+			{
+				documentType: "dental_medical_card",
+				patientId: "22222222-2222-2222-2222-222222222222",
+				format: "pdf",
+			},
+			{ organizationId: TEST_ORG_ID, runtimeMode: "web_browser" },
+		);
+		assert.strictEqual(cardRes.success, true);
+		assert.strictEqual(cardRes.documentType, "dental_medical_card");
+		assert.match(cardRes.printJobId, /^job_\d+_[0-9a-f]{8}$/);
+
+		const entryRes = await handlePrintDocument(
+			{
+				documentType: "clinical_record_entry",
+				patientId: "22222222-2222-2222-2222-222222222222",
+				format: "pdf",
+			},
+			{ organizationId: TEST_ORG_ID, runtimeMode: "web_browser" },
+		);
+		assert.strictEqual(entryRes.success, true);
+		assert.strictEqual(entryRes.documentType, "clinical_record_entry");
+		assert.match(entryRes.printJobId, /^job_\d+_[0-9a-f]{8}$/);
 	});
 });
 

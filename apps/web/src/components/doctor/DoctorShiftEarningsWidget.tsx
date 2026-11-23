@@ -6,8 +6,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Banknote, ChevronDown, Printer, Wallet, X } from "lucide-react";
-import { type ChairsideShiftEarningsSummary, calculateChairsideShiftEarnings } from "./doctorShiftEarnings.js";
-import type { DoctorShiftAppointment } from "@dental/shared";
+import { type ChairsideShiftEarningsSummary, type DoctorShiftAppointment, calculateChairsideShiftEarnings } from "@dental/shared";
 import { ShiftHudPayoutBanner } from "./shiftWidget/ShiftHudPayoutBanner.js";
 import { ShiftHudMetricsGrid } from "./shiftWidget/ShiftHudMetricsGrid.js";
 import { ShiftHudPatientsAccordion } from "./shiftWidget/ShiftHudPatientsAccordion.js";

@@ -46,7 +46,7 @@ export interface MdlpExpirationResult {
 	readonly isExpired: boolean;
 	readonly daysUntilExpiration: number | null;
 	readonly isExpiringSoon: boolean;
-	readonly error?: string | undefined;
+	readonly error?: string | null | undefined;
 }
 
 // ─── GS1 DataMatrix Barcode Parsing Types ───────────────────────────────────

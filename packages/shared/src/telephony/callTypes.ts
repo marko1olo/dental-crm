@@ -9,6 +9,7 @@ export type TelephonyProvider =
 	| "mango"
 	| "uis"
 	| "zadarma"
+	| "sipuni"
 	| "asterisk"
 	| "domru"
 	| "megafon"

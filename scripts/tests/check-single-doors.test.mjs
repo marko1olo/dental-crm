@@ -10,6 +10,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -220,6 +221,127 @@ test("Rule 3 (API Mutation Doors): passes validated mutations (schema.body, safe
 
 		const violations = checkApiMutationDoors([routeFile], allowlist);
 		assert.equal(violations.length, 0);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("Rule 3 (API Mutation Doors): blocks comment spoofing loophole (// TODO: validate later)", () => {
+	fs.mkdirSync(cacheDir, { recursive: true });
+	const tempDir = fs.mkdtempSync(path.join(cacheDir, "dente-door-test-"));
+
+	try {
+		const routeFile = path.join(tempDir, "spoofedRoute.ts");
+		fs.writeFileSync(
+			routeFile,
+			`
+			import { FastifyInstance } from "fastify";
+			export async function testRoutes(fastify: FastifyInstance) {
+				fastify.post("/api/spoofed-test", async (req, reply) => {
+					// TODO: validate later when schema is ready
+					const text = "must validate this";
+					return { ok: true, text };
+				});
+			}
+			`,
+			"utf8",
+		);
+
+		const violations = checkApiMutationDoors([routeFile], { api_mutation_doors_legacy_backlog: [] });
+		assert.equal(violations.length, 1);
+		assert.equal(violations[0].rule, "API_MUTATION_UNVALIDATED");
+		assert.equal(violations[0].path, "/api/spoofed-test");
+		assert.equal(violations[0].method, "POST");
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("Rule 3 (API Mutation Doors): supports fastify.route() declarations", () => {
+	fs.mkdirSync(cacheDir, { recursive: true });
+	const tempDir = fs.mkdtempSync(path.join(cacheDir, "dente-door-test-"));
+
+	try {
+		const routeFile = path.join(tempDir, "fastifyRouteDeclarations.ts");
+		fs.writeFileSync(
+			routeFile,
+			`
+			import { FastifyInstance } from "fastify";
+			export async function testRoutes(fastify: FastifyInstance) {
+				// Unvalidated fastify.route with single method
+				fastify.route({
+					method: "POST",
+					url: "/api/route-unvalidated",
+					handler: async (req, reply) => {
+						return { ok: true };
+					},
+				});
+
+				// Unvalidated fastify.route with array of methods
+				fastify.route({
+					method: ["POST", "PUT"],
+					url: "/api/route-array-unvalidated",
+					handler: async (req, reply) => {
+						return { ok: true };
+					},
+				});
+
+				// Validated fastify.route via schema.body
+				fastify.route({
+					method: "POST",
+					url: "/api/route-validated-schema",
+					schema: { body: { type: "object" } },
+					handler: async (req, reply) => {
+						return { ok: true };
+					},
+				});
+
+				// Validated fastify.route via safeParse in handler
+				fastify.route({
+					method: "PATCH",
+					url: "/api/route-validated-handler",
+					handler: async (req, reply) => {
+						const res = mySchema.safeParse(req.body);
+						return { ok: res.success };
+					},
+				});
+			}
+			`,
+			"utf8",
+		);
+
+		const violations = checkApiMutationDoors([routeFile], { api_mutation_doors_legacy_backlog: [] });
+		assert.equal(violations.length, 3); // 1 from route-unvalidated + 2 from route-array-unvalidated (POST, PUT)
+		const paths = violations.map((v) => `${v.method} ${v.path}`);
+		assert.ok(paths.includes("POST /api/route-unvalidated"));
+		assert.ok(paths.includes("POST /api/route-array-unvalidated"));
+		assert.ok(paths.includes("PUT /api/route-array-unvalidated"));
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("checkApiMutationDoors: ловит незащищенный fastify.delete роут", () => {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "single-doors-delete-test-"));
+	try {
+		const routeFile = path.join(tempDir, "delete-route.ts");
+		fs.writeFileSync(
+			routeFile,
+			`
+			import { FastifyInstance } from "fastify";
+			export async function deleteRoutes(fastify: FastifyInstance) {
+				fastify.delete("/api/patients/:id", async (req, reply) => {
+					return { success: true };
+				});
+			}
+			`,
+			"utf8",
+		);
+
+		const violations = checkApiMutationDoors([routeFile], { api_mutation_doors_legacy_backlog: [] });
+		assert.equal(violations.length, 1, "DELETE мутация обязана детектироваться как требующая валидации");
+		assert.equal(violations[0].method, "DELETE");
+		assert.equal(violations[0].path, "/api/patients/:id");
 	} finally {
 		fs.rmSync(tempDir, { recursive: true, force: true });
 	}

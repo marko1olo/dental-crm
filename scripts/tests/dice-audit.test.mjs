@@ -8,18 +8,28 @@
  *  3. Инспекцию строк (чистые кейсы vs обнаружение any, non-null, money division, uppercase).
  *  4. Формат и структуру полного отчета runDiceAudit.
  *  5. Детерминированный прогон аудита по сиду на реальной кодовой базе.
+ *  6. Валидацию манифестов отказов FAILURE_MANIFESTOS.
  *
  * Запуск: node --test scripts/tests/dice-audit.test.mjs
  */
 
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
+	auditDoors,
+	auditFields,
+	auditUi,
 	createPrng,
 	inspectLine,
 	parseCliArgs,
 	runDiceAudit,
+	sampleLines,
 } from "../dice-audit.mjs";
+import { FAILURE_MANIFESTOS, printFailureManifesto } from "../manifests/failure-manifestos.mjs";
 
 test("PRNG Mulberry32: детерминированность генерации по числовому и строковому сиду", () => {
 	const rng1 = createPrng(42);
@@ -142,6 +152,39 @@ test("Инспектор строк inspectLine: выявление опасно
 	assert.ok(res.defects.some((d) => d.rule === "MANDATE_8bm_RAW_MONEY_DIVISION"));
 });
 
+test("Инспектор строк inspectLine: выявление скрытого умножения денег на 0.01 / .01 (Мандат 8bm)", () => {
+	const sampleMul = {
+		relPath: "apps/api/src/routes/payroll.ts",
+		lineNum: 45,
+		current: "const docBonus = doctorWageBaseKopecks * docPct * 0.01;",
+		before: [],
+		after: [],
+	};
+
+	const res = inspectLine(sampleMul);
+	assert.equal(res.status, "DEFECT");
+	assert.ok(res.defects.some((d) => d.rule === "MANDATE_8bm_RAW_MONEY_MULTIPLICATION"));
+
+	// Проверка на пропуск легальных выражений (СанПиН 1%, геометрия рентгена, SVG)
+	const sampleSanPin = {
+		relPath: "apps/api/src/services/sterilization.ts",
+		lineNum: 80,
+		current: "const sampleSize = batchItemCount * 0.01;",
+		before: [],
+		after: [],
+	};
+	assert.equal(inspectLine(sampleSanPin).status, "CLEAN");
+
+	const sampleGeometry = {
+		relPath: "apps/web/src/components/imaging/RvgViewer.tsx",
+		lineNum: 110,
+		current: "const screenDx = dx * 0.01 * imageWidthPx;",
+		before: [],
+		after: [],
+	};
+	assert.equal(inspectLine(sampleGeometry).status, "CLEAN");
+});
+
 test("Инспектор строк inspectLine: выявление uppercase на кнопках (Мандат 8am)", () => {
 	const sampleUppercase = {
 		relPath: "apps/web/src/components/Toolbar.tsx",
@@ -205,4 +248,276 @@ test("Изолированные списки runDiceAudit (--list doors, fields
 	assert.equal(reportUi.doors, null);
 	assert.equal(reportFields.doors, null);
 	assert.ok(reportUi.ui.sampled.length > 0);
+});
+
+test("E2E CLI execution: --help prints usage and exits with 0", () => {
+	const scriptPath = path.resolve("scripts/dice-audit.mjs");
+	const res = spawnSync("node", [scriptPath, "--help"], { encoding: "utf8" });
+	assert.equal(res.status, 0, "CLI --help обязан выходить с кодом 0");
+	assert.ok(res.stdout.includes("Использование:"), "Вывод обязан содержать справку");
+	assert.ok(res.stdout.includes("--strict"), "Справка обязана содержать описание флага --strict");
+});
+
+test("E2E CLI execution: --json produces valid parseable JSON report", () => {
+	const scriptPath = path.resolve("scripts/dice-audit.mjs");
+	const res = spawnSync("node", [scriptPath, "--samples", "2", "--seed", "json-test-seed", "--json"], {
+		encoding: "utf8",
+	});
+	assert.equal(res.status, 0, "CLI с --json обязан выходить с кодом 0 при отсутствии --strict");
+	const parsed = JSON.parse(res.stdout);
+	assert.ok(parsed.meta, "JSON отчет обязан содержать meta");
+	assert.equal(parsed.meta.seed, "json-test-seed");
+	assert.ok(parsed.summary, "JSON отчет обязан содержать summary");
+	assert.equal(parsed.lines.length, 2, "Должно быть ровно 2 сэмпла строк");
+});
+
+test("E2E CLI execution: --strict with defects returns Exit Code 1", () => {
+	const scriptPath = path.resolve("scripts/dice-audit.mjs");
+	// Запускаем аудит дверей, где заведомо есть мутации без заголовка Idempotency-Key
+	const res = spawnSync("node", [scriptPath, "--list", "doors", "--samples", "5", "--strict"], {
+		encoding: "utf8",
+	});
+	assert.equal(res.status, 1, "При обнаружении дефектов с --strict CLI ОБЯЗАН завершаться с Exit Code 1");
+	assert.ok(
+		res.stdout.includes("ВЕРДИКТ") || res.stdout.includes("РЕЙТИНГ") || res.stderr.includes("ШЛЮЗ"),
+		"Вывод обязан содержать результат проверки или манифест отказа",
+	);
+});
+
+test("E2E CLI execution: without --strict returns Exit Code 0 even with warnings", () => {
+	const scriptPath = path.resolve("scripts/dice-audit.mjs");
+	const res = spawnSync("node", [scriptPath, "--list", "doors", "--samples", "5"], {
+		encoding: "utf8",
+	});
+	assert.equal(res.status, 0, "Без --strict CLI работает в режиме инспекции и выходит с Exit Code 0");
+});
+
+test("Мутационное тестирование: намеренно внедренные дефекты гарантированно отлавливаются инспектором", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-mutation-"));
+	try {
+		const badCode = [
+			"// Исходный файл с дефектами для мутационного теста",
+			"export function processPayment(req: any) {",
+			"  const payload = req.body as any;",
+			"  const userId = req.user!.id;",
+			"  const rubAmount = req.body.price / 100;",
+			"  const bonus = req.body.kopecks * 0.01;",
+			'  return <button className="h-9 px-4 uppercase bg-amber-100">Оплатить</button>;',
+			"}",
+		].join("\n");
+
+		const testFile = path.join(tmpDir, "mutationVictim.tsx");
+		writeFileSync(testFile, badCode, "utf8");
+
+		// Проверяем каждую строку отдельно
+		const lines = badCode.split("\n");
+
+		// Строка 3: payload = req.body as any;
+		const sampleAny = {
+			relPath: "apps/web/src/components/mutationVictim.tsx",
+			lineNum: 3,
+			current: lines[2],
+			before: lines.slice(0, 2),
+			after: lines.slice(3),
+		};
+		const resAny = inspectLine(sampleAny);
+		assert.equal(resAny.status, "DEFECT", "Слепой 'as any' обязан детектироваться");
+		assert.ok(resAny.defects.some((d) => d.rule === "MANDATE_8be_AS_ANY"));
+
+		// Строка 4: userId = req.user!.id;
+		const sampleNonNull = {
+			relPath: "apps/api/src/routes/mutationVictim.ts",
+			lineNum: 4,
+			current: lines[3],
+			before: lines.slice(0, 3),
+			after: lines.slice(4),
+		};
+		const resNonNull = inspectLine(sampleNonNull);
+		assert.equal(resNonNull.status, "DEFECT", "Non-null assertion '!' обязан детектироваться");
+		assert.ok(resNonNull.defects.some((d) => d.rule === "MANDATE_8be_NON_NULL_ASSERTION"));
+
+		// Строка 5: rubAmount = req.body.price / 100;
+		const sampleDiv = {
+			relPath: "apps/api/src/routes/mutationVictim.ts",
+			lineNum: 5,
+			current: lines[4],
+			before: lines.slice(0, 4),
+			after: lines.slice(5),
+		};
+		const resDiv = inspectLine(sampleDiv);
+		assert.equal(resDiv.status, "DEFECT", "Деление денег на 100 обязано детектироваться");
+		assert.ok(resDiv.defects.some((d) => d.rule === "MANDATE_8bm_RAW_MONEY_DIVISION"));
+
+		// Строка 7: button uppercase
+		const sampleUpper = {
+			relPath: "apps/web/src/components/mutationVictim.tsx",
+			lineNum: 7,
+			current: lines[6],
+			before: lines.slice(0, 6),
+			after: [],
+		};
+		const resUpper = inspectLine(sampleUpper);
+		assert.equal(resUpper.status, "DEFECT", "Капслок на кнопке обязан детектироваться");
+		assert.ok(resUpper.defects.some((d) => d.rule === "MANDATE_8am_UPPERCASE_BAN"));
+
+		// Инспекция через sampleLines на синтетическом файле
+		const prng = createPrng(12345);
+		const samples = sampleLines([testFile], 1, prng, tmpDir);
+		assert.equal(samples.length, 1);
+		assert.ok(["CLEAN", "DEFECT"].includes(samples[0].status));
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
+test("Глубокий аудит дверей (auditDoors): выявление мутаций без Idempotency-Key и без транзакций", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-doors-"));
+	try {
+		const routesDir = path.join(tmpDir, "apps/api/src/routes");
+		mkdirSync(routesDir, { recursive: true });
+
+		const dirtyRouteCode = [
+			'import { FastifyInstance } from "fastify";',
+			"export async function dirtyMutationRoutes(fastify: FastifyInstance) {",
+			'  fastify.post("/api/invoices/pay", async (req, reply) => {',
+			"    const { invoiceId, amount } = req.body as any;",
+			"    // Прямой insert без Idempotency-Key и без транзакции",
+			'    await db.insert("payments").values({ invoiceId, amount });',
+			'    await db.update("invoices").set({ status: "paid" });',
+			"    return { success: true };",
+			"  });",
+			"}",
+		].join("\n");
+
+		writeFileSync(path.join(routesDir, "dirtyPaymentRoute.ts"), dirtyRouteCode, "utf8");
+
+		const prng = createPrng(42);
+		const doorReport = auditDoors(tmpDir, prng, 1);
+		assert.equal(doorReport.totalDoorsFound, 1, "Должна быть найдена 1 мутационная дверь");
+		const door = doorReport.sampled[0];
+		assert.equal(door.status, "DEFECT", "Дверь без Idempotency-Key и транзакции обязана быть DEFECT");
+		assert.equal(door.hasIdempotency, false, "hasIdempotency обязан быть false");
+		assert.equal(door.hasTransaction, false, "hasTransaction обязан быть false");
+		assert.ok(door.issues.some((iss) => iss.includes("Idempotency-Key")));
+		assert.ok(door.issues.some((iss) => iss.includes("db.transaction")));
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
+test("Глубокий аудит полей (auditFields): выявление z.any() и float-numeric колонок", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-fields-"));
+	try {
+		const schemaDir = path.join(tmpDir, "apps/api/src/db/schema");
+		mkdirSync(schemaDir, { recursive: true });
+
+		const dirtySchemaCode = [
+			'import { pgTable, serial, numeric, text } from "drizzle-orm/pg-core";',
+			'import { z } from "zod";',
+			'export const dirtyPaymentsTable = pgTable("dirty_payments", {',
+			'  id: serial("id").primaryKey(),',
+			'  rubAmount: numeric("rub_amount").notNull(),',
+			"});",
+			"export const dirtyPayloadSchema = z.object({",
+			"  rawPayload: z.any(),",
+			"});",
+		].join("\n");
+
+		writeFileSync(path.join(schemaDir, "dirtySchema.ts"), dirtySchemaCode, "utf8");
+
+		const prng = createPrng(42);
+		const fieldReport = auditFields(tmpDir, prng, 2);
+		assert.equal(fieldReport.totalContractsFound, 2, "Должно быть найдено 2 контракта (таблица и схема)");
+
+		const tableContract = fieldReport.sampled.find((c) => c.type === "Drizzle Table");
+		assert.ok(tableContract, "Drizzle Table должна присутствовать");
+		assert.ok(tableContract.issues.some((iss) => iss.includes("numeric(Rub)")));
+
+		const zodContract = fieldReport.sampled.find((c) => c.type === "Zod Contract Schema");
+		assert.ok(zodContract, "Zod Contract Schema должна присутствовать");
+		assert.ok(zodContract.issues.some((iss) => iss.includes("z.any()")));
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
+test("Глубокий аудит UI (auditUi): выявление файлов-клонов модалок (*Modal2.tsx)", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-ui-"));
+	try {
+		const componentsDir = path.join(tmpDir, "apps/web/src/components");
+		mkdirSync(componentsDir, { recursive: true });
+
+		const modalCode = [
+			'import React from "react";',
+			"export function PatientCardModal2() {",
+			'  return <button className="h-9 px-4 rounded-lg">Сохранить</button>;',
+			"}",
+		].join("\n");
+
+		writeFileSync(path.join(componentsDir, "PatientCardModal2.tsx"), modalCode, "utf8");
+
+		const prng = createPrng(42);
+		const uiReport = auditUi(tmpDir, prng, 1);
+		assert.equal(uiReport.duplicateModalsFound, 1, "Файл-клон PatientCardModal2.tsx обязан быть обнаружен");
+		assert.equal(uiReport.duplicateModals[0].rule, "MANDATE_8s_DUPLICATE_CLONE");
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
+test("Реестр манифестов отказов FAILURE_MANIFESTOS: полнота и валидность всех 12 шлюзов", () => {
+	const REQUIRED_GATES = [
+		"DIFF_SAFETY",
+		"ENCODING_UTF8",
+		"DYNAMIC_IMPORTS",
+		"TYPE_RATCHET",
+		"MOCK_DEFAULTS",
+		"SINGLE_DOORS",
+		"DICE_AUDIT",
+		"TYPESCRIPT_COMPILER",
+		"MIGRATION_DRIFT",
+		"REACT_HOOKS",
+		"BUTTON_STYLES",
+		"CSS_TOKENS",
+		"UNIT_TESTS",
+	];
+
+	for (const gateKey of REQUIRED_GATES) {
+		const manifesto = FAILURE_MANIFESTOS[gateKey];
+		assert.ok(manifesto, `Манифест для шлюза '${gateKey}' обязан существовать`);
+		assert.ok(typeof manifesto.title === "string" && manifesto.title.length > 5, `Шлюз ${gateKey}: заголовок title`);
+		assert.ok(typeof manifesto.summary === "string" && manifesto.summary.length > 10, `Шлюз ${gateKey}: сводка summary`);
+		assert.ok(
+			typeof manifesto.clinicalDanger === "string" && manifesto.clinicalDanger.length > 20,
+			`Шлюз ${gateKey}: клиническая опасность clinicalDanger`,
+		);
+		assert.ok(
+			typeof manifesto.rottenPatchWarning === "string" && manifesto.rottenPatchWarning.length > 20,
+			`Шлюз ${gateKey}: предупреждение rottenPatchWarning`,
+		);
+		assert.ok(
+			Array.isArray(manifesto.remediationSteps) && manifesto.remediationSteps.length >= 3,
+			`Шлюз ${gateKey}: шаги исправления remediationSteps (>= 3)`,
+		);
+	}
+
+	// Проверяем printFailureManifesto на отсутствие рантайм-падений
+	// Перехватываем console.error
+	const originalError = console.error;
+	let errorOutput = "";
+	console.error = (...args) => {
+		errorOutput += args.join(" ") + "\n";
+	};
+	try {
+		printFailureManifesto("DICE_AUDIT", { details: "Тестовая ошибка" });
+		assert.ok(errorOutput.includes("DICE_AUDIT") || errorOutput.includes("MONTE CARLO"));
+		assert.ok(errorOutput.includes("Тестовая ошибка"));
+
+		// Проверка неизвестного шлюза (дефолтный манифест)
+		errorOutput = "";
+		printFailureManifesto("UNKNOWN_GATE_123");
+		assert.ok(errorOutput.includes("UNKNOWN_GATE_123"));
+	} finally {
+		console.error = originalError;
+	}
 });

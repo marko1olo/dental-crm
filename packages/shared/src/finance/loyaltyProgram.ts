@@ -10,6 +10,7 @@ import {
 	rubToKopecks,
 	distributeDiscountProportionally,
 } from "../fiscal/kopecksArithmetic.js";
+import { percentageOfKopecks, toExactKopecks, basisPointsFromPercent } from "../money.js";
 
 export type LoyaltyTierId = "silver" | "gold" | "platinum" | "family";
 
@@ -176,8 +177,8 @@ export function calculateLoyaltyAccrual(input: LoyaltyAccrualInput): LoyaltyAccr
 	const tier = getLoyaltyTierDefinition(input.tierId);
 	const cashbackPercent = input.customCashbackPercent ?? tier.cashbackPercent;
 
-	const accruedPointsKop = Math.round((eligibleBaseKop * cashbackPercent) / 100);
-	const accruedPointsRub = Math.round(accruedPointsKop / 100);
+	const accruedPointsKop = percentageOfKopecks(toExactKopecks(eligibleBaseKop), basisPointsFromPercent(cashbackPercent));
+	const accruedPointsRub = Math.round(kopecksToRub(accruedPointsKop));
 
 	return {
 		grossInvoiceKop: input.grossInvoiceKop,
@@ -218,8 +219,8 @@ export function calculateLoyaltyRedemption54Fz(
 	const tier = getLoyaltyTierDefinition(input.tierId);
 	const maxCoveragePercent = input.customMaxCoveragePercent ?? tier.maxInvoiceCoveragePercent;
 
-	const maxAllowedKop = Math.round((eligibleBaseKop * maxCoveragePercent) / 100);
-	const maxAllowedPointsRub = Math.floor(maxAllowedKop / 100);
+	const maxAllowedKop = percentageOfKopecks(toExactKopecks(eligibleBaseKop), basisPointsFromPercent(maxCoveragePercent));
+	const maxAllowedPointsRub = Math.floor(kopecksToRub(maxAllowedKop));
 
 	const availablePointsKop = Math.max(0, rubToKopecks(input.availablePointsBalanceRub));
 	const requestedPointsKop = Math.max(0, rubToKopecks(input.requestedPointsRub));

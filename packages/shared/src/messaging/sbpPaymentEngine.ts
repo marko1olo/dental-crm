@@ -10,7 +10,14 @@
  */
 
 import { z } from "zod";
-import { formatKopecksRu, formatKopecksToRubles, type Kopecks } from "../money.js";
+import {
+	formatKopecksRu,
+	formatKopecksToRubles,
+	kopecksToNumericString,
+	kopecksToRubles,
+	rublesToKopecks,
+	type Kopecks,
+} from "../money.js";
 
 // ─── Enums & Schemas ───
 
@@ -196,7 +203,7 @@ export function buildEmvCoSbpQrString(params: {
 	tlv += formatTlv("53", "643");
 
 	// Tag 54: Transaction Amount in Rubles ("1500.50")
-	const rublesStr = (amountKopecks / 100).toFixed(2);
+	const rublesStr = kopecksToNumericString(amountKopecks);
 	tlv += formatTlv("54", rublesStr);
 
 	// Tag 58: Country Code ("RU")
@@ -277,7 +284,7 @@ export function parseEmvCoTlv(tlvString: string): ParsedEmvCoQr {
 
 		const poi = rawTags["01"] === "11" ? "static" : "dynamic";
 		const amountRubles = rawTags["54"] ? parseFloat(rawTags["54"]) : undefined;
-		const amountKopecks = amountRubles !== undefined && !Number.isNaN(amountRubles) ? Math.round(amountRubles * 100) : undefined;
+		const amountKopecks = amountRubles !== undefined && !Number.isNaN(amountRubles) ? rublesToKopecks(amountRubles) : undefined;
 
 		// Parse subtag 26 (Merchant Account)
 		let merchantInfo: ParsedEmvCoQr["merchantAccountInfo"] = undefined;
@@ -513,5 +520,332 @@ export function generateSbpPaymentPackage(
 		expiresAt,
 		crc16: nspkPayload.crc16,
 		patientMessageText,
+	};
+}
+
+// ─── Extended SBP Split Tender & Dynamic QR Models (Consolidated SSOT) ───
+
+export interface SbpDynamicQrParams {
+	readonly sumRub: number;
+	readonly orderId: string;
+	readonly purpose?: string | undefined;
+	readonly merchantId?: string | undefined;
+	readonly bankId?: string | undefined;
+	readonly sbpMemberId?: string | undefined;
+	readonly ttlMinutes?: number | undefined;
+	readonly clinicName?: string | undefined;
+}
+
+export interface SbpDynamicQrResult {
+	readonly qrId: string;
+	readonly orderId: string;
+	readonly sumRub: number;
+	readonly sumKopecks: number;
+	readonly sumFormattedRu: string;
+	readonly purpose: string;
+	readonly nspkUrl: string;
+	readonly crc16Hex: string;
+	readonly expiresAtIso: string;
+	readonly emvPayload: string;
+	readonly deepLinkAppUrl: string;
+}
+
+export interface SbpSplitTenderDraft {
+	readonly totalAmountRub: number;
+	readonly depositAvailableRub: number;
+	readonly orderId?: string | undefined;
+	readonly purpose?: string | undefined;
+	readonly clinicName?: string | undefined;
+}
+
+export interface SbpSplitTenderResult {
+	readonly totalAmountRub: number;
+	readonly totalAmountKopecks: number;
+	readonly depositOffsetRub: number;
+	readonly depositOffsetKopecks: number; // Tag 1215
+	readonly sbpChargeRub: number;
+	readonly sbpChargeKopecks: number; // Tag 1081
+	readonly isFullyCoveredByDeposit: boolean;
+	readonly sbpQr: SbpDynamicQrResult | null;
+	readonly tag1081ElectronicKopecks: number;
+	readonly tag1215PrepaidKopecks: number;
+}
+
+export interface SbpBankAppMember {
+	readonly id: string;
+	readonly nameRu: string;
+	readonly schemaPrefix: string;
+	readonly brandColorHex: string;
+	readonly isPopular: boolean;
+}
+
+export const SBP_BANKS_CATALOG: readonly SbpBankAppMember[] = [
+	{
+		id: "sber",
+		nameRu: "СберБанк Онлайн",
+		schemaPrefix: "sberpay://qr/sub?qrId=",
+		brandColorHex: "#21a038",
+		isPopular: true,
+	},
+	{
+		id: "tbank",
+		nameRu: "Т-Банк (Тинькофф)",
+		schemaPrefix: "tinkoffbank://qr?id=",
+		brandColorHex: "#ffdd2d",
+		isPopular: true,
+	},
+	{
+		id: "alfa",
+		nameRu: "Альфа-Банк",
+		schemaPrefix: "alfabank://qr/pay?qrId=",
+		brandColorHex: "#ef3124",
+		isPopular: true,
+	},
+	{
+		id: "vtb",
+		nameRu: "ВТБ Онлайн",
+		schemaPrefix: "vtb://sbp/pay?qrId=",
+		brandColorHex: "#0a2896",
+		isPopular: true,
+	},
+	{
+		id: "raiffeisen",
+		nameRu: "Райффайзенбанк",
+		schemaPrefix: "raiffeisenonline://sbp/qr?qrId=",
+		brandColorHex: "#fee600",
+		isPopular: false,
+	},
+	{
+		id: "nspk_generic",
+		nameRu: "Другой банк (СБП)",
+		schemaPrefix: "https://qr.nspk.ru/",
+		brandColorHex: "#0284c7",
+		isPopular: false,
+	},
+];
+
+export interface SbpDynamicQrModel {
+	readonly qrId: string;
+	readonly orderId: string;
+	readonly sumKopecks: number;
+	readonly sumRub: number;
+	readonly sumFormattedRu: string;
+	readonly recipientLegalName: string;
+	readonly recipientInn: string;
+	readonly recipientAccount: string;
+	readonly bankBic: string;
+	readonly paymentPurpose: string;
+	readonly nspkUrl: string;
+	readonly crc16Hex: string;
+	readonly expiresAtIso: string;
+	readonly emvPayload: string;
+	readonly deepLinks: ReadonlyArray<{
+		readonly bankId: string;
+		readonly bankNameRu: string;
+		readonly appUrl: string;
+		readonly brandColor: string;
+	}>;
+}
+
+export const calculateCrc16Ccitt = computeCrc16Ccitt;
+
+/**
+ * Formats an integer amount of kopecks to Russian currency string (e.g. "14 500,00 ₽").
+ */
+export function formatKopecksToCurrencyRu(kopecks: number): string {
+	return formatKopecksRu(Math.round(kopecks) as Kopecks);
+}
+
+/**
+ * Generates a compliant NSPK SBP dynamic QR payload with CRC16 checksum.
+ * Strictly requires sumRub > 0 and validates orderId.
+ */
+export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDynamicQrResult {
+	const sumKopecks = rublesToKopecks(params.sumRub);
+	if (sumKopecks <= 0) {
+		throw new Error(
+			`Сумма динамического QR-кода СБП должна быть строго больше 0 копеек (получено: ${params.sumRub} ₽ / ${sumKopecks} коп.)`,
+		);
+	}
+	const sumRub = kopecksToRubles(sumKopecks);
+	const orderId = params.orderId?.trim() || `ORD-${Date.now().toString(36).toUpperCase()}`;
+	const qrId = `SBP-${orderId}-${Date.now().toString(36).toUpperCase()}`;
+	const ttl = params.ttlMinutes ?? 15; // default 15 minutes
+	const expiresAtIso = new Date(Date.now() + ttl * 60 * 1000).toISOString();
+
+	const merchantId = params.merchantId || "100000000001";
+	const bankId = params.bankId || "100000000111";
+	const purpose =
+		params.purpose ||
+		`Оплата медицинских стоматологических услуг по заказу №${orderId} (${params.clinicName || "ООО ДЕНТЕ"})`;
+
+	const baseUrl = `https://qr.nspk.ru/${qrId}?type=02&bank=${bankId}&sum=${sumKopecks}&cur=RUB`;
+	const crc16Hex = computeCrc16Ccitt(baseUrl);
+	const nspkUrl = `${baseUrl}&crc=${crc16Hex}`;
+
+	const emvDataWithoutCrc =
+		formatTlv("00", "01") +
+		formatTlv("01", "12") +
+		formatTlv(
+			"26",
+			formatTlv("00", "ru.nspk.sbp") +
+				formatTlv("01", qrId) +
+				formatTlv("02", merchantId),
+		) +
+		formatTlv("52", "8011") +
+		formatTlv("53", "643") +
+		formatTlv("54", kopecksToNumericString(sumKopecks)) +
+		formatTlv("58", "RU") +
+		formatTlv("59", (params.clinicName || "DENTE DENTAL CLINIC").slice(0, 25)) +
+		formatTlv("60", "MOSCOW") +
+		formatTlv(
+			"62",
+			formatTlv("01", orderId.slice(0, 25)) + formatTlv("08", purpose.slice(0, 25)),
+		) +
+		"6304";
+
+	const emvCrc = computeCrc16Ccitt(emvDataWithoutCrc);
+	const emvPayload = `${emvDataWithoutCrc}${emvCrc}`;
+
+	const deepLinkAppUrl = `bank100000000111://qr.nspk.ru/${qrId}?type=02&bank=${bankId}&sum=${sumKopecks}&cur=RUB&crc=${crc16Hex}`;
+
+	return {
+		qrId,
+		orderId,
+		sumRub,
+		sumKopecks,
+		sumFormattedRu: `${kopecksToNumericString(sumKopecks)} ₽`,
+		purpose,
+		nspkUrl,
+		crc16Hex,
+		expiresAtIso,
+		emvPayload,
+		deepLinkAppUrl,
+	};
+}
+
+/**
+ * Generates an SBP dynamic QR model with deep links and EMVCo TLV payload.
+ */
+export function generateSbpPaymentQrModel(params: {
+	sumKopecks: number;
+	orderId: string;
+	purpose?: string;
+	clinicLegalName?: string;
+	clinicInn?: string;
+	clinicAccount?: string;
+	bankBic?: string;
+	ttlMinutes?: number;
+}): SbpDynamicQrModel {
+	const sumKopecks = Math.round(params.sumKopecks);
+	if (sumKopecks <= 0) {
+		throw new Error(`Сумма оплаты через СБП должна быть строго больше 0 коп. (получено: ${sumKopecks})`);
+	}
+
+	const sumRub = kopecksToRubles(sumKopecks);
+	const orderId = params.orderId.trim() || `ORD-${Date.now().toString(36).toUpperCase()}`;
+	const qrId = `SBP${orderId.replace(/\W/g, "")}${Date.now().toString(36).toUpperCase()}`;
+	const ttl = params.ttlMinutes ?? 30;
+	const expiresAtIso = new Date(Date.now() + ttl * 60 * 1000).toISOString();
+
+	const recipientLegalName = params.clinicLegalName || 'ООО "Стоматологическая клиника ДЕНТЕ"';
+	const recipientInn = params.clinicInn || "";
+	const recipientAccount = params.clinicAccount || "40702810938000123456";
+	const bankBic = params.bankBic || "044525225";
+	const paymentPurpose = params.purpose || `Оплата стоматологических услуг по заказу №${orderId} (ИНН ${recipientInn})`;
+
+	const baseUrl = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${sumKopecks}&cur=RUB`;
+	const crc16Hex = computeCrc16Ccitt(baseUrl);
+	const nspkUrl = `${baseUrl}&crc=${crc16Hex}`;
+
+	const emvWithoutCrc =
+		formatTlv("00", "01") +
+		formatTlv("01", "12") +
+		formatTlv(
+			"26",
+			formatTlv("00", "ru.nspk.sbp") +
+				formatTlv("01", qrId) +
+				formatTlv("02", recipientInn),
+		) +
+		formatTlv("52", "8011") +
+		formatTlv("53", "643") +
+		formatTlv("54", kopecksToNumericString(sumKopecks)) +
+		formatTlv("58", "RU") +
+		formatTlv("59", recipientLegalName.slice(0, 25)) +
+		formatTlv("60", "MOSCOW") +
+		formatTlv(
+			"62",
+			formatTlv("01", orderId.slice(0, 25)) +
+				formatTlv("08", paymentPurpose.slice(0, 25)),
+		) +
+		"6304";
+
+	const emvCrc = computeCrc16Ccitt(emvWithoutCrc);
+	const emvPayload = `${emvWithoutCrc}${emvCrc}`;
+
+	const deepLinks = SBP_BANKS_CATALOG.map((bank) => ({
+		bankId: bank.id,
+		bankNameRu: bank.nameRu,
+		appUrl: bank.id === "nspk_generic" ? nspkUrl : `${bank.schemaPrefix}${qrId}`,
+		brandColor: bank.brandColorHex,
+	}));
+
+	return {
+		qrId,
+		orderId,
+		sumKopecks,
+		sumRub,
+		sumFormattedRu: formatKopecksToCurrencyRu(sumKopecks),
+		recipientLegalName,
+		recipientInn,
+		recipientAccount,
+		bankBic,
+		paymentPurpose,
+		nspkUrl,
+		crc16Hex,
+		expiresAtIso,
+		emvPayload,
+		deepLinks,
+	};
+}
+
+/**
+ * 1-Click calculation of multi-tender split:
+ * Available Family Deposit (Tag 1215) + Dynamic SBP QR generation for remaining due (Tag 1081).
+ */
+export function calculateSbpMultiTenderSplit(draft: SbpSplitTenderDraft): SbpSplitTenderResult {
+	const totalKopecks = Math.max(0, rublesToKopecks(draft.totalAmountRub));
+	const depositAvailKopecks = Math.max(0, rublesToKopecks(draft.depositAvailableRub));
+
+	const depositOffsetKopecks = Math.min(totalKopecks, depositAvailKopecks);
+	const sbpChargeKopecks = Math.max(0, totalKopecks - depositOffsetKopecks);
+
+	const depositOffsetRub = kopecksToRubles(depositOffsetKopecks);
+	const sbpChargeRub = kopecksToRubles(sbpChargeKopecks);
+	const isFullyCoveredByDeposit = sbpChargeKopecks === 0 && totalKopecks > 0;
+
+	let sbpQr: SbpDynamicQrResult | null = null;
+	if (sbpChargeKopecks > 0) {
+		sbpQr = generateDynamicSbpQrPayload({
+			sumRub: sbpChargeRub,
+			orderId: draft.orderId || `ORDER-${Date.now().toString().slice(-6)}`,
+			purpose:
+				draft.purpose ||
+				`Доплата через СБП к семейному расчету (заказ ${draft.orderId || "CRM"})`,
+			clinicName: draft.clinicName,
+		});
+	}
+
+	return {
+		totalAmountRub: kopecksToRubles(totalKopecks),
+		totalAmountKopecks: totalKopecks,
+		depositOffsetRub,
+		depositOffsetKopecks,
+		sbpChargeRub,
+		sbpChargeKopecks,
+		isFullyCoveredByDeposit,
+		sbpQr,
+		tag1081ElectronicKopecks: sbpChargeKopecks,
+		tag1215PrepaidKopecks: depositOffsetKopecks,
 	};
 }

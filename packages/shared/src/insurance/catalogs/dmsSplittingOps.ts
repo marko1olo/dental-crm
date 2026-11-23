@@ -112,14 +112,20 @@ export function verifyServiceForDms(
 		};
 	}
 
-	if (gLetter) {
+	const programKey = paramsOrCode.programKey;
+	const isCoveredByProgram = Boolean(
+		programKey &&
+		(programKey === "standard_therapy" || programKey === "vip_full_coverage" || programKey === "extended_surgery_hygiene")
+	);
+
+	if (gLetter || isCoveredByProgram) {
 		return {
 			status: "approved",
 			isCovered: true,
 			requiresPreAuth: false,
 			dmsPayableKopecks: price,
 			patientPayableKopecks: 0,
-			approvedByGuaranteeLetter: true,
+			approvedByGuaranteeLetter: Boolean(gLetter),
 		};
 	}
 

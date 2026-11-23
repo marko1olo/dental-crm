@@ -161,6 +161,7 @@ export interface PlanToInvoiceValidationReport {
 	readonly isValid: boolean;
 	readonly canGenerateInvoice: boolean;
 	readonly canGenerateWorkOrder: boolean;
+	readonly hasPriceWarnings?: boolean | undefined;
 	readonly totalItemsCount: number;
 	readonly matchedItemsCount: number;
 	readonly increasedItemsCount: number;
@@ -421,7 +422,12 @@ export function validatePlanToInvoice(
 					? `Удорожание услуги на +${deltaPercent}%. Требуется подтверждение`
 					: `Удорожание услуги на +${deltaPercent}%`;
 				suggestedResolution = deltaPercent > inflationThreshold ? "ADMIN_OVERRIDE" : "UPDATE_TO_CURRENT_PRICE";
-				requiresAdminOverride = deltaPercent > inflationThreshold;
+				const doctorAutonomy = Boolean(payload.isDoctorAutonomy || payload.adminOverrideAuthorized);
+				if ((isPlanExpired || deltaPercent > inflationThreshold) && !doctorAutonomy) {
+					requiresAdminOverride = deltaPercent > inflationThreshold;
+				} else {
+					requiresAdminOverride = false;
+				}
 			}
 		} else if (deltaKopecks < 0) {
 			discrepancyType = "PRICE_DECREASED";
@@ -574,13 +580,16 @@ export function validatePlanToInvoice(
 	// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату (только нейтральный бейдж и предупреждение).
 	const isExpiredUnapproved = false;
 
+	const doctorAutonomyActive = Boolean(payload.isDoctorAutonomy || payload.adminOverrideAuthorized);
+	const hasPriceWarnings = warnings.length > 0 || (isPlanExpired && increasedItemsCount > 0);
+
 	const canGenerateWorkOrder =
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
 		!hasInvalidPrices &&
 		!hasNegativePrices &&
 		!hasExcessiveDiscounts &&
-		!hasUnresolvedAdminOverrides;
+		(!hasUnresolvedAdminOverrides || doctorAutonomyActive);
 
 	const canGenerateInvoice = canGenerateWorkOrder;
 	const isValid = canGenerateWorkOrder && warnings.length === 0;
@@ -593,6 +602,7 @@ export function validatePlanToInvoice(
 		isValid,
 		canGenerateInvoice,
 		canGenerateWorkOrder,
+		hasPriceWarnings,
 		totalItemsCount: validatedItems.length,
 		matchedItemsCount,
 		increasedItemsCount,

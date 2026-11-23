@@ -13,7 +13,6 @@ export * from "./dentalProtocols.js";
 export * from "./anesthesiaEngine.js";
 export * from "./emergencyProtocols.js";
 export * from "./toothGrammarSsot.js";
-export * from "./tokenCompactor.js";
 export {
 	type ModelContextSpec,
 	MODEL_CONTEXT_REGISTRY,

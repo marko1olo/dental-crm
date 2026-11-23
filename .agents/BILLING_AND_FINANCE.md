@@ -332,6 +332,13 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - DEF-PAYROLL-12 [ЗАКРЫТО] (Снос сироты DirectDoctorWalletLauncher): мертвый неиспользуемый файл `DirectDoctorWalletLauncher.tsx` физически удален через `git rm` (Мандат 8aq, 8bj).
    - Тестовое покрытие: 10/10 тестов в `payrollStudioInquisition.test.ts` (100% green), 7/7 тестов в `doctorPayroll.test.ts` (100% green), 4/4 в `payrollCalculationsRealDb.test.ts`, 11/11 в `doctorPayrollSSOTSuite.test.tsx`. Компиляторы `tsc` API и Web — Exit Code 0.
 
+10. DEF-PAYROLL-13...16 [ЗАКРЫТО] (Red Team Fixer Surgeon Домен N — Сдельная оплата, Net Margin и синхронизация кошелька врача):
+   - DEF-PAYROLL-13 [ЗАКРЫТО] (Снос клонов doctorNetSalaryEngine.ts и локального реэкспорта doctorShiftEarnings.ts): физически удалены `packages/shared/src/finance/doctorNetSalaryEngine.ts` и `apps/web/src/components/doctor/doctorShiftEarnings.ts` (`git rm`). В `doctorNetSalaryBridge.ts` вычищены устаревшие методы `calculateDoctorSalary`, `calculateStandardDoctorSalary`, `calculateDoctorNetSalary`, `calculateServicesPayrollBreakdown`, `calculateDiscountSalaryBase`. Импорты всех веб-компонентов переведены на канонический `@dental/shared` (Мандат 8bf, 8bj).
+   - DEF-PAYROLL-14 [ЗАКРЫТО] (Искоренение float-деления / 100 в расчете комиссий врача и аренды кресла): в `doctorRentalAndBonusEngine.ts` и `doctorShiftEarnings.ts` ручные деления `/ 100` заменены на канонические функции `percentageOfKopecks` и `calculatePercentDiscountKopecks` из `packages/shared/src/money.ts`. Исключен копеечный дрейф (Мандат 8bm).
+   - DEF-PAYROLL-15 [ЗАКРЫТО] (Испарение расходов ЗТЛ при превышении выручки отдельной услуги, DEFECT 2): в `doctorPayrollDbQueries.ts` реализован гарантированный алгоритм дораспределения затрат зуботехнической лаборатории: сначала по свободной марже ортопедических услуг, затем по объёму ортопедических услуг, а при их отсутствии — через балансовую запись периода (`ЗТЛ-БАЛАНС`), гарантируя сохранение всех 1,500,000 коп. расходов ЗТЛ без потерь (тест `doctorPayroll.test.ts:555` 100% PASS).
+   - DEF-PAYROLL-16 [ЗАКРЫТО] (Синхронизация построчных и агрегированных начислений в кошельке врача): в `doctorMyEarningsHandler.ts` расчет построчных комиссий услуг и категориальной разбивки приведен в строгое соответствие с `doctorPayrollEngine` (`percentageOfKopecks`, учет `retail_hygiene` и кодов услуг), обеспечивая равенство сумм по строкам и итогового `totalDoctorEarnedKop`.
+   - Тестовое покрытие: 8/8 в `doctorPayroll.test.ts`, 12/12 в `doctorPayrollEngine.test.ts`, 6/6 в `doctorNetSalaryEngine.test.ts`, 4/4 в `payrollCalculationsRealDb.test.ts`, 11/11 в `payrollStudioInquisition.test.ts`, 3/3 в `doctorShiftEarnings.test.ts` (100% green). Санитарный храповик `check-staged-safety.mjs` — Exit Code 0.
+
 ---
 
 ## 🏥 8.1. Реестр устранённых дефектов страховой медицины и ДМС (DEF-DMS-01...06, Red Team Fixer Домен 25)
@@ -542,4 +549,116 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
      * Проверка создания расходной операции в кассе и списания баланса кассы по РКО (DEF-PAYROLL-04).
    - Юнит-тесты мобильного кошелька `DoctorPayoutMobileWallet.test.ts` (10/10 PASS).
    - Санитарный храповик `npm run check:ratchet` — Exit Code 0 (0 новых `any`, 0 новых супрессий).
+
+---
+
+## 💎 14. Реестр хирургических исправлений Red Team: Касса, 54-ФЗ, Сплит-оплаты, Фискализация, Депозиты (DEF-1...DEF-7)
+
+В рамках рейда Red Team Fixer Surgeon по Домену 28 устранены 7 дефектов:
+1. **DEF-1 [ЗАКРЫТО] (Ликвидация плавающего float / 100 и .toFixed(2) в расчете сдачи кассира, Мандат 8bm)**:
+   - В `packages/shared/src/fiscal/fiscalValidation/receiptTotalsValidation.ts` функция `calculateCashChange` переведена на канонические функции целочисленной копеечной арифметики `rublesToKopecks`, `kopecksToRub` и `kopecksToNumericString` из `@dental/shared/src/money.ts`.
+2. **DEF-2 [ЗАКРЫТО] (Устранение неточного SQL-деления ::numeric / 100 в incomeTotalRub, Мандат 8bm/8bo)**:
+   - В `apps/api/src/routes/cashbox/paymentStages/cashboxLedgerStage.ts` (строки 193, 263) обновление выручки активной смены `incomeTotalRub` переведено на строгую формулу с `ROUND(..., 2)`: `ROUND((ROUND(COALESCE(incomeTotalRub, 0) * 100)::bigint + resolvedKop::bigint)::numeric / 100, 2)`. Исключен дрейф хвоста numeric.
+3. **DEF-3 [ЗАКРЫТО] (Синхронизация amountRub и amountKopecks в payments при частичном возврате, Мандат 8bm/8bo)**:
+   - В `apps/api/src/routes/fiscal/receiptRoutes/correction/receiptCorrectionSelfCalculation.ts` (`updateRefundedPaymentRecord`) обновляются ОБА поля: `amountRub: kopecksToRub(remainingKop)` и `amountKopecks: BigInt(remainingKop)`. Исключен рассинхрон между копейками и рублями.
+4. **DEF-4 [ЗАКРЫТО] (Устранение сырого .toFixed(2) и деления / 100 при возвратах кассы и семейных депозитах, Мандат 8bm)**:
+   - В `apps/api/src/routes/cashbox/cashboxRefundRoutes.ts` все вызовы `.toFixed(2)` и деления `/ 100` заменены на `kopecksToNumericString` и `ROUND(..., 2)` в SQL-обновлении `familyGroups.balance`.
+5. **DEF-5 [ЗАКРЫТО] (Приведение цветов кассы к дизайн-токенам DENTE, Мандат 8am)**:
+   - В `CashboxQuickCard.tsx`, `CashRegisterStudioFooter.tsx`, `CashRegisterCheckoutSection.tsx` и `CheckoutDiscountAndPayerControls.tsx` ликвидирован хардкод `#0d9488` и `var(--teal)` с заменой на канонические семантические токены дизайн-системы `var(--primary)`, `var(--primary-hover)` и `var(--primary-soft)`.
+6. **DEF-6 [ЗАКРЫТО] (Сохранение семейного баланса при стандартном открытии кассы, Мандат 8e/8n)**:
+   - В `apps/web/src/views/financeView/modalModules/FinanceModalsHost.tsx` в модалку `CashRegisterStudioModal` (состояние `s.isCashboxOpen`) добавлен проброс `patientFamilyBalanceRub={resolvePatientFamilyBalanceRub(docPat)}`. Семейный баланс пациента больше не теряется при переходе в студию кассы.
+7. **DEF-7 [ЗАКРЫТО] (Идемпотентный реплей и защита от повторных сетевых вызовов, Мандат 8zp/8bo)**:
+   - В `apps/api/src/routes/cashbox/paymentStages/validateAndLockStage.ts` верифицирован и усилен блок идемпотентного реплея: сумма существующего платежа вычисляется с приоритетом точных `amountKopecks`, учитываются все тендерные суффиксы сплита (`:card`, `:cash`, `:deposit`, `:bonus`, `:certificate`, `:dms`), возвращается полный контракт данных (`paymentId`, `amountKopecks`, `amountRub`, `fiscalReceiptNumber`, `clientMutationId`, `isReplay: true`, семейные балансы) с HTTP 200 OK без повторных списаний.
+8. **Тестовое покрытие и валидация**:
+   - `splitPaymentEngine.test.ts` (17/17 PASS);
+   - `money.test.ts` (28/28 PASS);
+   - `financialFixerSurgeonVerifications.test.ts` (3/3 PASS, включая атомарный инкремент выручки смены);
+   - `cashboxInstallmentsAndBalanceIntegrity.test.ts` (1/1 PASS);
+   - `cashboxWalkInRetailPayment.test.ts` (5/5 PASS);
+   - `dualModeZeroMockBatch4.test.ts` (8/8 PASS);
+   - `pediatricAndFiscalHotkeys.test.ts` (5/5 PASS);
+   - `redTeamZeroBloatInquisition.test.ts` (12/12 PASS);
+   - `tsc --noEmit` во всех затронутых пакетах — 0 ошибок.
+
+---
+
+## 🏷️ 15. Реестр устранённых дефектов Red Team Домена 23: Прейскурант, Номенклатура 804н, BOM Техкарты и Soft Negative Stock (DEF-23-01...08)
+
+В рамках рейда Red Team Fixer Surgeon по Домену 23 устранены 8 дефектов и выполнена консолидация SSOT:
+1. **DEF-23-01 [SEV-1 КРИТИЧЕСКИЙ] (Устранение рассинхрона копеечных колонок цен и себестоимости в БД, Мандаты 8b, 8bm)**:
+   - В `apps/api/src/db/pricelistQuery.ts` переписан хелпер `moneyColumns`: поля `priceKopecks` и `basePriceKopecks` гарантированно синхронизируются с рублями (`basePriceRub`) через канонический `BigInt(rublesToKopecks(rub))`.
+   - В мутациях `createServiceCatalogItemInDb`, `updateServiceCatalogItemInDb` и `upsertServiceBomInDb` синхронно рассчитываются и сохраняются `materialsCostKopecks = BigInt(rublesToKopecks(materialsCostRub))` и `labCostKopecks = BigInt(rublesToKopecks(labCostRub))`.
+   - Исключено превращение цен услуг в «0 ₽» при чтении финансовым движком и расчете чеков.
+2. **DEF-23-02 [SEV-1 КРИТИЧЕСКИЙ] (Устранение обхода ACID-транзакций в батч-импортах и сканировании, Мандат 8bo)**:
+   - В `apps/api/src/db/pricelistQuery.ts` во все методы мутаций (`selectOwnedRow`, `createServiceCatalogItemInDb`, `updateServiceCatalogItemInDb`, `deactivateServiceCatalogItemInDb`) внедрен параметр `executor?: TenantDb | typeof db`.
+   - Создан единый канонический сервис `apps/api/src/routes/pricelist/batchPricelistCommitService.ts`, который выполняет все операции импорта, сканирования и парсинга строго внутри `await withTenantCtx(organizationId, async (tx) => ...)`, передавая транзакционный `tx` в генераторы записей.
+3. **DEF-23-03 [SEV-1 КРИТИЧЕСКИЙ] (Предотвращение затирания внутренних артикулов клиники при импорте, Мандат 8x)**:
+   - В `batchPricelistCommitService.ts` ликвидировано принудительное форсирование кода `A16.07.002` на все позиции клиники.
+   - Внутренний артикул клиники (`rawCode` / `item.code`) сохраняется в `code`, а код номенклатуры 804н сопоставляется независимо в `order804nCode`. Услуги без кода 804н сохраняют свой оригинальный внутренний код клиники.
+4. **DEF-23-04 [SEV-1 КРИТИЧЕСКИЙ] (Изоляция Multi-Tenant RLS через withTenantCtx в pricelistQuery.ts)**:
+   - Все методы прейскуранта (`getServiceCatalogForOrganization`, `getSingleServiceCatalogItemFromDb`, `createServiceCatalogItemInDb`, `updateServiceCatalogItemInDb`, `deactivateServiceCatalogItemInDb`, `seedBaseline804nServicesInDb`, `batchRepriceServicesInDb`, `getServiceBomFromDb`, `upsertServiceBomInDb`) обернуты в вызов `withTenantCtx(organizationId, async (tx) => ...)`.
+   - Гарантирована 100% RLS изоляция данных организаций на уровне PostgreSQL 18.
+5. **DEF-23-05 [SEV-2] (Консолидация дублирующего роута экспорта прейскуранта, Мандат 8bf)**:
+   - В `apps/api/src/routes/export.ts` дублирующий блок генерации CSV (строки 189-243) удален и перенаправлен напрямую на единый канонический обработчик `handleExportPricelist(request, reply)` из `routes/pricelist/handlersExportAndReprice.js`.
+6. **DEF-23-06 [SEV-2] (Ликвидация ручных операций * 100 и Math.round на фронтенде, Мандат 8bm)**:
+   - В `apps/web/src/components/catalog/pricelistCatalogData.ts` (строка 66) ручной расчет `Math.round(num * 100)` заменен на канонический `rublesToKopecks(num)`.
+   - В `apps/web/src/components/catalog/pricelist/usePricelistStudioState.ts` (строки 302, 369) расчет себестоимости материалов переведен на целочисленную арифметику без плавающих коэффициентов.
+7. **DEF-23-07 [SEV-2] (Внедрение заголовка Idempotency-Key в мутации каталога и техкарт BOM, Мандат 8zp)**:
+   - В `apps/web/src/components/catalog/pricelist/pricelistCatalogStorage.ts` в методы `syncServiceItemToBackend` и `batchSyncPricelistToBackend` внедрен заголовок `"Idempotency-Key": generateUuidV7()`.
+   - В `apps/web/src/components/inventory/bomModules/useMaterialBomsMutations.ts` в мутации `handleSeedDefaults`, `handleSaveRule` и `handleDeleteRule` внедрен заголовок `"Idempotency-Key": generateUuidV7()`.
+8. **DEF-23-08 [SEV-3] (Сохранение кода номенклатуры 804н при базовом сидировании)**:
+   - В `seedBaseline804nServicesInDb` добавлено явное сохранение `order804nCode: baseline.code`.
+9. **Снос дубликатов под `git rm` (Мандат 8bf)**:
+   - Физически удалены файлы-клоны импорта `apps/api/src/routes/pricelist/serviceBatchImportCommit.ts`, `apps/api/src/routes/pricelist/serviceScanCommit.ts`, `apps/api/src/routes/pricelist/serviceIngestCommit.ts`.
+   - Точка входа `catalogOperations.ts` переведена на единый `batchPricelistCommitService.ts`.
+10. **Ликвидация блокировок и починка FEFO-движка**:
+    - В `apps/api/src/routes/settings/serviceCatalogRoutes.ts` барьер `requireSettingsMutationAccess` заменен на `requireCatalogMutationAccess` (автономия врача у кресла, Мандат 8e).
+    - В `apps/api/src/services/inventory/fefoModules/fefoDeficitResolver.ts` устранена ошибка `ReferenceError: purchaseOrderDraft is not defined`.
+    - В `apps/api/src/services/treatmentConsumables/unifiedStockDeductionEngine.ts` добавлен недостающий импорт `eq`.
+    - Накатана миграция БД `0287_procedure_tech_card_alternatives.sql`.
+11. **Тестовая верификация (Exit Code 0)**:
+    - `apps/api/src/tests/routes/pricelistCatalogInquisition.test.ts` (8/8 PASS);
+    - `apps/api/src/tests/routes/pricelist.test.ts` (23/23 PASS);
+    - `apps/api/src/tests/routes/pricelistBatchImportRoute.test.ts` (4/4 PASS);
+    - `apps/api/src/tests/routes/pricelistScanAndImportRoute.test.ts` (5/5 PASS);
+    - `apps/api/src/tests/routes/chairsideVisitBomFefoIntegration.test.ts` (4/4 PASS);
+    - `apps/api/src/tests/routes/inventoryRedTeamBOMAndInvoices.test.ts` (3/3 PASS);
+    - `npm run check:diff` — 0 костылей;
+    - `npm run check:encoding` — 19968 файлов UTF-8 без замечаний;
+    - `tsc --noEmit` — 0 ошибок типов в бэкенде и фронтенде по Домену 23.
+
+---
+
+## 🏷️ 16. Реестр устранённых дефектов Red Team Домена 21: Программа лояльности, Бонусный счет, Подарочные сертификаты, Реферальная система и Семейный баланс (DEF-21-01...07)
+
+В рамках рейда Red Team Fixer Surgeon по Домену 21 устранены 7 дефектов, физически ликвидирован легаси-дубликат `referrals.ts` и консолидирован канонический SSOT:
+1. **DEF-21-01 [SEV-1 КРИТИЧЕСКИЙ] (Устранение уязвимости Double-Spend при списании бонусов семейного счета, Мандаты 8zp, 8bo)**:
+   - В `apps/api/src/routes/loyaltyModules/loyaltyFamilyRoutes.ts` (роут `POST /api/loyalty/family/spend`) внедрен обязательный `extractIdempotencyKey` с валидацией UUIDv7/v4.
+   - Значение заголовка передается в `executeBonusRedeem` как `clientMutationId: idempotencyKey`. Повторные сетевые клики («двойной тап») возвращают сохраненный результат без повторного списания баллов (заголовок `idempotency-replayed: "true"`).
+2. **DEF-21-02 [SEV-1 КРИТИЧЕСКИЙ] (Ликвидация вечного статуса `pending` у рефералов и рассинхрона начислений, Мандаты 8e, 8bo)**:
+   - В `apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts` в транзакционном начислении реферального вознаграждения (`POST /api/loyalty/referrals/credit`) добавлено обязательное обновление записи `patientReferrals`: `status = 'rewarded'`, `qualifyingPaymentId = verifiedPayment.id`, `qualifyingAmountRub`, `rewardedAt = new Date()`, `updatedAt = new Date()`.
+   - Рефералы гарантированно переходят в статус вознагражденных с привязкой к чеку оплаты в базе данных PostgreSQL 18.
+3. **DEF-21-03 [SEV-2] (Физический снос легаси-клона `referrals.ts` через `git rm` и ликвидация float-арифметики, Мандаты 8bf, 8bm)**:
+   - Файл-дубликат `apps/api/src/routes/referrals.ts` физически удален через `git rm`.
+   - Маршруты `GET /api/referrals/my-code/:patientId`, `POST /api/referrals/attribute`, `POST /api/referrals/reward-first-visit` перенесены в канонический модуль `loyaltyReferralRoutes.ts`.
+   - Ликвидированы `.toFixed(2)` и прямой обход транзакционного FIFO-журнала: вознаграждения начисляются через канонический `executeBonusAccrual` в целочисленных копейках с созданием бухгалтерской проводки в `patient_bonus_ledger`.
+4. **DEF-21-04 [SEV-2] (Синхронизация баланса касс при продаже сертификатов и семейных возвратах, Мандат 8bm)**:
+   - В `apps/api/src/routes/loyaltyModules/certificateIssuance.ts` при продаже подарочного сертификата в кассе атомарно обновляются обе колонки: `balanceRub = kopecksToNumericString(newBalanceKop)` и `balanceKopecks = newBalanceKop`.
+   - В `apps/api/src/services/familyWallet/modules/familyRefundOperation.ts` обновляются обе колонки кассы `balanceRub` и `balanceKopecks`, устраняя прогрессирующий рассинхрон копеечных остатков.
+5. **DEF-21-05 [SEV-2] (Канонический приоритет `balanceKopecks` над устаревшей строкой `balance` в Family Wallet, Мандат 8bm)**:
+   - В `depositAndFamilyStage.ts`, `familyWalletFacade.ts`, `familySpendAuthorization.ts` и `familyRefundOperation.ts` чтение баланса семейной группы переведено на безопасный канонический приоритет `(family.balanceKopecks && Number(family.balanceKopecks) > 0) ? Number(family.balanceKopecks) : (family.balance ? parseKopecks(family.balance) : 0)`.
+   - Исключены ошибки чтения нулевого дефолта `balance_kopecks` для старых записей и гарантирована автоматическая синхронизация обеих колонок при любой финансовой мутации.
+6. **DEF-21-06 [SEV-3] (Устранение float-арифметики в кроне сгорания бонусов по сроку жизни, Мандат 8bm)**:
+   - В `apps/api/src/routes/loyaltyModules/bonusBalanceService.ts` (метод `processExpiredBonusesForAllPatientsBatch`) вычисление сгоревших бонусов переведено с плавающего сложения строк на строгое копеечное суммирование через `sumKopecks` и `parseKopecks`.
+7. **DEF-21-07 [SEV-3] (Интеграция инпутов списания бонусов и подарочных сертификатов в UI кассы, Мандаты 8e, 8am, 8al)**:
+   - В `apps/web/src/components/cashbox/studioModules/checkout/CheckoutSplitPaymentPanel.tsx` добавлены эргономичные карточки списания подарочного сертификата (с номером и суммой) и списания бонусных баллов (с отображением доступного баланса и кнопкой «Макс»).
+   - В `useCashRegisterStudioState.ts` добавлены состояния `splitBonusRub` и `splitCertRub`, сбалансированные в пресетах сплита (50/50, 100% нал/карта/СБП), формирующие корректные тендеры списания в `splitTenders`.
+8. **Тестовая верификация и подтверждение чистоты (Exit Code 0)**:
+   - `apps/api/src/tests/concurrency/loyaltyAndCertificateAcidStress.test.ts` (4/4 PASS: 10 parallel redemptions double-spend defense, 15 concurrent replay storms);
+   - `apps/api/src/tests/routes/loyaltyMarketingInquisitionSuite.test.ts` (7/7 PASS: ACID-сплит, откат при нехватке, BOLA/IDOR защита, списание по доверенности, рефералы в БД, 3D RFM когорты, 2-phase hold/confirm/release);
+   - `apps/api/src/tests/loyaltyBonusTtlExpiration.test.ts` (4/4 PASS: JIT TTL сгорание, FIFO очередность списания, защита от отрицательного баланса, фоновый крон);
+   - `npm run check:diff` — Exit Code 0 (0 костылей, 0 float money);
+   - `tsc --noEmit` — Exit Code 0 по всем затронутым модулям.
+
+
 

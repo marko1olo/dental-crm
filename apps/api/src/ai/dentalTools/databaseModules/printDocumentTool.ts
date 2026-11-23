@@ -12,6 +12,8 @@ import { aiLogger } from "../../aiLogger.js";
 
 const DOCUMENT_KIND_MAP: Record<string, DocumentKind> = {
 	form_043: "dental_medical_card_043u",
+	dental_medical_card: "dental_medical_card_043u",
+	clinical_record_entry: "dental_medical_card_043u",
 	informed_consent: "informed_consent",
 	treatment_act: "completed_works_act",
 	invoice_receipt: "payment_receipt",
@@ -21,6 +23,8 @@ const DOCUMENT_KIND_MAP: Record<string, DocumentKind> = {
 
 const DOCUMENT_TITLE_MAP: Record<string, string> = {
 	form_043: "Медицинская карта приёма",
+	dental_medical_card: "Медицинская карта приёма",
+	clinical_record_entry: "Медицинская карта приёма",
 	informed_consent: "Информированное добровольное согласие",
 	treatment_act: "Акт выполненных работ",
 	invoice_receipt: "Квитанция об оплате медицинских услуг",
@@ -30,7 +34,16 @@ const DOCUMENT_TITLE_MAP: Record<string, string> = {
 
 export const printDocumentSchema = z.object({
 	documentType: z
-		.enum(["form_043", "informed_consent", "treatment_act", "invoice_receipt", "prescription", "warranty_memo"])
+		.enum([
+			"form_043",
+			"dental_medical_card",
+			"clinical_record_entry",
+			"informed_consent",
+			"treatment_act",
+			"invoice_receipt",
+			"prescription",
+			"warranty_memo",
+		])
 		.describe("Тип формируемого клинического/финансового документа"),
 	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
 	visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID визита"),
@@ -57,9 +70,9 @@ export interface PrintDocumentResult {
 
 export async function handlePrintDocument(args: PrintDocumentInput, context: DentalToolContext): Promise<PrintDocumentResult> {
 	const isDesktop = context.runtimeMode === "desktop_native";
-	const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	const jobId = `job_${Date.now()}_${randomUUID().slice(0, 8)}`;
 	const targetKind = DOCUMENT_KIND_MAP[args.documentType] ?? "dental_medical_card_043u";
-	const targetTitle = DOCUMENT_TITLE_MAP[args.documentType] ?? "Медицинский документ";
+	const targetTitle = DOCUMENT_TITLE_MAP[args.documentType] ?? "Медицинская карта приёма";
 
 	let docId: string = randomUUID();
 	if (context.organizationId) {

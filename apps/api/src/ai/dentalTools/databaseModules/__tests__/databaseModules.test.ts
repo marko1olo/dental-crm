@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test, { describe } from "node:test";
+import { getTableName } from "drizzle-orm";
 import {
 	createAppointmentSchema,
 	createAppointmentTool,
@@ -45,6 +46,23 @@ import {
 } from "../index.js";
 
 const TEST_ORG_ID = "11111111-1111-1111-1111-111111111111";
+
+interface MockQueryChain extends Promise<unknown[]> {
+	where: () => MockQueryChain;
+	limit: () => MockQueryChain;
+	orderBy: () => MockQueryChain;
+	for: () => MockQueryChain;
+}
+
+const makeQueryChain = (result: unknown[] = [{ id: "mock-id" }]): MockQueryChain => {
+	const p = Promise.resolve(result);
+	return Object.assign(p, {
+		where: () => makeQueryChain(result),
+		limit: () => makeQueryChain(result),
+		orderBy: () => makeQueryChain(result),
+		for: () => makeQueryChain(result),
+	});
+};
 
 describe("CRM Database AI Tools — dbTypes & Валидация", () => {
 	test("isValidFdiToothNumber: корректно валидирует постоянные (11-48) и молочные (51-85) зубы", () => {
@@ -83,8 +101,38 @@ describe("CRM Database AI Tools — dbTypes & Валидация", () => {
 
 describe("CRM Database AI Tools — Two-Phase Confirmation Guard (Мандат 8e)", () => {
 	const mockDb = {
-		select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
-		insert: () => ({ values: () => ({ returning: async () => [{ id: "test-id" }] }) }),
+		select: () => ({
+			from: (table: Parameters<typeof getTableName>[0] | { _: { name?: string }; name?: string }) => {
+				let name = "";
+				try {
+					name = getTableName(table);
+				} catch {
+					name = String(table?._?.name || table?.name || "");
+				}
+				if (name === "appointments" || name.includes("lease") || name.includes("blacklist")) {
+					return makeQueryChain([]);
+				}
+				return makeQueryChain([{ id: "mock-id" }]);
+			},
+		}),
+		insert: () => ({
+			values: () => ({
+				returning: async () => [
+					{
+						id: "test-id",
+						organizationId: TEST_ORG_ID,
+						patientId: "33333333-3333-3333-3333-333333333333",
+						doctorUserId: "44444444-4444-4444-4444-444444444444",
+						chairId: null,
+						status: "scheduled",
+						startsAt: new Date(),
+						endsAt: new Date(Date.now() + 30 * 60000),
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					},
+				],
+			}),
+		}),
 		update: () => ({ set: () => ({ where: async () => {} }) }),
 	};
 
@@ -159,8 +207,38 @@ describe("CRM Database AI Tools — Two-Phase Confirmation Guard (Мандат 8
 
 describe("CRM Database AI Tools — AI-REV-08: Мягкая валидация и контекст пациента/врача", () => {
 	const mockDb = {
-		select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
-		insert: () => ({ values: () => ({ returning: async () => [{ id: "test-id" }] }) }),
+		select: () => ({
+			from: (table: Parameters<typeof getTableName>[0] | { _: { name?: string }; name?: string }) => {
+				let name = "";
+				try {
+					name = getTableName(table);
+				} catch {
+					name = String(table?._?.name || table?.name || "");
+				}
+				if (name === "appointments" || name.includes("lease") || name.includes("blacklist")) {
+					return makeQueryChain([]);
+				}
+				return makeQueryChain([{ id: "mock-id" }]);
+			},
+		}),
+		insert: () => ({
+			values: () => ({
+				returning: async () => [
+					{
+						id: "test-id",
+						organizationId: TEST_ORG_ID,
+						patientId: "33333333-3333-3333-3333-333333333333",
+						doctorUserId: "44444444-4444-4444-4444-444444444444",
+						chairId: null,
+						status: "scheduled",
+						startsAt: new Date(),
+						endsAt: new Date(Date.now() + 30 * 60000),
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					},
+				],
+			}),
+		}),
 		update: () => ({ set: () => ({ where: async () => {} }) }),
 	};
 
@@ -198,11 +276,11 @@ describe("CRM Database AI Tools — AI-REV-08: Мягкая валидация �
 				durationMinutes: 30,
 				confirmed: true,
 			},
-			{ organizationId: TEST_ORG_ID, patientId: "context-pat-123", doctorId: "context-doc-456", db: mockDb as any },
+			{ organizationId: TEST_ORG_ID, patientId: "33333333-3333-3333-3333-333333333333", doctorId: "44444444-4444-4444-4444-444444444444", db: mockDb as any },
 		);
 		assert.strictEqual(res.success, true);
-		assert.strictEqual(res.patientId, "context-pat-123");
-		assert.strictEqual(res.doctorId, "context-doc-456");
+		assert.strictEqual(res.patientId, "33333333-3333-3333-3333-333333333333");
+		assert.strictEqual(res.doctorId, "44444444-4444-4444-4444-444444444444");
 	});
 
 	test("create_appointment: выбрасывает MISSING_PATIENT_CONTEXT при отсутствии patientId", async () => {

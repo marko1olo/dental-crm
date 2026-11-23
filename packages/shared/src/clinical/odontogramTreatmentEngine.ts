@@ -317,7 +317,12 @@ export function applyToothCondition(
 		}
 	} else {
 		baseTooth.generalCondition = condition;
-		baseTooth.surfaces = createDefaultSurfaces(condition);
+		if (condition === "crown") {
+			// Мандат 8ar/8as: Установка искусственной коронки сохраняет существующие анатомические поверхности MODBL и пломбы под коронкой
+			// Сохраняем baseTooth.surfaces без затирания исторического лечения
+		} else {
+			baseTooth.surfaces = createDefaultSurfaces(condition);
+		}
 	}
 
 	teeth[toothNumber] = baseTooth;

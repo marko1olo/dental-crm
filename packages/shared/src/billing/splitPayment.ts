@@ -387,9 +387,28 @@ export function validateAndBalanceSplitPayment(params: {
 }
 
 /**
- * Proportional allocation of multi-tender split payment across line items
- * using the Largest Remainder (Hamilton-Hare) Method.
- * Guarantees ZERO penny drift across all positions.
+ * Canonical 54-FZ Fiscal Priority Order for Sequential Multi-Tender Allocation.
+ * Priority: Dedicated/Restricted Tenders (DMS, Certificate, Deposits) -> Credit -> Digital/Instant (SBP, Card) -> Cash.
+ */
+export const TENDER_PRIORITY_ORDER: readonly SplitTenderKind[] = [
+	"dms_insurance",
+	"certificate_or_bonus",
+	"family_deposit",
+	"advance_deposit",
+	"credit",
+	"sbp",
+	"card",
+	"cash",
+] as const;
+
+/**
+ * 2D Sequential Exact Remainder Apportionment across line items.
+ *
+ * Guarantees TWO conservation laws without floating-point errors:
+ * 1. Row Sum Invariant: For EVERY line item i, sum(tenders) === itemTotalKopecks.
+ * 2. Column Sum Invariant: For EVERY tender kind j, sum(items) === totalTenderKopecks.
+ * 3. Non-negativity: All matrix elements >= 0.
+ * 4. Doctor Autonomy (Mandate 8e): 100% discount (0 ₽ act) preserves ALL items with 0 kopecks.
  */
 export function allocateSplitPaymentAcrossItems(
 	items: readonly SplitPaymentPositionItem[],
@@ -409,85 +428,192 @@ export function allocateSplitPaymentAcrossItems(
 		const netUnitKop = Math.max(0, unitKop - discKop);
 		return {
 			item: it,
-			totalKopecks: Math.round(netUnitKop * it.quantity),
+			totalKopecks: toExactKopecks(Math.round(netUnitKop * it.quantity)),
 		};
 	});
 
 	const grandTotalKopecks = itemTotals.reduce((sum, it) => sum + it.totalKopecks, 0);
+
+	// Mandate 8e: 100% discount does NOT purge items from the receipt/statement!
 	if (grandTotalKopecks === 0) {
-		return [];
+		return itemTotals.map((entry) => ({
+			itemId: entry.item.id,
+			itemName: entry.item.name,
+			itemTotalKopecks: toExactKopecks(0),
+			itemTotalRub: 0,
+			cashKopecks: toExactKopecks(0),
+			cardKopecks: toExactKopecks(0),
+			sbpKopecks: toExactKopecks(0),
+			advanceDepositKopecks: toExactKopecks(0),
+			familyDepositKopecks: toExactKopecks(0),
+			creditKopecks: toExactKopecks(0),
+			certificateKopecks: toExactKopecks(0),
+			dmsKopecks: toExactKopecks(0),
+		}));
 	}
 
-	const tenders = validationResult.ffd12Tags;
+	// Extract tender amounts from normalized tenders (or FFD 1.2 tags fallback)
+	const tenderAmounts: Record<SplitTenderKind, number> = {
+		dms_insurance: 0,
+		certificate_or_bonus: 0,
+		family_deposit: 0,
+		advance_deposit: 0,
+		credit: 0,
+		sbp: 0,
+		card: 0,
+		cash: 0,
+	};
 
-	// Distributes a single tender pool across items with zero remainder drift
-	const distributeTender = (tenderKopecks: number): number[] => {
-		if (tenderKopecks === 0) return itemTotals.map(() => 0);
+	for (const t of validationResult.tenders) {
+		if (t.amountKopecks > 0) {
+			tenderAmounts[t.kind] = (tenderAmounts[t.kind] ?? 0) + t.amountKopecks;
+		}
+	}
 
-		const exactShares = itemTotals.map((it) => (it.totalKopecks * tenderKopecks) / grandTotalKopecks);
-		const baseShares = exactShares.map((s) => Math.floor(s));
-		const remainders = exactShares.map((s, idx) => ({
-			index: idx,
-			remainder: s - baseShares[idx]!,
-		}));
+	let totalExtractedTenders = 0;
+	for (const kind of TENDER_PRIORITY_ORDER) {
+		totalExtractedTenders += tenderAmounts[kind];
+	}
 
-		const currentSum = baseShares.reduce((a, b) => a + b, 0);
-		const deficit = tenderKopecks - currentSum;
+	if (totalExtractedTenders === 0 && validationResult.ffd12Tags.totalKopecks > 0) {
+		const tags = validationResult.ffd12Tags;
+		tenderAmounts.cash = tags.tag1031_cashKopecks;
+		tenderAmounts.card = tags.tag1081_electronicKopecks;
+		tenderAmounts.advance_deposit = tags.tag1215_advanceOffsetKopecks;
+		tenderAmounts.credit = tags.tag1216_creditKopecks;
+		tenderAmounts.certificate_or_bonus = tags.tag1217_counterProvisionKopecks;
+	}
 
-		remainders.sort((a, b) => b.remainder - a.remainder);
-		for (let i = 0; i < deficit; i++) {
-			const target = remainders[i % remainders.length];
+	// Remaining unpaid kopecks for each item
+	const remainingItemKopecks = itemTotals.map((it) => it.totalKopecks);
+
+	// 2D Matrix of allocations: allocations[itemIndex][tenderKind]
+	const allocations: Array<Record<SplitTenderKind, number>> = itemTotals.map(() => ({
+		dms_insurance: 0,
+		certificate_or_bonus: 0,
+		family_deposit: 0,
+		advance_deposit: 0,
+		credit: 0,
+		sbp: 0,
+		card: 0,
+		cash: 0,
+	}));
+
+	for (const kind of TENDER_PRIORITY_ORDER) {
+		const tenderKopecks = tenderAmounts[kind];
+		if (tenderKopecks <= 0) continue;
+
+		const sumRemaining = remainingItemKopecks.reduce((sum, rem) => sum + rem, 0);
+		if (sumRemaining <= 0) break;
+
+		// If this tender exactly matches or covers all remaining debt across all items:
+		if (tenderKopecks === sumRemaining) {
+			for (let i = 0; i < itemTotals.length; i++) {
+				const rem = remainingItemKopecks[i] ?? 0;
+				const itemAlloc = allocations[i];
+				if (itemAlloc !== undefined && rem > 0) {
+					itemAlloc[kind] = (itemAlloc[kind] ?? 0) + rem;
+					remainingItemKopecks[i] = 0;
+				}
+			}
+			continue;
+		}
+
+		// Sequential Exact Remainder Apportionment on integers:
+		const baseShares = new Array<number>(itemTotals.length).fill(0);
+		const remainders: Array<{ index: number; remainderNumerator: number; remainingKop: number }> = [];
+
+		let distributedSum = 0;
+		for (let i = 0; i < itemTotals.length; i++) {
+			const rem = remainingItemKopecks[i] ?? 0;
+			if (rem <= 0) continue;
+
+			const product = rem * tenderKopecks;
+			const base = Math.floor(product / sumRemaining);
+			const remainderNumerator = product % sumRemaining;
+
+			baseShares[i] = base;
+			distributedSum += base;
+			remainders.push({
+				index: i,
+				remainderNumerator,
+				remainingKop: rem,
+			});
+		}
+
+		const deficit = tenderKopecks - distributedSum;
+
+		// Deterministic sort: highest remainder numerator -> highest remaining debt -> original index
+		remainders.sort((a, b) => {
+			if (b.remainderNumerator !== a.remainderNumerator) {
+				return b.remainderNumerator - a.remainderNumerator;
+			}
+			if (b.remainingKop !== a.remainingKop) {
+				return b.remainingKop - a.remainingKop;
+			}
+			return a.index - b.index;
+		});
+
+		for (let r = 0; r < deficit; r++) {
+			if (remainders.length === 0) break;
+			const target = remainders[r % remainders.length];
 			if (target !== undefined) {
-				const currentVal = baseShares[target.index] ?? 0;
-				baseShares[target.index] = currentVal + 1;
+				const idx = target.index;
+				const currentBase = baseShares[idx] ?? 0;
+				const maxAllowed = remainingItemKopecks[idx] ?? 0;
+				if (currentBase + 1 <= maxAllowed) {
+					baseShares[idx] = currentBase + 1;
+				} else {
+					for (let alt = 0; alt < remainders.length; alt++) {
+						const altTarget = remainders[alt];
+						if (altTarget !== undefined) {
+							const altIdx = altTarget.index;
+							if ((baseShares[altIdx] ?? 0) + 1 <= (remainingItemKopecks[altIdx] ?? 0)) {
+								baseShares[altIdx] = (baseShares[altIdx] ?? 0) + 1;
+								break;
+							}
+						}
+					}
+				}
 			}
 		}
 
-		return baseShares;
-	};
-
-	const cashShares = distributeTender(tenders.tag1031_cashKopecks);
-	const electronicShares = distributeTender(tenders.tag1081_electronicKopecks);
-	const advanceShares = distributeTender(tenders.tag1215_advanceOffsetKopecks);
-	const creditShares = distributeTender(tenders.tag1216_creditKopecks);
-	const certTenderKop = validationResult.tenders.find((t) => t.kind === "certificate_or_bonus")?.amountKopecks ?? 0;
-	const dmsTenderKop = validationResult.tenders.find((t) => t.kind === "dms_insurance")?.amountKopecks ?? 0;
-
-	let certShares: number[];
-	let dmsShares: number[];
-
-	if (dmsTenderKop > 0 && certTenderKop === 0) {
-		dmsShares = distributeTender(tenders.tag1217_counterProvisionKopecks);
-		certShares = itemTotals.map(() => 0);
-	} else if (certTenderKop > 0 && dmsTenderKop === 0) {
-		certShares = distributeTender(tenders.tag1217_counterProvisionKopecks);
-		dmsShares = itemTotals.map(() => 0);
-	} else {
-		certShares = distributeTender(certTenderKop);
-		dmsShares = distributeTender(dmsTenderKop);
+		// Apply allocations and decrement remaining item balances
+		for (let i = 0; i < itemTotals.length; i++) {
+			const allocatedToItem = baseShares[i] ?? 0;
+			const itemAlloc = allocations[i];
+			if (itemAlloc !== undefined && allocatedToItem > 0) {
+				itemAlloc[kind] = (itemAlloc[kind] ?? 0) + allocatedToItem;
+				remainingItemKopecks[i] = Math.max(0, (remainingItemKopecks[i] ?? 0) - allocatedToItem);
+			}
+		}
 	}
 
 	return itemTotals.map((entry, idx) => {
-		const cashK = cashShares[idx]!;
-		const elK = electronicShares[idx]!;
-		const advK = advanceShares[idx]!;
-		const credK = creditShares[idx]!;
-		const certK = certShares[idx] ?? 0;
-		const dmsK = dmsShares[idx] ?? 0;
+		const row = allocations[idx] ?? {
+			cash: 0,
+			card: 0,
+			sbp: 0,
+			advance_deposit: 0,
+			family_deposit: 0,
+			credit: 0,
+			certificate_or_bonus: 0,
+			dms_insurance: 0,
+		};
 
 		return {
 			itemId: entry.item.id,
 			itemName: entry.item.name,
 			itemTotalKopecks: toExactKopecks(entry.totalKopecks),
 			itemTotalRub: kopecksToRub(entry.totalKopecks),
-			cashKopecks: toExactKopecks(cashK),
-			cardKopecks: toExactKopecks(elK),
-			sbpKopecks: toExactKopecks(0),
-			advanceDepositKopecks: toExactKopecks(advK),
-			familyDepositKopecks: toExactKopecks(0),
-			creditKopecks: toExactKopecks(credK),
-			certificateKopecks: toExactKopecks(certK),
-			dmsKopecks: toExactKopecks(dmsK),
+			cashKopecks: toExactKopecks(row.cash),
+			cardKopecks: toExactKopecks(row.card),
+			sbpKopecks: toExactKopecks(row.sbp),
+			advanceDepositKopecks: toExactKopecks(row.advance_deposit),
+			familyDepositKopecks: toExactKopecks(row.family_deposit),
+			creditKopecks: toExactKopecks(row.credit),
+			certificateKopecks: toExactKopecks(row.certificate_or_bonus),
+			dmsKopecks: toExactKopecks(row.dms_insurance),
 		};
 	});
 }

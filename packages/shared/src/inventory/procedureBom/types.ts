@@ -52,6 +52,8 @@ export const procedureBomItemSchema = z.object({
 	unitOfMeasure: consumableUnitSchema,
 	estimatedUnitCostKopecks: z.number().int().nonnegative(),
 	isOptional: z.boolean().default(false),
+	alternativeSku: z.string().optional(),
+	alternativeInventoryItemId: z.string().uuid().optional(),
 	description: z.string().optional(),
 });
 

@@ -154,13 +154,14 @@ export const SACRED_STUDIOS = [
 	},
 ];
 
-const MUTATION_METHODS = new Set(["post", "put", "patch"]);
+const MUTATION_METHODS = new Set(["post", "put", "patch", "delete"]);
 const NON_FASTIFY_RECEIVERS = new Set([
 	"db",
 	"tx",
 	"trx",
 	"cache",
 	"map",
+	"set",
 	"store",
 	"headers",
 	"params",
@@ -413,19 +414,94 @@ export function checkUiOrphans(webFiles, allowlist) {
 }
 
 /**
- * Проверка текста на наличие ключевых слов валидации.
+ * Проверка AST узла обработчика или функции на наличие реальных вызовов валидации.
+ * Комментарии (например, // TODO: validate later) и строковые литералы игнорируются,
+ * исключая ложные срабатывания и лазейки обхода (Мандат 8bk/8bq).
  */
-function hasValidationKeywords(text) {
-	return (
-		text.includes(".safeParse") ||
-		text.includes(".parse") ||
-		text.includes("safeParse(") ||
-		text.includes("parseSchedulePayload") ||
-		text.includes("parseBody") ||
-		text.includes("validate") ||
-		text.includes("assert") ||
-		text.includes("door-validation: none")
-	);
+export function hasAstValidation(node, parsedSourceFile) {
+	if (!node) return false;
+
+	// Проверяем комментарии door-validation: none у самого узла функции
+	if (parsedSourceFile) {
+		const fullText = parsedSourceFile.getFullText();
+		const leadingComments = ts.getLeadingCommentRanges(fullText, node.getFullStart());
+		if (leadingComments) {
+			for (const c of leadingComments) {
+				const commentText = fullText.slice(c.pos, c.end);
+				if (/door-validation:\s*none\s*[—-]\s*.{5,}/.test(commentText)) {
+					return true;
+				}
+			}
+		}
+	}
+
+	let hasValidation = false;
+
+	function walk(n) {
+		if (hasValidation) return;
+
+		// 1. Проверяем вызовы функций:
+		if (ts.isCallExpression(n)) {
+			// e.g. schema.safeParse(req.body), schema.parse(req.body)
+			if (ts.isPropertyAccessExpression(n.expression)) {
+				const methodName = n.expression.name.text;
+				if (
+					methodName === "safeParse" ||
+					methodName === "parse" ||
+					methodName === "parseAsync" ||
+					methodName === "safeParseAsync" ||
+					/^validate[A-Z_]/.test(methodName) ||
+					/^assert[A-Z_]/.test(methodName) ||
+					/^verify[A-Z_]/.test(methodName)
+				) {
+					hasValidation = true;
+					return;
+				}
+				// e.g. z.object(...), z.tuple(...)
+				if (ts.isIdentifier(n.expression.expression) && n.expression.expression.text === "z") {
+					hasValidation = true;
+					return;
+				}
+				// e.g. assert.ok(...), assert.strictEqual(...)
+				if (ts.isIdentifier(n.expression.expression) && n.expression.expression.text === "assert") {
+					hasValidation = true;
+					return;
+				}
+			} else if (ts.isIdentifier(n.expression)) {
+				const fnName = n.expression.text;
+				if (
+					fnName === "safeParse" ||
+					fnName === "parse" ||
+					fnName === "assert" ||
+					fnName === "parseSchedulePayload" ||
+					fnName === "parseBody" ||
+					fnName === "parseAndValidate" ||
+					/^validate[A-Z_]/.test(fnName) ||
+					/^assert[A-Z_]/.test(fnName) ||
+					/^verify[A-Z_]/.test(fnName)
+				) {
+					hasValidation = true;
+					return;
+				}
+			}
+		}
+
+		// 2. Обращение к Zod-конструкторам схем (z.object, z.tuple, z.array, z.discriminatedUnion, etc.)
+		if (ts.isPropertyAccessExpression(n)) {
+			if (ts.isIdentifier(n.expression) && n.expression.text === "z") {
+				const prop = n.name.text;
+				if (["object", "tuple", "array", "discriminatedUnion", "record", "string", "number"].includes(prop)) {
+					hasValidation = true;
+					return;
+				}
+			}
+		}
+
+		ts.forEachChild(n, walk);
+	}
+
+	walk(node);
+	return hasValidation;
 }
 
 /**
@@ -458,13 +534,83 @@ function matchesPattern(routeMethod, routePath, pattern) {
 }
 
 /**
+ * Проверка наличия schema.body в объекте опций Fastify.
+ */
+function hasSchemaBodyInOptions(optionsNode) {
+	if (!optionsNode || !ts.isObjectLiteralExpression(optionsNode)) return false;
+	for (const prop of optionsNode.properties) {
+		if (
+			ts.isPropertyAssignment(prop) &&
+			prop.name &&
+			(prop.name.text === "schema" || prop.name.escapedText === "schema")
+		) {
+			const schemaInit = prop.initializer;
+			if (ts.isObjectLiteralExpression(schemaInit)) {
+				for (const sProp of schemaInit.properties) {
+					if (
+						sProp.name &&
+						(sProp.name.text === "body" || sProp.name.escapedText === "body")
+					) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * Проверка комментария // door-validation: none — <причина>.
+ */
+function hasCommentValidationOverride(parsedSourceFile, node) {
+	const fullText = parsedSourceFile.getFullText();
+	const leadingComments = ts.getLeadingCommentRanges(fullText, node.getFullStart());
+	if (leadingComments) {
+		for (const c of leadingComments) {
+			const commentText = fullText.slice(c.pos, c.end);
+			if (/door-validation:\s*none\s*[—-]\s*.{5,}/.test(commentText)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * Проверка AST обработчика Fastify (локального или импортированного).
+ */
+function checkHandlerValidation(handlerNode, localFns, importedFns, topLevelFunctionsMap, currentSourceFile) {
+	if (!handlerNode) return false;
+	if (ts.isArrowFunction(handlerNode) || ts.isFunctionExpression(handlerNode)) {
+		return hasAstValidation(handlerNode, currentSourceFile);
+	}
+	if (ts.isIdentifier(handlerNode)) {
+		const fnName = handlerNode.text;
+		if (localFns && localFns.has(fnName)) {
+			const entry = localFns.get(fnName);
+			return hasAstValidation(entry.node, entry.sourceFile);
+		}
+		if (importedFns && importedFns.has(fnName)) {
+			const targetFile = importedFns.get(fnName);
+			const targetFns = topLevelFunctionsMap.get(targetFile);
+			if (targetFns && targetFns.has(fnName)) {
+				const entry = targetFns.get(fnName);
+				return hasAstValidation(entry.node, entry.sourceFile);
+			}
+		}
+	}
+	return false;
+}
+
+/**
  * ПРАВИЛО 3: Проверка защиты дверей мутаций API Fastify.
  */
 export function checkApiMutationDoors(routeFiles, allowlist) {
 	const violations = [];
 	const legacyBacklog = allowlist.api_mutation_doors_legacy_backlog || [];
 
-	// Карта верхнеуровневых функций по файлам
+	// Карта верхнеуровневых функций по файлам (сохраняем AST узлы)
 	const parsedFilesCache = new Map();
 	const topLevelFunctionsMap = new Map();
 
@@ -476,11 +622,11 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 		const fnMap = new Map();
 		function collectFns(node) {
 			if (ts.isFunctionDeclaration(node) && node.name) {
-				fnMap.set(node.name.text, node.getText(parsed));
+				fnMap.set(node.name.text, { node, sourceFile: parsed });
 			} else if (ts.isVariableStatement(node)) {
 				for (const decl of node.declarationList.declarations) {
 					if (ts.isIdentifier(decl.name) && decl.initializer) {
-						fnMap.set(decl.name.text, decl.initializer.getText(parsed));
+						fnMap.set(decl.name.text, { node: decl.initializer, sourceFile: parsed });
 					}
 				}
 			}
@@ -524,12 +670,79 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 		function visit(node) {
 			if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
 				const verb = node.expression.name.text.toLowerCase();
-				if (MUTATION_METHODS.has(verb) && node.arguments.length >= 2) {
-					const receiver = ts.isIdentifier(node.expression.expression)
-						? node.expression.expression.text
-						: null;
-					if (receiver && NON_FASTIFY_RECEIVERS.has(receiver)) return;
+				const receiver = ts.isIdentifier(node.expression.expression)
+					? node.expression.expression.text
+					: null;
+				if (receiver && NON_FASTIFY_RECEIVERS.has(receiver)) return;
 
+				// А. Поддержка fastify.route({ method: 'POST', url: '...', handler: ... })
+				if (verb === "route" && node.arguments.length >= 1) {
+					const routeArg = node.arguments[0];
+					if (ts.isObjectLiteralExpression(routeArg)) {
+						const methods = [];
+						let pathText = "<dynamic>";
+						let hasSchemaBody = hasSchemaBodyInOptions(routeArg);
+						let handlerNode = null;
+
+						for (const prop of routeArg.properties) {
+							if (ts.isPropertyAssignment(prop) && prop.name) {
+								const propName = prop.name.text || prop.name.escapedText;
+								if (propName === "method") {
+									if (ts.isStringLiteralLike(prop.initializer)) {
+										methods.push(prop.initializer.text.toLowerCase());
+									} else if (ts.isArrayLiteralExpression(prop.initializer)) {
+										for (const el of prop.initializer.elements) {
+											if (ts.isStringLiteralLike(el)) {
+												methods.push(el.text.toLowerCase());
+											}
+										}
+									}
+								} else if (propName === "url" || propName === "path") {
+									if (ts.isStringLiteralLike(prop.initializer)) {
+										pathText = prop.initializer.text;
+									}
+								} else if (propName === "handler") {
+									handlerNode = prop.initializer;
+								}
+							}
+						}
+
+						const mutationMethods = methods.filter((m) => MUTATION_METHODS.has(m));
+						for (const mutVerb of mutationMethods) {
+							const hasHandlerValidation = checkHandlerValidation(
+								handlerNode,
+								localFns,
+								importedFns,
+								topLevelFunctionsMap,
+								parsed,
+							);
+							const hasCommentOverride = hasCommentValidationOverride(parsed, node);
+							const isValidated = hasSchemaBody || hasHandlerValidation || hasCommentOverride;
+
+							if (!isValidated) {
+								const method = mutVerb.toUpperCase();
+								const isAllowed = legacyBacklog.some((entry) =>
+									matchesPattern(method, pathText, entry.pattern),
+								);
+								if (!isAllowed) {
+									const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1;
+									const relFile = path.relative(repoRoot, file).replace(/\\/g, "/");
+									violations.push({
+										rule: "API_MUTATION_UNVALIDATED",
+										file: `${relFile}:${line}`,
+										method,
+										path: pathText,
+										message: `Эндпоинт мутации [${method}] ${pathText} (через fastify.route) не имеет схемы валидации тела (schema.body) или Zod-парсера! Закройте открытую дверь схемы либо добавьте // door-validation: none — <причина>`,
+									});
+								}
+							}
+						}
+					}
+					return;
+				}
+
+				// Б. Поддержка fastify.post / fastify.put / fastify.patch
+				if (MUTATION_METHODS.has(verb) && node.arguments.length >= 2) {
 					const pathArg = node.arguments[0];
 					let pathText = "<dynamic>";
 					if (ts.isStringLiteralLike(pathArg)) {
@@ -537,74 +750,23 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 					}
 
 					let hasSchemaBody = false;
-					let hasHandlerValidation = false;
-
-					// 1. Проверяем schema: { body: ... }
 					for (let i = 1; i < node.arguments.length; i++) {
 						const arg = node.arguments[i];
-						if (ts.isObjectLiteralExpression(arg)) {
-							for (const prop of arg.properties) {
-								if (
-									ts.isPropertyAssignment(prop) &&
-									prop.name &&
-									(prop.name.text === "schema" || prop.name.escapedText === "schema")
-								) {
-									const schemaInit = prop.initializer;
-									if (ts.isObjectLiteralExpression(schemaInit)) {
-										for (const sProp of schemaInit.properties) {
-											if (
-												sProp.name &&
-												(sProp.name.text === "body" || sProp.name.escapedText === "body")
-											) {
-												hasSchemaBody = true;
-											}
-										}
-									}
-								}
-							}
+						if (hasSchemaBodyInOptions(arg)) {
+							hasSchemaBody = true;
+							break;
 						}
 					}
 
-					// 2. Проверяем хэндлер
 					const lastArg = node.arguments[node.arguments.length - 1];
-					if (lastArg) {
-						if (ts.isArrowFunction(lastArg) || ts.isFunctionExpression(lastArg)) {
-							const text = lastArg.getText(parsed);
-							if (hasValidationKeywords(text)) {
-								hasHandlerValidation = true;
-							}
-						} else if (ts.isIdentifier(lastArg)) {
-							const fnName = lastArg.text;
-							if (localFns && localFns.has(fnName)) {
-								const fnText = localFns.get(fnName);
-								if (hasValidationKeywords(fnText)) {
-									hasHandlerValidation = true;
-								}
-							} else if (importedFns.has(fnName)) {
-								const targetFile = importedFns.get(fnName);
-								const targetFns = topLevelFunctionsMap.get(targetFile);
-								if (targetFns && targetFns.has(fnName)) {
-									const fnText = targetFns.get(fnName);
-									if (hasValidationKeywords(fnText)) {
-										hasHandlerValidation = true;
-									}
-								}
-							}
-						}
-					}
-
-					// 3. Проверяем комментарии door-validation: none
-					const fullText = parsed.getFullText();
-					const leadingComments = ts.getLeadingCommentRanges(fullText, node.getFullStart());
-					let hasCommentOverride = false;
-					if (leadingComments) {
-						for (const c of leadingComments) {
-							const commentText = fullText.slice(c.pos, c.end);
-							if (/door-validation:\s*none\s*[—-]\s*.{5,}/.test(commentText)) {
-								hasCommentOverride = true;
-							}
-						}
-					}
+					const hasHandlerValidation = checkHandlerValidation(
+						lastArg,
+						localFns,
+						importedFns,
+						topLevelFunctionsMap,
+						parsed,
+					);
+					const hasCommentOverride = hasCommentValidationOverride(parsed, node);
 
 					const isValidated = hasSchemaBody || hasHandlerValidation || hasCommentOverride;
 

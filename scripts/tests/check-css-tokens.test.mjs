@@ -57,6 +57,13 @@ function runGuardOn(files, modifier = null) {
 		const guardCopy = join(root, "scripts", "check-css-tokens.mjs");
 		mkdirSync(dirname(guardCopy), { recursive: true });
 		mkdirSync(join(root, "apps", "web", "src"), { recursive: true });
+
+		const manifestsDir = join(root, "scripts", "manifests");
+		mkdirSync(manifestsDir, { recursive: true });
+		copyFileSync(
+			join(scriptsDirectory, "manifests", "failure-manifestos.mjs"),
+			join(manifestsDir, "failure-manifestos.mjs"),
+		);
 		let source = readFileSync(guardPath, "utf8");
 		if (modifier) {
 			source = modifier(source);

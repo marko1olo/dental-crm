@@ -300,6 +300,32 @@ export function percentageOfKopecks(
 }
 
 /**
+ * Преобразование процента (например, 15 или 15.5) в целое количество базисных пунктов (1500 или 1550).
+ * 1% = 100 базисных пунктов (10 000 б.п. = 100%).
+ */
+export function basisPointsFromPercent(percent: number): number {
+	if (!Number.isFinite(percent) || percent < 0) return 0;
+	return Math.round(percent * 100);
+}
+
+/**
+ * Вычисляет точную процентную долю/скидку от суммы в копейках.
+ * Принимает процент от 0 до 100 (например, 15 для 15%), исключая операции `* 0.01` с float-дрейфом IEEE-754.
+ */
+export function calculatePercentDiscountKopecks(
+	amountKopecks: number | bigint,
+	percent: number,
+): number {
+	const amt = typeof amountKopecks === "bigint" ? Number(amountKopecks) : amountKopecks;
+	if (!Number.isFinite(amt) || amt <= 0 || !Number.isFinite(percent) || percent <= 0) {
+		return 0;
+	}
+	const safePercent = Math.min(100, Math.max(0, percent));
+	const basisPoints = Math.round(safePercent * 100);
+	return Math.round((amt * basisPoints) / 10_000);
+}
+
+/**
  * Делит сумму на `parts` частей так, что их сумма РАВНА исходной.
  *
  * Нужно для рассрочки: 100.00 на 3 платежа — это 33.34 + 33.33 + 33.33, а не

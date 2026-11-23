@@ -57,7 +57,7 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 		});
 
 		it("validates Zod schemas against compliant payloads", () => {
-			const statusParsed = purchaseOrderStatusSchema.safeParse("confirmed");
+			const statusParsed = procurementOrderStatusSchema.safeParse("confirmed");
 			assert.strictEqual(statusParsed.success, true);
 
 			const qualityParsed = receiptQualityVerdictSchema.safeParse("good");

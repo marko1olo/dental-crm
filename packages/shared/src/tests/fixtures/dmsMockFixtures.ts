@@ -1,0 +1,93 @@
+/**
+ * DENTE Dental CRM — DMS Test Fixtures & Mock Datasets.
+ * Isolated from production runtime SSOT (Mandate 8a / 8z).
+ */
+
+import type { DmsRegistryServiceRecord } from "../../insurance/catalogs/dmsRegistryExportOps.js";
+import type { DmsGuaranteeLetter } from "../../insurance/guaranteeModules/guaranteeTypes.js";
+
+export const DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS: readonly DmsRegistryServiceRecord[] = [
+	{
+		id: "rec-1",
+		visitDate: "01.08.2026",
+		patientFullName: "Иванов Сергей Алексеевич",
+		policyNumber: "СГЗ-77-991283",
+		letterNumber: "ГП-СОГАЗ-2026-8812",
+		serviceCode804n: "A16.07.002.001",
+		serviceName: "Восстановление зуба пломбой светового отверждения",
+		diagnosisCodeMkb10: "K02.1",
+		toothNumber: "16",
+		quantity: 1,
+		unitPriceKopecks: 450000,
+		totalPriceKopecks: 450000,
+		dmsCoveredKopecks: 450000,
+		patientPaidKopecks: 0,
+		unitPriceRub: 4500,
+		totalPriceRub: 4500,
+		dmsCoveredRub: 4500,
+		patientPaidRub: 0,
+		doctorFullName: "Д-р Соколов А.В.",
+		isExcluded: false,
+	},
+	{
+		id: "rec-2",
+		visitDate: "05.08.2026",
+		patientFullName: "Иванов Сергей Алексеевич",
+		policyNumber: "СГЗ-77-991283",
+		letterNumber: "ГП-СОГАЗ-2026-8812",
+		serviceCode804n: "A16.07.030.002",
+		serviceName: "Эндодонтическое лечение корневых каналов",
+		diagnosisCodeMkb10: "K04.0",
+		toothNumber: "16",
+		quantity: 1,
+		unitPriceKopecks: 580000,
+		totalPriceKopecks: 580000,
+		dmsCoveredKopecks: 580000,
+		patientPaidKopecks: 0,
+		unitPriceRub: 5800,
+		totalPriceRub: 5800,
+		dmsCoveredRub: 5800,
+		patientPaidRub: 0,
+		doctorFullName: "Д-р Соколов А.В.",
+		isExcluded: false,
+	},
+];
+
+export const SAMPLE_DMS_GUARANTEE_LETTERS: readonly DmsGuaranteeLetter[] = [
+	{
+		id: "sample-letter-1",
+		letterNumber: "ГП-СОГАЗ-2026-01",
+		issueDate: "2026-01-15",
+		validFrom: "2026-01-15",
+		validTo: "2026-12-31",
+		validUntil: "2026-12-31",
+		companyId: "sogaz",
+		companyName: "АО «СОГАЗ»",
+		policyNumber: "СГЗ-77-991283",
+		patientFullName: "Соколова Анна Викторовна",
+		patientBirthDate: "1985-04-12",
+		limitKopecks: 5000000,
+		usedKopecks: 1250000,
+		remainingLimitKopecks: 3750000,
+		defaultFranchisePercent: 0,
+		status: "active",
+	},
+	{
+		id: "sample-letter-exp",
+		letterNumber: "ГП-СОГАЗ-2025-99",
+		issueDate: "2025-01-15",
+		validFrom: "2025-01-15",
+		validTo: "2025-12-31",
+		validUntil: "2025-12-31",
+		companyId: "sogaz",
+		companyName: "АО «СОГАЗ»",
+		policyNumber: "СГЗ-77-991283",
+		patientFullName: "Соколова Анна Викторовна",
+		patientBirthDate: "1985-04-12",
+		limitKopecks: 3000000,
+		usedKopecks: 3000000,
+		remainingLimitKopecks: 0,
+		defaultFranchisePercent: 0,
+		status: "expired",
+	},
+];

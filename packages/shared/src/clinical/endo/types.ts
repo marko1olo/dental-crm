@@ -181,7 +181,7 @@ export interface EndoMaterialConsumableEstimate {
 		| "other";
 	readonly unit: string;
 	readonly quantity: number;
-	readonly costPriceKopecks: number;
+	readonly costPriceKopecks: bigint;
 	readonly costPriceRub: number;
 	readonly notes?: string | undefined;
 }
@@ -193,10 +193,10 @@ export interface EndoPriceServiceEstimate {
 	readonly title: string;
 	readonly category: string;
 	readonly priceRub: number;
-	readonly priceKopecks: number;
+	readonly priceKopecks: bigint;
 	readonly quantity: number;
 	readonly totalPriceRub: number;
-	readonly totalPriceKopecks: number;
+	readonly totalPriceKopecks: bigint;
 	readonly toothNumber: number;
 	readonly canalCount: number;
 	readonly isMandatory: boolean;
@@ -216,7 +216,18 @@ export interface EndoTreatmentBillingEstimateResult {
 	readonly services?: readonly EndoPriceServiceEstimate[] | undefined;
 	readonly materials: readonly EndoMaterialConsumableEstimate[];
 	readonly totalServicesPriceRub: number;
-	readonly totalServicesPriceKopecks: number;
+	readonly totalServicesPriceKopecks: bigint;
 	readonly totalMaterialsCostRub: number;
-	readonly totalMaterialsCostKopecks: number;
+	readonly totalMaterialsCostKopecks: bigint;
+}
+
+export interface EndoBillingCostBreakdown {
+	readonly totalKopecks: bigint;
+	readonly totalRubles: number;
+	readonly services: readonly {
+		readonly code: string;
+		readonly title: string;
+		readonly priceKopecks: bigint;
+		readonly quantity: number;
+	}[];
 }

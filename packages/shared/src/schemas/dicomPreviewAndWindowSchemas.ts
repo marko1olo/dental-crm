@@ -162,6 +162,8 @@ export const dicomFirstFramePreviewResponseSchema = z.object({
 	pixelRepresentation: z.number().int().min(0).max(1).nullable(),
 	windowCenter: z.number().nullable(),
 	windowWidth: z.number().positive().nullable(),
+	pixelSpacing: z.tuple([z.number(), z.number()]).nullable().optional(),
+	sliceThickness: z.number().nullable().optional(),
 	imageDataUrl: z.string().nullable(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),

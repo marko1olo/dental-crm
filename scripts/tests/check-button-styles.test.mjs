@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+	copyFileSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -33,6 +34,13 @@ function runGuardOn(files) {
 		const guardCopy = join(root, "scripts", "check-button-styles.mjs");
 		mkdirSync(dirname(guardCopy), { recursive: true });
 		mkdirSync(join(root, "apps", "web", "src"), { recursive: true });
+
+		const manifestsDir = join(root, "scripts", "manifests");
+		mkdirSync(manifestsDir, { recursive: true });
+		copyFileSync(
+			join(scriptsDirectory, "manifests", "failure-manifestos.mjs"),
+			join(manifestsDir, "failure-manifestos.mjs"),
+		);
 
 		const source = readFileSync(guardPath, "utf8");
 		writeFileSync(guardCopy, source, "utf8");

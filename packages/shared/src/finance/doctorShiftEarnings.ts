@@ -19,12 +19,13 @@
 
 import {
 	type Kopecks,
+	calculatePercentDiscountKopecks,
 	formatKopecksRu,
+	kopecksToRubles,
 	parseKopecks,
 	rublesToKopecks,
 	sumKopecks,
 } from "../money.js";
-import { kopecksToRub as kopecksToRubles } from "../fiscal/kopecksArithmetic.js";
 import {
 	DEFAULT_CATEGORY_COMMISSION_PERCENT,
 	type DoctorShiftAppointment,
@@ -157,7 +158,7 @@ export function calculateChairsideShiftEarnings(
 								: defaultCommission;
 
 				const srvDealBase = Math.max(0, srvRev - srvLab - srvMat) as Kopecks;
-				const srvEarned = Math.round((srvDealBase * commission) / 100) as Kopecks;
+				const srvEarned = calculatePercentDiscountKopecks(srvDealBase, commission) as Kopecks;
 
 				aptGrossKop = (aptGrossKop + srvRev) as Kopecks;
 				aptLabKop = (aptLabKop + srvLab) as Kopecks;
@@ -185,7 +186,7 @@ export function calculateChairsideShiftEarnings(
 				labCostKop: aptLabKop,
 				materialsCostKop: aptMatKop,
 				netBaseKop: aptNetBase,
-				commissionPercent: aptNetBase > 0 ? Math.round((aptEarnedKop * 100) / aptNetBase) : defaultCommission,
+				commissionPercent: aptNetBase > 0 ? Math.round((Number(aptEarnedKop) * 100) / Number(aptNetBase)) : defaultCommission,
 				doctorEarnedKop: aptEarnedKop,
 				serviceTitles,
 			});

@@ -11,7 +11,7 @@ export * from "./tenderTypes.js";
 export * from "./fiscalValidation.js";
 export * from "./fiscalReconciliationStatement.js";
 export * from "./offlineFiscalBatchReconciler.js";
-export * from "./sbpQrEngine.js";
+export * from "../messaging/sbpPaymentEngine.js";
 export * from "./familyFiscalBillingEngine.js";
 export * from "./qrGenerator.js";
 export * from "./fnsTaxDeductionEngine.js";

@@ -394,9 +394,11 @@ export function calculateMaxRedeemablePoints(
 		};
 	}
 
-	const maxInvoiceCoverageRub = Number(
-		((invoiceAmountRub * maxCoveragePercent) / 100).toFixed(2),
+	const maxInvoiceCoverageKopecks = percentageOfKopecks(
+		rublesToKopecks(invoiceAmountRub),
+		basisPointsFromPercent(maxCoveragePercent),
 	);
+	const maxInvoiceCoverageRub = kopecksToRubles(maxInvoiceCoverageKopecks);
 	const maxPointsByCoverage = Math.floor(maxInvoiceCoverageRub / pointRateRub);
 	const maxAllowedPoints = Math.min(Math.floor(activePoints), maxPointsByCoverage);
 	const maxDiscountRub = Number((maxAllowedPoints * pointRateRub).toFixed(2));

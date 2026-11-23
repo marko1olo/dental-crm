@@ -10,7 +10,7 @@ import { renderToString } from "react-dom/server";
 import {
 	calculateChairsideShiftEarnings,
 	createSampleChairsideShiftAppointments,
-} from "../doctorShiftEarnings.js";
+} from "@dental/shared";
 import { DoctorShiftEarningsWidget } from "../DoctorShiftEarningsWidget.js";
 
 describe("Doctor Workstation: Chairside Shift Earnings HUD", () => {

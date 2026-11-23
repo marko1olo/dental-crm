@@ -293,8 +293,23 @@ export function getBaseline(baselinePath = DEFAULT_BASELINE_PATH) {
 
 /**
  * Save updated baseline limits to JSON file.
+ * Enforces monotonic ratchet: limits can only decrease or stay the same, NEVER increase!
  */
 export function saveBaseline(baselinePath = DEFAULT_BASELINE_PATH, newBaseline) {
+	if (existsSync(baselinePath)) {
+		try {
+			const existing = JSON.parse(readFileSync(baselinePath, "utf8"));
+			for (const [key, val] of Object.entries(newBaseline)) {
+				if (typeof existing[key] === "number" && typeof val === "number" && val > existing[key]) {
+					throw new Error(
+						`[quality-ratchet] Запрещено увеличивать лимит санитарного храповика для ${key}: ${existing[key]} ➔ ${val}. Храповик может только закручиваться вниз!`,
+					);
+				}
+			}
+		} catch (err) {
+			if (err.message.includes("Храповик может только закручиваться")) throw err;
+		}
+	}
 	const dir = dirname(baselinePath);
 	if (!existsSync(dir)) {
 		mkdirSync(dir, { recursive: true });

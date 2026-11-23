@@ -79,91 +79,11 @@ export interface DmsStatutoryRegistry {
 	readonly grandTotalPatientKopecks: number;
 }
 
-export const DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS: readonly DmsRegistryServiceRecord[] = [
-	{
-		id: "rec-1",
-		visitDate: "01.08.2026",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "СГЗ-77-991283",
-		letterNumber: "ГП-СОГАЗ-2026-8812",
-		serviceCode804n: "A16.07.002.001",
-		serviceName: "Восстановление зуба пломбой светового отверждения",
-		diagnosisCodeMkb10: "K02.1",
-		toothNumber: "16",
-		quantity: 1,
-		unitPriceKopecks: 450000,
-		totalPriceKopecks: 450000,
-		dmsCoveredKopecks: 450000,
-		patientPaidKopecks: 0,
-		unitPriceRub: 4500,
-		totalPriceRub: 4500,
-		dmsCoveredRub: 4500,
-		patientPaidRub: 0,
-		doctorFullName: "Д-р Соколов А.В.",
-		isExcluded: false,
-	},
-	{
-		id: "rec-2",
-		visitDate: "05.08.2026",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "СГЗ-77-991283",
-		letterNumber: "ГП-СОГАЗ-2026-8812",
-		serviceCode804n: "A16.07.030.002",
-		serviceName: "Эндодонтическое лечение корневых каналов",
-		diagnosisCodeMkb10: "K04.0",
-		toothNumber: "16",
-		quantity: 1,
-		unitPriceKopecks: 580000,
-		totalPriceKopecks: 580000,
-		dmsCoveredKopecks: 580000,
-		patientPaidKopecks: 0,
-		unitPriceRub: 5800,
-		totalPriceRub: 5800,
-		dmsCoveredRub: 5800,
-		patientPaidRub: 0,
-		doctorFullName: "Д-р Соколов А.В.",
-		isExcluded: false,
-	},
-];
-
-export const SAMPLE_DMS_GUARANTEE_LETTERS: readonly DmsGuaranteeLetter[] = [
-	{
-		id: "sample-letter-1",
-		letterNumber: "ГП-СОГАЗ-2026-01",
-		issueDate: "2026-01-15",
-		validFrom: "2026-01-15",
-		validTo: "2026-12-31",
-		validUntil: "2026-12-31",
-		companyId: "sogaz",
-		companyName: "АО «СОГАЗ»",
-		policyNumber: "СГЗ-77-991283",
-		patientFullName: "Соколова Анна Викторовна",
-		patientBirthDate: "1985-04-12",
-		limitKopecks: 5000000,
-		usedKopecks: 1250000,
-		remainingLimitKopecks: 3750000,
-		defaultFranchisePercent: 0,
-		status: "active",
-	},
-	{
-		id: "sample-letter-exp",
-		letterNumber: "ГП-СОГАЗ-2025-99",
-		issueDate: "2025-01-15",
-		validFrom: "2025-01-15",
-		validTo: "2025-12-31",
-		validUntil: "2025-12-31",
-		companyId: "sogaz",
-		companyName: "АО «СОГАЗ»",
-		policyNumber: "СГЗ-77-991283",
-		patientFullName: "Соколова Анна Викторовна",
-		patientBirthDate: "1985-04-12",
-		limitKopecks: 3000000,
-		usedKopecks: 3000000,
-		remainingLimitKopecks: 0,
-		defaultFranchisePercent: 0,
-		status: "expired",
-	},
-];
+// Re-export isolated test fixtures & mocks for test suite backward compatibility
+export {
+	DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
+	SAMPLE_DMS_GUARANTEE_LETTERS,
+} from "../../tests/fixtures/dmsMockFixtures.js";
 
 export function calculateRegistryTotals(
 	records: readonly DmsRegistryServiceRecord[],
@@ -172,22 +92,25 @@ export function calculateRegistryTotals(
 	periodEnd = "",
 ): DmsRegistrySummary {
 	const uniquePatients = new Set<string>();
-	let totalAmountRub = 0;
-	let totalDmsCoveredRub = 0;
-	let totalPatientPaidRub = 0;
+	let totalAmountKop = 0;
+	let totalDmsCoveredKop = 0;
+	let totalPatientPaidKop = 0;
 	for (const r of records) {
 		if (r.patientFullName) uniquePatients.add(r.patientFullName);
-		totalAmountRub += Number(r.totalPriceRub || 0);
-		totalDmsCoveredRub += Number(r.dmsCoveredRub || 0);
-		totalPatientPaidRub += Number(r.patientPaidRub || 0);
+		const totKop = r.totalPriceKopecks ?? (r.totalPriceRub !== undefined ? rublesToKopecks(r.totalPriceRub) : (r.totalBillKopecks ?? 0));
+		const dmsKop = r.dmsCoveredKopecks ?? r.dmsAcceptedKopecks ?? (r.dmsCoveredRub !== undefined ? rublesToKopecks(r.dmsCoveredRub) : 0);
+		const patKop = r.patientPaidKopecks ?? (r.patientPaidRub !== undefined ? rublesToKopecks(r.patientPaidRub) : 0);
+		totalAmountKop += totKop;
+		totalDmsCoveredKop += dmsKop;
+		totalPatientPaidKop += patKop;
 	}
 	return {
 		totalServicesCount: records.length,
 		uniquePatientsCount: uniquePatients.size,
-		totalAmountRub: kopecksToRubles(rublesToKopecks(totalAmountRub)),
-		totalDmsCoveredRub: kopecksToRubles(rublesToKopecks(totalDmsCoveredRub)),
-		totalPatientPaidRub: kopecksToRubles(rublesToKopecks(totalPatientPaidRub)),
-		isBalanced: Math.abs(totalAmountRub - (totalDmsCoveredRub + totalPatientPaidRub)) < 0.01,
+		totalAmountRub: kopecksToRubles(totalAmountKop),
+		totalDmsCoveredRub: kopecksToRubles(totalDmsCoveredKop),
+		totalPatientPaidRub: kopecksToRubles(totalPatientPaidKop),
+		isBalanced: totalAmountKop === totalDmsCoveredKop + totalPatientPaidKop,
 		insurerName,
 		periodStart,
 		periodEnd,
@@ -211,15 +134,18 @@ export function buildDmsReconciliationRegistry(params: {
 	totalPatientsCount: number;
 } {
 	const items = params.splitResults || params.items || [];
-	let totRub = 0;
-	let dmsRub = 0;
-	let patRub = 0;
+	let totKop = 0;
+	let dmsKop = 0;
+	let patKop = 0;
 
 	for (const item of items) {
 		const line = item.lineItem;
-		totRub += line?.totalPriceRub ?? item.totalRubles ?? (typeof item.totalKopecks === "number" ? kopecksToRubles(item.totalKopecks) : (item.totalPriceRub || 0));
-		dmsRub += line?.dmsCoveredRub ?? item.insuranceCoveredRubles ?? (typeof item.insuranceCoveredKopecks === "number" ? kopecksToRubles(item.insuranceCoveredKopecks) : (item.dmsCoveredRub || 0));
-		patRub += line?.patientCoPayRub ?? item.patientOutOfPocketRubles ?? (typeof item.patientOutOfPocketKopecks === "number" ? kopecksToRubles(item.patientOutOfPocketKopecks) : (item.patientPaidRub || 0));
+		const lineTot = line?.totalPriceKopecks ?? (line?.totalPriceRub !== undefined ? rublesToKopecks(line.totalPriceRub) : (typeof item.totalKopecks === "number" ? item.totalKopecks : (item.totalPriceKopecks ?? (item.totalPriceRub ? rublesToKopecks(item.totalPriceRub) : 0))));
+		const lineDms = line?.dmsCoveredKopecks ?? (line?.dmsCoveredRub !== undefined ? rublesToKopecks(line.dmsCoveredRub) : (typeof item.insuranceCoveredKopecks === "number" ? item.insuranceCoveredKopecks : (item.dmsCoveredKopecks ?? (item.dmsCoveredRub ? rublesToKopecks(item.dmsCoveredRub) : 0))));
+		const linePat = line?.patientCoPayKopecks ?? (line?.patientCoPayRub !== undefined ? rublesToKopecks(line.patientCoPayRub) : (typeof item.patientOutOfPocketKopecks === "number" ? item.patientOutOfPocketKopecks : (item.patientPaidKopecks ?? (item.patientPaidRub ? rublesToKopecks(item.patientPaidRub) : 0))));
+		totKop += lineTot;
+		dmsKop += lineDms;
+		patKop += linePat;
 	}
 
 	const todayIso = new Date().toISOString().slice(0, 10);
@@ -230,9 +156,9 @@ export function buildDmsReconciliationRegistry(params: {
 		registryDate: params.registryDate || todayIso,
 		items,
 		splitResults: items,
-		totalRegistryAmountRubles: kopecksToRubles(rublesToKopecks(totRub)),
-		totalDmsClaimedRubles: kopecksToRubles(rublesToKopecks(dmsRub)),
-		totalPatientCoPaymentRubles: kopecksToRubles(rublesToKopecks(patRub)),
+		totalRegistryAmountRubles: kopecksToRubles(totKop),
+		totalDmsClaimedRubles: kopecksToRubles(dmsKop),
+		totalPatientCoPaymentRubles: kopecksToRubles(patKop),
 		totalServicesCount: items.length,
 		totalPatientsCount: new Set(items.map((i) => i.patientFullName)).size || 1,
 	};
@@ -296,17 +222,26 @@ export function exportRegistryToCsv(
 			"",
 			[esc("№"), esc("Дата"), esc("Пациент"), esc("Полис"), esc("Гар. письмо"), esc("Код"), esc("Услуга"), esc("Диагноз"), esc("Зуб"), esc("Кол-во"), esc("Тариф"), esc("Сумма"), esc("ДМС"), esc("Пациент"), esc("Врач")].join(";"),
 		];
-		const rows = records.map((r, i) => [
-			esc(i + 1), esc(r.visitDate), esc(r.patientFullName), esc(r.policyNumber), esc(r.letterNumber || "—"),
-			esc(r.serviceCode804n || r.serviceCode || ""), esc(r.serviceName), esc(r.diagnosisCodeMkb10 || "—"), esc(r.toothNumber || "—"),
-			esc(r.quantity ?? 1), esc(Number(r.unitPriceRub || 0).toFixed(2)), esc(Number(r.totalPriceRub || 0).toFixed(2)),
-			esc(Number(r.dmsCoveredRub || 0).toFixed(2)), esc(Number(r.patientPaidRub || 0).toFixed(2)), esc(r.doctorFullName || "—"),
-		].join(";"));
+		const rows = records.map((r, i) => {
+			const unitKop = r.unitPriceKopecks ?? (r.unitPriceRub !== undefined ? rublesToKopecks(r.unitPriceRub) : 0);
+			const totKop = r.totalPriceKopecks ?? (r.totalPriceRub !== undefined ? rublesToKopecks(r.totalPriceRub) : (r.totalBillKopecks ?? 0));
+			const dmsKop = r.dmsCoveredKopecks ?? (r.dmsCoveredRub !== undefined ? rublesToKopecks(r.dmsCoveredRub) : 0);
+			const patKop = r.patientPaidKopecks ?? (r.patientPaidRub !== undefined ? rublesToKopecks(r.patientPaidRub) : 0);
+			return [
+				esc(i + 1), esc(r.visitDate), esc(r.patientFullName), esc(r.policyNumber), esc(r.letterNumber || "—"),
+				esc(r.serviceCode804n || r.serviceCode || ""), esc(r.serviceName), esc(r.diagnosisCodeMkb10 || "—"), esc(r.toothNumber || "—"),
+				esc(r.quantity ?? 1), esc(kopecksToNumericString(unitKop)), esc(kopecksToNumericString(totKop)),
+				esc(kopecksToNumericString(dmsKop)), esc(kopecksToNumericString(patKop)), esc(r.doctorFullName || "—"),
+			].join(";");
+		});
 		const totals = calculateRegistryTotals(records, insName);
 		const totalRow = [
 			esc("ИТОГО"), esc(""), esc(`Пациентов: ${totals.uniquePatientsCount}`), esc(""), esc(""), esc(""),
 			esc(`Услуг: ${totals.totalServicesCount}`), esc(""), esc(""), esc(""), esc(""),
-			esc(totals.totalAmountRub.toFixed(2)), esc(totals.totalDmsCoveredRub.toFixed(2)), esc(totals.totalPatientPaidRub.toFixed(2)), esc(""),
+			esc(kopecksToNumericString(rublesToKopecks(totals.totalAmountRub))),
+			esc(kopecksToNumericString(rublesToKopecks(totals.totalDmsCoveredRub))),
+			esc(kopecksToNumericString(rublesToKopecks(totals.totalPatientPaidRub))),
+			esc(""),
 		].join(";");
 		return `\uFEFF${[...headers, ...rows, "", totalRow].join("\r\n")}`;
 	}
@@ -327,7 +262,7 @@ export function exportRegistryToCsv(
 			`№;Пациент;Код;Услуга;Сумма`,
 		];
 		for (const s of reg.visitServices) {
-			const total = s.totalBillKopecks ? kopecksToNumericString(s.totalBillKopecks) : Number(s.totalPriceRub || 0).toFixed(2);
+			const total = s.totalBillKopecks ? kopecksToNumericString(s.totalBillKopecks) : kopecksToNumericString(rublesToKopecks(s.totalPriceRub || 0));
 			lines.push(`1;${s.patientFullName};${s.serviceCode804n || s.serviceCode || ""};${s.serviceName};${total}`);
 		}
 		return `\uFEFF${lines.join("\r\n")}`;

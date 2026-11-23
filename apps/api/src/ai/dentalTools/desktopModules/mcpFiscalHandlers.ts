@@ -6,6 +6,7 @@
 import { canonicalTenderTypeSchema, multiplyKopecks, rublesToKopecks } from "@dental/shared";
 import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import type { DentalToolContext } from "../types.js";
 
 export interface FiscalReceiptRawItem {
 	name?: string | null | undefined;
@@ -19,6 +20,7 @@ export interface FiscalReceiptRawItem {
 export async function handleAtolCall(
 	toolName: string,
 	args: Record<string, unknown>,
+	context?: DentalToolContext,
 ): Promise<{ success: boolean; data?: unknown; error?: string; status?: string } | null> {
 	if (toolName === "get_kkt_status") {
 		const status = await LanKktDriverService.checkDeviceStatus();
@@ -91,19 +93,31 @@ export async function handleAtolCall(
 		}
 
 		const rawItems: FiscalReceiptRawItem[] = Array.isArray(args.items) ? (args.items as FiscalReceiptRawItem[]) : [];
-		const fallbackPatientId =
+		const resolvedPatientId =
 			typeof args.patientId === "string" && args.patientId.trim()
 				? args.patientId.trim()
-				: "00000000-0000-7000-8000-000000000001";
+				: context?.patientId && context.patientId.trim()
+					? context.patientId.trim()
+					: undefined;
+		if (!resolvedPatientId) {
+			return {
+				success: false,
+				error: "Пациент не выбран",
+			};
+		}
+		const customerContact =
+			typeof args.customerContact === "string" && args.customerContact.trim()
+				? args.customerContact.trim()
+				: undefined;
 		const payload = FiscalReceiptFactory.buildFfd12Receipt({
 			operationType: "income",
 			taxationSystem: "usn_income",
-			patientId: fallbackPatientId,
+			patientId: resolvedPatientId,
 			payerType: "physical_person",
 			addendumConfirmed: true,
 			cashierFullName: (args.cashierName as string) || "Кассир",
 			cashierInn: (args.cashierInn as string) || undefined,
-			customerContact: (args.customerContact as string) || "+79990000000",
+			customerContact,
 			totalKopecks,
 			cashKopecks: paymentType === "cash" ? totalKopecks : 0,
 			electronicCardKopecks: paymentType === "card" ? totalKopecks : 0,
@@ -200,6 +214,7 @@ export async function handleAtolCall(
 export async function handleShtrihCall(
 	toolName: string,
 	args: Record<string, unknown>,
+	context?: DentalToolContext,
 ): Promise<{ success: boolean; data?: unknown; error?: string; status?: string } | null> {
 	if (toolName === "get_device_metrics") {
 		const status = await LanKktDriverService.checkDeviceStatus({ model: "shtrikh_m_tcp" });
@@ -232,18 +247,30 @@ export async function handleShtrihCall(
 			};
 		}
 		const totalKopecks = rublesToKopecks(totalRub);
-		const fallbackPatientId =
+		const resolvedPatientId =
 			typeof args.patientId === "string" && args.patientId.trim()
 				? args.patientId.trim()
-				: "00000000-0000-7000-8000-000000000001";
+				: context?.patientId && context.patientId.trim()
+					? context.patientId.trim()
+					: undefined;
+		if (!resolvedPatientId) {
+			return {
+				success: false,
+				error: "Пациент не выбран",
+			};
+		}
+		const customerContact =
+			typeof args.customerContact === "string" && args.customerContact.trim()
+				? args.customerContact.trim()
+				: undefined;
 		const shtrikhPayload = FiscalReceiptFactory.buildFfd12Receipt({
 			operationType: "income",
 			taxationSystem: "usn_income",
-			patientId: fallbackPatientId,
+			patientId: resolvedPatientId,
 			payerType: "physical_person",
 			addendumConfirmed: true,
 			cashierFullName: (args.cashierName as string) || "Кассир",
-			customerContact: "+79990000000",
+			customerContact,
 			totalKopecks,
 			cashKopecks: totalKopecks,
 			items: [

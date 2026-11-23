@@ -55,6 +55,31 @@ const ts = require_("typescript");
 
 const ROOTS = ["apps/web/src", "apps/api/src"];
 
+export function loadFetchEnvelopeAllowlist(customPath = "scripts/config/fetch-envelope-allowlist.json") {
+	try {
+		const raw = readFileSync(customPath, "utf8");
+		return JSON.parse(raw);
+	} catch {
+		return { legacy_backlog: [] };
+	}
+}
+
+/**
+ * Читается ли поле .data или деструктурируется { data } из разобранного JSON-ответа Fastify DTO (Мандат 8bm).
+ */
+export function accessesDtoEnvelope(body) {
+	let found = false;
+	walk(body, (node) => {
+		if (found) return;
+		if (ts.isPropertyAccessExpression(node) && node.name.text === "data") {
+			found = true;
+		} else if (ts.isBindingElement(node) && ts.isIdentifier(node.name) && node.name.text === "data") {
+			found = true;
+		}
+	});
+	return found;
+}
+
 /**
  * СПИСОК ИСКЛЮЧЕНИЙ. Формат: "путь/файл.ts:строка" -> причина.
  * Список закрыт на пополнение без обоснования: каждая запись обязана объяснять,
@@ -179,92 +204,127 @@ function readsAnyGuardProperty(body) {
 	return found;
 }
 
-const findings = [];
-const files = [];
-for (const root of ROOTS) collectFiles(root, files);
+export function runFetchResponseGuard() {
+	const findings = [];
+	const envelopeViolations = [];
+	const envelopeAllowed = loadFetchEnvelopeAllowlist();
+	const envelopeAllowedSet = new Set(envelopeAllowed.legacy_backlog || []);
 
-for (const file of files) {
-	const source = ts.createSourceFile(
-		file,
-		readFileSync(file, "utf8"),
-		ts.ScriptTarget.Latest,
-		true,
-		file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-	);
-	const lineOf = (node) =>
-		source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+	const files = [];
+	for (const root of ROOTS) collectFiles(root, files);
 
-	const visit = (node) => {
-		if (
-			ts.isCallExpression(node) &&
-			ts.isIdentifier(node.expression) &&
-			node.expression.text === "fetch"
-		) {
-			let responseName = null;
-			let viaThen = false;
-			const parent = node.parent;
+	for (const file of files) {
+		const source = ts.createSourceFile(
+			file,
+			readFileSync(file, "utf8"),
+			ts.ScriptTarget.Latest,
+			true,
+			file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+		);
+		const lineOf = (node) =>
+			source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+
+		const visit = (node) => {
 			if (
-				ts.isAwaitExpression(parent) &&
-				ts.isVariableDeclaration(parent.parent) &&
-				ts.isIdentifier(parent.parent.name)
+				ts.isCallExpression(node) &&
+				ts.isIdentifier(node.expression) &&
+				node.expression.text === "fetch"
 			) {
-				responseName = parent.parent.name.text;
-			} else if (
-				ts.isPropertyAccessExpression(parent) &&
-				parent.name.text === "then"
-			) {
-				viaThen = true;
-			}
+				let responseName = null;
+				let viaThen = false;
+				const parent = node.parent;
+				if (
+					ts.isAwaitExpression(parent) &&
+					ts.isVariableDeclaration(parent.parent) &&
+					ts.isIdentifier(parent.parent.name)
+				) {
+					responseName = parent.parent.name.text;
+				} else if (
+					ts.isPropertyAccessExpression(parent) &&
+					parent.name.text === "then"
+				) {
+					viaThen = true;
+				}
 
-			const fn = enclosingFunction(node);
-			if (fn?.body) {
-				// Тело не разбирается — проверять нечего.
-				if (bodyParsesJson(fn.body)) {
-					const checked = responseName
-						? readsGuardProperty(fn.body, responseName)
-						: readsAnyGuardProperty(fn.body);
-					if (!checked) {
-						const key = `${file.replaceAll("\\", "/")}:${lineOf(node)}`;
-						if (!ALLOWED.has(key)) {
-							findings.push({
-								key,
-								responseName,
-								viaThen,
-							});
+				const fn = enclosingFunction(node);
+				if (fn?.body) {
+					// Тело не разбирается — проверять нечего.
+					if (bodyParsesJson(fn.body)) {
+						const checked = responseName
+							? readsGuardProperty(fn.body, responseName)
+							: readsAnyGuardProperty(fn.body);
+						if (!checked) {
+							const key = `${file.replaceAll("\\", "/")}:${lineOf(node)}`;
+							if (!ALLOWED.has(key)) {
+								findings.push({
+									key,
+									responseName,
+									viaThen,
+								});
+							}
+						}
+
+						// Проверка распаковки Fastify DTO-конверта (Мандат 8bm) для клиентского кода web
+						const normFile = file.replaceAll("\\", "/");
+						if (normFile.startsWith("apps/web/src")) {
+							if (!envelopeAllowedSet.has(normFile) && !accessesDtoEnvelope(fn.body)) {
+								const key = `${normFile}:${lineOf(node)}`;
+								envelopeViolations.push({
+									key,
+									message: "Ответ fetch разбирается через .json(), но не распаковывает безопасный DTO-конверт Fastify ({ success: true, data: T }). По Мандату 8bm распаковывайте через: const payload = json?.data ?? json;",
+								});
+							}
 						}
 					}
 				}
 			}
-		}
-		node.forEachChild(visit);
-	};
-	visit(source);
-}
-
-if (findings.length > 0) {
-	console.error(
-		`Ответ fetch не проверен до разбора тела: ${findings.length} мест.\n`,
-	);
-	for (const finding of findings) {
-		const how = finding.responseName
-			? `ответ в переменной "${finding.responseName}" — нет обращения к .ok или .status`
-			: finding.viaThen
-				? "цепочка .then без проверки ответа"
-				: "ответ не именован и не проверен";
-		console.error(`  ${finding.key}\n      ${how}`);
+			node.forEachChild(visit);
+		};
+		visit(source);
 	}
-	console.error(
-		"\nПочему это ломает клинику: fetch не отклоняется на 403/404/500, " +
-			"поэтому тело ошибки попадает туда, где ожидались данные, и экран " +
-			"показывает пустоту вместо причины отказа.\n" +
-			"Починка: проверьте res.ok (и форму тела) ДО использования данных.\n" +
-			"Если ответ проверяется в другом месте — внесите запись в ALLOWED " +
-			"в этом файле с указанием, где именно.",
+
+	if (envelopeViolations.length > 0) {
+		console.error(
+			`\n❌ Нарушение Мандата 8bm: ответ fetch не распаковывает DTO-конверт Fastify: ${envelopeViolations.length} мест.\n`,
+		);
+		for (const v of envelopeViolations) {
+			console.error(`  ${v.key}\n      ${v.message}`);
+		}
+	}
+
+	if (findings.length > 0 || envelopeViolations.length > 0) {
+		if (findings.length > 0) {
+			console.error(
+				`Ответ fetch не проверен до разбора тела: ${findings.length} мест.\n`,
+			);
+			for (const finding of findings) {
+				const how = finding.responseName
+					? `ответ в переменной "${finding.responseName}" — нет обращения к .ok или .status`
+					: finding.viaThen
+						? "цепочка .then без проверки ответа"
+						: "ответ не именован и не проверен";
+				console.error(`  ${finding.key}\n      ${how}`);
+			}
+		}
+		console.error(
+			"\nПочему это ломает клинику: fetch не отклоняется на 403/404/500, " +
+				"поэтому тело ошибки попадает туда, где ожидались данные, и экран " +
+				"показывает пустоту вместо причины отказа.\n" +
+				"Починка: проверьте res.ok (и форму тела) ДО использования данных.\n" +
+				"Если ответ проверяется в другом месте — внесите запись в ALLOWED " +
+				"в этом файле с указанием, где именно.",
+		);
+		return 1;
+	}
+
+	console.log(
+		`Ответ fetch проверяется везде: разобрано ${files.length} файлов, ` +
+			`исключений в списке ${ALLOWED.size}, DTO-конверт Fastify проверен.`,
 	);
-	process.exit(1);
+	return 0;
 }
 
-console.log(
-	`Ответ fetch проверяется везде: разобрано ${files.length} файлов, ` +
-		`исключений в списке ${ALLOWED.size}.`,
-);
+if (process.argv[1] && process.argv[1].endsWith("check-fetch-response-guard.mjs")) {
+	const code = runFetchResponseGuard();
+	process.exit(code);
+}

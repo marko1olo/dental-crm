@@ -22,7 +22,6 @@ export * from "./installmentScheduleEngine.js";
 export * from "./installmentsEngine.js";
 export * from "./planToInvoiceValidator.js";
 export * from "./priceLockEngine.js";
-export * from "./doctorNetSalaryEngine.js";
 export * from "./doctorShiftEarnings.js";
 export * from "./managerialPnlEngine.js";
 export * from "./cashFlowCatalogs.js";

@@ -247,6 +247,24 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 		)) as any;
 		assert.strictEqual(invalidTender.success, false);
 		assert.ok(invalidTender.error.includes("недопустимый способ расчета"));
+
+		const noPatientCtx: DentalToolContext = {
+			...DESKTOP_CTX,
+			patientId: undefined,
+		};
+		const noPatientRes = (await handleCallLocalMcpTool(
+			{
+				serverName: "kkt_atol",
+				toolName: "print_receipt",
+				arguments: {
+					totalKopecks: 10000,
+					paymentType: "card",
+				},
+			},
+			noPatientCtx,
+		)) as { success: boolean; error: string };
+		assert.strictEqual(noPatientRes.success, false);
+		assert.strictEqual(noPatientRes.error, "Пациент не выбран");
 	});
 });
 

@@ -20,7 +20,86 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
+
+const __filename = fileURLToPath(import.meta.url);
+const repoRoot = resolve(dirname(__filename), "..");
+
+export const RAW_LAZY_ALLOWLIST_PATH = resolve(repoRoot, "scripts/config/raw-lazy-allowlist.json");
+
+export function loadRawLazyAllowlist(customPath = RAW_LAZY_ALLOWLIST_PATH) {
+	if (!existsSync(customPath)) {
+		return { legacy_backlog: [] };
+	}
+	try {
+		const raw = readFileSync(customPath, "utf8");
+		return JSON.parse(raw);
+	} catch (err) {
+		console.error(`[check-dynamic-imports] Ошибка парсинга allowlist ${customPath}:`, err);
+		return { legacy_backlog: [] };
+	}
+}
+
+/**
+ * Проверка использования сырого React.lazy в apps/web/src.
+ * Канонический стандарт клиники: lazyWithRetry из apps/web/src/lib/lazyWithRetry.ts
+ */
+export function checkRawLazyUsage(webFiles, allowlist = null) {
+	const backlogList = (allowlist?.legacy_backlog || loadRawLazyAllowlist().legacy_backlog || []).map((p) =>
+		p.replace(/\\/g, "/"),
+	);
+	const allowedSet = new Set(backlogList);
+	const violations = [];
+
+	const RAW_REACT_LAZY = /\bReact\.lazy\s*\(/;
+	const IMPORT_LAZY_FROM_REACT = /import\s*\{[^}]*\blazy\b[^}]*\}\s*from\s*["']react["']/;
+	const BARE_LAZY_CALL = /\blazy\s*\(/;
+
+	for (const file of webFiles) {
+		const normalized = file.replace(/\\/g, "/");
+		const relPath = normalized.replace(/^.*?(apps\/web\/src\/.*)$/, "$1");
+
+		// Исключаем сам канонический файл lazyWithRetry и тесты
+		if (
+			normalized.endsWith("apps/web/src/lib/lazyWithRetry.ts") ||
+			normalized.includes(".test.") ||
+			normalized.includes(".spec.") ||
+			normalized.includes("/tests/")
+		) {
+			continue;
+		}
+
+		if (!existsSync(file)) continue;
+		let text;
+		try {
+			text = readFileSync(file, "utf8");
+		} catch (_) {
+			continue;
+		}
+
+		const code = text
+			.replace(/\/\*[\s\S]*?\*\//g, "")
+			.replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+		const hasReactLazy = RAW_REACT_LAZY.test(code);
+		const hasBareLazy = IMPORT_LAZY_FROM_REACT.test(code) && BARE_LAZY_CALL.test(code);
+
+		if (hasReactLazy || hasBareLazy) {
+			if (!allowedSet.has(relPath)) {
+				const match = (hasReactLazy ? RAW_REACT_LAZY : BARE_LAZY_CALL).exec(code);
+				const line = match ? code.slice(0, match.index).split("\n").length : 1;
+				violations.push({
+					file: relPath,
+					line,
+					message: `Использование сырого React.lazy запрещено! Все динамические компоненты должны загружаться исключительно через канонический lazyWithRetry (apps/web/src/lib/lazyWithRetry.ts) с защитой от сбоев чтения чанков на медленных дисках (5400 RPM HDD) и автоматическими ретраями.`,
+				});
+			}
+		}
+	}
+
+	return violations;
+}
 
 const ROOTS = ["apps/api/src", "apps/web/src", "packages/shared/src"];
 
@@ -52,7 +131,7 @@ function sources(dir) {
  * «./x.ts». Проверяем оба варианта и папочный index — иначе проверка объявила бы
  * ненайденным каждый обычный импорт.
  */
-function resolveTarget(fromFile, specifier) {
+export function resolveTarget(fromFile, specifier) {
 	const base = resolve(dirname(fromFile), specifier);
 	const candidates = [base];
 	if (base.endsWith(".js"))
@@ -101,56 +180,90 @@ if (existsSync(selfCheckAnchor)) {
 	);
 }
 
-const files = ROOTS.flatMap((root) => (existsSync(root) ? sources(root) : []));
-const broken = [];
-let checked = 0;
+export function checkBrokenDynamicImports(files) {
+	const broken = [];
+	let checked = 0;
 
-for (const file of files) {
-	if (!existsSync(file)) continue;
-	let text;
-	try {
-		text = readFileSync(file, "utf8");
-	} catch (_) {
-		continue;
+	for (const file of files) {
+		if (!existsSync(file)) continue;
+		let text;
+		try {
+			text = readFileSync(file, "utf8");
+		} catch (_) {
+			continue;
+		}
+		/*
+		 * Комментарии вырезаются: в этом проекте принято объяснять в комментариях, что
+		 * какой модуль удалён, и путь из объяснения — не импорт. Без вырезания
+		 * проверка ловила бы собственную документацию.
+		 */
+		const code = text
+			.replace(/\/\*[\s\S]*?\*\//g, "")
+			.replace(/(^|[^:])\/\/.*$/gm, "$1");
+		for (const match of code.matchAll(
+			/\bimport\s*\(\s*["'`](\.[^"'`]+)["'`]\s*\)/g,
+		)) {
+			checked += 1;
+			const specifier = match[1];
+			if (resolveTarget(file, specifier)) continue;
+			const line = code.slice(0, match.index).split("\n").length;
+			broken.push({ file, line, specifier });
+		}
 	}
-	/*
-	 * Комментарии вырезаются: в этом проекте принято объяснять в комментариях, что
-	 * какой модуль удалён, и путь из объяснения — не импорт. Без вырезания
-	 * проверка ловила бы собственную документацию.
-	 */
-	const code = text
-		.replace(/\/\*[\s\S]*?\*\//g, "")
-		.replace(/(^|[^:])\/\/.*$/gm, "$1");
-	for (const match of code.matchAll(
-		/\bimport\s*\(\s*["'`](\.[^"'`]+)["'`]\s*\)/g,
-	)) {
-		checked += 1;
-		const specifier = match[1];
-		if (resolveTarget(file, specifier)) continue;
-		const line = code.slice(0, match.index).split("\n").length;
-		broken.push({ file, line, specifier });
-	}
+
+	return { broken, checked };
 }
 
-console.log(`файлов просмотрено:            ${files.length}`);
-console.log(`динамических импортов найдено:  ${checked}`);
-console.log(`ведут в несуществующий файл:    ${broken.length}`);
+export function runDynamicImportChecks(options = {}) {
+	const files = options.files || ROOTS.flatMap((root) => (existsSync(root) ? sources(root) : []));
+	const webFiles = options.webFiles || (existsSync("apps/web/src") ? sources("apps/web/src") : []);
+	const allowlist = options.allowlist || loadRawLazyAllowlist(options.allowlistPath);
 
-if (broken.length > 0) {
-	console.log(
-		"\nНАЙДЕНЫ ИМПОРТЫ В НИКУДА. Проверка типов их не видит, а сервер падает",
-	);
-	console.log("при первом обращении к такому маршруту:\n");
-	for (const item of broken) {
-		console.log(`  ${item.file}:${item.line}`);
-		console.log(`      import("${item.specifier}") — файла нет`);
-	}
+	const { broken, checked } = checkBrokenDynamicImports(files);
+	const rawLazyViolations = checkRawLazyUsage(webFiles, allowlist);
 
-	printFailureManifesto("DYNAMIC_IMPORTS", {
-		details: `Найдено ${broken.length} битых динамических импортов в коде сервера/клиента.`,
-	});
-
-	process.exit(1);
+	return {
+		passed: broken.length === 0 && rawLazyViolations.length === 0,
+		broken,
+		checked,
+		filesCount: files.length,
+		rawLazyViolations,
+	};
 }
 
-console.log("\nвсе динамические импорты ведут на существующие файлы");
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+	const result = runDynamicImportChecks();
+
+	console.log(`файлов просмотрено:            ${result.filesCount}`);
+	console.log(`динамических импортов найдено:  ${result.checked}`);
+	console.log(`ведут в несуществующий файл:    ${result.broken.length}`);
+	console.log(`невалидных сырых React.lazy:    ${result.rawLazyViolations.length}`);
+
+	if (result.broken.length > 0) {
+		console.log(
+			"\nНАЙДЕНЫ ИМПОРТЫ В НИКУДА. Проверка типов их не видит, а сервер падает",
+		);
+		console.log("при первом обращении к такому маршруту:\n");
+		for (const item of result.broken) {
+			console.log(`  ${item.file}:${item.line}`);
+			console.log(`      import("${item.specifier}") — файла нет`);
+		}
+	}
+
+	if (result.rawLazyViolations.length > 0) {
+		console.error(`\n❌ НАЙДЕНО ИСПОЛЬЗОВАНИЕ СЫРОГО React.lazy (${result.rawLazyViolations.length} шт):`);
+		for (const item of result.rawLazyViolations) {
+			console.error(`  - ${item.file}:${item.line}`);
+			console.error(`    ${item.message}`);
+		}
+	}
+
+	if (!result.passed) {
+		printFailureManifesto("DYNAMIC_IMPORTS", {
+			details: `Найдено ${result.broken.length} битых динамических импортов и ${result.rawLazyViolations.length} сырых React.lazy.`,
+		});
+		process.exit(1);
+	}
+
+	console.log("\n✅ Все динамические импорты ведут на существующие файлы, сырой React.lazy блокирован.");
+}

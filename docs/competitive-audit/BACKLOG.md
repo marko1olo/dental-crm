@@ -12823,3 +12823,76 @@
     - `apps/api/src/tests/redteamOrthopedicsSurgeonApi.test.ts` (7/7 PASS).
   - `npm run check:diff`: Exit Code 0 (0 запрещенных паттернов / костылей);
   - `npm run check:encoding`: Exit Code 0 (все файлы в строгом UTF-8).
+
+
+---
+
+### 539. Волна 539: Расчет Зарплаты Врачей, Процентные Комиссии, Вычет Лаборатории и Расходников (Net Margin), Возвратные Удержания и Финансовый Учет Выплат (Домен N) — Red Team Инквизиция [DEF-PAYROLL-13..16], Снос Клонов doctorNetSalaryEngine И doctorShiftEarnings через git rm, Искоренение Float-деления / 100 в Комиссиях и Аренде Кресла, Сохранение 100% Затрат ЗТЛ (1,500,000 коп.) и Синхронизация Мобильного Кошелька Врача (Мандаты 8e, 8n, 8bm, 8bf, 8be, 8bk, 8bj, 8bq)
+
+- 1. [DEF-PAYROLL-13 / СНОС КЛОНОВ И РЕЭКСПОРТОВ (Мандаты 8bf, 8bj)]:
+  - Физически удален через `git rm` 9-строчный дублирующий фасад `packages/shared/src/finance/doctorNetSalaryEngine.ts`, очищены реэкспорты в `packages/shared/src/finance/index.ts` и `packages/shared/src/payroll/index.ts`.
+  - В `doctorNetSalaryBridge.ts` вычищены устаревшие мертвые методы: `calculateDoctorSalary`, `calculateStandardDoctorSalary`, `calculateDoctorNetSalary`, `calculateServicesPayrollBreakdown`, `calculateDiscountSalaryBase`. Сохранен строго канонический `generateDoctorEarningsPayslipHtml`.
+  - Физически удален локальный реэкспорт `apps/web/src/components/doctor/doctorShiftEarnings.ts`, 6 зависимых веб-компонентов переведены на SSOT `@dental/shared`.
+
+- 2. [DEF-PAYROLL-14 / ИСКОРЕНЕНИЕ FLOAT-ДЕЛЕНИЯ / 100 (Мандат 8bm)]:
+  - В `packages/shared/src/finance/payrollModules/doctorRentalAndBonusEngine.ts` (строки 16, 39, 75) и `packages/shared/src/finance/doctorShiftEarnings.ts` (строки 160, 188) ручные деления `/ 100` заменены на канонические функции целочисленной копеечной арифметики `percentageOfKopecks` и `calculatePercentDiscountKopecks` из `packages/shared/src/money.ts`.
+  - Исключен копеечный дрейф IEEE-754 между зарплатной ведомостью, РКО и кошельком врача.
+
+- 3. [DEF-PAYROLL-15 / СОХРАНЕНИЕ 100% ЗАТРАТ ЗТЛ (1,500,000 КОП., DEFECT 2)]:
+  - В `apps/api/src/routes/doctorPayrollDbQueries.ts` устранен сбой теста `doctorPayroll.test.ts:555`: внедрен 3-уровневый алгоритм дораспределения затрат зуботехнической лаборатории: сначала по свободной марже ортопедических услуг, затем по объему ортопедических услуг, а при их отсутствии — через балансовую запись периода (`ЗТЛ-БАЛАНС`).
+  - Все 1,500,000 коп. расходов ЗТЛ гарантированно сохраняются и вычитаются из Net Revenue доктора без потерь.
+
+- 4. [DEF-PAYROLL-16 / СИНХРОНИЗАЦИЯ ПОСТРОЧНЫХ НАЧИСЛЕНИЙ В КОШЕЛЬКЕ ВРАЧА]:
+  - В `apps/api/src/routes/doctorMyEarningsHandler.ts` расчет построчных комиссий услуг и категориальной разбивки приведен в строгое соответствие с `doctorPayrollEngine` (`percentageOfKopecks`, учет `retail_hygiene` и кодов услуг `serviceCode`), обеспечивая равенство сумм по строкам и итогового `totalDoctorEarnedKop`.
+
+- 5. [ТЕСТОВОЕ ПОКРЫТИЕ И ВАЛИДАЦИЯ]:
+  - 44 целевых теста Домена N: **44/44 PASS (100%)**:
+    * `node --import tsx --test apps/api/src/tests/routes/doctorPayroll.test.ts` (8/8 PASS);
+    * `node --import tsx --test packages/shared/src/tests/doctorPayrollEngine.test.ts` (12/12 PASS);
+    * `node --import tsx --test packages/shared/src/tests/doctorNetSalaryEngine.test.ts` (6/6 PASS);
+    * `node --import tsx --test apps/api/src/tests/routes/payrollCalculationsRealDb.test.ts` (4/4 PASS);
+    * `node --import tsx --test apps/api/src/tests/routes/payrollStudioInquisition.test.ts` (11/11 PASS);
+    * `npx vitest run apps/web/src/components/doctor/__tests__/doctorShiftEarnings.test.ts` (3/3 PASS).
+  - `node scripts/check-staged-safety.mjs`: Exit Code 0 (0 запрещенных паттернов, 0 float money, 0 any).
+  - `npm run check:encoding`: Exit Code 0 (все файлы в строгом UTF-8).
+
+---
+
+### ВОЛНА 543: Клинический ИИ-Ассистент DENTE, Речевой Скриб и 29 Стоматологических Инструментов (Домен O) — Red Team Инквизиция [DEF-COPILOT-01..04], Ликвидация Синтетического UUID Пациента и Фейкового Телефона в MCP Fiscal Handlers, Замена Math.random() на randomUUID() в Печати Документов, Искоренение Клона tokenCompactor (815 строк) в Пользу contextCompactor (SSOT) и Чистый Клинический Язык (Мандаты 8e, 8n, 8x, 8bf, 8bm, 8bo, 8be, 8bk)
+
+- 1. [РАССТРЕЛЬНЫЙ СПИСОК / СНОС КЛОНА tokenCompactor] (Мандаты 8bf, 8bj):
+  - Через `git rm` физически удалены `packages/shared/src/ai/tokenCompactor.ts` (815 строк) и `packages/shared/src/ai/tokenCompactor.test.ts`, являвшиеся полным дубликатом канонического `contextCompactor.ts`.
+  - Из `packages/shared/src/ai/index.ts` удален реэкспорт `export * from "./tokenCompactor.js";`. Канонический `contextCompactor.ts` закреплен в качестве единого SSOT.
+  - Разработан исчерпывающий модульный тест `packages/shared/src/tests/contextCompactor.test.ts` (16/16 PASS), покрывающий BPE эвристики, подсчет токенов русского/английского текста, оверхед тулов, трехуровневую компактификацию (pruning, sliding window, memory snapshots) и извлечение клинических сущностей FDI/МКБ-10.
+
+- 2. [DEFECT-1 / DEF-COPILOT-01] Ликвидация синтетического UUID пациента в MCP Fiscal Handlers (Мандаты 8e, 8n, 8z):
+  - В `apps/api/src/ai/dentalTools/desktopModules/mcpFiscalHandlers.ts` (функции `handleAtolCall` и `handleShtrihCall`) полностью ликвидирован синтетический UUID `'00000000-0000-7000-8000-000000000001'`.
+  - Значение `patientId` разрешается из аргументов `args.patientId` либо из авторизованного контекста `context.patientId`. При отсутствии идентификатора пациента фискализация чека немедленно отклоняется с понятной ошибкой: `{ success: false, error: "Пациент не выбран" }`.
+  - Сигнатуры `handleAtolCall`, `handleShtrihCall` и моста `LocalMcpBridgeManager.callTool` в `hardwareMcpBridge.ts` дополнены опциональным параметром `context?: DentalToolContext`, а вызов из `hardwareMcpBridgeTools.ts` передает контекст напрямую.
+
+- 3. [DEFECT-2 / DEF-COPILOT-02] Ликвидация фейкового номера телефона в фискальных чеках (Мандаты 8x, 8n):
+  - В `mcpFiscalHandlers.ts` устранен хардкод телефона `customerContact: "+79990000000"`.
+  - Поле `customerContact` берется из аргументов вызова `args.customerContact` или передается как `undefined`. По 54-ФЗ для физических лиц в розничной кассе клиники телефон/email не является обязательным реквизитом.
+
+- 4. [DEFECT-3 / DEF-COPILOT-03] Замена псевдослучайного Math.random() на криптографический randomUUID() в печати документов (Мандаты 8e, 8x):
+  - В `apps/api/src/ai/dentalTools/databaseModules/printDocumentTool.ts:60` генерация `jobId` переведена с небезопасного `Math.random().toString(36).slice(2, 8)` на канонический `randomUUID().slice(0, 8)` из встроенного модуля `node:crypto`.
+  - В схему `printDocumentSchema`, словарь `DOCUMENT_KIND_MAP` и словарь `DOCUMENT_TITLE_MAP` добавлены семантические медицинские алиасы `"dental_medical_card"` и `"clinical_record_entry"`, направляющие формирование карты приёма без необходимости знания врачом советского номенклатурного номера.
+
+- 5. [DEFECT-4 / DEF-COPILOT-04] Искоренение советского канцелярита в описаниях инструментов врача (Мандат 8x):
+  - В фасаде `apps/api/src/ai/dentalTools.ts:6-8` устаревшие бюрократические шифры «Форма 043/у» и «прайс 804н» заменены на живой профессиональный медицинский язык: «Медицинская карта приёма» и «Прейскурант услуг клиники».
+
+- 6. [МАШИННАЯ ВЕРИФИКАЦИЯ И 100% ТЕСТОВОЕ ПОКРЫТИЕ] (Мандаты 8be, 8bk, 8bo):
+  - В `apps/api/src/ai/dentalTools/databaseModules/__tests__/databaseModules.test.ts` обновлен `mockDb` для безопасной обработки таблиц `appointments` и `scheduleSlotLeases` через `getTableName(table)` и возврата валидных дат в возвращаемых записях (17/17 PASS);
+  - В `apps/api/src/ai/desktopMcpAndScreen.test.ts` подтверждено отклонение вызовов локального MCP-моста ККТ без выбранного пациента (8/8 PASS);
+  - В `apps/api/src/ai/dentalTools.test.ts` верифицирована печать документов с алиасами `"dental_medical_card"` и генерацией `jobId` на основе UUID (9/9 PASS);
+  - Прогон полного пакета тестов Домена O: **99/99 PASS (100%)**:
+    - `packages/shared/src/tests/contextCompactor.test.ts`: 16/16 PASS;
+    - `apps/api/src/ai/dentalTools/databaseModules/__tests__/databaseModules.test.ts`: 17/17 PASS;
+    - `apps/api/src/ai/desktopMcpAndScreen.test.ts`: 8/8 PASS;
+    - `apps/api/src/ai/dentalTools.test.ts`: 9/9 PASS;
+    - `apps/api/src/ai/tokenCompactification.test.ts`: 18/18 PASS;
+    - `apps/api/src/tests/ai/*.test.ts`: 31/31 PASS;
+  - Сборка `@dental/shared`: `npm run build -w @dental/shared` — Exit Code 0;
+  - Проверка типов `tsc -p apps/api/tsconfig.json --noEmit`: 0 ошибок;
+  - `node scripts/check-staged-safety.mjs`: Exit Code 0;
+  - `npm run check:encoding`: Exit Code 0.
