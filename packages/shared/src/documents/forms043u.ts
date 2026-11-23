@@ -571,5 +571,5 @@ export const fullForm043uPayloadSchema = z.object({
 	isDraft: z.boolean().optional(),
 	isClosed: z.boolean().optional(),
 	revisionCount: z.number().int().nonnegative().optional(),
-});
+}).strict();
 export type FullForm043uPayload = z.infer<typeof fullForm043uPayloadSchema>;
