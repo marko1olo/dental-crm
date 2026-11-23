@@ -21,12 +21,12 @@ export const DoctorChairFooterActions: React.FC<DoctorChairFooterActionsProps> =
 	onConfirm,
 }) => {
 	return (
-		<div className="flex items-center justify-between gap-2 pt-3 border-t border-[var(--line,#e2e8f0)]">
+		<div className="flex items-center justify-between gap-2 pt-3 border-t border-[var(--line)]">
 			{hasActiveAssignment ? (
 				<button
 					type="button"
 					onClick={onUnassign}
-					className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+					className="min-h-[44px] px-3.5 rounded-xl border border-[var(--danger-line)] bg-[var(--danger-soft)] hover:bg-[var(--danger-soft)]/80 text-[var(--danger)] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
 					data-testid="btn-unassign-chair-doctor"
 					title="Снять назначение врача с кресла"
 					style={{ minHeight: "44px" }}
@@ -41,7 +41,7 @@ export const DoctorChairFooterActions: React.FC<DoctorChairFooterActionsProps> =
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-xs font-semibold transition-colors cursor-pointer"
 					style={{ minHeight: "44px" }}
 				>
 					Отмена
@@ -49,7 +49,7 @@ export const DoctorChairFooterActions: React.FC<DoctorChairFooterActionsProps> =
 				<button
 					type="button"
 					onClick={onConfirm}
-					className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+					className="min-h-[44px] px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
 					data-testid="btn-confirm-chair-doctor"
 					style={{ minHeight: "44px" }}
 				>

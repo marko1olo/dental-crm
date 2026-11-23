@@ -16,15 +16,15 @@ export function AppointmentAlertBadges({
 		<>
 			{isCito && (
 				<span
-					className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500 ring-2 ring-rose-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
+					className="px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-line)] ring-2 ring-[var(--danger)]/30 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
 					title="Срочный приём (острая боль)"
 					data-testid="appointment-cito-badge"
 				>
 					<Zap
 						size={13}
-						className="text-rose-600 dark:text-rose-300 fill-rose-500"
+						className="text-[var(--danger)] fill-[var(--danger)]"
 					/>
-					<span>Срочно</span>
+					<span>СРОЧНО</span>
 				</span>
 			)}
 			{collisionMessage ? (

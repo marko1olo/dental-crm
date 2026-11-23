@@ -92,6 +92,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
   return (
     <>
       <QuickBookingDrawer
+        key={quickBookingSlot?.editingAppointment?.id || (quickBookingSlot?.patientId ? `patient-${quickBookingSlot.patientId}` : (quickBookingSlot?.startsAt ? `slot-${quickBookingSlot.startsAt}` : "quick_booking"))}
         isOpen={quickBookingOpen}
         onClose={() => {
           setQuickBookingOpen(false);
@@ -125,6 +126,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       />
 
       <WaitlistDrawer
+        key={waitlistQuickFillSlot?.startsAt || "waitlist"}
         isOpen={waitlistOpen || waitlistQuickFillSlot !== null || isWaitlistDrawerActive}
         onClose={() => {
           setWaitlistOpen(false);

@@ -1,9 +1,10 @@
 import { and, eq, gt, inArray, lt, ne, or, type SQL } from "drizzle-orm";
 import type { PgTableWithColumns } from "drizzle-orm/pg-core";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 
 export type DbClientOrTransaction =
+	| TenantDb
 	| typeof db
 	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -171,7 +172,12 @@ export async function assertNoResourceOverlap(
 		const [p] = await executor
 			.select({ fullName: schema.patients.fullName })
 			.from(schema.patients)
-			.where(eq(schema.patients.id, ov.patientId))
+			.where(
+				and(
+					eq(schema.patients.id, ov.patientId),
+					eq(schema.patients.organizationId, organizationId),
+				),
+			)
 			.limit(1);
 		if (p?.fullName) existingPatientName = p.fullName;
 	}

@@ -4,6 +4,7 @@ import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import {
   safeLocalStorageSetItem,
 } from "../../../lib/safeLocalStorage";
+import { logger } from "../../../utils/logger";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
 import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
@@ -93,7 +94,7 @@ export function useScheduleChairDoctorOps({
           3500,
         );
       } catch (err) {
-        console.error("Failed to add/update chair via QuickAddChairModal:", err);
+        logger.error("Failed to add/update chair via QuickAddChairModal:", err);
         showToast(
           isUpdate
             ? `Не удалось обновить параметры кресла «${chairData.name}» на сервере. Проверьте соединение.`
@@ -141,7 +142,7 @@ export function useScheduleChairDoctorOps({
         );
         return createdData || { id: doctorData.id };
       } catch (err) {
-        console.error("Failed to add doctor via QuickAddDoctorModal:", err);
+        logger.error("Failed to add doctor via QuickAddDoctorModal:", err);
         showToast(
           `Не удалось добавить врача «${doctorData.fullName}» на сервере. Проверьте права доступа.`,
           "error",
@@ -170,7 +171,7 @@ export function useScheduleChairDoctorOps({
             JSON.stringify(dateMap),
           );
         } catch (storageErr: unknown) {
-          console.warn(
+          logger.warn(
             "[ScheduleView] Error persisting doctor shifts to storage:",
             storageErr,
           );
@@ -191,11 +192,11 @@ export function useScheduleChairDoctorOps({
                 dateIso: currentDateKey,
               }),
             }).catch((syncErr: unknown) => {
-              console.warn("[ScheduleView] Async shift sync failed:", syncErr);
+              logger.warn("[ScheduleView] Async shift sync failed:", syncErr);
             });
           }
         } catch (networkErr: unknown) {
-          console.warn(
+          logger.warn(
             "[ScheduleView] Error initiating shift sync fetch:",
             networkErr,
           );

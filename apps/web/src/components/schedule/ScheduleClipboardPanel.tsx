@@ -8,8 +8,6 @@ import { useScheduleClipboard } from "./clipboard/useScheduleClipboard";
 
 export const ScheduleClipboardPanel: React.FC<ScheduleClipboardPanelProps> = ({
 	onPasted,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved prop
-	reloadToken = 0,
 }) => {
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const {

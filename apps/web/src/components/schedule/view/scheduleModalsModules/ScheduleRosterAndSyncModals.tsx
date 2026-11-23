@@ -45,6 +45,7 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
   return (
     <>
       <DoctorShiftRosterModal
+        key={currentDateKey || "doctor_shift_roster"}
         isOpen={Boolean(isRosterModalOpen || isChairDateRangeModalOpen)}
         onClose={() => {
           setIsRosterModalOpen(false);
@@ -65,6 +66,7 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
       />
 
       <QuickAddChairModal
+        key={editingChairData?.id || "quick_add_chair"}
         isOpen={isQuickAddChairOpen}
         onClose={() => {
           setIsQuickAddChairOpen(false);
@@ -83,6 +85,7 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
       />
 
       <DoctorCalendarSyncModal
+        key={scheduleDoctorFilterId || "doctor_calendar_sync"}
         isOpen={isCalendarSyncModalOpen}
         onClose={() => setIsCalendarSyncModalOpen(false)}
         dashboard={dashboard ?? null}
@@ -95,6 +98,7 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
         onSaveDrawerShift &&
         onDeleteDrawerShift && (
           <DoctorShiftDrawer
+            key={editingDrawerShift.id || "doctor_shift_drawer"}
             editingShift={editingDrawerShift}
             isNewShift={Boolean(isNewDrawerShift)}
             staffList={rosterStaffList}

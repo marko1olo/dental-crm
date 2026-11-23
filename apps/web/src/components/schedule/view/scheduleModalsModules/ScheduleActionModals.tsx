@@ -49,6 +49,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
     <>
       {dashboard && (
         <DoctorFreeSlotsModal
+          key={scheduleDoctorFilterId || "doctor_free_slots"}
           isOpen={doctorFreeSlotsOpen}
           onClose={() => {
             setDoctorFreeSlotsOpen(false);
@@ -81,6 +82,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
 
       {preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
         <PatientRecallsHubModal
+          key="patient_recalls_hub"
           isOpen={preventiveInspectionOpen}
           onClose={() => {
             setPreventiveInspectionOpen(false);
@@ -113,6 +115,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
       )}
 
       <SlotConflictModal
+        key={logicContext?.slotConflict?.appointmentId || "slot_conflict"}
         isOpen={Boolean(logicContext?.slotConflict)}
         onClose={() => logicContext?.setSlotConflict?.(null)}
         conflictMessage={logicContext?.slotConflict?.message}
@@ -149,6 +152,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
       />
 
       <PatientSearchModal
+        key="patient_search"
         isOpen={isPatientSearchOpen}
         patients={dashboard?.patients ?? []}
         onClose={() => {
@@ -203,6 +207,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
 
       {dashboard && (
         <TomorrowRemindersModal
+          key={scheduleDateFilter || "tomorrow_reminders"}
           dashboard={dashboard}
           isOpen={isTomorrowRemindersOpen}
           onClose={() => setIsTomorrowRemindersOpen(false)}
@@ -212,6 +217,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
 
       {Boolean(isPendingOnlineBookingsOpen && setIsPendingOnlineBookingsOpen) && (
         <PendingOnlineBookingsModal
+          key="pending_online_bookings"
           isOpen={Boolean(isPendingOnlineBookingsOpen)}
           onClose={() => {
             if (setIsPendingOnlineBookingsOpen) {

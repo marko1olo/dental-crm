@@ -35,7 +35,7 @@ export function useQuickBookingDraft({
   // Mandate 8bn / 8zq (Zero-Leak Draft & Stale Draft Purge):
   // При закрытии шторки по Escape/Отмена/Backdrop — обязательный сброс локального черновика,
   // предотвращающий утечку данных прошлого пациента следующему.
-  const handleDiscardDraftAndClose = useCallback(() => {
+  const purgeDraftState = useCallback(() => {
     safeLocalStorageRemoveItem("dente_quick_booking_draft");
     try {
       if (typeof globalThis !== "undefined" && globalThis.localStorage) {
@@ -44,32 +44,29 @@ export function useQuickBookingDraft({
     } catch (err: unknown) {
       console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
     }
+    patientSearch.setSelectedPatient(null);
+    patientSearch.setPatientId("");
+    patientSearch.setSearchQuery("");
+    patientSearch.setShowInlineNewPatient(false);
+    patientSearch.setNewPatientFullName("");
+    patientSearch.setNewPatientPhone("");
+    patientSearch.setNewPatientBirthDate("");
+  }, [patientSearch]);
+
+  const handleDiscardDraftAndClose = useCallback(() => {
+    purgeDraftState();
     onClose();
-  }, [onClose]);
+  }, [purgeDraftState, onClose]);
 
   const handleSaveDraftAndClose = useCallback(() => {
-    safeLocalStorageRemoveItem("dente_quick_booking_draft");
-    try {
-      if (typeof globalThis !== "undefined" && globalThis.localStorage) {
-        globalThis.localStorage.removeItem("dente_quick_booking_draft");
-      }
-    } catch (err: unknown) {
-      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
-    }
+    purgeDraftState();
     onClose();
-  }, [onClose]);
+  }, [purgeDraftState, onClose]);
 
   const handleRequestClose = useCallback(() => {
-    safeLocalStorageRemoveItem("dente_quick_booking_draft");
-    try {
-      if (typeof globalThis !== "undefined" && globalThis.localStorage) {
-        globalThis.localStorage.removeItem("dente_quick_booking_draft");
-      }
-    } catch (err: unknown) {
-      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
-    }
+    purgeDraftState();
     onClose();
-  }, [onClose]);
+  }, [purgeDraftState, onClose]);
 
   return { isDirty, handleSaveDraftAndClose, handleDiscardDraftAndClose, handleRequestClose };
 }

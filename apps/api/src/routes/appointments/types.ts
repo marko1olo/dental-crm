@@ -4,7 +4,7 @@ import type {
 } from "@dental/shared";
 import type { z } from "zod";
 import type { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
-import type { db } from "../../db/client.js";
+import type { db, TenantDb } from "../../db/client.js";
 import type {
 	AppointmentMutationCode,
 	AppointmentRejectionReason,
@@ -18,6 +18,7 @@ export type {
 };
 
 export type DbClientOrTransaction =
+	| TenantDb
 	| typeof db
 	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 

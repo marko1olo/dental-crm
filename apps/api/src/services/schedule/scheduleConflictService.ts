@@ -47,6 +47,8 @@ export function hasTimeOverlap(
 }
 
 /**
+ * guard-callers: none — Аналитическая проверка пересечения слотов приёма для валидации drag-and-drop и фонового уплотнения расписания (smart gap filler) без блокировки строк БД
+ *
  * Проверка пересечения временного интервала с существующими активными приемами в БД.
  * Интервал: [startsAt, endsAt)
  * Условие пересечения: appointment.startsAt < reqEnd AND appointment.endsAt > reqStart
@@ -213,6 +215,24 @@ function localDatePartsInTimeZone(
 	};
 }
 
+export interface ScheduleConflictStructuredLogger {
+	error: (obj: unknown, msg?: string) => void;
+	warn?: (obj: unknown, msg?: string) => void;
+	info?: (obj: unknown, msg?: string) => void;
+}
+
+const defaultStructuredLogger: ScheduleConflictStructuredLogger = {
+	error: (obj: unknown, msg?: string) => {
+		process.stderr.write(
+			`${JSON.stringify({
+				level: "error",
+				msg: msg || "[scheduleConflictService]",
+				...(typeof obj === "object" && obj !== null ? obj : { data: obj }),
+			})}\n`,
+		);
+	},
+};
+
 export async function findSuggestedAvailableSlots(
 	orgId: string,
 	params: {
@@ -220,6 +240,7 @@ export async function findSuggestedAvailableSlots(
 		chairId?: string | null | undefined;
 		startsAt: Date | string;
 		endsAt?: Date | string | null | undefined;
+		logger?: ScheduleConflictStructuredLogger | undefined;
 	},
 ): Promise<string[]> {
 	try {
@@ -313,7 +334,11 @@ export async function findSuggestedAvailableSlots(
 
 		return suggested;
 	} catch (error) {
-		console.error("findSuggestedAvailableSlots error:", error);
+		const activeLogger = params.logger ?? defaultStructuredLogger;
+		activeLogger.error(
+			{ err: error, orgId },
+			"[scheduleConflictService] findSuggestedAvailableSlots failed",
+		);
 		return [];
 	}
 }

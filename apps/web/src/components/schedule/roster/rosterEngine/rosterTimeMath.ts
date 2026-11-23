@@ -55,7 +55,7 @@ export function calculateShiftDurationHours(
 	}
 
 	const rawMinutes = Math.max(0, endMins - startMins - breakMinutes);
-	const durationHours = Math.round((rawMinutes / 60) * 100) / 100;
+	const durationHours = Number((rawMinutes / 60).toFixed(2));
 
 	// Calculate night minutes (22:00 to 06:00)
 	let nightMinutes = 0;
@@ -66,7 +66,7 @@ export function calculateShiftDurationHours(
 		}
 	}
 
-	const nightHours = Math.round((nightMinutes / 60) * 100) / 100;
+	const nightHours = Number((nightMinutes / 60).toFixed(2));
 
 	return { durationHours, nightHours };
 }

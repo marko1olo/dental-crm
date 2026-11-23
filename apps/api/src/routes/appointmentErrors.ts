@@ -249,11 +249,12 @@ export async function appointmentRejectionResponse(
 	error: unknown,
 	conflictContext?: {
 		orgId: string;
-		doctorUserId?: string | null;
-		chairId?: string | null;
+		doctorUserId?: string | null | undefined;
+		chairId?: string | null | undefined;
 		startsAt: Date | string;
-		endsAt?: Date | string | null;
-	},
+		endsAt?: Date | string | null | undefined;
+		logger?: { error: (obj: unknown, msg?: string) => void; warn?: (obj: unknown, msg?: string) => void } | undefined;
+	} | undefined,
 ): Promise<AppointmentRejectionResponse> {
 	const reason = classifyAppointmentRejection(error);
 	if (reason === "appointment_not_found") {

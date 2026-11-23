@@ -3,6 +3,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+	computePayloadHash,
 	detectCrossBranchScheduleCollisions,
 	type DoctorBranchShift,
 } from "@dental/shared";
@@ -11,12 +12,14 @@ import { db } from "../../db/client.js";
 import {
 	clinics,
 	doctorShiftRosters,
+	idempotencyKeys,
 	urgentScheduleRequests,
 } from "../../db/schema.js";
 import {
 	requireClinicOrganizationId,
 	requireScheduleMutationAccess,
 } from "../scheduleAuthGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 const urgentRequestParamsSchema = z.object({
 	id: z.string().min(1),
@@ -144,6 +147,53 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			(await requireOrganizationContext(req, reply)) ||
 			requireClinicOrganizationId(req, reply);
 		if (!orgId) return;
+
+		const rawIdempotencyKey = extractIdempotencyKey(req);
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: undefined;
+
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID).",
+				});
+			}
+
+			reply.header("Idempotency-Key", idempotencyKey);
+
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						code: "IdempotencyConflict",
+						message:
+							"Операция сохранения смен расписания с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		const parsed = scheduleShiftsSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -264,6 +314,28 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 						};
 					}),
 				);
+			}
+
+			if (idempotencyKey) {
+				const responsePayload = { ok: true, savedCount: shifts.length };
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(req.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+						},
+					});
 			}
 		});
 

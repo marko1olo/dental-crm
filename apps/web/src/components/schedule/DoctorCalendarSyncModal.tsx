@@ -116,8 +116,8 @@ export const DoctorCalendarSyncModal: React.FC<
 						</div>
 					)}
 					{errorMessage && !isLoading && (
-						<div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-900 dark:text-rose-200 text-xs flex items-start gap-2.5">
-							<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+						<div className="p-3.5 rounded-2xl bg-[var(--danger-soft)] border border-[var(--danger-line)] text-[var(--danger)] text-xs flex items-start gap-2.5">
+							<AlertTriangle className="w-4 h-4 text-[var(--danger)] shrink-0 mt-0.5" />
 							<div>{errorMessage}</div>
 						</div>
 					)}

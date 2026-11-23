@@ -5,6 +5,7 @@ import {
   safeLocalStorageSetItem,
   safeLocalStorageRemoveItem,
 } from "../../../lib/safeLocalStorage";
+import { logger } from "../../../utils/logger";
 import type {
   DoctorShift,
   StaffMember as RosterStaffMember,
@@ -76,7 +77,7 @@ export function useScheduleRosterData({
                   JSON.stringify(data.shifts),
                 );
               } catch (storageErr: unknown) {
-                console.warn(
+                logger.warn(
                   "[ScheduleView] Error saving dente_doctor_shifts to storage:",
                   storageErr,
                 );
@@ -86,7 +87,7 @@ export function useScheduleRosterData({
               try {
                 safeLocalStorageRemoveItem("dente_doctor_shifts");
               } catch (storageErr: unknown) {
-                console.warn(
+                logger.warn(
                   "[ScheduleView] Error removing dente_doctor_shifts from storage:",
                   storageErr,
                 );
@@ -96,7 +97,7 @@ export function useScheduleRosterData({
           }
         }
       } catch (fetchErr: unknown) {
-        console.warn(
+        logger.warn(
           "[ScheduleView] hydratePersistedShifts fetch error:",
           fetchErr,
         );
@@ -132,7 +133,7 @@ export function useScheduleRosterData({
         );
       }
     } catch (storageErr: unknown) {
-      console.warn(
+      logger.warn(
         "[ScheduleView] Error saving dente_doctor_shifts to storage:",
         storageErr,
       );
@@ -152,7 +153,7 @@ export function useScheduleRosterData({
         });
       }
     } catch (apiErr: unknown) {
-      console.warn("[ScheduleView] Error saving shifts to API:", apiErr);
+      logger.warn("[ScheduleView] Error saving shifts to API:", apiErr);
     }
   }, [auth]);
 
