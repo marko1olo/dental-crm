@@ -267,7 +267,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			integritySha256,
 		});
 
-		// Безопасный HTTP GET: проверка наличия ранее оформленного сертификата БЕЗ мутации БД
+		// Гарантированная регистрация сертификата в warrantyCertificates при выдаче паспорта (Мандаты 8e, 8x)
 		let existingCertificateId: string | null = null;
 		if (orderWithDetails.patientId) {
 			const [existingCert] = await withTenantCtx(orgId, async (tx) => {
@@ -285,8 +285,48 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 					)
 					.limit(1);
 			});
+			const targetPatientId = orderWithDetails.patientId;
 			if (existingCert?.id) {
 				existingCertificateId = existingCert.id;
+			} else if (targetPatientId && (!isDraft || orderWithDetails.isLockedInstalled || orderWithDetails.completedAt)) {
+				const [registered] = await withTenantCtx(orgId, async (tx) => {
+					return tx
+						.insert(warrantyCertificates)
+						.values({
+							organizationId: orgId,
+							patientId: targetPatientId,
+							visitId: orderWithDetails.appointmentId || null,
+							certificateNumber,
+							status: "active",
+							itemsJson: itemsPayload,
+							warrantyMonths: 24,
+							serviceLifeMonths: 60,
+							issuedAt: fixationDateObj,
+							expiresAt: expirationDateObj,
+							nextRecallDate: nextRecallDateObj,
+							integritySha256,
+							notes: `Гарантийный паспорт ортопедической конструкции ${certificateNumber}. Наряд ЗТЛ: ${formattedOrderNum}.`,
+							createdAt: new Date(),
+							updatedAt: new Date(),
+						})
+						.onConflictDoUpdate({
+							target: warrantyCertificates.certificateNumber,
+							set: {
+								status: "active",
+								itemsJson: itemsPayload,
+								warrantyMonths: 24,
+								serviceLifeMonths: 60,
+								expiresAt: expirationDateObj,
+								nextRecallDate: nextRecallDateObj,
+								integritySha256,
+								updatedAt: new Date(),
+							},
+						})
+						.returning({ id: warrantyCertificates.id });
+				});
+				if (registered?.id) {
+					existingCertificateId = registered.id;
+				}
 			}
 		}
 

@@ -1,4 +1,4 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { access } from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import { imagingStudySchema, isValidToothFdi } from "@dental/shared";
@@ -22,6 +22,7 @@ import {
 import { autoBindUnassignedStudies } from "../patientFioBindingEngine.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
 import { parseDicomHeader, readFilePrefix } from "../dicomParsing.js";
+import { isDemoOperationAllowed } from "../../demo/demoRoutes.js";
 
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
@@ -155,7 +156,7 @@ export async function autoBindHandler(request: FastifyRequest, reply: FastifyRep
 
 export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: FastifyReply) {
 	const query = (request.query || {}) as { demo?: string };
-	const isDemo = query.demo === "true" || process.env.DENTE_DEMO_MODE === "true";
+	const isDemo = (query.demo === "true" || process.env.DENTE_DEMO_MODE === "true") && isDemoOperationAllowed(request);
 	if (isDemo) {
 		return reply.send({
 			ok: true,
@@ -193,11 +194,12 @@ export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: F
 
 export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: FastifyReply) {
 	const query = (request.query || {}) as { demo?: string; id?: string };
-	const isDemo = query.demo === "true" || process.env.DENTE_DEMO_MODE === "true";
+	const isDemo = (query.demo === "true" || process.env.DENTE_DEMO_MODE === "true") && isDemoOperationAllowed(request);
 	if (isDemo) {
 		const emptyCube = Buffer.alloc(512 * 512 * 2);
 		return reply
 			.header("Content-Type", "application/octet-stream")
+			.header("x-dente-demo-showcase", "true")
 			.header("x-cbct-dim-x", "512").header("x-cbct-dim-y", "512").header("x-cbct-dim-z", "1")
 			.header("x-cbct-sp-x", "0.25").header("x-cbct-sp-y", "0.25").header("x-cbct-sp-z", "0.25")
 			.header("x-cbct-min-hu", "-1000").header("x-cbct-max-hu", "3000")

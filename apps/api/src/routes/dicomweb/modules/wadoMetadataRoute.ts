@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -6,6 +7,7 @@ import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
+import { parseDicomHeader } from "../../imaging/dicomParsing.js";
 import {
 	type DicomFileIdentity,
 	enforceClinicalDicomAccess,
@@ -68,8 +70,31 @@ export async function handleWadoSeriesMetadata(
 	const metadataList: Record<string, unknown>[] = [];
 	for (const inst of instances) {
 		let ident: DicomFileIdentity | null = null;
+		let actualRows = inst.rows;
+		let actualColumns = inst.columns;
+
 		if (inst.storagePath) {
-			ident = await readDicomIdentity(path.resolve(inst.storagePath));
+			try {
+				const resolvedStoragePath = path.resolve(inst.storagePath);
+				ident = await readDicomIdentity(resolvedStoragePath);
+				if (actualRows == null && ident?.rows != null) actualRows = ident.rows;
+				if (actualColumns == null && ident?.columns != null) actualColumns = ident.columns;
+
+				if (actualRows == null || actualColumns == null) {
+					const probeBuf = Buffer.alloc(262144);
+					const fh = await fs.open(resolvedStoragePath, "r");
+					try {
+						const { bytesRead } = await fh.read(probeBuf, 0, probeBuf.length, 0);
+						const parsedHdr = parseDicomHeader(probeBuf.subarray(0, bytesRead));
+						if (actualRows == null && parsedHdr.imageRows != null) actualRows = parsedHdr.imageRows;
+						if (actualColumns == null && parsedHdr.imageColumns != null) actualColumns = parsedHdr.imageColumns;
+					} finally {
+						await fh.close();
+					}
+				}
+			} catch {
+				// non-fatal probe fallback
+			}
 		}
 		metadataList.push({
 			"0020000D": { vr: "UI", Value: [studyUid] },
@@ -77,8 +102,8 @@ export async function handleWadoSeriesMetadata(
 			"00080018": { vr: "UI", Value: [inst.sopInstanceUid] },
 			"00200013": { vr: "IS", Value: [inst.instanceNumber ?? 1] },
 			"00280008": { vr: "IS", Value: [ident?.numberOfFrames ?? 1] },
-			"00280010": { vr: "US", Value: [inst.rows ?? ident?.rows ?? 512] },
-			"00280011": { vr: "US", Value: [inst.columns ?? ident?.columns ?? 512] },
+			"00280010": { vr: "US", Value: [actualRows ?? 512] },
+			"00280011": { vr: "US", Value: [actualColumns ?? 512] },
 			"00280100": { vr: "US", Value: [ident?.bitsAllocated ?? 16] },
 		});
 	}

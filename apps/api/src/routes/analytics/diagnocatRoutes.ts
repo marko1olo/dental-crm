@@ -5,7 +5,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { diagnocatAiFindings, diagnocatReports } from "../../db/schema.js";
+import { radiologyAiFindings, radiologyAiReports } from "../../db/schema.js";
 
 /**
  * Честный подсчет диагностических ИИ-осмотров и скрининга снимков (aiRadiologyFindings / aiDiagnosticReports).
@@ -22,21 +22,21 @@ export async function fetchAiDiagnosticStats(
 }> {
 	const [aiReportsRow] = await db
 		.select({ count: sql<number>`count(*)::int` })
-		.from(diagnocatReports)
+		.from(radiologyAiReports)
 		.where(
 			and(
-				eq(diagnocatReports.organizationId, orgId),
-				startDate ? gte(diagnocatReports.createdAt, startDate) : undefined,
+				eq(radiologyAiReports.organizationId, orgId),
+				startDate ? gte(radiologyAiReports.createdAt, startDate) : undefined,
 			),
 		);
 
 	const [aiFindingsRow] = await db
-		.select({ count: sql<number>`count(distinct ${diagnocatAiFindings.id})::int` })
-		.from(diagnocatAiFindings)
+		.select({ count: sql<number>`count(distinct ${radiologyAiFindings.id})::int` })
+		.from(radiologyAiFindings)
 		.where(
 			and(
-				eq(diagnocatAiFindings.organizationId, orgId),
-				startDate ? gte(diagnocatAiFindings.createdAt, startDate) : undefined,
+				eq(radiologyAiFindings.organizationId, orgId),
+				startDate ? gte(radiologyAiFindings.createdAt, startDate) : undefined,
 			),
 		);
 

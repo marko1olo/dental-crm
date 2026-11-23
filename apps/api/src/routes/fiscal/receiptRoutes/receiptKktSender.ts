@@ -11,11 +11,12 @@
 import {
 	buildFiscalReceiptPayloadSignature,
 	kopecksToNumericString,
+	kopecksToRub,
 	verifyFiscalCompositeIdempotencyKey,
 	type CreateFiscalReceiptPayloadOutput as CreateFiscalReceiptPayload,
 } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
-import { fiscalReceiptQueue } from "../../../db/schema.js";
+import { fiscalReceiptQueue, payments } from "../../../db/schema.js";
 import { LanKktDriverService } from "../../../services/hardware/index.js";
 import { FiscalReceiptFactory, type Ffd12ReceiptPayload } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { applyCashBoxFiscalReceipt } from "./receiptCashBoxLedger.js";
@@ -195,6 +196,50 @@ export async function finalizeKktPrintAndBuffer(
 	const isOffline = printResult.status === "hardware_offline";
 	const now = new Date();
 
+	// Ensure payment record exists if clientMutationId was provided and not yet created
+	let paymentId =
+		("paymentId" in data && typeof (data as { paymentId?: unknown }).paymentId === "string"
+			? (data as { paymentId?: string }).paymentId
+			: null) ?? null;
+	if (data.clientMutationId && data.patientId) {
+		const totalKop = data.totalKopecks || 0;
+		const amountRub = kopecksToRub(totalKop);
+		const [existing] = await tx
+			.select({ id: payments.id })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					eq(payments.clientMutationId, data.clientMutationId),
+				),
+			)
+			.limit(1);
+
+		if (!existing) {
+			const [inserted] = await tx
+				.insert(payments)
+				.values({
+					organizationId: orgId,
+					patientId: data.patientId,
+					visitId: data.visitId || null,
+					method: data.electronicCardKopecks ? "card" : data.sbpKopecks ? "online" : "cash",
+					status: "paid",
+					amountRub,
+					amountKopecks: BigInt(totalKop),
+					paidAt: now,
+					clientMutationId: data.clientMutationId,
+					note: `Фискальный платёж (${data.operationType})`,
+				})
+				.onConflictDoNothing()
+				.returning({ id: payments.id });
+			if (inserted) {
+				paymentId = inserted.id;
+			}
+		} else {
+			paymentId = existing.id;
+		}
+	}
+
 	const effectiveQrString =
 		printResult.qrString ||
 		(printResult.fnSerial && printResult.fiscalDocumentNumber && printResult.fiscalSign
@@ -222,6 +267,7 @@ export async function finalizeKktPrintAndBuffer(
 	const [queueRow] = await tx
 		.update(fiscalReceiptQueue)
 		.set({
+			paymentId: paymentId ?? undefined,
 			status: (printResult.status as typeof fiscalReceiptQueue.$inferInsert.status) || "pending_print",
 			payloadJson: payloadToStore,
 			lastError: isOffline
@@ -246,6 +292,7 @@ export async function finalizeKktPrintAndBuffer(
 		replayed: false,
 		queueId: queueRow?.id || queueId,
 		status: queueRow?.status,
+		queueStatus: queueRow?.status,
 		fnSerial: printResult.fnSerial,
 		fiscalDocumentNumber: printResult.fiscalDocumentNumber,
 		fiscalSign: printResult.fiscalSign,
@@ -270,6 +317,50 @@ export async function executeKktPrintAndBuffer(
 
 	const isOffline = printResult.status === "hardware_offline";
 	const now = new Date();
+
+	// Ensure payment record exists if clientMutationId was provided and not yet created
+	let paymentId =
+		("paymentId" in data && typeof (data as { paymentId?: unknown }).paymentId === "string"
+			? (data as { paymentId?: string }).paymentId
+			: null) ?? null;
+	if (data.clientMutationId && data.patientId) {
+		const totalKop = data.totalKopecks || 0;
+		const amountRub = kopecksToRub(totalKop);
+		const [existing] = await tx
+			.select({ id: payments.id })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					eq(payments.clientMutationId, data.clientMutationId),
+				),
+			)
+			.limit(1);
+
+		if (!existing) {
+			const [inserted] = await tx
+				.insert(payments)
+				.values({
+					organizationId: orgId,
+					patientId: data.patientId,
+					visitId: data.visitId || null,
+					method: data.electronicCardKopecks ? "card" : data.sbpKopecks ? "online" : "cash",
+					status: "paid",
+					amountRub,
+					amountKopecks: BigInt(totalKop),
+					paidAt: now,
+					clientMutationId: data.clientMutationId,
+					note: `Фискальный платёж (${data.operationType})`,
+				})
+				.onConflictDoNothing()
+				.returning({ id: payments.id });
+			if (inserted) {
+				paymentId = inserted.id;
+			}
+		} else {
+			paymentId = existing.id;
+		}
+	}
 
 	const effectiveQrString =
 		printResult.qrString ||
@@ -318,6 +409,7 @@ export async function executeKktPrintAndBuffer(
 		replayed: false,
 		queueId: queueRow?.id,
 		status: queueRow?.status,
+		queueStatus: queueRow?.status,
 		fnSerial: printResult.fnSerial,
 		fiscalDocumentNumber: printResult.fiscalDocumentNumber,
 		fiscalSign: printResult.fiscalSign,

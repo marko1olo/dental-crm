@@ -18,10 +18,10 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { type ImagingStudyKind, isHeicOrHeifBuffer } from "@dental/shared";
-import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { imagingInstances, imagingSeries, imagingStudies } from "../../db/schema.js";
+import { PacsDbRegistration } from "./pacsDbRegistration.js";
 
 export * from "./localPacsSanitizer.js";
 import {
@@ -447,91 +447,22 @@ export class LocalPacsStorageService {
 			"dicom",
 		);
 
-		// Insert or update imaging study in database with normalized relative storage_path
-		const study = await createImagingStudyInDb(input.organizationId, {
-			patientId: input.patientId,
-			visitId: input.visitId || null,
-			doctorId: input.doctorId || null,
-			kind: input.kind,
-			title: input.title.trim() || `Снимок ${input.kind.toUpperCase()}`,
-			toothCode: input.toothCode || null,
-			region: input.region || null,
-			capturedAt: capturedAtIso,
-			sourceKind: "dicom_file",
-			sourceName: input.sourceName || "Local Station PACS",
-			storagePath: normalizedStoragePath,
-			dicomStudyUid: studyUid,
-			aiSummary: input.localThumbnailDataUri ? "Снимок готов к приему. Локальный кэш сформирован." : null,
+		const result = await PacsDbRegistration.registerLocalRadiologyScanInDb(input, {
+			studyUid,
+			normalizedStoragePath,
+			fileSizeBytes,
+			fileSizeMb,
+			fileExistsLocally,
+			isMultiGigabyteScan,
 		});
 
-		const studyId = study.id;
-
-		await db
-			.update(imagingStudies)
-			.set({ status: "available" })
-			.where(and(eq(imagingStudies.id, study.id), eq(imagingStudies.organizationId, input.organizationId)));
-
-		// If series/instance UIDs provided, insert into imagingSeries and imagingInstances
-		if (input.dicomSeriesUid && study) {
-			try {
-				const [seriesRow] = await db
-					.insert(imagingSeries)
-					.values({
-						organizationId: input.organizationId,
-						studyId: study.id,
-						dicomSeriesUid: input.dicomSeriesUid,
-						modality: input.kind.toUpperCase(),
-						bodyPartExamined: input.region || "HEAD / JAW",
-						seriesDescription: input.title,
-					})
-					.returning();
-
-				if (seriesRow && input.dicomSopInstanceUid) {
-					await db.insert(imagingInstances).values({
-						organizationId: input.organizationId,
-						seriesId: seriesRow.id,
-						dicomSopInstanceUid: input.dicomSopInstanceUid,
-						sopInstanceUid: input.dicomSopInstanceUid,
-						instanceNumber: 1,
-						storagePath: normalizedStoragePath,
-						storageKey: normalizedStoragePath,
-						fileSizeBytes: fileSizeBytes || undefined,
-					});
-				}
-			} catch (err) {
-				console.warn("[LocalPacsStorageService] Series/instance insertion skipped:", err);
-			}
-		}
-
 		// Initial cloud sync status is "local_only"
-		this.syncQueueMap.set(studyId, {
+		this.syncQueueMap.set(result.studyId, {
 			status: "local_only",
 			updatedAt: now.toISOString(),
 		});
 
-		return {
-			studyId,
-			organizationId: input.organizationId,
-			patientId: input.patientId,
-			visitId: input.visitId || null,
-			kind: input.kind,
-			title: study.title || input.title,
-			toothCode: input.toothCode || null,
-			region: input.region || null,
-			localFilePath: normalizedStoragePath,
-			localOfflineAvailable: true,
-			cloudSyncStatus: "local_only",
-			canStartConsultationImmediately: true,
-			capturedAt: capturedAtIso,
-			dicomStudyUid: studyUid,
-			diagnostics: {
-				fileSizeMb,
-				fileExistsLocally,
-				localReadinessScore: 1.0, // 100% ready for local doctor viewing
-				thumbnailAvailable: Boolean(input.localThumbnailDataUri),
-				isMultiGigabyteScan,
-			},
-		};
+		return result;
 	}
 
 	/**

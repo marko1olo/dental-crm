@@ -4,7 +4,6 @@ import type {
 	BlockedIpv4Range,
 	BlockedIpv6Range,
 	TargetSafety,
-	WadoFrameRequest,
 } from "./dicomwebTypes.js";
 import { safeJoinUrl } from "./dicomwebQueryEngine.js";
 
@@ -307,14 +306,3 @@ export function buildWadoFrameUrl(
 	return `${instanceUrl}/frames/${Math.max(1, Math.floor(frameNumber))}`;
 }
 
-/**
- * guard-callers: none — Заготовка для проверки RLS организации при запросах фреймов DICOM WADO-RS, эндпоинт подключается на следующем этапе
- */
-export function validateClinicRlsAccess(req: WadoFrameRequest): boolean {
-	if (!req.organizationId || typeof req.organizationId !== "string") {
-		return false;
-	}
-	const uuidRegex =
-		/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-	return uuidRegex.test(req.organizationId);
-}

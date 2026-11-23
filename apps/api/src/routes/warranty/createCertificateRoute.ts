@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { generateUuidV7 } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import { computePayloadHash, generateUuidV7 } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
-import { patientRecalls, warrantyCertificates } from "../../db/schema.js";
+import { idempotencyKeys, patientRecalls, warrantyCertificates } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -16,6 +17,47 @@ export function registerCreateCertificateRoute(app: FastifyInstance) {
 		);
 		if (!context) return;
 
+		// Поддержка Idempotency-Key по стандарту Мандата 8bo & 8zp
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotency-key"] as string | undefined) ??
+			(request.headers["Idempotency-Key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+				: undefined);
+
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: generateUuidV7();
+
+		reply.header("Idempotency-Key", idempotencyKey);
+
+		// Проверка кэша идемпотентности
+		const existingRecord = await withTenantCtx(context.organizationId, async (tx) => {
+			const [rec] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(and(eq(idempotencyKeys.clinicId, context.organizationId), eq(idempotencyKeys.key, idempotencyKey)))
+				.limit(1);
+			return rec ?? null;
+		});
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция оформления гарантийного сертификата с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+
 		const parsed = createCertificateBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -27,9 +69,16 @@ export function registerCreateCertificateRoute(app: FastifyInstance) {
 
 		const data = parsed.data;
 		const issuedAtDate = data.issuedAt ? new Date(data.issuedAt) : new Date();
-		const expiresAtDate = data.expiresAt
-			? new Date(data.expiresAt)
-			: new Date(issuedAtDate.getTime() + data.warrantyMonths * 30 * 24 * 60 * 60 * 1000);
+
+		// Точное календарное добавление месяцев без потери дней (Мандат 8e / Defect 4)
+		let expiresAtDate: Date;
+		if (data.expiresAt) {
+			expiresAtDate = new Date(data.expiresAt);
+		} else {
+			expiresAtDate = new Date(issuedAtDate.getTime());
+			expiresAtDate.setMonth(expiresAtDate.getMonth() + data.warrantyMonths);
+		}
+
 		const nextRecallDate = data.nextRecallDate
 			? new Date(data.nextRecallDate)
 			: new Date(issuedAtDate.getTime() + 180 * 24 * 60 * 60 * 1000);
@@ -136,7 +185,7 @@ export function registerCreateCertificateRoute(app: FastifyInstance) {
 			});
 		}
 
-		return reply.code(201).send({
+		const responsePayload = {
 			success: true,
 			data: {
 				certificate: createdCert,
@@ -144,6 +193,30 @@ export function registerCreateCertificateRoute(app: FastifyInstance) {
 			},
 			certificate: createdCert,
 			recall: createdRecall,
+		};
+
+		// Кэширование ответа для обеспечения строгой идемпотентности (Мандат 8bo)
+		await withTenantCtx(context.organizationId, async (tx) => {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: context.organizationId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: responsePayload,
+					responseCode: 201,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: responsePayload,
+						responseCode: 201,
+					},
+				});
 		});
+
+		return reply.code(201).send(responsePayload);
 	});
 }

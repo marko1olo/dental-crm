@@ -19,10 +19,10 @@ import { sanitizePayload } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import {
 	clinics,
-	diagnocatReports,
 	generatedDocuments,
 	organizations,
 	patients,
+	radiologyAiReports,
 	users,
 } from "../db/schema.js";
 import { registerDiagnocatRoutes } from "../routes/integrations/diagnocat.js";
@@ -195,7 +195,7 @@ test("RED-TEAM HAMMER: WAVE 9 — Documents & Integrations Medical Privacy Penet
 				]).onConflictDoNothing();
 
 				// Сеем отчет Diagnocat (AI диагностика зубов)
-				await tx.insert(diagnocatReports).values({
+				await tx.insert(radiologyAiReports).values({
 					id: DIAGNOCAT_REPORT_ID,
 					organizationId: ORG_ID,
 					patientId: ACTIVE_PATIENT_ID,

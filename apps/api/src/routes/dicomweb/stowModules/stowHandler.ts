@@ -113,31 +113,44 @@ export async function handleDicomwebStow(
 	const staffId = typeof userStaffId === "string" ? userStaffId : doctorId;
 	const operatorLabel = identity.fullName ? ` [${identity.role === "doctor" ? "Врач" : "Сотрудник"}: ${identity.fullName}]` : doctorId ? ` [ID: ${doctorId}]` : "";
 
-	const result = await persistStowDicomEntities({
-		organizationId,
-		parsed: {
-			studyUid: parsed.studyUid,
-			seriesUid: parsed.seriesUid,
-			sopInstanceUid: parsed.sopInstanceUid,
-			sopClassUid: parsed.sopClassUid,
-			rows: parsed.rows,
-			columns: parsed.columns,
-			dicomPatientName: parsed.dicomPatientName,
-			dicomPatientId: parsed.dicomPatientId,
-			dicomBirthDate: parsed.dicomBirthDate,
-		},
-		resolvedPatientId: binding.resolvedPatientId,
-		validDoctorId,
-		validVisitId,
-		staffId,
-		operatorLabel,
-		bindingStatus: binding.bindingStatus,
-		bindingConfidence: binding.bindingConfidence,
-		matchMethod: binding.matchMethod,
-		matchDetailsText: binding.matchDetailsText,
-		normalizedRelativePath,
-		fileSizeOnDisk,
-	});
+	let result: Awaited<ReturnType<typeof persistStowDicomEntities>>;
+	try {
+		result = await persistStowDicomEntities({
+			organizationId,
+			parsed: {
+				studyUid: parsed.studyUid,
+				seriesUid: parsed.seriesUid,
+				sopInstanceUid: parsed.sopInstanceUid,
+				sopClassUid: parsed.sopClassUid,
+				rows: parsed.rows,
+				columns: parsed.columns,
+				dicomPatientName: parsed.dicomPatientName,
+				dicomPatientId: parsed.dicomPatientId,
+				dicomBirthDate: parsed.dicomBirthDate,
+			},
+			resolvedPatientId: binding.resolvedPatientId,
+			validDoctorId,
+			validVisitId,
+			staffId,
+			operatorLabel,
+			bindingStatus: binding.bindingStatus,
+			bindingConfidence: binding.bindingConfidence,
+			matchMethod: binding.matchMethod,
+			matchDetailsText: binding.matchDetailsText,
+			normalizedRelativePath,
+			fileSizeOnDisk,
+		});
+	} catch (dbErr) {
+		await fs.unlink(permanentDiskPath).catch(() => {});
+		request.log.error(
+			{ err: dbErr, permanentDiskPath, studyUid: parsed.studyUid, sopInstanceUid: parsed.sopInstanceUid },
+			"Сбой сохранения метаданных DICOM STOW в БД, осиротевший файл удален с диска",
+		);
+		return reply.code(500).send({
+			error: "DicomStoragePersistenceFailed",
+			message: "Не удалось сохранить метаданные DICOM снимка в базе данных.",
+		});
+	}
 
 	await auditMedicalAccessFromRequest(request, {
 		organizationId,

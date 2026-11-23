@@ -100,13 +100,16 @@ export async function streamDicomPayloadToDisk(
 			const tailSize = Math.min(stat.size, 1024);
 			const tailBuf = Buffer.alloc(tailSize);
 			const fd = await fs.open(targetPath, "r+");
-			await fd.read(tailBuf, 0, tailSize, stat.size - tailSize);
-			let lastBoundary = tailBuf.lastIndexOf("\r\n--");
-			if (lastBoundary === -1) {
-				lastBoundary = tailBuf.lastIndexOf("\n--");
+			try {
+				await fd.read(tailBuf, 0, tailSize, stat.size - tailSize);
+				let lastBoundary = tailBuf.lastIndexOf("\r\n--");
+				if (lastBoundary === -1) {
+					lastBoundary = tailBuf.lastIndexOf("\n--");
+				}
+				if (lastBoundary !== -1) await fd.truncate(stat.size - (tailSize - lastBoundary));
+			} finally {
+				await fd.close();
 			}
-			if (lastBoundary !== -1) await fd.truncate(stat.size - (tailSize - lastBoundary));
-			await fd.close();
 		}
 	} catch {
 		// Non-fatal trailing boundary cleanup

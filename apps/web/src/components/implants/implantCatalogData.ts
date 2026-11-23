@@ -7,7 +7,7 @@
  * 1. implantCatalogData.ts — 6 стандартизированных промышленных линеек и фасад каталогов
  * 2. implantTorqueSpecs.ts — торки, пределы безопасности и отвертки
  * 3. implantTiBaseCatalog.ts — титановые основания Ti-Base и скан-боди
- * 4. implantWarrantyEngine.ts — шаблоны операций, SOAP-дневники и гарантийные паспорта
+ * 4. implantQuickPresets.ts — шаблоны операций, SOAP-дневники, гарантийные паспорта и пресеты
  * 5. implantFixtureDrillCatalog.ts — фикстуры, сверление и расчет комплектов
  * 6. implantClinicalGeometry.ts — анатомические кросс-секции и безопасные зоны
  */
@@ -529,6 +529,12 @@ export function findImplantSystem(brandOrKey: string): NormalizedImplantSystem {
 
 export * from "./implantTorqueSpecs";
 export * from "./implantTiBaseCatalog";
-export * from "./implantWarrantyEngine";
+export {
+	type ImplantSurgeryQuickTemplate,
+	SURGICAL_QUICK_TEMPLATES,
+	type ImplantWarrantyPassportData,
+	generateWarrantyPassportRecord,
+	buildSoapSurgeryDiaryText,
+} from "./implantQuickPresets";
 export * from "./implantFixtureDrillCatalog";
 export * from "./implantClinicalGeometry";

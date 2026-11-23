@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
@@ -5,6 +7,7 @@ import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
+import { parseDicomHeader } from "../../imaging/dicomParsing.js";
 import {
 	enforceClinicalDicomAccess,
 	normalizeUid,
@@ -42,6 +45,7 @@ export async function handleQidoInstances(
 				sopInstanceUid: schema.imagingInstances.dicomSopInstanceUid,
 				instanceNumber: schema.imagingInstances.instanceNumber,
 				sopClassUid: schema.imagingInstances.sopClassUid,
+				storagePath: schema.imagingInstances.storagePath,
 				rows: schema.imagingInstances.rows,
 				columns: schema.imagingInstances.columns,
 			})
@@ -63,15 +67,47 @@ export async function handleQidoInstances(
 		return reply.code(403).send({ error: "OrganizationUnknown", message: "Организация из токена не существует." });
 	}
 
-	const dicomJson: Record<string, unknown>[] = rows.map((r) => ({
-		"0020000D": { vr: "UI", Value: [studyUid] },
-		"0020000E": { vr: "UI", Value: [seriesUid] },
-		"00080018": { vr: "UI", Value: [r.sopInstanceUid] },
-		"00200013": { vr: "IS", Value: [r.instanceNumber ?? 1] },
-		"00080016": { vr: "UI", Value: [r.sopClassUid ?? "1.2.840.10008.5.1.4.1.1.2"] },
-		"00280010": { vr: "US", Value: [r.rows ?? 512] },
-		"00280011": { vr: "US", Value: [r.columns ?? 512] },
-	}));
+	const dicomJson: Record<string, unknown>[] = [];
+	for (const r of rows) {
+		let actualRows = r.rows;
+		let actualColumns = r.columns;
+
+		if ((actualRows == null || actualColumns == null) && r.storagePath) {
+			try {
+				const resolvedStoragePath = path.resolve(r.storagePath);
+				const ident = await readDicomIdentity(resolvedStoragePath);
+				if (ident) {
+					if (actualRows == null && ident.rows != null) actualRows = ident.rows;
+					if (actualColumns == null && ident.columns != null) actualColumns = ident.columns;
+				}
+
+				if (actualRows == null || actualColumns == null) {
+					const probeBuf = Buffer.alloc(262144);
+					const fh = await fs.open(resolvedStoragePath, "r");
+					try {
+						const { bytesRead } = await fh.read(probeBuf, 0, probeBuf.length, 0);
+						const parsedHdr = parseDicomHeader(probeBuf.subarray(0, bytesRead));
+						if (actualRows == null && parsedHdr.imageRows != null) actualRows = parsedHdr.imageRows;
+						if (actualColumns == null && parsedHdr.imageColumns != null) actualColumns = parsedHdr.imageColumns;
+					} finally {
+						await fh.close();
+					}
+				}
+			} catch {
+				// non-fatal probe fallback
+			}
+		}
+
+		dicomJson.push({
+			"0020000D": { vr: "UI", Value: [studyUid] },
+			"0020000E": { vr: "UI", Value: [seriesUid] },
+			"00080018": { vr: "UI", Value: [r.sopInstanceUid] },
+			"00200013": { vr: "IS", Value: [r.instanceNumber ?? 1] },
+			"00080016": { vr: "UI", Value: [r.sopClassUid ?? "1.2.840.10008.5.1.4.1.1.2"] },
+			"00280010": { vr: "US", Value: [actualRows ?? 512] },
+			"00280011": { vr: "US", Value: [actualColumns ?? 512] },
+		});
+	}
 
 	if (dicomJson.length === 0) {
 		const sampleOwnerOrgId = sampleDicomOwnerOrganizationId();

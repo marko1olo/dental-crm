@@ -6,6 +6,7 @@
 import React, { useMemo } from "react";
 import { Award, Copy, Printer, QrCode, Send, Share2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { generateCode128Svg, generateQrCodeSvg } from "@dental/shared";
+import { buildWarrantyPortalUrl } from "../../lib/publicPortalRoute";
 import { showToast } from "../GlobalToast";
 import { DentalImplant } from "../icons/DentalIcons";
 import type { FastImplantPassportData } from "./implantQuickPresets";
@@ -131,15 +132,27 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 		showToast(`Паспорт имплантата #${data.toothFdi || ""} скопирован`, "success");
 	};
 
+	const qrVerificationUrl = useMemo(() => {
+		const clientOrigin =
+			typeof window !== "undefined" && window.location.origin
+				? window.location.origin
+				: "https://dente.clinic";
+		return buildWarrantyPortalUrl(data.passportId || "PASSPORT", clientOrigin);
+	}, [data.passportId]);
+
 	const handleShareWhatsApp = () => {
-		const text = encodeURIComponent(`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм\nLOT: ${displayLot} | Торк: ${data.torqueNcm || 35} Н·см`);
+		const text = encodeURIComponent(
+			`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм\nLOT: ${displayLot} | Торк: ${data.torqueNcm || 35} Н·см\nВерификация: ${qrVerificationUrl}`,
+		);
 		window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
 		showToast(`Паспорт #${data.toothFdi || ""} отправлен в WhatsApp`, "success");
 	};
 
 	const handleShareTelegram = () => {
-		const text = encodeURIComponent(`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм`);
-		const url = encodeURIComponent(`https://dente.clinic/passport/${data.passportId}`);
+		const text = encodeURIComponent(
+			`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм`,
+		);
+		const url = encodeURIComponent(qrVerificationUrl);
 		window.open(`https://t.me/share/url?url=${url}&text=${text}`, "_blank", "noopener,noreferrer");
 		showToast(`Паспорт #${data.toothFdi || ""} отправлен в Telegram`, "success");
 	};
@@ -150,7 +163,6 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 		showToast(`Бланк паспорта имплантата #${data.toothFdi || ""} отправлен на печать`, "success");
 	};
 
-	const qrVerificationUrl = `https://dente.clinic/passport/${data.passportId || "PASSPORT"}`;
 	const qrSvg = useMemo(() => {
 		try {
 			return generateQrCodeSvg(qrVerificationUrl, {

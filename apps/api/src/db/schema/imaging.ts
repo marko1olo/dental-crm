@@ -567,7 +567,6 @@ export const radiologyAiFindings = pgTable(
 	}),
 );
 export const clinicalAiFindings = radiologyAiFindings;
-export const diagnocatAiFindings = radiologyAiFindings;
 
 // Clinical AI diagnostic reports & automated odontogram pathology interpretations
 export const radiologyAiReports = pgTable(
@@ -591,7 +590,6 @@ export const radiologyAiReports = pgTable(
 	}),
 );
 export const clinicalAiReports = radiologyAiReports;
-export const diagnocatReports = radiologyAiReports;
 
 // Intraoral 3D Scan Sessions
 export * from "./intraoralScans.js";

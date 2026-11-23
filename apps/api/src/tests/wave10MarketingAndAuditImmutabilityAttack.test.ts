@@ -22,10 +22,10 @@ import {
 	attachments,
 	clinics,
 	crmLeads,
-	diagnocatReports,
 	organizations,
 	patients,
 	payments,
+	radiologyAiReports,
 	users,
 } from "../db/schema.js";
 import { registerAuditRoutes } from "../routes/audit.js";
@@ -252,7 +252,7 @@ test("RED-TEAM HAMMER: WAVE 10 — Marketing Attribution, Files & Audit Immutabi
 					sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 				}).onConflictDoNothing();
 
-				await tx.insert(diagnocatReports).values({
+				await tx.insert(radiologyAiReports).values({
 					id: DIAGNOCAT_REPORT_ID,
 					organizationId: ORG_ID,
 					patientId: ACTIVE_PATIENT_ID,

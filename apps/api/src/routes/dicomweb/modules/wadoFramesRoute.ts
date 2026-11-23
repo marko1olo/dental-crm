@@ -1,9 +1,13 @@
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
+import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
+import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
+import { parseDicomHeader } from "../../imaging/dicomParsing.js";
 import {
 	enforceClinicalDicomAccess,
 	normalizeUid,
@@ -60,7 +64,11 @@ export async function handleWadoRetrieveFrames(
 	let fileSize = 0;
 	try {
 		fileSize = (await fs.stat(filePath)).size;
-	} catch {
+	} catch (statErr) {
+		request.log.error(
+			{ err: statErr, filePath, studyUid, seriesUid, instanceUid },
+			"Сбой fs.stat при чтении файла кадра DICOM (ENOENT/EACCES)",
+		);
 		return reply.code(404).send({ error: "DicomInstanceFileNotFound", message: "Файл снимка не найден на сервере." });
 	}
 
@@ -71,12 +79,57 @@ export async function handleWadoRetrieveFrames(
 	}
 
 	const frameIndex = frameNumber - 1;
-	const rows = identity.rows ?? 512;
-	const columns = identity.columns ?? 512;
+	let rows = identity.rows;
+	let columns = identity.columns;
+
+	if ((rows == null || columns == null) && typeof instanceUid === "string" && instanceUid) {
+		const targetUid = instanceUid;
+		try {
+			const [dbInst] = await db
+				.select({
+					rows: schema.imagingInstances.rows,
+					columns: schema.imagingInstances.columns,
+				})
+				.from(schema.imagingInstances)
+				.where(
+					and(
+						eq(schema.imagingInstances.organizationId, organizationId),
+						eq(schema.imagingInstances.dicomSopInstanceUid, targetUid),
+					),
+				)
+				.limit(1);
+			if (dbInst) {
+				if (rows == null && dbInst.rows != null) rows = dbInst.rows;
+				if (columns == null && dbInst.columns != null) columns = dbInst.columns;
+			}
+		} catch (dbErr) {
+			request.log.warn({ err: dbErr, instanceUid }, "Не удалось прочитать габариты кадра из БД");
+		}
+	}
+
+	if (rows == null || columns == null) {
+		try {
+			const probeBuf = Buffer.alloc(262144);
+			const fh = await fs.open(filePath, "r");
+			try {
+				const { bytesRead } = await fh.read(probeBuf, 0, probeBuf.length, 0);
+				const parsedHdr = parseDicomHeader(probeBuf.subarray(0, bytesRead));
+				if (rows == null && parsedHdr.imageRows != null) rows = parsedHdr.imageRows;
+				if (columns == null && parsedHdr.imageColumns != null) columns = parsedHdr.imageColumns;
+			} finally {
+				await fh.close();
+			}
+		} catch (probeErr) {
+			request.log.warn({ err: probeErr, filePath }, "Не удалось извлечь теги габаритов (0028,0010)/(0028,0011) из файла");
+		}
+	}
+
+	const finalRows = rows ?? 512;
+	const finalColumns = columns ?? 512;
 	const bitsAllocated = identity.bitsAllocated ?? 16;
 	const bytesPerSample = Math.ceil(bitsAllocated / 8);
 	const samplesPerPixel = identity.samplesPerPixel ?? 1;
-	const frameSizeBytes = rows * columns * bytesPerSample * samplesPerPixel;
+	const frameSizeBytes = finalRows * finalColumns * bytesPerSample * samplesPerPixel;
 
 	if (identity.pixelDataOffset !== null && frameSizeBytes > 0) {
 		const frameStart = identity.pixelDataOffset + frameIndex * frameSizeBytes;
