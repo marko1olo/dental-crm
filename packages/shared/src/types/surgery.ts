@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { permanentToothNumberFdiSchema } from "../schemas/implantologyAndPrescriptionSchemas.js";
 
 export const SURGICAL_OPERATION_CATEGORIES = [
 	"implant",
@@ -178,7 +179,7 @@ export interface FastImplantPassportData {
 
 export const fastImplantPassportDataSchema = z.object({
 	passportId: z.string().optional(),
-	toothFdi: z.number().int().min(11).max(48),
+	toothFdi: permanentToothNumberFdiSchema,
 	brand: z.string().min(1),
 	model: z.string().min(1),
 	catalogArticle: z.string().optional(),

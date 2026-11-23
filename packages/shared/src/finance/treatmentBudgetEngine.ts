@@ -17,6 +17,7 @@ import { z } from "zod";
 import { escapeXml } from "../cda/c14n.js";
 import { amountToWordsRu } from "./taxDeduction.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
+import { calculatePercentDiscountKopecks } from "../money.js";
 
 // ─── 1. ZOD SCHEMAS & DOMAIN TYPES ──────────────────────────────────────────
 
@@ -289,7 +290,7 @@ export function calculateBudgetKopecks(
 			const unitPrice = Math.max(0, Math.round(it.unitPriceKopecks));
 			const base = unitPrice * qty;
 			const rawPct = Math.min(100, Math.max(0, it.discountPercent ?? 0));
-			const lineDisc = Math.min(base, Math.round(base * (rawPct / 100)));
+			const lineDisc = Math.min(base, calculatePercentDiscountKopecks(base, rawPct));
 			const net = base - lineDisc;
 
 			allLines.push({
@@ -323,7 +324,7 @@ export function calculateBudgetKopecks(
 			for (const line of allLines) {
 				line.globalDiscountShareKopecks = Math.min(
 					line.netAfterLineDiscountKopecks,
-					Math.round(line.netAfterLineDiscountKopecks * (pct / 100)),
+					calculatePercentDiscountKopecks(line.netAfterLineDiscountKopecks, pct),
 				);
 			}
 		} else if (globalType === "absolute") {
@@ -424,7 +425,7 @@ export interface ApplyDoctorDiscountInput {
 export function applyDoctorDiscount(input: ApplyDoctorDiscountInput): BudgetItem {
 	const pct = Math.min(100, Math.max(0, input.discountPercent));
 	const base = input.item.unitPriceKopecks * input.item.quantity;
-	const discKopecks = Math.round(base * (pct / 100));
+	const discKopecks = calculatePercentDiscountKopecks(base, pct);
 	const finalKopecks = Math.max(0, base - discKopecks);
 
 	return {

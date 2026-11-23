@@ -8,6 +8,7 @@ import { nonNegativeMoneyRubSchema } from "../money.js";
 import { fiscalReceiptDetailsSchema, fiscalReceiptUrlSchema, paymentMethodSchema, strictFiscalReceiptIssuedAtSchema } from "../fiscal/index.js";
 import { birthDateInputSchema } from "../patients/index.js";
 import { isDateLikeString } from "../datetime/index.js";
+import { appointmentInvoiceItemSchema } from "../schedule/appointmentSchemas.js";
 
 export const updateClinicProfileSchema = z.object({
 	clinicName: z.string().trim().min(1).max(240).optional(),
@@ -276,8 +277,8 @@ export const createPaymentSchema = z
 		toothNumber: z.union([z.number().int(), z.string()]).nullable().optional(),
 		tooth_number: z.union([z.number().int(), z.string()]).nullable().optional(),
 		toothCode: z.string().nullable().optional(),
-		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
-		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
+		invoice_items: z.array(appointmentInvoiceItemSchema).optional(),
+		invoiceItems: z.array(appointmentInvoiceItemSchema).optional(),
 		cashBoxType: z
 			.enum(["main", "cashless", "sbp", "online", "dms", "deposit"])
 			.nullable()

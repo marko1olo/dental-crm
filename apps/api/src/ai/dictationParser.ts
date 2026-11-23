@@ -1,5 +1,3 @@
-import { agentRouterClient } from "./agentRouterClient.js";
-
 export type ParserContext = "schedule" | "patient" | "visit";
 
 export interface DictationScheduleResult {
@@ -87,8 +85,8 @@ export function dictationTodayDate(
 }
 
 /**
- * Системная подсказка для разбора диктовки. Вынесена из `parseDictationWithLLM`
- * отдельной функцией, чтобы дату в подсказке можно было проверить прогоном, не
+ * Системная подсказка для разбора диктовки. Вынесена отдельной
+ * функцией, чтобы дату в подсказке можно было проверить прогоном, не
  * обращаясь к внешнему провайдеру.
  */
 export function buildDictationSystemPrompt(
@@ -139,57 +137,4 @@ export function buildDictationSystemPrompt(
 Если врач упоминает зубы, распределяй их статусы. Кариес/лечение = "treatment", удаление = "missing", наблюдение = "watch". Если данных для поля нет, не возвращайте его в JSON.`;
 	}
 	return "";
-}
-
-/**
- * @deprecated Use canonical agentRouterClient or parseDictationLocally instead.
- * Parses spoken dictation into structured JSON using canonical LLM AgentRouter.
- */
-export async function parseDictationWithLLM(
-	transcript: string,
-	context: ParserContext = "schedule",
-	timeZone?: string | null,
-): Promise<DictationParseResult> {
-	const modelName =
-		process.env.DENTAL_DICTATION_MODEL?.trim() || "qwen/qwen3.6-27b";
-	const systemPrompt = buildDictationSystemPrompt(context, timeZone);
-
-	try {
-		const response = await agentRouterClient.createChatCompletion({
-			model: modelName,
-			temperature: 0.1,
-			messages: [
-				{
-					role: "system",
-					content: systemPrompt,
-				},
-				{
-					role: "user",
-					content: `Текст диктовки: "${transcript}"`,
-				},
-			],
-		});
-
-		const content = response.choices?.[0]?.message?.content;
-		if (!content) {
-			throw new Error("Пустой ответ сервиса распознавания диктовки");
-		}
-
-		let parsed: DictationParseResult;
-		try {
-			parsed = JSON.parse(content.trim()) as DictationParseResult;
-		} catch {
-			const match = content.match(/\{[\s\S]*\}/);
-			if (match?.[0]) {
-				parsed = JSON.parse(match[0]) as DictationParseResult;
-			} else {
-				throw new Error("Некорректный формат JSON в ответе распознавания");
-			}
-		}
-
-		return parsed;
-	} catch (error) {
-		const msg = error instanceof Error ? error.message : String(error);
-		throw new Error(`Не удалось распарсить диктовку через канонический ИИ-роутер: ${msg}`);
-	}
 }

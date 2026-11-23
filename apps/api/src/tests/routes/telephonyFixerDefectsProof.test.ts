@@ -371,27 +371,28 @@ describe("Red Team Fixer Proof: Telephony Defect Fixes", () => {
 			const rawBodyStr = JSON.stringify(bodyObj);
 			const expectedHmac = createHmac("sha256", secret).update(rawBodyStr).digest("hex");
 
-			const mockReq = {
+			const app = Fastify();
+			app.post("/webhook", async (req, reply) => {
+				const isValid = await authenticatePbxWebhook(
+					req,
+					reply,
+					DEMO_SHOWCASE_ORG_ID,
+					bodyObj,
+				);
+				return reply.send({ isValid });
+			});
+			await app.ready();
+
+			const res = await app.inject({
+				method: "POST",
+				url: "/webhook",
 				headers: { "x-gravitel-signature": expectedHmac },
-				query: {},
-				body: bodyObj,
-				log: { warn: () => {}, error: () => {} },
-				ip: "127.0.0.1",
-				url: "/telephony/webhook",
-			} as unknown as Parameters<typeof authenticatePbxWebhook>[0];
+				payload: bodyObj,
+			});
 
-			const mockReply = {
-				status: () => mockReply,
-				send: () => mockReply,
-			} as unknown as Parameters<typeof authenticatePbxWebhook>[1];
-
-			const isValid = await authenticatePbxWebhook(
-				mockReq,
-				mockReply,
-				DEMO_SHOWCASE_ORG_ID,
-				bodyObj,
-			);
-			assert.strictEqual(isValid, true);
+			assert.strictEqual(res.statusCode, 200);
+			assert.strictEqual(res.json().isValid, true);
+			await app.close();
 		} finally {
 			if (prevSecret !== undefined) process.env.GRAVITEL_API_SECRET = prevSecret;
 			else delete process.env.GRAVITEL_API_SECRET;
@@ -419,27 +420,28 @@ describe("Red Team Fixer Proof: Telephony Defect Fixes", () => {
 			const rawBodyStr = JSON.stringify(bodyObj);
 			const expectedHmac = createHmac("sha256", secret).update(rawBodyStr).digest("hex");
 
-			const mockReq = {
+			const app = Fastify();
+			app.post("/webhook", async (req, reply) => {
+				const isValid = await authenticatePbxWebhook(
+					req,
+					reply,
+					DEMO_SHOWCASE_ORG_ID,
+					bodyObj,
+				);
+				return reply.send({ isValid });
+			});
+			await app.ready();
+
+			const res = await app.inject({
+				method: "POST",
+				url: "/webhook",
 				headers: { "x-mts-exolve-signature": `sha256=${expectedHmac}` },
-				query: {},
-				body: bodyObj,
-				log: { warn: () => {}, error: () => {} },
-				ip: "127.0.0.1",
-				url: "/telephony/webhook",
-			} as unknown as Parameters<typeof authenticatePbxWebhook>[0];
+				payload: bodyObj,
+			});
 
-			const mockReply = {
-				status: () => mockReply,
-				send: () => mockReply,
-			} as unknown as Parameters<typeof authenticatePbxWebhook>[1];
-
-			const isValid = await authenticatePbxWebhook(
-				mockReq,
-				mockReply,
-				DEMO_SHOWCASE_ORG_ID,
-				bodyObj,
-			);
-			assert.strictEqual(isValid, true);
+			assert.strictEqual(res.statusCode, 200);
+			assert.strictEqual(res.json().isValid, true);
+			await app.close();
 		} finally {
 			if (prevSecret !== undefined) process.env.MTS_EXOLVE_WEBHOOK_SECRET = prevSecret;
 			else delete process.env.MTS_EXOLVE_WEBHOOK_SECRET;

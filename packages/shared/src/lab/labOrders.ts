@@ -886,9 +886,12 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 		s === "completed" ||
 		s === "fitted" ||
 		s === "seated" ||
+		s === "installed" ||
 		s === "installed_in_mouth" ||
+		s === "delivered" ||
 		s === "фиксация" ||
-		s === "сдан"
+		s === "сдан" ||
+		s === "установлен"
 	) {
 		return s === "fitted" ? "fitted" : "completed";
 	}
@@ -1402,6 +1405,7 @@ export interface PatientLabOrderDto {
 	attachedImageUrl?: string | null;
 	/** Канонические финансовые поля в целочисленных копейках (Мандат 8bm) */
 	priceKopecks?: number | null;
+	patientPriceKopecks?: number | null | undefined;
 	amountKopecks?: number | null;
 	labCostKopecks?: number | null;
 	costKopecks?: number | null;

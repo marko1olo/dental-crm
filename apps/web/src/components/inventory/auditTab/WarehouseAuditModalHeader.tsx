@@ -1,6 +1,6 @@
 import { Boxes, FileSpreadsheet, Printer, X } from "lucide-react";
 import type React from "react";
-import { generateInv19Html, generateInv3Html, type WarehouseInventoryAuditDocument, type WarehouseInventoryStatus } from "../warehouseInventoryEngine.js";
+import { generateInventoryAuditStatementHtml, generateInventoryDiscrepancyStatementHtml, type WarehouseInventoryAuditDocument, type WarehouseInventoryStatus } from "../warehouseInventoryEngine.js";
 
 export interface WarehouseAuditModalHeaderProps {
 	readonly docNumber: string;
@@ -63,7 +63,7 @@ export const WarehouseAuditModalHeader: React.FC<WarehouseAuditModalHeaderProps>
 				<button
 					type="button"
 					className="warehouse-btn warehouse-btn-secondary"
-					onClick={() => onPrintDocument(generateInv3Html(currentDocument))}
+					onClick={() => onPrintDocument(generateInventoryAuditStatementHtml(currentDocument))}
 					title="Печать инвентаризационной описи"
 				>
 					<Printer size={14} />
@@ -74,7 +74,7 @@ export const WarehouseAuditModalHeader: React.FC<WarehouseAuditModalHeaderProps>
 				<button
 					type="button"
 					className="warehouse-btn warehouse-btn-secondary"
-					onClick={() => onPrintDocument(generateInv19Html(currentDocument))}
+					onClick={() => onPrintDocument(generateInventoryDiscrepancyStatementHtml(currentDocument))}
 					title="Печать сличительной ведомости остатков"
 				>
 					<FileSpreadsheet size={14} />

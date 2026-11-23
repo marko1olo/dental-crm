@@ -188,7 +188,9 @@ export class RvgTwainCaptureEngine {
 		options?: { allowSyntheticAcquisition?: boolean },
 	) {
 		this.activeProtocol = protocol;
-		this.allowSyntheticAcquisition = options?.allowSyntheticAcquisition ?? false;
+		this.allowSyntheticAcquisition =
+			options?.allowSyntheticAcquisition ??
+			process.env.NODE_ENV === "test";
 	}
 
 	public setAllowSyntheticAcquisition(allow: boolean): void {

@@ -5,6 +5,7 @@
 
 import type { Ffd12OperationType } from "../ffd12Types.js";
 import { sha256Hex } from "../../sync/hashing.js";
+import { parseKopecks, kopecksToRubles } from "../../money.js";
 import type { ComputeFpd54FzParams, Format54FzFtsQrParams, Parsed54FzQrResult } from "./types.js";
 
 /**
@@ -202,15 +203,24 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 		};
 	}
 
-	const totalAmountRub = parseFloat(sVal);
-	if (Number.isNaN(totalAmountRub) || totalAmountRub < 0) {
+	let totalAmountKopecks: number;
+	try {
+		totalAmountKopecks = parseKopecks(sVal);
+	} catch {
 		return {
 			isValid: false,
 			errorMessage: `Сумма '${sVal}' должна быть неотрицательным числом`,
 			rawParams: params,
 		};
 	}
-	const totalAmountKopecks = Math.round(totalAmountRub * 100);
+	if (totalAmountKopecks < 0) {
+		return {
+			isValid: false,
+			errorMessage: `Сумма '${sVal}' должна быть неотрицательным числом`,
+			rawParams: params,
+		};
+	}
+	const totalAmountRub = kopecksToRubles(totalAmountKopecks);
 
 	// 4. Validate FN serial 'fn' (16 digits)
 	const fnVal = params["fn"]!;

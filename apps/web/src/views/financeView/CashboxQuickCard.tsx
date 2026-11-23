@@ -41,14 +41,14 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 						data-testid="btn-open-cashbox-loyalty-modal"
 						title="Списание бонусов и сертификаты пациента"
 					>
-						<Award size={16} className="text-[var(--teal)]" />
+						<Award size={16} className="text-[var(--primary)]" />
 						<span className="hidden md:inline">Бонусы и сертификаты</span>
 						<span className="md:hidden">Бонусы</span>
 					</button>
 					<button
 						type="button"
 						onClick={onOpenPaymentModal}
-						className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm whitespace-nowrap flex-1 sm:flex-initial justify-center flex items-center gap-2 cursor-pointer active:scale-[0.99] transition-all shadow-xs"
+						className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm whitespace-nowrap flex-1 sm:flex-initial justify-center flex items-center gap-2 cursor-pointer active:scale-[0.99] transition-all shadow-xs"
 						data-testid="btn-open-cashbox-payment-modal"
 						title="Принять оплату от пациента"
 					>

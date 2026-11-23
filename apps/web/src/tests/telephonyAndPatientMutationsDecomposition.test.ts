@@ -105,17 +105,20 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 		class MockBroadcastChannel {
 			static channels = new Map<string, Set<MockBroadcastChannel>>();
 			name: string;
-			onmessage: ((ev: any) => void) | null = null;
+			onmessage: ((ev: { data: unknown }) => void) | null = null;
 
 			constructor(name: string) {
 				this.name = name;
 				if (!MockBroadcastChannel.channels.has(name)) {
 					MockBroadcastChannel.channels.set(name, new Set());
 				}
-				MockBroadcastChannel.channels.get(name)!.add(this);
+				const targetSet = MockBroadcastChannel.channels.get(name);
+				if (targetSet) {
+					targetSet.add(this);
+				}
 			}
 
-			postMessage(data: any) {
+			postMessage(data: unknown) {
 				const listeners = MockBroadcastChannel.channels.get(this.name);
 				if (listeners) {
 					for (const l of listeners) {
@@ -127,12 +130,15 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 			}
 
 			close() {
-				MockBroadcastChannel.channels.get(this.name)?.delete(this);
+				const listeners = MockBroadcastChannel.channels.get(this.name);
+				if (listeners) {
+					listeners.delete(this);
+				}
 			}
 		}
 
-		const prevBc = (globalThis as any).BroadcastChannel;
-		(globalThis as any).BroadcastChannel = MockBroadcastChannel;
+		const prevBc = Reflect.get(globalThis, "BroadcastChannel");
+		Reflect.set(globalThis, "BroadcastChannel", MockBroadcastChannel);
 
 		try {
 			const tab1 = new TelephonyAudioStreamManager();
@@ -158,8 +164,11 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 			tab1.dispose();
 			tab2.dispose();
 		} finally {
-			if (prevBc !== undefined) (globalThis as any).BroadcastChannel = prevBc;
-			else delete (globalThis as any).BroadcastChannel;
+			if (prevBc !== undefined) {
+				Reflect.set(globalThis, "BroadcastChannel", prevBc);
+			} else {
+				Reflect.deleteProperty(globalThis, "BroadcastChannel");
+			}
 		}
 	});
 

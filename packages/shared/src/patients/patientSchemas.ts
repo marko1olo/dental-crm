@@ -72,7 +72,10 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	taxpayerInn: z
 		.string()
 		.trim()
-		.regex(/^\d{10}$|^\d{12}$/)
+		.refine((value) => !value || /^\d{10}$|^\d{12}$/.test(value), {
+			message: "ИНН должен состоять из 10 или 12 цифр",
+		})
+		.transform((v) => (v === "" ? null : v))
 		.nullable()
 		.default(null),
 	registrationAddress: patientAdministrativeTextSchema,

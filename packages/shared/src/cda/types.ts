@@ -343,6 +343,8 @@ export interface DetachedSignature {
 	/** OID алгоритма хэширования (ГОСТ 34.11-2012: 1.2.643.7.1.1.2.2 или 1.2.643.7.1.1.2.3) */
 	digestAlgorithmOid?: string | undefined;
 	signatureValueHex?: string | undefined;
+	/** X.509 открытый сертификат в формате Base64 */
+	certificateBase64?: string | undefined;
 }
 
 export interface EgiszRemdPackage {

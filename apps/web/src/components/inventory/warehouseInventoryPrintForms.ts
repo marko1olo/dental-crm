@@ -106,13 +106,11 @@ export function generateWarehouseWriteoffActHtml(act: WarehouseWriteoffAct): str
 </html>`;
 }
 
-export const generateTorg16Html = generateWarehouseWriteoffActHtml;
-
 /**
- * generateInv3Html — Инвентаризационная опись материалов клиники (ИНВ-3).
+ * generateInventoryAuditStatementHtml — Инвентаризационная ведомость остатков материалов клиники.
  * Мандаты 8e (Врачебная автономия), 8n (Соло-клиника), 8x (Чистый клинический язык).
  */
-export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
+export function generateInventoryAuditStatementHtml(doc: WarehouseInventoryAuditDocument): string {
 	const totals = calculateInventoryAuditTotals(doc.items);
 	const rows = doc.items.map((it, idx) => `
     <tr>
@@ -211,9 +209,9 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
 }
 
 /**
- * generateInv19Html — Сличительная ведомость результатов инвентаризации ТМЦ (ИНВ-19).
+ * generateInventoryDiscrepancyStatementHtml — Сличительная ведомость результатов инвентаризации материалов клиники.
  */
-export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string {
+export function generateInventoryDiscrepancyStatementHtml(doc: WarehouseInventoryAuditDocument): string {
 	const totals = calculateInventoryAuditTotals(doc.items);
 	const discrepancies = doc.items.filter((it) => it.discrepancyType !== "match");
 
@@ -316,9 +314,7 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </html>`;
 }
 
-export const generateInventoryAuditStatementHtml = generateInv3Html;
-export const generateInventoryDiscrepancyStatementHtml = generateInv19Html;
-export const generateInventoryAuditActHtml = generateInv3Html;
-export const generateDiscrepancyStatementHtml = generateInv19Html;
+export const generateInventoryAuditActHtml = generateInventoryAuditStatementHtml;
+export const generateDiscrepancyStatementHtml = generateInventoryDiscrepancyStatementHtml;
 export const generateMaterialWriteoffActHtml = generateWarehouseWriteoffActHtml;
 

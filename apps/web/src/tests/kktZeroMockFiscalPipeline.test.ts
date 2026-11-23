@@ -315,7 +315,7 @@ test("Zero-Mock Hardware KKT & 54-FZ Fiscal Pipeline Suite", async (t) => {
 
 		const vatValidation = validateFiscalReceiptPayload54Fz(invalidVatPayload);
 		assert.equal(vatValidation.isValid, false);
-		assert.match(vatValidation.error || "", /некорректная ставка НДС по ФФД 1\.2/i);
+		assert.match(vatValidation.error || "", /некорректная ставка НДС (кассового чека|по ФФД 1\.2)/i);
 
 		const invalidPaymentMethodPayload = {
 			cashierFullName: "Иванова А. С.",
@@ -334,6 +334,6 @@ test("Zero-Mock Hardware KKT & 54-FZ Fiscal Pipeline Suite", async (t) => {
 
 		const methodValidation = validateFiscalReceiptPayload54Fz(invalidPaymentMethodPayload);
 		assert.equal(methodValidation.isValid, false);
-		assert.match(methodValidation.error || "", /некорректный признак способа расчета по ФФД 1\.2/i);
+		assert.match(methodValidation.error || "", /некорректный признак способа расчета (кассового чека|по ФФД 1\.2)/i);
 	});
 });

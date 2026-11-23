@@ -5,7 +5,7 @@
  * Layer 4: Compliant with Mandate 8b (file size <= 400 lines) and integer kopeck precision.
  */
 
-import { kopecksToRubles, percentageOfKopecks } from "@dental/shared";
+import { basisPointsFromPercent, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { rubToKopecks, kopecksToRub } from "./cashRegisterCatalogData.js";
 
 export * from "./stageAdvanceCalculator.js";
@@ -269,7 +269,8 @@ export function calculateFastCheckoutDiscount(params: {
 
 	discountKop = Math.max(0, Math.min(gross, discountKop));
 	const netKop = gross - discountKop;
-	const effectivePercent = gross > 0 ? Math.round((discountKop * 100) / gross) : 0;
+	const ratio = gross > 0 ? discountKop / gross : 0;
+	const effectivePercent = Math.round(ratio * 100);
 	const discountRub = kopecksToRubles(discountKop);
 
 	return {
@@ -300,9 +301,10 @@ export function calculatePaymentDiscount(
 	if (options.customDiscountRub !== undefined && options.customDiscountRub > 0) {
 		const customKop = Number(rubToKopecks(options.customDiscountRub));
 		cappedDiscountKop = Math.min(rawKop, customKop);
-		effPercent = rawKop > 0 ? Math.round((cappedDiscountKop * 10000) / rawKop) / 100 : 0;
+		const ratio = rawKop > 0 ? cappedDiscountKop / rawKop : 0;
+		effPercent = Math.round(ratio * 100);
 	} else if (options.discountPercent !== undefined && options.discountPercent > 0) {
-		const basisPoints = Math.round(options.discountPercent * 100);
+		const basisPoints = basisPointsFromPercent(options.discountPercent);
 		const discountKop = percentageOfKopecks(rawKop, basisPoints);
 		cappedDiscountKop = Math.min(rawKop, discountKop);
 		effPercent = options.discountPercent;

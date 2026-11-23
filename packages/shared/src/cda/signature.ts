@@ -219,6 +219,41 @@ export function createDemonstrationGostSignature(params: {
 }
 
 /**
+ * Извлекает открытый X.509 сертификат (DER/Base64) из CMS / PKCS#7 SignedData контейнера.
+ */
+export function extractCertificateFromCms(buf: Buffer): string | null {
+	const v3Header = Buffer.from([0xa0, 0x03, 0x02, 0x01, 0x02]);
+	const v3Idx = buf.indexOf(v3Header);
+	if (v3Idx === -1) return null;
+
+	for (let i = v3Idx - 1; i >= 0 && i >= v3Idx - 16; i--) {
+		if (buf[i] === 0x30) {
+			let certLen = 0;
+			let headerLen = 0;
+			const lenByte = buf[i + 1];
+			if (typeof lenByte === "number") {
+				if (lenByte < 0x80) {
+					certLen = lenByte;
+					headerLen = 2;
+				} else if (lenByte === 0x81 && buf.length > i + 2) {
+					certLen = buf[i + 2] ?? 0;
+					headerLen = 3;
+				} else if (lenByte === 0x82 && buf.length > i + 3) {
+					certLen = ((buf[i + 2] ?? 0) << 8) | (buf[i + 3] ?? 0);
+					headerLen = 4;
+				}
+				const totalCertLen = headerLen + certLen;
+				if (totalCertLen > 50 && i + totalCertLen <= buf.length) {
+					const certSlice = buf.subarray(i, i + totalCertLen);
+					return certSlice.toString("base64");
+				}
+			}
+		}
+	}
+	return null;
+}
+
+/**
  * Generates an XML-DSig / XAdES-BES structured signature fragment for enveloped or detached signing.
  */
 export function generateXadesXmlSignatureBlock(
@@ -228,9 +263,28 @@ export function generateXadesXmlSignatureBlock(
 	const certIssuer = sig.certificateIssuer || "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU";
 	const digestAlg = sig.digestAlgorithmOid || EGISZ_OIDS.GOST_3411_2012_256;
 	const signAlg = sig.algorithmOid || EGISZ_OIDS.GOST_3410_2012_256;
-	const digestVal = sig.signatureValueHex
-		? Buffer.from(sig.signatureValueHex, "hex").toString("base64")
-		: sig.signatureBase64.slice(0, 44);
+
+	let digestVal = "";
+	if (sig.signatureValueHex) {
+		digestVal = Buffer.from(sig.signatureValueHex, "hex").toString("base64");
+	} else {
+		const sigBuf = Buffer.from(sig.signatureBase64, "base64");
+		digestVal = Buffer.from(computeCdaSha256Hex(sigBuf), "hex").toString("base64");
+	}
+
+	let certBase64 = sig.certificateBase64;
+	if (!certBase64) {
+		try {
+			const sigBuf = Buffer.from(sig.signatureBase64, "base64");
+			certBase64 = extractCertificateFromCms(sigBuf) || undefined;
+		} catch {
+			certBase64 = undefined;
+		}
+	}
+
+	const x509CertTag = certBase64
+		? `\n\t\t\t<ds:X509Certificate>${certBase64}</ds:X509Certificate>`
+		: "";
 
 	return `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="Signature-${sig.certificateSerialNumber}">
 	<ds:SignedInfo>
@@ -247,8 +301,7 @@ export function generateXadesXmlSignatureBlock(
 	</ds:SignedInfo>
 	<ds:SignatureValue>${sig.signatureBase64}</ds:SignatureValue>
 	<ds:KeyInfo>
-		<ds:X509Data>
-			<ds:X509Certificate>${sig.signatureBase64.slice(0, 64)}</ds:X509Certificate>
+		<ds:X509Data>${x509CertTag}
 			<ds:X509IssuerSerial>
 				<ds:X509IssuerName>${certIssuer}</ds:X509IssuerName>
 				<ds:X509SerialNumber>${sig.certificateSerialNumber}</ds:X509SerialNumber>

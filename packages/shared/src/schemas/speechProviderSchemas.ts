@@ -417,7 +417,7 @@ export const clinicProfileSchema = z.object({
 	egiszEnabled: z.boolean(),
 	egiszAutonomousMode: z.boolean().optional(),
 	specializations: z.array(z.string()).optional(),
-	workingHours: z.any().nullable().optional(),
+	workingHours: staffWorkingHoursSchema.nullable().optional(),
 	currency: z.string().optional(),
 	themeColor: z.string().nullable().optional(),
 	logoUrl: z.string().nullable().optional(),

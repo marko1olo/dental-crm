@@ -204,9 +204,9 @@ export const messageTemplateCatalogSchema = z.object({
 	channel: z.string(),
 	intent: z.string(),
 	templateText: z.string().min(1, "Текст шаблона обязателен"),
-	variables: z.any().optional().nullable(),
+	variables: z.record(z.string(), z.unknown()).optional().nullable(),
 	isActive: z.boolean(),
-	createdAt: z.any().optional(), // Can be string or Date, handle flexibly
+	createdAt: z.union([z.string(), z.date()]).optional(), // Can be string or Date, handle flexibly
 });
 
 export type MessageTemplateCatalog = z.infer<

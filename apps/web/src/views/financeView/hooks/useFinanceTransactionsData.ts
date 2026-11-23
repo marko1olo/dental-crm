@@ -1,5 +1,5 @@
 import type { Dashboard, Payment } from "@dental/shared";
-import { resolveTaxDeductionCategoryShared } from "@dental/shared";
+import { kopecksToRubles, resolveTaxDeductionCategoryShared } from "@dental/shared";
 import { useMemo } from "react";
 import type {
 	ClinicalRuleEvaluation,
@@ -46,7 +46,7 @@ export function useFinanceTransactionsData(params: UseFinanceTransactionsDataPar
 				fiscalSign: ext.fiscalFpd || "",
 				serviceName: ext.serviceName || ext.description || "Медицинские стоматологические услуги",
 				dateIso: ext.paidAt || ext.createdAt || new Date().toISOString(),
-				amountRub: Number(ext.amountRub ?? (ext.amountKopecks ? ext.amountKopecks / 100 : 0)),
+				amountRub: Number(ext.amountRub ?? (ext.amountKopecks ? kopecksToRubles(ext.amountKopecks) : 0)),
 				taxCode: (ext.taxDeductionCode === "2" || ext.taxCode === "2"
 					? "2"
 					: ext.taxDeductionCode === "1" || ext.taxCode === "1"

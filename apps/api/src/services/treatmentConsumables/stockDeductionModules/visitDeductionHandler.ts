@@ -25,6 +25,7 @@ import {
 	executeFefoDeductionLoop,
 } from "./stockDeductionOverdraftHandler.js";
 import { mdlpOutboxService } from "../../mdlp/mdlpOutboxService.js";
+import { mdlpLogger } from "../../mdlp/logger.js";
 
 export async function deductForVisit(
 	tx: DbExecutor,
@@ -107,7 +108,10 @@ export async function deductForVisit(
 			clientMutationId,
 		});
 	} catch (_mdlpErr) {
-		// Ошибка постановки в outbox не блокирует приём врача, но не прерывает ответ
+		mdlpLogger.error(
+			{ err: _mdlpErr, visitId: safeVisitId, organizationId },
+			"Failed to enqueue MDLP outbox for visit writeoff",
+		);
 	}
 
 	return {

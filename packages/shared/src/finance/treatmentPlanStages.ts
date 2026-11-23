@@ -16,6 +16,7 @@
  */
 
 import { z } from "zod";
+import { kopecksToRubles } from "../money.js";
 
 // ─── 1. SCHEMAS & TYPES ──────────────────────────────────────────────────────
 
@@ -219,7 +220,7 @@ export function calculateStagePaymentDistribution(
 			stageTitle: title,
 			targetPercentage: Math.round(weight * 100),
 			allocatedKopecks: rawKopecks,
-			allocatedRublesFormatted: (rawKopecks / 100).toLocaleString("ru-RU", {
+			allocatedRublesFormatted: kopecksToRubles(rawKopecks).toLocaleString("ru-RU", {
 				style: "currency",
 				currency: "RUB",
 				minimumFractionDigits: 2,
@@ -238,7 +239,7 @@ export function calculateStagePaymentDistribution(
 		allocations[lastIdx] = {
 			...last,
 			allocatedKopecks: adjusted,
-			allocatedRublesFormatted: (adjusted / 100).toLocaleString("ru-RU", {
+			allocatedRublesFormatted: kopecksToRubles(adjusted).toLocaleString("ru-RU", {
 				style: "currency",
 				currency: "RUB",
 				minimumFractionDigits: 2,
@@ -463,7 +464,7 @@ export const treatmentPlanValidateAndCommentResponseSchema = z.object({
 				estimatedDeltaRub: z.number(),
 			}),
 		),
-		modifiedStages: z.array(z.any()).optional(),
+		modifiedStages: z.array(treatmentPlanValidationStageSchema).optional(),
 	}),
 	modelUsed: z.string().optional(),
 	providerUsed: z.string().optional(),

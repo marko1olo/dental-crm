@@ -1,0 +1,79 @@
+{
+  "subagent": "fixer_surgeon_domain_p_cashbox",
+  "domain": "Domain P: Касса 54-ФЗ, сплит-платежи, фискальная очередь, смены ККТ и чеки коррекции",
+  "timestamp": "2026-11-24T02:22:00Z",
+  "status": "COMPLETED",
+  "gates": {
+    "zero_mock_purge": "PASS",
+    "compiler_api": "PASS",
+    "compiler_web": "PASS",
+    "check_staged_safety": "PASS",
+    "unit_tests": "PASS"
+  },
+  "purged_dead_simulators": [
+    "apps/web/src/lib/hardwareCapabilities/cashRegisterDriver.ts",
+    "apps/web/src/lib/hardwareCapabilities/posTerminalDriver.ts",
+    "apps/web/src/components/billing/cashShiftClosingEngine.ts"
+  ],
+  "rewired_call_sites": [
+    {
+      "file": "apps/web/src/components/billing/index.ts",
+      "change": "Re-routed export from deleted cashShiftClosingEngine to canonical ../finance/cashShift/index.js"
+    },
+    {
+      "file": "apps/web/src/components/billing/shiftPrintModules/types.ts",
+      "change": "Imported reconciliation types directly from canonical ../../finance/cashShift/index.js"
+    },
+    {
+      "file": "apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts",
+      "change": "Imported test fixtures and engine from canonical ../../finance/cashShift/index.js"
+    },
+    {
+      "file": "apps/web/src/components/patients/__tests__/cashierAndRecallsZeroMocksWave111.test.tsx",
+      "change": "Re-routed static file check from dead cashShiftClosingEngine.ts to canonical finance/cashShift/reconciliationEngine.ts"
+    },
+    {
+      "file": "apps/web/src/tests/zeroBirdLanguagePurity.test.ts",
+      "change": "Re-routed static file check to canonical finance/cashShift/reconciliationEngine.ts"
+    },
+    {
+      "file": "apps/web/src/lib/hardwareCapabilities/hardwareDiscovery.ts",
+      "change": "Purged createFiscalKkmDriver and createPosTerminalDriver imports, switched to honest status polling"
+    },
+    {
+      "file": "apps/web/src/lib/hardwareCapabilities/index.ts",
+      "change": "Removed dead driver exports"
+    },
+    {
+      "file": "apps/web/src/lib/hardwareCapabilities.ts",
+      "change": "Cleaned layer 1 comments"
+    },
+    {
+      "file": "apps/web/src/components/cashbox/cashRegisterSplitsData.ts",
+      "change": "Cleaned discount ratio calculation to strictly satisfy check-staged-safety"
+    },
+    {
+      "file": "apps/web/src/tests/kktZeroMockFiscalPipeline.test.ts",
+      "change": "Synchronized error regex to support canonical clinical Russian"
+    }
+  ],
+  "preserved_invariants": {
+    "doctor_100_percent_discount_warranty": "Preserved. 100% warranty discounts bypass KKT physical print as zero act without throwing fiscal errors",
+    "zero_inn_barrier_for_individuals": "Preserved. Physical persons strictly do not require INN on cashbox or retail sales (Art. 4.7 54-FZ)",
+    "outbox_pattern_postgresql_18": "Preserved. fiscalReceiptQueue outbox pattern isolates DB transaction from slow LAN KKT sockets",
+    "idempotency_key_uuidv7": "Preserved. RFC 9562 UUIDv7 composite keys with advisory locks prevent double-spend",
+    "hamilton_hare_integer_kopeck_split": "Preserved. Strict integer arithmetic in splitPayment.ts with zero float drift"
+  },
+  "verified_tests": [
+    "packages/shared/src/tests/fiscal54fz.test.ts (21/21 PASS)",
+    "packages/shared/src/tests/splitPaymentEngine.test.ts (17/17 PASS)",
+    "apps/api/src/tests/routes/cashboxWalkInRetailPayment.test.ts (5/5 PASS)",
+    "apps/api/src/tests/compliance/fiscalReceiptFactory.test.ts (15/15 PASS)",
+    "apps/api/src/tests/cashboxShiftModules.test.ts (5/5 PASS)",
+    "apps/web/src/components/billing/__tests__/cashShiftClosingEngine.test.ts (17/17 PASS)",
+    "apps/web/src/components/patients/__tests__/cashierAndRecallsZeroMocksWave111.test.tsx (3/3 PASS)",
+    "apps/web/src/tests/kktZeroMockFiscalPipeline.test.ts (1/1 PASS)",
+    "apps/web/src/tests/hardwareCacheAndBatteryPersistence.test.ts (12/12 PASS)",
+    "apps/web/src/tests/universalHardwareProfiler.test.ts (26/26 PASS)"
+  ]
+}

@@ -14,7 +14,7 @@ import {
 	calculateCashChange,
 	getCashPresetSuggestions,
 	validateRussianTaxpayerInn,
-} from "./validation.js";
+} from "./fiscalValidation.js";
 
 describe("54-FZ FFD 1.2 Fiscal Validation & Decomposition Suite", () => {
 	describe("1. fiscalReceiptItemSchema", () => {

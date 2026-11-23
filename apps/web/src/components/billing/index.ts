@@ -4,7 +4,7 @@
  * nobody imports (billingMath duplicate) were deleted, not kept as museum pieces.
  */
 
-export * from "./cashShiftClosingEngine.js";
+export * from "../finance/cashShift/index.js";
 export { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal.js";
 export type { BankInstallmentQrModalProps } from "../payments/BankInstallmentQrModal.js";
 export * from "./InvoicesView.js";

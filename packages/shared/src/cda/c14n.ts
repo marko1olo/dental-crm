@@ -255,11 +255,14 @@ export function canonicalizeCdaXml(
 }
 
 /**
- * Computes SHA-256 digest of canonicalized XML payload.
+ * Computes SHA-256 digest of canonicalized XML payload or binary signature buffer.
  */
-export function computeCdaSha256Hex(xml: string): string {
-	const canonical = canonicalizeCdaXml(xml);
-	return sha256Hex(canonical);
+export function computeCdaSha256Hex(xmlOrBytes: string | Uint8Array): string {
+	if (typeof xmlOrBytes === "string") {
+		const canonical = canonicalizeCdaXml(xmlOrBytes);
+		return sha256Hex(canonical);
+	}
+	return sha256Hex(xmlOrBytes);
 }
 
 /**

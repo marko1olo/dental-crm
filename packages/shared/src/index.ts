@@ -297,7 +297,7 @@ export {
 export * from "./types/ai.js";
 export * from "./marketing/index.js";
 export * from "./fuzzing/index.js";
-export { generateUuidV7 } from "./sync/hashing.js";
+export { generateUuidV7, sha256Hex } from "./sync/hashing.js";
 export {
 	fdiToothNumberSchema,
 	VALID_FDI_TOOTH_NUMBERS,

@@ -27,6 +27,7 @@ import {
 	splitKopecks,
 	sumKopecks,
 	formatKopecksRu,
+	kopecksToRubles,
 } from "../money.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -265,7 +266,7 @@ export function find804nAnalogues(
 		code804n: c.service.code804n,
 		title: c.service.title,
 		basePriceKopecks: c.service.basePriceKopecks,
-		basePriceRub: Math.round(c.service.basePriceKopecks / 100),
+		basePriceRub: kopecksToRubles(c.service.basePriceKopecks),
 		similarityScore: c.score,
 		clinicalRationaleRu:
 			c.score >= 80

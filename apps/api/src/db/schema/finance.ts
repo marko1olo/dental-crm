@@ -93,11 +93,21 @@ export const cashBoxShifts = pgTable(
 		startBalanceRub: numeric("start_balance_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		startBalanceKopecks: bigint("start_balance_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		closingBalanceRub: numeric("closing_balance_rub", { precision: 14, scale: 2, mode: "number" }),
+		closingBalanceKopecks: bigint("closing_balance_kopecks", { mode: "number" }),
 		incomeTotalRub: numeric("income_total_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		incomeTotalKopecks: bigint("income_total_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		expenseTotalRub: numeric("expense_total_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		expenseTotalKopecks: bigint("expense_total_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		zReportNumber: text("z_report_number"),
@@ -172,7 +182,9 @@ export const cashOperations = pgTable(
 		amountRub: numeric("amount_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
 		amountKopecks: bigint("amount_kopecks", { mode: "number" }),
 		balanceBeforeRub: numeric("balance_before_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
+		balanceBeforeKopecks: bigint("balance_before_kopecks", { mode: "bigint" }),
 		balanceAfterRub: numeric("balance_after_rub", { precision: 14, scale: 2, mode: "number" }).notNull(),
+		balanceAfterKopecks: bigint("balance_after_kopecks", { mode: "bigint" }),
 		reasonId: uuid("reason_id").references(() => cashExpenseReasons.id),
 		reasonCode: integer("reason_code"),
 		reasonText: text("reason_text"),
@@ -234,12 +246,16 @@ export const installmentContracts = pgTable(
 		treatmentPlanId: uuid("treatment_plan_id").references(() => treatmentPlans.id),
 		contractNumber: text("contract_number").notNull(),
 		totalAmountRub: numeric("total_amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+		totalAmountKopecks: bigint("total_amount_kopecks", { mode: "bigint" }),
 		downPaymentRub: numeric("down_payment_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+		downPaymentKopecks: bigint("down_payment_kopecks", { mode: "bigint" }),
 		monthsCount: integer("months_count").notNull(),
 		paidAmountRub: numeric("paid_amount_rub", { precision: 12, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		paidAmountKopecks: bigint("paid_amount_kopecks", { mode: "bigint" }).default(sql`0::bigint`),
 		remainingAmountRub: numeric("remaining_amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+		remainingAmountKopecks: bigint("remaining_amount_kopecks", { mode: "bigint" }),
 		status: text("status").notNull().default("active"), // "active" | "completed" | "closed_early" | "cancelled" | "overdue"
 		signedAt: timestamp("signed_at", { withTimezone: true })
 			.notNull()
@@ -288,7 +304,7 @@ export const installmentTranches = pgTable(
 			.references(() => organizations.id),
 		trancheNumber: integer("tranche_number").notNull(),
 		amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
-		amountKopecks: bigint("amount_kopecks", { mode: "number" }),
+		amountKopecks: bigint("amount_kopecks", { mode: "bigint" }),
 		paidAmountKopecks: bigint("paid_amount_kopecks", { mode: "number" }).default(0),
 		dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
 		paidAt: timestamp("paid_at", { withTimezone: true }),

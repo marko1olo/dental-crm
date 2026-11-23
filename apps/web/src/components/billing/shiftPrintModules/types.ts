@@ -10,7 +10,7 @@ import {
 	type ShiftClosingActData,
 	type Ko1CashInflowVoucher,
 	type Ko2CashOutflowVoucher,
-} from "../cashShiftClosingEngine.js";
+} from "../../finance/cashShift/index.js";
 
 export {
 	type CashShiftReconciliationResult,

@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { amountToWordsRu, rubToKopecks } from "@dental/shared";
 import {
 	type CashDenominations,
 	type CashDiscrepancyReason,
@@ -10,7 +11,6 @@ import {
 	calculateCashShiftBalances,
 	calculateDenominationsTotalKopecks,
 	calculateDenominationsTotalRub,
-	convertRubToWordsRu,
 	generateEncashmentStatement,
 	generateEncashmentStatementHtml,
 	generateKo1Html,
@@ -20,7 +20,7 @@ import {
 	generateMonospacedTapeText,
 	generateShiftClosingAct,
 	generateShiftClosingActHtml,
-} from "../cashShiftClosingEngine.js";
+} from "../../finance/cashShift/index.js";
 
 describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 	describe("1. Denomination breakdown calculations", () => {
@@ -255,38 +255,38 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 		});
 	});
 
-	describe("3. Russian currency amount in words generator (convertRubToWordsRu)", () => {
+	describe("3. Russian currency amount in words generator (amountToWordsRu)", () => {
 		it("converts 0 rubles correctly", () => {
-			assert.equal(convertRubToWordsRu(0), "Ноль рублей 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(0)), "Ноль рублей 00 копеек");
 		});
 
 		it("converts single rubles with proper masculine declension", () => {
-			assert.equal(convertRubToWordsRu(1), "Один рубль 00 копеек");
-			assert.equal(convertRubToWordsRu(2), "Два рубля 00 копеек");
-			assert.equal(convertRubToWordsRu(5), "Пять рублей 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(1)), "Один рубль 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(2)), "Два рубля 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(5)), "Пять рублей 00 копеек");
 		});
 
 		it("converts thousands with proper feminine declension", () => {
-			assert.equal(convertRubToWordsRu(1000), "Одна тысяча рублей 00 копеек");
-			assert.equal(convertRubToWordsRu(2000), "Две тысячи рублей 00 копеек");
-			assert.equal(convertRubToWordsRu(5000), "Пять тысяч рублей 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(1000)), "Одна тысяча рублей 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(2000)), "Две тысячи рублей 00 копеек");
+			assert.equal(amountToWordsRu(rubToKopecks(5000)), "Пять тысяч рублей 00 копеек");
 		});
 
 		it("converts complex amounts with exact kopecks", () => {
 			assert.equal(
-				convertRubToWordsRu(55400.5),
+				amountToWordsRu(rubToKopecks(55400.5)),
 				"Пятьдесят пять тысяч четыреста рублей 50 копеек",
 			);
 			assert.equal(
-				convertRubToWordsRu(1001.01),
+				amountToWordsRu(rubToKopecks(1001.01)),
 				"Одна тысяча один рубль 01 копейка",
 			);
 			assert.equal(
-				convertRubToWordsRu(22.22),
+				amountToWordsRu(rubToKopecks(22.22)),
 				"Двадцать два рубля 22 копейки",
 			);
 			assert.equal(
-				convertRubToWordsRu(1234567.89),
+				amountToWordsRu(rubToKopecks(1234567.89)),
 				"Один миллион двести тридцать четыре тысячи пятьсот шестьдесят семь рублей 89 копеек",
 			);
 		});

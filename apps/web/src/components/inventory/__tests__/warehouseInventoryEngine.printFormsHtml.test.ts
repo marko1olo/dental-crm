@@ -4,10 +4,10 @@ import {
 	DEFAULT_COMMISSION_MEMBERS,
 	DEFAULT_INVENTORY_ITEMS_PRESET,
 	type WarehouseInventoryAuditDocument,
-	generateInv19Html,
-	generateInv3Html,
+	generateInventoryAuditStatementHtml,
+	generateInventoryDiscrepancyStatementHtml,
 	generateTorg16ActFromInventory,
-	generateTorg16Html,
+	generateWarehouseWriteoffActHtml,
 } from "../warehouseInventoryEngine.js";
 
 const sampleDoc: WarehouseInventoryAuditDocument = {
@@ -33,7 +33,7 @@ const sampleDoc: WarehouseInventoryAuditDocument = {
 
 describe("Official Russian Print Forms Generation (HTML)", () => {
 	it("Формирует каноническую инвентаризационную ведомость остатков материалов", () => {
-		const html = generateInv3Html(sampleDoc);
+		const html = generateInventoryAuditStatementHtml(sampleDoc);
 		assert.ok(html.includes("Инвентаризационная ведомость остатков материалов"));
 		assert.ok(html.includes("ИНВЕНТАРИЗАЦИОННАЯ ОПИСЬ"));
 		assert.ok(html.includes("Расписка:"));
@@ -44,7 +44,7 @@ describe("Official Russian Print Forms Generation (HTML)", () => {
 	});
 
 	it("Формирует сличительную ведомость инвентаризации материалов со сличительными колонками", () => {
-		const html = generateInv19Html(sampleDoc);
+		const html = generateInventoryDiscrepancyStatementHtml(sampleDoc);
 		assert.ok(html.includes("Сличительная ведомость инвентаризации материалов"));
 		assert.ok(html.includes("СЛИЧИТЕЛЬНАЯ ВЕДОМОСТЬ"));
 		assert.ok(html.includes("Излишки"));
@@ -56,7 +56,7 @@ describe("Official Russian Print Forms Generation (HTML)", () => {
 
 	it("Формирует акт списания материалов клиники со списанием просроченных ТМЦ", () => {
 		const torg16 = generateTorg16ActFromInventory(sampleDoc);
-		const html = generateTorg16Html(torg16);
+		const html = generateWarehouseWriteoffActHtml(torg16);
 		assert.ok(html.includes("Акт списания материалов клиники"));
 		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ КЛИНИКИ"));
 		assert.ok(html.includes("Причина списания:"));

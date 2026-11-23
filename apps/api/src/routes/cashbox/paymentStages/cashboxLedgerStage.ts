@@ -16,6 +16,7 @@ import {
 	cashBoxShifts,
 	cashOperations,
 } from "../../../db/schema.js";
+import { withSavepoint } from "../../../db/rls.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
 import type { PaymentProcessingContext, StageStepResult, TenantDb } from "./types.js";
 
@@ -59,8 +60,10 @@ export async function processCashboxLedgerStage(
 			"_" in tx;
 		if (isRealTransaction) {
 			try {
-				const seeded = await ensureOrganizationCashBoxes(tx, orgId);
-				boxes = seeded.boxes;
+				await withSavepoint(tx, async (spTx) => {
+					const seeded = await ensureOrganizationCashBoxes(spTx, orgId);
+					boxes = seeded.boxes;
+				});
 			} catch {
 				// Mock or already seeded in another context
 			}
@@ -130,6 +133,7 @@ export async function processCashboxLedgerStage(
 	ctx.dmsShift = dmsShift;
 
 	// 3. Кассовые проводки в cashOperations
+	let currentCashDeskBalRub = Number(cashDeskBox?.balanceRub || 0);
 	if (resolvedCashKop > 0 && cashDeskBox) {
 		const curBalKop =
 			cashDeskBox.balanceKopecks !== undefined && cashDeskBox.balanceKopecks !== null
@@ -156,7 +160,9 @@ export async function processCashboxLedgerStage(
 			amountRub: addRub,
 			amountKopecks: resolvedCashKop,
 			balanceBeforeRub: curBal,
+			balanceBeforeKopecks: BigInt(curBalKop),
 			balanceAfterRub: newBal,
+			balanceAfterKopecks: BigInt(newBalKop),
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: reasonTextCash,
@@ -180,12 +186,14 @@ export async function processCashboxLedgerStage(
 					eq(cashBoxes.organizationId, orgId),
 				),
 			);
+		currentCashDeskBalRub = newBal;
 
 		if (cashDeskShift && resolvedCashKop > 0) {
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedCashKop}::bigint)::numeric / 100)`,
+					incomeTotalRub: sql`ROUND((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedCashKop}::bigint)::numeric / 100, 2)`,
+					incomeTotalKopecks: sql`COALESCE(${cashBoxShifts.incomeTotalKopecks}, 0) + ${resolvedCashKop}::bigint`,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -223,7 +231,9 @@ export async function processCashboxLedgerStage(
 			amountRub: addRub,
 			amountKopecks: resolvedElecKop,
 			balanceBeforeRub: curBal,
+			balanceBeforeKopecks: BigInt(curBalKop),
 			balanceAfterRub: newBal,
+			balanceAfterKopecks: BigInt(newBalKop),
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: reasonTextElec,
@@ -247,12 +257,16 @@ export async function processCashboxLedgerStage(
 					eq(cashBoxes.organizationId, orgId),
 				),
 			);
+		if (cashlessBox.id === cashDeskBox?.id) {
+			currentCashDeskBalRub = newBal;
+		}
 
 		if (cashlessShift && resolvedElecKop > 0) {
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedElecKop}::bigint)::numeric / 100)`,
+					incomeTotalRub: sql`ROUND((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedElecKop}::bigint)::numeric / 100, 2)`,
+					incomeTotalKopecks: sql`COALESCE(${cashBoxShifts.incomeTotalKopecks}, 0) + ${resolvedElecKop}::bigint`,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -266,60 +280,89 @@ export async function processCashboxLedgerStage(
 
 	if (requiredDepositKopecks > 0n && cashDeskBox) {
 		const depositRub = kopecksToRubles(Number(requiredDepositKopecks));
+		const currentDeskKop = BigInt(rubToKopecks(currentCashDeskBalRub));
 		await tx.insert(cashOperations).values({
 			organizationId: orgId,
 			cashBoxId: cashDeskBox.id,
 			shiftId: cashDeskShift?.id ?? null,
-			operationType: "advance_offset",
+			operationType: "income",
 			amountRub: depositRub,
 			amountKopecks: Number(requiredDepositKopecks),
-			balanceBeforeRub: cashDeskBox.balanceRub || 0,
-			balanceAfterRub: cashDeskBox.balanceRub || 0,
+			balanceBeforeRub: currentCashDeskBalRub,
+			balanceBeforeKopecks: currentDeskKop,
+			balanceAfterRub: currentCashDeskBalRub,
+			balanceAfterKopecks: currentDeskKop,
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: `Зачёт аванса/депозита пациента: оплата стоматологических услуг (${receiptNumber || "б/н"})`,
 			operatorName: body.cashierFullName || "Кассир",
+			metadata: {
+				clientMutationId: effectiveMutationId,
+				tenderType: "deposit",
+				isAdvanceOffset: true,
+				depositKopecks: Number(requiredDepositKopecks),
+			},
 		});
 	}
 
 	if (requiredBonusKopecks > 0n && cashDeskBox) {
 		const bonusRub = kopecksToRubles(Number(requiredBonusKopecks));
+		const currentDeskKop = BigInt(rubToKopecks(currentCashDeskBalRub));
 		await tx.insert(cashOperations).values({
 			organizationId: orgId,
 			cashBoxId: cashDeskBox.id,
 			shiftId: cashDeskShift?.id ?? null,
-			operationType: "advance_offset",
+			operationType: "income",
 			amountRub: bonusRub,
 			amountKopecks: Number(requiredBonusKopecks),
-			balanceBeforeRub: cashDeskBox.balanceRub || 0,
-			balanceAfterRub: cashDeskBox.balanceRub || 0,
+			balanceBeforeRub: currentCashDeskBalRub,
+			balanceBeforeKopecks: currentDeskKop,
+			balanceAfterRub: currentCashDeskBalRub,
+			balanceAfterKopecks: currentDeskKop,
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: `Зачёт бонусов лояльности пациента: оплата стоматологических услуг (${receiptNumber || "б/н"})`,
 			operatorName: body.cashierFullName || "Кассир",
+			metadata: {
+				clientMutationId: effectiveMutationId,
+				tenderType: "bonus",
+				isAdvanceOffset: true,
+				bonusKopecks: Number(requiredBonusKopecks),
+			},
 		});
 	}
 
 	if (requiredCertificateKopecks > 0n && cashDeskBox) {
 		const certRub = kopecksToRubles(Number(requiredCertificateKopecks));
+		const currentDeskKop = BigInt(rubToKopecks(currentCashDeskBalRub));
 		await tx.insert(cashOperations).values({
 			organizationId: orgId,
 			cashBoxId: cashDeskBox.id,
 			shiftId: cashDeskShift?.id ?? null,
-			operationType: "advance_offset",
+			operationType: "income",
 			amountRub: certRub,
 			amountKopecks: Number(requiredCertificateKopecks),
-			balanceBeforeRub: cashDeskBox.balanceRub || 0,
-			balanceAfterRub: cashDeskBox.balanceRub || 0,
+			balanceBeforeRub: currentCashDeskBalRub,
+			balanceBeforeKopecks: currentDeskKop,
+			balanceAfterRub: currentCashDeskBalRub,
+			balanceAfterKopecks: currentDeskKop,
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: `Зачёт аванса (сертификат №${certificateNumber}): оплата стоматологических услуг (${receiptNumber || "б/н"})`,
 			operatorName: body.cashierFullName || "Кассир",
+			metadata: {
+				clientMutationId: effectiveMutationId,
+				tenderType: "certificate",
+				isAdvanceOffset: true,
+				certificateNumber,
+				certificateKopecks: Number(requiredCertificateKopecks),
+			},
 		});
 	}
 
 	if (requiredDmsKopecks > 0n && dmsBox) {
 		const dmsRub = kopecksToRubles(Number(requiredDmsKopecks));
+		const dmsBalKop = dmsBox.balanceKopecks != null ? BigInt(dmsBox.balanceKopecks) : BigInt(rubToKopecks(dmsBox.balanceRub || 0));
 		await tx.insert(cashOperations).values({
 			organizationId: orgId,
 			cashBoxId: dmsBox.id,
@@ -328,7 +371,9 @@ export async function processCashboxLedgerStage(
 			amountRub: dmsRub,
 			amountKopecks: Number(requiredDmsKopecks),
 			balanceBeforeRub: dmsBox.balanceRub || 0,
+			balanceBeforeKopecks: dmsBalKop,
 			balanceAfterRub: dmsBox.balanceRub || 0,
+			balanceAfterKopecks: dmsBalKop,
 			patientId: resolvedPatientId,
 			kkmDocNumber: receiptNumber,
 			reasonText: `Оплата по гарантийному письму ДМС (${lockedDmsLetter?.letterNumber || (isEmergencyLetterAlias ? "ЭКСТРЕННО (досылка)" : "б/н")}): стоматологические услуги (${receiptNumber || "б/н"})`,

@@ -6,6 +6,7 @@ import {
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	RESORPTION_STAGE_DEFINITIONS,
 	type ResorptionStagePercent,
+	kopecksToRubles,
 } from "@dental/shared";
 import {
 	calculateSplitPaymentAllocation,
@@ -114,7 +115,7 @@ describe("CashRegisterStudioModal — Rapid Payment Method Presets & Remainder A
 		const cardBase = typeof partialSplit.cardRub === "number" ? partialSplit.cardRub : 0;
 		const completedSplit: SplitPaymentInput = {
 			...partialSplit,
-			cardRub: cardBase + Math.round(initialAlloc.remainingKopecks / 100),
+			cardRub: cardBase + Math.round(kopecksToRubles(initialAlloc.remainingKopecks)),
 		};
 
 		const finalAlloc = calculateSplitPaymentAllocation(totalKopecks, completedSplit);

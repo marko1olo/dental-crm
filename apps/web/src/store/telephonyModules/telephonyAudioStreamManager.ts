@@ -478,8 +478,11 @@ export class TelephonyAudioStreamManager {
 			this.remoteAudioElement.srcObject = stream;
 			this.remoteAudioElement.volume = this.volume;
 			this.remoteAudioElement.play().catch(() => {});
+			return this.remoteAudioElement;
 		}
-		return this.remoteAudioElement!;
+
+		const fallbackAudio = typeof document !== "undefined" ? document.createElement("audio") : ({} as HTMLAudioElement);
+		return fallbackAudio;
 	}
 
 	/**

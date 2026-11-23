@@ -54,7 +54,10 @@ export async function handleGetBillingPayments(
 	const data = rows.map((row) => ({
 		id: row.id,
 		amountRub: Number(row.amountRub),
-		amountKopecks: rublesToKopecks(Number(row.amountRub)),
+		amountKopecks:
+			row.amountKopecks != null
+				? Number(row.amountKopecks)
+				: rublesToKopecks(Number(row.amountRub)),
 		status: row.status,
 		method: row.method,
 		paymentMethod: row.method,

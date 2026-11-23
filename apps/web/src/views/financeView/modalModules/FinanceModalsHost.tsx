@@ -107,6 +107,7 @@ export function FinanceModalsHost({
 				patientName={docPat?.fullName}
 				patientPhone={docPat?.phone ?? undefined}
 				patientDepositRub={depositRub}
+				patientFamilyBalanceRub={resolvePatientFamilyBalanceRub(docPat)}
 				onPaymentComplete={() => {
 					void s.loadDashboard?.();
 					s.setIsCashboxOpen(false);

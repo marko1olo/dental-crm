@@ -143,17 +143,23 @@ export function useConsumablesBatchWriteoff({
 
 			if (res.ok) {
 				const resData = await res.json();
-				setStatusMessage(resData.message || "Расходники смены успешно списаны");
+				const successMsg = resData.message || "Расходники смены успешно списаны";
+				setStatusMessage(successMsg);
+				showToast(successMsg, "success");
+				if (onWriteoffCompleted) await onWriteoffCompleted();
+				if (onDeductionComplete) await onDeductionComplete();
+				if (onConfirmWriteoff) await onConfirmWriteoff(data);
+				setTimeout(() => onClose(), 400);
+			} else {
+				const resData = await res.json().catch(() => null);
+				const errMsg = (resData as { message?: string; error?: string } | null)?.message || (resData as { message?: string; error?: string } | null)?.error || "Не удалось списать материалы: сбой сервера";
+				setStatusMessage(errMsg);
+				showToast(errMsg, "error");
 			}
-			if (onWriteoffCompleted) await onWriteoffCompleted();
-			if (onDeductionComplete) await onDeductionComplete();
-			if (onConfirmWriteoff) await onConfirmWriteoff(data);
-			setTimeout(() => onClose(), 400);
-		} catch {
-			if (onWriteoffCompleted) await onWriteoffCompleted();
-			if (onDeductionComplete) await onDeductionComplete();
-			if (onConfirmWriteoff) await onConfirmWriteoff(data);
-			onClose();
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сети";
+			setStatusMessage(errMsg);
+			showToast(errMsg, "error");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -190,10 +196,13 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Пакет анестезии списан по техкарте (мягкий овердрафт активен)", "success");
 			} else {
-				showToast("Пакет анестезии списан по техкарте (овердрафт учтен)", "success");
+				const d = await res.json().catch(() => null);
+				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать анестезию: сбой сервера";
+				showToast(msg, "error");
 			}
-		} catch {
-			showToast("Пакет анестезии списан по техкарте", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сервера";
+			showToast(msg, "error");
 		}
 	};
 
@@ -210,10 +219,13 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Полный пакет анестезии списан по техкарте", "success");
 			} else {
-				showToast("Полный пакет анестезии списан по техкарте", "success");
+				const d = await res.json().catch(() => null);
+				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать пакет анестезии: сбой сервера";
+				showToast(msg, "error");
 			}
-		} catch {
-			showToast("Полный пакет анестезии списан по техкарте", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сервера";
+			showToast(msg, "error");
 		}
 	};
 
@@ -230,10 +242,13 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники терапии списаны по техкарте", "success");
 			} else {
-				showToast("Расходники терапии списаны по техкарте", "success");
+				const d = await res.json().catch(() => null);
+				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники терапии: сбой сервера";
+				showToast(msg, "error");
 			}
-		} catch {
-			showToast("Расходники терапии списаны по техкарте", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сервера";
+			showToast(msg, "error");
 		}
 	};
 
@@ -250,10 +265,13 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники хирургии списаны по техкарте", "success");
 			} else {
-				showToast("Расходники хирургии списаны по техкарте", "success");
+				const d = await res.json().catch(() => null);
+				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники хирургии: сбой сервера";
+				showToast(msg, "error");
 			}
-		} catch {
-			showToast("Расходники хирургии списаны по техкарте", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сервера";
+			showToast(msg, "error");
 		}
 	};
 
@@ -277,10 +295,13 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники профгигиены списаны по техкарте", "success");
 			} else {
-				showToast("Расходники профгигиены списаны по техкарте", "success");
+				const d = await res.json().catch(() => null);
+				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники профгигиены: сбой сервера";
+				showToast(msg, "error");
 			}
-		} catch {
-			showToast("Расходники профгигиены списаны по техкарте", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось списать материалы: сбой сервера";
+			showToast(msg, "error");
 		}
 	};
 

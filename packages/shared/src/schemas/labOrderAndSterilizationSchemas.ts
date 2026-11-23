@@ -21,6 +21,18 @@ export const STERILIZATION_PACKAGING_TYPES = {
 		label: "Ламинированный пакет комбинированный (термосварка)",
 		shelfLifeDays: 180,
 	},
+	crepe_paper_double: {
+		label: "Крепированная бумага (двойная упаковка)",
+		shelfLifeDays: 30,
+	},
+	bix_filter_kspf: {
+		label: "Стерилизационная коробка с фильтром (КСПФ)",
+		shelfLifeDays: 20,
+	},
+	unpacked: {
+		label: "Без упаковки (на открытом лотке)",
+		shelfLifeDays: 0,
+	},
 	metal_cassette: {
 		label: "Металлическая кассета / контейнер с фильтром",
 		shelfLifeDays: 30,

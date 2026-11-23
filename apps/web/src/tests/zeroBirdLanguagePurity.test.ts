@@ -315,7 +315,7 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!cashPrintCode.includes("CRM DENTE • 54-ФЗ"), "cashShiftPrintTemplates must not cite '54-ФЗ'");
 		assert.ok(cashPrintCode.includes("CRM DENTE • Касса и чеки"), "cashShiftPrintTemplates must say 'Касса и чеки'");
 
-		const cashClosingCode = readComponent("components/billing/cashShiftClosingEngine.ts");
+		const cashClosingCode = readComponent("components/finance/cashShift/reconciliationEngine.ts");
 		assert.ok(!cashClosingCode.includes("54-ФЗ"), "cashShiftClosingEngine must not cite '54-ФЗ' in user warnings");
 
 		const emrStudioCode = readComponent("components/emr/MedicalRecordStudioModal.tsx");

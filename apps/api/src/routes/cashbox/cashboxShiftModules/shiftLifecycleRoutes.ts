@@ -11,8 +11,10 @@
  * - Idempotency-Key support against double submission
  */
 
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -22,9 +24,11 @@ import {
 	appointments,
 	cashBoxes,
 	cashBoxShifts,
+	idempotencyKeys,
 	users,
 } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { resolveEffectiveCashierUserId } from "../cashboxHelpers.js";
 import {
@@ -55,6 +59,40 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 
 		const parsed = openShiftBodySchema.safeParse(request.body || {});
 		const requestedUserId = parsed.success ? parsed.data.openedByUserId : undefined;
+
+		const rawOpenKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const openIdempotencyKey = rawOpenKey?.trim();
+		if (openIdempotencyKey && !isValidUuid(openIdempotencyKey)) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для открытия кассовой смены требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
+			});
+		}
+		if (openIdempotencyKey) {
+			const existingRecord = await withTenantCtx(orgId, async (tx) => {
+				const [found] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, openIdempotencyKey),
+						),
+					)
+					.limit(1);
+				return found;
+			});
+			if (existingRecord && existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply
+					.code(existingRecord.responseCode || 200)
+					.send(existingRecord.responseBody);
+			}
+		}
 
 		const effectiveUserId = await withTenantCtx(orgId, async (tx) => {
 			return await resolveEffectiveCashierUserId(tx, orgId, requestedUserId, currentUserId);
@@ -133,8 +171,11 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 							openedAt: now,
 							openedByUserId: effectiveUserId,
 							startBalanceRub: box.balanceRub,
+							startBalanceKopecks: Number(box.balanceKopecks ?? rublesToKopecks(Number(box.balanceRub || 0))),
 							incomeTotalRub: 0,
+							incomeTotalKopecks: 0,
 							expenseTotalRub: 0,
+							expenseTotalKopecks: 0,
 						})
 						.returning();
 
@@ -166,14 +207,58 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 			shifts: openedShifts,
 		};
 
+		if (openIdempotencyKey) {
+			await withTenantCtx(orgId, async (tx) => {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: openIdempotencyKey,
+						status: "completed",
+						responseBody: response,
+						responseCode: 200,
+					})
+					.onConflictDoNothing();
+			});
+		}
+
 		return reply.send(response);
 	};
 
-	app.post("/api/cash/cash-box-all-open", handleOpenCashShift);
-	app.post("/api/cashbox/shift/open", handleOpenCashShift);
-	app.post("/api/fiscal/shift/open", handleOpenCashShift);
-	app.post("/api/finance/shift/open", handleOpenCashShift);
-	app.post("/api/cash/shift/open", handleOpenCashShift);
+	const shiftMutationRouteOptions = {
+		schema: {
+			description:
+				"Cashbox shift mutation with mandatory Idempotency-Key header (UUIDv7) and organizationId tenant context",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cash/cash-box-all-open", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleOpenCashShift(request, reply);
+	});
+	app.post("/api/cashbox/shift/open", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleOpenCashShift(request, reply);
+	});
+	app.post("/api/fiscal/shift/open", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleOpenCashShift(request, reply);
+	});
+	app.post("/api/finance/shift/open", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleOpenCashShift(request, reply);
+	});
+	app.post("/api/cash/shift/open", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleOpenCashShift(request, reply);
+	});
 
 	/**
 	 * 2. POST /api/cash/cash-box-all-closing & POST /api/fiscal/shift/close
@@ -195,6 +280,49 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 		const inputData = parsed.success ? parsed.data : {};
 		const requestedUserId = inputData.closedByUserId;
 
+		const rawKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			inputData.idempotencyKey ||
+			inputData.clientMutationId;
+		const parsedKey = rawKey?.trim();
+
+		if (parsedKey && !isValidUuid(parsedKey)) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для закрытия кассовой смены требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
+			});
+		}
+		const idempotencyKey = parsedKey || randomUUID();
+
+		// Fast-path idempotency replay check against Postgres idempotencyKeys table
+		const existingRecord = await withTenantCtx(orgId, async (tx) => {
+			const [found] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+			return found;
+		});
+
+		if (
+			existingRecord &&
+			existingRecord.status === "completed" &&
+			existingRecord.responseBody
+		) {
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
+			return reply
+				.code(existingRecord.responseCode || 200)
+				.send(existingRecord.responseBody);
+		}
+
 		const effectiveUserId = await withTenantCtx(orgId, async (tx) => {
 			return await resolveEffectiveCashierUserId(tx, orgId, requestedUserId, currentUserId);
 		});
@@ -205,31 +333,36 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_shifts_lock'))`,
 			);
 
-			// RED TEAM GUARD: Проверка активных приёмов «в кресле» (in_treatment)
-			if (!inputData.force && !inputData.allowUnfinishedVisits) {
-				const activeVisitsInChair = await tx
-					.select({
-						id: appointments.id,
-						patientId: appointments.patientId,
-						doctorUserId: appointments.doctorUserId,
-						startsAt: appointments.startsAt,
-					})
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.organizationId, orgId),
-							eq(appointments.status, "in_treatment"),
-						),
-					)
-					.limit(10);
+			// Mandate 8e: Проверка активных приёмов «в кресле» (in_treatment) не блокирует закрытие кассы
+			let activeVisitsInChair: {
+				id: string;
+				patientId: string;
+				doctorUserId: string;
+				startsAt: Date;
+			}[] = [];
 
-				if (activeVisitsInChair.length > 0) {
-					return {
-						hasUnfinishedVisits: true as const,
-						unfinishedCount: activeVisitsInChair.length,
-						unfinishedAppointments: activeVisitsInChair,
-					};
-				}
+			const unfinishedVisits = await tx
+				.select({
+					id: appointments.id,
+					patientId: appointments.patientId,
+					doctorUserId: appointments.doctorUserId,
+					startsAt: appointments.startsAt,
+				})
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						eq(appointments.status, "in_treatment"),
+					),
+				)
+				.limit(10);
+
+			if (unfinishedVisits.length > 0) {
+				activeVisitsInChair = unfinishedVisits;
+				request.log.warn(
+					{ unfinishedCount: unfinishedVisits.length, orgId },
+					"Closing cash shift with active visits in chair (Mandate 8e: non-blocking soft warning)",
+				);
 			}
 
 			const openShifts = await tx
@@ -297,6 +430,16 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 					primaryResult = reconciliationResult;
 				}
 
+				const closingBalanceKop = Number(box?.balanceKopecks ?? rublesToKopecks(Number(finalBalance || 0)));
+				const incomeTotalKop =
+					shift.incomeTotalKopecks != null
+						? Number(shift.incomeTotalKopecks)
+						: rublesToKopecks(Number(reconciliationResult.zReportData.netRevenueRub ?? shift.incomeTotalRub ?? 0));
+				const expenseTotalKop =
+					shift.expenseTotalKopecks != null
+						? Number(shift.expenseTotalKopecks)
+						: rublesToKopecks(Number(shift.expenseTotalRub ?? 0));
+
 				const [updatedShift] = await tx
 					.update(cashBoxShifts)
 					.set({
@@ -304,6 +447,9 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 						closedAt: now,
 						closedByUserId: effectiveUserId ?? null,
 						closingBalanceRub: finalBalance,
+						closingBalanceKopecks: closingBalanceKop,
+						incomeTotalKopecks: incomeTotalKop,
+						expenseTotalKopecks: expenseTotalKop,
 						zReportNumber: reconciliationResult.zReportNumber,
 						zReportData: reconciliationResult.zReportData,
 						updatedAt: now,
@@ -316,62 +462,90 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 				}
 			}
 
-			return {
-				hasUnfinishedVisits: false as const,
-				closedShifts: closed,
-				primaryReconciliation: primaryResult,
+			const closeResponse: CloseShiftResponseBody = {
+				success: true,
+				message: activeVisitsInChair.length > 0
+					? `Все открытые кассовые смены успешно закрыты со снятием Z-отчетов (${closed.length}). Внимание: в кресле остались незавершенные визиты (${activeVisitsInChair.length}).`
+					: `Все открытые кассовые смены успешно закрыты со снятием Z-отчетов (${closed.length}).`,
+				closedShiftsCount: closed.length,
+				shifts: closed,
+				...(activeVisitsInChair.length > 0
+					? {
+							unfinishedVisitsWarning: {
+								count: activeVisitsInChair.length,
+								appointments: activeVisitsInChair,
+							},
+						}
+					: {}),
+				zReportData: primaryResult?.zReportData,
+				reconciliation: primaryResult
+					? {
+							countedCashRub: primaryResult.zReportData.countedCashRub,
+							expectedCashInDrawerRub: primaryResult.zReportData.expectedCashInDrawerRub,
+							incomeCashRub: primaryResult.zReportData.incomeCashRub,
+							incomeElectronicRub: primaryResult.zReportData.incomeElectronicRub,
+							incomeSbpRub: primaryResult.zReportData.incomeSbpRub,
+							advanceOffsetRub: primaryResult.zReportData.advanceOffsetRub,
+							insuranceTotalRub: primaryResult.zReportData.insuranceTotalRub,
+							returnTotalRub: primaryResult.zReportData.returnTotalRub,
+							netRevenueRub: primaryResult.zReportData.netRevenueRub,
+							differenceRub: primaryResult.differenceRub,
+							isBalanced: primaryResult.isBalanced,
+							discrepancyType: primaryResult.discrepancyType,
+							fiscalDocNumber: primaryResult.fiscalDocNumber,
+							fiscalSign: primaryResult.fiscalSign,
+							qrString: primaryResult.qrString,
+						}
+					: undefined,
 			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						responseBody: closeResponse,
+						responseCode: 200,
+					})
+					.onConflictDoNothing();
+			}
+
+			return closeResponse;
 		});
 
-		if (closeResult.hasUnfinishedVisits) {
-			return reply.code(409).send({
-				error: "UnfinishedVisitsInChair",
-				code: "UNFINISHED_VISITS_IN_CHAIR",
-				message: `Невозможно закрыть кассовую смену: в кресле находятся пациенты на приёме (${closeResult.unfinishedCount} визит(ов) в статусе «в кресле»). Завершите приём перед снятием Z-отчета или передайте force: true.`,
-				unfinishedCount: closeResult.unfinishedCount,
-				unfinishedAppointments: closeResult.unfinishedAppointments,
-			});
-		}
-
-		const { closedShifts, primaryReconciliation } = closeResult;
-
-		const response: CloseShiftResponseBody = {
-			success: true,
-			message: `Все открытые кассовые смены успешно закрыты со снятием Z-отчетов (${closedShifts.length}).`,
-			closedShiftsCount: closedShifts.length,
-			shifts: closedShifts,
-			zReportData: primaryReconciliation?.zReportData,
-			reconciliation: primaryReconciliation
-				? {
-						countedCashRub: primaryReconciliation.zReportData.countedCashRub,
-						expectedCashInDrawerRub: primaryReconciliation.zReportData.expectedCashInDrawerRub,
-						incomeCashRub: primaryReconciliation.zReportData.incomeCashRub,
-						incomeElectronicRub: primaryReconciliation.zReportData.incomeElectronicRub,
-						incomeSbpRub: primaryReconciliation.zReportData.incomeSbpRub,
-						advanceOffsetRub: primaryReconciliation.zReportData.advanceOffsetRub,
-						insuranceTotalRub: primaryReconciliation.zReportData.insuranceTotalRub,
-						returnTotalRub: primaryReconciliation.zReportData.returnTotalRub,
-						netRevenueRub: primaryReconciliation.zReportData.netRevenueRub,
-						differenceRub: primaryReconciliation.differenceRub,
-						isBalanced: primaryReconciliation.isBalanced,
-						discrepancyType: primaryReconciliation.discrepancyType,
-						fiscalDocNumber: primaryReconciliation.fiscalDocNumber,
-						fiscalSign: primaryReconciliation.fiscalSign,
-						qrString: primaryReconciliation.qrString,
-					}
-				: undefined,
-		};
-
-		return reply.send(response);
+		return reply.send(closeResult);
 	};
 
-	app.post("/api/cash/cash-box-all-closing", handleCloseCashShift);
-	app.post("/api/cashbox/shift/close", handleCloseCashShift);
-	app.post("/api/fiscal/shift/close", handleCloseCashShift);
-	app.post("/api/finance/shift/close", handleCloseCashShift);
-	app.post("/api/cashbox/shifts/close", handleCloseCashShift);
-	app.post("/api/fiscal/z-report", handleCloseCashShift);
-	app.post("/api/cash/shift/close", handleCloseCashShift);
+	app.post("/api/cash/cash-box-all-closing", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/cashbox/shift/close", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/fiscal/shift/close", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/finance/shift/close", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/cashbox/shifts/close", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/fiscal/z-report", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
+	app.post("/api/cash/shift/close", shiftMutationRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCloseCashShift(request, reply);
+	});
 
 	/**
 	 * 3. GET /api/cashbox/shifts & GET /api/cash/shifts
@@ -407,9 +581,13 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 					closedAt: shift.closedAt,
 					cashierName: cashier?.fullName || "Кассир клиники",
 					startBalanceRub: Number(shift.startBalanceRub || 0),
+					startBalanceKopecks: Number(shift.startBalanceKopecks ?? rublesToKopecks(Number(shift.startBalanceRub || 0))),
 					closingBalanceRub: shift.closingBalanceRub != null ? Number(shift.closingBalanceRub) : null,
+					closingBalanceKopecks: shift.closingBalanceKopecks != null ? Number(shift.closingBalanceKopecks) : (shift.closingBalanceRub != null ? rublesToKopecks(Number(shift.closingBalanceRub)) : null),
 					incomeTotalRub: Number(shift.incomeTotalRub || 0),
+					incomeTotalKopecks: Number(shift.incomeTotalKopecks ?? rublesToKopecks(Number(shift.incomeTotalRub || 0))),
 					expenseTotalRub: Number(shift.expenseTotalRub || 0),
+					expenseTotalKopecks: Number(shift.expenseTotalKopecks ?? rublesToKopecks(Number(shift.expenseTotalRub || 0))),
 					incomeCashRub: Number(zData.incomeCashRub ?? (shift.status === "open" ? shift.incomeTotalRub : 0)),
 					incomeElectronicRub: Number(zData.incomeElectronicRub ?? 0),
 					incomeSbpRub: Number(zData.incomeSbpRub ?? 0),

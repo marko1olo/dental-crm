@@ -1,4 +1,4 @@
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { denteQueryClient } from "../../../lib/queryClient.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import { type AutoVisitBomDeductionResult, kopecksToRubles } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
@@ -47,13 +47,8 @@ export function syncAutoBomDeduction(
 			},
 		).catch(() => {});
 
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-inventory-reload", {
-					detail: { visitId: options.visitId, organizationId: options.organizationId },
-				}),
-			);
-		}
+		void denteQueryClient.invalidateQueries({ queryKey: ["inventory"] });
+		void denteQueryClient.invalidateQueries({ queryKey: ["warehouse"] });
 	} catch {
 		// Non-blocking local store update
 	}
@@ -95,7 +90,7 @@ export function syncAutoBomDeduction(
 
 			options.fetchFn(deductEndpoint, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
 			}).catch((err) => {
 				console.warn("[autoBomDeduction] Фоновая синхронизация списания с сервером отложена:", err);
@@ -108,7 +103,7 @@ export function syncAutoBomDeduction(
 
 				options.fetchFn(alertEndpoint, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						visitId: options.visitId,
 						visitNumber: options.visitNumber,

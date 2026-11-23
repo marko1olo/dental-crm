@@ -239,10 +239,14 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					treatmentPlanId: treatmentPlanId ?? null,
 					contractNumber,
 					totalAmountRub,
+					totalAmountKopecks: BigInt(totalKop),
 					downPaymentRub,
+					downPaymentKopecks: BigInt(downPaymentKop),
 					monthsCount,
 					paidAmountRub: 0,
+					paidAmountKopecks: 0n,
 					remainingAmountRub: kopecksToRubles(remainingKop),
+					remainingAmountKopecks: BigInt(remainingKop),
 					status: "active",
 					signedAt: now,
 					notes: compositeNotes,
@@ -293,7 +297,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					organizationId: orgId,
 					trancheNumber: 0,
 					amountRub: downPaymentRub,
-					amountKopecks: downPaymentKop,
+					amountKopecks: BigInt(downPaymentKop),
 					paidAmountKopecks: downPaymentKop,
 					dueDate: now,
 					paidAt: now,
@@ -308,7 +312,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					organizationId: orgId,
 					trancheNumber: item.monthIndex,
 					amountRub: kopecksToRubles(item.amountKopecks),
-					amountKopecks: item.amountKopecks,
+					amountKopecks: BigInt(item.amountKopecks),
 					paidAmountKopecks: 0,
 					dueDate: new Date(item.paymentDateIso),
 					isPaid: false,
@@ -834,12 +838,12 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				retryCount: 0,
 			});
 
-			// 6. Обновляем транш рассрочки БЕЗ затирания исходного номинала (amountRub)
+			// 6. Обновляем транш рассрочки (номинал amountRub сохраняется, paidAmountKopecks фиксирует оплаченное)
 			const [updatedTranche] = await tx
 				.update(installmentTranches)
 				.set({
 					amountRub: tranche.amountRub,
-					amountKopecks: trancheNominalKop,
+					amountKopecks: BigInt(trancheNominalKop),
 					paidAmountKopecks: newPaidKop,
 					isPaid: isTrancheFullyPaid,
 					paidAt: now,
@@ -857,12 +861,17 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			const newPaidAmount = kopecksToRubles(rublesToKopecks(contract.paidAmountRub) + paymentKop);
 			const newRemaining = Math.max(0, kopecksToRubles(rublesToKopecks(contract.remainingAmountRub) - paymentKop));
 			const isFullyPaid = newRemaining <= 0;
+			const newPaidKopBigInt = (contract.paidAmountKopecks ?? BigInt(rublesToKopecks(contract.paidAmountRub))) + BigInt(paymentKop);
+			const contractTotalKop = contract.totalAmountKopecks ?? BigInt(rublesToKopecks(contract.totalAmountRub));
+			const newRemainingKopBigInt = contractTotalKop > newPaidKopBigInt ? contractTotalKop - newPaidKopBigInt : 0n;
 
 			const [updatedContract] = await tx
 				.update(installmentContracts)
 				.set({
 					paidAmountRub: newPaidAmount,
+					paidAmountKopecks: newPaidKopBigInt,
 					remainingAmountRub: newRemaining,
+					remainingAmountKopecks: newRemainingKopBigInt,
 					status: isFullyPaid ? "completed" : contract.status,
 					completedAt: isFullyPaid ? now : null,
 					updatedAt: now,
@@ -938,8 +947,36 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.post("/api/installments/tranches/:id/pay", handlePayTranche);
-	app.post("/api/installment-payments/:id/pay", handlePayTranche);
+	const installmentsPayRouteOptions = {
+		schema: {
+			description:
+				"Pay installment tranche with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post<{ Params: { id: string } }>(
+		"/api/installments/tranches/:id/pay",
+		installmentsPayRouteOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+			return handlePayTranche(request, reply);
+		},
+	);
+	app.post<{ Params: { id: string } }>(
+		"/api/installment-payments/:id/pay",
+		installmentsPayRouteOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+			return handlePayTranche(request, reply);
+		},
+	);
 
 	/**
 	 * 3. GET /api/installments & GET /api/installments/contracts

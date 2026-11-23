@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 import {
 	computeAuditLineItem,
 	calculateInventoryAuditTotals,
-	generateInv3Html,
-	generateInv19Html,
+	generateInventoryAuditStatementHtml,
+	generateInventoryDiscrepancyStatementHtml,
 } from "../warehouseInventoryEngine.js";
 
 describe("Warehouse Suite: Inventory Audit & Acts", () => {
@@ -73,11 +73,11 @@ describe("Warehouse Suite: Inventory Audit & Acts", () => {
 			organizationInn: "7701987654",
 		};
 
-		const inv3Html = generateInv3Html(doc);
+		const inv3Html = generateInventoryAuditStatementHtml(doc);
 		assert.ok(inv3Html.includes("Инвентаризационная") || inv3Html.includes("ИНВЕНТАРИЗАЦИОННАЯ"));
 		assert.ok(inv3Html.includes("Кузнецов А.В."));
 
-		const inv19Html = generateInv19Html(doc);
+		const inv19Html = generateInventoryDiscrepancyStatementHtml(doc);
 		assert.ok(inv19Html.includes("Сличительная") || inv19Html.includes("СЛИЧИТЕЛЬНАЯ"));
 		assert.ok(inv19Html.includes("СЛИЧИТЕЛЬНАЯ ВЕДОМОСТЬ"));
 	});

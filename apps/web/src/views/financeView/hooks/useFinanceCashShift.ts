@@ -52,6 +52,11 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 	});
 	const [manualCashDeltaRub, setManualCashDeltaRub] = useState<number>(() => {
+		const savedKop = safeLocalStorageGetItem("dente_cash_shift_delta_kop");
+		if (savedKop) {
+			const parsed = Number.parseInt(savedKop, 10);
+			if (Number.isFinite(parsed)) return kopecksToRubles(parsed);
+		}
 		const saved = safeLocalStorageGetItem("dente_cash_shift_delta");
 		return saved ? kopecksToRubles(rublesToKopecks(Number(saved) || 0)) : 0;
 	});
@@ -161,6 +166,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		setManualCashDeltaRub(0);
 		setServerCashBoxBalanceRub(0);
 		safeLocalStorageRemoveItem("dente_cash_shift_delta");
+		safeLocalStorageRemoveItem("dente_cash_shift_delta_kop");
 		void loadDashboard?.();
 		void fetchServerCashBoxBalance();
 	}, [propsOnCloseShift, paymentFiscalCashierName, shiftNumber, loadDashboard, fetchServerCashBoxBalance]);
@@ -187,6 +193,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) + rublesToKopecks(amountRub);
 				const next = kopecksToRubles(nextKop);
+				safeLocalStorageSetItem("dente_cash_shift_delta_kop", nextKop.toString());
 				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
 				return next;
 			});
@@ -228,6 +235,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) - rublesToKopecks(amountRub);
 				const next = kopecksToRubles(nextKop);
+				safeLocalStorageSetItem("dente_cash_shift_delta_kop", nextKop.toString());
 				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
 				return next;
 			});

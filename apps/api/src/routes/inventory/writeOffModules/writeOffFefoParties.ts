@@ -64,15 +64,11 @@ export async function handleDeductRequest(organizationId: string, rawBody: unkno
 			message: `Списано позиций по FEFO: ${results.length}`,
 		});
 	} catch (error: unknown) {
-		// Мандат 8n: Soft Negative Stock при нехватке остатка у кресла не блокирует врача и не возвращает 422
-		request.log.warn(error, "Inventory FEFO overdraft notice");
-		return reply.status(200).send({
-			success: true,
-			count: itemsList.length,
-			isOverdraft: true,
-			hasOverdraft: true,
-			warning: "Зафиксирован мягкий овердрафт склада. Приём проведён без блокировки врача.",
-			items: itemsList.map((it) => ({ inventoryItemId: it.inventoryItemId || it.id, isOverdraft: true })),
+		request.log.error(error, "Fatal error during FEFO stock deduction in database");
+		return reply.status(500).send({
+			success: false,
+			error: "InternalServerError",
+			message: "Внутренняя ошибка сервера при списании",
 		});
 	}
 }

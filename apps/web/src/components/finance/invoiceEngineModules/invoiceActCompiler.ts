@@ -9,7 +9,7 @@ import { resolveServiceWarranty } from "./invoiceWarrantyRules";
 export function numberToWordsRu(amountRub: number, amountKopecks?: number): string {
 	const kop = amountKopecks !== undefined
 		? Math.abs(amountKopecks)
-		: Math.round(Math.abs(amountRub) * 100);
+		: rubToKopecks(Math.abs(amountRub));
 	return amountToWordsRu(kop);
 }
 
