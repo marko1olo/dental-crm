@@ -58,6 +58,8 @@ export async function createInvoiceForApprovedPlan(
 		discountMode?: string | null | undefined;
 		planDiscountPercent?: number | null | undefined;
 		planDiscountRub?: number | null | undefined;
+		planDiscountKopecks?: bigint | number | null | undefined;
+		totalPriceKopecks?: bigint | number | null | undefined;
 	},
 ): Promise<CreatedInvoiceSummary> {
 	const { organizationId, patientId, planId, planName, planTotalPriceRub } = params;
@@ -151,10 +153,10 @@ export async function createInvoiceForApprovedPlan(
 			const qty = Math.max(1, it.quantity || 1);
 			const unitPrice = Number(it.price || 0);
 			const lineDiscountRub = Number(it.discount || 0);
-			const unitPriceKopecks = it.priceKopecks != null && Number(it.priceKopecks) > 0
+			const unitPriceKopecks = it.priceKopecks != null
 				? Number(it.priceKopecks)
 				: rublesToKopecks(unitPrice);
-			const lineDiscountKopecks = it.discountKopecks != null && Number(it.discountKopecks) > 0
+			const lineDiscountKopecks = it.discountKopecks != null
 				? Number(it.discountKopecks)
 				: rublesToKopecks(lineDiscountRub);
 			const lineBaseKopecks = Math.max(0, unitPriceKopecks * qty - lineDiscountKopecks);
@@ -176,6 +178,7 @@ export async function createInvoiceForApprovedPlan(
 			discountMode: params.discountMode ?? "plan_fixed",
 			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
 			planDiscountRub: Number(params.planDiscountRub ?? 0),
+			planDiscountKopecks: params.planDiscountKopecks,
 		});
 
 		const targetFinalTotalKopecks = effectiveDiscount.finalTotalKopecks;
@@ -241,12 +244,15 @@ export async function createInvoiceForApprovedPlan(
 		totalAmountRub = kopecksToRubles(targetFinalTotalKopecks);
 	} else {
 		const rawTotalRub = Number(planTotalPriceRub || 0);
-		const baseTotalKopecks = rublesToKopecks(rawTotalRub);
+		const baseTotalKopecks = params.totalPriceKopecks != null
+			? Number(params.totalPriceKopecks)
+			: rublesToKopecks(rawTotalRub);
 		const effectiveDiscount = calculateEffectivePlanDiscount({
 			baseTotalKopecks,
 			discountMode: params.discountMode ?? "plan_fixed",
 			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
 			planDiscountRub: Number(params.planDiscountRub ?? 0),
+			planDiscountKopecks: params.planDiscountKopecks,
 		});
 
 		const finalTotalKopecks = effectiveDiscount.finalTotalKopecks;
@@ -290,6 +296,7 @@ export async function createInvoiceForApprovedPlan(
 		visitId: null,
 		totalRub: totalRubText,
 		totalAmountRub: finalTotalAmountRub,
+		totalPriceKopecks: BigInt(totalAmountKopecks),
 		status: "draft",
 		issuedAt: now,
 		createdAt: now,
@@ -400,6 +407,8 @@ export async function handleApproveTreatmentPlan(
 				discountMode: updated.discountMode,
 				planDiscountPercent: updated.planDiscountPercent ? Number(updated.planDiscountPercent) : 0,
 				planDiscountRub: updated.planDiscountRub ? Number(updated.planDiscountRub) : 0,
+				planDiscountKopecks: updated.planDiscountKopecks != null ? BigInt(updated.planDiscountKopecks) : null,
+				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : null,
 			});
 
 			// Мандат 8bo: Аудит пишется строго внутри единой ACID-транзакции tx
@@ -540,6 +549,8 @@ export async function handleUpdateTreatmentPlanStatus(
 				discountMode: updated.discountMode,
 				planDiscountPercent: updated.planDiscountPercent ? Number(updated.planDiscountPercent) : 0,
 				planDiscountRub: updated.planDiscountRub ? Number(updated.planDiscountRub) : 0,
+				planDiscountKopecks: updated.planDiscountKopecks != null ? BigInt(updated.planDiscountKopecks) : null,
+				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : null,
 			});
 		}
 

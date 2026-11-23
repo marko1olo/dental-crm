@@ -92,8 +92,8 @@ export async function handleWadoSeriesMetadata(
 						await fh.close();
 					}
 				}
-			} catch {
-				// non-fatal probe fallback
+			} catch (err) {
+				request.log.warn({ err, storagePath: inst.storagePath, studyUid, seriesUid }, "Failed to probe DICOM file header for dimensions in WADO series metadata");
 			}
 		}
 		metadataList.push({

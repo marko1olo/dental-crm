@@ -1,9 +1,14 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, desc, eq } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { patientRecalls } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { isMachineDeliverableChannel } from "../../services/communications/channelRouter.js";
 import { enqueueMessage } from "../../services/communications/dispatcher.js";
+import type { EnqueueMessageResult } from "../../services/communications/dispatch/types.js";
 import { recallCandidateBelongsTo } from "../../services/patients/recallCandidates.js";
+import { wsBroker } from "../../services/websocketBroker.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { badRequest, inviteSchema } from "./types.js";
 
@@ -59,17 +64,77 @@ export function registerInviteRoutes(app: FastifyInstance) {
 		const now = new Date();
 		const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 
-		const result = await enqueueMessage({
-			organizationId: context.organizationId,
-			patientId,
-			channel,
-			intent: "recall",
-			scope: "marketing",
-			body,
-			dedupeKey: `recall:${patientId}:${period}`,
+		let result: EnqueueMessageResult | undefined;
+
+		await db.transaction(async (tx) => {
+			result = await enqueueMessage(
+				{
+					organizationId: context.organizationId,
+					patientId,
+					channel,
+					intent: "recall",
+					scope: "marketing",
+					body,
+					dedupeKey: `recall:${patientId}:${period}`,
+				},
+				tx,
+			);
+
+			if (!result.ok) return;
+
+			const existingRecalls = await tx
+				.select({ id: patientRecalls.id })
+				.from(patientRecalls)
+				.where(
+					and(
+						eq(patientRecalls.organizationId, context.organizationId),
+						eq(patientRecalls.patientId, patientId),
+					),
+				)
+				.orderBy(desc(patientRecalls.createdAt))
+				.limit(1);
+
+			const notes = `Приглашение отправлено через ${channel}: ${body.slice(0, 100)}`;
+			if (existingRecalls.length > 0 && existingRecalls[0]) {
+				await tx
+					.update(patientRecalls)
+					.set({
+						status: "invited",
+						channel,
+						notes,
+						updatedAt: now,
+					})
+					.where(eq(patientRecalls.id, existingRecalls[0].id));
+			} else {
+				await tx.insert(patientRecalls).values({
+					organizationId: context.organizationId,
+					patientId,
+					status: "invited",
+					dueDate: now,
+					channel,
+					notes,
+				});
+			}
 		});
 
-		if (!result.ok) return badRequest(reply, result.reason);
+		if (!result || !result.ok) {
+			return badRequest(reply, result?.reason ?? "Ошибка при постановке сообщения.");
+		}
+
+		try {
+			wsBroker.broadcastToOrganization(context.organizationId, {
+				type: "PATIENT_RECALL_UPDATED",
+				payload: {
+					patientId,
+					status: "invited",
+					channel,
+					note: `Приглашение отправлено через ${channel}`,
+					updatedAt: now.toISOString(),
+				},
+			});
+		} catch {
+			// Не блокирует ответ
+		}
 
 		return reply.code(200).send({
 			ok: true,

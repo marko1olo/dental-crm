@@ -1,4 +1,4 @@
-import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
+import { basisPointsFromPercent, kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import type {
 	CatalogRow,
 	FrozenPriceItem,
@@ -97,7 +97,7 @@ export function resolvePlanDiscount(params: {
 			const lineGrossKop = rublesToKopecks(effectivePriceRub) * it.quantity;
 			const discountKop = percentageOfKopecks(
 				lineGrossKop,
-				Math.round(Number(targetPlan?.planDiscountPercent) * 100),
+				basisPointsFromPercent(Number(targetPlan?.planDiscountPercent)),
 			);
 			return kopecksToRubles(discountKop);
 		}
@@ -110,7 +110,7 @@ export function resolvePlanDiscount(params: {
 			const lineGrossKop = rublesToKopecks(effectivePriceRub) * it.quantity;
 			const discountKop = percentageOfKopecks(
 				lineGrossKop,
-				Math.round(patientDiscountPercent * 100),
+				basisPointsFromPercent(patientDiscountPercent),
 			);
 			return kopecksToRubles(discountKop);
 		}

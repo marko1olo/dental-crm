@@ -2,7 +2,7 @@ import type {
 	DenteTelegramBotSettings,
 	DenteTelegramFeature,
 } from "@dental/shared";
-import { buildDenteTelegramLinkedScheduleReply } from "../../../services/telegram/telegramLegacyMemoryStore.js";
+import { buildDenteTelegramLinkedScheduleReply } from "../telegramCanonicalStore.js";
 import type { TelegramRequestScope, TelegramWebhookReplyPackage } from "../types.js";
 import { safeCommandKeyboard } from "../telegramKeyboards.js";
 import { patientMenuCardPhoto } from "./postOpEmergencyWizard.js";

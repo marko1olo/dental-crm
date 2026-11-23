@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
-import { db } from "./client.js";
+import { db, type TenantDb } from "./client.js";
 import { doctorPreferences } from "./schema.js";
 
 export interface DoctorPreferencesRecord {
@@ -20,9 +20,11 @@ export interface DoctorPreferencesRecord {
 export async function getDoctorPreferencesFromDb(
 	organizationId: string,
 	doctorId?: string | null,
+	client?: TenantDb,
 ): Promise<DoctorPreferencesRecord | null> {
+	const conn = client ?? db;
 	if (doctorId) {
-		const [specific] = await db
+		const [specific] = await conn
 			.select()
 			.from(doctorPreferences)
 			.where(
@@ -38,8 +40,8 @@ export async function getDoctorPreferencesFromDb(
 		}
 	}
 
-	// Fallback to clinic-wide default preferences or most recent entry for this organization
-	const [clinicDefault] = await db
+	// Fallback to clinic-wide default preferences (where doctorId is null)
+	const [clinicDefault] = await conn
 		.select()
 		.from(doctorPreferences)
 		.where(
@@ -54,15 +56,9 @@ export async function getDoctorPreferencesFromDb(
 		return clinicDefault as DoctorPreferencesRecord;
 	}
 
-	// If no null-doctor row, check any entry in organization
-	const [anyOrgPref] = await db
-		.select()
-		.from(doctorPreferences)
-		.where(eq(doctorPreferences.organizationId, organizationId))
-		.orderBy(desc(doctorPreferences.updatedAt))
-		.limit(1);
-
-	return (anyOrgPref as DoctorPreferencesRecord) ?? null;
+	// Исключен фоллбек на чужого врача клиники (DEF-DOCPREF-01).
+	// Если настроек нет — возвращаем null, вызывающий код отдаёт системный дефолт.
+	return null;
 }
 
 /**
@@ -74,7 +70,9 @@ export async function saveDoctorPreferencesInDb(
 	doctorId: string | null | undefined,
 	preferences: Record<string, unknown>,
 	specialty = "therapist",
+	client?: TenantDb,
 ): Promise<DoctorPreferencesRecord> {
+	const conn = client ?? db;
 	const cleanDoctorId =
 		doctorId && doctorId.trim().length > 0 ? doctorId.trim() : null;
 	const now = new Date();
@@ -82,7 +80,7 @@ export async function saveDoctorPreferencesInDb(
 	// 1. Check existing record
 	let existing: { id: string } | undefined;
 	if (cleanDoctorId) {
-		const [row] = await db
+		const [row] = await conn
 			.select({ id: doctorPreferences.id })
 			.from(doctorPreferences)
 			.where(
@@ -94,7 +92,7 @@ export async function saveDoctorPreferencesInDb(
 			.limit(1);
 		existing = row;
 	} else {
-		const [row] = await db
+		const [row] = await conn
 			.select({ id: doctorPreferences.id })
 			.from(doctorPreferences)
 			.where(
@@ -108,20 +106,25 @@ export async function saveDoctorPreferencesInDb(
 	}
 
 	if (existing) {
-		const [updated] = await db
+		const [updated] = await conn
 			.update(doctorPreferences)
 			.set({
 				specialty,
 				preferences,
 				updatedAt: now,
 			})
-			.where(eq(doctorPreferences.id, existing.id))
+			.where(
+				and(
+					eq(doctorPreferences.id, existing.id),
+					eq(doctorPreferences.organizationId, organizationId),
+				),
+			)
 			.returning();
 		return updated as DoctorPreferencesRecord;
 	}
 
 	try {
-		const [inserted] = await db
+		const [inserted] = await conn
 			.insert(doctorPreferences)
 			.values({
 				organizationId,
@@ -151,7 +154,7 @@ export async function saveDoctorPreferencesInDb(
 						isNull(doctorPreferences.doctorId),
 					);
 
-			const [updated] = await db
+			const [updated] = await conn
 				.update(doctorPreferences)
 				.set({
 					specialty,

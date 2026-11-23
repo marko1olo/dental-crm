@@ -18,8 +18,11 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
 import type { TelegramInlineKeyboard } from "./TelegramInteractiveTriageService.js";
 import type { RedFlagEvaluationResult } from "./TelegramRedFlagDetector.js";
+
+const logger = createApiLogger("TelegramEmergencyEscalationService");
 
 export type EmergencyEscalationParams = {
 	organizationId: string;
@@ -161,7 +164,10 @@ export class TelegramEmergencyEscalationService {
 				});
 			});
 		} catch (dbErr) {
-			console.warn("[TelegramEmergencyEscalation] Ошибка записи CITO тикета в БД:", dbErr);
+			logger.warn(
+				{ err: safeLogError(dbErr), organizationId, patientId },
+				"Ошибка записи CITO тикета в БД",
+			);
 		}
 
 		// 2. Мгновенный броадкаст через WebSocket брокер клиники
@@ -188,7 +194,10 @@ export class TelegramEmergencyEscalationService {
 			});
 			isBroadcasted = true;
 		} catch (wsErr) {
-			console.warn("[TelegramEmergencyEscalation] Ошибка отправки экстренного WS броадкаста:", wsErr);
+			logger.warn(
+				{ err: safeLogError(wsErr), organizationId, patientId },
+				"Ошибка отправки экстренного WS броадкаста",
+			);
 		}
 
 		// 3. Формирование экрана экстренной помощи для пациента

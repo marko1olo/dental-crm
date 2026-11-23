@@ -13,7 +13,6 @@ import {
 	users,
 } from "../db/schema.js";
 import { registerTelegramRoutes } from "../routes/telegram.js";
-import { registerTelegramTreatmentPlanCloserRoutes } from "../routes/telegramTreatmentPlanCloser.js";
 import { TelegramTreatmentPlanCloserService } from "../services/telegram/TelegramTreatmentPlanCloserService.js";
 import { encryptTelegramChatId } from "../utils/telegramChatRef.js";
 import { fixtureUuid, withFixtureTenant } from "./support/fixtureOrganizations.js";
@@ -52,7 +51,6 @@ describe("Telegram Treatment Plan Closer: Routes, Webhooks & Leads Integration",
 
 		app = createTenantTestApp();
 		await registerTelegramRoutes(app);
-		await registerTelegramTreatmentPlanCloserRoutes(app);
 		await app.ready();
 
 		try {
@@ -178,6 +176,7 @@ describe("Telegram Treatment Plan Closer: Routes, Webhooks & Leads Integration",
 				assert.ok(lead);
 				assert.strictEqual(lead.status, "INSTALLMENT_REQUEST");
 				assert.strictEqual(lead.source, "telegram_plan_closer");
+				assert.strictEqual(lead.expectedRevenueKopecks, BigInt(20700000));
 				assert.ok(lead.notes?.includes("12 месяцев"));
 				assert.ok(lead.notes?.includes("17 250 ₽/мес"));
 			}
@@ -205,6 +204,7 @@ describe("Telegram Treatment Plan Closer: Routes, Webhooks & Leads Integration",
 				assert.ok(lead);
 				assert.strictEqual(lead.status, "CURATOR_CALL_REQUEST");
 				assert.strictEqual(lead.source, "telegram_plan_closer");
+				assert.strictEqual(lead.expectedRevenueKopecks, BigInt(20700000));
 			}
 		});
 
@@ -403,6 +403,26 @@ describe("Telegram Treatment Plan Closer: Routes, Webhooks & Leads Integration",
 			const body = JSON.parse(response.body);
 			assert.strictEqual(body.ok, true);
 			assert.strictEqual(body.messageId, 88801);
+		});
+
+		it("returns 404 PlanNotFound for non-existent treatment plan (Mandate 8z)", async () => {
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/telegram/treatment-plans/00000000-0000-0000-0000-ffffffffffff/installment-calc`,
+				headers: {
+					"x-organization-id": TEST_ORG_ID,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					monthsCount: 12,
+					downPaymentRub: 0,
+					bankProvider: "tinkoff",
+				}),
+			});
+
+			assert.strictEqual(response.statusCode, 404);
+			const body = JSON.parse(response.body);
+			assert.strictEqual(body.error, "PlanNotFound");
 		});
 
 		it("validates bad requests on invalid parameters", async () => {

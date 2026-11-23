@@ -4,6 +4,7 @@
  */
 
 export * from "./types.js";
+export * from "./unifiedStockDeductionTypes.js";
 export * from "./recipeService.js";
 export * from "./stockAvailability.js";
 export * from "./inventoryReports.js";

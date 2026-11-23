@@ -115,6 +115,11 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "фиксация":
 		case "patient_fixation":
 		case "fixed":
+		case "installed":
+		case "installed_in_mouth":
+		case "delivered":
+		case "сдан":
+		case "установлен":
 			return "completed";
 		case "cancelled":
 			return "cancelled";

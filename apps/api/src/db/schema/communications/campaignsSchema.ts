@@ -73,6 +73,7 @@ export const communicationTasks = pgTable(
 		title: text("title").notNull(),
 		body: text("body").notNull(),
 		workflowCode: text("workflow_code"),
+		lastErrorMessage: text("last_error_message"),
 		lastEventAt: timestamp("last_event_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

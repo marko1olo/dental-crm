@@ -241,6 +241,27 @@ export async function getOrCreateDirectStaffChannel(
 		throw new Error("Нельзя создать личный диалог с самим собой");
 	}
 
+	// Проверяем принадлежность обоих участников к текущей организации (DEF-CHAT-01)
+	const participantRows = await db
+		.select({ id: users.id, fullName: users.fullName, role: users.role })
+		.from(users)
+		.where(
+			and(
+				eq(users.organizationId, organizationId),
+				inArray(users.id, [currentUserId, targetUserId]),
+			),
+		);
+
+	const currentUser = participantRows.find((u) => u.id === currentUserId);
+	const targetUser = participantRows.find((u) => u.id === targetUserId);
+
+	if (!currentUser) {
+		throw new Error("Текущий пользователь не найден в данной организации");
+	}
+	if (!targetUser) {
+		throw new Error("Собеседник не найден в данной клинике");
+	}
+
 	// Детерминированный порядок пользователей
 	const [u1, u2] =
 		currentUserId < targetUserId
@@ -262,17 +283,8 @@ export async function getOrCreateDirectStaffChannel(
 		.limit(1);
 
 	if (!channel) {
-		// Получаем данные собеседника
-		const [targetUser] = await db
-			.select({ fullName: users.fullName, role: users.role })
-			.from(users)
-			.where(
-				and(eq(users.organizationId, organizationId), eq(users.id, targetUserId)),
-			)
-			.limit(1);
-
-		const defaultName = targetUser?.fullName || "Личный диалог";
-		const defaultDesc = targetUser ? `Роль: ${targetUser.role}` : null;
+		const defaultName = targetUser.fullName || "Личный диалог";
+		const defaultDesc = `Роль: ${targetUser.role}`;
 
 		const [created] = await db
 			.insert(staffChatChannels)

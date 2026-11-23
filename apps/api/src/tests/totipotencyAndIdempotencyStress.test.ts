@@ -21,10 +21,21 @@
  *      Server failure unlocks the key, allowing retry with same key.
  *   8. Multi-Tenant RLS Boundary:
  *      Different clinics can use identical idempotency keys without collision.
+ *   9. PostgreSQL idempotency_keys Persistence:
+ *      Records stored under tenant context with lockedAt and payload hash.
+ *  10. Security Fail-Closed:
+ *      Mutating requests (POST, PUT, PATCH, DELETE) without UUIDv7 key return 400 Bad Request.
+ *  11. Validation:
+ *      Malformed or non-UUID key returns 400 Bad Request.
+ *  12. Exempt Paths:
+ *      Auth, health, and webhook endpoints bypass the Idempotency-Key requirement.
+ *  13. Crash Recovery:
+ *      Zombie in-flight locks (> 60s) auto-reclaimed without permanent 409 conflict.
  */
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
@@ -33,6 +44,7 @@ import { idempotencyKeys, organizations } from "../db/schema.js";
 import {
 	clearInMemoryIdempotencyCache,
 	idempotencyPlugin,
+	STALE_LOCK_THRESHOLD_MS,
 } from "../plugins/idempotencyPlugin.js";
 import {
 	fixtureUuid,
@@ -177,6 +189,20 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			});
 		});
 
+		// 6. Exempt Auth & Health Endpoints
+		app.post("/api/auth/login", async (_request, reply) => {
+			return reply.code(200).send({ token: "jwt-token-exempt" });
+		});
+
+		app.post("/health", async (_request, reply) => {
+			return reply.code(200).send({ status: "ok" });
+		});
+
+		// 7. Mutating DELETE Endpoint
+		app.delete("/api/finance/payments/:id", async (_request, reply) => {
+			return reply.code(200).send({ deleted: true });
+		});
+
 		await app.ready();
 	});
 
@@ -206,7 +232,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// =========================================================================
 	test("CONCURRENCY: 10 parallel simultaneous requests with identical X-Idempotency-Key execute exactly once", async () => {
 		const initialCount = paymentExecutionCount;
-		const idempotencyKey = `idem-stress-pay-${Date.now()}`;
+		const idempotencyKey = generateUuidV7();
 		const payload = {
 			amount: 15000,
 			currency: "RUB",
@@ -270,7 +296,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 2: TOTIPOTENT REPLAY (CACHED RESPONSE WITHOUT RE-EXECUTION)
 	// =========================================================================
 	test("REPLAY: subsequent request with identical X-Idempotency-Key returns cached response with HIT", async () => {
-		const idempotencyKey = `idem-replay-pay-${Date.now()}`;
+		const idempotencyKey = generateUuidV7();
 		const payload = {
 			amount: 7500,
 			currency: "RUB",
@@ -325,7 +351,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 3: PAYLOAD TAMPERING / COLLISION GUARD
 	// =========================================================================
 	test("TAMPERING: same X-Idempotency-Key with altered payload returns 409 Conflict collision", async () => {
-		const idempotencyKey = `idem-tamper-${Date.now()}`;
+		const idempotencyKey = generateUuidV7();
 		const originalPayload = {
 			amount: 5000,
 			currency: "RUB",
@@ -368,7 +394,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 4: BODY FALLBACK (idempotencyKey) ON WAREHOUSE WRITE-OFF
 	// =========================================================================
 	test("BODY FALLBACK: /api/inventory/write-off de-duplicates via body idempotencyKey", async () => {
-		const key = `wo-key-${Date.now()}`;
+		const key = generateUuidV7();
 		const initialCount = inventoryWriteOffCount;
 
 		const payload = {
@@ -412,7 +438,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 5: BODY FALLBACK (clientMutationId) ON APPOINTMENT BOOKING
 	// =========================================================================
 	test("BODY FALLBACK: /api/appointments de-duplicates via body clientMutationId", async () => {
-		const mutationId = `mut-booking-${Date.now()}`;
+		const mutationId = generateUuidV7();
 		const initialCount = appointmentBookingCount;
 
 		const payload = {
@@ -456,7 +482,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 6: 54-FZ FISCAL RECEIPT PROTECTION
 	// =========================================================================
 	test("FISCAL RECEIPT: /api/finance/receipts prevents double-printing of cash register receipts", async () => {
-		const fiscalKey = `fisc-key-${Date.now()}`;
+		const fiscalKey = generateUuidV7();
 		const initialCount = fiscalReceiptCount;
 
 		const payload = {
@@ -511,7 +537,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 7: TRANSIENT 500 SERVER ERROR RECOVERY
 	// =========================================================================
 	test("RETRY RECOVERY: server error (500) evicts in-flight lock, allowing retry with same key", async () => {
-		const key = `flaky-key-${Date.now()}`;
+		const key = generateUuidV7();
 
 		// First call hits 500 error
 		const res1 = await app.inject({
@@ -541,7 +567,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 	// TEST 8: MULTI-TENANT RLS BOUNDARY
 	// =========================================================================
 	test("MULTI-TENANT: same idempotency key in different clinics operates independently without collision", async () => {
-		const sharedKey = `shared-key-across-clinics-${Date.now()}`;
+		const sharedKey = generateUuidV7();
 		const payloadA = { amount: 1000, clinic: "Clinic Alpha" };
 		const payloadB = { amount: 2000, clinic: "Clinic Beta" };
 
@@ -579,7 +605,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			return t.skip("Database is unavailable in this environment");
 		}
 
-		const dbKey = `pg-check-${Date.now()}`;
+		const dbKey = generateUuidV7();
 		const payload = { amount: 33333, purpose: "DB persistence audit" };
 
 		const res = await app.inject({
@@ -616,6 +642,132 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 				33333,
 			);
 			assert.ok(row.lockedAt instanceof Date);
+		});
+	});
+
+	// =========================================================================
+	// TEST 10: SECURITY FAIL-CLOSED (MISSING IDEMPOTENCY-KEY ON MUTATING REQUEST)
+	// =========================================================================
+	test("SECURITY FAIL-CLOSED: mutating request without Idempotency-Key returns 400 Bad Request", async () => {
+		// POST without Idempotency-Key
+		const postRes = await app.inject({
+			method: "POST",
+			url: "/api/finance/payments",
+			payload: { amount: 1000 },
+		});
+		assert.equal(postRes.statusCode, 400);
+		const postBody = postRes.json();
+		assert.equal(postBody.error, "IdempotencyKeyRequired");
+		assert.match(postBody.message, /Idempotency-Key/i);
+
+		// DELETE without Idempotency-Key
+		const deleteRes = await app.inject({
+			method: "DELETE",
+			url: "/api/finance/payments/pay-123",
+		});
+		assert.equal(deleteRes.statusCode, 400);
+		const deleteBody = deleteRes.json();
+		assert.equal(deleteBody.error, "IdempotencyKeyRequired");
+	});
+
+	// =========================================================================
+	// TEST 11: VALIDATION (MALFORMED OR NON-UUIDv7 IDEMPOTENCY-KEY)
+	// =========================================================================
+	test("VALIDATION: malformed non-UUIDv7 Idempotency-Key returns 400 Bad Request", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/finance/payments",
+			headers: {
+				"x-idempotency-key": "not-a-valid-uuid-12345",
+			},
+			payload: { amount: 1000 },
+		});
+		assert.equal(res.statusCode, 400);
+		const body = res.json();
+		assert.equal(body.error, "IdempotencyKeyRequired");
+	});
+
+	// =========================================================================
+	// TEST 12: EXEMPT PATHS (AUTH, HEALTH, WEBHOOKS)
+	// =========================================================================
+	test("EXEMPT PATHS: /api/auth/login and /health bypass Idempotency-Key requirement", async () => {
+		// POST to /api/auth/login without any idempotency key
+		const loginRes = await app.inject({
+			method: "POST",
+			url: "/api/auth/login",
+			payload: { username: "doctor", password: "secret" },
+		});
+		assert.equal(loginRes.statusCode, 200);
+		assert.equal(loginRes.json().token, "jwt-token-exempt");
+
+		// POST to /health without any idempotency key
+		const healthRes = await app.inject({
+			method: "POST",
+			url: "/health",
+		});
+		assert.equal(healthRes.statusCode, 200);
+		assert.equal(healthRes.json().status, "ok");
+	});
+
+	// =========================================================================
+	// TEST 13: CRASH RECOVERY (ZOMBIE IN-FLIGHT LOCK AUTO-RECLAIM > 60s)
+	// =========================================================================
+	test("CRASH RECOVERY: zombie in-flight lock older than 60s is auto-reclaimed without 409 conflict", async (t) => {
+		if (!dbAvailable) {
+			return t.skip("Database is unavailable in this environment");
+		}
+
+		const zombieKey = generateUuidV7();
+		const staleDate = new Date(Date.now() - STALE_LOCK_THRESHOLD_MS - 10_000); // 70 seconds ago
+
+		// Seed a zombie in-flight lock in PostgreSQL directly
+		await withFixtureTenant(FIXTURE_CLINIC_A, async (tx) => {
+			await tx.insert(idempotencyKeys).values({
+				clinicId: FIXTURE_CLINIC_A,
+				key: zombieKey,
+				status: "in_flight",
+				payloadHash: "dummy-old-hash",
+				responseCode: 0,
+				responseBody: null,
+				createdAt: staleDate,
+				lockedAt: staleDate,
+			});
+		});
+
+		// Subsequent request with the same key should NOT get 409 Conflict.
+		// Instead, it must reclaim the zombie lock and execute successfully!
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/finance/payments",
+			headers: {
+				"x-idempotency-key": zombieKey,
+				"x-organization-id": FIXTURE_CLINIC_A,
+			},
+			payload: { amount: 8888, purpose: "Zombie lock recovery" },
+		});
+
+		assert.equal(
+			res.statusCode,
+			201,
+			"Must auto-reclaim zombie lock and return 201 Created",
+		);
+		assert.equal(res.json().amount, 8888);
+
+		// Verify database state: status should now be completed with recent lockedAt
+		await withFixtureTenant(FIXTURE_CLINIC_A, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, FIXTURE_CLINIC_A),
+						eq(idempotencyKeys.key, zombieKey),
+					),
+				);
+			assert.ok(row);
+			assert.equal(row.status, "completed");
+			assert.equal(row.responseCode, 201);
+			assert.ok(row.lockedAt.getTime() > staleDate.getTime());
 		});
 	});
 });

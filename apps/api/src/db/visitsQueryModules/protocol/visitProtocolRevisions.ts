@@ -5,8 +5,9 @@ import type {
 	VisitSaveReceipt,
 } from "@dental/shared";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { visitCloseChecklistFactsFor } from "../../../sampleData.js";
-import { deductMaterialsForVisit } from "../../../services/inventory/materialDeduction.js";
+import { TreatmentConsumablesService } from "../../../services/treatmentConsumables/index.js";
 import { buildVisitCloseChecklist } from "../../../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "../../auditQuery.js";
 import { db } from "../../client.js";
@@ -15,6 +16,8 @@ import * as schema from "../../schema.js";
 import { projectVisitRow } from "../../visitsProjection.js";
 import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
 import { VisitSignedResponseIncompleteError } from "../types.js";
+
+const logger = createApiLogger("visitProtocolRevisions");
 
 /**
  * Действие в журнале для подписания медицинской карты приёма.
@@ -78,12 +81,16 @@ export async function recordVisitDraftAcceptedAuditEvent(
 		actorUserId: null,
 		reason,
 	}).catch((error: unknown) => {
-		console.error(
-			`[visitsQuery] Приём ${signedVisit.id} ПОДПИСАН (клиника ${organizationId}, ревизия ` +
-				`${previousRevision} -> ${signedVisit.revision}), но событие ${VISIT_DRAFT_ACCEPTED_AUDIT_ACTION} ` +
-				"не записано в audit_events: юридического следа закрытия дневника за этот приём нет. " +
-				"Подписание отменять нельзя, событие восстанавливается по этой строке. Причина отказа:",
-			error,
+		logger.error(
+			{
+				err: safeLogError(error),
+				visitId: signedVisit.id,
+				organizationId,
+				previousRevision,
+				newRevision: signedVisit.revision,
+				action: VISIT_DRAFT_ACCEPTED_AUDIT_ACTION,
+			},
+			"Приём ПОДПИСАН, но событие не записано в audit_events",
 		);
 	});
 }
@@ -253,7 +260,7 @@ export async function acceptVisitDraftInDb(
 					previousDiagnosisTooth: existingDiary.diagnosisTooth,
 					previousComplications: existingDiary.complications,
 					previousComorbidities: existingDiary.comorbidities,
-					previousInstrumentTrayBarcode: existingDiary.instrumentTrayBarcode,
+					previousInstrumentTrayBarcode: null,
 					revisionReason: "Исправленному верить",
 					revisedByUserId: existingDiary.authorId ?? null,
 					revisedAt: savedAt,
@@ -371,13 +378,13 @@ export async function acceptVisitDraftInDb(
 
 			try {
 				await tx.transaction(async (subTx) => {
-					const deductionResult = await deductMaterialsForVisit(subTx, {
+					const deductionResult = await TreatmentConsumablesService.deductForVisit(subTx, {
 						organizationId,
 						visitId: input.visitId,
 						userId: signingDoctorId,
 						transactionType: "auto_deduct",
 					});
-					if (deductionResult?.hasOverdraft) {
+					if (deductionResult?.isOverdraft) {
 						deductionWarning =
 							"Мягкий овердрафт склада: часть расходников списана с отрицательным остатком";
 					}
@@ -385,10 +392,13 @@ export async function acceptVisitDraftInDb(
 			} catch (deductionError) {
 				deductionWarning =
 					"Предупреждение: автоматическое списание расходников со склада завершилось с ошибкой, карта сохранена";
-				console.warn(
-					`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
-						"завершилось с ошибкой, но подписание карты приёма продолжено:",
-					deductionError,
+				logger.warn(
+					{
+						err: safeLogError(deductionError),
+						visitId: input.visitId,
+						organizationId,
+					},
+					"Списание материалов для визита завершилось с ошибкой, но подписание карты приёма продолжено",
 				);
 			}
 		}

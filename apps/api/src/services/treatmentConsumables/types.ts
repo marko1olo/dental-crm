@@ -5,9 +5,35 @@
 import crypto from "node:crypto";
 import type { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
-import { InsufficientStockError } from "../inventory/materialDeduction.js";
+/**
+ * @deprecated Mandate 8v (Soft Negative Stock & Doctor Autonomy):
+ * Clinical inventory natively supports soft overdraft (quantity < 0, isOverdraft: true).
+ * Treatment procedures and chairside care are never blocked by warehouse shortages.
+ */
+export class InsufficientStockError extends Error {
+	readonly statusCode = 400;
+	readonly error = "InsufficientStock";
+	readonly inventoryItemId: string;
+	readonly inventoryItemName: string;
+	readonly availableStock: number;
+	readonly requiredStock: number;
 
-export { InsufficientStockError };
+	constructor(params: {
+		inventoryItemId: string;
+		inventoryItemName: string;
+		availableStock: number;
+		requiredStock: number;
+	}) {
+		super(
+			`Недостаточно материалов на складе: «${params.inventoryItemName}» (требуется ${params.requiredStock}, в наличии ${params.availableStock}).`,
+		);
+		this.name = "InsufficientStockError";
+		this.inventoryItemId = params.inventoryItemId;
+		this.inventoryItemName = params.inventoryItemName;
+		this.availableStock = params.availableStock;
+		this.requiredStock = params.requiredStock;
+	}
+}
 
 export type DbExecutor =
 	| typeof db

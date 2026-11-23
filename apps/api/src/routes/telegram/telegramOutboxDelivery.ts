@@ -7,7 +7,7 @@ import {
 	type DenteTelegramOutboxItem, type DenteTelegramOutboxSendRequest,
 	type DenteTelegramOutboxDeliveryStatus, type DenteTelegramOutboxDeliveryReceipt,
 } from "@dental/shared";
-import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import type { DomainState } from "./telegramCanonicalStore.js";
 import {
 	claimDenteTelegramOutboxDeliveryReceipt,
 	claimDenteTelegramOutboxDeliveryReceiptDb,
@@ -17,7 +17,7 @@ import {
 	prepareDenteTelegramOutboxDelivery,
 	recordDenteTelegramOutboxDelivery,
 	recordDenteTelegramOutboxDeliveryDb,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import {
 	sendTelegramPhotoMessage, sendTelegramTextMessage,
 	type SendTelegramPhotoMessageInput, type TelegramTransportResult,

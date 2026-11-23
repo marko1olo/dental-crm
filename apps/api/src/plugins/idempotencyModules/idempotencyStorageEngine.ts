@@ -2,11 +2,21 @@
  * idempotencyStorageEngine.ts — High-Performance In-Memory & PostgreSQL Dual Storage Engine (Layer 2).
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { idempotencyKeys, syncIdempotencyRecords } from "../../db/schema.js";
 import { extractPgErrorCode } from "./idempotencyHeaderParser.js";
 import type { IdempotencyContext, InMemoryRecord } from "./idempotencyTypes.js";
+
+/** 60-second threshold for zombie in-flight locks (Crash Recovery) */
+export const STALE_LOCK_THRESHOLD_MS = 60_000;
+
+export function isLockStale(lockedAt: Date | string | number | null | undefined): boolean {
+	if (!lockedAt) return false;
+	const lockTime = new Date(lockedAt).getTime();
+	if (Number.isNaN(lockTime)) return false;
+	return Date.now() - lockTime > STALE_LOCK_THRESHOLD_MS;
+}
 
 // In-memory fallback map for unauthenticated or non-database contexts
 const inMemoryIdempotencyCache = new Map<string, InMemoryRecord>();
@@ -79,7 +89,73 @@ export type InsertInFlightResult =
 	| { success: false; isConflict: false; error: unknown };
 
 /**
- * Records in-flight row in PostgreSQL idempotency_keys with race condition protection.
+ * Atomically reclaims a zombie in-flight lock (older than 60 seconds) in PostgreSQL.
+ * Resets locked_at = NOW(), payload_hash, and allows execution to proceed safely.
+ */
+export async function reclaimStaleLock(
+	tenantId: string,
+	idempotencyKey: string,
+	payloadHash: string,
+): Promise<boolean> {
+	let reclaimed = false;
+	const staleCutoff = new Date(Date.now() - STALE_LOCK_THRESHOLD_MS);
+
+	await withTenantCtx(tenantId, async (tx) => {
+		const updatedRows = await tx
+			.update(idempotencyKeys)
+			.set({
+				status: "in_flight",
+				payloadHash,
+				responseCode: 0,
+				responseBody: null,
+				lockedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, tenantId),
+					eq(idempotencyKeys.key, idempotencyKey),
+					eq(idempotencyKeys.status, "in_flight"),
+					lt(idempotencyKeys.lockedAt, staleCutoff),
+				),
+			)
+			.returning();
+
+		const firstUpdated = updatedRows[0];
+		if (firstUpdated) {
+			reclaimed = true;
+		}
+	});
+
+	if (reclaimed) {
+		try {
+			await withTenantCtx(tenantId, async (tx) => {
+				await tx
+					.update(syncIdempotencyRecords)
+					.set({
+						action: "in_flight",
+						payloadHash,
+						responseStatus: 0,
+						responseJson: null,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(syncIdempotencyRecords.organizationId, tenantId),
+							eq(syncIdempotencyRecords.idempotencyKey, idempotencyKey),
+						),
+					);
+			});
+		} catch {
+			// Ignored for sync compatibility table
+		}
+	}
+
+	return reclaimed;
+}
+
+/**
+ * Records in-flight row in PostgreSQL idempotency_keys with race condition protection
+ * and zombie lock auto-reclaim.
  */
 export async function recordInFlightToDatabase(
 	tenantId: string,
@@ -127,6 +203,15 @@ export async function recordInFlightToDatabase(
 			errStr.includes("unique constraint") ||
 			errStr.includes("idempotency_keys_clinic_key_idx")
 		) {
+			// Check if the conflicting row is a zombie in-flight lock (> 60s) and reclaim it!
+			try {
+				const reclaimed = await reclaimStaleLock(tenantId, idempotencyKey, payloadHash);
+				if (reclaimed) {
+					return { success: true };
+				}
+			} catch {
+				// Fall back to conflict
+			}
 			return { success: false, isConflict: true };
 		}
 		return { success: false, isConflict: false, error: insertErr };

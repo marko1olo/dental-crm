@@ -40,8 +40,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
 import type * as schema from "./schema.js";
+
+const logger = createApiLogger("dbRls");
 
 /** Drizzle database and transaction type scoped to this project's schema. */
 export type { TenantDb, TenantTransaction };
@@ -53,7 +56,100 @@ export type { TenantDb, TenantTransaction };
  * would switch the bypass off while the outer scope still relies on it,
  * silently re-enabling tenant isolation halfway through the outer operation.
  */
-const bypassScope = new AsyncLocalStorage<true>();
+const bypassScope = new AsyncLocalStorage<boolean>();
+
+export type PostCommitHook = () => Promise<void> | void;
+const postCommitStorage = new AsyncLocalStorage<PostCommitHook[] | undefined>();
+
+async function flushPostCommitHooks(hooks: PostCommitHook[]): Promise<void> {
+	for (const hook of hooks) {
+		try {
+			await hook();
+		} catch (err) {
+			logger.error({ err: safeLogError(err) }, "Post-commit hook failed");
+		}
+	}
+}
+
+/**
+ * Registers a side-effect callback (WebSocket broadcast, detached background sync,
+ * cache invalidation) to run ONLY AFTER the enclosing `withTenantCtx` transaction
+ * successfully commits.
+ *
+ * When invoked inside a `withSavepoint`, hooks wait until the savepoint succeeds
+ * before promoting into the enclosing transaction's commit queue (so rolled-back
+ * savepoints never trigger spurious side effects).
+ * When invoked outside any `withTenantCtx` transaction (e.g. unit test mocks),
+ * the callback runs immediately without throwing synchronously.
+ */
+export function onTenantTxCommit(fn: PostCommitHook): void {
+	const hooks = postCommitStorage.getStore();
+	if (hooks) {
+		hooks.push(fn);
+		return;
+	}
+	try {
+		const res = fn();
+		if (res && typeof (res as Promise<void>).catch === "function") {
+			void (res as Promise<void>).catch((err) => {
+				logger.error({ err: safeLogError(err) }, "Standalone post-commit async hook failed");
+			});
+		}
+	} catch (err) {
+		logger.error({ err: safeLogError(err) }, "Standalone post-commit sync hook failed");
+	}
+}
+
+/**
+ * Executes `callback` in a completely detached PostgreSQL transaction and clean
+ * AsyncLocalStorage scope (`transactionStorage`, `postCommitStorage`, `bypassScope`
+ * cleared), preventing asynchronous background jobs from inheriting an HTTP
+ * request transaction that is about to commit or close.
+ */
+export async function runDetachedInTenantCtx<T>(
+	organizationId: string,
+	callback: (tx: TenantDb) => Promise<T>,
+): Promise<T> {
+	return bypassScope.run(false, () =>
+		postCommitStorage.run(undefined, () =>
+			transactionStorage.run(undefined, () =>
+				withTenantCtx(organizationId, callback),
+			),
+		),
+	);
+}
+
+/**
+ * Wraps a non-fatal nested DB operation inside a PostgreSQL SAVEPOINT (`tx.transaction`)
+ * so that a SQL error (constraint violation, missing FK, etc.) inside `try { ... } catch`
+ * rolls back cleanly to the savepoint without poisoning the enclosing PostgreSQL transaction
+ * (`25P02 current transaction is aborted`).
+ */
+export async function withSavepoint<T>(
+	tx: TenantDb,
+	callback: (savepointTx: TenantDb) => Promise<T>,
+): Promise<T> {
+	if (
+		process.env.DENTAL_STATE_PERSISTENCE === "off" ||
+		typeof (tx as { transaction?: unknown }).transaction !== "function"
+	) {
+		return callback(tx);
+	}
+	const parentHooks = postCommitStorage.getStore();
+	const savepointHooks: PostCommitHook[] = [];
+	const result = await (tx as NodePgDatabase<typeof schema>).transaction(
+		async (spTx) =>
+			transactionStorage.run(spTx, () =>
+				parentHooks
+					? postCommitStorage.run(savepointHooks, () => callback(spTx))
+					: callback(spTx),
+			),
+	);
+	if (parentHooks && savepointHooks.length > 0) {
+		parentHooks.push(...savepointHooks);
+	}
+	return result;
+}
 
 /**
  * Executes `callback` inside a Drizzle transaction that pre-sets
@@ -106,7 +202,12 @@ export async function withTenantCtx<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return callback(dbRaw);
+		const postCommitHooks: PostCommitHook[] = [];
+		const result = await postCommitStorage.run(postCommitHooks, () =>
+			callback(dbRaw),
+		);
+		await flushPostCommitHooks(postCommitHooks);
+		return result;
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
@@ -176,29 +277,39 @@ export async function withTenantCtx<T>(
 			}
 		}
 	}
-	return dbRaw.transaction(async (tx) => {
+	const postCommitHooks: PostCommitHook[] = [];
+	const result = await dbRaw.transaction(async (tx) => {
 		// is_local = true: the setting expires when this transaction commits or
 		// rolls back, preventing the setting from leaking to the next request that
 		// reuses the same pooled connection.
 		await tx.execute(
 			sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
 		);
-		return transactionStorage.run(tx, () => callback(tx));
+		return postCommitStorage.run(postCommitHooks, () =>
+			transactionStorage.run(tx, () => callback(tx)),
+		);
 	});
+	await flushPostCommitHooks(postCommitHooks);
+	return result;
 }
 
 export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return callback(dbRaw);
+		const postCommitHooks: PostCommitHook[] = [];
+		const result = await postCommitStorage.run(postCommitHooks, () =>
+			callback(dbRaw),
+		);
+		await flushPostCommitHooks(postCommitHooks);
+		return result;
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// A bypass scope is already open on this transaction; it owns the flag and
 		// its reset. Doing another set/reset pair here would turn the bypass off
 		// while the outer scope is still using it.
-		if (bypassScope.getStore()) {
+		if (bypassScope.getStore() === true) {
 			return callback(existingTx);
 		}
 		await existingTx.execute(

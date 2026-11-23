@@ -1,11 +1,7 @@
 /**
  * apps/api/src/routes/sanpin/sterilizationModules/handlers/createAutoclaveBatchCycleHandler.ts
- *
- * Экспресс-запуск нормативного батча автоклава (134°C / 2.15 бар или 121°C / 1.15 бар)
- * с пакетным списанием расходников со склада и автоматической фиксацией 100% нормы очистки.
- * Мандат 8b: строго <= 120 строк.
+ * Экспресс-запуск нормативного батча автоклава с автофиксацией нормы очистки и списанием расходников.
  */
-
 import { computePackagingExpirationDate, type SterilizationPackagingType } from "@dental/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -14,14 +10,18 @@ import { withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
+import { quickNormCycleSchema } from "../schemas/sterilizationBodySchemas.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
-
 export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization quick norm");
 	if (!organizationId) return;
 
+	const parsed = quickNormCycleSchema.safeParse(req.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({ success: false, error: "Некорректные параметры цикла", details: parsed.error.format() });
+	}
+	const body = parsed.data as Record<string, unknown>;
 	const operatorId = getRequestIdentity(req).userId ?? null;
-	const body = (req.body as Record<string, unknown>) || {};
 	const isDelicate = body.regime === "delicate_121";
 	const isPrion = body.regime === "prion_134";
 	const batchSize = Math.max(1, Math.min(Number(body.batchSize ?? body.packagesCount) || 25, 100));
@@ -33,7 +33,6 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 	const packagingType = String(body.packagingType || (isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive"));
 	const now = new Date();
 	const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
 	const { log, stockDeduction, cycleNumber, cycleTimeLabel } = await withTenantCtx(organizationId, async (tx) => {
 		const [lastCycle] = await tx
 			.select({ cycleNumber: sterilizationLogs.cycleNumber })

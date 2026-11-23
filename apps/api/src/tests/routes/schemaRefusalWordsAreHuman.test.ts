@@ -224,7 +224,7 @@ describe("отказ разбора объяснён человеку, а не �
 		process.env.DENTE_AUTH_TOKEN_SECRET ??=
 			"замок-человеческого-текста-подпись";
 
-		const { registerBillingRoutes } = await import("../../routes/billing.js");
+		const { registerBillingRoutes } = await import("../../routes/billingRoutes/index.js");
 		const { registerMigrationRoutes } = await import(
 			"../../routes/migration.js"
 		);

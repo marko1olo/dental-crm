@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-11-22T18:41:39.660Z",
+  "savedAt": "2026-11-23T20:37:47.220Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -702,6 +702,27 @@
         "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
         "stageId": "01940000-0000-7000-8000-000000000003",
         "isCito": true
+      },
+      {
+        "id": "ceb19e8a-1b31-4c55-b12f-83e021cebd81",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "completed",
+        "startsAt": "2026-01-15T10:00:00+04:00",
+        "endsAt": "2026-01-15T10:30:00+04:00",
+        "reason": "Первичный приём",
+        "comment": null,
+        "parentAppointmentId": null,
+        "stageIndex": 1,
+        "clinicalStage": null,
+        "toothNumber": null,
+        "diagnosisMkb10": null,
+        "treatmentPlanId": "01940000-0000-7000-8000-000000000001",
+        "stageId": "01940000-0000-7000-8000-000000000003",
+        "isCito": true
       }
     ],
     "patients": [
@@ -1092,6 +1113,26 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "d9e78226-ec4e-43bf-8c01-d780e1ada312",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "ceb19e8a-1b31-4c55-b12f-83e021cebd81",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-23T20:37:47.150Z"
+      },
+      {
+        "id": "7f769d15-d08e-4053-aab2-044f79be7ca2",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "ceb19e8a-1b31-4c55-b12f-83e021cebd81",
+        "action": "appointment_created",
+        "reason": "Запись создана из расписания: пациент, врач, ассистент, кресло и время прошли проверку доступности.",
+        "createdAt": "2026-11-23T20:37:47.150Z"
+      },
+      {
         "id": "75094cd3-21e8-4fd8-96a6-05cfa4b865ba",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1466,5 +1507,5 @@
       "updatedAt": "2026-10-17T18:58:22.968Z"
     }
   },
-  "checksum": "51f8de4dffa9e2ae49a240d97d26fc36921976643ae7400248afe937ad40e538"
+  "checksum": "a278bed14d136c7de28b97ae762d5d0aafb7d8c343e6a9d9f79b736d38945eca"
 }

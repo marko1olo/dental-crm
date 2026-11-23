@@ -22,8 +22,13 @@ import { invalidateAppointmentReminders } from "../../services/communications/ap
 import { triggerSmartGapFiller } from "../../services/daemons/smartGapFillerService.js";
 import { syncRecallOnAppointmentCreated } from "../../services/patients/recallSyncService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import {
+	DEFAULT_CLINIC_TIME_ZONE,
+	clinicTimeZone,
+} from "../../services/reports/managerReports/timezone.js";
 import { requireScheduleMutationContext } from "../scheduleAuthGuard.js";
 import {
+	DEFAULT_SCHEDULE_TIMEZONE,
 	buildConflictContext,
 	buildNextStageCreatePayload,
 	normalizeAppointmentUpdateRawBody,
@@ -298,10 +303,12 @@ export const createAppointmentHandler = async (
 			if (replayed) return reply;
 		}
 
+		const zone = (await clinicTimeZone(orgId)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody = await prepareCreateAppointmentRawBody(
 			orgId,
 			request.body,
 			tx,
+			zone,
 		);
 
 		const input = parseSchedulePayload(
@@ -470,9 +477,10 @@ export const updateAppointmentHandler = async (
 			if (replayed) return reply;
 		}
 
+		const zone = (await clinicTimeZone(orgId)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody =
-			(await prepareUpdateAppointmentRawBody(orgId, request.body, tx)) ??
-			normalizeAppointmentUpdateRawBody(request.body);
+			(await prepareUpdateAppointmentRawBody(orgId, request.body, tx, zone)) ??
+			normalizeAppointmentUpdateRawBody(request.body, zone);
 
 		const input = parseSchedulePayload(
 			updateAppointmentSchema,

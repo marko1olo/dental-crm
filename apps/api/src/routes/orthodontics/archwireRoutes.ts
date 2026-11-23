@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import { rublesToKopecks } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import { computePayloadHash, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
@@ -16,8 +19,62 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { patientId } = patientParamsSchema.parse(request.params);
-			const body = archwireChangeSchema.parse(request.body);
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 200)
+							.send(existingRecord.responseBody);
+					}
+					if (existingRecord.status === "in_flight") {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
+			}
+
+			const parsedParams = patientParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+			const { patientId } = parsedParams.data;
+
+			const parsedBody = archwireChangeSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры смены дуги: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+					issues: parsedBody.error.issues,
+				});
+			}
+			const body = parsedBody.data;
 			const patient = await getPatientByIdFromDb(orgId, patientId);
 			if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
@@ -103,7 +160,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				fallbackPriceRub,
 			});
 
-			const { deduction, billing } = await db.transaction(async (tx) => {
+			const responsePayload = await db.transaction(async (tx) => {
 				// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
 				await updatePatientAdministrativeProfileInDb(
 					orgId,
@@ -192,20 +249,43 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 					logger: request.log,
 				});
 
-				return { deduction: deductionRes, billing: billingRes };
+				const payload: Record<string, unknown> = {
+					success: true,
+					archwire: archwireStr,
+					upperArchwire,
+					lowerArchwire,
+					combinedArchwire,
+					actionSummary,
+					progress: updatedProgress,
+					deduction: deductionRes,
+					billing: billingRes,
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: payload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: payload,
+								responseCode: 200,
+							},
+						});
+				}
+
+				return payload;
 			});
 
-			return reply.send({
-				success: true,
-				archwire: archwireStr,
-				upperArchwire,
-				lowerArchwire,
-				combinedArchwire,
-				actionSummary,
-				progress: updatedProgress,
-				deduction,
-				billing,
-			});
+			return reply.send(responsePayload);
 		},
 	);
 
@@ -215,8 +295,62 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { patientId } = patientParamsSchema.parse(request.params);
-			const body = ligatureActivateSchema.parse(request.body);
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 200)
+							.send(existingRecord.responseBody);
+					}
+					if (existingRecord.status === "in_flight") {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
+			}
+
+			const parsedParams = patientParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+			const { patientId } = parsedParams.data;
+
+			const parsedBody = ligatureActivateSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры активации лигатур: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+					issues: parsedBody.error.issues,
+				});
+			}
+			const body = parsedBody.data;
 			const patient = await getPatientByIdFromDb(orgId, patientId);
 			if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
@@ -242,7 +376,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				fallbackCostRub: body.powerChain ? 80 : 15,
 			});
 
-			const deduction = await db.transaction(async (tx) => {
+			const responsePayload = await db.transaction(async (tx) => {
 				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
 				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
 					...adminProfile,
@@ -250,7 +384,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				}, tx);
 
 				// Списание материалов отключается для съемных пластинок (plate)
-				return shouldDeductLigatures
+				const deductionRes = shouldDeductLigatures
 					? await deductOrthoMaterialSafely({
 							organizationId: orgId,
 							patientId,
@@ -268,9 +402,39 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							logger: request.log,
 					  })
 					: null;
+
+				const payload: Record<string, unknown> = {
+					success: true,
+					actionSummary,
+					progress: updatedProgress,
+					deduction: deductionRes,
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: payload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: payload,
+								responseCode: 200,
+							},
+						});
+				}
+
+				return payload;
 			});
 
-			return reply.send({ success: true, actionSummary, progress: updatedProgress, deduction });
+			return reply.send(responsePayload);
 		},
 	);
 }

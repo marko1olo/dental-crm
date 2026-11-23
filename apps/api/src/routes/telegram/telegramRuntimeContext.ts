@@ -11,7 +11,7 @@
 
 export {
 	safeDenteTelegramPublicHttpsUrl,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramUrlHelpers.js";
 
 export {
 	trimmedEnv,

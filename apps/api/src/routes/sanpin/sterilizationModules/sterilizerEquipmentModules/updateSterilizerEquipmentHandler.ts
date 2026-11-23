@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 import { updateSterilizerEquipmentDtoSchema } from "../sterilizationSchemas.js";
 import { executeEquipmentLifecycleAction } from "./updateSterilizerEquipmentActions.js";
@@ -48,32 +49,34 @@ export async function handleUpdateSterilizerEquipment(
 		return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
 	}
 
-	const [updated] = await db
-		.update(sterilizerEquipments)
-		.set({
-			...(body.name ? { name: body.name } : {}),
-			...(body.brandModel ? { brandModel: body.brandModel } : {}),
-			...(body.serialNumber ? { serialNumber: body.serialNumber } : {}),
-			...(body.inventoryNumber !== undefined ? { inventoryNumber: body.inventoryNumber } : {}),
-			...(body.deviceType ? { deviceType: body.deviceType } : {}),
-			...(body.deviceClass ? { deviceClass: body.deviceClass } : {}),
-			...(body.chamberVolumeLiters ? { chamberVolumeLiters: String(body.chamberVolumeLiters) } : {}),
-			...(body.locationRoom ? { locationRoom: body.locationRoom } : {}),
-			...(body.verificationExpiryDate !== undefined ? { verificationExpiryDate: body.verificationExpiryDate } : {}),
-			...(body.lastMaintenanceDate !== undefined ? { lastMaintenanceDate: body.lastMaintenanceDate } : {}),
-			...(body.nextMaintenanceDate !== undefined ? { nextMaintenanceDate: body.nextMaintenanceDate } : {}),
-			...(body.commissioningDate !== undefined ? { commissioningDate: body.commissioningDate } : {}),
-			...(body.status ? { status: body.status, isCommissioned: body.status !== "decommissioned" } : {}),
-			...(body.notes !== undefined ? { notes: body.notes } : {}),
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(sterilizerEquipments.id, id),
-				eq(sterilizerEquipments.organizationId, organizationId),
-			),
-		)
-		.returning();
+	const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.update(sterilizerEquipments)
+			.set({
+				...(body.name ? { name: body.name } : {}),
+				...(body.brandModel ? { brandModel: body.brandModel } : {}),
+				...(body.serialNumber ? { serialNumber: body.serialNumber } : {}),
+				...(body.inventoryNumber !== undefined ? { inventoryNumber: body.inventoryNumber } : {}),
+				...(body.deviceType ? { deviceType: body.deviceType } : {}),
+				...(body.deviceClass ? { deviceClass: body.deviceClass } : {}),
+				...(body.chamberVolumeLiters ? { chamberVolumeLiters: String(body.chamberVolumeLiters) } : {}),
+				...(body.locationRoom ? { locationRoom: body.locationRoom } : {}),
+				...(body.verificationExpiryDate !== undefined ? { verificationExpiryDate: body.verificationExpiryDate } : {}),
+				...(body.lastMaintenanceDate !== undefined ? { lastMaintenanceDate: body.lastMaintenanceDate } : {}),
+				...(body.nextMaintenanceDate !== undefined ? { nextMaintenanceDate: body.nextMaintenanceDate } : {}),
+				...(body.commissioningDate !== undefined ? { commissioningDate: body.commissioningDate } : {}),
+				...(body.status ? { status: body.status, isCommissioned: body.status !== "decommissioned" } : {}),
+				...(body.notes !== undefined ? { notes: body.notes } : {}),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(sterilizerEquipments.id, id),
+					eq(sterilizerEquipments.organizationId, organizationId),
+				),
+			)
+			.returning();
+	});
 
 	if (!updated) {
 		return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });

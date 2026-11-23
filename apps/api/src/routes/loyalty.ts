@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { registerLoyaltyCertificateRoutes } from "./loyaltyCertificates.js";
 import {
 	registerLoyaltyBalanceRoutes,
+	registerLoyaltyCertificateRoutes,
 	registerLoyaltyFamilyRoutes,
 	registerLoyaltyLedgerRoutes,
 	registerLoyaltyReferralRoutes,

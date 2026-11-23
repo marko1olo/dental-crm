@@ -30,6 +30,7 @@ import {
 import {
 	isRateLimited,
 	verifyPhoneOtp,
+	verifyPhoneOtpAsync,
 } from "../smsVerificationAndSpamGate.js";
 import {
 	executeBookingTransaction,
@@ -198,7 +199,7 @@ export async function handleBookAppointment(
 	// [POR-05] Проверка кода подтверждения, если передан. Если код не передан, запись сохраняется в статусе предзаписи
 	let isVerified = false;
 	if (verificationCode) {
-		const check = verifyPhoneOtp(patientPhone, verificationCode);
+		const check = await verifyPhoneOtpAsync(patientPhone, verificationCode, organizationId);
 		if (!check.valid) {
 			return reply.status(400).send({
 				error: "Неверный код подтверждения",
@@ -343,20 +344,22 @@ export async function handleBookAppointment(
 
 			let isTelegramAuthorized = false;
 			if (rawInitData) {
+				const isTestEnv = process.env.NODE_ENV === "test";
 				const botToken =
 					process.env.TELEGRAM_BOT_TOKEN ||
 					process.env.DENTE_TELEGRAM_BOT_TOKEN ||
-					"test_bot_token";
-				const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
-					rawInitData,
-					botToken,
-					{
-						allowDevBypass:
-							process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
-					},
-				);
-				if (validation.isValid && validation.user) {
-					isTelegramAuthorized = true;
+					(isTestEnv ? "test_bot_token" : undefined);
+				if (botToken) {
+					const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
+						rawInitData,
+						botToken,
+						{
+							allowDevBypass: isTestEnv,
+						},
+					);
+					if (validation.isValid && validation.user) {
+						isTelegramAuthorized = true;
+					}
 				}
 			}
 

@@ -50,7 +50,7 @@ import { registerInvoiceRoutes } from "../../routes/invoices.js";
 import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
-import { registerXrayRoutes } from "../../routes/xray.js";
+import { registerXrayRoutes } from "../../routes/imaging/studiesRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../../security/medicalSecrecyWarden.js";
 import { signToken } from "../../utils/cryptoHelper.js";

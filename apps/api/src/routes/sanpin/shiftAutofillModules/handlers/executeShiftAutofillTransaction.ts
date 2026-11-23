@@ -36,6 +36,84 @@ export async function executeShiftAutofillTransaction(
 }> {
 	const { organizationId, body, operatorId, todayStr } = params;
 
+	// Поддержка пакетного массива смен batchDays (ретроспективное сохранение смен)
+	if (Array.isArray(body.batchDays) && body.batchDays.length > 0) {
+		const workingDays = body.batchDays.filter(
+			(d) => (d as Record<string, unknown>).isWorkingDay !== false,
+		);
+		const daysToProcess = workingDays.length > 0 ? workingDays : body.batchDays;
+
+		const psoValues: Array<typeof preSterilizationCleaningLogs.$inferInsert> = daysToProcess.map((d) => {
+			const day = d as Record<string, unknown>;
+			const dayDateStr = typeof day.date === "string" ? day.date : todayStr;
+			const dayTimestamp = new Date(`${dayDateStr}T10:00:00.000Z`);
+			const validTimestamp = Number.isNaN(dayTimestamp.getTime()) ? new Date() : dayTimestamp;
+			const batchCount = Number(day.traysProcessedCount || day.psoBatchCount || 100);
+			const sampleCount = Number(day.psoSampleCount || 3);
+			return {
+				organizationId,
+				testType: "both" as const,
+				batchItemCount: batchCount,
+				testedSampleCount: sampleCount,
+				isAzopyramNegative: day.isAzopyramNegative !== false,
+				isPhenolphthaleinNegative: day.isPhenolphthaleinNegative !== false,
+				isBatchApproved: day.isPsoApproved !== false,
+				detergentBrand: (day.psoDetergent as string) || "Биолот 0.5%",
+				operatorId,
+				notes: (day.notes as string) || `Ретроспективная смена (${dayDateStr}): норма СанПиН 3.3686-21`,
+				timestamp: validTimestamp,
+			};
+		});
+
+		const sterilValues: Array<typeof sterilizationLogs.$inferInsert> = [];
+		for (const d of daysToProcess) {
+			const day = d as Record<string, unknown>;
+			const dayDateStr = typeof day.date === "string" ? day.date : todayStr;
+			const dayTimestamp = new Date(`${dayDateStr}T12:00:00.000Z`);
+			const validTimestamp = Number.isNaN(dayTimestamp.getTime()) ? new Date() : dayTimestamp;
+			const cyclesCount = Math.max(1, Number(day.autoclaveCyclesCount || 1));
+			for (let c = 1; c <= cyclesCount; c++) {
+				sterilValues.push({
+					organizationId,
+					deviceName: String(day.sterilizerModelName || body.autoclaveId || "Автоклав Euronda E9 Next (Класс B)"),
+					autoclaveId: String(body.autoclaveId || "АК-01"),
+					cycleNumber: c,
+					itemsDescription: String(
+						day.autoclaveRegimeTitle || "Стоматологический инструментарий смены",
+					),
+					packagingType: normalizePackagingType(
+						typeof day.packagingType === "string" ? day.packagingType : "kraft_bag_combined",
+					),
+					temperatureCelsius: String(day.autoclaveTemperature || "134"),
+					pressureBar: String(day.autoclavePressure || "2.15"),
+					durationMin: Number(day.autoclaveDuration || 5),
+					indicatorType: "class5_integrating",
+					cycleMode: "B",
+					passedIndicator: day.points5Passed !== false,
+					status: "passed" as const,
+					barcode: `DNT-STER-${dayDateStr.replace(/-/g, "")}-${c}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
+					operatorId,
+					timestamp: validTimestamp,
+				});
+			}
+		}
+
+		const psoRows = psoValues.length > 0 ? await tx.insert(preSterilizationCleaningLogs).values(psoValues).returning() : [];
+		const sterilRows = sterilValues.length > 0 ? await tx.insert(sterilizationLogs).values(sterilValues).returning() : [];
+
+		const sterilWithCounts = sterilRows.map((row) =>
+			Object.assign(row, { packagedItemsCount: Math.max(1, Number(body.packagedItemsCount || 1)) }),
+		);
+
+		for (const d of daysToProcess) {
+			const day = d as Record<string, unknown>;
+			const dayDateStr = typeof day.date === "string" ? day.date : todayStr;
+			await executeShiftBactericidalAndClimateLogs(tx, organizationId, dayDateStr, operatorId);
+		}
+
+		return { insertedPso: psoRows, insertedSteril: sterilWithCounts };
+	}
+
 	// 1. Пробы контроля предстерилизационной очистки
 	const psoBatches = getShiftPsoBatches(body.psoRecords);
 	const rawAutoclaveCycles = body.autoclaveCycles ?? body.autoclaveCycle ?? body.form257 ?? body.sterilizationRecords;

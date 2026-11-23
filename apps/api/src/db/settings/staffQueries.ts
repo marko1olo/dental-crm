@@ -14,6 +14,7 @@ import {
 	updateStaffMemberProfile as updateStaffMemberProfileInMemory,
 	updateStaffWorkingHours as updateStaffWorkingHoursInMemory,
 } from "../../sampleData.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type {
 	DoctorCommissionRate,
 	UpdateStaffMemberProfileInput,
@@ -22,6 +23,8 @@ import { useInMemory } from "./types.js";
 import { staffAuthorityFlags } from "../../security/permissions.js";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
+
+const logger = createApiLogger("staffQueries");
 
 export async function createStaffMemberInDb(
 	organizationId: string,
@@ -173,7 +176,10 @@ export async function updateStaffMemberProfileInDb(
 				labCostDeductionPct: input.labCostDeductionPct ?? undefined,
 			});
 		} catch (commErr) {
-			console.warn("[staffQueries] Не удалось синхронизировать ставку врача при обновлении профиля:", commErr);
+			logger.warn(
+				{ err: safeLogError(commErr), organizationId, staffId },
+				"Не удалось синхронизировать ставку врача при обновлении профиля",
+			);
 		}
 	}
 }

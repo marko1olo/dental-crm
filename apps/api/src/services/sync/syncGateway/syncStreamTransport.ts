@@ -2,6 +2,7 @@ import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
 import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
+	patientInvoices,
 	patients,
 	payments,
 	syncEntityVectors,
@@ -154,6 +155,7 @@ export class SyncStreamTransport {
 				changedPayments,
 				changedAppointments,
 				changedToothStates,
+				changedInvoices,
 			] = await Promise.all([
 				tx
 					.select()
@@ -201,6 +203,15 @@ export class SyncStreamTransport {
 							isInitialSync ? sql`TRUE` : gte(toothStates.updatedAt, since),
 						),
 					),
+				tx
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.organizationId, organizationId),
+							isInitialSync ? sql`TRUE` : gte(patientInvoices.createdAt, since),
+						),
+					),
 			]);
 
 			return {
@@ -212,6 +223,7 @@ export class SyncStreamTransport {
 				appointments: changedAppointments,
 				toothStates: changedToothStates,
 				vectors: changedVectors,
+				invoices: changedInvoices,
 			};
 		});
 	}

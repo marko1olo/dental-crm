@@ -7,7 +7,7 @@
  */
 
 import { SEPA_PERMANENT_TEETH } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	patients,
@@ -189,6 +189,43 @@ export async function upsertPatientFullPeriodontogram({
 			// 1. Пакетное обновление параметров зубов (1 запрос вместо 32)
 			if (teeth && teeth.length > 0) {
 				await batchUpsertTeeth(tx, activeDraft.id, teeth);
+
+				// SEV-2.1: Синхронизация подвижности (mobility) в tooth_states.clinical_data в рамках транзакции tx
+				const teethWithMobility = teeth.filter((t) => {
+					const num = t.toothNumber ?? t.tooth_number;
+					return num !== undefined && t.mobility !== undefined && t.mobility !== null;
+				});
+
+				if (teethWithMobility.length > 0) {
+					for (const t of teethWithMobility) {
+						const toothNum = (t.toothNumber ?? t.tooth_number) as number;
+						const mobilityVal = Number(t.mobility);
+						if (!Number.isNaN(mobilityVal)) {
+							await tx
+								.insert(toothStates)
+								.values({
+									organizationId: orgId,
+									patientId,
+									toothNumber: toothNum,
+									state: "healthy",
+									clinicalData: { mobility: mobilityVal },
+									isSynced: false,
+									updatedAt: new Date(),
+								})
+								.onConflictDoUpdate({
+									target: [
+										toothStates.organizationId,
+										toothStates.patientId,
+										toothStates.toothNumber,
+									],
+									set: {
+										clinicalData: sql`coalesce(${toothStates.clinicalData}, '{}'::jsonb) || jsonb_build_object('mobility', ${mobilityVal}::int)`,
+										updatedAt: new Date(),
+									},
+								});
+						}
+					}
+				}
 			}
 
 			// 2. Пакетное обновление сайтов зондирования (1 запрос вместо 192)

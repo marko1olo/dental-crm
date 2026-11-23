@@ -324,4 +324,79 @@ describe("Loyalty Gift Certificates — Statutory 54-FZ & Luhn Modulo-10 Integra
 		assert.equal(unknownRes.statusCode, 404);
 		assert.match(unknownRes.json().message, /не найден в картотеке клиники/);
 	});
+
+	test("6. Каскадное списание из семейного пула бонусов (SEV-1.2: totalPooledPoints debit)", async () => {
+		if (!databaseAvailable) return;
+
+		// 1. Начисляем баллы: спонсору (PATIENT_ID) 500 б., родственнику (RELATIVE_ID) 1 500 б.
+		await app.inject({
+			method: "POST",
+			url: "/api/loyalty/accrue",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": "00000000-0000-7000-8000-000000000601",
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				amountPoints: 500,
+				description: "Начисление спонсору",
+			},
+		});
+
+		await app.inject({
+			method: "POST",
+			url: "/api/loyalty/accrue",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": "00000000-0000-7000-8000-000000000602",
+			},
+			payload: {
+				patientId: RELATIVE_ID,
+				amountPoints: 1500,
+				description: "Начисление родственнику",
+			},
+		});
+
+		// 2. Проверяем семейный пул: сумма должна быть 2 000 бонусов
+		const familyPoolRes = await app.inject({
+			method: "GET",
+			url: `/api/loyalty/family/${PATIENT_ID}`,
+			headers: ORG_HEADERS,
+		});
+		assert.equal(familyPoolRes.statusCode, 200);
+		const familyPoolBody = familyPoolRes.json();
+		assert.equal(familyPoolBody.hasFamilyGroup, true);
+		assert.equal(familyPoolBody.totalPooledPoints, 2000, "Суммарный пул семьи должен составлять 2 000 бонусов");
+
+		// 3. Списание 1 200 бонусов в пользу родственника со спонсором PATIENT_ID
+		const debitRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/family/debit",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": "00000000-0000-7000-8000-000000000603",
+			},
+			payload: {
+				sponsorPatientId: PATIENT_ID,
+				targetPatientId: RELATIVE_ID,
+				pointsToDebit: 1200,
+				description: "Оплата части лечения из семейного пула",
+			},
+		});
+
+		assert.equal(debitRes.statusCode, 200, `Ошибка списания семейного бонуса: ${debitRes.body}`);
+		const debitBody = debitRes.json();
+		assert.equal(debitBody.success, true);
+		assert.equal(debitBody.redeemedPoints, 1200);
+
+		// 4. Проверяем остаток в пуле: 2 000 - 1 200 = 800 бонусов
+		const updatedPoolRes = await app.inject({
+			method: "GET",
+			url: `/api/loyalty/family/${PATIENT_ID}`,
+			headers: ORG_HEADERS,
+		});
+		assert.equal(updatedPoolRes.statusCode, 200);
+		const updatedPoolBody = updatedPoolRes.json();
+		assert.equal(updatedPoolBody.totalPooledPoints, 800, "В семейном пуле должно остаться ровно 800 бонусов");
+	});
 });

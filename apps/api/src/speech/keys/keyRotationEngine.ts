@@ -28,6 +28,9 @@ import {
 	speechProviderTimeoutMs,
 	splitKeyList,
 } from "./keyHashing.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("speechKeyRotationEngine");
 
 const keyHealthByFingerprint = new Map<string, KeyHealth>();
 let keyHealthLoadedFromDisk = false;
@@ -41,7 +44,7 @@ export function clearSpeechKeyHealthMemoryForTests(): void {
 		try {
 			unlinkSync(filePath);
 		} catch (err) {
-			console.warn("[KeyRotation] Failed to unlink key health test file:", err);
+			logger.warn({ err: safeLogError(err), filePath }, "Failed to unlink key health test file");
 		}
 	}
 	clearModelHealthMemoryForTests();
@@ -527,16 +530,19 @@ export function recordProviderKeyFailure(
 
 	const maskedKey = candidate.value ? `...${candidate.value.slice(-6)}` : "unknown";
 	if (isRateLimit) {
-		console.warn(
-			`[KeyPool:${String(providerId)}] Key ${maskedKey} RATE LIMITED (429/quota). Consecutive=${consecutiveFailures}. Cooldown=${Math.round(cooldownMs / 1000)}s.`,
+		logger.warn(
+			{ providerId: String(providerId), maskedKey, consecutiveFailures, cooldownSeconds: Math.round(cooldownMs / 1000) },
+			"Key rate limited (429/quota)",
 		);
 	} else if (isAuthFailure) {
-		console.warn(
-			`[KeyPool:${String(providerId)}] Key ${maskedKey} AUTH FAILED (${statusCode ?? "403"}). Consecutive=${consecutiveFailures}. Cooldown=${Math.round(cooldownMs / 1000)}s. Error: ${errorMessage}`,
+		logger.warn(
+			{ providerId: String(providerId), maskedKey, statusCode: statusCode ?? 403, consecutiveFailures, cooldownSeconds: Math.round(cooldownMs / 1000), errorMessage },
+			"Key auth failed",
 		);
 	} else {
-		console.warn(
-			`[KeyPool:${String(providerId)}] Key ${maskedKey} FAILED. Consecutive=${consecutiveFailures}. Cooldown=${Math.round(cooldownMs / 1000)}s. Error: ${errorMessage}`,
+		logger.warn(
+			{ providerId: String(providerId), maskedKey, consecutiveFailures, cooldownSeconds: Math.round(cooldownMs / 1000), errorMessage },
+			"Key failed",
 		);
 	}
 

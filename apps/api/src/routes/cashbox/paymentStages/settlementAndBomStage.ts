@@ -5,7 +5,7 @@
  * Governed by Mandate 8e, 8v, 8bm, 8bo (Soft Negative Stock & Clinical Autonomy).
  */
 
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, ne, notInArray, sql } from "drizzle-orm";
 import {
 	kopecksToNumericString,
 	normalizePaymentMethod,
@@ -21,8 +21,9 @@ import {
 	treatmentItems,
 	visits,
 } from "../../../db/schema.js";
+import { withSavepoint } from "../../../db/rls.js";
 import { chargeLineKopecks } from "../../../money/patientDebt.js";
-import { deductMaterialsForVisit } from "../../../services/inventory/materialDeduction.js";
+import { TreatmentConsumablesService } from "../../../services/treatmentConsumables/index.js";
 import { finalizeLoyaltyBonusDeduction } from "./loyaltyBonusStage.js";
 import { finalizeGiftCertificateDeduction } from "./giftCertificateStage.js";
 import { finalizeDmsDeduction } from "./dmsStage.js";
@@ -175,7 +176,11 @@ export async function processSettlementAndBomStage(
 						eq(payments.organizationId, orgId),
 						eq(payments.visitId, effectiveVisitId),
 						eq(payments.status, "paid"),
-						newPayment?.id ? ne(payments.id, newPayment.id) : sql`true`,
+						ctx.createdPaymentIds.length > 0
+							? notInArray(payments.id, ctx.createdPaymentIds)
+							: newPayment?.id
+								? ne(payments.id, newPayment.id)
+								: sql`true`,
 					),
 				);
 
@@ -261,11 +266,19 @@ export async function processSettlementAndBomStage(
 			// Автоматическое списание расходных материалов по техкартам процедур (BOM) визита (Мандаты 8e, 8v)
 			const cashierUserId = body.cashierUserId || body.operatorId || null;
 			try {
-				await deductMaterialsForVisit(tx, {
-					organizationId: orgId,
-					visitId: effectiveVisitId,
-					userId: cashierUserId,
-					transactionType: "auto_deduct",
+				await withSavepoint(tx, async (spTx) => {
+					await TreatmentConsumablesService.deductForVisit(spTx, {
+						organizationId: orgId,
+						visitId: effectiveVisitId,
+						userId: cashierUserId,
+						transactionType: "auto_deduct",
+						clientMutationId: ctx.effectiveMutationId || body.clientMutationId || null,
+						patientId: resolvedPatientId,
+						carpulesCount: (body as { carpulesCount?: number }).carpulesCount ?? undefined,
+						drugName: (body as { drugName?: string }).drugName ?? undefined,
+						mdlpItems: (body as { mdlpItems?: Array<{ rawBarcode?: string | null; sgtin?: string | null; gtin?: string | null; serialNumber?: string | null; costRub?: number | null; tradeName?: string | null; inn?: string | null; series?: string | null }> }).mdlpItems ?? undefined,
+						allowOverdraft: true,
+					});
 				});
 			} catch (deductErr) {
 				// Soft Negative Stock: ошибка списания никогда не блокирует кассовый расчет визита

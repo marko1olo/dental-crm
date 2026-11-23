@@ -1,7 +1,8 @@
 /**
- * botUrlHelpers.ts
+ * telegramUrlHelpers.ts
  *
- * URL validation, sensitive query filtering, visual cards and portal links.
+ * URL validation, sensitive query filtering, visual cards and portal links for Telegram.
+ * SSOT for URL handling in DENTE Telegram integrations.
  */
 
 import type {
@@ -10,8 +11,14 @@ import type {
 	DenteTelegramVisualCardKey,
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
-import type { DenteTelegramPortalSection } from "./types.js";
-import { denteTelegramBotSettings } from "./botSettings.js";
+
+export type DenteTelegramPortalSection =
+	| "home"
+	| "schedule"
+	| "documents"
+	| "tax"
+	| "billing"
+	| "care";
 
 const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"patient",
@@ -192,7 +199,7 @@ export function safeDenteTelegramPublicHttpsUrl(
 	}
 }
 
-const defaultDenteTelegramVisualCardUrls: DenteTelegramVisualCardUrls = {
+export const defaultDenteTelegramVisualCardUrls: DenteTelegramVisualCardUrls = {
 	mainMenu: null,
 	appointment: null,
 	documents: null,
@@ -256,7 +263,6 @@ export function normalizeExistingDenteTelegramVisualCardUrls(
 	}
 }
 
-
 export function safeHttpsUrl(value: string | null | undefined): string | null {
 	try {
 		return normalizeTelegramPublicHttpsUrl("telegramPublicUrl", value);
@@ -266,9 +272,10 @@ export function safeHttpsUrl(value: string | null | undefined): string | null {
 }
 
 export function denteTelegramVisualCardUrlFor(
-	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	settings?: DenteTelegramBotSettings | null,
 	cardKey: DenteTelegramVisualCardKey = "mainMenu",
 ): string | null {
+	if (!settings) return null;
 	return (
 		safeHttpsUrl(settings.visualCardUrls?.[cardKey]) ??
 		safeHttpsUrl(settings.welcomeImageUrl)
@@ -299,14 +306,13 @@ function denteTelegramVisualCardKeyForTemplate(
 
 export function denteTelegramVisualCardUrlForTemplate(
 	templateKind: DenteTelegramTemplateKind,
-	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	settings?: DenteTelegramBotSettings | null,
 ): string | null {
 	return denteTelegramVisualCardUrlFor(
 		settings,
 		denteTelegramVisualCardKeyForTemplate(templateKind),
 	);
 }
-
 
 function denteTelegramPortalSectionForTemplate(
 	templateKind: DenteTelegramTemplateKind,
@@ -330,8 +336,9 @@ function denteTelegramPortalSectionForTemplate(
 
 export function denteTelegramPortalUrlForSection(
 	section: DenteTelegramPortalSection,
-	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	settings?: DenteTelegramBotSettings | null,
 ): string | null {
+	if (!settings) return null;
 	const portal = safeHttpsUrl(settings.patientPortalBaseUrl);
 	if (!portal) return null;
 	try {
@@ -348,7 +355,7 @@ export function denteTelegramPortalUrlForSection(
 
 export function denteTelegramPortalUrlForTemplate(
 	templateKind: DenteTelegramTemplateKind,
-	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	settings?: DenteTelegramBotSettings | null,
 ): string | null {
 	return denteTelegramPortalUrlForSection(
 		denteTelegramPortalSectionForTemplate(templateKind),
@@ -358,9 +365,8 @@ export function denteTelegramPortalUrlForTemplate(
 
 export function denteTelegramPortalRowForTemplate(
 	templateKind: DenteTelegramTemplateKind,
-	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	settings?: DenteTelegramBotSettings | null,
 ): Array<{ text: string; url: string }> {
 	const portal = denteTelegramPortalUrlForTemplate(templateKind, settings);
 	return portal ? [{ text: "Открыть DENTE", url: portal }] : [];
 }
-

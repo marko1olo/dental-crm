@@ -190,6 +190,14 @@ export async function handleGetTreatmentPlanById(
 		validUntilIso: plan.priceFrozenUntil ? plan.priceFrozenUntil.toISOString() : undefined,
 		items: items.map((item) => {
 			const summary = calculateTreatmentPlanItemSummary(item);
+			const unitPriceKop = item.priceKopecks != null
+				? Number(item.priceKopecks)
+				: rublesToKopecks(summary.unitPriceRub);
+			const discountKop = item.discountKopecks != null
+				? Number(item.discountKopecks)
+				: rublesToKopecks(summary.planDiscountRub);
+			const lineTotalKop = Math.max(0, unitPriceKop * summary.quantity - discountKop);
+
 			return {
 				itemId: summary.itemId,
 				toothNumber: summary.toothNumber,
@@ -200,13 +208,9 @@ export async function handleGetTreatmentPlanById(
 				planUnitPriceRub: summary.unitPriceRub,
 				planDiscountRub: summary.planDiscountRub,
 				planDiscountPercent: summary.planDiscountPercent,
-				unitPriceKopecks: Number(item.priceKopecks ?? rublesToKopecks(summary.unitPriceRub)),
-				discountKopecks: Number(item.discountKopecks ?? rublesToKopecks(summary.planDiscountRub)),
-				lineTotalKopecks: Math.max(
-					0,
-					Number(item.priceKopecks ?? rublesToKopecks(summary.unitPriceRub)) * summary.quantity -
-						Number(item.discountKopecks ?? rublesToKopecks(summary.planDiscountRub)),
-				),
+				unitPriceKopecks: unitPriceKop,
+				discountKopecks: discountKop,
+				lineTotalKopecks: lineTotalKop,
 				quantity: summary.quantity,
 				planLineTotalRub: summary.planLineTotalRub,
 				serviceId: summary.serviceCode,

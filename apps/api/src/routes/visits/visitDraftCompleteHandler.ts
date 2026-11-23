@@ -87,16 +87,21 @@ export async function handleCompleteVisit(
 			};
 		}
 
-		const body = (request.body as Record<string, any> | undefined) ?? {};
-		const rawDraft = body.draft || body.diary || {};
+		const body = (request.body as Record<string, unknown> | undefined) ?? {};
+		const rawDraft = (body.draft || body.diary || {}) as Record<string, unknown>;
 		const effectiveDraft = buildEffectiveDraft(rawDraft, existingVisit);
 
 		const acceptInput = {
 			visitId,
 			draft: effectiveDraft,
-			doctorSummary: body.doctorSummary ?? existingVisit.doctorSummary ?? null,
+			doctorSummary:
+				typeof body.doctorSummary === "string"
+					? body.doctorSummary
+					: existingVisit.doctorSummary ?? null,
 			clientMutationId:
-				body.clientMutationId ?? `complete-${visitId}-${Date.now()}`,
+				typeof body.clientMutationId === "string" && body.clientMutationId.trim()
+					? body.clientMutationId.trim()
+					: `complete-${visitId}-${Date.now()}`,
 			baseRevision: existingVisit.revision,
 			clientSavedAt: new Date().toISOString(),
 		};

@@ -1,9 +1,9 @@
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { multiplyKopecks, rublesToKopecks, toExactKopecks } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import {
 	treatmentItems,
 	treatmentPlanItemsNew,
@@ -11,6 +11,7 @@ import {
 	treatmentPlans,
 	visits,
 } from "../../db/schema.js";
+import { rublesFromKopecks } from "../../money/patientDebt.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -29,6 +30,31 @@ import {
 interface PlanCompletionParams {
 	patientId: string;
 	planId: string;
+}
+
+function resolvePlanItemMoney(item: typeof treatmentPlanItemsNew.$inferSelect) {
+	const quantity = Math.max(1, Math.trunc(Number(item.quantity) || 1));
+	const unitPriceKopecksExact =
+		item.priceKopecks > 0n
+			? toExactKopecks(Number(item.priceKopecks))
+			: rublesToKopecks(numeric(item.price));
+	const discountKopecksExact =
+		item.discountKopecks > 0n
+			? toExactKopecks(Number(item.discountKopecks))
+			: rublesToKopecks(numeric(item.discount));
+	const lineTotalKopecksExact = toExactKopecks(
+		Math.max(0, multiplyKopecks(unitPriceKopecksExact, quantity) - discountKopecksExact),
+	);
+
+	return {
+		quantityStr: String(quantity),
+		priceRub: rublesFromKopecks(lineTotalKopecksExact),
+		unitPriceRub: rublesFromKopecks(unitPriceKopecksExact),
+		discountRub: rublesFromKopecks(discountKopecksExact),
+		priceKopecks: BigInt(lineTotalKopecksExact),
+		unitPriceKopecks: BigInt(unitPriceKopecksExact),
+		discountKopecks: BigInt(discountKopecksExact),
+	};
 }
 
 export function registerPlanCompletionRoutes(app: FastifyInstance) {
@@ -198,9 +224,14 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					}
 				}
 
-				const targetLedgerIds = Array.from(targetIndices)
-					.map((idx) => (planItems[idx] ? ledgerRowId(planId, idx) : null))
-					.filter((id): id is string => Boolean(id));
+				const ledgerIdByIdx = new Map<number, string>();
+				for (const idx of targetIndices) {
+					if (planItems[idx]) {
+						ledgerIdByIdx.set(idx, ledgerRowId(planId, idx));
+					}
+				}
+
+				const targetLedgerIds = Array.from(ledgerIdByIdx.values());
 
 				const targetItemIds = Array.from(targetIndices)
 					.map((idx) => planItems[idx]?.id)
@@ -211,12 +242,15 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 						? await tx
 								.select({
 									id: treatmentItems.id,
+									status: treatmentItems.status,
+									visitId: treatmentItems.visitId,
 									treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
 								})
 								.from(treatmentItems)
 								.where(
 									and(
 										eq(treatmentItems.organizationId, organizationId),
+										ne(treatmentItems.status, "cancelled"),
 										or(
 											targetLedgerIds.length > 0
 												? inArray(treatmentItems.id, targetLedgerIds)
@@ -239,21 +273,30 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
-					const ledgerId = ledgerRowId(planId, idx);
+					const ledgerId = ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx);
 					if (existingIdSet.has(ledgerId) || existingPlanItemIdSet.has(item.id)) {
+						const money = resolvePlanItemMoney(item);
 						await tx
 							.update(treatmentItems)
 							.set({
 								status: "completed",
-								visitId: validVisitId,
+								...(validVisitId !== null ? { visitId: validVisitId } : {}),
 								treatmentPlanId: planId,
 								treatmentPlanItemId: item.id,
+								quantity: money.quantityStr,
+								priceRub: money.priceRub,
+								unitPriceRub: money.unitPriceRub,
+								discountRub: money.discountRub,
+								priceKopecks: money.priceKopecks,
+								unitPriceKopecks: money.unitPriceKopecks,
+								discountKopecks: money.discountKopecks,
 								isSynced: false,
 								version: sql`${treatmentItems.version} + 1`,
 							})
 							.where(
 								and(
 									eq(treatmentItems.organizationId, organizationId),
+									ne(treatmentItems.status, "cancelled"),
 									or(
 										eq(treatmentItems.treatmentPlanItemId, item.id),
 										eq(treatmentItems.id, ledgerId),
@@ -267,9 +310,11 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
-					const ledgerId = ledgerRowId(planId, idx);
+					const ledgerId = ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx);
 					if (!existingIdSet.has(ledgerId) && !existingPlanItemIdSet.has(item.id)) {
 						const { name } = splitStoredPriceId(item.priceId);
+						const money = resolvePlanItemMoney(item);
+						const title = item.name?.trim() || name || "Услуга плана лечения";
 						itemsToInsert.push({
 							id: ledgerId,
 							organizationId,
@@ -282,14 +327,17 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 								item.toothNumber !== null && item.toothNumber !== undefined
 									? String(item.toothNumber)
 									: null,
-							title: name,
-							quantity: String(item.quantity),
-							priceRub: numeric(item.price),
-							unitPriceRub: numeric(item.price),
-							discountRub: numeric(item.discount),
+							title,
+							quantity: money.quantityStr,
+							priceRub: money.priceRub,
+							unitPriceRub: money.unitPriceRub,
+							discountRub: money.discountRub,
+							priceKopecks: money.priceKopecks,
+							unitPriceKopecks: money.unitPriceKopecks,
+							discountKopecks: money.discountKopecks,
 							status: "completed",
 							plannedDoctorUserId: item.doctorId ?? null,
-							notes: body.visitId ? `Завершено в приёме ${body.visitId}` : null,
+							notes: validVisitId ? `Завершено в приёме ${validVisitId}` : null,
 							isSynced: false,
 							version: 1,
 						});
@@ -327,13 +375,16 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				);
 				const completedPlanItemIdsSet = new Set(
 					ledgerRows
-						.filter((r) => r.status === "completed" && r.treatmentPlanItemId)
-						.map((r) => r.treatmentPlanItemId!.toLowerCase()),
+						.filter(
+							(r): r is typeof r & { treatmentPlanItemId: string } =>
+								r.status === "completed" && typeof r.treatmentPlanItemId === "string",
+						)
+						.map((r) => r.treatmentPlanItemId.toLowerCase()),
 				);
 
 				const allCompleted = planItems.every((item, idx) =>
 					completedPlanItemIdsSet.has(item.id.toLowerCase()) ||
-					completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()),
+					completedLedgerIds.has((ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx)).toLowerCase()),
 				);
 
 				if (allCompleted) {
@@ -382,18 +433,21 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					const phaseIndices = planItems
 						.map((it, idx) => (it.phase === phaseNum ? idx : -1))
 						.filter((idx) => idx >= 0);
+					const isPhaseItemCompleted = (idx: number): boolean => {
+						const planItem = planItems[idx];
+						if (!planItem) return false;
+						return (
+							completedPlanItemIdsSet.has(planItem.id.toLowerCase()) ||
+							completedLedgerIds.has(
+								(ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx)).toLowerCase(),
+							) ||
+							targetIndices.has(idx)
+						);
+					};
 					const allPhaseCompleted =
 						phaseIndices.length > 0 &&
-						phaseIndices.every(
-							(idx) =>
-								completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()) ||
-								targetIndices.has(idx),
-						);
-					const completedPhaseCount = phaseIndices.filter(
-						(idx) =>
-							completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()) ||
-							targetIndices.has(idx),
-					).length;
+						phaseIndices.every(isPhaseItemCompleted);
+					const completedPhaseCount = phaseIndices.filter(isPhaseItemCompleted).length;
 					const phasePercentage =
 						phaseIndices.length > 0
 							? Math.min(100, Math.round((completedPhaseCount / phaseIndices.length) * 100))
@@ -445,11 +499,13 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				});
 			}
 
-			wsBroker.broadcastToPatient(organizationId, patientId, {
-				type: "treatment_plan_updated",
-				planId,
-				completedItemCount: result.targetCount,
-				totalItemCount: result.totalCount,
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToPatient(organizationId, patientId, {
+					type: "treatment_plan_updated",
+					planId,
+					completedItemCount: result.targetCount,
+					totalItemCount: result.totalCount,
+				});
 			});
 
 			const updatedPlans = await withTenantCtx(organizationId, async () =>

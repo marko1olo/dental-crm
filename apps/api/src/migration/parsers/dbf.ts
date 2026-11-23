@@ -106,8 +106,7 @@ const RECORD_DELETED = 0x2a;
 /** Быстрая проверка, что буфер вообще похож на DBF, — до попытки разбора. */
 export function looksLikeDbf(buffer: Buffer): boolean {
 	if (buffer.length < HEADER_SIZE + 1) return false;
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const version = buffer[0]!;
+	const version = buffer[0] ?? 0;
 	if (!(version in DBF_VERSION_LABELS)) return false;
 
 	const headerLength = buffer.readUInt16LE(8);
@@ -120,10 +119,8 @@ export function looksLikeDbf(buffer: Buffer): boolean {
 	if (recordLength === 0) return false;
 
 	// Месяц и день последнего изменения обязаны быть календарными.
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const month = buffer[2]!;
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const day = buffer[3]!;
+	const month = buffer[2] ?? 0;
+	const day = buffer[3] ?? 0;
 	return month >= 1 && month <= 12 && day >= 1 && day <= 31;
 }
 
@@ -245,16 +242,14 @@ export function parseDbf(
 		);
 	}
 
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const version = buffer[0]!;
+	const version = buffer[0] ?? 0;
 	const versionLabel =
 		DBF_VERSION_LABELS[version] ??
 		`неизвестная версия 0x${version.toString(16)}`;
 	const declaredRecordCount = buffer.readUInt32LE(4);
 	const headerLength = buffer.readUInt16LE(8);
 	const recordLength = buffer.readUInt16LE(10);
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const languageDriver = buffer[29]!;
+	const languageDriver = buffer[29] ?? 0;
 
 	if (
 		headerLength < HEADER_SIZE + FIELD_DESCRIPTOR_SIZE ||
@@ -311,10 +306,8 @@ export function parseDbf(
 			.replace(/\0.*$/, "")
 			.trim();
 		const type = String.fromCharCode(descriptor[11] ?? 0x43);
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const length = descriptor[16]!;
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const decimals = descriptor[17]!;
+		const length = descriptor[16] ?? 0;
+		const decimals = descriptor[17] ?? 0;
 		if (name === "") {
 			offset += FIELD_DESCRIPTOR_SIZE;
 			continue;
@@ -373,8 +366,7 @@ export function parseDbf(
 		const record = buffer.subarray(start, start + recordLength);
 		if (record.length < recordLength) break;
 
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const flag = record[0]!;
+		const flag = record[0] ?? RECORD_ACTIVE;
 		if (flag === RECORD_DELETED) {
 			deletedRowCount += 1;
 			if (!options.includeDeleted) continue;

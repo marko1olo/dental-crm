@@ -116,10 +116,10 @@ function setFunctionModule(
 	isDark: boolean,
 ): void {
 	if (x < 0 || y < 0 || x >= QR_SIZE || y >= QR_SIZE) return;
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	modules[y]![x] = isDark;
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	reserved[y]![x] = true;
+	const modRow = modules[y];
+	const resRow = reserved[y];
+	if (modRow) modRow[x] = isDark;
+	if (resRow) resRow[x] = true;
 }
 
 function drawFinder(
@@ -267,8 +267,8 @@ function drawData(
 				let bit = bitIndex < bits.length ? (bits[bitIndex] ?? 0) : 0;
 				bitIndex += 1;
 				if ((xx + y) % 2 === 0) bit = bit === 1 ? 0 : 1;
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				modules[y]![xx] = bit === 1;
+				const modRow = modules[y];
+				if (modRow) modRow[xx] = bit === 1;
 			}
 		}
 		upward = !upward;

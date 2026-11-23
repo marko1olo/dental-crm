@@ -29,6 +29,9 @@ import {
 	type GeminiBidiBridgeOptions,
 	type GeminiBidiParsedMessage,
 } from "./types.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("geminiBidiBridge");
 
 /**
  * Parses incoming server message from Google Gemini Live WebSocket.
@@ -535,9 +538,9 @@ export class GeminiBidiBridge extends EventEmitter {
 		if (this.listenerCount("error") > 0) {
 			this.emit("error", error);
 		} else {
-			console.error(
-				"[GeminiBidiBridge] Unhandled bridge error event:",
-				error.message,
+			logger.error(
+				{ err: safeLogError(error) },
+				"Unhandled bridge error event",
 			);
 		}
 	}
@@ -572,11 +575,11 @@ export class GeminiBidiBridge extends EventEmitter {
 			);
 			this.ws.send(JSON.stringify(mediaFrame), (err) => {
 				if (err) {
-					console.warn("[GeminiBidiBridge] ws.send error:", err.message);
+					logger.warn({ err: safeLogError(err) }, "ws.send error");
 				}
 			});
 		} catch (err) {
-			console.warn("[GeminiBidiBridge] ws.send exception:", err);
+			logger.warn({ err: safeLogError(err) }, "ws.send exception");
 			this.streamer.enqueue(chunk);
 		}
 	}

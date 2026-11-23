@@ -45,6 +45,8 @@ export interface SiteItemInput {
 	probing_depth_mm?: number | null | undefined;
 	gingivalMarginMm?: number | null | undefined;
 	gingival_margin_mm?: number | null | undefined;
+	calMm?: number | null | undefined;
+	cal_mm?: number | null | undefined;
 	bleedingOnProbing?: boolean | undefined;
 	bleeding_on_probing?: boolean | undefined;
 	plaque?: boolean | undefined;

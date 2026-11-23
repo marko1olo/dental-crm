@@ -1,10 +1,29 @@
+import crypto from "node:crypto";
 import { signToken, verifyToken } from "../../../utils/cryptoHelper.js";
 
-const DEFAULT_LAB_PORTAL_SECRET = "dente-lab-guest-portal-hmac-sha256-salt-2026";
 const LAB_TOKEN_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 дней — полный ортопедический производственный цикл
 
-function getLabPortalSecret(): string {
-	return process.env.LAB_PORTAL_SECRET || process.env.JWT_SECRET || DEFAULT_LAB_PORTAL_SECRET;
+let ephemeralLabPortalSecret: string | null = null;
+
+/**
+ * Возвращает криптографический секрет для гостевого портала техника ЗТЛ.
+ * В production отсутствие секрета вызывает FatalConfigError.
+ * В dev/test генерируется надежный динамический ключ на время жизни процесса.
+ */
+export function getLabPortalSecret(): string {
+	const configured = process.env.LAB_PORTAL_SECRET || process.env.JWT_SECRET || process.env.AUTH_SECRET;
+	if (configured) {
+		return configured;
+	}
+	if (process.env.NODE_ENV === "production") {
+		throw new Error(
+			"FATAL_SECURITY_ERROR: LAB_PORTAL_SECRET, JWT_SECRET, or AUTH_SECRET must be explicitly configured in production environment!",
+		);
+	}
+	if (!ephemeralLabPortalSecret) {
+		ephemeralLabPortalSecret = crypto.randomBytes(32).toString("hex");
+	}
+	return ephemeralLabPortalSecret;
 }
 
 /**

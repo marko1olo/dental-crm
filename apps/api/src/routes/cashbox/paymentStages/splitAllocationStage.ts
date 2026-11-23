@@ -9,6 +9,9 @@ import { kopecksToRubles, normalizePaymentMethod, rublesToKopecks } from "@denta
 import { payments } from "../../../db/schema.js";
 import type { PaymentProcessingContext, StageStepResult, TenantTransaction } from "./types.js";
 
+const isValidUuid = (val?: string | null): boolean =>
+	Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
 export async function processSplitAllocationStage(
 	tx: TenantTransaction,
 	ctx: PaymentProcessingContext,
@@ -85,6 +88,11 @@ export async function processSplitAllocationStage(
 	ctx.splitTenderCount = splitTenderCount;
 
 	let newPayment: typeof payments.$inferSelect;
+	const recordCreatedPaymentId = (paymentRow: typeof payments.$inferSelect | undefined) => {
+		if (paymentRow?.id && !ctx.createdPaymentIds.includes(paymentRow.id)) {
+			ctx.createdPaymentIds.push(paymentRow.id);
+		}
+	};
 
 	if (splitTenderCount > 1) {
 		let elecPayment: typeof payments.$inferSelect | undefined;
@@ -235,13 +243,24 @@ export async function processSplitAllocationStage(
 		}
 
 		if (requiredDmsKopecks > 0n) {
+			const effectiveDmsDocId =
+				(isValidUuid(ctx.guaranteeLetterId) ? ctx.guaranteeLetterId : null) ||
+				(ctx.lockedDmsLetter?.id && isValidUuid(ctx.lockedDmsLetter.id) ? ctx.lockedDmsLetter.id : null) ||
+				body.invoiceId ||
+				null;
+			const letterRef = ctx.lockedDmsLetter?.letterNumber
+				? ` (ГП №${ctx.lockedDmsLetter.letterNumber})`
+				: ctx.guaranteeLetterId
+					? ` (ГП: ${ctx.guaranteeLetterId})`
+					: "";
+
 			const [dmsp] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: effectiveDmsDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:dms` : null,
 					amountRub: kopecksToRubles(Number(requiredDmsKopecks)),
 					amountKopecks: requiredDmsKopecks,
@@ -256,10 +275,23 @@ export async function processSplitAllocationStage(
 					payerIdentityDocument: body.payerIdentityDocument || null,
 					payerRelationship: body.payerRelationship || null,
 					taxDeductionCode: effectiveTaxCode,
-					note: body.note ? `${body.note} (ДМС)` : "Сплит-оплата (ДМС)",
+					note: body.note
+						? `${body.note} (ДМС${letterRef})`
+						: `Сплит-оплата (ДМС${letterRef})`,
 				})
 				.returning();
 			dmsPayment = dmsp;
+		}
+
+		for (const createdRow of [
+			elecPayment,
+			cashPayment,
+			depositPayment,
+			bonusPayment,
+			certPayment,
+			dmsPayment,
+		]) {
+			recordCreatedPaymentId(createdRow);
 		}
 
 		const primaryCandidate =
@@ -274,13 +306,30 @@ export async function processSplitAllocationStage(
 		}
 		newPayment = primaryCandidate;
 	} else {
+		const isSingleInsurance = normalizePaymentMethod(body.method) === "insurance";
+		const effectiveSingleDocId = isSingleInsurance
+			? (isValidUuid(ctx.guaranteeLetterId) ? ctx.guaranteeLetterId : null) ||
+				(ctx.lockedDmsLetter?.id && isValidUuid(ctx.lockedDmsLetter.id) ? ctx.lockedDmsLetter.id : null) ||
+				body.invoiceId ||
+				body.familyGroupId ||
+				null
+			: body.invoiceId || body.familyGroupId || null;
+
+		const singleLetterRef = isSingleInsurance
+			? ctx.lockedDmsLetter?.letterNumber
+				? ` (ГП №${ctx.lockedDmsLetter.letterNumber})`
+				: ctx.guaranteeLetterId
+					? ` (ГП: ${ctx.guaranteeLetterId})`
+					: ""
+			: "";
+
 		const [np] = await tx
 			.insert(payments)
 			.values({
 				organizationId: orgId,
 				patientId: resolvedPatientId,
 				visitId: effectiveVisitId,
-				documentId: body.invoiceId || body.familyGroupId || null,
+				documentId: effectiveSingleDocId,
 				clientMutationId: effectiveMutationId,
 				amountRub: amountRubNumber,
 				amountKopecks: totalKopecks,
@@ -296,12 +345,17 @@ export async function processSplitAllocationStage(
 				payerRelationship: body.payerRelationship || null,
 				taxDeductionCode: effectiveTaxCode,
 				note:
-					body.note ||
-					(body.isAdvanceDeposit
-						? body.familyGroupId
-							? "Внесение аванса (семейный депозит)"
-							: "Внесение авансового депозита"
-						: `Оплата через кассу (${body.method || "card"})`),
+					body.note
+						? isSingleInsurance && !body.note.includes("ДМС")
+							? `${body.note} (ДМС${singleLetterRef})`
+							: body.note
+						: (body.isAdvanceDeposit
+								? body.familyGroupId
+									? "Внесение аванса (семейный депозит)"
+									: "Внесение авансового депозита"
+								: isSingleInsurance
+									? `Оплата ДМС${singleLetterRef}`
+									: `Оплата через кассу (${body.method || "card"})`),
 			})
 			.returning();
 
@@ -312,5 +366,6 @@ export async function processSplitAllocationStage(
 	}
 
 	ctx.newPayment = newPayment;
+	recordCreatedPaymentId(newPayment);
 	return { success: true };
 }

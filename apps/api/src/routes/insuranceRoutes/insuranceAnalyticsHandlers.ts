@@ -122,7 +122,9 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 		};
 
 		// 3. Данные страховой компании
+		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
 		let contract: typeof insuranceContracts.$inferSelect | null = null;
+
 		if (contractId) {
 			const [found] = await db
 				.select()
@@ -136,7 +138,8 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				.limit(1);
 			contract = found || null;
 		} else if (insurerKey && insurerKey !== "all") {
-			const [found] = await db
+			const insurerTargetName = matchedInsurer?.name?.toLowerCase().trim();
+			const orgContracts = await db
 				.select()
 				.from(insuranceContracts)
 				.where(
@@ -144,18 +147,31 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 						eq(insuranceContracts.organizationId, orgId),
 						eq(insuranceContracts.isActive, true),
 					),
-				)
-				.limit(1);
+				);
+			const found = orgContracts.find((c) => {
+				const cName = c.companyName.toLowerCase().trim();
+				if (
+					insurerTargetName &&
+					(cName === insurerTargetName ||
+						cName.includes(insurerTargetName) ||
+						insurerTargetName.includes(cName))
+				) {
+					return true;
+				}
+				if (cName.includes(insurerKey.toLowerCase())) {
+					return true;
+				}
+				return false;
+			});
 			if (found) contract = found;
 		}
 
-		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
 		const insurerTitle = contract?.companyName || matchedInsurer?.name || (insurerKey && insurerKey !== "all" ? insurerKey : "Все страховые компании (Сводный отчет)");
 		const insurerInn = matchedInsurer?.inn || (insurerKey && insurerKey !== "all" ? "7700000000" : "0000000000");
 
 		const contractNumber = contract?.id
 			? `ДМС-${now.getFullYear()}/${contract.id.slice(0, 4).toUpperCase()}`
-			: `ДМС-${now.getFullYear()}/СВОД`;
+			: (insurerKey && insurerKey !== "all" ? "Б/Н" : `ДМС-${now.getFullYear()}/СВОД`);
 		const contractDate = contract?.createdAt
 			? contract.createdAt.toISOString().slice(0, 10)
 			: `${now.getFullYear()}-01-01`;
@@ -168,7 +184,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			contractDate,
 		};
 
-		// 4. Поиск гарантийных писем
+		// 4. Поиск гарантийных писем с профилем пациента
 		const lettersQueryConditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId)];
 		if (patientId) {
 			lettersQueryConditions.push(eq(dmsGuaranteeLetters.patientId, patientId));
@@ -176,10 +192,19 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 		if (insurerKey && insurerKey !== "all") {
 			lettersQueryConditions.push(eq(dmsGuaranteeLetters.insurerKey, insurerKey));
 		}
-		const letters = await db
-			.select()
+		const lettersWithPatients = await db
+			.select({
+				letter: dmsGuaranteeLetters,
+				patientAdminProfile: patients.administrativeProfile,
+			})
 			.from(dmsGuaranteeLetters)
+			.leftJoin(patients, eq(patients.id, dmsGuaranteeLetters.patientId))
 			.where(and(...lettersQueryConditions));
+
+		const letters = lettersWithPatients.map((r) => r.letter);
+		const patientProfileByLetterId = new Map(
+			lettersWithPatients.map((r) => [r.letter.id, r.patientAdminProfile]),
+		);
 
 		const lettersByPatientId = new Map<string, typeof dmsGuaranteeLetters.$inferSelect>();
 		for (const letter of letters) {
@@ -433,12 +458,19 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				if (!matchSearch) continue;
 			}
 
+			const letterAdminProfile = patientProfileByLetterId.get(letter.id);
+			const letterGender: "M" | "F" | "М" | "Ж" =
+				letterAdminProfile?.gender === "female"
+					? "Ж"
+					: "М";
+
 			canonicalRecords.push({
 				recordId: letter.id,
 				serviceDate: letterDateIso,
 				patientFullName: letter.patientFullName,
 				patientBirthDate: letter.patientBirthDate || "1990-01-01",
-				patientGender: letter.patientFullName.trim().endsWith("на") || letter.patientFullName.trim().endsWith("ва") || letter.patientFullName.trim().endsWith("ая") ? "Ж" : "М",
+				patientGender: letterGender,
+				patientSnils: letterAdminProfile?.snils || undefined,
 				policyNumber: letter.policyNumber,
 				guaranteeLetterNumber: letter.letterNumber,
 				guaranteeLetterDate: letter.issueDate,

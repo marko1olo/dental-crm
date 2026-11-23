@@ -1,6 +1,6 @@
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
-import { getVkConfirmationCode } from "./webhookAuth.js";
+import { getVkConfirmationCode } from "../../security/webhookAuth.js";
 
 /**
  * Обработка входящих событий VK Callback API (confirmation, message_new).

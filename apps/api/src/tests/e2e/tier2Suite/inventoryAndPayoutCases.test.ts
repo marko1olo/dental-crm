@@ -10,7 +10,7 @@ import {
 	visits,
 } from "../../../db/schema.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";
-import { deductMaterialsForVisit } from "../../../services/inventory/materialDeduction.js";
+import { deductForVisit as deductMaterialsForVisit } from "../../../services/treatmentConsumables/stockDeduction.js";
 import {
 	fixtureUuid,
 	withFixtureTenant,

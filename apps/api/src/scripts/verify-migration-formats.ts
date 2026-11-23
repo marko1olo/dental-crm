@@ -432,7 +432,7 @@ try {
 		const insertPatient = database.prepare(
 			"insert into patients (id, full_name, phone, birth_date, notes) values (?, ?, ?, ?, ?)",
 		);
-		const names = [
+		const names: Array<readonly [string, string, string, string]> = [
 			[
 				"Волкова Анна Петровна",
 				"+79031234567",
@@ -447,9 +447,8 @@ try {
 			],
 			["Лебедева Ирина Олеговна", "89091112233", "1995-02-14", "Отбеливание"],
 		];
-		names.forEach((row, index) => {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			insertPatient.run(index + 1, row[0]!, row[1]!, row[2]!, row[3]!);
+		names.forEach(([fullName, phone, birthDate, notes], index) => {
+			insertPatient.run(index + 1, fullName, phone, birthDate, notes);
 		});
 		const insertVisit = database.prepare(
 			"insert into visits (id, patient_id, visit_date, complaint) values (?,?,?,?)",

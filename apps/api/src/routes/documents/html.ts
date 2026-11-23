@@ -106,7 +106,7 @@ export async function register(app: FastifyInstance) {
 
 			// Реальный контекст вместо пустой заглушки (см. documents.ts).
 			const renderContext = {
-				...(await resolveDocumentRenderContext(orgId, document.patientId)),
+				...(await resolveDocumentRenderContext(orgId, document.patientId, request.log)),
 				origin,
 			};
 			if (document.status === "voided") {

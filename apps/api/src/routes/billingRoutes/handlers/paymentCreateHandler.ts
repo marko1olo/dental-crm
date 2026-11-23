@@ -13,6 +13,7 @@ import { recordAuditEventInDb } from "../../../db/auditQuery.js";
 import { findPaymentByClientMutationIdInDb } from "../../../db/billingQuery.js";
 import { narrowTaxDeductionCode } from "../../../db/billing/types.js";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
 import { processCashboxPayment } from "../../../routes/cashbox/cashboxPaymentProcessor.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -58,7 +59,8 @@ export async function handleCreatePayment(
 	if (!effectiveMutationId) {
 		return reply.code(400).send({
 			error: "BillingValidationError",
-			message: "Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения двойных списаний.",
+			code: "IdempotencyKeyRequired",
+			message: "Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения двойных списаний (Мандат 8bo / RFC 9562).",
 		});
 	}
 	const input: CreatePaymentInput = { ...rawInput, clientMutationId: effectiveMutationId };
@@ -97,11 +99,13 @@ export async function handleCreatePayment(
 
 		const resultData = cashboxResult.body.data as Record<string, unknown>;
 		const paymentId = typeof resultData.id === "string" ? resultData.id : "";
-		const [paymentRow] = await db
-			.select()
-			.from(payments)
-			.where(and(eq(payments.organizationId, orgId), eq(payments.id, paymentId)))
-			.limit(1);
+		const [paymentRow] = await withTenantCtx(orgId, async (tx) => {
+			return await tx
+				.select()
+				.from(payments)
+				.where(and(eq(payments.organizationId, orgId), eq(payments.id, paymentId)))
+				.limit(1);
+		});
 
 		if (!paymentRow) {
 			return reply.code(500).send({

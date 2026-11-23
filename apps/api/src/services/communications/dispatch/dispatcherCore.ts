@@ -7,7 +7,7 @@
 import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { type TenantDb, withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
-import { communicationOutbox } from "../../../db/schema.js";
+import { communicationOutbox, communicationTasks } from "../../../db/schema.js";
 import {
 	type CommunicationChannelCode,
 	type CommunicationConsentScope,
@@ -117,7 +117,10 @@ export async function enqueueMessage(
 	const body = input.body.trim();
 	if (!body) return { ok: false, reason: "Пустой текст сообщения." };
 
-	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(body);
+	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(body, {
+		scope: input.scope,
+		allowToothNumbers: (input.scope ?? "service") === "service",
+	});
 	if (secrecy.hasLeak) {
 		return {
 			ok: false,
@@ -175,7 +178,10 @@ export async function processRow(
 		return "suppressed";
 	}
 
-	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(row.body);
+	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(row.body, {
+		scope,
+		allowToothNumbers: scope === "service",
+	});
 	if (secrecy.hasLeak) {
 		await markSuppressed(
 			row,
@@ -282,6 +288,17 @@ export async function processRow(
 				updatedAt: now,
 			})
 			.where(eq(communicationOutbox.id, row.id));
+
+		if (row.taskId) {
+			await db
+				.update(communicationTasks)
+				.set({
+					status: "sent",
+					lastEventAt: now,
+				})
+				.where(eq(communicationTasks.id, row.taskId));
+		}
+
 		if (row.patientId) {
 			context.sentToday.set(
 				row.patientId,
@@ -379,6 +396,17 @@ export async function processRow(
 			updatedAt: now,
 		})
 		.where(eq(communicationOutbox.id, row.id));
+
+	if (row.taskId) {
+		await db
+			.update(communicationTasks)
+			.set({
+				status: "failed",
+				lastErrorMessage: outcome.errorMessage ?? outcome.errorClass,
+				lastEventAt: now,
+			})
+			.where(eq(communicationTasks.id, row.taskId));
+	}
 
 	return outcome.kind === "suppressed" ? "not_configured" : "failed";
 }

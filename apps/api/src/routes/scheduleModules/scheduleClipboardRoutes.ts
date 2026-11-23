@@ -39,13 +39,13 @@ const clipboardCopySchema = z.object({
 });
 
 const clipboardParamsSchema = z.object({
-	id: z.string().min(1, clipboardItemMissingMessage),
+	id: z.string().uuid({ message: clipboardItemMissingMessage }),
 });
 
 const clipboardPasteSchema = z.object({
 	startsAt: z.string().min(1, clipboardPasteValidationMessage),
 	doctorUserId: z.string().uuid().optional().nullable(),
-	chairId: z.string().optional().nullable(),
+	chairId: z.string().uuid().or(z.literal("default-chair")).optional().nullable(),
 });
 
 /**

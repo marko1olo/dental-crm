@@ -9,7 +9,7 @@ import {
 	denteTelegramAppointmentCallbacksReady,
 	buildDenteTelegramAppointmentCallbackData,
 	appointmentStatusLabelForTelegram,
-} from "../../services/telegram/legacyMemory/telegramChatLinkHelpers.js";
+} from "../../routes/telegram/telegramCanonicalStore.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 
 describe("Domain 30: Notifications, Gateways & 2-Way Appointment Confirmations", () => {

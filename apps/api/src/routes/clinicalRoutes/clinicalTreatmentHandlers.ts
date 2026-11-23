@@ -237,24 +237,4 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// COMPETITOR FEATURE #47: crm::пользовательские_типы_задач_для_администраторов
-	app.get("/api/crm/custom-crm-task-types", async (request, reply) => {
-		try {
-			// Организация берётся из подписанного токена, а не из заголовка клиента.
-			// Раньше здесь принимался x-organization-id без всякой аутентификации:
-			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-			const { getCustomCrmTaskTypesFromDb } = await import(
-				"../../db/customCrmTaskTypesQuery.js"
-			);
-			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при получении пользовательских типов CRM-задач.",
-			});
-		}
-	});
 }

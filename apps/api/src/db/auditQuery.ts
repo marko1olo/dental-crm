@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { AuditEvent } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { db } from "./client.js";
 import type { TenantDb } from "./rls.js";
 import { auditEvents } from "./schema.js";
+
+const logger = createApiLogger("auditQuery");
 
 /**
  * Единственный писатель `audit_events`, у которого автор события есть в
@@ -60,18 +63,28 @@ export async function recordAuditEventInDb(
 			})
 			.returning();
 	} catch (error) {
-		console.error(
-			`[auditQuery] ОТКАЗ ЗАПИСИ в audit_events. Событие подлежит ручному ` +
-				`внесению: ${emergencyRecord()}. Причина отказа:`,
-			error,
+		logger.error(
+			{
+				err: safeLogError(error),
+				emergencyRecord: emergencyRecord(),
+				organizationId,
+				entityType: input.entityType,
+				entityId: input.entityId,
+			},
+			"[auditQuery] ОТКАЗ ЗАПИСИ в audit_events. Событие подлежит ручному внесению",
 		);
 		throw error;
 	}
 
 	if (!event) {
-		console.error(
-			`[auditQuery] ОТКАЗ ЗАПИСИ в audit_events: вставка не вернула строку. ` +
-				`Событие подлежит ручному внесению: ${emergencyRecord()}`,
+		logger.error(
+			{
+				emergencyRecord: emergencyRecord(),
+				organizationId,
+				entityType: input.entityType,
+				entityId: input.entityId,
+			},
+			"[auditQuery] ОТКАЗ ЗАПИСИ в audit_events: вставка не вернула строку. Событие подлежит ручному внесению",
 		);
 		throw new Error("Failed to insert audit event");
 	}

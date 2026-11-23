@@ -23,7 +23,10 @@ import {
 } from "../../../telegramTransport.js";
 import { normalizeWhatsappRecipient } from "../../../whatsappTransport.js";
 import { resolveTelegramChatId } from "../../communications/channelRouter.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import type { TriageScreenResult } from "../TelegramInteractiveTriageService.js";
+
+const logger = createApiLogger("telegramPostOpPipeline");
 import {
 	COMPLEX_SURGERY_PATTERNS,
 	get3HoursScreen,
@@ -233,7 +236,7 @@ export class TelegramPostOpCarePipeline {
 				});
 			}
 		}).catch((err) => {
-			console.warn("[TelegramPostOpCarePipeline] Ошибка сохранения задачи в БД:", err);
+			logger.warn({ err: safeLogError(err), organizationId: params.organizationId, visitId: params.visitId }, "Ошибка сохранения задачи в БД");
 		});
 
 		return plan;

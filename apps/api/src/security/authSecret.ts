@@ -19,6 +19,9 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { createApiLogger } from "../observability/logger.js";
+
+const logger = createApiLogger("authSecret");
 
 const MIN_PRODUCTION_SECRET_LENGTH = 32;
 
@@ -55,18 +58,17 @@ function loadOrCreateDevSecret(): string {
 		const generated = randomBytes(48).toString("base64url");
 		mkdirSync(path.dirname(filePath), { recursive: true });
 		writeFileSync(filePath, generated, { encoding: "utf8", mode: 0o600 });
-		console.warn(
-			`[security] AUTH_TOKEN_SECRET не задан. Сгенерирован локальный dev-секрет: ${filePath}. ` +
-				"Для production обязательно задайте AUTH_TOKEN_SECRET в окружении.",
+		logger.warn(
+			{ filePath },
+			"AUTH_TOKEN_SECRET не задан. Сгенерирован локальный dev-секрет. Для production обязательно задайте AUTH_TOKEN_SECRET в окружении.",
 		);
 		return generated;
 	} catch {
 		// Диск недоступен (только чтение / контейнер). Эфемерный секрет: сессии не
 		// переживут перезапуск, но публичной константы всё равно не будет.
 		const ephemeral = randomBytes(48).toString("base64url");
-		console.warn(
-			"[security] AUTH_TOKEN_SECRET не задан и dev-секрет не сохраняется на диск. " +
-				"Используется эфемерный секрет: все сессии сбросятся при перезапуске.",
+		logger.warn(
+			"AUTH_TOKEN_SECRET не задан и dev-секрет не сохраняется на диск. Используется эфемерный секрет: все сессии сбросятся при перезапуске.",
 		);
 		return ephemeral;
 	}

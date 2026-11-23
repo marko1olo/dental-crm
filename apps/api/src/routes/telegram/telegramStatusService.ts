@@ -6,7 +6,7 @@ import {
 	denteTelegramOutboxDeliveryReceipts,
 	listDenteTelegramLinkCodes,
 	getDenteTelegramBotSettings,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import { listDenteTelegramWebhookEvents } from "../../services/telegram/telegramWebhookEventsService.js";
 import {
 	countActiveDenteTelegramChatLinks,

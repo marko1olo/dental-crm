@@ -7,6 +7,9 @@
 import type { FastifyRequest } from "fastify";
 import { db } from "./db/client.js";
 import { clinicalAuditLogs } from "./db/schema.js";
+import { createApiLogger, safeLogError } from "./observability/logger.js";
+
+const logger = createApiLogger("clinicalAudit");
 
 type ClinicalAuditAction =
 	| "VIEW_PATIENT"
@@ -75,9 +78,10 @@ async function writeClinicalAuditLog(input: ClinicalAuditInput): Promise<void> {
 	} catch (err) {
 		// Never propagate — audit failure must not crash the clinical flow,
 		// но событие обязано пережить отказ в читаемом виде.
-		console.error(
-			`[ClinicalAudit] ОТКАЗ ЗАПИСИ журнала доступа к медданным. ` +
-				`Событие подлежит ручному внесению: ${JSON.stringify({
+		logger.error(
+			{
+				err: safeLogError(err),
+				clinicalAuditEvent: {
 					organizationId: input.organizationId,
 					userId: input.userId ?? null,
 					patientId: input.patientId ?? null,
@@ -87,8 +91,9 @@ async function writeClinicalAuditLog(input: ClinicalAuditInput): Promise<void> {
 					ipAddress: input.ipAddress ?? null,
 					userAgent: input.userAgent ?? null,
 					occurredAt: new Date().toISOString(),
-				})}. Причина отказа:`,
-			err,
+				},
+			},
+			"ОТКАЗ ЗАПИСИ журнала доступа к медданным",
 		);
 	}
 }

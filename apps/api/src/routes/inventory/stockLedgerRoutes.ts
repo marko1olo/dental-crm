@@ -8,7 +8,7 @@ import {
 	fefoStockService,
 	getDefaultExpirationDate,
 } from "../../services/inventory/fefoStockService.js";
-import { InsufficientStockError } from "../../services/inventory/materialDeduction.js";
+import { InsufficientStockError } from "../../services/treatmentConsumablesService.js";
 import { inventoryStockBodySchema } from "./types.js";
 
 async function handleStockAdjustment(

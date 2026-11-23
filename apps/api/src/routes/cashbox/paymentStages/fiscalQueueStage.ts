@@ -103,6 +103,7 @@ export async function processFiscalQueueStage(
 					invoiceId: body.invoiceId || null,
 					note: newPayment.note,
 					splitTenders: body.splitTenders ?? null,
+					createdPaymentIds: ctx.createdPaymentIds,
 				},
 				retryCount: 0,
 			})

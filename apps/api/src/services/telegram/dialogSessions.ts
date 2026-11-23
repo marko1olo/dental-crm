@@ -1,17 +1,55 @@
 /**
  * dialogSessions.ts
  *
- * In-memory dialog session state machine and cleanup lifecycle.
+ * In-memory dialog session state machine and cleanup lifecycle for Telegram interactive triage.
  */
 
 import { randomUUID } from "node:crypto";
-import type {
-	SetTelegramBotDialogSessionInput,
-	TelegramBotDialogSession,
-	TelegramBotDialogStep,
-} from "./types.js";
-import { configuredTelegramBotConfigId } from "./botSettings.js";
 
+export type TelegramBotDialogStep =
+	| "idle"
+	| "menu"
+	| "awaiting_link_code"
+	| "awaiting_appointment_choice"
+	| "awaiting_reschedule_reason"
+	| "awaiting_callback_phone"
+	| "awaiting_feedback"
+	| "awaiting_care_topic"
+	| "awaiting_doc_type"
+	| (string & {});
+
+export type TelegramBotDialogSession = {
+	sessionId: string;
+	organizationId: string;
+	clinicId: string | null;
+	botConfigId: string;
+	chatFingerprint: string;
+	chatId: string | null;
+	subjectType: "patient" | "staff" | "unknown";
+	subjectId: string | null;
+	currentStep: TelegramBotDialogStep;
+	lastCommand: string | null;
+	lastMessageText: string | null;
+	metadata: Record<string, unknown>;
+	createdAt: number;
+	lastActiveAt: number;
+	expiresAt: number;
+};
+
+export type SetTelegramBotDialogSessionInput = {
+	organizationId: string;
+	clinicId?: string | null;
+	botConfigId?: string | null;
+	chatFingerprint: string;
+	chatId?: string | null;
+	subjectType?: "patient" | "staff" | "unknown";
+	subjectId?: string | null;
+	currentStep?: TelegramBotDialogStep;
+	lastCommand?: string | null;
+	lastMessageText?: string | null;
+	metadata?: Record<string, unknown>;
+	ttlMs?: number;
+};
 
 const DEFAULT_DIALOG_SESSION_TTL_MS = 60 * 60 * 1000; // 1 час неактивности
 const MAX_DIALOG_SESSIONS = 5000; // Жесткий потолок на размер кэша для защиты от утечек памяти
@@ -43,7 +81,7 @@ export function getTelegramDialogSession(
 	botConfigId?: string | null,
 	nowMs = Date.now(),
 ): TelegramBotDialogSession | null {
-	const configId = botConfigId?.trim() || configuredTelegramBotConfigId();
+	const configId = botConfigId?.trim() || "default";
 	const key = getTelegramDialogSessionKey(organizationId, configId, chatFingerprint);
 	const session = telegramDialogSessions.get(key);
 	if (!session) return null;
@@ -53,7 +91,6 @@ export function getTelegramDialogSession(
 		return null;
 	}
 
-	// Продлеваем активность при обращении
 	session.lastActiveAt = nowMs;
 	return session;
 }
@@ -62,14 +99,12 @@ export function setTelegramDialogSession(
 	input: SetTelegramBotDialogSessionInput,
 	nowMs = Date.now(),
 ): TelegramBotDialogSession {
-	const configId = input.botConfigId?.trim() || configuredTelegramBotConfigId();
+	const configId = input.botConfigId?.trim() || "default";
 	const key = getTelegramDialogSessionKey(input.organizationId, configId, input.chatFingerprint);
 	const ttl = input.ttlMs && input.ttlMs > 0 ? input.ttlMs : DEFAULT_DIALOG_SESSION_TTL_MS;
 
-	// Защита от утечки памяти: если размер превышает MAX_DIALOG_SESSIONS, чистим протухшие
 	if (telegramDialogSessions.size >= MAX_DIALOG_SESSIONS) {
 		cleanupStaleTelegramDialogSessions(nowMs);
-		// Если все еще превышает, вытесняем самые старые неактивные сессии (LRU)
 		if (telegramDialogSessions.size >= MAX_DIALOG_SESSIONS) {
 			const sortedEntries = Array.from(telegramDialogSessions.entries()).sort(
 				(a, b) => a[1].lastActiveAt - b[1].lastActiveAt,
@@ -111,12 +146,11 @@ export function updateTelegramDialogSession(
 	botConfigId?: string | null,
 	nowMs = Date.now(),
 ): TelegramBotDialogSession | null {
-	const configId = botConfigId?.trim() || configuredTelegramBotConfigId();
+	const configId = botConfigId?.trim() || "default";
 	const key = getTelegramDialogSessionKey(organizationId, configId, chatFingerprint);
 	const existing = telegramDialogSessions.get(key);
 
 	if (!existing || existing.expiresAt <= nowMs) {
-		// Если сессии не было, создаем новую
 		return setTelegramDialogSession(
 			{
 				organizationId,
@@ -148,7 +182,7 @@ export function clearTelegramDialogSession(
 	organizationId: string,
 	botConfigId?: string | null,
 ): boolean {
-	const configId = botConfigId?.trim() || configuredTelegramBotConfigId();
+	const configId = botConfigId?.trim() || "default";
 	const key = getTelegramDialogSessionKey(organizationId, configId, chatFingerprint);
 	return telegramDialogSessions.delete(key);
 }
@@ -171,26 +205,3 @@ export function countTelegramDialogSessions(
 export function resetTelegramDialogSessions(): void {
 	telegramDialogSessions.clear();
 }
-
-let dialogSessionCleanupTimer: NodeJS.Timeout | null = null;
-
-export function ensureTelegramDialogSessionCleanupTimer(): void {
-	if (!dialogSessionCleanupTimer) {
-		dialogSessionCleanupTimer = setInterval(() => {
-			cleanupStaleTelegramDialogSessions();
-		}, 5 * 60 * 1000);
-		// unref гарантирует, что таймер не удерживает процесс Node.js от завершения
-		dialogSessionCleanupTimer.unref();
-	}
-}
-
-export function stopTelegramDialogSessionCleanup(): void {
-	if (dialogSessionCleanupTimer) {
-		clearInterval(dialogSessionCleanupTimer);
-		dialogSessionCleanupTimer = null;
-	}
-}
-
-// Запускаем фоновую периодическую очистку с unref
-ensureTelegramDialogSessionCleanupTimer();
-

@@ -6,6 +6,7 @@ import {
 } from "@dental/shared";
 import { getImagingOrganizationId, parseImagingPayload } from "../imagingHelpers.js";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { parseImagingManifest } from "../manifestParser.js";
 import { createImagingStudyInDb } from "../../../db/imagingQuery.js";
 import { kindLabels } from "../imagingConstants.js";
@@ -14,13 +15,26 @@ import { withTenantCtx } from "../../../db/rls.js";
 
 export async function handleImagingImportCommit(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging import commit"))) return;
+
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const parsed = parseImagingPayload(
 		imagingImportPreviewRequestSchema, request.body,
 		"Импорт снимков не выполнен: повторно передайте ту же непустую выгрузку перед записью.",
 	);
 	if (!parsed.ok) return reply.code(400).send(parsed.response);
-	const orgId = getImagingOrganizationId(request, reply);
-	if (!orgId) return;
 	return commitImagingImport(orgId, parsed.data);
 }
 

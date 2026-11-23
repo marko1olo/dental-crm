@@ -9,6 +9,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { copilotHitlCards } from "../../db/schema/copilot.js";
 import { patientDrugAllergies } from "../../db/schema/patients.js";
 import { visits } from "../../db/schema/clinical/visitsSchema.js";
@@ -176,22 +177,41 @@ async function handleDismissAlert(request: FastifyRequest, reply: FastifyReply):
 	if (!resolvedOrgId) return;
 
 	const body = (request.body ?? {}) as { alertId?: string };
-	if (body.alertId) {
+	const alertId = body.alertId;
+	if (alertId) {
 		try {
-			await db.update(copilotHitlCards).set({ status: "dismissed", resolvedAt: new Date() }).where(and(eq(copilotHitlCards.id, body.alertId), eq(copilotHitlCards.organizationId, resolvedOrgId)));
+			await withTenantCtx(resolvedOrgId, async (tx) => {
+				await tx
+					.update(copilotHitlCards)
+					.set({ status: "dismissed", resolvedAt: new Date() })
+					.where(
+						and(
+							eq(copilotHitlCards.id, alertId),
+							eq(copilotHitlCards.organizationId, resolvedOrgId),
+						),
+					);
 
-			const identity = getRequestIdentity(request);
-			const prefRecord = await getDoctorPreferencesFromDb(resolvedOrgId, identity.userId || null);
-			const doctorPrefs = (prefRecord?.preferences || {}) as Record<string, unknown>;
-			const existingAlerts = Array.isArray(doctorPrefs.copilotDismissedAlertIds) ? (doctorPrefs.copilotDismissedAlertIds as string[]) : [];
-			if (!existingAlerts.includes(body.alertId)) {
-				await saveDoctorPreferencesInDb(resolvedOrgId, identity.userId || null, { ...doctorPrefs, copilotDismissedAlertIds: [...existingAlerts, body.alertId] }, prefRecord?.specialty || "therapist");
-			}
+				const identity = getRequestIdentity(request);
+				const prefRecord = await getDoctorPreferencesFromDb(resolvedOrgId, identity.userId ?? null, tx);
+				const doctorPrefs = (prefRecord?.preferences ?? {}) as Record<string, unknown>;
+				const existingAlerts = Array.isArray(doctorPrefs.copilotDismissedAlertIds)
+					? (doctorPrefs.copilotDismissedAlertIds as string[])
+					: [];
+				if (!existingAlerts.includes(alertId)) {
+					await saveDoctorPreferencesInDb(
+						resolvedOrgId,
+						identity.userId ?? null,
+						{ ...doctorPrefs, copilotDismissedAlertIds: [...existingAlerts, alertId] },
+						prefRecord?.specialty ?? "therapist",
+						tx,
+					);
+				}
+			});
 		} catch (err) {
-			request.log.warn({ err, alertId: body.alertId }, "[agentProactiveAndNudgeRoutes] Failed to persist dismissed alert");
+			request.log.warn({ err, alertId }, "[agentProactiveAndNudgeRoutes] Failed to persist dismissed alert");
 		}
 	}
-	return reply.code(200).send({ ok: true, alertId: body.alertId });
+	return reply.code(200).send({ ok: true, alertId });
 }
 
 async function handleSentinelAnalyze(request: FastifyRequest, reply: FastifyReply): Promise<void> {

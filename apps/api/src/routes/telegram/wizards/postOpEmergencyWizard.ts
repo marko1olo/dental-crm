@@ -3,10 +3,8 @@ import type {
 	DenteTelegramUpdateKind,
 	DenteTelegramVisualCardKey,
 } from "@dental/shared";
-import {
-	denteTelegramVisualCardUrlFor,
-	createDenteTelegramCareRequest,
-} from "../../../services/telegram/telegramLegacyMemoryStore.js";
+import { denteTelegramVisualCardUrlFor } from "../telegramUrlHelpers.js";
+import { createDenteTelegramCareRequest } from "../telegramCanonicalStore.js";
 import { TelegramBotHostingService } from "../../../services/telegram/TelegramBotHostingService.js";
 import type {
 	TelegramWebhookReplyPackage,

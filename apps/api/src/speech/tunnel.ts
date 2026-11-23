@@ -7,6 +7,9 @@
 import cp, { type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("speechSshTunnel");
 
 let tunnelProcess: ChildProcess | null = null;
 const SOCKS_PORT = 1080;
@@ -32,15 +35,15 @@ export async function ensureSshTunnel(): Promise<boolean> {
 	const sshHost = process.env.SSH_HOST;
 
 	if (!sshKey || !sshHost) {
-		console.warn(
-			`[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.`,
+		logger.warn(
+			"SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.",
 		);
 		return false;
 	}
 
 	if (sshHost.startsWith("-") || sshKey.startsWith("-")) {
-		console.warn(
-			`[SSH Tunnel] Invalid SSH_HOST or SSH_KEY_PATH. Cannot start tunnel.`,
+		logger.warn(
+			"Invalid SSH_HOST or SSH_KEY_PATH. Cannot start tunnel.",
 		);
 		return false;
 	}
@@ -53,8 +56,9 @@ export async function ensureSshTunnel(): Promise<boolean> {
 
 	// 2. Проверяем наличие приватного ключа
 	if (!fs.existsSync(sshKey)) {
-		console.warn(
-			`[SSH Tunnel] SSH key not found at ${sshKey}. Cannot start tunnel.`,
+		logger.warn(
+			{ sshKey },
+			"SSH key not found. Cannot start tunnel.",
 		);
 		return false;
 	}
@@ -91,13 +95,14 @@ export async function ensureSshTunnel(): Promise<boolean> {
 		if (checkOpen) {
 			return true;
 		} else {
-			console.warn(
-				`[SSH Tunnel] Tunnel process spawned but port ${SOCKS_PORT} is still closed.`,
+			logger.warn(
+				{ port: SOCKS_PORT },
+				"Tunnel process spawned but port is still closed.",
 			);
 			return false;
 		}
 	} catch (err) {
-		console.error(`[SSH Tunnel] Failed to launch SSH tunnel:`, err);
+		logger.error({ err: safeLogError(err) }, "Failed to launch SSH tunnel");
 		return false;
 	}
 }

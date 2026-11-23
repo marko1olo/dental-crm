@@ -12,7 +12,7 @@
 
 import { randomInt } from "node:crypto";
 import type { FiscalReceiptDetails } from "@dental/shared";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { fiscalReceiptQueue, payments } from "../../db/schema.js";
@@ -47,9 +47,73 @@ function buildFiscalReceiptDetails(
 	};
 }
 
+const STALE_PRINTING_THRESHOLD_MS = 2 * 60 * 1000;
+
+function isFreshPrinting(
+	item: { status: string; updatedAt: Date | string | null | undefined },
+	nowMs: number,
+): boolean {
+	if (item.status !== "printing" || !item.updatedAt) {
+		return false;
+	}
+	const updatedAtMs =
+		item.updatedAt instanceof Date
+			? item.updatedAt.getTime()
+			: new Date(item.updatedAt).getTime();
+	if (!Number.isFinite(updatedAtMs)) {
+		return false;
+	}
+	return nowMs - updatedAtMs < STALE_PRINTING_THRESHOLD_MS;
+}
+
+function extractTargetPaymentIds(
+	paymentId: string | null | undefined,
+	payloadJson: unknown,
+): string[] {
+	const ids = new Set<string>();
+	if (typeof paymentId === "string" && paymentId.length > 0) {
+		ids.add(paymentId);
+	}
+	if (
+		typeof payloadJson === "object" &&
+		payloadJson !== null &&
+		"createdPaymentIds" in payloadJson
+	) {
+		const rawCreatedIds: unknown = payloadJson.createdPaymentIds;
+		if (Array.isArray(rawCreatedIds)) {
+			for (const entry of rawCreatedIds) {
+				const candidate: unknown = entry;
+				if (typeof candidate === "string" && candidate.length > 0) {
+					ids.add(candidate);
+				}
+			}
+		}
+	}
+	return Array.from(ids);
+}
+
+async function safeCheckDeviceStatus(config?: Partial<KktLanConfig>): Promise<KktDeviceStatus> {
+	try {
+		return await LanKktDriverService.checkDeviceStatus(config);
+	} catch (err: unknown) {
+		return {
+			online: false,
+			paperOk: false,
+			coverClosed: true,
+			fnPresent: false,
+			fnFiscalized: false,
+			modelName: "Offline",
+			fnSerial: "",
+			kktSerialNumber: "",
+			lastCheckAt: new Date().toISOString(),
+			latencyMs: 0,
+			error: err instanceof Error ? err.message : "KKT device status check failed",
+		};
+	}
+}
+
 export class FiscalQueueRetryWorker {
-	private static isRunning = false;
-	private static intervalTimer: NodeJS.Timeout | null = null;
+	private static orgTimers = new Map<string, NodeJS.Timeout>();
 	public static logger?: {
 		warn: (obj: unknown, msg?: string) => void;
 		error: (obj: unknown, msg?: string) => void;
@@ -105,12 +169,11 @@ export class FiscalQueueRetryWorker {
 		retryCount: number;
 		error?: string | null | undefined;
 	}> {
-		const deviceStatus = await LanKktDriverService.checkDeviceStatus(config);
-
-		// Step 1: Fast transactional query
-		const queueItem = await withTenantCtx(organizationId, async (tx) => {
+		// Step 1: Claim queue item atomically inside tenant transaction BEFORE external KKT I/O
+		const claimTime = new Date();
+		const claimResult = await withTenantCtx(organizationId, async (tx) => {
 			const targetDb = tx ?? db;
-			const [item] = await targetDb
+			const selectQuery = targetDb
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
@@ -120,10 +183,44 @@ export class FiscalQueueRetryWorker {
 					),
 				)
 				.limit(1);
-			return item || null;
+			const rows = await (
+				typeof selectQuery === "object" &&
+				selectQuery !== null &&
+				"for" in selectQuery &&
+				typeof selectQuery.for === "function"
+					? selectQuery.for("update", { skipLocked: true })
+					: selectQuery
+			);
+			const item = rows[0] ?? null;
+
+			if (!item) {
+				return { kind: "not_found" as const };
+			}
+			if (item.status === "printed") {
+				return { kind: "already_printed" as const, item };
+			}
+			if (isFreshPrinting(item, claimTime.getTime())) {
+				return { kind: "already_printing" as const, item };
+			}
+
+			const [claimed] = await targetDb
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "printing",
+					updatedAt: claimTime,
+				})
+				.where(
+					and(
+						eq(fiscalReceiptQueue.id, queueItemId),
+						eq(fiscalReceiptQueue.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			return { kind: "claimed" as const, item: claimed ?? item };
 		});
 
-		if (!queueItem) {
+		if (claimResult.kind === "not_found") {
 			return {
 				success: false,
 				status: "hardware_offline",
@@ -134,17 +231,29 @@ export class FiscalQueueRetryWorker {
 		}
 
 		// If already printed, return idempotent success
-		if (queueItem.status === "printed") {
+		if (claimResult.kind === "already_printed") {
 			return {
 				success: true,
 				status: "printed",
-				item: queueItem,
-				retryCount: queueItem.retryCount,
+				item: claimResult.item,
+				retryCount: claimResult.item.retryCount,
 				error: null,
 			};
 		}
 
+		if (claimResult.kind === "already_printing") {
+			return {
+				success: false,
+				status: "hardware_offline",
+				item: claimResult.item,
+				retryCount: claimResult.item.retryCount,
+				error: "PrintAlreadyInProgress",
+			};
+		}
+
+		const queueItem = claimResult.item;
 		const now = new Date();
+		const deviceStatus = await safeCheckDeviceStatus(config);
 
 		if (!deviceStatus.online || !deviceStatus.paperOk) {
 			const errorMessage =
@@ -260,8 +369,12 @@ export class FiscalQueueRetryWorker {
 				)
 				.returning();
 
-			// If attached to a payment, sync fiscal attributes to the payment record
-			if (queueItem.paymentId) {
+			// If attached to payments (including split tenders), sync fiscal attributes to all matching payment records
+			const targetPaymentIds = extractTargetPaymentIds(
+				queueItem.paymentId,
+				queueItem.payloadJson,
+			);
+			if (targetPaymentIds.length > 0) {
 				try {
 					await targetDb
 						.update(payments)
@@ -274,14 +387,14 @@ export class FiscalQueueRetryWorker {
 						})
 						.where(
 							and(
-								eq(payments.id, queueItem.paymentId),
+								inArray(payments.id, targetPaymentIds),
 								eq(payments.organizationId, organizationId),
 							),
 						);
 				} catch (paySyncErr) {
 					FiscalQueueRetryWorker.logger?.warn(
-						{ paySyncErr, paymentId: queueItem.paymentId },
-						`[FiscalQueueRetryWorker] Failed to sync fiscal receipt to payment ${queueItem.paymentId}`,
+						{ paySyncErr, paymentIds: targetPaymentIds },
+						`[FiscalQueueRetryWorker] Failed to sync fiscal receipt to payments ${targetPaymentIds.join(", ")}`,
 					);
 				}
 			}
@@ -309,12 +422,11 @@ export class FiscalQueueRetryWorker {
 		failedCount: number;
 		deviceStatus: KktDeviceStatus;
 	}> {
-		const deviceStatus = await LanKktDriverService.checkDeviceStatus(config);
-
-		// Step 1: Quick read of pending items
+		// Step 1: Claim pending/stale items inside tenant transaction BEFORE external KKT I/O
+		const claimTime = new Date();
 		const pendingItems = await withTenantCtx(organizationId, async (tx) => {
 			const targetDb = tx ?? db;
-			return await targetDb
+			const selectQuery = targetDb
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
@@ -329,7 +441,39 @@ export class FiscalQueueRetryWorker {
 					),
 				)
 				.orderBy(fiscalReceiptQueue.createdAt);
+
+			const rows = await (
+				typeof selectQuery === "object" &&
+				selectQuery !== null &&
+				"for" in selectQuery &&
+				typeof selectQuery.for === "function"
+					? selectQuery.for("update", { skipLocked: true })
+					: selectQuery
+			);
+
+			const eligible = rows.filter((row) => !isFreshPrinting(row, claimTime.getTime()));
+			if (eligible.length === 0) {
+				return [];
+			}
+
+			const eligibleIds = eligible.map((row) => row.id);
+			await targetDb
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "printing",
+					updatedAt: claimTime,
+				})
+				.where(
+					and(
+						inArray(fiscalReceiptQueue.id, eligibleIds),
+						eq(fiscalReceiptQueue.organizationId, organizationId),
+					),
+				);
+
+			return eligible;
 		});
+
+		const deviceStatus = await safeCheckDeviceStatus(config);
 
 		if (pendingItems.length === 0) {
 			return {
@@ -438,7 +582,11 @@ export class FiscalQueueRetryWorker {
 							),
 						);
 
-					if (item.paymentId) {
+					const targetPaymentIds = extractTargetPaymentIds(
+						item.paymentId,
+						item.payloadJson,
+					);
+					if (targetPaymentIds.length > 0) {
 						try {
 							await targetDb
 								.update(payments)
@@ -451,14 +599,14 @@ export class FiscalQueueRetryWorker {
 								})
 								.where(
 									and(
-										eq(payments.id, item.paymentId),
+										inArray(payments.id, targetPaymentIds),
 										eq(payments.organizationId, organizationId),
 									),
 								);
 						} catch (paySyncErr) {
 							FiscalQueueRetryWorker.logger?.warn(
-								{ paySyncErr, paymentId: item.paymentId },
-								`[FiscalQueueRetryWorker] Failed to sync payment ${item.paymentId}`,
+								{ paySyncErr, paymentIds: targetPaymentIds },
+								`[FiscalQueueRetryWorker] Failed to sync payments ${targetPaymentIds.join(", ")}`,
 							);
 						}
 					}
@@ -491,9 +639,8 @@ export class FiscalQueueRetryWorker {
 		if (logger) {
 			this.logger = logger;
 		}
-		if (this.isRunning) return;
-		this.isRunning = true;
-		this.intervalTimer = setInterval(async () => {
+		if (this.orgTimers.has(organizationId)) return;
+		const timer = setInterval(async () => {
 			try {
 				await this.flushOrganizationQueue(organizationId);
 			} catch (err) {
@@ -503,25 +650,36 @@ export class FiscalQueueRetryWorker {
 				);
 			}
 		}, intervalMs);
-		this.intervalTimer.unref();
+		timer.unref();
+		this.orgTimers.set(organizationId, timer);
 	}
 
 	/**
-	 * Stops background auto-retry timer.
+	 * Stops background auto-retry timer (for one organization or all organizations).
 	 */
-	public static stopAutoRetryLoop(): void {
-		if (this.intervalTimer) {
-			clearInterval(this.intervalTimer);
-			this.intervalTimer = null;
+	public static stopAutoRetryLoop(organizationId?: string): void {
+		if (organizationId !== undefined) {
+			const timer = this.orgTimers.get(organizationId);
+			if (timer) {
+				clearInterval(timer);
+				this.orgTimers.delete(organizationId);
+			}
+			return;
 		}
-		this.isRunning = false;
+		for (const timer of this.orgTimers.values()) {
+			clearInterval(timer);
+		}
+		this.orgTimers.clear();
 	}
 
 	/**
-	 * Checks if auto-retry loop is running.
+	 * Checks if auto-retry loop is running (for one organization or any organization).
 	 */
-	public static isAutoRetryRunning(): boolean {
-		return this.isRunning;
+	public static isAutoRetryRunning(organizationId?: string): boolean {
+		if (organizationId !== undefined) {
+			return this.orgTimers.has(organizationId);
+		}
+		return this.orgTimers.size > 0;
 	}
 }
 

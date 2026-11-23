@@ -56,7 +56,7 @@ import {
 	isDicomArchivePath,
 	isDicomHeaderCandidatePath,
 	parseDicomHeader,
-	readFilePrefix,
+	readFilePrefixAsync,
 } from "./dicomParsing.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 
@@ -448,9 +448,8 @@ export async function buildDicomHeaderManifest(
 
 		if (!isDicomPixelPath(filePath)) continue;
 		try {
-			const metadata = parseDicomHeader(
-				readFilePrefix(filePath, input.maxHeaderBytes),
-			);
+			const prefix = await readFilePrefixAsync(filePath, input.maxHeaderBytes);
+			const metadata = parseDicomHeader(prefix);
 			filesParsed += 1;
 			warnings.push(
 				...metadata.warnings.map((warning) => `${filePath}: ${warning}`),

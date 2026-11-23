@@ -120,6 +120,7 @@ export interface SyncPullResult {
 	appointments: unknown[];
 	toothStates: unknown[];
 	vectors: unknown[];
+	invoices?: unknown[] | undefined;
 }
 
 /**

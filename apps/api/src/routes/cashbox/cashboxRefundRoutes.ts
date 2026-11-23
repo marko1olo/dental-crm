@@ -5,7 +5,7 @@
  */
 
 import { and, eq, or, sql } from "drizzle-orm";
-import { kopecksToNumericString, normalizePaymentMethod, rublesToKopecks } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRub, normalizePaymentMethod, rublesToKopecks } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -51,6 +51,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 		}
 
 		const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId, patientId } = parsed.data;
+		const refundKop = rublesToKopecks(amountRub);
 
 		// [SEV-2.2] Обязательный заголовок Idempotency-Key для защиты от гонок и повторных возвратов
 		const rawIdempHeader =
@@ -91,13 +92,18 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				.limit(1);
 
 			if (existingRefund) {
+				const rawExistingNote = existingRefund.note || "";
+				const strippedExistingNote = rawExistingNote.replace(/\s*\[ref:[^\]]+\]$/, "");
 				const [existingOp] = await tx
 					.select()
 					.from(cashOperations)
 					.where(
 						and(
 							eq(cashOperations.organizationId, orgId),
-							eq(cashOperations.reasonText, existingRefund.note || ""),
+							or(
+								eq(cashOperations.reasonText, rawExistingNote),
+								eq(cashOperations.reasonText, strippedExistingNote),
+							),
 						),
 					)
 					.limit(1);
@@ -124,7 +130,6 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 
 			// Поиск связанного платежа или счёта для фискального возврата (54-ФЗ Возврат прихода / Tag 1054 = 2)
 			let linkedPayment: typeof payments.$inferSelect | undefined;
-			const refundKop = rublesToKopecks(amountRub);
 
 			if (paymentId) {
 				const [p] = await tx
@@ -136,7 +141,8 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				linkedPayment = p;
 
 				if (linkedPayment) {
-					// [DEF-REFUND-02] Защита от Over-Refund по исходному платежу
+					// [DEF-REFUND-02] Защита от Over-Refund по исходному платежу через детерминированный маркер [ref:<paymentId>]
+					const paymentRefTag = `[ref:${linkedPayment.id}]`;
 					const [refundHistory] = await tx
 						.select({
 							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
@@ -149,25 +155,24 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 									sql`${payments.amountKopecks} < 0`,
 									sql`${payments.amountRub} < 0`,
 								),
-								or(
-									eq(payments.id, linkedPayment.id),
-									linkedPayment.documentId ? eq(payments.documentId, linkedPayment.documentId) : sql`false`,
-									sql`${payments.note} LIKE ${'%' + linkedPayment.id + '%'}`,
-								),
+								sql`${payments.note} LIKE ${"%" + paymentRefTag + "%"}`,
 							),
 						);
 
-					const origPaidKop = linkedPayment.amountKopecks !== null && linkedPayment.amountKopecks !== undefined
+					const rawOrigPaidKop = linkedPayment.amountKopecks !== null && linkedPayment.amountKopecks !== undefined
 						? Number(linkedPayment.amountKopecks)
 						: rublesToKopecks(Number(linkedPayment.amountRub || 0));
 					const prevRefundKop = Number(refundHistory?.alreadyRefundedKop || 0);
-					const availableToRefundKop = origPaidKop - prevRefundKop;
+					const availableToRefundKop =
+						rawOrigPaidKop <= 0 || linkedPayment.status === "refunded"
+							? 0
+							: rawOrigPaidKop - prevRefundKop;
 
 					if (refundKop > availableToRefundKop) {
 						return {
 							kind: "over_refund_forbidden" as const,
 							availableRub: kopecksToNumericString(Math.max(0, availableToRefundKop)),
-							requestedRub: amountRub.toFixed(2),
+							requestedRub: kopecksToNumericString(refundKop),
 						};
 					}
 				}
@@ -185,7 +190,21 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				linkedInvoice = inv;
 
 				if (linkedInvoice) {
-					// [DEF-REFUND-02] Защита от Over-Refund по исходному счёту
+					// [DEF-REFUND-02] Защита от Over-Refund по исходному счёту (ограничение реально оплаченной суммой)
+					const [invoicePaid] = await tx
+						.select({
+							paidOnInvoiceKop: sql<number>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)`,
+						})
+						.from(payments)
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								eq(payments.documentId, linkedInvoice.id),
+								eq(payments.status, "paid"),
+								sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) > 0`,
+							),
+						);
+
 					const [invoiceRefunds] = await tx
 						.select({
 							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
@@ -203,14 +222,21 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						);
 
 					const invoiceTotalKop = rublesToKopecks(Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0));
+					const paidOnInvoiceKop = Number(invoicePaid?.paidOnInvoiceKop || 0);
 					const prevRefundKop = Number(invoiceRefunds?.alreadyRefundedKop || 0);
-					const availableToRefundKop = invoiceTotalKop - prevRefundKop;
+					const invoiceCapKop =
+						paidOnInvoiceKop > 0
+							? Math.min(invoiceTotalKop, paidOnInvoiceKop)
+							: linkedInvoice.status === "paid" || linkedInvoice.status === "partially_refunded"
+								? invoiceTotalKop
+								: 0;
+					const availableToRefundKop = invoiceCapKop - prevRefundKop;
 
 					if (refundKop > availableToRefundKop) {
 						return {
 							kind: "over_refund_forbidden" as const,
 							availableRub: kopecksToNumericString(Math.max(0, availableToRefundKop)),
-							requestedRub: amountRub.toFixed(2),
+							requestedRub: kopecksToNumericString(refundKop),
 						};
 					}
 				}
@@ -241,12 +267,10 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				return { kind: "box_not_found" as const };
 			}
 
-			// [SEV-2.3] Защита кассы от утечки наличных при возврате с депозита/аванса
+			// [SEV-2.3] Защита кассы от утечки наличных при возврате с депозита/аванса (строго по явному методу)
 			const isDepositRefund =
 				linkedPayment?.method === "family_wallet" ||
-				(linkedPayment?.method as string) === "deposit" ||
-				(typeof linkedPayment?.note === "string" &&
-					linkedPayment.note.toLowerCase().includes("депозит"));
+				String(linkedPayment?.method ?? "") === "deposit";
 
 			const balanceBeforeKop =
 				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
@@ -357,21 +381,49 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 										eq(familyGroups.organizationId, orgId),
 									),
 								)
+								.for("update")
 								.limit(1);
 							if (headFg) targetFamilyGroupId = headFg.id;
 						}
 
+						let lockedFg: { id: string; balanceKopecks: number; balance: string } | null = null;
 						if (targetFamilyGroupId) {
+							const [fgRow] = await tx
+								.select({
+									id: familyGroups.id,
+									balanceKopecks: familyGroups.balanceKopecks,
+									balance: familyGroups.balance,
+								})
+								.from(familyGroups)
+								.where(
+									and(
+										eq(familyGroups.id, targetFamilyGroupId),
+										eq(familyGroups.organizationId, orgId),
+									),
+								)
+								.for("update")
+								.limit(1);
+							lockedFg = fgRow ?? null;
+						}
+
+						if (lockedFg) {
+							const currentKop =
+								lockedFg.balanceKopecks !== null && lockedFg.balanceKopecks !== undefined
+									? Number(lockedFg.balanceKopecks)
+									: rublesToKopecks(Number(lockedFg.balance || 0));
+							const newBalanceKop = currentKop + refundKop;
+							const newBalanceRubStr = kopecksToNumericString(newBalanceKop);
+
 							await tx
 								.update(familyGroups)
 								.set({
-									balanceKopecks: sql`(COALESCE(${familyGroups.balanceKopecks}, ROUND(COALESCE(${familyGroups.balance}, 0) * 100)::bigint) + ${refundKop}::bigint)`,
-									balance: sql`(((COALESCE(${familyGroups.balanceKopecks}, ROUND(COALESCE(${familyGroups.balance}, 0) * 100)::bigint) + ${refundKop}::bigint)::numeric / 100)::numeric(12,2))`,
+									balanceKopecks: newBalanceKop,
+									balance: newBalanceRubStr,
 									updatedAt: new Date(),
 								})
 								.where(
 									and(
-										eq(familyGroups.id, targetFamilyGroupId),
+										eq(familyGroups.id, lockedFg.id),
 										eq(familyGroups.organizationId, orgId),
 									),
 								);
@@ -380,7 +432,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 								organizationId: orgId,
 								patientId: effectivePatientId,
 								patientName,
-								depositAmountRub: amountRub.toFixed(2),
+								depositAmountRub: kopecksToNumericString(refundKop),
 								taggedTargetType: "family_wallet_refund",
 								taggedTargetName: `Возврат средств на семейный кошелек (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
 								allocationStatus: "unallocated",
@@ -392,7 +444,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 							organizationId: orgId,
 							patientId: effectivePatientId,
 							patientName,
-							depositAmountRub: amountRub.toFixed(2),
+							depositAmountRub: kopecksToNumericString(refundKop),
 							taggedTargetType: "deposit_refund",
 							taggedTargetName: `Возврат средств на авансовый депозит (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
 							allocationStatus: "unallocated",
@@ -448,7 +500,14 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						fiscalReceiptNumber: refundReceiptNumber,
 						fiscalReceiptIssuedAt: null,
 						payerFullName: operatorId ? "Кассир" : (linkedPayment?.payerFullName || "Кассир"),
-						note: reasonText || (isDepositRefund ? `Возврат на депозит на сумму -${amountRub} ₽` : `Возврат денежных средств на сумму -${amountRub} ₽`),
+						note: (() => {
+							const baseNote =
+								reasonText ||
+								(isDepositRefund
+									? `Возврат на депозит на сумму -${amountRub} ₽`
+									: `Возврат денежных средств на сумму -${amountRub} ₽`);
+							return linkedPayment ? `${baseNote} [ref:${linkedPayment.id}]` : baseNote;
+						})(),
 					})
 					.returning({ id: payments.id });
 
@@ -490,23 +549,26 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				}
 			}
 
-			// Обновляем статус счёта и исходного платежа при наличии
+			// Обновляем статус счёта в целых копейках; исходный платёж остаётся "paid", чтобы отрицательный сторно-платёж не вычитался дважды
 			if (linkedInvoice) {
-				const invoiceTotalRub = Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0);
+				const invoiceTotalKop = rublesToKopecks(Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0));
 				const [allRefunds] = await tx
 					.select({
-						totalRefunded: sql<number>`coalesce(sum(abs(${payments.amountRub})), 0)`,
+						totalRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
 					})
 					.from(payments)
 					.where(
 						and(
 							eq(payments.organizationId, orgId),
 							eq(payments.documentId, linkedInvoice.id),
-							sql`${payments.amountRub} < 0`,
+							or(
+								sql`${payments.amountKopecks} < 0`,
+								sql`${payments.amountRub} < 0`,
+							),
 						),
 					);
-				const totalRefunded = Number(allRefunds?.totalRefunded || 0);
-				const nextStatus = totalRefunded >= invoiceTotalRub ? "refunded" : "partially_refunded";
+				const totalRefundedKop = Number(allRefunds?.totalRefundedKop || 0);
+				const nextStatus = totalRefundedKop >= invoiceTotalKop ? "refunded" : "partially_refunded";
 				await tx
 					.update(patientInvoices)
 					.set({
@@ -517,18 +579,6 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						and(
 							eq(patientInvoices.id, linkedInvoice.id),
 							eq(patientInvoices.organizationId, orgId),
-						),
-					);
-			}
-
-			if (linkedPayment && Number(linkedPayment.amountRub) <= amountRub) {
-				await tx
-					.update(payments)
-					.set({ status: "refunded" })
-					.where(
-						and(
-							eq(payments.id, linkedPayment.id),
-							eq(payments.organizationId, orgId),
 						),
 					);
 			}
@@ -578,15 +628,17 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 		}
 
 		if (result.kind === "insufficient_funds") {
+			const availRub = kopecksToNumericString(rublesToKopecks(result.balanceBefore));
+			const reqRub = kopecksToNumericString(rublesToKopecks(result.requestedAmount));
 			return reply.code(400).send({
 				error: "InsufficientFunds",
-				message: `Недостаточно средств в кассе для возврата. Доступно: ${result.balanceBefore.toFixed(2)} ₽, запрошено: ${result.requestedAmount.toFixed(2)} ₽.`,
+				message: `Недостаточно средств в кассе для возврата. Доступно: ${availRub} ₽, запрошено: ${reqRub} ₽.`,
 			});
 		}
 
 		return reply.send({
 			success: true,
-			message: `Возврат ${amountRub.toFixed(2)} ₽ успешно оформлен в кассе.`,
+			message: `Возврат ${kopecksToNumericString(refundKop)} ₽ успешно оформлен в кассе.`,
 			operation: result.operation,
 			cashBox: result.cashBox,
 			invoiceId,
@@ -597,6 +649,26 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 		});
 	};
 
-	app.post("/api/cash/refund", handleCashRefund);
-	app.post("/api/cashbox/refund", handleCashRefund);
+	const cashRefundRouteOptions = {
+		schema: {
+			description:
+				"Cashbox refund with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cash/refund", cashRefundRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashRefund(request, reply);
+	});
+	app.post("/api/cashbox/refund", cashRefundRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashRefund(request, reply);
+	});
 }

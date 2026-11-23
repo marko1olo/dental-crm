@@ -11,7 +11,7 @@ import { wsBroker } from "../services/websocketBroker.js";
 import { createCrmLeadFromPublicIntake } from "./publicBooking/bookingModules/publicBookingMutations.js";
 
 const waitlistParamsSchema = z.object({
-	id: z.string().min(1),
+	id: z.string().uuid("Некорректный UUID записи листа ожидания"),
 });
 
 const waitlistTimeRangeSchema = z.object({
@@ -42,22 +42,29 @@ function extractWaitlistMetadata(preferredTimeRanges: unknown): {
 	if (!Array.isArray(preferredTimeRanges) || preferredTimeRanges.length === 0) {
 		return { notes: "" };
 	}
-	const first = preferredTimeRanges[0] as Record<string, unknown> | undefined;
-	const notes =
-		typeof first?.notes === "string" && first.notes.trim().length > 0
-			? first.notes.trim()
-			: "";
-	const urgency =
-		typeof first?.urgency === "string" && first.urgency.trim().length > 0
-			? first.urgency.trim()
-			: undefined;
-	const treatmentCategory =
-		typeof first?.treatmentCategory === "string" &&
-		first.treatmentCategory.trim().length > 0
-			? first.treatmentCategory.trim()
-			: undefined;
+	const notesList: string[] = [];
+	let urgency: string | undefined;
+	let treatmentCategory: string | undefined;
+
+	for (const range of preferredTimeRanges) {
+		if (!range || typeof range !== "object") continue;
+		const r = range as Record<string, unknown>;
+		if (typeof r.notes === "string" && r.notes.trim().length > 0) {
+			const trimmed = r.notes.trim();
+			if (!notesList.includes(trimmed)) {
+				notesList.push(trimmed);
+			}
+		}
+		if (!urgency && typeof r.urgency === "string" && r.urgency.trim().length > 0) {
+			urgency = r.urgency.trim();
+		}
+		if (!treatmentCategory && typeof r.treatmentCategory === "string" && r.treatmentCategory.trim().length > 0) {
+			treatmentCategory = r.treatmentCategory.trim();
+		}
+	}
+
 	return {
-		notes,
+		notes: notesList.join("; "),
 		...(urgency ? { urgency } : {}),
 		...(treatmentCategory ? { treatmentCategory } : {}),
 	};
@@ -376,6 +383,25 @@ export async function registerWaitlistRoutes(
 			}
 
 			const updateData = parsed.data;
+
+			if (updateData.preferredDoctorId) {
+				const [doctor] = await db
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.id, updateData.preferredDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				if (!doctor) {
+					return reply.code(404).send({
+						error: "DoctorNotFound",
+						message: "Выбранный врач не найден в вашей клинике.",
+					});
+				}
+			}
 
 			const [updated] = await db
 				.update(appointmentWaitlists)

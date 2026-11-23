@@ -8,16 +8,26 @@ export interface SecrecyDetectionResult {
 	reasons: string[];
 }
 
+export interface SecrecyDetectorOptions {
+	criticalOnly?: boolean | undefined;
+	scope?: string | undefined;
+	allowToothNumbers?: boolean | undefined;
+}
+
 export function detectMedicalSecrecyLeaks(
 	text: string,
-	options?: { criticalOnly?: boolean },
+	options?: SecrecyDetectorOptions,
 ): SecrecyDetectionResult {
 	const detectedTerms: string[] = [];
 	const criticalTerms: string[] = [];
 	const reasons: string[] = [];
 
+	const allowToothNumbers =
+		options?.allowToothNumbers ?? (options?.scope === "service");
+
 	for (const rule of CLINICAL_SECRECY_PATTERNS) {
 		if (options?.criticalOnly && !rule.isCritical) continue;
+		if (rule.isToothNumber && allowToothNumbers) continue;
 		const matches = text.match(rule.pattern);
 		if (matches && matches.length > 0) {
 			for (const match of matches) {

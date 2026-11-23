@@ -32,6 +32,8 @@ export interface DbProcedureItem {
 	unit?: string | undefined;
 	name?: string | undefined;
 	isMdlpRequired?: boolean | undefined;
+	alternativeInventoryItemId?: string | null | undefined;
+	isOptional?: boolean | undefined;
 }
 
 export async function resolveServiceMeta(
@@ -108,6 +110,8 @@ export async function findDbProcedureItems(
 			quantity: Number(ci.quantity) * serviceQuantity,
 			unit: ci.unit ?? "pcs",
 			isMdlpRequired: Boolean(ci.isMdlpRequired),
+			alternativeInventoryItemId: ci.alternativeInventoryItemId ?? null,
+			isOptional: Boolean(ci.isOptional),
 		}));
 	}
 

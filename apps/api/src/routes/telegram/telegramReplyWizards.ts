@@ -5,7 +5,7 @@ import type {
 import {
 	createDenteTelegramCareRequest,
 	createDenteTelegramDocumentRequest,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import type {
 	TelegramWebhookReplyPackage,
 	TelegramRequestScope,

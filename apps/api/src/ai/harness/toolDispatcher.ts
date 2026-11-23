@@ -47,9 +47,9 @@ export class ToolDispatcher {
 	constructor(
 		private readonly effectiveToolContext: DentalToolContext,
 		private readonly requireConfirmationForDestructive = false,
-		private readonly onEvent?: (event: AgentHarnessEvent) => void | Promise<void>,
+		private readonly onEvent?: ((event: AgentHarnessEvent) => void | Promise<void>) | undefined,
 		private readonly trustLevel: "confirm_all" | "balanced" | "autonomous" | "cautious" | "supervised" = "balanced",
-		private readonly granularPermissions?: GranularAgentPermissions,
+		private readonly granularPermissions?: GranularAgentPermissions | undefined,
 	) {}
 
 	/**
@@ -108,21 +108,46 @@ export class ToolDispatcher {
 		// 2. Two-phase execution guard based on Trust Level & Fine-Grained Permissions
 		let isAutoApprovedByGranular = false;
 		if (this.granularPermissions) {
-			if (this.granularPermissions.autoApproveFileReads && ["search_workstation_files", "read_clinical_file", "list_patient_study_directory", "open_patient_dropzone_folder"].includes(toolName)) {
+			if (
+				this.granularPermissions.autoApproveFileReads &&
+				[
+					"search_workstation_files",
+					"read_clinical_file",
+					"read_local_clinical_file",
+					"list_patient_study_directory",
+					"open_patient_dropzone_folder",
+				].includes(canonicalToolName)
+			) {
 				isAutoApprovedByGranular = true;
-			} else if (this.granularPermissions.autoApproveFileWrites && ["write_clinical_file", "replace_file_content"].includes(toolName)) {
+			} else if (
+				this.granularPermissions.autoApproveFileWrites &&
+				["write_clinical_file", "replace_file_content"].includes(canonicalToolName)
+			) {
 				isAutoApprovedByGranular = true;
-			} else if (this.granularPermissions.autoApproveClinicalMutations && ["update_tooth_status", "generate_clinical_protocol_entry", "generate_clinical_protocol"].includes(toolName)) {
+			} else if (
+				this.granularPermissions.autoApproveClinicalMutations &&
+				[
+					"update_tooth_status",
+					"generate_clinical_protocol_entry",
+					"generate_clinical_protocol",
+				].includes(canonicalToolName)
+			) {
 				isAutoApprovedByGranular = true;
-			} else if (this.granularPermissions.autoApproveFinancialDrafts && toolName === "create_invoice_draft") {
+			} else if (
+				this.granularPermissions.autoApproveFinancialDrafts &&
+				canonicalToolName === "create_invoice_draft"
+			) {
 				isAutoApprovedByGranular = true;
-			} else if (this.granularPermissions.autoApproveExternalSoftware && toolName === "launch_workstation_app") {
+			} else if (
+				this.granularPermissions.autoApproveExternalSoftware &&
+				canonicalToolName === "launch_workstation_app"
+			) {
 				isAutoApprovedByGranular = true;
 			}
 		}
 
-		const isDestructive = isDestructiveDentalTool(toolName);
-		const isCautious = this.trustLevel === "confirm_all" || (this.trustLevel as string) === "cautious";
+		const isDestructive = isDestructiveDentalTool(canonicalToolName);
+		const isCautious = this.trustLevel === "confirm_all" || this.trustLevel === "cautious";
 		const isAutonomous = this.trustLevel === "autonomous";
 		const needsConfirmation =
 			isCautious
@@ -219,7 +244,7 @@ export class ToolDispatcher {
 		// 4. Task plan synchronization
 		let updatedPlan = currentPlan;
 		if (
-			(toolName === "manage_task_plan" || toolName === "task_plan") &&
+			canonicalToolName === "manage_task_plan" &&
 			toolResult &&
 			typeof toolResult === "object" &&
 			"plan" in toolResult &&

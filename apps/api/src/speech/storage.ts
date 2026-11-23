@@ -4,6 +4,9 @@
  */
 
 import { ensureSpeechTranscriptionChunksRestored } from "./audioStorage/index.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("speechStorageFacade");
 
 export {
 	SpeechChunkIdentityConflictError,
@@ -24,5 +27,5 @@ export * from "./audioStorage/index.js";
 
 // Идемпотентная фоновая загрузка расшифровок при старте модуля
 void ensureSpeechTranscriptionChunksRestored().catch((err) => {
-	console.error("[SpeechStorage] Failed to asynchronously restore chunks on module load:", err);
+	logger.error({ err: safeLogError(err) }, "Failed to asynchronously restore chunks on module load");
 });

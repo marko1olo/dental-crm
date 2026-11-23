@@ -5,6 +5,9 @@ import {
 	sanitizeProviderErrorMessage,
 	modelHealthFilePath,
 } from "./keyHashing.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("speechModelHealthEngine");
 
 const modelHealthByName = new Map<string, ModelHealthRecord>();
 let modelHealthLoadedFromDisk = false;
@@ -101,8 +104,9 @@ export function banModel(
 	if (reason) health.lastError = sanitizeProviderErrorMessage(reason);
 	modelHealthByName.set(modelName, health);
 	saveModelHealthToDisk();
-	console.warn(
-		`[ModelHealth] Model ${modelName} banned for ${durationSeconds}s. Reason: ${reason ?? "unknown"}`,
+	logger.warn(
+		{ modelName, durationSeconds, reason: reason ?? "unknown" },
+		"Model banned",
 	);
 }
 
@@ -146,8 +150,9 @@ export function recordModelFailure(modelName: string, error: unknown): number {
 	modelHealthByName.set(modelName, health);
 	saveModelHealthToDisk();
 
-	console.warn(
-		`[ModelHealth] Model ${modelName} failed (${errLower.slice(0, 100)}). Failure #${count}. Banned for ${banSec}s.`,
+	logger.warn(
+		{ modelName, errorSample: errLower.slice(0, 100), failureCount: count, banSeconds: banSec },
+		"Model failed and banned",
 	);
 	return banSec;
 }
@@ -157,7 +162,7 @@ export function recordModelSuccess(modelName: string): void {
 	if (modelHealthByName.has(modelName)) {
 		modelHealthByName.delete(modelName);
 		saveModelHealthToDisk();
-		console.log(`[ModelHealth] Model ${modelName} answered successfully. Ban lifted.`);
+		logger.info({ modelName }, "Model answered successfully. Ban lifted.");
 	}
 }
 
@@ -190,7 +195,7 @@ export function clearModelHealthMemoryForTests(): void {
 		try {
 			unlinkSync(filePath);
 		} catch (err) {
-			console.warn("[ModelHealth] Failed to unlink model health test file:", err);
+			logger.warn({ err: safeLogError(err), filePath }, "Failed to unlink model health test file");
 		}
 	}
 }

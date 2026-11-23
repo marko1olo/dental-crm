@@ -1,13 +1,15 @@
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
 import {
+	fiscalReceiptQueue,
 	generatedDocuments,
 	patientInvoices,
 	payments,
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
+import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import type { ProcessSbpWebhookResult } from "./sbpWebhookTypes.js";
 import type { SbpWebhookTargetContext } from "./types.js";
 
@@ -38,7 +40,7 @@ export async function handleSbpWebhookSuccess(params: {
 	if ((lockedSberTx && lockedSberTx.status === "success") || (lockedPayment && lockedPayment.status === "paid")) {
 		return {
 			statusCode: 200,
-			body: { success: true, processed: false, reason: "already_processed", status: "PAID", paymentId: lockedPayment?.id },
+			body: { success: true, processed: false, reason: "already_processed", status: "PAID", paymentId: lockedPayment?.id ?? undefined },
 		};
 	}
 
@@ -49,13 +51,14 @@ export async function handleSbpWebhookSuccess(params: {
 			.where(and(eq(sberbankTransactions.id, lockedSberTx.id), eq(sberbankTransactions.organizationId, orgId)));
 	}
 
-	const effectiveAmountKopecks = targetContext.amountKopecks ?? incomingAmountKopecks ?? 0;
+	const effectiveAmountKopecks = targetContext.amountKopecks ?? incomingAmountKopecks ?? (payload.amountKopecks ? Number(payload.amountKopecks) : 0);
 	const amountRub =
 		effectiveAmountKopecks > 0
 			? kopecksToRubles(effectiveAmountKopecks)
 			: payload.amountRub
 				? Number(payload.amountRub)
 				: 0;
+	const targetAmountKopecks = effectiveAmountKopecks > 0 ? effectiveAmountKopecks : rublesToKopecks(amountRub);
 
 	const effectivePatientId = targetContext.patientId || lockedSberTx?.patientId || (payload.patientId ? String(payload.patientId) : null);
 	if (!effectivePatientId) {
@@ -75,6 +78,7 @@ export async function handleSbpWebhookSuccess(params: {
 			method: "online",
 			status: "paid",
 			amountRub,
+			amountKopecks: BigInt(targetAmountKopecks),
 			paidAt: new Date(),
 			clientMutationId: mutationId,
 			note: `Оплата через СБП QR (операция ${operationId})`,
@@ -100,14 +104,59 @@ export async function handleSbpWebhookSuccess(params: {
 		await tx.update(patientInvoices).set({ status: "paid", paidAt: new Date() }).where(and(eq(patientInvoices.id, targetInvoiceId), eq(patientInvoices.organizationId, orgId)));
 	}
 
+	// 54-FZ Statutory Fiscal Receipt enqueuing for successful SBP online payment (Tag 1081)
+	const resolvedPaymentId = insertedPayment?.id || lockedPayment?.id || null;
+	const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+		patientId: effectivePatientId,
+		invoiceId: targetInvoiceId || undefined,
+		visitId: targetVisitId || undefined,
+		clientMutationId: mutationId,
+		operationType: "income",
+		taxationSystem: "usn_income",
+		cashierFullName: "Система быстрых платежей (СБП)",
+		sbpKopecks: targetAmountKopecks,
+		totalKopecks: targetAmountKopecks,
+		items: [
+			{
+				name: (payload.serviceTitle as string) || "Оплата стоматологических услуг по СБП",
+				priceKopecks: targetAmountKopecks,
+				quantity: 1,
+				amountKopecks: targetAmountKopecks,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		],
+	});
+
+	await tx.insert(fiscalReceiptQueue).values({
+		organizationId: orgId,
+		paymentId: resolvedPaymentId ?? undefined,
+		visitId: targetVisitId ?? undefined,
+		receiptType: "income",
+		status: "pending_print",
+		payloadJson: {
+			...ffdPayload,
+			clientMutationId: mutationId,
+			invoiceId: targetInvoiceId || null,
+			paymentId: resolvedPaymentId,
+			operationId,
+			amountRub,
+			amountKopecks: targetAmountKopecks,
+			source: "sbp_webhook",
+		},
+		retryCount: 0,
+	});
+
 	return {
 		statusCode: 200,
 		body: {
 			success: true,
 			processed: true,
 			status: "PAID",
-			paymentId: insertedPayment?.id || lockedPayment?.id,
-			amount: effectiveAmountKopecks,
+			paymentId: resolvedPaymentId ?? undefined,
+			amount: targetAmountKopecks,
 		},
 	};
 }

@@ -1,11 +1,14 @@
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { eq } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { db } from "../../client.js";
 import type { ServiceCatalogRow } from "../../pricelistQuery.js";
 import * as schema from "../../schema.js";
 import { selectByOrganization } from "../sliceExtractors.js";
 import type { DomainStateHydrationReport } from "../types.js";
 import type { RawHydrationSlices } from "./hydrationPipelineTypes.js";
+
+const logger = createApiLogger("hydrationQueryExecutor");
 
 /**
  * Исполнитель параллельных и ступенчатых запросов срезов БД с поддержкой RLS и демо-сидирования (Layer 2/3).
@@ -185,7 +188,7 @@ export async function executeHydrationQueries(
 				typeof schema.communicationEvents.$inferSelect
 			>(schema.communicationEvents, organizationId, "communicationEvents", report);
 		} catch (seedErr) {
-			console.warn("[DashboardHydration] Demo communications seed skipped:", seedErr);
+			logger.warn({ err: safeLogError(seedErr), organizationId }, "Demo communications seed skipped");
 		}
 	}
 	const imagingRows = await selectByOrganization<
@@ -295,7 +298,7 @@ export async function executeHydrationQueries(
 				typeof schema.labOrders.$inferSelect
 			>(schema.labOrders, organizationId, "labOrders", report);
 		} catch (seedErr) {
-			console.warn("[DashboardHydration] Demo labOrders seed skipped:", seedErr);
+			logger.warn({ err: safeLogError(seedErr), organizationId }, "Demo labOrders seed skipped");
 		}
 	}
 

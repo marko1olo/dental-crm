@@ -44,8 +44,7 @@ function splitDelimited(text: string, delimiter: string): string[][] {
 	let inQuotes = false;
 
 	for (let index = 0; index < text.length; index += 1) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const char = text[index]!;
+		const char = text[index] ?? "";
 
 		if (inQuotes) {
 			if (char === '"') {
@@ -123,8 +122,7 @@ export function detectDelimiter(text: string): {
 		if (rows.length === 0) continue;
 
 		const counts = rows.map((row) => row.length);
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const columns = counts[0]!;
+		const columns = counts[0] ?? 0;
 		if (columns < 2) continue;
 
 		const consistent =
@@ -262,14 +260,13 @@ export function parseDelimited(
 		};
 	}
 
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const hasHeader = looksLikeHeader(allRows[0]!, allRows[1]);
+	const firstRow = allRows[0] ?? [];
+	const hasHeader = looksLikeHeader(firstRow, allRows[1]);
 	let columns: string[];
 	let dataRows: string[][];
 
 	if (hasHeader) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const normalized = normalizeColumnNames(allRows[0]!);
+		const normalized = normalizeColumnNames(firstRow);
 		columns = normalized.columns;
 		warnings.push(...normalized.warnings);
 		dataRows = allRows.slice(1);

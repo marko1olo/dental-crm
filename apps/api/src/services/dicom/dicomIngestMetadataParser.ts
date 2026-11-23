@@ -6,7 +6,7 @@
  */
 
 import dicomParser from "dicom-parser";
-import { formatDicomDateToIso } from "../imaging/dicomMetadataParser.js";
+import { formatDicomDateToIso } from "../../routes/imaging/dicomParsing.js";
 
 export type IngestModalityKind = "intraoral" | "panoramic" | "ct" | "cephalometric" | "secondary_capture" | "other";
 

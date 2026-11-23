@@ -3,6 +3,7 @@ import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -15,7 +16,7 @@ import {
 } from "./familyFinanceTypes.js";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type DbOrTx = DatabaseTransaction | typeof db;
+export type DbOrTx = DatabaseTransaction | typeof db | TenantDb;
 
 /**
  * ensureFamilyMemberSpendAuthorization
@@ -84,6 +85,118 @@ export async function ensureFamilyMemberSpendAuthorization(
 	}
 }
 
+export interface CreateFamilyGroupData {
+	name: string;
+	headPatientId?: string | null | undefined;
+	memberPatientIds?: string[] | undefined;
+}
+
+export type ExecuteCreateFamilyGroupResult =
+	| { success: true; status: 200; family: typeof familyGroups.$inferSelect }
+	| { success: false; status: 400 | 403 | 409 | 500; error: string; message: string };
+
+export async function executeCreateFamilyGroup(params: {
+	organizationId: string;
+	data: CreateFamilyGroupData;
+}): Promise<ExecuteCreateFamilyGroupResult> {
+	const { organizationId, data } = params;
+
+	if (data.headPatientId) {
+		const [head] = await db.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients)
+			.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
+		if (!head) return { success: false, status: 403, error: "Forbidden", message: "Пациент не найден в клинике" };
+		if (head.familyGroupId) return { success: false, status: 409, error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" };
+	}
+
+	if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+		const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
+		if (memberIds.length > 0) {
+			const orgMembers = await db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
+			if (orgMembers.length !== memberIds.length) {
+				return {
+					success: false,
+					status: 400,
+					error: "InvalidMemberPatientId",
+					message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
+				};
+			}
+		}
+	}
+
+	const family = await withTenantCtx(organizationId, async (tx) => {
+		const [created] = await tx.insert(familyGroups).values({
+			organizationId,
+			name: data.name,
+			headPatientId: data.headPatientId || null,
+			balance: kopecksToNumericString(0),
+			balanceKopecks: 0,
+		}).returning();
+
+		if (data.headPatientId && created) {
+			await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
+				.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId)));
+		}
+
+		if (created && data.headPatientId && Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+			for (const memberId of data.memberPatientIds) {
+				if (memberId && memberId !== data.headPatientId) {
+					await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
+						.where(and(eq(patients.id, memberId), eq(patients.organizationId, organizationId)));
+					await ensureFamilyMemberSpendAuthorization(tx, organizationId, data.headPatientId, memberId, true);
+				}
+			}
+		}
+
+		return created;
+	});
+
+	if (!family) {
+		return { success: false, status: 500, error: "InsertFailed", message: "Не удалось создать семейную группу" };
+	}
+
+	return { success: true, status: 200, family };
+}
+
+export type ExecuteAddFamilyMemberResult =
+	| { success: true; status: 200; body: { success: true; patientId: string; familyGroupId: string; canSpendFamilyWallet: boolean } }
+	| { success: false; status: 400 | 404 | 409; body: { error: string; message: string } };
+
+export async function executeAddFamilyMember(params: {
+	organizationId: string;
+	familyGroupId: string;
+	patientId: string;
+	canSpendFamilyWallet?: boolean | undefined;
+}): Promise<ExecuteAddFamilyMemberResult> {
+	const { organizationId, familyGroupId, patientId, canSpendFamilyWallet = true } = params;
+
+	return withTenantCtx(organizationId, async (tx) => {
+		const [family] = await tx.select().from(familyGroups)
+			.where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
+		if (!family) return { success: false, status: 404, body: { error: "FamilyNotFound", message: "Семейная группа не найдена" } };
+
+		const [patient] = await tx.select().from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId))).limit(1);
+		if (!patient) return { success: false, status: 404, body: { error: "PatientNotFound", message: "Пациент не найден в клинике" } };
+
+		if (patient.familyGroupId && patient.familyGroupId !== familyGroupId) {
+			return { success: false, status: 409, body: { error: "PatientAlreadyInFamily", message: "Пациент уже состоит в другой семейной группе" } };
+		}
+
+		await tx.update(patients).set({ familyGroupId, updatedAt: new Date() })
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
+
+		const headId = family.headPatientId || family.primaryPatientId;
+		if (headId && headId !== patientId) {
+			await ensureFamilyMemberSpendAuthorization(tx, organizationId, headId, patientId, canSpendFamilyWallet);
+		}
+
+		return { success: true, status: 200, body: { success: true, patientId, familyGroupId, canSpendFamilyWallet } };
+	});
+}
+
 export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 	// POST /api/finance/family — create a family group
 	app.post("/api/finance/family", async (req, reply) => {
@@ -102,61 +215,16 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 		const data = createParsed.data;
 
-		if (data.headPatientId) {
-			const [head] = await db.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients)
-				.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
-			if (!head) return reply.code(403).send({ error: "Forbidden", message: "Пациент не найден в клинике" });
-			if (head.familyGroupId) return reply.code(409).send({ error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" });
+		const result = await executeCreateFamilyGroup({ organizationId, data });
+		if (!result.success) {
+			return reply.code(result.status).send({ error: result.error, message: result.message });
 		}
 
-		if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
-			const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
-			if (memberIds.length > 0) {
-				const orgMembers = await db
-					.select({ id: patients.id })
-					.from(patients)
-					.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
-				if (orgMembers.length !== memberIds.length) {
-					return reply.code(400).send({
-						error: "InvalidMemberPatientId",
-						message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
-					});
-				}
-			}
-		}
-
-		const family = await db.transaction(async (tx) => {
-			const [created] = await tx.insert(familyGroups).values({
-				organizationId,
-				name: data.name,
-				headPatientId: data.headPatientId || null,
-				balance: kopecksToNumericString(0),
-				balanceKopecks: 0,
-			}).returning();
-
-			if (data.headPatientId && created) {
-				await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
-					.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId)));
-			}
-
-			if (created && data.headPatientId && Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
-				for (const memberId of data.memberPatientIds) {
-					if (memberId && memberId !== data.headPatientId) {
-						await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
-							.where(and(eq(patients.id, memberId), eq(patients.organizationId, organizationId)));
-						await ensureFamilyMemberSpendAuthorization(tx, organizationId, data.headPatientId, memberId, true);
-					}
-				}
-			}
-
-			return created;
-		});
-
-		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_CREATED", payload: family });
+		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_CREATED", payload: result.family });
 		if (idempotencyKey) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
-		return family;
+		return result.family;
 	});
 
 	// PUT /api/finance/family/:id — update a family group
@@ -202,7 +270,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 			}
 		}
 
-		const family = await db.transaction(async (tx) => {
+		const family = await withTenantCtx(organizationId, async (tx) => {
 			const [updated] = await tx.update(familyGroups).set(data)
 				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).returning();
 			if (!updated) return null;
@@ -260,28 +328,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 		const { patientId, canSpendFamilyWallet } = parsed.data;
 
-		const result = await db.transaction(async (tx) => {
-			const [family] = await tx.select().from(familyGroups)
-				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).limit(1);
-			if (!family) return { status: 404, body: { error: "FamilyNotFound", message: "Семейная группа не найдена" } };
-
-			const [patient] = await tx.select().from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId))).limit(1);
-			if (!patient) return { status: 404, body: { error: "PatientNotFound", message: "Пациент не найден в клинике" } };
-
-			if (patient.familyGroupId && patient.familyGroupId !== id) {
-				return { status: 409, body: { error: "PatientAlreadyInFamily", message: "Пациент уже состоит в другой семейной группе" } };
-			}
-
-			await tx.update(patients).set({ familyGroupId: id, updatedAt: new Date() })
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
-
-			const headId = family.headPatientId || family.primaryPatientId;
-			if (headId && headId !== patientId) {
-				await ensureFamilyMemberSpendAuthorization(tx, organizationId, headId, patientId, canSpendFamilyWallet ?? true);
-			}
-
-			return { status: 200, body: { success: true, patientId, familyGroupId: id, canSpendFamilyWallet: canSpendFamilyWallet ?? true } };
+		const result = await executeAddFamilyMember({
+			organizationId,
+			familyGroupId: id,
+			patientId,
+			canSpendFamilyWallet,
 		});
 
 		if (result.status === 200) {
@@ -300,9 +351,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const { id, patientId } = req.params as { id: string; patientId: string };
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			const [family] = await tx.select().from(familyGroups)
-				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).limit(1);
+				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
 			if (!family) return { status: 404, body: { error: "FamilyNotFound", message: "Семейная группа не найдена" } };
 
 			await tx.update(patients).set({ familyGroupId: null, updatedAt: new Date() })
@@ -411,18 +462,18 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		const data = parsed.data;
 		const targetFamilyId = params.id || data.familyGroupId;
 
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			let family: typeof familyGroups.$inferSelect | undefined;
 			if (targetFamilyId) {
 				const [found] = await tx.select().from(familyGroups)
-					.where(and(eq(familyGroups.id, targetFamilyId), eq(familyGroups.organizationId, organizationId))).limit(1);
+					.where(and(eq(familyGroups.id, targetFamilyId), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
 				family = found;
 			} else if (data.patientId) {
 				const [pat] = await tx.select({ familyGroupId: patients.familyGroupId }).from(patients)
 					.where(and(eq(patients.id, data.patientId), eq(patients.organizationId, organizationId))).limit(1);
 				if (pat?.familyGroupId) {
 					const [found] = await tx.select().from(familyGroups)
-						.where(and(eq(familyGroups.id, pat.familyGroupId), eq(familyGroups.organizationId, organizationId))).limit(1);
+						.where(and(eq(familyGroups.id, pat.familyGroupId), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
 					family = found;
 				}
 			}
@@ -472,7 +523,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = req.params as { id: string };
-		const deleteResult = await db.transaction(async (tx) => {
+		const deleteResult = await withTenantCtx(organizationId, async (tx) => {
 			const [family] = await tx
 				.select()
 				.from(familyGroups)
@@ -487,7 +538,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 				.limit(1);
 			if (members.length > 0) return { status: 400, body: { error: "Cannot delete family group with members" } };
 
-			const balanceKopecks = parseKopecks(family.balance);
+			const balanceKopecks = Number(family.balanceKopecks != null && family.balanceKopecks > 0 ? family.balanceKopecks : parseKopecks(family.balance));
 			if (balanceKopecks !== 0) {
 				return { status: 409, body: { error: "FamilyWalletNotEmpty", message: `На кошельке ${kopecksToNumericString(balanceKopecks)} ₽. Удалить нельзя.` } };
 			}

@@ -2,11 +2,16 @@ import crypto from "node:crypto";
 import { closeSync, openSync, readSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
+import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
+import * as schema from "../../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { normalizeUid, organizationExists, parseDicomBufferForStow, UUID_SHAPE } from "../../dicomwebHelpers.js";
 import { resolveStowBinding } from "./stowBindingHelper.js";
 import { persistStowDicomEntities } from "./stowDbStorage.js";
@@ -22,6 +27,17 @@ export async function handleDicomwebStow(
 	if (!(await requireClinicalMutationAccess(request, reply, "dicom stow store"))) return;
 	const organizationId = requireOrganizationId(request, reply);
 	if (!organizationId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
@@ -71,10 +87,91 @@ export async function handleDicomwebStow(
 		return reply.code(422).send({ error: "UnprocessableDicomInstance", message: "Файл не содержит обязательных DICOM-тегов идентификации: StudyInstanceUID, SeriesInstanceUID или SOPInstanceUID." });
 	}
 
+	const studyUid = parsed.studyUid;
+	const seriesUid = parsed.seriesUid;
+	const sopInstanceUid = parsed.sopInstanceUid;
+
 	const pathStudyUid = request.params?.studyUid ? normalizeUid(request.params.studyUid) : null;
-	if (pathStudyUid && pathStudyUid !== parsed.studyUid) {
+	if (pathStudyUid && pathStudyUid !== studyUid) {
 		await fs.unlink(tempFilePath).catch(() => {});
-		return reply.code(409).send({ error: "StudyUidMismatch", message: `StudyInstanceUID в URL (${pathStudyUid}) не совпадает со значением в файле (${parsed.studyUid}).` });
+		return reply.code(409).send({ error: "StudyUidMismatch", message: `StudyInstanceUID в URL (${pathStudyUid}) не совпадает со значением в файле (${studyUid}).` });
+	}
+
+	const existingInstance = await withTenantCtx(organizationId, async (tx) => {
+		const [inst] = await tx
+			.select({
+				id: schema.imagingInstances.id,
+				seriesId: schema.imagingInstances.seriesId,
+				sopClassUid: schema.imagingInstances.sopClassUid,
+			})
+			.from(schema.imagingInstances)
+			.where(
+				and(
+					eq(schema.imagingInstances.organizationId, organizationId),
+					eq(schema.imagingInstances.dicomSopInstanceUid, sopInstanceUid),
+				),
+			)
+			.limit(1);
+		if (!inst) return null;
+
+		const [study] = await tx
+			.select({
+				id: schema.imagingStudies.id,
+				patientId: schema.imagingStudies.patientId,
+				bindingStatus: schema.imagingStudies.bindingStatus,
+				bindingConfidence: schema.imagingStudies.bindingConfidence,
+			})
+			.from(schema.imagingStudies)
+			.where(
+				and(
+					eq(schema.imagingStudies.organizationId, organizationId),
+					eq(schema.imagingStudies.dicomStudyUid, studyUid),
+				),
+			)
+			.limit(1);
+
+		return {
+			instanceId: inst.id,
+			seriesId: inst.seriesId,
+			sopClassUid: inst.sopClassUid,
+			studyId: study?.id ?? null,
+			patientId: study?.patientId ?? null,
+			bindingStatus: study?.bindingStatus ?? "auto_bound",
+			bindingConfidence: study?.bindingConfidence ?? 100,
+		};
+	});
+
+	if (existingInstance) {
+		await fs.unlink(tempFilePath).catch(() => {});
+		if (idempotencyKey) {
+			reply.header("x-idempotency-replayed", "true");
+		}
+		const sopClassUid = existingInstance.sopClassUid || parsed.sopClassUid || "1.2.840.10008.5.1.4.1.1.1";
+		return reply.code(200).send({
+			"00081199": {
+				vr: "SQ",
+				Value: [
+					{
+						"00081150": { vr: "UI", Value: [sopClassUid] },
+						"00081155": { vr: "UI", Value: [sopInstanceUid] },
+						"00081190": {
+							vr: "UR",
+							Value: [
+								`/api/dicomweb/studies/${studyUid}/series/${seriesUid}/instances/${sopInstanceUid}`,
+							],
+						},
+					},
+				],
+			},
+			studyId: existingInstance.studyId,
+			instanceId: existingInstance.instanceId,
+			patientId: existingInstance.patientId,
+			bindingStatus: existingInstance.bindingStatus,
+			bindingConfidence: existingInstance.bindingConfidence,
+			matchMethod: "deduplicated_sop_instance",
+			status: "stored",
+			deduplicated: true,
+		});
 	}
 
 	const explicitPatientId =

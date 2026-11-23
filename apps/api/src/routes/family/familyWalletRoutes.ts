@@ -156,22 +156,42 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 		try {
 			const settings = await getClinicSettingsFromDb(organizationId);
 			const profile = settings?.profile;
+			const profileRecord = profile as (typeof profile & { chiefDoctorName?: string; directorName?: string }) | undefined;
+
+			const inn = profile?.inn?.trim();
+			const ogrn = profile?.ogrn?.trim();
+			const clinicName = (profile?.legalName || profile?.clinicName)?.trim();
+			const rawSignatory = (profile?.signatoryName || profileRecord?.chiefDoctorName || profileRecord?.directorName)?.trim();
+
+			if (!inn || !ogrn || !clinicName || !rawSignatory) {
+				return reply.code(422).send({
+					error: "UnprocessableEntity",
+					message: "Для выдачи справки об оплате медицинских услуг заполните реквизиты клиники и главного врача в Настройках",
+				});
+			}
+
+			const signatoryFioParts = rawSignatory.split(/\s+/).filter(Boolean);
+			if (signatoryFioParts.length < 2) {
+				return reply.code(422).send({
+					error: "UnprocessableEntity",
+					message: "Для выдачи справки об оплате медицинских услуг заполните реквизиты клиники и главного врача в Настройках",
+				});
+			}
 
 			const clinicInfo: FnsClinicInfo = {
-				inn: profile?.inn || "7701234567",
-				kpp: profile?.kpp || "770101001",
-				ogrn: profile?.ogrn || "1027700000000",
-				name: profile?.legalName || profile?.clinicName || "ООО ДЕНТЕ СТОМАТОЛОГИЯ",
+				inn,
+				...(profile?.kpp ? { kpp: profile.kpp.trim() } : {}),
+				ogrn,
+				name: clinicName,
 			};
 
-			const profileRecord = profile as (typeof profile & { chiefDoctorName?: string; directorName?: string }) | undefined;
-			const rawSignatory = (profile?.signatoryName || profileRecord?.chiefDoctorName || profileRecord?.directorName || "Главный врач").trim();
-			const signatoryFioParts = rawSignatory.split(/\s+/);
+			const familyPart = signatoryFioParts[0] ?? "";
+			const givenPart = signatoryFioParts[1] ?? "";
 			const signatory = {
 				signatoryRole: "1" as const,
 				fullName: {
-					family: signatoryFioParts[0] || "Главный",
-					given: signatoryFioParts[1] || "врач",
+					family: familyPart,
+					given: givenPart,
 					...(signatoryFioParts[2] ? { patronymic: signatoryFioParts.slice(2).join(" ") } : {}),
 				},
 			};

@@ -16,6 +16,9 @@ import {
 	GROQ_PROVIDER_ID,
 	type ProviderSlot,
 } from "./visionTypes.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("aiVisionCascadeClient");
 
 export type VisionContentPart =
 	| { type: "text"; text: string }
@@ -130,8 +133,9 @@ export async function runCascade(
 			}
 
 			try {
-				console.info(
-					`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${candidate.fingerprint}`,
+				logger.info(
+					{ slotIdx, provider: slot.provider, model: slot.model, keyFingerprint: candidate.fingerprint },
+					"Vision analysis pass attempt",
 				);
 				const text = await callVisionModel(
 					slot,
@@ -145,18 +149,19 @@ export async function runCascade(
 					recordProviderKeySuccess(providerId, candidate);
 					return { text, slotIdx };
 				}
-				console.warn(
-					`[visionAnalyzer] Response too short (${text.length} chars), trying next`,
+				logger.warn(
+					{ textLength: text.length, minLength },
+					"Response too short, trying next provider slot",
 				);
 			} catch (err: unknown) {
 				const httpErr = err as VisionHttpError | undefined;
 				const statusCode: number = typeof httpErr?.statusCode === "number" ? httpErr.statusCode : 0;
-				const message = err instanceof Error ? err.message : String(err);
 				recordProviderKeyFailure(providerId, candidate, err);
 				triedFingerprints.add(candidate.fingerprint);
 
-				console.warn(
-					`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${message}`,
+				logger.warn(
+					{ err: safeLogError(err), provider: slot.provider, keyFingerprint: candidate.fingerprint },
+					"Vision provider attempt failed",
 				);
 
 				if (statusCode === 429 || statusCode === 401 || statusCode === 403) {

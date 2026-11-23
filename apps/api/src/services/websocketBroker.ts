@@ -124,41 +124,75 @@ export interface StaffPresenceInfo {
 	lastSeen: number;
 }
 
-type ClientConn = {
+export type ClientConn = {
 	ws: WebSocket;
 	organizationId: string;
 	branchId?: string | undefined;
 	patientId?: string | undefined;
+	userId?: string | undefined;
 	isClinical?: boolean | undefined;
+	isPatient?: boolean | undefined;
 	presence?: StaffPresenceInfo | undefined;
+	isAlive?: boolean | undefined;
 };
 
 const clients = new Set<ClientConn>();
 const PRESENCE_TTL_MS = 45_000;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
 export const wsBroker = {
 	addClient(
 		ws: WebSocket,
 		organizationId: string,
-		patientId?: string,
-		roleOrClinical?: boolean | string | null,
-		branchId?: string,
+		patientIdOrOptions?: string | {
+			patientId?: string | undefined;
+			roleOrClinical?: boolean | string | null | undefined;
+			branchId?: string | undefined;
+			userId?: string | undefined;
+			isPatient?: boolean | undefined;
+		} | undefined,
+		roleOrClinical?: boolean | string | null | undefined,
+		branchId?: string | undefined,
+		userId?: string | undefined,
+		isPatient?: boolean | undefined,
 	) {
+		let patientId: string | undefined;
+		let clinicalParam = roleOrClinical;
+		let branch = branchId;
+		let user = userId;
+		let patientFlag = isPatient ?? false;
+
+		if (typeof patientIdOrOptions === "object" && patientIdOrOptions !== null) {
+			patientId = patientIdOrOptions.patientId;
+			clinicalParam = patientIdOrOptions.roleOrClinical;
+			branch = patientIdOrOptions.branchId;
+			user = patientIdOrOptions.userId;
+			patientFlag = patientIdOrOptions.isPatient ?? false;
+		} else {
+			patientId = patientIdOrOptions;
+		}
+
 		let isClinical = false;
-		if (typeof roleOrClinical === "boolean") {
-			isClinical = roleOrClinical;
-		} else if (typeof roleOrClinical === "string") {
-			isClinical = evaluateClinicalAccess(roleOrClinical).hasClinicalAccess;
+		if (typeof clinicalParam === "boolean") {
+			isClinical = clinicalParam;
+		} else if (typeof clinicalParam === "string") {
+			isClinical = evaluateClinicalAccess(clinicalParam).hasClinicalAccess;
 		}
 		const conn: ClientConn = {
 			ws,
 			organizationId,
-			branchId,
+			branchId: branch ? branch : undefined,
+			patientId: patientId ? patientId : undefined,
+			userId: user ? user : undefined,
 			isClinical,
+			isPatient: patientFlag,
+			isAlive: true,
 		};
-		if (patientId !== undefined) conn.patientId = patientId;
 		clients.add(conn);
 		if (typeof ws?.on === "function") {
+			ws.on("pong", () => {
+				conn.isAlive = true;
+			});
 			ws.on("close", () => {
 				wsBroker.removePresence(ws);
 				clients.delete(conn);
@@ -278,6 +312,10 @@ export const wsBroker = {
 				continue;
 			}
 			if (client.organizationId === organizationId) {
+				// Межпользовательская изоляция: сокеты пациентов НЕ получают общеклинические события персонала
+				if (client.isPatient) {
+					continue;
+				}
 				// Branch-level isolation: if branchId is specified, only send to matching branch (or un-scoped client)
 				if (branchId && client.branchId && client.branchId !== branchId) {
 					continue;
@@ -360,6 +398,30 @@ export const wsBroker = {
 			}
 		}
 	},
+	broadcastToUser(
+		organizationId: string,
+		userId: string,
+		message: object,
+	) {
+		const rawData = JSON.stringify(message);
+		for (const client of clients) {
+			if (client.ws.readyState !== 1) {
+				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
+					clients.delete(client);
+				}
+				continue;
+			}
+			if (client.organizationId === organizationId && client.userId === userId) {
+				try {
+					client.ws.send(rawData, (err) => {
+						if (err) clients.delete(client);
+					});
+				} catch {
+					clients.delete(client);
+				}
+			}
+		}
+	},
 	removeClient(ws: WebSocket): boolean {
 		wsBroker.removePresence(ws);
 		let removed = false;
@@ -384,7 +446,42 @@ export const wsBroker = {
 		}
 		return count;
 	},
+	startHeartbeat(intervalMs = 30_000): void {
+		if (heartbeatTimer) {
+			clearInterval(heartbeatTimer);
+		}
+		heartbeatTimer = setInterval(() => {
+			for (const client of clients) {
+				if (client.isAlive === false) {
+					wsBroker.removePresence(client.ws);
+					try {
+						client.ws.terminate();
+					} catch {
+						// ignore termination error
+					}
+					clients.delete(client);
+					continue;
+				}
+				client.isAlive = false;
+				try {
+					if (typeof client.ws.ping === "function") {
+						client.ws.ping();
+					}
+				} catch {
+					wsBroker.removePresence(client.ws);
+					clients.delete(client);
+				}
+			}
+		}, intervalMs);
+	},
+	stopHeartbeat(): void {
+		if (heartbeatTimer) {
+			clearInterval(heartbeatTimer);
+			heartbeatTimer = null;
+		}
+	},
 	clear(): void {
+		wsBroker.stopHeartbeat();
 		clients.clear();
 	},
 };

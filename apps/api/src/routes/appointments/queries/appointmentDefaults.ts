@@ -2,10 +2,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { chairs, clinics, users } from "../../../db/schema.js";
 import {
+	DEFAULT_SCHEDULE_TIMEZONE,
 	isMissingOrDefaultChairId,
 	isMissingOrDefaultDoctorId,
 	normalizeAppointmentFieldAliases,
 } from "../appointmentsHelpers.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 import type { DbClientOrTransaction } from "../types.js";
 
 /**
@@ -134,6 +136,7 @@ export async function prepareCreateAppointmentRawBody(
 	orgId: string,
 	body: unknown,
 	tx: DbClientOrTransaction = db,
+	explicitTimeZone?: string | null,
 ): Promise<Record<string, unknown> | null> {
 	const rawBody =
 		body && typeof body === "object"
@@ -141,7 +144,11 @@ export async function prepareCreateAppointmentRawBody(
 			: null;
 
 	if (rawBody) {
-		normalizeAppointmentFieldAliases(rawBody);
+		const zone =
+			explicitTimeZone ||
+			(await clinicTimeZone(orgId)) ||
+			DEFAULT_SCHEDULE_TIMEZONE;
+		normalizeAppointmentFieldAliases(rawBody, zone);
 
 		if (isMissingOrDefaultChairId(rawBody.chairId)) {
 			const resolvedChairId = await resolveDefaultChairForCreate(tx, orgId);
@@ -168,6 +175,7 @@ export async function prepareUpdateAppointmentRawBody(
 	orgId: string,
 	body: unknown,
 	tx: DbClientOrTransaction = db,
+	explicitTimeZone?: string | null,
 ): Promise<Record<string, unknown> | null> {
 	const rawBody =
 		body && typeof body === "object"
@@ -175,7 +183,11 @@ export async function prepareUpdateAppointmentRawBody(
 			: null;
 
 	if (rawBody) {
-		normalizeAppointmentFieldAliases(rawBody);
+		const zone =
+			explicitTimeZone ||
+			(await clinicTimeZone(orgId)) ||
+			DEFAULT_SCHEDULE_TIMEZONE;
+		normalizeAppointmentFieldAliases(rawBody, zone);
 
 		if (
 			rawBody.chairId !== undefined &&

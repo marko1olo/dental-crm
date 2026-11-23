@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import {
 	ImplantStabilityCalculator,
-	createImplantInstallationSchema,
 	computePayloadHash,
+	createImplantInstallationSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -41,7 +41,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			});
 		}
 
-		// Дедупликация и проверка Idempotency-Key (Мандаты 8d, 8bo, 8zp)
+		// Дедупликация и проверка Idempotency-Key (Мандаты 8bo, 8zp)
 		const rawIdempotencyKey =
 			(request.headers["idempotency-key"] as string | undefined) ??
 			(request.headers["x-idempotency-key"] as string | undefined) ??
@@ -72,7 +72,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					reply.header("Idempotency-Key", idempotencyKey);
 					reply.header("idempotency-replayed", "true");
 					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+					return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
 				}
 				if (existingRecord.status === "in_flight") {
 					return reply.code(409).header("Retry-After", "1").send({
@@ -440,7 +440,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			decisionRationale,
 		};
 
-		// Запись в таблицу idempotencyKeys для атомарного кэширования
+		// Запись в таблицу idempotencyKeys для атомарного кэширования (Мандаты 8bo, 8zp)
 		if (idempotencyKey) {
 			await withTenantCtx(orgId, async (tx) => {
 				await tx

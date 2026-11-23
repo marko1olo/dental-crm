@@ -133,6 +133,7 @@ export async function dispatchDueCareTasks(
 				taskId: task.id,
 				channel: toChannelCode(task.channel),
 				intent: toIntentCode(task.intent),
+				scope: "service",
 				body: task.body || task.title,
 				dedupeKey: `care_task:${task.id}`,
 				scheduledAt: now,
@@ -148,6 +149,16 @@ export async function dispatchDueCareTasks(
 				});
 			} else {
 				problems.push(`Task ${task.id}: ${res.reason}`);
+				await withSuperuserBypass(async (tx) => {
+					await tx
+						.update(communicationTasks)
+						.set({
+							status: "failed",
+							lastErrorMessage: res.reason,
+							lastEventAt: new Date(),
+						})
+						.where(eq(communicationTasks.id, task.id));
+				});
 			}
 		}
 	} catch (err) {

@@ -39,7 +39,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";

@@ -4,7 +4,9 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
-import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import { inventoryItems } from "../../db/schema.js";
+import { fefoStockService } from "../inventory/fefoStockService.js";
+import type { DbTransaction } from "../inventory/fefo/types.js";
 import type { DbExecutor } from "./types.js";
 import { resolveOrAutoCreateItems } from "./unifiedItemResolver.js";
 import type {
@@ -44,7 +46,6 @@ export async function executeUnifiedStockDeduction(
 	const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));
 	const deductedItems: UnifiedDeductedItemRecord[] = [];
 	const warnings: string[] = [];
-	const txRows: Array<typeof inventoryTransactions.$inferInsert> = [];
 	let hasOverdraft = false;
 
 	for (const target of resolved) {
@@ -55,37 +56,28 @@ export async function executeUnifiedStockDeduction(
 		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
 		const deductQty = Number(target.qty);
 		const safeDeductQty = Number.isFinite(deductQty) && deductQty > 0 ? deductQty : 1;
-		const newStock = Number((baseStock - safeDeductQty).toFixed(4));
-		const isOverdraft = newStock < 0;
-		if (isOverdraft) hasOverdraft = true;
-
-		await tx
-			.update(inventoryItems)
-			.set({ stockQuantity: String(newStock), currentQty: String(newStock), updatedAt: new Date() })
-			.where(and(eq(inventoryItems.id, inv.id), eq(inventoryItems.organizationId, organizationId)));
-
 		const itemLabel = target.label || inv.name;
-		const txNote = isOverdraft
-			? `Списано под операцию, требуется оприходование (${itemLabel}: дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."})`
-			: (notes || `${reasonPrefix} (${itemLabel})`);
+		const txNote = notes || `${reasonPrefix} (${itemLabel})`;
 
-		txRows.push({
+		const fefoRes = await fefoStockService.deductFefo(tx as DbTransaction, {
 			organizationId,
-			visitId,
-			itemId: inv.id,
 			inventoryItemId: inv.id,
-			quantityChanged: String(-target.qty),
-			qty: String(-target.qty),
-			unitCostRub: inv.unitCostRub ?? "0",
-			transactionType: isOverdraft ? "emergency_overdraft" : transactionType,
-			isOverdraft,
+			requiredQty: safeDeductQty,
+			visitId,
 			userId,
+			allowOverdraft: true,
+			transactionType: transactionType === "manual_writeoff" ? "manual_writeoff" : "treatment_consumable",
 			notes: txNote,
-			metadata: metadata ?? null,
 		});
 
+		const remainingStock = Number((baseStock - safeDeductQty).toFixed(4));
+		const isOverdraft = fefoRes.isOverdraft || Boolean(fefoRes.isNegativeStock);
 		if (isOverdraft) {
-			warnings.push(`Позиция «${inv.name}»: списано под операцию, требуется оприходование (остаток: ${newStock} ${inv.unit ?? "ед."}).`);
+			hasOverdraft = true;
+			warnings.push(
+				fefoRes.warning ||
+					`Позиция «${inv.name}»: списано под операцию, требуется оприходование (остаток: ${remainingStock} ${inv.unit ?? "ед."}).`,
+			);
 		}
 
 		deductedItems.push({
@@ -93,13 +85,9 @@ export async function executeUnifiedStockDeduction(
 			itemName: inv.name,
 			quantity: target.qty,
 			unit: inv.unit ?? "шт.",
-			remainingStock: newStock,
+			remainingStock,
 			isOverdraft,
 		});
-	}
-
-	if (txRows.length > 0) {
-		await tx.insert(inventoryTransactions).values(txRows);
 	}
 
 	const message = successMessageTemplate

@@ -34,7 +34,7 @@ import {
 	payments,
 	users,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";

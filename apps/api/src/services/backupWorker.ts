@@ -42,6 +42,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { Transform, type TransformCallback } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
+import { createApiLogger, safeLogError } from "../observability/index.js";
+
+const logger = createApiLogger("backupWorker");
 
 const ENCRYPTION_ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
@@ -393,9 +396,9 @@ async function serverMajorVersion(): Promise<number | null> {
 			? Math.floor(numeric / 10000)
 			: null;
 	} catch (error) {
-		console.warn(
-			"[BackupWorker] Не удалось узнать версию сервера, проверка версии pg_dump пропущена:",
-			error instanceof Error ? error.message : String(error),
+		logger.warn(
+			{ err: safeLogError(error) },
+			"Не удалось узнать версию сервера, проверка версии pg_dump пропущена",
 		);
 		return null;
 	}
@@ -445,9 +448,9 @@ function removePartialFile(filePath: string): void {
 	try {
 		if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 	} catch (error) {
-		console.warn(
-			"[BackupWorker] Не удалось удалить незавершённый файл копии:",
-			error,
+		logger.warn(
+			{ err: safeLogError(error), filePath },
+			"Не удалось удалить незавершённый файл копии",
 		);
 	}
 }
@@ -475,7 +478,10 @@ export function pruneOldBackups(
 			}
 		}
 	} catch (error) {
-		console.warn("[BackupWorker] Не удалось очистить старые копии:", error);
+		logger.warn(
+			{ err: safeLogError(error) },
+			"Не удалось очистить старые копии",
+		);
 	}
 }
 
@@ -486,7 +492,7 @@ export function pruneOldBackups(
 export async function createEncryptedBackup(): Promise<BackupResult> {
 	const keyResult = resolveEncryptionKey();
 	if ("error" in keyResult) {
-		console.error(`[BackupWorker] ${keyResult.error}`);
+		logger.error({ err: keyResult.error }, "CLINIC_ENCRYPTION_KEY invalid or missing");
 		return { success: false, error: keyResult.error };
 	}
 
@@ -517,7 +523,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 		const dumpTool = resolvePgDump(serverMajor);
 		if ("error" in dumpTool) {
 			removePartialFile(filePath);
-			console.error(`[BackupWorker] Копия НЕ создана: ${dumpTool.error}`);
+			logger.error({ err: dumpTool.error }, "Копия НЕ создана: pg_dump resolution error");
 			return { success: false, error: dumpTool.error };
 		}
 
@@ -533,7 +539,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 				`pg_dump отказывается выгружать сервер новее себя, поэтому копии не создаются вообще. ` +
 				`Задайте PG_DUMP_PATH на бинарь версии ${serverMajor} или новее. ` +
 				`На этой машине готовый вариант: C:\\Clinic_MVP\\dental-crm\\.tools\\pgsql\\bin\\pg_dump.exe.`;
-			console.error(`[BackupWorker] ${error}`);
+			logger.error({ err: error, serverMajor, dumpMajor: dumpTool.major }, "pg_dump version mismatch");
 			return { success: false, error };
 		}
 
@@ -548,7 +554,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 		pgDump.stderr.on("data", (data) => {
 			const text = String(data);
 			stderrChunks.push(text);
-			console.warn(`[BackupWorker] pg_dump: ${text.trim()}`);
+			logger.warn({ stderr: text.trim() }, "pg_dump stderr stream warning");
 		});
 
 		pgDump.stdout.pipe(inspector).pipe(cipher).pipe(writeStream);
@@ -634,7 +640,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 			// Незавершённый файл удаляем: иначе в папке остаются копии
 			// правильного вида и ненулевого размера, которые не расшифровать.
 			removePartialFile(filePath);
-			console.error(`[BackupWorker] Копия НЕ создана: ${outcome.error}`);
+			logger.error({ err: outcome.error }, "Копия НЕ создана: pg_dump execution failed");
 			return outcome;
 		}
 
@@ -648,21 +654,26 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 		if (rejection) {
 			removePartialFile(filePath);
 			const error = `Копия признана недействительной и удалена: ${rejection}`;
-			console.error(`[BackupWorker] ${error}`);
+			logger.error({ err: error, stats, sizeBytes }, "Резервная копия отклонена как пустая или неполная");
 			return { success: false, error };
 		}
 
-		console.log(
-			`[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ, ` +
-				`секций COPY ${stats.copyBlocks}, строк данных ${stats.dataRows}, ` +
-				`таблиц со строками ${stats.populatedTables})`,
+		logger.info(
+			{
+				filePath,
+				sizeKb: Math.round(sizeBytes / 1024),
+				copyBlocks: stats.copyBlocks,
+				dataRows: stats.dataRows,
+				populatedTables: stats.populatedTables,
+			},
+			"Резервная копия базы успешно создана и зашифрована",
 		);
 		pruneOldBackups();
 		return outcome;
 	} catch (error) {
 		if (filePath) removePartialFile(filePath);
 		const message = error instanceof Error ? error.message : String(error);
-		console.error("[BackupWorker] Исключение при создании копии:", error);
+		logger.error({ err: safeLogError(error), filePath }, "Исключение при создании копии");
 		return { success: false, error: message };
 	}
 }
@@ -689,13 +700,14 @@ export function startBackupDaemon(): void {
 	const keyResult = resolveEncryptionKey();
 	if ("error" in keyResult) {
 		// Молчать нельзя: клиника должна знать, что копий НЕТ.
-		console.error(
-			`[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. ${keyResult.error}`,
+		logger.error(
+			{ err: keyResult.error },
+			"Резервное копирование ОТКЛЮЧЕНО: отсутствует или недействителен ключ шифрования",
 		);
 		return;
 	}
 
-	console.log("[BackupWorker] Резервное копирование включено.");
+	logger.info("Резервное копирование включено");
 
 	const firstRunDelayMs = Number(
 		process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
@@ -704,7 +716,7 @@ export function startBackupDaemon(): void {
 		() => {
 			firstRunTimeout = null;
 			void createEncryptedBackup().catch((err) => {
-				console.error("[BackupWorker] Uncaught error during initial backup run:", err);
+				logger.error({ err: safeLogError(err) }, "Uncaught error during initial backup run");
 			});
 		},
 		Math.max(0, firstRunDelayMs),
@@ -714,7 +726,7 @@ export function startBackupDaemon(): void {
 
 	backupInterval = setInterval(() => {
 		void createEncryptedBackup().catch((err) => {
-			console.error("[BackupWorker] Uncaught error during scheduled backup cycle:", err);
+			logger.error({ err: safeLogError(err) }, "Uncaught error during scheduled backup cycle");
 		});
 	}, backupIntervalMs());
 	backupInterval?.unref();
@@ -728,6 +740,6 @@ export function stopBackupDaemon(): void {
 	if (backupInterval) {
 		clearInterval(backupInterval);
 		backupInterval = null;
-		console.log("[BackupWorker] Резервное копирование остановлено.");
+		logger.info("Резервное копирование остановлено");
 	}
 }

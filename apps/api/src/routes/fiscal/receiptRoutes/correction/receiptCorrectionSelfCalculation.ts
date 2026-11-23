@@ -221,7 +221,10 @@ async function updateRefundedPaymentRecord(
 		const remainingKop = Math.max(0, origKop - refundKopecks);
 		await tx
 			.update(payments)
-			.set({ amountRub: kopecksToRub(remainingKop) })
+			.set({
+				amountRub: kopecksToRub(remainingKop),
+				amountKopecks: BigInt(remainingKop),
+			})
 			.where(and(eq(payments.id, existingPayment.id), eq(payments.organizationId, orgId)));
 	}
 

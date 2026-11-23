@@ -11,6 +11,7 @@ import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../../utils/httpIdempotency.js";
 import {
 	computeSterilizationExpiration,
 	evaluateAutoclaveCycle,
@@ -32,6 +33,17 @@ export async function handleCreateSterilizationLog(
 		"sterilization create",
 	);
 	if (!organizationId) return;
+
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const rawBody = (req.body as Record<string, unknown>) || {};
 	const normalizedBody = normalizeSterilizationBody(rawBody);

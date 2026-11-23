@@ -8,6 +8,9 @@ import {
 	computeChairUtilizationAll,
 	computePlanFunnelAll,
 } from "./biAnalyticsEngine.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("biAnalyticsSnapshots");
 
 /**
  * Итог прогона снимков аналитики.
@@ -74,27 +77,28 @@ export async function computeBiAnalyticsSnapshots(
 						doctorProfitabilityJson,
 					});
 
-					console.log(`[BI Worker] Snapshot generated for org ${orgId}`);
+					logger.info({ orgId }, "Snapshot generated for org");
 				});
 				succeeded += 1;
 			} catch (err) {
 				failed.push(orgId);
-				console.error(
-					`[BI Worker] Error generating snapshot for organization ${orgId}:`,
-					err,
+				logger.error(
+					{ err: safeLogError(err), orgId },
+					"Error generating snapshot for organization",
 				);
 			}
 		}
 
 		if (failed.length > 0) {
-			console.error(
-				`[BI Worker] Снимки не записаны у ${failed.length} организаций из ${orgIds.length}: ${failed.join(", ")}`,
+			logger.error(
+				{ failedCount: failed.length, totalCount: orgIds.length, failedOrgIds: failed },
+				"Снимки не записаны у части организаций",
 			);
 		}
 
 		return { organizations: orgIds.length, succeeded, failed };
 	} catch (err) {
-		console.error("[BI Worker] Error generating snapshots:", err);
+		logger.error({ err: safeLogError(err) }, "Error generating snapshots");
 		throw err;
 	}
 }

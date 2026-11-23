@@ -57,9 +57,11 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			// не может, а файл «Пациенты.dbf» — обычное дело.
 			const rawFileName = decodeHeaderText(
 				request.headers["x-migration-file-name"],
+				request.log,
 			);
 			const rawSourceName = decodeHeaderText(
 				request.headers["x-migration-source-name"],
+				request.log,
 			);
 
 			/**

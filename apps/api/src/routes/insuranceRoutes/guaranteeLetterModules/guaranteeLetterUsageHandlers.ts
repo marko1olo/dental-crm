@@ -94,6 +94,26 @@ export async function handleRecordGuaranteeLetterUsage(
 			warning: "Требуется досылка гарантийного письма ДМС",
 			isEmergency: true,
 		};
+
+		await db
+			.insert(idempotencyKeys)
+			.values({
+				clinicId: orgId,
+				key: idempotencyKey,
+				status: "completed",
+				payloadHash: computePayloadHash(request.body ?? {}),
+				responseBody: emergencyPayload,
+				responseCode: 200,
+			})
+			.onConflictDoUpdate({
+				target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+				set: {
+					status: "completed",
+					responseBody: emergencyPayload,
+					responseCode: 200,
+				},
+			});
+
 		reply.header("Idempotency-Key", idempotencyKey);
 		return reply.code(200).send(emergencyPayload);
 	}
@@ -306,12 +326,44 @@ export async function handleRecordGuaranteeLetterUsage(
 				};
 			}
 
+			// Mandate 8e: если лимит ГП исчерпан, возвращаем 200 с переносом всей суммы в сооплату пациента
+			// без блокировки врача и без ошибки 400 (DEF-DMS-08).
+			const exhaustedSplitData = {
+				success: true,
+				letterId: letter.id,
+				debitedAmountRub: 0,
+				debitedDmsKopecks: 0,
+				patientCoPayRub: amountRub,
+				patientCoPayKopecks: amountKop,
+				usedAmountRub: Number(letter.usedAmountRub),
+				remainingCoverageRub: 0,
+				remainingCoverageKopecks: 0,
+				status: "exhausted",
+				warning: "Лимит гарантийного письма исчерпан. Сумма перенесена в сооплату пациента.",
+			};
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: exhaustedSplitData,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: exhaustedSplitData,
+						responseCode: 200,
+					},
+				});
+
 			return {
-				status: 400,
-				error: {
-					error: "LetterExhausted",
-					message: "Лимит гарантийного письма уже полностью исчерпан.",
-				},
+				status: 200,
+				data: exhaustedSplitData,
 			};
 		}
 

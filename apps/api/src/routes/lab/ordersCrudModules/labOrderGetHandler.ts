@@ -49,7 +49,7 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 			details: parsedQuery.error.issues,
 		});
 	}
-	const patientId = parsedQuery.data.patientId;
+	const patientId = parsedQuery.data.patientId ?? undefined;
 
 	try {
 		const orders = await withTenantCtx(orgId, async (tx) => {
@@ -65,7 +65,7 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 			return current;
 		});
 
-		return reply.code(200).send(orders);
+		return reply.code(200).send({ success: true, data: orders });
 	} catch (err: unknown) {
 		request.log.error(
 			{ err, orgId, patientId },

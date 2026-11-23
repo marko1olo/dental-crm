@@ -38,8 +38,8 @@ import { authTokenSecret } from "../../security/authSecret.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import {
 	InsufficientStockError,
-	deductMaterialsForVisit,
-} from "../../services/inventory/materialDeduction.js";
+	deductForVisit as deductMaterialsForVisit,
+} from "../../services/treatmentConsumables/index.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,

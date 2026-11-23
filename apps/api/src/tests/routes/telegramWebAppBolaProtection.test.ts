@@ -137,7 +137,7 @@ describe("Telegram WebApp BOLA / IDOR Protection & Verification Suite [POR-01]",
 			username: "bob_patient",
 		});
 
-		bookingVerificationEngine.requestPhoneVerification("+79004445566");
+		await bookingVerificationEngine.requestPhoneVerification("+79004445566");
 		const verificationCode = bookingVerificationEngine.getActiveCodeForTesting("+79004445566") || "123456";
 
 		const res = await app.inject({

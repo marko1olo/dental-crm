@@ -2,7 +2,7 @@ import type { DenteTelegramBotSettings } from "@dental/shared";
 import {
 	createDenteTelegramCareRequest,
 	createDenteTelegramDocumentRequest,
-} from "../../../services/telegram/telegramLegacyMemoryStore.js";
+} from "../telegramCanonicalStore.js";
 import type { TelegramRequestScope, TelegramWebhookReplyPackage } from "../types.js";
 import {
 	careTopicFromFreeText,

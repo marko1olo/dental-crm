@@ -18,6 +18,7 @@ import {
 	requireSettingsAccess,
 	requireSettingsMutationAccess,
 } from "./helpers.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	chairCreateValidationMessage,
 	chairDeactivateNotFoundMessage,
@@ -44,6 +45,19 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/chairs", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const input = parseSettingsPayload(createChairSchema, request.body);
 		if (!input) {
 			reply.code(400);
@@ -64,6 +78,19 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		async (request, reply) => {
 			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				};
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const params = request.params as { chairId?: string };
 			if (!params.chairId) {
 				reply.code(400);
@@ -104,6 +131,19 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/chairs/:chairId", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const params = request.params as { chairId?: string };
 		if (!params.chairId) {
 			reply.code(400);
@@ -154,6 +194,19 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	app.delete("/api/settings/chairs/:chairId", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const params = request.params as { chairId?: string };
 		if (!params.chairId) {
 			reply.code(400);

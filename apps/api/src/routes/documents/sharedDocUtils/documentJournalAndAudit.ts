@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import type { FastifyBaseLogger } from "fastify";
 import {
 	type DocumentIssueSignatureAttestation,
 	type DocumentReleaseJournalEntry,
@@ -180,6 +181,7 @@ export async function buildMedicalDocumentReleaseJournalEntry(
 export async function resolveDocumentRenderContext(
 	organizationId: string,
 	patientId?: string,
+	logger?: FastifyBaseLogger | undefined,
 ): Promise<DocumentRenderContext> {
 	try {
 		return (await getDocumentRenderContextFromDb(
@@ -187,7 +189,7 @@ export async function resolveDocumentRenderContext(
 			patientId,
 		)) as DocumentRenderContext;
 	} catch (error) {
-		console.error("[documents] Не удалось собрать контекст рендеринга:", error);
+		logger?.error({ err: error }, "[documents] Не удалось собрать контекст рендеринга");
 		return {};
 	}
 }

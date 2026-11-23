@@ -15,6 +15,9 @@ import * as childProcess from "node:child_process";
 import * as crypto from "node:crypto";
 import * as dgram from "node:dgram";
 import * as os from "node:os";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("lanDiscoveryService");
 
 export interface LanInterfaceCandidate {
 	readonly name: string;

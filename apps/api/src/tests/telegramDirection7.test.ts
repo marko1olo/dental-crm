@@ -22,7 +22,7 @@ import {
 	resetTelegramDialogSessions,
 	setTelegramDialogSession,
 	updateTelegramDialogSession,
-} from "../services/telegram/telegramLegacyMemoryStore.js";
+} from "../services/telegram/dialogSessions.js";
 import {
 	findActiveDenteTelegramChatLinkByFingerprint,
 	findActiveDenteTelegramChatLinkBySubject,

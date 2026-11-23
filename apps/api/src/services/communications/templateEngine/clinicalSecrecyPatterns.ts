@@ -1,7 +1,8 @@
 export interface ClinicalSecrecyRule {
 	pattern: RegExp;
 	description: string;
-	isCritical?: boolean;
+	isCritical?: boolean | undefined;
+	isToothNumber?: boolean | undefined;
 }
 
 export const CLINICAL_SECRECY_PATTERNS: readonly ClinicalSecrecyRule[] = [
@@ -30,6 +31,7 @@ export const CLINICAL_SECRECY_PATTERNS: readonly ClinicalSecrecyRule[] = [
 	{
 		pattern: /(?<![а-яёА-ЯЁ])(?:зуб[а-яёА-ЯЁ]*)\s*(?:№\s*)?(?:[1-4][1-8]|[5-8][1-5]|\d{1,2})(?![а-яёА-ЯЁ])/gi,
 		description: "Клиническая локализация: указание номера зуба",
+		isToothNumber: true,
 	},
 	{
 		pattern: /(?<![а-яёА-ЯЁ])(?:полост[а-яёА-ЯЁ]*)\s*(?:I{1,3}|IV|V|VI)\s*класс[а-яёА-ЯЁ]*(?![а-яёА-ЯЁ])/gi,

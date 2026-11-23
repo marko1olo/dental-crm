@@ -9,7 +9,7 @@ import {
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 import type { PostOpSurveyInput, TelegramBotPresetId } from "@dental/shared";
-import { getDenteTelegramBotSettings } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { getDenteTelegramBotSettings } from "./telegramCanonicalStore.js";
 import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
 import {
 	TELEGRAM_BOT_PRESETS,

@@ -15,7 +15,8 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { dicomCrawlerDaemon, type DicomCrawlerDaemonConfig } from "../../services/dicom/DicomCrawlerDaemon.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, requireNonDoctorAccess } from "../../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { and, eq, inArray, desc, ne } from "drizzle-orm";
@@ -36,7 +37,21 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 * POST /api/imaging/daemon/start
 	 */
 	app.post("/api/imaging/daemon/start", async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "start dicom daemon"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "start dicom daemon"))) return;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		dicomCrawlerDaemon.start();
 		return reply.send({
 			success: true,
@@ -49,7 +64,21 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 * POST /api/imaging/daemon/stop
 	 */
 	app.post("/api/imaging/daemon/stop", async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "stop dicom daemon"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "stop dicom daemon"))) return;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		dicomCrawlerDaemon.stop();
 		return reply.send({
 			success: true,
@@ -66,6 +95,17 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const bodySchema = z.object({
 			paths: z.array(z.string()).optional(),
@@ -103,6 +143,17 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const configSchema = z.object({
 			watchPaths: z.array(z.string()).optional(),
@@ -210,6 +261,18 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const schemaBody = z.object({
 			studyId: z.string().uuid(),
 			patientId: z.string().uuid(),
@@ -269,6 +332,18 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const schemaBody = z.object({
 			studyId: z.string().uuid(),
 		});

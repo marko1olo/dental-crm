@@ -164,7 +164,9 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.patch("/api/settings/clinic", handleUpdateClinicProfile);
 	app.post("/api/settings/clinic", handleUpdateClinicProfile);
 
-	app.post("/api/settings/reset-demo", async (_request, _reply) => {
+	app.post("/api/settings/reset-demo", async (request, reply) => {
+		const orgId = await requireSettingsMutationAccess(request, reply);
+		if (!orgId) return;
 		return {
 			success: true,
 			message:
@@ -172,7 +174,9 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		};
 	});
 
-	app.post("/api/settings/reset-zero", async (_request, _reply) => {
+	app.post("/api/settings/reset-zero", async (request, reply) => {
+		const orgId = await requireSettingsMutationAccess(request, reply);
+		if (!orgId) return;
 		return {
 			success: true,
 			message: "Очистка базы больше не поддерживается (используется Postgres).",

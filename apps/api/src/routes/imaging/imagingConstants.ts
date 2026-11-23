@@ -80,12 +80,14 @@ export const dicomMetadataTags = new Set([
 	"00081030",
 	"0008103e",
 	"00100010",
+	"00180050",
 	"0020000d",
 	"0020000e",
 	"00200013",
 	"00280002",
 	"00280010",
 	"00280011",
+	"00280030",
 	"00280100",
 ]);
 
@@ -106,6 +108,8 @@ export type DicomHeaderMetadata = {
 	capturedAt: string | null;
 	tagsRead: number;
 	transferSyntaxUid: string | null;
+	pixelSpacing?: [number, number] | null | undefined;
+	sliceThickness?: number | null | undefined;
 	warnings: string[];
 	isCompressed?: boolean;
 };

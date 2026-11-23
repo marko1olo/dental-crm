@@ -2,7 +2,10 @@ import {
 	patientSchema,
 	updatePatientAdministrativeProfileSchema,
 } from "@dental/shared";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, eq } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { patients } from "../../db/schema.js";
 import {
 	getPatientByIdFromDb,
 	updatePatientAdministrativeProfileInDb,
@@ -227,102 +230,104 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.post(
-		"/api/patients/:patientId/archive-status",
-		async (request, reply) => {
-			const orgId = requireClinicOrganizationId(request, reply);
-			if (!orgId) return reply;
-			const { patientId } = request.params as { patientId?: string };
-			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
-				return sendPatientRouteValidationError(reply);
-			}
+	const handleArchiveStatus = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+		const { patientId } = request.params as { patientId?: string };
+		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+			return sendPatientRouteValidationError(reply);
+		}
 
-			const parsedBody = patientArchiveStatusBodySchema.safeParse(
-				request.body ?? {},
+		const parsedBody = patientArchiveStatusBodySchema.safeParse(
+			request.body ?? {},
+		);
+		if (
+			!parsedBody.success ||
+			typeof parsedBody.data.isBlacklisted !== "boolean"
+		) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Не указано действие: запретить пациенту запись на приём или снять запрет.",
+			});
+		}
+		const requestedBlacklisted = parsedBody.data.isBlacklisted;
+
+		try {
+			const {
+				getPatientArchiveReasonsAndBlacklistsFromDb,
+				setPatientArchiveStatusInDb,
+			} = await import("../../db/patientArchiveReasonsAndBlacklistsQuery.js");
+			const patient = await getPatientByIdFromDb(orgId, patientId);
+			if (!patient) return sendPatientNotFound(reply);
+
+			const rowsBefore = selectPatientArchiveRows(
+				await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
+				patientId,
+				patient.fullName,
 			);
 			if (
-				!parsedBody.success ||
-				typeof parsedBody.data.isBlacklisted !== "boolean"
+				patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted
 			) {
-				// БЫЛО: «isBlacklisted boolean is required» — имя поля запроса на экране
-				// администратора вместо того, что от него требуется.
-				return reply.code(400).send({
-					error: "ValidationError",
-					message:
-						"Не указано действие: запретить пациенту запись на приём или снять запрет.",
-				});
-			}
-			const requestedBlacklisted = parsedBody.data.isBlacklisted;
-
-			try {
-				const {
-					getPatientArchiveReasonsAndBlacklistsFromDb,
-					setPatientArchiveStatusInDb,
-				} = await import("../../db/patientArchiveReasonsAndBlacklistsQuery.js");
-				const patient = await getPatientByIdFromDb(orgId, patientId);
-				if (!patient) return sendPatientNotFound(reply);
-
-				const rowsBefore = selectPatientArchiveRows(
-					await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
-					patientId,
-					patient.fullName,
-				);
-				// Повторное нажатие кнопки не должно плодить строки: setPatientArchiveStatusInDb
-				// вставляет запись безусловно, а карточка после отправки перечитывает статус
-				// и снова показывает ту же кнопку.
-				if (
-					patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted
-				) {
-					return reply
-						.status(200)
-						.send({ success: true, isBlacklisted: requestedBlacklisted });
+				if (!requestedBlacklisted) {
+					await db
+						.update(patients)
+						.set({ status: "active", updatedAt: new Date() })
+						.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
 				}
-
-				await setPatientArchiveStatusInDb(
-					orgId,
-					patientId,
-					requestedBlacklisted,
-					patient.fullName,
-				);
-
-				// БЫЛО: маршрут отвечал { success: true } сразу после вызова записи, а
-				// setPatientArchiveStatusInDb гасит ЛЮБУЮ ошибку базы в пустой catch и
-				// оставляет запрет только в памяти процесса. Карточка показывала «Пациент
-				// добавлен в черный список. Запись на прием заблокирована», запрет исчезал
-				// при перезапуске сервера, и никто об этом не узнавал. Отвечаем успехом
-				// только после того, как база подтвердила новое состояние.
-				const rowsAfter = selectPatientArchiveRows(
-					await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
-					patientId,
-					patient.fullName,
-				);
-				if (
-					patientArchiveRowsBlockBooking(rowsAfter) !== requestedBlacklisted
-				) {
-					return reply.code(500).send({
-						error: "PatientArchiveStatusNotSaved",
-						message: requestedBlacklisted
-							? "Запрет записи не сохранён в базе. Пациент по-прежнему доступен для записи на приём — повторите действие."
-							: "Снятие запрета не сохранено в базе. Пациенту по-прежнему запрещена запись на приём — повторите действие.",
-					});
-				}
-
 				return reply
 					.status(200)
 					.send({ success: true, isBlacklisted: requestedBlacklisted });
-			} catch (e: unknown) {
-				request.log.error(
-					{ err: e },
-					"[Patients] Ошибка сохранения запрета записи",
-				);
+			}
+
+			await setPatientArchiveStatusInDb(
+				orgId,
+				patientId,
+				requestedBlacklisted,
+				patient.fullName,
+			);
+
+			if (!requestedBlacklisted) {
+				await db
+					.update(patients)
+					.set({ status: "active", updatedAt: new Date() })
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+			}
+
+			const rowsAfter = selectPatientArchiveRows(
+				await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
+				patientId,
+				patient.fullName,
+			);
+			if (
+				patientArchiveRowsBlockBooking(rowsAfter) !== requestedBlacklisted
+			) {
 				return reply.code(500).send({
 					error: "PatientArchiveStatusNotSaved",
-					message:
-						"Не удалось сохранить запрет записи. Откройте карту заново и проверьте текущий запрет перед повторной попыткой.",
+					message: requestedBlacklisted
+						? "Запрет записи не сохранён в базе. Пациент по-прежнему доступен для записи на приём — повторите действие."
+						: "Снятие запрета не сохранено в базе. Пациенту по-прежнему запрещена запись на приём — повторите действие.",
 				});
 			}
-		},
-	);
+
+			return reply
+				.status(200)
+				.send({ success: true, isBlacklisted: requestedBlacklisted });
+		} catch (e: unknown) {
+			request.log.error(
+				{ err: e },
+				"[Patients] Ошибка сохранения запрета записи",
+			);
+			return reply.code(500).send({
+				error: "PatientArchiveStatusNotSaved",
+				message:
+					"Не удалось сохранить запрет записи. Откройте карту заново и проверьте текущий запрет перед повторной попыткой.",
+			});
+		}
+	};
+
+	app.post("/api/patients/:patientId/archive-status", handleArchiveStatus);
+	app.put("/api/patients/:patientId/archive-status", handleArchiveStatus);
 
 	app.post("/api/patients/:patientId/archive", async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
@@ -456,6 +461,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			"chief_doctor",
 			"chiefdoctor",
 			"head_doctor",
+			"doctor",
 		]);
 
 		if (!staffRole || !allowedArchiveRoles.has(staffRole)) {
@@ -464,7 +470,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				permission: "patients.archive",
 				role: staffRole,
 				message:
-					"Разархивация пациентов разрешена только администраторам или руководству клиники.",
+					"Разархивация пациентов разрешена администраторам, врачам или руководству клиники.",
 			});
 		}
 

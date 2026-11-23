@@ -189,11 +189,20 @@ export async function processCashboxLedgerStage(
 		currentCashDeskBalRub = newBal;
 
 		if (cashDeskShift && resolvedCashKop > 0) {
+			const prevIncomeKop =
+				cashDeskShift.incomeTotalKopecks !== undefined && cashDeskShift.incomeTotalKopecks !== null
+					? Number(cashDeskShift.incomeTotalKopecks)
+					: rubToKopecks(Number(cashDeskShift.incomeTotalRub || 0));
+			const newIncomeKop = prevIncomeKop + resolvedCashKop;
+			const newIncomeRub = kopecksToRubles(newIncomeKop);
+			cashDeskShift.incomeTotalKopecks = newIncomeKop;
+			cashDeskShift.incomeTotalRub = newIncomeRub;
+
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`ROUND((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedCashKop}::bigint)::numeric / 100, 2)`,
-					incomeTotalKopecks: sql`COALESCE(${cashBoxShifts.incomeTotalKopecks}, 0) + ${resolvedCashKop}::bigint`,
+					incomeTotalRub: newIncomeRub,
+					incomeTotalKopecks: newIncomeKop,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -262,11 +271,20 @@ export async function processCashboxLedgerStage(
 		}
 
 		if (cashlessShift && resolvedElecKop > 0) {
+			const prevIncomeKop =
+				cashlessShift.incomeTotalKopecks !== undefined && cashlessShift.incomeTotalKopecks !== null
+					? Number(cashlessShift.incomeTotalKopecks)
+					: rubToKopecks(Number(cashlessShift.incomeTotalRub || 0));
+			const newIncomeKop = prevIncomeKop + resolvedElecKop;
+			const newIncomeRub = kopecksToRubles(newIncomeKop);
+			cashlessShift.incomeTotalKopecks = newIncomeKop;
+			cashlessShift.incomeTotalRub = newIncomeRub;
+
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`ROUND((ROUND(COALESCE(${cashBoxShifts.incomeTotalRub}, 0) * 100)::bigint + ${resolvedElecKop}::bigint)::numeric / 100, 2)`,
-					incomeTotalKopecks: sql`COALESCE(${cashBoxShifts.incomeTotalKopecks}, 0) + ${resolvedElecKop}::bigint`,
+					incomeTotalRub: newIncomeRub,
+					incomeTotalKopecks: newIncomeKop,
 					updatedAt: new Date(),
 				})
 				.where(

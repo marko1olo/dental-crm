@@ -23,6 +23,27 @@ import {
 	type SpeechRemoteArtifactDeletion,
 } from "./types.js";
 
+export type SpeechGatewayLogger = {
+	error: (obj: unknown, msg?: string) => void;
+	warn: (obj: unknown, msg?: string) => void;
+	info: (obj: unknown, msg?: string) => void;
+};
+
+const defaultSpeechGatewayLogger: SpeechGatewayLogger = {
+	error: (obj: unknown, msg?: string) => {
+		const payload = typeof obj === "object" && obj !== null ? { ...obj, msg } : { msg, details: obj };
+		process.stderr.write(`${JSON.stringify({ level: "error", service: "SpeechGateway", ...payload })}\n`);
+	},
+	warn: (obj: unknown, msg?: string) => {
+		const payload = typeof obj === "object" && obj !== null ? { ...obj, msg } : { msg, details: obj };
+		process.stderr.write(`${JSON.stringify({ level: "warn", service: "SpeechGateway", ...payload })}\n`);
+	},
+	info: (obj: unknown, msg?: string) => {
+		const payload = typeof obj === "object" && obj !== null ? { ...obj, msg } : { msg, details: obj };
+		process.stdout.write(`${JSON.stringify({ level: "info", service: "SpeechGateway", ...payload })}\n`);
+	},
+};
+
 /**
  * Базовый адрес AssemblyAI. Вынесен в окружение не ради стиля: удаление данных в
  * европейском контуре провайдера обслуживает отдельный хост
@@ -146,6 +167,7 @@ export function reportRemoteArtifactDeletion(input: {
 	providerLabel: string;
 	deletion: SpeechRemoteArtifactDeletion;
 	warnings: string[];
+	logger?: SpeechGatewayLogger | undefined;
 }): void {
 	if (input.deletion.deleted) return;
 	const warning = `${input.providerLabel}: не удалось удалить загруженное аудио и расшифровку у источника (${(
@@ -154,7 +176,8 @@ export function reportRemoteArtifactDeletion(input: {
 		0,
 		80,
 	)}), попыток ${input.deletion.attempts}. Запись голоса пациента осталась у внешнего источника: удалите её в его панели.`;
-	console.error(`[SpeechGateway] ${warning}`);
+	const logger = input.logger ?? defaultSpeechGatewayLogger;
+	logger.error({ attempts: input.deletion.attempts, reason: input.deletion.failureReason }, `[SpeechGateway] ${warning}`);
 	input.warnings.push(warning);
 }
 
@@ -168,13 +191,15 @@ export function reportAbandonedRemoteJob(input: {
 	failure: unknown;
 	budgetExhausted: boolean;
 	warnings: string[];
+	logger?: SpeechGatewayLogger | undefined;
 }): void {
 	const reason = speechProviderFailureReason(input.failure);
 	const cause = input.budgetExhausted
 		? `бюджет ожидания истёк, а последние неудачные опросы (${input.consecutiveFailures}) так и не прошли: ${reason}`
 		: `${input.consecutiveFailures} опроса задания подряд не прошли: ${reason}`;
 	const warning = `${input.providerLabel}: ${cause} (всего опросов ${input.pollCount}). Задание распознавания у источника оставалось в работе, но CRM прекратила ожидание и запрашивает удаление задания вместе с загруженным аудио, поэтому текст этого фрагмента получить уже нельзя — отправьте фрагмент заново.`;
-	console.error(`[SpeechGateway] ${warning}`);
+	const logger = input.logger ?? defaultSpeechGatewayLogger;
+	logger.error({ consecutiveFailures: input.consecutiveFailures, pollCount: input.pollCount, reason }, `[SpeechGateway] ${warning}`);
 	input.warnings.push(warning);
 }
 
@@ -185,6 +210,7 @@ export async function transcribeAssemblyAi(input: {
 	language: string;
 	specialty?: DentalSpecialty | null;
 	source?: SpeechChunkUploadInput["source"];
+	logger?: SpeechGatewayLogger | undefined;
 	/**
 	 * Предупреждения о судьбе аудио пишутся в массив вызывающей стороны, а не в
 	 * возвращаемый ProviderTranscript: на отказе распознавания результата нет, а
@@ -256,6 +282,7 @@ export async function transcribeAssemblyAi(input: {
 				transcriptId,
 			}),
 			warnings: input.warnings,
+			logger: input.logger,
 		});
 	};
 
@@ -312,11 +339,19 @@ export async function transcribeAssemblyAi(input: {
 						failure: pollError,
 						budgetExhausted: false,
 						warnings: input.warnings,
+						logger: input.logger,
 					});
 					failure = pollError;
 					break;
 				}
-				console.warn(
+				(input.logger ?? defaultSpeechGatewayLogger).warn(
+					{
+						service: "SpeechGateway",
+						providerLabel,
+						pollCount,
+						consecutivePollFailures,
+						failureReason: speechProviderFailureReason(pollError),
+					},
 					`[SpeechGateway] ${providerLabel}: опрос задания N ${pollCount} не прошёл (${speechProviderFailureReason(
 						pollError,
 					)}); задание живо, ожидание продолжается, запас неудачных опросов ${consecutivePollFailures}/${
@@ -363,6 +398,7 @@ export async function transcribeAssemblyAi(input: {
 			failure: lastPollFailure,
 			budgetExhausted: true,
 			warnings: input.warnings,
+			logger: input.logger,
 		});
 	}
 

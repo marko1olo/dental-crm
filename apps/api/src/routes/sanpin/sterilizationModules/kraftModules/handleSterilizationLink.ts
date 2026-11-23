@@ -2,6 +2,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, visitDiaries } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -27,11 +28,13 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	const doctorUserId = identity.userId ?? null;
 
 	if (!trimmedBarcode) {
-		const [existingDiary] = await db
-			.select()
-			.from(visitDiaries)
-			.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, organizationId)))
-			.limit(1);
+		const [existingDiary] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select()
+				.from(visitDiaries)
+				.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, organizationId)))
+				.limit(1),
+		);
 		if (existingDiary) return reply.send(existingDiary);
 
 		const result = await executeLinkDiaryTransaction({
@@ -54,11 +57,13 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 		if (firstPart) barcodeCandidates.push(firstPart);
 	}
 
-	const foundLogs = await db
-		.select()
-		.from(sterilizationLogs)
-		.where(and(eq(sterilizationLogs.organizationId, organizationId), inArray(sterilizationLogs.barcode, barcodeCandidates)))
-		.orderBy(desc(sterilizationLogs.timestamp));
+	const foundLogs = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select()
+			.from(sterilizationLogs)
+			.where(and(eq(sterilizationLogs.organizationId, organizationId), inArray(sterilizationLogs.barcode, barcodeCandidates)))
+			.orderBy(desc(sterilizationLogs.timestamp)),
+	);
 
 	let log = barcodeCandidates.map((c) => foundLogs.find((l) => l.barcode === c)).find(Boolean);
 
@@ -69,7 +74,9 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 			operatorId: doctorUserId,
 			now: new Date(),
 		});
-		const [autoCreatedLog] = await db.insert(sterilizationLogs).values(autoValues).returning();
+		const [autoCreatedLog] = await withTenantCtx(organizationId, async (tx) =>
+			tx.insert(sterilizationLogs).values(autoValues).returning(),
+		);
 		if (!autoCreatedLog) {
 			return reply.code(500).send({ error: "SterilizationAutoProvisionFailed", message: "Не удалось зарегистрировать лоток." });
 		}

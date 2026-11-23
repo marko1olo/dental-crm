@@ -6,10 +6,11 @@ import {
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { db as database } from "../../db/client.js";
-import { visits } from "../../db/schema.js";
+import { visitDiaries, visits } from "../../db/schema.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	upsertPatientFullPeriodontogram,
+	upsertPatientFullPeriodontogramBodySchema,
 	type PatchToothInput,
 	type SiteItemInput,
 } from "../../services/periodontogramService.js";
@@ -39,6 +40,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 				id: visits.id,
 				patientId: visits.patientId,
 				organizationId: visits.organizationId,
+				status: visits.status,
 			})
 			.from(visits)
 			.where(
@@ -55,8 +57,6 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 				message: "Приём не найден",
 			});
 		}
-
-		// Актуальная пародонтограмма пациента (черновик или последний закрытый снимок — ADR 0013 SSOT)
 		const latestPerio = await fetchPatientLatestPeriodontogram(
 			context.organizationId,
 			visit.patientId,
@@ -92,6 +92,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 				id: visits.id,
 				patientId: visits.patientId,
 				organizationId: visits.organizationId,
+				status: visits.status,
 			})
 			.from(visits)
 			.where(
@@ -109,19 +110,51 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const body = (request.body as Record<string, unknown>) || {};
-		const rawTeeth = Array.isArray(body.teeth)
-			? body.teeth
-			: Array.isArray(body.teethData)
-				? body.teethData
-				: [];
-		const teeth = rawTeeth as PatchToothInput[];
-		const sites = (Array.isArray(body.sites) ? body.sites : []) as SiteItemInput[];
-		const summary = body.summary ?? body.summaryData ?? {};
-		const psr = body.psr ?? body.psrData ?? null;
-		const notes = typeof body.notes === "string" ? body.notes : null;
-		const status = body.status === "closed" ? "closed" : "draft";
-		const autoClose = Boolean(body.autoClose);
+		if (visit.status === "signed") {
+			return reply.code(422).send({
+				error: "VISIT_PROTOCOL_LOCKED",
+				message: "Протокол приёма подписан и защищён от изменений.",
+			});
+		}
+
+		const [lockedDiary] = await database
+			.select({ id: visitDiaries.id })
+			.from(visitDiaries)
+			.where(
+				and(
+					eq(visitDiaries.visitId, visitId),
+					eq(visitDiaries.organizationId, context.organizationId),
+					eq(visitDiaries.isLocked, true),
+				),
+			)
+			.limit(1);
+
+		if (lockedDiary) {
+			return reply.code(422).send({
+				error: "VISIT_PROTOCOL_LOCKED",
+				message: "Протокол приёма подписан и защищён от изменений.",
+			});
+		}
+
+		const rawBody = (request.body as Record<string, unknown>) || {};
+		const normalizedBody = {
+			...rawBody,
+			teeth: Array.isArray(rawBody.teeth)
+				? rawBody.teeth
+				: Array.isArray(rawBody.teethData)
+					? rawBody.teethData
+					: undefined,
+			psrData: (rawBody.psrData ?? rawBody.psr ?? undefined) as Record<string, unknown> | undefined,
+		};
+		const parsed = upsertPatientFullPeriodontogramBodySchema.safeParse(normalizedBody);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные данные пародонтограммы",
+				details: parsed.error.issues,
+			});
+		}
+		const validData = parsed.data;
 
 		const identity = getRequestIdentity(request);
 		const doctorUserId = identity.userId ?? null;
@@ -132,12 +165,12 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			patientId: visit.patientId,
 			visitId: visit.id,
 			recordedByUserId: doctorUserId,
-			teeth,
-			sites,
-			notes,
-			status,
-			autoClose,
-			psrData: (psr as Record<string, unknown>) || undefined,
+			teeth: validData.teeth,
+			sites: validData.sites,
+			notes: validData.notes ?? null,
+			status: validData.status,
+			autoClose: validData.autoClose,
+			psrData: validData.psrData,
 		});
 
 		return reply.send({

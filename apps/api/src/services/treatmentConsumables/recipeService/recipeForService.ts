@@ -30,7 +30,7 @@ export async function getRecipeForService(
 
 	const { items: consumables } = await listLinks(executor, organizationId, { serviceId, pageSize: 100 });
 	const totalEstimatedCostRub = calculateRecipeEstimatedCost(
-		consumables.map((c) => ({ quantity: c.quantity, unitCostRub: c.unitCostRub })),
+		consumables.map((c) => ({ quantity: c.quantity, unitCostRub: c.unitCostRub ?? null })),
 	);
 
 	return {

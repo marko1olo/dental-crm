@@ -64,6 +64,8 @@ export const siteItemSchema = z.object({
 	probing_depth_mm: z.number().int().min(0).max(15).nullable().optional(),
 	gingivalMarginMm: z.number().int().min(-5).max(10).nullable().optional(),
 	gingival_margin_mm: z.number().int().min(-5).max(10).nullable().optional(),
+	calMm: z.number().int().min(0).max(30).nullable().optional(),
+	cal_mm: z.number().int().min(0).max(30).nullable().optional(),
 	bleedingOnProbing: z.boolean().optional(),
 	bleeding_on_probing: z.boolean().optional(),
 	plaque: z.boolean().optional(),

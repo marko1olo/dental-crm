@@ -6,9 +6,11 @@
 
 import {
 	type CreateFiscalReceiptPayloadOutput as CreateFiscalReceiptPayload,
+	basisPointsFromPercent,
 	createFiscalReceiptPayloadSchema,
 	kopecksToRub,
 	parseKopecks,
+	percentageOfKopecks,
 } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -77,7 +79,7 @@ export async function verifyAndEnforceCatalogPrices(
 		if (item.discountKopecks !== undefined && item.discountKopecks !== null) {
 			discountKop = item.discountKopecks;
 		} else if (item.discountPercent !== undefined && item.discountPercent !== null) {
-			discountKop = Math.round((catalogUnitPriceKop * item.discountPercent) / 100);
+			discountKop = percentageOfKopecks(catalogUnitPriceKop, basisPointsFromPercent(item.discountPercent));
 		}
 
 		const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);

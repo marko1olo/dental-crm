@@ -2,6 +2,9 @@ import { randomInt } from "node:crypto";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { WebSocket } from "ws";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const fallbackLogger = createApiLogger("cloudRelayClient");
 
 /**
  * cloudRelayClient.ts — Фоновый агент локального сервера клиники для NAT Traversal.
@@ -197,9 +200,8 @@ export class CloudRelayClient {
 			try {
 				this.ws.close(1000, "Клиент клиники остановлен");
 			} catch (err) {
-				const msg = `[CloudRelay] Error closing WebSocket on stop: ${String(err)}`;
-				if (this.app?.log) this.app.log.debug(msg);
-				else console.debug(msg);
+				if (this.app?.log) this.app.log.debug({ err: safeLogError(err) }, "Error closing WebSocket on stop");
+				else fallbackLogger.debug({ err: safeLogError(err) }, "Error closing WebSocket on stop");
 			}
 			this.ws = null;
 		}
@@ -247,9 +249,8 @@ export class CloudRelayClient {
 					try {
 						this.ws.close();
 					} catch (closeErr) {
-						const msg = `[CloudRelay] Error closing WebSocket after error: ${String(closeErr)}`;
-						if (this.app?.log) this.app.log.debug(msg);
-						else console.debug(msg);
+						if (this.app?.log) this.app.log.debug({ err: safeLogError(closeErr) }, "Error closing WebSocket after error");
+						else fallbackLogger.debug({ err: safeLogError(closeErr) }, "Error closing WebSocket after error");
 					}
 				}
 			});
@@ -271,9 +272,8 @@ export class CloudRelayClient {
 				try {
 					this.ws.terminate();
 				} catch (termErr) {
-					const msg = `[CloudRelay] Error terminating unresponsive WebSocket: ${String(termErr)}`;
-					if (this.app?.log) this.app.log.warn(msg);
-					else console.warn(msg);
+					if (this.app?.log) this.app.log.warn({ err: safeLogError(termErr) }, "Error terminating unresponsive WebSocket");
+					else fallbackLogger.warn({ err: safeLogError(termErr) }, "Error terminating unresponsive WebSocket");
 				}
 				return;
 			}

@@ -15,6 +15,9 @@ import {
 	sanitizeProviderErrorMessage,
 	speechProviderTimeoutMs,
 } from "./keyHashing.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("speechProxyAndTunnel");
 
 export class SpeechProviderRequestError extends Error {
 	statusCode: number | null;
@@ -127,9 +130,9 @@ export function getProxyAgent(): Dispatcher | null {
 				cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
 			}
 		} catch (err) {
-			console.error(
-				`[Proxy Agent] Failed to initialize ProxyAgent for ${proxyUrl}:`,
-				err,
+			logger.error(
+				{ err: safeLogError(err), proxyUrl },
+				"Failed to initialize ProxyAgent",
 			);
 		}
 	}
@@ -286,7 +289,7 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 			cachedWsAgent = new https.Agent(httpAgentOpts as https.AgentOptions);
 		}
 	} catch (err) {
-		console.error(`[WS Proxy Agent] Failed to create WebSocket proxy agent:`, err);
+		logger.error({ err: safeLogError(err) }, "Failed to create WebSocket proxy agent");
 		return null;
 	}
 
@@ -338,13 +341,14 @@ export async function fetchWithProviderTimeout(
 				error.message.includes("undici"));
 
 		if (isNetworkError && !dispatcher) {
-			console.log(
-				`[Speech Fetch] Direct connection failed (${error.message}). Attempting SOCKS5 SSH Tunnel fallback...`,
+			logger.info(
+				{ errorMsg: error.message },
+				"Direct connection failed. Attempting SOCKS5 SSH Tunnel fallback...",
 			);
 			const tunnelActive = await ensureSshTunnel();
 			if (tunnelActive) {
-				console.log(
-					`[Speech Fetch] SSH Tunnel is active. Retrying request through SOCKS5 proxy on 127.0.0.1:1080...`,
+				logger.info(
+					"SSH Tunnel is active. Retrying request through SOCKS5 proxy on 127.0.0.1:1080...",
 				);
 				const socksDispatcher = new Agent({
 					connect: (opts, callback) => {
@@ -411,7 +415,7 @@ export async function fetchWithProviderTimeout(
 					const retryRes = await undiciFetch(input as URL | RequestInfo, retryInit);
 					return retryRes as Response;
 				} catch (retryError) {
-					console.error(`[Speech Fetch] SOCKS5 retry also failed:`, retryError);
+					logger.error({ err: safeLogError(retryError) }, "SOCKS5 retry also failed");
 				} finally {
 					clearTimeout(retryTimer);
 				}

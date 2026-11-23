@@ -49,7 +49,7 @@ import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";

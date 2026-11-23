@@ -250,99 +250,101 @@ export async function updateClinicFiscalSettingsInDb(
 		return updated;
 	}
 
-	const [org] = await db
-		.select()
-		.from(schema.organizations)
-		.where(eq(schema.organizations.id, organizationId))
-		.limit(1);
-	if (!org) {
-		throw new Error("Организация не найдена в базе данных.");
-	}
-
-	await ensureOrganizationCashBoxes(db, organizationId);
-
-	const existingFlags =
-		(org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
-	const nextFlags: Record<string, unknown> = { ...existingFlags };
-
-	if (input.taxationSystem !== undefined) {
-		nextFlags.taxationSystem = normalizeTaxationSystem(input.taxationSystem);
-	}
-	if (input.ofdProvider !== undefined) {
-		nextFlags.ofdProvider = normalizeOfdProvider(input.ofdProvider);
-	}
-	if (input.ffdVersion !== undefined) {
-		nextFlags.ffdVersion = input.ffdVersion === "1.05" ? "1.05" : "1.2";
-	}
-	if (input.autoSendReceipt !== undefined) {
-		nextFlags.autoSendReceipt = Boolean(input.autoSendReceipt);
-	}
-	if (input.allowAutonomousBuffer !== undefined) {
-		nextFlags.allowAutonomousBuffer = Boolean(input.allowAutonomousBuffer);
-	}
-	if (input.kkmModel !== undefined && input.kkmModel !== null) {
-		nextFlags.kkmModel = input.kkmModel.trim();
-	}
-	if (input.kkmSerialNumber !== undefined && input.kkmSerialNumber !== null) {
-		nextFlags.kkmSerialNumber = input.kkmSerialNumber.trim();
-	}
-	if (input.branchId !== undefined && input.branchId !== null) {
-		nextFlags.branchId = input.branchId.trim();
-	}
-
-	await db
-		.update(schema.organizations)
-		.set({
-			workspaceFeatureFlags: nextFlags,
-			updatedAt: new Date(),
-		})
-		.where(eq(schema.organizations.id, organizationId));
-
-	const boxes = await db
-		.select()
-		.from(schema.cashBoxes)
-		.where(eq(schema.cashBoxes.organizationId, organizationId))
-		.orderBy(asc(schema.cashBoxes.displayOrder), asc(schema.cashBoxes.createdAt));
-
-	const targetBox =
-		(input.cashBoxId
-			? boxes.find((b) => b.id === input.cashBoxId)
-			: undefined) ??
-		boxes.find((b) => b.isMain || b.type === "main") ??
-		boxes[0];
-
-	if (targetBox) {
-		const boxUpdate: Partial<typeof schema.cashBoxes.$inferInsert> = {
-			updatedAt: new Date(),
-		};
-		if (input.cashBoxName !== undefined && input.cashBoxName.trim().length > 0) {
-			boxUpdate.name = input.cashBoxName.trim();
-		}
-		if (input.kkmModel !== undefined) {
-			boxUpdate.kkmModel = input.kkmModel ? input.kkmModel.trim() : null;
-		}
-		if (input.kkmSerialNumber !== undefined) {
-			boxUpdate.kkmSerialNumber = input.kkmSerialNumber
-				? input.kkmSerialNumber.trim()
-				: null;
-		}
-		if (input.branchId !== undefined) {
-			boxUpdate.branchId = input.branchId ? input.branchId.trim() : null;
-		}
-		if (input.kkmActive !== undefined) {
-			boxUpdate.kkmActive = Boolean(input.kkmActive);
+	await db.transaction(async (tx) => {
+		const [org] = await tx
+			.select()
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+		if (!org) {
+			throw new Error("Организация не найдена в базе данных.");
 		}
 
-		await db
-			.update(schema.cashBoxes)
-			.set(boxUpdate)
-			.where(
-				and(
-					eq(schema.cashBoxes.id, targetBox.id),
-					eq(schema.cashBoxes.organizationId, organizationId),
-				),
-			);
-	}
+		await ensureOrganizationCashBoxes(tx, organizationId);
+
+		const existingFlags =
+			(org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+		const nextFlags: Record<string, unknown> = { ...existingFlags };
+
+		if (input.taxationSystem !== undefined) {
+			nextFlags.taxationSystem = normalizeTaxationSystem(input.taxationSystem);
+		}
+		if (input.ofdProvider !== undefined) {
+			nextFlags.ofdProvider = normalizeOfdProvider(input.ofdProvider);
+		}
+		if (input.ffdVersion !== undefined) {
+			nextFlags.ffdVersion = input.ffdVersion === "1.05" ? "1.05" : "1.2";
+		}
+		if (input.autoSendReceipt !== undefined) {
+			nextFlags.autoSendReceipt = Boolean(input.autoSendReceipt);
+		}
+		if (input.allowAutonomousBuffer !== undefined) {
+			nextFlags.allowAutonomousBuffer = Boolean(input.allowAutonomousBuffer);
+		}
+		if (input.kkmModel !== undefined && input.kkmModel !== null) {
+			nextFlags.kkmModel = input.kkmModel.trim();
+		}
+		if (input.kkmSerialNumber !== undefined && input.kkmSerialNumber !== null) {
+			nextFlags.kkmSerialNumber = input.kkmSerialNumber.trim();
+		}
+		if (input.branchId !== undefined && input.branchId !== null) {
+			nextFlags.branchId = input.branchId.trim();
+		}
+
+		await tx
+			.update(schema.organizations)
+			.set({
+				workspaceFeatureFlags: nextFlags,
+				updatedAt: new Date(),
+			})
+			.where(eq(schema.organizations.id, organizationId));
+
+		const boxes = await tx
+			.select()
+			.from(schema.cashBoxes)
+			.where(eq(schema.cashBoxes.organizationId, organizationId))
+			.orderBy(asc(schema.cashBoxes.displayOrder), asc(schema.cashBoxes.createdAt));
+
+		const targetBox =
+			(input.cashBoxId
+				? boxes.find((b) => b.id === input.cashBoxId)
+				: undefined) ??
+			boxes.find((b) => b.isMain || b.type === "main") ??
+			boxes[0];
+
+		if (targetBox) {
+			const boxUpdate: Partial<typeof schema.cashBoxes.$inferInsert> = {
+				updatedAt: new Date(),
+			};
+			if (input.cashBoxName !== undefined && input.cashBoxName.trim().length > 0) {
+				boxUpdate.name = input.cashBoxName.trim();
+			}
+			if (input.kkmModel !== undefined) {
+				boxUpdate.kkmModel = input.kkmModel ? input.kkmModel.trim() : null;
+			}
+			if (input.kkmSerialNumber !== undefined) {
+				boxUpdate.kkmSerialNumber = input.kkmSerialNumber
+					? input.kkmSerialNumber.trim()
+					: null;
+			}
+			if (input.branchId !== undefined) {
+				boxUpdate.branchId = input.branchId ? input.branchId.trim() : null;
+			}
+			if (input.kkmActive !== undefined) {
+				boxUpdate.kkmActive = Boolean(input.kkmActive);
+			}
+
+			await tx
+				.update(schema.cashBoxes)
+				.set(boxUpdate)
+				.where(
+					and(
+						eq(schema.cashBoxes.id, targetBox.id),
+						eq(schema.cashBoxes.organizationId, organizationId),
+					),
+				);
+		}
+	});
 
 	return getClinicFiscalSettingsFromDb(organizationId);
 }

@@ -20,7 +20,7 @@ import {
 	getDenteTelegramBotSettings, renderDenteTelegramMessagePreview,
 	revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
 	updateDenteTelegramBotSettings,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import {
 	TelegramBotBillingService,
 	TELEGRAM_BOT_SAAS_TIERS,

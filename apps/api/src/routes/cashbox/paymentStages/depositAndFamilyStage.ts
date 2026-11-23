@@ -21,6 +21,7 @@ import {
 	buildPatientLedger,
 	clinicOwesPatientKopecks,
 } from "../../../money/patientDebt.js";
+import { onTenantTxCommit } from "../../../db/rls.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import type { PaymentProcessingContext, StageStepResult, TenantTransaction } from "./types.js";
 
@@ -57,7 +58,9 @@ export async function processDepositAndFamilyStage(
 			}
 
 			ctx.lockedTopupFamilyGroup = fg;
-			ctx.topupPrevBalKop = BigInt(parseKopecks(fg.balance ?? 0));
+			ctx.topupPrevBalKop = fg.balanceKopecks != null && fg.balanceKopecks > 0
+				? BigInt(fg.balanceKopecks)
+				: BigInt(parseKopecks(fg.balance ?? 0));
 			ctx.topupNewBalKop = ctx.topupPrevBalKop + totalKopecks;
 			const newBalanceStr = kopecksToNumericString(Number(ctx.topupNewBalKop));
 
@@ -70,13 +73,15 @@ export async function processDepositAndFamilyStage(
 				})
 				.where(and(eq(familyGroups.id, fg.id), eq(familyGroups.organizationId, orgId)));
 
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "FAMILY_BALANCE_UPDATED",
-				payload: {
-					organizationId: orgId,
-					familyGroupId: fg.id,
-					balance: newBalanceStr,
-				},
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "FAMILY_BALANCE_UPDATED",
+					payload: {
+						organizationId: orgId,
+						familyGroupId: fg.id,
+						balance: newBalanceStr,
+					},
+				});
 			});
 		} else if (resolvedPatientId) {
 			await tx.insert(advanceDepositTaggings).values({
@@ -174,147 +179,17 @@ export async function processDepositAndFamilyStage(
 
 		ctx.lockedFamilyGroup = lockedFamilyGroup;
 		const familyBalanceKop = lockedFamilyGroup
-			? BigInt(parseKopecks(lockedFamilyGroup.balance ?? 0))
+			? (lockedFamilyGroup.balanceKopecks != null && lockedFamilyGroup.balanceKopecks > 0
+				? BigInt(lockedFamilyGroup.balanceKopecks)
+				: BigInt(parseKopecks(lockedFamilyGroup.balance ?? 0)))
 			: 0n;
 		ctx.familyBalanceKop = familyBalanceKop;
 
-		// Поиск и блокировка целевых авансов advanceDepositTaggings
-		const advanceRows = await tx
-			.select()
-			.from(advanceDepositTaggings)
-			.where(
-				and(
-					eq(advanceDepositTaggings.organizationId, orgId),
-					or(
-						eq(advanceDepositTaggings.patientId, resolvedPatientId),
-						and(
-							isNull(advanceDepositTaggings.patientId),
-							eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
-						),
-					),
-					inArray(advanceDepositTaggings.allocationStatus, [
-						"unallocated",
-						"pinned",
-						"active",
-					]),
-				),
-			)
-			.for("update");
-		ctx.advanceRows = advanceRows;
-
-		let advanceTotalKop = 0n;
-		for (const adv of advanceRows) {
-			advanceTotalKop += BigInt(parseKopecks(adv.depositAmountRub ?? 0));
-		}
-
-		// Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
-		const [patientCharges, patientPayments] = await Promise.all([
-			tx
-				.select({
-					patientId: treatmentItems.patientId,
-					status: treatmentItems.status,
-					unitPriceRub: treatmentItems.unitPriceRub,
-					quantity: treatmentItems.quantity,
-					discountRub: treatmentItems.discountRub,
-				})
-				.from(treatmentItems)
-				.where(
-					and(
-						eq(treatmentItems.organizationId, orgId),
-						eq(treatmentItems.patientId, resolvedPatientId),
-					),
-				),
-			tx
-				.select({
-					patientId: payments.patientId,
-					status: payments.status,
-					amountRub: payments.amountRub,
-				})
-				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.patientId, resolvedPatientId),
-					),
-				),
-		]);
-
-		const ledger = buildPatientLedger(resolvedPatientId, patientCharges, patientPayments, {
-			organizationId: orgId,
-		});
-		const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
-
-		const personalAvailableKop =
-			advanceTotalKop > ledgerOverpaidKop ? advanceTotalKop : ledgerOverpaidKop;
-
 		// Изоляция балансов (ROT-002): семейный депозит и личный аванс строго изолированы
-		const totalAvailableDepositKop = lockedFamilyGroup
-			? familyBalanceKop
-			: personalAvailableKop;
+		if (lockedFamilyGroup) {
+			ctx.advanceRows = [];
 
-		if (totalAvailableDepositKop < requiredDepositKopecks) {
-			const availableRub = kopecksToNumericString(Number(totalAvailableDepositKop));
-			const requiredRub = kopecksToNumericString(Number(requiredDepositKopecks));
-			return {
-				failure: {
-					kind: "insufficient_deposit",
-					availableRub,
-					requiredRub,
-					isFamilyWallet: Boolean(
-						body.method === "family_wallet" ||
-							(lockedFamilyGroup && personalAvailableKop === 0n),
-					),
-				},
-			};
-		}
-
-		// Списание с депозита: сначала с размеченных авансов (устранен float round-trip!)
-		let remainingToDeductKop = requiredDepositKopecks;
-		for (const adv of advanceRows) {
-			if (remainingToDeductKop <= 0n) break;
-			const advKop = BigInt(parseKopecks(adv.depositAmountRub ?? 0));
-			if (advKop <= remainingToDeductKop) {
-				remainingToDeductKop -= advKop;
-				await tx
-					.update(advanceDepositTaggings)
-					.set({ allocationStatus: "spent" })
-					.where(
-						and(
-							eq(advanceDepositTaggings.id, adv.id),
-							eq(advanceDepositTaggings.organizationId, orgId),
-						),
-					);
-			} else {
-				const nextAdvKop = advKop - remainingToDeductKop;
-				remainingToDeductKop = 0n;
-				await tx
-					.update(advanceDepositTaggings)
-					.set({ depositAmountRub: kopecksToNumericString(Number(nextAdvKop)) })
-					.where(
-						and(
-							eq(advanceDepositTaggings.id, adv.id),
-							eq(advanceDepositTaggings.organizationId, orgId),
-						),
-					);
-			}
-		}
-
-		// [DEF-DEP-01] Зачёт аванса по леджеру соло-пациента без предварительного тегирования
-		if (remainingToDeductKop > 0n && !lockedFamilyGroup) {
-			await tx.insert(advanceDepositTaggings).values({
-				organizationId: orgId,
-				patientId: resolvedPatientId,
-				patientName: patientRow?.fullName || "Пациент клиники",
-				depositAmountRub: kopecksToNumericString(Number(remainingToDeductKop)),
-				taggedTargetType: "treatment_plan",
-				taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
-				allocationStatus: "spent",
-			});
-			remainingToDeductKop = 0n;
-		}
-
-		// Списание из семейного баланса familyGroups
-		if (remainingToDeductKop > 0n && lockedFamilyGroup) {
+			// Сначала проверяем полномочия и лимит списания семейного кошелька ДО любых мутаций
 			const walletOwnerId =
 				lockedFamilyGroup.headPatientId ||
 				lockedFamilyGroup.primaryPatientId ||
@@ -363,32 +238,41 @@ export async function processDepositAndFamilyStage(
 
 				// Проверка лимита списания spendLimitKopecks
 				const spendLimitKop =
-					rel?.spendLimitKopecks != null ? Number(rel.spendLimitKopecks) : undefined;
+					rel.spendLimitKopecks != null ? Number(rel.spendLimitKopecks) : undefined;
 				if (
 					spendLimitKop !== undefined &&
 					spendLimitKop >= 0 &&
-					Number(remainingToDeductKop) > spendLimitKop
+					Number(requiredDepositKopecks) > spendLimitKop
 				) {
 					return {
 						failure: {
 							kind: "unauthorized_family_spend",
-							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${kopecksToNumericString(spendLimitKop)} ₽, запрошено: ${kopecksToNumericString(Number(remainingToDeductKop))} ₽).`,
+							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${kopecksToNumericString(spendLimitKop)} ₽, запрошено: ${kopecksToNumericString(Number(requiredDepositKopecks))} ₽).`,
 						},
 					};
 				}
 			}
 
-			const deductFromFamilyKop =
-				remainingToDeductKop <= familyBalanceKop
-					? remainingToDeductKop
-					: familyBalanceKop;
-			const newFamilyBalKop = familyBalanceKop - deductFromFamilyKop;
-			remainingToDeductKop -= deductFromFamilyKop;
+			if (familyBalanceKop < requiredDepositKopecks) {
+				const availableRub = kopecksToNumericString(Number(familyBalanceKop));
+				const requiredRub = kopecksToNumericString(Number(requiredDepositKopecks));
+				return {
+					failure: {
+						kind: "insufficient_deposit",
+						availableRub,
+						requiredRub,
+						isFamilyWallet: true,
+					},
+				};
+			}
+
+			const newFamilyBalKop = familyBalanceKop - requiredDepositKopecks;
+			const newFamilyBalStr = kopecksToNumericString(Number(newFamilyBalKop));
 
 			await tx
 				.update(familyGroups)
 				.set({
-					balance: kopecksToNumericString(Number(newFamilyBalKop)),
+					balance: newFamilyBalStr,
 					balanceKopecks: Number(newFamilyBalKop),
 					updatedAt: new Date(),
 				})
@@ -399,14 +283,148 @@ export async function processDepositAndFamilyStage(
 					),
 				);
 
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "FAMILY_BALANCE_UPDATED",
-				payload: {
-					organizationId: orgId,
-					familyGroupId: lockedFamilyGroup.id,
-					balance: kopecksToNumericString(Number(newFamilyBalKop)),
-				},
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "FAMILY_BALANCE_UPDATED",
+					payload: {
+						organizationId: orgId,
+						familyGroupId: lockedFamilyGroup.id,
+						balance: newFamilyBalStr,
+					},
+				});
 			});
+		} else {
+			// Поиск и блокировка целевых личных авансов advanceDepositTaggings
+			const advanceRows = await tx
+				.select()
+				.from(advanceDepositTaggings)
+				.where(
+					and(
+						eq(advanceDepositTaggings.organizationId, orgId),
+						or(
+							eq(advanceDepositTaggings.patientId, resolvedPatientId),
+							and(
+								isNull(advanceDepositTaggings.patientId),
+								eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
+							),
+						),
+						inArray(advanceDepositTaggings.allocationStatus, [
+							"unallocated",
+							"pinned",
+							"active",
+						]),
+					),
+				)
+				.for("update");
+			ctx.advanceRows = advanceRows;
+
+			let advanceTotalKop = 0n;
+			for (const adv of advanceRows) {
+				advanceTotalKop += BigInt(parseKopecks(adv.depositAmountRub ?? 0));
+			}
+
+			// Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
+			const [patientCharges, patientPayments] = await Promise.all([
+				tx
+					.select({
+						patientId: treatmentItems.patientId,
+						status: treatmentItems.status,
+						unitPriceRub: treatmentItems.unitPriceRub,
+						quantity: treatmentItems.quantity,
+						discountRub: treatmentItems.discountRub,
+					})
+					.from(treatmentItems)
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							eq(treatmentItems.patientId, resolvedPatientId),
+						),
+					),
+				tx
+					.select({
+						patientId: payments.patientId,
+						status: payments.status,
+						amountRub: payments.amountRub,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.patientId, resolvedPatientId),
+						),
+					),
+			]);
+
+			const ledger = buildPatientLedger(resolvedPatientId, patientCharges, patientPayments, {
+				organizationId: orgId,
+			});
+			const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
+
+			// SEV-2.3: Сальдо леджера выступает строгим верхним лимитом (cap) доступного личного аванса.
+			// Пациент не может потратить больше, чем физическая переплата клиники по леджеру.
+			const personalAvailableKop = ledgerOverpaidKop <= 0n
+				? 0n
+				: (advanceTotalKop > 0n
+					? (advanceTotalKop < ledgerOverpaidKop ? advanceTotalKop : ledgerOverpaidKop)
+					: ledgerOverpaidKop);
+
+			if (personalAvailableKop < requiredDepositKopecks) {
+				const availableRub = kopecksToNumericString(Number(personalAvailableKop));
+				const requiredRub = kopecksToNumericString(Number(requiredDepositKopecks));
+				return {
+					failure: {
+						kind: "insufficient_deposit",
+						availableRub,
+						requiredRub,
+						isFamilyWallet: body.method === "family_wallet",
+					},
+				};
+			}
+
+			// Списание с личного депозита: сначала с размеченных авансов (устранен float round-trip!)
+			let remainingToDeductKop = requiredDepositKopecks;
+			for (const adv of advanceRows) {
+				if (remainingToDeductKop <= 0n) break;
+				const advKop = BigInt(parseKopecks(adv.depositAmountRub ?? 0));
+				if (advKop <= remainingToDeductKop) {
+					remainingToDeductKop -= advKop;
+					await tx
+						.update(advanceDepositTaggings)
+						.set({ allocationStatus: "spent" })
+						.where(
+							and(
+								eq(advanceDepositTaggings.id, adv.id),
+								eq(advanceDepositTaggings.organizationId, orgId),
+							),
+						);
+				} else {
+					const nextAdvKop = advKop - remainingToDeductKop;
+					remainingToDeductKop = 0n;
+					await tx
+						.update(advanceDepositTaggings)
+						.set({ depositAmountRub: kopecksToNumericString(Number(nextAdvKop)) })
+						.where(
+							and(
+								eq(advanceDepositTaggings.id, adv.id),
+								eq(advanceDepositTaggings.organizationId, orgId),
+							),
+						);
+				}
+			}
+
+			// [DEF-DEP-01] Зачёт аванса по леджеру соло-пациента без предварительного тегирования
+			if (remainingToDeductKop > 0n) {
+				await tx.insert(advanceDepositTaggings).values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					patientName: patientRow?.fullName || "Пациент клиники",
+					depositAmountRub: kopecksToNumericString(Number(remainingToDeductKop)),
+					taggedTargetType: "treatment_plan",
+					taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
+					allocationStatus: "spent",
+				});
+				remainingToDeductKop = 0n;
+			}
 		}
 	}
 

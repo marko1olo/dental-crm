@@ -363,8 +363,4 @@ export async function registerSlotLeaseRoutes(app: FastifyInstance) {
 	app.post("/api/v1/schedule/leases/release", handleReleaseSlotLease);
 	app.post("/api/v1/schedule/leases/heartbeat", handleHeartbeatSlotLease);
 
-	// Относительные пути при монтировании с префиксом
-	app.post("/acquire", handleAcquireSlotLease);
-	app.post("/release", handleReleaseSlotLease);
-	app.post("/heartbeat", handleHeartbeatSlotLease);
 }

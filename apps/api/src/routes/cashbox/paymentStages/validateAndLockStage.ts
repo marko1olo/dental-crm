@@ -390,6 +390,7 @@ export function validatePaymentInput(
 		issuedAt: null,
 
 		enqueuedReceiptId: null,
+		createdPaymentIds: [],
 	};
 
 	return { success: true, context };
@@ -432,8 +433,16 @@ export async function acquireLockAndResolvePatient(
 		const existingPayment = matchedExistingPayments[0]!;
 		const isSplitReplay = matchedExistingPayments.length > 1;
 		const totalExistingKop = isSplitReplay
-			? sumKopecks(matchedExistingPayments.map((p) => parseKopecks(p.amountRub ?? 0)))
-			: parseKopecks(existingPayment.amountRub ?? 0);
+			? sumKopecks(
+					matchedExistingPayments.map((p) =>
+						p.amountKopecks !== null && p.amountKopecks !== undefined
+							? Number(p.amountKopecks)
+							: parseKopecks(p.amountRub ?? 0),
+					),
+				)
+			: existingPayment.amountKopecks !== null && existingPayment.amountKopecks !== undefined
+				? Number(existingPayment.amountKopecks)
+				: parseKopecks(existingPayment.amountRub ?? 0);
 		const totalExistingRub = kopecksToRubles(totalExistingKop);
 
 		let replayFamilyPrevBal = 0;
@@ -441,12 +450,15 @@ export async function acquireLockAndResolvePatient(
 		if (body.familyGroupId || existingPayment.documentId) {
 			const targetFgId = body.familyGroupId || existingPayment.documentId;
 			const [fg] = await tx
-				.select({ balance: familyGroups.balance })
+				.select({ balance: familyGroups.balance, balanceKopecks: familyGroups.balanceKopecks })
 				.from(familyGroups)
 				.where(and(eq(familyGroups.id, targetFgId!), eq(familyGroups.organizationId, orgId)))
 				.limit(1);
 			if (fg) {
-				replayFamilyPrevBal = parseKopecks(fg.balance ?? 0);
+				replayFamilyPrevBal =
+					fg.balanceKopecks !== null && fg.balanceKopecks !== undefined
+						? Number(fg.balanceKopecks)
+						: parseKopecks(fg.balance ?? 0);
 				replayFamilyNewBal = replayFamilyPrevBal;
 			}
 		}
@@ -458,10 +470,16 @@ export async function acquireLockAndResolvePatient(
 					success: true,
 					data: {
 						id: existingPayment.id,
+						paymentId: existingPayment.id,
+						organizationId: existingPayment.organizationId,
+						patientId: existingPayment.patientId,
+						visitId: existingPayment.visitId,
+						documentId: existingPayment.documentId,
 						amountKopecks: totalExistingKop,
 						amountRub: totalExistingRub,
 						method: isSplitReplay ? "split" : existingPayment.method,
 						status: existingPayment.status,
+						paidAt: existingPayment.paidAt ? existingPayment.paidAt.toISOString() : new Date().toISOString(),
 						fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
 						clientMutationId: effectiveMutationId,
 						isReplay: true,

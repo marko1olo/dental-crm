@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 import { createSterilizerEquipmentDtoSchema } from "../sterilizationSchemas.js";
 
@@ -24,27 +25,29 @@ export async function handleCreateSterilizerEquipment(
 	}
 	const data = parsed.data;
 
-	const [created] = await db
-		.insert(sterilizerEquipments)
-		.values({
-			organizationId,
-			name: data.name,
-			brandModel: data.brandModel,
-			serialNumber: data.serialNumber,
-			inventoryNumber: data.inventoryNumber ?? null,
-			deviceType: data.deviceType,
-			deviceClass: data.deviceClass,
-			chamberVolumeLiters: String(data.chamberVolumeLiters),
-			locationRoom: data.locationRoom,
-			verificationExpiryDate: data.verificationExpiryDate ?? null,
-			lastMaintenanceDate: data.lastMaintenanceDate ?? null,
-			nextMaintenanceDate: data.nextMaintenanceDate ?? null,
-			commissioningDate: data.commissioningDate ?? new Date().toISOString().slice(0, 10),
-			status: data.status ?? "active",
-			isCommissioned: data.status !== "decommissioned",
-			notes: data.notes ?? null,
-		})
-		.returning();
+	const [created] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.insert(sterilizerEquipments)
+			.values({
+				organizationId,
+				name: data.name,
+				brandModel: data.brandModel,
+				serialNumber: data.serialNumber,
+				inventoryNumber: data.inventoryNumber ?? null,
+				deviceType: data.deviceType,
+				deviceClass: data.deviceClass,
+				chamberVolumeLiters: String(data.chamberVolumeLiters),
+				locationRoom: data.locationRoom,
+				verificationExpiryDate: data.verificationExpiryDate ?? null,
+				lastMaintenanceDate: data.lastMaintenanceDate ?? null,
+				nextMaintenanceDate: data.nextMaintenanceDate ?? null,
+				commissioningDate: data.commissioningDate ?? new Date().toISOString().slice(0, 10),
+				status: data.status ?? "active",
+				isCommissioned: data.status !== "decommissioned",
+				notes: data.notes ?? null,
+			})
+			.returning();
+	});
 
 	if (!created) {
 		return reply.code(500).send({

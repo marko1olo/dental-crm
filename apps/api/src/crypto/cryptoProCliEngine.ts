@@ -2,8 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * CRYPTOPRO CSP NATIVE CLI BRIDGE (ГОСТ Р 34.10-2012 / УКЭП / ЕГИСЗ РЭМД)
  * Production CLI bridge for CryptoPro CSP using csptest.exe / cryptcp.exe / certmgr.exe.
- * Reverse-engineered from StomX (ipc_handlers_full.js) with zero mocks and
- * strict race-condition isolation (StomX #4975).
+ * Pure native execution with zero mocks and strict process isolation.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -604,7 +603,7 @@ export async function signDetachedGost(
 			);
 		}
 
-		// Аргументы команды подписания (StomX стандарт: -sign -detached -nochain -thumbprint ... -dir ... ...)
+		// Аргументы команды подписания cryptcp: -sign -detached -nochain -thumbprint ... -dir ... ...
 		const args = [
 			"-sign",
 			"-detached",

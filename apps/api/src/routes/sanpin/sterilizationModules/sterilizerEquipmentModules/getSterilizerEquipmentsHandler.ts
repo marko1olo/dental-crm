@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 
 export async function handleGetSterilizerEquipments(
@@ -15,11 +16,13 @@ export async function handleGetSterilizerEquipments(
 	);
 	if (!organizationId) return;
 
-	let list = await db
-		.select()
-		.from(sterilizerEquipments)
-		.where(eq(sterilizerEquipments.organizationId, organizationId))
-		.orderBy(sterilizerEquipments.name);
+	let list = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select()
+			.from(sterilizerEquipments)
+			.where(eq(sterilizerEquipments.organizationId, organizationId))
+			.orderBy(sterilizerEquipments.name);
+	});
 
 	if (list.length === 0) {
 		const todayStr = new Date().toISOString().slice(0, 10);
@@ -27,27 +30,29 @@ export async function handleGetSterilizerEquipments(
 		const in365Days = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 		try {
-			const [seeded] = await db
-				.insert(sterilizerEquipments)
-				.values({
-					organizationId,
-					name: "Melag Vacuklav 23 B+ (ЦСО №1)",
-					brandModel: "Melag Vacuklav 23 B+ (Германия)",
-					serialNumber: "MEL-2026-9812",
-					inventoryNumber: "ИНВ-ЦСО-001",
-					deviceType: "autoclave_steam",
-					deviceClass: "autoclave_class_b",
-					chamberVolumeLiters: "22.00",
-					locationRoom: "Центральное стерилизационное отделение (ЦСО)",
-					verificationExpiryDate: in365Days,
-					lastMaintenanceDate: todayStr,
-					nextMaintenanceDate: in180Days,
-					commissioningDate: todayStr,
-					status: "active",
-					isCommissioned: true,
-					notes: "Автоклав B-класса с фракционированным вакуумом (СанПиН 3.3686-21)",
-				})
-				.returning();
+			const [seeded] = await withTenantCtx(organizationId, async (tx) => {
+				return tx
+					.insert(sterilizerEquipments)
+					.values({
+						organizationId,
+						name: "Melag Vacuklav 23 B+ (ЦСО №1)",
+						brandModel: "Melag Vacuklav 23 B+ (Германия)",
+						serialNumber: "MEL-2026-9812",
+						inventoryNumber: "ИНВ-ЦСО-001",
+						deviceType: "autoclave_steam",
+						deviceClass: "autoclave_class_b",
+						chamberVolumeLiters: "22.00",
+						locationRoom: "Центральное стерилизационное отделение (ЦСО)",
+						verificationExpiryDate: in365Days,
+						lastMaintenanceDate: todayStr,
+						nextMaintenanceDate: in180Days,
+						commissioningDate: todayStr,
+						status: "active",
+						isCommissioned: true,
+						notes: "Автоклав B-класса с фракционированным вакуумом (СанПиН 3.3686-21)",
+					})
+					.returning();
+			});
 
 			if (seeded) {
 				list = [seeded];

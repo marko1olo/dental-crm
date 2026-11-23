@@ -6,6 +6,7 @@ import type {
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -452,15 +453,24 @@ export const migrationReconciliations = pgTable(
 			scale: 2,
 			mode: "number",
 		}),
+		sourceMoneyTotalKopecks: bigint("source_money_total_kopecks", {
+			mode: "bigint",
+		}),
 		loadedMoneyTotalRub: numeric("loaded_money_total_rub", {
 			precision: 12,
 			scale: 2,
 			mode: "number",
 		}),
+		loadedMoneyTotalKopecks: bigint("loaded_money_total_kopecks", {
+			mode: "bigint",
+		}),
 		quarantinedMoneyTotalRub: numeric("quarantined_money_total_rub", {
 			precision: 12,
 			scale: 2,
 			mode: "number",
+		}),
+		quarantinedMoneyTotalKopecks: bigint("quarantined_money_total_kopecks", {
+			mode: "bigint",
 		}),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

@@ -10,8 +10,9 @@ import {
 	payments,
 	users,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
-import { registerSbpQrRoutes } from "../../routes/sbpQr.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
+import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
+import { registerSbpRoutes as registerSbpQrRoutes } from "../../routes/sbp/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -44,6 +45,7 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 		app = createTenantTestApp();
 		await registerBillingRoutes(app);
 		await registerSbpQrRoutes(app);
+		await registerFiscalReceiptRoutes(app);
 		await app.ready();
 
 		clinicTokenA = signToken({ organizationId: ORG_A_ID }, authTokenSecret());

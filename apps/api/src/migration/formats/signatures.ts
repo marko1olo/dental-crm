@@ -269,16 +269,13 @@ export function identifyFormat(head: Buffer, fileName = ""): FormatSignature {
 
 	// ---- DBF. Проверяем не только версию, но и согласованность заголовка.
 	if (head.length > 32) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const version = head[0]!;
+		const version = head[0] ?? 0;
 		const label = DBF_VERSIONS[version];
 		if (label) {
 			const headerLength = head.readUInt16LE(8);
 			const recordLength = head.readUInt16LE(10);
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const month = head[2]!;
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const day = head[3]!;
+			const month = head[2] ?? 0;
+			const day = head[3] ?? 0;
 			const plausible =
 				headerLength >= 64 &&
 				recordLength > 0 &&
@@ -434,8 +431,7 @@ export function identifyFormat(head: Buffer, fileName = ""): FormatSignature {
 	if (lines.length >= 2) {
 		for (const delimiter of [";", "\t", ",", "|"]) {
 			const counts = lines.map((line) => line.split(delimiter).length);
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const first = counts[0]!;
+			const first = counts[0] ?? 0;
 			if (
 				first >= 2 &&
 				counts.filter((count) => count === first).length / counts.length >= 0.8

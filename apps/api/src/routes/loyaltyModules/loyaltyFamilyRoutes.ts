@@ -1,13 +1,14 @@
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { familyDebitBodySchema, kopecksToNumericString, parseKopecks } from "@dental/shared";
+import { familyDebitBodySchema } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientBonusBalances, patientRelationships, patients } from "../../db/schema.js";
-import { executeBonusRedeem } from "./bonusRedemptionService.js";
-import { ensureFamilyMemberSpendAuthorization } from "../family/familyGroupWriteRoutes.js";
+import { executeFamilyBonusRedeem } from "./bonusRedemptionService.js";
+import { ensureFamilyMemberSpendAuthorization, executeCreateFamilyGroup, executeAddFamilyMember } from "../family/familyGroupWriteRoutes.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 const familyLinkSchema = z.object({
 	primaryPatientId: z.string().uuid(),
@@ -91,6 +92,15 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 	app.post("/api/loyalty/family/debit", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = familyDebitBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры списания семьи", errors: parsed.error.format() });
 
@@ -157,12 +167,25 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				}
 			}
 
-			const res = await executeBonusRedeem({
-				orgId, patientId: sponsorPatientId, invoiceAmountRub: pointsToDebit, pointsToRedeem: pointsToDebit,
-				allowFullCoverage: true, description: `${description} (в пользу ${targetPatientId})`,
+			const res = await executeFamilyBonusRedeem({
+				orgId,
+				sponsorPatientId,
+				targetPatientId,
+				pointsToRedeem: pointsToDebit,
+				invoiceAmountRub: pointsToDebit,
+				clientMutationId: idempotencyKey ?? undefined,
+				description: `${description} (семейный пул в пользу ${targetPatientId})`,
 			});
-			if ("notFound" in res) return reply.status(404).send({ message: "Спонсор не найден" });
+			if ("notFound" in res) return reply.status(404).send({ message: "Участники семейной группы не найдены" });
 			if ("insufficientPoints" in res) return reply.status(400).send({ message: "Недостаточно бонусов в семейном кошельке" });
+
+			if ("replayed" in res && res.replayed) {
+				reply.header("idempotency-replayed", "true");
+			}
+			if (idempotencyKey) {
+				reply.header("idempotency-key", idempotencyKey);
+			}
+
 			return reply.status(200).send(res);
 		});
 	});
@@ -214,63 +237,30 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 			if (!relative) return reply.status(404).send({ message: "Родственник с указанным идентификатором, именем или телефоном не найден в картотеке клиники" });
 			if (primary.id === relative.id) return reply.status(400).send({ message: "Нельзя привязать пациента к самому себе в качестве родственника" });
 
-			class FamilyConflictError extends Error {
-				constructor() {
-					super("Пациент уже состоит в другой семейной группе с активным балансом депозита");
-					this.name = "FamilyConflictError";
+			let targetGroupId = primary.familyGroupId;
+			if (!targetGroupId) {
+				const createRes = await executeCreateFamilyGroup({
+					organizationId: orgId,
+					data: {
+						name: `Семья ${primary.fullName.split(" ")[0]}`,
+						headPatientId: primary.id,
+					},
+				});
+				if (!createRes.success) {
+					return reply.status(createRes.status).send({ message: createRes.message });
 				}
+				targetGroupId = createRes.family.id;
 			}
 
-			let targetGroupId: string | null = null;
-			try {
-				targetGroupId = await db.transaction(async (tx) => {
-					let groupId = primary.familyGroupId;
-					if (!groupId) {
-						const [newGroup] = await tx
-							.insert(familyGroups)
-							.values({
-								organizationId: orgId,
-								name: `Семья ${primary.fullName.split(" ")[0]}`,
-								headPatientId: primary.id,
-								balance: kopecksToNumericString(0),
-							})
-							.returning();
-						groupId = newGroup?.id ?? null;
-						if (groupId) {
-							await tx
-								.update(patients)
-								.set({ familyGroupId: groupId, updatedAt: new Date() })
-								.where(and(eq(patients.organizationId, orgId), eq(patients.id, primary.id)));
-						}
-					}
+			const addRes = await executeAddFamilyMember({
+				organizationId: orgId,
+				familyGroupId: targetGroupId,
+				patientId: relative.id,
+				canSpendFamilyWallet: true,
+			});
 
-					if (relative.familyGroupId && relative.familyGroupId !== groupId) {
-						const [existingFam] = await tx
-							.select({ balance: familyGroups.balance })
-							.from(familyGroups)
-							.where(and(eq(familyGroups.organizationId, orgId), eq(familyGroups.id, relative.familyGroupId)))
-							.limit(1);
-						if (existingFam && parseKopecks(existingFam.balance) > 0) {
-							throw new FamilyConflictError();
-						}
-					}
-
-					if (groupId) {
-						await tx
-							.update(patients)
-							.set({ familyGroupId: groupId, updatedAt: new Date() })
-							.where(and(eq(patients.organizationId, orgId), eq(patients.id, relative.id)));
-
-						await ensureFamilyMemberSpendAuthorization(tx, orgId, primary.id, relative.id, true);
-					}
-
-					return groupId;
-				});
-			} catch (err) {
-				if (err instanceof FamilyConflictError) {
-					return reply.status(409).send({ message: err.message });
-				}
-				throw err;
+			if (!addRes.success) {
+				return reply.status(addRes.status).send({ message: addRes.body.message });
 			}
 
 			const [balance] = await db

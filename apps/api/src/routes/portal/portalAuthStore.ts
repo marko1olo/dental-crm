@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import {
@@ -14,10 +14,15 @@ import {
 
 // In-memory revocation cache for synchronous token checks, backed by PostgreSQL portal_revoked_tokens
 export const revokedPortalTokens = new Set<string>();
+export const revokedPortalTokenHashes = new Set<string>();
 export const portalRevokedBeforeByPatient = new Map<string, number>();
 
+export function hashPortalToken(token: string): string {
+	return createHash("sha256").update(token).digest("hex");
+}
+
 /**
- * Записывает отозванный токен в PostgreSQL и локальный кэш
+ * Записывает отозванный токен (raw + SHA-256 hash) в PostgreSQL и локальный кэш
  */
 export async function persistRevokedToken(
 	token: string,
@@ -25,21 +30,48 @@ export async function persistRevokedToken(
 	organizationId: string,
 	expiresAt: Date,
 ): Promise<void> {
+	const tokenHash = hashPortalToken(token);
 	revokedPortalTokens.add(token);
-	const tokenHash = createHash("sha256").update(token).digest("hex");
-	try {
-		await db
-			.insert(portalRevokedTokens)
-			.values({
-				tokenHash,
-				patientId,
-				organizationId,
-				expiresAt,
-			})
-			.onConflictDoNothing();
-	} catch {
-		// Игнорируем дубликат
+	revokedPortalTokenHashes.add(tokenHash);
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return;
 	}
+	try {
+		await withTenantCtx(organizationId, async (tx) => {
+			await tx
+				.insert(portalRevokedTokens)
+				.values({
+					tokenHash,
+					patientId,
+					organizationId,
+					expiresAt,
+				})
+				.onConflictDoNothing();
+		});
+	} catch (err) {
+		// Игнорируем конфликт дубликата или отсутствие БД в изолированных тестах
+		void err;
+	}
+}
+
+/**
+ * Загружает активные (неистёкшие) SHA-256 хэши отозванных токенов портала из PostgreSQL при старте сервера
+ */
+export async function hydrateRevokedPortalTokensFromDb(): Promise<number> {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return 0;
+	}
+	const now = new Date();
+	const rows = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({ tokenHash: portalRevokedTokens.tokenHash })
+			.from(portalRevokedTokens)
+			.where(gt(portalRevokedTokens.expiresAt, now)),
+	);
+	for (const row of rows) {
+		revokedPortalTokenHashes.add(row.tokenHash);
+	}
+	return rows.length;
 }
 
 // In-memory store for pending registration OTP codes (kept for backwards-compatibility in tests)
@@ -56,13 +88,75 @@ export const pendingRegistrationOtpStore = new Map<string, PendingRegistrationOt
 
 export function resetPortalRevokedTokensForTesting(): void {
 	revokedPortalTokens.clear();
+	revokedPortalTokenHashes.clear();
 	portalRevokedBeforeByPatient.clear();
 	pendingRegistrationOtpStore.clear();
 }
 
+interface PortalRateLimitWindow {
+	count: number;
+	resetAt: number;
+}
+
+const PORTAL_RATE_LIMIT_PRUNE_THRESHOLD = 128;
+const MAX_PORTAL_RATE_LIMIT_ENTRIES = 10_000;
+
+function pruneExpiredMapEntries(map: Map<string, PortalRateLimitWindow>, now: number): void {
+	for (const [key, entry] of map.entries()) {
+		if (entry.resetAt <= now) {
+			map.delete(key);
+		}
+	}
+}
+
+class BoundedPortalRateLimitMap extends Map<string, PortalRateLimitWindow> {
+	private isPruning = false;
+
+	override get(key: string): PortalRateLimitWindow | undefined {
+		if (!this.isPruning && this.size >= PORTAL_RATE_LIMIT_PRUNE_THRESHOLD) {
+			this.isPruning = true;
+			try {
+				pruneExpiredPortalRateLimits();
+			} finally {
+				this.isPruning = false;
+			}
+		}
+		return super.get(key);
+	}
+
+	override set(key: string, value: PortalRateLimitWindow): this {
+		if (!this.isPruning) {
+			this.isPruning = true;
+			try {
+				if (this.size >= PORTAL_RATE_LIMIT_PRUNE_THRESHOLD) {
+					pruneExpiredPortalRateLimits();
+				}
+				while (this.size >= MAX_PORTAL_RATE_LIMIT_ENTRIES && !this.has(key)) {
+					const oldestKey = this.keys().next().value;
+					if (oldestKey === undefined) break;
+					this.delete(oldestKey);
+				}
+			} finally {
+				this.isPruning = false;
+			}
+		}
+		return super.set(key, value);
+	}
+}
+
 // Rate limiting & flood protection stores for OTP requests (10-minute window)
-export const otpIpRequestCounts = new Map<string, { count: number; resetAt: number }>();
-export const otpPhoneRequestCounts = new Map<string, { count: number; resetAt: number }>();
+export const otpIpRequestCounts: Map<string, { count: number; resetAt: number }> =
+	new BoundedPortalRateLimitMap();
+export const otpPhoneRequestCounts: Map<string, { count: number; resetAt: number }> =
+	new BoundedPortalRateLimitMap();
+
+/**
+ * Удаляет просроченные записи счётчиков OTP rate-limit для защиты памяти от утечки.
+ */
+export function pruneExpiredPortalRateLimits(now = Date.now()): void {
+	pruneExpiredMapEntries(otpIpRequestCounts, now);
+	pruneExpiredMapEntries(otpPhoneRequestCounts, now);
+}
 
 export function resetPortalOtpRateLimitsForTesting(): void {
 	otpIpRequestCounts.clear();
@@ -77,7 +171,9 @@ export function extractPortalPatient(request: FastifyRequest): AuthenticatedPort
 	if (!authHeader?.startsWith("Bearer ")) return null;
 	const token = authHeader.slice("Bearer ".length).trim();
 	if (!token) return null;
-	if (revokedPortalTokens.has(token)) return null;
+	if (revokedPortalTokens.has(token) || revokedPortalTokenHashes.has(hashPortalToken(token))) {
+		return null;
+	}
 	const payload = verifyToken(token, requireAuthTokenSecret());
 	if (
 		!payload ||
@@ -94,12 +190,62 @@ export function extractPortalPatient(request: FastifyRequest): AuthenticatedPort
 	return { patientId: payload.sub, organizationId: payload.organizationId };
 }
 
+export interface FoundPatientByPhone {
+	id: string;
+	organizationId: string;
+	fullName: string;
+	phone: string | null;
+	birthDate?: string | null | undefined;
+	isFamilyHead: boolean;
+}
+
 /**
- * Телефон -> ровно один пациент, иначе отказ.
- *
- * .limit(2) здесь не случайность: с частичным LIKE и .limit(1) сервер молча
- * выдавал первого попавшегося пациента, чей номер лишь СОДЕРЖИТ эти цифры, и
- * человек попадал в чужую медкарту. Неоднозначность — отказ, а не «первый».
+ * Находит всех пациентов, привязанных к номеру телефона (включая семейные группы).
+ */
+export async function findPatientsByPhone(
+	rawPhone: string,
+	targetOrgId?: string | undefined,
+): Promise<FoundPatientByPhone[]> {
+	const digits = rawPhone.replace(/\D/g, "");
+	if (digits.length < 10) return [];
+	const suffix = digits.slice(-10);
+	return withSuperuserBypass(async (tx) => {
+		const baseFilter = sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`;
+		const filter =
+			targetOrgId && targetOrgId !== "default"
+				? and(eq(patients.organizationId, targetOrgId), baseFilter)
+				: baseFilter;
+		const rows = await tx
+			.select({
+				id: patients.id,
+				organizationId: patients.organizationId,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				birthDate: patients.birthDate,
+				administrativeProfile: patients.administrativeProfile,
+			})
+			.from(patients)
+			.where(filter)
+			.limit(10);
+
+		return rows.map((r) => {
+			const adminProfile = (r.administrativeProfile as Record<string, unknown> | null) || {};
+			return {
+				id: r.id,
+				organizationId: r.organizationId,
+				fullName: r.fullName,
+				phone: r.phone,
+				birthDate: r.birthDate ?? undefined,
+				isFamilyHead: Boolean(adminProfile.isFamilyHead),
+			};
+		});
+	});
+}
+
+/**
+ * Телефон -> основной пациент с корректной поддержкой семейных номеров.
+ * При наличии нескольких профилей на один номер отдаёт основной профиль (главу семьи),
+ * предотвращая ложные регистрации дубликатов-пустышек.
  */
 export async function findUniquePatientByPhone(
 	rawPhone: string,
@@ -109,26 +255,18 @@ export async function findUniquePatientByPhone(
 	organizationId: string;
 	phone: string | null;
 } | null> {
-	const digits = rawPhone.replace(/\D/g, "");
-	if (digits.length < 10) return null;
-	const suffix = digits.slice(-10);
-	const found = await withSuperuserBypass(async (tx) => {
-		const baseFilter = sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`;
-		const filter =
-			targetOrgId && targetOrgId !== "default"
-				? and(eq(patients.organizationId, targetOrgId), baseFilter)
-				: baseFilter;
-		return tx
-			.select({
-				id: patients.id,
-				organizationId: patients.organizationId,
-				phone: patients.phone,
-			})
-			.from(patients)
-			.where(filter)
-			.limit(2);
-	});
-	return found.length === 1 ? (found[0] ?? null) : null;
+	const found = await findPatientsByPhone(rawPhone, targetOrgId);
+	if (found.length === 0) return null;
+	if (found.length === 1) {
+		const single = found[0];
+		return single ? { id: single.id, organizationId: single.organizationId, phone: single.phone } : null;
+	}
+	// Семейный номер: отдаем основной профиль (глава семьи или первый реальный пациент с непустым именем)
+	const primary =
+		found.find((p) => p.isFamilyHead) ||
+		found.find((p) => p.fullName.trim() !== "Пациент" && p.fullName.trim().length > 0) ||
+		found[0];
+	return primary ? { id: primary.id, organizationId: primary.organizationId, phone: primary.phone } : null;
 }
 
 /**

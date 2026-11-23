@@ -60,3 +60,20 @@ export const shareConsentLinkSchema = z.object({
 });
 
 export type ShareConsentLinkInput = z.infer<typeof shareConsentLinkSchema>;
+
+export const publicSignConsentSchema = z.object({
+	token: z.string().min(1),
+	signatureSvg: z.string().optional(),
+	integrityHash: z.string().optional(),
+	signatureType: z.enum([
+		"digital_canvas",
+		"paper_scanned",
+		"tablet_stylus",
+		"paper_signed",
+		"sms_otp",
+		"patient_portal",
+	]).optional(),
+	notes: z.string().optional(),
+});
+
+export type PublicSignConsentInput = z.infer<typeof publicSignConsentSchema>;

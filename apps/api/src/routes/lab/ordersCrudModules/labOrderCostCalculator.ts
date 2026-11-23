@@ -1,4 +1,4 @@
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import type { TenantDb } from "../../../db/rls.js";
@@ -89,11 +89,12 @@ export async function fetchLabPriceFromDb(
 		);
 	}
 
-	// 2. Поиск в исторических позициях lab_items по типу материала
+	// 2. Поиск в исторических позициях lab_items по типу материала (целочисленные копейки, Мандат 8bm)
 	try {
 		const [historicalItem] = await tx
 			.select({
 				priceRub: labItems.priceRub,
+				priceKopecks: labItems.priceKopecks,
 				material: labItems.material,
 			})
 			.from(labItems)
@@ -109,10 +110,15 @@ export async function fetchLabPriceFromDb(
 			.orderBy(labItems.createdAt)
 			.limit(1);
 
-		if (historicalItem && historicalItem.priceRub) {
-			const parsedPrice = parseFloat(historicalItem.priceRub);
-			if (parsedPrice > 0) {
-				return { costRub: parsedPrice, priceRub: parsedPrice };
+		if (historicalItem) {
+			const itemKopecks = historicalItem.priceKopecks != null
+				? Number(historicalItem.priceKopecks)
+				: historicalItem.priceRub != null
+					? rublesToKopecks(Number(historicalItem.priceRub))
+					: 0;
+			if (itemKopecks > 0) {
+				const resolvedRub = kopecksToRubles(itemKopecks);
+				return { costRub: resolvedRub, priceRub: resolvedRub };
 			}
 		}
 	} catch (err: unknown) {
@@ -217,20 +223,20 @@ export function calculateLabOrderCostAndMarkup(params: {
 		? params.ponticsCount
 		: hasBridgeCounts ? Math.max(0, units - abutments) : 0;
 
-	// Понтик по умолчанию 70% стоимости опорной коронки
+	// Понтик по умолчанию 70% стоимости опорной коронки (целочисленные копейки, Мандат 8bm)
 	const abutmentPriceKop = params.abutmentPriceKopecks != null && params.abutmentPriceKopecks >= 0
 		? Math.round(params.abutmentPriceKopecks)
 		: defaultPricePerUnitKopecks;
 	const ponticPriceKop = params.ponticPriceKopecks != null && params.ponticPriceKopecks >= 0
 		? Math.round(params.ponticPriceKopecks)
-		: Math.round(abutmentPriceKop * 0.7);
+		: percentageOfKopecks(abutmentPriceKop, 7000);
 
 	const abutmentCostKop = params.abutmentCostKopecks != null && params.abutmentCostKopecks >= 0
 		? Math.round(params.abutmentCostKopecks)
 		: defaultCostPerUnitKopecks;
 	const ponticCostKop = params.ponticCostKopecks != null && params.ponticCostKopecks >= 0
 		? Math.round(params.ponticCostKopecks)
-		: Math.round(abutmentCostKop * 0.7);
+		: percentageOfKopecks(abutmentCostKop, 7000);
 
 	let estimatedCostKopecks: number;
 	let suggestedPriceKopecks: number;

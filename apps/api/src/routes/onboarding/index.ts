@@ -174,13 +174,17 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 						timezone,
 					})
 					.returning({ id: clinics.id });
-				clinicId = insertedClinic!.id;
+				if (!insertedClinic) {
+					throw new Error("Не удалось создать профиль клиники при онбординге");
+				}
+				clinicId = insertedClinic.id;
 			}
 
 			// 3. Upsert chairs if provided
 			if (body.chairs && body.chairs.length > 0) {
 				for (let i = 0; i < body.chairs.length; i++) {
-					const c = body.chairs[i]!;
+					const c = body.chairs[i];
+					if (!c) continue;
 					const chairName = c.name?.trim() || `Кресло ${i + 1}`;
 					const existingChair = await tx
 						.select({ id: chairs.id })

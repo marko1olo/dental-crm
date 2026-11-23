@@ -23,6 +23,9 @@ import {
 	type RadiographAnalysisResult,
 	type ToothFindingUpdate,
 } from "./visionTypes.js";
+import { createApiLogger } from "../../observability/logger.js";
+
+const logger = createApiLogger("aiVisionAnalyzerCore");
 
 /**
  * Analyzes dental radiograph/study from base64 data URL using 2-pass vision cascade.
@@ -139,8 +142,8 @@ export async function analyzeImagingStudy(
 			}
 			pass2ModelName = pass2Slots[pass2.slotIdx]?.model ?? null;
 		} catch {
-			console.warn(
-				"[visionAnalyzer] Pass 2 JSON parse failed, using Pass 1 result",
+			logger.warn(
+				"Pass 2 JSON parse failed, using Pass 1 result",
 			);
 		}
 	}

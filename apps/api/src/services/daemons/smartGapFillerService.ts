@@ -23,6 +23,9 @@ import {
 	slotFitsRanges,
 } from "../schedule/waitlistMatching.js";
 import { utcToLocalWallTime } from "../../routes/publicBooking/index.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
+
+const logger = createApiLogger("smartGapFillerService");
 
 export interface GapFillerCandidate {
 	readonly patientId: string;
@@ -253,9 +256,9 @@ export async function triggerSmartGapFiller(
 			createdAt: new Date().toISOString(),
 		};
 	} catch (error) {
-		console.error(
-			"[smartGapFillerService:ERROR] Failed to run gap filler analysis:",
-			error,
+		logger.error(
+			{ err: safeLogError(error), cancelledAppointmentId },
+			"Failed to run gap filler analysis",
 		);
 		return null;
 	}

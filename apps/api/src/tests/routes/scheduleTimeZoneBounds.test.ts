@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { normalizeAppointmentFieldAliases, normalizeIsoDateTimeString } from "../../routes/appointments/appointmentsHelpers.js";
 import { resolveScheduleDateBounds } from "../../routes/appointments/appointmentsQueryRoutes.js";
 
 describe("Schedule Date Bounds in Clinic Timezone (Anti-Morning-Clipping)", () => {
@@ -38,5 +39,23 @@ describe("Schedule Date Bounds in Clinic Timezone (Anti-Morning-Clipping)", () =
 		const bounds = resolveScheduleDateBounds("2026-11-14", "Invalid/Timezone");
 		assert.equal(bounds.dayStart.toISOString(), "2026-11-14T00:00:00.000Z");
 		assert.equal(bounds.dayEnd.toISOString(), "2026-11-14T23:59:59.999Z");
+	});
+
+	test("normalizeAppointmentFieldAliases preserves clinic timezone offset (SEV-1 Fix)", () => {
+		const rawBodyVladivostok: Record<string, unknown> = {
+			startsAt: "2026-11-14T09:00:00",
+			endsAt: "2026-11-14T10:00:00",
+		};
+		normalizeAppointmentFieldAliases(rawBodyVladivostok, "Asia/Vladivostok");
+		assert.equal(rawBodyVladivostok.startsAt, "2026-11-14T09:00:00+10:00");
+		assert.equal(rawBodyVladivostok.endsAt, "2026-11-14T10:00:00+10:00");
+
+		const rawBodySamara: Record<string, unknown> = {
+			startsAt: "2026-11-14T09:00:00",
+			endsAt: "2026-11-14T10:00:00",
+		};
+		normalizeAppointmentFieldAliases(rawBodySamara, "Europe/Samara");
+		assert.equal(rawBodySamara.startsAt, "2026-11-14T09:00:00+04:00");
+		assert.equal(rawBodySamara.endsAt, "2026-11-14T10:00:00+04:00");
 	});
 });

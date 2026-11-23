@@ -51,6 +51,14 @@ export async function handleStreamRecording(
 	const orgId = await requireResolvedOrganizationId(request, reply, "stream call recording");
 	if (!orgId) return;
 
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Несовпадение идентификатора организации при доступе к аудиозаписи",
+		});
+	}
+
 	const eventId = request.params.eventId || request.params.id || request.query?.eventId || request.query?.id;
 	if (!eventId || !UUID_REGEX.test(eventId)) {
 		return reply.status(400).send({ error: "InvalidEventId", message: "Invalid event ID format" });

@@ -19,6 +19,7 @@ export async function fetchAndCompleteTreatmentItemsForVisit(
 				eq(treatmentItems.visitId, safeVisitId),
 				eq(treatmentItems.organizationId, organizationId),
 				ne(treatmentItems.status, "completed"),
+				ne(treatmentItems.status, "cancelled"),
 			),
 		);
 

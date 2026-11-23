@@ -41,6 +41,7 @@ export interface ApiErrorEnvelope {
  */
 export function decodeHeaderText(
 	value: string | string[] | undefined,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): string | undefined {
 	const raw = Array.isArray(value) ? value[0] : value;
 	if (!raw?.trim()) return undefined;
@@ -48,7 +49,7 @@ export function decodeHeaderText(
 	try {
 		return decodeURIComponent(raw);
 	} catch (err) {
-		console.error("[Dente] decodeHeaderText failed:", err);
+		logger?.error({ err }, "[Dente] decodeHeaderText failed");
 		// Битая процентная последовательность — берём как есть, чем терять имя.
 		return raw;
 	}

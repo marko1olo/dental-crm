@@ -60,11 +60,19 @@ export interface StoredUpload {
  * заголовка запроса попало бы в путь на диске. Имя приходит от клиента и
  * доверять ему нельзя.
  */
+function stripControlChars(value: string): string {
+	let result = "";
+	for (let i = 0; i < value.length; i += 1) {
+		if (value.charCodeAt(i) >= 32) {
+			result += value[i];
+		}
+	}
+	return result;
+}
+
 function safeUploadFileName(rawName: string | undefined): string {
 	const base = (rawName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
-	const cleaned = base
-		// biome-ignore lint/complexity/useRegexLiterals: control character range
-		.replace(new RegExp("[\\x00-\\x1F]", "g"), "")
+	const cleaned = stripControlChars(base)
 		.replace(/[<>:"|?*]/g, "_")
 		.slice(0, 180);
 	return cleaned || "upload.bin";

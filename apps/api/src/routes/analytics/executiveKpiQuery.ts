@@ -399,11 +399,17 @@ export async function queryExecutiveKpiAndFunnel(
 	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
-	// 5b. Честное распределение по способам оплат (Касса наличные / Карты и ДМС / СБП QR)
-	const paymentMethodRows = await db
+	// 5b. Честное распределение по способам оплат (Касса наличные / Карты и ДМС / СБП QR / Депозиты)
+	// [SEV-2.2] Распаковка комбинированных сплит-чеков ('split') по тендерам нал/СБП/депозит/карты
+	const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+	const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
+	const methodText = sql`${payments.method}::text`;
+	const [paymentMethodsRow] = await db
 		.select({
-			method: payments.method,
-			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
+			cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+			cardDmsKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('card', 'insurance', 'bank_transfer') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${absPaymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) + coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+			sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+			depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other', 'certificate') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
 		})
 		.from(payments)
 		.where(
@@ -414,27 +420,12 @@ export async function queryExecutiveKpiAndFunnel(
 				inArray(payments.status, ["paid", "refunded"]),
 				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
-		)
-		.groupBy(payments.method);
+		);
 
-	let cashKopecks = 0;
-	let cardDmsKopecks = 0;
-	let sbpKopecks = 0;
-	let depositKopecks = 0;
-
-	for (const pm of paymentMethodRows) {
-		const amt = Math.max(0, Number(pm.revenueKopecks || 0));
-		const m = (pm.method || "").toLowerCase();
-		if (m === "cash") {
-			cashKopecks += amt;
-		} else if (m === "sbp" || m === "online") {
-			sbpKopecks += amt;
-		} else if (m === "deposit" || m === "family_wallet" || m === "advance") {
-			depositKopecks += amt;
-		} else {
-			cardDmsKopecks += amt;
-		}
-	}
+	const cashKopecks = Math.max(0, Number(paymentMethodsRow?.cashKopecks || 0));
+	const cardDmsKopecks = Math.max(0, Number(paymentMethodsRow?.cardDmsKopecks || 0));
+	const sbpKopecks = Math.max(0, Number(paymentMethodsRow?.sbpKopecks || 0));
+	const depositKopecks = Math.max(0, Number(paymentMethodsRow?.depositKopecks || 0));
 
 	const totalMethodsKopecks = cashKopecks + cardDmsKopecks + sbpKopecks + depositKopecks;
 	const paymentBreakdown = {

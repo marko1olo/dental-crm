@@ -4,6 +4,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import type { ImagingStudyKind } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 export function normalizeImagingStudyKind(raw: string | undefined): ImagingStudyKind {
 	const val = (raw || "").toLowerCase().trim();
@@ -83,6 +84,17 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parseResult = registerLocalStudyBodySchema.safeParse(request.body);
 		if (!parseResult.success) {
 			return reply.status(400).send({
@@ -158,6 +170,17 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			}
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.status(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
 			let fileStream: NodeJS.ReadableStream | null = null;
 			let filename = "scan.dcm";
@@ -323,7 +346,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 								patientId,
 								visitId: visitId || null,
 								storagePath: stored.relativePath,
-								fileUrl: `/api/xray/scans/${createdStudy.id}/file`,
+								fileUrl: `/api/imaging/studies/${createdStudy.id}/file`,
 								originalFilename: filename,
 								fileSizeBytes: stored.fileSizeBytes,
 								sha256: stored.sha256,
@@ -420,6 +443,17 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 		}
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const body = request.body as Record<string, unknown> | undefined;
 		const studyId = typeof body?.studyId === "string" ? body.studyId : "";

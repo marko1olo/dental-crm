@@ -45,7 +45,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerCashboxRoutes } from "../../routes/cashbox.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";

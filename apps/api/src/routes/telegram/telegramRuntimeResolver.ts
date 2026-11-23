@@ -1,4 +1,4 @@
-import { getDenteTelegramBotSettings } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { getDenteTelegramBotSettings } from "./telegramCanonicalStore.js";
 import {
 	configuredBotToken,
 	configuredBotUsername,

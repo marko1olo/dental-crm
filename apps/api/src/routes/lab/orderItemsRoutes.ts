@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { generateUuidV7, isValidUuid } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -57,8 +58,9 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
+			"lab order item add",
 		);
-		if (!orgId) return;
+		if (reply.sent || !orgId) return reply;
 
 		// 152-ФЗ / 323-ФЗ: Добавление единиц протезирования ЗТЛ разрешено только клиническому персоналу
 		const identity = getRequestIdentity(request);
@@ -72,6 +74,22 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 				message: `Отказ в добавлении единицы протезирования ЗТЛ: ${evalAccess.reason}`,
 			});
 		}
+
+		const rawIdempotencyKey =
+			(request.headers?.["idempotency-key"] as string | undefined) ??
+			(request.headers?.["x-idempotency-key"] as string | undefined) ??
+			(request.headers?.["Idempotency-Key"] as string | undefined);
+
+		let idempotencyKey = rawIdempotencyKey?.trim();
+		if (!idempotencyKey) {
+			idempotencyKey = generateUuidV7();
+		} else if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
 
 		const parsed = createLabItemSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -119,8 +137,22 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.status(201).send({ success: true, item: result.item });
 	};
 
-	app.post<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", postOrderItemHandler);
-	app.post<{ Params: { id: string } }>("/api/lab/orders/:id/items", postOrderItemHandler);
+	app.post<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Добавление единицы протезирования с проверкой organizationId и Idempotency-Key",
+			},
+		},
+	}, postOrderItemHandler);
+	app.post<{ Params: { id: string } }>("/api/lab/orders/:id/items", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Добавление единицы протезирования с проверкой organizationId и Idempotency-Key",
+			},
+		},
+	}, postOrderItemHandler);
 
 	// ─── PUT /items/:itemId: Обновление позиции с неделимой транзакцией и пересчетом родителя (SEV-3 / Мандат 8bo) ───
 
@@ -128,8 +160,12 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		request: FastifyRequest<{ Params: { id: string; itemId: string } }>,
 		reply: FastifyReply,
 	) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"lab order item update",
+		);
+		if (reply.sent || !orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -142,6 +178,22 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 				message: `Отказ в обновлении единицы протезирования ЗТЛ: ${evalAccess.reason}`,
 			});
 		}
+
+		const rawIdempotencyKey =
+			(request.headers?.["idempotency-key"] as string | undefined) ??
+			(request.headers?.["x-idempotency-key"] as string | undefined) ??
+			(request.headers?.["Idempotency-Key"] as string | undefined);
+
+		let idempotencyKey = rawIdempotencyKey?.trim();
+		if (!idempotencyKey) {
+			idempotencyKey = generateUuidV7();
+		} else if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
 
 		const parsed = updateLabItemSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -196,10 +248,26 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 
 	app.put<{ Params: { id: string; itemId: string } }>(
 		"/api/clinical/lab-orders/:id/items/:itemId",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Обновление единицы протезирования с проверкой organizationId и Idempotency-Key",
+				},
+			},
+		},
 		putOrderItemHandler,
 	);
 	app.put<{ Params: { id: string; itemId: string } }>(
 		"/api/lab/orders/:id/items/:itemId",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Обновление единицы протезирования с проверкой organizationId и Idempotency-Key",
+				},
+			},
+		},
 		putOrderItemHandler,
 	);
 
@@ -209,8 +277,12 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		request: FastifyRequest<{ Params: { id: string; itemId: string } }>,
 		reply: FastifyReply,
 	) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"lab order item delete",
+		);
+		if (reply.sent || !orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -223,6 +295,22 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 				message: `Отказ в удалении единицы протезирования ЗТЛ: ${evalAccess.reason}`,
 			});
 		}
+
+		const rawIdempotencyKey =
+			(request.headers?.["idempotency-key"] as string | undefined) ??
+			(request.headers?.["x-idempotency-key"] as string | undefined) ??
+			(request.headers?.["Idempotency-Key"] as string | undefined);
+
+		let idempotencyKey = rawIdempotencyKey?.trim();
+		if (!idempotencyKey) {
+			idempotencyKey = generateUuidV7();
+		} else if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
 
 		const { id: labOrderId, itemId } = request.params;
 
@@ -264,10 +352,26 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 
 	app.delete<{ Params: { id: string; itemId: string } }>(
 		"/api/clinical/lab-orders/:id/items/:itemId",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Удаление единицы протезирования с проверкой organizationId и Idempotency-Key",
+				},
+			},
+		},
 		deleteOrderItemHandler,
 	);
 	app.delete<{ Params: { id: string; itemId: string } }>(
 		"/api/lab/orders/:id/items/:itemId",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Удаление единицы протезирования с проверкой organizationId и Idempotency-Key",
+				},
+			},
+		},
 		deleteOrderItemHandler,
 	);
 }

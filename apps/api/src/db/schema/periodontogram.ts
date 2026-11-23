@@ -13,6 +13,7 @@ import {
 import { organizations, users } from "./auth.js";
 import { visits } from "./clinical/visitsSchema.js";
 import { patients } from "./patients.js";
+import type { PeriodontogramSnapshotIndices } from "../../services/periodontogramIndices.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +49,7 @@ export const periodontogramSnapshots = pgTable(
 		closedByUserId: uuid("closed_by_user_id").references(() => users.id),
 		notes: text("notes"),
 		// Frozen calculated indices upon closure (bop_pct, pi_pct, cal_mean_mm, deep_pockets_count, ohi_s, pma, psr)
-		indices: jsonb("indices"),
+		indices: jsonb("indices").$type<PeriodontogramSnapshotIndices>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

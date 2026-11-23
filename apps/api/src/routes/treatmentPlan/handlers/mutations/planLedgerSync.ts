@@ -18,6 +18,7 @@ export interface SyncPlanLedgerItemInput {
 	price: number;
 	discount: number;
 	discountPercent?: number | undefined;
+	discountKopecks?: number | bigint | undefined;
 	priceKopecks?: number | bigint | undefined;
 	unitPriceKopecks?: number | undefined;
 	totalPriceKopecks?: number | undefined;
@@ -35,7 +36,7 @@ export interface SyncPlanLedgerParams {
 	patientSignature?: string | null | undefined;
 	allowClinicalBlockerOverride?: boolean | undefined;
 	clinicalBlockerOverrideReason?: string | null | undefined;
-	logger?: { warn: (obj: unknown, msg: string) => void };
+	logger?: { warn: (obj: unknown, msg: string) => void } | undefined;
 }
 
 /**
@@ -76,7 +77,13 @@ export async function syncUpsertPlanLedgerItems(
 	const existingByPlanItemId = new Map<string, (typeof ownedRows)[0]>();
 	for (const row of ownedRows) {
 		if (row.treatmentPlanItemId && row.status !== "cancelled") {
-			existingByPlanItemId.set(row.treatmentPlanItemId.toLowerCase(), row);
+			const key = row.treatmentPlanItemId.toLowerCase();
+			const prev = existingByPlanItemId.get(key);
+			const isProtected =
+				row.visitId !== null || !LEDGER_STATUSES_OWNED_BY_PLAN.has(row.status);
+			if (!prev || isProtected) {
+				existingByPlanItemId.set(key, row);
+			}
 		}
 	}
 
@@ -178,7 +185,7 @@ export async function syncUpsertPlanLedgerItems(
 		serviceIds: Array.from(knownServiceIds),
 		completedServiceIds: completedItems
 			.map((r) => r.serviceId)
-			.filter(Boolean) as string[],
+			.filter((id): id is string => Boolean(id)),
 		enforceBlockers: false,
 	});
 
@@ -197,12 +204,11 @@ export async function syncUpsertPlanLedgerItems(
 		);
 	}
 
-	const ledgerStatus = patientSignature ? "approved" : "proposed";
+	const ledgerStatus: "proposed" | "approved" = patientSignature ? "approved" : "proposed";
 
 	const toInsert: (typeof treatmentItems.$inferInsert)[] = [];
 
-	for (let index = 0; index < items.length; index++) {
-		const item = items[index]!;
+	for (const item of items) {
 		const lineTotalKopecksNumber = chargeLineKopecks({
 			patientId,
 			status: ledgerStatus,
@@ -232,7 +238,9 @@ export async function syncUpsertPlanLedgerItems(
 		const unitPriceKopecks = item.unitPriceKopecks != null
 			? BigInt(item.unitPriceKopecks)
 			: BigInt(rublesToKopecks(item.price));
-		const discountKopecks = BigInt(rublesToKopecks(item.discount || 0));
+		const discountKopecks = item.discountKopecks != null
+			? BigInt(item.discountKopecks)
+			: BigInt(rublesToKopecks(item.discount || 0));
 
 		let existingRow: (typeof ownedRows)[0] | undefined;
 		let rowId: string | undefined;
@@ -240,7 +248,12 @@ export async function syncUpsertPlanLedgerItems(
 		const planItemIdKey = item.treatmentPlanItemId ? item.treatmentPlanItemId.toLowerCase() : null;
 		if (planItemIdKey) {
 			const candidate = existingByPlanItemId.get(planItemIdKey);
-			if (candidate && candidate.visitId === null && LEDGER_STATUSES_OWNED_BY_PLAN.has(candidate.status)) {
+			if (candidate) {
+				if (candidate.visitId !== null || !LEDGER_STATUSES_OWNED_BY_PLAN.has(candidate.status)) {
+					// Строка уже привязана к приёму или вышла из-под владения плана — не дублируем и не перезаписываем
+					usedRowIds.add(candidate.id.toLowerCase());
+					continue;
+				}
 				existingRow = candidate;
 				rowId = candidate.id;
 			}
@@ -278,7 +291,7 @@ export async function syncUpsertPlanLedgerItems(
 					priceKopecks: lineTotalKopecks,
 					unitPriceKopecks: unitPriceKopecks,
 					discountKopecks: discountKopecks,
-					status: ledgerStatus as "proposed" | "approved",
+					status: ledgerStatus,
 					plannedDoctorUserId: item.doctorId ?? null,
 					treatmentPlanItemId: item.treatmentPlanItemId ?? null,
 				})
@@ -317,7 +330,7 @@ export async function syncUpsertPlanLedgerItems(
 				priceKopecks: lineTotalKopecks,
 				unitPriceKopecks: unitPriceKopecks,
 				discountKopecks: discountKopecks,
-				status: ledgerStatus as "proposed" | "approved",
+				status: ledgerStatus,
 				plannedDoctorUserId: item.doctorId ?? null,
 				notes: null,
 			});

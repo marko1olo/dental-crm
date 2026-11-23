@@ -204,10 +204,12 @@ export async function calculateDoctorProfitability(
 	orgId: string,
 	startDate?: Date,
 ): Promise<DoctorProfitabilityItem[]> {
+	// [SEV-3.1] Прямое суммирование копеек amountKopecks
+	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
 	const docProfRes = await db
 		.select({
 			doctorId: appointments.doctorUserId,
-			revenue: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
 		})
 		.from(payments)
 		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
@@ -295,6 +297,7 @@ export async function calculateDoctorProfitability(
 		.where(
 			and(
 				eq(doctorPayrollStatements.organizationId, orgId),
+				eq(doctorPayrollStatements.isFinalized, true),
 				startDate
 					? gte(
 							doctorPayrollStatements.period,
@@ -346,7 +349,7 @@ export async function calculateDoctorProfitability(
 				(p) => (p.doctorId ?? null) === (docId ?? null),
 			);
 			const appt = docApptMap.get(docId ?? "unassigned");
-			const revenue = Number(prof?.revenue || 0);
+			const revenue = kopecksToRubles(Number(prof?.revenueKopecks || 0));
 			const appointmentsCount = Number(appt?.totalAppointments || 0);
 			const completedCount = Number(appt?.completedAppointments || 0);
 			const workedMinutes = Number(appt?.totalMinutes || 0);
@@ -371,9 +374,9 @@ export async function calculateDoctorProfitability(
 			const materialsCostRub = docMaterialsMap.get(docId ?? "unassigned") || 0;
 			const recordedPayroll = docId ? (docPayrollMap.get(docId) || 0) : 0;
 			const doctorPayrollRub = recordedPayroll;
-			// Канонический паритет с P&L: Выручка минус ЗТЛ, материалы со склада и ФОТ врача
+			// [SEV-2.4] Канонический паритет с P&L: Выручка минус ЗТЛ, материалы со склада и ФОТ врача (честный учет отрицательной маржи)
 			const clinicMarginRub = revenue > 0
-				? Math.max(0, revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub)
+				? revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub
 				: 0;
 			const margin = revenue > 0
 				? Math.round((clinicMarginRub / revenue) * 100)

@@ -115,13 +115,39 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 		return reply.send(reportData);
 	};
 
-	app.post("/api/cash/x-report", handleXReport);
+	const reportRouteOptions = {
+		schema: {
+			description:
+				"Shift X-report and reconciliation with organizationId tenant isolation and optional Idempotency-Key",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cash/x-report", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleXReport(request, reply);
+	});
 	app.get("/api/cash/x-report", handleXReport);
-	app.post("/api/fiscal/x-report", handleXReport);
+	app.post("/api/fiscal/x-report", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleXReport(request, reply);
+	});
 	app.get("/api/fiscal/x-report", handleXReport);
-	app.post("/api/fiscal/reports/x-report", handleXReport);
+	app.post("/api/fiscal/reports/x-report", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleXReport(request, reply);
+	});
 	app.get("/api/fiscal/reports/x-report", handleXReport);
-	app.post("/api/finance/reports/x-report", handleXReport);
+	app.post("/api/finance/reports/x-report", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleXReport(request, reply);
+	});
 	app.get("/api/finance/reports/x-report", handleXReport);
 
 	/**
@@ -198,7 +224,13 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 	};
 
 	app.get("/api/cash/shift-reconciliation", handleShiftReconciliation);
-	app.post("/api/cash/shift-reconciliation", handleShiftReconciliation);
+	app.post("/api/cash/shift-reconciliation", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleShiftReconciliation(request, reply);
+	});
 	app.get("/api/cashbox/shift", handleShiftReconciliation);
-	app.post("/api/cashbox/shift", handleShiftReconciliation);
+	app.post("/api/cashbox/shift", reportRouteOptions, async (request, reply) => {
+		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleShiftReconciliation(request, reply);
+	});
 }

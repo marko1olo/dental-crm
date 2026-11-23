@@ -18,39 +18,98 @@ export {
 	handleGetBillingInvoices,
 };
 
+const billingPaymentMutationOptions = {
+	schema: {
+		description:
+			"Billing payment mutation endpoint with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+			},
+		},
+	},
+};
+
 export async function registerBillingRoutes(app: FastifyInstance): Promise<void> {
 	app.get("/api/billing/payments", handleGetBillingPayments);
 	app.get("/api/payments", handleGetBillingPayments);
 	app.get("/api/billing/invoices", handleGetBillingInvoices);
-	app.post("/api/billing/payments", handleCreatePayment);
-	app.post("/api/payments", handleCreatePayment);
-	app.post("/api/finance/payments", handleCreatePayment);
-	app.post("/api/v1/billing/payments", handleCreatePayment);
-	app.post("/api/v1/finance/payments", handleCreatePayment);
+
+	app.post("/api/billing/payments", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleCreatePayment(request, reply);
+	});
+	app.post("/api/payments", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleCreatePayment(request, reply);
+	});
+	app.post("/api/finance/payments", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleCreatePayment(request, reply);
+	});
+	app.post("/api/v1/billing/payments", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleCreatePayment(request, reply);
+	});
+	app.post("/api/v1/finance/payments", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleCreatePayment(request, reply);
+	});
 
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/billing/invoices/:id/payments",
-		invoicePayHandler,
+		billingPaymentMutationOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+			return invoicePayHandler(request, reply);
+		},
 	);
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/invoices/:id/pay",
-		invoicePayHandler,
+		billingPaymentMutationOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+			return invoicePayHandler(request, reply);
+		},
 	);
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/v1/invoices/:id/pay",
-		invoicePayHandler,
+		billingPaymentMutationOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+			return invoicePayHandler(request, reply);
+		},
 	);
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/invoices/:id/payments",
-		invoicePayHandler,
+		billingPaymentMutationOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+			return invoicePayHandler(request, reply);
+		},
 	);
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/v1/billing/invoices/:id/payments",
-		invoicePayHandler,
+		billingPaymentMutationOptions,
+		async (request, reply) => {
+			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+			return invoicePayHandler(request, reply);
+		},
 	);
 
-	app.post("/api/billing/refunds/partial", handlePartialRefund);
+	app.post("/api/billing/refunds/partial", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handlePartialRefund(request, reply);
+	});
 	app.get("/api/billing/fiscal-queue/pending", handleGetFiscalQueuePending);
-	app.post("/api/billing/fiscal-queue/:id/retry", handleRetryFiscalQueueItem);
-	app.post("/api/billing/fiscal-queue/retry-all", handleRetryAllFiscalQueue);
+	app.post("/api/billing/fiscal-queue/:id/retry", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleRetryFiscalQueueItem(request, reply);
+	});
+	app.post("/api/billing/fiscal-queue/retry-all", billingPaymentMutationOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
+		return handleRetryAllFiscalQueue(request, reply);
+	});
 }

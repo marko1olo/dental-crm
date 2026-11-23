@@ -3,6 +3,9 @@
  */
 
 import sharp from "sharp";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("aiImagePreprocessor");
 
 /**
  * Applies dental visio-graph enhancement: CLAHE contrast equalization and unsharp mask.
@@ -27,9 +30,9 @@ export async function enhanceVisioGraphImage(
 
 		return `data:image/jpeg;base64,${enhancedBuffer.toString("base64")}`;
 	} catch (err) {
-		console.warn(
-			"[visionAnalyzer] Image enhancement with sharp failed, falling back to original image",
-			err,
+		logger.warn(
+			{ err: safeLogError(err) },
+			"Image enhancement with sharp failed, falling back to original image",
 		);
 		return imageBase64;
 	}

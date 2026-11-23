@@ -56,7 +56,9 @@ export const payments = pgTable(
 			scale: 2,
 			mode: "number",
 		}).notNull(),
-		amountKopecks: bigint("amount_kopecks", { mode: "bigint" }),
+		amountKopecks: bigint("amount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(0n),
 		method: paymentMethod("method").notNull().default("card"),
 		status: paymentStatus("status").notNull().default("paid"),
 		paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),

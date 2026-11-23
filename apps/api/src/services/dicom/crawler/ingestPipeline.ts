@@ -12,7 +12,7 @@ import {
 	buildStudyStorageFolderName,
 	type DicomCrawlerDiscoveredStudy,
 } from "@dental/shared";
-import { scanDicomSeriesFolder } from "../../imaging/dicomMetadataParser.js";
+import { scanDicomSeriesFolder } from "../../../routes/imaging/dicomParsing.js";
 import { inspectZipForDicom, unpackZipArchive } from "./archiveInspector.js";
 import {
 	findExistingStudyByUid,

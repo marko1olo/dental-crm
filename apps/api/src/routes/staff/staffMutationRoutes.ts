@@ -231,8 +231,18 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		}
 
 		// Защита ставок и окладов (Управление ФОТ): доступно только владельцу или бухгалтеру
+		const isBaseSalaryRubChanged =
+			data.baseSalaryRub !== undefined &&
+			data.baseSalaryRub !== (existingHr.baseSalaryRub || 0);
+		const isBaseSalaryKopecksChanged =
+			data.baseSalaryKopecks !== undefined &&
+			data.baseSalaryKopecks !==
+				(existingHr.baseSalaryKopecks ??
+					rublesToKopecks(existingHr.baseSalaryRub || 0));
+
 		if (
-			(data.baseSalaryRub !== undefined && data.baseSalaryRub !== (existingHr.baseSalaryRub || 0)) ||
+			isBaseSalaryRubChanged ||
+			isBaseSalaryKopecksChanged ||
 			data.commissionPct !== undefined ||
 			data.materialCostDeductionPct !== undefined ||
 			data.labCostDeductionPct !== undefined
@@ -411,7 +421,8 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			// 9.1. Обязательная запись в неизменяемый журнал audit_events [SEC-07]
 			const isRoleChanged = data.role !== undefined && data.role !== existingUser.role;
 			const isSalaryOrCommissionChanged =
-				(data.baseSalaryRub !== undefined && data.baseSalaryRub !== (existingHr.baseSalaryRub || 0)) ||
+				isBaseSalaryRubChanged ||
+				isBaseSalaryKopecksChanged ||
 				(data.commissionPct !== undefined && String(data.commissionPct) !== String(existingComm?.commissionPct ?? "")) ||
 				(data.materialCostDeductionPct !== undefined && String(data.materialCostDeductionPct) !== String(existingComm?.materialCostDeductionPct ?? "")) ||
 				(data.labCostDeductionPct !== undefined && String(data.labCostDeductionPct) !== String(existingComm?.labCostDeductionPct ?? ""));
@@ -654,6 +665,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 					and(
 						eq(schema.users.id, params.staffId),
 						eq(schema.users.organizationId, auth.orgId),
+					),
+				);
+
+			await tx
+				.delete(schema.singleSessionEnforcements)
+				.where(
+					and(
+						eq(schema.singleSessionEnforcements.userId, params.staffId),
+						eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
 					),
 				);
 

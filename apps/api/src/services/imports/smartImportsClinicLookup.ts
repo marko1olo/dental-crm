@@ -16,6 +16,9 @@ import {
 import { cleanExtractedValue } from "./smartImportsClassification.js";
 import { clinicPublicLookupResponseSchema } from "@dental/shared";
 import { firstValidDigits } from "./smartImportsClassification.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("smartImportsClinicLookup");
 
 export function encoded(value: string) {
 	return encodeURIComponent(value.trim());
@@ -404,7 +407,7 @@ export async function fetchDadataClinicSuggestions(
 				: ["Сервис реквизитов не вернул организаций по безопасному запросу."],
 		};
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.error({ err: safeLogError(err) }, "Clinic public lookup error");
 		return {
 			status: "error",
 			suggestions: [],

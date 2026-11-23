@@ -14,7 +14,11 @@
  */
 
 import { sql } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import { db } from "../../db/client.js";
+import { createApiLogger } from "../../observability/index.js";
+
+const defaultDaemonLogger = createApiLogger("daemonScheduler");
 import {
 	runWeeklyRetentionScan,
 	type WeeklyRetentionSummary,
@@ -73,6 +77,7 @@ export interface DaemonSchedulerOptions {
 	enableWeeklyRetention?: boolean | undefined;
 	enableMdlpOutbox?: boolean | undefined;
 	logger?:
+		| FastifyBaseLogger
 		| {
 				info?: (msg: string) => void;
 				warn?: (msg: string) => void;
@@ -121,11 +126,7 @@ export class DaemonScheduler {
 			enableSanpinAndInventory: options?.enableSanpinAndInventory ?? true,
 			enableWeeklyRetention: options?.enableWeeklyRetention ?? true,
 			enableMdlpOutbox: options?.enableMdlpOutbox ?? true,
-			logger: options?.logger ?? {
-				info: (msg: string) => console.log(`[DaemonScheduler:INFO] ${msg}`),
-				warn: (msg: string) => console.warn(`[DaemonScheduler:WARN] ${msg}`),
-				error: (msg: string) => console.error(`[DaemonScheduler:ERROR] ${msg}`),
-			},
+			logger: options?.logger ?? defaultDaemonLogger,
 		};
 
 		this.nowProvider = options?.nowProvider ?? (() => new Date());
@@ -224,13 +225,13 @@ export class DaemonScheduler {
 	}
 
 	private log(msg: string): void {
-		const logger = this.options.logger;
+		const logger = this.options.logger ?? defaultDaemonLogger;
 		if (typeof logger === "function") {
 			logger(`[DaemonScheduler] ${msg}`);
 		} else if (logger && typeof logger.info === "function") {
 			logger.info(`[DaemonScheduler] ${msg}`);
 		} else {
-			console.log(`[DaemonScheduler] ${msg}`);
+			defaultDaemonLogger.info(msg);
 		}
 	}
 

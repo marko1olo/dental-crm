@@ -32,7 +32,6 @@ import {
 import { createPaymentInDb } from "../../db/billingQuery.js";
 import { registerLoyaltyRoutes } from "../../routes/loyalty.js";
 import { registerMarketingRoutes } from "../../routes/marketing.js";
-import { registerReferralRoutes } from "../../routes/referrals.js";
 import { calculateRealMarketingCohorts } from "../../services/marketing/marketingCohortService.js";
 import { verifyFamilySpendAuthorization } from "../../services/familyWallet/modules/familySpendAuthorization.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -154,7 +153,6 @@ describe("Loyalty, Family Wallet & RFM Marketing Inquisition Suite [LOY-02..11]"
 
 		app = createTenantTestApp();
 		await registerLoyaltyRoutes(app);
-		await registerReferralRoutes(app);
 		await registerMarketingRoutes(app);
 		await app.ready();
 	});

@@ -14,7 +14,8 @@ import type { FastifyInstance } from "fastify";
 import { registerInsuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid } from "../support/fixtureOrganizations.js";
+import { organizations } from "../../db/schema.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "guaranteeSafety";
@@ -27,6 +28,15 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 
 	before(async () => {
 		process.env.NODE_ENV = "test";
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: `Клиника ДМС Тест-${Date.now()}`,
+				isActive: true,
+			}).onConflictDoNothing();
+		});
+
 		app = createTenantTestApp();
 		await app.register(registerInsuranceRoutes);
 		await app.ready();
@@ -42,6 +52,7 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 	});
 
 	after(async () => {
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 		await app?.close();
 	});
 

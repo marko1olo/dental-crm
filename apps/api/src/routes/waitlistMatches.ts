@@ -12,6 +12,7 @@
 
 import { and, eq, gt, inArray, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { appointments, clinics, users } from "../db/schema.js";
@@ -21,6 +22,10 @@ import {
 	findWaitlistMatches,
 	type WaitlistMatch,
 } from "../services/schedule/waitlistMatching.js";
+
+const waitlistMatchParamsSchema = z.object({
+	appointmentId: z.string().uuid("Идентификатор приёма должен быть валидным UUID"),
+});
 
 function badRequest(reply: FastifyReply, message: string) {
 	return replyBadRequest(reply, "WaitlistMatchValidationError", message);
@@ -164,9 +169,11 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
 					return;
 
-				const appointmentId = (request.params as { appointmentId?: string })
-					.appointmentId;
-				if (!appointmentId) return badRequest(reply, "Не указан приём.");
+				const parsedParams = waitlistMatchParamsSchema.safeParse(request.params);
+				if (!parsedParams.success) {
+					return badRequest(reply, "Некорректный идентификатор приёма (ожидается UUID).");
+				}
+				const { appointmentId } = parsedParams.data;
 
 				const [appointment] = await db
 					.select({

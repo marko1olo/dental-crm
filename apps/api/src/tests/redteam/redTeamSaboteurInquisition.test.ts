@@ -28,7 +28,7 @@ import {
 	users,
 	generatedDocuments,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
 import { registerPatientRoutes } from "../../routes/patients.js";

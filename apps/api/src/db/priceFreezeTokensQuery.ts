@@ -45,7 +45,9 @@ import {
 	rublesFromKopecks,
 } from "../money/patientDebt.js";
 import {
+	basisPointsFromPercent,
 	kopecksToRubles,
+	percentageOfKopecks,
 	rublesToKopecks,
 	sumKopecks,
 } from "@dental/shared";
@@ -384,7 +386,7 @@ export async function setPlanDiscountMode(
 			// Режим 2: Задать на план — рассчитываем процент от цены услуги
 			if (discountPercent > 0) {
 				const unitPriceKop = rublesToKopecks(unitPriceRub);
-				const itemDiscountKop = Math.round((unitPriceKop * discountPercent) / 100);
+				const itemDiscountKop = percentageOfKopecks(unitPriceKop, basisPointsFromPercent(discountPercent));
 				itemDiscountRub = kopecksToRubles(itemDiscountKop);
 			} else {
 				itemDiscountRub = Number(item.discount || 0);

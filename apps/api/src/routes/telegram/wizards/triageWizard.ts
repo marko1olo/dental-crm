@@ -1,5 +1,5 @@
 import type { DenteTelegramBotSettings } from "@dental/shared";
-import { createDenteTelegramContactRequest } from "../../../services/telegram/telegramLegacyMemoryStore.js";
+import { createDenteTelegramContactRequest } from "../telegramCanonicalStore.js";
 import { TelegramInteractiveTriageService } from "../../../services/telegram/TelegramInteractiveTriageService.js";
 import type { TelegramRequestScope, TelegramWebhookReplyPackage } from "../types.js";
 import {

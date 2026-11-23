@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
-import { organizations, patients, users } from "../../db/schema.js";
-import { registerConsentRoutes } from "../../routes/consents.js";
+import { organizations, patients, users, visits } from "../../db/schema.js";
+import { registerConsentRoutes } from "../../routes/consents/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -15,6 +15,7 @@ const FIXTURE = "consentsAutonomyProof";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
 const DOCTOR_ID = fixtureUuid(FIXTURE, 2);
 const PATIENT_ID = fixtureUuid(FIXTURE, 3);
+const VISIT_ID = fixtureUuid(FIXTURE, 4);
 
 describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 	before(async () => {
@@ -50,6 +51,15 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 					administrativeProfile: {
 						gender: "male",
 					},
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(visits)
+				.values({
+					id: VISIT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
 				})
 				.onConflictDoNothing();
 		});
@@ -212,5 +222,131 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 		const found = getBody.consents.find((c: any) => c.kind === "implant");
 		assert.ok(found, "Must find saved implant consent in database");
 		assert.ok(found.grantedAt, "Must have grantedAt timestamp");
+	});
+
+	it("6. Public gateway: share-info validates token and sign registers consent without staff auth", async () => {
+		const app = Fastify();
+		await registerConsentRoutes(app);
+
+		const staffToken = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
+
+		const testVisitId = VISIT_ID;
+
+		// 1. Клиника генерирует ссылку с криптографическим токеном
+		const shareRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents/share-link`,
+			headers: {
+				authorization: `Bearer ${staffToken}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				kind: "informed_consent",
+				title: "Информированное согласие на удаленное подписание",
+				visitId: testVisitId,
+			}),
+		});
+
+		assert.strictEqual(shareRes.statusCode, 200);
+		const { token: shareToken } = shareRes.json();
+		assert.ok(shareToken, "Must return signed shareToken");
+
+		// 2. Внешний пациент без JWT запрашивает инфо по токену
+		const infoRes = await app.inject({
+			method: "GET",
+			url: `/api/public/consents/share-info?token=${encodeURIComponent(shareToken)}`,
+		});
+
+		assert.strictEqual(infoRes.statusCode, 200);
+		const info = infoRes.json();
+		assert.strictEqual(info.valid, true);
+		assert.strictEqual(info.patientName, "Иванов Иван Иванович");
+		assert.strictEqual(info.clinicName, "Клиника DENTE Юридический Контур");
+		assert.strictEqual(info.kind, "informed_consent");
+		assert.strictEqual(info.visitId, testVisitId, "share-info must resolve visitId from token vid");
+
+		// 3. Отказ при невалидном токене
+		const badInfoRes = await app.inject({
+			method: "GET",
+			url: "/api/public/consents/share-info?token=invalid.tampered.token",
+		});
+		assert.strictEqual(badInfoRes.statusCode, 401);
+
+		// 4. Пациент подписывает согласие дистанционно
+		const signRes = await app.inject({
+			method: "POST",
+			url: "/api/public/consents/sign",
+			headers: {
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				token: shareToken,
+				signatureSvg: '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0,0 L10,10"/></svg>',
+				signatureType: "tablet_stylus",
+				notes: "Дистанционная подпись пациента",
+			}),
+		});
+
+		assert.strictEqual(signRes.statusCode, 201);
+		const signData = signRes.json();
+		assert.strictEqual(signData.success, true);
+		assert.ok(signData.consent.id, "Must return recorded consent");
+		assert.strictEqual(signData.consent.verificationMethod, "patient_portal");
+		assert.strictEqual(signData.consent.visitId, testVisitId, "DEF-CONSENT-01: sign must preserve visitId from token vid");
+	});
+
+	it("7. Defect 1 Dual-Doc Bug: passing documentId updates existing document and prevents duplicates", async () => {
+		const app = Fastify();
+		await registerConsentRoutes(app);
+
+		const staffToken = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
+
+		// Сначала создаем документ в generatedDocuments
+		const docRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${staffToken}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				kind: "radiation_xray",
+				title: "Согласие на КЛКТ и рентгенографию",
+				isSigned: true,
+				verificationMethod: "tablet_stylus",
+			}),
+		});
+
+		assert.strictEqual(docRes.statusCode, 201);
+		const firstDoc = docRes.json();
+		const docId = firstDoc.documentId;
+		assert.ok(docId, "Must return created documentId");
+
+		// Теперь симулируем вызов из useDocumentStudioSignAndIssue c documentId
+		const updatedSvg = '<svg xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="5"/></svg>';
+		const secondRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${staffToken}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				documentId: docId,
+				kind: "radiation_xray",
+				title: "Согласие на КЛКТ и рентгенографию",
+				isSigned: true,
+				signatureSvg: updatedSvg,
+				integrityHash: "HASH-UPDATED-ZERO-DUPLICATE",
+				verificationMethod: "tablet_stylus",
+			}),
+		});
+
+		assert.strictEqual(secondRes.statusCode, 201);
+		const secondDoc = secondRes.json();
+		// documentId должен совпадать с исходным документом (ноль задвоения!)
+		assert.strictEqual(secondDoc.documentId, docId, "Must update existing document without creating duplicate");
+		assert.strictEqual(secondDoc.signatureSvg, updatedSvg, "Must update signature in existing document");
+		assert.strictEqual(secondDoc.integrityHash, "HASH-UPDATED-ZERO-DUPLICATE");
 	});
 });

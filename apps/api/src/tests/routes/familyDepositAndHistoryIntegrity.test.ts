@@ -282,7 +282,38 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 		assert.equal(data.totalNetRub, 3500);
 	});
 
-	it("GET /api/finance/family/:familyGroupId/tax-certificates returns statutory FNS certificates", async () => {
+	it("GET /api/finance/family/:familyGroupId/tax-certificates returns 422 when clinic requisites are missing", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/finance/family/${FAMILY_ID}/tax-certificates?taxYear=${new Date().getFullYear()}`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": staffToken,
+			},
+		});
+
+		assert.equal(res.statusCode, 422);
+		const data = res.json();
+		assert.equal(data.error, "UnprocessableEntity");
+		assert.equal(
+			data.message,
+			"Для выдачи справки об оплате медицинских услуг заполните реквизиты клиники и главного врача в Настройках",
+		);
+	});
+
+	it("GET /api/finance/family/:familyGroupId/tax-certificates returns statutory FNS certificates when requisites filled", async () => {
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.update(organizations)
+				.set({
+					inn: "7701234567",
+					kpp: "770101001",
+					ogrn: "1027700000000",
+					signatoryName: "Смирнов Иван Алексеевич",
+				})
+				.where(eq(organizations.id, ORG_ID));
+		});
+
 		const res = await app.inject({
 			method: "GET",
 			url: `/api/finance/family/${FAMILY_ID}/tax-certificates?taxYear=${new Date().getFullYear()}`,

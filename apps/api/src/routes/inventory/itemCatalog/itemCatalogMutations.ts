@@ -226,7 +226,7 @@ export const handleUpdateInventoryItem = async (
 			updatePayload.packageMultiplier = String(packageMultiplier);
 		}
 		if (stockQuantity !== undefined) {
-			const qtyStr = String(Math.max(0, stockQuantity));
+			const qtyStr = String(stockQuantity);
 			updatePayload.stockQuantity = qtyStr;
 			updatePayload.currentQty = qtyStr;
 		}

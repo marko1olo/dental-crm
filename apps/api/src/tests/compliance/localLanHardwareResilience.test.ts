@@ -29,7 +29,7 @@ import {
 	patients,
 	users,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
 import { registerImagingRoutes } from "../../routes/imaging.js";
 import { telephonyRoutes } from "../../routes/telephony/index.js";

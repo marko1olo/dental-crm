@@ -33,8 +33,10 @@ import {
   migrationDicomExtensions
 } from "./smartImportsConstants.js";
 import { resolveMigrationSourceRoute, migrationFingerprint } from "./smartImportsRoots.js";
-
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { migrationProbeVendorMatchers, migrationProbeArtifactKindTitles } from "./smartImportsProbeMatchers.js";
+
+const logger = createApiLogger("smartImportsProbe");
 
 export function uniqueStrings(values: string[]) {
 	return Array.from(new Set(values.filter((value) => value.trim())));
@@ -153,7 +155,7 @@ export function migrationProbeSafeArtifact(
 		byteSize = stat.size;
 		modifiedAt = stat.mtime.toISOString();
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.warn({ err: safeLogError(err), filePath }, "Failed to stat migration probe artifact");
 		// Probe output stays best-effort; unreadable files are reported as warnings by caller.
 	}
 	const extension = path.extname(filePath).toLowerCase() || null;
@@ -345,7 +347,7 @@ export async function inspectMigrationProbeFile(input: {
 				input.formatSignals.add(signal);
 			});
 		} catch (err) {
-			console.error("[Dente] context:", err);
+			logger.warn({ err: safeLogError(err), filePath: input.filePath }, "Failed to read migration probe header");
 			input.warnings.add(
 				"Один файл-кандидат не удалось прочитать даже для заголовка; он учтен без сигнатуры.",
 			);
@@ -442,7 +444,7 @@ export async function scanMigrationProbeDirectory(
 		try {
 			entries = await readdir(current.folderPath, { withFileTypes: true });
 		} catch (err) {
-			console.error("[Dente] context:", err);
+			logger.warn({ err: safeLogError(err), folderPath: current.folderPath }, "Failed to read migration probe directory");
 			warnings.add(
 				"Одну подпапку проверки не удалось прочитать; она пропущена.",
 			);
@@ -485,7 +487,7 @@ export async function scanMigrationProbeDirectory(
 				if (!latestModifiedAt || modified > latestModifiedAt)
 					latestModifiedAt = modified;
 			} catch (err) {
-				console.error("[Dente] context:", err);
+				logger.warn({ err: safeLogError(err), fullPath }, "Failed to stat file metadata during migration probe scan");
 				// Metadata is best-effort only.
 			}
 			await inspectMigrationProbeFile({
@@ -588,7 +590,7 @@ export async function buildMigrationLocalSourceProbe(
 			sourceByteSize = stat.isFile() ? stat.size : null;
 			latestModifiedAt = stat.mtime.toISOString();
 		} catch (err) {
-			console.error("[Dente] context:", err);
+			logger.warn({ err: safeLogError(err), sourceRef: normalizedSourceRef }, "Failed to stat normalized migration probe source");
 			sourceExists = false;
 			warnings.add(
 				"Источник сейчас недоступен; подключите диск/сетевую папку и повторите проверку.",

@@ -341,15 +341,15 @@ function parseXmlTree(xml: string): {
 		match = tagPattern.exec(working);
 		if (match === null) break;
 		const text = working.slice(lastIndex, match.index);
-		if (text.trim() && stack.length > 0) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			stack[stack.length - 1]!.text += decodeXmlEntities(text);
+		const topNode = stack[stack.length - 1];
+		if (text.trim() && topNode) {
+			topNode.text += decodeXmlEntities(text);
 		}
 		lastIndex = tagPattern.lastIndex;
 
 		const isClosing = match[0].startsWith("</");
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const name = match[1]!;
+		const name = match[1] ?? "";
+		if (!name) continue;
 		const selfClosing = match[3] === "/";
 
 		if (isClosing) {
@@ -363,10 +363,12 @@ function parseXmlTree(xml: string): {
 		for (const attributeMatch of (match[2] ?? "").matchAll(
 			/([\w.:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g,
 		)) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			attributes[attributeMatch[1]!] = decodeXmlEntities(
-				attributeMatch[2] ?? attributeMatch[3] ?? "",
-			);
+			const attrName = attributeMatch[1];
+			if (attrName) {
+				attributes[attrName] = decodeXmlEntities(
+					attributeMatch[2] ?? attributeMatch[3] ?? "",
+				);
+			}
 		}
 
 		const node: XmlNode = { name, attributes, children: [], text: "" };

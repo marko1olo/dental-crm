@@ -8,7 +8,12 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
 import type { TenantDb } from "../../../db/rls.js";
-import { labOrders } from "../../../db/schema.js";
+import {
+	intraoralScanSessions,
+	labItems,
+	labOrderEvents,
+	labOrders,
+} from "../../../db/schema.js";
 import { mapStageToLabOrderStatus } from "../types.js";
 import type { UpdateLabOrderInput } from "./labOrderValidationSchemas.js";
 import { isPermittedLabStatusTransition } from "./labOrderStatusTransitions.js";
@@ -55,7 +60,25 @@ export async function updateLabOrderInDb(
 		updateData.stage === "refitting" ||
 		targetStatus === "refitting";
 
-	if (currentOrder.isLockedInstalled && !isWarranty) {
+	// Автономия врача у кресла (Мандаты 8e, 8n): после фиксации конструкции блокируется изменение
+	// критических параметров (номера наряда, зубов, материала, стоимости), но разрешено вносить
+	// клинические примечания (clinicalNotes/doctorNotes), прикреплять снимки (attachedImageUrl) и гарантийный ремонт.
+	const isOnlyClinicalNotesOrScan =
+		updateData.orderNumber === undefined &&
+		updateData.toothFdi === undefined &&
+		updateData.teethFdi === undefined &&
+		updateData.material === undefined &&
+		updateData.materialId === undefined &&
+		updateData.materialName === undefined &&
+		updateData.priceRub === undefined &&
+		updateData.priceKopecks === undefined &&
+		updateData.costRub === undefined &&
+		updateData.costKopecks === undefined &&
+		updateData.labCostRub === undefined &&
+		updateData.labCostKopecks === undefined &&
+		(targetStatus === undefined || targetStatus === currentOrder.status);
+
+	if (currentOrder.isLockedInstalled && !isWarranty && !isOnlyClinicalNotesOrScan) {
 		return { kind: "locked_installed" as const };
 	}
 
@@ -168,6 +191,7 @@ export async function updateLabOrderInDb(
 
 /**
  * DB query helper: Delete lab order in database (only drafts or cancelled).
+ * Атомарная каскадная очистка связанных таблиц (labItems, labOrderEvents, отвязка сканов) в единой tx (Мандат 8bo).
  */
 export async function deleteLabOrderInDb(tx: TenantDb, orgId: string, id: string) {
 	const [existing] = await tx
@@ -181,6 +205,38 @@ export async function deleteLabOrderInDb(tx: TenantDb, orgId: string, id: string
 		return { kind: "cannot_delete" as const, status: existing.status };
 	}
 
+	// 1. Отвязка сессий 3D интраоральных сканов от удаляемого наряда ЗТЛ
+	await tx
+		.update(intraoralScanSessions)
+		.set({ labOrderId: null })
+		.where(
+			and(
+				eq(intraoralScanSessions.labOrderId, id),
+				eq(intraoralScanSessions.organizationId, orgId),
+			),
+		);
+
+	// 2. Удаление истории событий наряда ЗТЛ
+	await tx
+		.delete(labOrderEvents)
+		.where(
+			and(
+				eq(labOrderEvents.labOrderId, id),
+				eq(labOrderEvents.organizationId, orgId),
+			),
+		);
+
+	// 3. Удаление позиций конструкций наряда ЗТЛ
+	await tx
+		.delete(labItems)
+		.where(
+			and(
+				eq(labItems.labOrderId, id),
+				eq(labItems.organizationId, orgId),
+			),
+		);
+
+	// 4. Удаление самого наряда ЗТЛ
 	const [deleted] = await tx
 		.delete(labOrders)
 		.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))

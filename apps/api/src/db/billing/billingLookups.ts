@@ -16,11 +16,6 @@ export interface BillingDocumentLookupResult {
 	[key: string]: unknown;
 }
 
-export async function getDefaultOrganizationId(): Promise<string | null> {
-	const [org] = await db.select().from(schema.organizations).limit(1);
-	return org?.id || null;
-}
-
 export async function findPaymentByClientMutationIdInDb(
 	organizationId: string,
 	clientMutationId: string | null | undefined,

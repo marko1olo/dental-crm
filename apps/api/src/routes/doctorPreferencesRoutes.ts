@@ -31,7 +31,24 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 
 			const identity = getRequestIdentity(request);
 			const query = request.query as { doctorId?: string } | undefined;
-			const targetDoctorId = query?.doctorId || identity.userId || null;
+			const requestedDoctorId = query?.doctorId?.trim() || null;
+
+			// IDOR защита (DEF-DOCPREF-01): врач может запрашивать только свои настройки,
+			// если запрашивается чужой doctorId — требуется роль admin или owner.
+			const isPrivileged = identity.role === "admin" || identity.role === "owner";
+			if (
+				requestedDoctorId &&
+				identity.userId &&
+				requestedDoctorId !== identity.userId &&
+				!isPrivileged
+			) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ к индивидуальным клиническим настройкам других врачей ограничен.",
+				});
+			}
+
+			const targetDoctorId = requestedDoctorId || identity.userId || null;
 
 			const record = await getDoctorPreferencesFromDb(orgId, targetDoctorId);
 			if (!record) {
@@ -76,7 +93,24 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 			}
 
 			const identity = getRequestIdentity(request);
-			const doctorId = parsed.data.doctorId || identity.userId || null;
+			const requestedDoctorId = parsed.data.doctorId?.trim() || null;
+
+			// IDOR защита (DEF-DOCPREF-01): сохранять настройки чужого врача могут только admin и owner
+			const isPrivileged = identity.role === "admin" || identity.role === "owner";
+			if (
+				requestedDoctorId &&
+				identity.userId &&
+				requestedDoctorId !== identity.userId &&
+				!isPrivileged
+			) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message:
+						"Изменение индивидуальных клинических настроек других врачей доступно только руководству.",
+				});
+			}
+
+			const doctorId = requestedDoctorId || identity.userId || null;
 			const specialty = parsed.data.specialty || "therapist";
 
 			const saved = await saveDoctorPreferencesInDb(

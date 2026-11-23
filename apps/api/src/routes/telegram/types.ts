@@ -18,7 +18,7 @@ import type {
 	DomainState,
 	createDenteTelegramCareRequest,
 	DenteTelegramOutboxRuntimeScope,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 
 // Constants
 export const telegramPhotoSentTextFailedBlockedReason =

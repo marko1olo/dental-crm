@@ -1,8 +1,8 @@
 import type { DenteTelegramChatLink } from "@dental/shared";
 import type { FastifyRequest } from "fastify";
 import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
-import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
-import { inMemoryDomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import type { DomainState } from "./telegramCanonicalStore.js";
+import { inMemoryDomainState } from "./telegramCanonicalStore.js";
 import { isDbConnectionError } from "../../services/telegram/TelegramReferralLoyaltyService.js";
 import { upsertDenteTelegramChatLink } from "../../telegram/chatLinks.js";
 import type { TelegramRuntimeContext } from "./types.js";

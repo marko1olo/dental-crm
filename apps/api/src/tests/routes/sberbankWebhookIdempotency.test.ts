@@ -5,6 +5,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
+	fiscalReceiptQueue,
 	generatedDocuments,
 	organizations,
 	patientInvoices,
@@ -19,9 +20,9 @@ import {
 	verifySberbankChecksum,
 } from "../../routes/sberbank.js";
 import {
-	registerSbpQrRoutes,
+	registerSbpRoutes as registerSbpQrRoutes,
 	verifySbpWebhookSignature,
-} from "../../routes/sbpQr.js";
+} from "../../routes/sbp/index.js";
 import { registerSberPosWebhookRoutes } from "../../routes/payments/sberPosWebhookRoute.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -376,6 +377,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		);
 		assert.equal(pRows.length, 1);
 		assert.equal(pRows[0]?.amountRub, 2000);
+		assert.equal(pRows[0]?.amountKopecks, 200000n);
 		assert.equal(pRows[0]?.status, "paid");
 	});
 
@@ -461,6 +463,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		);
 		assert.equal(pRows.length, 1);
 		assert.equal(pRows[0]?.amountRub, 3500);
+		assert.equal(pRows[0]?.amountKopecks, 350000n);
 	});
 
 	test("3. SBP Webhook: Sequential duplicate webhooks return 200 OK already_processed without duplicate payments", async (context) => {
@@ -528,8 +531,24 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		);
 		assert.equal(pRows.length, 1);
 		assert.equal(pRows[0]?.amountRub, 1500);
+		assert.equal(pRows[0]?.amountKopecks, 150000n);
 		assert.equal(pRows[0]?.status, "paid");
 		assert.equal(pRows[0]?.method, "online");
+
+		// Assert fiscalReceiptQueue has receipt enqueued for this SBP payment
+		const qRows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						eq(fiscalReceiptQueue.paymentId, pRows[0]?.id ?? ""),
+					),
+				),
+		);
+		assert.equal(qRows.length, 1);
+		assert.equal(qRows[0]?.status, "pending_print");
 	});
 
 	test("4. SBP Webhook: Concurrent parallel webhooks guarantee single payment creation and state lock", async (context) => {
@@ -612,6 +631,22 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		);
 		assert.equal(pRows.length, 1);
 		assert.equal(pRows[0]?.amountRub, 4800);
+		assert.equal(pRows[0]?.amountKopecks, 480000n);
+
+		// Assert fiscalReceiptQueue has receipt with Tag 1081 (sbpKopecks)
+		const qRows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						eq(fiscalReceiptQueue.paymentId, pRows[0]?.id ?? ""),
+					),
+				),
+		);
+		assert.equal(qRows.length, 1);
+		assert.equal(qRows[0]?.status, "pending_print");
 	});
 
 	test("5. POS Initiate: Cashier double-click with identical idempotencyKey returns 200 isDuplicate=true and does not duplicate transaction", async () => {

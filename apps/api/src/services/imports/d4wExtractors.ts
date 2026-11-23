@@ -3,6 +3,7 @@
  */
 import { D4wXmlTokenizer, type XmlNode } from "./d4wXmlTokenizer.js";
 import { Dental4WindowsXmlParser } from "./d4wParser.js";
+import { kopecksToRubles } from "@dental/shared";
 import type {
   D4WAppointmentRecord,
   D4WInvoiceRecord,
@@ -141,7 +142,7 @@ export class D4wExtractors {
 			const balanceKopecks =
 				Dental4WindowsXmlParser.parseKopecks(rawBalance);
 			const balanceRub =
-				balanceKopecks !== null ? Math.round(balanceKopecks) / 100 : null;
+				balanceKopecks !== null ? kopecksToRubles(balanceKopecks) : null;
 
 			results.push({
 				externalId,
@@ -355,13 +356,13 @@ export class D4wExtractors {
 						values["amount"] ||
 						values["fee"],
 				) ?? 0;
-			const totalRub = Math.round(totalKopecks) / 100;
+			const totalRub = kopecksToRubles(totalKopecks);
 
 			const paidKopecks =
 				Dental4WindowsXmlParser.parseKopecks(
 					values["paidamount"] || values["paid"] || values["amountpaid"],
 				) ?? totalKopecks;
-			const paidRub = Math.round(paidKopecks) / 100;
+			const paidRub = kopecksToRubles(paidKopecks);
 
 			const rawMethod = (
 				values["paymentmethod"] ||
@@ -413,7 +414,7 @@ export class D4wExtractors {
 					surface:
 						itemVals["surface"] || itemVals["surfaces"] || null,
 					feeKopecks: itemFeeKopecks,
-					feeRub: Math.round(itemFeeKopecks) / 100,
+					feeRub: kopecksToRubles(itemFeeKopecks),
 					quantity: Number.parseInt(itemVals["qty"] || "1", 10) || 1,
 				});
 			});
@@ -491,7 +492,7 @@ export class D4wExtractors {
 						values["amount"] ||
 						values["standardfee"],
 				) ?? 0;
-			const feeRub = Math.round(feeKopecks) / 100;
+			const feeRub = kopecksToRubles(feeKopecks);
 
 			results.push({
 				itemCode,

@@ -227,6 +227,7 @@ export async function handleCreateInvoice(
 			visitId: effectiveVisitId,
 			totalRub: String(totalAmountRub),
 			totalAmountRub,
+			totalPriceKopecks: finalNetKopecks,
 			status: invoiceStatus,
 			issuedAt: now,
 			createdAt: now,

@@ -72,6 +72,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			}>,
 			reply: FastifyReply,
 		) => {
+			// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
@@ -282,8 +283,34 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		return reply.code(result.statusCode).send(result.body);
 	};
 
-	app.post("/api/cashbox/payments", handleCashboxPayment);
-	app.post("/api/cash/payments", handleCashboxPayment);
-	app.post("/api/cashbox/receipt", handleCashboxPayment);
-	app.post("/api/cash/receipt", handleCashboxPayment);
+	const cashboxPaymentRouteOptions = {
+		schema: {
+			description:
+				"Cashbox payment with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cashbox/payments", cashboxPaymentRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashboxPayment(request, reply);
+	});
+	app.post("/api/cash/payments", cashboxPaymentRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashboxPayment(request, reply);
+	});
+	app.post("/api/cashbox/receipt", cashboxPaymentRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashboxPayment(request, reply);
+	});
+	app.post("/api/cash/receipt", cashboxPaymentRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashboxPayment(request, reply);
+	});
 }

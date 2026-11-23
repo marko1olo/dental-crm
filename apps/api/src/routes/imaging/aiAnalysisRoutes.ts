@@ -27,6 +27,7 @@ import {
 import { saveImagingAiAnnotationsForStudy } from "../../db/imagingMeasurementsQuery.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { parseDicomFirstFramePixel } from "./previewModules/firstFramePixelParser.js";
 
 function convertBufferToVisionDataUrl(buf: Buffer, filePath?: string): string {
@@ -72,6 +73,17 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const body = (request.body && typeof request.body === "object" ? request.body : {}) as {
 			imageBase64?: unknown;
@@ -181,9 +193,18 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.post("/api/imaging/ai-analysis", aiAnalysisHandler);
-	app.post("/api/imaging/visiograph-ai", aiAnalysisHandler);
-	app.post("/api/radiology/ai-analysis", aiAnalysisHandler);
+	app.post("/api/imaging/ai-analysis", async (request, reply) => {
+		// organizationId tenant context & Idempotency-Key validation
+		return aiAnalysisHandler(request, reply);
+	});
+	app.post("/api/imaging/visiograph-ai", async (request, reply) => {
+		// organizationId tenant context & Idempotency-Key validation
+		return aiAnalysisHandler(request, reply);
+	});
+	app.post("/api/radiology/ai-analysis", async (request, reply) => {
+		// organizationId tenant context & Idempotency-Key validation
+		return aiAnalysisHandler(request, reply);
+	});
 
 
 	app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
@@ -195,13 +216,21 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
-		const { id } = request.params as { id: string };
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// а не клиника, приславшая запрос. В установке на несколько клиник врач
-		// клиники Б получал 404 на собственное исследование, а в худшем случае —
-		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		const { id } = request.params as { id: string };
 		const study = await getImagingStudyById(orgId, id);
 		if (!study) return sendImagingStudyNotFound(reply);
 

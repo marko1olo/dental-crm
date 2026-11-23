@@ -10,39 +10,54 @@ import { desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, users } from "../../../../db/schema.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../../utils/httpIdempotency.js";
 
 export async function handleGetPsoTests(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "read pso tests");
 	if (!organizationId) return;
 
-	return db
-		.select({
-			id: preSterilizationCleaningLogs.id,
-			organizationId: preSterilizationCleaningLogs.organizationId,
-			testType: preSterilizationCleaningLogs.testType,
-			batchItemCount: preSterilizationCleaningLogs.batchItemCount,
-			testedSampleCount: preSterilizationCleaningLogs.testedSampleCount,
-			isAzopyramNegative: preSterilizationCleaningLogs.isAzopyramNegative,
-			isPhenolphthaleinNegative: preSterilizationCleaningLogs.isPhenolphthaleinNegative,
-			isBatchApproved: preSterilizationCleaningLogs.isBatchApproved,
-			detergentBrand: preSterilizationCleaningLogs.detergentBrand,
-			rejectionReason: preSterilizationCleaningLogs.rejectionReason,
-			operatorId: preSterilizationCleaningLogs.operatorId,
-			operatorName: users.fullName,
-			notes: preSterilizationCleaningLogs.notes,
-			timestamp: preSterilizationCleaningLogs.timestamp,
-			createdAt: preSterilizationCleaningLogs.createdAt,
-		})
-		.from(preSterilizationCleaningLogs)
-		.leftJoin(users, eq(users.id, preSterilizationCleaningLogs.operatorId))
-		.where(eq(preSterilizationCleaningLogs.organizationId, organizationId))
-		.orderBy(desc(preSterilizationCleaningLogs.timestamp));
+	return withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select({
+				id: preSterilizationCleaningLogs.id,
+				organizationId: preSterilizationCleaningLogs.organizationId,
+				testType: preSterilizationCleaningLogs.testType,
+				batchItemCount: preSterilizationCleaningLogs.batchItemCount,
+				testedSampleCount: preSterilizationCleaningLogs.testedSampleCount,
+				isAzopyramNegative: preSterilizationCleaningLogs.isAzopyramNegative,
+				isPhenolphthaleinNegative: preSterilizationCleaningLogs.isPhenolphthaleinNegative,
+				isBatchApproved: preSterilizationCleaningLogs.isBatchApproved,
+				detergentBrand: preSterilizationCleaningLogs.detergentBrand,
+				rejectionReason: preSterilizationCleaningLogs.rejectionReason,
+				operatorId: preSterilizationCleaningLogs.operatorId,
+				operatorName: users.fullName,
+				notes: preSterilizationCleaningLogs.notes,
+				timestamp: preSterilizationCleaningLogs.timestamp,
+				createdAt: preSterilizationCleaningLogs.createdAt,
+			})
+			.from(preSterilizationCleaningLogs)
+			.leftJoin(users, eq(users.id, preSterilizationCleaningLogs.operatorId))
+			.where(eq(preSterilizationCleaningLogs.organizationId, organizationId))
+			.orderBy(desc(preSterilizationCleaningLogs.timestamp));
+	});
 }
 
 export async function handleCreatePsoTest(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization pso test");
 	if (!organizationId) return;
+
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const parsed = createPsoCleaningLogSchema.safeParse(req.body);
 	if (!parsed.success) {
@@ -60,23 +75,25 @@ export async function handleCreatePsoTest(req: FastifyRequest, reply: FastifyRep
 		data.isPhenolphthaleinNegative,
 	);
 
-	const [log] = await db
-		.insert(preSterilizationCleaningLogs)
-		.values({
-			organizationId,
-			testType: data.testType,
-			batchItemCount: data.batchItemCount,
-			testedSampleCount: data.testedSampleCount,
-			isAzopyramNegative: data.isAzopyramNegative,
-			isPhenolphthaleinNegative: data.isPhenolphthaleinNegative,
-			isBatchApproved: evaluation.isBatchApproved,
-			detergentBrand: data.detergentBrand ?? null,
-			rejectionReason: evaluation.rejectionReason,
-			operatorId: data.operatorId ?? null,
-			notes: data.notes ?? null,
-			timestamp: new Date(),
-		})
-		.returning();
+	const [log] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: data.testType,
+				batchItemCount: data.batchItemCount,
+				testedSampleCount: data.testedSampleCount,
+				isAzopyramNegative: data.isAzopyramNegative,
+				isPhenolphthaleinNegative: data.isPhenolphthaleinNegative,
+				isBatchApproved: evaluation.isBatchApproved,
+				detergentBrand: data.detergentBrand ?? null,
+				rejectionReason: evaluation.rejectionReason,
+				operatorId: data.operatorId ?? null,
+				notes: data.notes ?? null,
+				timestamp: new Date(),
+			})
+			.returning();
+	});
 
 	return reply.code(201).send({ success: true, log, evaluation });
 }
@@ -84,6 +101,17 @@ export async function handleCreatePsoTest(req: FastifyRequest, reply: FastifyRep
 export async function handlePsoQuickNorm(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization pso quick norm");
 	if (!organizationId) return;
+
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const body = (req.body as {
 		batchItemCount?: number;
@@ -99,23 +127,25 @@ export async function handlePsoQuickNorm(req: FastifyRequest, reply: FastifyRepl
 
 	const evaluation = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(batchItemCount, testedSampleCount, true, true);
 
-	const [log] = await db
-		.insert(preSterilizationCleaningLogs)
-		.values({
-			organizationId,
-			testType: "both",
-			batchItemCount,
-			testedSampleCount,
-			isAzopyramNegative: true,
-			isPhenolphthaleinNegative: true,
-			isBatchApproved: true,
-			detergentBrand,
-			rejectionReason: null,
-			operatorId: body.operatorId ?? null,
-			notes,
-			timestamp: new Date(),
-		})
-		.returning();
+	const [log] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount,
+				testedSampleCount,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand,
+				rejectionReason: null,
+				operatorId: body.operatorId ?? null,
+				notes,
+				timestamp: new Date(),
+			})
+			.returning();
+	});
 
 	return reply.code(201).send({
 		success: true,

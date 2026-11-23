@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { uisSmsChatQuotas } from "./schema.js";
 
@@ -34,35 +34,19 @@ export async function getDailySmsQuota(organizationId: string) {
 export async function incrementDailySmsQuota(organizationId: string) {
 	const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-	const [existing] = await db
-		.select()
-		.from(uisSmsChatQuotas)
-		.where(
-			and(
-				eq(uisSmsChatQuotas.organizationId, organizationId),
-				eq(uisSmsChatQuotas.monthYear, today),
-			),
-		)
-		.limit(1);
-
-	if (existing) {
-		await db
-			.update(uisSmsChatQuotas)
-			.set({
-				smsSentCount: existing.smsSentCount + 1,
-			})
-			.where(
-				and(
-					eq(uisSmsChatQuotas.organizationId, organizationId),
-					eq(uisSmsChatQuotas.monthYear, today),
-				),
-			);
-	} else {
-		await db.insert(uisSmsChatQuotas).values({
+	await db
+		.insert(uisSmsChatQuotas)
+		.values({
 			organizationId,
 			monthYear: today,
 			smsSentCount: 1,
 			smsQuotaLimit: 300,
+			costKopecks: 0,
+		})
+		.onConflictDoUpdate({
+			target: [uisSmsChatQuotas.organizationId, uisSmsChatQuotas.monthYear],
+			set: {
+				smsSentCount: sql`${uisSmsChatQuotas.smsSentCount} + 1`,
+			},
 		});
-	}
 }

@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-	InsufficientStockError,
-	isDeductibleQuantity,
-} from "../../services/inventory/materialDeduction.js";
+import { isDeductibleQuantity } from "@dental/shared";
+import { InsufficientStockError } from "../../services/treatmentConsumables/types.js";
 
 describe("Medical Inventory Material Deduction Invariants", () => {
 	it("validates deductible quantities strictly (positive finite numbers only)", () => {

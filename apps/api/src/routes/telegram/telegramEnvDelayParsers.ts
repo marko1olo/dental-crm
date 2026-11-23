@@ -2,7 +2,7 @@ import type {
 	DenteTelegramPostVisitCheckupDelayHoursByTopic,
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
-import { safeDenteTelegramPublicHttpsUrl } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { safeDenteTelegramPublicHttpsUrl } from "./telegramUrlHelpers.js";
 import { stringFromEnvConfig } from "./telegramEnvUtils.js";
 import { isRecord } from "./telegramUtils.js";
 import type { UnknownRecord } from "./types.js";

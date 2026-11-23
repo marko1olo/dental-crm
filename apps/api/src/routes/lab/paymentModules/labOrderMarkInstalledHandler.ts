@@ -23,21 +23,18 @@ export async function labOrderMarkInstalledHandler(
 		(request.headers?.["x-idempotency-key"] as string | undefined) ??
 		(request.headers?.["Idempotency-Key"] as string | undefined);
 
-	const idempotencyKey = rawIdempotencyKey?.trim();
+	let idempotencyKey = rawIdempotencyKey?.trim();
 	if (!idempotencyKey) {
-		return reply.code(400).send({
-			error: "IdempotencyKeyRequired",
-			message: "Для сдачи и фиксации ортопедической работы обязателен заголовок Idempotency-Key (UUIDv7).",
-		});
-	}
-
-	const uuidValidation = z.string().uuid().safeParse(idempotencyKey);
-	if (!uuidValidation.success) {
-		return reply.code(400).send({
-			error: "InvalidIdempotencyKey",
-			message: "Некорректный формат Idempotency-Key (ожидается валидный UUIDv7).",
-			details: uuidValidation.error.issues,
-		});
+		idempotencyKey = generateUuidV7();
+	} else {
+		const uuidValidation = z.string().uuid().safeParse(idempotencyKey);
+		if (!uuidValidation.success) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный формат Idempotency-Key (ожидается валидный UUIDv7).",
+				details: uuidValidation.error.issues,
+			});
+		}
 	}
 
 	reply.header("Idempotency-Key", idempotencyKey);

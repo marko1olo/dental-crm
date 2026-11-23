@@ -8,10 +8,14 @@
 import {
 	parseKopecks,
 	kopecksToNumericString,
+	kopecksToRubles,
+	rublesToKopecks,
+	toExactKopecks,
 	type RedeemCertificateBody,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import {
 	cashBoxes,
 	cashOperations,
@@ -22,6 +26,13 @@ import {
 } from "../../db/schema.js";
 import type { FormattedCertificateDto, RedeemCertificateResult } from "./certificateTypes.js";
 
+function isPgUniqueViolation(err: unknown): boolean {
+	const candidate = err as { code?: unknown; cause?: unknown };
+	if (candidate?.code === "23505") return true;
+	if (candidate?.cause) return isPgUniqueViolation(candidate.cause);
+	return false;
+}
+
 /**
  * Списание средств с подарочного сертификата в счет оплаты лечения.
  * Фискальный зачёт аванса по 54-ФЗ (тег 1215). Метод оплаты: "certificate".
@@ -29,7 +40,8 @@ import type { FormattedCertificateDto, RedeemCertificateResult } from "./certifi
 export async function executeRedeemGiftCertificate(
 	orgId: string,
 	data: RedeemCertificateBody,
-	clientMutationId?: string | null,
+	clientMutationId?: string | null | undefined,
+	txClient?: TenantDb | undefined,
 ): Promise<RedeemCertificateResult> {
 	const {
 		serialNumber,
@@ -43,7 +55,7 @@ export async function executeRedeemGiftCertificate(
 
 	const cleaned = serialNumber.replace(/[\s-]/g, "");
 
-	return db.transaction(async (tx) => {
+	const execute = async (tx: TenantDb): Promise<RedeemCertificateResult> => {
 		if (clientMutationId) {
 			const [existingPayment] = await tx
 				.select()
@@ -54,7 +66,8 @@ export async function executeRedeemGiftCertificate(
 						eq(payments.clientMutationId, clientMutationId),
 					),
 				)
-				.limit(1);
+				.limit(1)
+				.for("update");
 
 			if (existingPayment) {
 				const [existingCert] = await tx
@@ -66,27 +79,34 @@ export async function executeRedeemGiftCertificate(
 							sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
 						),
 					)
-					.limit(1);
+					.limit(1)
+					.for("update");
 
 				if (existingCert) {
 					const existingRedeemedKop = parseKopecks(existingPayment.amountRub);
-					const existingRedeemedRub = Number(kopecksToNumericString(existingRedeemedKop));
-					const currentBalKop = parseKopecks(existingCert.currentBalanceRub);
-					const currentBalRub = Number(kopecksToNumericString(currentBalKop));
+					const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
+					const currentBalKop = existingCert.currentBalanceKopecks != null
+						? existingCert.currentBalanceKopecks
+						: parseKopecks(existingCert.currentBalanceRub);
+					const currentBalRub = kopecksToRubles(currentBalKop);
+					const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+					const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
+					const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
 					return {
-						success: true,
+						success: true as const,
+						replayed: true as const,
 						certificateId: existingCert.id,
 						serialNumber: existingCert.serialNumber,
-						previousBalanceRub: Number(kopecksToNumericString(currentBalKop + existingRedeemedKop)),
+						previousBalanceRub: kopecksToRubles(currentBalKop + existingRedeemedKop),
 						redeemedAmountRub: existingRedeemedRub,
 						newBalanceRub: currentBalRub,
-						remainingInvoiceAmountRub: 0,
+						remainingInvoiceAmountRub,
 						status: existingCert.status,
 						paymentId: existingPayment.id,
-						invoicePaid: true,
+						invoicePaid: remainingInvoiceKop <= 0,
 						fiscal54FzSplit: {
 							tag1215AdvanceOffsetKop: existingRedeemedKop,
-							tag1081ElectronicKop: 0,
+							tag1081ElectronicKop: remainingInvoiceKop,
 						},
 					};
 				}
@@ -123,7 +143,9 @@ export async function executeRedeemGiftCertificate(
 			};
 		}
 
-		const currentBalanceKop = parseKopecks(cert.currentBalanceRub);
+		const currentBalanceKop = cert.currentBalanceKopecks != null
+			? Number(cert.currentBalanceKopecks)
+			: parseKopecks(cert.currentBalanceRub);
 		if (currentBalanceKop <= 0) {
 			return { error: true, message: "Баланс сертификата равен 0 ₽", code: 400 };
 		}
@@ -137,16 +159,17 @@ export async function executeRedeemGiftCertificate(
 					: invoiceAmountKop;
 
 		const redeemedKop = Math.min(currentBalanceKop, requestedDeductionKop, invoiceAmountKop);
-		const redeemedRub = Number(kopecksToNumericString(redeemedKop));
+		const redeemedRub = kopecksToRubles(redeemedKop);
 		const newBalanceKop = Math.max(0, currentBalanceKop - redeemedKop);
 		const newBalanceStr = kopecksToNumericString(newBalanceKop);
-		const newBalanceRub = Number(newBalanceStr);
+		const newBalanceRub = kopecksToRubles(newBalanceKop);
 		const newStatus = newBalanceKop <= 0 ? "depleted" : "active";
 
 		await tx
 			.update(giftCertificates)
 			.set({
 				currentBalanceRub: newBalanceStr,
+				currentBalanceKopecks: newBalanceKop,
 				status: newStatus,
 				updatedAt: new Date(),
 			})
@@ -184,6 +207,7 @@ export async function executeRedeemGiftCertificate(
 					patientId: targetPatientId,
 					documentId: invoiceId,
 					amountRub: redeemedRub,
+					amountKopecks: BigInt(redeemedKop),
 					method: "certificate",
 					status: "paid",
 					paidAt: new Date(),
@@ -194,7 +218,7 @@ export async function executeRedeemGiftCertificate(
 
 			paymentId = payRecord?.id ?? null;
 
-			// Проводка зачета аванса по сертификату в кассовый журнал
+			// Проводка зачета аванса по сертификату в кассовый журнал со строгим enum кассы (income)
 			const [cashDeskBox] = await tx
 				.select()
 				.from(cashBoxes)
@@ -205,7 +229,7 @@ export async function executeRedeemGiftCertificate(
 				await tx.insert(cashOperations).values({
 					organizationId: orgId,
 					cashBoxId: cashDeskBox.id,
-					operationType: "advance_offset",
+					operationType: "income",
 					amountRub: redeemedRub,
 					amountKopecks: Number(redeemedKop),
 					balanceBeforeRub: cashDeskBox.balanceRub || 0,
@@ -214,6 +238,12 @@ export async function executeRedeemGiftCertificate(
 					kkmDocNumber: `CERT-${Date.now()}`,
 					reasonText: `Зачёт аванса (сертификат №${cert.serialNumber}): оплата стоматологических услуг`,
 					operatorName: "Администратор",
+					metadata: {
+						tenderType: "certificate",
+						isAdvanceOffset: true,
+						certificateNumber: cert.serialNumber,
+						tag1215AdvanceKopecks: Number(redeemedKop),
+					},
 				});
 			}
 
@@ -260,13 +290,13 @@ export async function executeRedeemGiftCertificate(
 		}
 
 		const remainingInvoiceKop = Math.max(0, invoiceAmountKop - redeemedKop);
-		const remainingInvoiceAmountRub = Number(kopecksToNumericString(remainingInvoiceKop));
+		const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
 
 		return {
-			success: true,
+			success: true as const,
 			certificateId: cert.id,
 			serialNumber: cert.serialNumber,
-			previousBalanceRub: Number(kopecksToNumericString(currentBalanceKop)),
+			previousBalanceRub: kopecksToRubles(currentBalanceKop),
 			redeemedAmountRub: redeemedRub,
 			newBalanceRub,
 			remainingInvoiceAmountRub,
@@ -278,7 +308,77 @@ export async function executeRedeemGiftCertificate(
 				tag1081ElectronicKop: remainingInvoiceKop,
 			},
 		};
-	});
+	};
+
+	if (clientMutationId) {
+		try {
+			if (txClient) {
+				return await execute(txClient);
+			}
+			return await db.transaction(execute);
+		} catch (err) {
+			if (isPgUniqueViolation(err)) {
+				const [existingPayment] = await db
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.clientMutationId, clientMutationId),
+						),
+					)
+					.limit(1);
+
+				if (existingPayment) {
+					const [existingCert] = await db
+						.select()
+						.from(giftCertificates)
+						.where(
+							and(
+								eq(giftCertificates.organizationId, orgId),
+								sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
+							),
+						)
+						.limit(1);
+
+					if (existingCert) {
+						const existingRedeemedKop = parseKopecks(existingPayment.amountRub);
+						const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
+						const currentBalKop = existingCert.currentBalanceKopecks != null
+							? existingCert.currentBalanceKopecks
+							: parseKopecks(existingCert.currentBalanceRub);
+						const currentBalRub = kopecksToRubles(currentBalKop);
+						const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+						const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
+						const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
+						return {
+							success: true as const,
+							replayed: true as const,
+							certificateId: existingCert.id,
+							serialNumber: existingCert.serialNumber,
+							previousBalanceRub: kopecksToRubles(currentBalKop + existingRedeemedKop),
+							redeemedAmountRub: existingRedeemedRub,
+							newBalanceRub: currentBalRub,
+							remainingInvoiceAmountRub,
+							status: existingCert.status,
+							paymentId: existingPayment.id,
+							invoicePaid: remainingInvoiceKop <= 0,
+							fiscal54FzSplit: {
+								tag1215AdvanceOffsetKop: existingRedeemedKop,
+								tag1081ElectronicKop: remainingInvoiceKop,
+							},
+						};
+					}
+				}
+			}
+			throw err;
+		}
+	}
+
+	if (txClient) {
+		return execute(txClient);
+	}
+	return db.transaction(execute);
 }
 
 /**
@@ -292,19 +392,23 @@ export async function listGiftCertificates(orgId: string): Promise<readonly Form
 		.orderBy(desc(giftCertificates.createdAt))
 		.limit(100);
 
-	return rows.map((r) => ({
-		id: r.id,
-		serialNumber: r.serialNumber,
-		nominalRub: Number(r.nominalRub),
-		currentBalanceRub: Number(r.currentBalanceRub),
-		nominalKop: parseKopecks(r.nominalRub),
-		currentBalanceKop: parseKopecks(r.currentBalanceRub),
-		purchaserName: r.purchaserName,
-		recipientName: r.recipientName,
-		recipientPhone: r.recipientPhone,
-		status: r.status,
-		issuedAtIso: r.issuedAt.toISOString(),
-		expiresAtIso: r.expiresAt.toISOString(),
-		notes: r.notes,
-	}));
+	return rows.map((r) => {
+		const nomKop = Number(r.nominalKopecks != null ? r.nominalKopecks : parseKopecks(r.nominalRub));
+		const curBalKop = Number(r.currentBalanceKopecks != null ? r.currentBalanceKopecks : parseKopecks(r.currentBalanceRub));
+		return {
+			id: r.id,
+			serialNumber: r.serialNumber,
+			nominalRub: kopecksToRubles(nomKop),
+			currentBalanceRub: kopecksToRubles(curBalKop),
+			nominalKop: nomKop,
+			currentBalanceKop: curBalKop,
+			purchaserName: r.purchaserName,
+			recipientName: r.recipientName,
+			recipientPhone: r.recipientPhone,
+			status: r.status,
+			issuedAtIso: r.issuedAt.toISOString(),
+			expiresAtIso: r.expiresAt.toISOString(),
+			notes: r.notes,
+		};
+	});
 }

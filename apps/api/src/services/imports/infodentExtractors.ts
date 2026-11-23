@@ -2,6 +2,7 @@
  * Entity extraction helpers from Infodent CSV rows.
  */
 import { InfodentCsvParser } from "./infodentParser.js";
+import { kopecksToRubles } from "@dental/shared";
 import {
   PATIENT_HEADER_ALIASES,
   VISIT_HEADER_ALIASES,
@@ -96,7 +97,7 @@ export class InfodentExtractors {
 				discountCard: getValue("discountCard") || null,
 				balanceRub:
 					balanceKopecks !== null
-						? Math.round(balanceKopecks) / 100
+						? kopecksToRubles(balanceKopecks)
 						: null,
 				balanceKopecks,
 				passport: getValue("passport") || null,
@@ -236,7 +237,7 @@ export class InfodentExtractors {
 
 			const amountKopecks =
 				InfodentCsvParser.parseKopecks(getValue("amount")) ?? 0;
-			const amountRub = Math.round(amountKopecks) / 100;
+			const amountRub = kopecksToRubles(amountKopecks);
 			const paidAt =
 				InfodentCsvParser.normalizeDate(getValue("paidAt")) ||
 				new Date().toISOString().slice(0, 10);
@@ -317,7 +318,7 @@ export class InfodentExtractors {
 
 			const priceKopecks =
 				InfodentCsvParser.parseKopecks(getValue("price")) ?? 0;
-			const priceRub = Math.round(priceKopecks) / 100;
+			const priceRub = kopecksToRubles(priceKopecks);
 
 			records.push({
 				code: getValue("code") || `price-item-${sourceRow}`,

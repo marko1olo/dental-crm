@@ -15,6 +15,9 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("medicalAuditTrail");
 import {
 	auditEvents,
 	treatmentPlans,
@@ -148,10 +151,15 @@ export async function recordMedicalRecordAccessAudit(
 		});
 	} catch (error) {
 		// Аварийный канал протоколирования: запись аудита не должна ронять клинический прием,
-		// но отказ должен быть зафиксирован в аварийном потоке stderr
-		console.error(
-			`[MedicalAuditTrail] АВАРИЯ: Не удалось сохранить аудит-запись 152-ФЗ (org=${input.organizationId}, patient=${input.patientId}, actor=${input.actorUserId}):`,
-			error,
+		// но отказ должен быть зафиксирован в структурированном логгере
+		logger.error(
+			{
+				err: safeLogError(error),
+				organizationId: input.organizationId,
+				patientId: input.patientId,
+				actorUserId: input.actorUserId,
+			},
+			"Не удалось сохранить аудит-запись 152-ФЗ",
 		);
 	}
 }
@@ -254,6 +262,7 @@ export async function getMedicalAccessAuditTrailFromDb(
 		.limit(limit);
 
 	return rows.map((row) => {
+		const match = row.reason?.match(/диагноз «([^»]+)»/);
 		return {
 			id: row.id,
 			organizationId: row.organizationId,
@@ -262,7 +271,7 @@ export async function getMedicalAccessAuditTrailFromDb(
 			actorLogin: null,
 			action: row.action,
 			eventType: "DIAGNOSIS_ACCESS",
-			diagnosis: row.reason,
+			diagnosis: match ? (match[1] ?? row.reason) : row.reason,
 			ipAddress: null,
 			userAgent: null,
 			createdAt:

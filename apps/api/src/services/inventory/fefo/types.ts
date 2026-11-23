@@ -1,3 +1,4 @@
+import type { SupplierPurchaseOrder } from "@dental/shared";
 import type { db } from "../../../db/client.js";
 import type { TenantDb } from "../../../db/rls.js";
 
@@ -23,6 +24,7 @@ export interface FefoDeductionResult {
 	isNegativeStock?: boolean | undefined;
 	requiresReplenishment?: boolean | undefined;
 	warning?: string | undefined;
+	purchaseOrder?: SupplierPurchaseOrder | null | undefined;
 }
 
 export interface ReceiveBatchInput {

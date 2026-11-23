@@ -89,10 +89,6 @@ export async function registerRecognitionRoutes(app: FastifyInstance): Promise<v
 			if (!orgId) return;
 			const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
 			if (!parsedInput.success) {
-				console.error(
-					"SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:",
-					parsedInput.error.format(),
-				);
 				return reply.code(400).send({
 					error: "AiRecognitionValidationError",
 					message: aiRecognitionValidationMessage,

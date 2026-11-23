@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	date,
 	index,
@@ -43,6 +44,9 @@ export const stockBatches = pgTable(
 			precision: 12,
 			scale: 2,
 		}).default("0"),
+		purchasePricePerUnitKopecks: bigint("purchase_price_per_unit_kopecks", {
+			mode: "bigint",
+		}),
 		status: text("status").notNull().default("active"), // active | depleted | expired | quarantine
 		barcode: text("barcode"),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -93,6 +97,7 @@ export const inventoryTransactions = pgTable(
 		// alias — some routes call it quantityChanged
 		quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
 		unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
+		unitCostKopecks: bigint("unit_cost_kopecks", { mode: "bigint" }),
 		isOverdraft: boolean("is_overdraft").default(false),
 		userId: uuid("user_id"),
 		notes: text("notes"),
@@ -154,6 +159,7 @@ export const mdlpItems = pgTable(
 			onDelete: "set null",
 		}),
 		costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
+		costKopecks: bigint("cost_kopecks", { mode: "bigint" }),
 		warehouseId: uuid("warehouse_id").references(() => warehouses.id, {
 			onDelete: "set null",
 		}),

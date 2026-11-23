@@ -124,8 +124,7 @@ export function quoteStateOf(fragment: string): boolean {
 	let inQuotes = false;
 	let fieldEmpty = true;
 	for (let index = 0; index < fragment.length; index += 1) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const char = fragment[index]!;
+		const char = fragment[index] ?? "";
 		if (inQuotes) {
 			if (char === '"') {
 				if (fragment[index + 1] === '"') {
@@ -184,8 +183,7 @@ export class DelimitedRowAccumulator {
 		let consumedTo = 0;
 
 		for (let index = 0; index < this.buffer.length; index += 1) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const char = this.buffer[index]!;
+			const char = this.buffer[index] ?? "";
 
 			if (this.inQuotes) {
 				if (char === '"') {

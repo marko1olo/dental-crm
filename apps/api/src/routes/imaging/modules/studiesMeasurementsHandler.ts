@@ -6,6 +6,7 @@ import { getImagingStudyById } from "../../../db/imagingQuery.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 
 const saveMeasurementsBodySchema = z.union([
 	z.object({
@@ -34,7 +35,7 @@ const saveMeasurementsBodySchema = z.union([
 	),
 ]);
 
-export async function getMeasurementsHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function getMeasurementsHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "imaging measurements read"))) return;
 
 	const identity = getRequestIdentity(request);
@@ -47,7 +48,7 @@ export async function getMeasurementsHandler(request: FastifyRequest<{ Params: {
 		});
 	}
 
-	const { id } = request.params;
+	const { id } = request.params as { id: string };
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -58,12 +59,23 @@ export async function getMeasurementsHandler(request: FastifyRequest<{ Params: {
 	return reply.code(200).send(measurements);
 }
 
-export async function saveMeasurementsHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function saveMeasurementsHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging measurements save"))) return;
 
-	const { id } = request.params;
+	const { id } = request.params as { id: string };
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const study = await getImagingStudyById(orgId, id);
 	if (!study) return sendImagingStudyNotFound(reply);

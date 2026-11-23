@@ -8,7 +8,7 @@ import {
 
 // The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
 // to the fiscal codes "1" | "2" | null. Validate at the read boundary instead of
-// asserting with `as any`: any legacy/invalid value collapses to null rather than
+// unsafe type assertions: any legacy/invalid value collapses to null rather than
 // silently violating the contract.
 export function narrowTaxDeductionCode(value: string | null): "1" | "2" | null {
 	return value === "1" || value === "2" ? value : null;

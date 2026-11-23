@@ -4,6 +4,7 @@ import { inMemoryBlacklist } from "../../../db/patientArchiveReasonsAndBlacklist
 import { patientDuplicateDecisions } from "../../../db/patientsSchema.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
+	auditEvents,
 	patientArchiveReasonsAndBlacklists,
 	patients,
 } from "../../../db/schema.js";
@@ -299,6 +300,18 @@ export async function mergePatients(
 							}),
 							decidedAt: new Date(),
 						},
+					});
+
+				// 14. Фиксация в аудит-логе клиники (audit_events)
+				await inner
+					.insert(auditEvents)
+					.values({
+						organizationId: input.organizationId,
+						actorUserId: input.performedByUserId ?? null,
+						entityType: "patient",
+						entityId: input.primaryPatientId,
+						action: "patient_merged",
+						reason: `Слияние дубликата ${duplicate.fullName} (${input.duplicatePatientId}) в основную карту ${primary.fullName}. Причина: ${input.reason ?? "Не указана"}`,
 					});
 
 				return { ok: true as const };

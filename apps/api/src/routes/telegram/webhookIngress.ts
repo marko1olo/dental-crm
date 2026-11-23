@@ -8,7 +8,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import {
 	inMemoryDomainState,
 	type DomainState,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import {
 	claimDenteTelegramWebhookUpdate,
 	hasDenteTelegramWebhookUpdate,

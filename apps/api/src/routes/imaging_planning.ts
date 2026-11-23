@@ -6,6 +6,7 @@ import { db } from "../db/client.js";
 import { patientCtPlannings, patients } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 /**
  * РАЗМЕТКА ПЛАНИРОВАНИЯ ИМПЛАНТАЦИИ: ХРАНЕНИЕ.
@@ -185,6 +186,17 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 				"save ct planning",
 			);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
 			const parsed = savePlanningSchema.safeParse(request.body);
 			if (!parsed.success) {

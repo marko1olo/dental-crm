@@ -17,6 +17,7 @@ import { db } from "../../db/client.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
 import { WhatsappConnectionHubService } from "../../services/messaging/whatsappConnectionHub.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	qrSessionStartSchema,
 	updateWhatsappConfigSchema,
@@ -28,7 +29,11 @@ export function maskToken(raw: string): string {
 	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
 }
 
-export function parseJsonSafe<T>(value: unknown, fallback: T): T {
+export function parseJsonSafe<T>(
+	value: unknown,
+	fallback: T,
+	logger?: { error: (obj: unknown, msg?: string) => void },
+): T {
 	if (value === null || value === undefined) {
 		return fallback;
 	}
@@ -39,7 +44,7 @@ export function parseJsonSafe<T>(value: unknown, fallback: T): T {
 		try {
 			return JSON.parse(value) as T;
 		} catch (err) {
-			console.error("[Dente] parseJsonSafe failed:", err);
+			logger?.error({ err }, "[Dente] parseJsonSafe failed");
 			return fallback;
 		}
 	}
@@ -87,11 +92,12 @@ export async function registerConnectionHubRoutes(
 			enabledFeatures: parseJsonSafe<string[]>(
 				config.enabledFeaturesJson,
 				[],
+				request.log,
 			),
 			staffRouting: parseJsonSafe(config.staffRoutingJson, {
 				defaultUserId: null,
 				rules: [],
-			}),
+			}, request.log),
 			isActive: config.isActive,
 			updatedAt: (config.updatedAt ?? config.createdAt).toISOString(),
 		};
@@ -109,6 +115,18 @@ export async function registerConnectionHubRoutes(
 			"whatsapp settings write",
 		);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const parsed = updateWhatsappConfigSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -252,6 +270,18 @@ export async function registerConnectionHubRoutes(
 		);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = qrSessionStartSchema.safeParse(request.body || {});
 		const input = parsed.success ? parsed.data : {};
 
@@ -315,6 +345,18 @@ export async function registerConnectionHubRoutes(
 		);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		WhatsappConnectionHubService.disconnectQrSession(orgId);
 
 		return {
@@ -354,6 +396,18 @@ export async function registerConnectionHubRoutes(
 			"whatsapp waba connect",
 		);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const parsed = wabaConnectSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -397,6 +451,18 @@ export async function registerConnectionHubRoutes(
 			"whatsapp waba test",
 		);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const parsed = wabaTestSchema.safeParse(request.body || {});
 		let phoneNumberId = parsed.success ? parsed.data.phoneNumberId : undefined;

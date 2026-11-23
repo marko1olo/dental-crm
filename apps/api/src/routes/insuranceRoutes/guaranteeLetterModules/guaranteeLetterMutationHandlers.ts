@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { dmsGuaranteeLetters, patients } from "../../../db/schema.js";
+import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
 import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { formatGuaranteeLetterResponse, isValidUuid } from "./guaranteeLetterFormatters.js";
 
@@ -114,6 +114,29 @@ export async function handleCreateGuaranteeLetter(
 					message: "Пациент не найден в вашей клинике.",
 				},
 			};
+		}
+
+		if (data.contractId) {
+			const [contractRecord] = await tx
+				.select({ id: insuranceContracts.id })
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.id, data.contractId),
+						eq(insuranceContracts.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			if (!contractRecord) {
+				return {
+					status: 404,
+					error: {
+						error: "ContractNotFound",
+						message: "Договор ДМС не найден в вашей клинике.",
+					},
+				};
+			}
 		}
 
 		const [inserted] = await tx
@@ -246,7 +269,33 @@ export async function handleUpdateGuaranteeLetter(
 			updatedAt: new Date(),
 		};
 
-		if (d.contractId !== undefined) updateData.contractId = d.contractId ?? null;
+		if (d.contractId !== undefined) {
+			if (d.contractId) {
+				const [contractRecord] = await tx
+					.select({ id: insuranceContracts.id })
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.id, d.contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!contractRecord) {
+					return {
+						status: 404,
+						error: {
+							error: "ContractNotFound",
+							message: "Договор ДМС не найден в вашей клинике.",
+						},
+					};
+				}
+				updateData.contractId = d.contractId;
+			} else {
+				updateData.contractId = null;
+			}
+		}
 		if (d.patientId !== undefined) {
 			const [patientRecord] = await tx
 				.select({ id: patients.id })

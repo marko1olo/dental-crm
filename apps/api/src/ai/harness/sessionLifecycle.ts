@@ -103,6 +103,85 @@ function maskPhiInText(text: string): string {
 }
 
 /**
+ * Маскирует ПДн во всех текстовых полях и аргументах вызовов инструментов сообщения перед передачей в LLM.
+ */
+function maskChatMessagePhi(message: AgentRouterChatMessage): AgentRouterChatMessage {
+	return {
+		...message,
+		...(typeof message.content === "string"
+			? { content: maskPhiInText(message.content) }
+			: {}),
+		...(typeof message.reasoning_content === "string"
+			? { reasoning_content: maskPhiInText(message.reasoning_content) }
+			: {}),
+		...(Array.isArray(message.tool_calls)
+			? {
+					tool_calls: message.tool_calls.map((tc) => ({
+						...tc,
+						function: {
+							...tc.function,
+							arguments: maskPhiInText(tc.function.arguments),
+						},
+					})),
+				}
+			: {}),
+	};
+}
+
+function runContextCompactionPass(
+	history: AgentRouterChatMessage[],
+	currentSummary: string,
+	params: Pick<
+		AgentHarnessParams,
+		| "contextLimitTokens"
+		| "compactThresholdTokens"
+		| "slidingWindowRetainedTurns"
+		| "maskPhiData"
+		| "onEvent"
+	>,
+): { compacted: boolean; history: AgentRouterChatMessage[]; summary: string } {
+	const compactorOpts: TokenCompactorOptions = {
+		...(params.contextLimitTokens !== undefined ||
+		params.compactThresholdTokens !== undefined
+			? { thresholdTokens: params.contextLimitTokens ?? params.compactThresholdTokens }
+			: {}),
+		...(params.slidingWindowRetainedTurns !== undefined
+			? { retainedRecentTurns: params.slidingWindowRetainedTurns }
+			: {}),
+		previousSummary: currentSummary,
+	};
+
+	if (!shouldCompactContext(history, compactorOpts)) {
+		return { compacted: false, history, summary: currentSummary };
+	}
+
+	const compactResult = compactConversationHistory(history, compactorOpts);
+	if (!compactResult.compacted) {
+		return { compacted: false, history, summary: currentSummary };
+	}
+
+	const nextSummary = params.maskPhiData
+		? maskPhiInText(compactResult.summary)
+		: compactResult.summary;
+	const compactedMessages = compactResult.compactedMessages as AgentRouterChatMessage[];
+	const nextHistory = params.maskPhiData
+		? compactedMessages.map(maskChatMessagePhi)
+		: compactedMessages;
+
+	params.onEvent?.({
+		type: "compact_triggered",
+		beforeTokens: compactResult.beforeTokens,
+		afterTokens: compactResult.afterTokens,
+		tokensSaved: compactResult.tokensSaved,
+		prunedToolOutputsCount: compactResult.prunedToolOutputsCount,
+		compressedMessagesCount: compactResult.compressedMessagesCount,
+		summary: nextSummary,
+	});
+
+	return { compacted: true, history: nextHistory, summary: nextSummary };
+}
+
+/**
  * Runs the autonomous ReAct execution loop for the clinical dental assistant.
  */
 export async function runAgentHarness(
@@ -159,56 +238,35 @@ export async function runAgentHarness(
 		normalizedTrustLevel,
 	);
 
-	// 152-ФЗ: маскирование ПДн в пользовательских сообщениях перед отправкой в LLM
+	// 152-ФЗ: маскирование ПДн во всех сообщениях и системном промпте перед отправкой в LLM
+	const effectiveSystemPrompt = params.maskPhiData
+		? maskPhiInText(systemPrompt)
+		: systemPrompt;
+
 	const effectiveMessages = params.maskPhiData
-		? messages.map((m) => {
-				if (m.role === "user" && typeof m.content === "string") {
-					return { ...m, content: maskPhiInText(m.content) };
-				}
-				return m;
-			})
+		? messages.map(maskChatMessagePhi)
 		: messages;
 
 	// Working history for this ReAct execution turn
 	let history: AgentRouterChatMessage[] = [
-		{ role: "system", content: systemPrompt },
+		{ role: "system", content: effectiveSystemPrompt },
 		...effectiveMessages,
 	];
 
 	let hasCompacted = false;
-	let currentSummary = params.initialSummary || "";
+	let currentSummary =
+		params.maskPhiData && params.initialSummary
+			? maskPhiInText(params.initialSummary)
+			: params.initialSummary || "";
 	let lastRecordedUsage: AgentHarnessResult["tokenUsage"] | undefined;
 
-	const compactorOptions: TokenCompactorOptions = {
-		...(params.contextLimitTokens !== undefined || params.compactThresholdTokens !== undefined
-			? { thresholdTokens: params.contextLimitTokens ?? params.compactThresholdTokens }
-			: {}),
-		...(params.slidingWindowRetainedTurns !== undefined
-			? { retainedRecentTurns: params.slidingWindowRetainedTurns }
-			: {}),
-		previousSummary: currentSummary,
-	};
-
 	// Level 1 + Level 2 initial check: compact before the first inference turn if dialogue exceeds threshold
-	if (
-		params.enableAutoCompaction !== false &&
-		shouldCompactContext(history, compactorOptions)
-	) {
-		const compactResult = compactConversationHistory(history, compactorOptions);
-		if (compactResult.compacted) {
+	if (params.enableAutoCompaction !== false) {
+		const initialCompact = runContextCompactionPass(history, currentSummary, params);
+		if (initialCompact.compacted) {
 			hasCompacted = true;
-			currentSummary = compactResult.summary;
-			history = compactResult.compactedMessages as AgentRouterChatMessage[];
-
-			onEvent?.({
-				type: "compact_triggered",
-				beforeTokens: compactResult.beforeTokens,
-				afterTokens: compactResult.afterTokens,
-				tokensSaved: compactResult.tokensSaved,
-				prunedToolOutputsCount: compactResult.prunedToolOutputsCount,
-				compressedMessagesCount: compactResult.compressedMessagesCount,
-				summary: compactResult.summary,
-			});
+			history = initialCompact.history;
+			currentSummary = initialCompact.summary;
 		}
 	}
 
@@ -228,6 +286,7 @@ export async function runAgentHarness(
 
 	let iteration = 0;
 	let finalResponseText = "";
+	const seenConfirmationCalls = new Set<string>();
 
 	while (iteration < maxIterations) {
 		if (signal?.aborted) {
@@ -251,42 +310,17 @@ export async function runAgentHarness(
 
 		// Mid-execution compaction check if tool outputs swelled context during multi-step ReAct
 		if (params.enableAutoCompaction !== false && iteration > 1) {
-			const midCompactorOpts: TokenCompactorOptions = {
-				...(params.contextLimitTokens !== undefined || params.compactThresholdTokens !== undefined
-					? { thresholdTokens: params.contextLimitTokens ?? params.compactThresholdTokens }
-					: {}),
-				...(params.slidingWindowRetainedTurns !== undefined
-					? { retainedRecentTurns: params.slidingWindowRetainedTurns }
-					: {}),
-				previousSummary: currentSummary,
-			};
-
-			if (shouldCompactContext(history, midCompactorOpts)) {
-				const compactResult = compactConversationHistory(
-					history,
-					midCompactorOpts,
-				);
-				if (compactResult.compacted) {
-					hasCompacted = true;
-					currentSummary = compactResult.summary;
-					history = compactResult.compactedMessages as AgentRouterChatMessage[];
-
-					onEvent?.({
-						type: "compact_triggered",
-						beforeTokens: compactResult.beforeTokens,
-						afterTokens: compactResult.afterTokens,
-						tokensSaved: compactResult.tokensSaved,
-						prunedToolOutputsCount: compactResult.prunedToolOutputsCount,
-						compressedMessagesCount: compactResult.compressedMessagesCount,
-						summary: compactResult.summary,
-					});
-				}
+			const midCompact = runContextCompactionPass(history, currentSummary, params);
+			if (midCompact.compacted) {
+				hasCompacted = true;
+				history = midCompact.history;
+				currentSummary = midCompact.summary;
 			}
 		}
 
 		try {
 			const routing = routeClinicalTask({
-				messages,
+				messages: effectiveMessages,
 				speedMode: params.speedMode,
 				doctorSpecialization: params.doctorSpecialization,
 				modelRoutingMode: params.modelRoutingMode,
@@ -405,15 +439,31 @@ export async function runAgentHarness(
 			}
 
 			// CASE 2: Model returned tool_calls -> Execute tools in ReAct loop
-			history.push({
+			const assistantToolMessage: AgentRouterChatMessage = {
 				role: "assistant",
-				content: content || null,
-				tool_calls: toolCalls,
-			});
+				content: content
+					? params.maskPhiData
+						? maskPhiInText(content)
+						: content
+					: null,
+				tool_calls: params.maskPhiData
+					? toolCalls.map((tc) => ({
+							...tc,
+							function: {
+								...tc.function,
+								arguments: maskPhiInText(tc.function.arguments),
+							},
+						}))
+					: toolCalls,
+			};
+			history.push(assistantToolMessage);
 
 			if (content && !streamEmittedTokens) {
 				onEvent?.({ type: "token", text: content });
 			}
+
+			let shouldAbortRepeatedConfirmationLoop = false;
+			let repeatedConfirmationMessage = "";
 
 			for (const call of toolCalls) {
 				const dispatch = await toolDispatcher.dispatchToolCall(call, activePlan);
@@ -425,11 +475,16 @@ export async function runAgentHarness(
 					result: dispatch.result,
 				});
 
+				const serializedResult = JSON.stringify(dispatch.result) ?? "null";
+				const toolMessageContent = params.maskPhiData
+					? maskPhiInText(serializedResult)
+					: serializedResult;
+
 				// Append tool execution result message for model's next turn
 				history.push({
 					role: "tool",
 					tool_call_id: call.id,
-					content: JSON.stringify(dispatch.result),
+					content: toolMessageContent,
 				});
 
 				if (signal?.aborted) {
@@ -449,6 +504,39 @@ export async function runAgentHarness(
 						plan: activePlan,
 					};
 				}
+
+				const isConfirmationRequiredResult =
+					dispatch.isConfirmationRequired === true ||
+					(dispatch.result !== null &&
+						typeof dispatch.result === "object" &&
+						"status" in dispatch.result &&
+						(dispatch.result as { status?: unknown }).status ===
+							"confirmation_required");
+
+				if (isConfirmationRequiredResult) {
+					const signature = `${call.function.name}::${call.function.arguments ?? ""}`;
+					if (seenConfirmationCalls.has(signature)) {
+						shouldAbortRepeatedConfirmationLoop = true;
+						repeatedConfirmationMessage =
+							dispatch.result !== null &&
+							typeof dispatch.result === "object" &&
+							"message" in dispatch.result &&
+							typeof (dispatch.result as { message?: unknown }).message ===
+								"string"
+								? (dispatch.result as { message: string }).message
+								: "Действие требует подтверждения врача.";
+						break;
+					}
+					seenConfirmationCalls.add(signature);
+				}
+			}
+
+			if (shouldAbortRepeatedConfirmationLoop) {
+				if (!finalResponseText.trim()) {
+					finalResponseText = repeatedConfirmationMessage;
+					onEvent?.({ type: "token", text: finalResponseText });
+				}
+				break;
 			}
 
 			// Check if iteration limit is reached after tool executions

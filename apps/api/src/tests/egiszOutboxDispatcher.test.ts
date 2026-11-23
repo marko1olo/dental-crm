@@ -37,6 +37,7 @@ import {
 // 2. Direct Subsystem Imports
 import * as DispatcherBarrel from "../services/egisz/dispatcher/index.js";
 import { OiisGatewayClient } from "../services/egisz/OiisGatewayClient.js";
+import { buildDeterministicGostCmsTestContainer } from "@dental/shared";
 
 describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 	describe("1. Architectural Health & File Limits (<800 lines, Facade <= 50 lines)", () => {
@@ -195,8 +196,14 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 
 	describe("3. Layer 1: CryptoPro PKCS#7 Signer & FZ-63 Compliance", () => {
 		it("3.1 verifyCryptoProSignature validates Base64 PKCS#7 format", () => {
-			// 64-byte payload encoded as Base64
-			const sampleSignatureBase64 = Buffer.alloc(80, 0x5a).toString("base64");
+			const sampleContainer = buildDeterministicGostCmsTestContainer({
+				documentHashSha256Hex: Buffer.alloc(32, 0x11).toString("hex"),
+				certificateSerialNumber: "1234ABCD",
+				doctorFullName: "Иванов Иван Иванович",
+				validFromIso: "2024-01-01T00:00:00.000Z",
+				validToIso: "2030-01-01T23:59:59.000Z",
+			});
+			const sampleSignatureBase64 = sampleContainer.toString("base64");
 			const res = verifyCryptoProSignature(sampleSignatureBase64, "1234ABCD");
 			assert.strictEqual(res.isValid, true);
 			assert.strictEqual(res.certificateSerialNumber, "1234ABCD");
@@ -217,7 +224,13 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 		});
 
 		it("3.3 validateDoctorSignature enforces Zero-Mock policy (rejects missing signatures)", () => {
-			const validSig = Buffer.alloc(80, 0x33).toString("base64");
+			const validSig = buildDeterministicGostCmsTestContainer({
+				documentHashSha256Hex: Buffer.alloc(32, 0x22).toString("hex"),
+				certificateSerialNumber: "01A2B3C4",
+				doctorFullName: "Иванов Иван Иванович",
+				validFromIso: "2024-01-01T00:00:00.000Z",
+				validToIso: "2030-01-01T23:59:59.000Z",
+			}).toString("base64");
 
 			const validPkg = {
 				documentId: "VISIT-001",
@@ -251,6 +264,13 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 			const unsignedRes = validateDoctorSignature(unsignedPkg as any);
 			assert.strictEqual(unsignedRes.isValid, false);
 			assert.ok(unsignedRes.error?.includes("Отсутствует"));
+		});
+
+		it("3.4 verifyCryptoProSignature strictly rejects buffers without ASN.1 SEQUENCE (0x30)", () => {
+			const nonDerSignatureBase64 = Buffer.alloc(80, 0x5a).toString("base64");
+			const res = verifyCryptoProSignature(nonDerSignatureBase64, "1234ABCD");
+			assert.strictEqual(res.isValid, false);
+			assert.ok(res.error?.includes("0x30"));
 		});
 	});
 

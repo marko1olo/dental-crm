@@ -698,74 +698,77 @@ export async function updateClinicProfileInDb(
 	if (input.scheduleDefaults !== undefined)
 		updateData.clinicSchedule = input.scheduleDefaults;
 
-	if (
-		input.logoUrl !== undefined ||
-		input.stampUrl !== undefined ||
-		input.defaultVisitMinutes !== undefined ||
-		input.egiszEnabled !== undefined ||
-		input.egiszAutonomousMode !== undefined
-	) {
-		const [currentOrg] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
-		const existingFlags =
-			(currentOrg?.flags as Record<string, unknown> | null) ?? {};
-		const updatedFlags = { ...existingFlags };
-		if (input.logoUrl !== undefined) updatedFlags.logoUrl = input.logoUrl;
-		if (input.stampUrl !== undefined) updatedFlags.stampUrl = input.stampUrl;
-		if (input.defaultVisitMinutes !== undefined)
-			updatedFlags.defaultVisitMinutes = input.defaultVisitMinutes;
-		if (input.egiszEnabled !== undefined)
-			updatedFlags.egiszEnabled = input.egiszEnabled;
-		if (input.egiszAutonomousMode !== undefined)
-			updatedFlags.egiszAutonomousMode = input.egiszAutonomousMode;
-		updateData.workspaceFeatureFlags = updatedFlags;
-	}
-
-	await db
-		.update(schema.organizations)
-		.set(updateData)
-		.where(eq(schema.organizations.id, organizationId));
-
-	const clinicUpdateData: Partial<typeof schema.clinics.$inferInsert> = {};
-	if (input.clinicName !== undefined) clinicUpdateData.name = input.clinicName;
-	if (input.address !== undefined) clinicUpdateData.address = input.address;
-	if (input.phone !== undefined) clinicUpdateData.phone = input.phone;
-	if (input.timezone !== undefined) clinicUpdateData.timezone = input.timezone;
-
-	if (Object.keys(clinicUpdateData).length > 0) {
-		const targetId = (input as { branchId?: string; clinicId?: string }).branchId ||
-			(input as { branchId?: string; clinicId?: string }).clinicId;
-		const query = targetId
-			? and(eq(schema.clinics.id, targetId), eq(schema.clinics.organizationId, organizationId))
-			: eq(schema.clinics.organizationId, organizationId);
-
-		const existingClinic = await db
-			.select({ id: schema.clinics.id })
-			.from(schema.clinics)
-			.where(query)
-			.limit(1);
-
-		if (existingClinic.length > 0) {
-			await db
-				.update(schema.clinics)
-				.set(clinicUpdateData)
-				.where(
-					and(
-						eq(schema.clinics.id, existingClinic[0]!.id),
-						eq(schema.clinics.organizationId, organizationId),
-					),
-				);
-		} else {
-			await db.insert(schema.clinics).values({
-				organizationId,
-				name: input.clinicName ?? "Клиника",
-				address: input.address ?? null,
-				phone: input.phone ?? null,
-				timezone: input.timezone ?? "Europe/Samara",
-			});
+	await db.transaction(async (tx) => {
+		if (
+			input.logoUrl !== undefined ||
+			input.stampUrl !== undefined ||
+			input.defaultVisitMinutes !== undefined ||
+			input.egiszEnabled !== undefined ||
+			input.egiszAutonomousMode !== undefined
+		) {
+			const [currentOrg] = await tx
+				.select({ flags: schema.organizations.workspaceFeatureFlags })
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.limit(1);
+			const existingFlags =
+				(currentOrg?.flags as Record<string, unknown> | null) ?? {};
+			const updatedFlags = { ...existingFlags };
+			if (input.logoUrl !== undefined) updatedFlags.logoUrl = input.logoUrl;
+			if (input.stampUrl !== undefined) updatedFlags.stampUrl = input.stampUrl;
+			if (input.defaultVisitMinutes !== undefined)
+				updatedFlags.defaultVisitMinutes = input.defaultVisitMinutes;
+			if (input.egiszEnabled !== undefined)
+				updatedFlags.egiszEnabled = input.egiszEnabled;
+			if (input.egiszAutonomousMode !== undefined)
+				updatedFlags.egiszAutonomousMode = input.egiszAutonomousMode;
+			updateData.workspaceFeatureFlags = updatedFlags;
 		}
-	}
+
+		await tx
+			.update(schema.organizations)
+			.set(updateData)
+			.where(eq(schema.organizations.id, organizationId));
+
+		const clinicUpdateData: Partial<typeof schema.clinics.$inferInsert> = {};
+		if (input.clinicName !== undefined) clinicUpdateData.name = input.clinicName;
+		if (input.address !== undefined) clinicUpdateData.address = input.address;
+		if (input.phone !== undefined) clinicUpdateData.phone = input.phone;
+		if (input.timezone !== undefined) clinicUpdateData.timezone = input.timezone;
+
+		if (Object.keys(clinicUpdateData).length > 0) {
+			const targetId = (input as { branchId?: string; clinicId?: string }).branchId ||
+				(input as { branchId?: string; clinicId?: string }).clinicId;
+			const query = targetId
+				? and(eq(schema.clinics.id, targetId), eq(schema.clinics.organizationId, organizationId))
+				: eq(schema.clinics.organizationId, organizationId);
+
+			const existingClinic = await tx
+				.select({ id: schema.clinics.id })
+				.from(schema.clinics)
+				.where(query)
+				.limit(1);
+
+			const firstClinic = existingClinic[0];
+			if (firstClinic) {
+				await tx
+					.update(schema.clinics)
+					.set(clinicUpdateData)
+					.where(
+						and(
+							eq(schema.clinics.id, firstClinic.id),
+							eq(schema.clinics.organizationId, organizationId),
+						),
+					);
+			} else {
+				await tx.insert(schema.clinics).values({
+					organizationId,
+					name: input.clinicName ?? "Клиника",
+					address: input.address ?? null,
+					phone: input.phone ?? null,
+					timezone: input.timezone ?? "Europe/Samara",
+				});
+			}
+		}
+	});
 }

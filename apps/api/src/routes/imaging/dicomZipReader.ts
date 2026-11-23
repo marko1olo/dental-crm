@@ -25,6 +25,7 @@ import {
 	isDicomLikeEntry,
 	parseDicomHeader,
 } from "./dicomParsing.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import {
 	dicomMetadataManifestHeader,
 	dicomMetadataManifestRow,
@@ -58,6 +59,15 @@ export async function readExactFileRange(
 export async function readZipCentralDirectoryDetailed(
 	filePath: string,
 ): Promise<ZipCentralDirectoryDetailedResult> {
+	if (filePath.includes("\0") || filePath.includes("..")) {
+		return {
+			entries: [],
+			warnings: [
+				"Недопустимый путь к архиву (обнаружен выход за пределы каталога).",
+			],
+			fileHandle: null,
+		};
+	}
 	const warnings: string[] = [];
 	let stats: Stats;
 	try {
@@ -386,6 +396,7 @@ export async function readZipCentralDirectory(
 
 export async function expandDicomArchiveManifestLines(
 	lines: string[],
+	orgId?: string,
 ): Promise<{ lines: string[]; notes: string[] }> {
 	const expandedLines: string[] = [];
 	const notes: string[] = [];
@@ -406,7 +417,20 @@ export async function expandDicomArchiveManifestLines(
 			continue;
 		}
 
-		const zip = await readZipCentralDirectory(archivePath);
+		let resolvedArchivePath = archivePath;
+		if (orgId) {
+			try {
+				resolvedArchivePath = validateAndResolvePacsLocalFilePath(orgId, archivePath);
+			} catch (err) {
+				expandedLines.push(line);
+				notes.push(
+					`${archivePath}: доступ к архиву заблокирован политикой безопасности (${err instanceof Error ? err.message : String(err)})`,
+				);
+				continue;
+			}
+		}
+
+		const zip = await readZipCentralDirectory(resolvedArchivePath);
 		notes.push(...zip.warnings.map((warning) => `${archivePath}: ${warning}`));
 		const dicomEntries = zip.entries.filter(isDicomLikeEntry);
 		if (!dicomEntries.length) {

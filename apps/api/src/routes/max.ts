@@ -56,13 +56,13 @@ function maskToken(raw: string): string {
 	return OmnichannelTokenVault.maskToken(raw);
 }
 
-function parseJsonSafe<T>(value: unknown, fallback: T): T {
+function parseJsonSafe<T>(value: unknown, fallback: T, logger?: { error: (obj: unknown, msg?: string) => void }): T {
 	if (!value) return fallback;
 	if (typeof value === "string") {
 		try {
 			return JSON.parse(value) as T;
 		} catch (err) {
-			console.error("[Dente] parseJsonSafe failed:", err);
+			logger?.error({ err }, "[Dente] parseJsonSafe failed");
 			return fallback;
 		}
 	}
@@ -128,11 +128,11 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			botId: config.botId ?? null,
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookUrl: config.webhookUrl ?? null,
-			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, []),
+			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, [], request.log),
 			staffRouting: parseJsonSafe(config.staffRoutingJson, {
 				defaultUserId: null,
 				rules: [],
-			}),
+			}, request.log),
 			isActive: config.isActive,
 			updatedAt: (config.updatedAt ?? new Date()).toISOString(),
 		};
@@ -372,7 +372,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 
 		// Await or float the processor to ingest this message to the Inbox immediately
 		void processInboundEvents().catch((err) =>
-			console.error("MAX ingestion error:", err),
+			request.log.error({ err }, "[Dente] parseJsonSafe failed: MAX ingestion error"),
 		);
 	}
 
@@ -451,7 +451,6 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			});
 		}
 
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		const { patientId, message } = parsed.data;
 
 		const [patient] = await db

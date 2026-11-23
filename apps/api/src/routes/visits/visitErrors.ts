@@ -90,6 +90,18 @@ export function sendVisitDraftMutationError(
 			message: visitDraftNotFoundMessage,
 		});
 	}
+	if (
+		message === "VISIT_PROTOCOL_LOCKED" ||
+		errCode === "VISIT_PROTOCOL_LOCKED" ||
+		message === "Протокол приёма подписан и защищён от изменений." ||
+		message.includes("подписан и защищён от изменений")
+	) {
+		return reply.code(422).send({
+			error: "VISIT_PROTOCOL_LOCKED",
+			reason: "visit_protocol_locked",
+			message: "Протокол приёма подписан и защищён от изменений.",
+		});
+	}
 	if (message === "Прием уже закрыт или аннулирован") {
 		return reply.code(409).send({
 			error: "VisitDraftMutationRejected",
@@ -104,5 +116,12 @@ export function sendVisitDraftMutationError(
 		error: "VisitDraftMutationRejected",
 		reason: "visit_draft_rejected",
 		message: visitDraftMutationRejectedMessage,
+	});
+}
+
+export function sendVisitProtocolLockedError(reply: FastifyReply) {
+	return reply.code(422).send({
+		error: "VISIT_PROTOCOL_LOCKED",
+		message: "Протокол приёма подписан и защищён от изменений.",
 	});
 }

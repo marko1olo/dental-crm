@@ -38,4 +38,10 @@ export const executeSberPosTransactionSchema = z.object({
 	patientId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
 	invoiceId: z.string().uuid().optional(),
+	cardHash: z.string().trim().optional(),
+	cardIssuer: z.string().trim().optional(),
 });
+
+export type ExecuteSberPosTransactionInput = z.infer<
+	typeof executeSberPosTransactionSchema
+>;

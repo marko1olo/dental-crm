@@ -22,9 +22,8 @@ export function normalizePhoneValue(
 	let extension: string | null = null;
 	const extensionMatch =
 		/(?:доб\.?|добавочный|ext\.?|extension|x|#)\s*(\d{1,6})\s*$/i.exec(working);
-	if (extensionMatch) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		extension = extensionMatch[1]!;
+	if (extensionMatch?.[1]) {
+		extension = extensionMatch[1];
 		working = working.slice(0, extensionMatch.index);
 		transforms.push("split-extension");
 	}

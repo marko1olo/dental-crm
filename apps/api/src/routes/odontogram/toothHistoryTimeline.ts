@@ -505,7 +505,7 @@ export async function fetchToothHistoryTimeline(
 					authorId: "Визиограф RVG",
 					visitId: scan.visitId,
 					studyId: scan.id,
-					previewUrl: scan.fileUrl || `/api/xray/scans/${scan.id}/file`,
+					previewUrl: scan.fileUrl || `/api/imaging/studies/${scan.id}/file`,
 					scanType: scan.kind,
 				});
 			}

@@ -84,8 +84,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			// Org admin may only reset own org password; setup-key path needs organizationId.
 			const targetOrganizationId = isOrgAdmin
-				? // biome-ignore lint/style/noNonNullAssertion: automated suppression
-					identity.organizationId!
+				? identity.organizationId
 				: body.organizationId;
 			if (!targetOrganizationId) {
 				return reply.code(400).send({
@@ -209,15 +208,14 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 			const body = parsed.data;
 
-			if (isOrgAdmin) {
+			if (isOrgAdmin && identity.organizationId) {
 				const [target] = await db
 					.select({ id: users.id })
 					.from(users)
 					.where(
 						and(
 							eq(users.id, body.userId),
-							// biome-ignore lint/style/noNonNullAssertion: automated suppression
-							eq(users.organizationId, identity.organizationId!),
+							eq(users.organizationId, identity.organizationId),
 						),
 					)
 					.limit(1);

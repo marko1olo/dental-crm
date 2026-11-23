@@ -33,7 +33,10 @@ import {
 	TelegramEmergencyEscalationService,
 	type EmergencyEscalationResult,
 } from "./TelegramEmergencyEscalationService.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
 import type { TelegramInlineKeyboard, TriageScreenResult } from "./TelegramInteractiveTriageService.js";
+
+const logger = createApiLogger("TelegramVoiceIntakeService");
 import {
 	TelegramRedFlagDetector,
 	type RedFlagEvaluationResult,
@@ -359,7 +362,10 @@ export class TelegramVoiceIntakeService {
 				savedLocalPath = path.join(uploadsBase, fileName);
 				await fs.promises.writeFile(savedLocalPath, downloadResult.buffer);
 			} catch (writeErr) {
-				console.warn("[TelegramVoiceIntake] Ошибка асинхронной записи аудиофайла на диск:", writeErr);
+				logger.warn(
+					{ err: safeLogError(writeErr), savedLocalPath },
+					"Ошибка асинхронной записи аудиофайла на диск",
+				);
 			}
 		}
 
@@ -370,7 +376,10 @@ export class TelegramVoiceIntakeService {
 				try {
 					rawTranscript = await transcriber(downloadResult.buffer, mimeType);
 				} catch (trErr) {
-					console.warn("[TelegramVoiceIntake] Ошибка кастомного транскрибера:", trErr);
+					logger.warn(
+						{ err: safeLogError(trErr), mimeType },
+						"Ошибка кастомного транскрибера",
+					);
 				}
 			} else {
 				// Встроенная быстрая эвристика или фоллбек
@@ -409,7 +418,10 @@ export class TelegramVoiceIntakeService {
 				});
 			}
 		} catch (linkErr) {
-			console.warn("[TelegramVoiceIntake] Ошибка поиска привязки пациента:", linkErr);
+			logger.warn(
+				{ err: safeLogError(linkErr), organizationId, chatFingerprint },
+				"Ошибка поиска привязки пациента",
+			);
 		}
 
 		// 6. Если обнаружены красные флаги — мгновенная экстренная эскалация
@@ -497,7 +509,10 @@ export class TelegramVoiceIntakeService {
 					}
 				});
 			} catch (dbErr) {
-				console.warn("[TelegramVoiceIntake] Ошибка сохранения голосового в CRM:", dbErr);
+				logger.warn(
+					{ err: safeLogError(dbErr), organizationId, chatId },
+					"Ошибка сохранения голосового в CRM",
+				);
 			}
 
 			// WebSocket броадкаст о новом голосовом сообщении
@@ -517,7 +532,10 @@ export class TelegramVoiceIntakeService {
 					},
 				});
 			} catch (wsErr) {
-				console.warn("[TelegramVoiceIntake] WS broadcast failed:", wsErr);
+				logger.warn(
+					{ err: safeLogError(wsErr), organizationId, chatId },
+					"WS broadcast failed",
+				);
 			}
 		}
 

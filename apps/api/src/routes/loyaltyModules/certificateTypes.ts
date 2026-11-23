@@ -30,6 +30,7 @@ export type RedeemCertificateResult =
 	| { readonly error: true; readonly message: string; readonly code: number }
 	| {
 			readonly success: true;
+			readonly replayed?: boolean | undefined;
 			readonly certificateId: string;
 			readonly serialNumber: string;
 			readonly previousBalanceRub: number;

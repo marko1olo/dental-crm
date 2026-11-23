@@ -21,9 +21,17 @@ export async function handleWadoRetrieveInstance(
 
 	if (!enforceClinicalDicomAccess(request, reply, "КТ / DICOM снимку")) return;
 
-	const studyUid = normalizeUid(request.params.studyUid);
-	const seriesUid = normalizeUid(request.params.seriesUid);
-	const instanceUid = normalizeUid(request.params.instanceUid);
+	const rawStudyUid = request.params.studyUid?.trim();
+	const rawSeriesUid = request.params.seriesUid?.trim();
+	const rawInstanceUid = request.params.instanceUid?.trim();
+
+	if (!rawStudyUid || !rawSeriesUid || !rawInstanceUid) {
+		return reply.code(400).send({ error: "DicomInstanceUidMissing", message: "В адресе должны быть указаны UID исследования, серии и объекта." });
+	}
+
+	const studyUid = normalizeUid(rawStudyUid);
+	const seriesUid = normalizeUid(rawSeriesUid);
+	const instanceUid = normalizeUid(rawInstanceUid);
 
 	if (!UUID_SHAPE.test(organizationId)) {
 		return reply.code(403).send({ error: "OrganizationUnknown", message: "Снимок не выдан: организация из токена не существует." });
@@ -52,15 +60,11 @@ export async function handleWadoRetrieveInstance(
 		return reply.code(403).send({ error: "OrganizationUnknown", message: "Снимок не выдан: организация из токена не существует." });
 	}
 
-	if (!studyUid || !seriesUid || !instanceUid) {
-		return reply.code(400).send({ error: "DicomInstanceUidMissing", message: "В адресе должны быть указаны UID исследования, серии и объекта." });
-	}
-
 	const filePath = resolution.filePath;
 	if (!filePath) {
 		return reply.code(404).send({
 			error: "DicomInstanceNotFound", message: "Снимок с таким UID в этой клинике не найден.",
-			studyUid, seriesUid, instanceUid,
+			studyUid: studyUid ?? rawStudyUid, seriesUid: seriesUid ?? rawSeriesUid, instanceUid: instanceUid ?? rawInstanceUid,
 		});
 	}
 

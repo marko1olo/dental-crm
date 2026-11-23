@@ -58,9 +58,7 @@ export async function handleClinicLogin(
 
 	// Look up organization by login ID
 	let org:
-		| typeof organizations.$inferSelect
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		| Record<string, any>
+		| Pick<typeof organizations.$inferSelect, "id" | "name" | "passwordHash">
 		| undefined;
 	try {
 		const lookup = await readUnderBypass((tx) =>

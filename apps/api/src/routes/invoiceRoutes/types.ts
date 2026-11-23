@@ -25,6 +25,7 @@ export const validatePlanBodySchema = z.object({
 	isSignedWithPatient: z.boolean().optional(),
 	validityDaysLimit: z.number().int().positive().optional(),
 	inflationThresholdPercent: z.number().int().positive().optional(),
+	isDoctorAutonomy: z.boolean().optional(),
 	items: z.array(
 		z.object({
 			itemId: z.string().min(1),

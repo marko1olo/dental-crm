@@ -1,14 +1,23 @@
 import { createHash } from "node:crypto";
+import type { FastifyBaseLogger } from "fastify";
 import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys, labItems, labOrderEvents, labOrders, warrantyCertificates } from "../../../db/schema.js";
+import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
+import {
+	idempotencyKeys,
+	labItems,
+	labOrderEvents,
+	labOrders,
+	visits,
+	warrantyCertificates,
+} from "../../../db/schema.js";
 import { quickWriteoffOrthopedicProtocol } from "../../../services/treatmentConsumables/bundleWriteoffService.js";
 
 export interface LabOrderMarkInstalledInput {
 	readonly clinicalNotes?: string | undefined;
 	readonly doctorId?: string | undefined;
 	readonly idempotencyKey?: string | undefined;
+	readonly logger?: FastifyBaseLogger | { warn: (obj: unknown, msg?: string) => void } | undefined;
 }
 
 export type LabOrderMarkInstalledResult =
@@ -57,8 +66,23 @@ export async function executeLabOrderMarkInstalled(
 			milestone: "installed",
 			actorType: "clinic_doctor",
 			actorName: "Врач-ортопед",
-			notes: "Ортопедическая конструкция успешно установлена и сдана пациенту. Наряд намертво заблокирован от редактирования.",
+			notes: "Ортопедическая конструкция успешно установлена и сдана пациенту.",
 		});
+
+		let resolvedVisitId: string | null = null;
+		if (order.appointmentId) {
+			const [linkedVisit] = await tx
+				.select({ id: visits.id })
+				.from(visits)
+				.where(
+					and(
+						eq(visits.organizationId, orgId),
+						eq(visits.appointmentId, order.appointmentId),
+					),
+				)
+				.limit(1);
+			resolvedVisitId = linkedVisit?.id ?? null;
+		}
 
 		// Сшивание контура гарантийных паспортов (СтАР / Закон РФ № 2300-1)
 		if (order.patientId) {
@@ -154,7 +178,7 @@ export async function executeLabOrderMarkInstalled(
 				.values({
 					organizationId: orgId,
 					patientId: order.patientId,
-					visitId: order.appointmentId || null,
+					visitId: resolvedVisitId,
 					certificateNumber,
 					status: "active",
 					itemsJson: itemsPayload,
@@ -171,6 +195,7 @@ export async function executeLabOrderMarkInstalled(
 				.onConflictDoUpdate({
 					target: warrantyCertificates.certificateNumber,
 					set: {
+						visitId: resolvedVisitId,
 						status: "active",
 						itemsJson: itemsPayload,
 						warrantyMonths: 24,
@@ -190,16 +215,22 @@ export async function executeLabOrderMarkInstalled(
 
 		// Фоновое атомарное списание цементов постоянной фиксации по техкарте (Мандат 8v & 8bo)
 		try {
-			await quickWriteoffOrthopedicProtocol(tx, {
-				organizationId: orgId,
-				protocolId: "orthopedics_cementation",
-				userId: input.doctorId || order.doctorId,
-				visitId: order.appointmentId,
-				toothNumber: order.toothFdi,
-				notes: `Списание цементов постоянной фиксации для наряда ЗТЛ ${order.orderNumber || order.id}`,
+			await withSavepoint(tx, async (spTx) => {
+				await quickWriteoffOrthopedicProtocol(spTx, {
+					organizationId: orgId,
+					protocolId: "orthopedics_cementation",
+					userId: input.doctorId || order.doctorId,
+					...(resolvedVisitId ? { visitId: resolvedVisitId } : {}),
+					toothNumber: order.toothFdi,
+					notes: `Списание цементов постоянной фиксации для наряда ЗТЛ ${order.orderNumber || order.id}`,
+				});
 			});
-		} catch {
+		} catch (writeoffErr) {
 			// Мягкий овердрафт: не блокирует клиническую фиксацию конструкции у кресла (Мандат 8v)
+			input.logger?.warn(
+				{ err: writeoffErr },
+				"[labOrderMarkInstalled] Не удалось списать материал",
+			);
 		}
 
 		// Атомарная фиксация ключа идемпотентности внутри транзакции

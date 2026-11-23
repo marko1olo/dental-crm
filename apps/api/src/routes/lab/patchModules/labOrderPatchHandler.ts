@@ -174,7 +174,11 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 			},
 		});
 
-		return reply.send({ success: true, order: updated });
+		return reply.send({
+			success: true,
+			order: updated,
+			...(result.satelliteOrder ? { satelliteOrder: result.satelliteOrder } : {}),
+		});
 	} catch (err: unknown) {
 		request.log.error(
 			{ err, id, orgId },

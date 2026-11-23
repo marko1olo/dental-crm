@@ -21,15 +21,13 @@ export async function analyzeSource(
 ): Promise<MigrationAnalyzeResponse> {
 	const { parsed, tables, warnings } = await prepareSource(input);
 
-	if (tables.length === 0) {
+	// Анализ показывает первую таблицу; остальные упоминаются в предупреждениях.
+	const primary = tables[0];
+	if (!primary) {
 		throw new Error(
 			`Источник «${input.sourceName}» не содержит распознаваемых таблиц. ${warnings.join(" ")}`.trim(),
 		);
 	}
-
-	// Анализ показывает первую таблицу; остальные упоминаются в предупреждениях.
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const primary = tables[0]!;
 
 	let projectedReady = 0;
 	let projectedQuarantine = 0;

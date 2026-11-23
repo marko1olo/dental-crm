@@ -137,6 +137,7 @@ export function calculateEffectivePlanDiscount(params: {
 	discountMode?: "none" | "plan_fixed" | "on_selection" | string;
 	planDiscountPercent?: number;
 	planDiscountRub?: number;
+	planDiscountKopecks?: bigint | number | null | undefined;
 }): {
 	discountKopecks: number;
 	finalTotalKopecks: number;
@@ -146,6 +147,7 @@ export function calculateEffectivePlanDiscount(params: {
 		discountMode = "plan_fixed",
 		planDiscountPercent = 0,
 		planDiscountRub = 0,
+		planDiscountKopecks,
 	} = params;
 
 	if (discountMode === "none" || baseTotalKopecks <= 0) {
@@ -153,7 +155,9 @@ export function calculateEffectivePlanDiscount(params: {
 	}
 
 	let discountKopecks = 0;
-	if (planDiscountPercent > 0) {
+	if (planDiscountKopecks != null && Number(planDiscountKopecks) >= 0) {
+		discountKopecks = Math.min(baseTotalKopecks, Number(planDiscountKopecks));
+	} else if (planDiscountPercent > 0) {
 		const clampedPercent = Math.min(100, Math.max(0, planDiscountPercent));
 		const basisPoints = Math.round(clampedPercent * 100);
 		discountKopecks = percentageOfKopecks(toExactKopecks(baseTotalKopecks), basisPoints);

@@ -16,6 +16,9 @@ import {
 	buildTreatmentPlanPrompt,
 	callLlmJson,
 } from "./neuralCommentaryCascade.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("aiTreatmentPlanSuite");
 
 export async function validateAndCommentTreatmentPlan(
 	request: TreatmentPlanValidateAndCommentRequest,
@@ -119,6 +122,41 @@ export async function validateAndCommentTreatmentPlan(
 		}
 	}
 
+	// Calculate deterministic tier deltas directly from catalog nomenclature differences
+	let economyTierDeltaRub = 0;
+	let premiumTierDeltaRub = 0;
+
+	for (const item of allItems) {
+		const qty = Math.max(1, item.quantity || 1);
+		const category = classifyProcedure4StageCategory(
+			item.code804n,
+			item.name,
+			item.category,
+		);
+		switch (category) {
+			case "ortho_prosthetics":
+				// Металлокерамика (-12 000 руб) vs Цирконий (База) vs E.max (+12 000 руб)
+				economyTierDeltaRub -= 12000 * qty;
+				premiumTierDeltaRub += 12000 * qty;
+				break;
+			case "surgery_implant":
+				// Базовая система (-10 000 руб) vs SLA (База) vs 3D навигация (+26 000 руб)
+				economyTierDeltaRub -= 10000 * qty;
+				premiumTierDeltaRub += 26000 * qty;
+				break;
+			case "hygiene_sanitation":
+				// УЗ гигиена (-2 000 руб) vs AirFlow (База) vs GBT протокол (+3 000 руб)
+				economyTierDeltaRub -= 2000 * qty;
+				premiumTierDeltaRub += 3000 * qty;
+				break;
+			default:
+				// Стандартный композит (-1 300 руб) vs нанокомпозит (База) vs микрореставрация (+2 500 руб)
+				economyTierDeltaRub -= 1300 * qty;
+				premiumTierDeltaRub += 2500 * qty;
+				break;
+		}
+	}
+
 	// Default structured fallback object
 	const defaultResult: TreatmentPlanValidateAndCommentResponse = {
 		clinicalValidation: deterministicValidation,
@@ -162,7 +200,7 @@ export async function validateAndCommentTreatmentPlan(
 					type: "scenario_economy",
 					title: economyTitle,
 					description: economyDescription,
-					estimatedDeltaRub: -Math.round(deterministicFinance.totalRub * 0.3),
+					estimatedDeltaRub: economyTierDeltaRub,
 				},
 				{
 					type: "scenario_optimum",
@@ -174,7 +212,7 @@ export async function validateAndCommentTreatmentPlan(
 					type: "scenario_premium",
 					title: premiumTitle,
 					description: premiumDescription,
-					estimatedDeltaRub: Math.round(deterministicFinance.totalRub * 0.5),
+					estimatedDeltaRub: premiumTierDeltaRub,
 				},
 			],
 		},
@@ -286,8 +324,9 @@ export async function validateAndCommentTreatmentPlan(
 				return treatmentPlanValidateAndCommentResponseSchema.parse(responseObj);
 			}
 		} catch (llmError) {
-			console.warn(
-				`[TreatmentPlan AI Validator Cascade ${cascadeItem.provider}/${cascadeItem.model} Error]: ${llmError instanceof Error ? llmError.message : llmError}`,
+			logger.warn(
+				{ err: safeLogError(llmError), provider: cascadeItem.provider, model: cascadeItem.model },
+				"TreatmentPlan AI Validator Cascade Error",
 			);
 		}
 	}

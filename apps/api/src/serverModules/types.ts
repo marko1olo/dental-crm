@@ -13,7 +13,7 @@ import type { RateLimitRule } from "../security/rateLimit.js";
  *
  * Объявление расширяет пустой интерфейс FastifyContextConfig самого Fastify
  * (node_modules/fastify/types/context.d.ts), поэтому `config: { … }` в объявлении
- * маршрута проверяется компилятором и не требует ни `as any`, ни импорта в
+ * маршрута проверяется компилятором и не требует ни небезопасных приведений типов, ни импорта в
  * файле маршрута.
  */
 declare module "fastify" {

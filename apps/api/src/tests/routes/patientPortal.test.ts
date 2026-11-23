@@ -21,7 +21,7 @@ describe("Patient Portal API & Telemedicine Suite", () => {
 	test("1. validateTelegramWebAppData: correctly validates valid HMAC-SHA256 signature", () => {
 		const userObj = { id: 987654321, first_name: "Иван", username: "ivan_patient" };
 		const userStr = JSON.stringify(userObj);
-		const authDate = "1724673600";
+		const authDate = Math.floor(Date.now() / 1000).toString();
 		const queryId = "AAHdF6IQAAAAAN0XohD9_test";
 
 		const dataCheckString = `auth_date=${authDate}\nquery_id=${queryId}\nuser=${userStr}`;

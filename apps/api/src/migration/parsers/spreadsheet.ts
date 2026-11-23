@@ -163,8 +163,9 @@ function readSheetNames(entries: ZipEntry[]): Map<string, string> {
 	for (const match of rels.data
 		.toString("utf8")
 		.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		relTargets.set(match[1]!, (match[2] ?? "").replace(/^\/?(xl\/)?/, ""));
+		if (match[1]) {
+			relTargets.set(match[1], (match[2] ?? "").replace(/^\/?(xl\/)?/, ""));
+		}
 	}
 
 	for (const match of workbook.data
@@ -239,9 +240,8 @@ export function parseXlsx(buffer: Buffer): SpreadsheetParseResult {
 
 				// Адрес ячейки — источник истины о номере колонки.
 				const reference = /\br="([A-Z]+)(\d+)"/i.exec(attributes);
-				const columnIndex = reference
-					? // biome-ignore lint/style/noNonNullAssertion: automated suppression
-						columnLettersToIndex(reference[1]!)
+				const columnIndex = reference?.[1]
+					? columnLettersToIndex(reference[1])
 					: fallbackColumn;
 				if (columnIndex < 0) continue;
 				fallbackColumn = columnIndex + 1;
@@ -294,12 +294,11 @@ export function parseXlsx(buffer: Buffer): SpreadsheetParseResult {
 			(left, right) => left - right,
 		);
 		const rows = orderedRowIndexes.map((rowIndex) => {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const cells = sparseRows.get(rowIndex)!;
+			const cells = sparseRows.get(rowIndex);
 			// Пустые позиции восстанавливаются как пустые строки, а не пропускаются.
 			return Array.from(
 				{ length: width },
-				(_, columnIndex) => cells.get(columnIndex) ?? "",
+				(_, columnIndex) => cells?.get(columnIndex) ?? "",
 			);
 		});
 

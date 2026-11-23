@@ -21,14 +21,26 @@ import {
 } from "../../../services/imaging/localPacsStorageService.js";
 import { autoBindUnassignedStudies } from "../patientFioBindingEngine.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
-import { parseDicomHeader, readFilePrefix } from "../dicomParsing.js";
+import { parseDicomHeader, readFilePrefixAsync } from "../dicomParsing.js";
 import { isDemoOperationAllowed } from "../../demo/demoRoutes.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
 	const { id } = request.params as { id: string };
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const bindBodySchema = z.object({ patientId: z.string().uuid() });
 	const parsed = bindBodySchema.safeParse(request.body);
@@ -59,7 +71,7 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 							organizationId: orgId,
 							patientId: parsed.data.patientId,
 							storagePath: study.storagePath ?? null,
-							fileUrl: `/api/xray/scans/${study.id}/file`,
+							fileUrl: `/api/imaging/studies/${study.id}/file`,
 							originalFilename: study.title,
 							mimeType: "image/jpeg",
 							kind: study.kind,
@@ -85,6 +97,17 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 	const { id } = request.params as { id: string };
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const bindToothBodySchema = z.object({ toothCode: z.string().trim().max(16).nullable().optional() });
 	const parsed = bindToothBodySchema.safeParse(request.body ?? {});
@@ -128,6 +151,17 @@ export async function unbindPatientHandler(request: FastifyRequest, reply: Fasti
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	try {
 		const updated = await db.transaction(async (tx) => {
 			const study = await unbindPatientFromStudyInDb(orgId, id, tx);
@@ -150,12 +184,36 @@ export async function autoBindHandler(request: FastifyRequest, reply: FastifyRep
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const summary = await autoBindUnassignedStudies(orgId);
 	return reply.code(200).send(summary);
 }
 
+const cbctTunerQuerySchema = z.object({
+	demo: z.string().optional(),
+	id: z.string().optional(),
+}).strict();
+
 export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: FastifyReply) {
-	const query = (request.query || {}) as { demo?: string };
+	const parsedQuery = cbctTunerQuerySchema.safeParse(request.query ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры запроса тюнера КЛКТ.",
+			details: parsedQuery.error.issues,
+		});
+	}
+	const query = parsedQuery.data;
 	const isDemo = (query.demo === "true" || process.env.DENTE_DEMO_MODE === "true") && isDemoOperationAllowed(request);
 	if (isDemo) {
 		return reply.send({
@@ -193,7 +251,15 @@ export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: F
 }
 
 export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: FastifyReply) {
-	const query = (request.query || {}) as { demo?: string; id?: string };
+	const parsedQuery = cbctTunerQuerySchema.safeParse(request.query ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры запроса объема КЛКТ.",
+			details: parsedQuery.error.issues,
+		});
+	}
+	const query = parsedQuery.data;
 	const isDemo = (query.demo === "true" || process.env.DENTE_DEMO_MODE === "true") && isDemoOperationAllowed(request);
 	if (isDemo) {
 		const emptyCube = Buffer.alloc(512 * 512 * 2);
@@ -253,7 +319,7 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 
 		if (!study.dimensions) {
 			try {
-				const prefix = readFilePrefix(filePath, 65536);
+				const prefix = await readFilePrefixAsync(filePath, 65536);
 				const meta = parseDicomHeader(prefix);
 				if (meta.imageColumns && meta.imageRows) {
 					dimX = meta.imageColumns;

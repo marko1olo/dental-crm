@@ -11,6 +11,9 @@ import {
 	selectProviderKey,
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("treatmentPlanPersonalize");
 
 export type SpeechPolishProvider =
 	| "none"
@@ -541,8 +544,9 @@ export async function personalizeTreatmentPlan(
 			}
 		}
 	} catch (error) {
-		console.warn(
-			`[AI Plan Personalize Primary Failed]: ${error instanceof Error ? error.message : error}`,
+		logger.warn(
+			{ err: safeLogError(error), provider: config.provider, model: config.modelName },
+			"AI Plan Personalize Primary Failed",
 		);
 	}
 
@@ -584,15 +588,16 @@ export async function personalizeTreatmentPlan(
 			recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
 			return result;
 		} catch (fallbackError) {
-			console.warn(
-				`[AI Plan Personalize Cascade ${fallback.provider}/${fallback.model} Failed]: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`,
+			logger.warn(
+				{ err: safeLogError(fallbackError), provider: fallback.provider, model: fallback.model },
+				"AI Plan Personalize Cascade Failed",
 			);
 		}
 	}
 
 	// Final fallback — rule-based text
-	console.error(
-		"[AI Plan Personalize]: All providers failed, returning rule-based fallback.",
+	logger.error(
+		"AI Plan Personalize: All providers failed, returning rule-based fallback",
 	);
 	return {
 		patientFriendlyExplanation: `**Ваш план лечения:**\n${payload.plannedStages.map((s, i) => `${i + 1}. **${s.stageName}** — ${s.plannedServices} (${s.plannedTiming})`).join("\n")}\n\nОбратитесь к врачу для подробного разъяснения плана.`,

@@ -8,6 +8,9 @@ import {
 	selectProviderKey,
 	SpeechProviderRequestError,
 } from "./keyPool.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("geminiLiveTranslate");
 
 export interface GeminiLiveTranslateOptions {
 	sourceLanguageCode: string;
@@ -189,7 +192,7 @@ export class GeminiLiveTranslateSession {
 
 					this.handleServerMessage(message);
 				} catch (err) {
-					console.error("[GeminiLiveTranslate] Error parsing server message:", err);
+					logger.error({ err: safeLogError(err), sessionId: this.sessionId }, "Error parsing server message");
 				}
 			});
 

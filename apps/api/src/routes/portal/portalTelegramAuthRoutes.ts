@@ -2,13 +2,14 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../../accessGuard.js";
+import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
 import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
+import { findUniquePatientByPhone } from "./portalAuthStore.js";
 import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "./types.js";
 
 export interface TelegramInitDataUser {
@@ -57,10 +58,21 @@ export function validateTelegramWebAppData(
 			? Number.parseInt(params.get("auth_date") || "0", 10)
 			: undefined;
 
+		// 24-часовой лимит давности auth_date для защиты от replay-атак
+		const nowSec = Math.floor(Date.now() / 1000);
+		if (
+			authDate === undefined ||
+			Number.isNaN(authDate) ||
+			nowSec - authDate > 86400 ||
+			authDate > nowSec + 300
+		) {
+			return { isValid: false };
+		}
+
 		return {
 			isValid: true,
 			...(user ? { user } : {}),
-			...(authDate !== undefined ? { authDate } : {}),
+			authDate,
 		};
 	} catch {
 		return { isValid: false };
@@ -109,12 +121,11 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 		}
 		const validation = validateTelegramWebAppData(initData, botToken);
 
-		const isDev = namedDevelopmentModeActive();
-		if (!validation.isValid && !isDev) {
+		if (!validation.isValid) {
 			reply.status(401);
 			return {
 				error: "Unauthorized",
-				message: "Недействительная подпись Telegram WebApp.",
+				message: "Недействительная или истёкшая подпись Telegram WebApp.",
 			};
 		}
 
@@ -140,12 +151,15 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 			const callerTelegramId = validation.user?.id ? String(validation.user.id) : null;
 
 			if (phone) {
-				const [p] = await db
-					.select()
-					.from(patients)
-					.where(and(eq(patients.organizationId, orgId), eq(patients.phone, phone)))
-					.limit(1);
-				foundPatient = p;
+				const uniquePatient = await findUniquePatientByPhone(phone, orgId);
+				if (uniquePatient) {
+					const [p] = await db
+						.select()
+						.from(patients)
+						.where(and(eq(patients.organizationId, orgId), eq(patients.id, uniquePatient.id)))
+						.limit(1);
+					foundPatient = p;
+				}
 
 				if (foundPatient) {
 					const adminProfile = (foundPatient.administrativeProfile as Record<string, unknown> | null) || {};

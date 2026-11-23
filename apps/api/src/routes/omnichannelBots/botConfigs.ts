@@ -5,6 +5,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
@@ -140,144 +141,166 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 			: OmnichannelTokenVault.encrypt(body.greenApiToken, orgId);
 	}
 
-	if (body.channel === "vk") {
-		const existing = await db
-			.select({ id: denteVkBotConfigs.id })
-			.from(denteVkBotConfigs)
-			.where(
-				and(
-					eq(denteVkBotConfigs.organizationId, orgId),
-					eq(denteVkBotConfigs.botConfigId, body.botConfigId),
-				),
-			)
-			.limit(1);
+	await withTenantCtx(orgId, async (tx) => {
+		if (body.channel === "vk") {
+			const existing = await tx
+				.select({ id: denteVkBotConfigs.id })
+				.from(denteVkBotConfigs)
+				.where(
+					and(
+						eq(denteVkBotConfigs.organizationId, orgId),
+						eq(denteVkBotConfigs.botConfigId, body.botConfigId),
+					),
+				)
+				.limit(1);
 
-		const existingRecord = existing[0];
-		if (existingRecord) {
-			await db
-				.update(denteVkBotConfigs)
-				.set({
+			const existingRecord = existing[0];
+			if (existingRecord) {
+				await tx
+					.update(denteVkBotConfigs)
+					.set({
+						clinicId: body.clinicId || null,
+						groupId: body.groupId,
+						...(encryptedToken ? { groupToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
+						...(encryptedSecretKey ? { secretKey: encryptedSecretKey } : {}),
+						...(body.confirmationCode ? { confirmationCode: body.confirmationCode } : {}),
+						isActive: body.isActive,
+						isEnabled: body.isActive,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(denteVkBotConfigs.id, existingRecord.id),
+							eq(denteVkBotConfigs.organizationId, orgId),
+						),
+					);
+			} else {
+				await tx.insert(denteVkBotConfigs).values({
+					organizationId: orgId,
 					clinicId: body.clinicId || null,
+					botConfigId: body.botConfigId,
 					groupId: body.groupId,
-					...(encryptedToken ? { groupToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
-					...(encryptedSecretKey ? { secretKey: encryptedSecretKey } : {}),
-					...(body.confirmationCode ? { confirmationCode: body.confirmationCode } : {}),
+					groupToken: encryptedToken,
+					tokenSecretRef: encryptedToken,
+					secretKey: encryptedSecretKey,
+					confirmationCode: body.confirmationCode,
 					isActive: body.isActive,
 					isEnabled: body.isActive,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteVkBotConfigs.id, existingRecord.id));
-		} else {
-			await db.insert(denteVkBotConfigs).values({
-				organizationId: orgId,
-				clinicId: body.clinicId || null,
-				botConfigId: body.botConfigId,
-				groupId: body.groupId,
-				groupToken: encryptedToken,
-				tokenSecretRef: encryptedToken,
-				secretKey: encryptedSecretKey,
-				confirmationCode: body.confirmationCode,
-				isActive: body.isActive,
-				isEnabled: body.isActive,
-			});
-		}
-	} else if (body.channel === "whatsapp") {
-		const existing = await db
-			.select({ id: denteWhatsappBotConfigs.id })
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
+				});
+			}
+		} else if (body.channel === "whatsapp") {
+			const existing = await tx
+				.select({ id: denteWhatsappBotConfigs.id })
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.limit(1);
 
-		const existingRecord = existing[0];
-		if (existingRecord) {
-			await db
-				.update(denteWhatsappBotConfigs)
-				.set({
+			const existingRecord = existing[0];
+			if (existingRecord) {
+				await tx
+					.update(denteWhatsappBotConfigs)
+					.set({
+						phoneNumberId: body.phoneNumberId,
+						provider: body.provider || "cloud_api",
+						greenApiInstanceId: body.greenApiInstanceId,
+						...(encryptedGreenApiToken ? { greenApiToken: encryptedGreenApiToken } : {}),
+						...(encryptedToken ? { accessToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
+						isActive: body.isActive,
+						isEnabled: body.isActive,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(denteWhatsappBotConfigs.id, existingRecord.id),
+							eq(denteWhatsappBotConfigs.organizationId, orgId),
+						),
+					);
+			} else {
+				await tx.insert(denteWhatsappBotConfigs).values({
+					organizationId: orgId,
 					phoneNumberId: body.phoneNumberId,
 					provider: body.provider || "cloud_api",
 					greenApiInstanceId: body.greenApiInstanceId,
-					...(encryptedGreenApiToken ? { greenApiToken: encryptedGreenApiToken } : {}),
-					...(encryptedToken ? { accessToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
+					greenApiToken: encryptedGreenApiToken,
+					accessToken: encryptedToken,
+					tokenSecretRef: encryptedToken,
 					isActive: body.isActive,
 					isEnabled: body.isActive,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteWhatsappBotConfigs.id, existingRecord.id));
-		} else {
-			await db.insert(denteWhatsappBotConfigs).values({
-				organizationId: orgId,
-				phoneNumberId: body.phoneNumberId,
-				provider: body.provider || "cloud_api",
-				greenApiInstanceId: body.greenApiInstanceId,
-				greenApiToken: encryptedGreenApiToken,
-				accessToken: encryptedToken,
-				tokenSecretRef: encryptedToken,
-				isActive: body.isActive,
-				isEnabled: body.isActive,
-			});
-		}
-	} else if (body.channel === "telegram") {
-		const existing = await db
-			.select({ id: denteTelegramBotConfigs.id })
-			.from(denteTelegramBotConfigs)
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, orgId),
-					eq(denteTelegramBotConfigs.botConfigId, body.botConfigId),
-				),
-			)
-			.limit(1);
+				});
+			}
+		} else if (body.channel === "telegram") {
+			const existing = await tx
+				.select({ id: denteTelegramBotConfigs.id })
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, orgId),
+						eq(denteTelegramBotConfigs.botConfigId, body.botConfigId),
+					),
+				)
+				.limit(1);
 
-		const existingRecord = existing[0];
-		if (existingRecord) {
-			await db
-				.update(denteTelegramBotConfigs)
-				.set({
+			const existingRecord = existing[0];
+			if (existingRecord) {
+				await tx
+					.update(denteTelegramBotConfigs)
+					.set({
+						clinicId: body.clinicId || null,
+						mode: body.isActive ? "clinic_owned_bot" : "disabled",
+						...(encryptedToken ? { tokenSecretRef: encryptedToken } : {}),
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.id, existingRecord.id),
+							eq(denteTelegramBotConfigs.organizationId, orgId),
+						),
+					);
+			} else {
+				await tx.insert(denteTelegramBotConfigs).values({
+					organizationId: orgId,
 					clinicId: body.clinicId || null,
+					botConfigId: body.botConfigId,
 					mode: body.isActive ? "clinic_owned_bot" : "disabled",
-					...(encryptedToken ? { tokenSecretRef: encryptedToken } : {}),
-					updatedAt: new Date(),
-				})
-				.where(eq(denteTelegramBotConfigs.id, existingRecord.id));
-		} else {
-			await db.insert(denteTelegramBotConfigs).values({
-				organizationId: orgId,
-				clinicId: body.clinicId || null,
-				botConfigId: body.botConfigId,
-				mode: body.isActive ? "clinic_owned_bot" : "disabled",
-				tokenSecretRef: encryptedToken,
-			});
-		}
-	} else if (body.channel === "max") {
-		const existing = await db
-			.select({ id: denteMaxBotConfigs.id })
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
+					tokenSecretRef: encryptedToken,
+				});
+			}
+		} else if (body.channel === "max") {
+			const existing = await tx
+				.select({ id: denteMaxBotConfigs.id })
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId))
+				.limit(1);
 
-		const existingRecord = existing[0];
-		if (existingRecord) {
-			await db
-				.update(denteMaxBotConfigs)
-				.set({
+			const existingRecord = existing[0];
+			if (existingRecord) {
+				await tx
+					.update(denteMaxBotConfigs)
+					.set({
+						botId: body.maxBotId,
+						...(encryptedToken ? { maxBotToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
+						isActive: body.isActive,
+						isEnabled: body.isActive,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(denteMaxBotConfigs.id, existingRecord.id),
+							eq(denteMaxBotConfigs.organizationId, orgId),
+						),
+					);
+			} else {
+				await tx.insert(denteMaxBotConfigs).values({
+					organizationId: orgId,
 					botId: body.maxBotId,
-					...(encryptedToken ? { maxBotToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
+					maxBotToken: encryptedToken,
+					tokenSecretRef: encryptedToken,
 					isActive: body.isActive,
 					isEnabled: body.isActive,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteMaxBotConfigs.id, existingRecord.id));
-		} else {
-			await db.insert(denteMaxBotConfigs).values({
-				organizationId: orgId,
-				botId: body.maxBotId,
-				maxBotToken: encryptedToken,
-				tokenSecretRef: encryptedToken,
-				isActive: body.isActive,
-				isEnabled: body.isActive,
-			});
+				});
+			}
 		}
-	}
+	});
 
 	// Обновляем рантайм в памяти движка
 	const runtime = omnichannelBotEngine.registerBot({

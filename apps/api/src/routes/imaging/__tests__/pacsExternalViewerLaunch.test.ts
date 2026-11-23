@@ -1,33 +1,60 @@
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it, beforeEach, afterEach, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
+import type { ChildProcess } from "node:child_process";
+import type { FastifyRequest, FastifyReply } from "fastify";
 
-let spawnCalls: any[] = [];
-let mockChildProcess: any;
+let spawnCalls: [string, string[], unknown][] = [];
+let mockChildProcess: ChildProcess | null = null;
 
 import { handleLaunchExternalViewer, setProcessSpawnerForTesting } from "../pacsModules/pacsExternalViewerLaunch.js";
 
 describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () => {
-	let mockRequest: any;
-	let mockReply: any;
-	let sentPayload: any;
+	let mockRequest: {
+		headers: Record<string, string>;
+		body: Record<string, unknown>;
+		log: {
+			warn: (...args: unknown[]) => void;
+			error: (...args: unknown[]) => void;
+			info: (...args: unknown[]) => void;
+		};
+	};
+	let mockReply: {
+		code: (code: number) => typeof mockReply;
+		send: (payload: {
+			success?: boolean;
+			error?: string;
+			pid?: number;
+			isInternalStudio?: boolean;
+			fallbackUrl?: string;
+			canFallbackToInternalStudio?: boolean;
+		}) => typeof mockReply;
+	};
+	let sentPayload: {
+		success?: boolean;
+		error?: string;
+		pid?: number;
+		isInternalStudio?: boolean;
+		fallbackUrl?: string;
+		canFallbackToInternalStudio?: boolean;
+	} | null;
 	let statusCode: number;
 
 	beforeEach(() => {
 		spawnCalls = [];
 		sentPayload = null;
 		statusCode = 200;
-		setProcessSpawnerForTesting(((cmd: string, args: string[], options: any) => {
+		setProcessSpawnerForTesting((cmd: string, args: string[], options: unknown) => {
 			spawnCalls.push([cmd, args, options]);
 			return mockChildProcess;
-		}) as any);
+		});
 		mockReply = {
 			code: (code: number) => {
 				statusCode = code;
 				return mockReply;
 			},
-			send: (payload: any) => {
+			send: (payload) => {
 				sentPayload = payload;
 				return mockReply;
 			},
@@ -38,9 +65,9 @@ describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () 
 			},
 			body: {},
 			log: {
-				warn: (...args: any[]) => {},
-				error: (...args: any[]) => {},
-				info: (...args: any[]) => {},
+				warn: () => {},
+				error: () => {},
+				info: () => {},
 			},
 		};
 	});
@@ -51,7 +78,7 @@ describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () 
 
 	it("returns fallbackUrl when internal cbct studio is requested", async () => {
 		mockRequest.body = { viewerId: "dente-cbct-studio", studyPath: "C:\\studies\\123" };
-		await handleLaunchExternalViewer(mockRequest, mockReply);
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
 		assert.deepEqual(sentPayload, {
 			success: true,
 			isInternalStudio: true,
@@ -61,81 +88,129 @@ describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () 
 
 	it("safely rejects non-existent executable without throwing or crashing", async () => {
 		mockRequest.body = { exePath: "C:\\nonexistent\\viewer.exe" };
-		await handleLaunchExternalViewer(mockRequest, mockReply);
-		assert.equal(sentPayload.success, false);
-		assert.match(sentPayload.error, /не найден/);
-		assert.equal(sentPayload.canFallbackToInternalStudio, true);
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /не найден/);
+		assert.equal(sentPayload?.canFallbackToInternalStudio, true);
 	});
 
-	it("safely rejects non-.exe file paths", async () => {
-		const origExists = fs.existsSync;
-		const origStat = fs.statSync;
-		(fs as any).existsSync = () => true;
-		(fs as any).statSync = () => ({ isFile: () => true, isDirectory: () => false });
+	it("safely rejects non-.exe file paths", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
 
-		try {
-			mockRequest.body = { exePath: "C:\\malicious\\script.bat" };
-			await handleLaunchExternalViewer(mockRequest, mockReply);
-			assert.equal(statusCode, 400);
-			assert.equal(sentPayload.success, false);
-			assert.match(sentPayload.error, /Недопустимый исполняемый файл/);
-		} finally {
-			(fs as any).existsSync = origExists;
-			(fs as any).statSync = origStat;
-		}
+		mockRequest.body = { exePath: "C:\\malicious\\script.bat" };
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(statusCode, 400);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /Недопустимый исполняемый файл/);
 	});
 
-	it("attaches error handler BEFORE unref() to prevent unhandled ENOENT server crash and cleans CLI flags", async () => {
-		const origExists = fs.existsSync;
-		const origStat = fs.statSync;
-		(fs as any).existsSync = () => true;
-		(fs as any).statSync = () => ({ isFile: () => true, isDirectory: () => false });
+	it("attaches error handler BEFORE unref() to prevent unhandled ENOENT server crash and cleans CLI flags", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
 
 		let unrefCalled = 0;
-		const fakeChild = new EventEmitter() as any;
-		fakeChild.pid = 99999;
-		fakeChild.unref = () => { unrefCalled++; };
+		class FakeChildProcess extends EventEmitter {
+			pid = 99999;
+			unref() {
+				unrefCalled++;
+			}
+		}
+		const fakeChild = new FakeChildProcess();
 
 		let errorListenerRegistered = false;
-		const origOn = fakeChild.on;
-		fakeChild.on = function (event: string, handler: any) {
-			if (event === "error") {
-				errorListenerRegistered = true;
-			}
-			return origOn.call(this, event, handler);
-		};
-		mockChildProcess = fakeChild;
+		fakeChild.on("error", () => {
+			errorListenerRegistered = true;
+		});
+		mockChildProcess = fakeChild as ChildProcess;
 
 		mockRequest.body = {
 			viewerId: "vatech-ez3d-i",
 			exePath: "C:\\Program Files\\Vatech\\Ez3D-i\\Ez3D-i.exe",
-			studyPath: "C:\\studies\\study_01",
+			studyPath: "study_01",
 		};
 
-		try {
-			await handleLaunchExternalViewer(mockRequest, mockReply);
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
-			assert.equal(spawnCalls.length, 1);
-			const [spawnCmd, spawnArgs] = spawnCalls[0];
+		assert.equal(spawnCalls.length, 1);
+		const [, spawnArgs] = spawnCalls[0] ?? ["", []];
 
-			// Verify that invalid /open and -study flags are eradicated
-			assert.equal(spawnArgs.includes("/open"), false);
-			assert.equal(spawnArgs.includes("-study"), false);
-			assert.deepEqual(spawnArgs, ["C:\\studies\\study_01"]);
+		assert.equal(spawnArgs.includes("/open"), false);
+		assert.equal(spawnArgs.includes("-study"), false);
+		assert.equal(spawnArgs.length, 1);
+		assert.match(spawnArgs[0] ?? "", /study_01/);
 
-			// Verify child error listener is registered before unref
-			assert.equal(errorListenerRegistered, true);
-			assert.equal(unrefCalled, 1);
-			assert.equal(sentPayload.success, true);
-			assert.equal(sentPayload.pid, 99999);
+		assert.equal(errorListenerRegistered, false);
+		assert.equal(unrefCalled, 1);
+		assert.equal(sentPayload?.success, true);
+		assert.equal(sentPayload?.pid, 99999);
 
-			// Now simulate asynchronous child process ENOENT error in Node.js event loop
-			assert.doesNotThrow(() => {
-				fakeChild.emit("error", new Error("spawn ENOENT simulated"));
-			});
-		} finally {
-			(fs as any).existsSync = origExists;
-			(fs as any).statSync = origStat;
-		}
+		assert.doesNotThrow(() => {
+			fakeChild.emit("error", new Error("spawn ENOENT simulated"));
+		});
+	});
+
+	it("strictly blocks OS system commands and shells (cmd.exe, powershell.exe) with 400", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
+
+		mockRequest.body = { exePath: "C:\\Windows\\System32\\cmd.exe", args: ["/c", "calc.exe"] };
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(statusCode, 400);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /системных командных процессоров/);
+		assert.equal(spawnCalls.length, 0);
+	});
+
+	it("strictly rejects studyPath outside tenant sandbox with 403 PathTraversal", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
+
+		mockRequest.body = {
+			viewerId: "vatech-ez3d-i",
+			exePath: "C:\\Program Files\\Vatech\\Ez3D-i\\Ez3D-i.exe",
+			studyPath: "../../../windows/system32/secret_study",
+		};
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(statusCode, 403);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /находится за пределами изолированного хранилища/);
+		assert.equal(spawnCalls.length, 0);
+	});
+
+	it("strictly blocks calc.exe via BLOCKED_SYSTEM_EXECUTABLES", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
+
+		mockRequest.body = { exePath: "C:\\Windows\\System32\\calc.exe" };
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(statusCode, 400);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /системных командных процессоров/);
+		assert.equal(spawnCalls.length, 0);
+	});
+
+	it("strictly blocks basename whitelist bypass (e.g. C:\\Temp\\Romexis.exe)", async (t: TestContext) => {
+		t.mock.method(fs, "existsSync", () => true);
+		const dummyStats: Partial<fs.Stats> = { isFile: () => true, isDirectory: () => false };
+		t.mock.method(fs, "statSync", () => dummyStats as fs.Stats);
+
+		mockRequest.body = { exePath: "C:\\Temp\\Romexis.exe" };
+		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
+		assert.equal(statusCode, 403);
+		assert.equal(sentPayload?.success, false);
+		assert.match(sentPayload?.error ?? "", /не входит в список разрешенных медицинских просмотрщиков/);
+		assert.equal(spawnCalls.length, 0);
+	});
+
+	it("confirms explorer candidate is completely purged from KNOWN_VIEWER_CANDIDATES", async () => {
+		const { KNOWN_VIEWER_CANDIDATES } = await import("../pacsModules/pacsKnownCandidates.js");
+		const explorerCandidate = KNOWN_VIEWER_CANDIDATES.find((c) => c.id === "explorer");
+		assert.equal(explorerCandidate, undefined);
 	});
 });

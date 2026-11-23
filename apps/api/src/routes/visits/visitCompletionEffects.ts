@@ -16,16 +16,17 @@ export interface VisitCompletionPayload {
 	orgId: string;
 	visit: {
 		id: string;
-		appointmentId?: string | null;
-		patientId?: string | null;
-		diagnosis?: string | null;
-		treatmentPlan?: string | null;
-		complaint?: string | null;
-		objectiveStatus?: string | null;
-		doctorSummary?: string | null;
+		appointmentId?: string | null | undefined;
+		patientId?: string | null | undefined;
+		diagnosis?: string | null | undefined;
+		treatmentPlan?: string | null | undefined;
+		complaint?: string | null | undefined;
+		objectiveStatus?: string | null | undefined;
+		doctorSummary?: string | null | undefined;
 	};
-	doctorId?: string | null;
+	doctorId?: string | null | undefined;
 	log: FastifyBaseLogger;
+	skipBomDeduction?: boolean | undefined;
 }
 
 export async function executeVisitCompletionSideEffects({
@@ -33,6 +34,7 @@ export async function executeVisitCompletionSideEffects({
 	visit,
 	doctorId,
 	log,
+	skipBomDeduction,
 }: VisitCompletionPayload): Promise<void> {
 	try {
 		await withTenantCtx(orgId, async (tx) => {
@@ -61,30 +63,32 @@ export async function executeVisitCompletionSideEffects({
 
 			// Каноническое списание расходных материалов по техкартам (BOM - Мандаты 8e, 8v, 8bo)
 			// Списание происходит строго 1 раз на сервере в транзакции с RLS (в SAVEPOINT, чтобы сбой BOM не отравил транзакцию)
-			try {
-				await withSavepoint(tx, async (spTx) =>
-					executeAutoBomWriteoff(spTx, {
-						organizationId: orgId,
-						visitId: visit.id,
-						patientId: visit.patientId,
-						userId: doctorId ?? null,
-						allowOverdraft: true,
-					}),
-				);
-				onTenantTxCommit(() => {
-					wsBroker.broadcastToOrganization(orgId, {
-						type: "INVENTORY_STOCK_CHANGED",
-						payload: {
+			if (!skipBomDeduction) {
+				try {
+					await withSavepoint(tx, async (spTx) =>
+						executeAutoBomWriteoff(spTx, {
+							organizationId: orgId,
 							visitId: visit.id,
-							action: "auto_deduct",
-						},
+							patientId: visit.patientId,
+							userId: doctorId ?? null,
+							allowOverdraft: true,
+						}),
+					);
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "INVENTORY_STOCK_CHANGED",
+							payload: {
+								visitId: visit.id,
+								action: "auto_deduct",
+							},
+						});
 					});
-				});
-			} catch (bomErr) {
-				log.warn(
-					{ error: bomErr, visitId: visit.id },
-					"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
-				);
+				} catch (bomErr) {
+					log.warn(
+						{ error: bomErr, visitId: visit.id },
+						"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
+					);
+				}
 			}
 
 			onTenantTxCommit(() => {

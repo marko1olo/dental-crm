@@ -421,4 +421,170 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(result2.priceKopecks, 149950);
 		assert.equal(result2.amountKopecks, 149950n);
 	});
+
+	it("12. DEF-ORTHO-API-01: Idempotency-Key validation & replay caching on archwire-change and ligatures-activate (Mandates 8bo, 8zp)", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		// 12a. archwire-change rejects non-UUID idempotency key
+		const invalidIdemRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": "not-a-valid-uuid",
+			},
+			payload: {
+				material: "NiTi",
+				section: ".014",
+				arch: "upper",
+			},
+		});
+		assert.equal(invalidIdemRes.statusCode, 400);
+		const invalidBody = JSON.parse(invalidIdemRes.body);
+		assert.equal(invalidBody.error, "ValidationError");
+
+		// 12b. archwire-change performs exactly-once execution and idempotent replay
+		const idemKey1 = fixtureUuid(NAMESPACE, 21);
+		const firstWireRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKey1,
+			},
+			payload: {
+				material: "SS",
+				section: ".018",
+				arch: "upper",
+				note: "Первая смена дуги",
+			},
+		});
+		assert.equal(firstWireRes.statusCode, 200);
+		const firstWireBody = JSON.parse(firstWireRes.body);
+		assert.equal(firstWireBody.success, true);
+		assert.equal(firstWireRes.headers["idempotency-key"], idemKey1);
+
+		// Replay with identical key
+		const secondWireRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKey1,
+			},
+			payload: {
+				material: "SS",
+				section: ".018",
+				arch: "upper",
+				note: "Первая смена дуги",
+			},
+		});
+		assert.equal(secondWireRes.statusCode, 200);
+		assert.equal(secondWireRes.headers["idempotency-replayed"], "true");
+		const secondWireBody = JSON.parse(secondWireRes.body);
+		assert.deepEqual(secondWireBody, firstWireBody);
+
+		// 12c. ligatures-activate performs exactly-once execution and idempotent replay
+		const idemKey2 = fixtureUuid(NAMESPACE, 22);
+		const firstLigRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/ligatures-activate`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKey2,
+			},
+			payload: {
+				powerChain: true,
+				powerChainSpan: "14-24",
+				note: "Закрытие тремы",
+			},
+		});
+		assert.equal(firstLigRes.statusCode, 200);
+		const firstLigBody = JSON.parse(firstLigRes.body);
+		assert.equal(firstLigBody.success, true);
+
+		// Replay with identical key
+		const secondLigRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/ligatures-activate`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKey2,
+			},
+			payload: {
+				powerChain: true,
+				powerChainSpan: "14-24",
+			},
+		});
+		assert.equal(secondLigRes.statusCode, 200);
+		assert.equal(secondLigRes.headers["idempotency-replayed"], "true");
+		const secondLigBody = JSON.parse(secondLigRes.body);
+		assert.deepEqual(secondLigBody, firstLigBody);
+	});
+
+	it("13. DEF-ORTHO-API-02: Sealed Zod schemas with .strict() reject extra unknown properties (Mandate 8bq)", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		// 13a. issueAlignerSetSchema .strict()
+		const alignerRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
+			headers: ORG_HEADERS,
+			payload: {
+				alignerCount: 2,
+				wearDaysPerAligner: 14,
+				unknownHackerField: "malicious_payload",
+			},
+		});
+		assert.equal(alignerRes.statusCode, 400);
+
+		// 13b. ligatureActivateSchema .strict()
+		const ligatureRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/ligatures-activate`,
+			headers: ORG_HEADERS,
+			payload: {
+				powerChain: true,
+				rogueProperty: 123,
+			},
+		});
+		assert.equal(ligatureRes.statusCode, 400);
+
+		// 13c. stageAdvanceSchema .strict()
+		const stageRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/stages/advance`,
+			headers: ORG_HEADERS,
+			payload: {
+				nextStage: 3,
+				unrecognizedPayload: true,
+			},
+		});
+		assert.equal(stageRes.statusCode, 400);
+
+		// 13d. rebracketSchema .strict()
+		const rebracketRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
+			headers: ORG_HEADERS,
+			payload: {
+				toothNumber: 15,
+				unexpectedField: "boom",
+			},
+		});
+		assert.equal(rebracketRes.statusCode, 400);
+
+		// 13e. deductOrthoMaterialsSchema .strict()
+		const deductRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
+			headers: ORG_HEADERS,
+			payload: {
+				action: "wire_change",
+				quantity: 1,
+				extraUnsafeParam: "denied",
+			},
+		});
+		assert.equal(deductRes.statusCode, 400);
+	});
 });

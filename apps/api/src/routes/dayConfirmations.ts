@@ -21,6 +21,7 @@ import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
+import { requireScheduleMutationContext } from "./scheduleAuthGuard.js";
 import { db } from "../db/client.js";
 import { appointmentActionCodes } from "../db/communicationsSchema.js";
 import {
@@ -322,6 +323,9 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 									...dayAppointmentIds.map((id) =>
 										like(communicationOutbox.dedupeKey, `reminder:${id}:%`),
 									),
+									...dayAppointmentIds.map((id) =>
+										like(communicationOutbox.dedupeKey, `reminder:appointment:${id}:%`),
+									),
 								),
 							),
 						)
@@ -338,7 +342,7 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			// Ключ: reminder:<приём>:<часов>. Приёму может соответствовать несколько
 			// напоминаний — за сутки и за два часа; берём самое продвинутое.
 			const parts = row.dedupeKey.split(":");
-			const appointmentId = parts[1];
+			const appointmentId = parts[1] === "appointment" ? parts[2] : parts[1];
 			if (!appointmentId) continue;
 
 			const state = OUTBOX_TO_REMINDER_STATE[row.status] ?? "queued";
@@ -475,7 +479,7 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 	});
 
 	const handleDispatchBatchReminders = async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(
+		const context = await requireScheduleMutationContext(
 			request,
 			reply,
 			"batch dispatch reminders",
@@ -632,8 +636,7 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				preferredChannel = "whatsapp";
 			}
 
-			const dedupeKey = `reminder:${appt.id}:${date}:${preferredChannel}`;
-			let recipientAddress = phone || "";
+			let recipientAddress = "";
 			if (preferredChannel === "telegram") {
 				if (telegram) {
 					if (/^-?\d+$/.test(telegram.trim())) {
@@ -643,7 +646,26 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 						recipientAddress = cleanUsername ? `@${cleanUsername}` : "";
 					}
 				}
+				if (!recipientAddress) {
+					request.log.warn(
+						{ appointmentId: appt.id, patientId: appt.patientId },
+						"Пропуск отправки через Telegram: отсутствует Telegram Chat ID",
+					);
+					skippedNoContact++;
+					prefilteredResults.push({
+						appointmentId: appt.id,
+						patientName: patName,
+						channel: "telegram",
+						status: "skipped_no_contact",
+						details: "У пациента не привязан Telegram аккаунт",
+					});
+					continue;
+				}
+			} else {
+				recipientAddress = phone || "";
 			}
+
+			const dedupeKey = `reminder:appointment:${appt.id}:batch`;
 
 			const timeStr = appt.startsAt.toLocaleTimeString("ru-RU", {
 				timeZone,

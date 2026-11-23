@@ -2,8 +2,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { visitDiaries } from "../../../db/schema.js";
 import { Icd10ClinicalValidator } from "../Icd10ClinicalValidator.js";
+import type { FastifyBaseLogger } from "fastify";
 import { buildEmkDiagnosisText, computeDiaryHash } from "./diaryHashCalculator.js";
-import { dispatchDiarySigningSideEffects, type DiaryStockDeduction } from "./diarySideEffectsAsyncDispatcher.js";
+import { dispatchDiarySigningSideEffects, type DiarySideEffectsLogger, type DiaryStockDeduction } from "./diarySideEffectsAsyncDispatcher.js";
 import {
 	DiarySigningError, formatDoctorSpecialtyLabel, redactLegacyPinSignature,
 	resolveSignatureForStorage, SIMPLE_PIN_EP_MARK, type DiaryDbTransaction,
@@ -20,7 +21,13 @@ export interface DiarySigningResult {
  */
 export async function runDiarySigningCeremony(
 	tx: DiaryDbTransaction,
-	params: { diaryId: string; organizationId: string; userId: string | null; pkcs7Signature: string | null },
+	params: {
+		diaryId: string;
+		organizationId: string;
+		userId: string | null;
+		pkcs7Signature: string | null;
+		logger?: FastifyBaseLogger | DiarySideEffectsLogger | undefined;
+	},
 ): Promise<DiarySigningResult> {
 	const { diaryId, organizationId, userId } = params;
 	const [diary] = await tx
@@ -59,7 +66,12 @@ export async function runDiarySigningCeremony(
 	.returning({ id: visitDiaries.id });
 	if (lockedRows.length === 0) throw new DiarySigningError("AlreadyLocked", "Дневник подписан и заблокирован.");
 
-	const sideEffects = await dispatchDiarySigningSideEffects(tx, { organizationId, visitId: diary.visitId, userId });
+	const sideEffects = await dispatchDiarySigningSideEffects(tx, {
+		organizationId,
+		visitId: diary.visitId,
+		userId,
+		logger: params.logger,
+	});
 	const auditLogId = await recordSigningAuditLog(tx, {
 		organizationId, patientId: diary.patientId, diaryId, userId, action: "VISIT_SIGNED_AND_LOCKED",
 	});

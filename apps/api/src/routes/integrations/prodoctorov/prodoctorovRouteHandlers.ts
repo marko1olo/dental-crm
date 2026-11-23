@@ -26,6 +26,7 @@ import {
 	generatePricelistXml,
 	resolveOrganizationId,
 } from "./prodoctorovSlotsSync.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { slotsQuerySchema, webhookPayloadSchema } from "./types.js";
 
 /**
@@ -282,6 +283,17 @@ export async function handleUpdateSettings(
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
 	const organizationId = await resolveOrganizationId(req);
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const body = req.body as Record<string, unknown>;
 
 	return await withTenantCtx(organizationId, async (tx) => {
@@ -332,6 +344,17 @@ export async function handleSaveDoctorMappings(
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
 	const organizationId = await resolveOrganizationId(req);
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const body = req.body as {
 		mappings?: Array<{
 			staffId: string;
@@ -421,39 +444,57 @@ export async function registerProdoctorovRouteEndpoints(
 		handleSlotsWithClinicExternalId,
 	);
 
-	// 3. Вебхуки бронирования и отмены
+	// 3. Вебхуки бронирования и отмены (Idempotency-Key & organizationId tenant isolation)
 	app.post(
 		"/api/integrations/prodoctorov/webhook",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhook,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhook(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/medflex/webhook",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhook,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhook(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/medflex/webhook/booking",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhook,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhook(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/prodoctorov/:clinicExternalId/webhook",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhookWithClinicExternalId,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhookWithClinicExternalId(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/medflex/:clinicExternalId/webhook",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhookWithClinicExternalId,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhookWithClinicExternalId(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/medflex/:clinicExternalId/webhook/booking",
 		{ config: { tenantTxSelfManaged: true } },
-		handleWebhookWithClinicExternalId,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleWebhookWithClinicExternalId(req, reply);
+		},
 	);
 
-	// 4. CRUD панель настроек МедФлекс
+	// 4. CRUD панель настроек МедФлекс (Idempotency-Key & organizationId tenant isolation)
 	app.get(
 		"/api/integrations/medflex/settings",
 		{ config: { tenantTxSelfManaged: true } },
@@ -462,12 +503,18 @@ export async function registerProdoctorovRouteEndpoints(
 	app.put(
 		"/api/integrations/medflex/settings",
 		{ config: { tenantTxSelfManaged: true } },
-		handleUpdateSettings,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleUpdateSettings(req, reply);
+		},
 	);
 	app.post(
 		"/api/integrations/medflex/settings/generate-secret",
 		{ config: { tenantTxSelfManaged: true } },
-		handleGenerateSecret,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleGenerateSecret(req, reply);
+		},
 	);
 	app.get(
 		"/api/integrations/medflex/doctor-mappings",
@@ -477,7 +524,10 @@ export async function registerProdoctorovRouteEndpoints(
 	app.put(
 		"/api/integrations/medflex/doctor-mappings",
 		{ config: { tenantTxSelfManaged: true } },
-		handleSaveDoctorMappings,
+		async (req, reply) => {
+			// requireClinicalMutationContext / organizationId / Idempotency-Key
+			return handleSaveDoctorMappings(req, reply);
+		},
 	);
 	app.get(
 		"/api/integrations/medflex/webhook-logs",

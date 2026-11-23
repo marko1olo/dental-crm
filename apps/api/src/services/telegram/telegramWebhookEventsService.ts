@@ -13,6 +13,9 @@ import type {
 } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { denteTelegramWebhookEvents } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("telegramWebhookEvents");
 
 function parseWarnings(json: string | null | undefined): string[] {
 	if (!json) return [];
@@ -162,7 +165,7 @@ export async function claimDenteTelegramWebhookUpdate(input: {
 		}
 	} catch (dbError) {
 		// Ошибка работы с БД
-		console.error("[TelegramWebhookService] Database claim error:", dbError);
+		logger.error({ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId }, "Database claim error");
 	}
 
 	// Fallback-объект при сбое базы данных
@@ -240,7 +243,7 @@ export async function recordDenteTelegramWebhookEvent(input: {
 			return mapRowToEvent(saved);
 		}
 	} catch (dbError) {
-		console.error("[TelegramWebhookService] Database record error:", dbError);
+		logger.error({ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId }, "Database record error");
 	}
 
 	return {

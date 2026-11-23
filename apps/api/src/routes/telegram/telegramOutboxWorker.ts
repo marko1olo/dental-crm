@@ -6,10 +6,10 @@ import {
 	denteTelegramOutboxSendDueResponseSchema,
 } from "@dental/shared";
 import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
-import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import type { DomainState } from "./telegramCanonicalStore.js";
 import {
 	buildDenteTelegramOutbox,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import {
 	dueOutboxClientMutationId,
 	telegramRetryAfterSeconds,
@@ -32,6 +32,7 @@ import {
 	type TelegramDueWorkerLogger,
 	type DenteTelegramOutboxDueWorkerHandle,
 } from "./types.js";
+import { dispatchDueMessages } from "../../services/communications/dispatch/dispatcherCore.js";
 
 export async function executeDenteTelegramOutboxDueBatch(
 	input: TelegramOutboxSendDueInput,
@@ -79,6 +80,17 @@ export async function executeDenteTelegramOutboxDueBatch(
 	}
 
 	const requestedLimit = input.limit ?? 50;
+
+	if (!input.dryRun && orgId) {
+		try {
+			await dispatchDueMessages({
+				organizationId: orgId,
+				batchSize: requestedLimit,
+			});
+		} catch {
+			// Изоляция фоновой обработки очереди коммуникаций
+		}
+	}
 	const outbox = buildDenteTelegramOutbox(
 		{ limit: Math.max(requestedLimit, 50), status: "due" },
 		runtimeResult.runtime.runtimeScope,

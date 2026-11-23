@@ -1,6 +1,13 @@
-import { applyPlanItemsToVisitSchema } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import {
+	applyPlanItemsToVisitSchema,
+	computePayloadHash,
+	generateUuidV7,
+} from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	VisitWorkOrderError,
@@ -39,15 +46,79 @@ export async function handleApplyPlanItemsToVisit(
 		};
 	}
 
+	const rawIdempotencyKey =
+		(request.headers["idempotency-key"] as string | undefined) ??
+		(request.headers["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined)
+			: undefined);
+
+	const idempotencyKey =
+		typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+			? rawIdempotencyKey.trim()
+			: generateUuidV7();
+
+	reply.header("Idempotency-Key", idempotencyKey);
+
+	const existingRecord = await withTenantCtx(context.organizationId, async (tx) => {
+		const [rec] = await tx
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, context.organizationId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+		return rec ?? null;
+	});
+
+	if (existingRecord) {
+		if (existingRecord.status === "completed" && existingRecord.responseBody) {
+			reply.header("idempotency-replayed", "true");
+			return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+		}
+		if (existingRecord.status === "in_flight") {
+			return reply.code(409).header("Retry-After", "1").send({
+				error: "Conflict",
+				message: "Операция переноса услуг плана лечения с данным Idempotency-Key уже выполняется.",
+			});
+		}
+	}
+
 	try {
 		const identity = getRequestIdentity(request);
-		return await VisitWorkOrderService.applyPlanItemsToVisit({
+		const result = await VisitWorkOrderService.applyPlanItemsToVisit({
 			organizationId: context.organizationId,
 			visitId,
 			planId: parsed.data.planId,
 			itemIds: parsed.data.itemIds,
 			actorUserId: identity.userId ?? null,
 		});
+
+		await withTenantCtx(context.organizationId, async (tx) => {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: context.organizationId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: result,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: result,
+						responseCode: 200,
+					},
+				});
+		});
+
+		return result;
 	} catch (error) {
 		if (error instanceof VisitWorkOrderError) {
 			reply.code(error.statusCode);

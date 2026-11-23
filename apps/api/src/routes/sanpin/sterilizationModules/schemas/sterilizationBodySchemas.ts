@@ -41,15 +41,26 @@ export const unsealBodySchema = z.object({
 	notes: z.string().trim().optional().nullable(),
 });
 
-export const quickNormCycleSchema = z.object({
-	regime: z.enum(["standard_134", "delicate_121", "prion_134", "quick_134", "flash_134"]).default("standard_134").optional(),
-	autoclaveId: z.string().optional(),
-	deviceName: z.string().optional(),
-	packagingType: packagingTypeSchema.default("kraft_heat_sealed").optional(),
-	itemsDescription: z.string().optional(),
-	packagesCount: z.number().int().min(1).max(50).default(1).optional(),
-	operatorId: z.string().nullable().optional(),
-});
+export const quickNormCycleSchema = z
+	.object({
+		regime: z.enum(["standard_134", "delicate_121", "prion_134", "quick_134", "flash_134"]).default("standard_134").optional(),
+		autoclaveId: z.string().optional(),
+		deviceName: z.string().optional(),
+		packagingType: z.string().optional(),
+		itemsDescription: z.string().optional(),
+		packagesCount: z.number().int().min(1).max(100).optional(),
+		batchSize: z.union([z.number(), z.string()]).optional(),
+		temperatureCelsius: z.union([z.number(), z.string()]).optional(),
+		pressureBar: z.union([z.number(), z.string()]).optional(),
+		durationMin: z.union([z.number(), z.string()]).optional(),
+		barcode: z.string().optional(),
+		cycleName: z.string().optional(),
+		shiftCycleName: z.string().optional(),
+		indicatorType: z.string().optional(),
+		indicatorClass: z.string().optional(),
+		operatorId: z.string().nullable().optional(),
+	})
+	.passthrough();
 
 export const sanpinCycleCreateSchema = z
 	.object({

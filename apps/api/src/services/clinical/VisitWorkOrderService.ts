@@ -23,9 +23,9 @@ import {
 } from "../../db/schema.js";
 import { rublesFromKopecks } from "../../money/patientDebt.js";
 import {
-	deductMaterialsForVisit,
+	TreatmentConsumablesService,
 	type StockDeductionRecord,
-} from "../inventory/materialDeduction.js";
+} from "../treatmentConsumables/index.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -189,10 +189,17 @@ export class VisitWorkOrderService {
 				throw new VisitWorkOrderError("VISIT_NOT_FOUND", "Приём не найден.", 404);
 			}
 
-			if (visit.status === "signed" || visit.status === "voided") {
+			if (visit.status === "signed") {
 				throw new VisitWorkOrderError(
 					"VISIT_CLOSED",
-					"Нельзя добавлять позиции плана в уже подписанный или аннулированный приём.",
+					"Протокол приёма подписан и защищён от изменений.",
+					422,
+				);
+			}
+			if (visit.status === "voided") {
+				throw new VisitWorkOrderError(
+					"VISIT_CLOSED",
+					"Нельзя добавлять позиции плана в аннулированный приём.",
 					409,
 				);
 			}
@@ -504,14 +511,14 @@ export class VisitWorkOrderService {
 			let deductions: readonly StockDeductionRecord[] = [];
 			let hasOverdraft = false;
 			if (params.autoDeductMaterials) {
-				const deductionResult = await deductMaterialsForVisit(tx, {
+				const deductionResult = await TreatmentConsumablesService.deductForVisit(tx, {
 					organizationId,
 					visitId: visit.id,
 					userId: actorUserId ?? null,
 					transactionType: "auto_deduct",
 				});
 				deductions = deductionResult.deductions;
-				hasOverdraft = Boolean(deductionResult.hasOverdraft);
+				hasOverdraft = Boolean(deductionResult.isOverdraft);
 			}
 
 			if (params.targetVisitStatus) {
@@ -598,14 +605,18 @@ export class VisitWorkOrderService {
 			}
 
 			// 2. Атомарное списание расходных материалов со склада клиники (идемпотентно для уже закрытых позиций)
-			const deductionResult = await deductMaterialsForVisit(tx, {
+			const deductionResult = await TreatmentConsumablesService.deductForVisit(tx, {
 				organizationId, visitId: visit.id, userId: actorUserId ?? null, transactionType: "auto_deduct",
 			});
 
 			// 3. Атомарная фиксация статуса визита и синхронизация полей черновика
 			const now = new Date();
 			const finalStatus = status === "completed" ? "signed" : status === "in_progress" ? "draft" : status;
-			const autosaveDraft = ((visit.draftAutosave as Record<string, any> | null)?.draft as Record<string, string | null | undefined> | undefined) ?? {};
+			const draftContainer =
+				visit.draftAutosave && typeof visit.draftAutosave === "object"
+					? (visit.draftAutosave as { draft?: Record<string, string | null | undefined> })
+					: null;
+			const autosaveDraft = draftContainer?.draft ?? {};
 			await tx
 				.update(visits)
 				.set({
@@ -637,7 +648,7 @@ export class VisitWorkOrderService {
 				},
 			});
 
-			const hasOverdraft = Boolean(deductionResult.hasOverdraft);
+			const hasOverdraft = Boolean(deductionResult.isOverdraft);
 			return {
 				visitId: visit.id,
 				previousStatus: visit.status,

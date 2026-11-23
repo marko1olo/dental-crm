@@ -1,3 +1,4 @@
+import { existsSync, promises as fs } from "node:fs";
 import { createImagingStudySchema, imagingStudySchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
@@ -9,7 +10,9 @@ import { getVisitByIdInDb } from "../../../db/visitsQuery.js";
 import { LocalPacsStorageService } from "../../../services/imaging/localPacsStorageService.js";
 import { getImagingOrganizationId, parseImagingPayload, sendImagingStudyNotFound, sendImagingStudyScopeError } from "../imagingHelpers.js";
 import { db } from "../../../db/client.js";
-import { xrayScans } from "../../../db/schema.js";
+import { imagingStudies, xrayScans } from "../../../db/schema.js";
+import { getRequestIdentity } from "../../../security/identity.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 
 const updateImagingStudyBodySchema = z.object({
 	title: z.string().trim().min(1).max(180).optional(),
@@ -31,6 +34,17 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return reply;
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging study create"))) return reply;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const input = parsed.data;
 	const patient = await getPatientByIdFromDb(orgId, input.patientId);
@@ -90,7 +104,7 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 					patientId: input.patientId,
 					visitId: input.visitId ?? null,
 					storagePath: storagePath ?? null,
-					fileUrl: `/api/xray/scans/${createdStudy.id}/file`,
+					fileUrl: `/api/imaging/studies/${createdStudy.id}/file`,
 					originalFilename: input.title,
 					mimeType: "image/jpeg",
 					kind: input.kind,
@@ -112,6 +126,17 @@ export async function updateStudyHandler(request: FastifyRequest, reply: Fastify
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return reply;
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging study update"))) return reply;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const { id } = request.params as { id: string };
 	const parsed = updateImagingStudyBodySchema.safeParse(request.body);
@@ -152,4 +177,55 @@ export async function updateStudyHandler(request: FastifyRequest, reply: Fastify
 
 	if (!study) return sendImagingStudyNotFound(reply);
 	return reply.send(imagingStudySchema.parse(study));
+}
+
+export async function deleteStudyHandler(request: FastifyRequest, reply: FastifyReply) {
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return reply;
+	if (!(await requireClinicalMutationAccess(request, reply, "imaging study delete"))) return reply;
+
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+	const allowed = new Set(["chief_doctor", "chiefdoctor", "head_doctor", "owner", "admin"]);
+	if (!staffRole || !allowed.has(staffRole)) {
+		return reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "imaging.delete",
+			role: staffRole,
+			message: "Удаление снимков разрешено главному врачу или владельцу.",
+		});
+	}
+
+	const { id } = request.params as { id: string };
+	const deleted = await db.transaction(async (tx) => {
+		const [studyRes] = await tx
+			.delete(imagingStudies)
+			.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, orgId)))
+			.returning({ id: imagingStudies.id, storagePath: imagingStudies.storagePath });
+
+		const [xrayRes] = await tx
+			.delete(xrayScans)
+			.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)))
+			.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
+
+		if (!studyRes && !xrayRes) return null;
+		return {
+			id: studyRes?.id ?? xrayRes?.id,
+			storagePath: studyRes?.storagePath ?? xrayRes?.storagePath,
+		};
+	});
+
+	if (!deleted) {
+		return sendImagingStudyNotFound(reply);
+	}
+
+	if (deleted.storagePath && existsSync(deleted.storagePath)) {
+		try {
+			await fs.unlink(deleted.storagePath);
+		} catch (unlinkErr) {
+			request.log.warn({ err: unlinkErr, path: deleted.storagePath }, "Failed to remove physical study file");
+		}
+	}
+
+	return reply.code(204).send();
 }

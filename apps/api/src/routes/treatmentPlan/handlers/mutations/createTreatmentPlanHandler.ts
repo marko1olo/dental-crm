@@ -86,8 +86,12 @@ export async function handleCreateTreatmentPlan(
 		const phaseMap = new Map<number, typeof data.items>();
 		for (const it of data.items) {
 			const ph = it.phase || 1;
-			if (!phaseMap.has(ph)) phaseMap.set(ph, []);
-			phaseMap.get(ph)!.push(it);
+			let bucket = phaseMap.get(ph);
+			if (!bucket) {
+				bucket = [];
+				phaseMap.set(ph, bucket);
+			}
+			bucket.push(it);
 		}
 		effectiveStages = Array.from(phaseMap.entries())
 			.sort(([a], [b]) => a - b)
@@ -246,11 +250,21 @@ export async function handleCreateTreatmentPlan(
 					const createdItem = createdItemsRows[i];
 					const meta = itemMetaList[i];
 					if (meta) {
+						const itemPriceKopecks = typeof meta.item.unitPriceKopecks === "number" && meta.item.unitPriceKopecks > 0
+							? Math.round(meta.item.unitPriceKopecks)
+							: rublesToKopecks(meta.item.price);
+						const itemDiscountKopecks = rublesToKopecks(meta.item.discount);
+						const lineTotalKopecks = Math.max(0, itemPriceKopecks * meta.item.quantity - itemDiscountKopecks);
+
 						allItemsFlat.push({
 							...meta.item,
 							treatmentPlanItemId: createdItem?.id ?? null,
 							phase: meta.stageOrder,
 							isAuto: meta.item.isBundle,
+							unitPriceKopecks: itemPriceKopecks,
+							totalPriceKopecks: lineTotalKopecks,
+							priceKopecks: lineTotalKopecks,
+							discountKopecks: itemDiscountKopecks,
 						});
 					}
 				}
@@ -281,7 +295,7 @@ export async function handleCreateTreatmentPlan(
 			request.log.warn({ err: auditErr }, "Не удалось записать аудит создания плана лечения");
 		}
 
-		const responsePayload = {
+		const responsePayload: Record<string, unknown> = {
 			success: true,
 			treatmentPlan: newPlan,
 			stages: createdStages,
@@ -296,14 +310,14 @@ export async function handleCreateTreatmentPlan(
 					key: idempotencyKey,
 					status: "completed",
 					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: responsePayload as unknown as Record<string, unknown>,
+					responseBody: responsePayload,
 					responseCode: 201,
 				})
 				.onConflictDoUpdate({
 					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
 					set: {
 						status: "completed",
-						responseBody: responsePayload as unknown as Record<string, unknown>,
+						responseBody: responsePayload,
 						responseCode: 201,
 					},
 				});

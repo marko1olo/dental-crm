@@ -7,6 +7,9 @@ import { isAutomatedRun } from "../env/requiredEnv.js";
 import { getHddDbPoolConfig } from "../lib/hddPerformanceConfig.js";
 import { registerMoneyTypeParsers } from "./moneyTypeParsers.js";
 import * as schema from "./schema.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("dbPoolClient");
 
 /**
  * Раньше здесь стоял голый `import "dotenv/config"`, который читает .env только
@@ -83,7 +86,7 @@ export const pool = new pg.Pool({
 });
 
 pool.on("error", (err) => {
-	console.error("[pg.Pool] Unexpected error on idle PostgreSQL client:", err);
+	logger.error({ err: safeLogError(err) }, "Unexpected error on idle PostgreSQL client");
 });
 
 /**
@@ -109,7 +112,7 @@ export const dbRaw = drizzle(pool, { schema });
 export type TenantTransaction = Parameters<Parameters<typeof dbRaw.transaction>[0]>[0];
 export type TenantDb = NodePgDatabase<typeof schema> | TenantTransaction;
 
-export const transactionStorage = new AsyncLocalStorage<TenantDb>();
+export const transactionStorage = new AsyncLocalStorage<TenantDb | undefined>();
 
 export const db = new Proxy(dbRaw, {
 	get(target, prop, receiver) {

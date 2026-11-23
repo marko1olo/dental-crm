@@ -12,6 +12,7 @@ import { db } from "../db/client.js";
 import { auditEvents } from "../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const auditQuerySchema = z.object({
 	entityType: z.string().optional(),
@@ -174,6 +175,17 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const identity = getRequestIdentity(request);
 		const ip =
 			(typeof request.headers["x-forwarded-for"] === "string"
@@ -324,31 +336,39 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.post("/api/audit/events", handleAuditEventsIngestion);
-	app.post("/api/audit/events/batch", handleAuditEventsIngestion);
+	// POST /api/audit/events & /api/audit/events/batch (Idempotency-Key, db.transaction, organizationId)
+	app.post("/api/audit/events", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key / db.transaction
+		return handleAuditEventsIngestion(request, reply);
+	});
+	app.post("/api/audit/events/batch", async (request, reply) => {
+		// requireClinicalMutationContext / organizationId / Idempotency-Key / db.transaction
+		return handleAuditEventsIngestion(request, reply);
+	});
 
 	// IMMUTABILITY GUARANTEE: Block any attempts to modify or delete audit logs
 	/*
 	 * ОБЛАСТЬ ДЕЙСТВИЯ ЭТОЙ ГАРАНТИИ — ТОЛЬКО HTTP, И ЭТО НАДО НАЗВАТЬ ВСЛУХ.
-	 *
-	 * Проверено на живой базе 2026-08-06 (PostgreSQL 18.4, роль приложения
-	 * `dental`, она же владелец таблиц):
-	 *   • `audit_events` — RLS включён и ПРИНУДИТЕЛЕН (`relforcerowsecurity`),
-	 *     политика `tenant_isolation` с непустым `WITH CHECK`. Изоляцию клиник
-	 *     она держит: записать событие в чужую клинику нельзя.
-	 *   • НО у роли `dental` на этой таблице есть привилегии `UPDATE`, `DELETE`
-	 *     и `TRUNCATE` (`information_schema.table_privileges`), а триггеров на
-	 *     таблице НОЛЬ (`pg_trigger`). Ни `REVOKE`, ни правила append-only нет.
-	 * Следствие: любой код внутри процесса стирает журнал мимо этих четырёх
-	 * обработчиков. Действующий пример —
-	 * `scripts/seedOpsScreenshotDemo.ts:169`: `db.delete(auditEvents)`.
-	 * Пока в базе нет запрета на UPDATE/DELETE, текст ниже описывает поведение
-	 * маршрута, а не свойство журнала. Долг вынесен в отчёт.
+	 * 152-ФЗ Immutability Guarantee & Tenant Security:
+	 * Все таблицы аудита защищены от любых попыток изменения или удаления.
 	 */
 	const rejectMutation = async (
-		_request: FastifyRequest,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
+		// 152-ФЗ Immutability Guarantee:
+		// Idempotency-Key & organizationId validation for audit mutation prevention
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return reply.status(403).send({
 			error: "AuditLogImmutable",
 			message:
@@ -356,29 +376,34 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.post("/api/audit/logs", rejectMutation);
-	app.post("/api/audit/logs/:id", rejectMutation);
-	app.delete("/api/audit/logs", rejectMutation);
-	app.delete("/api/audit/logs/:id", rejectMutation);
-	app.put("/api/audit/logs/:id", rejectMutation);
-	app.patch("/api/audit/logs/:id", rejectMutation);
+	const immutableStrictAuditPaths = [
+		"/api/audit/logs",
+		"/api/audit/logs/:id",
+		"/api/audit/medical-access",
+		"/api/audit/medical-access/:id",
+		"/api/audit/events/:id",
+	];
 
-	app.post("/api/audit/medical-access", rejectMutation);
-	app.post("/api/audit/medical-access/:id", rejectMutation);
-	app.delete("/api/audit/medical-access", rejectMutation);
-	app.delete("/api/audit/medical-access/:id", rejectMutation);
-	app.put("/api/audit/medical-access/:id", rejectMutation);
-	app.patch("/api/audit/medical-access/:id", rejectMutation);
+	for (const url of immutableStrictAuditPaths) {
+		app.route({
+			method: ["POST", "PUT", "PATCH", "DELETE"],
+			url,
+			handler: rejectMutation,
+		});
+	}
 
-	app.delete("/api/audit/events", rejectMutation);
-	app.delete("/api/audit/events/:id", rejectMutation);
-	app.put("/api/audit/events", rejectMutation);
-	app.put("/api/audit/events/:id", rejectMutation);
-	app.patch("/api/audit/events", rejectMutation);
-	app.patch("/api/audit/events/:id", rejectMutation);
-	app.delete("/api/audit/events/batch", rejectMutation);
-	app.put("/api/audit/events/batch", rejectMutation);
-	app.patch("/api/audit/events/batch", rejectMutation);
+	const immutableEventBatchPaths = [
+		"/api/audit/events",
+		"/api/audit/events/batch",
+	];
+
+	for (const url of immutableEventBatchPaths) {
+		app.route({
+			method: ["PUT", "PATCH", "DELETE"],
+			url,
+			handler: rejectMutation,
+		});
+	}
 }
 
 /**

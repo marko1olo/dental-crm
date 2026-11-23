@@ -96,6 +96,9 @@ export const procedureTechCardItems = pgTable(
 			.default("1.0000"),
 		unit: text("unit").notNull().default("шт"),
 		isMdlpRequired: boolean("is_mdlp_required").notNull().default(false), // Маркированный препарат (Честный Знак)
+		alternativeInventoryItemId: uuid("alternative_inventory_item_id")
+			.references(() => inventoryItems.id, { onDelete: "set null" }),
+		isOptional: boolean("is_optional").notNull().default(false),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -104,5 +107,6 @@ export const procedureTechCardItems = pgTable(
 	(t) => ({
 		techCardIdx: index("procedure_tech_card_items_card_idx").on(t.techCardId),
 		itemIdx: index("procedure_tech_card_items_item_idx").on(t.inventoryItemId),
+		alternativeItemIdx: index("procedure_tech_card_items_alt_item_idx").on(t.alternativeInventoryItemId),
 	}),
 );

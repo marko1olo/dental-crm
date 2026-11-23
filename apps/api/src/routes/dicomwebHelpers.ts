@@ -54,10 +54,21 @@ export interface RangeSpecification {
 	isPartial: boolean;
 }
 
+export const DICOM_UID_PATTERN = /^[0-9]+(?:\.[0-9]+)*$/;
+
 /**
- * Normalizes DICOM UIDs by stripping trailing NULs and whitespace.
+ * Normalizes and validates DICOM UIDs according to DICOM PS 3.5.
+ * Strictly requires numeric components separated by dots without path traversal (max 64 chars).
  */
 export function normalizeUid(value: string | null | undefined): string | null {
+	if (typeof value !== "string") return null;
+	const trimmed = value.replace(/\0+$/u, "").trim();
+	if (trimmed.length === 0 || trimmed.length > 64) return null;
+	if (!DICOM_UID_PATTERN.test(trimmed)) return null;
+	return trimmed;
+}
+
+function cleanTagValue(value: string | null | undefined): string | null {
 	if (typeof value !== "string") return null;
 	const trimmed = value.replace(/\0+$/u, "").trim();
 	return trimmed.length > 0 ? trimmed : null;
@@ -130,6 +141,7 @@ export function parseHttpRange(
  */
 export async function readDicomIdentity(
 	filePath: string,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): Promise<DicomFileIdentity | null> {
 	let handle: FileHandle | null = null;
 	try {
@@ -161,7 +173,7 @@ export async function readDicomIdentity(
 			pixelDataLength: pixelElement ? pixelElement.length : null,
 		};
 	} catch (err) {
-		console.error("[Dente] readDicomIdentity failed:", err);
+		logger?.error({ err }, "[Dente] readDicomIdentity failed");
 		return null;
 	} finally {
 		if (handle) {
@@ -445,9 +457,9 @@ export function parseDicomBufferForStow(buffer: Buffer): {
 			seriesUid: normalizeUid(dataSet.string(TAG_SERIES_INSTANCE_UID)),
 			sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID)),
 			sopClassUid: normalizeUid(dataSet.string(TAG_SOP_CLASS_UID) ?? dataSet.string(TAG_MEDIA_STORAGE_SOP_CLASS_UID)),
-			dicomPatientId: normalizeUid(dataSet.string(TAG_PATIENT_ID)),
+			dicomPatientId: cleanTagValue(dataSet.string(TAG_PATIENT_ID)),
 			dicomPatientName: cleanDicomPatientName(dataSet.string(TAG_PATIENT_NAME)),
-			dicomBirthDate: normalizeUid(dataSet.string(TAG_PATIENT_BIRTH_DATE)),
+			dicomBirthDate: cleanTagValue(dataSet.string(TAG_PATIENT_BIRTH_DATE)),
 			rows: dataSet.uint16(TAG_ROWS) ?? null,
 			columns: dataSet.uint16(TAG_COLUMNS) ?? null,
 		};

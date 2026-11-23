@@ -3,6 +3,9 @@ import { auditEvents } from "./db/schema.js";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { withTenantCtx } from "./db/rls.js";
+import { createApiLogger, safeLogError } from "./observability/logger.js";
+
+const logger = createApiLogger("auditJournal");
 
 /**
  * Писатель журнала аудита для пути документов (`db/documentQuery.ts`).
@@ -103,7 +106,7 @@ export async function recordAuditEvent(input: {
 			"Событие журнала аудита НЕ записано: клиника не определена ни из аргумента, " +
 			"ни из контекста арендатора (RLS fail-closed, см. db/rls.ts). " +
 			`Потерянное событие: ${describeAuditEvent(input)}`;
-		console.error(`[audit] ${message}`);
+		logger.error({ auditEvent: describeAuditEvent(input) }, message);
 		throw new Error(message);
 	}
 
@@ -119,15 +122,15 @@ export async function recordAuditEvent(input: {
 			});
 		});
 	} catch (error) {
-		// Аварийный канал: событие целиком уходит в лог одной строкой, чтобы его
+		// Аварийный канал: событие целиком уходит в лог структурированным объектом, чтобы его
 		// можно было восстановить, даже если база отвергла запись. Проброс
 		// обязателен — молчаливое проглатывание здесь и было исходным дефектом.
-		console.error(
-			`[audit] ОТКАЗ ЗАПИСИ ЖУРНАЛА. Событие: ${describeAuditEvent({
-				...input,
-				organizationId: orgId,
-			})}. Операция вызывающего должна быть отменена. Причина отказа:`,
-			error,
+		logger.error(
+			{
+				err: safeLogError(error),
+				auditEvent: describeAuditEvent({ ...input, organizationId: orgId }),
+			},
+			"ОТКАЗ ЗАПИСИ ЖУРНАЛА АУДИТА. Операция вызывающего должна быть отменена.",
 		);
 		throw error;
 	}

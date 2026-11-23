@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, or, sql } from "drizzle-orm";
+import { rublesToKopecks } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
@@ -16,7 +17,10 @@ import {
 } from "../../../telegramTransport.js";
 import { decryptTelegramChatId } from "../../../utils/telegramChatRef.js";
 import { wsBroker } from "../../websocketBroker.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { BANK_PROVIDERS } from "./constants.js";
+
+const logger = createApiLogger("telegramPlanCloser");
 import {
 	buildDefaultStages,
 	calculateAllInstallmentOptions,
@@ -135,18 +139,20 @@ export async function getPendingTreatmentPlansForPatient(
 
 			for (const plan of rawPlans) {
 				// Загружаем имя доктора
-				let doctorName = "Смирнова Анна Павловна";
-				let doctorTitle = "Врач-стоматолог терапевт, хирург-имплантолог";
+				let doctorName = "Лечащий врач";
+				let doctorTitle = "Стоматологическая клиника";
 				if (plan.doctorId) {
 					const [docUser] = await tx
 						.select({
 							fullName: users.fullName,
+							role: users.role,
 						})
 						.from(users)
 						.where(and(eq(users.id, plan.doctorId), eq(users.organizationId, resolvedOrgId)))
 						.limit(1);
 					if (docUser?.fullName) {
 						doctorName = docUser.fullName;
+						doctorTitle = docUser.role === "doctor" ? "Врач-стоматолог" : "Специалист клиники";
 					}
 				}
 
@@ -170,7 +176,7 @@ export async function getPendingTreatmentPlansForPatient(
 				// Сумма плана
 				const priceFromNumeric = plan.totalPrice ? Number.parseFloat(plan.totalPrice) : 0;
 				const priceFromRub = plan.totalPriceRub ? Number.parseFloat(plan.totalPriceRub) : 0;
-				const finalTotalRub = Math.max(priceFromRub, priceFromNumeric, 207000); // 207 000 ₽ клинический эталон
+				const finalTotalRub = Math.max(priceFromRub, priceFromNumeric, 0);
 
 				// Этапы
 				const stages = buildDefaultStages(finalTotalRub);
@@ -227,7 +233,7 @@ export async function getPendingTreatmentPlansForPatient(
 			return summaries;
 		});
 	} catch (err) {
-		console.error("[TelegramTreatmentPlanCloserService] getPendingTreatmentPlansForPatient error:", err);
+		logger.error({ err: safeLogError(err), patientId, organizationId }, "getPendingTreatmentPlansForPatient error");
 		return [];
 	}
 }
@@ -245,13 +251,13 @@ export function getSyntheticFallbackPlan(
 		planId,
 		organizationId: organizationId || "org-test-default",
 		patientId: "patient-sample-default",
-		patientName: "Иван Иванович",
+		patientName: "Пациент",
 		patientPhone: "+7 999 123-45-67",
 		doctorId: "doc-sample-default",
-		doctorName: "Смирнова Анна Павловна",
-		doctorTitle: "Врач-стоматолог терапевт, хирург-имплантолог",
-		title: "Комплексный план лечения (позиции 16, 26, 46)",
-		name: "Комплексный план лечения (позиции 16, 26, 46)",
+		doctorName: "Лечащий врач",
+		doctorTitle: "Врач-стоматолог",
+		title: "Комплексный план лечения",
+		name: "Комплексный план лечения",
 		status: "Draft",
 		totalPriceRub: total,
 		teeth: [16, 26, 46],
@@ -309,8 +315,7 @@ export async function getPendingPlanById(
 				}));
 
 		if (!planRow) {
-			// Если плана нет в базе (например, при синтетическом тесте в памяти), возвращаем эталонный пресет
-			return getSyntheticFallbackPlan(planId, organizationId);
+			return null;
 		}
 
 		const resolvedOrgId = organizationId || planRow.organizationId;
@@ -318,10 +323,10 @@ export async function getPendingPlanById(
 		const found = list.find((p) => p.planId === planId);
 		if (found) return found;
 
-		return getSyntheticFallbackPlan(planId, resolvedOrgId);
+		return null;
 	} catch (err) {
-		console.error("[TelegramTreatmentPlanCloserService] getPendingPlanById error:", err);
-		return getSyntheticFallbackPlan(planId, organizationId);
+		logger.error({ err: safeLogError(err), planId, organizationId }, "getPendingPlanById error");
+		return null;
 	}
 }
 
@@ -376,6 +381,7 @@ export async function createInstallmentLead(input: CreateInstallmentLeadInput): 
 				source: "telegram_plan_closer",
 				status: "INSTALLMENT_REQUEST",
 				expectedRevenue: String(plan.totalPriceRub),
+				expectedRevenueKopecks: BigInt(rublesToKopecks(plan.totalPriceRub)),
 				notes: noteText,
 				clinicalTags: [
 					"installment_request",
@@ -403,7 +409,7 @@ export async function createInstallmentLead(input: CreateInstallmentLeadInput): 
 			},
 		});
 	} catch (err) {
-		console.error("[TelegramTreatmentPlanCloserService] createInstallmentLead error:", err);
+		logger.error({ err: safeLogError(err), planId: input.planId, orgId }, "createInstallmentLead error");
 		// В случае отсутствия соединения с реальной БД сохраняем мягко
 	}
 
@@ -448,6 +454,7 @@ export async function createCuratorCallRequest(input: CreateCuratorCallInput): P
 				source: "telegram_plan_closer",
 				status: "CURATOR_CALL_REQUEST",
 				expectedRevenue: String(plan.totalPriceRub),
+				expectedRevenueKopecks: BigInt(rublesToKopecks(plan.totalPriceRub)),
 				notes: noteText,
 				clinicalTags: ["curator_call_request", "telegram_plan_closer"],
 				priority: "high",
@@ -469,7 +476,7 @@ export async function createCuratorCallRequest(input: CreateCuratorCallInput): P
 			},
 		});
 	} catch (err) {
-		console.error("[TelegramTreatmentPlanCloserService] createCuratorCallRequest error:", err);
+		logger.error({ err: safeLogError(err), planId: input.planId, orgId }, "createCuratorCallRequest error");
 	}
 
 	return { ok: true, leadId, plan };

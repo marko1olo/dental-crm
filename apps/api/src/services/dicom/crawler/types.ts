@@ -11,7 +11,7 @@ import type {
 	DicomCrawlerScanReport,
 } from "@dental/shared";
 import type { DicomIngestMetadata } from "../dicomIngestMetadataParser.js";
-import type { DicomSeriesScanSummary } from "../../imaging/dicomMetadataParser.js";
+import type { DicomSeriesScanSummary } from "../../../routes/imaging/dicomParsing.js";
 
 export type {
 	DicomCrawlerDiscoveredStudy,

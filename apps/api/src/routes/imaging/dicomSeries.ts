@@ -377,7 +377,7 @@ export async function parseDicomSeriesManifest(
 		.split(/\r?\n/)
 		.map((line) => line.trim())
 		.filter(Boolean);
-	const archiveExpansion = await expandDicomArchiveManifestLines(sourceLines);
+	const archiveExpansion = await expandDicomArchiveManifestLines(sourceLines, orgId);
 	const lines = archiveExpansion.lines;
 	if (!lines.length) {
 		return dicomSeriesPreviewResponseSchema.parse({

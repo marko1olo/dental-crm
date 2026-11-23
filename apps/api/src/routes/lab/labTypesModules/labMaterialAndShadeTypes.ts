@@ -64,12 +64,7 @@ export const colorVitaSchema = z
 	.nullable();
 
 export const createLabOrderSchema = z.object({
-	patientId: z
-		.string()
-		.optional()
-		.nullable()
-		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null))
-		.optional(),
+	patientId: z.string().uuid("Параметр patientId должен быть валидным UUID.").optional().nullable(),
 	patientName: z.string().trim().optional().nullable(),
 	treatmentPlanId: z.string().uuid().optional().nullable(),
 	appointmentId: z.string().uuid().optional().nullable(),

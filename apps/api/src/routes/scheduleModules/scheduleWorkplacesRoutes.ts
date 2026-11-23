@@ -1,10 +1,21 @@
-import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { appointments, chairs } from "../../db/schema.js";
+import {
+	DEFAULT_CLINIC_TIME_ZONE,
+	clinicTimeZone,
+} from "../../services/reports/managerReports/timezone.js";
+import { resolveScheduleDateBounds } from "../appointments/appointmentsQueryRoutes.js";
 import { requireClinicOrganizationId } from "../scheduleAuthGuard.js";
+
+const scheduleSlotsQuerySchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
+	chairId: z.string().uuid().optional().or(z.literal("")),
+	doctorId: z.string().uuid().optional().or(z.literal("")),
+});
 
 /**
  * Маршруты рабочих мест (кресел) клиники и сетки слотов расписания.
@@ -18,8 +29,14 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 	app.get("/api/schedule/workplaces", async (request, reply) => {
 		const orgId =
 			(await requireOrganizationContext(request, reply)) ||
-			requireClinicOrganizationId(request, reply) ||
-			DEMO_SHOWCASE_ORG_ID;
+			requireClinicOrganizationId(request, reply);
+		if (reply.sent) return reply;
+		if (!orgId) {
+			return reply.code(401).send({
+				error: "Unauthorized",
+				message: "Не указан контекст организации.",
+			});
+		}
 
 		const dbChairs = await db
 			.select({
@@ -58,18 +75,31 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 	app.get("/api/schedule/slots", async (request, reply) => {
 		const orgId =
 			(await requireOrganizationContext(request, reply)) ||
-			requireClinicOrganizationId(request, reply) ||
-			DEMO_SHOWCASE_ORG_ID;
+			requireClinicOrganizationId(request, reply);
+		if (reply.sent) return reply;
+		if (!orgId) {
+			return reply.code(401).send({
+				error: "Unauthorized",
+				message: "Не указан контекст организации.",
+			});
+		}
 
-		const query = (request.query || {}) as Record<string, string | undefined>;
-		const dateParam = (query.date || "").trim();
-		const chairIdParam = (query.chairId || "").trim();
-		const doctorIdParam = (query.doctorId || "").trim();
+		const parsedQuery = scheduleSlotsQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры фильтрации слотов расписания (ожидается UUID).",
+				issues: parsedQuery.error.issues,
+			});
+		}
+		const dateParam = (parsedQuery.data.date || "").trim();
+		const chairIdParam = (parsedQuery.data.chairId || "").trim();
+		const doctorIdParam = (parsedQuery.data.doctorId || "").trim();
 
 		const now = new Date();
 		const targetDateStr = dateParam || now.toISOString().slice(0, 10);
-		const startOfDay = new Date(`${targetDateStr}T00:00:00.000Z`);
-		const endOfDay = new Date(`${targetDateStr}T23:59:59.999Z`);
+		const zone = (await clinicTimeZone(orgId)) || DEFAULT_CLINIC_TIME_ZONE;
+		const { dayStart, dayEnd } = resolveScheduleDateBounds(targetDateStr, zone);
 
 		// Проверяем количество кресел для соло-режима
 		const dbChairs = await db
@@ -87,8 +117,8 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 		// Условия выборки приёмов
 		const conditions = [
 			eq(appointments.organizationId, orgId),
-			gte(appointments.startsAt, startOfDay),
-			lte(appointments.startsAt, endOfDay),
+			gte(appointments.startsAt, dayStart),
+			lte(appointments.startsAt, dayEnd),
 		];
 
 		if (effectiveChairId) {

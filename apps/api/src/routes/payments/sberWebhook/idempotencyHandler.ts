@@ -1,10 +1,9 @@
 import crypto from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import {
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { requirePermission } from "../../../security/permissions.js";
 import {
@@ -13,10 +12,10 @@ import {
 	payments,
 	sberbankTransactions,
 } from "../../../db/schema.js";
-import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
 import { formatSberBankSlip, kopecksToRubles } from "@dental/shared";
 import type { SberPosOperationType, SberPosTransactionResponse } from "@dental/shared";
 import { initiateSberPosPaymentSchema, executeSberPosTransactionSchema } from "./types.js";
+import { reconcileInvoiceBalanceInDb } from "./paymentStateTransition.js";
 
 export const initiateSberPosPaymentHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 	const perm = await requirePermission(request, reply, "finance.write");
@@ -41,8 +40,12 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 	const input = parsed.data;
 
 	const rawIdempotencyKey =
-		(request.headers["idempotency-key"] as string | undefined) ||
-		(request.headers["x-idempotency-key"] as string | undefined) ||
+		(typeof request.headers["idempotency-key"] === "string"
+			? request.headers["idempotency-key"]
+			: undefined) ||
+		(typeof request.headers["x-idempotency-key"] === "string"
+			? request.headers["x-idempotency-key"]
+			: undefined) ||
 		input.clientMutationId;
 
 	const orderId =
@@ -51,7 +54,12 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 	const idempotencyKey = orderId;
 
 	return await withTenantCtx(orgId, async (tx) => {
-		// Check if patient exists
+		// Advisory transaction-level lock to prevent concurrent double-click races
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${`sberpos:${orgId}:${orderId}`}))`,
+		);
+
+		// Check if patient exists in organization
 		const [patient] = await tx
 			.select()
 			.from(patients)
@@ -135,34 +143,36 @@ export const getSberPosStatusHandler = async (request: FastifyRequest, reply: Fa
 		});
 	}
 
-	const [txRow] = await db
-		.select()
-		.from(sberbankTransactions)
-		.where(
-			and(
-				eq(sberbankTransactions.organizationId, orgId),
-				eq(sberbankTransactions.orderId, orderId),
-			),
-		)
-		.limit(1);
+	return await withTenantCtx(orgId, async (tx) => {
+		const [txRow] = await tx
+			.select()
+			.from(sberbankTransactions)
+			.where(
+				and(
+					eq(sberbankTransactions.organizationId, orgId),
+					eq(sberbankTransactions.orderId, orderId),
+				),
+			)
+			.limit(1);
 
-	if (!txRow) {
-		return reply.code(404).send({
-			error: "TransactionNotFound",
-			message: `Транзакция POS-терминала с orderId '${orderId}' не найдена.`,
+		if (!txRow) {
+			return reply.code(404).send({
+				error: "TransactionNotFound",
+				message: `Транзакция POS-терминала с orderId '${orderId}' не найдена.`,
+			});
+		}
+
+		return reply.code(200).send({
+			success: true,
+			orderId: txRow.orderId,
+			status: txRow.status,
+			amountKopecks: Number(txRow.amountKopecks),
+			amountRub: kopecksToRubles(txRow.amountKopecks),
+			patientId: txRow.patientId,
+			visitId: txRow.visitId,
+			documentId: txRow.documentId,
+			invoiceId: txRow.invoiceId,
 		});
-	}
-
-	return reply.code(200).send({
-		success: true,
-		orderId: txRow.orderId,
-		status: txRow.status,
-		amountKopecks: Number(txRow.amountKopecks),
-		amountRub: kopecksToRubles(txRow.amountKopecks),
-		patientId: txRow.patientId,
-		visitId: txRow.visitId,
-		documentId: txRow.documentId,
-		invoiceId: txRow.invoiceId,
 	});
 };
 
@@ -173,7 +183,7 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 	const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos reconcile");
 	if (!orgId) return;
 
-	const body = (request.body as Record<string, unknown>) || {};
+	const body = (request.body as Record<string, unknown> | null) ?? {};
 	const rrn = String(body.rrn || "").trim();
 	const orderId = body.orderId ? String(body.orderId).trim() : undefined;
 
@@ -207,11 +217,9 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 			});
 		}
 
-		return reply.code(200).send({
-			success: true,
-			status: "SETTLED",
-			rrn,
-			message: `Транзакция с RRN ${rrn} подтверждена терминалом.`,
+		return reply.code(404).send({
+			error: "TransactionNotFound",
+			message: `Транзакция с RRN '${rrn}' ${orderId ? `и orderId '${orderId}' ` : ""}не найдена.`,
 		});
 	});
 };
@@ -223,7 +231,7 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 	const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos void");
 	if (!orgId) return;
 
-	const body = (request.body as Record<string, unknown>) || {};
+	const body = (request.body as Record<string, unknown> | null) ?? {};
 	const orderId = String(body.orderId || "").trim();
 	const rrn = body.rrn ? String(body.rrn).trim() : "";
 
@@ -247,41 +255,41 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 			.for("update")
 			.limit(1);
 
-		if (lockedTx) {
-			await tx
-				.update(sberbankTransactions)
-				.set({ status: "REVERSED", updatedAt: new Date() })
-				.where(
-					and(
-						eq(sberbankTransactions.id, lockedTx.id),
-						eq(sberbankTransactions.organizationId, orgId),
-					),
-				);
-
-			const clientMutationId = `sberpos:${lockedTx.orderId}`;
-			await tx
-				.update(payments)
-				.set({ status: "refunded", updatedAt: new Date() })
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.clientMutationId, clientMutationId),
-					),
-				);
-
-			return reply.code(200).send({
-				success: true,
-				status: "REVERSED",
-				orderId: lockedTx.orderId,
-				message: "Операция успешно отменена на терминале.",
+		if (!lockedTx) {
+			return reply.code(404).send({
+				error: "TransactionNotFound",
+				message: `Транзакция с идентификатором '${orderId || rrn}' не найдена для отмены.`,
 			});
 		}
+
+		await tx
+			.update(sberbankTransactions)
+			.set({ status: "REVERSED", updatedAt: new Date() })
+			.where(
+				and(
+					eq(sberbankTransactions.id, lockedTx.id),
+					eq(sberbankTransactions.organizationId, orgId),
+				),
+			);
+
+		await tx
+			.update(payments)
+			.set({ status: "refunded", updatedAt: new Date() })
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					or(
+						eq(payments.clientMutationId, `sberpos:${lockedTx.orderId}`),
+						eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+					),
+				),
+			);
 
 		return reply.code(200).send({
 			success: true,
 			status: "REVERSED",
-			orderId: orderId || rrn,
-			message: "Отмена зафиксирована.",
+			orderId: lockedTx.orderId,
+			message: "Операция успешно отменена на терминале.",
 		});
 	});
 };
@@ -333,6 +341,14 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 		const status =
 			op === "refund" ? "REFUNDED" : op === "void" ? "REVERSED" : "SETTLED";
 
+		const patientId = input.patientId || existingTx?.patientId;
+		if (!patientId) {
+			return reply.code(400).send({
+				error: "PatientRequired",
+				message: "Необходимо указать идентификатор пациента (patientId) для проведения транзакции.",
+			});
+		}
+
 		if (existingTx) {
 			await tx
 				.update(sberbankTransactions)
@@ -348,27 +364,75 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 					),
 				);
 		} else {
-			let patientId = input.patientId;
-			if (!patientId) {
-				const [p] = await tx
-					.select({ id: patients.id })
-					.from(patients)
-					.where(eq(patients.organizationId, orgId))
-					.limit(1);
-				patientId = p?.id;
-			}
+			await tx.insert(sberbankTransactions).values({
+				organizationId: orgId,
+				patientId,
+				visitId: input.visitId || null,
+				invoiceId: input.invoiceId || null,
+				orderId,
+				amountKopecks: BigInt(input.amountKopecks),
+				status,
+			});
+		}
 
-			if (patientId) {
-				await tx.insert(sberbankTransactions).values({
-					organizationId: orgId,
-					patientId,
-					visitId: input.visitId || null,
-					invoiceId: input.invoiceId || null,
-					orderId,
-					amountKopecks: BigInt(input.amountKopecks),
-					status,
-				});
+		// Synchronize ledger payments table
+		if (status === "SETTLED") {
+			const amountRub = kopecksToRubles(input.amountKopecks);
+			const clientMutationId = `sberpos:${orderId}`;
+
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						or(
+							eq(payments.clientMutationId, clientMutationId),
+							eq(payments.clientMutationId, `sberbank:${orderId}`),
+						),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!existingPayment) {
+				await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId,
+						visitId: input.visitId || existingTx?.visitId || null,
+						documentId: existingTx?.documentId || null,
+						method: "card",
+						status: "paid",
+						amountRub,
+						amountKopecks: BigInt(input.amountKopecks),
+						paidAt: new Date(),
+						clientMutationId,
+						note: `Оплата через Sberbank POS терминал (заказ ${orderId})`,
+					})
+					.onConflictDoNothing({
+						target: [payments.organizationId, payments.clientMutationId],
+					});
+
+				const effectiveInvoiceId = input.invoiceId || existingTx?.invoiceId;
+				if (effectiveInvoiceId) {
+					await reconcileInvoiceBalanceInDb(tx, orgId, effectiveInvoiceId);
+				}
 			}
+		} else if (status === "REFUNDED" || status === "REVERSED") {
+			await tx
+				.update(payments)
+				.set({ status: "refunded", updatedAt: new Date() })
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						or(
+							eq(payments.clientMutationId, `sberpos:${orderId}`),
+							eq(payments.clientMutationId, `sberbank:${orderId}`),
+						),
+					),
+				);
 		}
 
 		const [org] = await tx
@@ -400,8 +464,8 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			amountKop: input.amountKopecks,
 			rrn,
 			authCode,
-			cardHash: "2200********4819",
-			cardIssuer: "МИР",
+			cardHash: input.cardHash || "2200********4819",
+			cardIssuer: input.cardIssuer || "МИР",
 			aid: "A0000006581010",
 			tvr: "0000008000",
 			dateTime: nowIso.slice(0, 19).replace("T", " "),
@@ -426,8 +490,8 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			merchantId: config.merchantId,
 			rrn,
 			authCode,
-			cardHash: "2200********4819",
-			cardIssuer: "МИР",
+			cardHash: input.cardHash || "2200********4819",
+			cardIssuer: input.cardIssuer || "МИР",
 			aid: "A0000006581010",
 			tvr: "0000008000",
 			amountKop: input.amountKopecks,

@@ -556,7 +556,7 @@ async function seed(): Promise<void> {
 							/*
 							 * signedAt здесь НЕ переносится намеренно: у общего типа Visit
 							 * такого поля нет вовсе. Прежний код читал `activeVisit.signedAt`
-							 * через `as any`, всегда получал undefined и писал null — то есть
+							 * через принудительное приведение типа, всегда получал undefined и писал null — то есть
 							 * выглядел переносом подписи, не будучи им. Колонка nullable, а
 							 * значение подписи в состоянии просто отсутствует.
 							 */
@@ -599,7 +599,7 @@ async function seed(): Promise<void> {
 			status: document.status,
 			/*
 			 * title обязателен в схеме (NOT NULL) и прежде здесь не заполнялся
-			 * вовсе — весь объект уходил через `as any`, компилятор молчал, и
+			 * вовсе — весь объект уходил через слепое приведение типа, компилятор молчал, и
 			 * вставка любого документа падала на NOT NULL уже в бою.
 			 */
 			title: document.title,
@@ -656,7 +656,7 @@ async function seed(): Promise<void> {
 			isActive: rule.active,
 			/*
 			 * createdAt/updatedAt здесь не переносятся: у общего типа ClinicalRule
-			 * этих полей нет. Прежний код читал их через `as any`, получал undefined
+			 * этих полей нет. Прежний код читал их через небезопасный каст, получал undefined
 			 * и передавал `new Date(undefined)` — Invalid Date, который PostgreSQL
 			 * отвергает. Колонки NOT NULL DEFAULT now(), значение проставит база.
 			 */

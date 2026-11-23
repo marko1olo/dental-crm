@@ -5,7 +5,12 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import {
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+	requireNonDoctorAccess,
+} from "../../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { getImagingOrganizationId } from "../imaging/imagingHelpers.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import {
@@ -37,7 +42,20 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Запуск TCP-сервера DICOM C-STORE SCP.
 	 */
 	app.post("/api/radiology/dicom/server/start", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "start dicom scp server"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "start dicom scp server"))) return;
+		const organizationId = getImagingOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const bodySchema = z.object({
 			port: z.number().int().min(1).max(65535).optional(),
@@ -72,7 +90,20 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Остановка TCP-сервера DICOM C-STORE SCP.
 	 */
 	app.post("/api/radiology/dicom/server/stop", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "stop dicom scp server"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "stop dicom scp server"))) return;
+		const organizationId = getImagingOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		try {
 			await dicomCStoreScpServer.stop();
@@ -98,6 +129,17 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 
 		const organizationId = getImagingOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const bodySchema = z.object({
 			dicomBase64: z.string().min(132, "Минимальный размер Base64 DICOM — 132 байта"),
@@ -145,10 +187,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Запуск фонового мониторинга локальной папки Vatech.
 	 */
 	app.post("/api/radiology/dicom/bridge/start", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "start vatech bridge"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "start vatech bridge"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const bodySchema = z.object({
 			watchDirectory: z.string().optional(),
@@ -187,7 +240,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Остановка мониторинга папки Vatech.
 	 */
 	app.post("/api/radiology/dicom/bridge/stop", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "stop vatech bridge"))) return;
+		if (!(await requireNonDoctorAccess(request, reply, "stop vatech bridge"))) return;
+
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		try {
 			await vatechDirectBridgeService.stop();
@@ -213,6 +280,17 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const bodySchema = z.object({
 			directoryPath: z.string().optional(),

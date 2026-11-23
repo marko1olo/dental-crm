@@ -97,13 +97,14 @@ async function requireRunWithUpload(runId: string, organizationId: string) {
 			"Прогон переноса не найден в этой организации.",
 		);
 	}
-	if (!run.uploadPath || !(await uploadExists(run.uploadPath))) {
+	const uploadPath = run.uploadPath;
+	if (!uploadPath || !(await uploadExists(uploadPath))) {
 		throw new MigrationPhaseError(
 			"UploadExpired",
 			"Файл источника больше недоступен: он удалён по сроку хранения либо процесс запущен на другом сервере. Залейте файл заново.",
 		);
 	}
-	return run;
+	return { ...run, uploadPath };
 }
 
 // ---------------------------------------------------------------------------
@@ -134,8 +135,7 @@ export async function mapRunPhase(
 	});
 
 	const shape = await detectSourceShape({
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		filePath: run.uploadPath!,
+		filePath: run.uploadPath,
 		fileName: run.uploadFileName ?? run.sourceName,
 		byteSize: run.sourceBytes ?? 0,
 		forcedKind: undefined,
@@ -347,8 +347,7 @@ export async function stageRunPhase(
 	});
 
 	const shape = await detectSourceShape({
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		filePath: run.uploadPath!,
+		filePath: run.uploadPath,
 		fileName: run.uploadFileName ?? run.sourceName,
 		byteSize: run.sourceBytes ?? 0,
 		forcedKind: undefined,
@@ -362,8 +361,7 @@ export async function stageRunPhase(
 	let sourceRows = 0;
 
 	for await (const batch of streamSourceRows({
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		filePath: run.uploadPath!,
+		filePath: run.uploadPath,
 		fileName: run.uploadFileName ?? run.sourceName,
 		shape,
 		batchRows: STAGE_BATCH_ROWS,
@@ -542,13 +540,10 @@ export async function executeRunPhase(
 			result.failed += outcome.failed;
 
 			// Проблемы, возникшие при записи, попадают в карантин.
-			const issueRows = rows
-				.filter((row) => outcome.issuesByStagingId.has(row.stagingId))
-				.map((row) => ({
-					...row,
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					issues: [outcome.issuesByStagingId.get(row.stagingId)!],
-				}));
+			const issueRows = rows.flatMap((row) => {
+				const issue = outcome.issuesByStagingId.get(row.stagingId);
+				return issue ? [{ ...row, issues: [issue] }] : [];
+			});
 			if (issueRows.length > 0) {
 				await recordQuarantine({
 					runId: context.runId,

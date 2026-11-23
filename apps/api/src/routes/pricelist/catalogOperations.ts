@@ -1,6 +1,5 @@
 export * from "./serviceCategoryNormalizer.js";
-export * from "./serviceIngestCommit.js";
-export * from "./serviceBatchImportCommit.js";
+export * from "./batchPricelistCommitService.js";
 
 export {
 	VALID_SERVICE_CATEGORIES,

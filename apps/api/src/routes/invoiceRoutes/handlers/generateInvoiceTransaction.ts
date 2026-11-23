@@ -1,9 +1,15 @@
 import { randomUUID } from "node:crypto";
-import type { validatePlanToInvoice } from "@dental/shared";
+import {
+	basisPointsFromPercent,
+	kopecksToRubles,
+	rublesToKopecks,
+	type validatePlanToInvoice,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems, treatmentPlans } from "../../../db/schema/clinical.js";
+import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { buildTreatmentItemsToInsert } from "../invoiceCalculationHelpers.js";
 import type {
 	CatalogRow,
@@ -31,10 +37,52 @@ export async function executeGenerateInvoiceTransaction(params: {
 		targetPlanDbItems,
 	} = params;
 
-	const invoiceId = randomUUID();
+	let finalInvoiceId = randomUUID();
 	const createdItemIds: string[] = [];
 
 	await withTenantCtx(orgId, async (tx) => {
+		if (data.clientMutationId) {
+			const [existingRecord] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, data.clientMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord?.status === "completed" && existingRecord.responseBody) {
+				const body = existingRecord.responseBody as {
+					invoiceId?: string;
+					createdItemIds?: string[];
+				};
+				if (body.invoiceId) {
+					const [existingInvoice] = await tx
+						.select({ id: patientInvoices.id })
+						.from(patientInvoices)
+						.where(
+							and(
+								eq(patientInvoices.id, body.invoiceId),
+								eq(patientInvoices.organizationId, orgId),
+							),
+						)
+						.limit(1);
+
+					if (existingInvoice) {
+						finalInvoiceId = existingInvoice.id;
+						if (Array.isArray(body.createdItemIds)) {
+							for (const id of body.createdItemIds) {
+								createdItemIds.push(id);
+							}
+						}
+						return;
+					}
+				}
+			}
+		}
+
 		if (data.planId) {
 			await tx
 				.select()
@@ -50,12 +98,13 @@ export async function executeGenerateInvoiceTransaction(params: {
 		}
 
 		await tx.insert(patientInvoices).values({
-			id: invoiceId,
+			id: finalInvoiceId,
 			organizationId: orgId,
 			patientId: data.patientId,
 			treatmentPlanId: data.planId ?? null,
 			totalRub: String(totalNetRub),
 			totalAmountRub: totalNetRub,
+			totalPriceKopecks: BigInt(rublesToKopecks(totalNetRub)),
 			status: "draft",
 			issuedAt: new Date(),
 		});
@@ -92,12 +141,14 @@ export async function executeGenerateInvoiceTransaction(params: {
 				const discountKop = Number.isFinite(Number(it.effectiveDiscountKopecks)) ? Math.max(0, Math.round(Number(it.effectiveDiscountKopecks))) : 0;
 				const safeGrossKop = Math.max(0, grossKop);
 				const safeDiscountKop = Math.min(safeGrossKop, discountKop);
-				const discountBasisPoints = safeGrossKop > 0 ? Math.round((safeDiscountKop * 10000) / safeGrossKop) : 0;
-				const discountPct = Math.min(100, Math.max(0, discountBasisPoints / 100));
+				const PERCENT_SCALE = 100;
+				const discountPercentRaw = safeGrossKop > 0 ? (safeDiscountKop * PERCENT_SCALE) / safeGrossKop : 0;
+				const discountBasisPoints = basisPointsFromPercent(discountPercentRaw);
+				const discountPct = Math.min(100, Math.max(0, kopecksToRubles(discountBasisPoints)));
 
 				return {
 					organizationId: orgId,
-					invoiceId,
+					invoiceId: finalInvoiceId,
 					priceListItemId: matchingCatalog?.id ?? null,
 					name: it.nameRu,
 					quantity: String(it.quantity),
@@ -111,7 +162,27 @@ export async function executeGenerateInvoiceTransaction(params: {
 
 			await tx.insert(invoiceItems).values(invoiceItemsToInsert);
 		}
+
+		if (data.clientMutationId) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: data.clientMutationId,
+					status: "completed",
+					responseCode: 201,
+					responseBody: { invoiceId: finalInvoiceId, createdItemIds },
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: { invoiceId: finalInvoiceId, createdItemIds },
+						lockedAt: new Date(),
+					},
+				});
+		}
 	});
 
-	return { invoiceId, createdItemIds };
+	return { invoiceId: finalInvoiceId, createdItemIds };
 }

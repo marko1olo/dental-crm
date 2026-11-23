@@ -116,6 +116,7 @@ function setupDbMock(
 	t.mock.method(db, "select", select);
 	t.mock.method(db, "insert", insert);
 	t.mock.method(db, "update", update);
+	t.mock.method(db, "transaction", async (cb: (tx: unknown) => Promise<unknown>) => cb({ select, insert, update }));
 }
 
 test("1. Парсинг подлинного DICOM образца из .data/dicom/test.dcm", async () => {

@@ -51,11 +51,22 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		}
 
 		const { initData, organizationId, patientId, phone, verificationCode } = parsed.data;
-		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN || "test_bot_token";
+		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
 
-		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(initData, botToken, {
-			allowDevBypass: process.env.NODE_ENV === "test" || (!process.env.TELEGRAM_BOT_TOKEN && !process.env.DENTE_TELEGRAM_BOT_TOKEN),
-		});
+		if (!botToken && process.env.NODE_ENV !== "test") {
+			return reply.status(503).send({
+				error: "TELEGRAM_INTEGRATION_NOT_CONFIGURED",
+				message: "Интеграция с Telegram не сконфигурирована на сервере.",
+			});
+		}
+
+		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
+			initData,
+			botToken || "test_bot_token",
+			{
+				allowDevBypass: process.env.NODE_ENV === "test",
+			},
+		);
 		if (!validation.isValid || !validation.user) {
 			return reply.status(401).send({
 				error: "Unauthorized",
@@ -481,6 +492,14 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				complaintNotes,
 			},
 		);
+
+		if (!result.success) {
+			const statusCode =
+				"errorCode" in result && result.errorCode === "APPOINTMENT_DOCTOR_REQUIRED"
+					? 400
+					: 422;
+			return reply.status(statusCode).send(result);
+		}
 
 		return reply.send(result);
 	});

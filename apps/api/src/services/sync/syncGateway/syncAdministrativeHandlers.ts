@@ -1,13 +1,17 @@
-import type {
-	FieldConflictDetail,
-	MutationVector,
-	SyncMutationEnvelope,
-	SyncMutationStatus,
+import crypto from "node:crypto";
+import {
+	type FieldConflictDetail,
+	type MutationVector,
+	type SyncMutationEnvelope,
+	type SyncMutationStatus,
+	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
+	patientInvoices,
 	patients,
 	payments,
 	syncEntityVectors,
@@ -61,7 +65,26 @@ export class SyncAdministrativeHandlers {
 			};
 		}
 
-		const amountRub = Number(payload.amountRub ?? 0);
+		let amountKopecks: bigint | null = null;
+		if (payload.amountKopecks !== undefined && payload.amountKopecks !== null) {
+			try {
+				amountKopecks = BigInt(String(payload.amountKopecks));
+			} catch {
+				amountKopecks = null;
+			}
+		}
+
+		let amountRub: number;
+		if (amountKopecks !== null) {
+			amountRub =
+				payload.amountRub !== undefined && payload.amountRub !== null
+					? Number(payload.amountRub)
+					: kopecksToRubles(amountKopecks);
+		} else {
+			amountRub = Number(payload.amountRub ?? 0);
+			amountKopecks = BigInt(rublesToKopecks(amountRub));
+		}
+
 		if (!isValidUuid(payload.patientId)) {
 			throw new Error(
 				`Invalid or missing patientId UUID for payment mutation: ${String(payload.patientId)}`,
@@ -90,16 +113,21 @@ export class SyncAdministrativeHandlers {
 			: null;
 		const fiscalReceipt = payload.fiscalReceipt ?? null;
 
+		const paymentId = isValidUuid(mutation.entityId)
+			? mutation.entityId
+			: crypto.randomUUID();
+
 		const [createdPayment] = await tx
 			.insert(payments)
 			.values({
-				id: mutation.entityId,
+				id: paymentId,
 				organizationId,
 				patientId,
 				visitId,
 				documentId,
 				clientMutationId,
 				amountRub,
+				amountKopecks,
 				method,
 				status: "paid",
 				fiscalReceiptNumber,
@@ -120,6 +148,119 @@ export class SyncAdministrativeHandlers {
 	}
 
 	/**
+	 * Invoice Mutation Handler with exact kopeck precision and idempotent upsert.
+	 */
+	public static async handleInvoiceMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+	): Promise<{ status: SyncMutationStatus; entity: Record<string, unknown> }> {
+		const payload = mutation.payload;
+		if (!isValidUuid(payload.patientId)) {
+			throw new Error(
+				`Invalid or missing patientId UUID for invoice mutation: ${String(payload.patientId)}`,
+			);
+		}
+
+		let totalPriceKopecks: bigint | null = null;
+		if (payload.totalPriceKopecks !== undefined && payload.totalPriceKopecks !== null) {
+			try {
+				totalPriceKopecks = BigInt(String(payload.totalPriceKopecks));
+			} catch {
+				totalPriceKopecks = null;
+			}
+		} else if (payload.amountKopecks !== undefined && payload.amountKopecks !== null) {
+			try {
+				totalPriceKopecks = BigInt(String(payload.amountKopecks));
+			} catch {
+				totalPriceKopecks = null;
+			}
+		}
+
+		let totalAmountRub: number;
+		if (totalPriceKopecks !== null) {
+			totalAmountRub =
+				payload.totalAmountRub !== undefined && payload.totalAmountRub !== null
+					? Number(payload.totalAmountRub)
+					: kopecksToRubles(totalPriceKopecks);
+		} else {
+			totalAmountRub = Number(payload.totalAmountRub ?? payload.totalRub ?? 0);
+			totalPriceKopecks = BigInt(rublesToKopecks(totalAmountRub));
+		}
+
+		const patientId = String(payload.patientId);
+		const treatmentPlanId = isValidUuid(payload.treatmentPlanId)
+			? String(payload.treatmentPlanId)
+			: null;
+		const visitId = isValidUuid(payload.visitId) ? String(payload.visitId) : null;
+		const status = typeof payload.status === "string" ? payload.status : "draft";
+
+		const invoiceId = isValidUuid(mutation.entityId)
+			? mutation.entityId
+			: crypto.randomUUID();
+
+		const existingInvoice = isValidUuid(mutation.entityId)
+			? (
+					await tx
+						.select()
+						.from(patientInvoices)
+						.where(
+							and(
+								eq(patientInvoices.organizationId, organizationId),
+								eq(patientInvoices.id, mutation.entityId),
+							),
+						)
+						.limit(1)
+				)[0]
+			: undefined;
+
+		if (existingInvoice) {
+			const [updated] = await tx
+				.update(patientInvoices)
+				.set({
+					totalPriceKopecks,
+					totalAmountRub,
+					totalRub: String(totalAmountRub),
+					status: status ?? existingInvoice.status,
+					isSynced: true,
+				})
+				.where(
+					and(
+						eq(patientInvoices.organizationId, organizationId),
+						eq(patientInvoices.id, mutation.entityId),
+					),
+				)
+				.returning();
+
+			return {
+				status: "applied",
+				entity: ensureEntityRecord(updated),
+			};
+		}
+
+		const [createdInvoice] = await tx
+			.insert(patientInvoices)
+			.values({
+				id: invoiceId,
+				organizationId,
+				patientId,
+				treatmentPlanId,
+				visitId,
+				totalAmountRub,
+				totalPriceKopecks,
+				totalRub: String(totalAmountRub),
+				status,
+				isSynced: true,
+			})
+			.returning();
+
+		return {
+			status: "applied",
+			entity: ensureEntityRecord(createdInvoice),
+		};
+	}
+
+	/**
 	 * Patient Entity Handler with field-level CRDT merging.
 	 */
 	public static async handlePatientMutation(
@@ -129,16 +270,20 @@ export class SyncAdministrativeHandlers {
 		clientId: string,
 		authorUserId?: string,
 	): Promise<EntityMutationHandlerResult> {
-		const [serverPatient] = await tx
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					eq(patients.id, mutation.entityId),
-				),
-			)
-			.limit(1);
+		const serverPatient = isValidUuid(mutation.entityId)
+			? (
+					await tx
+						.select()
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								eq(patients.id, mutation.entityId),
+							),
+						)
+						.limit(1)
+				)[0]
+			: undefined;
 
 		const [vectorRow] = await tx
 			.select()
@@ -172,10 +317,13 @@ export class SyncAdministrativeHandlers {
 
 		if (!serverPatient) {
 			const newPatientPayload = mergeResult.mergedEntity;
+			const patientId = isValidUuid(mutation.entityId)
+				? mutation.entityId
+				: crypto.randomUUID();
 			const [inserted] = await tx
 				.insert(patients)
 				.values({
-					id: mutation.entityId,
+					id: patientId,
 					organizationId,
 					fullName: String(newPatientPayload.fullName || "Без имени"),
 					phone: newPatientPayload.phone
@@ -268,16 +416,20 @@ export class SyncAdministrativeHandlers {
 		clientId: string,
 		authorUserId?: string,
 	): Promise<EntityMutationHandlerResult> {
-		const [serverAppointment] = await tx
-			.select()
-			.from(appointments)
-			.where(
-				and(
-					eq(appointments.organizationId, organizationId),
-					eq(appointments.id, mutation.entityId),
-				),
-			)
-			.limit(1);
+		const serverAppointment = isValidUuid(mutation.entityId)
+			? (
+					await tx
+						.select()
+						.from(appointments)
+						.where(
+							and(
+								eq(appointments.organizationId, organizationId),
+								eq(appointments.id, mutation.entityId),
+							),
+						)
+						.limit(1)
+				)[0]
+			: undefined;
 
 		const [vectorRow] = await tx
 			.select()
@@ -360,10 +512,14 @@ export class SyncAdministrativeHandlers {
 				| "cancelled"
 				| "no_show";
 
+			const appointmentId = isValidUuid(mutation.entityId)
+				? mutation.entityId
+				: crypto.randomUUID();
+
 			const [inserted] = await tx
 				.insert(appointments)
 				.values({
-					id: mutation.entityId,
+					id: appointmentId,
 					organizationId,
 					patientId: isValidUuid(p.patientId) ? String(p.patientId) : null,
 					doctorUserId: isValidUuid(p.doctorUserId) ? String(p.doctorUserId) : null,

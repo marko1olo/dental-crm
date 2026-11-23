@@ -203,15 +203,15 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 	reply: FastifyReply,
 	_protectedArea?: string,
 ): Promise<string | null> {
-	const identity = getRequestIdentity(request);
-	if (!identity.organizationId) {
+	const { organizationId, userId, sessionId } = getRequestIdentity(request);
+	if (!organizationId) {
 		reply.code(401).send({
 			error: "AuthRequired",
 			message: "Требуется авторизация рабочего кабинета клиники.",
 		});
 		return null;
 	}
-	if (!identity.userId) {
+	if (!userId) {
 		reply.code(401).send({
 			error: "StaffAuthRequired",
 			message: "Требуется вход сотрудника.",
@@ -219,7 +219,7 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 		return null;
 	}
 
-	if (identity.sessionId) {
+	if (sessionId) {
 		const { db } = await import("./db/client.js");
 		const { users } = await import("./db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
@@ -228,17 +228,15 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 			.from(users)
 			.where(
 				and(
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.id, identity.userId!),
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.organizationId, identity.organizationId!),
+					eq(users.id, userId),
+					eq(users.organizationId, organizationId),
 				),
 			)
 			.limit(1);
 
 		if (
 			!user?.currentSessionId ||
-			user.currentSessionId !== identity.sessionId
+			user.currentSessionId !== sessionId
 		) {
 			reply.code(401).send({
 				error: "invalid_session",
@@ -249,7 +247,7 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 		}
 	}
 
-	return identity.organizationId;
+	return organizationId;
 }
 
 /**
@@ -260,8 +258,8 @@ async function _requireResolvedStaffUserId(
 	reply: FastifyReply,
 	_protectedArea?: string,
 ): Promise<string | null> {
-	const identity = getRequestIdentity(request);
-	if (!identity.userId) {
+	const { userId, organizationId, sessionId } = getRequestIdentity(request);
+	if (!userId) {
 		reply.code(401).send({
 			error: "StaffAuthRequired",
 			message: "Требуется вход сотрудника.",
@@ -269,26 +267,22 @@ async function _requireResolvedStaffUserId(
 		return null;
 	}
 
-	if (identity.sessionId) {
+	if (sessionId) {
 		const { db } = await import("./db/client.js");
 		const { users } = await import("./db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
+		const whereClause = organizationId
+			? and(eq(users.id, userId), eq(users.organizationId, organizationId))
+			: eq(users.id, userId);
 		const [user] = await db
 			.select({ currentSessionId: users.currentSessionId })
 			.from(users)
-			.where(
-				and(
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.id, identity.userId!),
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.organizationId, identity.organizationId!),
-				),
-			)
+			.where(whereClause)
 			.limit(1);
 
 		if (
 			!user?.currentSessionId ||
-			user.currentSessionId !== identity.sessionId
+			user.currentSessionId !== sessionId
 		) {
 			reply.code(401).send({
 				error: "invalid_session",
@@ -299,7 +293,7 @@ async function _requireResolvedStaffUserId(
 		}
 	}
 
-	return identity.userId;
+	return userId;
 }
 
 /**

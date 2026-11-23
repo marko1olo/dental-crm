@@ -1,10 +1,13 @@
 import { omniLlmGateway } from "../../../ai/omniGateway.js";
 import type { ChatOptions } from "../../../ai/omniGatewayTypes.js";
+import { createApiLogger, safeLogError } from "../../../observability/index.js";
 import {
 	calculateAge,
 	isAnesthesiaIndicatedAppointment,
 	isSurgicalAppointment,
 } from "./clinicalClassifiers.js";
+
+const logger = createApiLogger("somaticRadar");
 import {
 	type AppointmentSomaticContextInput,
 	type PatientSomaticProfileInput,
@@ -55,9 +58,9 @@ export async function extractSomaticRisksWithLlm(
 
 		return SomaticAnamnesisExtractionSchema.parse(result.data);
 	} catch (err) {
-		console.warn(
-			"[SomaticRadarDaemon:WARN] OmniGateway LLM extraction failed or unavailable, using deterministic fallback:",
-			err instanceof Error ? err.message : String(err),
+		logger.warn(
+			{ err: safeLogError(err) },
+			"OmniGateway LLM extraction failed or unavailable, using deterministic fallback",
 		);
 		return extractSomaticRisksDeterministic(text);
 	}

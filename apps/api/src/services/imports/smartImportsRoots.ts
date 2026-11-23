@@ -7,7 +7,10 @@ import { open } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { MigrationLocalSourceDiscoveryCandidate, SmartImportLegacySource } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { uniqueStrings, legacySourceTitles } from "./smartImportsUtils.js";
+
+const logger = createApiLogger("smartImportsRoots");
 import {
   migrationWorkstationProfiles,
   migrationVendorGuidanceCatalog,
@@ -39,7 +42,7 @@ export function migrationRootExists(root: string) {
 	try {
 		return existsSync(root);
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.error({ err: safeLogError(err), root }, "Failed to check if migration root exists");
 		return false;
 	}
 }

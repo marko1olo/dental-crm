@@ -45,6 +45,9 @@ import {
   collectMigrationWorkstationSignals,
   migrationCandidateFromWorkstationSignal
 } from "./smartImportsSignals.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("smartImportsDiscovery");
 
 export interface MigrationDiscoveryQueueItem {
   root: string;
@@ -73,7 +76,7 @@ export async function inspectMigrationDiscoveryFolder(
 	try {
 		entries = await readdir(item.folderPath, { withFileTypes: true });
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.error({ err: safeLogError(err), folderPath: item.folderPath }, "Failed to read migration discovery folder");
 		warnings.add(
 			"Одну локальную папку миграционного поиска не удалось прочитать; она пропущена.",
 		);
@@ -159,7 +162,7 @@ export async function inspectMigrationDiscoveryFolder(
 			if (!latestModifiedAt || modified > latestModifiedAt)
 				latestModifiedAt = modified;
 		} catch (err) {
-			console.error("[Dente] context:", err);
+			logger.warn({ err: safeLogError(err), fullPath }, "Failed to stat file metadata during migration discovery");
 			// Best-effort metadata only.
 		}
 	}

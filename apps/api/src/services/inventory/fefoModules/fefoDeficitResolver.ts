@@ -3,6 +3,10 @@
  * Расчет дефицита и подготовка транзакций овердрафта при нехватке партий FEFO (Мандат 8b).
  */
 
+import {
+	generateSupplierPurchaseOrder,
+	type SupplierPurchaseOrder,
+} from "@dental/shared";
 import type { InventoryTransactionInsert } from "./auditLogging.js";
 
 export function resolveDeficitAndOverdraft(params: {
@@ -36,6 +40,7 @@ export function resolveDeficitAndOverdraft(params: {
 	let isOverdraft = false;
 	let deficitQty = 0;
 	let warning: string | undefined;
+	let purchaseOrderDraft: SupplierPurchaseOrder | null = null;
 
 	if (needed > 0) {
 		const alreadyDeducted = requiredQty - needed;
@@ -84,8 +89,49 @@ export function resolveDeficitAndOverdraft(params: {
 				userId: userId ?? null,
 				notes: notes ? `${notes} (дефицит ${deficitQty} ед.)` : `Технический перерасход при оказании помощи (дефицит ${deficitQty} ед.)`,
 			});
+
+			const safeUnit =
+				inv.unit === "карпула" || inv.unit === "carpule"
+					? "carpule"
+					: inv.unit === "шприц_гр" || inv.unit === "gram"
+						? "gram"
+						: inv.unit === "ампула" || inv.unit === "dose"
+							? "dose"
+							: inv.unit === "упак" || inv.unit === "pack"
+								? "pack"
+								: "pcs";
+
+			purchaseOrderDraft = generateSupplierPurchaseOrder({
+				visitId: visitId ?? undefined,
+				alerts: [
+					{
+						sku: inv.id,
+						nameRu: inv.name,
+						cabinetId: warehouseId || "main",
+						previousQuantity: currentStock,
+						remainingQuantity: -trueDeficit,
+						minThresholdQuantity: 0,
+						alertLevel: "critical_out_of_stock",
+						messageRu: warning,
+					},
+				],
+				requirements: [
+					{
+						sku: inv.id,
+						nameRu: inv.name,
+						category: "Расходные материалы",
+						totalQuantityRequired: requiredQty,
+						unitOfMeasure: safeUnit,
+						totalEstimatedCostKopecks: 0,
+						procedureBreakdown: [],
+						isAvailableInStock: false,
+						currentStockQuantity: currentStock,
+						shortfallQuantity: trueDeficit,
+					},
+				],
+			});
 		}
 	}
 
-	return { additionalTransactions, isOverdraft, deficitQty, warning };
+	return { additionalTransactions, isOverdraft, deficitQty, warning, purchaseOrderDraft };
 }

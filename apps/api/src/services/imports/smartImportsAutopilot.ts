@@ -40,6 +40,9 @@ import {
   migrationAutopilotOwner
 } from "./smartImportsOperatorScript.js";
 import { buildSmartImportPreview } from "./smartImportsPipeline.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("smartImportsAutopilot");
 
 export function migrationSourceCanStartDryRunPreview(
 	source: MigrationAutopilotSource,
@@ -636,7 +639,7 @@ export async function buildMigrationAutopilot(
 					privacyWarnings.add(warning);
 				});
 			} catch (err) {
-				console.error("[Dente] context:", err);
+				logger.error({ err: safeLogError(err), candidate: candidate.safeDisplayName }, "Failed to probe local migration source");
 				warnings.add(
 					`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`,
 				);

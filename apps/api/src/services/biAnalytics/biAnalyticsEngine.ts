@@ -8,6 +8,9 @@ import {
 	treatmentPlans,
 } from "../../db/schema.js";
 import { computeBiAnalyticsSnapshots } from "./biAnalyticsSnapshots.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("biAnalyticsEngine");
 
 /** Состояние плана лечения так, как его называет перечисление базы. */
 export type TreatmentPlanStatus =
@@ -75,11 +78,9 @@ export function buildPlanFunnel(
 	}
 
 	if (unknown.size > 0) {
-		console.error(
-			"[BI] Воронка планов лечения: база вернула состояния, которых нет в перечислении " +
-				`treatmentPlanStatus (db/schema.ts): ${[...unknown.keys()].join(", ")}. ` +
-				"Планы показаны под сырым именем, чтобы не пропасть из отчёта; подпись и цвет им " +
-				"добавляются в TREATMENT_PLAN_FUNNEL_APPEARANCE.",
+		logger.error(
+			{ unknownStatuses: [...unknown.keys()] },
+			"Воронка планов лечения: база вернула состояния, которых нет в перечислении treatmentPlanStatus (db/schema.ts)",
 		);
 	}
 
@@ -179,7 +180,7 @@ export async function computeChairUtilizationAll(): Promise<
  */
 export function runScheduledSnapshots(): void {
 	void computeBiAnalyticsSnapshots().catch((err) => {
-		console.error("[BI Worker] Плановый прогон снимков отказал:", err);
+		logger.error({ err: safeLogError(err) }, "Плановый прогон снимков отказал");
 	});
 }
 

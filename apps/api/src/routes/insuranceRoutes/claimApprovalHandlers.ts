@@ -491,6 +491,29 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
+				if (d.contractId) {
+					const [contractRecord] = await tx
+						.select({ id: insuranceContracts.id })
+						.from(insuranceContracts)
+						.where(
+							and(
+								eq(insuranceContracts.id, d.contractId),
+								eq(insuranceContracts.organizationId, orgId),
+							),
+						)
+						.limit(1);
+
+					if (!contractRecord) {
+						return {
+							status: 404,
+							error: {
+								error: "ContractNotFound",
+								message: "Договор ДМС не найден в вашей клинике.",
+							},
+						};
+					}
+				}
+
 				const estimatedCostKop = d.estimatedCostKopecks ?? (d.estimatedCostRub ? rublesToKopecks(d.estimatedCostRub) : 5000000);
 				const estimatedCostRub = kopecksToRubles(estimatedCostKop);
 

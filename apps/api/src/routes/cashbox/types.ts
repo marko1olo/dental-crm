@@ -24,6 +24,7 @@ export interface OpenShiftRequestBody {
 }
 
 export interface OpenShiftResponseBody {
+	[key: string]: unknown;
 	success: boolean;
 	message: string;
 	openedShiftsCount: number;
@@ -84,6 +85,7 @@ export interface CloseShiftRequestBody {
 }
 
 export interface CloseShiftResponseBody {
+	[key: string]: unknown;
 	success: boolean;
 	message: string;
 	closedShiftsCount: number;

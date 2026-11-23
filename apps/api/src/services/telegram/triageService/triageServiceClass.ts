@@ -26,8 +26,11 @@ import {
 import {
 	getTelegramDialogSession,
 	updateTelegramDialogSession,
-} from "../telegramLegacyMemoryStore.js";
+} from "../dialogSessions.js";
 import { wsBroker } from "../../websocketBroker.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
+
+const logger = createApiLogger("telegramTriage");
 import {
 	presentAestheticScreen,
 	presentBrokenToothPhotoHintScreen,
@@ -236,7 +239,7 @@ export class TelegramInteractiveTriageService {
 				}
 			});
 		} catch (taskErr) {
-			console.warn("[TelegramInteractiveTriage] Не удалось создать communicationTask:", taskErr);
+			logger.warn({ err: safeLogError(taskErr), organizationId, chatFingerprint }, "Не удалось создать communicationTask");
 		}
 
 		// Трансляция события через WebSocket брокер клиники
@@ -253,7 +256,7 @@ export class TelegramInteractiveTriageService {
 				},
 			});
 		} catch (wsErr) {
-			console.warn("[TelegramInteractiveTriage] Ошибка WebSocket оповещения:", wsErr);
+			logger.warn({ err: safeLogError(wsErr), organizationId }, "Ошибка WebSocket оповещения");
 		}
 
 		return presentHumanTakeoverScreen();
@@ -340,7 +343,7 @@ export class TelegramInteractiveTriageService {
 				savedLocalPath = path.join(uploadsBase, fileName);
 				fs.writeFileSync(savedLocalPath, downloadResult.buffer);
 			} catch (writeErr) {
-				console.warn("[TelegramInteractiveTriage] Ошибка записи фото на диск:", writeErr);
+				logger.warn({ err: safeLogError(writeErr), organizationId, chatId }, "Ошибка записи фото на диск");
 			}
 		}
 
@@ -365,7 +368,7 @@ export class TelegramInteractiveTriageService {
 				});
 			});
 		} catch (dbErr) {
-			console.warn("[TelegramInteractiveTriage] Ошибка сохранения фото в БД:", dbErr);
+			logger.warn({ err: safeLogError(dbErr), organizationId, chatId }, "Ошибка сохранения фото в БД");
 		}
 
 		// 4. Оповещение персонала через WebSocket
@@ -382,7 +385,7 @@ export class TelegramInteractiveTriageService {
 				},
 			});
 		} catch (wsErr) {
-			console.warn("[TelegramInteractiveTriage] WS notification failed:", wsErr);
+			logger.warn({ err: safeLogError(wsErr), organizationId, chatId }, "WS notification failed");
 		}
 
 		return {

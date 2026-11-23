@@ -160,12 +160,18 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		if (memberRawPayments.length === 0) continue;
 
 		const mappedItems: TaxDeductionPaymentItem[] = memberRawPayments.map((p) => {
-			const amtRub = Number(p.amountRub) || 0;
-			const amtKop = rublesToKopecks(amtRub);
+			const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
+			const amountKopecks = rawAmountKopecks != null
+				? BigInt(rawAmountKopecks as bigint | number)
+				: BigInt(rublesToKopecks(p.amountRub || 0));
+			const amtKop = Number(amountKopecks);
+
+			const rawNote = p.note?.trim() || undefined;
+			const code804nCandidate = rawNote && /^[A-B]\d{2}\.\d{2}\.\d{3}/i.test(rawNote) ? rawNote : undefined;
 			const isExpensive = Boolean(
 				p.taxDeductionCode === "2" ||
-				classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
-				classifyNdflServiceCode(p.note ?? undefined, p.note ?? undefined) === "2",
+				classifyTaxDeduction804n(code804nCandidate, rawNote).categoryCode === "2" ||
+				classifyNdflServiceCode(rawNote, code804nCandidate) === "2",
 			);
 			const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 			const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);
@@ -186,6 +192,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 				fiscalSign,
 				serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
 				amountRub: kopecksToRubles(amtKop),
+				amountKopecks: amtKop,
 				taxCode: isExpensive ? ("2" as const) : ("1" as const),
 				status: p.status === "refunded" ? ("refunded" as const) : ("paid" as const),
 				isRefund: amtKop < 0,
@@ -195,18 +202,23 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		const normalizedItems = normalizePaymentsForTaxCertificate(mappedItems, targetYear);
 		if (normalizedItems.length === 0) continue;
 
-		let code1Kopecks = 0;
-		let code2Kopecks = 0;
+		let code1KopecksBi = 0n;
+		let code2KopecksBi = 0n;
 		for (const item of normalizedItems) {
-			const kopecks = rublesToKopecks(item.amountRub);
+			const kopecksBi = item.amountKopecks != null
+				? BigInt(item.amountKopecks)
+				: BigInt(rublesToKopecks(item.amountRub));
 			if (item.taxCode === "2") {
-				code2Kopecks += kopecks;
+				code2KopecksBi += kopecksBi;
 			} else {
-				code1Kopecks += kopecks;
+				code1KopecksBi += kopecksBi;
 			}
 		}
-		const totalKopecks = code1Kopecks + code2Kopecks;
-		if (totalKopecks <= 0) continue;
+		const totalKopecksBi = code1KopecksBi + code2KopecksBi;
+		if (totalKopecksBi <= 0n) continue;
+		const code1Kopecks = Number(code1KopecksBi);
+		const code2Kopecks = Number(code2KopecksBi);
+		const totalKopecks = Number(totalKopecksBi);
 
 		// Kinship code: 1 = Self, 2 = Spouse, 3 = Parent, 4 = Child, 5 = Ward
 		let kinshipCode: "1" | "2" | "3" | "4" | "5" = "1";

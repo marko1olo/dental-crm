@@ -123,12 +123,12 @@ export class BookingVerificationEngine {
 		return { allowed: true };
 	}
 
-	public requestPhoneVerification(
+	public async requestPhoneVerification(
 		phone: string,
 		method: "sms" | "flash_call" = "sms",
 		clientIp: string = "unknown",
 		organizationId?: string,
-	): { allowed: boolean; message: string; cooldownSeconds?: number; challengeId?: string; developerCode?: string } {
+	): Promise<{ allowed: boolean; message: string; cooldownSeconds?: number; challengeId?: string; developerCode?: string }> {
 		const cleanPhone = normalizePhoneDigits(phone);
 		if (cleanPhone.length < 10) {
 			return { allowed: false, message: "Некорректный номер телефона" };
@@ -170,11 +170,9 @@ export class BookingVerificationEngine {
 			failedAttempts: 0,
 		});
 
-		void (async () => {
-			try {
-				const targetOrgId = organizationId ? (await resolveDefaultOrganizationId(organizationId)) : null;
-				if (!targetOrgId) return;
-
+		try {
+			const targetOrgId = organizationId ? await resolveDefaultOrganizationId(organizationId) : null;
+			if (targetOrgId) {
 				const [pt] = await db
 					.select({ id: patients.id })
 					.from(patients)
@@ -218,10 +216,10 @@ export class BookingVerificationEngine {
 						// Safe fallback: provider unconfigured or dispatch error — flow continues without hanging
 					}
 				}
-			} catch {
-				// In test/offline environments, in-memory challenge remains active
 			}
-		})();
+		} catch {
+			// In test/offline environments, in-memory challenge remains active
+		}
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
 		const isDevOrTest =
@@ -382,7 +380,7 @@ export class BookingVerificationEngine {
 
 export const bookingVerificationEngine = new BookingVerificationEngine();
 
-export function requestPhoneVerification(
+export async function requestPhoneVerification(
 	phone: string,
 	method: "sms" | "flash_call" = "sms",
 	clientIp: string = "unknown",

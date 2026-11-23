@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
@@ -7,6 +7,7 @@ import { withTenantCtx } from "../../../db/rls.js";
 import { getImagingStudyById } from "../../../db/imagingQuery.js";
 import { browserRenderableImageMimeType, isDicomOrRadiographFile } from "../../../imaging/previewFormats.js";
 import { LocalPacsStorageService, PathTraversalError, TenantIsolationError } from "../../../services/imaging/localPacsStorageService.js";
+import { anonymizeDicomBuffer } from "../../../services/imaging/dicomAnonymizer.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
 import { previewSvg } from "../previewSvg.js";
 
@@ -70,8 +71,23 @@ export async function fileStreamHandler(request: FastifyRequest, reply: FastifyR
 	}
 
 	const browserMime = browserRenderableImageMimeType(resolved);
-	const query = (request.query || {}) as { raw?: string; download?: string };
+	const query = (request.query || {}) as { raw?: string; download?: string; anonymize?: string };
 	const isDownload = query.download === "true" || query.raw === "true";
+	const shouldAnonymize = query.anonymize === "true";
+
+	if (shouldAnonymize) {
+		const rawBuf = await readFile(resolved);
+		const anonymizedBuf = anonymizeDicomBuffer(rawBuf, {
+			patientName: "ANONYMIZED^PATIENT",
+			patientId: `ANON-${study.id.slice(0, 8)}`,
+		});
+		const ext = path.extname(resolved).toLowerCase();
+		const mime = ext === ".dcm" || ext === ".dicom" || ext === ".ima" ? "application/dicom" : (browserMime || "application/octet-stream");
+		reply.type(mime);
+		const filename = isDownload ? `anonymized_${path.basename(resolved)}` : path.basename(resolved);
+		reply.header("Content-Disposition", `${isDownload ? "attachment" : "inline"}; filename="${filename}"`);
+		return reply.send(anonymizedBuf);
+	}
 
 	if (browserMime && !isDownload) {
 		reply.type(browserMime);

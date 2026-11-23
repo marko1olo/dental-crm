@@ -100,14 +100,15 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 			let generatedOwnerPin: string | null = null;
 			let ownerPinHash: string | null = null;
 			if (ownerName) {
-				if (!ownerPin) {
+				let effectiveOwnerPin = ownerPin;
+				if (!effectiveOwnerPin) {
 					generatedOwnerPin = String(crypto.randomInt(0, 1_000_000)).padStart(
 						6,
 						"0",
 					);
+					effectiveOwnerPin = generatedOwnerPin;
 				}
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				ownerPinHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
+				ownerPinHash = await hashCredential(effectiveOwnerPin);
 			}
 
 			// ИДЕНТИФИКАТОР КЛИНИКИ ГЕНЕРИРУЕТСЯ ДО ВСТАВКИ, и им же выставляется
@@ -278,8 +279,11 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 			const generatedOwnerPin = ownerPin
 				? null
 				: String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const pinCodeHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
+			const effectivePin =
+				ownerPin ??
+				generatedOwnerPin ??
+				String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+			const pinCodeHash = await hashCredential(effectivePin);
 
 			// Идентификатор клиники известен до вставки, поэтому обход здесь не нужен:
 			// контекст арендатора разрешает создать ровно эту строку и никакую другую.

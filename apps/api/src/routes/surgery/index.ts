@@ -39,7 +39,7 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
+import { TreatmentConsumablesService, type UnifiedStockDeductionResult } from "../../services/treatmentConsumablesService.js";
 
 export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -325,6 +325,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 						.set({
 							totalAmountRub: updatedTotalRub,
 							totalRub: String(updatedTotalRub),
+							totalPriceKopecks: newTotalKopecks,
 						})
 						.where(and(eq(patientInvoices.id, existingInvoice.id), eq(patientInvoices.organizationId, orgId)));
 				}
@@ -340,6 +341,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 						visitId: targetVisitId ?? null,
 						totalAmountRub: invoiceTotalRub,
 						totalRub: String(invoiceTotalRub),
+						totalPriceKopecks: operationPriceKopecks,
 						status: "issued",
 						issuedAt: new Date(),
 					})
@@ -459,6 +461,48 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// Дедупликация и проверка Idempotency-Key (Мандаты 8bo, 8zp)
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotence-key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+				: undefined);
+
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: null;
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+			const existingRecord = await withTenantCtx(orgId, async (tx) => {
+				const [rec] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+				return rec ?? null;
+			});
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция списания материалов с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		const identity = getRequestIdentity(request);
 		const parsed = surgicalQuickDeductSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -470,10 +514,11 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		}
 		const input = parsed.data;
 
-		const writeoffResult = await db.transaction(async (tx) => {
+		const responsePayload = await db.transaction(async (tx) => {
+			let res: UnifiedStockDeductionResult;
 			if (input.bundleType === "anesthesia_carpule") {
 				// Списание карпул анестетиков медсестрой (Класс Б, СанПиН 3.3686-21, без комиссий)
-				return await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+				res = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 					organizationId: orgId,
 					carpulesCount: input.carpulesCount,
 					drugName: input.drugBrandName,
@@ -481,31 +526,61 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					visitId: input.visitId,
 					notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
 				});
-			}
-
-			// Маппинг хирургических бандлов на TreatmentConsumablesService
-			let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
-			if (input.bundleType === "implant") {
-				visitType = "implant";
-			} else if (input.bundleType === "sinus_gbr") {
-				visitType = "sinus_gbr";
 			} else {
-				visitType = "surgery";
+				// Маппинг хирургических бандлов на TreatmentConsumablesService
+				let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
+				if (input.bundleType === "implant") {
+					visitType = "implant";
+				} else if (input.bundleType === "sinus_gbr") {
+					visitType = "sinus_gbr";
+				} else {
+					visitType = "surgery";
+				}
+
+				res = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId: orgId,
+					visitType,
+					userId: identity.userId,
+					visitId: input.visitId,
+					notes: input.notes ?? `Списание набора «${visitType}»`,
+				});
 			}
 
-			return await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-				organizationId: orgId,
-				visitType,
-				userId: identity.userId,
-				visitId: input.visitId,
-				notes: input.notes ?? `Списание набора «${visitType}»`,
-			});
+			const payload = {
+				bundleType: input.bundleType,
+				success: res.success,
+				isOverdraft: res.isOverdraft,
+				deductedItemsCount: res.deductedItems.length,
+				messageRu: res.message,
+				deductedItems: res.deductedItems,
+				warnings: res.warnings,
+			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: payload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: payload,
+							responseCode: 200,
+						},
+					});
+			}
+
+			return payload;
 		});
 
-		return reply.send({
-			bundleType: input.bundleType,
-			...writeoffResult,
-		});
+		return reply.send(responsePayload);
 	});
 
 	/**

@@ -74,45 +74,44 @@ export function verifyCryptoProSignature(
 		}
 	}
 
-	// Deep ASN.1 DER CMS / PKCS#7 validation via @dental/shared when container starts with SEQUENCE (0x30)
-	if (buf[0] === 0x30) {
-		const cmsCheck = validateGostCmsPkcs7Signature(
-			cleaned,
-			expectedDocumentHashHex,
-		);
-		if (!cmsCheck.valid) {
-			return {
-				isValid: false,
-				error: cmsCheck.error ?? "Контейнер подписи CMS/PKCS#7 поврежден",
-			};
-		}
-
-		const certStatus = validateCertificateStatus({
-			certificateSerialNumber:
-				certSerial ?? cmsCheck.details?.certificateSerialNumber,
-			validFrom: cmsCheck.details?.validFromIso,
-			validTo: cmsCheck.details?.validToIso,
-		});
-		if (!certStatus.valid) {
-			return {
-				isValid: false,
-				error: certStatus.error ?? "Срок действия сертификата истек или сертификат отозван",
-			};
-		}
-
+	// Deep ASN.1 DER CMS / PKCS#7 validation: container must strictly start with SEQUENCE (0x30)
+	if (buf[0] !== 0x30) {
 		return {
-			isValid: true,
-			certificateSerialNumber:
-				certSerial ?? cmsCheck.details?.certificateSerialNumber,
-			algorithmOid:
-				cmsCheck.details?.signatureAlgorithmOid ?? GOST_3410_2012_256_OID,
+			isValid: false,
+			error: "Некорректная структура ASN.1 DER: контейнер подписи PKCS#7 должен начинаться с SEQUENCE (0x30)",
+		};
+	}
+
+	const cmsCheck = validateGostCmsPkcs7Signature(
+		cleaned,
+		expectedDocumentHashHex,
+	);
+	if (!cmsCheck.valid) {
+		return {
+			isValid: false,
+			error: cmsCheck.error ?? "Контейнер подписи CMS/PKCS#7 поврежден",
+		};
+	}
+
+	const certStatus = validateCertificateStatus({
+		certificateSerialNumber:
+			certSerial ?? cmsCheck.details?.certificateSerialNumber,
+		validFrom: cmsCheck.details?.validFromIso,
+		validTo: cmsCheck.details?.validToIso,
+	});
+	if (!certStatus.valid) {
+		return {
+			isValid: false,
+			error: certStatus.error ?? "Срок действия сертификата истек или сертификат отозван",
 		};
 	}
 
 	return {
 		isValid: true,
-		certificateSerialNumber: certSerial ?? undefined,
-		algorithmOid: GOST_3410_2012_256_OID,
+		certificateSerialNumber:
+			certSerial ?? cmsCheck.details?.certificateSerialNumber,
+		algorithmOid:
+			cmsCheck.details?.signatureAlgorithmOid ?? GOST_3410_2012_256_OID,
 	};
 }
 

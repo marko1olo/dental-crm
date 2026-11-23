@@ -12,16 +12,7 @@ import {
  */
 
 export const labOrdersQuerySchema = z.object({
-	patientId: z
-		.string()
-		.trim()
-		.optional()
-		.nullable()
-		.refine(
-			(val) => !val || val === "pat_direct" || /^[0-9a-fA-F-]{36}$/.test(val),
-			{ message: "Параметр patientId должен быть валидным UUID." },
-		)
-		.transform((val) => (val && val !== "pat_direct" ? val : undefined)),
+	patientId: z.string().uuid("Параметр patientId должен быть валидным UUID.").optional().nullable(),
 });
 export type LabOrdersQuery = z.infer<typeof labOrdersQuerySchema>;
 

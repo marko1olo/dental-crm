@@ -53,6 +53,9 @@ import {
 	SpeechChunkOrganizationScopeError,
 	type SpeechRecordingEnvelope,
 } from "./types.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("speechAudioIndexManager");
 
 let speechRestorePromise: Promise<void> | null = null;
 let speechRestoreFailure: string | null = null;
@@ -262,8 +265,14 @@ export async function persistSpeechRecording(
 	const owner = storedRecordingOwner(stored.chunks);
 	if (owner && !speechRecordingIdentityMatches(owner, trigger)) {
 		forgetCachedSpeechChunk(trigger);
-		console.error(
-			`[SpeechStorage] Фрагмент ${trigger.chunkIndex} записи ${recordingId} отклонен: запись сохранена как ${describeSpeechRecordingIdentity(owner)}, а фрагмент пришёл как ${describeSpeechRecordingIdentity(trigger)}.`,
+		logger.error(
+			{
+				chunkIndex: trigger.chunkIndex,
+				recordingId,
+				ownerIdentity: describeSpeechRecordingIdentity(owner),
+				triggerIdentity: describeSpeechRecordingIdentity(trigger),
+			},
+			"Фрагмент записи отклонен из-за конфликта идентичности",
 		);
 		throw new SpeechChunkIdentityConflictError(
 			`у сохранённой записи другой ${speechIdentityDivergence(owner, trigger)}`,
@@ -407,9 +416,9 @@ export async function restoreSpeechTranscriptionChunks(): Promise<void> {
 			).chunks;
 		} catch (error) {
 			unreadableRows += 1;
-			console.error(
-				"[SpeechStorage] Конверт расшифровки не прочитан, строка пропущена:",
-				error,
+			logger.error(
+				{ err: safeLogError(error), storagePath },
+				"Конверт расшифровки не прочитан, строка пропущена",
 			);
 			continue;
 		}
@@ -465,9 +474,9 @@ export function ensureSpeechTranscriptionChunksRestored(): Promise<void> {
 				error instanceof Error ? error.message : "неизвестная ошибка чтения";
 			speechRestoreRetryAtMs = Date.now() + speechRestoreBackoffMs();
 			if (speechRestorePromise === attempt) speechRestorePromise = null;
-			console.error(
-				"[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы:",
-				error,
+			logger.error(
+				{ err: safeLogError(error), failedAttempts: speechRestoreFailedAttempts },
+				"Не удалось восстановить расшифровки диктовки из базы",
 			);
 		},
 	);
@@ -501,9 +510,9 @@ export async function withDurableSpeechRecording(
 		if (error instanceof SpeechChunkIdentityConflictError) throw error;
 		const reason =
 			error instanceof Error ? error.message : "неизвестная ошибка записи";
-		console.error(
-			`[SpeechStorage] Расшифровка ${chunk.recordingId} не сохранена в базу:`,
-			error,
+		logger.error(
+			{ err: safeLogError(error), recordingId: chunk.recordingId, organizationId },
+			"Расшифровка не сохранена в базу",
 		);
 		chunk.warnings = uniqueStrings([
 			...chunk.warnings.filter(

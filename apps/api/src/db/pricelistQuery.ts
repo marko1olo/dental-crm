@@ -41,14 +41,18 @@ import {
 	serviceCatalogItemSchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
  */
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 import { BASELINE_804N_PRICELIST_SERVICES } from "../services/clinical/statutoryCatalogs.js";
-import { db } from "./client.js";
+import { db, type TenantTransaction } from "./client.js";
+import { withTenantCtx, type TenantDb } from "./rls.js";
 import * as schema from "./schema.js";
+
+const logger = createApiLogger("pricelistQuery");
 
 /** Строка прайса ровно в той форме, в которой её отдаёт база. */
 export type ServiceCatalogRow = typeof schema.serviceCatalogItems.$inferSelect;
@@ -247,13 +251,18 @@ export async function getServiceCatalogForOrganization(
 		return [];
 	}
 	try {
-		const rows = await db
-			.select()
-			.from(schema.serviceCatalogItems)
-			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
-		return projectServiceCatalogRows(rows).items;
+		return await withTenantCtx(organizationId, async (tx) => {
+			const rows = await tx
+				.select()
+				.from(schema.serviceCatalogItems)
+				.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+			return projectServiceCatalogRows(rows).items;
+		});
 	} catch (err) {
-		console.warn("[pricelist] Database query for service catalog failed, returning empty catalog:", err);
+		logger.warn(
+			{ err: safeLogError(err), organizationId },
+			"Database query for service catalog failed, returning empty catalog",
+		);
 		return [];
 	}
 }
@@ -335,8 +344,10 @@ export class ServiceCatalogItemNotFoundError extends Error {
 async function selectOwnedRow(
 	organizationId: string,
 	serviceId: string,
+	executor?: TenantDb | typeof db,
 ): Promise<ServiceCatalogRow | null> {
-	const [row] = await db
+	const client = executor ?? db;
+	const [row] = await client
 		.select()
 		.from(schema.serviceCatalogItems)
 		.where(
@@ -368,7 +379,7 @@ function projectSingleRow(row: ServiceCatalogRow): ServiceCatalogItem {
 }
 
 /**
- * Обе денежные колонки заполняются одним значением.
+ * Обе денежные колонки заполняются одним значением, плюс синхронно пишутся копейки (DEF-23-01).
  *
  * base_price_rub и price_rub объявлены NOT NULL обе, а проекция читает только
  * base_price_rub. Посев мастера первого запуска (routes/workspaceProfile.ts:826)
@@ -379,36 +390,60 @@ function projectSingleRow(row: ServiceCatalogRow): ServiceCatalogItem {
  * схемы, и он назван здесь, а не разведён двумя разными смыслами.
  */
 function moneyColumns(basePriceRub: number) {
-	return { basePriceRub, priceRub: basePriceRub };
+	const kop = BigInt(rublesToKopecks(basePriceRub));
+	return {
+		basePriceRub,
+		priceRub: basePriceRub,
+		priceKopecks: kop,
+		basePriceKopecks: kop,
+	};
 }
 
 /** Новая услуга прайса. */
 export async function createServiceCatalogItemInDb(
 	organizationId: string,
 	input: ServiceCatalogItemInput,
+	executor?: TenantDb | typeof db,
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
-	const [row] = await db
-		.insert(schema.serviceCatalogItems)
-		.values({
-			organizationId,
-			code: input.code,
-			title: input.title,
-			category: input.category,
-			specialty: input.specialty,
-			...moneyColumns(input.basePriceRub),
-			durationMinutes: input.durationMinutes,
-			taxDeductible: input.taxDeductible,
-			isActive: input.active,
-			order804nCode: input.order804nCode ?? null,
-			materialsCostRub: input.materialsCostRub !== undefined && input.materialsCostRub !== null ? input.materialsCostRub : 0,
-			labCostRub: input.labCostRub !== undefined && input.labCostRub !== null ? input.labCostRub : 0,
-			tierPrices: input.tierPrices ?? {},
-		})
-		.returning();
-	if (!row)
-		throw new Error("Услуга не создана: база не вернула ни одной строки.");
-	return projectSingleRow(row);
+
+	return await withTenantCtx(organizationId, async (tx) => {
+		const client = executor ?? tx;
+		const materialsCostRub =
+			input.materialsCostRub !== undefined && input.materialsCostRub !== null
+				? input.materialsCostRub
+				: 0;
+		const labCostRub =
+			input.labCostRub !== undefined && input.labCostRub !== null
+				? input.labCostRub
+				: 0;
+		const materialsCostKopecks = BigInt(rublesToKopecks(materialsCostRub));
+		const labCostKopecks = BigInt(rublesToKopecks(labCostRub));
+
+		const [row] = await client
+			.insert(schema.serviceCatalogItems)
+			.values({
+				organizationId,
+				code: input.code,
+				title: input.title,
+				category: input.category,
+				specialty: input.specialty,
+				...moneyColumns(input.basePriceRub),
+				durationMinutes: input.durationMinutes,
+				taxDeductible: input.taxDeductible,
+				isActive: input.active,
+				order804nCode: input.order804nCode ?? null,
+				materialsCostRub,
+				labCostRub,
+				materialsCostKopecks,
+				labCostKopecks,
+				tierPrices: input.tierPrices ?? {},
+			})
+			.returning();
+		if (!row)
+			throw new Error("Услуга не создана: база не вернула ни одной строки.");
+		return projectSingleRow(row);
+	});
 }
 
 /** Правка услуги. Меняются только переданные поля. */
@@ -416,46 +451,57 @@ export async function updateServiceCatalogItemInDb(
 	organizationId: string,
 	serviceId: string,
 	patch: ServiceCatalogItemPatch,
+	executor?: TenantDb | typeof db,
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
-	// Существование проверяется ДО обновления: drizzle на несовпавшем условии
-	// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
-	const existing = await selectOwnedRow(organizationId, serviceId);
-	if (!existing) throw new ServiceCatalogItemNotFoundError();
 
-	const updates: Partial<typeof schema.serviceCatalogItems.$inferInsert> = {};
-	if (patch.code !== undefined) updates.code = patch.code;
-	if (patch.title !== undefined) updates.title = patch.title;
-	if (patch.category !== undefined) updates.category = patch.category;
-	if (patch.specialty !== undefined) updates.specialty = patch.specialty;
-	if (patch.basePriceRub !== undefined)
-		Object.assign(updates, moneyColumns(patch.basePriceRub));
-	if (patch.durationMinutes !== undefined)
-		updates.durationMinutes = patch.durationMinutes;
-	if (patch.taxDeductible !== undefined)
-		updates.taxDeductible = patch.taxDeductible;
-	if (patch.active !== undefined) updates.isActive = patch.active;
-	if (patch.order804nCode !== undefined)
-		updates.order804nCode = patch.order804nCode;
-	if (patch.materialsCostRub !== undefined)
-		updates.materialsCostRub = patch.materialsCostRub !== null ? patch.materialsCostRub : 0;
-	if (patch.labCostRub !== undefined)
-		updates.labCostRub = patch.labCostRub !== null ? patch.labCostRub : 0;
-	if (patch.tierPrices !== undefined)
-		updates.tierPrices = patch.tierPrices ?? {};
+	return await withTenantCtx(organizationId, async (tx) => {
+		const client = executor ?? tx;
+		// Существование проверяется ДО обновления: drizzle на несовпавшем условии
+		// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
+		const existing = await selectOwnedRow(organizationId, serviceId, client);
+		if (!existing) throw new ServiceCatalogItemNotFoundError();
 
-	const [row] = await db
-		.update(schema.serviceCatalogItems)
-		.set(updates)
-		.where(
-			and(
-				eq(schema.serviceCatalogItems.id, serviceId),
-				eq(schema.serviceCatalogItems.organizationId, organizationId),
-			),
-		)
-		.returning();
-	if (!row) throw new ServiceCatalogItemNotFoundError();
-	return projectSingleRow(row);
+		const updates: Partial<typeof schema.serviceCatalogItems.$inferInsert> = {};
+		if (patch.code !== undefined) updates.code = patch.code;
+		if (patch.title !== undefined) updates.title = patch.title;
+		if (patch.category !== undefined) updates.category = patch.category;
+		if (patch.specialty !== undefined) updates.specialty = patch.specialty;
+		if (patch.basePriceRub !== undefined)
+			Object.assign(updates, moneyColumns(patch.basePriceRub));
+		if (patch.durationMinutes !== undefined)
+			updates.durationMinutes = patch.durationMinutes;
+		if (patch.taxDeductible !== undefined)
+			updates.taxDeductible = patch.taxDeductible;
+		if (patch.active !== undefined) updates.isActive = patch.active;
+		if (patch.order804nCode !== undefined)
+			updates.order804nCode = patch.order804nCode;
+		if (patch.materialsCostRub !== undefined) {
+			const rub = patch.materialsCostRub !== null ? patch.materialsCostRub : 0;
+			updates.materialsCostRub = rub;
+			updates.materialsCostKopecks = BigInt(rublesToKopecks(rub));
+		}
+		if (patch.labCostRub !== undefined) {
+			const rub = patch.labCostRub !== null ? patch.labCostRub : 0;
+			updates.labCostRub = rub;
+			updates.labCostKopecks = BigInt(rublesToKopecks(rub));
+		}
+		if (patch.tierPrices !== undefined)
+			updates.tierPrices = patch.tierPrices ?? {};
+
+		const [row] = await client
+			.update(schema.serviceCatalogItems)
+			.set(updates)
+			.where(
+				and(
+					eq(schema.serviceCatalogItems.id, serviceId),
+					eq(schema.serviceCatalogItems.organizationId, organizationId),
+				),
+			)
+			.returning();
+		if (!row) throw new ServiceCatalogItemNotFoundError();
+		return projectSingleRow(row);
+	});
 }
 
 /**
@@ -472,22 +518,26 @@ export async function updateServiceCatalogItemInDb(
 export async function deactivateServiceCatalogItemInDb(
 	organizationId: string,
 	serviceId: string,
+	executor?: TenantDb | typeof db,
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
-	const existing = await selectOwnedRow(organizationId, serviceId);
-	if (!existing) throw new ServiceCatalogItemNotFoundError();
-	const [row] = await db
-		.update(schema.serviceCatalogItems)
-		.set({ isActive: false })
-		.where(
-			and(
-				eq(schema.serviceCatalogItems.id, serviceId),
-				eq(schema.serviceCatalogItems.organizationId, organizationId),
-			),
-		)
-		.returning();
-	if (!row) throw new ServiceCatalogItemNotFoundError();
-	return projectSingleRow(row);
+	return await withTenantCtx(organizationId, async (tx) => {
+		const client = executor ?? tx;
+		const existing = await selectOwnedRow(organizationId, serviceId, client);
+		if (!existing) throw new ServiceCatalogItemNotFoundError();
+		const [row] = await client
+			.update(schema.serviceCatalogItems)
+			.set({ isActive: false })
+			.where(
+				and(
+					eq(schema.serviceCatalogItems.id, serviceId),
+					eq(schema.serviceCatalogItems.organizationId, organizationId),
+				),
+			)
+			.returning();
+		if (!row) throw new ServiceCatalogItemNotFoundError();
+		return projectSingleRow(row);
+	});
 }
 
 /**
@@ -506,63 +556,73 @@ export async function seedBaseline804nServicesInDb(
 }> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
-	const existingCatalog = await getServiceCatalogForOrganization(organizationId);
-	const existingCodes = new Set(
-		existingCatalog
-			.map((item) => (item.code || "").trim().toUpperCase())
-			.filter(Boolean),
-	);
-	const existingTitles = new Set(
-		existingCatalog.map((item) => item.title.trim().toLowerCase()),
-	);
+	return await withTenantCtx(organizationId, async (tx) => {
+		const existingCatalog = await getServiceCatalogForOrganization(organizationId);
+		const existingCodes = new Set(
+			existingCatalog
+				.map((item) => (item.code || "").trim().toUpperCase())
+				.filter(Boolean),
+		);
+		const existingTitles = new Set(
+			existingCatalog.map((item) => item.title.trim().toLowerCase()),
+		);
 
-	if (options.replace && existingCatalog.length > 0) {
-		await db
-			.update(schema.serviceCatalogItems)
-			.set({ isActive: false })
-			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
-		existingCodes.clear();
-		existingTitles.clear();
-	}
-
-	const createdItems: ServiceCatalogItem[] = [];
-	let skippedCount = 0;
-
-	for (const baseline of BASELINE_804N_PRICELIST_SERVICES) {
-		const normCode = baseline.code.trim().toUpperCase();
-		const normTitle = baseline.title.trim().toLowerCase();
-
-		if (!options.replace && (existingCodes.has(normCode) || existingTitles.has(normTitle))) {
-			skippedCount++;
-			continue;
+		if (options.replace && existingCatalog.length > 0) {
+			await tx
+				.update(schema.serviceCatalogItems)
+				.set({ isActive: false })
+				.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+			existingCodes.clear();
+			existingTitles.clear();
 		}
 
-		try {
-			const item = await createServiceCatalogItemInDb(organizationId, {
-				code: baseline.code,
-				title: baseline.title,
-				category: baseline.category,
-				specialty: baseline.specialty,
-				basePriceRub: baseline.basePriceRub,
-				durationMinutes: baseline.durationMinutes,
-				taxDeductible: baseline.taxDeductible,
-				active: baseline.active,
-			});
-			createdItems.push(item);
-			existingCodes.add(normCode);
-			existingTitles.add(normTitle);
-		} catch (err) {
-			console.warn(`[pricelist] Не удалось посеять услугу ${baseline.code}:`, err);
-		}
-	}
+		const createdItems: ServiceCatalogItem[] = [];
+		let skippedCount = 0;
 
-	return {
-		success: true,
-		createdCount: createdItems.length,
-		skippedCount,
-		totalBaseline: BASELINE_804N_PRICELIST_SERVICES.length,
-		items: createdItems,
-	};
+		for (const baseline of BASELINE_804N_PRICELIST_SERVICES) {
+			const normCode = baseline.code.trim().toUpperCase();
+			const normTitle = baseline.title.trim().toLowerCase();
+
+			if (!options.replace && (existingCodes.has(normCode) || existingTitles.has(normTitle))) {
+				skippedCount++;
+				continue;
+			}
+
+			try {
+				const item = await createServiceCatalogItemInDb(
+					organizationId,
+					{
+						code: baseline.code,
+						order804nCode: baseline.code,
+						title: baseline.title,
+						category: baseline.category,
+						specialty: baseline.specialty,
+						basePriceRub: baseline.basePriceRub,
+						durationMinutes: baseline.durationMinutes,
+						taxDeductible: baseline.taxDeductible,
+						active: baseline.active,
+					},
+					tx,
+				);
+				createdItems.push(item);
+				existingCodes.add(normCode);
+				existingTitles.add(normTitle);
+			} catch (err) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId, serviceCode: baseline.code },
+					"Не удалось посеять услугу базового каталога 804н",
+				);
+			}
+		}
+
+		return {
+			success: true,
+			createdCount: createdItems.length,
+			skippedCount,
+			totalBaseline: BASELINE_804N_PRICELIST_SERVICES.length,
+			items: createdItems,
+		};
+	});
 }
 
 export type PriceRoundingRule = "none" | "round_10" | "round_50" | "round_100";
@@ -619,34 +679,34 @@ export async function batchRepriceServicesInDb(
 ): Promise<BatchRepriceResult> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
-	const currentCatalog = await getServiceCatalogForOrganization(organizationId);
-	if (currentCatalog.length === 0) {
-		return { success: true, updatedCount: 0, items: [] };
-	}
-
-	const targetServiceIdSet =
-		options.serviceIds && options.serviceIds.length > 0
-			? new Set(options.serviceIds)
-			: null;
-
-	const itemsToUpdate = currentCatalog.filter((item) => {
-		if (targetServiceIdSet && !targetServiceIdSet.has(item.id)) return false;
-		if (options.category && options.category !== "all" && item.category !== options.category) {
-			return false;
+	return await withTenantCtx(organizationId, async (tx) => {
+		const currentCatalog = await getServiceCatalogForOrganization(organizationId);
+		if (currentCatalog.length === 0) {
+			return { success: true, updatedCount: 0, items: [] };
 		}
-		if (options.specialty && options.specialty !== "all" && item.specialty !== options.specialty) {
-			return false;
+
+		const targetServiceIdSet =
+			options.serviceIds && options.serviceIds.length > 0
+				? new Set(options.serviceIds)
+				: null;
+
+		const itemsToUpdate = currentCatalog.filter((item) => {
+			if (targetServiceIdSet && !targetServiceIdSet.has(item.id)) return false;
+			if (options.category && options.category !== "all" && item.category !== options.category) {
+				return false;
+			}
+			if (options.specialty && options.specialty !== "all" && item.specialty !== options.specialty) {
+				return false;
+			}
+			return true;
+		});
+
+		if (itemsToUpdate.length === 0) {
+			return { success: true, updatedCount: 0, items: [] };
 		}
-		return true;
-	});
 
-	if (itemsToUpdate.length === 0) {
-		return { success: true, updatedCount: 0, items: [] };
-	}
+		const updatedItems: ServiceCatalogItem[] = [];
 
-	const updatedItems: ServiceCatalogItem[] = [];
-
-	await db.transaction(async (tx) => {
 		for (const item of itemsToUpdate) {
 			const newPrice = computeRepricedAmount(
 				item.basePriceRub,
@@ -670,13 +730,13 @@ export async function batchRepriceServicesInDb(
 				updatedItems.push(projectSingleRow(row));
 			}
 		}
-	});
 
-	return {
-		success: true,
-		updatedCount: updatedItems.length,
-		items: updatedItems,
-	};
+		return {
+			success: true,
+			updatedCount: updatedItems.length,
+			items: updatedItems,
+		};
+	});
 }
 
 export async function getSingleServiceCatalogItemFromDb(
@@ -684,9 +744,11 @@ export async function getSingleServiceCatalogItemFromDb(
 	serviceId: string,
 ): Promise<ServiceCatalogItem | null> {
 	if (useInMemory()) return null;
-	const row = await selectOwnedRow(organizationId, serviceId);
-	if (!row) return null;
-	return projectSingleRow(row);
+	return await withTenantCtx(organizationId, async (tx) => {
+		const row = await selectOwnedRow(organizationId, serviceId, tx);
+		if (!row) return null;
+		return projectSingleRow(row);
+	});
 }
 
 export interface ServiceBomItemPayload {
@@ -715,107 +777,109 @@ export async function getServiceBomFromDb(
 	serviceId: string,
 ): Promise<ServiceBomDetails | null> {
 	if (useInMemory()) return null;
-	const service = await selectOwnedRow(organizationId, serviceId);
-	if (!service) return null;
+	return await withTenantCtx(organizationId, async (tx) => {
+		const service = await selectOwnedRow(organizationId, serviceId, tx);
+		if (!service) return null;
 
-	const [techCard] = await db
-		.select()
-		.from(schema.procedureTechCards)
-		.where(
-			and(
-				eq(schema.procedureTechCards.organizationId, organizationId),
-				eq(schema.procedureTechCards.serviceId, serviceId),
-			),
-		)
-		.limit(1);
-
-	if (techCard) {
-		const cardItems = await db
-			.select({
-				id: schema.procedureTechCardItems.id,
-				inventoryItemId: schema.procedureTechCardItems.inventoryItemId,
-				quantity: schema.procedureTechCardItems.quantity,
-				unit: schema.procedureTechCardItems.unit,
-				isMdlpRequired: schema.procedureTechCardItems.isMdlpRequired,
-				notes: schema.procedureTechCardItems.notes,
-				itemName: schema.inventoryItems.name,
-				pricePerUnit: schema.inventoryItems.pricePerUnit,
-				unitCostRub: schema.inventoryItems.unitCostRub,
-			})
-			.from(schema.procedureTechCardItems)
-			.leftJoin(
-				schema.inventoryItems,
-				eq(schema.procedureTechCardItems.inventoryItemId, schema.inventoryItems.id),
+		const [techCard] = await tx
+			.select()
+			.from(schema.procedureTechCards)
+			.where(
+				and(
+					eq(schema.procedureTechCards.organizationId, organizationId),
+					eq(schema.procedureTechCards.serviceId, serviceId),
+				),
 			)
-			.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
+			.limit(1);
 
-		let totalCost = 0;
-		const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
-			const qty = Number(ci.quantity) || 1;
-			const unitCost = Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0);
-			totalCost += qty * unitCost;
+		if (techCard) {
+			const cardItems = await tx
+				.select({
+					id: schema.procedureTechCardItems.id,
+					inventoryItemId: schema.procedureTechCardItems.inventoryItemId,
+					quantity: schema.procedureTechCardItems.quantity,
+					unit: schema.procedureTechCardItems.unit,
+					isMdlpRequired: schema.procedureTechCardItems.isMdlpRequired,
+					notes: schema.procedureTechCardItems.notes,
+					itemName: schema.inventoryItems.name,
+					pricePerUnit: schema.inventoryItems.pricePerUnit,
+					unitCostRub: schema.inventoryItems.unitCostRub,
+				})
+				.from(schema.procedureTechCardItems)
+				.leftJoin(
+					schema.inventoryItems,
+					eq(schema.procedureTechCardItems.inventoryItemId, schema.inventoryItems.id),
+				)
+				.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
+
+			let totalCost = 0;
+			const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
+				const qty = Number(ci.quantity) || 1;
+				const unitCost = Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0);
+				totalCost += qty * unitCost;
+				return {
+					id: ci.id,
+					inventoryItemId: ci.inventoryItemId,
+					materialName: ci.itemName || undefined,
+					quantity: qty,
+					unit: ci.unit,
+					isMdlpRequired: ci.isMdlpRequired,
+					notes: ci.notes,
+					costRub: kopecksToRubles(rublesToKopecks(qty * unitCost)),
+				};
+			});
+
 			return {
-				id: ci.id,
-				inventoryItemId: ci.inventoryItemId,
-				materialName: ci.itemName || undefined,
-				quantity: qty,
-				unit: ci.unit,
-				isMdlpRequired: ci.isMdlpRequired,
-				notes: ci.notes,
-				costRub: kopecksToRubles(rublesToKopecks(qty * unitCost)),
+				serviceId,
+				techCardId: techCard.id,
+				title: techCard.title,
+				status: techCard.status,
+				description: techCard.description,
+				items,
+				totalMaterialsCostRub: kopecksToRubles(rublesToKopecks(totalCost)),
 			};
-		});
+		}
 
-		return {
-			serviceId,
-			techCardId: techCard.id,
-			title: techCard.title,
-			status: techCard.status,
-			description: techCard.description,
-			items,
-			totalMaterialsCostRub: kopecksToRubles(rublesToKopecks(totalCost)),
-		};
-	}
+		const rules = await tx
+			.select()
+			.from(schema.procedureMaterialRules)
+			.where(
+				and(
+					eq(schema.procedureMaterialRules.organizationId, organizationId),
+					eq(schema.procedureMaterialRules.serviceId, serviceId),
+				),
+			);
 
-	const rules = await db
-		.select()
-		.from(schema.procedureMaterialRules)
-		.where(
-			and(
-				eq(schema.procedureMaterialRules.organizationId, organizationId),
-				eq(schema.procedureMaterialRules.serviceId, serviceId),
-			),
-		);
+		if (rules.length > 0) {
+			const items: ServiceBomItemPayload[] = rules.map((r) => ({
+				id: r.id,
+				inventoryItemId: (r.inventoryItemId || r.materialItemId || serviceId),
+				materialName: r.materialName || undefined,
+				quantity: Number(r.quantityToDeduct || r.requiredQty || 1),
+				unit: r.unit || "шт",
+				isMdlpRequired: Boolean(r.isMdlpRequired),
+				costRub: 0,
+			}));
 
-	if (rules.length > 0) {
-		const items: ServiceBomItemPayload[] = rules.map((r) => ({
-			id: r.id,
-			inventoryItemId: (r.inventoryItemId || r.materialItemId || serviceId),
-			materialName: r.materialName || undefined,
-			quantity: Number(r.quantityToDeduct || r.requiredQty || 1),
-			unit: r.unit || "шт",
-			isMdlpRequired: Boolean(r.isMdlpRequired),
-			costRub: 0,
-		}));
+			return {
+				serviceId,
+				title: `Техкарта: ${service.title}`,
+				status: "active",
+				description: "Автоматическая спецификация по правилам списания",
+				items,
+				totalMaterialsCostRub: 0,
+			};
+		}
 
 		return {
 			serviceId,
 			title: `Техкарта: ${service.title}`,
-			status: "active",
-			description: "Автоматическая спецификация по правилам списания",
-			items,
+			status: "draft",
+			description: null,
+			items: [],
 			totalMaterialsCostRub: 0,
 		};
-	}
-
-	return {
-		serviceId,
-		title: `Техкарта: ${service.title}`,
-		status: "draft",
-		description: null,
-		items: [],
-		totalMaterialsCostRub: 0,
-	};
+	});
 }
 
 export interface UpsertServiceBomInput {
@@ -838,10 +902,10 @@ export async function upsertServiceBomInDb(
 ): Promise<ServiceBomDetails> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
-	const service = await selectOwnedRow(organizationId, serviceId);
-	if (!service) throw new ServiceCatalogItemNotFoundError();
+	return await withTenantCtx(organizationId, async (tx) => {
+		const service = await selectOwnedRow(organizationId, serviceId, tx);
+		if (!service) throw new ServiceCatalogItemNotFoundError();
 
-	return await db.transaction(async (tx) => {
 		let [techCard] = await tx
 			.select()
 			.from(schema.procedureTechCards)
@@ -968,9 +1032,13 @@ export async function upsertServiceBomInDb(
 		}
 
 		const calculatedMaterialsCost = kopecksToRubles(rublesToKopecks(totalCost));
+		const calculatedMaterialsCostKopecks = BigInt(rublesToKopecks(totalCost));
 		await tx
 			.update(schema.serviceCatalogItems)
-			.set({ materialsCostRub: calculatedMaterialsCost })
+			.set({
+				materialsCostRub: calculatedMaterialsCost,
+				materialsCostKopecks: calculatedMaterialsCostKopecks,
+			})
 			.where(
 				and(
 					eq(schema.serviceCatalogItems.id, serviceId),

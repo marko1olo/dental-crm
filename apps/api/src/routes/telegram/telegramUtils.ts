@@ -6,13 +6,13 @@ import {
 	denteTelegramOutboxDeliveryStatusSchema, denteTelegramTemplateKindSchema,
 	denteTelegramSubjectTypeSchema, denteTelegramLinkCodeStatusSchema, denteTelegramChatLinkStatusSchema,
 } from "@dental/shared";
-import { getDenteTelegramBotSettings } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { getDenteTelegramBotSettings } from "./telegramCanonicalStore.js";
 import type {
 	BuildDenteTelegramChatLinkListOptions, BuildDenteTelegramLinkCodeListOptions,
 	BuildDenteTelegramOutboxOptions, DenteTelegramChatLinkListStatusFilter,
 	DenteTelegramLinkCodeListStatusFilter, DenteTelegramOutboxRuntimeScope,
 	DenteTelegramOutboxStatusFilter,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
 import type { TelegramTransportFailure, TelegramTransportResult } from "../../telegramTransport.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
 import {
@@ -53,11 +53,12 @@ export function readableTelegramPayload<T>(value: T): T {
 export function parseTelegramRouteBody<T>(
 	schema: TelegramRouteBodySchema<T>,
 	body: unknown,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): TelegramRouteBodyParseResult<T> {
 	try {
 		return { ok: true, value: schema.parse(body) };
 	} catch (err) {
-		console.error("[Dente] parseTelegramRouteBody failed:", err);
+		logger?.error({ err }, "[Dente] parseTelegramRouteBody failed");
 		return {
 			ok: false,
 			message:

@@ -28,6 +28,7 @@
 import fastifyWebsocket from "@fastify/websocket";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { WebSocket } from "ws";
+import { authTokenSecret } from "../security/authSecret.js";
 import {
 	getRequestIdentity,
 	resolveIdentityFromTokens,
@@ -35,6 +36,14 @@ import {
 import { recordMedicalRecordAccessAudit } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { verifyToken } from "../utils/cryptoHelper.js";
+import {
+	hashPortalToken,
+	portalRevokedBeforeByPatient,
+	revokedPortalTokenHashes,
+	revokedPortalTokens,
+} from "./portal/portalAuthStore.js";
+import { PORTAL_TOKEN_KIND } from "./portal/types.js";
 
 /** Сколько ждать кадр AUTH перед закрытием соединения. */
 const AUTH_TIMEOUT_MS = 10_000;
@@ -65,6 +74,38 @@ function identityFromTokens(clinicToken: unknown, staffToken: unknown) {
 	return resolveIdentityFromTokens(cToken, sToken);
 }
 
+/**
+ * Проверяет подлинность токена пациента (портал / мобильный кабинет).
+ * Гарантирует привязку сокета строго к verified organizationId и patientId из токена.
+ */
+function verifyPortalAuthToken(token: unknown): { organizationId: string; patientId: string } | null {
+	if (typeof token !== "string" || !token.trim()) return null;
+	const trimmed = token.trim();
+	if (revokedPortalTokens.has(trimmed) || revokedPortalTokenHashes.has(hashPortalToken(trimmed))) {
+		return null;
+	}
+	let secret: string;
+	try {
+		secret = authTokenSecret();
+	} catch {
+		return null;
+	}
+	const payload = verifyToken(trimmed, secret);
+	if (
+		!payload ||
+		payload.kind !== PORTAL_TOKEN_KIND ||
+		typeof payload.sub !== "string" ||
+		typeof payload.organizationId !== "string"
+	) {
+		return null;
+	}
+	const revokedBefore = portalRevokedBeforeByPatient.get(payload.sub);
+	if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
+		return null;
+	}
+	return { organizationId: payload.organizationId, patientId: payload.sub };
+}
+
 export async function registerWebsocketRoutes(app: FastifyInstance) {
 	if (!app.hasRequestDecorator("ws")) {
 		await app.register(fastifyWebsocket, {
@@ -76,10 +117,16 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 		});
 	}
 
+	wsBroker.startHeartbeat(30_000);
+	app.addHook("onClose", () => {
+		wsBroker.stopHeartbeat();
+	});
+
 	const handleSecureWsConnection = (socket: WebSocket, request: FastifyRequest) => {
 		let authorized = false;
 		let currentOrganizationId: string | undefined;
 		let currentIdentity: ReturnType<typeof identityFromTokens> | undefined;
+		let isPatientSocket = false;
 
 		const authTimer = setTimeout(() => {
 			if (!authorized) socket.close(CLOSE_AUTH_TIMEOUT, "auth timeout");
@@ -122,37 +169,108 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 				if (message?.type !== "AUTH") return;
 
 				const payload = message.payload ?? {};
-				const identity = identityFromTokens(
-					payload.clinicToken,
-					payload.staffToken,
-				);
-				if (!identity.organizationId) {
+
+				// А) Проверяем токен пациента (портал / мобильный кабинет пациента)
+				const portalTokenCandidate =
+					typeof payload.portalToken === "string"
+						? payload.portalToken
+						: typeof payload.patientToken === "string"
+							? payload.patientToken
+							: typeof payload.token === "string"
+								? payload.token
+								: null;
+
+				const portalAuth = portalTokenCandidate
+					? verifyPortalAuthToken(portalTokenCandidate)
+					: null;
+
+				let verifiedOrgId: string | null = null;
+				let verifiedUserId: string | undefined = undefined;
+				let verifiedPatientId: string | undefined = undefined;
+				let isClinical = false;
+				let role = "patient";
+				let branchId: string | undefined = undefined;
+
+				if (portalAuth) {
+					// Авторизован пациент: patientId и organizationId берутся СТРОГО из подписанного токена!
+					verifiedOrgId = portalAuth.organizationId;
+					verifiedPatientId = portalAuth.patientId;
+					verifiedUserId = portalAuth.patientId;
+					isPatientSocket = true;
+					isClinical = false;
+					role = "patient";
+				} else {
+					// Б) Авторизован сотрудник клиники
+					const clinicToken = payload.clinicToken ?? (typeof payload.token === "string" ? payload.token : null);
+					const staffToken = payload.staffToken ?? (typeof payload.token === "string" ? payload.token : null);
+					const identity = identityFromTokens(clinicToken, staffToken);
+
+					// Строгая проверка: организация и личность обязаны быть проверены (verified = true)
+					if (!identity.organizationId || !identity.verified) {
+						socket.close(CLOSE_UNAUTHORIZED, "unauthorized");
+						return;
+					}
+
+					verifiedOrgId = identity.organizationId;
+					verifiedUserId = identity.userId ?? undefined;
+					currentIdentity = identity;
+					role = identity.role ?? "staff";
+					isPatientSocket = false;
+
+					// Проверка активной сессии в базе данных при наличии sessionId в токене
+					if (identity.sessionId && identity.userId) {
+						const checkedUserId = identity.userId;
+						const checkedOrgId = identity.organizationId;
+						void (async () => {
+							try {
+								const { db } = await import("../db/client.js");
+								const { users } = await import("../db/schema.js");
+								const { eq, and } = await import("drizzle-orm");
+								const [user] = await db
+									.select({ currentSessionId: users.currentSessionId })
+									.from(users)
+									.where(and(eq(users.id, checkedUserId), eq(users.organizationId, checkedOrgId)))
+									.limit(1);
+
+								if (user?.currentSessionId && user.currentSessionId !== identity.sessionId) {
+									socket.close(CLOSE_UNAUTHORIZED, "invalid_session");
+								}
+							} catch (sessionErr) {
+								request.log.warn({ sessionErr }, "Failed to verify session id against database");
+							}
+						})();
+					}
+
+					// Сотрудник может отслеживать обновления конкретного пациента у кресла
+					verifiedPatientId =
+						typeof payload.patientId === "string" && payload.patientId.trim()
+							? payload.patientId.trim()
+							: undefined;
+
+					branchId =
+						typeof payload.branchId === "string" && payload.branchId.trim()
+							? payload.branchId.trim()
+							: undefined;
+
+					const evalResult = evaluateClinicalAccess(identity.role);
+					isClinical = evalResult.hasClinicalAccess;
+				}
+
+				if (!verifiedOrgId) {
 					socket.close(CLOSE_UNAUTHORIZED, "unauthorized");
 					return;
 				}
 
-				const patientId =
-					typeof payload.patientId === "string" && payload.patientId.trim()
-						? payload.patientId.trim()
-						: undefined;
-
-				const branchId =
-					typeof payload.branchId === "string" && payload.branchId.trim()
-						? payload.branchId.trim()
-						: undefined;
-
-				const evalResult = evaluateClinicalAccess(identity.role);
-				const isClinical = evalResult.hasClinicalAccess;
-
-				currentOrganizationId = identity.organizationId;
-				currentIdentity = identity;
+				currentOrganizationId = verifiedOrgId;
 
 				wsBroker.addClient(
 					socket,
-					identity.organizationId,
-					patientId,
+					verifiedOrgId,
+					verifiedPatientId,
 					isClinical,
 					branchId,
+					verifiedUserId,
+					isPatientSocket,
 				);
 				authorized = true;
 				clearTimeout(authTimer);
@@ -165,7 +283,9 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 							JSON.stringify({
 								type: "AUTH_OK",
 								payload: {
-									organizationId: identity.organizationId,
+									organizationId: verifiedOrgId,
+									role,
+									...(verifiedPatientId ? { patientId: verifiedPatientId } : {}),
 									...(branchId ? { branchId } : {}),
 								},
 							}),
@@ -175,8 +295,8 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 					}
 				}
 				request.log.debug(
-					{ organizationId: identity.organizationId, patientId },
-					"websocket client subscribed",
+					{ organizationId: verifiedOrgId, patientId: verifiedPatientId, userId: verifiedUserId, isPatient: isPatientSocket },
+					"websocket client subscribed and verified",
 				);
 				return;
 			}
@@ -209,19 +329,11 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 				message.type === "STAFF_PRESENCE_HEARTBEAT" ||
 				message.type === "STAFF_PRESENCE"
 			) {
-				if (currentOrganizationId) {
-					const staffId =
-						typeof payload.staffId === "string" && payload.staffId.trim()
-							? payload.staffId.trim()
-							: (currentIdentity?.userId || "staff-user");
-					const staffName =
-						typeof payload.staffName === "string" && payload.staffName.trim()
-							? payload.staffName.trim()
-							: (currentIdentity?.fullName || "Сотрудник клиники");
-					const role =
-						typeof payload.role === "string" && payload.role.trim()
-							? payload.role.trim()
-							: (currentIdentity?.role || "staff");
+				if (currentOrganizationId && !isPatientSocket) {
+					// Безопасность: данные сотрудника берутся строго из проверенной identity (запрет подделки через payload)
+					const staffId = currentIdentity?.userId || "staff-user";
+					const staffName = currentIdentity?.fullName || "Сотрудник клиники";
+					const role = currentIdentity?.role || "staff";
 					const visitId =
 						typeof payload.visitId === "string" && payload.visitId.trim()
 							? payload.visitId.trim()
@@ -245,12 +357,14 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 			}
 
 			if (message.type === "STAFF_PRESENCE_LEAVE") {
-				wsBroker.removePresence(socket);
+				if (!isPatientSocket) {
+					wsBroker.removePresence(socket);
+				}
 				return;
 			}
 
 			if (message.type === "STAFF_PRESENCE_QUERY") {
-				if (currentOrganizationId && socket.readyState === 1) {
+				if (currentOrganizationId && !isPatientSocket && socket.readyState === 1) {
 					const vId =
 						typeof payload.visitId === "string" && payload.visitId.trim()
 							? payload.visitId.trim()
@@ -293,18 +407,9 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 									typeof castEvt.patientId === "string"
 										? castEvt.patientId
 										: null,
-								actorUserId:
-									typeof castEvt.actorUserId === "string"
-										? castEvt.actorUserId
-										: (currentIdentity?.userId ?? null),
-								actorLogin:
-									typeof castEvt.actorName === "string"
-										? castEvt.actorName
-										: (currentIdentity?.fullName ?? null),
-								actorRole:
-									typeof castEvt.actorRole === "string"
-										? castEvt.actorRole
-										: (currentIdentity?.role ?? null),
+								actorUserId: currentIdentity?.userId ?? null,
+								actorLogin: currentIdentity?.fullName ?? null,
+								actorRole: currentIdentity?.role ?? (isPatientSocket ? "patient" : null),
 								action:
 									typeof castEvt.actionType === "string"
 										? castEvt.actionType

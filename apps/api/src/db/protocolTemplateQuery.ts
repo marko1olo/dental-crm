@@ -31,6 +31,7 @@
 
 import { type ProtocolTemplate, protocolTemplateSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
+import { createApiLogger } from "../observability/logger.js";
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
@@ -38,6 +39,8 @@ import { and, eq } from "drizzle-orm";
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+
+const logger = createApiLogger("protocolTemplateQuery");
 
 /** Строка шаблона ровно в той форме, в которой её отдаёт база. */
 type ProtocolTemplateRow = typeof schema.protocolTemplates.$inferSelect;
@@ -137,18 +140,17 @@ function templateUpdatedAt(row: ProtocolTemplateRow): string {
 	// невозможность: если NULL всё же придёт, значит схема разошлась с кодом, и
 	// об этом надо узнать из лога, а не получить время чтения в ответе.
 	if (value === null || value === undefined) {
-		console.error(
-			`[ProtocolTemplateQuery] У шаблона ${row.id} пустая отметка «изменён», хотя колонка объявлена NOT NULL: ` +
-				"схема базы разошлась с кодом. Отдана метка «времени нет», время чтения не подставлено.",
+		logger.error(
+			{ templateId: row.id },
+			"У шаблона пустая отметка «изменён», хотя колонка объявлена NOT NULL: схема базы разошлась с кодом. Отдана метка «времени нет»",
 		);
 		return TEMPLATE_TIME_UNKNOWN;
 	}
 	const millis = value.getTime();
 	if (!Number.isFinite(millis)) {
-		console.error(
-			`[ProtocolTemplateQuery] У шаблона ${row.id} отметка «изменён» не читается как дата ` +
-				`(protocol_templates.updated_at = ${String(value)}). Отдана метка «времени нет»: прежний код ` +
-				"бросал здесь RangeError, и одна кривая строка роняла чтение ВСЕХ шаблонов протоколов.",
+		logger.error(
+			{ templateId: row.id, rawUpdatedAt: String(value) },
+			"У шаблона отметка «изменён» не читается как дата. Отдана метка «времени нет»",
 		);
 		return TEMPLATE_TIME_UNKNOWN;
 	}

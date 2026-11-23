@@ -4,12 +4,13 @@ import type { SettingsPayloadSchema } from "../types.js";
 export function parseSettingsPayload<T>(
 	schema: SettingsPayloadSchema<T>,
 	value: unknown,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ) {
 	const parsed = schema.safeParse(value);
 	if (!parsed.success) {
-		console.error(
-			"SMOKE TEST DEBUG: parseSettingsPayload failed validation:",
-			parsed.error?.format(),
+		logger?.error(
+			{ err: parsed.error?.format() },
+			"[Dente] parseSettingsPayload failed",
 		);
 		return null;
 	}

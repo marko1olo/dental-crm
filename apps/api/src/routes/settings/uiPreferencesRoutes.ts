@@ -67,9 +67,9 @@ export function registerUiPreferencesRoutes(app: FastifyInstance): void {
 			// базы: писали одновременно. Отвечать 500 значило бы отправить человека к
 			// администратору вместо того, чтобы обновить страницу и повторить правку.
 			if (error instanceof UiPreferencesConcurrentSaveError) {
-				console.error(
-					"[настройки] настройки рабочего места не сохранены:",
-					error,
+				request.log.error(
+					{ err: error },
+					"[настройки] настройки рабочего места не сохранены",
 				);
 				reply.code(409);
 				return {

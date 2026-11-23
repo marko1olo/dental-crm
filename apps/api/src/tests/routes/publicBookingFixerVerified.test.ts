@@ -201,7 +201,7 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 
 		const testPhone = "+7 (916) 123-45-67";
 		// Request OTP
-		requestPhoneVerification(testPhone, "sms", "127.0.0.1", ORG_ID);
+		await requestPhoneVerification(testPhone, "sms", "127.0.0.1", ORG_ID);
 		const code = getActiveCodeForTesting(testPhone);
 		assert.ok(code);
 

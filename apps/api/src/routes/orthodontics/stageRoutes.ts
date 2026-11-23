@@ -23,8 +23,24 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 
-		const { patientId } = patientParamsSchema.parse(request.params);
-		const body = deductOrthoMaterialsSchema.parse(request.body);
+		const parsedParams = patientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента",
+			});
+		}
+		const { patientId } = parsedParams.data;
+
+		const parsedBody = deductOrthoMaterialsSchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры списания материалов: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+				issues: parsedBody.error.issues,
+			});
+		}
+		const body = parsedBody.data;
 		const patient = await getPatientByIdFromDb(orgId, patientId);
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
@@ -67,8 +83,24 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 
-		const { patientId } = patientParamsSchema.parse(request.params);
-		const body = stageAdvanceSchema.parse(request.body);
+		const parsedParams = patientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента",
+			});
+		}
+		const { patientId } = parsedParams.data;
+
+		const parsedBody = stageAdvanceSchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры перехода на этап: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+				issues: parsedBody.error.issues,
+			});
+		}
+		const body = parsedBody.data;
 		const patient = await getPatientByIdFromDb(orgId, patientId);
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
@@ -107,8 +139,24 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 
-		const { patientId } = patientParamsSchema.parse(request.params);
-		const body = rebracketSchema.parse(request.body ?? {});
+		const parsedParams = patientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента",
+			});
+		}
+		const { patientId } = parsedParams.data;
+
+		const parsedBody = rebracketSchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры повторной фиксации брекета: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+				issues: parsedBody.error.issues,
+			});
+		}
+		const body = parsedBody.data;
 		const patient = await getPatientByIdFromDb(orgId, patientId);
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 

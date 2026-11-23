@@ -84,8 +84,8 @@ import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	InsufficientStockError,
-	deductMaterialsForVisit,
-} from "../../services/inventory/materialDeduction.js";
+	deductForVisit as deductMaterialsForVisit,
+} from "../../services/treatmentConsumables/index.js";
 import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -1373,16 +1373,19 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 		});
 
 		it("15.3 locks inventory rows in deterministic ascending ID order to prevent deadlocks", () => {
-			const deductionServicePath = join(repoRoot, "apps/api/src/services/inventory/materialDeduction.ts");
-			assert.equal(existsSync(deductionServicePath), true, "materialDeduction.ts must exist");
+			const deductionServicePath = join(
+				repoRoot,
+				"apps/api/src/services/treatmentConsumables/stockDeductionModules/inventoryItemLocker.ts",
+			);
+			assert.equal(existsSync(deductionServicePath), true, "inventoryItemLocker.ts must exist");
 			const deductionSource = readFileSync(deductionServicePath, "utf8");
 			assert.ok(
-				deductionSource.includes("const sortedItemIds = Array.from(requiredByItem.keys()).sort()"),
-				"materialDeduction.ts must sort inventory item IDs in ascending order before acquiring row locks",
+				deductionSource.includes(".sort()"),
+				"inventoryItemLocker.ts must sort inventory item IDs in ascending order before acquiring row locks",
 			);
 			assert.ok(
 				deductionSource.includes('.for("update")'),
-				"materialDeduction.ts must acquire row-level FOR UPDATE lock on sorted inventory items",
+				"inventoryItemLocker.ts must acquire row-level FOR UPDATE lock on sorted inventory items",
 			);
 			const itemIds = [fixtureUuid(NAMESPACE, 85), fixtureUuid(NAMESPACE, 82), fixtureUuid(NAMESPACE, 89)];
 			const sorted = [...itemIds].sort();

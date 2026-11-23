@@ -107,8 +107,9 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 			? data.toothNumber || targetBundle.defaultTooth
 			: undefined;
 
-		const selectedItems = data.selectedItemIds && data.selectedItemIds.length > 0
-			? targetBundle.items.filter((it) => data.selectedItemIds!.includes(it.id))
+		const selectedItemIds = data.selectedItemIds;
+		const selectedItems = selectedItemIds && selectedItemIds.length > 0
+			? targetBundle.items.filter((it) => selectedItemIds.includes(it.id))
 			: targetBundle.items.filter((it) => it.defaultSelected !== false);
 
 		if (selectedItems.length === 0) {
@@ -145,13 +146,14 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 		});
 
 		// Если передан существующий planId, привязываем позиции напрямую в PostgreSQL 18
-		if (data.planId) {
+		const targetPlanId = data.planId;
+		if (targetPlanId) {
 			const [plan] = await db
 				.select({ id: treatmentPlans.id })
 				.from(treatmentPlans)
 				.where(
 					and(
-						eq(treatmentPlans.id, data.planId),
+						eq(treatmentPlans.id, targetPlanId),
 						eq(treatmentPlans.organizationId, context.organizationId),
 					),
 				)
@@ -169,7 +171,7 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 				for (const item of constructedItems) {
 					await tx.insert(treatmentPlanItemsNew).values({
 						organizationId: context.organizationId,
-						planId: data.planId!,
+						planId: targetPlanId,
 						toothNumber: item.toothNumber,
 						priceId: item.serviceCode,
 						quantity: item.quantity,

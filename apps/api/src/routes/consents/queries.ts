@@ -3,6 +3,14 @@ import { db } from "../../db/client.js";
 import { generatedDocuments, patientConsents, patients } from "../../db/schema.js";
 import type { SaveConsentBody } from "./types.js";
 
+export class PatientNotFoundError extends Error {
+	public readonly statusCode = 404;
+	constructor(message = "Пациент не найден в клинике") {
+		super(message);
+		this.name = "PatientNotFoundError";
+	}
+}
+
 type DocumentKindEnum = typeof generatedDocuments.kind.enumValues[number];
 
 function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
@@ -59,6 +67,7 @@ export async function fetchPatientConsentsList(orgId: string, patientId: string)
 			documentStatus: generatedDocuments.status,
 			signatureSvg: generatedDocuments.signatureSvg,
 			integrityHash: generatedDocuments.issuedSnapshotSha256,
+			visitId: generatedDocuments.visitId,
 		})
 		.from(patientConsents)
 		.leftJoin(
@@ -98,7 +107,12 @@ export async function recordPatientConsentEntry(
 		)
 		.limit(1);
 
-	const patientFullName = patientRow[0]?.fullName || "Пациент клиники";
+	const existingPatient = patientRow[0];
+	if (!existingPatient) {
+		throw new PatientNotFoundError(`Пациент с ID ${patientId} не найден в организации ${orgId}.`);
+	}
+
+	const patientFullName = existingPatient.fullName || "Пациент клиники";
 	const effectiveDoctorName = body.doctorFullName || "Лечащий врач";
 	const isDigital =
 		body.signatureType === "digital_canvas" ||
@@ -240,6 +254,7 @@ export async function recordPatientConsentEntry(
 		integrityHash: body.integrityHash ?? null,
 		title: body.title,
 		verificationMethod: body.verificationMethod,
+		visitId: body.visitId ?? null,
 	};
 }
 

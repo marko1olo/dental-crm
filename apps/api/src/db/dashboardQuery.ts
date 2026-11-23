@@ -1,9 +1,12 @@
 import { type Dashboard, dashboardSchema } from "@dental/shared";
+import { createApiLogger } from "../observability/logger.js";
 import { buildDashboard } from "../sampleData.js";
 import {
 	assertCriticalSlicesAvailable,
 	hydrateDomainStateFromDb,
 } from "./domainStateHydration.js";
+
+const logger = createApiLogger("dashboardQuery");
 
 export class ClinicOrganizationMissingError extends Error {
 	readonly organizationId: string;
@@ -44,9 +47,9 @@ export async function getDashboardFromDb(
 
 	// Печатаем предупреждения о пропущенных строках и деградировавших срезах.
 	if (report.warnings.length > 0) {
-		console.warn(
-			`[DashboardQuery] Клиника ${organizationId}: ${report.warnings.length} предупреждений гидратации:`,
-			report.warnings,
+		logger.warn(
+			{ organizationId, warningsCount: report.warnings.length, warnings: report.warnings },
+			"Предупреждения гидратации дашборда",
 		);
 	}
 
@@ -55,14 +58,14 @@ export async function getDashboardFromDb(
 	// Проверка контракта остаётся, но теперь она ДИАГНОСТИРУЕТ, а не молчит.
 	const parsed = dashboardSchema.safeParse(dashboard);
 	if (!parsed.success) {
-		console.error(
-			`[DashboardQuery] Клиника ${organizationId}: сводка НЕ соответствует контракту dashboardSchema.`,
-			"Ошибки валидации:",
-			JSON.stringify(parsed.error.errors, null, 2),
-			"Счётчики гидратации:",
-			report.counts,
-			"Пропущено строк:",
-			report.skipped,
+		logger.error(
+			{
+				organizationId,
+				validationErrors: parsed.error.errors,
+				hydrationCounts: report.counts,
+				skippedRows: report.skipped,
+			},
+			"Сводка клиники НЕ соответствует контракту dashboardSchema",
 		);
 		// БЫЛО: возвращала невалидное всё равно. СТАЛО: бросаем — невалидную
 		// сводку отдавать нельзя, клиент получит несходящиеся расчёты.

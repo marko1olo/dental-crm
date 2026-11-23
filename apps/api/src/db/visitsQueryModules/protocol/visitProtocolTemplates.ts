@@ -1,7 +1,10 @@
 import type { VisitDraftAutosave } from "@dental/shared";
 import { eq } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { db } from "../../client.js";
 import * as schema from "../../schema.js";
+
+const logger = createApiLogger("visitProtocolTemplates");
 
 /**
  * Тип клинического шаблона протокола приёма для терапевтического,
@@ -119,9 +122,9 @@ export async function getClinicalProtocolTemplatesFromDb(
 				: mapped;
 		}
 	} catch (error) {
-		console.warn(
-			"[visitProtocolTemplates] Ошибка чтения protocolTemplates из базы, отдаём встроенные пресеты:",
-			error,
+		logger.warn(
+			{ err: safeLogError(error), organizationId },
+			"Ошибка чтения protocolTemplates из базы, отдаём встроенные пресеты",
 		);
 	}
 

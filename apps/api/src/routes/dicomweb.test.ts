@@ -187,6 +187,15 @@ function clinicHeaders(
 	};
 }
 
+function clinicOnlyHeaders(
+	organizationId: string = ORGANIZATION_ID,
+): Record<string, string> {
+	const secret = authTokenSecret();
+	return {
+		"x-dente-clinic-token": signToken({ organizationId }, secret),
+	};
+}
+
 function instanceUrl(
 	studyUid: string,
 	seriesUid: string,
@@ -374,7 +383,7 @@ test("гейт клинического чтения отказывает ток
 	const response = await app.inject({
 		method: "GET",
 		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-		headers: clinicHeaders(),
+		headers: clinicOnlyHeaders(),
 	});
 
 	assert.strictEqual(response.statusCode, 403);
@@ -393,7 +402,7 @@ test("гейт клинического чтения с верным секре�
 	const response = await app.inject({
 		method: "GET",
 		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-		headers: { ...clinicHeaders(), [denteAdminSecretHeader]: ADMIN_GATE_PROBE },
+		headers: { ...clinicOnlyHeaders(), [denteAdminSecretHeader]: ADMIN_GATE_PROBE },
 	});
 
 	assert.strictEqual(response.statusCode, 200);
@@ -416,7 +425,7 @@ test("гейт клинического чтения отказывает при
 		method: "GET",
 		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
 		headers: {
-			...clinicHeaders(),
+			...clinicOnlyHeaders(),
 			[denteAdminSecretHeader]: `${ADMIN_GATE_PROBE}x`,
 		},
 	});
@@ -764,6 +773,17 @@ test("WADO-RS series metadata returns metadata array for series", async (t) => {
 	assert.strictEqual(json[0]["00080018"].Value[0], SAMPLE_SOP_UID);
 
 	await app.close();
+});
+
+test("normalizeUid strictly rejects path traversal and non-numeric UIDs", async () => {
+	const { normalizeUid } = await import("./dicomwebHelpers.js");
+	assert.strictEqual(normalizeUid("../../../etc/passwd"), null);
+	assert.strictEqual(normalizeUid("..\\..\\windows\\system32"), null);
+	assert.strictEqual(normalizeUid("1.2.840.10008.5.1.4.1.1.2"), "1.2.840.10008.5.1.4.1.1.2");
+	assert.strictEqual(normalizeUid("malicious<script>"), null);
+	assert.strictEqual(normalizeUid("1.2..3"), null);
+	assert.strictEqual(normalizeUid(".1.2.3"), null);
+	assert.strictEqual(normalizeUid("1.2.3."), null);
 });
 
 

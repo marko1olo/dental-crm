@@ -1,5 +1,5 @@
 import type { DenteTelegramBotSettings } from "@dental/shared";
-import { safeDenteTelegramPublicHttpsUrl } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { safeDenteTelegramPublicHttpsUrl } from "./telegramUrlHelpers.js";
 import {
 	postVisitCheckupDelayHoursFromEnvConfig,
 	reviewRequestDelayHoursFromEnvConfig,
@@ -20,14 +20,14 @@ export {
 	visualCardUrlsFromEnvConfig,
 } from "./telegramEnvDelayParsers.js";
 
-export function clinicBotEnvConfigs(): TelegramClinicBotEnvConfig[] {
+export function clinicBotEnvConfigs(logger?: { error: (obj: unknown, msg?: string) => void }): TelegramClinicBotEnvConfig[] {
 	const raw = trimmedEnv("DENTE_TELEGRAM_CLINIC_BOTS_JSON");
 	if (!raw) return [];
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
 	} catch (err) {
-		console.error("[Dente] clinicBotEnvConfigs JSON parse failed:", err);
+		logger?.error({ err }, "[Dente] clinicBotEnvConfigs JSON parse failed");
 		return [];
 	}
 

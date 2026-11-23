@@ -1,8 +1,12 @@
 import { imagingStudySchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
+import { db } from "../../../db/client.js";
 import { getImagingStudiesWithFilters } from "../../../db/imagingQuery.js";
+import { mapImagingStudy } from "../../../db/imaging/imagingMappers.js";
+import { imagingStudies, patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { getImagingOrganizationId } from "../imagingHelpers.js";
@@ -52,4 +56,30 @@ export async function getStudiesHandler(request: FastifyRequest<{ Params: { pati
 		offset: parsedQuery.data.offset,
 	});
 	return studies.map((study) => imagingStudySchema.parse(study));
+}
+
+export async function getStudyByIdHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+	if (!(await requireClinicalReadAccess(request, reply, "get imaging study"))) return;
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
+
+	const { id } = request.params;
+	const [study] = await db
+		.select({
+			study: imagingStudies,
+			patientFullName: patients.fullName,
+		})
+		.from(imagingStudies)
+		.leftJoin(
+			patients,
+			and(eq(patients.organizationId, orgId), eq(patients.id, imagingStudies.patientId)),
+		)
+		.where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, orgId)))
+		.limit(1);
+
+	if (!study) {
+		return reply.code(404).send({ error: "ImagingStudyNotFound", message: "Исследование не найдено." });
+	}
+
+	return reply.send(imagingStudySchema.parse(mapImagingStudy(study.study, study.patientFullName)));
 }

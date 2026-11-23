@@ -8,6 +8,9 @@ import { patients } from "../../db/schema/patients.js";
 import { doctorPreferences } from "../../db/schema/doctorPreferences.js";
 import { patientImplantInstallations } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
+
+const logger = createApiLogger("recallSyncService");
 
 /**
  * Реактивная связка Запись/Визит <-> Контрольный вызов (Recall).
@@ -204,7 +207,10 @@ export async function syncRecallOnAppointmentCreated(
 			}
 		});
 	} catch (err) {
-		console.error("[recallSyncService] syncRecallOnAppointmentCreated failed:", err);
+		logger.error(
+			{ err: safeLogError(err), organizationId, patientId },
+			"syncRecallOnAppointmentCreated failed",
+		);
 	}
 }
 
@@ -303,7 +309,10 @@ export async function syncRecallOnAppointmentCompleted(
 			});
 		});
 	} catch (err) {
-		console.error("[recallSyncService] syncRecallOnAppointmentCompleted failed:", err);
+		logger.error(
+			{ err: safeLogError(err), organizationId, appointmentId },
+			"syncRecallOnAppointmentCompleted failed",
+		);
 	}
 }
 
@@ -430,6 +439,9 @@ export async function syncRecallOnVisitCompleted(
 			});
 		});
 	} catch (err) {
-		console.error("[recallSyncService] syncRecallOnVisitCompleted failed:", err);
+		logger.error(
+			{ err: safeLogError(err), organizationId, visitId },
+			"syncRecallOnVisitCompleted failed",
+		);
 	}
 }

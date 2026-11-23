@@ -34,6 +34,18 @@ export const labOrdersRelations = relations(labOrders, ({ one, many }) => ({
 		fields: [labOrders.doctorId],
 		references: [users.id],
 	}),
+	parentLabOrder: one(labOrders, {
+		fields: [labOrders.parentLabOrderId],
+		references: [labOrders.id],
+		relationName: "lab_order_remakes",
+	}),
+	remakes: many(labOrders, {
+		relationName: "lab_order_remakes",
+	}),
+	fittingAppointment: one(appointments, {
+		fields: [labOrders.fittingAppointmentId],
+		references: [appointments.id],
+	}),
 	items: many(labItems),
 }));
 

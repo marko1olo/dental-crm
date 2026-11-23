@@ -39,6 +39,7 @@ import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { parseDicomSeriesManifest } from "./dicomSeries.js";
 import { buildDicomViewerToolStateBundle } from "./viewerToolState.js";
@@ -56,6 +57,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			!(await requireClinicalReadAccess(request, reply, "dicom series preview"))
 		)
 			return;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			dicomSeriesPreviewRequestSchema,
 			request.body,
@@ -63,12 +78,6 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
 		const input = parsed.data;
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// а не клиника, приславшая запрос. В установке на несколько клиник врач
-		// клиники Б получал 404 на собственное исследование, а в худшем случае —
-		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
 		return parseDicomSeriesManifest(orgId, input);
 	});
 
@@ -82,6 +91,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			dicomViewerToolStateBundleRequestSchema,
 			request.body,
@@ -102,6 +125,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			dicomRenderCachePlanRequestSchema,
 			request.body,
@@ -123,6 +160,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const parsed = parseImagingPayload(
 				dicomWorkstationReadinessRequestSchema,
 				request.body,
@@ -145,6 +196,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const parsed = parseImagingPayload(
 				dicomViewerWorkbenchManifestRequestSchema,
 				request.body,
@@ -166,6 +231,20 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			))
 		)
 			return reply;
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return reply;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			saveDicomWorkbenchBundleRequestSchema,
 			request.body,
@@ -173,12 +252,6 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
 		const input = parsed.data;
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// а не клиника, приславшая запрос. В установке на несколько клиник врач
-		// клиники Б получал 404 на собственное исследование, а в худшем случае —
-		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return reply;
 		const bundle = await saveDicomWorkbenchBundle(orgId, input);
 		return reply.code(201).send(
 			dicomWorkbenchBundleResponseSchema.parse({
@@ -232,14 +305,26 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const discoveryOrgId = getImagingOrganizationId(request, reply);
+			if (!discoveryOrgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const parsed = parseImagingPayload(
 				dicomLocalFolderDiscoveryRequestSchema,
 				request.body,
 				"Поиск папок снимков не запущен: проверьте корни поиска и лимиты обхода.",
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
-			const discoveryOrgId = getImagingOrganizationId(request, reply);
-			if (!discoveryOrgId) return;
 			const input = parsed.data;
 			return runAbortableImagingScan(request, reply, (options) =>
 				discoverLocalDicomFolders(input, options, discoveryOrgId),
@@ -258,14 +343,26 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const previewOrgId = getImagingOrganizationId(request, reply);
+			if (!previewOrgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const parsed = parseImagingPayload(
 				localImagingOrganizerRequestSchema,
 				request.body,
 				"Разбор локальных снимков не запущен: проверьте корни поиска и лимиты обхода.",
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
-			const previewOrgId = getImagingOrganizationId(request, reply);
-			if (!previewOrgId) return;
 			const input = parsed.data;
 			return runAbortableImagingScan(request, reply, (options) =>
 				organizeLocalImagingSources(input, options, previewOrgId),
@@ -284,14 +381,26 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const previewOrgId = getImagingOrganizationId(request, reply);
+			if (!previewOrgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const parsed = parseImagingPayload(
 				dicomFolderSeriesPreviewRequestSchema,
 				request.body,
 				"Предпросмотр папки DICOM не построен: выберите папку снимков и безопасные лимиты чтения.",
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
-			const previewOrgId = getImagingOrganizationId(request, reply);
-			if (!previewOrgId) return;
 			const input = parsed.data;
 			return runAbortableImagingScan(request, reply, (options) =>
 				buildDicomFolderSeriesPreview(input, options, previewOrgId),
@@ -309,14 +418,26 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+		const firstFrameOrgId = getImagingOrganizationId(request, reply);
+		if (!firstFrameOrgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			dicomFirstFramePreviewRequestSchema,
 			request.body,
 			"Первый кадр DICOM не построен: выберите папку снимков и безопасные лимиты чтения.",
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const firstFrameOrgId = getImagingOrganizationId(request, reply);
-		if (!firstFrameOrgId) return;
 		const input = parsed.data;
 		return runAbortableImagingScan(request, reply, (options) =>
 			buildDicomFirstFramePreview(input, options, firstFrameOrgId),
@@ -333,14 +454,26 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+		const workupOrgId = getImagingOrganizationId(request, reply);
+		if (!workupOrgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsed = parseImagingPayload(
 			dicomFolderWorkupPlanRequestSchema,
 			request.body,
 			"План работы с папкой DICOM не построен: выберите папку снимков и передайте сведения об устройстве.",
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const workupOrgId = getImagingOrganizationId(request, reply);
-		if (!workupOrgId) return;
 		const input = parsed.data;
 		return runAbortableImagingScan(request, reply, (options) =>
 			buildDicomFolderWorkupPlan(input, options, workupOrgId),

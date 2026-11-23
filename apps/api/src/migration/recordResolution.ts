@@ -53,12 +53,9 @@ function levenshteinDistance(left: string, right: string): number {
 		for (let shortIndex = 1; shortIndex <= shorter.length; shortIndex += 1) {
 			const cost = longChar === shorter[shortIndex - 1] ? 0 : 1;
 			current[shortIndex] = Math.min(
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				previous[shortIndex]! + 1,
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				current[shortIndex - 1]! + 1,
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				previous[shortIndex - 1]! + cost,
+				(previous[shortIndex] ?? longIndex) + 1,
+				(current[shortIndex - 1] ?? shortIndex) + 1,
+				(previous[shortIndex - 1] ?? 0) + cost,
 			);
 		}
 		const swap = previous;
@@ -66,8 +63,7 @@ function levenshteinDistance(left: string, right: string): number {
 		current = swap;
 	}
 
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	return previous[shorter.length]!;
+	return previous[shorter.length] ?? longer.length;
 }
 
 /** Сходство строк 0..1 на основе расстояния Левенштейна. */

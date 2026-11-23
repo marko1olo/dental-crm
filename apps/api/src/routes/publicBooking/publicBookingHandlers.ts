@@ -24,6 +24,7 @@ import {
 	requestPhoneVerification,
 	resolveDefaultOrganizationId,
 	verifyPhoneOtp,
+	verifyPhoneOtpAsync,
 } from "./smsVerificationAndSpamGate.js";
 
 export { handleSlotsQuery };
@@ -61,7 +62,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 			});
 		}
-		const result = requestPhoneVerification(
+		const result = await requestPhoneVerification(
 			parsed.data.phone,
 			parsed.data.method,
 			clientIp,
@@ -111,7 +112,11 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
-		const check = verifyPhoneOtp(parsed.data.phone, parsed.data.code);
+		const check = await verifyPhoneOtpAsync(
+			parsed.data.phone,
+			parsed.data.code,
+			parsed.data.organizationId || request.params?.organizationId,
+		);
 		if (!check.valid) {
 			return reply.status(400).send({
 				error: "Неверный код подтверждения",
@@ -144,51 +149,34 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		// First prioritize demo showcase org if it exists
-		const [demoOrg] = await withSuperuserBypass(async (tx) => {
-			return tx
-				.select({
-					organizationId: organizations.id,
-					name: organizations.name,
-					address: clinics.address,
-					phone: clinics.phone,
-				})
-				.from(organizations)
-				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
-				.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
-				.limit(1);
-		});
 
-		if (demoOrg) {
-			return demoOrg;
+		const targetOrgId =
+			(request.query as { organizationId?: string } | undefined)?.organizationId;
+
+		if (targetOrgId && isValidUuid(targetOrgId)) {
+			const [clinicRow] = await withSuperuserBypass(async (tx) => {
+				return tx
+					.select({
+						organizationId: organizations.id,
+						name: organizations.name,
+						address: clinics.address,
+						phone: clinics.phone,
+					})
+					.from(organizations)
+					.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
+					.where(eq(organizations.id, targetOrgId))
+					.limit(1);
+			});
+
+			if (clinicRow) {
+				return reply.send(clinicRow);
+			}
 		}
 
-		// Next prioritize an organization with active bookable doctors
-		const [orgWithDoctor] = await withSuperuserBypass(async (tx) => {
-			return tx
-				.select({
-					organizationId: organizations.id,
-					name: organizations.name,
-					address: clinics.address,
-					phone: clinics.phone,
-				})
-				.from(organizations)
-				.innerJoin(users, eq(users.organizationId, organizations.id))
-				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
-				.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
-				.limit(1);
+		return reply.status(404).send({
+			error: "ClinicNotFound",
+			message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 		});
-
-		if (orgWithDoctor) {
-			return orgWithDoctor;
-		}
-
-		return {
-			organizationId: "01a00000-0000-0000-0000-000000000000",
-			name: "Стоматологическая Клиника DENTE (Демо)",
-			address: "г. Москва, ул. Арбат, д. 24",
-			phone: "+7 (800) 200-55-40",
-		};
 	});
 
 	// 0a-2. Get clinic details by organizationId

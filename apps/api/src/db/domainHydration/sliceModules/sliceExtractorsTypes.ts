@@ -1,7 +1,10 @@
 import type { DomainStateHydrationReport } from "../types.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { db } from "../../client.js";
 import { eq, type Column } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
+
+const logger = createApiLogger("domainStateHydration");
 
 export function iso(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
@@ -27,12 +30,15 @@ export function reportUnreadableTime(
 			: value === undefined
 				? "колонки нет в строке"
 				: `«${String(value)}»`;
-	console.error(
-		`[domainStateHydration] ${table} ${rowId} (клиника ${report.organizationId}): ` +
-			`колонка ${column} прочитана как ${shown} — время неизвестно. Строка НЕ переносится в рабочее ` +
-			"состояние клиники. Подставить сюда часы сервера значило бы передвинуть запись на момент " +
-			"открытия страницы: приём попал бы в расписание на сейчас, платёж — в кассовый отчёт за сегодня. " +
-			"Исправьте значение в базе, после чего строка вернётся сама.",
+	logger.error(
+		{
+			table,
+			rowId,
+			column,
+			shownValue: shown,
+			organizationId: report.organizationId,
+		},
+		"Время неизвестно: строка НЕ переносится в рабочее состояние клиники",
 	);
 	report.warnings.push(
 		`${table} ${rowId}: колонка ${column} не читается как время (${shown}). Строка пропущена — ` +
@@ -136,9 +142,13 @@ export async function selectByOrganization<T>(
 		report.warnings.push(
 			`${label}: не удалось прочитать из базы (${message}).`,
 		);
-		console.error(
-			`[DomainStateHydration] Срез "${label}" клиники ${organizationId} не прочитан:`,
-			error,
+		logger.error(
+			{
+				err: safeLogError(error),
+				slice: label,
+				organizationId,
+			},
+			"Срез клиники не прочитан из базы",
 		);
 		return [];
 	}

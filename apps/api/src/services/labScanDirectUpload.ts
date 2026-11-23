@@ -69,12 +69,34 @@ export const SCAN_MIME_TYPES: Record<string, string> = {
 	zip: "application/zip",
 };
 
+let ephemeralDirectStorageSecret: string | null = null;
+
+export function getDirectStorageSecret(): string {
+	const configured =
+		process.env.AUTH_SECRET ||
+		process.env.JWT_SECRET ||
+		process.env.STORAGE_SIGNING_SECRET ||
+		process.env.LAB_PORTAL_SECRET;
+	if (configured) {
+		return configured;
+	}
+	if (process.env.NODE_ENV === "production") {
+		throw new Error(
+			"FATAL_SECURITY_ERROR: AUTH_SECRET, JWT_SECRET, or STORAGE_SIGNING_SECRET must be configured for direct scan storage in production environment!",
+		);
+	}
+	if (!ephemeralDirectStorageSecret) {
+		ephemeralDirectStorageSecret = crypto.randomBytes(32).toString("hex");
+	}
+	return ephemeralDirectStorageSecret;
+}
+
 export function createDirectStorageSignature(params: {
 	readonly storageKey: string;
 	readonly action: "upload" | "download";
 	readonly expiresAtSeconds: number;
 }): string {
-	const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET || "dente-direct-storage-secret-2026";
+	const secret = getDirectStorageSecret();
 	return crypto
 		.createHmac("sha256", secret)
 		.update(`${params.action}:${params.storageKey}:${params.expiresAtSeconds}`)

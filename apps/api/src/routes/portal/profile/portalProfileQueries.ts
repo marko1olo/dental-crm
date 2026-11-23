@@ -6,15 +6,14 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireAuthTokenSecret } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { familyGroups, patientRelationships, patients } from "../../../db/schema.js";
-import { verifyToken } from "../../../utils/cryptoHelper.js";
 import {
-	portalRevokedBeforeByPatient,
+	extractPortalPatient,
+	hashPortalToken,
+	revokedPortalTokenHashes,
 	revokedPortalTokens,
 } from "../portalAuthStore.js";
-import { PORTAL_TOKEN_KIND } from "../types.js";
 
 export interface VerifiedPortalProfileAuth {
 	patientId: string;
@@ -22,7 +21,7 @@ export interface VerifiedPortalProfileAuth {
 }
 
 /**
- * Проверка Bearer токена личного кабинета пациента с защитой от отозванных сессий.
+ * Проверка Bearer токена личного кабинета пациента с защитой от отозванных сессий (SSOT).
  */
 export function verifyPortalProfileRequest(
 	request: FastifyRequest,
@@ -31,46 +30,31 @@ export function verifyPortalProfileRequest(
 	const authHeader = request.headers.authorization;
 	if (!authHeader?.startsWith("Bearer ")) {
 		reply.status(401);
-		reply.send({ error: "Unauthorized" });
+		reply.send({ error: "Unauthorized", message: "Токен авторизации не предоставлен." });
 		return null;
 	}
 
 	const token = authHeader.slice("Bearer ".length).trim();
 	if (!token) {
 		reply.status(401);
-		reply.send({ error: "Unauthorized" });
+		reply.send({ error: "Unauthorized", message: "Токен авторизации не предоставлен." });
 		return null;
 	}
 
-	if (revokedPortalTokens.has(token)) {
+	if (revokedPortalTokens.has(token) || revokedPortalTokenHashes.has(hashPortalToken(token))) {
 		reply.status(401);
 		reply.send({ error: "SessionRevoked", message: "Сессия завершена. Войдите снова." });
 		return null;
 	}
 
-	const payload = verifyToken(token, requireAuthTokenSecret());
-	if (
-		!payload ||
-		payload.kind !== PORTAL_TOKEN_KIND ||
-		typeof payload.sub !== "string" ||
-		typeof payload.organizationId !== "string"
-	) {
+	const auth = extractPortalPatient(request);
+	if (!auth) {
 		reply.status(401);
-		reply.send({ error: "Invalid token" });
+		reply.send({ error: "SessionRevoked", message: "Сессия недействительна или завершена. Войдите снова." });
 		return null;
 	}
 
-	const patientId = payload.sub;
-	const organizationId = payload.organizationId as string;
-
-	const revokedBefore = portalRevokedBeforeByPatient.get(patientId);
-	if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
-		reply.status(401);
-		reply.send({ error: "SessionRevoked", message: "Сессия завершена. Войдите снова." });
-		return null;
-	}
-
-	return { patientId, organizationId };
+	return { patientId: auth.patientId, organizationId: auth.organizationId };
 }
 
 /**

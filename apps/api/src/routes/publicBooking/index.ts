@@ -48,6 +48,7 @@ export {
 	requestPhoneVerification,
 	resolveDefaultOrganizationId,
 	verifyPhoneOtp,
+	verifyPhoneOtpAsync,
 } from "./smsVerificationAndSpamGate.js";
 
 export {

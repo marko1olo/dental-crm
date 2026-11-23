@@ -15,6 +15,9 @@ import {
 	selectProviderKey,
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("aiVisitDraft");
 
 type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
 
@@ -346,8 +349,9 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
 			}
 		}
 	} catch (primaryError) {
-		console.warn(
-			`[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ${primaryError instanceof Error ? primaryError.message : primaryError}`,
+		logger.warn(
+			{ err: safeLogError(primaryError), provider: input.config.provider, model: input.config.modelName },
+			"Сбой основного провайдера ИИ-черновика",
 		);
 	}
 
@@ -374,8 +378,9 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
 				triedFingerprints,
 			);
 			if (!keyCandidate) {
-				console.warn(
-					`[AI Draft Cascade] Нет доступных ключей для провайдера ${fallback.provider}`,
+				logger.warn(
+					{ provider: fallback.provider },
+					"Нет доступных ключей для провайдера в каскаде ИИ-черновика",
 				);
 				continue;
 			}
@@ -400,8 +405,9 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
 			recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
 			return result;
 		} catch (fallbackError) {
-			console.warn(
-				`[AI Draft Cascade] Модель ${fallback.model} (${fallback.provider}) завершилась ошибкой: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`,
+			logger.warn(
+				{ err: safeLogError(fallbackError), model: fallback.model, provider: fallback.provider },
+				"Модель из каскада ИИ-черновика завершилась ошибкой",
 			);
 		}
 	}

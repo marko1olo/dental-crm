@@ -19,10 +19,12 @@ import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
+	idempotencyKeys,
 	patientInvoices,
 	payments,
 	sberbankTransactions,
 } from "../../../db/schema.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import {
 	FiscalQueueRetryWorker,
 	LanKktDriverService,
@@ -43,10 +45,6 @@ export async function handleSbpStatus(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<void> {
-	const ctx = await requireClinicalReadContext(request, reply, "sbp status query");
-	if (!ctx) return;
-	const orgId = ctx.organizationId;
-
 	const parsedQuery = sbpStatusInputSchema.safeParse(request.query || {});
 	const parsedBody = sbpStatusInputSchema.safeParse(request.body || {});
 	const query = parsedQuery.success ? parsedQuery.data : {};
@@ -56,13 +54,56 @@ export async function handleSbpStatus(
 	const qrId = (body.qrId || query.qrId)?.trim();
 	const invoiceId = (body.invoiceId || query.invoiceId)?.trim();
 	const paymentId = (body.paymentId || query.paymentId)?.trim();
-	const clientMutationId = (body.clientMutationId || query.clientMutationId)?.trim();
 	const isConfirmManual =
 		body.action === "confirm_manual" ||
 		query.action === "confirm_manual" ||
 		query.confirm === "true";
+	const isMutation = request.method.toUpperCase() === "POST" || isConfirmManual;
+
+	const ctx = isMutation
+		? await requireClinicalMutationContext(request, reply, "sbp status confirm")
+		: await requireClinicalReadContext(request, reply, "sbp status query");
+	if (!ctx) return;
+	const orgId = ctx.organizationId;
+
+	const rawMutationId =
+		(request.headers["idempotency-key"] as string | undefined) ||
+		(request.headers["x-idempotency-key"] as string | undefined) ||
+		body.clientMutationId ||
+		query.clientMutationId;
+	const clientMutationId = rawMutationId?.trim();
+
+	if (isConfirmManual) {
+		if (!clientMutationId || !isValidUuid(clientMutationId)) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для ручного подтверждения оплаты СБП требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
+			});
+		}
+	}
 
 	return await withTenantCtx(orgId, async (tx) => {
+		if (clientMutationId) {
+			const [existingKey] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, clientMutationId),
+					),
+				)
+				.limit(1);
+			if (existingKey && existingKey.status === "completed" && existingKey.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply
+					.code(existingKey.responseCode || 200)
+					.send(existingKey.responseBody);
+			}
+		}
+
 		let isPaid = false;
 		let resolvedOrderId = orderId || qrId || invoiceId || null;
 		let resolvedPaymentId: string | null = paymentId || null;
@@ -216,7 +257,7 @@ export async function handleSbpStatus(
 			paidAtIso = new Date().toISOString();
 		}
 
-		return reply.status(200).send({
+		const responseData: Record<string, unknown> = {
 			success: true,
 			paid: isPaid,
 			status: isPaid ? "paid" : "pending",
@@ -228,7 +269,22 @@ export async function handleSbpStatus(
 			amountRub: amountKopecks !== null ? kopecksToRub(amountKopecks) : null,
 			paidAt: paidAtIso,
 			method: "sbp_qr",
-		});
+		};
+
+		if (isConfirmManual && clientMutationId) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: clientMutationId,
+					status: "completed",
+					responseBody: responseData,
+					responseCode: 200,
+				})
+				.onConflictDoNothing();
+		}
+
+		return reply.status(200).send(responseData);
 	});
 }
 

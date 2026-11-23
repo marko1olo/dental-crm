@@ -4,9 +4,12 @@ import type {
 	CreateAiRecognitionJobInput,
 } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";
 import { aiJobs } from "./schema.js";
+
+const logger = createApiLogger("aiQuery");
 
 function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
 	const normalized = input.inputText
@@ -148,9 +151,9 @@ export async function createAiRecognitionJobInDb(
 	} catch (e) {
 		// Audit logging must never block AI job creation, but a failure here is a
 		// 152-FZ traceability gap and must be surfaced, not silently swallowed.
-		console.warn(
-			"[AiQuery] Failed to record ai_recognition_prepared audit event:",
-			e,
+		logger.warn(
+			{ err: safeLogError(e), organizationId, jobId: job.id },
+			"Failed to record ai_recognition_prepared audit event",
 		);
 	}
 

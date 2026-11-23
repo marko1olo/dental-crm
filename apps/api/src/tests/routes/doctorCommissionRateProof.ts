@@ -42,7 +42,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";

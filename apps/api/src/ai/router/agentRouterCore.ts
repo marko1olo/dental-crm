@@ -27,6 +27,9 @@ import {
 	parseApiKeys,
 	parseAllConfiguredApiKeys,
 } from "./keyPoolManager.js";
+import { createApiLogger } from "../../observability/logger.js";
+
+const logger = createApiLogger("aiAgentRouterCore");
 import {
 	buildChatPayload,
 	isGeminiModel,
@@ -184,8 +187,9 @@ export class AgentRouterClient {
 				) {
 					const banDurationSec = Math.floor(MODEL_OVERLOAD_COOLDOWN_MS / 1000);
 					this.banModel(targetModel, banDurationSec);
-					console.warn(
-						`[AgentRouter] Model '${targetModel}' budget pool exhausted (402). Model banned for ${banDurationSec}s. Key ${maskApiKey(key)} remains active.`,
+					logger.warn(
+						{ targetModel, banDurationSec, maskedKey: maskApiKey(key) },
+						"Model budget pool exhausted (402). Model banned, key remains active.",
 					);
 					throw new AgentRouterModelOverloadedError(
 						targetModel,
@@ -381,8 +385,9 @@ export class AgentRouterClient {
 							MODEL_OVERLOAD_COOLDOWN_MS / 1000,
 						);
 						this.banModel(targetModel, banDurationSec);
-						console.warn(
-							`[AgentRouter] Model '${targetModel}' budget pool exhausted (402). Model banned for ${banDurationSec}s. Key ${maskApiKey(key)} remains active.`,
+						logger.warn(
+							{ targetModel, banDurationSec, maskedKey: maskApiKey(key) },
+							"Model budget pool exhausted (402). Model banned, key remains active.",
 						);
 						const overloadErr = new AgentRouterModelOverloadedError(
 							targetModel,

@@ -103,6 +103,7 @@ export type XrayAnalysisJob = {
 	readonly scanId: string;
 	readonly organizationId: string;
 	readonly imageDataUri: string;
+	readonly logger?: { error: (obj: unknown, msg?: string) => void; warn?: (obj: unknown, msg?: string) => void } | undefined;
 };
 
 export type XrayAnalysisPatch = Partial<typeof xrayScans.$inferInsert>;
@@ -202,7 +203,7 @@ export async function executeXrayAnalysisJob(job: XrayAnalysisJob): Promise<void
 		});
 	} catch (error) {
 		const reason = error instanceof Error ? error.message : String(error);
-		console.error("[XRay AI] Разбор снимка не выполнен", job.scanId, reason);
+		job.logger?.error({ err: error, scanId: job.scanId }, "[XRay AI] Разбор снимка не выполнен");
 		try {
 			await persistXrayAnalysisOutcome(job, {
 				status: "error",
@@ -212,12 +213,9 @@ export async function executeXrayAnalysisJob(job: XrayAnalysisJob): Promise<void
 						: "Не удалось выполнить AI-анализ снимка.",
 			});
 		} catch (persistError) {
-			console.error(
+			job.logger?.error(
+				{ err: persistError, scanId: job.scanId },
 				"[XRay AI] Состояние разбора не записано",
-				job.scanId,
-				persistError instanceof Error
-					? persistError.message
-					: String(persistError),
 			);
 		}
 	}
@@ -230,7 +228,7 @@ export function startDetachedXrayAnalysis(job: XrayAnalysisJob): void {
 	setImmediate(() => {
 		transactionStorage.exit(() => {
 			void executeXrayAnalysisJob(job).catch((err) => {
-				console.error(`[XrayAI] Detached analysis job failed for scan ${job.scanId}:`, err);
+				job.logger?.error({ err, scanId: job.scanId }, "[XrayAI] Detached analysis job failed");
 			});
 		});
 	});

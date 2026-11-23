@@ -18,6 +18,9 @@ import {
 	selectProviderKey,
 	shouldTryNextProviderKey,
 } from "./keyPool.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("speechPolish");
 
 type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
 
@@ -507,8 +510,9 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
 		}
 	} catch (err) {
 		primaryError = err;
-		console.warn(
-			`[AI Polish Primary Fallback Triggered] Сбой основного провайдера очистки: ${err instanceof Error ? err.message : err}`,
+		logger.warn(
+			{ err: safeLogError(err), provider: input.config.provider, model: input.config.modelName },
+			"Сбой основного провайдера очистки диктовки",
 		);
 	}
 
@@ -535,8 +539,9 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
 				triedFingerprints,
 			);
 			if (!keyCandidate) {
-				console.warn(
-					`[AI Polish Cascade] Нет доступных ключей для провайдера ${fallback.provider}`,
+				logger.warn(
+					{ provider: fallback.provider },
+					"Нет доступных ключей для провайдера в каскаде очистки диктовки",
 				);
 				continue;
 			}
@@ -567,8 +572,9 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
 			);
 			return result;
 		} catch (fallbackError) {
-			console.warn(
-				`[AI Polish Cascade] Модель ${fallback.model} (${fallback.provider}) завершилась ошибкой: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`,
+			logger.warn(
+				{ err: safeLogError(fallbackError), model: fallback.model, provider: fallback.provider },
+				"Модель из каскада завершилась ошибкой",
 			);
 		}
 	}

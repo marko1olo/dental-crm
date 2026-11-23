@@ -12,7 +12,7 @@ import {
 	xrayScans,
 } from "../db/schema.js";
 import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
-import { registerXrayRoutes } from "./xray.js";
+import { registerXrayRoutes } from "./imaging/studiesRoutes.js";
 import { scanToResponse } from "./xraySchemas.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";

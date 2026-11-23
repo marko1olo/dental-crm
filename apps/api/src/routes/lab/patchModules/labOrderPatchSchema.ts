@@ -13,6 +13,12 @@ export const labOrderPatchSchema = z.object({
 	frameworkTrialDate: z.string().optional().nullable(),
 	ceramicTrialDate: z.string().optional().nullable(),
 	deliveryDate: z.string().optional().nullable(),
+	fittingAppointmentId: z.string().uuid().optional().nullable(),
+	laboratoryId: z.string().uuid().optional().nullable(),
+	isWarranty: z.boolean().optional(),
+	warrantyLiabilityType: z.enum(["clinic_warranty", "lab_defect", "patient_fault"]).optional(),
+	isRemake: z.boolean().optional(),
+	remakeReason: z.string().trim().max(500).optional().nullable(),
 });
 
 export type LabOrderPatchBody = z.infer<typeof labOrderPatchSchema>;

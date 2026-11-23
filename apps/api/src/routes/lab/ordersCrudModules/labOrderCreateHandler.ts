@@ -93,6 +93,7 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	const result = await withTenantCtx(orgId, async (tx) => {
 		const insertRes = await insertLabOrderInDb(tx, orgId, data, currentUserId);
 		if (insertRes.kind === "ok" && insertRes.order && idempotencyKey) {
+			const orderPayload: Record<string, unknown> = insertRes.order;
 			await tx
 				.insert(idempotencyKeys)
 				.values({
@@ -100,14 +101,14 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 					key: idempotencyKey,
 					status: "completed",
 					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: insertRes.order as unknown as Record<string, unknown>,
+					responseBody: orderPayload,
 					responseCode: 201,
 				})
 				.onConflictDoUpdate({
 					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
 					set: {
 						status: "completed",
-						responseBody: insertRes.order as unknown as Record<string, unknown>,
+						responseBody: orderPayload,
 						responseCode: 201,
 					},
 				});
@@ -123,9 +124,9 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	}
 
 	if (result.kind === "doctor_not_found") {
-		return reply.code(404).send({
-			error: "DoctorNotFound",
-			message: "Врач не найден в вашей клинике.",
+		return reply.code(400).send({
+			error: "DoctorRequired",
+			message: "Не указан или не найден лечащий врач в клинике для оформления наряда ЗТЛ.",
 		});
 	}
 

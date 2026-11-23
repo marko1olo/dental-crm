@@ -34,6 +34,8 @@ export interface RawRequiredMaterial {
 	readonly name?: string | undefined;
 	readonly defaultCostRub?: number | undefined;
 	readonly isMdlpRequired?: boolean | undefined;
+	readonly alternativeInventoryItemId?: string | null | undefined;
+	readonly isOptional?: boolean | undefined;
 }
 
 export interface ResolvedItemEntry {

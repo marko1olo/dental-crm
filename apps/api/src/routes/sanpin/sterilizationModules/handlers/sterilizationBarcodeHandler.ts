@@ -9,7 +9,6 @@ import { computePackagingExpirationDate, type SterilizationPackagingType } from 
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
 import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
@@ -31,16 +30,6 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	}
 	const data = scanParsed.data;
 
-	let verifiedOperatorId: string | null = null;
-	if (data.operatorId) {
-		const [operator] = await db
-			.select({ id: users.id })
-			.from(users)
-			.where(and(eq(users.id, data.operatorId), eq(users.organizationId, organizationId)))
-			.limit(1);
-		verifiedOperatorId = operator?.id || null;
-	}
-
 	const now = new Date();
 	const effectiveBarcode = data.barcode?.trim() || `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${data.cycleNumber || 1}`;
 	const effectiveAutoclaveId = data.autoclaveId?.trim() || "АК-01";
@@ -51,6 +40,16 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	const passedIndicator = data.status === "passed";
 
 	const log = await withTenantCtx(organizationId, async (tx) => {
+		let verifiedOperatorId: string | null = null;
+		if (data.operatorId) {
+			const [operator] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(and(eq(users.id, data.operatorId), eq(users.organizationId, organizationId)))
+				.limit(1);
+			verifiedOperatorId = operator?.id || null;
+		}
+
 		const [createdLog] = await tx
 			.insert(sterilizationLogs)
 			.values({

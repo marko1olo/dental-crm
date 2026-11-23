@@ -106,6 +106,7 @@ export async function handleFiscalReceipt(
 				warrantyActNumber: actNumber,
 				queueId: queueRow?.id,
 				status: "printed",
+				queueStatus: "printed",
 				fnSerial: "0000000000000000",
 				fiscalDocumentNumber: "0",
 				fiscalSign: "0000000000",

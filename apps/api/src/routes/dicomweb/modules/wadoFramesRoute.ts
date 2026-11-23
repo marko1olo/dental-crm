@@ -124,8 +124,15 @@ export async function handleWadoRetrieveFrames(
 		}
 	}
 
-	const finalRows = rows ?? 512;
-	const finalColumns = columns ?? 512;
+	if (rows == null || columns == null) {
+		return reply.code(422).send({
+			error: "UnprocessableDicomDimensions",
+			message: "Не удалось определить геометрические размеры кадра (0028,0010)/(0028,0011). Запрос кадра отклонен.",
+		});
+	}
+
+	const finalRows = rows;
+	const finalColumns = columns;
 	const bitsAllocated = identity.bitsAllocated ?? 16;
 	const bytesPerSample = Math.ceil(bitsAllocated / 8);
 	const samplesPerPixel = identity.samplesPerPixel ?? 1;

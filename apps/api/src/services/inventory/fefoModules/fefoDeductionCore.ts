@@ -11,6 +11,7 @@ import { ensureInventoryItemForDeduction } from "./softOverdraftHandler.js";
 import { flushInventoryTransactions, type InventoryTransactionInsert } from "./auditLogging.js";
 import { deductFromActiveBatches } from "./fefoBatchDeductor.js";
 import { resolveDeficitAndOverdraft } from "./fefoDeficitResolver.js";
+import { wsBroker } from "../../websocketBroker.js";
 
 export async function deductFefo(
 	tx: DbTransaction,
@@ -59,7 +60,7 @@ export async function deductFefo(
 	const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
 	const newStock = Number((currentStock - requiredQty).toFixed(4));
 
-	const { additionalTransactions, isOverdraft, deficitQty, warning } = resolveDeficitAndOverdraft({
+	const { additionalTransactions, isOverdraft, deficitQty, warning, purchaseOrderDraft } = resolveDeficitAndOverdraft({
 		inv,
 		needed,
 		currentStock,
@@ -92,6 +93,26 @@ export async function deductFefo(
 	const isNegative = newStock < 0;
 	const finalWarning = warning ?? (isNegative ? `Внимание: допущен технический перерасход (остаток ${newStock} ед.). Требуется пополнение.` : undefined);
 
+	if (isOverdraft || isNegative) {
+		try {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "INVENTORY_DEFICIT_ALERT",
+				payload: {
+					inventoryItemId: inv.id,
+					inventoryItemName: inv.name,
+					currentStock: newStock,
+					deficitQty: deficitQty > 0 ? deficitQty : Math.abs(newStock),
+					unit: inv.unit ?? "шт",
+					visitId: visitId ?? null,
+					warning: finalWarning,
+					purchaseOrder: purchaseOrderDraft ?? null,
+				},
+			});
+		} catch {
+			// Неблокирующий алерт снабженца (Мандат 8aa)
+		}
+	}
+
 	return {
 		inventoryItemId: inv.id,
 		inventoryItemName: inv.name,
@@ -103,5 +124,6 @@ export async function deductFefo(
 		isNegativeStock: isNegative,
 		requiresReplenishment: newStock <= 0,
 		warning: finalWarning,
+		purchaseOrder: purchaseOrderDraft ?? null,
 	};
 }

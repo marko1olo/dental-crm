@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
 	communicationEvents,
@@ -6,6 +6,7 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../../../db/schema.js";
+import { denteTelegramChatLinks } from "../../../db/schema/communications/channelsSchema.js";
 import { omnichannelBotEngine } from "../../../services/bots/OmnichannelBotEngine.js";
 import type { BotChannel } from "../../../services/bots/types.js";
 import type { InboxConversation } from "../types.js";
@@ -51,37 +52,151 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 		.orderBy(desc(communicationEvents.createdAt))
 		.limit(200);
 
-	// 3. Получаем список пациентов клиники с привязками к чатам
-	const clinicPatients = await db
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-			notes: patients.notes,
-		})
-		.from(patients)
-		.where(eq(patients.organizationId, orgId))
-		.limit(300);
-
-	const patientMap = new Map<string, (typeof clinicPatients)[0]>();
-	for (const p of clinicPatients) {
-		patientMap.set(p.id, p);
+	// 3. Собираем известные идентификаторы пациентов и телефоны из активных диалогов (DEF-17-08)
+	const patientIds = new Set<string>();
+	for (const e of inboundEvents) {
+		if (e.patientId) patientIds.add(e.patientId);
+	}
+	for (const e of outboundEvents) {
+		if (e.patientId) patientIds.add(e.patientId);
 	}
 
-	// 4. Получаем список лидов клиники
-	const leads = await db
+	// Загружаем активные связки Telegram-чатов организации
+	const chatLinks = await db
 		.select({
-			id: crmLeads.id,
-			name: crmLeads.name,
-			patientName: crmLeads.patientName,
-			phone: crmLeads.phone,
-			source: crmLeads.source,
-			status: crmLeads.status,
-			notes: crmLeads.notes,
+			subjectId: denteTelegramChatLinks.subjectId,
+			chatTransportRef: denteTelegramChatLinks.chatTransportRef,
 		})
-		.from(crmLeads)
-		.where(eq(crmLeads.organizationId, orgId))
-		.limit(300);
+		.from(denteTelegramChatLinks)
+		.where(
+			and(
+				eq(denteTelegramChatLinks.organizationId, orgId),
+				eq(denteTelegramChatLinks.subjectType, "patient"),
+				eq(denteTelegramChatLinks.status, "active"),
+			),
+		);
+
+	const chatRefToPatientId = new Map<string, string>();
+	const patientIdToChatRef = new Map<string, string>();
+	for (const cl of chatLinks) {
+		if (cl.chatTransportRef && cl.subjectId) {
+			chatRefToPatientId.set(cl.chatTransportRef, cl.subjectId);
+			patientIdToChatRef.set(cl.subjectId, cl.chatTransportRef);
+			patientIds.add(cl.subjectId);
+		}
+	}
+
+	// Собираем нормализованные 10-значные суффиксы телефонов
+	const searchPhones = new Set<string>();
+	for (const evt of inboundEvents) {
+		const digits = evt.externalChatId.replace(/\D/g, "");
+		if (digits.length >= 10) {
+			searchPhones.add(digits.slice(-10));
+		}
+	}
+
+	type ClinicPatientRecord = {
+		id: string;
+		fullName: string;
+		phone: string | null;
+	};
+
+	const patientIdList = Array.from(patientIds);
+	const phoneList = Array.from(searchPhones);
+	let clinicPatients: ClinicPatientRecord[] = [];
+
+	if (patientIdList.length > 0) {
+		const byIds = await db
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					inArray(patients.id, patientIdList),
+				),
+			);
+		clinicPatients = byIds;
+	}
+
+	if (phoneList.length > 0) {
+		const byPhones = await db
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					or(
+						...phoneList.map((p) => sql`right(regexp_replace(coalesce(${patients.phone}, ''), '\\D', '', 'g'), 10) = ${p}`),
+					),
+				),
+			);
+		for (const p of byPhones) {
+			if (!clinicPatients.some((cp) => cp.id === p.id)) {
+				clinicPatients.push(p);
+			}
+		}
+	}
+
+	const patientMap = new Map<string, ClinicPatientRecord>();
+	const patientPhoneMap = new Map<string, ClinicPatientRecord>();
+	for (const p of clinicPatients) {
+		patientMap.set(p.id, p);
+		if (p.phone) {
+			const digits = p.phone.replace(/\D/g, "");
+			if (digits.length >= 10) {
+				patientPhoneMap.set(digits.slice(-10), p);
+			}
+		}
+	}
+
+	// 4. Получаем список лидов клиники по совпадению нормализованных номеров телефонов
+	let leads: {
+		id: string;
+		name: string | null;
+		patientName: string | null;
+		phone: string | null;
+		source: string | null;
+		status: string;
+	}[] = [];
+
+	if (phoneList.length > 0) {
+		leads = await db
+			.select({
+				id: crmLeads.id,
+				name: crmLeads.name,
+				patientName: crmLeads.patientName,
+				phone: crmLeads.phone,
+				source: crmLeads.source,
+				status: crmLeads.status,
+			})
+			.from(crmLeads)
+			.where(
+				and(
+					eq(crmLeads.organizationId, orgId),
+					or(
+						...phoneList.map((p) => sql`right(regexp_replace(coalesce(${crmLeads.phone}, ''), '\\D', '', 'g'), 10) = ${p}`),
+					),
+				),
+			);
+	}
+
+	const leadPhoneMap = new Map<string, (typeof leads)[0]>();
+	for (const l of leads) {
+		if (l.phone) {
+			const digits = l.phone.replace(/\D/g, "");
+			if (digits.length >= 10) {
+				leadPhoneMap.set(digits.slice(-10), l);
+			}
+		}
+	}
 
 	// Агрегируем диалоги по ключу: `${channel}:${senderId}`
 	const convMap = new Map<string, InboxConversation>();
@@ -132,21 +247,20 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 			rawPayload.senderData?.senderName ||
 			null;
 
+		const digits = senderId.replace(/\D/g, "");
+		const phoneKey = digits.length >= 10 ? digits.slice(-10) : null;
+
 		let matchedPatient = evt.patientId ? patientMap.get(evt.patientId) : undefined;
-		if (!matchedPatient) {
-			matchedPatient = clinicPatients.find(
-				(p) =>
-					(p.notes && p.notes.includes(`${channel}:${senderId}`)) ||
-					(p.phone && senderId.includes(p.phone.replace(/\D/g, "").slice(-10))),
-			);
+		const linkedPatientId = chatRefToPatientId.get(senderId);
+		if (!matchedPatient && linkedPatientId) {
+			matchedPatient = patientMap.get(linkedPatientId);
+		}
+		if (!matchedPatient && phoneKey) {
+			matchedPatient = patientPhoneMap.get(phoneKey);
 		}
 
 		// Ищем лид
-		const matchedLead = leads.find(
-			(l) =>
-				(l.notes && l.notes.includes(`${channel}:${senderId}`)) ||
-				(l.phone && senderId.includes(l.phone.replace(/\D/g, "").slice(-10))),
-		);
+		const matchedLead = phoneKey ? leadPhoneMap.get(phoneKey) : undefined;
 
 		const interceptInfo = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
 
@@ -190,8 +304,13 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 		const p = patientMap.get(out.patientId);
 		if (!p) continue;
 
-		const match = p.notes?.match(new RegExp(`${channel}:([a-zA-Z0-9_-]+)`));
-		const senderId = match ? match[1] : p.phone ? p.phone.replace(/\D/g, "") : null;
+		let senderId: string | null = null;
+		const linkedChatRef = patientIdToChatRef.get(p.id);
+		if (channel === "telegram" && linkedChatRef) {
+			senderId = linkedChatRef;
+		} else if (p.phone) {
+			senderId = p.phone.replace(/\D/g, "");
+		}
 		if (!senderId) continue;
 
 		const key = `${channel}:${senderId}`;

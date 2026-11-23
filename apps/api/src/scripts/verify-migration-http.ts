@@ -215,17 +215,15 @@ try {
 			 * полных тёзок каждая — данные, которых не бывает в живой клинике.
 			 * Независимые индексы дают 2560 разных ФИО.
 			 */
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const surname = SURNAMES[index % SURNAMES.length]!;
+			const surname = SURNAMES[index % SURNAMES.length] ?? "Иванов";
 			const given =
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				GIVEN_NAMES[Math.floor(index / SURNAMES.length) % GIVEN_NAMES.length]!;
+				GIVEN_NAMES[Math.floor(index / SURNAMES.length) % GIVEN_NAMES.length] ??
+				"Александр";
 			const patronymic =
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				PATRONYMICS[
 					Math.floor(index / (SURNAMES.length * GIVEN_NAMES.length)) %
 						PATRONYMICS.length
-				]!;
+				] ?? "Иванович";
 			const female = index % 2 === 1;
 			const fullName =
 				index % 20 === 0
@@ -413,16 +411,15 @@ try {
 	// Имя 5000-й строки считаем той же формулой, что и при сборке образца.
 	const index5000 = 4999;
 	const female5000 = index5000 % 2 === 1;
-	const surname5000 = `${SURNAMES[index5000 % SURNAMES.length]}${female5000 ? "а" : ""}`;
+	const surname5000 = `${SURNAMES[index5000 % SURNAMES.length] ?? "Иванов"}${female5000 ? "а" : ""}`;
 	const given5000 =
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		GIVEN_NAMES[Math.floor(index5000 / SURNAMES.length) % GIVEN_NAMES.length]!;
+		GIVEN_NAMES[Math.floor(index5000 / SURNAMES.length) % GIVEN_NAMES.length] ??
+		"Александр";
 	const patronymic5000 =
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		PATRONYMICS[
 			Math.floor(index5000 / (SURNAMES.length * GIVEN_NAMES.length)) %
 				PATRONYMICS.length
-		]!;
+		] ?? "Иванович";
 	const expectedName5000 =
 		index5000 % 20 === 0
 			? `${surname5000} ${given5000.charAt(0)}.${patronymic5000.charAt(0)}.`

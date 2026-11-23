@@ -4,6 +4,8 @@
  * Decomposed in accordance with Mandate 8b (<= 120 lines SSOT).
  */
 
+import { and, eq } from "drizzle-orm";
+import { inventoryItems } from "../../../db/schema/inventory.js";
 import type { DbExecutor } from "../types.js";
 import { isPureUuid, type RawRequiredMaterial, type ServiceDescriptor } from "./stockDeductionTypes.js";
 import { resolveServicesMetadata } from "./serviceMetadataResolver.js";
@@ -45,15 +47,61 @@ export async function resolveRequiredMaterialsForServices(
 			srvQty,
 		);
 		if (dbItems && dbItems.length > 0) {
-			materials.push(
-				...dbItems.map((ci) => ({
-					key: ci.inventoryItemId,
+			for (const ci of dbItems) {
+				let effectiveItemId = ci.inventoryItemId;
+
+				// Если указан клинический аналог и базового материала не хватает на складе
+				if (ci.alternativeInventoryItemId) {
+					const [baseItem] = await tx
+						.select({
+							stockQuantity: inventoryItems.stockQuantity,
+							currentQty: inventoryItems.currentQty,
+						})
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.id, ci.inventoryItemId),
+								eq(inventoryItems.organizationId, organizationId),
+							),
+						)
+						.limit(1);
+
+					const baseStock = Number(baseItem?.stockQuantity ?? baseItem?.currentQty ?? 0);
+					if (baseStock < ci.quantity) {
+						// Базового материала нет или дефицит: проверяем наличие аналога
+						const [altItem] = await tx
+							.select({
+								id: inventoryItems.id,
+								name: inventoryItems.name,
+								stockQuantity: inventoryItems.stockQuantity,
+								currentQty: inventoryItems.currentQty,
+							})
+							.from(inventoryItems)
+							.where(
+								and(
+									eq(inventoryItems.id, ci.alternativeInventoryItemId),
+									eq(inventoryItems.organizationId, organizationId),
+								),
+							)
+							.limit(1);
+
+						const altStock = Number(altItem?.stockQuantity ?? altItem?.currentQty ?? 0);
+						if (altStock >= ci.quantity || altStock > 0) {
+							effectiveItemId = ci.alternativeInventoryItemId;
+						}
+					}
+				}
+
+				materials.push({
+					key: effectiveItemId,
 					quantity: ci.quantity,
 					unit: ci.unit || "pcs",
 					name: ci.name,
 					isMdlpRequired: ci.isMdlpRequired,
-				})),
-			);
+					alternativeInventoryItemId: ci.alternativeInventoryItemId,
+					isOptional: ci.isOptional,
+				});
+			}
 			continue;
 		}
 

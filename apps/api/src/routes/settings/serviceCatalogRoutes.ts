@@ -23,28 +23,28 @@ import {
  * Ролевой барьер: requireCatalogMutationAccess (свободный доступ для врача у кресла без 403 Forbidden).
  */
 export function registerServiceCatalogRoutes(app: FastifyInstance): void {
-	const settingsMutationPreHandler = async (
+	const catalogMutationPreHandler = async (
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
+		const orgId = await requireCatalogMutationAccess(request, reply);
 		if (!orgId) return reply;
 	};
 
-	// Делегация в канонические обработчики CRUD с ролевым контролем настроек (settings.write)
+	// Делегация в канонические обработчики CRUD с ролевым контролем прейскуранта (Мандат 8e / 8n)
 	app.post(
 		"/api/settings/catalog",
-		{ preHandler: settingsMutationPreHandler },
+		{ preHandler: catalogMutationPreHandler },
 		handleCreateCatalogItem,
 	);
 	app.put(
 		"/api/settings/catalog/:serviceId",
-		{ preHandler: settingsMutationPreHandler },
+		{ preHandler: catalogMutationPreHandler },
 		handleUpdateCatalogItem,
 	);
 	app.delete(
 		"/api/settings/catalog/:serviceId",
-		{ preHandler: settingsMutationPreHandler },
+		{ preHandler: catalogMutationPreHandler },
 		handleDeactivateCatalogItem,
 	);
 

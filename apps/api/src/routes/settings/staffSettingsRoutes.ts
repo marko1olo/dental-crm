@@ -414,7 +414,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			// Причина уходит в журнал сервера целиком: наружу идёт текст для
 			// оператора, но без записи здесь отказ по ставке был бы неотличим от
 			// опечатки в проценте, и разбирать его было бы нечем.
-			console.error("[настройки] ставка врача не сохранена:", error);
+			request.log.error({ err: error }, "[настройки] ставка врача не сохранена");
 			return staffMutationRejection(
 				reply,
 				error,

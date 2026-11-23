@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { wsBroker } from "../../websocketBroker.js";
+import { ChatLockService } from "../../communications/ChatLockService.js";
 import type {
 	BotChannel,
 	OmnichannelBotRuntime,
@@ -68,6 +69,34 @@ export class BotSessionRouter {
 		return true;
 	}
 
+	public async isChatInterceptedAsync(
+		channel: BotChannel,
+		organizationId: string,
+		senderId: string,
+	): Promise<boolean> {
+		if (this.isChatIntercepted(channel, organizationId, senderId)) {
+			return true;
+		}
+		try {
+			const status = await ChatLockService.getLockStatus({
+				organizationId,
+				chatId: `${channel}:${senderId}`,
+			});
+			if (status.isLocked && status.lockedByAgent) {
+				const key = `${channel}:${organizationId}:${senderId}`;
+				this.interceptedChats.set(key, {
+					interceptedAt: status.lockAcquiredAt ? new Date(status.lockAcquiredAt) : new Date(),
+					operatorName: status.lockedByAgent,
+					expiresAt: status.lockExpiresAt ? new Date(status.lockExpiresAt) : new Date(Date.now() + 60 * 1000),
+				});
+				return true;
+			}
+		} catch {
+			// В unit-тестах без БД используется локальный кеш
+		}
+		return false;
+	}
+
 	public takeoverChat(
 		channel: BotChannel,
 		organizationId: string,
@@ -75,10 +104,21 @@ export class BotSessionRouter {
 		operatorName = "Оператор",
 	): { success: boolean; chatId: string; interceptedBy: string } {
 		const key = `${channel}:${organizationId}:${senderId}`;
+		const chatId = `${channel}:${senderId}`;
 		this.interceptedChats.set(key, {
 			interceptedAt: new Date(),
 			operatorName,
 			expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour takeover
+		});
+
+		// Персистентный захват в PostgreSQL collaborative_chat_processing_states + pg_advisory_xact_lock
+		void ChatLockService.acquireLock({
+			organizationId,
+			chatId,
+			agentName: operatorName,
+			durationMinutes: 60,
+		}).catch(() => {
+			// Изоляция от падений БД: in-memory лок уже активен
 		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
@@ -95,7 +135,15 @@ export class BotSessionRouter {
 		senderId: string,
 	): { success: boolean; chatId: string } {
 		const key = `${channel}:${organizationId}:${senderId}`;
+		const chatId = `${channel}:${senderId}`;
 		this.interceptedChats.delete(key);
+
+		// Персистентное снятие блокировки в PostgreSQL
+		void ChatLockService.releaseLock({
+			organizationId,
+			chatId,
+			force: true,
+		}).catch(() => {});
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "INBOX_CHAT_RELEASED",

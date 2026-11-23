@@ -1,5 +1,5 @@
 import type { DenteTelegramBotSettings } from "@dental/shared";
-import { safeDenteTelegramPublicHttpsUrl } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { safeDenteTelegramPublicHttpsUrl } from "./telegramUrlHelpers.js";
 import type {
 	TelegramInlineKeyboardButton,
 	TelegramInlineKeyboardRow,
@@ -16,6 +16,7 @@ import {
 export function portalButton(
 	settings: DenteTelegramBotSettings,
 	section: TelegramPortalSection = "home",
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): TelegramInlineKeyboardRow {
 	const raw = settings.patientPortalBaseUrl?.trim();
 	if (!raw) return [];
@@ -28,7 +29,7 @@ export function portalButton(
 		portal.hash = "";
 		return [{ text: "Открыть DENTE", url: portal.toString() }];
 	} catch (err) {
-		console.error("[Dente] patientPortalButtons failed to construct URL:", err);
+		logger?.error({ err }, "[Dente] patientPortalButtons failed to construct URL");
 		return [];
 	}
 }
@@ -36,6 +37,7 @@ export function portalButton(
 export function safeHttpsTelegramButton(
 	raw: string | null | undefined,
 	text: string,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): TelegramInlineKeyboardRow {
 	const value = raw?.trim();
 	if (!value) return [];
@@ -43,9 +45,9 @@ export function safeHttpsTelegramButton(
 		const url = new URL(value);
 		return url.protocol === "https:" ? [{ text, url: url.toString() }] : [];
 	} catch (err) {
-		console.error(
-			"[Dente] safeHttpsTelegramButton failed to construct URL:",
-			err,
+		logger?.error(
+			{ err },
+			"[Dente] safeHttpsTelegramButton failed to construct URL",
 		);
 		return [];
 	}

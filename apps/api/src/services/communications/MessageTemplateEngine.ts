@@ -41,8 +41,11 @@ function normalizeChannel(channel: string | undefined): DbCommunicationChannel {
 }
 
 export class MessageTemplateEngine {
-	public static detectMedicalSecrecyLeaks(text: string) {
-		return detectMedicalSecrecyLeaks(text);
+	public static detectMedicalSecrecyLeaks(
+		text: string,
+		options?: Parameters<typeof detectMedicalSecrecyLeaks>[1],
+	) {
+		return detectMedicalSecrecyLeaks(text, options);
 	}
 
 	public static sanitizeMedicalSecrecy(text: string) {

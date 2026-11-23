@@ -20,6 +20,7 @@ import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	communicationOutbox,
+	communicationTasks,
 	patientCommunicationConsents,
 } from "../../../db/schema.js";
 import type {
@@ -246,6 +247,17 @@ export async function markSuppressed(
 				updatedAt: now,
 			})
 			.where(eq(communicationOutbox.id, row.id));
+
+		if (row.taskId) {
+			await tx
+				.update(communicationTasks)
+				.set({
+					status: "failed",
+					lastErrorMessage: reason,
+					lastEventAt: now,
+				})
+				.where(eq(communicationTasks.id, row.taskId));
+		}
 	};
 
 	return row.organizationId

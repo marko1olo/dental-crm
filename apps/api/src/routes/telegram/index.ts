@@ -10,6 +10,7 @@ import {
 	registerTelegramBillingRoutes,
 } from "./telegramManagementRoutes.js";
 import { registerTelegramConnectionHubRoutes } from "./telegramConnectionHub.js";
+import { registerTelegramTreatmentPlanCloserRoutes } from "../telegramTreatmentPlanCloser.js";
 
 export { registerTelegramWebhookRoutes } from "./webhookIngress.js";
 export { registerTelegramConnectionHubRoutes } from "./telegramConnectionHub.js";
@@ -46,4 +47,5 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
 	registerTelegramPreviewRoutes(app, telegramControlPlaneRouteOptions);
 	registerTelegramBillingRoutes(app, telegramControlPlaneRouteOptions);
 	registerTelegramConnectionHubRoutes(app);
+	await registerTelegramTreatmentPlanCloserRoutes(app);
 }

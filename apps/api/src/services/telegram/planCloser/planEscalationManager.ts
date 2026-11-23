@@ -5,7 +5,10 @@ import { sendTelegramTextMessage } from "../../../telegramTransport.js";
 import { DEFAULT_FOLLOW_UP_MIN_HOURS } from "./constants.js";
 import { getPendingPlanById } from "./planCallbackProcessor.js";
 import { getPlanCloserRootScreen } from "./planMessagePresenter.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import type { PendingTreatmentPlanSummary } from "./types.js";
+
+const logger = createApiLogger("telegramPlanCloserEscalation");
 
 /**
  * Находит всех кандидатов на бережный follow-up через 48 часов после сметы.
@@ -65,7 +68,7 @@ export async function findFollowUpCandidates(
 
 		return results;
 	} catch (err) {
-		console.error("[TelegramTreatmentPlanCloserService] findFollowUpCandidates error:", err);
+		logger.error({ err: safeLogError(err), organizationId }, "findFollowUpCandidates error");
 		return [];
 	}
 }

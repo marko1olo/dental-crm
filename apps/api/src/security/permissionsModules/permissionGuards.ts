@@ -5,6 +5,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db, type TenantDb } from "../../db/client.js";
 import { auditEvents } from "../../db/schema/system.js";
+import { unguardedBypassAllowed } from "../bypass.js";
 import { getRequestIdentity } from "../identity.js";
 import {
 	permissionRefusalMessage,
@@ -219,6 +220,13 @@ export function enforcePermissionWhenStaffKnown(
 	}
 
 	if (!identity.userId || !identity.role) {
+		if (
+			(permission.startsWith("patients.") || permission.startsWith("clinical.")) &&
+			(unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS") ||
+				unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_READS"))
+		) {
+			return true;
+		}
 		reply.code(401).send({
 			error: "StaffAuthRequired",
 			message:

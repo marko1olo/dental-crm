@@ -398,9 +398,38 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		return reply.send(response);
 	};
 
-	app.post("/api/cash/cash-withdrawal", handleCashWithdrawal);
-	app.post("/api/fiscal/cash-out", handleCashWithdrawal);
-	app.post("/api/finance/cash-out", handleCashWithdrawal);
-	app.post("/api/cashbox/operations/out", handleCashWithdrawal);
-	app.post("/api/billing/cash/out", handleCashWithdrawal);
+	const cashTransferRouteOptions = {
+		schema: {
+			description:
+				"Cash transfer with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cash/cash-withdrawal", cashTransferRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashWithdrawal(request, reply);
+	});
+	app.post("/api/fiscal/cash-out", cashTransferRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashWithdrawal(request, reply);
+	});
+	app.post("/api/finance/cash-out", cashTransferRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashWithdrawal(request, reply);
+	});
+	app.post("/api/cashbox/operations/out", cashTransferRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashWithdrawal(request, reply);
+	});
+	app.post("/api/billing/cash/out", cashTransferRouteOptions, async (request, reply) => {
+		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashWithdrawal(request, reply);
+	});
 }

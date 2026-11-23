@@ -11,4 +11,5 @@ export * from "./egiszGatewayClient.js";
 export * from "./receiptManager.js";
 export * from "./statusSyncer.js";
 export * from "./legacyLogsProcessor.js";
+export * from "./outboxRowSender.js";
 export * from "./outboxQueueProcessor.js";

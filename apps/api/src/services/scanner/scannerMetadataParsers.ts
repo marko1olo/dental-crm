@@ -8,6 +8,7 @@
 import path from "node:path";
 import {
 	isValidScanFdiToothNumber,
+	matrix4x4Schema,
 	type Matrix4x4,
 } from "@dental/shared";
 
@@ -91,8 +92,9 @@ export function parseMetadataContent(fileName: string, content: Buffer): Extract
 
 			// Occlusion Matrix (4x4)
 			const rawMatrix = parsed.occlusionMatrix || parsed.transformationMatrix || parsed.matrix;
-			if (Array.isArray(rawMatrix) && rawMatrix.length === 16 && rawMatrix.every((x) => typeof x === "number")) {
-				metadata.matrix = rawMatrix as unknown as Matrix4x4;
+			const matrixResult = matrix4x4Schema.safeParse(rawMatrix);
+			if (matrixResult.success) {
+				metadata.matrix = matrixResult.data;
 			}
 		} catch {
 			// Malformed JSON — ignored safely
@@ -125,8 +127,9 @@ export function parseMetadataContent(fileName: string, content: Buffer): Extract
 		const matrixMatch = text.match(/<Matrix>([^<]+)<\/Matrix>/i);
 		if (matrixMatch?.[1]) {
 			const nums = matrixMatch[1].trim().split(/[\s,]+/).map(Number);
-			if (nums.length === 16 && nums.every((n) => !Number.isNaN(n))) {
-				metadata.matrix = nums as unknown as Matrix4x4;
+			const matrixResult = matrix4x4Schema.safeParse(nums);
+			if (matrixResult.success) {
+				metadata.matrix = matrixResult.data;
 			}
 		}
 	}

@@ -104,7 +104,37 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			}
 
 			// ВЕРИФИЦИРОВАННЫЙ ДОСТУП — ПОЛНАЯ РАСШИФРОВКА СМЕТЫ
-			const rawItems = Array.isArray(budget.items) ? budget.items : [];
+			const rawItems = Array.isArray(budget.items)
+				? (budget.items as Array<Record<string, unknown>>).map((it) => {
+						const priceKopecks =
+							typeof it.priceKopecks === "number" || typeof it.priceKopecks === "bigint"
+								? Number(it.priceKopecks)
+								: Math.round((Number(it.priceRub) || 0) * 100);
+						const discountKopecks =
+							typeof it.discountKopecks === "number" || typeof it.discountKopecks === "bigint"
+								? Number(it.discountKopecks)
+								: Math.round((Number(it.discountRub) || 0) * 100);
+						return {
+							...it,
+							priceKopecks,
+							discountKopecks,
+						};
+					})
+				: [];
+
+			const totalPriceKopecks =
+				typeof budget.totalPriceKopecks === "bigint" || typeof budget.totalPriceKopecks === "number"
+					? Number(budget.totalPriceKopecks)
+					: Math.round((Number(budget.totalPriceRub) || 0) * 100);
+			const discountKopecks =
+				typeof budget.discountKopecks === "bigint" || typeof budget.discountKopecks === "number"
+					? Number(budget.discountKopecks)
+					: Math.round((Number(budget.discountRub) || 0) * 100);
+			const netTotalKopecks =
+				typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
+					? Number(budget.netTotalKopecks)
+					: Math.round((Number(budget.netTotalRub) || 0) * 100);
+
 			return reply.code(200).send({
 				token: budget.token,
 				planId: budget.planId,
@@ -119,6 +149,9 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				totalPriceRub: Number(budget.totalPriceRub) || 0,
 				discountRub: Number(budget.discountRub) || 0,
 				netTotalRub: Number(budget.netTotalRub) || 0,
+				totalPriceKopecks,
+				discountKopecks,
+				netTotalKopecks,
 				currency: budget.currency || "RUB",
 				requiresVerification: false,
 				isVerified: true,
@@ -309,6 +342,15 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			const token = request.params.token?.trim();
 			if (!token) {
 				return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
+			}
+
+			const rawIdemKey =
+				request.headers["idempotency-key"] ||
+				request.headers["x-idempotency-key"];
+			const idempotencyKey =
+				typeof rawIdemKey === "string" ? rawIdemKey.trim() : undefined;
+			if (idempotencyKey) {
+				reply.header("X-Idempotency-Key", idempotencyKey);
 			}
 
 			const parsed = signBodySchema.safeParse(request.body || {});

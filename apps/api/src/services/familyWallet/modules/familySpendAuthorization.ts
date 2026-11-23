@@ -43,7 +43,9 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	const currentBalKop = parseKopecks(family.balance);
+	const currentBalKop = (family.balanceKopecks && Number(family.balanceKopecks) > 0)
+		? Number(family.balanceKopecks)
+		: (family.balance ? parseKopecks(family.balance) : 0);
 	if (currentBalKop < debitKopecks) {
 		throw new FamilyWalletError(
 			`Недостаточно средств на семейном кошельке (доступно ${formatKopecksToRubles(currentBalKop)} ₽, требуется ${formatKopecksToRubles(debitKopecks)} ₽)`,

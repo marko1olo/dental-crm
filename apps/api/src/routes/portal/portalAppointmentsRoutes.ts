@@ -525,28 +525,193 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					};
 				}
 
-				const collisionConditions = [
-					eq(appointments.organizationId, auth.organizationId),
-					ne(appointments.id, appointmentId),
-					lt(appointments.startsAt, endDate),
-					gt(appointments.endsAt, startDate),
-					notInArray(appointments.status, ["cancelled", "no_show"]),
+				// 1. Проверка рабочего графика клиники и врача через slotAvailabilityEngine
+				if (appRow.doctorUserId) {
+					const [orgRow] = await tx
+						.select({ clinicSchedule: organizations.clinicSchedule })
+						.from(organizations)
+						.where(eq(organizations.id, auth.organizationId))
+						.limit(1);
+
+					const [doctorRow] = await tx
+						.select({ id: users.id, workingHours: users.workingHours })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, appRow.doctorUserId),
+								eq(users.organizationId, auth.organizationId),
+							),
+						)
+						.limit(1)
+						.for("update");
+
+					if (!doctorRow) {
+						reply.status(404);
+						return {
+							error: "DoctorNotFound",
+							message: "Назначенный врач не найден в этой клинике.",
+						};
+					}
+
+					const tz =
+						(orgRow?.clinicSchedule as { timezone?: string } | null)?.timezone ||
+						DEFAULT_TIMEZONE;
+					const localStart = utcToLocalWallTime(startDate, tz);
+					const localEnd = utcToLocalWallTime(endDate, tz);
+
+					const clinicDaySchedule = resolveDaySchedule(
+						orgRow?.clinicSchedule as unknown,
+						localStart.weekday,
+					);
+					if (!clinicDaySchedule.isWorking) {
+						reply.status(409);
+						return {
+							error: "ClinicClosed",
+							message: "В этот день клиника не работает. Пожалуйста, выберите другую дату.",
+						};
+					}
+
+					const doctorWindow = resolveDoctorDaySchedule(
+						doctorRow.workingHours,
+						localStart.weekday,
+						clinicDaySchedule,
+					);
+					const effectiveWindow = intersectWorkingWindows(
+						clinicDaySchedule,
+						doctorWindow,
+						1,
+					);
+					if (!effectiveWindow.isWorking) {
+						reply.status(409);
+						return {
+							error: "DoctorNotWorking",
+							message: "В этот день выбранный врач не ведёт приём. Пожалуйста, выберите другую дату.",
+						};
+					}
+
+					const startMinute = localStart.hours * 60 + localStart.minutes;
+					const endMinute = localEnd.hours * 60 + localEnd.minutes;
+					if (
+						startMinute < effectiveWindow.startMinute ||
+						endMinute > effectiveWindow.endMinute ||
+						endMinute <= startMinute
+					) {
+						reply.status(409);
+						return {
+							error: "OutsideWorkingHours",
+							message: "Выбранное время находится вне рабочих часов приёма. Пожалуйста, выберите рабочее окно врача.",
+						};
+					}
+				}
+
+				// 2. Валидация и назначение свободного кресла (chairId) с пессимистической блокировкой
+				const activeChairs = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, auth.organizationId),
+							eq(chairs.isActive, true),
+						),
+					);
+
+				let selectedChairId: string | null = null;
+				if (activeChairs.length > 0) {
+					// Сначала пробуем сохранить текущее кресло записи, если оно активно и свободно
+					const sortedChairs = [...activeChairs].sort((a, b) => {
+						if (appRow.chairId && a.id === appRow.chairId) return -1;
+						if (appRow.chairId && b.id === appRow.chairId) return 1;
+						return a.id.localeCompare(b.id);
+					});
+
+					for (const chair of sortedChairs) {
+						const [occupied] = await tx
+							.select({ id: appointments.id })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, auth.organizationId),
+									ne(appointments.id, appointmentId),
+									eq(appointments.chairId, chair.id),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, ["cancelled", "no_show"]),
+								),
+							)
+							.limit(1);
+
+						if (!occupied) {
+							selectedChairId = chair.id;
+							break;
+						}
+					}
+
+					if (!selectedChairId) {
+						reply.status(409);
+						return {
+							error: "NoAvailableChairs",
+							message: "На выбранное время нет свободных стоматологических кресел. Пожалуйста, выберите другое время.",
+						};
+					}
+
+					// Блокируем кресло FOR UPDATE в каноническом порядке
+					await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, auth.organizationId),
+								eq(chairs.id, selectedChairId),
+							),
+						)
+						.limit(1)
+						.for("update");
+				}
+
+				// 3. Блокируем строку пациента FOR UPDATE
+				await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, auth.patientId),
+							eq(patients.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				// 4. Проверка коллизий по врачу, пациенту и креслу
+				const resourceConditions = [
+					eq(appointments.patientId, auth.patientId),
 				];
 				if (appRow.doctorUserId) {
-					collisionConditions.push(eq(appointments.doctorUserId, appRow.doctorUserId));
+					resourceConditions.push(eq(appointments.doctorUserId, appRow.doctorUserId));
+				}
+				if (selectedChairId) {
+					resourceConditions.push(eq(appointments.chairId, selectedChairId));
 				}
 
 				const [collision] = await tx
 					.select({ id: appointments.id })
 					.from(appointments)
-					.where(and(...collisionConditions))
+					.where(
+						and(
+							eq(appointments.organizationId, auth.organizationId),
+							ne(appointments.id, appointmentId),
+							or(...resourceConditions),
+							lt(appointments.startsAt, endDate),
+							gt(appointments.endsAt, startDate),
+							notInArray(appointments.status, ["cancelled", "no_show"]),
+						),
+					)
 					.limit(1);
 
 				if (collision) {
 					reply.status(409);
 					return {
 						error: "SlotConflict",
-						message: "Выбранное время у врача уже занято другой записью. Пожалуйста, выберите другое время.",
+						message: "Выбранное время у врача или в кресле уже занято другой записью. Пожалуйста, выберите другое время.",
 					};
 				}
 
@@ -555,6 +720,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					.set({
 						startsAt: startDate,
 						endsAt: endDate,
+						chairId: selectedChairId,
 						comment: appRow.comment
 							? `${appRow.comment} | [Перенос: ${rescheduleReason}]`
 							: `[Перенос: ${rescheduleReason}]`,

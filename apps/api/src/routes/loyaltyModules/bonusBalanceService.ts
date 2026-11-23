@@ -376,7 +376,7 @@ export async function processExpiredBonuses(
 		return { processedPatients: 0, totalExpiredPoints: 0, expiredTransactionsCount: 0 };
 	}
 
-	let totalExpiredPoints = 0;
+	let totalExpiredPointsKop = 0;
 	let totalExpiredCount = 0;
 	let processedPatients = 0;
 
@@ -386,14 +386,14 @@ export async function processExpiredBonuses(
 		});
 		if (res.expiredPoints > 0 || res.expiredTransactionsCount > 0) {
 			processedPatients += 1;
-			totalExpiredPoints = Number((totalExpiredPoints + res.expiredPoints).toFixed(2));
+			totalExpiredPointsKop = sumKopecks([totalExpiredPointsKop, parseKopecks(res.expiredPoints)]);
 			totalExpiredCount += res.expiredTransactionsCount;
 		}
 	}
 
 	return {
 		processedPatients,
-		totalExpiredPoints,
+		totalExpiredPoints: Number(kopecksToNumericString(totalExpiredPointsKop)),
 		expiredTransactionsCount: totalExpiredCount,
 	};
 }

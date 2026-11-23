@@ -10,12 +10,15 @@ import {
 	visits,
 } from "../../../db/schema.js";
 import { evaluatePatientSomaticRisk } from "./riskEvaluationEngine.js";
+import { createApiLogger, safeLogError } from "../../../observability/index.js";
 import type {
 	AppointmentSomaticContextInput,
 	PatientSomaticProfileInput,
 	SomaticRadarAlert,
 	SomaticRadarPreShiftSummary,
 } from "./types.js";
+
+const logger = createApiLogger("somaticRadar");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATABASE INTEGRATION & PRE-SHIFT BATCH SCANNER (LAYER 3)
@@ -247,7 +250,7 @@ export async function runSomaticRadarScan(options?: {
 
 		return allAlerts;
 	} catch (error) {
-		console.error("[SomaticRadarDaemon:ERROR] Failed to run somatic radar scan:", error);
+		logger.error({ err: safeLogError(error) }, "Failed to run somatic radar scan");
 		throw error;
 	}
 }
@@ -317,7 +320,7 @@ export async function runSomaticRadarShiftSummary(options?: {
 
 		return summaries;
 	} catch (error) {
-		console.error("[SomaticRadarDaemon:ERROR] Failed to run somatic radar shift summary:", error);
+		logger.error({ err: safeLogError(error) }, "Failed to run somatic radar shift summary");
 		throw error;
 	}
 }

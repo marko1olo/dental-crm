@@ -32,6 +32,7 @@ import {
 	setupBackgroundWorkers,
 } from "./lifecycleHooks.js";
 import { registerAllRoutes } from "./routeRegistrar.js";
+import { bindServerLogger } from "../observability/index.js";
 import type { CreateDenteApiAppOptions } from "./types.js";
 
 loadAdditionalServerEnv();
@@ -54,6 +55,11 @@ export async function createDenteApiApp(
 		trustProxy: process.env.TRUST_PROXY === "1",
 		// Ограничение размера тела запроса: безопасный стриминг КТ и снимков до 1-2 ГБ
 		bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES ?? 1024 * 1024 * 1024),
+	});
+
+	bindServerLogger(app.log);
+	app.addHook("onClose", async () => {
+		bindServerLogger(null);
 	});
 
 	await registerCorsAndSecurity(app);

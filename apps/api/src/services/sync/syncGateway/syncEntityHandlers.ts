@@ -23,6 +23,14 @@ export class SyncEntityHandlers {
 		return SyncAdministrativeHandlers.handlePaymentMutation(tx, organizationId, mutation);
 	}
 
+	public static handleInvoiceMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+	): Promise<{ status: SyncMutationStatus; entity: Record<string, unknown> }> {
+		return SyncAdministrativeHandlers.handleInvoiceMutation(tx, organizationId, mutation);
+	}
+
 	public static handlePatientMutation(
 		tx: TenantDb,
 		organizationId: string,

@@ -65,6 +65,9 @@ export const patientInvoices = pgTable(
 		})
 			.notNull()
 			.default(0),
+		totalPriceKopecks: bigint("total_price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(0n),
 		status: text("status").notNull().default("draft"),
 		issuedAt: timestamp("issued_at", { withTimezone: true }),
 		paidAt: timestamp("paid_at", { withTimezone: true }),

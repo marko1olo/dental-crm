@@ -287,6 +287,10 @@ export async function upsertDenteTelegramChatLink(
 			})
 			.returning();
 
+		if (!saved) {
+			throw new Error("Не удалось сохранить привязку Telegram-чата.");
+		}
+
 		// Один субъект — один активный чат. Прежний чат того же пациента снимается
 		// ПОСЛЕ вставки: иначе только что записанная строка снялась бы сама.
 		await tx
@@ -303,12 +307,11 @@ export async function upsertDenteTelegramChatLink(
 					eq(denteTelegramChatLinks.subjectType, input.subjectType),
 					eq(denteTelegramChatLinks.subjectId, input.subjectId),
 					eq(denteTelegramChatLinks.status, "active"),
-					sql`${denteTelegramChatLinks.id} <> ${saved?.id}`,
+					sql`${denteTelegramChatLinks.id} <> ${saved.id}`,
 				),
 			);
 
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		return toDenteTelegramChatLink(saved!);
+		return toDenteTelegramChatLink(saved);
 	});
 }
 

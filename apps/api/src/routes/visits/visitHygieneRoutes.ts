@@ -6,7 +6,7 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { db as database } from "../../db/client.js";
-import { visits } from "../../db/schema.js";
+import { visitDiaries, visits } from "../../db/schema.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -76,31 +76,74 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 			reply.code(400);
 			return { error: "ValidationError", issues: parsed.error.issues };
 		}
-		const [updated] = await database
-			.update(visits)
-			.set({
-				hygieneIndices: parsed.data,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(visits.id, visitId),
-					eq(visits.organizationId, context.organizationId),
-				),
-			)
-			.returning({ id: visits.id, hygieneIndices: visits.hygieneIndices });
+		return await database.transaction(async (tx) => {
+			const [visit] = await tx
+				.select({
+					id: visits.id,
+					status: visits.status,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.for("update")
+				.limit(1);
 
-		if (!updated) {
-			return reply.code(404).send({
-				error: "VisitNotFound",
-				message: "Приём не найден",
-			});
-		}
+			if (!visit) {
+				return reply.code(404).send({
+					error: "VisitNotFound",
+					message: "Приём не найден",
+				});
+			}
 
-		return {
-			ok: true,
-			visitId,
-			hygieneIndices: updated.hygieneIndices,
-		};
+			if (visit.status === "signed") {
+				return reply.code(422).send({
+					error: "VISIT_PROTOCOL_LOCKED",
+					message: "Протокол приёма подписан и защищён от изменений.",
+				});
+			}
+
+			const [lockedDiary] = await tx
+				.select({ id: visitDiaries.id })
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, visitId),
+						eq(visitDiaries.organizationId, context.organizationId),
+						eq(visitDiaries.isLocked, true),
+					),
+				)
+				.limit(1);
+
+			if (lockedDiary) {
+				return reply.code(422).send({
+					error: "VISIT_PROTOCOL_LOCKED",
+					message: "Протокол приёма подписан и защищён от изменений.",
+				});
+			}
+
+			const [updated] = await tx
+				.update(visits)
+				.set({
+					hygieneIndices: parsed.data,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.returning({ id: visits.id, hygieneIndices: visits.hygieneIndices });
+
+			return {
+				ok: true,
+				visitId,
+				hygieneIndices: updated?.hygieneIndices ?? parsed.data,
+			};
+		});
 	});
 }

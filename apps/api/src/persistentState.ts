@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { createApiLogger, safeLogError } from "./observability/logger.js";
+
+const logger = createApiLogger("persistentState");
 import type {
 	AiRecognitionJob,
 	Appointment,
@@ -268,14 +271,15 @@ function readPersistedState(): PersistedDentalState | null {
 				state: parsed.state as DentalMutableState,
 			});
 			if (parsed.checksum !== expectedChecksum) {
-				console.warn("Dental state file ignored: checksum mismatch");
+				logger.warn("Dental state file ignored: checksum mismatch");
 				return null;
 			}
 		}
 		return parsed as PersistedDentalState;
 	} catch (error) {
-		console.warn(
-			`Dental state file ignored: ${error instanceof Error ? error.message : "unknown parse error"}`,
+		logger.warn(
+			{ err: safeLogError(error) },
+			"Dental state file ignored: parse error",
 		);
 		return null;
 	}
@@ -306,8 +310,9 @@ export function savePersistentState(state: DentalMutableState): void {
 		fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf8");
 		fs.renameSync(tempPath, stateFilePath);
 	} catch (error) {
-		console.warn(
-			`Dental state file save failed: ${error instanceof Error ? error.message : "unknown save error"}`,
+		logger.warn(
+			{ err: safeLogError(error) },
+			"Dental state file save failed",
 		);
 	}
 }

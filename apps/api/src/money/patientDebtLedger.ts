@@ -80,10 +80,21 @@ export function buildPatientLedgers(
 	const paymentLines = new Map<string, Kopecks[]>();
 	for (const row of payments) {
 		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
-		if (row.status !== PAID_PAYMENT_STATUS) continue;
-		const lines = paymentLines.get(row.patientId) ?? [];
-		lines.push(validateSplitPaymentRow(row));
-		paymentLines.set(row.patientId, lines);
+		if (row.status === PAID_PAYMENT_STATUS) {
+			const lines = paymentLines.get(row.patientId) ?? [];
+			lines.push(validateSplitPaymentRow(row));
+			paymentLines.set(row.patientId, lines);
+			continue;
+		}
+		// Include only negative counter-entry refund rows; legacy positive "refunded" rows stay excluded.
+		if (row.status === "refunded") {
+			const kop = validateSplitPaymentRow(row);
+			if (kop < 0) {
+				const lines = paymentLines.get(row.patientId) ?? [];
+				lines.push(kop);
+				paymentLines.set(row.patientId, lines);
+			}
+		}
 	}
 
 	const ledgers = new Map<string, PatientLedger>();
@@ -346,8 +357,17 @@ export function buildVisitLedger(
 		if (row.visitId !== visitId) continue;
 		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		paymentRowCount += 1;
-		if (row.status !== PAID_PAYMENT_STATUS) continue;
-		paymentLines.push(validateSplitPaymentRow(row));
+		if (row.status === PAID_PAYMENT_STATUS) {
+			paymentLines.push(validateSplitPaymentRow(row));
+			continue;
+		}
+		// Include only negative counter-entry refund rows; legacy positive "refunded" rows stay excluded.
+		if (row.status === "refunded") {
+			const kop = validateSplitPaymentRow(row);
+			if (kop < 0) {
+				paymentLines.push(kop);
+			}
+		}
 	}
 
 	const chargedKopecks = sumKopecks(chargeLines);

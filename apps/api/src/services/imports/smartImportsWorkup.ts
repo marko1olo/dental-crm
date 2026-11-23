@@ -16,7 +16,10 @@ import type {
   MigrationProbeArtifactKind
 } from "@dental/shared";
 import { uniqueStrings } from "./smartImportsUtils.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { detectLegacySourceKind, legacySourcePlaybook } from "./smartImportsLegacyPlans.js";
+
+const logger = createApiLogger("smartImportsWorkup");
 import { migrationLocalSourceWorkupResponseSchema } from "@dental/shared";
 import {
   resolveMigrationSourceRoute,
@@ -595,7 +598,7 @@ export function buildMigrationLocalSourceWorkup(
 			sourceIsDirectory = stat.isDirectory();
 			if (sourceIsDirectory) fileExtension = null;
 		} catch (err) {
-			console.error("[Dente] context:", err);
+			logger.warn({ err: safeLogError(err), sourceRef: normalizedSourceRef }, "Failed to stat normalized migration source");
 			sourceExists = false;
 			warnings.push(
 				"Источник недоступен с этого компьютера сейчас; план построен по названию/расширению.",

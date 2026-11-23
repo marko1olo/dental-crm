@@ -50,7 +50,14 @@ export interface ComputedPeriodontogramIndices {
 	psr: number;
 	total_teeth_examined: number;
 	total_sites_probed: number;
+	psrData?: Record<string, unknown> | undefined;
+	[key: string]: unknown;
 }
+
+export type PeriodontogramSnapshotIndices = Partial<ComputedPeriodontogramIndices> & {
+	psrData?: Record<string, unknown> | undefined;
+	[key: string]: unknown;
+};
 
 export const GREEN_VERMILLION_INDEX_TEETH = [16, 11, 26, 36, 31, 46] as const;
 

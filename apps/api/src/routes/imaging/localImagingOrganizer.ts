@@ -276,7 +276,12 @@ export async function organizeLocalImagingSources(
 				);
 			}
 
-			if (result.isModelFileOrArchive) {
+			if (
+				result.isModelFileOrArchive &&
+				result.format !== undefined &&
+				result.role !== undefined &&
+				result.confidence !== undefined
+			) {
 				if (!result.stats) {
 					folderWarnings.add(
 						"Не удалось прочитать сведения об одном файле модели; он мог измениться во время сканирования.",
@@ -286,13 +291,10 @@ export async function organizeLocalImagingSources(
 				modelCandidates.push({
 					filePath: result.fullPath,
 					fileName: result.entryName,
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					format: result.format!,
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					role: result.role!,
+					format: result.format,
+					role: result.role,
 					sizeBytes,
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					confidence: result.confidence!,
+					confidence: result.confidence,
 					warnings:
 						sizeBytes > 250 * 1024 * 1024
 							? [

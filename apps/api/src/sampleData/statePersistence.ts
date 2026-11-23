@@ -32,10 +32,10 @@ import {
 	denteTelegramOutboxDeliveryReceipts,
 	denteTelegramWebhookEvents,
 	normalizeDenteTelegramBotScopedLedgers,
-	normalizeExistingDenteTelegramVisualCardUrls,
 	normalizeReviewRequestDelayHours,
 	syncDenteTelegramOutboxDeliveryReceiptsMap,
-} from "../services/telegram/telegramLegacyMemoryStore.js";
+} from "../routes/telegram/telegramCanonicalStore.js";
+import { normalizeExistingDenteTelegramVisualCardUrls } from "../routes/telegram/telegramUrlHelpers.js";
 
 import { chairs, clinicProfile, defaultClinicScheduleDefaults, normalizeClinicScheduleDefaults } from "./organizations.js";
 import { normalizeStaffWorkingHours } from "./staff.js";

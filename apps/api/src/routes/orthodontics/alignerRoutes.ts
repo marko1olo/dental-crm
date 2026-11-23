@@ -57,8 +57,24 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				});
 			}
 
-			const { patientId } = patientParamsSchema.parse(request.params);
-			const body = issueAlignerSetSchema.parse(request.body);
+			const parsedParams = patientParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+			const { patientId } = parsedParams.data;
+
+			const parsedBody = issueAlignerSetSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры выдачи сета элайнеров: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+					issues: parsedBody.error.issues,
+				});
+			}
+			const body = parsedBody.data;
 
 			const patient = await getPatientByIdFromDb(orgId, patientId);
 			if (!patient) {

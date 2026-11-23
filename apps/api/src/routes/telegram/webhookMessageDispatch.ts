@@ -17,8 +17,8 @@ import {
 	type DomainState,
 	extractDenteTelegramLinkCode,
 	consumeDenteTelegramLinkCode,
-	updateTelegramDialogSession,
-} from "../../services/telegram/telegramLegacyMemoryStore.js";
+} from "./telegramCanonicalStore.js";
+import { updateTelegramDialogSession } from "../../services/telegram/dialogSessions.js";
 import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramWebhookEventsService.js";
 import { answerTelegramCallbackQuery } from "../../telegramTransport.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";

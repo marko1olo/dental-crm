@@ -534,23 +534,29 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			const certs = await listInstalledCertificates();
 			const cert = certs.find((c) => c.thumbprint.replace(/[\s:-]/g, "").toUpperCase() === cleanThumbprint);
 
-			if (cert) {
-				const tenantContext = await getTenantCryptoContext(request);
-				if (!isCertificateAllowedForTenant(cert, tenantContext)) {
-					return reply.status(403).send({
-						success: false,
-						code: "CERTIFICATE_ACCESS_DENIED",
-						message: "Сертификат с данным отпечатком принадлежит другой организации или другому врачу (доступ запрещен)",
-					});
-				}
+			if (!cert) {
+				return reply.status(404).send({
+					success: false,
+					code: "CERTIFICATE_NOT_FOUND",
+					message: "Сертификат с данным отпечатком не найден в хранилище",
+				});
+			}
 
-				if (!cert.hasPrivateKey) {
-					return reply.status(400).send({
-						success: false,
-						code: "CERTIFICATE_PRIVATE_KEY_MISSING",
-						message: "У данного сертификата отсутствует закрытый ключ (подписание невозможно)",
-					});
-				}
+			const tenantContext = await getTenantCryptoContext(request);
+			if (!isCertificateAllowedForTenant(cert, tenantContext)) {
+				return reply.status(403).send({
+					success: false,
+					code: "CERTIFICATE_ACCESS_DENIED",
+					message: "Сертификат с данным отпечатком принадлежит другой организации или другому врачу (доступ запрещен)",
+				});
+			}
+
+			if (!cert.hasPrivateKey) {
+				return reply.status(400).send({
+					success: false,
+					code: "CERTIFICATE_PRIVATE_KEY_MISSING",
+					message: "У данного сертификата отсутствует закрытый ключ (подписание невозможно)",
+				});
 			}
 
 			const signatureBuffer = await signDetachedGost(dataBuffer, cleanThumbprint, { requestId, pin });
@@ -583,14 +589,51 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или формы 043/у.
 	 * Требует Idempotency-Key и tenant organizationId изоляцию (Мандат 8bo / RFC 9562).
 	 */
-	// door-validation: none — Валидация криптографического пейлоада и сертификата внутри handleSign
-	app.post("/api/crypto/sign", async (request, reply) => {
-		// requireClinicalMutationContext / organizationId / Idempotency-Key
-		return handleSign(request, reply);
-	});
-	// door-validation: none — Валидация криптографического пейлоада и сертификата внутри handleSign
-	app.post("/api/cryptopro/native/sign", async (request, reply) => {
-		// requireClinicalMutationContext / organizationId / Idempotency-Key
-		return handleSign(request, reply);
-	});
+	app.post(
+		"/api/crypto/sign",
+		{
+			schema: {
+				body: {
+					type: "object",
+					required: ["data", "thumbprint"],
+					properties: {
+						data: { type: "string", minLength: 1 },
+						dataEncoding: { type: "string", enum: ["utf8", "base64", "hex"] },
+						thumbprint: { type: "string", minLength: 1 },
+						pin: { type: "string" },
+						requestId: { type: "string" },
+						documentId: { type: "string" },
+						documentKind: { type: "string" },
+					},
+				},
+			},
+		},
+		async (request, reply) => {
+			return handleSign(request, reply);
+		},
+	);
+
+	app.post(
+		"/api/cryptopro/native/sign",
+		{
+			schema: {
+				body: {
+					type: "object",
+					required: ["data", "thumbprint"],
+					properties: {
+						data: { type: "string", minLength: 1 },
+						dataEncoding: { type: "string", enum: ["utf8", "base64", "hex"] },
+						thumbprint: { type: "string", minLength: 1 },
+						pin: { type: "string" },
+						requestId: { type: "string" },
+						documentId: { type: "string" },
+						documentKind: { type: "string" },
+					},
+				},
+			},
+		},
+		async (request, reply) => {
+			return handleSign(request, reply);
+		},
+	);
 }

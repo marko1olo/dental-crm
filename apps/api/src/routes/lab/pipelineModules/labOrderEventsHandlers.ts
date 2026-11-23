@@ -1,8 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labOrderEvents } from "../../../db/schema.js";
+import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { createLabOrderEventSchema } from "../types.js";
@@ -42,8 +43,12 @@ export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: 
 }
 
 export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-	const orgId = await requireResolvedOrganizationId(request, reply);
-	if (!orgId) return;
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"lab order event create",
+	);
+	if (reply.sent || !orgId) return;
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
@@ -57,6 +62,24 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 		});
 	}
 
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.headers?.["Idempotency-Key"] as string | undefined);
+
+	let idempotencyKey = rawIdempotencyKey?.trim();
+	if (!idempotencyKey) {
+		idempotencyKey = generateUuidV7();
+	} else if (!isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
+	if (typeof reply.header === "function") {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const labOrderId = request.params.id;
 	const parsed = createLabOrderEventSchema.safeParse(request.body);
 	if (!parsed.success) {
@@ -68,7 +91,22 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 	}
 	const body = parsed.data;
 
-	const createdEvent = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantCtx(orgId, async (tx) => {
+		const [order] = await tx
+			.select({ id: labOrders.id })
+			.from(labOrders)
+			.where(
+				and(
+					eq(labOrders.id, labOrderId),
+					eq(labOrders.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!order) {
+			return { kind: "not_found" as const };
+		}
+
 		const [ev] = await tx
 			.insert(labOrderEvents)
 			.values({
@@ -84,8 +122,29 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 				cadPreviewGlbUrl: body.cadPreviewGlbUrl ?? null,
 			})
 			.returning();
-		return ev;
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseCode: 201,
+					responseBody: { success: true, event: ev as Record<string, unknown> },
+				})
+				.onConflictDoNothing();
+		}
+
+		return { kind: "ok" as const, event: ev };
 	});
 
-	return reply.status(201).send({ success: true, event: createdEvent });
+	if (result.kind === "not_found") {
+		return reply.code(404).send({
+			error: "LabOrderNotFound",
+			message: "Заказ-наряд ЗТЛ не найден в вашей клинике.",
+		});
+	}
+
+	return reply.status(201).send({ success: true, event: result.event });
 }

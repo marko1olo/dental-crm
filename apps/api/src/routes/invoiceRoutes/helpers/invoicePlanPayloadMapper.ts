@@ -80,5 +80,6 @@ export function buildValidatePlanPayload(
 		adminOverrideAuthorized: parsedData.adminOverrideAuthorized,
 		adminOverrideStaffName: parsedData.adminOverrideStaffName,
 		adminOverrideReason: parsedData.adminOverrideReason,
+		isDoctorAutonomy: parsedData.isDoctorAutonomy ?? true,
 	};
 }

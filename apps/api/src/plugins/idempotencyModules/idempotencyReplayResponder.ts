@@ -78,12 +78,13 @@ export function sendReplay(
 
 export interface GenericIdempotencyRecord {
 	payloadHash: string | null;
-	status?: string;
-	action?: string;
-	responseCode?: number;
-	responseStatus?: number;
+	status?: string | undefined;
+	action?: string | undefined;
+	responseCode?: number | undefined;
+	responseStatus?: number | undefined;
 	responseBody?: unknown;
 	responseJson?: unknown;
+	lockedAt?: Date | string | null | undefined;
 }
 
 /**

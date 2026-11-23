@@ -12,6 +12,7 @@ import { RU_MONTHS } from "./types.js";
 export interface CohortLtvItem {
 	cohort: string;
 	"Month 12": number;
+	[key: string]: string | number | undefined;
 }
 
 export interface CohortCalculationResult {
@@ -31,23 +32,29 @@ export async function calculateCohortLtv(
 
 	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
 
+	// [SEV-1.3] leftJoin по всем пациентам: знаменатель когорты = общее число созданных карт пациентов за месяц
 	const cohortRaw = await db
 		.select({
 			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
-			patientId: payments.patientId,
-			totalKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -(${paymentKopecks}) else 0 end), 0)::bigint`,
+			patientId: patients.id,
+			totalKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
 		})
-		.from(payments)
-		.innerJoin(patients, eq(payments.patientId, patients.id))
-		.where(
+		.from(patients)
+		.leftJoin(
+			payments,
 			and(
-				eq(patients.organizationId, orgId),
+				eq(payments.patientId, patients.id),
 				eq(payments.organizationId, orgId),
-				gte(patients.createdAt, ltvStartDate),
 				inArray(payments.status, ["paid", "refunded"]),
 			),
 		)
-		.groupBy(cohortMonthBucket, payments.patientId)
+		.where(
+			and(
+				eq(patients.organizationId, orgId),
+				gte(patients.createdAt, ltvStartDate),
+			),
+		)
+		.groupBy(cohortMonthBucket, patients.id)
 		.orderBy(cohortMonthBucket);
 
 	const cohortMap = new Map<string, number[]>();
@@ -66,14 +73,22 @@ export async function calculateCohortLtv(
 	const cohortLtvJson: CohortLtvItem[] = Array.from(cohortMap.entries())
 		.slice(-6)
 		.map(([key, kopecksList]) => {
-			const [, monthStr] = key.split("-");
+			const [yearStr, monthStr] = key.split("-");
+			const yearNum = yearStr ? parseInt(yearStr, 10) : now.getFullYear();
 			const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 			const label = (RU_MONTHS as readonly string[])[monthIdx] ?? key;
 			const totalKopecks = sumKopecks(kopecksList);
 			const avgKopecks = kopecksList.length > 0 ? Math.round(totalKopecks / kopecksList.length) : 0;
+			const ltvRub = Math.round(kopecksToRubles(avgKopecks));
+
+			// [SEV-1.3] Реальный возраст когорты в месяцах: Month 1, Month 3, Month 6 и т.д.
+			const cohortAgeMonths = Math.max(1, (now.getFullYear() - yearNum) * 12 + (now.getMonth() - monthIdx) + 1);
+			const cohortAgeKey = `Month ${cohortAgeMonths}`;
+
 			return {
 				cohort: label,
-				"Month 12": Math.round(kopecksToRubles(avgKopecks)),
+				[cohortAgeKey]: ltvRub,
+				"Month 12": ltvRub,
 			};
 		});
 

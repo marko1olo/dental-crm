@@ -5,6 +5,9 @@
  */
 
 import type { DoctorScreenContext } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("aiContextExtractor");
 
 export { type DoctorScreenContext } from "@dental/shared";
 
@@ -37,10 +40,9 @@ function parseClinicalEmrContext(raw: string): ClinicalEmrRecord | null {
 					: undefined,
 		};
 	} catch (err) {
-		console.warn(
-			"[Copilot extractDoctorScreenContext] Failed to parse clinicalEmrContext JSON:",
-			raw,
-			err,
+		logger.warn(
+			{ err: safeLogError(err), raw },
+			"Failed to parse clinicalEmrContext JSON",
 		);
 		return null;
 	}
@@ -112,7 +114,7 @@ export function extractDoctorScreenContext(
 				);
 			}
 		} catch (err) {
-			console.warn("[Copilot extractDoctorScreenContext] Failed to parse toothFormula JSON:", raw, err);
+			logger.warn({ err: safeLogError(err), raw }, "Failed to parse toothFormula JSON");
 		}
 	}
 
@@ -130,7 +132,7 @@ export function extractDoctorScreenContext(
 				);
 			}
 		} catch (err) {
-			console.warn("[Copilot extractDoctorScreenContext] Failed to parse diagnosesByTooth JSON:", raw, err);
+			logger.warn({ err: safeLogError(err), raw }, "Failed to parse diagnosesByTooth JSON");
 		}
 	}
 
@@ -149,7 +151,7 @@ export function extractDoctorScreenContext(
 				allergies = parsed.map(String);
 			}
 		} catch (err) {
-			console.warn("[Copilot extractDoctorScreenContext] Failed to parse allergies JSON:", raw, err);
+			logger.warn({ err: safeLogError(err), raw }, "Failed to parse allergies JSON");
 			// Resilient fallback: parse comma-separated or bracketed tokens so critical life-saving allergies are not lost
 			const salvaged = raw
 				.replace(/^[\["']+|[\]"']+$/g, "")

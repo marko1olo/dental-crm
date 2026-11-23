@@ -3,13 +3,14 @@ import {
 	renderMessageTemplateInputSchema,
 	updateMessageTemplateSchema,
 } from "@dental/shared";
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
-	requireClinicalMutationAccess,
+	requireClinicalMutationContext,
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import {
 	createMessageTemplate,
 	deleteMessageTemplate,
@@ -102,20 +103,31 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * POST /api/v1/message-templates
+	 * POST /api/v1/message-templates & /api/settings/message-templates
 	 * Creates a new message template with dynamic tags.
 	 */
-	app.post("/api/v1/message-templates", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"create message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+	const handleCreateTemplate = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"create message template",
+		);
+		if (!context) return;
+		const { organizationId } = context;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const parsedInput = createMessageTemplateSchema.safeParse(request.body);
 		if (!parsedInput.success) {
@@ -126,52 +138,42 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const template = await createMessageTemplate(orgId, parsedInput.data);
-		return reply.code(201).send({ success: true, data: template });
-	});
-
-	/**
-	 * Backward compatibility POST /api/settings/message-templates
-	 */
-	app.post("/api/settings/message-templates", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"create message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const parsedInput = createMessageTemplateSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				details: parsedInput.error.errors,
-			});
+		const template = await createMessageTemplate(organizationId, parsedInput.data);
+		if (request.url.startsWith("/api/settings/")) {
+			return reply.code(201).send(template);
 		}
+		return reply.code(201).send({ success: true, data: template });
+	};
 
-		const template = await createMessageTemplate(orgId, parsedInput.data);
-		return reply.send(template);
-	});
+	app.post("/api/v1/message-templates", handleCreateTemplate);
+	app.post("/api/settings/message-templates", handleCreateTemplate);
 
 	/**
-	 * PUT /api/v1/message-templates/:id
+	 * PUT /api/v1/message-templates/:id & /api/settings/message-templates/:id
 	 * Updates an existing template.
 	 */
-	app.put("/api/v1/message-templates/:id", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"update message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+	const handleUpdateTemplate = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"update message template",
+		);
+		if (!context) return;
+		const { organizationId } = context;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const { id } = request.params as { id: string };
 		const parsedInput = updateMessageTemplateSchema.safeParse(request.body);
@@ -185,10 +187,13 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 
 		try {
 			const template = await updateMessageTemplate(
-				orgId,
+				organizationId,
 				id,
 				parsedInput.data,
 			);
+			if (request.url.startsWith("/api/settings/")) {
+				return reply.send(template);
+			}
 			return reply.send({ success: true, data: template });
 		} catch (error) {
 			return reply.code(404).send({
@@ -199,63 +204,41 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 						: "Шаблон сообщения не найден",
 			});
 		}
-	});
+	};
+
+	app.put("/api/v1/message-templates/:id", handleUpdateTemplate);
+	app.put("/api/settings/message-templates/:id", handleUpdateTemplate);
 
 	/**
-	 * Backward compatibility PUT /api/settings/message-templates/:id
-	 */
-	app.put("/api/settings/message-templates/:id", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"update message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const { id } = request.params as { id: string };
-		const parsedInput = updateMessageTemplateSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				details: parsedInput.error.errors,
-			});
-		}
-
-		try {
-			const template = await updateMessageTemplate(
-				orgId,
-				id,
-				parsedInput.data,
-			);
-			return reply.send(template);
-		} catch (_error) {
-			return reply.code(404).send({ error: "NotFound" });
-		}
-	});
-
-	/**
-	 * DELETE /api/v1/message-templates/:id
+	 * DELETE /api/v1/message-templates/:id & /api/settings/message-templates/:id
 	 * Deletes a message template.
 	 */
-	app.delete("/api/v1/message-templates/:id", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"delete message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+	const handleDeleteTemplate = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"delete message template",
+		);
+		if (!context) return;
+		const { organizationId } = context;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const { id } = request.params as { id: string };
 		try {
-			await deleteMessageTemplate(orgId, id);
+			await deleteMessageTemplate(organizationId, id);
 			return reply.send({ success: true });
 		} catch (error) {
 			return reply.code(404).send({
@@ -266,31 +249,10 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 						: "Шаблон сообщения не найден",
 			});
 		}
-	});
+	};
 
-	/**
-	 * Backward compatibility DELETE /api/settings/message-templates/:id
-	 */
-	app.delete("/api/settings/message-templates/:id", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"delete message template",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const { id } = request.params as { id: string };
-		try {
-			await deleteMessageTemplate(orgId, id);
-			return reply.send({ success: true });
-		} catch (_error) {
-			return reply.code(404).send({ error: "NotFound" });
-		}
-	});
+	app.delete("/api/v1/message-templates/:id", handleDeleteTemplate);
+	app.delete("/api/settings/message-templates/:id", handleDeleteTemplate);
 
 	/**
 	 * POST /api/v1/message-templates/render

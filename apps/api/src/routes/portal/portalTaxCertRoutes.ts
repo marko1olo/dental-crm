@@ -284,10 +284,12 @@ async function buildTaxCertificatePayload(
 
 		const amtKop = isRefundRecord ? -Math.abs(parsedKop) : Math.abs(parsedKop);
 
+		const rawNote = p.note?.trim() || undefined;
+		const code804nCandidate = rawNote && /^[A-B]\d{2}\.\d{2}\.\d{3}/i.test(rawNote) ? rawNote : undefined;
 		const isExpensive = Boolean(
 			p.taxDeductionCode === "2" ||
-			classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
-			classifyNdflServiceCode(p.note ?? undefined, p.note ?? undefined) === "2",
+			classifyTaxDeduction804n(code804nCandidate, rawNote).categoryCode === "2" ||
+			classifyNdflServiceCode(rawNote, code804nCandidate) === "2",
 		);
 
 		const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();

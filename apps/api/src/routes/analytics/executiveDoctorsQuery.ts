@@ -225,13 +225,14 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		);
 
 	// 3. Топ врачей по выручке, часам в кресле и явке пациентов (100% честный запрос к БД)
-	// Устранение декартова произведения при сплит-чеках: агрегация оплат по визиту в подзапросе
-	// [ANL-03] Фильтрация оплат строго по дате периода для исключения приписок оплат всех времен
+	// [SEV-1.2] Устранение «черной дыры» оплат между периодами:
+	// Платежи врача группируются строго по времени проведения платежа coalesce(payments.paidAt, payments.createdAt),
+	// а не отсекаются по дате appointments.startsAt.
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const visitPaymentsSubquery = db
+	const doctorRevenueSubquery = db
 		.select({
-			visitId: sql<string>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`.as("visit_id"),
-			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) when ${payments.status} = 'refunded' then -coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) else 0 end), 0)::bigint`.as("revenue_kopecks"),
+			doctorUserId: appointments.doctorUserId,
+			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) when ${payments.status} = 'refunded' then -abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)) else 0 end), 0)::bigint`.as("revenue_kopecks"),
 		})
 		.from(payments)
 		.leftJoin(
@@ -241,32 +242,28 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				sql`${payments.visitId} is null`,
 			),
 		)
+		.leftJoin(visits, eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id))
+		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
 				inArray(payments.status, ["paid", "refunded"]),
 				gte(paymentTimestamp, startDate),
 				lte(paymentTimestamp, effectiveEndDate),
+				sql`${appointments.doctorUserId} is not null`,
 			),
 		)
-		.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
-		.as("vp");
+		.groupBy(appointments.doctorUserId)
+		.as("dr");
 
-	const doctorRevenueExpr = sql<number>`coalesce(sum(${visitPaymentsSubquery.revenueKopecks}), 0)::bigint`;
-	const doctorStats = await db
+	const doctorAppointmentsSubquery = db
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			fullName: users.fullName,
-			role: users.role,
-			revenueKopecks: doctorRevenueExpr,
-			appointmentsCount: sql<number>`count(distinct ${appointments.id})::int`,
-			completedCount: sql<number>`coalesce(sum(case when ${appointments.status} in ('completed', 'arrived', 'in_treatment') then 1 else 0 end), 0)::int`,
-			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
+			appointmentsCount: sql<number>`count(distinct ${appointments.id})::int`.as("appointments_count"),
+			completedCount: sql<number>`coalesce(sum(case when ${appointments.status} in ('completed', 'arrived', 'in_treatment') then 1 else 0 end), 0)::int`.as("completed_count"),
+			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`.as("occupied_minutes"),
 		})
 		.from(appointments)
-		.leftJoin(users, eq(appointments.doctorUserId, users.id))
-		.leftJoin(visits, eq(visits.appointmentId, appointments.id))
-		.leftJoin(visitPaymentsSubquery, eq(visits.id, visitPaymentsSubquery.visitId))
 		.where(
 			and(
 				eq(appointments.organizationId, orgId),
@@ -274,7 +271,32 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				lte(appointments.startsAt, effectiveEndDate),
 			),
 		)
-		.groupBy(appointments.doctorUserId, users.fullName, users.role)
+		.groupBy(appointments.doctorUserId)
+		.as("da");
+
+	const doctorRevenueExpr = sql<number>`coalesce(${doctorRevenueSubquery.revenueKopecks}, 0)::bigint`;
+	const doctorStats = await db
+		.select({
+			doctorUserId: users.id,
+			fullName: users.fullName,
+			role: users.role,
+			revenueKopecks: doctorRevenueExpr,
+			appointmentsCount: sql<number>`coalesce(${doctorAppointmentsSubquery.appointmentsCount}, 0)::int`,
+			completedCount: sql<number>`coalesce(${doctorAppointmentsSubquery.completedCount}, 0)::int`,
+			occupiedMinutes: sql<number>`coalesce(${doctorAppointmentsSubquery.occupiedMinutes}, 0)::int`,
+		})
+		.from(users)
+		.leftJoin(doctorRevenueSubquery, eq(users.id, doctorRevenueSubquery.doctorUserId))
+		.leftJoin(doctorAppointmentsSubquery, eq(users.id, doctorAppointmentsSubquery.doctorUserId))
+		.where(
+			and(
+				eq(users.organizationId, orgId),
+				or(
+					sql`${doctorRevenueSubquery.doctorUserId} is not null`,
+					sql`${doctorAppointmentsSubquery.doctorUserId} is not null`,
+				),
+			),
+		)
 		.orderBy(desc(doctorRevenueExpr))
 		.limit(5);
 

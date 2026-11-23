@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId as requireOrganizationContext,
@@ -8,14 +8,18 @@ import {
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	fiscalReceiptQueue,
 	generatedDocuments,
+	patientInvoices,
 	patients,
 	payments,
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
 import { requirePermission } from "../../security/permissions.js";
+import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
 import { SberbankClient } from "../../services/sberbankClient.js";
+import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import {
 	sberbankCancelReconcileBodySchema,
 	sberbankCancelReconcileFastifySchema,
@@ -190,7 +194,10 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						.where(
 							and(
 								eq(payments.organizationId, orgId),
-								eq(payments.clientMutationId, `sberbank:${orderId}`),
+								or(
+									eq(payments.clientMutationId, `sberbank:${orderId}`),
+									eq(payments.clientMutationId, `sberpos:${orderId}`),
+								),
 							),
 						)
 						.for("update")
@@ -214,7 +221,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							!lockedPayment
 						) {
 							const amountRub = kopecksToRubles(lockedTx.amountKopecks);
-							await tx
+							const [insertedPayment] = await tx
 								.insert(payments)
 								.values({
 									organizationId: orgId,
@@ -224,13 +231,15 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									method: "card",
 									status: "paid",
 									amountRub,
+									amountKopecks: lockedTx.amountKopecks,
 									paidAt: new Date(),
 									clientMutationId: `sberbank:${orderId}`,
 									note: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
 								})
 								.onConflictDoNothing({
 									target: [payments.organizationId, payments.clientMutationId],
-								});
+								})
+								.returning();
 
 							if (lockedTx.documentId) {
 								await tx
@@ -255,6 +264,62 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 											eq(visits.organizationId, orgId),
 										),
 									);
+							}
+
+							if (lockedTx.invoiceId) {
+								await reconcileInvoiceBalanceInDb(
+									tx,
+									orgId,
+									lockedTx.invoiceId,
+								);
+							}
+
+							// 54-FZ compliance: Enqueue statutory fiscal receipt
+							try {
+								const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+									organizationId: orgId,
+									patientId: lockedTx.patientId,
+									customerContact: "cardholder@clinic.ru",
+									cashierFullName: "Кассир-администратор",
+									operationType: "income",
+									defaultCalculationMethod: "full_payment",
+									tenderSplits: {
+										electronicCardRub: amountRub,
+									},
+									positions: [
+										{
+											name: `Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+											priceRub: amountRub,
+											quantity: 1,
+											medicalServiceCode804n: null,
+											subject: "service",
+											method: "full_payment",
+											vatRate: "vat_none",
+										},
+									],
+									visitId: lockedTx.visitId,
+									documentId: lockedTx.documentId,
+									invoiceId: lockedTx.invoiceId,
+									clientMutationId: `sberbank:${orderId}`,
+								});
+
+								await tx.insert(fiscalReceiptQueue).values({
+									organizationId: orgId,
+									paymentId: insertedPayment?.id || null,
+									visitId: lockedTx.visitId || null,
+									receiptType: "income",
+									status: "pending_print",
+									payloadJson: {
+										...fiscalReceiptPayload,
+										tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+									},
+									retryCount: 0,
+								});
+							} catch (fiscalErr) {
+								request.log.warn(
+									{ fiscalErr, orderId: lockedTx.orderId },
+									"[SberbankStatus] Fiscal receipt enqueue skipped or warning",
+								);
 							}
 						}
 					}
@@ -355,14 +420,18 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							.where(
 								and(
 									eq(payments.organizationId, orgId),
-									eq(payments.clientMutationId, `sberbank:${orderId}`),
+									or(
+										eq(payments.clientMutationId, `sberbank:${orderId}`),
+										eq(payments.clientMutationId, `sberpos:${orderId}`),
+									),
 								),
 							)
 							.for("update")
 							.limit(1);
 
+						let insertedPayment: typeof payments.$inferSelect | undefined;
 						if (!lockedPayment) {
-							await tx
+							const [inserted] = await tx
 								.insert(payments)
 								.values({
 									organizationId: orgId,
@@ -372,13 +441,16 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									method: "card",
 									status: "paid",
 									amountRub,
+									amountKopecks: lockedTx.amountKopecks,
 									paidAt: new Date(),
 									clientMutationId: `sberbank:${orderId}`,
 									note: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
 								})
 								.onConflictDoNothing({
 									target: [payments.organizationId, payments.clientMutationId],
-								});
+								})
+								.returning();
+							insertedPayment = inserted;
 						}
 
 						if (lockedTx.documentId) {
@@ -392,6 +464,76 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 										eq(generatedDocuments.status, "draft"),
 									),
 								);
+						}
+
+						if (lockedTx.visitId) {
+							await tx
+								.update(visits)
+								.set({ updatedAt: new Date() })
+								.where(
+									and(
+										eq(visits.id, lockedTx.visitId),
+										eq(visits.organizationId, orgId),
+									),
+								);
+						}
+
+						if (lockedTx.invoiceId) {
+							await reconcileInvoiceBalanceInDb(
+								tx,
+								orgId,
+								lockedTx.invoiceId,
+							);
+						}
+
+						// 54-FZ statutory fiscal receipt queue registration
+						if (insertedPayment) {
+							try {
+								const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+									organizationId: orgId,
+									patientId: lockedTx.patientId,
+									customerContact: "cardholder@clinic.ru",
+									cashierFullName: "Кассир-администратор",
+									operationType: "income",
+									defaultCalculationMethod: "full_payment",
+									tenderSplits: {
+										electronicCardRub: amountRub,
+									},
+									positions: [
+										{
+											name: `Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+											priceRub: amountRub,
+											quantity: 1,
+											medicalServiceCode804n: null,
+											subject: "service",
+											method: "full_payment",
+											vatRate: "vat_none",
+										},
+									],
+									visitId: lockedTx.visitId,
+									documentId: lockedTx.documentId,
+									invoiceId: lockedTx.invoiceId,
+									clientMutationId: `sberbank:${orderId}`,
+								});
+
+								await tx.insert(fiscalReceiptQueue).values({
+									organizationId: orgId,
+									paymentId: insertedPayment.id,
+									visitId: lockedTx.visitId || null,
+									receiptType: "income",
+									status: "pending_print",
+									payloadJson: {
+										...fiscalReceiptPayload,
+										tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+									},
+									retryCount: 0,
+								});
+							} catch (fiscalErr) {
+								request.log.warn(
+									{ fiscalErr, orderId: lockedTx.orderId },
+									"[SberbankCancelReconcile] Fiscal receipt enqueue skipped or warning",
+								);
+							}
 						}
 
 						return {
@@ -419,6 +561,41 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									eq(sberbankTransactions.organizationId, orgId),
 								),
 							);
+
+						const [lockedPayment] = await tx
+							.select()
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, orgId),
+									or(
+										eq(payments.clientMutationId, `sberbank:${orderId}`),
+										eq(payments.clientMutationId, `sberpos:${orderId}`),
+									),
+								),
+							)
+							.for("update")
+							.limit(1);
+
+						if (lockedPayment) {
+							await tx
+								.update(payments)
+								.set({ status: "refunded", updatedAt: new Date() })
+								.where(
+									and(
+										eq(payments.organizationId, orgId),
+										eq(payments.id, lockedPayment.id),
+									),
+								);
+						}
+
+						if (lockedTx.invoiceId) {
+							await reconcileInvoiceBalanceInDb(
+								tx,
+								orgId,
+								lockedTx.invoiceId,
+							);
+						}
 
 						return {
 							success: true,

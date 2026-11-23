@@ -47,7 +47,7 @@ import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
-import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerBillingRoutes } from "../../routes/billingRoutes/index.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";

@@ -86,7 +86,7 @@ export class BotWebhookDispatcher {
 			let executedReply: BotReply | null = null;
 			let handledPluginName: string | undefined;
 
-			const isIntercepted = sessionRouter.isChatIntercepted(
+			const isIntercepted = await sessionRouter.isChatInterceptedAsync(
 				msg.channel,
 				msg.organizationId,
 				msg.senderId,

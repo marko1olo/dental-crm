@@ -266,11 +266,20 @@ export type LegacyRenderTemplateOptions = ValidateTemplateBodyOptions & {
  * Управляющие символы ломают и SMS-шлюзы, и разметку мессенджеров.
  */
 function stripControlCharacters(value: string): string {
-	return value.replace(
-		// biome-ignore lint/complexity/useRegexLiterals: control character range
-		new RegExp("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "g"),
-		"",
-	);
+	let result = "";
+	for (let i = 0; i < value.length; i += 1) {
+		const code = value.charCodeAt(i);
+		const isDisallowedControl =
+			(code >= 0x00 && code <= 0x08) ||
+			code === 0x0b ||
+			code === 0x0c ||
+			(code >= 0x0e && code <= 0x1f) ||
+			code === 0x7f;
+		if (!isDisallowedControl) {
+			result += value[i];
+		}
+	}
+	return result;
 }
 
 function normalizeRenderedText(value: string): string {

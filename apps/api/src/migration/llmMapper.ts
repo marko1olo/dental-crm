@@ -156,6 +156,15 @@ function allowedFieldsFor(
 	entityKind: MigrationEntityKind,
 ): MigrationTargetField[] {
 	const all = migrationTargetFieldSchema.options;
+	const defaultPrefixes = [
+		"patient.",
+		"doctor.",
+		"service.",
+		"appointment.",
+		"visit.",
+		"payment.",
+		"toothState.",
+	];
 	const prefixByEntity: Partial<Record<MigrationEntityKind, string[]>> = {
 		patient: ["patient."],
 		doctor: ["doctor."],
@@ -166,18 +175,9 @@ function allowedFieldsFor(
 		tooth_state: ["toothState."],
 		treatment_plan: ["visit.", "service."],
 		document: ["patient."],
-		unknown: [
-			"patient.",
-			"doctor.",
-			"service.",
-			"appointment.",
-			"visit.",
-			"payment.",
-			"toothState.",
-		],
+		unknown: defaultPrefixes,
 	};
-	// biome-ignore lint/style/noNonNullAssertion: automated suppression
-	const prefixes = prefixByEntity[entityKind] ?? prefixByEntity.unknown!;
+	const prefixes = prefixByEntity[entityKind] ?? defaultPrefixes;
 	return [
 		...all.filter((field) =>
 			prefixes.some((prefix) => field.startsWith(prefix)),

@@ -430,7 +430,13 @@ export class TelegramReferralLoyaltyService {
 		organizationId: string,
 		patientId: string,
 		booking: WebAppBookingInput,
-	): Promise<{ success: boolean; appointmentId: string; message: string; confirmationMessage?: string }> {
+	): Promise<{
+		success: boolean;
+		appointmentId: string;
+		message: string;
+		confirmationMessage?: string;
+		errorCode?: string;
+	}> {
 		try {
 			return await withTenantCtx(organizationId, async (tx) => {
 				const targetPatientId = booking.familyMemberPatientId || patientId;
@@ -464,16 +470,12 @@ export class TelegramReferralLoyaltyService {
 				}
 
 				if (!resolvedDoctorUserId) {
-					const [firstDoc] = await tx
-						.select({ id: users.id })
-						.from(users)
-						.where(and(eq(users.organizationId, organizationId), eq(users.isActive, true)))
-						.limit(1);
-					resolvedDoctorUserId = firstDoc?.id || null;
-				}
-
-				if (!resolvedDoctorUserId) {
-					return { success: false, appointmentId: "", message: "В клинике не найден доступный врач для записи." };
+					return {
+						success: false,
+						appointmentId: "",
+						message: "Врач для записи не указан или не найден в клинике.",
+						errorCode: "APPOINTMENT_DOCTOR_REQUIRED",
+					};
 				}
 
 				const bookingResult = await executeBookingTransaction(tx, {

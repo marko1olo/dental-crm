@@ -22,7 +22,7 @@ import {
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 const urgentRequestParamsSchema = z.object({
-	id: z.string().min(1),
+	id: z.string().uuid("Некорректный UUID экстренного запроса"),
 });
 
 const scheduleShiftsSchema = z.object({

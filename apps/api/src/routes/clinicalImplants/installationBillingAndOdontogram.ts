@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks } from "@dental/shared";
 import type { z } from "zod";
-import { db } from "../../db/client.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import {
 	invoiceItems,

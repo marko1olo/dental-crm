@@ -1,5 +1,6 @@
 import { type InferInsertModel, type InferSelectModel, sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -31,6 +32,9 @@ export const loyaltyPrograms = pgTable(
 		})
 			.notNull()
 			.default("0.00"),
+		minSpendThresholdKopecks: bigint("min_spend_threshold_kopecks", {
+			mode: "bigint",
+		}),
 		cashbackPercent: numeric("cashback_percent", {
 			precision: 5,
 			scale: 2,
@@ -50,6 +54,9 @@ export const loyaltyPrograms = pgTable(
 		})
 			.notNull()
 			.default("1.00"),
+		pointRateKopecks: bigint("point_rate_kopecks", {
+			mode: "bigint",
+		}),
 		isActive: boolean("is_active").notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

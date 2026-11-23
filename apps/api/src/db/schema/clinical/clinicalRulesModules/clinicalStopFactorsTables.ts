@@ -6,6 +6,7 @@
 
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	date,
 	index,
@@ -63,6 +64,7 @@ export const insuranceContracts = pgTable(
 			scale: 2,
 			mode: "number",
 		}),
+		annualLimitKopecks: bigint("annual_limit_kopecks", { mode: "bigint" }),
 		patientFranchisePct: numeric("patient_franchise_pct", {
 			precision: 5,
 			scale: 2,
@@ -111,6 +113,7 @@ export const dmsGuaranteeLetters = pgTable(
 			scale: 2,
 			mode: "number",
 		}).notNull(),
+		maxCoverageKopecks: bigint("max_coverage_kopecks", { mode: "bigint" }),
 		usedAmountRub: numeric("used_amount_rub", {
 			precision: 12,
 			scale: 2,
@@ -118,6 +121,7 @@ export const dmsGuaranteeLetters = pgTable(
 		})
 			.notNull()
 			.default(0),
+		usedAmountKopecks: bigint("used_amount_kopecks", { mode: "bigint" }),
 		franchisePct: numeric("franchise_pct", {
 			precision: 5,
 			scale: 2,
@@ -133,6 +137,7 @@ export const dmsGuaranteeLetters = pgTable(
 		})
 			.notNull()
 			.default(0),
+		franchiseFixedKopecks: bigint("franchise_fixed_kopecks", { mode: "bigint" }),
 		programExclusions: jsonb("program_exclusions")
 			.$type<string[]>()
 			.notNull()

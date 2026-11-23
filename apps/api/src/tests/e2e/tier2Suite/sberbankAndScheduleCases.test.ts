@@ -442,7 +442,7 @@ export function registerSberbankAndScheduleCases(ctx: Tier2FixtureContext): void
 
 		it("10.5 confirms zero mock interfaces in production billing and schedule route files", () => {
 			const billingRoute = readFileSync(
-				join(repoRoot, "apps/api/src/routes/billing.ts"),
+				join(repoRoot, "apps/api/src/routes/billingRoutes/index.ts"),
 				"utf8",
 			);
 			assert.doesNotMatch(billingRoute, /mock|Mock|Dummy/i);

@@ -2,6 +2,7 @@
  * Entity mapping functions for IDENT / StomX JSON exports.
  */
 import { IdentJsonParser } from "./identParser.js";
+import { kopecksToRubles } from "@dental/shared";
 import type {
   IdentInvoiceRecord,
   IdentInvoiceServiceItem,
@@ -118,7 +119,7 @@ export class IdentMappers {
 			obj["dolg"]) as string | number;
 		const balanceKopecks = IdentJsonParser.parseKopecks(rawBalance);
 		const balanceRub =
-			balanceKopecks !== null ? Math.round(balanceKopecks) / 100 : null;
+			balanceKopecks !== null ? kopecksToRubles(balanceKopecks) : null;
 
 		const source = obj["source"] ? String(obj["source"]).trim() : null;
 		const tags: string[] = [];
@@ -298,21 +299,21 @@ export class IdentMappers {
 			obj["total"] ??
 			obj["cost"]) as string | number;
 		const amountKopecks = IdentJsonParser.parseKopecks(rawAmount) ?? 0;
-		const amountRub = Math.round(amountKopecks) / 100;
+		const amountRub = kopecksToRubles(amountKopecks);
 
 		const rawPaid = (obj["paidAmount"] ??
 			obj["paid"] ??
 			obj["oplatit"]) as string | number;
 		const paidKopecks =
 			IdentJsonParser.parseKopecks(rawPaid) ?? amountKopecks;
-		const paidRub = Math.round(paidKopecks) / 100;
+		const paidRub = kopecksToRubles(paidKopecks);
 
 		const rawDiscount = obj["discountAmount"] ?? obj["discount"];
 		const discountKopecks = IdentJsonParser.parseKopecks(
 			rawDiscount as string | number,
 		);
 		const discountRub =
-			discountKopecks !== null ? Math.round(discountKopecks) / 100 : null;
+			discountKopecks !== null ? kopecksToRubles(discountKopecks) : null;
 
 		const rawStatus = String(obj["status"] || "paid").toLowerCase();
 		let status: IdentInvoiceRecord["status"] = "paid";
@@ -349,6 +350,11 @@ export class IdentMappers {
 							sObj["cena"]) as string | number,
 					) ?? amountKopecks;
 
+				const itemPriceKop =
+					IdentJsonParser.parseKopecks(
+						(sObj["price"] ?? sObj["cena"]) as string | number,
+					) ?? svcAmountKopecks;
+
 				services.push({
 					id: sObj["id"] ? String(sObj["id"]) : `item-${sIdx + 1}`,
 					code: sObj["code"] ? String(sObj["code"]) : null,
@@ -359,19 +365,13 @@ export class IdentMappers {
 							"Услуга IDENT",
 					),
 					quantity: Number(sObj["quantity"] || sObj["count"] || 1),
-					priceKopecks:
-						IdentJsonParser.parseKopecks(
-							(sObj["price"] ?? sObj["cena"]) as string | number,
-						) ?? svcAmountKopecks,
-					priceRub:
-						(IdentJsonParser.parseKopecks(
-							(sObj["price"] ?? sObj["cena"]) as string | number,
-						) ?? svcAmountKopecks) / 100,
+					priceKopecks: itemPriceKop,
+					priceRub: kopecksToRubles(itemPriceKop),
 					discountRub: typeof sObj["discount"] === "number"
 						? sObj["discount"]
 						: null,
 					totalKopecks: svcAmountKopecks,
-					totalRub: Math.round(svcAmountKopecks) / 100,
+					totalRub: kopecksToRubles(svcAmountKopecks),
 					tooth: sObj["tooth"] ? String(sObj["tooth"]) : null,
 					doctorId: sObj["doctorId"] ? String(sObj["doctorId"]) : null,
 				});
@@ -429,14 +429,14 @@ export class IdentMappers {
 			obj["cost"] ??
 			obj["tarif"]) as string | number;
 		const priceKopecks = IdentJsonParser.parseKopecks(rawPrice) ?? 0;
-		const priceRub = Math.round(priceKopecks) / 100;
+		const priceRub = kopecksToRubles(priceKopecks);
 
 		const rawCost = obj["costPrice"] ?? obj["sebestoimost"];
 		const costKopecks = IdentJsonParser.parseKopecks(
 			rawCost as string | number,
 		);
 		const costRub =
-			costKopecks !== null ? Math.round(costKopecks) / 100 : null;
+			costKopecks !== null ? kopecksToRubles(costKopecks) : null;
 
 		const category = obj["category"]
 			? String(obj["category"])

@@ -7,6 +7,7 @@
 import type { StaffRole } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	bigint,
 	boolean,
 	index,
@@ -134,8 +135,19 @@ export const labOrders = pgTable(
 			() => appointments.id,
 			{ onDelete: "set null" },
 		),
-		doctorId: uuid("doctor_id"),
+		fittingAppointmentId: uuid("fitting_appointment_id").references(
+			() => appointments.id,
+			{ onDelete: "set null" },
+		),
+		parentLabOrderId: uuid("parent_lab_order_id").references(
+			(): AnyPgColumn => labOrders.id,
+			{ onDelete: "set null" },
+		),
+		doctorId: uuid("doctor_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
 		doctorName: text("doctor_name"),
+		laboratoryId: uuid("laboratory_id"),
 		laboratoryName: text("laboratory_name"),
 		orderNumber: text("order_number"),
 		secureToken: text("secure_token").notNull().unique(),
@@ -143,7 +155,7 @@ export const labOrders = pgTable(
 		material: text("material"),
 		colorVita: text("color_vita"),
 		/**
-		 * Статус заказа ЗТЛ. Значения ограничены миграцией 0042
+		 * Статус заказа ЗТЛ. Значения ограничены миграцией 0042 / 0231
 		 * CHECK-ограничением; произвольные строки не пройдут.
 		 *
 		 * Переходы: draft → sent → in_progress → shipped → received →
@@ -166,6 +178,10 @@ export const labOrders = pgTable(
 		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" }),
 		/** Гарантийная переделка (относится на клинику, 0 вычетов с врача) */
 		isWarranty: boolean("is_warranty").notNull().default(false),
+		/** Ответственность по гарантии: clinic_warranty | lab_defect | patient_fault */
+		warrantyLiabilityType: text("warranty_liability_type"),
+		/** Клиническая причина рекламации / переделки */
+		remakeReason: text("remake_reason"),
 		/** Статус сдачи и фиксации installed (клинический стандарт фиксации) */
 		isLockedInstalled: boolean("is_locked_installed").notNull().default(false),
 		installedAt: timestamp("installed_at", { withTimezone: true }),
@@ -194,7 +210,14 @@ export const labOrders = pgTable(
 		appointmentIdIdx: index("lab_orders_appointment_id_idx").on(
 			t.appointmentId,
 		),
+		fittingAppointmentIdIdx: index("lab_orders_fitting_appointment_id_idx").on(
+			t.fittingAppointmentId,
+		),
+		parentLabOrderIdIdx: index("lab_orders_parent_lab_order_id_idx").on(
+			t.parentLabOrderId,
+		),
 		doctorIdIdx: index("lab_orders_doctor_id_idx").on(t.doctorId),
+		laboratoryIdIdx: index("lab_orders_laboratory_id_idx").on(t.laboratoryId),
 		statusIdx: index("lab_orders_status_idx").on(t.organizationId, t.status),
 	}),
 );

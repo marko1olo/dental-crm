@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { denteTelegramBotConfigs } from "../../db/schema.js";
-import type { DenteTelegramOutboxRuntimeScope } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import type { DenteTelegramOutboxRuntimeScope } from "./telegramCanonicalStore.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { resolveTelegramRuntimeContext } from "./telegramRuntimeResolver.js";
 import type { TelegramRuntimeContext } from "./types.js";

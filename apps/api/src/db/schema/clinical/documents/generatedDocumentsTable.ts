@@ -7,6 +7,7 @@ import type {
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	foreignKey,
 	index,
 	integer,
@@ -45,6 +46,7 @@ export const generatedDocuments = pgTable(
 			scale: 2,
 			mode: "number",
 		}),
+		totalAmountKopecks: bigint("total_amount_kopecks", { mode: "bigint" }),
 		taxYear: integer("tax_year"),
 		taxPayerInn: text("tax_payer_inn"),
 		payloadJson: text("payload_json"),

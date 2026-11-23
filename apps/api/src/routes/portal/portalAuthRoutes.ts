@@ -20,6 +20,7 @@ import {
 } from "../../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import {
+	findPatientsByPhone,
 	findUniquePatientByPhone,
 	isIssuanceThrottled,
 	otpIpRequestCounts,
@@ -43,6 +44,14 @@ import {
 	PORTAL_TOKEN_TTL_SECONDS,
 } from "./types.js";
 
+function getPortalOtpRateLimitKey(req: FastifyRequest, prefix: string): string {
+	const ip = req.ip ?? "unknown";
+	const body = req.body as { phone?: unknown } | undefined;
+	const rawPhone = typeof body?.phone === "string" ? body.phone.trim().replace(/\D/g, "") : "";
+	const phoneSuffix = rawPhone.length >= 10 ? rawPhone.slice(-10) : (rawPhone || "no-phone");
+	return `${prefix}|${ip}|${phoneSuffix}`;
+}
+
 export async function registerPortalAuthRoutes(server: FastifyInstance): Promise<void> {
 	// 1. Send OTP (защищен составным лимитером по связке IP + phone_number)
 	server.post<{ Body: { phone?: unknown; organizationId?: unknown } }>(
@@ -53,17 +62,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					max: 5,
 					timeWindow: "1 minute",
 					hook: "preHandler",
-					keyGenerator: (req: FastifyRequest) => {
-						const ip = req.ip ?? "unknown";
-						const body = req.body as { phone?: unknown } | undefined;
-						const rawPhone =
-							typeof body?.phone === "string"
-								? body.phone.trim().replace(/\D/g, "")
-								: "";
-						const phoneSuffix =
-							rawPhone.length >= 10 ? rawPhone.slice(-10) : (rawPhone || "no-phone");
-						return `portal-otp|${ip}|${phoneSuffix}`;
-					},
+					keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-otp"),
 				},
 			},
 		},
@@ -83,25 +82,10 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			}
 
 			const smsConfigured = readSmsCredentialsFromEnv() !== null;
-			/*
-			 * Ветка для разработки. Условия, при которых она допустима, выполнены
-			 * все три: она достижима ТОЛЬКО при явно названном режиме разработки
-			 * (NODE_ENV=development либо test — см. developerLogFallbackAllowed
-			 * выше; пустой и незнакомый NODE_ENV её больше не открывают), код в
-			 * ней генерируется на каждый запрос тем же CSPRNG (никаких «0000»), и
-			 * о её срабатывании громко пишется в журнал сервера. Код уходит ТОЛЬКО
-			 * в журнал — в теле HTTP-ответа его нет даже здесь.
-			 */
-			const developerLogFallback =
-				!smsConfigured && developerLogFallbackAllowed();
+			// Ветка разработки: только при явном NODE_ENV=development/test, код выводится в журнал
+			const developerLogFallback = !smsConfigured && developerLogFallbackAllowed();
 
-			/*
-			 * Ответ, одинаковый для «пациент найден», «такого номера нет»,
-			 * «номер принадлежит двум карточкам» и «код только что отправляли».
-			 * Все поля — константы настройки сервера, они не зависят от того, что
-			 * лежит в базе. Иначе публичный маршрут работает справочником: «есть ли
-			 * у этой клиники пациент с таким телефоном» — а это медицинская тайна.
-			 */
+			// Нейтральный ответ, одинаковый для существующего и несуществующего пациента (152-ФЗ)
 			const neutralAccepted = {
 				status: "accepted" as const,
 				message:
@@ -469,9 +453,19 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 		},
 	);
 
-	// 2. Verify OTP
+	// 2. Verify OTP (защищен составным лимитером по связке IP + phone_number)
 	server.post<{ Body: { phone?: unknown; code?: unknown; organizationId?: unknown } }>(
 		"/auth/verify-otp",
+		{
+			config: {
+				rateLimit: {
+					max: 10,
+					timeWindow: "1 minute",
+					hook: "preHandler",
+					keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-verify-otp"),
+				},
+			},
+		},
 		async (request, reply) => {
 			const invalidOtp = {
 				error: "InvalidOtp",
@@ -568,6 +562,26 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 						.where(eq(portalOtpCodes.id, pendingReg.id));
 				}
 				pendingRegistrationOtpStore.delete(phoneSuffix);
+
+				// Предотвращение дубликатов и пустышек "Пациент" при повторной или семейной верификации
+				const existingPatients = await findPatientsByPhone(rawPhone, pendingReg.organizationId);
+				const matchedExisting =
+					existingPatients.find((p) => p.isFamilyHead) ||
+					existingPatients.find((p) => p.fullName.trim() !== "Пациент" && p.fullName.trim().length > 0) ||
+					existingPatients[0];
+
+				if (matchedExisting) {
+					const token = signToken(
+						{
+							sub: matchedExisting.id,
+							organizationId: matchedExisting.organizationId,
+							kind: PORTAL_TOKEN_KIND,
+						},
+						requireAuthTokenSecret(),
+						PORTAL_TOKEN_TTL_SECONDS,
+					);
+					return { success: true, token, patientId: matchedExisting.id, isNewPatient: false };
+				}
 
 				const newPatient = await withTenantCtx(pendingReg.organizationId, async () => {
 					const [created] = await db

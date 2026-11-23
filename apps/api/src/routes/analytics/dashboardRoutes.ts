@@ -197,16 +197,18 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// 3) Строгая сходимость сумм всех тендеров с totalKopecks
 			// 4) Прямое чтение целочисленных копеек coalesce(amountKopecks, round(amountRub * 100))
 			const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+			const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+			const methodText = sql`${payments.method}::text`;
 			const [revenueRow] = await db
 				.select({
-					totalKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${paymentKopExpr} else 0 end)::bigint, 0)`,
-					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'cash' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'card' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${paymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
-					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} in ('family_wallet', 'other') then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
-					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'online' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'bank_transfer' then ${paymentKopExpr} else 0 end)), 0)::bigint`,
-					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${payments.method} = 'insurance' then ${paymentKopExpr} when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					totalKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${absPaymentKopExpr} else 0 end)::bigint, 0)`,
+					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'card' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${absPaymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
+					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
+					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'bank_transfer' then ${absPaymentKopExpr} else 0 end)), 0)::bigint`,
+					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'insurance' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
 				})
 				.from(payments)
 				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа, исключая аннулированные счета

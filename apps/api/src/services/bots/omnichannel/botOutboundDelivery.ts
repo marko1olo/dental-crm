@@ -48,7 +48,8 @@ export class BotOutboundDelivery {
 			};
 		}
 
-		return await withTenantCtx(params.organizationId, async (tx) => {
+		// Фаза 1: Разрешение / создание карты пациента в транзакции БД
+		const patientResolution = await withTenantCtx(params.organizationId, async (tx) => {
 			const phoneDigits = params.senderId.replace(/\D/g, "");
 			let patientId: string | null = null;
 			let patientName = `Пациент ${params.channel.toUpperCase()}`;
@@ -87,37 +88,47 @@ export class BotOutboundDelivery {
 			}
 
 			if (!patientId) {
-				return { ok: false, error: "Не удалось привязать пациента к диалогу" };
+				return { ok: false as const, error: "Не удалось привязать пациента к диалогу" };
 			}
 
-			// Канонический транспорт через единый роутер каналов
-			const credentials = await resolveChannelCredentials(params.organizationId);
-			let sendResult: ChannelSendResult;
-			try {
-				sendResult = await sendThroughChannel(
-					{
-						channel: params.channel,
-						recipientAddress: params.senderId,
-						subject: null,
-						body: trimmed,
-						idempotencyKey: null,
-					},
-					credentials,
-				);
-			} catch (transportErr) {
-				sendResult = {
-					ok: false,
-					errorClass: "network",
-					errorMessage:
-						transportErr instanceof Error
-							? transportErr.message
-							: String(transportErr),
-				};
-			}
+			return { ok: true as const, patientId, patientName };
+		});
 
-			const deliveryStatus = sendResult.ok ? "sent" : "failed";
+		if (!patientResolution.ok) {
+			return { ok: false, error: patientResolution.error };
+		}
 
-			// Персистентность исходящего сообщения в communicationEvents с реальным статусом
+		const { patientId, patientName } = patientResolution;
+
+		// Фаза 2: Сетевой I/O СТРОГО ВНЕ транзакции БД (DEF-17-04 / Mandate 8bo)
+		const credentials = await resolveChannelCredentials(params.organizationId);
+		let sendResult: ChannelSendResult;
+		try {
+			sendResult = await sendThroughChannel(
+				{
+					channel: params.channel,
+					recipientAddress: params.senderId,
+					subject: null,
+					body: trimmed,
+					idempotencyKey: null,
+				},
+				credentials,
+			);
+		} catch (transportErr) {
+			sendResult = {
+				ok: false,
+				errorClass: "network",
+				errorMessage:
+					transportErr instanceof Error
+						? transportErr.message
+						: String(transportErr),
+			};
+		}
+
+		const deliveryStatus = sendResult.ok ? "sent" : "failed";
+
+		// Фаза 3: Фиксация события в communicationEvents в короткой транзакции
+		return await withTenantCtx(params.organizationId, async (tx) => {
 			const [outboundEvent] = await tx
 				.insert(communicationEvents)
 				.values({

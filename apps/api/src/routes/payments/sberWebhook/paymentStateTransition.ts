@@ -1,8 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
 import { kopecksToRubles, sumKopecks } from "@dental/shared";
-import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
@@ -17,7 +16,7 @@ import { verifySberPosWebhookChecksum } from "./signatureVerifier.js";
 import type { SberPosTransactionStatus } from "./types.js";
 
 /**
- * Reconciles invoice balance and updates invoice status atomically
+ * Reconciles invoice balance and updates invoice status atomically within a tenant transaction.
  */
 export async function reconcileInvoiceBalanceInDb(
 	tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0],
@@ -50,14 +49,14 @@ export async function reconcileInvoiceBalanceInDb(
 		};
 	}
 
-	const invoiceTotalKopecks = Fiscal54FzService.rubToKopecks(
-		invoice.totalAmountRub || Number(invoice.totalRub),
-	);
+	const rawTotal = invoice.totalAmountRub || invoice.totalRub || "0";
+	const invoiceTotalKopecks = Fiscal54FzService.rubToKopecks(Number(rawTotal));
 
 	// Find all paid payments linked to this patient and visit/document
 	const invoicePayments = await tx
 		.select({
 			amountRub: payments.amountRub,
+			amountKopecks: payments.amountKopecks,
 			status: payments.status,
 		})
 		.from(payments)
@@ -71,7 +70,11 @@ export async function reconcileInvoiceBalanceInDb(
 		);
 
 	const paidKopecks = sumKopecks(
-		invoicePayments.map((p) => Fiscal54FzService.rubToKopecks(p.amountRub)),
+		invoicePayments.map((p) =>
+			p.amountKopecks !== null && p.amountKopecks !== undefined
+				? Number(p.amountKopecks)
+				: Fiscal54FzService.rubToKopecks(p.amountRub),
+		),
 	);
 
 	const remainingKopecks = Math.max(0, invoiceTotalKopecks - paidKopecks);
@@ -113,16 +116,20 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 		});
 	}
 
-	const body = (request.body as Record<string, unknown>) || {};
-	const query = (request.query as Record<string, unknown>) || {};
-	const payload = { ...query, ...body };
+	const body = (request.body as Record<string, unknown> | null) ?? {};
+	const query = (request.query as Record<string, unknown> | null) ?? {};
+	const payload: Record<string, unknown> = { ...query, ...body };
 
 	const incomingChecksum =
-		(payload.checksum as string) ||
-		(payload.sign as string) ||
-		(payload.signature as string) ||
-		(request.headers["x-sberbank-signature"] as string) ||
-		(request.headers["x-dente-webhook-secret"] as string);
+		(typeof payload.checksum === "string" ? payload.checksum : undefined) ||
+		(typeof payload.sign === "string" ? payload.sign : undefined) ||
+		(typeof payload.signature === "string" ? payload.signature : undefined) ||
+		(typeof request.headers["x-sberbank-signature"] === "string"
+			? request.headers["x-sberbank-signature"]
+			: undefined) ||
+		(typeof request.headers["x-dente-webhook-secret"] === "string"
+			? request.headers["x-dente-webhook-secret"]
+			: undefined);
 
 	if (!incomingChecksum) {
 		return reply.status(400).send({
@@ -148,10 +155,10 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 	}
 
 	const orderId =
-		(payload.orderId as string) ||
-		(payload.mdOrder as string) ||
-		(payload.orderNumber as string) ||
-		(payload.terminalTxId as string);
+		(typeof payload.orderId === "string" ? payload.orderId : undefined) ||
+		(typeof payload.mdOrder === "string" ? payload.mdOrder : undefined) ||
+		(typeof payload.orderNumber === "string" ? payload.orderNumber : undefined) ||
+		(typeof payload.terminalTxId === "string" ? payload.terminalTxId : undefined);
 
 	if (!orderId) {
 		return reply.status(400).send({
@@ -203,7 +210,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 		// Validate incoming amount in kopecks if provided
 		if (payload.amount !== undefined && payload.amount !== null) {
 			const incomingKopecks = Number(payload.amount);
-			if (!Number.isNaN(incomingKopecks) && BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
+			if (!Number.isNaN(incomingKopecks) && BigInt(Math.round(incomingKopecks)) !== lockedTx.amountKopecks) {
 				request.log.warn(
 					{ orderId, expected: Number(lockedTx.amountKopecks), received: incomingKopecks },
 					"[SberPosWebhook] Amount mismatch detected",
@@ -218,7 +225,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			}
 		}
 
-		// Pessimistically lock payments row for this order
+		// Pessimistically lock payments row for this order (both sberpos: and sberbank: prefixes)
 		const clientMutationId = `sberpos:${lockedTx.orderId}`;
 		const [lockedPayment] = await tx
 			.select()
@@ -226,7 +233,10 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			.where(
 				and(
 					eq(payments.organizationId, targetTx.organizationId),
-					eq(payments.clientMutationId, clientMutationId),
+					or(
+						eq(payments.clientMutationId, clientMutationId),
+						eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+					),
 				),
 			)
 			.for("update")
@@ -256,14 +266,17 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					),
 				);
 
-			if (nextStatus === "REFUNDED") {
+			if (nextStatus === "REFUNDED" || nextStatus === "REVERSED") {
 				await tx
 					.update(payments)
 					.set({ status: "refunded", updatedAt: new Date() })
 					.where(
 						and(
 							eq(payments.organizationId, lockedTx.organizationId),
-							eq(payments.clientMutationId, clientMutationId),
+							or(
+								eq(payments.clientMutationId, clientMutationId),
+								eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+							),
 						),
 					);
 			}
@@ -312,10 +325,13 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			rawStatus === "0";
 
 		if (isSettled) {
-			if (
+			const isAlreadyProcessed =
 				lockedTx.status === "SETTLED" ||
-				(lockedPayment && lockedPayment.status === "paid")
-			) {
+				lockedTx.status.toLowerCase() === "success" ||
+				lockedTx.status.toLowerCase() === "paid" ||
+				(lockedPayment !== undefined && lockedPayment.status === "paid");
+
+			if (isAlreadyProcessed) {
 				return {
 					statusCode: 200,
 					body: {
@@ -341,7 +357,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 
 			const amountRub = kopecksToRubles(lockedTx.amountKopecks);
 
-			// Insert ledger payment
+			// Insert ledger payment with explicit amountKopecks (Mandate 8bm)
 			const [newPayment] = await tx
 				.insert(payments)
 				.values({
@@ -352,6 +368,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					method: "card",
 					status: "paid",
 					amountRub,
+					amountKopecks: lockedTx.amountKopecks,
 					paidAt: new Date(),
 					clientMutationId,
 					note: `Оплата через Sberbank POS / SberPay (транзакция ${lockedTx.orderId})`,
@@ -401,7 +418,9 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
 				organizationId: lockedTx.organizationId,
 				patientId: lockedTx.patientId,
-				customerContact: (payload.customerContact as string) || "cardholder@clinic.ru",
+				customerContact:
+					(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
+					"cardholder@clinic.ru",
 				cashierFullName: "Кассир-администратор",
 				operationType: "income",
 				defaultCalculationMethod: "full_payment",
@@ -410,10 +429,15 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				},
 				positions: [
 					{
-						name: (payload.serviceTitle as string) || "Медицинские стоматологические услуги",
+						name:
+							(typeof payload.serviceTitle === "string" ? payload.serviceTitle : undefined) ||
+							"Медицинские стоматологические услуги",
 						priceRub: amountRub,
 						quantity: 1,
-						medicalServiceCode804n: (payload.medicalServiceCode804n as string) || null,
+						medicalServiceCode804n:
+							(typeof payload.medicalServiceCode804n === "string"
+								? payload.medicalServiceCode804n
+								: undefined) || null,
 						subject: "service",
 						method: "full_payment",
 						vatRate: "vat_none",

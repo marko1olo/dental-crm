@@ -119,8 +119,8 @@ function hasUtf16BeBom(buffer: Buffer): boolean {
 function isValidUtf8(buffer: Buffer): boolean {
 	let index = 0;
 	while (index < buffer.length) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const byte = buffer[index]!;
+		const byte = buffer[index];
+		if (byte === undefined) break;
 		if (byte <= 0x7f) {
 			index += 1;
 			continue;
@@ -144,9 +144,9 @@ function isValidUtf8(buffer: Buffer): boolean {
 
 		if (index + extraBytes >= buffer.length) return false;
 		for (let offset = 1; offset <= extraBytes; offset += 1) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const continuation = buffer[index + offset]!;
-			if ((continuation & 0xc0) !== 0x80) return false;
+			const continuation = buffer[index + offset];
+			if (continuation === undefined || (continuation & 0xc0) !== 0x80)
+				return false;
 			codePoint = (codePoint << 6) | (continuation & 0x3f);
 		}
 
@@ -193,8 +193,8 @@ function scoreRussianPlausibility(text: string): number {
 	const letterCounts = new Map<string, number>();
 
 	for (const char of sample) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const code = char.codePointAt(0)!;
+		const code = char.codePointAt(0);
+		if (code === undefined) continue;
 		if (code === 0xfffd) {
 			replacement += 1;
 			continue;
@@ -420,8 +420,8 @@ function repairCp1251DoubleEncoding(text: string): string {
 		const bytes: number[] = [];
 		const encoder = cp1251EncodeMap();
 		for (const char of text) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
-			const code = char.codePointAt(0)!;
+			const code = char.codePointAt(0);
+			if (code === undefined) continue;
 			if (code <= 0x7f) {
 				bytes.push(code);
 				continue;
@@ -474,8 +474,8 @@ export function normalizeDecodedText(value: string): string {
 	return (
 		value
 			.replace(/^\uFEFF/, "")
-			// biome-ignore lint/suspicious/noControlCharactersInRegex: NUL byte stripping for migration data
-			.replace(/\u0000/g, "")
+			.split(String.fromCharCode(0))
+			.join("")
 			// Мягкий перенос и неразрывный пробел нулевой ширины из копипаста Word.
 			.replace(/\u00AD|\u200B|\u200C|\u200D|\u2060/g, "")
 			.replace(/\r\n/g, "\n")

@@ -7,6 +7,7 @@ import {
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { canonicalizeCdaXml, egiszRemdPackageSchema, type EgiszRemdPackage } from "../../services/cda/index.js";
@@ -111,22 +112,48 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		let rows = await db.select().from(schema.egiszBlankPermissions).where(eq(schema.egiszBlankPermissions.organizationId, orgId));
-		if (rows.length === 0) {
-			const [org] = await db.select({ id: schema.organizations.id }).from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
-			if (org) {
-				const [doc] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.organizationId, orgId)).limit(1);
-				const doctorId = doc?.id ?? orgId;
-				const defaults = [
-					{ organizationId: orgId, doctorId, blankCode: "Медицинская карта приёма", blankTitle: "Анамнез, дневник приёма и зубная формула", isAllowed: true, patientOptOutRespect: true },
-					{ organizationId: orgId, doctorId, blankCode: "Протокол консультации и осмотра", blankTitle: "Первичный и повторный осмотр врача-стоматолога", isAllowed: true, patientOptOutRespect: true },
-					{ organizationId: orgId, doctorId, blankCode: "Протокол КЛКТ 3D и рентген-снимков", blankTitle: "Описание КЛКТ 3D, панорамных и прицельных снимков", isAllowed: true, patientOptOutRespect: true },
-					{ organizationId: orgId, doctorId, blankCode: "Информированное добровольное согласие (ИДС)", blankTitle: "Согласие пациента на стоматологическое вмешательство", isAllowed: true, patientOptOutRespect: true },
-					{ organizationId: orgId, doctorId, blankCode: "Справка об оплате медицинских услуг для налогового вычета", blankTitle: "Данные об оплаченных услугах для оформления вычета", isAllowed: false, patientOptOutRespect: true },
-				];
-				rows = await db.insert(schema.egiszBlankPermissions).values(defaults).returning();
+		const rows = await withTenantCtx(orgId, async (tx) => {
+			let currentRows = await tx
+				.select()
+				.from(schema.egiszBlankPermissions)
+				.where(eq(schema.egiszBlankPermissions.organizationId, orgId));
+
+			if (currentRows.length === 0) {
+				const [org] = await tx
+					.select({ id: schema.organizations.id })
+					.from(schema.organizations)
+					.where(eq(schema.organizations.id, orgId))
+					.limit(1);
+
+				if (org) {
+					const [doc] = await tx
+						.select({ id: schema.users.id })
+						.from(schema.users)
+						.where(eq(schema.users.organizationId, orgId))
+						.limit(1);
+
+					const doctorId = doc?.id ?? orgId;
+					const defaults = [
+						{ organizationId: orgId, doctorId, blankCode: "Медицинская карта приёма", blankTitle: "Анамнез, дневник приёма и зубная формула", isAllowed: true, patientOptOutRespect: true },
+						{ organizationId: orgId, doctorId, blankCode: "Протокол консультации и осмотра", blankTitle: "Первичный и повторный осмотр врача-стоматолога", isAllowed: true, patientOptOutRespect: true },
+						{ organizationId: orgId, doctorId, blankCode: "Протокол КЛКТ 3D и рентген-снимков", blankTitle: "Описание КЛКТ 3D, панорамных и прицельных снимков", isAllowed: true, patientOptOutRespect: true },
+						{ organizationId: orgId, doctorId, blankCode: "Информированное добровольное согласие (ИДС)", blankTitle: "Согласие пациента на стоматологическое вмешательство", isAllowed: true, patientOptOutRespect: true },
+						{ organizationId: orgId, doctorId, blankCode: "Справка об оплате медицинских услуг для налогового вычета", blankTitle: "Данные об оплаченных услугах для оформления вычета", isAllowed: false, patientOptOutRespect: true },
+					];
+
+					await tx
+						.insert(schema.egiszBlankPermissions)
+						.values(defaults)
+						.onConflictDoNothing();
+
+					currentRows = await tx
+						.select()
+						.from(schema.egiszBlankPermissions)
+						.where(eq(schema.egiszBlankPermissions.organizationId, orgId));
+				}
 			}
-		}
+			return currentRows;
+		});
 
 		return reply.status(200).send(rows.map((r) => {
 			const norm = normalizeBlankLabel(r.blankCode, r.blankTitle);
@@ -350,7 +377,15 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		}
 		const pkg = parsed.data;
 
-		const [visit] = await db.select({ id: schema.visits.id, patientId: schema.visits.patientId }).from(schema.visits).where(and(eq(schema.visits.id, pkg.documentId), eq(schema.visits.organizationId, orgId))).limit(1);
+		const rawVisitId = typeof (bodyToParse as { visitId?: unknown })?.visitId === "string"
+			? (bodyToParse as { visitId: string }).visitId
+			: pkg.documentId;
+		const isVisitUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawVisitId);
+		if (!isVisitUuid) {
+			return reply.status(404).send({ error: "VisitNotFound", message: "Идентификатор приёма должен быть валидным UUID." });
+		}
+
+		const [visit] = await db.select({ id: schema.visits.id, patientId: schema.visits.patientId }).from(schema.visits).where(and(eq(schema.visits.id, rawVisitId), eq(schema.visits.organizationId, orgId))).limit(1);
 		if (!visit) return reply.status(404).send({ error: "VisitNotFound", message: "Приём не найден в текущей клинике." });
 
 		const isSync = (request.query as { sync?: string })?.sync === "true";

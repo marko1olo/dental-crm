@@ -134,6 +134,9 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 				clientMutationId: idempotencyKey ?? undefined,
 			});
 			if ("holdNotFound" in res) return reply.status(404).send({ message: res.message });
+			if ("replayed" in res && res.replayed) {
+				reply.header("idempotency-replayed", "true");
+			}
 			return reply.status(200).send(res);
 		});
 	});
@@ -157,8 +160,15 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры снятия резерва", errors: parsed.error.format() });
 
 		return withTenantCtx(orgId, async () => {
-			const res = await executeBonusRelease({ orgId, ...parsed.data });
+			const res = await executeBonusRelease({
+				orgId,
+				...parsed.data,
+				clientMutationId: idempotencyKey ?? undefined,
+			});
 			if ("holdNotFound" in res) return reply.status(404).send({ message: res.message });
+			if ("replayed" in res && res.replayed) {
+				reply.header("idempotency-replayed", "true");
+			}
 			return reply.status(200).send(res);
 		});
 	});

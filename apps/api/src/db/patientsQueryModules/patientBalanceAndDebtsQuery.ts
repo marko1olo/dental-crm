@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -10,6 +11,8 @@ import {
 } from "../../money/patientDebt.js";
 import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
+
+const logger = createApiLogger("patientBalanceAndDebtsQuery");
 
 /**
  * САЛЬДО КАРТОЧКИ ПАЦИЕНТА — ИЗ ЕДИНОГО ДОМА ФОРМУЛЫ ДОЛГА.
@@ -150,10 +153,13 @@ export async function patientAccountBalancesRub(
 				error instanceof MoneyPrecisionError ||
 				error instanceof QuantityContractError
 			) {
-				console.error(
-					`[patientsQuery] Сальдо пациента ${patientId} (клиника ${organizationId}) не рассчитано: ${error.message} ` +
-						"В карточке будет 0, потому что поле balanceRub контракта не умеет говорить «не рассчитано». " +
-						"Это не измеренный ноль: почините строку денег, названную в причине.",
+				logger.error(
+					{
+						err: safeLogError(error),
+						patientId,
+						organizationId,
+					},
+					"Сальдо пациента не рассчитано: ошибка точности денег или количества",
 				);
 				balances.set(patientId, null);
 				continue;

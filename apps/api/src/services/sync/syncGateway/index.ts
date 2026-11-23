@@ -249,6 +249,17 @@ export class SyncGatewayService {
 			);
 			mutationStatus = paymentResult.status;
 			currentServerEntity = paymentResult.entity;
+		} else if (
+			mutation.entityKind === "patient_invoice" ||
+			(mutation.entityKind as string) === "invoice"
+		) {
+			const invoiceResult = await SyncEntityHandlers.handleInvoiceMutation(
+				tx,
+				organizationId,
+				mutation,
+			);
+			mutationStatus = invoiceResult.status;
+			currentServerEntity = invoiceResult.entity;
 		} else if (mutation.entityKind === "patient") {
 			const patientResult = await SyncEntityHandlers.handlePatientMutation(
 				tx,

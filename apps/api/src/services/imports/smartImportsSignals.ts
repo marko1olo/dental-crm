@@ -17,6 +17,9 @@ import {
   registerMigrationSourceRoute,
   migrationWorkstationProfileMatches
 } from "./smartImportsRoots.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("smartImportsSignals");
 
 export type MigrationWorkstationSignalCandidate = {
 	channel: "configured" | "process" | "service" | "installed_app" | "shortcut";
@@ -121,7 +124,7 @@ export async function readWindowsMigrationWorkstationSignalValues(
 			})
 			.filter((row) => row.value.length >= 3);
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.warn({ err: safeLogError(err) }, "Failed to read Windows migration workstation signals");
 		warnings.add(
 			"Системные сигналы рабочей станции не прочитаны: поиск продолжился по доступным папкам и ярлыкам без списка процессов, служб и установленных программ.",
 		);
@@ -199,7 +202,7 @@ export function migrationExistingDirectory(value: string) {
 		if (stat.isFile()) return path.dirname(resolved);
 		return null;
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.warn({ err: safeLogError(err), path: value }, "Failed to stat migration existing directory");
 		return null;
 	}
 }
@@ -572,7 +575,7 @@ export async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
 			.filter((root) => migrationRootExists(root))
 			.slice(0, 32);
 	} catch (err) {
-		console.error("[Dente] context:", err);
+		logger.warn({ err: safeLogError(err) }, "Failed to read Windows mapped network drives");
 		warnings.add(
 			"Сетевые и внешние диски не удалось прочитать автоматически: поиск продолжился по доступным папкам и вручную указанным корням.",
 		);

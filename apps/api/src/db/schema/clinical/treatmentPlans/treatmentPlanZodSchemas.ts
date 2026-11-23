@@ -86,6 +86,8 @@ export const treatmentPlanItemZodSchema = z.object({
 	quantity: z.number().int().min(1).max(999).default(1),
 	price: z.number().nonnegative().max(100_000_000),
 	discount: z.number().nonnegative().max(100_000_000).default(0),
+	unitPriceKopecks: z.number().int().nonnegative().optional(),
+	discountKopecks: z.number().int().nonnegative().optional(),
 	phase: z.number().int().min(1).max(12).default(1),
 	isAuto: z.boolean().optional(),
 	doctorId: z.string().uuid().optional().nullable(),

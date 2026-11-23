@@ -5,6 +5,7 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
+	idempotencyKeys,
 	inventoryItems,
 	inventorySupplierInvoices,
 	inventorySupplierInvoiceItems,
@@ -19,7 +20,9 @@ import {
 import {
 	normalizeInventoryUnit,
 	INVENTORY_UNITS_METADATA,
+	basisPointsFromPercent,
 	kopecksToRubles,
+	percentageOfKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
 import { acceptanceWaybillBodySchema } from "../types.js";
@@ -69,23 +72,30 @@ export const handleAcceptanceWaybillRequest = async (
 	try {
 		const result = await withTenantCtx(targetOrgId, async (tx) => {
 			// Идемпотентность складских операций (Мандаты 8e, 8n, 8s, 8bo):
-			// Строгий Idempotency-Key или номер накладной + поставщик
-			let existingInvoice: Array<typeof inventorySupplierInvoices.$inferSelect> = [];
-
+			// 1. Канонический реестр idempotency_keys
 			if (idempotencyKey) {
-				existingInvoice = await tx
+				const [existingRecord] = await tx
 					.select()
-					.from(inventorySupplierInvoices)
+					.from(idempotencyKeys)
 					.where(
 						and(
-							eq(inventorySupplierInvoices.organizationId, targetOrgId),
-							sql`${inventorySupplierInvoices.notes} LIKE ${`%[idempotency:${idempotencyKey}]%`}`,
+							eq(idempotencyKeys.clinicId, targetOrgId),
+							eq(idempotencyKeys.key, idempotencyKey),
 						),
 					)
 					.limit(1);
+
+				if (existingRecord?.responseBody) {
+					return {
+						...(existingRecord.responseBody as Record<string, unknown>),
+						alreadyProcessed: true,
+					};
+				}
 			}
 
-			if (existingInvoice.length === 0 && data.waybillNumber && data.supplierName) {
+			// 2. Дедупликация по номеру накладной и поставщику
+			let existingInvoice: Array<typeof inventorySupplierInvoices.$inferSelect> = [];
+			if (data.waybillNumber && data.supplierName) {
 				existingInvoice = await tx
 					.select()
 					.from(inventorySupplierInvoices)
@@ -203,7 +213,7 @@ export const handleAcceptanceWaybillRequest = async (
 
 			for (const item of data.items) {
 				const multiplier = item.packageMultiplier ?? detectPackageMultiplier(item.name, item.unit);
-				const effectiveReceivedQty = Math.round(item.quantity * multiplier);
+				const effectiveReceivedQty = Number((item.quantity * multiplier).toFixed(3));
 				totalQuantity += item.quantity;
 				const unitPriceKopecks =
 					item.unitPriceKopecks ??
@@ -214,7 +224,7 @@ export const handleAcceptanceWaybillRequest = async (
 
 				const itemSubtotalKopecks = Math.round(item.quantity * priceKopecks);
 				const vatRate = item.vatRate ?? 0;
-				const itemVatKopecks = Math.round((itemSubtotalKopecks * vatRate) / 100);
+				const itemVatKopecks = percentageOfKopecks(itemSubtotalKopecks, basisPointsFromPercent(vatRate));
 				const itemTotalKopecks = itemSubtotalKopecks + itemVatKopecks;
 				const effectiveUnitPriceKopecks =
 					multiplier > 0 ? Math.round(unitPriceKopecks / multiplier) : unitPriceKopecks;
@@ -394,7 +404,7 @@ export const handleAcceptanceWaybillRequest = async (
 					warehouseId: data.warehouseId ?? null,
 					totalAmountKopecks: totalCostKopecks,
 					vatAmountKopecks: totalVatKopecks,
-					notes: `Приходная накладная №${data.waybillNumber} от ${data.supplierName}${idempotencyKey ? ` [idempotency:${idempotencyKey}]` : ""}`,
+					notes: `Приходная накладная №${data.waybillNumber} от ${data.supplierName}`,
 					createdBy: effectiveUserId,
 				})
 				.returning();
@@ -426,7 +436,7 @@ export const handleAcceptanceWaybillRequest = async (
 				}
 			}
 
-			return {
+			const responsePayload = {
 				success: true,
 				waybillNumber: data.waybillNumber,
 				supplierName: data.supplierName,
@@ -442,6 +452,21 @@ export const handleAcceptanceWaybillRequest = async (
 				overdraftResolvedCount,
 				items: processedItems,
 			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: targetOrgId,
+						key: idempotencyKey,
+						status: "completed",
+						responseBody: { ...responsePayload } as Record<string, unknown>,
+						responseCode: 201,
+					})
+					.onConflictDoNothing();
+			}
+
+			return responsePayload;
 		});
 
 		return reply.status(201).send(result);
