@@ -92,11 +92,6 @@ export const patientSearchQuerySchema = z.object({
 });
 export type PatientSearchQuery = z.infer<typeof patientSearchQuerySchema>;
 
-export const recordingsParamSchema = z.object({
-	id: z.string().uuid("Идентификатор записи должен быть UUID"),
-});
-export type RecordingsParam = z.infer<typeof recordingsParamSchema>;
-
 export const patientIdParamSchema = z.object({
 	patientId: z.string().regex(UUID_REGEX, "Некорректный идентификатор пациента."),
 });
@@ -109,17 +104,3 @@ export const templateListQuerySchema = z.object({
 });
 export type TemplateListQuery = z.infer<typeof templateListQuerySchema>;
 
-export const telephonyWebhookSchema = z.object({
-	callId: z.string().min(1, "Идентификатор звонка обязателен"),
-	callerNumber: z.string().min(1, "Номер звонящего обязателен"),
-	destinationNumber: z.string().optional(),
-	direction: z.enum(["inbound", "outbound"]).default("inbound"),
-	status: z.enum(["answered", "missed", "busy", "failed"]).default("answered"),
-	durationSeconds: z.number().int().nonnegative().optional(),
-	recordingUrl: z.string().url().optional(),
-	audioFormat: z.string().default("mp3").optional(),
-	transcriptionText: z.string().optional(),
-	actorUserId: z.string().uuid().optional(),
-	clinicId: z.string().uuid().optional(),
-});
-export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookSchema>;

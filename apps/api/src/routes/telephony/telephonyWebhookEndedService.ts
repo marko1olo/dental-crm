@@ -1,9 +1,10 @@
-import { and, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { communicationEvents, crmLeads, type patients } from "../../db/schema.js";
 import {
 	type NormalizedPhone,
+	detectMarketingAttribution,
 	validateSsrfSafeRecordingUrl,
 } from "../../services/telephony/telephonySecurity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -25,9 +26,25 @@ export interface HandleEndedParams {
 	durationSeconds: number;
 	transcriptionSnippet: string | null;
 	matchedPatient: typeof patients.$inferSelect | null;
+	utm_source?: string | undefined;
+	utm_campaign?: string | undefined;
+	utm_medium?: string | undefined;
+	advertising_channel?: string | undefined;
+	targetRaw?: string | undefined;
+	targetPhone?: NormalizedPhone | undefined;
 }
 
 export async function handleEndedEvent(p: HandleEndedParams) {
+	const attribution = detectMarketingAttribution({
+		utm_source: p.utm_source,
+		utm_medium: p.utm_medium,
+		utm_campaign: p.utm_campaign,
+		advertising_channel: p.advertising_channel,
+		targetRaw: p.targetRaw,
+		targetPhone: p.targetPhone,
+	});
+	const virtualTrunkNumber = p.targetPhone?.e164 || p.targetRaw || null;
+
 	let verifiedRecUrl: string | null = null;
 	if (p.recordingUrl) {
 		const ssrf = await validateSsrfSafeRecordingUrl(p.recordingUrl);
@@ -48,6 +65,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 	if (cleanCallId) {
 		await db.transaction(async (tx) => {
 			const callMessage = `Звонок завершён${!p.matchedPatient ? " (первичный звонок)" : ""}`;
+			const eventIdempotencyKey = `telephony:ended:${p.resolvedOrgId}:${cleanCallId}`;
 			const [savedEvent] = await tx
 				.insert(communicationEvents)
 				.values({
@@ -62,6 +80,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 					message: callMessage,
 					recordingUrl: verifiedRecUrl,
 					durationSeconds: nextDuration,
+					idempotencyKey: eventIdempotencyKey,
 				})
 				.onConflictDoUpdate({
 					target: [communicationEvents.organizationId, communicationEvents.providerCallId],
@@ -70,6 +89,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 						...(verifiedRecUrl ? { recordingUrl: verifiedRecUrl } : {}),
 						...(nextDuration !== null ? { durationSeconds: nextDuration } : {}),
 						...(p.matchedPatient?.id ? { patientId: p.matchedPatient.id } : {}),
+						idempotencyKey: eventIdempotencyKey,
 					},
 				})
 				.returning({
@@ -79,6 +99,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 				});
 
 			if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
+				const leadIdempotencyKey = `telephony:lead:ended:${p.resolvedOrgId}:${cleanCallId || p.callerPhone.national10}`;
 				const existingLead = await tx
 					.select({ id: crmLeads.id })
 					.from(crmLeads)
@@ -88,6 +109,8 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 							or(
 								eq(crmLeads.phone, p.callerPhone.e164),
 								ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
+								cleanCallId ? sql`${crmLeads.metadata}->>'callId' = ${cleanCallId}` : sql`false`,
+								sql`${crmLeads.metadata}->>'idempotencyKey' = ${leadIdempotencyKey}`,
 							),
 						),
 					)
@@ -99,11 +122,21 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 						name: `Входящий звонок ${p.callerPhone.e164}`,
 						patientName: `Первичный звонок ${p.callerPhone.e164}`,
 						phone: p.callerPhone.e164,
-						source: "telephony",
+						source: attribution.channel || "telephony",
 						status: "new",
-						notes: `Автоматический лид из входящего звонка телефонии. call_id: ${cleanCallId}.${p.durationSeconds > 0 ? ` Длительность: ${p.durationSeconds}с.` : ""}`,
+						notes: `Автоматический лид из входящего звонка телефонии. Канал: ${attribution.channelLabel}.${virtualTrunkNumber ? ` Номер: ${virtualTrunkNumber}.` : ""} call_id: ${cleanCallId}.${p.durationSeconds > 0 ? ` Длительность: ${p.durationSeconds}с.` : ""}`,
 						audioRecordUrl: verifiedRecUrl || null,
 						transcriptionSnippet: p.transcriptionSnippet || null,
+						metadata: {
+							idempotencyKey: leadIdempotencyKey,
+							utm_source: p.utm_source || null,
+							utm_campaign: p.utm_campaign || null,
+							utm_medium: p.utm_medium || null,
+							advertising_channel: attribution.channel,
+							channelLabel: attribution.channelLabel,
+							virtualNumber: virtualTrunkNumber,
+							callId: cleanCallId || null,
+						},
 						stageEnteredAt: new Date(),
 						priority: "normal",
 					});
@@ -181,6 +214,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 		}
 	}
 
+	const fallbackEventIdempotencyKey = `telephony:ended:fallback:${p.resolvedOrgId}:${p.recordingUrl || `${p.callerPhone.national10}_${Date.now()}`}`;
 	await db.transaction(async (tx) => {
 		await tx.insert(communicationEvents).values({
 			organizationId: p.resolvedOrgId,
@@ -192,9 +226,11 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 			message: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
 			recordingUrl: verifiedRecUrl,
 			durationSeconds: nextDuration,
+			idempotencyKey: fallbackEventIdempotencyKey,
 		});
 
 		if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
+			const fallbackLeadKey = `telephony:lead:ended:fallback:${p.resolvedOrgId}:${p.callerPhone.national10}`;
 			const existingLead = await tx
 				.select({ id: crmLeads.id })
 				.from(crmLeads)
@@ -204,6 +240,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 						or(
 							eq(crmLeads.phone, p.callerPhone.e164),
 							ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
+							sql`${crmLeads.metadata}->>'idempotencyKey' = ${fallbackLeadKey}`,
 						),
 					),
 				)
@@ -215,11 +252,21 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 					name: `Входящий звонок ${p.callerPhone.e164}`,
 					patientName: `Первичный звонок ${p.callerPhone.e164}`,
 					phone: p.callerPhone.e164,
-					source: "telephony",
+					source: attribution.channel || "telephony",
 					status: "new",
-					notes: `Автоматический лид из входящего звонка телефонии. ${p.durationSeconds > 0 ? ` Длительность: ${p.durationSeconds}с.` : ""}`,
+					notes: `Автоматический лид из входящего звонка телефонии. Канал: ${attribution.channelLabel}.${virtualTrunkNumber ? ` Номер: ${virtualTrunkNumber}.` : ""} ${p.durationSeconds > 0 ? ` Длительность: ${p.durationSeconds}с.` : ""}`,
 					audioRecordUrl: verifiedRecUrl || null,
 					transcriptionSnippet: p.transcriptionSnippet || null,
+					metadata: {
+						idempotencyKey: fallbackLeadKey,
+						utm_source: p.utm_source || null,
+						utm_campaign: p.utm_campaign || null,
+						utm_medium: p.utm_medium || null,
+						advertising_channel: attribution.channel,
+						channelLabel: attribution.channelLabel,
+						virtualNumber: virtualTrunkNumber,
+						callId: cleanCallId || null,
+					},
 					stageEnteredAt: new Date(),
 					priority: "normal",
 				});

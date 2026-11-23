@@ -10,13 +10,32 @@ import type { NormalizedCallAction, TelephonyProvider, TelephonyWebhookPayload }
 
 export function detectTelephonyProvider(
 	data: TelephonyWebhookPayload,
-	rawEvent: string,
+	rawEvent: string = "",
 ): TelephonyProvider {
-	if (data.vpbx_api_key || data.sign || rawEvent.includes("mango")) return "mango";
-	if (data.cmd || data.callid || rawEvent.includes("domru")) return "domru";
-	if (data.crm_token || (data.client && data.type) || rawEvent.includes("megafon")) return "megafon";
+	const eventStr = `${rawEvent} ${data.event || ""} ${data.notification_name || ""}`.toLowerCase();
+	if (data.vpbx_api_key || data.sign || eventStr.includes("mango")) return "mango";
+	if (data.cmd || data.callid || eventStr.includes("domru")) return "domru";
+	if (data.crm_token || (data.client && data.type) || eventStr.includes("megafon")) return "megafon";
 	if (data.call_session_id || data.from_number || data.notification_name) return "uis";
 	if (data.CallerIdNum || data.uniqueid || data.CalledIdNum) return "asterisk";
+	if (data.hash || data.user || eventStr.includes("sipuni")) return "sipuni";
+	if (
+		eventStr.includes("gravitel") ||
+		data.gravitel_call_id ||
+		data.provider === "gravitel" ||
+		(data as Record<string, unknown>).gravitel
+	) {
+		return "gravitel";
+	}
+	if (
+		eventStr.includes("exolve") ||
+		eventStr.includes("mts") ||
+		data.voice_call_id ||
+		data.provider === "mts_exolve" ||
+		(data as Record<string, unknown>).exolve
+	) {
+		return "mts_exolve";
+	}
 	if (data.signature || data.caller_id) return "zadarma";
 	return "generic";
 }

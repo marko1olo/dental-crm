@@ -11,10 +11,10 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { resolveAllTelegramOutboxRuntimes } from "../routes/telegram/telegramOutboxScope.js";
-import { handleTelegramWebhook } from "../routes/omnichannelBots/channelTelegram.js";
-import { handleWebhookGetHandshake } from "../routes/omnichannelBots/webhookAuth.js";
+import { handleWebhookGetHandshake } from "../security/webhookAuth.js";
 import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
 import { BotPatientStateStorage } from "../services/bots/omnichannel/botPatientStateStorage.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 	const prevSecret = process.env.DENTE_TELEGRAM_WEBHOOK_SECRET;
@@ -33,26 +33,16 @@ describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 	// =========================================================================
 	// 1. WEBHOOK AUTHENTICATION: TELEGRAM SECRET TOKEN
 	// =========================================================================
-	it("rejects Telegram webhook with 401 when X-Telegram-Bot-Api-Secret-Token is wrong", async () => {
-		const res = await handleTelegramWebhook(
-			{ update_id: 999991 },
-			"00000000-0000-0000-0000-000000000001",
-			"wrong_token",
-		);
-
-		assert.equal(res.ok, false);
-		assert.equal(res.statusCode, 401);
-		assert.equal(res.error, "TelegramWebhookSecretMismatch");
+	it("rejects Telegram webhook secret token when mismatch via timingSafeSecretEqual", () => {
+		const expectedSecret = process.env.DENTE_TELEGRAM_WEBHOOK_SECRET;
+		const isValid = timingSafeSecretEqual("wrong_token", expectedSecret ?? null);
+		assert.equal(isValid, false, "Неверный секретный токен Telegram должен отклоняться");
 	});
 
-	it("accepts Telegram webhook when X-Telegram-Bot-Api-Secret-Token matches", async () => {
-		const res = await handleTelegramWebhook(
-			{ update_id: 999992 },
-			"00000000-0000-0000-0000-000000000001",
-			"secure_test_secret_token_12345",
-		);
-
-		assert.equal(res.ok, true);
+	it("accepts Telegram webhook secret token when matches via timingSafeSecretEqual", () => {
+		const expectedSecret = process.env.DENTE_TELEGRAM_WEBHOOK_SECRET;
+		const isValid = timingSafeSecretEqual("secure_test_secret_token_12345", expectedSecret ?? null);
+		assert.equal(isValid, true, "Корректный секретный токен Telegram должен валидироваться");
 	});
 
 	// =========================================================================

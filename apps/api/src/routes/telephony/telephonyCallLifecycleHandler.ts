@@ -5,6 +5,7 @@ import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
 import {
+	detectMarketingAttribution,
 	normalizePhoneNumber,
 	UUID_REGEX,
 } from "../../services/telephony/telephonySecurity.js";
@@ -13,19 +14,29 @@ import { wsBroker } from "../../services/websocketBroker.js";
 export interface AnswerCallBody {
 	callId: string;
 	phone: string;
-	patientId?: string;
-	lineId?: 1 | 2;
+	patientId?: string | undefined;
+	lineId?: 1 | 2 | undefined;
+	utm_source?: string | undefined;
+	utm_campaign?: string | undefined;
+	utm_medium?: string | undefined;
+	advertising_channel?: string | undefined;
+	virtualNumber?: string | undefined;
 }
 
 export interface EndCallBody {
 	callId: string;
 	phone: string;
-	patientId?: string;
-	direction?: "inbound" | "outbound";
-	durationSeconds?: number;
-	recordingUrl?: string;
-	outcome?: string;
-	notes?: string;
+	patientId?: string | undefined;
+	direction?: "inbound" | "outbound" | undefined;
+	durationSeconds?: number | undefined;
+	recordingUrl?: string | undefined;
+	outcome?: string | undefined;
+	notes?: string | undefined;
+	utm_source?: string | undefined;
+	utm_campaign?: string | undefined;
+	utm_medium?: string | undefined;
+	advertising_channel?: string | undefined;
+	virtualNumber?: string | undefined;
 }
 
 export async function handleAnswerCall(
@@ -47,6 +58,10 @@ export async function handleAnswerCall(
 	}
 
 	const body = request.body || ({} as AnswerCallBody);
+	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim()
+		? rawIdempotencyKey.trim()
+		: `telephony:lead:answer:${resolvedOrgId}:${body.callId || "call"}`;
 	const callerPhone = normalizePhoneNumber(body.phone);
 	const callId = body.callId || `call-${Date.now()}`;
 	const now = new Date().toISOString();
@@ -101,20 +116,39 @@ export async function handleAnswerCall(
 									or(
 										eq(crmLeads.phone, callerPhone.e164),
 										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										callId ? sql`${crmLeads.metadata}->>'callId' = ${callId}` : sql`false`,
+										sql`${crmLeads.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
 									),
 								),
 							)
 							.limit(1);
 
 						if (existingLead.length === 0) {
+							const attribution = detectMarketingAttribution({
+								utm_source: body.utm_source,
+								utm_campaign: body.utm_campaign,
+								utm_medium: body.utm_medium,
+								advertising_channel: body.advertising_channel,
+								targetRaw: body.virtualNumber,
+							});
 							await tx.insert(crmLeads).values({
 								organizationId: targetOrgId,
 								name: `Входящий звонок ${callerPhone.e164}`,
 								patientName: `Звонок ${callerPhone.e164}`,
 								phone: callerPhone.e164,
-								source: "telephony",
+								source: attribution.channel || "telephony",
 								status: "new",
 								notes: `Лид из принятого входящего звонка (call_id: ${callId})`,
+								metadata: {
+									idempotencyKey,
+									utm_source: body.utm_source || null,
+									utm_campaign: body.utm_campaign || null,
+									utm_medium: body.utm_medium || null,
+									advertising_channel: attribution.channel,
+									channelLabel: attribution.channelLabel,
+									virtualNumber: body.virtualNumber || null,
+									callId,
+								},
 								stageEnteredAt: new Date(),
 								priority: "normal",
 							});
@@ -156,7 +190,9 @@ export async function handleEndCall(
 
 	const body = request.body || ({} as EndCallBody);
 	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
-	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
+	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim()
+		? rawIdempotencyKey.trim()
+		: `telephony:end:${orgId}:${body.callId || `call-${Date.now()}`}`;
 	const callerPhone = normalizePhoneNumber(body.phone);
 	const callId = body.callId || `call-${Date.now()}`;
 	const parsedDuration = typeof body.durationSeconds === "number"
@@ -259,6 +295,8 @@ export async function handleEndCall(
 							or(
 								eq(crmLeads.phone, callerPhone.e164),
 								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+								callId ? sql`${crmLeads.metadata}->>'callId' = ${callId}` : sql`false`,
+								sql`${crmLeads.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
 							),
 						),
 					)
@@ -273,14 +311,31 @@ export async function handleEndCall(
 						})
 						.where(eq(crmLeads.id, existing[0].id));
 				} else {
+					const attribution = detectMarketingAttribution({
+						utm_source: body.utm_source,
+						utm_campaign: body.utm_campaign,
+						utm_medium: body.utm_medium,
+						advertising_channel: body.advertising_channel,
+						targetRaw: body.virtualNumber,
+					});
 					await tx.insert(crmLeads).values({
 						organizationId: orgId,
 						phone: callerPhone.e164,
 						patientName: "Новый лид",
 						name: "Новый лид",
-						source: "telephony",
+						source: attribution.channel || "telephony",
 						status: "new",
 						lastContactedAt: new Date(),
+						metadata: {
+							idempotencyKey,
+							utm_source: body.utm_source || null,
+							utm_campaign: body.utm_campaign || null,
+							utm_medium: body.utm_medium || null,
+							advertising_channel: attribution.channel,
+							channelLabel: attribution.channelLabel,
+							virtualNumber: body.virtualNumber || null,
+							callId,
+						},
 						...(body.notes ? { notes: body.notes } : {}),
 					});
 				}

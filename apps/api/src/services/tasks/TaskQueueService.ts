@@ -39,6 +39,7 @@ export interface EnqueueJobParams {
 	payload?: Record<string, unknown> | undefined;
 	scheduledFor?: Date | undefined;
 	maxRetries?: number | undefined;
+	idempotencyKey?: string | undefined;
 }
 
 export interface TaskHandlerContext {
@@ -132,17 +133,45 @@ export class TaskQueueService {
 	}
 
 	/**
-	 * Постановка задачи в персистентную очередь с multi-tenant привязкой.
+	 * Постановка задачи в персистентную очередь с multi-tenant привязкой и дедупликацией по idempotencyKey.
 	 */
-	static async enqueue(params: EnqueueJobParams): Promise<SystemBackgroundJob> {
+	static async enqueue(
+		params: EnqueueJobParams,
+	): Promise<SystemBackgroundJob & { isDuplicate?: boolean }> {
 		return withSuperuserBypass(async (tx) => {
+			if (params.idempotencyKey) {
+				const existing = await tx
+					.select()
+					.from(systemBackgroundJobs)
+					.where(
+						and(
+							params.organizationId
+								? eq(systemBackgroundJobs.organizationId, params.organizationId)
+								: sql`1=1`,
+							eq(systemBackgroundJobs.queueName, params.queueName),
+							eq(systemBackgroundJobs.taskName, params.taskName),
+							sql`${systemBackgroundJobs.payload}->>'idempotencyKey' = ${params.idempotencyKey}`,
+						),
+					)
+					.limit(1);
+
+				if (existing[0]) {
+					return Object.assign(existing[0], { isDuplicate: true });
+				}
+			}
+
+			const payloadWithKey = {
+				...(params.payload ?? {}),
+				...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+			};
+
 			const [job] = await tx
 				.insert(systemBackgroundJobs)
 				.values({
 					organizationId: params.organizationId ?? null,
 					queueName: params.queueName,
 					taskName: params.taskName,
-					payload: params.payload ?? {},
+					payload: payloadWithKey,
 					status: "pending",
 					retryCount: 0,
 					maxRetries: params.maxRetries ?? 3,
@@ -154,7 +183,7 @@ export class TaskQueueService {
 				throw new Error("Failed to enqueue job: database returned empty result");
 			}
 
-			return job;
+			return Object.assign(job, { isDuplicate: false });
 		});
 	}
 

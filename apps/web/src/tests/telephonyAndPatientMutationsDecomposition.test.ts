@@ -6,6 +6,7 @@ import {
 	createCallAudioStreamActions,
 	createCallTransferAndDtmfActions,
 } from "../store/telephonyModules/telephonyCallActions";
+import { TelephonyAudioStreamManager } from "../store/telephonyModules/telephonyAudioStreamManager";
 import {
 	usePatientMutations,
 	usePatientCoreSave,
@@ -97,6 +98,69 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 		assert.strictEqual(state.callHistory[0].acutePain, true);
 		assert.strictEqual(state.callHistory[0].phone, "+79995554433");
 		assert.strictEqual(state.callHistory[0].status, "answered");
+	});
+
+	it("1.4. TelephonyAudioStreamManager Tab Audio Lock arbitrates microphone across simulated tabs", () => {
+		// Mock global BroadcastChannel for testing environment if undefined
+		class MockBroadcastChannel {
+			static channels = new Map<string, Set<MockBroadcastChannel>>();
+			name: string;
+			onmessage: ((ev: any) => void) | null = null;
+
+			constructor(name: string) {
+				this.name = name;
+				if (!MockBroadcastChannel.channels.has(name)) {
+					MockBroadcastChannel.channels.set(name, new Set());
+				}
+				MockBroadcastChannel.channels.get(name)!.add(this);
+			}
+
+			postMessage(data: any) {
+				const listeners = MockBroadcastChannel.channels.get(this.name);
+				if (listeners) {
+					for (const l of listeners) {
+						if (l !== this && l.onmessage) {
+							l.onmessage({ data });
+						}
+					}
+				}
+			}
+
+			close() {
+				MockBroadcastChannel.channels.get(this.name)?.delete(this);
+			}
+		}
+
+		const prevBc = (globalThis as any).BroadcastChannel;
+		(globalThis as any).BroadcastChannel = MockBroadcastChannel;
+
+		try {
+			const tab1 = new TelephonyAudioStreamManager();
+			const tab2 = new TelephonyAudioStreamManager();
+
+			// Tab 1 acquires lock
+			const acquired1 = tab1.requestAudioLock();
+			assert.strictEqual(acquired1, true);
+
+			// Tab 2 now detects lock held by Tab 1
+			assert.strictEqual(tab2.isLockedByOtherTab(), true);
+			const acquired2 = tab2.requestAudioLock();
+			assert.strictEqual(acquired2, false);
+
+			// Tab 1 releases lock
+			tab1.releaseAudioLock();
+
+			// Tab 2 now detects lock is free
+			assert.strictEqual(tab2.isLockedByOtherTab(), false);
+			const acquired2Retry = tab2.requestAudioLock();
+			assert.strictEqual(acquired2Retry, true);
+
+			tab1.dispose();
+			tab2.dispose();
+		} finally {
+			if (prevBc !== undefined) (globalThis as any).BroadcastChannel = prevBc;
+			else delete (globalThis as any).BroadcastChannel;
+		}
 	});
 
 	it("2.1. Patient Mutations Facade and modules export correctly", () => {

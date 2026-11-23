@@ -10,6 +10,8 @@ export type TelephonyProvider =
 	| "uis"
 	| "zadarma"
 	| "sipuni"
+	| "gravitel"
+	| "mts_exolve"
 	| "asterisk"
 	| "domru"
 	| "megafon"

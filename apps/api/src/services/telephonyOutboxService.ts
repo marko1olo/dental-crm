@@ -308,12 +308,14 @@ export class TelephonyOutboxService {
 			organizationId: resolvedOrgId,
 			queueName: "communications",
 			taskName: TELEPHONY_OUTBOX_TOPIC,
-			payload: jobPayload,
+			payload: { ...jobPayload, idempotencyKey },
+			idempotencyKey,
 			maxRetries: 5,
 			scheduledFor: new Date(),
 		});
 
 		const ackLatencyMs = Date.now() - startMs;
+		const isDuplicate = Boolean(job.isDuplicate);
 
 		return {
 			success: true,
@@ -322,7 +324,7 @@ export class TelephonyOutboxService {
 			event,
 			organizationId: resolvedOrgId,
 			ackLatencyMs,
-			isDuplicate: false,
+			isDuplicate,
 		};
 	}
 

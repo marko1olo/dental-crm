@@ -22,8 +22,11 @@ export async function saveRetroactiveBatchAction({
 		return;
 	}
 	try {
-		const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
-		await fetch("/api/registers/autofill-shift", {
+		const headers = {
+			...denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			"Idempotency-Key": crypto.randomUUID(),
+		};
+		const res = await fetch("/api/registers/autofill-shift", {
 			method: "POST",
 			headers,
 			body: JSON.stringify({
@@ -31,12 +34,18 @@ export async function saveRetroactiveBatchAction({
 				periodLabel: periodLabelRu,
 				nurseFullName,
 			}),
-		}).catch(() => null);
+		});
+
+		if (!res.ok) {
+			const json = await res.json().catch(() => null);
+			const payload = json?.data ?? json;
+			throw new Error(payload?.message || `Ошибка сервера (${res.status})`);
+		}
 
 		onDaysUpdated((prev) => prev.map((d) => ({ ...d, isSavedToDb: true })));
 		showToast(`Все журналы СанПиН за период (${workingDaysCount} рабочих смен) внесены в реестры!`, "success");
 		if (onSuccess) onSuccess();
 	} catch (err) {
-		showToast("Ошибка сохранения реестров СанПиН", "error");
+		showToast(err instanceof Error ? err.message : "Ошибка сохранения реестров СанПиН", "error");
 	}
 }

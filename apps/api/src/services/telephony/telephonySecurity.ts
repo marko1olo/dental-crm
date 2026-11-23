@@ -3,12 +3,15 @@ import * as dns from "node:dns/promises";
 import * as net from "node:net";
 import { URL } from "node:url";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { eq } from "drizzle-orm";
 import {
 	getNationalPhoneDigits,
 	normalizePhoneDigits,
 	normalizePhoneToE164,
 } from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { organizations } from "../../db/schema.js";
 import type { TelephonyWebhookPayload } from "../../routes/telephony/types.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
@@ -16,6 +19,73 @@ export type { TelephonyWebhookPayload };
 
 export const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-8][0-9a-f]{3}-[89ab0-9][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export interface OrgTelephonySecrets {
+	webhookSecret?: string | undefined;
+	mangoApiSalt?: string | undefined;
+	sipuniSecret?: string | undefined;
+	uisSecret?: string | undefined;
+	gravitelSecret?: string | undefined;
+	mtsExolveSecret?: string | undefined;
+}
+
+export async function resolveOrgTelephonySecrets(organizationId: string): Promise<OrgTelephonySecrets> {
+	if (!organizationId || !UUID_REGEX.test(organizationId)) {
+		return {};
+	}
+	try {
+		const orgRows = await db
+			.select({ flags: organizations.workspaceFeatureFlags })
+			.from(organizations)
+			.where(eq(organizations.id, organizationId))
+			.limit(1);
+		const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+		const telephony =
+			(flags.telephony as Record<string, unknown> | null) ??
+			(flags.telephonySettings as Record<string, unknown> | null) ??
+			{};
+		return {
+			webhookSecret:
+				typeof flags.telephonyWebhookSecret === "string"
+					? flags.telephonyWebhookSecret
+					: typeof telephony.webhookSecret === "string"
+						? telephony.webhookSecret
+						: undefined,
+			mangoApiSalt:
+				typeof flags.mangoApiSalt === "string"
+					? flags.mangoApiSalt
+					: typeof telephony.mangoApiSalt === "string"
+						? telephony.mangoApiSalt
+						: undefined,
+			sipuniSecret:
+				typeof flags.sipuniSecret === "string"
+					? flags.sipuniSecret
+					: typeof telephony.sipuniSecret === "string"
+						? telephony.sipuniSecret
+						: undefined,
+			uisSecret:
+				typeof flags.uisSecret === "string"
+					? flags.uisSecret
+					: typeof telephony.uisSecret === "string"
+						? telephony.uisSecret
+						: undefined,
+			gravitelSecret:
+				typeof flags.gravitelSecret === "string"
+					? flags.gravitelSecret
+					: typeof telephony.gravitelSecret === "string"
+						? telephony.gravitelSecret
+						: undefined,
+			mtsExolveSecret:
+				typeof flags.mtsExolveSecret === "string"
+					? flags.mtsExolveSecret
+					: typeof telephony.mtsExolveSecret === "string"
+						? telephony.mtsExolveSecret
+						: undefined,
+		};
+	} catch {
+		return {};
+	}
+}
 
 export interface NormalizedPhone {
 	raw: string;
@@ -70,7 +140,10 @@ export async function authenticatePbxWebhook(
 		}
 	}
 
+	const orgSecrets = await resolveOrgTelephonySecrets(organizationId);
+
 	const primarySecret =
+		orgSecrets.webhookSecret?.trim() ||
 		process.env.TELEPHONY_WEBHOOK_SECRET?.trim() ||
 		process.env.DENTE_WEBHOOK_SECRET?.trim();
 
@@ -84,12 +157,20 @@ export async function authenticatePbxWebhook(
 		extractHeader(request, "x-api-key") || extractHeader(request, "api-key");
 	const hPbx =
 		extractHeader(request, "x-pbx-token") || extractHeader(request, "x-token");
+	const hGravitel =
+		extractHeader(request, "x-gravitel-signature") ||
+		extractHeader(request, "x-gravitel-token");
+	const hMts =
+		extractHeader(request, "x-mts-exolve-signature") ||
+		extractHeader(request, "x-exolve-signature");
 	const hAuth = extractHeader(request, "authorization");
 
 	if (hDente) candidateTokens.push(hDente);
 	if (hWebhook) candidateTokens.push(hWebhook);
 	if (hApiKey) candidateTokens.push(hApiKey);
 	if (hPbx) candidateTokens.push(hPbx);
+	if (hGravitel) candidateTokens.push(hGravitel);
+	if (hMts) candidateTokens.push(hMts);
 
 	if (hAuth) {
 		if (hAuth.startsWith("Bearer ")) {
@@ -112,7 +193,7 @@ export async function authenticatePbxWebhook(
 		extractHeader(request, "x-mango-signature") ||
 		extractHeader(request, "x-signature");
 	const mangoKey = payload.vpbx_api_key || payload.api_key;
-	const mangoSalt = process.env.MANGO_API_SALT?.trim() || primarySecret;
+	const mangoSalt = orgSecrets.mangoApiSalt?.trim() || process.env.MANGO_API_SALT?.trim() || primarySecret;
 
 	if (mangoSign && mangoKey && mangoSalt) {
 		let rawJsonStr: string | null = null;
@@ -156,6 +237,53 @@ export async function authenticatePbxWebhook(
 		}
 	}
 
+	// Sipuni MD5 Check: hash = md5(concatenated_params + secret)
+	const sipuniHash =
+		payload.hash ||
+		extractHeader(request, "x-sipuni-hash") ||
+		extractHeader(request, "x-sipuni-signature");
+	const sipuniSecret =
+		orgSecrets.sipuniSecret?.trim() ||
+		process.env.SIPUNI_API_SECRET?.trim() ||
+		primarySecret;
+	if (sipuniHash && sipuniSecret && request.body && typeof request.body === "object") {
+		const clone: Record<string, unknown> = { ...(request.body as Record<string, unknown>) };
+		delete clone.hash;
+		delete clone.sign;
+		delete clone.signature;
+		const sortedConcat = Object.keys(clone).sort().map((k) => String(clone[k] ?? "")).join("");
+		const naturalConcat = Object.values(clone).map((v) => String(v ?? "")).join("");
+		const expectedSorted = createHash("md5").update(`${sortedConcat}${sipuniSecret}`).digest("hex");
+		const expectedNatural = createHash("md5").update(`${naturalConcat}${sipuniSecret}`).digest("hex");
+		if (
+			timingSafeSecretEqual(sipuniHash, expectedSorted) ||
+			timingSafeSecretEqual(sipuniHash, expectedNatural)
+		) {
+			return true;
+		}
+	}
+
+	// UIS / CoMagic Signature Check
+	const uisSign =
+		extractHeader(request, "x-uis-signature") ||
+		extractHeader(request, "x-comagic-signature");
+	const uisSecret =
+		orgSecrets.uisSecret?.trim() ||
+		process.env.UIS_API_SECRET?.trim() ||
+		primarySecret;
+	if (uisSign && uisSecret && request.body) {
+		const rawBodyStr =
+			typeof request.body === "string" ? request.body : JSON.stringify(request.body);
+		const expectedHmac = createHmac("sha256", uisSecret).update(rawBodyStr).digest("hex");
+		const expectedMd5 = createHash("md5").update(`${rawBodyStr}${uisSecret}`).digest("hex");
+		if (
+			timingSafeSecretEqual(uisSign, expectedHmac) ||
+			timingSafeSecretEqual(uisSign, expectedMd5)
+		) {
+			return true;
+		}
+	}
+
 	// Zadarma MD5/SHA1 Check
 	const zadarmaSign =
 		payload.signature ||
@@ -180,18 +308,86 @@ export async function authenticatePbxWebhook(
 		}
 	}
 
-	if (primarySecret) {
-		for (const candidate of candidateTokens) {
-			if (timingSafeSecretEqual(candidate, primarySecret)) {
+	// Gravitel MD5 / HMAC Check
+	const rawGravitelSign =
+		extractHeader(request, "x-gravitel-signature") ||
+		extractHeader(request, "x-gravitel-token") ||
+		(typeof (payload as Record<string, unknown>).sign === "string"
+			? ((payload as Record<string, unknown>).sign as string)
+			: undefined) ||
+		(typeof (payload as Record<string, unknown>).signature === "string"
+			? ((payload as Record<string, unknown>).signature as string)
+			: undefined);
+	const gravitelSign = rawGravitelSign ? String(rawGravitelSign).trim() : null;
+	const gravitelSecret =
+		orgSecrets.gravitelSecret?.trim() ||
+		process.env.GRAVITEL_API_SECRET?.trim() ||
+		process.env.GRAVITEL_WEBHOOK_SECRET?.trim() ||
+		primarySecret;
+	if (gravitelSign && gravitelSecret) {
+		if (timingSafeSecretEqual(gravitelSign, gravitelSecret)) {
+			return true;
+		}
+		if (request.body) {
+			const rawBodyStr =
+				typeof request.body === "string" ? request.body : JSON.stringify(request.body);
+			const expectedHmac = createHmac("sha256", gravitelSecret).update(rawBodyStr).digest("hex");
+			const expectedMd5 = createHash("md5").update(`${rawBodyStr}${gravitelSecret}`).digest("hex");
+			if (
+				timingSafeSecretEqual(gravitelSign, expectedHmac) ||
+				timingSafeSecretEqual(gravitelSign, expectedMd5)
+			) {
 				return true;
 			}
 		}
 	}
 
-	if (!primarySecret) {
+	// MTS Exolve HMAC-SHA256 Check
+	const mtsSign =
+		extractHeader(request, "x-mts-exolve-signature") ||
+		extractHeader(request, "x-exolve-signature");
+	const mtsSecret =
+		orgSecrets.mtsExolveSecret?.trim() ||
+		process.env.MTS_EXOLVE_WEBHOOK_SECRET?.trim() ||
+		process.env.EXOLVE_API_SECRET?.trim() ||
+		primarySecret;
+	if (mtsSign && mtsSecret && request.body) {
+		let cleanMtsSign = mtsSign.trim();
+		if (cleanMtsSign.toLowerCase().startsWith("sha256=")) {
+			cleanMtsSign = cleanMtsSign.slice(7).trim();
+		}
+		if (timingSafeSecretEqual(cleanMtsSign, mtsSecret)) {
+			return true;
+		}
+		const rawBodyStr =
+			typeof request.body === "string" ? request.body : JSON.stringify(request.body);
+		const expectedHmac = createHmac("sha256", mtsSecret).update(rawBodyStr).digest("hex");
+		if (timingSafeSecretEqual(cleanMtsSign, expectedHmac)) {
+			return true;
+		}
+	}
+
+	const allowedSecrets = [
+		primarySecret,
+		orgSecrets.webhookSecret?.trim(),
+		orgSecrets.sipuniSecret?.trim(),
+		orgSecrets.uisSecret?.trim(),
+		orgSecrets.gravitelSecret?.trim(),
+		orgSecrets.mtsExolveSecret?.trim(),
+	].filter((s): s is string => Boolean(s && s.length > 0));
+
+	for (const candidate of candidateTokens) {
+		for (const secret of allowedSecrets) {
+			if (timingSafeSecretEqual(candidate, secret)) {
+				return true;
+			}
+		}
+	}
+
+	if (allowedSecrets.length === 0) {
 		request.log.error(
 			{ organizationId, channel: "telephony" },
-			"PBX webhook rejected: TELEPHONY_WEBHOOK_SECRET is not configured on the server.",
+			"PBX webhook rejected: TELEPHONY_WEBHOOK_SECRET is not configured on the server or organization.",
 		);
 		reply.status(503).send({
 			error: "WebhookSecretNotConfigured",
@@ -329,9 +525,12 @@ export function detectMarketingAttribution(params: {
 	utm_medium?: string | undefined;
 	advertising_channel?: string | undefined;
 	targetRaw?: string | undefined;
+	targetPhone?: NormalizedPhone | undefined;
 }): MarketingAttributionResult {
 	let detectedChannel = "telephony";
 	let detectedLabel = "Прямой звонок / ВАТС";
+
+	const targetStr = params.targetRaw || params.targetPhone?.e164 || params.targetPhone?.raw || "";
 
 	const utmRaw = `${params.utm_source || ""} ${params.utm_campaign || ""} ${params.utm_medium || ""}`
 		.trim()
@@ -385,10 +584,10 @@ export function detectMarketingAttribution(params: {
 		} else if (/2gis|2гис/i.test(ch)) {
 			detectedChannel = "gis_2";
 			detectedLabel = "2ГИС Карты";
-		} else if (/prodoc/i.test(ch)) {
+		} else if (/prodoc|продоктор/i.test(ch)) {
 			detectedChannel = "prodoctorov";
 			detectedLabel = "ПроДокторов";
-		} else if (/napopr/i.test(ch)) {
+		} else if (/napopr|напоправк/i.test(ch)) {
 			detectedChannel = "napopravku";
 			detectedLabel = "НаПоправку";
 		} else if (/site|seo|сайт/i.test(ch)) {
@@ -400,8 +599,8 @@ export function detectMarketingAttribution(params: {
 		}
 	}
 
-	if (detectedChannel === "telephony" && params.targetRaw) {
-		const trLower = params.targetRaw.toLowerCase();
+	if (detectedChannel === "telephony" && targetStr) {
+		const trLower = targetStr.toLowerCase();
 		if (/avito|авито/i.test(trLower)) {
 			detectedChannel = "avito";
 			detectedLabel = "Авито";
@@ -417,9 +616,12 @@ export function detectMarketingAttribution(params: {
 		} else if (/2gis|2гис/i.test(trLower)) {
 			detectedChannel = "gis_2";
 			detectedLabel = "2ГИС Карты";
-		} else if (/prodoc/i.test(trLower)) {
+		} else if (/prodoc|продоктор/i.test(trLower)) {
 			detectedChannel = "prodoctorov";
 			detectedLabel = "ПроДокторов";
+		} else if (/napopr|напоправк/i.test(trLower)) {
+			detectedChannel = "napopravku";
+			detectedLabel = "НаПоправку";
 		}
 	}
 

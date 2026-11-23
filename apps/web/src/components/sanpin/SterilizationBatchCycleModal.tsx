@@ -13,6 +13,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { ShieldCheck, X, User, CheckCircle2, PackageCheck, Barcode, FlaskConical, Printer } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 import { generateSanpinPrintHtml, getSanpinBatchRecords, type SterilizationBatchCycleRecord } from "./sanpinCatalogData";
@@ -135,13 +137,20 @@ export function SterilizationBatchCycleModal({
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				throw new Error(`HTTP error ${res.status}`);
+				const json = await res.json().catch(() => null);
+				const payload = json?.data ?? json;
+				throw new Error(payload?.message || `HTTP error ${res.status}`);
 			}
 			setFeedbackToast(`Цикл стерилизации запущен: ${packagesCount} пакетов списано со склада`);
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
 		} catch (err) {
-			console.warn("[SanPiN] Soft fallback on cycle submission:", err);
-			onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose();
+			console.error("[SanPiN] Error on cycle submission:", err);
+			if (isDemoShowcaseMode()) {
+				setFeedbackToast(`Цикл стерилизации запущен (демо): ${packagesCount} пакетов`);
+				setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
+			} else {
+				showToast(err instanceof Error ? err.message : "Ошибка при запуске цикла стерилизации", "error");
+			}
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -169,13 +178,20 @@ export function SterilizationBatchCycleModal({
 				body: JSON.stringify(payloadMacro),
 			});
 			if (!res.ok) {
-				throw new Error(`HTTP error ${res.status}`);
+				const json = await res.json().catch(() => null);
+				const payload = json?.data ?? json;
+				throw new Error(payload?.message || `HTTP error ${res.status}`);
 			}
 			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Списано со склада.");
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);
 		} catch (err) {
-			console.warn("[SanPiN] Soft fallback on macro batch:", err);
-			onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose();
+			console.error("[SanPiN] Error on macro batch submission:", err);
+			if (isDemoShowcaseMode()) {
+				setFeedbackToast("Автоклавирование смены запущено (демо): 2 цикла 134°C");
+				setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);
+			} else {
+				showToast(err instanceof Error ? err.message : "Ошибка при запуске стерилизации смены", "error");
+			}
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -274,17 +290,17 @@ export function SterilizationBatchCycleModal({
 					</div>
 					{feedbackToast && (<div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-semibold text-center">{feedbackToast}</div>)}
 				</div>
-				<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
+				<div className="p-3.5 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
 					<div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
-						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sanpin-run-cycle-cta" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="sanpin-primary-cta h-11 min-h-[44px] w-full sm:w-auto px-4 rounded-xl font-semibold text-xs sm:text-xs text-white bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] order-1 sm:order-2">
+						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sanpin-run-cycle-cta" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="sanpin-primary-cta h-11 min-h-[44px] w-full sm:w-auto px-4 rounded-xl font-semibold text-xs sm:text-xs text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] order-1 sm:order-2">
 							<CheckCircle2 size={16} className="text-white shrink-0" />
 							<span className="truncate sm:whitespace-normal">Запустить цикл стерилизации смены</span>
 						</button>
-						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] w-full sm:w-auto px-3.5 rounded-xl font-medium text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] order-2 sm:order-1">
+						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] w-full sm:w-auto px-3.5 rounded-xl font-medium text-xs text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] order-2 sm:order-1">
 							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
 						</button>
 					</div>
-					<button type="button" onClick={onClose} className="h-10 min-h-[44px] w-full sm:w-auto px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--muted,#64748b)] cursor-pointer order-2 sm:order-1">Отмена</button>
+					<button type="button" onClick={onClose} className="h-10 min-h-[44px] w-full sm:w-auto px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink-muted)] cursor-pointer order-2 sm:order-1">Отмена</button>
 				</div>
 			</div>
 		</div>

@@ -71,6 +71,8 @@ export const telephonyWebhookPayloadSchema = z.object({
 	crm_token: z.string().optional(),
 	sign: z.string().optional(),
 	signature: z.string().optional(),
+	hash: z.string().optional(),
+	user: z.string().optional(),
 	utm_source: z.string().optional(),
 	utm_medium: z.string().optional(),
 	utm_campaign: z.string().optional(),
@@ -83,6 +85,9 @@ export const telephonyWebhookPayloadSchema = z.object({
 	transcription: z.string().optional(),
 	transcription_snippet: z.string().optional(),
 	ai_summary: z.string().optional(),
+	gravitel_call_id: z.string().optional(),
+	voice_call_id: z.string().optional(),
+	provider: z.string().optional(),
 });
 
 export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookPayloadSchema>;

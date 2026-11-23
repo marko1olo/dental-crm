@@ -33,7 +33,111 @@ export class TelephonyAudioStreamManager {
 	private cachedCodecName = "";
 	private statsPollingTimer: ReturnType<typeof setInterval> | null = null;
 
-	constructor(private readonly config: TelephonyAudioStreamConfig = {}) {}
+	// Tab Audio Lock (BroadcastChannel arbitration to prevent microphone collisions across tabs)
+	private readonly tabId =
+		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: `tab_${Math.random().toString(36).slice(2, 10)}`;
+	private audioLockChannel: BroadcastChannel | null = null;
+	private isAudioLockedByOtherTab = false;
+	private activeAudioLockHolderTabId: string | null = null;
+	private hasLocalAudioLock = false;
+
+	constructor(private readonly config: TelephonyAudioStreamConfig = {}) {
+		this.initAudioLockChannel();
+	}
+
+	/**
+	 * Initializes BroadcastChannel arbitration for softphone audio lock across browser tabs.
+	 */
+	private initAudioLockChannel(): void {
+		if (typeof BroadcastChannel === "undefined") return;
+		try {
+			this.audioLockChannel = new BroadcastChannel("dente_softphone_audio_lock");
+			this.audioLockChannel.onmessage = (event: MessageEvent) => {
+				const data = event.data as { type?: string; tabId?: string } | undefined;
+				if (!data || data.tabId === this.tabId) return;
+
+				if (data.type === "LOCK_ACQUIRED") {
+					this.isAudioLockedByOtherTab = true;
+					this.activeAudioLockHolderTabId = data.tabId ?? null;
+				} else if (data.type === "LOCK_RELEASED") {
+					if (this.activeAudioLockHolderTabId === data.tabId) {
+						this.isAudioLockedByOtherTab = false;
+						this.activeAudioLockHolderTabId = null;
+					}
+				} else if (data.type === "REQUEST_LOCK") {
+					if (this.hasLocalAudioLock) {
+						this.audioLockChannel?.postMessage({
+							type: "LOCK_HELD",
+							tabId: this.tabId,
+						});
+					}
+				} else if (data.type === "LOCK_HELD") {
+					this.isAudioLockedByOtherTab = true;
+					this.activeAudioLockHolderTabId = data.tabId ?? null;
+				}
+			};
+
+			if (typeof window !== "undefined") {
+				window.addEventListener("beforeunload", this.handleBeforeUnload);
+			}
+
+			// Broadcast query to discover existing audio lock holder
+			this.audioLockChannel.postMessage({
+				type: "REQUEST_LOCK",
+				tabId: this.tabId,
+			});
+		} catch (err) {
+			logger.warn("[TelephonyAudioStreamManager] Failed to init Tab Audio Lock BroadcastChannel:", err);
+		}
+	}
+
+	private handleBeforeUnload = (): void => {
+		this.releaseAudioLock();
+	};
+
+	/**
+	 * Returns whether microphone audio stream is currently held by another browser tab.
+	 */
+	public isLockedByOtherTab(): boolean {
+		return this.isAudioLockedByOtherTab;
+	}
+
+	/**
+	 * Returns identifier of tab currently holding the microphone lock.
+	 */
+	public getActiveAudioLockHolderTabId(): string | null {
+		return this.activeAudioLockHolderTabId;
+	}
+
+	/**
+	 * Requests tab audio lock before acquiring microphone stream.
+	 */
+	public requestAudioLock(): boolean {
+		if (this.isAudioLockedByOtherTab) {
+			return false;
+		}
+		this.hasLocalAudioLock = true;
+		this.audioLockChannel?.postMessage({
+			type: "LOCK_ACQUIRED",
+			tabId: this.tabId,
+		});
+		return true;
+	}
+
+	/**
+	 * Releases tab audio lock when microphone is stopped.
+	 */
+	public releaseAudioLock(): void {
+		if (this.hasLocalAudioLock) {
+			this.hasLocalAudioLock = false;
+			this.audioLockChannel?.postMessage({
+				type: "LOCK_RELEASED",
+				tabId: this.tabId,
+			});
+		}
+	}
 
 	/**
 	 * Initializes audio context safely with AnalyserNodes without autoplay violations.
@@ -78,10 +182,20 @@ export class TelephonyAudioStreamManager {
 	 * Handles NotAllowedError gracefully with user-friendly clinical error messages.
 	 */
 	public async acquireLocalAudioStream(): Promise<MediaStream | null> {
+		if (this.isAudioLockedByOtherTab) {
+			this.microphoneError = "Микрофон уже используется софтфоном в другой вкладке браузера";
+			this.config.onError?.(this.microphoneError);
+			return null;
+		}
+
 		if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
 			this.microphoneError = "Медиа-устройства недоступны в текущей среде";
 			return null;
 		}
+
+		// Acquire tab audio lock prior to capturing hardware microphone
+		this.requestAudioLock();
+
 		try {
 			const constraints: MediaStreamConstraints = {
 				audio: {
@@ -123,6 +237,7 @@ export class TelephonyAudioStreamManager {
 			this.applyMuteStateToTracks();
 			return stream;
 		} catch (err: unknown) {
+			this.releaseAudioLock();
 			const errorObj = err as Error;
 			if (errorObj?.name === "NotAllowedError" || errorObj?.name === "PermissionDeniedError") {
 				this.microphoneError = "Требуется доступ к микрофону для звонков";
@@ -135,6 +250,23 @@ export class TelephonyAudioStreamManager {
 			this.config.onError?.(this.microphoneError);
 			return null;
 		}
+	}
+
+	/**
+	 * Releases microphone capture and frees tab audio lock.
+	 */
+	public releaseLocalAudioStream(): void {
+		if (this.localStream) {
+			for (const track of this.localStream.getTracks()) {
+				track.stop();
+			}
+			this.localStream = null;
+		}
+		if (this.inputSourceNode) {
+			try { this.inputSourceNode.disconnect(); } catch {}
+			this.inputSourceNode = null;
+		}
+		this.releaseAudioLock();
 	}
 
 	/**
@@ -388,7 +520,7 @@ export class TelephonyAudioStreamManager {
 					sum += dataArray[i] ?? 0;
 				}
 				const avg = sum / (bufferLength * 255);
-				return Math.min(1.0, Math.round(avg * 100) / 100);
+				return Math.min(1.0, Number(avg.toFixed(2)));
 			} catch {
 				return 0;
 			}
@@ -412,7 +544,7 @@ export class TelephonyAudioStreamManager {
 					sum += dataArray[i] ?? 0;
 				}
 				const avg = (sum / (bufferLength * 255)) * this.volume;
-				return Math.min(1.0, Math.round(avg * 100) / 100);
+				return Math.min(1.0, Number(avg.toFixed(2)));
 			} catch {
 				return 0;
 			}
@@ -437,7 +569,7 @@ export class TelephonyAudioStreamManager {
 				for (let i = 0; i < barCount; i++) {
 					const idx = Math.min(bufferLength - 1, i * step);
 					const normalized = (dataArray[idx] ?? 0) / 255;
-					bars.push(Math.min(1.0, Math.round(normalized * 100) / 100));
+					bars.push(Math.min(1.0, Number(normalized.toFixed(2))));
 				}
 				return bars;
 			} catch {}
@@ -559,6 +691,17 @@ export class TelephonyAudioStreamManager {
 		if (this.audioContext && this.audioContext.state !== "closed") {
 			this.audioContext.close().catch(() => {});
 			this.audioContext = null;
+		}
+
+		this.releaseAudioLock();
+		if (this.audioLockChannel) {
+			try {
+				this.audioLockChannel.close();
+			} catch {}
+			this.audioLockChannel = null;
+		}
+		if (typeof window !== "undefined") {
+			window.removeEventListener("beforeunload", this.handleBeforeUnload);
 		}
 	}
 

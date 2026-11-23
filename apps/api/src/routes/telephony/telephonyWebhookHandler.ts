@@ -98,12 +98,15 @@ export async function telephonyWebhookHandler(
 							await tx.execute(
 								sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${resolvedOrgId}:${callerPhone.national10}`}))`,
 							);
+							const calculatedIdempotencyKey = `telephony:lead:answered:${resolvedOrgId}:${callId || callerPhone.national10}`;
 							const existing = await tx.select().from(crmLeads).where(
 								and(
 									eq(crmLeads.organizationId, resolvedOrgId),
 									or(
 										eq(crmLeads.phone, callerPhone.e164),
 										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										callId ? sql`${crmLeads.metadata}->>'callId' = ${callId}` : sql`false`,
+										sql`${crmLeads.metadata}->>'idempotencyKey' = ${calculatedIdempotencyKey}`,
 									),
 								),
 							).limit(1);
@@ -126,6 +129,16 @@ export async function telephonyWebhookHandler(
 									notes: `Лид из принятого входящего звонка (${detectedProvider}). Канал: ${attribution.channelLabel}.${virtualTrunkNumber ? ` Номер: ${virtualTrunkNumber}.` : ""} ${callId ? `call_id: ${callId}` : ""}`,
 									audioRecordUrl: recordingUrl || null,
 									transcriptionSnippet,
+									metadata: {
+										idempotencyKey: calculatedIdempotencyKey,
+										utm_source: data.utm_source || null,
+										utm_campaign: data.utm_campaign || null,
+										utm_medium: data.utm_medium || null,
+										advertising_channel: attribution.channel,
+										channelLabel: attribution.channelLabel,
+										virtualNumber: virtualTrunkNumber || null,
+										callId: callId || null,
+									},
 									stageEnteredAt: new Date(),
 									priority: "normal",
 								});
@@ -169,6 +182,12 @@ export async function telephonyWebhookHandler(
 			return handleEndedEvent({
 				request, resolvedOrgId, callerPhone, callId, recordingUrl,
 				durationSeconds, transcriptionSnippet, matchedPatient: searchPatient[0] || null,
+				utm_source: data.utm_source,
+				utm_campaign: data.utm_campaign,
+				utm_medium: data.utm_medium,
+				advertising_channel: data.advertising_channel,
+				targetRaw,
+				targetPhone,
 			});
 		}
 		return { success: true, event };

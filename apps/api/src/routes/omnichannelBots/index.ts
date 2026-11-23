@@ -10,7 +10,6 @@ import {
 } from "./botConfigs.js";
 import { handleMaxWebhook } from "./channelMax.js";
 import { getMessengersOverviewHandler, handleTestConnection } from "./channelOverview.js";
-import { handleTelegramWebhook } from "./channelTelegram.js";
 import { handleVkWebhook } from "./channelVk.js";
 import {
 	handleReleaseChat,
@@ -24,7 +23,7 @@ import {
 	handleBookAppointment,
 	handleLinkPatient,
 } from "./triageAndBooking.js";
-import { handleWebhookGetHandshake } from "./webhookAuth.js";
+import { handleWebhookGetHandshake } from "../../security/webhookAuth.js";
 
 export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -112,13 +111,13 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		}
 
 		if (channel === "telegram") {
-			const headerSecret = request.headers["x-telegram-bot-api-secret-token"];
-			const secretToken = typeof headerSecret === "string" ? headerSecret : null;
-			const res = await handleTelegramWebhook(body, organizationId, secretToken);
-			if (!res.ok && res.statusCode) {
-				return reply.code(res.statusCode).send(res);
-			}
-			return reply.code(200).send(res);
+			// Канонический шлюз Telegram — /api/telegram/webhook/:organizationId (DEF-TEL-07)
+			return reply.code(400).send({
+				ok: false,
+				error: "UseCanonicalTelegramWebhook",
+				message:
+					"Входящие вебхуки Telegram принимаются на каноническом эндпоинте /api/telegram/webhook/:organizationId.",
+			});
 		}
 
 		if (channel === "whatsapp") {
@@ -305,10 +304,9 @@ export default registerOmnichannelBotRoutes;
 
 export * from "./schemas.js";
 export * from "./types.js";
-export * from "./webhookAuth.js";
+export { handleWebhookGetHandshake, getVkConfirmationCode } from "../../security/webhookAuth.js";
 export * from "./botConfigs.js";
 export * from "./channelOverview.js";
-export * from "./channelTelegram.js";
 export * from "./channelVk.js";
 export * from "./channelMax.js";
 export * from "./channelWebWidget.js";
