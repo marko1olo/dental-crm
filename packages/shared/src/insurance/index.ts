@@ -8,6 +8,6 @@
  */
 
 export * from "./dmsFranchiseEngine.js";
-export * from "./dmsGuaranteeLetters.js";
-export * from "./dmsRegistryExport.js";
+export * from "./guaranteeModules/index.js";
+export * from "./registryModules/index.js";
 export * from "./catalogs/index.js";

@@ -152,7 +152,7 @@ export function stageFailureToOutcome(failure: StageFailure): CashboxPaymentOutc
 				body: {
 					error: isFamily ? "InsufficientFamilyBalance" : "InsufficientDepositBalance",
 					message: isFamily
-						? `Недостаточно средств на семейном балансе. Доступно: ${failure.availableRub} ₽, требуется: ${failure.requiredRub} ₽`
+						? `Недостаточно средств на семейном кошельке. Доступно: ${failure.availableRub} ₽, требуется: ${failure.requiredRub} ₽`
 						: `Недостаточно средств на депозите пациента. Доступно: ${failure.availableRub} ₽, требуется: ${failure.requiredRub} ₽`,
 				},
 			};
@@ -279,6 +279,7 @@ export interface PaymentProcessingContext {
 	newDmsUsedRub: number;
 	isDmsExhausted: boolean;
 	isEmergencyLetterAlias: boolean;
+	patientCoPayKopecks?: bigint | undefined;
 
 	// Инвойс и визит
 	effectiveVisitId: string | null;
@@ -293,6 +294,7 @@ export interface PaymentProcessingContext {
 
 	// Проводка платежа
 	newPayment?: typeof payments.$inferSelect | undefined;
+	createdPaymentIds: string[];
 
 	// Кассы и смены
 	cashDeskBox?: typeof cashBoxes.$inferSelect | undefined;

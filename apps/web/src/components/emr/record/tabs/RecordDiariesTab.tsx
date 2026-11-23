@@ -166,6 +166,11 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 
 		const handleSaveNewDiary = useCallback(() => {
 			if (!protocol.trim() && !subjective.trim() && !objective.trim()) {
+				showToast(
+					"Заполните жалобы (S), статус осмотра (O) или протокол лечения (P) для сохранения дневника приёма",
+					"warning",
+					4000
+				);
 				return;
 			}
 			const now = new Date();
@@ -464,14 +469,14 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 								<span className="font-bold text-[var(--teal,#0d9488)]">S (Жалобы):</span> {diary.subjectiveComplaints}
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">O (Осмотр):</span> {diary.objectiveStatusLocalis}
+								<span className="font-bold text-[var(--teal,#0d9488)]">O (Status localis):</span> {diary.objectiveStatusLocalis}
 								{diary.eodMicroamperes ? ` [ЭОД: ${diary.eodMicroamperes} мкА]` : ""}
 							</div>
 							<div className="mb-1.5 text-xs">
 								<span className="font-bold text-[var(--teal,#0d9488)]">A (Диагноз):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">P (Лечение):</span> {diary.procedureProtocol}
+								<span className="font-bold text-[var(--teal,#0d9488)]">P (Протокол лечения):</span> {diary.procedureProtocol}
 							</div>
 							{diary.anesthesiaDetails && (
 								<div className="text-[11px] text-[var(--muted,#64748b)] mb-1">• Анестезия: {diary.anesthesiaDetails}</div>

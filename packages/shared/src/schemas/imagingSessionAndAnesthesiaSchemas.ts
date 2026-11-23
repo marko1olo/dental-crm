@@ -3,7 +3,7 @@ import { imagingViewerStateSchema } from "./migrationBridgeAndViewerSchemas.js";
 import { visitNoteDraftSchema } from "./localBridgeAndSpeechTokensSchemas.js";
 import { postVisitRecommendationsPayloadSchema, treatmentPlanPayloadSchema } from "./labOrderAndSterilizationSchemas.js";
 import { dentalSpecialtySchema } from "./aiAndEgiszSchemas.js";
-import { nonNegativeMoneyRubSchema } from "../money.js";
+import { nonNegativeMoneyRubSchema, rublesToKopecks, kopecksToRubles, percentageOfKopecks, basisPointsFromPercent } from "../money.js";
 
 export const imagingViewerSaveSessionPayloadSchema = z.object({
 	studyId: z.string(),
@@ -417,7 +417,9 @@ export function calculateCashbackPoints(
 	if (paidAmountRub <= 0 || cashbackPercent <= 0 || pointRateRub <= 0) {
 		return 0;
 	}
-	const cashbackRub = (paidAmountRub * cashbackPercent) / 100;
+	const paidKopecks = rublesToKopecks(paidAmountRub);
+	const cashbackKopecks = percentageOfKopecks(paidKopecks, basisPointsFromPercent(cashbackPercent));
+	const cashbackRub = kopecksToRubles(cashbackKopecks);
 	return Number((cashbackRub / pointRateRub).toFixed(2));
 }
 

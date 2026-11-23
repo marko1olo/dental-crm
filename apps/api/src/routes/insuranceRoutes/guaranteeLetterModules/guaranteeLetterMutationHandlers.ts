@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { dmsGuaranteeLetters } from "../../../db/schema.js";
+import { dmsGuaranteeLetters, patients } from "../../../db/schema.js";
 import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { formatGuaranteeLetterResponse, isValidUuid } from "./guaranteeLetterFormatters.js";
 
@@ -94,6 +94,28 @@ export async function handleCreateGuaranteeLetter(
 	const validLetterId = isValidUuid(data.id) ? data.id : undefined;
 
 	const created = await db.transaction(async (tx) => {
+		// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
+		const [patientRecord] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, data.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!patientRecord) {
+			return {
+				status: 404,
+				error: {
+					error: "PatientNotFound",
+					message: "Пациент не найден в вашей клинике.",
+				},
+			};
+		}
+
 		const [inserted] = await tx
 			.insert(dmsGuaranteeLetters)
 			.values({
@@ -126,7 +148,15 @@ export async function handleCreateGuaranteeLetter(
 			})
 			.returning();
 
-		if (!inserted) return null;
+		if (!inserted) {
+			return {
+				status: 500,
+				error: {
+					error: "LetterNotSaved",
+					message: "Не удалось сохранить гарантийное письмо ДМС в базе данных.",
+				},
+			};
+		}
 
 		const formatted = formatGuaranteeLetterResponse(inserted);
 
@@ -151,21 +181,18 @@ export async function handleCreateGuaranteeLetter(
 				});
 		}
 
-		return formatted;
+		return { status: 201, data: formatted };
 	});
 
-	if (!created) {
-		return reply.code(500).send({
-			error: "LetterNotSaved",
-			message: "Не удалось сохранить гарантийное письмо ДМС в базе данных.",
-		});
+	if (created.status !== 201 || !created.data) {
+		return reply.code(created.status).send(created.error);
 	}
 
 	if (idempotencyKey) {
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	return reply.code(201).send(created);
+	return reply.code(201).send(created.data);
 }
 
 export async function handleUpdateGuaranteeLetter(
@@ -220,7 +247,29 @@ export async function handleUpdateGuaranteeLetter(
 		};
 
 		if (d.contractId !== undefined) updateData.contractId = d.contractId ?? null;
-		if (d.patientId !== undefined) updateData.patientId = d.patientId;
+		if (d.patientId !== undefined) {
+			const [patientRecord] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, d.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRecord) {
+				return {
+					status: 404,
+					error: {
+						error: "PatientNotFound",
+						message: "Пациент не найден в вашей клинике.",
+					},
+				};
+			}
+			updateData.patientId = d.patientId;
+		}
 		if (d.patientFullName !== undefined) updateData.patientFullName = d.patientFullName.trim();
 		if (d.patientBirthDate !== undefined) updateData.patientBirthDate = d.patientBirthDate ?? null;
 		if (d.policyNumber !== undefined) updateData.policyNumber = d.policyNumber.trim();

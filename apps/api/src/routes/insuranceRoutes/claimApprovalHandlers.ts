@@ -1,5 +1,8 @@
 import {
 	calculateDmsGuaranteeSplit,
+	computePayloadHash,
+	kopecksToRubles,
+	rublesToKopecks,
 	type DmsGuaranteeLetter,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -9,7 +12,8 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { dmsGuaranteeLetters, insuranceContracts } from "../../db/schema.js";
+import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import {
 	preAuthRequestBodySchema,
 	splitInvoiceBodySchema,
@@ -147,6 +151,46 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// Mandate 8zp/8bo: Idempotency-Key support
+		const rawBodyMutationId = (request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.clientMutationId ||
+			(request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.idempotencyKey;
+		const rawIdemKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+		const idempotencyKey =
+			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+				? rawIdemKey.trim()
+				: undefined;
+
+		if (idempotencyKey) {
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция смены статуса гарантийного письма с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		const { letterId, status, notes, resolutionReason } = parsed.data;
 
 		const txResult = await db.transaction(async (tx) => {
@@ -208,20 +252,47 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				};
 			}
 
+			const responsePayload = {
+				success: true,
+				letterId: updated.id,
+				status: updated.status,
+				notes: updated.notes,
+				updatedAt: updated.updatedAt.toISOString(),
+			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+						},
+					});
+			}
+
 			return {
 				status: 200,
-				data: {
-					success: true,
-					letterId: updated.id,
-					status: updated.status,
-					notes: updated.notes,
-					updatedAt: updated.updatedAt.toISOString(),
-				},
+				data: responsePayload,
 			};
 		});
 
 		if (txResult.status !== 200 || !txResult.data) {
 			return reply.code(txResult.status).send(txResult.error);
+		}
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		return reply.code(200).send(txResult.data);
@@ -243,6 +314,46 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				error: "ValidationError",
 				message: msg,
 			});
+		}
+
+		// Mandate 8zp/8bo: Idempotency-Key support
+		const rawBodyMutationId = (request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.clientMutationId ||
+			(request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.idempotencyKey;
+		const rawIdemKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+		const idempotencyKey =
+			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+				? rawIdemKey.trim()
+				: undefined;
+
+		if (idempotencyKey) {
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция предварительного согласования ДМС с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
 		}
 
 		const d = parsed.data;
@@ -307,21 +418,48 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
+				const responsePayload = {
+					success: true,
+					letterId: updated.id,
+					status: updated.status,
+					curatorFullName: updated.curatorFullName,
+					curatorPhone: updated.curatorPhone,
+					message: "Запрос на предварительное согласование отправлен куратору страховой компании.",
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 200,
+							},
+						});
+				}
+
 				return {
 					status: 200,
-					data: {
-						success: true,
-						letterId: updated.id,
-						status: updated.status,
-						curatorFullName: updated.curatorFullName,
-						curatorPhone: updated.curatorPhone,
-						message: "Запрос на предварительное согласование отправлен куратору страховой компании.",
-					},
+					data: responsePayload,
 				};
 			});
 
 			if (txResult.status !== 200 || !txResult.data) {
 				return reply.code(txResult.status).send(txResult.error);
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			return reply.code(200).send(txResult.data);
@@ -331,6 +469,31 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			const nextMonthIso = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
 
 			const txResult = await db.transaction(async (tx) => {
+				// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
+				const [patientRecord] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, d.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!patientRecord) {
+					return {
+						status: 404,
+						error: {
+							error: "PatientNotFound",
+							message: "Пациент не найден в вашей клинике.",
+						},
+					};
+				}
+
+				const estimatedCostKop = d.estimatedCostKopecks ?? (d.estimatedCostRub ? rublesToKopecks(d.estimatedCostRub) : 5000000);
+				const estimatedCostRub = kopecksToRubles(estimatedCostKop);
+
 				const [created] = await tx
 					.insert(dmsGuaranteeLetters)
 					.values({
@@ -346,7 +509,7 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 						issueDate: todayIso,
 						validFrom: todayIso,
 						validUntil: nextMonthIso,
-						maxCoverageRub: d.estimatedCostRub ?? 50000,
+						maxCoverageRub: estimatedCostRub,
 						usedAmountRub: 0,
 						franchisePct: 0,
 						franchiseType: "percent",
@@ -372,21 +535,48 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
+				const responsePayload = {
+					success: true,
+					letterId: created.id,
+					status: created.status,
+					curatorFullName: created.curatorFullName,
+					curatorPhone: created.curatorPhone,
+					message: "Создан запрос на предварительное согласование со статусом ожидания ответа куратора.",
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 201,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 201,
+							},
+						});
+				}
+
 				return {
 					status: 201,
-					data: {
-						success: true,
-						letterId: created.id,
-						status: created.status,
-						curatorFullName: created.curatorFullName,
-						curatorPhone: created.curatorPhone,
-						message: "Создан запрос на предварительное согласование со статусом ожидания ответа куратора.",
-					},
+					data: responsePayload,
 				};
 			});
 
 			if (txResult.status !== 201 || !txResult.data) {
 				return reply.code(txResult.status).send(txResult.error);
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			return reply.code(201).send(txResult.data);

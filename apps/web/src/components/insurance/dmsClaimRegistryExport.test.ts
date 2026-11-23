@@ -11,8 +11,9 @@ import {
 	DEFAULT_CLINIC_PROFILE,
 	formatKopecksToRub,
 	formatRubInt,
-	generateDmsLegacyRegistryXml as generateDmsRegistryXml,
-	generateDmsLegacyRegistryCsv as generateDmsRegistryCsv,
+	generateDmsRegistryXml,
+	generateDmsRegistryCsv,
+	convertRecordsToDmsRegistryData,
 	generateDmsA4PrintableHtml,
 } from "@dental/shared";
 
@@ -50,34 +51,37 @@ describe("DmsClaimRegistryExport — Statutory Insurance Contracts Catalog", () 
 
 describe("DmsClaimRegistryExport — 1-Click Export Engines (XML, CSV, A4 HTML)", () => {
 	it("2.1 Generates valid electronic XML registry conforming to Russian DMS interchange standards", () => {
-		const xml = generateDmsRegistryXml(
+		const regData = convertRecordsToDmsRegistryData(
 			DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
 			DEFAULT_CLINIC_PROFILE,
 			DEFAULT_STATUTORY_INSURANCE_CONTRACTS[0],
 			"Август 2026 г.",
 			"РЕЕСТР-2026-08/SOGAZ",
 		);
+		const xml = generateDmsRegistryXml(regData);
 
 		assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
-		assert.ok(xml.includes("<DmsReconciliationRegistry"));
-		assert.ok(xml.includes("<RegistryNumber>РЕЕСТР-2026-08/SOGAZ</RegistryNumber>"));
-		assert.ok(xml.includes("<LegalName>ООО «Стоматологический Центр «ДЕНТЕ»</LegalName>"));
-		assert.ok(xml.includes("<INN>7701984210</INN>"));
-		assert.ok(xml.includes("<ServiceCode804n>A16.07.002.001</ServiceCode804n>"));
+		assert.ok(xml.includes("<РеестрСчетовДМС"));
+		assert.ok(xml.includes("<НомерРеестра>РЕЕСТР-2026-08/SOGAZ</НомерРеестра>"));
+		assert.ok(xml.includes("<Наименование>ООО «Стоматологический Центр «ДЕНТЕ»</Наименование>"));
+		assert.ok(xml.includes("<ИНН>7701984210</ИНН>"));
+		assert.ok(xml.includes("<Код804н>A16.07.002.001</Код804н>"));
 	});
 
 	it("2.2 Generates RFC 4180 CSV registry with UTF-8 BOM for Microsoft Excel / 1C", () => {
-		const csv = generateDmsRegistryCsv(
+		const regData = convertRecordsToDmsRegistryData(
 			DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
 			DEFAULT_CLINIC_PROFILE,
-			"АО «СОГАЗ»",
+			DEFAULT_STATUTORY_INSURANCE_CONTRACTS[0],
 			"Август 2026 г.",
+			"РЕЕСТР-2026-08/SOGAZ",
 		);
+		const csv = generateDmsRegistryCsv(regData);
 
 		assert.equal(csv.charCodeAt(0), 0xfeff);
 		const lines = csv.slice(1).split("\r\n");
 		assert.ok(lines.length >= DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS.length + 2);
-		assert.ok(lines[0]?.includes("№ п/п;Дата визита;Ф.И.О. Застрахованного"));
+		assert.ok(lines[0]?.includes("№ п/п;Дата услуги;ФИО застрахованного"));
 		assert.ok(lines[1]?.includes("Иванов Сергей Алексеевич"));
 	});
 

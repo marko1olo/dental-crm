@@ -13,7 +13,7 @@ export {
 
 export * from "./insuranceRoutes/types.js";
 export * from "./insuranceRoutes/constants.js";
-export { registerPolicyManagementRoutes } from "./insuranceRoutes/policyManagementHandlers.js";
+export { registerPolicyManagementRoutes } from "./insuranceRoutes/policyModules/index.js";
 export { registerGuaranteeLetterRoutes } from "./insuranceRoutes/guaranteeLetterHandlers.js";
 export { registerClaimApprovalRoutes } from "./insuranceRoutes/claimApprovalHandlers.js";
 export { registerInsuranceAnalyticsRoutes } from "./insuranceRoutes/insuranceAnalyticsHandlers.js";

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { computePayloadHash } from "@dental/shared";
+import { computePayloadHash, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
@@ -355,6 +355,8 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			patientBirthDate?: string;
 			isEmergency?: boolean;
 			maxCoverageRub?: number;
+			maxCoverageKopecks?: number;
+			limitKopecks?: number;
 		};
 	}>("/api/insurance/quick-attach", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -434,7 +436,11 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 		const todayIso = new Date().toISOString().slice(0, 10);
 		const oneYearLaterIso = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
 
-		const maxCoverage = body.maxCoverageRub && body.maxCoverageRub > 0 ? body.maxCoverageRub : 50000;
+		const maxCoverageKop =
+			body.maxCoverageKopecks ??
+			body.limitKopecks ??
+			(body.maxCoverageRub && body.maxCoverageRub > 0 ? rublesToKopecks(body.maxCoverageRub) : 5000000);
+		const maxCoverage = kopecksToRubles(maxCoverageKop);
 		const letterNumber = body.isEmergency
 			? `ЭКСТРЕННО-${Date.now().toString().slice(-6)}`
 			: `ДМС-${Date.now().toString().slice(-6)}`;

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -19,6 +19,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	organizations,
+	patientRelationships,
 	patients,
 	payments,
 	users,
@@ -219,17 +220,42 @@ async function buildTaxCertificatePayload(
 
 	if (!patient) return null;
 
-	// По приказу ФНС России № ЕА-7-11/824@ (форма КНД 1151156) расчет расходов справки
-	// строго привязан к конкретному пациенту, получившему медицинские услуги.
-	// Запрещено смешивать расходы других членов семьи под именем одного пациента.
-	const targetPatientIds = [patientId];
+	// Поддержка семейных справок для налогового вычета (Приказ ФНС РФ № ЕА-7-11/824@):
+	// При запросе справки налогоплательщиком за родственников (детей/супругов) консолидируем платежи членов семьи
+	let targetPatientIds = [patientId];
+	if (relationship && relationship !== "patient_self") {
+		const relRows = await db
+			.select({
+				patientId: patientRelationships.patientId,
+				relatedPatientId: patientRelationships.relatedPatientId,
+			})
+			.from(patientRelationships)
+			.where(
+				and(
+					eq(patientRelationships.organizationId, organizationId),
+					or(
+						eq(patientRelationships.patientId, patientId),
+						eq(patientRelationships.relatedPatientId, patientId),
+					),
+				),
+			);
+
+		if (relRows.length > 0) {
+			const relatedIds = relRows.map((r) =>
+				r.patientId === patientId ? r.relatedPatientId : r.patientId,
+			);
+			targetPatientIds = Array.from(new Set([patientId, ...relatedIds]));
+		}
+	}
 
 	const dbPayments = await db
 		.select()
 		.from(payments)
 		.where(
 			and(
-				eq(payments.patientId, patientId),
+				targetPatientIds.length === 1
+					? eq(payments.patientId, patientId)
+					: inArray(payments.patientId, targetPatientIds),
 				eq(payments.organizationId, organizationId),
 			),
 		);
@@ -244,11 +270,20 @@ async function buildTaxCertificatePayload(
 
 	for (const p of yearPayments) {
 		const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
-		const amtKop = typeof rawAmountKopecks === "bigint"
+		const parsedKop = typeof rawAmountKopecks === "bigint"
 			? Number(rawAmountKopecks)
 			: typeof rawAmountKopecks === "number"
 				? Math.round(rawAmountKopecks)
 				: rublesToKopecks(Number(p.amountRub) || 0);
+
+		const isRefundRecord =
+			p.status === "refunded" ||
+			("paymentMethod" in p && (p as { paymentMethod?: unknown }).paymentMethod === "refund") ||
+			("type" in p && (p as { type?: unknown }).type === "refund") ||
+			parsedKop < 0;
+
+		const amtKop = isRefundRecord ? -Math.abs(parsedKop) : Math.abs(parsedKop);
+
 		const isExpensive = Boolean(
 			p.taxDeductionCode === "2" ||
 			classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
@@ -280,8 +315,8 @@ async function buildTaxCertificatePayload(
 			amountRub: kopecksToRubles(amtKop),
 			amountKopecks: amtKop,
 			taxCode: isExpensive ? ("2" as const) : ("1" as const),
-			status: p.status === "refunded" ? ("refunded" as const) : ("paid" as const),
-			isRefund: amtKop < 0,
+			status: isRefundRecord ? ("refunded" as const) : ("paid" as const),
+			isRefund: isRefundRecord,
 		});
 	}
 

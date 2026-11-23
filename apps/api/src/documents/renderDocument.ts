@@ -181,7 +181,7 @@ export function renderDocumentHtml(
 				return orthodonticMedicalCard043_1u(document, patient);
 			case "daily_dentist_diary_037u":
 			case "summary_dentist_statement_039u":
-				return `<section><h2>Архивная форма</h2><p class="notice">Советские формы 037/у и 039/у (УЕТ 1988 г.) выведены из эксплуатации. Вся медицинская деятельность ведется в цифровой ЭМК (форма 043/у).</p></section>`;
+				return `<section><h2>Архивная форма</h2><p class="notice">Советские формы 037/у и 039/у (УЕТ 1988 г.) выведены из эксплуатации. Вся медицинская деятельность ведется в цифровой ЭМК (Медицинская карта стоматологического пациента).</p></section>`;
 			case "medical_record_copy_request":
 				return structuredMedicalRecordCopyRequest(document, patient);
 			case "medical_document_release_receipt":

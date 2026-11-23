@@ -99,7 +99,7 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 					<div>
 						<div className="flex items-center justify-between mb-1">
 							<label className="text-[11px] font-bold text-[var(--muted)]">
-								Жалобы (Subjective):
+								S (Жалобы):
 							</label>
 							<button
 								type="button"
@@ -161,7 +161,7 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 
 				<div>
 					<label className="text-[11px] font-bold text-[var(--muted)] block mb-1">
-						P (Протокол лечения и манипуляции):
+						P (Протокол лечения):
 					</label>
 					<textarea
 						rows={3}

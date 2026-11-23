@@ -43,7 +43,7 @@ import { TreatmentConsumablesService } from "../../services/treatmentConsumables
 export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * 1. GET /api/surgery/protocols/templates
-	 * Возвращает 1-клик шаблоны хирургических протоколов с физиологической нормой по умолчанию
+	 * Возвращает шаблоны хирургических протоколов с физиологической нормой по умолчанию
 	 * (Код услуги прейскуранта, Медицинская карта приёма, Мандаты 8e, 8i).
 	 */
 	app.get("/api/surgery/protocols/templates", async (request, reply) => {
@@ -450,7 +450,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 	/**
 	 * 3. POST /api/surgery/materials/quick-deduct
-	 * 1-клик списание хирургических комплектов у кресла (Мандаты 8e, 8s, 8n).
+	 * Экспресс-списание хирургических комплектов у кресла (Мандаты 8e, 8s, 8n).
 	 * Пустые карпулы анестетиков — отходы Класса Б (СанПиН 3.3686-21) без комиссий.
 	 * Мягкий овердрафт склада: задержка накладной никогда не блокирует операцию врача!
 	 */
@@ -478,7 +478,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					drugName: input.drugBrandName,
 					userId: identity.userId,
 					visitId: input.visitId,
-					notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, 1 клик)`,
+					notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
 				});
 			}
 

@@ -53,6 +53,7 @@ const OUTBOX_TO_REMINDER_STATE: Readonly<Record<string, ReminderState>> = {
 export function dayBoundsInTimeZone(
 	date: string,
 	timeZone: string,
+	logger?: { error: (obj: unknown, msg?: string) => void },
 ): { from: Date; to: Date } | null {
 	const parts = date.split("-").map((value) => Number.parseInt(value, 10));
 	const [year, month, day] = parts;
@@ -85,7 +86,7 @@ export function dayBoundsInTimeZone(
 		);
 		offsetMinutes = (localAsUtc - probeUtc.getTime()) / 60_000;
 	} catch (err) {
-		console.error("[Dente] timeZoneLocalDayLimits failed:", err);
+		logger?.error({ err }, "[Dente] timezone helper failed");
 		return null;
 	}
 
@@ -97,7 +98,11 @@ export function dayBoundsInTimeZone(
 }
 
 /** Дата в поясе клиники в виде ГГГГ-ММ-ДД. null — пояс неизвестен. */
-function dateInTimeZone(timeZone: string, moment: Date): string | null {
+function dateInTimeZone(
+	timeZone: string,
+	moment: Date,
+	logger?: { error: (obj: unknown, msg?: string) => void },
+): string | null {
 	try {
 		// en-CA даёт ISO-подобный формат ГГГГ-ММ-ДД.
 		return new Intl.DateTimeFormat("en-CA", {
@@ -107,7 +112,7 @@ function dateInTimeZone(timeZone: string, moment: Date): string | null {
 			day: "2-digit",
 		}).format(moment);
 	} catch (err) {
-		console.error("[Dente] dateInTimeZone failed:", err);
+		logger?.error({ err }, "[Dente] timezone helper failed");
 		return null;
 	}
 }
@@ -143,8 +148,12 @@ function nextCalendarDay(date: string): string {
  * Теперь дата считается КАЛЕНДАРНО: берётся сегодняшняя дата в поясе клиники и
  * к ней прибавляется один день. Длина суток на это не влияет вообще.
  */
-export function tomorrowInTimeZone(timeZone: string, now = new Date()): string {
-	const today = dateInTimeZone(timeZone, now);
+export function tomorrowInTimeZone(
+	timeZone: string,
+	now = new Date(),
+	logger?: { error: (obj: unknown, msg?: string) => void },
+): string {
+	const today = dateInTimeZone(timeZone, now, logger);
 	// Пояс неизвестен — прежнее поведение: сутки вперёд по UTC. Здесь это
 	// единственный доступный ответ, и он честнее отказа: маршрут обязан вернуть
 	// список хотя бы за какой-то день.
@@ -181,8 +190,8 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			.limit(1);
 		const timeZone = clinic?.timezone ?? "Europe/Moscow";
 
-		const date = parsed.data.date ?? tomorrowInTimeZone(timeZone);
-		const bounds = dayBoundsInTimeZone(date, timeZone);
+		const date = parsed.data.date ?? tomorrowInTimeZone(timeZone, new Date(), request.log);
+		const bounds = dayBoundsInTimeZone(date, timeZone, request.log);
 		if (!bounds)
 			return badRequest(
 				reply,
@@ -491,8 +500,8 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		const clinic = clinicList[0];
 		const timeZone = clinic?.timezone?.trim() || "Europe/Moscow";
 
-		const date = parsed.date ?? tomorrowInTimeZone(timeZone);
-		const bounds = dayBoundsInTimeZone(date, timeZone);
+		const date = parsed.date ?? tomorrowInTimeZone(timeZone, new Date(), request.log);
+		const bounds = dayBoundsInTimeZone(date, timeZone, request.log);
 		if (!bounds) {
 			return reply.status(400).send({
 				error: "InvalidDate",
@@ -675,7 +684,7 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 			if (!bodyText) {
 				const linkSuffix = actionLinks?.confirmLink
-					? `\n\nПодтвердить в 1 клик: ${actionLinks.confirmLink}\nОтменить: ${actionLinks.cancelLink}`
+					? `\n\nПодтвердить запись: ${actionLinks.confirmLink}\nОтменить: ${actionLinks.cancelLink}`
 					: "";
 				bodyText = `Здравствуйте, ${patName}! Напоминаем о вашей записи в клинику на завтра (${date}) в ${timeStr}.${linkSuffix}\nЖдём вас!`;
 			}

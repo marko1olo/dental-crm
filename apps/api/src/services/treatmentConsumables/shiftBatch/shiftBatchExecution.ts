@@ -111,7 +111,7 @@ export async function executeShiftBatchDeduction(
 		reasonPrefix: `Списание под смену ${effectiveDate}`,
 		metadata: effectiveKey ? { idempotencyKey: effectiveKey, clientMutationId: effectiveKey } : undefined,
 		successMessageTemplate: (count, hasOverdraft) =>
-			`Расходники за смену ${effectiveDate} списаны пакетом в 1 клик (${count} поз., мягкий овердрафт: ${hasOverdraft ? "активен" : "нет"}).`,
+			`Расходники за смену ${effectiveDate} списаны пакетно (${count} поз., мягкий овердрафт: ${hasOverdraft ? "активен" : "нет"}).`,
 	});
 
 	return {

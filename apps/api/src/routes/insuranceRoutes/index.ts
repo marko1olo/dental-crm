@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { registerClaimApprovalRoutes } from "./claimApprovalHandlers.js";
 import { registerGuaranteeLetterRoutes } from "./guaranteeLetterHandlers.js";
 import { registerInsuranceAnalyticsRoutes } from "./insuranceAnalyticsHandlers.js";
-import { registerPolicyManagementRoutes } from "./policyManagementHandlers.js";
+import { registerPolicyManagementRoutes } from "./policyModules/index.js";
 
 /**
  * Master Fastify Registration Plugin for all Insurance and VHI/DMS Routes.
@@ -19,7 +19,7 @@ export const insuranceRoutes = registerInsuranceRoutes;
 
 export * from "./types.js";
 export * from "./constants.js";
-export { registerPolicyManagementRoutes } from "./policyManagementHandlers.js";
+export { registerPolicyManagementRoutes } from "./policyModules/index.js";
 export { registerGuaranteeLetterRoutes } from "./guaranteeLetterHandlers.js";
 export { registerClaimApprovalRoutes } from "./claimApprovalHandlers.js";
 export { registerInsuranceAnalyticsRoutes } from "./insuranceAnalyticsHandlers.js";

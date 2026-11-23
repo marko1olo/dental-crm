@@ -6,8 +6,8 @@
 import type { ClinicLegalInfo } from "../../sanpin/index.js";
 import { rublesToKopecks } from "../../money.js";
 import {
-	generateDmsLegacyRegistryXml,
-	generateDmsLegacyRegistryCsv,
+	generateDmsRegistryXml,
+	generateDmsRegistryCsv,
 	generateDmsRegistryA4Html,
 	type DmsRegistryData,
 } from "../registryModules/index.js";
@@ -52,15 +52,15 @@ export function generateBilateralAcceptanceActHtml(params: {
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Акт сдачи-приемки № ${actNum}</title><style>@page{size:A4 portrait;margin:15mm;}body{font-family:'Times New Roman',serif;font-size:11pt;line-height:1.3;color:#000;padding:10px;}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:9.5pt;}th{border:1px solid #000;background:#f0f0f0;padding:5px;}</style></head><body><h2 style="text-align:center;">АКТ СДАЧИ-ПРИЕМКИ № ${actNum}</h2><p>По Договору ДМС № ${insurer.contractNumber} от ${insurer.contractDate} г.</p><p>Исполнитель: ${clinic.name}, ИНН ${clinic.inn}. Заказчик: ${insurer.name}</p><table><thead><tr><th>№</th><th>Дата</th><th>Пациент</th><th>Полис</th><th>Гар. письмо</th><th>Услуга</th><th>Кол-во</th><th>Тариф</th><th>ДМС</th><th>Пациент</th></tr></thead><tbody>${rows}</tbody></table><p>Всего к оплате Страховщиком: <strong>${formatRubKopecks(summary.totalDmsCoveredRub)}</strong>. Оплачено пациентом: <strong>${formatRubKopecks(summary.totalPatientPaidRub)}</strong>.</p><div style="display:flex;justify-content:space-between;margin-top:20px;"><div><strong>ОТ ИСПОЛНИТЕЛЯ:</strong> ${clinic.name}</div><div><strong>ОТ ЗАКАЗЧИКА:</strong> ${insurer.name}</div></div></body></html>`;
 }
 
-export function generateDmsA4PrintableHtml(
+export function convertRecordsToDmsRegistryData(
 	records: readonly DmsRegistryServiceRecord[],
 	clinic: ClinicLegalInfo,
 	contract: StatutoryInsuranceContract,
 	period: string,
 	regNum: string,
-): string {
+): DmsRegistryData {
 	const todayIso = new Date().toISOString().slice(0, 10);
-	const regData: DmsRegistryData = {
+	return {
 		registryNumber: regNum,
 		registryDate: todayIso,
 		periodStart: period,
@@ -105,7 +105,27 @@ export function generateDmsA4PrintableHtml(
 			insurerClaimKopecks: r.dmsCoveredKopecks ?? (r.dmsCoveredRub ? rublesToKopecks(r.dmsCoveredRub) : 0),
 		})),
 	};
-	return generateDmsRegistryA4Html(regData);
+}
+
+export function generateDmsA4PrintableHtml(
+	records: readonly DmsRegistryServiceRecord[],
+	clinic: ClinicLegalInfo,
+	contract: StatutoryInsuranceContract,
+	period: string,
+	regNum: string,
+): string {
+	const regData = convertRecordsToDmsRegistryData(records, clinic, contract, period, regNum);
+	const rawHtml = generateDmsRegistryA4Html(regData);
+	const actSection = `
+	<div class="act-section" style="page-break-before: always; margin-top: 30px; border-top: 2px dashed #333; padding-top: 20px;">
+		<h2 style="text-align: center; margin-bottom: 8px;">ДВУСТОРОННИЙ АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ УСЛУГ</h2>
+		<p style="text-align: center; font-size: 10pt; color: #555;">к Договору ДМС № ${contract.contractNumber} от 10.01.2026 г. по Реестру № ${regNum}</p>
+		<p style="margin-top: 15px;">Мы, нижеподписавшиеся, Исполнитель <b>${clinic.name}</b> (ИНН ${clinic.inn}) в лице руководителя и Заказчик <b>${contract.insurerShortName}</b> (ИНН ${contract.inn}), составили настоящий акт о том, что услуги по счет-реестру оказаны в полном объеме, претензий стороны не имеют.</p>
+	</div>
+</body>`;
+	return rawHtml
+		.replace("<h1>Сводный счет-реестр оказанных медицинских услуг ДМС №", "<h1>СЧЕТ-РЕЕСТР МЕДИЦИНСКИХ УСЛУГ ПО ДМС №")
+		.replace("</body>", actSection);
 }
 
 export function generateDmsClaimXml(params: {
@@ -115,23 +135,29 @@ export function generateDmsClaimXml(params: {
 }): string {
 	const currentYear = new Date().getFullYear().toString();
 	const regNum = `CLM-${Date.now().toString().slice(-6)}`;
-	return generateDmsLegacyRegistryXml(
-		params.records || [],
-		params.clinic || DEFAULT_CLINIC_PROFILE,
-		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT,
-		currentYear,
-		regNum,
-	);
+	const clinic = params.clinic || DEFAULT_CLINIC_PROFILE;
+	const contract = params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT;
+	const regData = convertRecordsToDmsRegistryData(params.records || [], clinic, contract, currentYear, regNum);
+	return generateDmsRegistryXml(regData);
 }
 
 export function generateDmsClaimCsv(
 	records: readonly DmsRegistryServiceRecord[],
 	clinic: ClinicLegalInfo,
-	insurer: string | { name: string },
+	insurer: string | { name: string; inn?: string; contractNumber?: string },
 ): string {
 	const insurerTitle = typeof insurer === "string" ? insurer : insurer.name;
 	const currentYear = new Date().getFullYear().toString();
-	return generateDmsLegacyRegistryCsv(records, clinic, insurerTitle, currentYear);
+	const regNum = `CSV-${Date.now().toString().slice(-6)}`;
+	const contract: StatutoryInsuranceContract = {
+		insurerKey: "custom",
+		insurerShortName: insurerTitle,
+		inn: typeof insurer === "object" && insurer.inn ? insurer.inn : "7700000000",
+		contractNumber: typeof insurer === "object" && insurer.contractNumber ? insurer.contractNumber : "ДМС-2026",
+		defaultFranchisePct: 0,
+	};
+	const regData = convertRecordsToDmsRegistryData(records, clinic, contract, currentYear, regNum);
+	return generateDmsRegistryCsv(regData);
 }
 
 export function generateDmsConsolidatedInvoiceHtml(params: {

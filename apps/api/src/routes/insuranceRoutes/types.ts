@@ -24,16 +24,26 @@ export const splitInvoiceBodySchema = z.object({
 
 export type SplitInvoiceBody = z.infer<typeof splitInvoiceBodySchema>;
 
-export const recordUsageBodySchema = z.object({
-	amountRub: nonNegativeMoneyRubSchema.refine((v) => v > 0, "Сумма списания должна быть больше 0 ₽."),
-	invoiceId: z.string().optional(),
-	notes: z.string().optional(),
-	isEmergency: z.boolean().optional(),
-	hasAcutePain: z.boolean().optional(),
-	allowOverdraft: z.boolean().optional(),
-	clientMutationId: z.string().optional(),
-	idempotencyKey: z.string().optional(),
-});
+export const recordUsageBodySchema = z
+	.object({
+		amountRub: nonNegativeMoneyRubSchema.optional(),
+		amountKopecks: z.number().int().positive("Сумма списания должна быть больше 0 коп.").optional(),
+		invoiceId: z.string().optional(),
+		notes: z.string().optional(),
+		isEmergency: z.boolean().optional(),
+		hasAcutePain: z.boolean().optional(),
+		allowOverdraft: z.boolean().optional(),
+		clientMutationId: z.string().optional(),
+		idempotencyKey: z.string().optional(),
+	})
+	.refine(
+		(v) =>
+			(v.amountKopecks !== undefined && v.amountKopecks > 0) ||
+			(v.amountRub !== undefined && v.amountRub > 0),
+		{
+			message: "Укажите сумму списания по ГП (amountKopecks или amountRub > 0).",
+		},
+	);
 
 export type RecordUsageBody = z.infer<typeof recordUsageBodySchema>;
 
@@ -99,6 +109,8 @@ export const quickAttachBodySchema = z.object({
 	patientBirthDate: z.string().optional(),
 	isEmergency: z.boolean().optional(),
 	maxCoverageRub: z.number().optional(),
+	maxCoverageKopecks: z.number().int().nonnegative().optional(),
+	limitKopecks: z.number().int().nonnegative().optional(),
 });
 
 export type QuickAttachBody = z.infer<typeof quickAttachBodySchema>;
@@ -137,6 +149,7 @@ export const preAuthRequestBodySchema = z.object({
 	teethFdi: z.array(z.string()).optional(),
 	diagnosisCodes: z.array(z.string()).optional(),
 	estimatedCostRub: z.number().nonnegative().optional(),
+	estimatedCostKopecks: z.number().int().nonnegative().optional(),
 	notes: z.string().optional(),
 });
 

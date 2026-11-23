@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { Kopecks } from "../../money.js";
 
 export type DmsInsuranceCompanyId =
@@ -89,46 +88,4 @@ export interface DmsGuaranteeLetter {
 	readonly transactions?: readonly DmsLetterTransaction[] | undefined;
 }
 
-export const dmsGuaranteeLetterSchema = z.object({
-	id: z.string().min(1, { message: "ID гарантийного письма обязателен" }),
-	letterNumber: z.string().min(1, { message: "Номер гарантийного письма обязателен" }),
-	issueDate: z.string().min(1),
-	validFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата начала: YYYY-MM-DD" }),
-	validTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата окончания: YYYY-MM-DD" }),
-	validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата окончания: YYYY-MM-DD" }).optional(),
-	companyId: z.enum([
-		"sogaz", "alfastrakhovanie", "ingosstrakh", "reso_garantiya",
-		"vsk", "soglasie", "rosgosstrakh", "kapital_life", "ugoria", "other",
-	]),
-	companyName: z.string().min(1, { message: "Наименование страховой компании обязательно" }),
-	policyNumber: z.string().min(1, { message: "Номер полиса ДМС обязателен" }),
-	patientFullName: z.string().min(1, { message: "ФИО застрахованного обязательно" }),
-	patientBirthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата рождения: YYYY-MM-DD" }),
-	insurerId: z.string().optional(),
-	insurerName: z.string().optional(),
-	patientId: z.string().optional(),
-	patientSnils: z.string().optional(),
-	patientPhone: z.string().optional(),
-	programKey: z.string().optional(),
-	programNameRu: z.string().optional(),
-	limitKopecks: z.number().int().nonnegative(),
-	totalLimitKopecks: z.number().int().nonnegative().optional(),
-	usedKopecks: z.number().int().nonnegative(),
-	usedAmountKopecks: z.number().int().nonnegative().optional(),
-	remainingLimitKopecks: z.number().int().nonnegative(),
-	defaultFranchisePercent: z.number().int().min(0).max(100),
-	allowed804nPrefixes: z.array(z.string()).optional(),
-	excluded804nCodes: z.array(z.string()).optional(),
-	approvedNomenclatureCodes: z.array(z.string()).optional(),
-	approvedTeeth: z.array(z.string()).optional(),
-	diagnosisMkb10: z.array(z.string()).optional(),
-	curatorFullName: z.string().optional(),
-	curatorPhone: z.string().optional(),
-	curatorEmail: z.string().optional(),
-	attachedXrayUris: z.array(z.string()).optional(),
-	status: z.enum([
-		"draft", "pending_letter", "pending_approval", "approved", "active",
-		"billed", "paid", "exhausted", "expired", "cancelled",
-	]),
-	notes: z.string().optional(),
-});
+export { dmsGuaranteeLetterSchema } from "../../schemas/documentChainAndDmsSchemas.js";

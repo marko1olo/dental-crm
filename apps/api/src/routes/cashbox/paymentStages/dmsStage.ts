@@ -109,14 +109,16 @@ export async function validateAndLockDmsCoverage(
 					newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 					isDmsExhausted = true;
 				} else {
-					return {
-						failure: {
-							kind: "insufficient_dms_coverage",
-							letterNumber: lockedDmsLetter.letterNumber,
-							availableRub: kopecksToNumericString(Number(maxCovKop - curUsedKop)),
-							requiredRub: kopecksToNumericString(Number(requiredDmsKopecks)),
-						},
-					};
+					// Soft Split: Mandate 8e & 8v - credit available remainder to DMS, exhaust letter,
+					// and redirect remaining amount to patient co-pay without blocking chairside checkout!
+					const availableDmsKop = maxCovKop > curUsedKop ? maxCovKop - curUsedKop : 0n;
+					dmsAmountToDeductKop = availableDmsKop;
+					const patientCoPayKop = requiredDmsKopecks - availableDmsKop;
+					const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+					newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
+					isDmsExhausted = true;
+					ctx.patientCoPayKopecks = patientCoPayKop;
+					ctx.requiredDmsKopecks = dmsAmountToDeductKop;
 				}
 			} else {
 				dmsAmountToDeductKop = requiredDmsKopecks;

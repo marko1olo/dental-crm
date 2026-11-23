@@ -3,7 +3,7 @@ import {
 	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
@@ -33,7 +33,8 @@ export async function handleRecordGuaranteeLetterUsage(
 		});
 	}
 
-	const { amountRub } = parsed.data;
+	const amountKop = parsed.data.amountKopecks ?? rublesToKopecks(parsed.data.amountRub ?? 0);
+	const amountRub = kopecksToRubles(amountKop);
 	const isUrgentCare = Boolean(parsed.data.isEmergency || parsed.data.hasAcutePain || parsed.data.allowOverdraft);
 
 	// Mandate 8zp/8bo: Idempotency-Key is strictly required on money/stock/debit mutations
@@ -105,6 +106,43 @@ export async function handleRecordGuaranteeLetterUsage(
 	}
 
 	const result = await db.transaction(async (tx) => {
+		// Advisory transaction lock per organization and idempotencyKey to prevent TOCTOU double-spend
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
+		);
+
+		// Re-check idempotency record inside transaction under lock
+		const [txExistingRecord] = await tx
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, orgId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.for("update")
+			.limit(1);
+
+		if (txExistingRecord) {
+			if (txExistingRecord.status === "completed" && txExistingRecord.responseBody) {
+				return {
+					status: txExistingRecord.responseCode || 200,
+					data: txExistingRecord.responseBody,
+					isReplayed: true,
+				};
+			}
+			if (txExistingRecord.status === "in_flight") {
+				return {
+					status: 409,
+					error: {
+						error: "Conflict",
+						message: "Операция списания по гарантийному письму с данным Idempotency-Key уже выполняется.",
+					},
+				};
+			}
+		}
+
 		const [letter] = await tx
 			.select()
 			.from(dmsGuaranteeLetters)
@@ -422,6 +460,10 @@ export async function handleRecordGuaranteeLetterUsage(
 		return reply.code(result.status).send(result.error);
 	}
 	reply.header("Idempotency-Key", idempotencyKey);
+	if ("isReplayed" in result && result.isReplayed) {
+		reply.header("idempotency-replayed", "true");
+		reply.header("x-idempotency-replayed", "true");
+	}
 	return reply.code(200).send(result.data);
 }
 
