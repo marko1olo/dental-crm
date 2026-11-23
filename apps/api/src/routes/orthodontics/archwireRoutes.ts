@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { and, eq } from "drizzle-orm";
 import { computePayloadHash, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
@@ -30,26 +29,23 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			if (idempotencyKey) {
 				reply.header("Idempotency-Key", idempotencyKey);
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
+				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
+				const record = existingIdemKey ?? (existingSyncRecord ? {
+					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
+					responseBody: existingSyncRecord.responseJson,
+					responseCode: existingSyncRecord.responseStatus,
+					lockedAt: existingSyncRecord.updatedAt,
+				} : null);
 
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				if (record) {
+					if (record.status === "completed" && record.responseBody) {
 						reply.header("idempotency-replayed", "true");
 						reply.header("x-idempotency-replayed", "true");
 						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
+							.code(record.responseCode || 200)
+							.send(record.responseBody);
 					}
-					if (existingRecord.status === "in_flight") {
+					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
 						return reply.code(409).header("Retry-After", "1").send({
 							error: "Conflict",
 							message: "Операция с данным Idempotency-Key уже выполняется.",
@@ -306,26 +302,23 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			if (idempotencyKey) {
 				reply.header("Idempotency-Key", idempotencyKey);
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
+				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
+				const record = existingIdemKey ?? (existingSyncRecord ? {
+					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
+					responseBody: existingSyncRecord.responseJson,
+					responseCode: existingSyncRecord.responseStatus,
+					lockedAt: existingSyncRecord.updatedAt,
+				} : null);
 
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				if (record) {
+					if (record.status === "completed" && record.responseBody) {
 						reply.header("idempotency-replayed", "true");
 						reply.header("x-idempotency-replayed", "true");
 						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
+							.code(record.responseCode || 200)
+							.send(record.responseBody);
 					}
-					if (existingRecord.status === "in_flight") {
+					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
 						return reply.code(409).header("Retry-After", "1").send({
 							error: "Conflict",
 							message: "Операция с данным Idempotency-Key уже выполняется.",
