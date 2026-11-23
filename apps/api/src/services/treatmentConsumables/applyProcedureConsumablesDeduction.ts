@@ -23,11 +23,9 @@ import { and, asc, eq, inArray, isNull, or, type SQL } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	inventoryItems,
-	procedureMaterialRules,
 	procedureTechCardItems,
 	procedureTechCards,
 	treatmentConsumableDeductions,
-	treatmentConsumables,
 } from "../../db/schema.js";
 import { DEFAULT_804N_BOM_SEEDS } from "../inventory/bomSeeds/index.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
@@ -160,73 +158,12 @@ export async function applyProcedureConsumablesDeduction(
 			}
 		}
 
-		// 3b. Tier 2: Check treatment_consumables if tech cards were empty
-		if (requiredByItem.size === 0) {
-			const mappings = await tx
-				.select()
-				.from(treatmentConsumables)
-				.where(
-					and(
-						eq(treatmentConsumables.organizationId, organizationId),
-						inArray(treatmentConsumables.catalogItemCode, catalogCodes),
-					),
-				);
+		// 3b. Tier 2 Fallback: statutory canonical recipes (Order 804n) and seeds for codes without DB tech cards
+		const coveredServiceCodes = new Set(techCards.map((c) => c.serviceCode));
+		const uncoveredCodes = catalogCodes.filter((code) => !coveredServiceCodes.has(code));
 
-			for (const mapping of mappings) {
-				const procedureCount = codeQuantities.get(mapping.catalogItemCode) ?? 1;
-				const unitNorm = Number(mapping.quantity) || 1;
-				const totalNeeded = unitNorm * procedureCount;
-
-				const existing = requiredByItem.get(mapping.inventoryItemId);
-				if (existing) {
-					existing.quantity += totalNeeded;
-				} else {
-					requiredByItem.set(mapping.inventoryItemId, {
-						quantity: totalNeeded,
-						unit: "pcs",
-					});
-				}
-			}
-		}
-
-		// 3c. Tier 3: Fallback to procedureMaterialRules
-		if (requiredByItem.size === 0) {
-			const fallbackRules = await tx
-				.select()
-				.from(procedureMaterialRules)
-				.where(
-					and(
-						or(
-							eq(procedureMaterialRules.organizationId, organizationId),
-							isNull(procedureMaterialRules.organizationId),
-						),
-						inArray(procedureMaterialRules.serviceCode, catalogCodes),
-					),
-				);
-
-			for (const rule of fallbackRules) {
-				const targetItemId = rule.inventoryItemId ?? rule.materialItemId;
-				if (!targetItemId) continue;
-				const procedureCount = codeQuantities.get(rule.serviceCode ?? "") ?? 1;
-				const unitNorm = Number(rule.quantityToDeduct ?? rule.requiredQty ?? 1);
-				const totalNeeded = unitNorm * procedureCount;
-
-				const existing = requiredByItem.get(targetItemId);
-				if (existing) {
-					existing.quantity += totalNeeded;
-				} else {
-					requiredByItem.set(targetItemId, {
-						quantity: totalNeeded,
-						unit: rule.unit || "pcs",
-						...(rule.materialName ? { name: rule.materialName } : {}),
-					});
-				}
-			}
-		}
-
-		// 3d. Tier 4: Fallback to statutory canonical recipes and seeds if still empty
-		if (requiredByItem.size === 0) {
-			for (const code of catalogCodes) {
+		if (uncoveredCodes.length > 0) {
+			for (const code of uncoveredCodes) {
 				const procedureCount = codeQuantities.get(code) ?? 1;
 
 				const recipe = CANONICAL_PROCEDURE_RECIPES.find(

@@ -1,4 +1,5 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { createApiLogger } from "../../../observability/logger.js";
 import { db } from "../../../db/client.js";
 import {
 	appointments,
@@ -12,6 +13,8 @@ import type {
 	DoctorPerformanceRow,
 	ReportScope,
 } from "./types.js";
+
+const logger = createApiLogger("doctorPerformanceService");
 
 /**
  * Выручка и загрузка по врачам (Мандаты 8ap, 8bm, 8bo).
@@ -110,8 +113,13 @@ export async function doctorPerformance(
 	// [ANL-01] Защита от отрицательной нераспределённой выручки при непривязанных к врачам возвратах
 	const hasNegativeUnattributed = rawUnattributedRevenueRub < 0;
 	if (hasNegativeUnattributed) {
-		console.warn(
-			`[ANL-01][Audit] Negative unattributed revenue (${rawUnattributedRevenueRub} руб) detected due to doctor-unlinked refunds for org ${scope.organizationId}. Clamped to 0. Total unlinked refunds: ${unlinkedRefundsSumRub} руб.`,
+		logger.warn(
+			{
+				organizationId: scope.organizationId,
+				rawUnattributedRevenueRub,
+				unlinkedRefundsSumRub,
+			},
+			"Negative unattributed revenue detected due to doctor-unlinked refunds. Clamped to 0",
 		);
 	}
 	const unattributedRevenueRub = Math.max(0, rawUnattributedRevenueRub);

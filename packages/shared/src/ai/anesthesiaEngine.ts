@@ -404,7 +404,7 @@ export const anesthesiaCalculationInputSchema = z.object({
 	formulationKey: z.string().min(1),
 	patient: anesthesiaPatientProfileSchema,
 	customCarpuleVolumeMl: z.union([z.literal(1.7), z.literal(1.8)]).optional()
-});
+}).strict();
 
 export const anesthesiaCalculationResultSchema = z.object({
 	drugKey: z.string(),

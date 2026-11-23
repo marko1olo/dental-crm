@@ -8,7 +8,10 @@
  */
 
 import { wsBroker } from "../websocketBroker.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type { ChatOptions } from "../../ai/omniGatewayTypes.js";
+
+const logger = createApiLogger("whatsappBridge");
 
 export type TriageUrgency = "NORMAL" | "URGENT" | "CRITICAL";
 export type PatientSentiment = "positive" | "neutral" | "negative" | "anxious" | "emergency";
@@ -332,9 +335,9 @@ export class WhatsAppBridge {
 					card: alertCard,
 				});
 			} catch (err) {
-				console.warn(
-					"[WhatsAppBridge:WARN] Failed to broadcast proactive alert:",
-					err instanceof Error ? err.message : String(err),
+				logger.warn(
+					{ err: safeLogError(err), organizationId: message.organizationId, cardId: alertCard.id },
+					"Failed to broadcast proactive alert",
 				);
 			}
 		}

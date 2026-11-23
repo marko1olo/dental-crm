@@ -636,7 +636,7 @@ export function stopLanDiscoveryService(): void {
 		try {
 			activeUdpSocket.close();
 		} catch (err: unknown) {
-			console.warn("[LanDiscoveryService] Error closing active UDP socket:", err);
+			logger.warn({ err: safeLogError(err) }, "Error closing active UDP socket");
 		}
 		activeUdpSocket = null;
 	}

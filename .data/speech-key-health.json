@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-11-15T20:42:57.247Z",
+  "savedAt": "2026-11-23T20:14:34.707Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
@@ -15,8 +15,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 3,
-      "lastUsedAt": 1794775377247,
+      "successes": 4,
+      "lastUsedAt": 1795464874706,
       "lastStatusCode": null,
       "lastError": null
     },

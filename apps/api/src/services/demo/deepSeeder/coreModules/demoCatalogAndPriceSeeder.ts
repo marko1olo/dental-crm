@@ -2,9 +2,12 @@
  * demoCatalogAndPriceSeeder.ts — Baseline 804n Services & Pricelist Seeder under RLS (Layer 2).
  */
 
+import { createApiLogger, safeLogError } from "../../../../observability/logger.js";
 import { withTenantCtx } from "../../../../db/rls.js";
 import { seedBaseline804nServicesInDb } from "../../../../db/pricelistQuery.js";
 import { DEMO_SHOWCASE_ORG_ID } from "../types.js";
+
+const logger = createApiLogger("demoCatalogAndPriceSeeder");
 
 /**
  * Гарантирует наличие базового клинического справочника услуг Приказа 804н для демо-организации.
@@ -18,9 +21,9 @@ export async function ensureDemoPricelistCatalog(forceReset = false): Promise<vo
 			});
 		});
 	} catch (pricelistErr) {
-		console.warn(
-			"[DEMO_SEED_PRICELIST_WARN] Не удалось засеять прайс 804н для демо:",
-			pricelistErr,
+		logger.warn(
+			{ err: safeLogError(pricelistErr), organizationId: DEMO_SHOWCASE_ORG_ID },
+			"Не удалось засеять прайс 804н для демо",
 		);
 	}
 }

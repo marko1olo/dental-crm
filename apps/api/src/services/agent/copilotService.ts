@@ -2,6 +2,10 @@
  * copilotService.ts — SSE Streaming and Proactive Alert Manager.
  */
 
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("copilotService");
+
 export interface ProactiveAlertCard {
 	id: string;
 	urgency?: string | undefined;
@@ -32,7 +36,10 @@ export class CopilotStreamManager {
 				try {
 					sub(alertCard);
 				} catch (err) {
-					console.warn("[CopilotStreamManager] Error delivering alert to subscriber:", err);
+					logger.warn(
+						{ err: safeLogError(err), organizationId, alertId: alertCard.id },
+						"Error delivering alert to subscriber",
+					);
 				}
 			}
 		}

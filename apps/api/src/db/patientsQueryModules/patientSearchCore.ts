@@ -87,6 +87,19 @@ export function rowToPatient(
 		p.administrativeProfile && typeof p.administrativeProfile === "object"
 			? (p.administrativeProfile as Record<string, unknown>)
 			: null;
+	const safetyProfile =
+		adminProfile?.clinicalSafetyProfile && typeof adminProfile.clinicalSafetyProfile === "object"
+			? (adminProfile.clinicalSafetyProfile as Record<string, unknown>)
+			: null;
+	const extractedAllergies =
+		(adminProfile?.allergies as string | string[] | undefined) ??
+		(safetyProfile?.allergies as string | string[] | undefined) ??
+		null;
+	const extractedSomaticNotes =
+		(adminProfile?.somaticNotes as string | undefined) ??
+		(safetyProfile?.somaticNotes as string | undefined) ??
+		null;
+
 	return patientSchema.parse({
 		id: p.id,
 		organizationId: p.organizationId,
@@ -96,6 +109,8 @@ export function rowToPatient(
 		phone: p.phone,
 		email: p.email,
 		notes: p.notes,
+		allergies: extractedAllergies,
+		somaticNotes: extractedSomaticNotes,
 		weightKg: p.weightKg !== null && p.weightKg !== undefined && p.weightKg !== "" ? Number(p.weightKg) : null,
 		isAnonymous: typeof adminProfile?.isAnonymous === "boolean" ? adminProfile.isAnonymous : false,
 		anonymousCode: typeof adminProfile?.anonymousCode === "string" ? adminProfile.anonymousCode : null,

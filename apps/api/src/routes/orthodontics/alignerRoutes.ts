@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { computePayloadHash } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { calculateNextDate, createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
@@ -55,6 +58,33 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 					error: "ValidationError",
 					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
 				});
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
+				const record = existingIdemKey ?? (existingSyncRecord ? {
+					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
+					responseBody: existingSyncRecord.responseJson,
+					responseCode: existingSyncRecord.responseStatus,
+					lockedAt: existingSyncRecord.updatedAt,
+				} : null);
+
+				if (record) {
+					if (record.status === "completed" && record.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(record.responseCode || 200)
+							.send(record.responseBody);
+					}
+					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
 			}
 
 			const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -123,7 +153,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				logger: request.log,
 			});
 
-			const billing = await db.transaction(async (tx) => {
+			const responsePayload = await db.transaction(async (tx) => {
 				// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
 				await updatePatientAdministrativeProfileInDb(
 					orgId,
@@ -135,7 +165,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 					tx,
 				);
 
-				return await linkOrthoServiceToBillingSafely({
+				const billing = await linkOrthoServiceToBillingSafely({
 					organizationId: orgId,
 					patientId,
 					visitId: body.visitId,
@@ -146,16 +176,41 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 					tx,
 					logger: request.log,
 				});
+
+				const payload: Record<string, unknown> = {
+					success: true,
+					issuedRange: `№${fromAligner}–${toAligner}`,
+					nextVisitRecommendedDate: nextDate,
+					actionSummary,
+					progress: updatedProgress,
+					billing,
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: payload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: payload,
+								responseCode: 200,
+							},
+						});
+				}
+
+				return payload;
 			});
 
-			return reply.send({
-				success: true,
-				issuedRange: `№${fromAligner}–${toAligner}`,
-				nextVisitRecommendedDate: nextDate,
-				actionSummary,
-				progress: updatedProgress,
-				billing,
-			});
+			return reply.send(responsePayload);
 		},
 	);
 }

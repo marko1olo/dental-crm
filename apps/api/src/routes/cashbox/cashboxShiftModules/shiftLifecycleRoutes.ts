@@ -287,14 +287,22 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 			inputData.clientMutationId;
 		const parsedKey = rawKey?.trim();
 
-		if (parsedKey && !isValidUuid(parsedKey)) {
+		if (!parsedKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для закрытия кассовой смены обязателен заголовок Idempotency-Key или поле clientMutationId (Мандат 8bo / RFC 9562).",
+			});
+		}
+
+		if (!isValidUuid(parsedKey)) {
 			return reply.code(400).send({
 				error: "IdempotencyKeyRequired",
 				message:
 					"Для закрытия кассовой смены требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
 			});
 		}
-		const idempotencyKey = parsedKey || randomUUID();
+		const idempotencyKey = parsedKey;
 
 		// Fast-path idempotency replay check against Postgres idempotencyKeys table
 		const existingRecord = await withTenantCtx(orgId, async (tx) => {

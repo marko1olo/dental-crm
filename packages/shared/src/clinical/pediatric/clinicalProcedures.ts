@@ -239,6 +239,166 @@ export function calculatePediatricPulpotomyProtocol(
 	};
 }
 
+export const enamelConditionSchema = z.enum(["white_spot", "superficial"]);
+export type EnamelCondition = z.infer<typeof enamelConditionSchema>;
+
+export interface PediatricIconProtocolOptions {
+	readonly toothNumber: number;
+	readonly surface: string;
+	readonly enamelCondition: EnamelCondition;
+	readonly patientWeightKg?: number | undefined;
+	readonly isPrimary: boolean;
+	readonly clinicalNotes?: string | undefined;
+}
+
+export interface PediatricIconStep {
+	readonly stepNumber: number;
+	readonly nameRu: string;
+	readonly durationSeconds: number;
+	readonly descriptionRu: string;
+	readonly material?: string | undefined;
+}
+
+export interface PediatricIconProtocolResult {
+	readonly procedureNameRu: string;
+	readonly toothNumber: number;
+	readonly surface: string;
+	readonly enamelCondition: EnamelCondition;
+	readonly isPrimary: boolean;
+	readonly steps: readonly PediatricIconStep[];
+	readonly totalExposureSeconds: number;
+	readonly indicationsRu: string;
+	readonly protocolDescriptionRu: string;
+	readonly safetyWarningsRu: readonly string[];
+	readonly parentRecommendationsRu: readonly string[];
+	readonly formattedDiaryEntryRu: string;
+}
+
+export function calculatePediatricIconProtocol(
+	options: PediatricIconProtocolOptions,
+): PediatricIconProtocolResult {
+	const tooth = options.toothNumber;
+	const surface = options.surface || "вестибулярная";
+	const isPrimary = options.isPrimary;
+	const condition = options.enamelCondition;
+
+	const conditionNameRu =
+		condition === "white_spot"
+			? "начальный кариес в стадии белого пятна (K02.0)"
+			: "поверхностный кариес эмали без образования полости (K02.0)";
+
+	const steps: readonly PediatricIconStep[] = [
+		{
+			stepNumber: 1,
+			nameRu: "Абсолютная изоляция рабочего поля",
+			durationSeconds: 60,
+			descriptionRu:
+				"Изоляция коффердамом/раббердамом или жидким коффердамом (жизненно необходимо для защиты слизистой от 15% соляной кислоты Icon-Etch).",
+			material: "Коффердам / раббердам / Liquid Dam",
+		},
+		{
+			stepNumber: 2,
+			nameRu: "Травление эмали (Icon-Etch)",
+			durationSeconds: 120,
+			descriptionRu:
+				"Нанесение 15% соляной кислоты (Icon-Etch) аппликатором на 120 секунд (2 минуты) для удаления гиперминерализованного поверхностного слоя эмали.",
+			material: "Icon-Etch (15% HCl)",
+		},
+		{
+			stepNumber: 3,
+			nameRu: "Промывание и высушивание",
+			durationSeconds: 30,
+			descriptionRu:
+				"Тщательное промывание обработанного участка зуба струей воды не менее 30 секунд с последующим полным высушиванием чистым сухим воздухом без примеси масел.",
+		},
+		{
+			stepNumber: 4,
+			nameRu: "Обезвоживание и оптический контроль (Icon-Dry)",
+			durationSeconds: 30,
+			descriptionRu:
+				"Нанесение 99% этанола (Icon-Dry) на 30 секунд. Визуальный контроль: исчезновение белого пятна подтверждает достаточную глубину протравливания. При сохранении белого пятна допускается повторное травление.",
+			material: "Icon-Dry (99% этанол)",
+		},
+		{
+			stepNumber: 5,
+			nameRu: "Первая инфильтрация (Icon-Infiltrant)",
+			durationSeconds: 220,
+			descriptionRu:
+				"Нанесение инфильтранта высокой текучести на основе TEGDMA (Icon-Infiltrant) на 180 секунд (3 минуты). Капиллярное проникновение смолы в поры эмали. Удаление излишков матрикса флоссом/ватным валиком. Светополимеризация 40 секунд.",
+			material: "Icon-Infiltrant (TEGDMA матрикс)",
+		},
+		{
+			stepNumber: 6,
+			nameRu: "Вторая инфильтрация (Icon-Infiltrant)",
+			durationSeconds: 100,
+			descriptionRu:
+				"Повторное нанесение Icon-Infiltrant на 60 секунд (1 минута) для компенсации полимеризационной усадки. Удаление излишков, светополимеризация 40 секунд.",
+			material: "Icon-Infiltrant (TEGDMA матрикс)",
+		},
+		{
+			stepNumber: 7,
+			nameRu: "Финишная полировка",
+			durationSeconds: 60,
+			descriptionRu:
+				"Финишная обработка и полировка поверхности зуба мелкозернистыми полировочными полосками (штрипсами) и дисками до зеркального блеска эмали.",
+			material: "Полировочные полоски / диски",
+		},
+	];
+
+	const totalExposureSeconds = steps.reduce((sum, s) => sum + s.durationSeconds, 0);
+
+	const indicationsRu =
+		"Микроинвазивное лечение начального кариеса эмали в стадии белого пятна (K02.0) и поверхностного кариеса вестибулярных и апроксимальных поверхностей зубов без препарирования бормашиной у детей и подростков (включая пятна после ортодонтического лечения).";
+
+	const protocolDescriptionRu =
+		`Протокол инфильтрации кариеса ICON без бормашины зуба ${tooth} (${surface} поверхность, ${isPrimary ? "временный зуб" : "постоянный зуб"}): ` +
+		`1. Абсолютная изоляция коффердамом. ` +
+		`2. Протравливание 15% HCl Icon-Etch 120 сек (2 мин). ` +
+		`3. Промывание водой 30 сек и высушивание воздухом. ` +
+		`4. Обезвоживание Icon-Dry 30 сек и оптический контроль прозрачности. ` +
+		`5. Первая инфильтрация Icon-Infiltrant 180 сек (3 мин), удаление излишков, светополимеризация 40 сек. ` +
+		`6. Вторая инфильтрация Icon-Infiltrant 60 сек (1 мин), светополимеризация 40 сек. ` +
+		`7. Финишная полировка штрипсами и дисками.`;
+
+	const safetyWarningsRu: readonly string[] = [
+		"ОБЯЗАТЕЛЬНАЯ ИЗОЛЯЦИЯ: 15% соляная кислота (Icon-Etch) вызывает химический ожог слизистой оболочки десны. Применение без коффердама/раббердама строго запрещено!",
+		"Не применять при наличии сформированной кариозной полости с дефектом эмали глубже внешней трети дентина (D2–D3).",
+		"Защита глаз ребенка и персонала специальными защитными очками от брызг соляной кислоты и фотополимеризационного света.",
+	];
+
+	const parentRecommendationsRu: readonly string[] = [
+		"Процедура выполнена без сверления бормашиной и без анестезии: анатомия зуба сохранена на 100%.",
+		"Не кормить ребенка красящими продуктами и напитками (ягоды, шоколад, соки, кола, морковь, свекла) в течение первых 24 часов после инфильтрации.",
+		"Не употреблять жесткую пищу в течение 2 часов.",
+		"Тщательная гигиена полости рта 2 раза в день фторсодержащей зубной пастой для стабилизации минерального баланса эмали.",
+		"Контрольный осмотр и фотофиксация стабильности цвета эмали через 6 месяцев.",
+	];
+
+	const formattedDiaryEntryRu = [
+		`Диагноз: ${conditionNameRu}, зуб ${tooth} (${surface} поверхность)`,
+		`Процедура: Микроинвазивная инфильтрация кариеса эмали препаратом ICON (DMG)`,
+		`Зуб: #${tooth} (${isPrimary ? "временный" : "постоянный"})`,
+		`Протокол: ${protocolDescriptionRu}`,
+		`Безопасность: Применена абсолютная изоляция коффердамом, ожога слизистой нет.`,
+		`Результат: Кариозное пятно стабилизировано, оптический дефект устранен. Выдана памятка родителям.`,
+	].join("\n");
+
+	return {
+		procedureNameRu: `Инфильтрация кариеса ICON зуба ${tooth}`,
+		toothNumber: tooth,
+		surface,
+		enamelCondition: condition,
+		isPrimary,
+		steps,
+		totalExposureSeconds,
+		indicationsRu,
+		protocolDescriptionRu,
+		safetyWarningsRu,
+		parentRecommendationsRu,
+		formattedDiaryEntryRu,
+	};
+}
+
 export interface PediatricParentMemoOptions {
 	readonly patientName?: string | undefined;
 	readonly patientAgeYears?: number | undefined;
@@ -248,6 +408,7 @@ export interface PediatricParentMemoOptions {
 	readonly silvering?: PediatricSilveringOptions | undefined;
 	readonly fissureSealing?: PediatricFissureSealingOptions | undefined;
 	readonly pulpotomy?: PediatricPulpotomyOptions | undefined;
+	readonly iconInfiltration?: PediatricIconProtocolOptions | undefined;
 	readonly generalHygieneAdvice?: boolean | undefined;
 	readonly customNotes?: string | undefined;
 }
@@ -313,6 +474,19 @@ export function generatePediatricParentRecommendations(
 		lines.push(`   ${silv.parentWarningRu}`);
 		lines.push(`   Рекомендации:`);
 		silv.parentRecommendationsRu.forEach((rec) => {
+			lines.push(`   • ${rec}`);
+		});
+	}
+
+	// 4. Icon infiltration section
+	if (options?.iconInfiltration) {
+		const icon = calculatePediatricIconProtocol(options.iconInfiltration);
+		lines.push("");
+		lines.push(`───────────────────────────────────────────────────────────────`);
+		lines.push(`4. ИНФИЛЬТРАЦИЯ КАРИЕСА ICON (ЗУБ #${icon.toothNumber}, поверхность ${icon.surface}):`);
+		lines.push(`   Лечение кариеса в стадии пятна проведено без бормашины и без боли.`);
+		lines.push(`   Рекомендации:`);
+		icon.parentRecommendationsRu.forEach((rec) => {
 			lines.push(`   • ${rec}`);
 		});
 	}

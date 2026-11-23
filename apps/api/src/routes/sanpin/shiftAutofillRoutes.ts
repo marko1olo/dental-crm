@@ -48,10 +48,54 @@ export {
  */
 export function registerSanpinShiftAutofillRoutes(app: FastifyInstance) {
 	// 7. Автопилот смены журналов СанПиН
-	app.post("/api/registers/autofill-shift", handleAutofillShift);
-	app.post("/api/sanpin/shift-autofill", handleAutofillShift);
+	app.post(
+		"/api/registers/autofill-shift",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Автопилот смены журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
+				},
+			},
+		},
+		handleAutofillShift,
+	);
+	app.post(
+		"/api/sanpin/shift-autofill",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Автопилот смены журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
+				},
+			},
+		},
+		handleAutofillShift,
+	);
 
 	// 8. Автопилот месяца журналов СанПиН
-	app.post("/api/registers/autofill-month", handleAutofillMonth);
-	app.post("/api/sanpin/month-autofill", handleAutofillMonth);
+	app.post(
+		"/api/registers/autofill-month",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Автопилот месяца журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
+				},
+			},
+		},
+		handleAutofillMonth,
+	);
+	app.post(
+		"/api/sanpin/month-autofill",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Автопилот месяца журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
+				},
+			},
+		},
+		handleAutofillMonth,
+	);
 }

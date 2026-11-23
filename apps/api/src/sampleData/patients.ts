@@ -21,6 +21,7 @@ import type {
 	TreatmentPlanItem,
 } from "@dental/shared";
 import type { DomainState } from "../types/domainState.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import {
 	buildPatientLedger,
@@ -36,6 +37,8 @@ import { payments } from "./billing.js";
 import { communicationTasks } from "./communications.js";
 
 import { organizationId, marinaPatientId, alexeyPatientId, elmiraPatientId, nowIso } from "./fixtureIds.js";
+
+const logger = createApiLogger("sampleDataPatients");
 
 export const patients: Patient[] = [
 	{
@@ -164,8 +167,9 @@ function patientInsightDebt(
 			error instanceof MoneyPrecisionError ||
 			error instanceof QuantityContractError
 		) {
-			console.error(
-				`[Dashboard] Долг пациента ${patientId} для подсказки администратору не рассчитан: ${error.message}`,
+			logger.error(
+				{ err: safeLogError(error), patientId },
+				"Долг пациента для подсказки администратору не рассчитан",
 			);
 			return {
 				balanceDueRub: 0,

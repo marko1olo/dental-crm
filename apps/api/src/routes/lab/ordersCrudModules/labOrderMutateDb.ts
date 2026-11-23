@@ -1,5 +1,6 @@
 import {
 	CANONICAL_PG_LAB_STATUSES,
+	isValidUuid,
 	kopecksToNumericString,
 	mapStageToCanonicalPgStatus,
 	normalizeVitaShade,
@@ -110,7 +111,19 @@ export async function updateLabOrderInDb(
 	const effectiveTooth = updateData.toothFdi ?? updateData.teethFdi;
 
 	const updatePayload: Record<string, unknown> = { ...auditFields, updatedAt: now };
-	if (isWarranty) updatePayload.isLockedInstalled = false;
+	if (isWarranty) {
+		updatePayload.isWarranty = true;
+		updatePayload.isLockedInstalled = false;
+	} else if (updateData.isWarranty !== undefined) {
+		updatePayload.isWarranty = updateData.isWarranty;
+	}
+	if (updateData.warrantyLiabilityType !== undefined) updatePayload.warrantyLiabilityType = updateData.warrantyLiabilityType;
+	if (updateData.remakeReason !== undefined) updatePayload.remakeReason = updateData.remakeReason;
+	if (updateData.parentLabOrderId !== undefined) updatePayload.parentLabOrderId = updateData.parentLabOrderId;
+	if (updateData.fittingAppointmentId !== undefined) updatePayload.fittingAppointmentId = updateData.fittingAppointmentId;
+	if (updateData.laboratoryId !== undefined) {
+		updatePayload.laboratoryId = updateData.laboratoryId && isValidUuid(updateData.laboratoryId) ? updateData.laboratoryId : null;
+	}
 	if (updateData.orderNumber !== undefined) updatePayload.orderNumber = updateData.orderNumber;
 	if (updateData.doctorId !== undefined) updatePayload.doctorId = updateData.doctorId;
 	if (effectiveTooth !== undefined) updatePayload.toothFdi = effectiveTooth;

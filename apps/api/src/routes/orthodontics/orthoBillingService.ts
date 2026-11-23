@@ -69,13 +69,16 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 						status: "draft",
 						totalRub: formatKopecksToRubles(itemKopecks),
 						totalAmountRub: priceRub,
+						totalPriceKopecks: itemKopecks,
 					})
 					.returning();
 				invoice = created;
 			} else {
 				// Мандат 8bm: Zero-Float Drift — суммирование сметы счёта строго в целочисленных копейках через parseKopecks без parseFloat и дробных погрешностей IEEE 754
 				const rawAmount = invoice.totalAmountRub ?? invoice.totalRub;
-				const existingKopecks = BigInt(parseKopecks(rawAmount));
+				const existingKopecks = (invoice.totalPriceKopecks && invoice.totalPriceKopecks > 0n)
+					? BigInt(invoice.totalPriceKopecks)
+					: BigInt(parseKopecks(rawAmount));
 				const newTotalKopecks = existingKopecks + itemKopecks;
 				const newTotalRub = kopecksToRubles(newTotalKopecks);
 				await tx
@@ -83,6 +86,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					.set({
 						totalRub: formatKopecksToRubles(newTotalKopecks),
 						totalAmountRub: newTotalRub,
+						totalPriceKopecks: newTotalKopecks,
 					})
 					.where(and(eq(patientInvoices.id, invoice.id), eq(patientInvoices.organizationId, organizationId)));
 			}

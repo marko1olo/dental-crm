@@ -290,19 +290,27 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 	 * Seeds standard clinical templates if none exist.
 	 */
 	app.post("/api/v1/message-templates/seed", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"seed message templates",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"seed message templates",
+		);
+		if (!context) return;
+		const { organizationId } = context;
 
-		const count = await ensureDefaultMessageTemplatesSeeded(orgId);
-		const templates = await getMessageTemplates(orgId);
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		const count = await ensureDefaultMessageTemplatesSeeded(organizationId);
+		const templates = await getMessageTemplates(organizationId);
 		return reply.send({ success: true, seededCount: count, total: templates.length });
 	});
 }

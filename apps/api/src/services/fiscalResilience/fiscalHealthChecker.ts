@@ -10,6 +10,7 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { fiscalReceiptQueue } from "../../db/schema.js";
@@ -22,6 +23,8 @@ import type {
 	FiscalHealthTelemetry,
 	FiscalRetryExecutor,
 } from "./types.js";
+
+const logger = createApiLogger("fiscalHealthChecker");
 
 export class FiscalHealthChecker {
 	private static isWorkerRunning = false;
@@ -106,7 +109,10 @@ export class FiscalHealthChecker {
 					}
 				}
 			} catch (err) {
-				console.error("[FiscalHealthChecker] Background worker tick error:", err);
+				logger.error(
+					{ err: safeLogError(err), organizationId },
+					"Background worker tick error",
+				);
 			}
 		}, intervalMs);
 		this.pollerTimer.unref();

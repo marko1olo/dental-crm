@@ -45,7 +45,7 @@ graph TD
 
     subgraph Storage["Database: Native PostgreSQL 18.4"]
         PG["PostgreSQL 18.4 on 127.0.0.1:5432<br/>Data Dir: .data/pg18"]
-        Tables["203 таблицы в 20 доменах<br/>Row-Level Security (RLS)"]
+        Tables["216 таблиц в 28 доменах (276 миграций, 3011 колонок)<br/>Row-Level Security (RLS)"]
     end
 
     UI --> Zustand
@@ -153,7 +153,7 @@ sequenceDiagram
 ## 6. Database Engine & Multi-Tenant Isolation (PostgreSQL 18.4)
 
 - Ядро базы данных: Полноценный PostgreSQL 18.4 на `127.0.0.1:5432` (каталог данных `.data/pg18`, соединение через пул `pg.Pool`).
-- Схема Drizzle ORM: Схема разделена на 20 модульных файлов в `apps/api/src/db/schema/` (`_common.ts`, `auth.ts`, `patients.ts`, `schedule.ts`, `billing.ts`, `clinical.ts`, `imaging.ts`, `inventory.ts`, `communications.ts`, `system.ts` и др.) с сохранением обратной совместимости через `apps/api/src/db/schema.ts`.
+- Схема Drizzle ORM: Схема декомпозирована на 28 доменных модулей (78 файлов схем в `apps/api/src/db/schema/`) с 216 таблицами `pgTable`, 49 enums и 3011 колонками, полностью синхронизированными с 276 физическими DDL-миграциями в `apps/api/drizzle/` без дрифта.
 - Изоляция арендаторов (RLS): Каждый HTTP-запрос выполняется внутри контекста `withTenantCtx` (`AsyncLocalStorage`), устанавливающего `SET LOCAL app.current_tenant = organizationId`. Защита данных пациентов и клиник обеспечивается на уровне ядра СУБД.
 - **Защита от стирания данных (`npm ci` & safety gates):** Бинарники PostgreSQL 18 изолированы от случайного удаления, а деструктивные скрипты (`db:reset-seed`) снабжены защитными блокировками.
 

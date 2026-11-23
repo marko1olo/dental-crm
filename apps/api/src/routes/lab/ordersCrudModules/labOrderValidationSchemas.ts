@@ -53,6 +53,11 @@ export const updateLabOrderSchema = z.object({
 	isWarranty: z.boolean().optional().nullable(),
 	isWarrantyRemake: z.boolean().optional().nullable(),
 	isWarrantyRework: z.boolean().optional().nullable(),
+	warrantyLiabilityType: z.string().trim().optional().nullable(),
+	remakeReason: z.string().trim().max(1000).optional().nullable(),
+	parentLabOrderId: z.string().uuid().optional().nullable(),
+	fittingAppointmentId: z.string().uuid().optional().nullable(),
+	laboratoryId: z.string().trim().optional().nullable(),
 });
 export type UpdateLabOrderInput = z.infer<typeof updateLabOrderSchema>;
 

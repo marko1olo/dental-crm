@@ -9,14 +9,24 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	isValidUuid,
+	kopecksToRubles,
+	rublesToKopecks,
+	type TreatmentConsumableDeductionRecord,
+	type TreatmentConsumableDeductionWarning,
+} from "@dental/shared";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { inventoryTransactions, visits } from "../../db/schema.js";
+import {
+	inventoryTransactions,
+	treatmentConsumableDeductions,
+	visits,
+} from "../../db/schema.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { executeFefoBatchDeduction } from "../inventory/writeOffModules/writeOffFefoExecution.js";
@@ -53,10 +63,10 @@ function extractTargetVisitId(params: VisitConsumablesRouteParams): string | nul
 	return params.id || params.visitId || null;
 }
 
-function validateIdempotencyHeaderOrBody(
+function extractAndValidateIdempotencyKey(
 	request: FastifyRequest,
 	rawBody: unknown,
-): { valid: boolean; error?: string } {
+): { valid: boolean; key: string | null; error?: string } {
 	const rawKey =
 		request.headers["idempotency-key"] ??
 		request.headers["x-idempotency-key"] ??
@@ -72,11 +82,13 @@ function validateIdempotencyHeaderOrBody(
 		if (!isValidUuid(trimmed)) {
 			return {
 				valid: false,
+				key: null,
 				error: "Заголовок Idempotency-Key / X-Idempotency-Key должен содержать валидный UUID (рекомендуется UUIDv7)",
 			};
 		}
+		return { valid: true, key: trimmed };
 	}
-	return { valid: true };
+	return { valid: true, key: null };
 }
 
 async function handlePostVisitConsumables(
@@ -94,13 +106,20 @@ async function handlePostVisitConsumables(
 		});
 	}
 
-	const idemCheck = validateIdempotencyHeaderOrBody(request, request.body);
+	const idemCheck = extractAndValidateIdempotencyKey(request, request.body);
 	if (!idemCheck.valid) {
 		return reply.status(400).send({
 			error: "InvalidIdempotencyKey",
 			message: idemCheck.error,
 		});
 	}
+	const idempotencyKey = idemCheck.key;
+	const body = request.body || {};
+	const clientMutationId =
+		typeof body.clientMutationId === "string" && body.clientMutationId.trim().length > 0
+			? body.clientMutationId.trim()
+			: null;
+	const effectiveIdemKey = idempotencyKey || clientMutationId || null;
 
 	const context = await requireClinicalMutationContext(
 		request,
@@ -111,6 +130,49 @@ async function handlePostVisitConsumables(
 	const orgId = context.organizationId;
 	const identity = getRequestIdentity(request);
 	const doctorUserId = identity.userId ?? request.user?.id ?? null;
+
+	// Идемпотентная проверка по реестру treatment_consumable_deductions (Мандаты 8e, 8n, 8bo)
+	if (effectiveIdemKey) {
+		const [existingDeduction] = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select()
+				.from(treatmentConsumableDeductions)
+				.where(
+					and(
+						eq(treatmentConsumableDeductions.organizationId, orgId),
+						eq(treatmentConsumableDeductions.treatmentReferenceId, effectiveIdemKey),
+					),
+				)
+				.limit(1);
+		});
+
+		if (existingDeduction) {
+			reply.header("X-Idempotency-Key", effectiveIdemKey);
+			const prevDeductions = Array.isArray(existingDeduction.deductions)
+				? existingDeduction.deductions
+				: [];
+			const prevWarnings = Array.isArray(existingDeduction.warnings)
+				? existingDeduction.warnings
+				: [];
+			return reply.status(200).send({
+				success: true,
+				visitId: targetVisitId,
+				alreadyProcessed: true,
+				isOverdraft: existingDeduction.isOverdraft,
+				hasOverdraft: existingDeduction.isOverdraft,
+				deductions: prevDeductions,
+				items: prevDeductions,
+				warnings: [
+					...prevWarnings,
+					{
+						type: "already_processed",
+						message: `Списание по ключу «${effectiveIdemKey}» уже было выполнено ранее (дедуплицировано).`,
+					},
+				],
+				message: `Списание материалов по ключу «${effectiveIdemKey}» уже проведено ранее.`,
+			});
+		}
+	}
 
 	const [visit] = await withTenantCtx(orgId, async (tx) => {
 		return tx
@@ -126,8 +188,6 @@ async function handlePostVisitConsumables(
 			message: `Приём ${targetVisitId} не найден в текущей организации`,
 		});
 	}
-
-	const body = request.body || {};
 
 	try {
 		let result: unknown;
@@ -225,6 +285,42 @@ async function handlePostVisitConsumables(
 				action: "consumables_deducted",
 			},
 		});
+
+		// Регистрация в реестре treatment_consumable_deductions для сквозной идемпотентности
+		if (effectiveIdemKey) {
+			const resObj =
+				result && typeof result === "object"
+					? (result as Record<string, unknown>)
+					: {};
+			const isOverdraftVal = Boolean(resObj.isOverdraft ?? resObj.hasOverdraft);
+			const rawDeductions = resObj.items ?? resObj.deductions ?? [];
+			const rawWarnings = resObj.warnings ?? [];
+			const savedDeductions: TreatmentConsumableDeductionRecord[] = Array.isArray(rawDeductions)
+				? (rawDeductions as TreatmentConsumableDeductionRecord[])
+				: [];
+			const savedWarnings: TreatmentConsumableDeductionWarning[] = Array.isArray(rawWarnings)
+				? (rawWarnings as TreatmentConsumableDeductionWarning[])
+				: [];
+
+			await withTenantCtx(orgId, async (tx) => {
+				await tx
+					.insert(treatmentConsumableDeductions)
+					.values({
+						organizationId: orgId,
+						treatmentReferenceId: effectiveIdemKey,
+						visitId: targetVisitId,
+						doctorId: doctorUserId,
+						status: "completed",
+						isOverdraft: isOverdraftVal,
+						deductions: savedDeductions,
+						warnings: savedWarnings,
+						notes: body.notes ?? null,
+					})
+					.onConflictDoNothing();
+			});
+
+			reply.header("X-Idempotency-Key", effectiveIdemKey);
+		}
 
 		return reply.status(200).send(result);
 	} catch (error: unknown) {

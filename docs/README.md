@@ -23,7 +23,7 @@
 *   **[DEPLOYMENT_GUIDE.md](file:///C:/Clinic_MVP/dental-crm/docs/DEPLOYMENT_GUIDE.md)** — Руководство по производственному развертыванию (On-Premises Mac/Windows vs Cloud VPS), Zero-Knowledge бэкапы, протокол блэкаутов, Wi-Fi планшеты.
 *   **[CLI_REFERENCE.md](file:///C:/Clinic_MVP/dental-crm/docs/CLI_REFERENCE.md)** — Полное руководство по консольной утилите DENTE CLI (`dente doctor`, `dente preflight`, `dente info`).
 *   **[installer/README.md](file:///C:/Clinic_MVP/dental-crm/installer/README.md)** — Корневое руководство по установке системных служб macOS (LaunchAgent) и Windows (WinSW Service).
-*   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), 18 модулей, 203 таблицы Drizzle ORM, RLS и миграции.
+*   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), 28 модулей (78 файлов схем), 216 таблиц Drizzle ORM, 49 enums, 3011 колонок, 276 DDL-миграций, RLS и регламент миграций.
 *   **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Инфраструктура развёртывания локальной базы данных, polyfill `uuidv7()` и push-процедуры.
 *   **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Все консольные команды, 5-этапный typecheck, гейты кодировки и E2E smoke-тесты.
 *   **[auth_and_access_control.md](file:///C:/Clinic_MVP/dental-crm/docs/architecture/auth_and_access_control.md)** — Архитектура авторизации и контроля доступа: тотальная декомпозиция монолитов StaffPinPad, DoctorPrivacyShield, Register, UserLogin <= 120 строк (фасады <= 15 строк), автономия врача (Мандат 8e, 1-клик вход, сохранение черновиков), Apple HIG и 4-State Visual Proof.

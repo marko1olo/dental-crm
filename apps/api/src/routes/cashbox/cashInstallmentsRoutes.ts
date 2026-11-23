@@ -68,18 +68,30 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		// Проверка Idempotency-Key (UUIDv7) при наличии для защиты от повторных договоров
-		let idempotencyKey = parseHeaderIdempotencyKey(request);
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-				});
-			}
-		} else {
-			idempotencyKey = randomUUID();
+		// Проверка Idempotency-Key (UUIDv7) или clientMutationId для защиты от повторных договоров
+		const bodyClientMutationId = typeof (request.body as Record<string, unknown> | undefined)?.clientMutationId === "string"
+			? ((request.body as Record<string, unknown>).clientMutationId as string).trim()
+			: undefined;
+		const bodyIdempotencyKey = typeof (request.body as Record<string, unknown> | undefined)?.idempotencyKey === "string"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string).trim()
+			: undefined;
+		const rawKey = parseHeaderIdempotencyKey(request) || bodyClientMutationId || bodyIdempotencyKey;
+
+		if (!rawKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для оформления договора рассрочки обязателен заголовок Idempotency-Key или поле clientMutationId (Мандат 8bo / RFC 9562).",
+			});
 		}
+
+		if (!isValidUuid(rawKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		const idempotencyKey = rawKey;
 
 		const bodySchema = z.object({
 			patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
@@ -102,7 +114,9 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			startDateIso: z.string().optional(),
 			cashBoxId: z.string().uuid().optional(),
 			operatorId: z.string().uuid().optional(),
-		});
+			clientMutationId: z.string().trim().optional(),
+			idempotencyKey: z.string().trim().optional(),
+		}).strict();
 
 		const parsed = bodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -565,7 +579,9 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			operatorId: z.string().uuid().optional(),
 			amountPaidKopecks: z.number().int().positive().optional(),
 			amountRub: positiveMoneyRubSchema.optional(),
-		});
+			clientMutationId: z.string().trim().optional(),
+			idempotencyKey: z.string().trim().optional(),
+		}).strict();
 		const parsed = bodySchema.safeParse(request.body || {});
 		const payData = parsed.success ? parsed.data : {};
 

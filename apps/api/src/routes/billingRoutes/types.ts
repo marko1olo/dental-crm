@@ -76,7 +76,7 @@ export const partialRefundBodySchema = z.object({
 					.refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val))
 					.optional(),
 				reasonRu: z.string().optional(),
-			}),
+			}).strict(),
 		)
 		.min(1),
 	reasonCategory: z
@@ -96,7 +96,7 @@ export const partialRefundBodySchema = z.object({
 		.max(100)
 		.refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val))
 		.optional(),
-});
+}).strict();
 
 export type PartialRefundBody = z.infer<typeof partialRefundBodySchema>;
 

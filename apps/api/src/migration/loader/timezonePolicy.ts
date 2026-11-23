@@ -9,9 +9,12 @@
  * знает и тянет только drizzle, клиент базы и схему.
  */
 
+import { createApiLogger } from "../../observability/logger.js";
 import { clinicTimeZone } from "../../services/reports/managerReports.js";
 import { NO_OFFSET_TIME_ZONE } from "./constants.js";
 import type { MigrationTimeZone, TransferredMoment } from "./types.js";
+
+const logger = createApiLogger("migrationTimezonePolicy");
 
 /**
  * Пояс переноса из пояса клиники. Чистая функция — вся политика «что делать,
@@ -107,10 +110,9 @@ export async function migrationTimeZone(
 ): Promise<MigrationTimeZone> {
 	const resolved = migrationTimeZoneFrom(await clinicTimeZone(organizationId));
 	if (!resolved.known) {
-		console.warn(
-			`[MIGRATION_TIME_ZONE_UNKNOWN] Организация ${organizationId}: часовой пояс клиники не задан ` +
-				`(clinics.timezone). Загрузка «${entityTitle}» сохраняет время суток из выгрузки без сдвига. ` +
-				"Укажите часовой пояс клиники и повторите загрузку, иначе часы приёмов останутся смещёнными.",
+		logger.warn(
+			{ organizationId, entityTitle },
+			"Часовой пояс клиники не задан (clinics.timezone). Загрузка сохраняет время суток из выгрузки без сдвига",
 		);
 	}
 	return resolved;

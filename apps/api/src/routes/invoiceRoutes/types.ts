@@ -42,14 +42,14 @@ export const validatePlanBodySchema = z.object({
 			stageId: z.string().optional(),
 			stageTitleRu: z.string().optional(),
 			doctorId: z.string().uuid().optional().nullable(),
-		}),
+		}).strict(),
 	),
 	itemResolutionOverrides: z.record(z.string(), z.string()).optional(),
 	itemAnalogueSelections: z.record(z.string(), z.string()).optional(),
 	adminOverrideAuthorized: z.boolean().optional(),
 	adminOverrideStaffName: z.string().optional(),
 	adminOverrideReason: z.string().optional(),
-});
+}).strict();
 
 export const generateInvoiceFromPlanSchema = z.object({
 	patientId: z.string().uuid(),
@@ -80,7 +80,7 @@ export const generateInvoiceFromPlanSchema = z.object({
 				serviceId: z.string().optional(),
 				analogueServiceId: z.string().optional(),
 				doctorId: z.string().uuid().optional().nullable(),
-			}),
+			}).strict(),
 		)
 		.min(1),
 	adminOverridePin: z.string().optional(),
@@ -88,7 +88,7 @@ export const generateInvoiceFromPlanSchema = z.object({
 	allowUnplannedServices: z.boolean().optional().default(true),
 	notes: z.string().optional(),
 	clientMutationId: z.string().optional(),
-});
+}).strict();
 
 export const invoiceListQuerySchema = z.object({
 	patientId: z.string().uuid().optional(),
@@ -112,7 +112,7 @@ export const createInvoiceItemSchema = z.object({
 	discountPercent: z.number().min(0).max(100).optional().default(0),
 	discountRub: z.number().min(0).optional().default(0),
 	totalRub: z.number().nonnegative().optional().nullable(),
-});
+}).strict();
 
 export const createInvoiceSchema = z.object({
 	visitId: z.string().uuid().optional().nullable(),
@@ -127,7 +127,7 @@ export const createInvoiceSchema = z.object({
 	notes: z.string().optional().nullable(),
 	clientMutationId: z.string().optional(),
 	items: z.array(createInvoiceItemSchema).default([]),
-});
+}).strict();
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type CreateInvoiceItemInput = z.infer<typeof createInvoiceItemSchema>;

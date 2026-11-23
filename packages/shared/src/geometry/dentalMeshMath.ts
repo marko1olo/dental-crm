@@ -197,7 +197,12 @@ export function transformPoint4x4(
  * Multiplies two 4x4 row-major matrices: Result = A * B.
  */
 export function multiplyMatrix4x4(a: Matrix4x4, b: Matrix4x4): Matrix4x4 {
-	const out = new Array<number>(16);
+	const out: Matrix4x4 = [
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+	];
 
 	for (let row = 0; row < 4; row++) {
 		const rIdx = row * 4;
@@ -215,7 +220,7 @@ export function multiplyMatrix4x4(a: Matrix4x4, b: Matrix4x4): Matrix4x4 {
 		}
 	}
 
-	return out as unknown as Matrix4x4;
+	return out;
 }
 
 /**

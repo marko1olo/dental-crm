@@ -235,7 +235,7 @@ graph TD
 
     subgraph Database_Layer ["База данных"]
         N[(PostgreSQL 18.4 Native)]
-        O[Drizzle ORM Схема]
+        O[Drizzle ORM Схема / 216 таблиц]
         P[Row Level Security / RLS]
     end
 

@@ -305,6 +305,11 @@ export async function insertLabOrderInDb(
 			labCostRub: finalLabCostRub,
 			labCostKopecks: finalLabCostKopecks,
 			isWarranty,
+			parentLabOrderId: data.parentLabOrderId ?? data.originalOrderId ?? null,
+			fittingAppointmentId: data.fittingAppointmentId ?? null,
+			laboratoryId: data.laboratoryId && isValidUuid(data.laboratoryId) ? data.laboratoryId : null,
+			warrantyLiabilityType: data.warrantyLiabilityType ?? (isWarranty ? "clinic_warranty" : null),
+			remakeReason: data.remakeReason ?? null,
 			status: effectiveStatus,
 			stage: effectiveStage,
 		})

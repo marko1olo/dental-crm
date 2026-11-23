@@ -67,7 +67,7 @@ export interface CompleteVisitWorkOrderInput {
 	readonly status?: "signed" | "draft" | "voided" | "completed" | "in_progress" | undefined;
 }
 
-export interface CompleteVisitWorkOrderResult {
+export interface CompleteVisitWorkOrderResult extends Record<string, unknown> {
 	readonly visitId: string;
 	readonly previousStatus: string;
 	readonly status: string;
@@ -92,7 +92,7 @@ export interface AppliedVisitWorkOrderItem {
 	readonly isAlreadyApplied: boolean;
 }
 
-export interface ApplyPlanItemsResult {
+export interface ApplyPlanItemsResult extends Record<string, unknown> {
 	readonly visitId: string;
 	readonly planId: string;
 	readonly transferredItemsCount: number;
@@ -106,9 +106,9 @@ export interface ApplyPlanItemsResult {
 	};
 	readonly totalAddedRub: number;
 	readonly totalAddedKopecks: number;
-	readonly deductions?: readonly StockDeductionRecord[];
-	readonly isOverdraft?: boolean;
-	readonly warning?: string;
+	readonly deductions?: readonly StockDeductionRecord[] | undefined;
+	readonly isOverdraft?: boolean | undefined;
+	readonly warning?: string | undefined;
 }
 
 function splitStoredPriceId(value: string | null): {

@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import {
 	FRANKL_SCALE_DEFINITIONS,
 	calculatePediatricFissureSealingProtocol,
+	calculatePediatricIconProtocol,
 	calculatePediatricPulpotomyProtocol,
 	calculatePediatricSilveringProtocol,
+	enamelConditionSchema,
 	fissureSealantMaterialSchema,
 	fissureSealingMethodSchema,
 	franklRatingSchema,
@@ -190,5 +192,77 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 		assert.ok(diary.includes("Пульпотомия зуба 74"));
 		assert.ok(diary.includes("Герметизация фиссур (16, 26)"));
 		assert.ok(diary.includes("Психологическая адаптация проведена"));
+	});
+
+	it("8. Micro-invasive Caries Infiltration ICON Protocol (calculatePediatricIconProtocol)", () => {
+		// Schema tests
+		assert.equal(enamelConditionSchema.safeParse("white_spot").success, true);
+		assert.equal(enamelConditionSchema.safeParse("superficial").success, true);
+		assert.equal(enamelConditionSchema.safeParse("deep").success, false);
+
+		const iconProtocol = calculatePediatricIconProtocol({
+			toothNumber: 51,
+			surface: "вестибулярная",
+			enamelCondition: "white_spot",
+			isPrimary: true,
+			patientWeightKg: 18,
+		});
+
+		assert.equal(iconProtocol.toothNumber, 51);
+		assert.equal(iconProtocol.isPrimary, true);
+		assert.equal(iconProtocol.enamelCondition, "white_spot");
+		assert.equal(iconProtocol.steps.length, 7);
+
+		// Step 1: Isolation
+		assert.equal(iconProtocol.steps[0].stepNumber, 1);
+		assert.ok(iconProtocol.steps[0].material?.includes("Коффердам") || iconProtocol.steps[0].descriptionRu.includes("коффердамом"));
+
+		// Step 2: 15% HCl Icon-Etch 120s
+		assert.equal(iconProtocol.steps[1].stepNumber, 2);
+		assert.equal(iconProtocol.steps[1].durationSeconds, 120);
+		assert.ok(iconProtocol.steps[1].descriptionRu.includes("120 секунд") || iconProtocol.steps[1].descriptionRu.includes("2 минут"));
+		assert.ok(iconProtocol.steps[1].material?.includes("15% HCl"));
+
+		// Step 3: Water rinse 30s
+		assert.equal(iconProtocol.steps[2].stepNumber, 3);
+		assert.equal(iconProtocol.steps[2].durationSeconds, 30);
+
+		// Step 4: Icon-Dry ethanol 30s
+		assert.equal(iconProtocol.steps[3].stepNumber, 4);
+		assert.equal(iconProtocol.steps[3].durationSeconds, 30);
+		assert.ok(iconProtocol.steps[3].material?.includes("этанол") || iconProtocol.steps[3].descriptionRu.includes("Icon-Dry"));
+
+		// Step 5: First infiltration 180s (3 min) + cure 40s
+		assert.equal(iconProtocol.steps[4].stepNumber, 5);
+		assert.ok(iconProtocol.steps[4].descriptionRu.includes("180 секунд") || iconProtocol.steps[4].descriptionRu.includes("3 минут"));
+		assert.ok(iconProtocol.steps[4].descriptionRu.includes("40 секунд"));
+
+		// Step 6: Second infiltration 60s (1 min) + cure 40s
+		assert.equal(iconProtocol.steps[5].stepNumber, 6);
+		assert.ok(iconProtocol.steps[5].descriptionRu.includes("60 секунд") || iconProtocol.steps[5].descriptionRu.includes("1 минут"));
+
+		// Step 7: Polishing
+		assert.equal(iconProtocol.steps[6].stepNumber, 7);
+		assert.ok(iconProtocol.steps[6].nameRu.includes("полировка") || iconProtocol.steps[6].descriptionRu.includes("полировка"));
+
+		// Indications, warnings, parent recommendations
+		assert.ok(iconProtocol.indicationsRu.includes("K02.0"));
+		assert.ok(iconProtocol.safetyWarningsRu.some((w) => w.includes("ОБЯЗАТЕЛЬНАЯ ИЗОЛЯЦИЯ")));
+		assert.ok(iconProtocol.parentRecommendationsRu.some((r) => r.includes("24 часов")));
+		assert.ok(iconProtocol.formattedDiaryEntryRu.includes("ICON"));
+
+		// Test in parent memo
+		const memo = generatePediatricParentRecommendations({
+			patientName: "София Петрова",
+			patientAgeYears: 5,
+			iconInfiltration: {
+				toothNumber: 51,
+				surface: "вестибулярная",
+				enamelCondition: "white_spot",
+				isPrimary: true,
+			},
+		});
+		assert.ok(memo.includes("ИНФИЛЬТРАЦИЯ КАРИЕСА ICON (ЗУБ #51"));
+		assert.ok(memo.includes("без бормашины"));
 	});
 });

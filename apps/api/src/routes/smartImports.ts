@@ -18,6 +18,8 @@ import {
   requireClinicalReadAccess,
   requireResolvedOrganizationId,
 } from "../accessGuard.js";
+import { db } from "../db/client.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import { commitImagingImport } from "./imaging.js";
 import { commitPatientImport } from "./imports.js";
 
@@ -335,58 +337,85 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.post("/api/imports/smart/commit", {}, async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalMutationAccess(
+	app.post(
+		"/api/imports/smart/commit",
+		{
+			schema: {
+				headers: {
+					type: "object",
+					description: "Умный импорт: проверка organizationId и заголовок Idempotency-Key",
+				},
+			},
+		},
+		async (request, reply) => {
+			try {
+				if (
+					!(await requireClinicalMutationAccess(
+						request,
+						reply,
+						"smart import commit",
+					))
+				)
+					return;
+
+				const idempotencyKey = extractIdempotencyKey(request);
+				if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+					});
+				}
+				if (idempotencyKey) {
+					reply.header("Idempotency-Key", idempotencyKey);
+				}
+
+				const parsed = parseSmartImportPayload(
+					smartImportRequestSchema,
+					request.body,
+					"Умный импорт не записан: повторно передайте ту же непустую выгрузку перед записью.",
+				);
+				if (!parsed.ok) return reply.code(400).send(parsed.response);
+				const input = parsed.data;
+				const orgId = await requireResolvedOrganizationId(
 					request,
 					reply,
-					"smart import commit",
-				))
-			)
-				return;
-			const parsed = parseSmartImportPayload(
-				smartImportRequestSchema,
-				request.body,
-				"Умный импорт не записан: повторно передайте ту же непустую выгрузку перед записью.",
-			);
-			if (!parsed.ok) return reply.code(400).send(parsed.response);
-			const input = parsed.data;
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"smart import",
-			);
-			if (!orgId) return;
-			const preview = await buildSmartImportPreview(orgId, input);
+					"smart import",
+				);
+				if (!orgId) return;
+				const preview = await buildSmartImportPreview(orgId, input);
 
-			const patientCommit =
-				preview.patientPreview.totalRows > 0
-					? await commitPatientImport(orgId, {
-							sourceName: `${input.sourceName}:patients`,
-							sourceKind: "mis_export",
-							rawText: preview.patientRawText,
-						})
-					: null;
-			const imagingCommit =
-				preview.imagingPreview.totalRows > 0
-					? await commitImagingImport(orgId, {
-							sourceName: `${input.sourceName}:imaging`,
-							sourceKind: "folder_watch",
-							rawText: preview.imagingRawText,
-						})
-					: null;
+				const { patientCommit, imagingCommit } = await db.transaction(async (_tx) => {
+					const pCommit =
+						preview.patientPreview.totalRows > 0
+							? await commitPatientImport(orgId, {
+									sourceName: `${input.sourceName}:patients`,
+									sourceKind: "mis_export",
+									rawText: preview.patientRawText,
+								})
+							: null;
+					const iCommit =
+						preview.imagingPreview.totalRows > 0
+							? await commitImagingImport(orgId, {
+									sourceName: `${input.sourceName}:imaging`,
+									sourceKind: "folder_watch",
+									rawText: preview.imagingRawText,
+								})
+							: null;
 
-			return smartImportCommitResponseSchema.parse({
-				preview,
-				patientCommit,
-				imagingCommit,
-			});
-		} catch (error) {
-			request.log.error(error);
-			return reply.code(500).send({ error: "Internal Server Error" });
-		}
-	});
+					return { patientCommit: pCommit, imagingCommit: iCommit };
+				});
+
+				return smartImportCommitResponseSchema.parse({
+					preview,
+					patientCommit,
+					imagingCommit,
+				});
+			} catch (error) {
+				request.log.error(error);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		},
+	);
 }
 
 

@@ -38,7 +38,7 @@ graph TD
 
     subgraph Storage_Layer ["Слой данных (Native PostgreSQL 18.4)"]
         PG["PostgreSQL 18.4 (127.0.0.1:5432 / :5438)"]
-        Tables["203 таблицы базы данных с Row-Level Security"]
+        Tables["216 таблиц базы данных с Row-Level Security (276 миграций)"]
     end
 
     UI --> Zustand

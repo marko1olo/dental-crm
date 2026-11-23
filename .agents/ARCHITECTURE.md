@@ -24,14 +24,14 @@ This document describes the structure, data flows, and architectural conventions
 * 🗺️ **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Central Documentation Index.
 * 📚 **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Documentation Knowledge Hub & Specifications Gateway.
 * 🛣️ **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Comprehensive Fastify API Routes Catalog (771 endpoints, 14 domains, Zod validation, RBAC, DB tables).
-* 🗄️ **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4 engine, Drizzle ORM schema (203 tables across 18 modules), RLS isolation, and migration pipeline.
+* 🗄️ **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4 engine, Drizzle ORM schema (216 tables across 28 modules / 78 files, 276 migrations, 3011 columns), RLS isolation, and migration pipeline.
 * 💳 **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-FZ fiscal receipts, cashboxes, family shared balances, and payment idempotency.
 * ⚕️ **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Clinical rules engine, triggers matching, prerequisite checks, and warning/blocking actions.
 * 📞 **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Mango/Zadarma/UIS Telephony webhooks, WebSocket broadcasts, Patient Portal OTP auth, and PWA setup.
 * 📄 **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
 * 💬 **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
 * 🧠 **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция, правила поведения и T.A.R.S. протокол ИИ-ассистента DENTE.
-* 🏛️ **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Архитектура ИИ-ассистента, 3 контура взаимодействия, Dual-Harness (Web vs Desktop) и 26 инструментов.
+* 🏛️ **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Архитектура ИИ-ассистента, 3 контура взаимодействия, Dual-Harness (Web vs Desktop) и 29 инструментов.
 * 🖥️ **[AI_ASSISTANT_DESKTOP_MCP.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)** — Архитектура десктопного харнесса (.EXE / Windows), файловый движок, фоновые задачи (schedule/manage_task), управление софтом томографов и аппаратный MCP-мост оборудования.
 * 🛡️ **[TEST_SUITES_INQUISITION_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)** — Реестр Red Team инквизиции тестов, искоренение regex-проверок исходников (Ось №7 Мандата 8aj), ликвидация глотания ошибок и честный рантайм.
 

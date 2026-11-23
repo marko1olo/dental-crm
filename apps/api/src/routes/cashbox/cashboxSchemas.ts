@@ -14,7 +14,7 @@ export const openShiftBodySchema = z.object({
 	openedByUserId: z.string().uuid().optional(),
 	cashierFullName: z.string().trim().optional(),
 	openedAt: z.string().optional(),
-});
+}).strict();
 
 export const closeShiftBodySchema = z.object({
 	closedByUserId: z.string().uuid().optional(),
@@ -45,8 +45,9 @@ export const closeShiftBodySchema = z.object({
 			fiscalSign: z.string().nullable().optional(),
 			qrString: z.string().nullable().optional(),
 		})
+		.strict()
 		.optional(),
-});
+}).strict();
 
 export const cashIntroductionBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
@@ -57,7 +58,7 @@ export const cashIntroductionBodySchema = z.object({
 	typeAlias: z.string().trim().optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
-});
+}).strict();
 
 export const cashWithdrawalBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
@@ -69,13 +70,13 @@ export const cashWithdrawalBodySchema = z.object({
 	typeAlias: z.string().trim().optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
-});
+}).strict();
 
 export const xReportQueryOrBodySchema = z.object({
 	cashierFullName: z.string().trim().optional(),
 	shiftNumber: z.coerce.number().int().optional(),
 	print: z.coerce.boolean().optional(),
-});
+}).strict();
 
 export const cashOperationListQuerySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
@@ -95,7 +96,7 @@ export const cashRefundBodySchema = z.object({
 	cashierFullName: z.string().trim().optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
-});
+}).strict();
 
 export const retryFiscalizeParamsSchema = z.object({
 	id: z.string(),
@@ -181,11 +182,11 @@ export const cashboxPaymentRequestSchema = z.object({
 			amountRub: nonNegativeMoneyRubSchema.optional(),
 			certificateNumber: z.string().trim().optional(),
 			guaranteeLetterId: z.string().trim().optional(),
-	allowOverdraft: z.boolean().optional(),
-	isUrgentCare: z.boolean().optional(),
-	isEmergency: z.boolean().optional(),
-	hasAcutePain: z.boolean().optional(),
-		}),
+			allowOverdraft: z.boolean().optional(),
+			isUrgentCare: z.boolean().optional(),
+			isEmergency: z.boolean().optional(),
+			hasAcutePain: z.boolean().optional(),
+		}).strict(),
 	).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
@@ -216,6 +217,6 @@ export const cashboxPaymentRequestSchema = z.object({
 		z.string().trim().optional().nullable(),
 	),
 	printFormat: z.string().trim().optional(),
-});
+}).strict();
 
 export type CashboxPaymentRequest = z.infer<typeof cashboxPaymentRequestSchema>;

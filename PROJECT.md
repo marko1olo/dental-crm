@@ -1,50 +1,34 @@
-# Project: DENTE Dental CRM — 2.5D Odontogram & Gate 0 First Article Inspection
+# Project: DENTE Dental CRM — Clinical MIS & Dental Practice Operating System
 
-## Architecture
-- Monolithic 2.5D Vector Anatomy Model:
-  - Frontal-Occlusal perspective projection with 17.5° tilt ($\cos 17.5^\circ \approx 0.954$, $\sin 17.5^\circ \approx 0.301$), providing simultaneous full-length root visibility and occlusal cusp relief.
-  - Wheeler's Dental Anatomy Chapter 12 coordinates: continuous biological crown and root outlines.
-  - Zero patchwork stained-glass tiles: non-destructive translucent clinical overlays over monolithic anatomy.
-- Cupertino Clinical Vector Shaders:
-  - Apple HIG porcelain-enamel multi-stop gradient (`#ffffff` -> `#f8fafc` -> `#f1f5f9` -> `#e2e8f0` -> `#cbd5e1`/`#ded5c4`).
-  - Hairline 0.8px with `vector-effect="non-scaling-stroke"`.
-  - Coaxial radiant endodontic gutta-percha (`#f43f5e` sheath + `#ffffff` 0.8px core).
-- Mandate 8b Modular Decomposition:
-  - All components and code files strictly $\le 120$ lines.
-- Live In-App Visual Test Stand:
-  - Mounted directly in `apps/web/src/main.tsx` via `?stand=odontogram-gate0`. Zero fake `*_preview.html` sandboxes.
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [🏗️ Архитектура (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/ARCHITECTURE.md)
+> ⚠️ Высшая Конституция: **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
 
-## Feature Inventory
-| # | Feature | Description | Milestone | Source |
-|---|---------|-------------|-----------|--------|
-| 1 | Tooth 46 Monolithic Crown Geometry | Unified 5-cusp outline (MB, DB, D, ML, DL) following Wheeler's Chapter 12 | M0 (Gate 0) | Spec Miner |
-| 2 | Tooth 46 Fissure System | Surgical hairline developmental grooves (central, MB, DB, lingual, buccal pit) | M0 (Gate 0) | Spec Miner |
-| 3 | Tooth 46 Monolithic Root Geometry | Divergent mesial root with sulcus longitudinalis + distal root with bifurcation at (50, 96) | M0 (Gate 0) | Spec Miner |
-| 4 | Tooth 46 Endodontic System | 3 internal root canals (MB, ML, Distal) with coaxial radiant coral gutta-percha | M0 (Gate 0) | Spec Miner |
-| 5 | Cupertino Clinical Shaders | SVG porcelain-enamel, root dentin, and gutta-percha shader definitions | M0 (Gate 0) | Rendering Explorer |
-| 6 | Gate 0 Modular Components (<=120 lines) | `Tooth46Container`, `Tooth46OcclusalCusps`, `Tooth46Roots`, `Tooth46EndoCanals`, `Tooth46ShaderDefs` | M0 (Gate 0) | Worker |
-| 7 | Live CRM Test Stand Integration | Mount in-app standalone inspection stand in `apps/web/src/main.tsx` via `?stand=odontogram-gate0` | M0 (Gate 0) | Worker |
-| 8 | Automated Playwright Visual Proof | High-resolution screenshot capture in Light & Dark themes with WCAG 2.1 contrast verification | M0 (Gate 0) | Reviewer / Auditor |
-| 9 | Dentition Expansion (Remaining 31 Teeth) | Expansion to full adult (11–48) and pediatric (51–85) dentition after Gate 0 approval | M1–M4 | Deferred |
+## 1. Project Passport & Identity
+- **Официальное название:** DENTE Dental CRM & Clinical MIS.
+- **Назначение:** Высокопроизводительная медицинская информационная система (МИС) и CRM для частной амбулаторной стоматологии, созданная на замену устаревшим монолитам прошлого поколения (IDENT, StomX, DentalPRO, iStom).
+- **Стратегический приоритет №1 (Мандат 8n):** Соло-врач (1–2 кресла, аренда, ИП/самозанятый) и малая частная клиника (1–3 кресла) с бесшовным масштабированием до сетевых филиалов (Zero Dead-Ends).
+- **Ключевой принцип (Мандат 8e):** Автономия врача и персонала (Zero-Friction Law). Ноль заблокированных кнопок (`disabled`), норма в 1 клик, сохранение черновиков на лету (Autosave).
 
-## Milestones
-| # | Name | Scope | Dependencies | Status |
-|---|------|-------|-------------|--------|
-| M0 | Gate 0: First Article Inspection (Tooth 46) | `apps/web/src/components/odontogram/gate0/`, `apps/web/src/main.tsx`, `scripts/capture-odontogram-gate0-4state.mjs` | none | **APPROVED** (Gate 0 Masterpiece Passed All Gates) |
-| M1 | Maxillary Dentition (Q1 & Q2: 11–28) | 16 adult upper teeth with 3-root molars & trifurcation | M0 | PLANNED |
-| M2 | Mandibular Dentition (Q3 & Q4: 31–48) | 15 remaining adult lower teeth with 5-cusp molars | M0 | PLANNED |
-| M3 | Deciduous Dentition (51–85) | 20 primary teeth with thin enamel & divergent roots | M0 | PLANNED |
-| M4 | Clinical Layers & Deep CRM Integration | Full pathology state machine, visit diary, treatment plan links | M1, M2, M3 | PLANNED |
+## 2. Core Technical Architecture
+- **Frontend:** React 19 (`react: ^19.2.7`), Vite 6, Tailwind CSS v4, Zustand v5, React Query v5. Плотная профессиональная вёрстка Studio Mac HIG (десктопные строки 36px `h-9`) и сенсорная эргономика Apple iOS HIG (тач-таргеты $\ge 44\times 44$px).
+- **Backend:** Node.js Fastify v5 (`fastify: ^5.3.3`), TypeScript 5.8+, Zod v3.24 валидация, ALS-контекст тенантов `withTenantCtx`.
+- **Database Engine:** Нативный PostgreSQL 18.4 (`.data/pg18`, TCP `127.0.0.1:5432`), 216 таблиц Drizzle ORM в 28 доменных модулях (78 файлов схем), 49 enums, 3011 колонок, 276 физических DDL-миграций без дрифта, Row-Level Security (RLS) изоляция.
+- **Shared Domain Core (`@dental/shared`):** Строгая математика денег в копейках (`BIGINT`, `amountKopecks`), 3-уровневые планы лечения (Эконом, ★ Оптимум, Премиум), правила эндодонтии Wheeler & Hess, классификатор НДФЛ 13% (КНД 1151156), чек-суммы SHA-256.
 
-## Code Layout
-- `apps/web/src/components/odontogram/gate0/`:
-  - `tooth46GeometryConstants.ts` (Wheeler coordinates & dimensions)
-  - `Tooth46ShaderDefs.tsx` (Apple HIG porcelain & gutta-percha gradients)
-  - `Tooth46Roots.tsx` (Monolithic 2 divergent roots + CEJ)
-  - `Tooth46OcclusalCusps.tsx` (5 cusps + surgical fissures)
-  - `Tooth46EndoCanals.tsx` (3 canals MB, ML, D with luminous core)
-  - `Tooth46Container.tsx` (Master composite 2.5D tooth component)
-  - `Tooth46InspectionStand.tsx` (In-app interactive inspection stand)
-- `apps/web/src/main.tsx`: Entry point wiring for `?stand=odontogram-gate0`.
-- `scripts/capture-odontogram-gate0-4state.mjs`: Automated Playwright capture script.
-- `docs/proofs/odontogram/`: Captured visual evidence PNGs.
+## 3. Subsystem Status & Shipped Milestones
+| Домен | Описание функционала | Статус | Документация |
+|---|---|---|---|
+| **Анатомическая Одонтограмма** | 2.5D векторная формула Wheeler (взрослый прикус 11–48 и детский сменный 51–85), 5 поверхностей MODBL, 40+ клинических состояний, реактивный SVG 120 FPS | **SHIPPED & APPROVED** | [.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md) |
+| **Клинический контур ЭМК** | Дневник SOAP, нозологии МКБ-10 (K02–K08), пресеты СтАР, 1-клик соматическая норма «✓ Здоров», debounced autosave, печать 043/у | **SHIPPED & APPROVED** | [.agents/CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) |
+| **Касса 54-ФЗ и Биллинг** | Сплит-оплаты (нал + карта + семейный депозит + СБП QR), копейки BIGINT, 0 ИНН физлиц в чеке, скидки врача до 100%, смены и Z-отчеты | **SHIPPED & APPROVED** | [.agents/BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) |
+| **3D DICOM / КЛКТ MPR** | Браузерный просмотр томограмм КЛКТ, Zero-Copy WebWorker, ортогональные срезы, панорама ОПТГ, окна плотности Хаунсфилда (HU) | **SHIPPED & APPROVED** | [docs/architecture/DICOM_3D_MPR_SPEC.md](file:///C:/Clinic_MVP/dental-crm/docs/architecture/DICOM_3D_MPR_SPEC.md) |
+| **Склад и СанПиН** | Soft Negative Stock (тихий овердрафт при задержке накладных), списание по техкартам BOM, 5 журналов СанПиН, автоклавы Class B, Честный Знак | **SHIPPED & APPROVED** | [.agents/WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md) |
+| **Документы и Право** | PDF рендеринг, бланки информированных согласий (ИДС), договоры, справки в ФНС КНД 1151156, штампы УКЭП, пакетный экспорт | **SHIPPED & APPROVED** | [.agents/DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) |
+| **Расписание и Пациенты** | Плотная сетка Studio HIG (строки 36px), запись за 5 сек без ассистента, карточка пациента, семейный баланс, лист ожидания | **SHIPPED & APPROVED** | [.agents/FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md) |
+| **ИИ-Копайлот DENTE** | Мудрый соло-ассистент врача, голосовая диктовка Whisper, стенографист FDI, генерация SOAP, ReAct-харнесс, 29 инструментов | **SHIPPED & APPROVED** | [.agents/AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) |
+
+## 4. Machine Gates & Quality Ratchet (Definition of Done)
+1. **Санитарный храповик (`npm run check:ratchet`):** 0 any, 0 suppressions, 0 float money divisions, 0 uppercase buttons в UI-ядре.
+2. **Миграции (`npm run check:migration-drift`):** 100% синхронизация между Drizzle-схемой и DDL-миграциями Postgres 18.
+3. **Безопасность диффа (`npm run check:diff`):** 0 костылей, 0 сырых токенов, 0 утечек секретов.
+4. **Кодировка (`npm run check:encoding`):** 100% файлов в строгом UTF-8 без BOM.

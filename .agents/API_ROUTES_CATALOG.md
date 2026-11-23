@@ -23,7 +23,7 @@
 * 🗺️ **[Индекс документации](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральная карта документации кодовой базы.
 * 📚 **[Портал документации docs/](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Центральный шлюз документации и спецификаций проекта.
 * 🏗️ **[Архитектура системы](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Fastify, React 19, WebSocket Broker, сессия и proxy.
-* 🗄️ **[База данных и схема Drizzle](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4, 203 таблицы, RLS политики, миграции.
+* 🗄️ **[База данных и схема Drizzle](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4, 216 таблиц в 28 модулях (78 файлов схем, 276 миграций, 3011 колонок), RLS политики, миграции.
 * 💳 **[Биллинг и финансы](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-ФЗ, эквайринг, семейный баланс, идемпотентность.
 * ⚕️ **[Клинические правила](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Клинический движок, МКБ-10, формуляры, правила приёма.
 * 📞 **[Телефония и портал](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — АТС webhooks, софтфон, OTP авторизация пациента.

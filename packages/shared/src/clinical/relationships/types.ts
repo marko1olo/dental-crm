@@ -271,7 +271,7 @@ export const createRelationshipInputSchema = z.object({
 	canSignConsents: z.boolean().optional().default(false),
 	notes: z.string().nullable().optional(),
 	createdAt: z.string().optional(),
-});
+}).strict();
 
 export type CreateRelationshipInput = z.input<typeof createRelationshipInputSchema>;
 export const createPatientRelationshipSchema = createRelationshipInputSchema;
@@ -288,7 +288,7 @@ export const updateRelationshipInputSchema = z.object({
 	isLegalGuardian: z.boolean().optional(),
 	canShareBalance: z.boolean().optional(),
 	notes: z.string().nullable().optional(),
-});
+}).strict();
 
 export type UpdateRelationshipInput = z.infer<typeof updateRelationshipInputSchema>;
 export const updatePatientRelationshipSchema = updateRelationshipInputSchema;

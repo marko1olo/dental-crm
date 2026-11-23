@@ -10,6 +10,8 @@ import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 const STEPS = [
 	{ name: "File limits guard", cmd: "node", args: ["scripts/check_file_limits.cjs"] },
 	{ name: "Sandbox hunter guard", cmd: "node", args: ["scripts/sandbox_hunter.cjs"] },
+	{ name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта — Мандат 8bq)", cmd: "node", args: ["--max-old-space-size=2048", "scripts/dice-audit.mjs"] },
+	{ name: "Dice audit engine unit tests", cmd: "node", args: ["--test", "scripts/tests/dice-audit.test.mjs"] },
 	{ name: "@dental/shared unit tests", cmd: "npm", args: ["run", "test", "-w", "@dental/shared"] },
 	{ name: "@dental/api integration tests", cmd: "npm", args: ["run", "test", "-w", "@dental/api"] },
 	{ name: "@dental/web component tests", cmd: "npm", args: ["run", "test", "-w", "@dental/web"] },

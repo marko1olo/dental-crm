@@ -19,7 +19,7 @@ Central intertextual navigation hub and task routing matrix for AI agents and hu
 Comprehensive overview of the monorepo layout (`apps/api`, `apps/web`, `packages/shared`), Fastify 5 API gateway, React 19 single-page application, real-time WebSocket broker, and multi-tenant isolation via AsyncLocalStorage (`withTenantCtx`).
 
 ### 3. [Database Engine & Schema Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) (`.agents/DATABASE.md`)
-Drizzle ORM over native PostgreSQL 18.4 connected over TCP on `127.0.0.1:5432` (`.data/pg18`, `pg.Pool`). Details the 203 database tables across 18 schema modules, Row-Level Security (RLS) isolation, migration procedures, connection pooling, and baseline seeding safety gates.
+Drizzle ORM over native PostgreSQL 18.4 connected over TCP on `127.0.0.1:5432` (`.data/pg18`, `pg.Pool`). Details the 216 database tables across 28 schema modules (78 schema files, 276 physical DDL migrations, 3011 columns), Row-Level Security (RLS) isolation, migration procedures, connection pooling, and baseline seeding safety gates.
 
 ### 4. [Fastify API Routes Catalog](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md) (`.agents/API_ROUTES_CATALOG.md`)
 Comprehensive catalog of all 771 Fastify API routes across 14 functional domains: query/body Zod validations, role-based access control (RBAC), database transaction boundaries, and HTTP response codes.

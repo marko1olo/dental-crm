@@ -13,6 +13,9 @@ import {
 	WORKER_ID,
 } from "./runStore.js";
 import { cleanupExpiredUploads, deleteUpload } from "./uploadStore.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("migrationWorker");
 
 /**
  * Фоновый исполнитель переноса.
@@ -150,9 +153,16 @@ async function processRun(
 		});
 
 		state.processed += 1;
-		console.info(
-			`[migration worker] прогон ${run.id} завершён: создано ${executed.created}, обновлено ${executed.updated}, ` +
-				`дублей ${executed.duplicates}, отказов ${executed.failed}, сверка ${reconciliation.balanced ? "сошлась" : "НЕ сошлась"}`,
+		logger.info(
+			{
+				runId: run.id,
+				created: executed.created,
+				updated: executed.updated,
+				duplicates: executed.duplicates,
+				failed: executed.failed,
+				balanced: reconciliation.balanced,
+			},
+			"Прогон миграции завершён",
 		);
 
 		/**
@@ -170,7 +180,7 @@ async function processRun(
 		const isPhaseError = error instanceof MigrationPhaseError;
 		const message = error instanceof Error ? error.message : String(error);
 
-		console.error(`[migration worker] прогон ${run.id} упал: ${message}`);
+		logger.error({ err: safeLogError(error), runId: run.id }, "Прогон миграции упал");
 
 		/**
 		 * Прогон помечается неудачным, владелец снимается. Стейджинг НЕ удаляется:
@@ -193,9 +203,9 @@ async function processRun(
 		}).catch((updateError: unknown) => {
 			// Если и запись об ошибке не удалась, прогон останется loading с
 			// устаревшей отметкой и будет подобран заново — это верное поведение.
-			console.error(
-				`[migration worker] не удалось записать ошибку прогона ${run.id}:`,
-				updateError,
+			logger.error(
+				{ err: safeLogError(updateError), runId: run.id },
+				"Не удалось записать ошибку прогона",
 			);
 		});
 	} finally {
@@ -208,8 +218,9 @@ async function tick(): Promise<boolean> {
 	if (state.activeRunId !== null) return false;
 	const run = await claimNextRun();
 	if (!run) return false;
-	console.info(
-		`[migration worker] взят прогон ${run.id} (${run.sourceName})${run.resumeCount > 0 ? `, возобновление #${run.resumeCount}` : ""}`,
+	logger.info(
+		{ runId: run.id, sourceName: run.sourceName, resumeCount: run.resumeCount },
+		"Взят прогон миграции",
 	);
 	await processRun(run);
 	return true;
@@ -232,7 +243,7 @@ async function loop(): Promise<void> {
 		// Если работа была, сразу пробуем следующую: очередь могла накопиться.
 		schedule(worked ? 0 : IDLE_POLL_MS);
 	} catch (error) {
-		console.error("[migration worker] ошибка цикла:", error);
+		logger.error({ err: safeLogError(error) }, "Ошибка цикла воркера миграции");
 		schedule(ERROR_BACKOFF_MS);
 	}
 }
@@ -249,15 +260,16 @@ export async function startMigrationWorker(): Promise<void> {
 	state.running = true;
 
 	const released = await releaseOwnRuns().catch((error: unknown) => {
-		console.error(
-			"[migration worker] не удалось освободить свои прогоны:",
-			error,
+		logger.error(
+			{ err: safeLogError(error) },
+			"Не удалось освободить свои прогоны миграции",
 		);
 		return 0;
 	});
 	if (released > 0) {
-		console.info(
-			`[migration worker] освобождено прогонов после перезапуска: ${released}`,
+		logger.info(
+			{ releasedCount: released },
+			"Освобождено прогонов миграции после перезапуска",
 		);
 	}
 
@@ -266,8 +278,9 @@ export async function startMigrationWorker(): Promise<void> {
 	const cleanup = async (): Promise<void> => {
 		const removed = await cleanupExpiredUploads().catch(() => 0);
 		if (removed > 0)
-			console.info(
-				`[migration worker] удалено просроченных файлов выгрузок: ${removed}`,
+			logger.info(
+				{ removedFilesCount: removed },
+				"Удалено просроченных файлов выгрузок миграции",
 			);
 	};
 	void cleanup();
@@ -277,7 +290,7 @@ export async function startMigrationWorker(): Promise<void> {
 	);
 	state.cleanupTimer.unref();
 
-	console.info(`[migration worker] запущен, идентификатор ${WORKER_ID}`);
+	logger.info({ workerId: WORKER_ID }, "Воркер миграции запущен");
 	schedule(0);
 }
 

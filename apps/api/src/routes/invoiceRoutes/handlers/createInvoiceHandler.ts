@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { basisPointsFromPercent, kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems } from "../../../db/schema/clinical.js";
@@ -54,93 +53,6 @@ export async function handleCreateInvoice(
 	const data: CreateInvoiceInput = parsed.data;
 	const effectiveVisitId = data.visitId ?? visitIdFromParam ?? null;
 
-	// Проверяем существование пациента
-	const [patient] = await db
-		.select({ id: patients.id, fullName: patients.fullName })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, data.patientId),
-				eq(patients.organizationId, orgId),
-			),
-		)
-		.limit(1);
-
-	if (!patient) {
-		return reply.code(404).send({
-			error: "PatientNotFound",
-			message: `Пациент с ID '${data.patientId}' не найден в текущей организации.`,
-		});
-	}
-
-	// Идемпотентность: проверяем наличие открытого счёта по visitId
-	if (effectiveVisitId) {
-		const [existingInvoice] = await db
-			.select()
-			.from(patientInvoices)
-			.where(
-				and(
-					eq(patientInvoices.organizationId, orgId),
-					eq(patientInvoices.visitId, effectiveVisitId),
-					inArray(patientInvoices.status, ["draft", "issued"]),
-				),
-			)
-			.limit(1);
-
-		if (existingInvoice) {
-			const year = existingInvoice.createdAt
-				? new Date(existingInvoice.createdAt).getFullYear()
-				: new Date().getFullYear();
-			const invoiceNumber = `СЧ-${year}-${existingInvoice.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
-
-			const existingItemsRows = await db
-				.select()
-				.from(invoiceItems)
-				.where(
-					and(
-						eq(invoiceItems.organizationId, orgId),
-						eq(invoiceItems.invoiceId, existingInvoice.id),
-					),
-				);
-
-			const existingItems = existingItemsRows.map((it) => ({
-				id: it.id,
-				serviceId: it.priceListItemId || it.serviceCode || undefined,
-				serviceCode: it.serviceCode || undefined,
-				code: it.serviceCode || undefined,
-				toothCode: it.toothCode,
-				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
-				title: it.name,
-				name: it.name,
-				quantity: Number(it.quantity) || 1,
-				unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
-				priceRub: kopecksToRubles(it.totalPriceKopecks),
-				discountRub: 0,
-				totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
-			}));
-
-			return reply.code(200).send({
-				success: true,
-				idempotent: true,
-				invoice: {
-					id: existingInvoice.id,
-					number: invoiceNumber,
-					invoiceNumber,
-					patientId: existingInvoice.patientId,
-					patientName: patient.fullName,
-					visitId: existingInvoice.visitId,
-					totalAmountRub: Number(existingInvoice.totalAmountRub),
-					status: existingInvoice.status,
-					issuedAt: existingInvoice.issuedAt?.toISOString() || null,
-					createdAt: existingInvoice.createdAt.toISOString(),
-					items: existingItems,
-				},
-				items: existingItems,
-				itemsCount: existingItems.length,
-			});
-		}
-	}
-
 	// Расчёт позиций и итоговой суммы строго в целочисленных копейках
 	let totalItemsNetKopecks = BigInt(0);
 	const preparedItems = data.items.map((item, idx) => {
@@ -159,7 +71,7 @@ export async function handleCreateInvoice(
 		let itemDiscountKopecks = BigInt(0);
 
 		if (item.discountPercent && item.discountPercent > 0) {
-			const basisPoints = Math.round(Math.min(100, Math.max(0, item.discountPercent)) * 100);
+			const basisPoints = basisPointsFromPercent(Math.min(100, Math.max(0, item.discountPercent)));
 			itemDiscountKopecks = BigInt(percentageOfKopecks(Number(grossLineKopecks), basisPoints));
 		} else if (item.discountRub && item.discountRub > 0) {
 			itemDiscountKopecks = BigInt(Math.max(0, rublesToKopecks(item.discountRub)));
@@ -217,9 +129,88 @@ export async function handleCreateInvoice(
 	const invoiceStatus = data.status ?? "issued";
 	const now = new Date();
 
-	let insertedItems: Array<typeof invoiceItems.$inferSelect> = [];
+	// Устранение TOCTOU-гонки: единая транзакция с advisory lock по visitId
+	const result = await withTenantCtx(orgId, async (tx) => {
+		if (effectiveVisitId) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':invoice_visit:' || ${effectiveVisitId}))`,
+			);
+		}
 
-	await withTenantCtx(orgId, async (tx) => {
+		// 1. Проверяем существование пациента
+		const [patient] = await tx
+			.select({ id: patients.id, fullName: patients.fullName })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, data.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!patient) {
+			return { kind: "patient_not_found" as const };
+		}
+
+		// 2. Идемпотентность: проверяем наличие открытого счёта по visitId
+		if (effectiveVisitId) {
+			const [existingInvoice] = await tx
+				.select()
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.organizationId, orgId),
+						eq(patientInvoices.visitId, effectiveVisitId),
+						inArray(patientInvoices.status, ["draft", "issued"]),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (existingInvoice) {
+				const year = existingInvoice.createdAt
+					? new Date(existingInvoice.createdAt).getFullYear()
+					: new Date().getFullYear();
+				const invoiceNumber = `СЧ-${year}-${existingInvoice.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+
+				const existingItemsRows = await tx
+					.select()
+					.from(invoiceItems)
+					.where(
+						and(
+							eq(invoiceItems.organizationId, orgId),
+							eq(invoiceItems.invoiceId, existingInvoice.id),
+						),
+					);
+
+				const existingItems = existingItemsRows.map((it) => ({
+					id: it.id,
+					serviceId: it.priceListItemId || it.serviceCode || undefined,
+					serviceCode: it.serviceCode || undefined,
+					code: it.serviceCode || undefined,
+					toothCode: it.toothCode,
+					toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
+					title: it.name,
+					name: it.name,
+					quantity: Number(it.quantity) || 1,
+					unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
+					priceRub: kopecksToRubles(it.totalPriceKopecks),
+					discountRub: 0,
+					totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
+				}));
+
+				return {
+					kind: "idempotent_existing" as const,
+					invoice: existingInvoice,
+					invoiceNumber,
+					patientName: patient.fullName,
+					items: existingItems,
+				};
+			}
+		}
+
+		// 3. Создаем новый счет
 		await tx.insert(patientInvoices).values({
 			id: invoiceId,
 			organizationId: orgId,
@@ -233,6 +224,7 @@ export async function handleCreateInvoice(
 			createdAt: now,
 		});
 
+		let insertedItems: Array<typeof invoiceItems.$inferSelect> = [];
 		if (preparedItems.length > 0) {
 			const itemsToInsert = preparedItems.map((it) => ({
 				organizationId: orgId,
@@ -271,13 +263,48 @@ export async function handleCreateInvoice(
 				await tx.insert(treatmentItems).values(treatmentItemsToInsert);
 			}
 		}
+
+		return {
+			kind: "created" as const,
+			patientName: patient.fullName,
+			insertedItems,
+		};
 	});
+
+	if (result.kind === "patient_not_found") {
+		return reply.code(404).send({
+			error: "PatientNotFound",
+			message: `Пациент с ID '${data.patientId}' не найден в текущей организации.`,
+		});
+	}
+
+	if (result.kind === "idempotent_existing") {
+		return reply.code(200).send({
+			success: true,
+			idempotent: true,
+			invoice: {
+				id: result.invoice.id,
+				number: result.invoiceNumber,
+				invoiceNumber: result.invoiceNumber,
+				patientId: result.invoice.patientId,
+				patientName: result.patientName,
+				visitId: result.invoice.visitId,
+				totalAmountRub: Number(result.invoice.totalAmountRub),
+				status: result.invoice.status,
+				issuedAt: result.invoice.issuedAt?.toISOString() || null,
+				createdAt: result.invoice.createdAt.toISOString(),
+				items: result.items,
+			},
+			items: result.items,
+			itemsCount: result.items.length,
+		});
+	}
 
 	const year = now.getFullYear();
 	const generatedNumber = formatInvoiceNumber(data.documentType ?? "invoice", data.patientId);
 	const invoiceNumber = generatedNumber || `СЧ-${year}-${invoiceId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
-	const returnedItems = insertedItems.map((it, idx) => {
+	const returnedItems = result.insertedItems.map((it, idx) => {
 		const prep = preparedItems[idx];
 		return {
 			id: it.id,
@@ -307,7 +334,7 @@ export async function handleCreateInvoice(
 				invoiceId,
 				invoiceNumber,
 				patientId: data.patientId,
-				patientName: patient.fullName,
+				patientName: result.patientName,
 				visitId: effectiveVisitId,
 				totalAmountRub,
 				status: invoiceStatus,
@@ -324,7 +351,7 @@ export async function handleCreateInvoice(
 			number: invoiceNumber,
 			invoiceNumber,
 			patientId: data.patientId,
-			patientName: patient.fullName,
+			patientName: result.patientName,
 			visitId: effectiveVisitId,
 			totalAmountRub,
 			status: invoiceStatus,

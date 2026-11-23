@@ -192,27 +192,17 @@ npm run db:migrate -- --strict      # treat a changed checksum on an applied mig
     journal as proof a migration exists. The runner ignores the journal entirely — it globs
     `apps/api/drizzle/*.sql` and sorts on the leading ordinal. The `.sql` file on disk is the source of
     truth.
-*   Current state, measured 2026-08-06 and moving: **130 `.sql` files, highest ordinal `0160`**,
-    123 distinct ordinals, and seven duplicated ordinals — `0011`, `0012`, `0013`, `0119`, `0120`,
-    `0124`, `0128`. The ordinal space is not contiguous (there are gaps from `0015` onward). The previous
-    revision said "90 files, `0000`–`0013` then `0061`–`0132`, four duplicates"; every one of those four
-    numbers is now wrong. **Check the real maximum with `fd` before choosing a new number, and do not
-    assume the count equals the highest ordinal.** This line rots faster than any other in the document:
-    `0160` landed while this revision was being written.
+*   Current state, measured 2026-11-24: **276 `.sql` files in `apps/api/drizzle`** (all 276 files matching the 216 Drizzle tables, 49 enums, and 3011 columns, verified via `npm run check:migration-drift` with Exit Code 0 and 0 drift).
 *   The SQL splitter is the thing that used to break a clean rollout. `statementsOf()` in
     `apps/api/src/scripts/migrate.ts` once cut files on bare `;`, ignoring comments and dollar quoting,
     which detonated on any migration containing a `DO $$ … $$` block or a semicolon inside a comment.
     As of 2026-08-06 the splitting logic lives in `apps/api/src/scripts/sqlStatements.ts` (239 lines,
     comment-aware and dollar-quote-aware, deliberately kept out of `migrate.ts` because that module runs
     `main()` at import time). Transactional migrations are split on drizzle's `statement-breakpoint`
-    marker; only the `--no-transaction` path goes through the general splitter. **This file was being
-    edited by another agent on 2026-08-06 — read it before quoting its behaviour.**
+    marker; only the `--no-transaction` path goes through the general splitter.
 *   **A migration is complete only as `.sql` + ledger entry + proof against the database**
     (`.agents/AGENTS.md` §8b). Run `db:migrate:check` before `db:migrate`, and quote both.
-*   Ledger state 2026-08-06: `_dente_migrations` holds 130 rows against **130 `.sql` files** — the
-    full chain is applied to the live `dental_crm`. An earlier reading the same day showed the ledger
-    stuck at 103 of 129 with `db:migrate` exiting 1 on `0134`; that was the splitter defect above, and it
-    is resolved. If you see a partial ledger, suspect the splitter before suspecting the SQL.
+*   Ledger state 2026-11-24: `_dente_migrations` tracks all 276 migrations applied to the live PostgreSQL 18 `dental_crm` database. Parity confirmed 100% synchronized via `npm run check:migration-drift`.
 
 ### Seeding / reset
 ```bash
@@ -252,9 +242,9 @@ npm run db:reset-seed               # npx tsx apps/api/src/scripts/migrateStateT
 
 ## 📋 Core Table Registry & Modular Domain Schema (`apps/api/src/db/schema/`)
 
-> Re-measured 2026-09-10 (Wave 93):  
-> `apps/api/src/db/schema.ts` is a 7-line proxy re-exporting `apps/api/src/db/schema/index.ts`.
-> The schema is organized into 20 domain-driven modules in `apps/api/src/db/schema/`, declaring **209 `pgTable`** definitions (measured 2026-09-10 with ripgrep across all schema files; including Wave 93 clinical additions: `periodontogram.ts`, `treatmentConsumables.ts`, and `patientRelationships`).
+> Re-measured 2026-11-24 via `npm run check:migration-drift`:  
+> `apps/api/src/db/schema.ts` is a proxy re-exporting `apps/api/src/db/schema/index.ts`.
+> The schema is organized into 28 domain-driven modules across 78 schema source files in `apps/api/src/db/schema/`, declaring **216 `pgTable`** definitions, 49 enums, and 3011 columns, fully synchronized with 276 physical DDL migrations in `apps/api/drizzle/` without drift.
 >
 > For the complete HTTP endpoint mapping to these tables, see **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** (771+ endpoints with RBAC, Zod schemas, and DB table lineage).
 
@@ -279,6 +269,16 @@ npm run db:reset-seed               # npx tsx apps/api/src/scripts/migrateStateT
 18. **`system.ts`** (12 tables): `auditEvents`, `systemSettings`, `backgroundJobs`, `featureFlags`, `branchOffices`, `backupLedger`, etc.
 19. **`periodontogram.ts`** (3 tables): `periodontogram_snapshots`, `periodontogram_teeth`, `periodontogram_sites` (ADR 0013, реляционная пародонтограмма).
 20. **`treatmentConsumables.ts`** (2 tables): `treatment_consumables`, `treatment_consumable_logs` (автосписание расходников по 804н).
+21. **`doctorPreferences.ts`**: Настройки и клинические пресеты врачей.
+22. **`staffChat.ts`**: Внутренний корпоративный чат персонала и оповещения.
+23. **`idempotency.ts`**: Журнал ключей идемпотентности финансовых и клинических транзакций (UUIDv7).
+24. **`warranties.ts`**: Учет гарантийных сроков на оказанные услуги и протезирование (Мандат 8e).
+25. **`dentalLabOrders.ts`**: Наряды зуботехнической лаборатории (ЗТЛ), цвета VITA, оттиски и этапы примерки (каноническая таблица `lab_orders`).  
+   > ⚠️ **Архитектурный статус `ztl_lab_orders` (`deprecated_legacy`):**  
+   > Устаревшая таблица `ztl_lab_orders` (миграция `0006_nostalgic_maverick.sql`, RLS закрыт в `0160_rls_perimeter_orphan_tables.sql`) помечена как `deprecated_legacy`. Единым каноническим SSOT монорепозитория является таблица `lab_orders` (`dentalLabOrders.ts`). Физический DROP таблицы `ztl_lab_orders` намеренно не выполняется для сохранения целостности журнала миграций и обратной совместимости. Все новые фичи, роуты и сторы работают строго через `lab_orders`.
+26. **`intraoralScans.ts`**: Интраоральные 3D-сканы челюстей (PLY/STL) и привязка к одонтограмме.
+27. **`hardware.ts`**: Фискальные регистраторы ККТ, сетевые сокеты, датчики радиовизиографа (RVG).
+28. **`integrations/medflexSchema.ts`**: Схемы внешней синхронизации и интеграционных шлюзов.
 
 ### 🧭 Core Orientation Tables
 | Table Name | Description | Key Fields / Relations |

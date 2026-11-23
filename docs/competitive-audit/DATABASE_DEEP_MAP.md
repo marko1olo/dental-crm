@@ -1,7 +1,7 @@
 # 🗄️ Полная Карта Базы Данных и Сущностей Dental CRM (PostgreSQL 18.4 / Drizzle ORM)
 
 > Глубокая архитектурная спецификация структуры базы данных DENTE Dental CRM.  
-> Отражает модульную схему Drizzle ORM (22 файла, **208 таблиц `pgTable`, 48 перечислений `pgEnum`, 18 связей `relations`** в [`apps/api/src/db/schema/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/)), нативный сетевой движок **PostgreSQL 18.4 TCP (`127.0.0.1:5432`), политики Row-Level Security (RLS)** и суверенитет стоматологического амбулаторного контекста (Форма 043/у).
+> Отражает модульную схему Drizzle ORM (28 модулей, 78 файлов, **216 таблиц `pgTable`, 49 перечислений `pgEnum`, 3011 колонок** в [`apps/api/src/db/schema/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/) и 276 физических DDL-миграций в `apps/api/drizzle/`), нативный сетевой движок **PostgreSQL 18.4 TCP (`127.0.0.1:5432`), политики Row-Level Security (RLS)** и суверенитет стоматологического амбулаторного контекста (Форма 043/у).
 
 ---
 
@@ -31,13 +31,13 @@
 | **Бинарные файлы** | `node_modules/@embedded-postgres/windows-x64/native/bin/` | Серверные исполняемые файлы `postgres.exe`, `initdb.exe`, `pg_ctl.exe` |
 | **Клиент ORM** | `drizzle-orm: ^0.45.2` | Экземпляр `db` в `apps/api/src/db/client.ts` обёрнут в Proxy для транзакций ALS |
 | **Парсинг валют** | `registerMoneyTypeParsers()` | Регистрация парсеров OID `numeric` до старта пула (защита от склеивания строк) |
-| **Файлы схемы** | `apps/api/src/db/schema/*.ts` | 22 строго типизированных модуля (208 таблиц `pgTable`) |
+| **Файлы схемы** | `apps/api/src/db/schema/*.ts` | 28 модулей, 78 файлов (216 таблиц `pgTable`, 49 enums, 3011 колонок) |
 
 ---
 
 ## 🧩 Модульная архитектура схемы (`apps/api/src/db/schema/*.ts`)
 
-Монолит разделен на 20 независимых предметных модулей + общий модуль перечислений `_common.ts` + агрегатор `index.ts` (всего 22 файла), объявляющих **208 таблиц `pgTable`**:
+Схема разделена на 28 независимых предметных модулей (78 файлов схем в `apps/api/src/db/schema/`), объявляющих **216 таблиц `pgTable`**, 49 перечислений `pgEnum` и 3011 колонок:
 
 ```
 apps/api/src/db/schema/

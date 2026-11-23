@@ -1,9 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { computeCommerceMlSha256 } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../../../observability/logger.js";
 import { db } from "../../../../db/client.js";
 import { auditEvents, inventoryItems, inventoryTransactions, payments } from "../../../../db/schema.js";
 import { oneCSyncPayloadSchema, type OneCSyncPayload, type OneCSyncResult } from "../types.js";
 import { isSyncHashProcessed, markSyncHashProcessed } from "./reconciliationStore.js";
+
+const logger = createApiLogger("commerceMlSyncEngine");
 
 export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string): Promise<OneCSyncResult> {
 	const parsed = oneCSyncPayloadSchema.parse(payload);
@@ -76,7 +79,10 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 			});
 		});
 	} catch (txError) {
-		console.error("[CommerceML 1C Sync] Transaction failed:", txError);
+		logger.error(
+			{ err: safeLogError(txError), organizationId: orgId, syncTransactionId: parsed.syncTransactionId },
+			"CommerceML 1C Sync Transaction failed",
+		);
 		throw txError;
 	}
 

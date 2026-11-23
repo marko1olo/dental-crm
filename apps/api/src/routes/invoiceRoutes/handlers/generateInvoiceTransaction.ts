@@ -37,7 +37,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 		targetPlanDbItems,
 	} = params;
 
-	let finalInvoiceId = randomUUID();
+	let finalInvoiceId: string = randomUUID();
 	const createdItemIds: string[] = [];
 
 	await withTenantCtx(orgId, async (tx) => {

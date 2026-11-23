@@ -20,6 +20,8 @@ export interface FranklExpressItem {
 }
 
 export type PediatricProtocolId =
+	| "adaptation_visit"
+	| "icon_infiltration"
 	| "caries_primary"
 	| "pulpotomy_primary"
 	| "silvering_deep_fluoridation"

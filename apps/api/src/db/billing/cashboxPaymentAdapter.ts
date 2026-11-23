@@ -24,7 +24,15 @@ export async function createPaymentInDb(
 	input: CreatePaymentInput,
 ): Promise<PaymentWithReplay> {
 	validateAndResolvePaymentSplit(input);
-	const effectiveMutationId = input.clientMutationId?.trim() || `pay-mut-${crypto.randomUUID()}`;
+	const effectiveMutationId = input.clientMutationId?.trim();
+	if (!effectiveMutationId) {
+		const err = new Error(
+			"IdempotencyKeyRequired: Для проведения оплаты требуется clientMutationId (Мандат 8bo / RFC 9562).",
+		);
+		(err as { code?: string; statusCode?: number }).code = "IdempotencyKeyRequired";
+		(err as { code?: string; statusCode?: number }).statusCode = 400;
+		throw err;
+	}
 	const inputWithInvoice = input as CreatePaymentInput & { invoiceId?: string };
 	const outcome = await processCashboxPayment(
 		organizationId,

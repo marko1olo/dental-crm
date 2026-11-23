@@ -336,6 +336,8 @@ export const updatePatientSchema = z.object({
 	allergies: z.union([z.array(z.string()), z.string()]).nullable().optional(),
 	somaticNotes: z.string().nullable().optional(),
 	familyGroupId: z.string().uuid().nullable().optional(),
+	clinicalSafetyProfile: z.record(z.unknown()).nullable().optional(),
+	administrativeProfile: patientAdministrativeProfileSchema.partial().nullable().optional(),
 });
 
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
