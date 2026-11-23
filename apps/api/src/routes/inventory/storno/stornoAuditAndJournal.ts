@@ -6,10 +6,13 @@
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { DEFAULT_804N_CONSUMABLE_LINKS } from "@dental/shared";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
+	inventoryItems,
 	inventoryTransactions,
 	procedureMaterialRules,
+	procedureTechCardItems,
+	procedureTechCards,
 } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import type { DbExecutor } from "../../../services/treatmentConsumables/types.js";
@@ -79,7 +82,61 @@ export async function resolveServiceStornoMaterials(
 	const srvCode = (srv.code804n || srv.serviceCode || "").trim().toUpperCase();
 	const srvTitle = srv.title || srvCode || "Стоматологическая услуга";
 
-	// 1. Поиск в БД (procedureMaterialRules)
+	// 1. Поиск в каноническом SSOT техкарт (procedureTechCards + procedureTechCardItems)
+	if (srv.serviceId || srvCode) {
+		const techCardConditions = [
+			eq(procedureTechCards.organizationId, organizationId),
+			eq(procedureTechCards.status, "active"),
+		];
+		if (srv.serviceId && srvCode) {
+			const matchedOr = or(
+				eq(procedureTechCards.serviceId, srv.serviceId),
+				eq(procedureTechCards.serviceCode, srvCode),
+			);
+			if (matchedOr) techCardConditions.push(matchedOr);
+		} else if (srv.serviceId) {
+			techCardConditions.push(eq(procedureTechCards.serviceId, srv.serviceId));
+		} else {
+			techCardConditions.push(eq(procedureTechCards.serviceCode, srvCode));
+		}
+
+		const techCards = await tx
+			.select({ id: procedureTechCards.id })
+			.from(procedureTechCards)
+			.where(and(...techCardConditions))
+			.limit(1);
+
+		const techCard = techCards[0];
+		if (techCard) {
+			const cardItems = await tx
+				.select({
+					inventoryItemId: procedureTechCardItems.inventoryItemId,
+					quantity: procedureTechCardItems.quantity,
+					itemName: inventoryItems.name,
+				})
+				.from(procedureTechCardItems)
+				.leftJoin(
+					inventoryItems,
+					eq(procedureTechCardItems.inventoryItemId, inventoryItems.id),
+				)
+				.where(eq(procedureTechCardItems.techCardId, techCard.id));
+
+			if (cardItems.length > 0) {
+				for (const ci of cardItems) {
+					const unitQty = Number(ci.quantity ?? 1);
+					materials.push({
+						inventoryItemId: ci.inventoryItemId,
+						name: ci.itemName ?? undefined,
+						quantity: Number((unitQty * srvQty).toFixed(4)),
+						serviceTitle: srvTitle,
+					});
+				}
+				return materials;
+			}
+		}
+	}
+
+	// 2. Fallback в легаси-правила (procedureMaterialRules)
 	let dbRules: Array<{
 		inventoryItemId: string | null;
 		materialItemId: string | null;
@@ -91,12 +148,11 @@ export async function resolveServiceStornoMaterials(
 	if (srv.serviceId || srvCode) {
 		const conditions = [eq(procedureMaterialRules.organizationId, organizationId)];
 		if (srv.serviceId && srvCode) {
-			conditions.push(
-				or(
-					eq(procedureMaterialRules.serviceId, srv.serviceId),
-					eq(procedureMaterialRules.serviceCode, srvCode),
-				)!,
+			const matchedOr = or(
+				eq(procedureMaterialRules.serviceId, srv.serviceId),
+				eq(procedureMaterialRules.serviceCode, srvCode),
 			);
+			if (matchedOr) conditions.push(matchedOr);
 		} else if (srv.serviceId) {
 			conditions.push(eq(procedureMaterialRules.serviceId, srv.serviceId));
 		} else {
@@ -294,7 +350,7 @@ export async function handleOverdraftAlertRequest(
 				};
 			});
 
-			await db.transaction(async (tx) => {
+			await withTenantCtx(organizationId, async (tx) => {
 				await tx.insert(inventoryTransactions).values(txRecords);
 			});
 			recordedCount = txRecords.length;

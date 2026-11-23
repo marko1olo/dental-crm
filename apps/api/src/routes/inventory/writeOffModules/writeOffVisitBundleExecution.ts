@@ -8,7 +8,7 @@ import {
 	type QuickWriteoffVisitBundleType,
 } from "../../../services/treatmentConsumablesService.js";
 import type { UnifiedStockDeductionResult } from "../../../services/treatmentConsumables/unifiedStockDeductionTypes.js";
-import type { DatabaseTransaction } from "./writeOffTypes.js";
+import type { DatabaseTransaction } from "./writeOffValidation.js";
 
 export { handleDeductVisitRequest } from "./writeOffAuditTrail.js";
 

@@ -4,7 +4,7 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -155,7 +155,7 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 		const effectiveUserId = identity.userId ?? userContext?.id ?? null;
 
 		try {
-			const batch = await db.transaction(async (tx) => {
+			const batch = await withTenantCtx(targetOrgId, async (tx) => {
 				return fefoStockService.receiveBatch(tx, {
 					organizationId: targetOrgId,
 					inventoryItemId: data.inventoryItemId,

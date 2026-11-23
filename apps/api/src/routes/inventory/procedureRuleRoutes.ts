@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	inventoryItems,
 	procedureMaterialRules,
@@ -75,6 +76,7 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 							inventoryItems,
 							eq(procedureTechCardItems.inventoryItemId, inventoryItems.id),
 						)
+						.where(inArray(procedureTechCardItems.techCardId, cardIds))
 				: [];
 
 		const itemsByCardId = new Map<string, typeof items>();
@@ -299,7 +301,7 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 
 		const normalizedQty = String(Math.max(0.0001, quantityToDeduct));
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			// Sync with canonical procedure_tech_cards
 			let [techCard] = await tx
 				.select()
@@ -457,7 +459,7 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!rule) return reply.status(404).send({ error: "Rule not found" });
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			if (rule.serviceId && rule.inventoryItemId) {
 				const [techCard] = await tx
 					.select({ id: procedureTechCards.id })
@@ -515,7 +517,7 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			const [techCard] = await tx
 				.select({ id: procedureTechCards.id })
 				.from(procedureTechCards)

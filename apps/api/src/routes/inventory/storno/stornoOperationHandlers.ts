@@ -3,14 +3,16 @@
  * Автоматический возврат ТМЦ на склад при удалении услуг из визита.
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
+	stockBatches,
 } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
+import { getDefaultExpirationDate } from "../../../services/inventory/fefoStockService.js";
 import {
 	inventoryStornoBodySchema,
 	toValidUuid,
@@ -55,7 +57,7 @@ export async function handleStornoRequest(
 	const effectiveUserId = identity.userId ?? userContext?.id ?? null;
 
 	try {
-		const stornoResult = await db.transaction(async (tx) => {
+		const stornoResult = await withTenantCtx(organizationId, async (tx) => {
 			const materialsToRestore: StornoMaterialTarget[] = [];
 
 			// 1. Direct items / materials passed
@@ -124,12 +126,48 @@ export async function handleStornoRequest(
 			// 4. Физическое возвращение материалов на склад (сторно)
 			const restoredItems: RestoredStornoItem[] = [];
 
-			for (const m of materialsToRestore) {
+			// Deadlock-free locking (Мандаты 8e, 8n, 8v): детерминированная сортировка списка материалов для исключения дедлоков 40P01
+			const sortedMaterials = [...materialsToRestore].sort((a, b) => {
+				const keyA = (a.inventoryItemId || a.name || "").toLowerCase();
+				const keyB = (b.inventoryItemId || b.name || "").toLowerCase();
+				return keyA.localeCompare(keyB);
+			});
+
+			// Предварительная сортировка и блокировка известных inventoryItems по первичному ключу
+			const sortedItemIds = Array.from(
+				new Set(
+					sortedMaterials
+						.map((m) => m.inventoryItemId)
+						.filter((id): id is string => Boolean(id)),
+				),
+			).sort();
+
+			const prelockedMap = new Map<string, typeof inventoryItems.$inferSelect>();
+			if (sortedItemIds.length > 0) {
+				const prelocked = await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							inArray(inventoryItems.id, sortedItemIds),
+							eq(inventoryItems.organizationId, organizationId),
+						),
+					)
+					.orderBy(asc(inventoryItems.id))
+					.for("update");
+				for (const item of prelocked) {
+					prelockedMap.set(item.id, item);
+				}
+			}
+
+			for (const m of sortedMaterials) {
 				if (!m.quantity || m.quantity <= 0) continue;
 
-				let targetItem: typeof inventoryItems.$inferSelect | undefined;
+				let targetItem: typeof inventoryItems.$inferSelect | undefined = m.inventoryItemId
+					? prelockedMap.get(m.inventoryItemId)
+					: undefined;
 
-				if (m.inventoryItemId) {
+				if (!targetItem && m.inventoryItemId) {
 					const [found] = await tx
 						.select()
 						.from(inventoryItems)
@@ -141,6 +179,9 @@ export async function handleStornoRequest(
 						)
 						.for("update");
 					targetItem = found;
+					if (targetItem) {
+						prelockedMap.set(targetItem.id, targetItem);
+					}
 				}
 
 				if (!targetItem && m.name?.trim()) {
@@ -211,11 +252,65 @@ export async function handleStornoRequest(
 						),
 					);
 
-				// Фиксируем сторно в журнале движений (положительное количество, тип "storno")
+				targetItem = {
+					...targetItem,
+					stockQuantity: String(newStock),
+					currentQty: String(newStock),
+				};
+				prelockedMap.set(targetItem.id, targetItem);
+
+				// Восстановление партионного учета FEFO (Мандаты 8e, 8n, 8v):
+				// Пополняем остаток последней партии товара либо создаем активную партию возврата
+				let restoredBatchId: string | null = null;
+				const [existingBatch] = await tx
+					.select()
+					.from(stockBatches)
+					.where(
+						and(
+							eq(stockBatches.organizationId, organizationId),
+							eq(stockBatches.inventoryItemId, targetItem.id),
+						),
+					)
+					.orderBy(desc(stockBatches.updatedAt))
+					.limit(1)
+					.for("update");
+
+				if (existingBatch) {
+					const currentBatchRemaining = Number(existingBatch.remainingQty ?? 0);
+					const newBatchRemaining = Number((currentBatchRemaining + m.quantity).toFixed(3));
+					await tx
+						.update(stockBatches)
+						.set({
+							remainingQty: String(newBatchRemaining),
+							status: newBatchRemaining > 0 ? "active" : existingBatch.status,
+							updatedAt: new Date(),
+						})
+						.where(eq(stockBatches.id, existingBatch.id));
+					restoredBatchId = existingBatch.id;
+				} else {
+					const defaultExpDate = targetItem.expirationDate || getDefaultExpirationDate();
+					const [createdBatch] = await tx
+						.insert(stockBatches)
+						.values({
+							organizationId,
+							inventoryItemId: targetItem.id,
+							batchNumber: `STORNO-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+							expirationDate: defaultExpDate,
+							initialQty: String(m.quantity),
+							remainingQty: String(m.quantity),
+							purchasePricePerUnit: targetItem.unitCostRub ?? targetItem.pricePerUnit ?? "0",
+							status: "active",
+						})
+						.returning();
+					restoredBatchId = createdBatch?.id ?? null;
+				}
+
+				// Фиксируем сторно в журнале движений (положительное количество, тип "storno", ссылка на batchId)
 				await tx.insert(inventoryTransactions).values({
 					organizationId,
 					itemId: targetItem.id,
 					inventoryItemId: targetItem.id,
+					batchId: restoredBatchId,
 					visitId: safeVisitId ?? null,
 					quantityChanged: String(m.quantity),
 					qty: String(m.quantity),

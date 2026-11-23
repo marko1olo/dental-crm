@@ -8,7 +8,7 @@ import type { z } from "zod";
 import { inventoryItems } from "../../../db/schema.js";
 import { fefoStockService, type FefoDeductionResult } from "../../../services/inventory/fefoStockService.js";
 import type { inventoryDeductItemSchema } from "../types.js";
-import type { DatabaseTransaction } from "./writeOffTypes.js";
+import type { DatabaseTransaction } from "./writeOffValidation.js";
 
 export { handleDeductRequest } from "./writeOffFefoParties.js";
 

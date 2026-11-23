@@ -1,10 +1,10 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { batchTrackingRoutes } from "./batchTrackingRoutes.js";
-import { itemCatalogRoutes } from "./itemCatalogRoutes.js";
+import { itemCatalogRoutes, calculateAlertsFromItems } from "./itemCatalog/itemCatalogRoutes.js";
 import { procedureRuleRoutes } from "./procedureRuleRoutes.js";
 import { stockLedgerRoutes } from "./stockLedgerRoutes.js";
 import { stornoRoutes } from "./stornoRoutes.js";
-import { supplierInvoiceRoutes } from "./supplierInvoiceRoutes.js";
+import { supplierInvoiceRoutes } from "./supplierInvoices/supplierInvoiceRoutes.js";
 import { writeOffRoutes } from "./writeOffRoutes.js";
 
 export * from "./consumables/index.js";
@@ -14,7 +14,7 @@ export {
 	normalizedExpirationDate,
 	toValidUuid,
 } from "./types.js";
-export { calculateAlertsFromItems } from "./itemCatalogRoutes.js";
+export { calculateAlertsFromItems } from "./itemCatalog/itemCatalogRoutes.js";
 export {
 	batchTrackingRoutes,
 	itemCatalogRoutes,

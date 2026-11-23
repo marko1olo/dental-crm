@@ -234,10 +234,13 @@ async function handleStockAdjustment(
 			return { updated: finalUpdated, isOverdraft: fefoResult.isOverdraft || isNegative, isNegativeStock: isNegative };
 		}
 
-		// Мандат 8n & Soft Negative Stock: списание всегда разрешено без блокировок.
 		const [updated] = await tx
 			.update(inventoryItems)
-			.set({ stockQuantity: String(newStock), updatedAt: new Date() })
+			.set({
+				stockQuantity: String(newStock),
+				currentQty: String(newStock),
+				updatedAt: new Date(),
+			})
 			.where(
 				and(
 					eq(inventoryItems.id, itemId),
@@ -246,27 +249,9 @@ async function handleStockAdjustment(
 			)
 			.returning();
 
-		if (!updated) return { failed: true as const };
-
-		// Log the transaction (same tx: the ledger entry commits atomically with the balance change)
-		if (actualAdjustment !== 0) {
-			const userContext = request.user;
-			const effectiveUserId = identity.userId ?? userContext?.id ?? null;
-			await tx.insert(inventoryTransactions).values({
-				organizationId,
-				inventoryItemId: itemId,
-				quantityChanged: String(actualAdjustment),
-				unitCostRub: updated.unitCostRub,
-				transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
-				isOverdraft,
-				notes: isOverdraft
-					? (parsedStock.data.reason || `Списано под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`)
-					: (parsedStock.data.reason || null),
-				userId: effectiveUserId,
-			});
-		}
-
-		return { updated, isOverdraft };
+		const finalUpdated = updated ?? item;
+		const isNegative = Number(finalUpdated.stockQuantity ?? 0) < 0;
+		return { updated: finalUpdated, isOverdraft: isNegative, isNegativeStock: isNegative };
 	});
 
 	if ("notFound" in result)
