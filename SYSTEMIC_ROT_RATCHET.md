@@ -11,6 +11,11 @@
 
 > Правило `ЧАСТЬ 2.6`: перед стартом работ фиксировать claim-строку с датой/временем, работать только в заявленном скоупе, по коммиту снимать `✅ DONE`.
 
+- 🔒 `[Fixer-4C]` — `apps/web` finance/cashbox/billing/family/shift/pricelist/odontogram contracts — `00:56 25.11`
+- 🔒 `[Fixer-4A]` — sync/gateway + medicalSecrecyWarden + web sync callers — `01:01 25.11`
+- 🔒 `[Fixer-4B]` — auth/onboarding/odontogram/pediatric/anesthesia/treatmentPlan/inventory/lab/warranty/outbox/reports/analytics + 0299 DDL — `01:02 25.11`
+- 🔒 `[Fixer-4D]` — `apps/web` documents/portal/insurance/radiology/implants/surgery contracts — `01:01 25.11`
+
 - ✅ `[Backend Clinical Routes High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`visits/*`, `git rm ensureActiveChair.ts`, `periodontogram/*`, `appointments/*`, `scheduleAuthGuard.ts`, `sanpin/*`, `consents/*`, `waitlist.ts`, `patientRecall/*`, `patients/ticketRoutes+helpers`).
 - ✅ `[Backend Finance Loyalty Shared High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`@dental/shared` 25+ файлов + `.strict()`, DDL `0298_referrals_and_shifts_kopecks_backfill.sql`, `loyaltyModules/*`, `budget*`, `clinicalBundles*`, `imports/*`, `debtReports`).
 - ✅ `[Backend Platform Security Logs High + L1]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`photoBridgeRoutes*`, `MobilePhotoUploadPage.tsx`, `settings/*`, `branchesRoutes.ts`, `workspaceProfileHandlers.ts`, `migrationRunRoutes/*`, `mdlp*`, `hardware.ts`, `lanNetwork.ts`, `telegram*`, `smartImports*`, `env/requiredEnv.ts`).
