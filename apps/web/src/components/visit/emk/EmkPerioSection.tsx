@@ -177,7 +177,7 @@ export function EmkPerioSection({
 			if (bop !== undefined) setHasBop(bop);
 			if (effectivePatientId) {
 				try {
-					localStorage.setItem(`dente_perio_screening_${effectivePatientId}`, JSON.stringify({
+					localStorage.setItem(`dente_perio_draft_v2_${effectivePatientId}`, JSON.stringify({
 						patientId: effectivePatientId, visitId: effectiveVisitId, updatedAt: new Date().toISOString(),
 						affectedRecords, pocketDepthMm: depth, hasBop: bop,
 					}));

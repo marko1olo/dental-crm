@@ -26,7 +26,7 @@ export const RefusalHeaderBanner: React.FC<RefusalHeaderBannerProps> = ({
 			<div className="flex items-center gap-2">
 				<ShieldCheck size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
 				<div>
-					<div className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+					<div className="text-xs font-bold text-[var(--ink)]">
 						Бланк отказа от медицинского вмешательства (ИДС)
 					</div>
 					<div className="text-xs text-[var(--muted,#64748b)]">

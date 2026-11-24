@@ -46,7 +46,7 @@ export async function revenueTimeline(
 				? sql`date_trunc('week', ${localPaidAt})`
 				: sql`date_trunc('day', ${localPaidAt})`;
 
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 
 	const rows = await db
 		.select({
@@ -69,12 +69,16 @@ export async function revenueTimeline(
 		.groupBy(truncated)
 		.orderBy(truncated);
 
-	const points: RevenueTimelinePoint[] = rows.map((row) => ({
-		bucket: row.bucket,
-		revenueRub: kopecksToRubles(Number(row.revenueKopecks)),
-		paymentCount: Number(row.paymentCount),
-		payingPatients: Number(row.payingPatients),
-	}));
+	const points: RevenueTimelinePoint[] = rows.map((row) => {
+		const revKop = Number(row.revenueKopecks);
+		return {
+			bucket: row.bucket,
+			revenueRub: kopecksToRubles(revKop),
+			revenueKopecks: revKop,
+			paymentCount: Number(row.paymentCount),
+			payingPatients: Number(row.payingPatients),
+		};
+	});
 
 	const kopecksList = rows.map((row) => toExactKopecks(Number(row.revenueKopecks)));
 	const totalKopecks = sumKopecks(kopecksList);
@@ -83,6 +87,7 @@ export async function revenueTimeline(
 		granularity,
 		points,
 		totalRub: kopecksToRubles(totalKopecks),
+		totalKopecks: Number(totalKopecks),
 		isEmpty: points.length === 0,
 	};
 }

@@ -21,6 +21,8 @@ import {
 	type ChatMessageLike,
 } from "./tokenCounter.js";
 
+export type { ChatMessageLike } from "./tokenCounter.js";
+
 export interface TokenCompactorOptions {
 	/**
 	 * Token threshold to trigger compaction.

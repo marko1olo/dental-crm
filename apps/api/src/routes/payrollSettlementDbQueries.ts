@@ -346,7 +346,12 @@ export async function closeSettlementPeriodInDb(
 									updatedAt: now.toISOString(),
 								},
 							})
-							.where(eq(cashOperations.id, existingOp.id));
+							.where(
+								and(
+									eq(cashOperations.id, existingOp.id),
+									eq(cashOperations.organizationId, organizationId),
+								),
+							);
 					}
 				}
 			}
@@ -446,7 +451,12 @@ export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string
 						annulledReason: "reopen_settlement_period",
 					},
 				})
-				.where(eq(cashOperations.id, op.id));
+				.where(
+					and(
+						eq(cashOperations.id, op.id),
+						eq(cashOperations.organizationId, orgId),
+					),
+				);
 		}
 
 		return statement;

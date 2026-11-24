@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
@@ -43,8 +42,8 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 
 		const body = bodyParse.data;
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const [primaryPatient] = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [primaryPatient] = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -71,7 +70,7 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 				const digits = body.phone.replace(/\D/g, "");
 				if (digits.length >= 10) {
 					const suffix = digits.slice(-10);
-					const [existing] = await db
+					const [existing] = await tx
 						.select({ id: patients.id })
 						.from(patients)
 						.where(
@@ -91,7 +90,7 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 			// Если пациента нет — создаем новую карту пациента в клинике
 			if (!relatedPatientId) {
 				const newId = randomUUID();
-				await db.insert(patients).values({
+				await tx.insert(patients).values({
 					id: newId,
 					organizationId: auth.organizationId,
 					fullName: body.fullName.trim(),
@@ -105,7 +104,7 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 			let targetFamilyGroupId = primaryPatient.familyGroupId;
 			if (!targetFamilyGroupId) {
 				const newFgId = randomUUID();
-				await db.insert(familyGroups).values({
+				await tx.insert(familyGroups).values({
 					id: newFgId,
 					organizationId: auth.organizationId,
 					name: `Семья (${primaryPatient.fullName})`,
@@ -115,20 +114,30 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 					balance: "0.00",
 					balanceKopecks: 0,
 				});
-				await db
+				await tx
 					.update(patients)
 					.set({ familyGroupId: newFgId })
-					.where(eq(patients.id, auth.patientId));
+					.where(
+						and(
+							eq(patients.id, auth.patientId),
+							eq(patients.organizationId, auth.organizationId),
+						),
+					);
 				targetFamilyGroupId = newFgId;
 			}
 
-			await db
+			await tx
 				.update(patients)
 				.set({ familyGroupId: targetFamilyGroupId })
-				.where(eq(patients.id, relatedPatientId));
+				.where(
+					and(
+						eq(patients.id, relatedPatientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				);
 
 			// Проверка и создание связи в patientRelationships
-			const [existingRel] = await db
+			const [existingRel] = await tx
 				.select({ id: patientRelationships.id })
 				.from(patientRelationships)
 				.where(
@@ -149,16 +158,21 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 				.limit(1);
 
 			if (existingRel) {
-				await db
+				await tx
 					.update(patientRelationships)
 					.set({
 						relationshipType: body.relationship,
 						canSpendFamilyWallet: Boolean(body.allowSpendFamilyBalance),
 						updatedAt: new Date(),
 					})
-					.where(eq(patientRelationships.id, existingRel.id));
+					.where(
+						and(
+							eq(patientRelationships.id, existingRel.id),
+							eq(patientRelationships.organizationId, auth.organizationId),
+						),
+					);
 			} else {
-				await db.insert(patientRelationships).values({
+				await tx.insert(patientRelationships).values({
 					organizationId: auth.organizationId,
 					patientId: auth.patientId,
 					relatedPatientId,
@@ -198,8 +212,8 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 
 		const body = bodyParse.data;
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const updated = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const updated = await tx
 				.update(patientRelationships)
 				.set({
 					canSpendFamilyWallet: body.canSpendFamilyWallet,

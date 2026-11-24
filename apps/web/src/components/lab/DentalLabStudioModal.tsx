@@ -608,7 +608,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						<div className="min-w-0 flex-1">
 							<h2 className="dental-lab-header-title">
 								<span className="hidden sm:inline">Зуботехническая лаборатория и заказ-наряды</span>
-								<span className="sm:hidden font-bold text-sm">ЗТЛ и заказ-наряды</span>
+								<span className="sm:hidden font-bold text-sm">Наряды в лабораторию</span>
 								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30 shrink-0">Ортопедия</span>
 							</h2>
 							<div className="dental-lab-header-meta">
@@ -655,7 +655,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mb-3">
 								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
 									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
-										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В работе ЗТЛ", in_clinic: "Готово в клинике", overdue: "Просроченные" };
+										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
 												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
@@ -666,7 +666,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
+									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру наряда..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
 								</div>
 							</div>
 							<div className="space-y-3">
@@ -699,7 +699,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
 								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
 									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
-										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В работе ЗТЛ", in_clinic: "Готово в клинике", overdue: "Просроченные" };
+										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
 												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
@@ -710,7 +710,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
+									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру наряда..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
 								</div>
 							</div>
 							<div className="space-y-3 overflow-y-auto max-h-[64vh] pr-1">

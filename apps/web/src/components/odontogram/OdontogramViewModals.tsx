@@ -239,14 +239,15 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 							<button
 								type="button"
 								onClick={onCloseOrthoDrawer}
-								className="w-8 h-8 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer"
+								className="w-8 h-8 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer"
 								aria-label="Закрыть панель ортопедии"
 							>
 								<X size={18} />
 							</button>
 						</div>
-						<React.Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка ортопедической панели...</div>}>
+						<React.Suspense fallback={<div className="p-8 text-center text-xs text-[var(--ink-muted)]">Загрузка ортопедической панели...</div>}>
 							<OrthopedicsChairsidePanel
+								key={`ortho-${patientId ?? "anon"}-${orthoDrawerTooth}`}
 								patientId={patientId}
 								activeToothFdi={orthoDrawerTooth}
 								onToothSelect={(tooth) => {

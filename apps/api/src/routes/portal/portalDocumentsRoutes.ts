@@ -1,7 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
@@ -84,8 +83,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const [patientRow] = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [patientRow] = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -105,7 +104,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "Not found" };
 			}
 
-			const dbConsents = await db
+			const dbConsents = await tx
 				.select()
 				.from(patientConsents)
 				.where(
@@ -230,8 +229,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			].join("|"),
 		);
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const [patientRow] = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [patientRow] = await tx
 				.select()
 				.from(patients)
 				.where(
@@ -250,7 +249,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			// Физическая генерация официального бланка согласия в таблице generated_documents
 			const docMeta = mapConsentKindToDocMeta(consentId);
 
-			const [createdDoc] = await db
+			const [createdDoc] = await tx
 				.insert(generatedDocuments)
 				.values({
 					organizationId: auth.organizationId,
@@ -275,7 +274,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			const generatedDocId = createdDoc?.id ?? null;
 
 			// Update or insert patient consent record with link to generated_documents
-			const existing = await db
+			const existing = await tx
 				.select({ id: patientConsents.id })
 				.from(patientConsents)
 				.where(
@@ -288,7 +287,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				.limit(1);
 
 			if (existing.length > 0 && existing[0]) {
-				await db
+				await tx
 					.update(patientConsents)
 					.set({ grantedAt: now, revokedAt: null, documentId: generatedDocId })
 					.where(
@@ -298,7 +297,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 						),
 					);
 			} else {
-				await db.insert(patientConsents).values({
+				await tx.insert(patientConsents).values({
 					organizationId: auth.organizationId,
 					patientId: auth.patientId,
 					kind: consentId,
@@ -329,7 +328,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				},
 			};
 
-			await db
+			await tx
 				.update(patients)
 				.set({
 					administrativeProfile: {
@@ -367,8 +366,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const dbPlans = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const dbPlans = await tx
 				.select()
 				.from(treatmentPlans)
 				.where(
@@ -378,7 +377,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					),
 				);
 
-			const [patientRow] = await db
+			const [patientRow] = await tx
 				.select({
 					administrativeProfile: patients.administrativeProfile,
 				})
@@ -404,7 +403,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			}
 
 			const planIds = dbPlans.map((p) => p.id);
-			const planItems = await db
+			const planItems = await tx
 				.select()
 				.from(treatmentPlanItemsNew)
 				.where(
@@ -584,8 +583,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			};
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const [planRow] = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [planRow] = await tx
 				.select({ id: treatmentPlans.id })
 				.from(treatmentPlans)
 				.where(
@@ -602,7 +601,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "PlanNotFound", message: "План лечения не найден или не принадлежит пациенту." };
 			}
 
-			const [patientRow] = await db
+			const [patientRow] = await tx
 				.select()
 				.from(patients)
 				.where(
@@ -620,7 +619,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 
 			const currentProfile = patientRow.administrativeProfile ?? {};
 
-			await db
+			await tx
 				.update(patients)
 				.set({
 					administrativeProfile: {
@@ -687,8 +686,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			};
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const [planRow] = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [planRow] = await tx
 				.select({ id: treatmentPlans.id })
 				.from(treatmentPlans)
 				.where(
@@ -727,7 +726,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				].join("|"),
 			);
 
-			await db
+			await tx
 				.update(treatmentPlans)
 				.set({
 					status: "Approved",
@@ -741,7 +740,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				);
 
 			// Аудит согласования в профиле пациента
-			const [patientRow] = await db
+			const [patientRow] = await tx
 				.select({ administrativeProfile: patients.administrativeProfile })
 				.from(patients)
 				.where(and(eq(patients.id, auth.patientId), eq(patients.organizationId, auth.organizationId)))
@@ -751,7 +750,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			const currentApprovals =
 				((currentProfile as Record<string, unknown>).treatmentPlanApprovals as Record<string, unknown> | undefined) || {};
 
-			await db
+			await tx
 				.update(patients)
 				.set({
 					administrativeProfile: {

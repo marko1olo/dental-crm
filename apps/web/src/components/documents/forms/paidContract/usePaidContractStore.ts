@@ -51,8 +51,11 @@ export function usePaidContractStore(props: {
 		if (!store.paidContractCustomerFullName.trim() && props.documentPatientFullName) store.setPaidContractCustomerFullName(props.documentPatientFullName);
 		if (!store.paidContractCareReason.trim()) store.setPaidContractCareReason(props.activeVisitComplaint || "Плановое стоматологическое лечение по результатам осмотра");
 		if (!store.paidContractServiceScope.trim()) store.setPaidContractServiceScope(props.activeVisitTreatmentPlan || props.activeVisitDoctorSummary || "Комплекс стоматологических услуг согласно согласованному плану лечения");
-		if (totalRubVal > 0) store.setPaidContractTotalRub(String(totalRubVal));
-		else if (!store.paidContractTotalRub.trim() || Number(store.paidContractTotalRub) <= 0) store.setPaidContractTotalRub("1000");
+		if (totalRubVal > 0) {
+			store.setPaidContractTotalRub(String(totalRubVal));
+		} else if (!store.paidContractTotalRub.trim() || Number(store.paidContractTotalRub) < 0) {
+			store.setPaidContractTotalRub("0");
+		}
 		if (!store.paidContractDoctorFullName.trim()) store.setPaidContractDoctorFullName(props.activeDoctorFullName || "Врач-стоматолог клиники");
 		if (!store.paidContractSignedAt.trim()) store.setPaidContractSignedAt(todayIso);
 		store.setPaidContractClinicInfoConfirmed(true); store.setPaidContractServiceListConfirmed(true);

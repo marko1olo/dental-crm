@@ -45,7 +45,7 @@ export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	// Устранение декартова произведения при сплит-чеках и множественных позициях счетов:
 	// первичная агрегация оплат по визиту в изолированном подзапросе
 	const visitPaymentsSubquery = db
@@ -107,6 +107,7 @@ export async function doctorPerformance(
 
 	type Accumulator = {
 		revenueRub: number;
+		revenueKopecks: number;
 		total: number;
 		completed: number;
 		cancelled: number;
@@ -118,6 +119,7 @@ export async function doctorPerformance(
 		if (existing) return existing;
 		const fresh = {
 			revenueRub: 0,
+			revenueKopecks: 0,
 			total: 0,
 			completed: 0,
 			cancelled: 0,
@@ -142,7 +144,9 @@ export async function doctorPerformance(
 		}
 		const currentKop = (doctorRevenueKopecksMap.get(row.doctorUserId) ?? 0) + kopecks;
 		doctorRevenueKopecksMap.set(row.doctorUserId, currentKop);
-		ensure(row.doctorUserId).revenueRub = kopecksToRubles(currentKop);
+		const acc = ensure(row.doctorUserId);
+		acc.revenueKopecks = currentKop;
+		acc.revenueRub = kopecksToRubles(currentKop);
 	}
 
 	const rawUnattributedRevenueRub = kopecksToRubles(rawUnattributedRevenueKopecks);
@@ -173,31 +177,40 @@ export async function doctorPerformance(
 	}
 
 	const rows: DoctorPerformanceRow[] = [...byDoctor.entries()]
-		.map(([doctorUserId, accumulator]) => ({
-			doctorUserId,
-			doctorName: staffNames.get(doctorUserId) ?? "Сотрудник вне списка",
-			revenueRub: accumulator.revenueRub,
-			appointmentsTotal: accumulator.total,
-			appointmentsCompleted: accumulator.completed,
-			appointmentsCancelled: accumulator.cancelled,
-			appointmentsNoShow: accumulator.noShow,
-			completionRate:
-				accumulator.total > 0
-					? accumulator.completed / accumulator.total
-					: null,
-			noShowRate:
-				accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
-			averageTicketRub:
+		.map(([doctorUserId, accumulator]) => {
+			const averageTicketKopecks =
 				accumulator.completed > 0
-					? Math.round(accumulator.revenueRub / accumulator.completed)
-					: null,
-			marginRub: null as null,
-		}))
-		.sort((left, right) => right.revenueRub - left.revenueRub);
+					? Math.round(accumulator.revenueKopecks / accumulator.completed)
+					: null;
+			return {
+				doctorUserId,
+				doctorName: staffNames.get(doctorUserId) ?? "Сотрудник вне списка",
+				revenueRub: accumulator.revenueRub,
+				revenueKopecks: accumulator.revenueKopecks,
+				appointmentsTotal: accumulator.total,
+				appointmentsCompleted: accumulator.completed,
+				appointmentsCancelled: accumulator.cancelled,
+				appointmentsNoShow: accumulator.noShow,
+				completionRate:
+					accumulator.total > 0
+						? accumulator.completed / accumulator.total
+						: null,
+				noShowRate:
+					accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
+				averageTicketRub:
+					averageTicketKopecks != null
+						? kopecksToRubles(averageTicketKopecks)
+						: null,
+				averageTicketKopecks,
+				marginRub: null as null,
+			};
+		})
+		.sort((left, right) => (right.revenueKopecks ?? 0) - (left.revenueKopecks ?? 0));
 
 	return {
 		rows,
 		unattributedRevenueRub,
+		unattributedRevenueKopecks: rawUnattributedRevenueKopecks,
 		// У визита нет поля «врач»: единственная связь платежа с врачом идёт
 		// через приём (payments.visit_id → visits.appointment_id →
 		// appointments.doctor_user_id). Платёж без визита или визит без приёма

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { classifyNdflServiceCode } from "@dental/shared";
+import { classifyNdflServiceCode, rublesToKopecks } from "@dental/shared";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 import type { DocumentsCatalogViewProps } from "./types";
 
@@ -12,6 +12,13 @@ export function useTaxPaymentsMapper(
 		}
 		return eligibleTaxPayments.map((p, idx) => {
 			const amountRub = Number(p.amountRub ?? p.amount ?? 0);
+			const rawAmountKopecks = p.amountKopecks;
+			const amountKopecks =
+				typeof rawAmountKopecks === "bigint"
+					? Number(rawAmountKopecks)
+					: typeof rawAmountKopecks === "number"
+						? rawAmountKopecks
+						: rublesToKopecks(amountRub);
 			const rawCode804n = p.code804n ? String(p.code804n).trim() : undefined;
 			const serviceName = String(
 				p.description ||
@@ -31,14 +38,14 @@ export function useTaxPaymentsMapper(
 					p.paidAt || p.createdAt || p.dateIso || new Date().toISOString(),
 				),
 				amountRub,
-				amountKopecks: Math.round(amountRub * 100),
+				amountKopecks,
 				taxCode,
 				serviceName,
 				code804n:
 					rawCode804n || (taxCode === "2" ? "A16.07.054" : "A16.07.002"),
-				receiptNumber: String(p.receiptNumber || `ФЧ-${idx + 1}`),
-				fiscalDocumentNumber: String(p.fiscalDocumentNumber || `${501 + idx}`),
-				fiscalSign: String(p.fiscalSign || `${88776655 + idx}`),
+				receiptNumber: p.receiptNumber?.trim() || (p.id ? `ПЛ-${String(p.id).slice(0, 8)}` : "—"),
+				fiscalDocumentNumber: p.fiscalDocumentNumber?.trim() || "—",
+				fiscalSign: p.fiscalSign?.trim() || "—",
 				isRefund: Boolean(p.status === "refunded" || p.isRefund),
 			};
 		});

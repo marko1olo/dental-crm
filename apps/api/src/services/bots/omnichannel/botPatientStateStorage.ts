@@ -6,8 +6,11 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { wsBroker } from "../../websocketBroker.js";
 import type { BotInboundMessage } from "../types.js";
+
+const botLogger = createApiLogger("botPatientStateStorage");
 
 export interface SyncPatientStateResult {
 	patientId: string | null;
@@ -152,8 +155,9 @@ export class BotPatientStateStorage {
 				}
 			});
 		} catch (dbErr) {
-			console.warn(
-				`[BotPatientStateStorage] CRM persistence notice: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`,
+			botLogger.warn(
+				{ err: safeLogError(dbErr), organizationId: msg.organizationId },
+				"CRM persistence notice",
 			);
 		}
 
@@ -203,7 +207,10 @@ export class BotPatientStateStorage {
 				});
 			});
 		} catch (botEvtErr) {
-			console.warn(`[BotPatientStateStorage] Bot reply persistence warning:`, botEvtErr);
+			botLogger.warn(
+				{ err: safeLogError(botEvtErr), organizationId: params.organizationId },
+				"Bot reply persistence warning",
+			);
 		}
 	}
 }

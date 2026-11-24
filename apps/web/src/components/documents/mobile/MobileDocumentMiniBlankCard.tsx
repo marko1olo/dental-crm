@@ -25,7 +25,7 @@ export function MobileDocumentMiniBlankCard({
 		<div className="rounded-[18px] bg-[var(--paper)] border border-[var(--line)] p-4 shadow-sm space-y-3">
 			<div className="flex justify-between items-start pb-2 border-b border-[var(--line-subtle)]">
 				<div>
-					<div className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+					<div className="text-[11px] font-semibold text-[var(--muted)]">
 						Бланк документа
 					</div>
 					<div className="text-[14px] font-bold text-[var(--ink)] mt-0.5">
@@ -53,7 +53,7 @@ export function MobileDocumentMiniBlankCard({
 				{document.totalAmountRub != null && document.totalAmountRub > 0 && (
 					<div className="col-span-2 p-2.5 rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex items-center justify-between">
 						<span className="text-[12px] font-medium text-[var(--muted)]">Сумма документа:</span>
-						<span className="text-[16px] font-bold text-teal-600 dark:text-teal-400 font-mono">
+						<span className="text-[16px] font-bold text-[var(--primary)] font-mono">
 							{formatRub(document.totalAmountRub)}
 						</span>
 					</div>

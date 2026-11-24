@@ -234,13 +234,17 @@ export async function handleGetDoctorMyEarnings(
 			categoryRu: string;
 			priceRub: number;
 			priceKop: number;
+			priceKopecks?: number | undefined;
 			labCostRub: number;
 			labCostKop: number;
+			labCostKopecks?: number | undefined;
 			materialCostRub: number;
 			materialCostKop: number;
+			materialCostKopecks?: number | undefined;
 			commissionPercent: number;
 			earnedRub: number;
 			earnedKop: number;
+			earnedKopecks?: number | undefined;
 			isPaid: boolean;
 		}>;
 		labOrders: Array<{
@@ -251,6 +255,7 @@ export async function handleGetDoctorMyEarnings(
 			statusRu: string;
 			costRub: number;
 			costKop: number;
+			costKopecks?: number | undefined;
 			dueDate: string | null;
 		}>;
 	};
@@ -306,13 +311,17 @@ export async function handleGetDoctorMyEarnings(
 			categoryRu: ord.categoryLabelRu,
 			priceRub: kopecksToRubles(ord.grossKopecks),
 			priceKop: ord.grossKopecks,
+			priceKopecks: ord.grossKopecks,
 			labCostRub: kopecksToRubles(ord.labCostKopecks),
 			labCostKop: ord.labCostKopecks,
+			labCostKopecks: ord.labCostKopecks,
 			materialCostRub: kopecksToRubles(ord.materialCostKopecks),
 			materialCostKop: ord.materialCostKopecks,
+			materialCostKopecks: ord.materialCostKopecks,
 			commissionPercent: itemCommPercent,
 			earnedRub: kopecksToRubles(earnedItemKop),
 			earnedKop: earnedItemKop,
+			earnedKopecks: earnedItemKop,
 			isPaid: ord.isPaid54Fz,
 		});
 
@@ -325,6 +334,7 @@ export async function handleGetDoctorMyEarnings(
 				statusRu: "Готов",
 				costRub: kopecksToRubles(ord.labCostKopecks),
 				costKop: ord.labCostKopecks,
+				costKopecks: ord.labCostKopecks,
 				dueDate: ord.dateIso,
 			});
 		}

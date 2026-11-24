@@ -41,12 +41,12 @@ export const TherapyPresetSelector: React.FC<TherapyPresetSelectorProps> = ({
 							</div>
 							<div className="mt-0.5 text-[11px] text-[var(--ink-muted)] truncate">
 								{preset.id === "caries_composite"
-									? "OptiBond FL + Filtek"
+									? "Тотальное травление + Нанокомпозит"
 									: preset.id === "failed_filling_replacement"
-										? "Снятие + Harmonize"
+										? "Снятие пломбы + Наногибрид"
 										: preset.id === "wedge_defect_erosion"
-											? "Clearfil SE + SDR"
-											: "Ключ + Мамелоны"}
+											? "Самопротравливание + Bulk-fill"
+											: "Ключ + Анатомическая стратификация"}
 							</div>
 						</button>
 					);

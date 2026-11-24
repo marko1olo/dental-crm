@@ -508,4 +508,50 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 
 		await app.close();
 	});
+
+	it("11. SEV-1 Fix: Accepts toothNumber in payload without Zod strict rejection & returns Mandate 8bm envelope", async () => {
+		const app = Fastify();
+		await registerOdontogramRoutes(app);
+		await app.ready();
+
+		const resPost = await app.inject({
+			method: "POST",
+			url: `/api/patients/${testPatientId}/tooth-states/16/endo`,
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload: {
+				toothNumber: 16,
+				canals: [{ canalName: "MB", workingLengthMm: 21.5 }],
+				rotarySystem: "WaveOne Gold",
+				irrigation: "NaOCl 3%",
+			},
+		});
+
+		assert.equal(resPost.statusCode, 200, "Must accept toothNumber in payload without 400 Bad Request");
+		const jsonPost = JSON.parse(resPost.payload);
+		assert.equal(jsonPost.success, true);
+		assert.ok(jsonPost.data, "POST must return data property (Mandate 8bm)");
+		assert.equal(jsonPost.data.toothNumber, 16);
+
+		const resGet = await app.inject({
+			method: "GET",
+			url: `/api/patients/${testPatientId}/tooth-states/16/endo`,
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+			},
+		});
+
+		assert.equal(resGet.statusCode, 200);
+		const jsonGet = JSON.parse(resGet.payload);
+		assert.equal(jsonGet.success, true);
+		assert.ok(jsonGet.data, "GET must return data envelope (Mandate 8bm)");
+		assert.equal(jsonGet.data.toothNumber, 16);
+		assert.ok(Array.isArray(jsonGet.data.canalMeasurements));
+
+		await app.close();
+	});
 });

@@ -30,6 +30,21 @@ import { requireOrganizationId } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { parseDicomFirstFramePixel } from "./previewModules/firstFramePixelParser.js";
 
+export const imagingAiAnalysisBodySchema = z.object({
+	imageBase64: z.string().optional().default(""),
+	toothCode: z.string().trim().min(1).optional().nullable(),
+	patientId: z.string().trim().min(1).optional().nullable(),
+	visitId: z.string().trim().min(1).optional().nullable(),
+	studyId: z.string().trim().min(1).optional().nullable(),
+	focus: z.enum(["caries", "perio", "endo"]).optional().nullable(),
+});
+
+export type ImagingAiAnalysisBody = z.infer<typeof imagingAiAnalysisBodySchema>;
+
+const studyAnalyzeParamsSchema = z.object({
+	id: z.string().trim().min(1),
+});
+
 function convertBufferToVisionDataUrl(buf: Buffer, filePath?: string): string {
 	const isJpeg =
 		buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
@@ -85,19 +100,28 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const body = (request.body && typeof request.body === "object" ? request.body : {}) as {
-			imageBase64?: unknown;
-			toothCode?: unknown;
-			patientId?: unknown;
-			visitId?: unknown;
-			studyId?: unknown;
-		};
+		if (!request.body || typeof request.body !== "object" || Array.isArray(request.body)) {
+			return reply.code(400).send({
+				error: "Missing imageBase64",
+				message: "Missing imageBase64 or valid studyId",
+			});
+		}
 
-		let imageBase64 = typeof body.imageBase64 === "string" && body.imageBase64.trim() ? body.imageBase64 : "";
-		const toothCode = typeof body.toothCode === "string" && body.toothCode.trim() ? body.toothCode.trim() : null;
-		const patientId = typeof body.patientId === "string" && body.patientId.trim() ? body.patientId.trim() : null;
-		const visitId = typeof body.visitId === "string" && body.visitId.trim() ? body.visitId.trim() : null;
-		const studyId = typeof body.studyId === "string" && body.studyId.trim() ? body.studyId.trim() : null;
+		const parseResult = imagingAiAnalysisBodySchema.safeParse(request.body);
+		if (!parseResult.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса ИИ-анализа снимка",
+				details: parseResult.error.flatten(),
+			});
+		}
+
+		const body = parseResult.data;
+		let imageBase64 = body.imageBase64.trim();
+		const toothCode = body.toothCode?.trim() ?? null;
+		const patientId = body.patientId?.trim() ?? null;
+		const visitId = body.visitId?.trim() ?? null;
+		const studyId = body.studyId?.trim() ?? null;
 
 		// If imageBase64 is not provided directly, try to load it from studyId if present
 		if (!imageBase64 && studyId) {
@@ -197,14 +221,6 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		// organizationId tenant context & Idempotency-Key validation
 		return aiAnalysisHandler(request, reply);
 	});
-	app.post("/api/imaging/visiograph-ai", async (request, reply) => {
-		// organizationId tenant context & Idempotency-Key validation
-		return aiAnalysisHandler(request, reply);
-	});
-	app.post("/api/radiology/ai-analysis", async (request, reply) => {
-		// organizationId tenant context & Idempotency-Key validation
-		return aiAnalysisHandler(request, reply);
-	});
 
 
 	app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
@@ -230,7 +246,14 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const { id } = request.params as { id: string };
+		const paramsParsed = studyAnalyzeParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "InvalidParams",
+				message: "Некорректный идентификатор исследования",
+			});
+		}
+		const { id } = paramsParsed.data;
 		const study = await getImagingStudyById(orgId, id);
 		if (!study) return sendImagingStudyNotFound(reply);
 

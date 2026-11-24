@@ -64,27 +64,27 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 						<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0"><Award size={18} /></div>
 						<div className="min-w-0 flex-1">
 							<h3 className="text-xs sm:text-sm font-bold truncate text-[var(--ink)]">Паспорт ортопедической конструкции</h3>
-							<p className="text-[11px] text-[var(--muted)] font-mono truncate">{passportNumber} · Зуб FDI {data.toothFdi}</p>
+							<p className="text-[11px] text-[var(--ink-muted)] font-mono truncate">{passportNumber} · Зуб FDI {data.toothFdi}</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
 						<button type="button" onClick={handleCopyText} className="hidden sm:inline-flex min-h-[36px] h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] items-center gap-1.5 cursor-pointer active:scale-95" data-testid="passport-copy-btn"><Copy size={14} className="text-[var(--primary)]" /><span>Скопировать</span></button>
 						<button type="button" onClick={handlePrint} className="hidden sm:inline-flex min-h-[36px] h-9 px-3.5 text-xs font-bold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white items-center gap-1.5 shadow-xs cursor-pointer active:scale-95" data-testid="passport-print-btn"><Printer size={14} /><span>Печать (А4)</span></button>
-						<button type="button" onClick={onClose} className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-[36px] sm:min-w-[36px] rounded-xl sm:rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-colors" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
+						<button type="button" onClick={onClose} className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-[36px] sm:min-w-[36px] rounded-xl sm:rounded-lg flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-colors" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
 					</div>
 				</div>
 				<div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[var(--paper-subtle)]">
 					<div id="orthopedic-passport-print-area" ref={printRef} className="max-w-[800px] mx-auto bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 sm:p-7 shadow-sm text-[var(--ink)] font-sans" data-testid="passport-a4-sheet">
 						<OrthopedicPassportHeader clinicName={clinicName} passportNumber={passportNumber} issueDate={issueDate} batchLot={batchLot} toothFdi={data.toothFdi} />
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4 p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
-							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{data.patientChartNumber && (<div className="text-[11px] text-[var(--muted)]">Мед. карта № {data.patientChartNumber}</div>)}</div>
-							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Врач-ортопед</span><div className="font-bold">{doctorName}</div><div className="text-[11px] text-[var(--muted)]">{clinicName}</div></div>
-							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Изготовитель (ЗТЛ)</span><div className="font-bold">{technicianName}</div><div className="text-[11px] text-[var(--muted)]">{labName}</div></div>
+							<div><span className="text-[10px] font-bold text-[var(--ink-muted)] block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{data.patientChartNumber && (<div className="text-[11px] text-[var(--ink-muted)]">Мед. карта № {data.patientChartNumber}</div>)}</div>
+							<div><span className="text-[10px] font-bold text-[var(--ink-muted)] block mb-0.5">Врач-ортопед</span><div className="font-bold">{doctorName}</div><div className="text-[11px] text-[var(--ink-muted)]">{clinicName}</div></div>
+							<div><span className="text-[10px] font-bold text-[var(--ink-muted)] block mb-0.5">Изготовитель (ЗТЛ)</span><div className="font-bold">{technicianName}</div><div className="text-[11px] text-[var(--ink-muted)]">{labName}</div></div>
 						</div>
 						<OrthopedicPassportSpecsTable passport={data} batchLot={batchLot} standards={standards} />
 						<OrthopedicPassportCareNotice warrantyLabelRu={warrantyLabelRu} careNotes={careNotes} />
 						{data.integritySha256 && (
-							<div className="mb-3 px-3 py-1.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--muted)] font-mono flex items-center justify-between">
+							<div className="mb-3 px-3 py-1.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--ink-muted)] font-mono flex items-center justify-between">
 								<span>Контрольный хеш подлинности бланка (SHA-256):</span>
 								<span className="font-bold select-all">{data.integritySha256}</span>
 							</div>

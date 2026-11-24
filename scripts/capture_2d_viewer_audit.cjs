@@ -265,7 +265,7 @@ async function setupPageRoutes(page) {
         body: JSON.stringify(mockScans),
       });
     }
-    if (url.includes("/api/imaging/visiograph-ai")) {
+    if (url.includes("/api/imaging/ai-analysis") || url.includes("/api/imaging/visiograph-ai")) {
       return route.fulfill({
         status: 200,
         contentType: "application/json",

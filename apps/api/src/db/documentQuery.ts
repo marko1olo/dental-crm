@@ -1,15 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import type {
-	DocumentIssueSignatureAttestation,
-	DocumentReleaseJournalEntry,
-	DocumentVoidAttestation,
-	GeneratedDocument,
-	TaxPaymentSnapshot,
-	TaxXmlSnapshot,
-	TaxXmlSourceSnapshot,
-	TreatmentPlanItem,
+import {
+	rublesToKopecks,
+	type DocumentIssueSignatureAttestation,
+	type DocumentReleaseJournalEntry,
+	type DocumentVoidAttestation,
+	type GeneratedDocument,
+	type TaxPaymentSnapshot,
+	type TaxXmlSnapshot,
+	type TaxXmlSourceSnapshot,
+	type TreatmentPlanItem,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -113,6 +114,12 @@ function mapDocument(
 		title: record.title,
 		storagePath: record.storagePath,
 		totalAmountRub: record.totalAmountRub,
+		totalAmountKopecks:
+			record.totalAmountKopecks !== null && record.totalAmountKopecks !== undefined
+				? Number(record.totalAmountKopecks)
+				: (record.totalAmountRub !== null && record.totalAmountRub !== undefined
+					? rublesToKopecks(record.totalAmountRub)
+					: null),
 		taxYear: record.taxYear,
 		taxPayerInn: record.taxPayerInn,
 		payload: safeJsonParse<Record<string, unknown> | null>(record.payloadJson, null),
@@ -224,6 +231,7 @@ export async function createGeneratedDocumentInDb(
 		kind: GeneratedDocument["kind"];
 		title?: string | undefined;
 		totalAmountRub?: number | null | undefined;
+		totalAmountKopecks?: number | null | undefined;
 		taxYear?: number | null | undefined;
 		taxPayerInn?: string | null | undefined;
 		payload?: Record<string, unknown> | null | undefined;
@@ -241,6 +249,11 @@ export async function createGeneratedDocumentInDb(
 			status: "draft",
 			issuedAt: null,
 			totalAmountRub: input.totalAmountRub ?? null,
+			totalAmountKopecks:
+				input.totalAmountKopecks ??
+				(input.totalAmountRub !== undefined && input.totalAmountRub !== null
+					? rublesToKopecks(input.totalAmountRub)
+					: null),
 			payload: input.payload ?? null,
 			signatureSvg: input.signatureSvg ?? null,
 		};
@@ -299,6 +312,12 @@ export async function createGeneratedDocumentInDb(
 			title: title.length > 240 ? title.slice(0, 240) : title,
 			status: "draft",
 			totalAmountRub: input.totalAmountRub ?? null,
+			totalAmountKopecks:
+				input.totalAmountKopecks !== undefined && input.totalAmountKopecks !== null
+					? BigInt(input.totalAmountKopecks)
+					: (input.totalAmountRub !== undefined && input.totalAmountRub !== null
+						? BigInt(rublesToKopecks(input.totalAmountRub))
+						: null),
 			taxYear: input.taxYear ?? null,
 			taxPayerInn: input.taxPayerInn ?? null,
 			payloadJson: input.payload ? JSON.stringify(input.payload) : null,
@@ -371,6 +390,7 @@ export async function issueGeneratedDocumentInDb(
 		taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
 		taxXmlSnapshot?: TaxXmlSnapshot | null;
 		totalAmountRub?: number | null | undefined;
+		totalAmountKopecks?: number | null | undefined;
 		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
@@ -397,6 +417,11 @@ export async function issueGeneratedDocumentInDb(
 			taxXmlSourceSnapshot: options.taxXmlSourceSnapshot || null,
 			taxXmlSnapshot: options.taxXmlSnapshot !== undefined ? options.taxXmlSnapshot : inMemoryDocument.taxXmlSnapshot || null,
 			totalAmountRub: options.totalAmountRub ?? inMemoryDocument.totalAmountRub,
+			totalAmountKopecks:
+				options.totalAmountKopecks ??
+				(options.totalAmountRub !== undefined && options.totalAmountRub !== null
+					? rublesToKopecks(options.totalAmountRub)
+					: inMemoryDocument.totalAmountKopecks),
 			...(snapshot
 				? {
 					storagePath: snapshot.snapshotPath,
@@ -456,6 +481,12 @@ export async function issueGeneratedDocumentInDb(
 					? options.taxXmlSnapshot
 					: existing.taxXmlSnapshot,
 			totalAmountRub: options.totalAmountRub ?? existing.totalAmountRub,
+			totalAmountKopecks:
+				options.totalAmountKopecks !== undefined && options.totalAmountKopecks !== null
+					? BigInt(options.totalAmountKopecks)
+					: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
+						? BigInt(rublesToKopecks(options.totalAmountRub))
+						: existing.totalAmountKopecks),
 			...(snapshot
 				? {
 						storagePath: snapshot.snapshotPath,

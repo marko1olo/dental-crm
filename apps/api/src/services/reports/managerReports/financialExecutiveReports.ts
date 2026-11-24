@@ -137,7 +137,7 @@ export async function financialExecutiveSummary(
 	// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
 	// Распаковка комбинированных сплит-чеков ('split') по тендерам без искажения ДДС
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 
 	const [paymentTotals] = await db
@@ -194,7 +194,7 @@ export async function financialExecutiveSummary(
 	const [invoicesSummary] = await db
 		.select({
 			invoicesCount: sql<number>`count(*)::int`,
-			totalInvoicedRub: sql<number>`coalesce(sum(case when ${invoices.status} != 'voided' and ${invoices.status} != 'cancelled' then coalesce(${invoices.totalAmountRub}, ${invoices.totalRub}) else 0 end), 0)::numeric(12,2)`,
+			totalInvoicedKopecks: sql<number>`coalesce(sum(case when ${invoices.status} != 'voided' and ${invoices.status} != 'cancelled' then coalesce(${invoices.totalPriceKopecks}, 0)::bigint else 0 end), 0)::bigint`,
 		})
 		.from(invoices)
 		.where(
@@ -206,8 +206,8 @@ export async function financialExecutiveSummary(
 		);
 
 	const invoicesCount = Number(invoicesSummary?.invoicesCount || 0);
-	const totalInvoicedRub = Number(invoicesSummary?.totalInvoicedRub || 0);
-	const totalInvoicedKopecks = rublesToKopecks(totalInvoicedRub);
+	const totalInvoicedKopecks = Number(invoicesSummary?.totalInvoicedKopecks || 0);
+	const totalInvoicedRub = kopecksToRubles(totalInvoicedKopecks);
 
 	// [FIN-01] Ликвидация двойного учёта выручки:
 	// (а) Реальный денежный приток в кассу и банк (ДДС): физические поступления средств за период (нал + карты + СБП).
@@ -299,7 +299,7 @@ export async function financialExecutiveSummary(
 		depositRealizedRub,
 		depositRealizedKopecks,
 		invoicesCount,
-		totalInvoicedRub: Math.round(totalInvoicedRub),
+		totalInvoicedRub,
 		totalInvoicedKopecks,
 		averageCheckRub,
 		averageCheckKopecks,

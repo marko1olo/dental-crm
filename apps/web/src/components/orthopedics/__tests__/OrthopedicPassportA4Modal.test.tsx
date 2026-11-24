@@ -20,11 +20,11 @@ describe("OrthopedicPassportA4Modal — Printable A4 Passport & Warranty (Mandat
 		labName: "ЗТЛ «DenteLab Precision»",
 		toothFdi: "16",
 		constructionName: "Коронка цельнокерамическая (ZrO2 Multi-Layer)",
-		material: "Диоксид циркония Katana HTML",
+		material: "Диоксид циркония Multi-Layer (градиентный)",
 		colorVita: "A2",
 		stumpShade: "ND2",
 		preparationMarginLabel: "Круговой уступ Chamfer (0.8 мм)",
-		fixationTypeLabel: "Постоянная цементная (GC Fuji Plus / RelyX U200)",
+		fixationTypeLabel: "Постоянная цементная фиксация (двойного отверждения / СИЦ)",
 		warrantyMonths: 60,
 		warrantyLabelRu: "60 месяцев (5 лет)",
 		batchLotNumber: "LOT-2026-ZR441",
@@ -59,11 +59,11 @@ describe("OrthopedicPassportA4Modal — Printable A4 Passport & Warranty (Mandat
 		);
 
 		assert.ok(html.includes("16"), "Must render tooth 16");
-		assert.ok(html.includes("Диоксид циркония Katana HTML"), "Must render material name");
+		assert.ok(html.includes("Диоксид циркония Multi-Layer"), "Must render material name");
 		assert.ok(html.includes("A2"), "Must render VITA shade A2");
 		assert.ok(html.includes("ND2"), "Must render stump shade ND2");
 		assert.ok(html.includes("Chamfer"), "Must render prep margin Chamfer");
-		assert.ok(html.includes("GC Fuji Plus / RelyX U200"), "Must render fixation protocol");
+		assert.ok(html.includes("Постоянная цементная фиксация"), "Must render fixation protocol");
 		assert.ok(html.includes("LOT-2026-ZR441"), "Must render material lot number");
 	});
 

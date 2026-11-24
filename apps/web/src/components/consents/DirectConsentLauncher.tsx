@@ -11,6 +11,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { ConsentStudioModal } from "../documents/DocumentsStudioModal";
 import { type ConsentDocumentId, normalizeConsentDocId } from "./consentCatalogData";
+import { useDocumentStore } from "../../store/documentStore/store";
 
 export const isConsentTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
@@ -134,8 +135,10 @@ export const DirectConsentLauncher: React.FC = () => {
 		};
 	}, [handleOpen, handleHash]);
 
-	const handleClose = () => {
+	const handleClose = useCallback(() => {
+		useDocumentStore.getState().resetDocumentForms();
 		setIsOpen(false);
+		setPatientContext(undefined);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("consents");
@@ -145,12 +148,23 @@ export const DirectConsentLauncher: React.FC = () => {
 			const cleanHash = window.location.hash.replace(/#consents|#consent-studio|#consent(-[a-z_]+)?/g, "");
 			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, handleClose]);
 
 	if (!isOpen) return null;
 
 	return (
 		<ConsentStudioModal
+			key={patientContext?.patientId ?? initialDocId ?? "consent-studio"}
 			isOpen={isOpen}
 			onClose={handleClose}
 			initialDocId={initialDocId}

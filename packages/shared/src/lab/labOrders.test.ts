@@ -25,11 +25,16 @@ import {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	mapTo5StageLabStatus,
 	FORM_ZTL_1_METADATA,
+	STATUTORY_LAB_ORDER_METADATA,
+	formatLabOrderPrescriptionA4,
+	formatLabOrderFormZtl1A4Protocol,
+	formatLabOrderProtocolA4,
 	generateProstheticWarrantyPassport,
 	calculateWarrantyTerms,
 	prostheticWarrantyPassportSchema,
 	CANONICAL_PG_LAB_STATUSES,
 	canonicalPgLabStatusSchema,
+	type CanonicalPgLabStatus,
 	STAGE_TO_CANONICAL_PG_STATUS,
 	mapStageToCanonicalPgStatus,
 	mapPgStatusTo5Stage,
@@ -444,6 +449,21 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		assert.equal(mapPgStatusTo5Stage("received"), "ready");
 		assert.equal(mapPgStatusTo5Stage("completed"), "completed");
 		assert.equal(mapPgStatusTo5Stage("fitted"), "completed");
+	});
+
+	test("formatLabOrderPrescriptionA4 and formatLabOrderProtocolA4 output statutory header without bureaucratic stamp", () => {
+		assert.equal(STATUTORY_LAB_ORDER_METADATA, FORM_ZTL_1_METADATA);
+		assert.equal(formatLabOrderProtocolA4, formatLabOrderFormZtl1A4Protocol);
+
+		const sample = formatLabOrderProtocolA4({
+			id: "12345678-1234-1234-1234-123456789abc",
+			patientFullName: "Сидоров С.С.",
+			labName: "Лаборатория Дента",
+			workType: "crown",
+		});
+
+		assert.ok(sample.includes("НАРЯД-ЗАКАЗ В ЗУБОТЕХНИЧЕСКУЮ ЛАБОРАТОРИЮ"));
+		assert.equal(sample.includes("(ФОРМА № ЗТЛ-1)"), false, "Bureaucratic stamp (ФОРМА № ЗТЛ-1) must be removed per Mandate 8x");
 	});
 });
 

@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { OrthopedicsChairsidePanel } from "./OrthopedicsChairsidePanel.js";
+import { validateOrthopedicTooth } from "./orthopedicCatalogData.js";
 
 function checkIsOrthopedicsActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -24,9 +25,8 @@ function readToothFromUrl(): string {
 	if (typeof window === "undefined") return "16";
 	const params = new URLSearchParams(window.location.search || "");
 	const toothParam = params.get("tooth") || params.get("toothFdi") || params.get("toothNumber");
-	if (toothParam) {
-		const parsed = parseInt(toothParam, 10);
-		if (!Number.isNaN(parsed) && parsed >= 11 && parsed <= 48) return String(parsed);
+	if (toothParam && validateOrthopedicTooth(toothParam)) {
+		return String(parseInt(toothParam, 10));
 	}
 	return "16";
 }
@@ -86,22 +86,22 @@ export const DirectOrthopedicsLauncher: React.FC = () => {
 			onClick={handleClose}
 		>
 			<div
-				className="relative w-full max-w-5xl max-h-[94vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl shadow-2xl overflow-hidden border border-[var(--line,#e2e8f0)]"
+				className="relative w-full max-w-5xl max-h-[94vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl shadow-2xl overflow-hidden border border-[var(--line)]"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,#f8fafc)]">
+				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-subtle)]">
 					<div>
-						<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)]">
+						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)]">
 							Ортопедия и зуботехническая лаборатория (ЗТЛ)
 						</h2>
-						<p className="text-xs text-[var(--muted,#64748b)]">
+						<p className="text-xs text-[var(--ink-muted)]">
 							Кресельный протокол ортопеда, заказ-наряды и гарантийный паспорт изделия
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={handleClose}
-						className="w-11 h-11 flex items-center justify-center rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+						className="w-11 h-11 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer"
 						aria-label="Закрыть"
 					>
 						<X size={18} />
@@ -109,6 +109,7 @@ export const DirectOrthopedicsLauncher: React.FC = () => {
 				</div>
 				<div className="flex-1 overflow-y-auto p-3 sm:p-5">
 					<OrthopedicsChairsidePanel
+						key={toothFdi}
 						patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
 						doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
 						activeToothFdi={toothFdi}

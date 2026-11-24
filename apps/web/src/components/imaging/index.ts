@@ -15,7 +15,6 @@ export * from "./DicomAutoDetectStatusBadge";
 export * from "./DicomImportManagerModal";
 export * from "./dicomMprTypes";
 export * from "./DicomToolboxRibbon";
-export * from "./DicomMprSidebar";
 export * from "./DicomAiFindingsDrawer";
 export * from "./types";
 export * from "./ImagingToolbar";

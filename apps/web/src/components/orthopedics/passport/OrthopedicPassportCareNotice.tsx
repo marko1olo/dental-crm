@@ -18,7 +18,7 @@ export function OrthopedicPassportCareNotice({
 					<ShieldCheck size={16} className="shrink-0 text-[var(--primary)]" />
 					<span className="text-xs sm:text-sm">Гарантийные обязательства: {warrantyLabelRu}</span>
 				</div>
-				<p className="text-[var(--muted)] leading-relaxed text-[11px]">
+				<p className="text-[var(--ink-muted)] leading-relaxed text-[11px]">
 					Клиника гарантирует сохранение целостности, функциональной пригодности и цветостабильности конструкции в течение гарантийного срока при соблюдении гигиены и прохождении профосмотров.
 				</p>
 			</div>
@@ -29,7 +29,7 @@ export function OrthopedicPassportCareNotice({
 					<FileText size={14} className="text-[var(--primary)]" />
 					<span>Памятка пациенту по уходу за конструкцией</span>
 				</h4>
-				<ol className="list-decimal pl-4 space-y-1 text-[11px] text-[var(--muted)] leading-relaxed">
+				<ol className="list-decimal pl-4 space-y-1 text-[11px] text-[var(--ink-muted)] leading-relaxed">
 					{careNotes.map((note, idx) => (
 						<li key={idx} className="pl-0.5">
 							{note}

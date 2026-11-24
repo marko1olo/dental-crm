@@ -73,7 +73,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 				{/* Шапка модалки */}
 				<header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5">
-						<div className="w-8 h-8 rounded-xl bg-teal-500/10 text-[var(--primary)] flex items-center justify-center shrink-0 border border-teal-500/20">
+						<div className="w-8 h-8 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0 border border-[var(--primary)]/20">
 							<ShieldCheck className="w-4 h-4" />
 						</div>
 						<div>
@@ -101,7 +101,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 					{/* Индикатор статуса СКЗИ КриптоПро */}
 					<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-3">
 						<div className="flex items-center gap-2.5">
-							<Fingerprint className={`w-5 h-5 ${hasPlugin ? "text-teal-600 dark:text-teal-400" : "text-amber-500"}`} />
+							<Fingerprint className={`w-5 h-5 ${hasPlugin ? "text-[var(--primary)]" : "text-amber-500"}`} />
 							<div>
 								<div className="text-xs font-bold">
 									{isCheckingPlugin
@@ -120,8 +120,9 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 
 						<button
 							type="button"
-							onClick={() => void detectCryptoPro()}
-							disabled={isCheckingPlugin}
+							onClick={() => {
+								if (!isCheckingPlugin) void detectCryptoPro();
+							}}
 							className="secondary-button text-xs font-semibold px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-subtle)] flex items-center gap-1.5 transition-colors min-h-[36px]"
 						>
 							<RefreshCw className={`w-3.5 h-3.5 ${isCheckingPlugin ? "animate-spin" : ""}`} />
@@ -133,7 +134,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 						{/* Левая колонка: Документы для подписания */}
 						<div className="flex flex-col gap-2.5">
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+							<label className="text-xs font-bold text-[var(--muted)]">
 								Документы приёма ({documents.length})
 							</label>
 
@@ -150,7 +151,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 												onClick={() => setSelectedDocId(doc.id)}
 												className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
 													isSelected
-														? "border-[var(--primary)] bg-teal-500/5 shadow-xs"
+														? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-xs"
 														: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
 												}`}
 												role="button"
@@ -159,7 +160,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 												<div className="flex items-center justify-between gap-2 mb-1">
 													<span className="text-xs font-bold line-clamp-1">{doc.title}</span>
 													{isSignedUkep ? (
-														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0">
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 shrink-0">
 															УКЭП ГОСТ
 														</span>
 													) : isSignedPep ? (
@@ -179,7 +180,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 												</div>
 
 												{doc.signerFullName && (
-													<div className="text-[10px] text-teal-600 dark:text-teal-400 mt-1 line-clamp-1 font-mono">
+													<div className="text-[10px] text-[var(--primary)] mt-1 line-clamp-1 font-mono">
 														Подписал: {doc.signerFullName}
 													</div>
 												)}
@@ -204,7 +205,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 						{/* Правая колонка: Сертификат, PIN и хэш */}
 						<div className="flex flex-col gap-3.5 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
 							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+								<span className="text-xs font-bold text-[var(--muted)]">
 									Квалифицированный сертификат
 								</span>
 								<KeyRound className="w-4 h-4 text-[var(--muted)]" />
@@ -262,7 +263,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 								<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1">
 									<div className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
 										<span>Хэш документа (ГОСТ Стрибог 256):</span>
-										<Lock className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+										<Lock className="w-3 h-3 text-[var(--primary)]" />
 									</div>
 									<div className="text-[10px] font-mono break-all text-[var(--ink)]">
 										{selectedDoc.hashHex}
@@ -275,14 +276,14 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 					{/* Уведомления */}
 					{statusMessage && (
 						<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-200 text-xs flex items-center gap-2">
-							<CheckCircle2 className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
+							<CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 							<span>{statusMessage}</span>
 						</div>
 					)}
 
 					{errorMessage && (
-						<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
-							<AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+						<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--danger)] text-xs flex items-center gap-2">
+							<AlertCircle className="w-4 h-4 shrink-0 text-[var(--danger)]" />
 							<span>{errorMessage}</span>
 						</div>
 					)}
@@ -315,9 +316,10 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 					{/* Ровно 1 Primary CTA кнопка (Мандат 8am, 8e) */}
 					<button
 						type="button"
-						onClick={signSelectedDocumentUkep}
-						disabled={isSigning}
-						className="primary-button text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-dark,#0f766e)] text-white flex items-center gap-2 shadow-md transition-all min-h-[44px] sm:min-h-[36px] cursor-pointer"
+						onClick={() => {
+							if (!isSigning) signSelectedDocumentUkep();
+						}}
+						className="primary-button text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white flex items-center gap-2 shadow-md transition-all min-h-[44px] sm:min-h-[36px] cursor-pointer"
 						data-testid="btn-ukep-sign-primary"
 					>
 						<ShieldCheck className="w-4 h-4 shrink-0" />

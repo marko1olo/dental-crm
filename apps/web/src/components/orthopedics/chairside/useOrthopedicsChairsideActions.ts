@@ -91,6 +91,7 @@ export function useOrthopedicsChairsideActions(
 			priceRub: state.isWarrantyRework ? 0 : state.grossPriceRub,
 			priceKopecks: state.isWarrantyRework ? 0 : rublesToKopecks(state.grossPriceRub),
 			patientPriceKopecks: state.isWarrantyRework ? 0 : rublesToKopecks(state.grossPriceRub),
+			amountKopecks: state.isWarrantyRework ? 0 : rublesToKopecks(state.grossPriceRub),
 			costRub: state.isWarrantyRework && state.warrantyLiabilityType === "lab_defect" ? 0 : state.ztlCostRub,
 			labCostKopecks: state.isWarrantyRework && state.warrantyLiabilityType === "lab_defect" ? 0 : rublesToKopecks(state.ztlCostRub),
 			isWarrantyRework: state.isWarrantyRework,

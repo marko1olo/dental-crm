@@ -5,6 +5,7 @@ import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documen
 export interface EligibleTaxPaymentInput {
 	readonly id?: string | undefined;
 	readonly amountRub?: number | string | undefined;
+	readonly amountKopecks?: number | bigint | undefined;
 	readonly amount?: number | string | undefined;
 	readonly code804n?: string | null | undefined;
 	readonly description?: string | null | undefined;

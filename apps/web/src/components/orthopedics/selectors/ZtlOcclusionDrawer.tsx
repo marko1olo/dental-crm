@@ -105,7 +105,7 @@ export function ZtlOcclusionDrawer({
 						Exocad CAD/CAM
 					</span>
 				</div>
-				<span className="text-[11px] text-[var(--muted)] truncate">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate">
 					Биомеханика движений нижней челюсти и CAD/CAM профиль
 				</span>
 			</div>
@@ -124,10 +124,10 @@ export function ZtlOcclusionDrawer({
 								key={art.id}
 								type="button"
 								onClick={() => handleArticulatorClick(art.id)}
-								className={`min-h-[34px] px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
+								className={`min-h-[44px] sm:h-9 px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
 									isSelected
 										? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--ink)] ring-1 ring-[var(--primary)] shadow-2xs font-bold"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-subtle)]"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink-muted)] hover:bg-[var(--paper-subtle)]"
 								}`}
 								data-testid={`articulator-chip-${art.id}`}
 							>
@@ -137,7 +137,7 @@ export function ZtlOcclusionDrawer({
 					})}
 				</div>
 
-				<label className="flex items-center gap-2 px-2.5 py-1 min-h-[34px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium text-[var(--ink)] cursor-pointer select-none" data-testid="facebow-checkbox-label">
+				<label className="flex items-center gap-2 px-2.5 py-1 min-h-[44px] sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium text-[var(--ink)] cursor-pointer select-none" data-testid="facebow-checkbox-label">
 					<input
 						type="checkbox"
 						checked={currentFacebow}
@@ -171,7 +171,7 @@ export function ZtlOcclusionDrawer({
 								data-testid={`guidance-chip-${opt.id}`}
 							>
 								<span className="text-xs font-bold leading-tight truncate">{opt.label}</span>
-								<span className="text-[10px] text-[var(--muted)] mt-0.5 line-clamp-1">{opt.desc}</span>
+								<span className="text-[10px] text-[var(--ink-muted)] mt-0.5 line-clamp-1">{opt.desc}</span>
 							</button>
 						);
 					})}
@@ -186,7 +186,7 @@ export function ZtlOcclusionDrawer({
 				</div>
 				<div className="flex items-center gap-4">
 					<div className="flex items-center gap-1.5 text-xs text-[var(--ink)]">
-						<span className="text-[var(--muted)] text-[11px]">Сагиттальный путь:</span>
+						<span className="text-[var(--ink-muted)] text-[11px]">Сагиттальный путь:</span>
 						<input
 							type="number"
 							min={10}
@@ -196,10 +196,10 @@ export function ZtlOcclusionDrawer({
 							className="w-14 h-7 text-center rounded-md border border-[var(--line)] bg-[var(--paper)] font-mono text-xs font-semibold text-[var(--ink)] focus:border-[var(--primary)] focus:outline-none"
 							data-testid="sagittal-angle-input"
 						/>
-						<span className="text-[11px] font-mono text-[var(--muted)]">°</span>
+						<span className="text-[11px] font-mono text-[var(--ink-muted)]">°</span>
 					</div>
 					<div className="flex items-center gap-1.5 text-xs text-[var(--ink)]">
-						<span className="text-[var(--muted)] text-[11px]">Угол Беннетта:</span>
+						<span className="text-[var(--ink-muted)] text-[11px]">Угол Беннетта:</span>
 						<input
 							type="number"
 							min={0}
@@ -209,7 +209,7 @@ export function ZtlOcclusionDrawer({
 							className="w-14 h-7 text-center rounded-md border border-[var(--line)] bg-[var(--paper)] font-mono text-xs font-semibold text-[var(--ink)] focus:border-[var(--primary)] focus:outline-none"
 							data-testid="bennett-angle-input"
 						/>
-						<span className="text-[11px] font-mono text-[var(--muted)]">°</span>
+						<span className="text-[11px] font-mono text-[var(--ink-muted)]">°</span>
 					</div>
 				</div>
 			</div>

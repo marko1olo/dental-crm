@@ -970,6 +970,8 @@ export const FORM_ZTL_1_METADATA = {
 	warrantyGostRu: "2 года гарантии (ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Рекомендации СтАР)",
 } as const;
 
+export const STATUTORY_LAB_ORDER_METADATA = FORM_ZTL_1_METADATA;
+
 // ─── DYNAMIC WARRANTY TERMS CALCULATION (MANDATE 8X, 8E & GOST) ──────────────
 
 export interface WarrantyTermsResult {
@@ -1368,7 +1370,7 @@ export function formatLabOrderPrescriptionA4(
 
 	return [
 		"================================================================================",
-		"            НАРЯД-ЗАКАЗ В ЗУБОТЕХНИЧЕСКУЮ ЛАБОРАТОРИЮ (ФОРМА № ЗТЛ-1)           ",
+		"            НАРЯД-ЗАКАЗ В ЗУБОТЕХНИЧЕСКУЮ ЛАБОРАТОРИЮ           ",
 		"             (Официальное клиническое задание на изготовление протеза)           ",
 		"================================================================================",
 		"",
@@ -1484,9 +1486,12 @@ export const formatLabOrderFormZtl1A4Protocol = (
 	);
 };
 
+export const formatLabOrderProtocolA4 = formatLabOrderFormZtl1A4Protocol;
+
 export const labOrdersEngine = {
 	formatLabOrderPrescriptionA4,
 	formatLabOrderFormZtl1A4Protocol,
+	formatLabOrderProtocolA4,
 };
 
 export interface PatientLabOrderDto {

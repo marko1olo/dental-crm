@@ -97,6 +97,7 @@ describe("отчёты руководителю: дебиторка, переп�
 					organizationId: ctx.orgId,
 					patientId: ctx.patientNew,
 					amountRub: 4_500.5,
+					amountKopecks: 450_050n,
 					status: "paid",
 					paidAt: inPeriod,
 				})

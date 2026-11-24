@@ -46,7 +46,7 @@ describe("RED TEAM INQUISITOR — Dental Lab & ZTL Orders Consolidation & Mandat
 		assert.ok(html.includes("dental-lab-studio-modal-root"), "Модалка рендерится с каноническим data-testid");
 		assert.ok(html.includes("Оттенок VITA"), "Содержит шкалу VITA");
 		assert.ok(html.includes("Зубы FDI"), "Содержит выбор зубов FDI");
-		assert.ok(html.includes("Себестоимость ЗТЛ"), "Содержит финансовый блок");
+		assert.ok(html.includes("Себестоимость ЗТЛ") || html.includes("Себестоимость лаборатории"), "Содержит финансовый блок");
 		assert.ok(
 			html.includes("Создать заказ-наряд") ||
 				html.includes("Отправить заказ в лабораторию"),

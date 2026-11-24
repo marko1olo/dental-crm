@@ -10,6 +10,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { DocumentsStudioModal, type DocumentTemplateKey } from "./DocumentsStudioModal";
 import { MedicalRecordStudioModal } from "../emr/MedicalRecordStudioModal";
+import { useDocumentStore } from "../../store/documentStore/store";
 
 export const isDocumentsOrConsentsTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
@@ -47,6 +48,11 @@ export const getInitialTemplateFromUrl = (): DocumentTemplateKey => {
 export const DirectDocumentsLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(isDocumentsOrConsentsTarget);
 	const [initialTemplate, setInitialTemplate] = useState<DocumentTemplateKey>(getInitialTemplateFromUrl);
+	const [patientId, setPatientId] = useState<string | undefined>(() => {
+		if (typeof window === "undefined") return undefined;
+		const s = new URLSearchParams(window.location.search);
+		return s.get("patientId") || s.get("id") || undefined;
+	});
 	const [isOutpatientCard, setIsOutpatientCard] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
 		return window.location.hash.includes("outpatient-card") || window.location.search.includes("outpatient_card=1");
@@ -54,6 +60,9 @@ export const DirectDocumentsLauncher: React.FC = () => {
 
 	const handleOpen = useCallback((e?: Event) => {
 		const custom = (e as CustomEvent)?.detail;
+		if (custom?.patientId || custom?.id) {
+			setPatientId(custom.patientId || custom.id);
+		}
 		if (custom?.isOutpatientCard) {
 			setIsOutpatientCard(true);
 		} else if (custom?.template) {
@@ -67,6 +76,9 @@ export const DirectDocumentsLauncher: React.FC = () => {
 
 	const handleHash = useCallback(() => {
 		if (isDocumentsOrConsentsTarget()) {
+			const s = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+			const pId = s?.get("patientId") || s?.get("id") || undefined;
+			if (pId) setPatientId(pId);
 			const isCard = typeof window !== "undefined" && (window.location.hash.includes("outpatient-card") || window.location.search.includes("outpatient_card=1"));
 			setIsOutpatientCard(isCard);
 			setInitialTemplate(getInitialTemplateFromUrl());
@@ -76,21 +88,11 @@ export const DirectDocumentsLauncher: React.FC = () => {
 		}
 	}, []);
 
-	useEffect(() => {
-		window.addEventListener("dente:open-documents", handleOpen);
-		window.addEventListener("dente:open-outpatient-card", handleOpen);
-		window.addEventListener("hashchange", handleHash);
-
-		return () => {
-			window.removeEventListener("dente:open-documents", handleOpen);
-			window.removeEventListener("dente:open-outpatient-card", handleOpen);
-			window.removeEventListener("hashchange", handleHash);
-		};
-	}, [handleOpen, handleHash]);
-
-	const handleClose = () => {
+	const handleClose = useCallback(() => {
+		useDocumentStore.getState().resetDocumentForms();
 		setIsOpen(false);
 		setIsOutpatientCard(false);
+		setPatientId(undefined);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("docs");
@@ -104,7 +106,29 @@ export const DirectDocumentsLauncher: React.FC = () => {
 			const cleanHash = window.location.hash.replace(/#documents-studio|#docs-studio|#tax-certificate|#documents|#consents|#contract|#outpatient-card/g, "");
 			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, handleClose]);
+
+	useEffect(() => {
+		window.addEventListener("dente:open-documents", handleOpen);
+		window.addEventListener("dente:open-outpatient-card", handleOpen);
+		window.addEventListener("hashchange", handleHash);
+
+		return () => {
+			window.removeEventListener("dente:open-documents", handleOpen);
+			window.removeEventListener("dente:open-outpatient-card", handleOpen);
+			window.removeEventListener("hashchange", handleHash);
+		};
+	}, [handleOpen, handleHash]);
 
 	if (!isOpen) return null;
 
@@ -123,9 +147,11 @@ export const DirectDocumentsLauncher: React.FC = () => {
 
 	return (
 		<DocumentsStudioModal
+			key={patientId ?? "docs-studio"}
 			isOpen={isOpen}
 			onClose={handleClose}
 			initialTemplate={initialTemplate}
+			patientId={patientId}
 		/>
 	);
 };

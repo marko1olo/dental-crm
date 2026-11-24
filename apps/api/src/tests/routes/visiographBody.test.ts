@@ -1,5 +1,5 @@
 /**
- * СТОРОЖ ТЕЛА /api/imaging/visiograph-ai.
+ * СТОРОЖ ТЕЛА /api/imaging/ai-analysis.
  *
  * Раньше: bare cast `request.body as { imageBase64?: string }` — null/non-object
  * не проверялись как у соседних imaging-маршрутов через parseImagingPayload.
@@ -15,7 +15,7 @@ import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { registerImagingRoutes } from "../../routes/imaging.js";
 
-describe("Visiograph AI — body guard (null → 400, не 500)", () => {
+describe("Imaging AI Analysis — body guard (null → 400, не 500)", () => {
 	let app: FastifyInstance;
 	const savedEnv: Record<string, string | undefined> = {};
 
@@ -59,7 +59,7 @@ describe("Visiograph AI — body guard (null → 400, не 500)", () => {
 			payload?: any;
 		} = {
 			method: "POST",
-			url: "/api/imaging/visiograph-ai",
+			url: "/api/imaging/ai-analysis",
 			headers,
 		};
 		if (opts.rawPayload !== undefined) {

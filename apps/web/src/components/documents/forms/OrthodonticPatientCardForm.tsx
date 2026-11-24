@@ -324,7 +324,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 													step="0.1"
 													className="form-control form-control-sm"
 													value={upperIncisors[k]}
-													disabled={disabled}
 													onChange={(e) => setUpperIncisors((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
 												/>
 											</div>
@@ -343,7 +342,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 													step="0.1"
 													className="form-control form-control-sm"
 													value={lowerIncisors[k]}
-													disabled={disabled}
 													onChange={(e) => setLowerIncisors((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
 												/>
 											</div>
@@ -361,7 +359,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 										step="0.5"
 										className="form-control"
 										value={premolarWidthActual}
-										disabled={disabled}
 										onChange={(e) => setPremolarWidthActual(Number(e.target.value))}
 									/>
 								</div>
@@ -372,7 +369,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 										step="0.5"
 										className="form-control"
 										value={molarWidthActual}
-										disabled={disabled}
 										onChange={(e) => setMolarWidthActual(Number(e.target.value))}
 									/>
 								</div>
@@ -410,7 +406,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 										step="0.5"
 										className="form-control"
 										value={snaAngle}
-										disabled={disabled}
 										onChange={(e) => setSnaAngle(Number(e.target.value))}
 									/>
 								</div>
@@ -421,7 +416,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 										step="0.5"
 										className="form-control"
 										value={snbAngle}
-										disabled={disabled}
 										onChange={(e) => setSnbAngle(Number(e.target.value))}
 									/>
 								</div>
@@ -432,7 +426,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 										step="0.5"
 										className="form-control"
 										value={anbAngle}
-										disabled={disabled}
 										onChange={(e) => setAnbAngle(Number(e.target.value))}
 									/>
 								</div>
@@ -452,7 +445,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 									<select
 										className="form-control"
 										value={profileType}
-										disabled={disabled}
 										onChange={(e) => setProfileType(e.target.value as FacialProfileType)}
 									>
 										<option value="straight">Прямой гармоничный</option>
@@ -465,7 +457,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 									<select
 										className="form-control"
 										value={lipCompetence}
-										disabled={disabled}
 										onChange={(e) => setLipCompetence(e.target.value as LipCompetenceType)}
 									>
 										<option value="competent_closed">Сомкнуты в покое без напряжения</option>
@@ -485,7 +476,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 								<select
 									className="form-control"
 									value={applianceType}
-									disabled={disabled}
 									onChange={(e) => setApplianceType(e.target.value as OrthodonticAppliancePlan["applianceType"])}
 								>
 									<option value="metal_braces_self_ligating">Брекет-система металлическая самолигирующая</option>
@@ -507,7 +497,6 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 									max={60}
 									className="form-control"
 									value={durationMonths}
-									disabled={disabled}
 									onChange={(e) => setDurationMonths(Number(e.target.value))}
 								/>
 							</div>

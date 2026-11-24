@@ -262,7 +262,12 @@ export async function handleEndCall(
 							: {}),
 						...(idempotencyKey ? { idempotencyKey } : {}),
 					})
-					.where(eq(communicationEvents.id, existing.id));
+					.where(
+						and(
+							eq(communicationEvents.id, existing.id),
+							eq(communicationEvents.organizationId, orgId),
+						),
+					);
 			} else {
 				await tx.insert(communicationEvents).values({
 					organizationId: orgId,
@@ -308,7 +313,12 @@ export async function handleEndCall(
 							lastContactedAt: new Date(),
 							...(body.notes ? { notes: body.notes } : {}),
 						})
-						.where(eq(crmLeads.id, existing[0].id));
+						.where(
+							and(
+								eq(crmLeads.id, existing[0].id),
+								eq(crmLeads.organizationId, orgId),
+							),
+						);
 				} else {
 					const attribution = detectMarketingAttribution({
 						utm_source: body.utm_source,
@@ -408,7 +418,12 @@ export async function cleanupStaleRingingCalls(
 					status: "failed",
 					message: sql`coalesce(${communicationEvents.message}, '') || ' [Авто-завершение: таймаут звонка >300с]'`,
 				})
-				.where(eq(communicationEvents.id, row.id));
+				.where(
+					and(
+						eq(communicationEvents.id, row.id),
+						eq(communicationEvents.organizationId, row.organizationId),
+					),
+				);
 
 			broadcastsToEmit.push({
 				organizationId: row.organizationId,

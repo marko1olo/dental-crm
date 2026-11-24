@@ -54,8 +54,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.select({
 			category: serviceCatalogItems.category,
 			specialty: serviceCatalogItems.specialty,
-			revenueKopecks: sql<number>`coalesce(sum(coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint) * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`,
-			revenueRub: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceRub}, 0) * coalesce(${treatmentItems.quantity}, 1)), 0)`,
+			revenueKopecks: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`,
 			visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
 			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
 		})
@@ -195,7 +194,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				planKop = Math.round(hours * HOURLY_TARGET_KOPECKS[departmentKey]);
 			} else if (factKop > 0) {
 				// Честный ориентир целевого плана (+15% от факта) при отсутствии явного расписания смен
-				planKop = Math.round(factKop * 1.15);
+				planKop = Number((BigInt(factKop) * 115n) / 100n);
 			} else {
 				planKop = 0;
 			}
@@ -229,7 +228,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	// Платежи врача группируются строго по времени проведения платежа coalesce(payments.paidAt, payments.createdAt),
 	// а не отсекаются по дате appointments.startsAt.
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	const doctorRevenueSubquery = db
 		.select({
 			doctorUserId: appointments.doctorUserId,
@@ -338,7 +337,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		});
 
 	// 4. Топ процедур по выручке и популярности
-	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint) * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`;
+	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`;
 	const procedureStats = await db
 		.select({
 			id: treatmentItems.serviceId,

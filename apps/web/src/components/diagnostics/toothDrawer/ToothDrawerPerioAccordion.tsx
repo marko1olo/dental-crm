@@ -65,7 +65,18 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 						if (typeof match.mobility === "number") {
 							setMobility(match.mobility as 0 | 1 | 2 | 3);
 						}
-						const sites = [match.distoBuccal, match.midBuccal, match.mesioBuccal, match.distoLingual, match.midLingual, match.mesioLingual];
+						// Гидратация кэша SEPA: если match.distoBuccal равен undefined, маппим из массива сайтов SEPA (siteCode: "DV", etc.)
+						const sepaSites: Array<{ siteCode?: string; probingDepthMm?: number; bleedingOnProbing?: boolean; calculus?: boolean }> =
+							Array.isArray(match.sites)
+								? (match.sites as Array<{ siteCode?: string; probingDepthMm?: number; bleedingOnProbing?: boolean; calculus?: boolean }>)
+								: Array.isArray(parsed.sites)
+									? (parsed.sites as Array<{ toothNumber?: number; siteCode?: string; probingDepthMm?: number; bleedingOnProbing?: boolean; calculus?: boolean }>).filter(
+											(s) => s.toothNumber === toothNumber,
+										)
+									: [];
+						const perioSites = [match.distoBuccal, match.midBuccal, match.mesioBuccal, match.distoLingual, match.midLingual, match.mesioLingual];
+						const sites = perioSites.some((s) => s !== undefined) ? perioSites : sepaSites;
+
 						const depths = sites.map((s) => s?.probingDepthMm).filter((d): d is number => typeof d === "number");
 						if (depths.length > 0) {
 							setProbingDepth(Math.max(...depths));
@@ -98,15 +109,29 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 				const isImplant = Boolean(existingTooth?.isImplant);
 				const isMissing = Boolean(existingTooth?.isMissing);
 
-				const updateSite = (existingSite: { gingivalMarginMm?: number; plaque?: boolean; suppuration?: boolean } | undefined) => {
-					const prevGm = typeof existingSite?.gingivalMarginMm === "number" ? existingSite.gingivalMarginMm : 0;
+				const findSepaSite = (code: string) => {
+					if (Array.isArray(existingTooth?.sites)) {
+						return existingTooth.sites.find((s: { siteCode?: string }) => s.siteCode === code);
+					}
+					return undefined;
+				};
+
+				const updateSite = (
+					existingSite: { gingivalMarginMm?: number; plaque?: boolean; suppuration?: boolean } | undefined,
+					sepaCode?: string,
+				) => {
+					const sepaMatch = sepaCode ? findSepaSite(sepaCode) : undefined;
+					const gm = existingSite?.gingivalMarginMm ?? sepaMatch?.gingivalMarginMm;
+					const prevGm = typeof gm === "number" ? gm : 0;
+					const plaque = existingSite?.plaque ?? sepaMatch?.plaque ?? newBop;
+					const supp = existingSite?.suppuration ?? sepaMatch?.suppuration ?? false;
 					return {
 						probingDepthMm: newDepth,
 						gingivalMarginMm: prevGm,
 						bleedingOnProbing: newBop,
 						calculus: newCalc,
-						plaque: existingSite?.plaque ?? newBop,
-						suppuration: existingSite?.suppuration ?? false,
+						plaque,
+						suppuration: supp,
 						calMm: newDepth + prevGm,
 					};
 				};
@@ -117,12 +142,20 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 					isImplant,
 					mobility: newMobility,
 					furcation: preservedFurcation,
-					distoBuccal: updateSite(existingTooth?.distoBuccal),
-					midBuccal: updateSite(existingTooth?.midBuccal),
-					mesioBuccal: updateSite(existingTooth?.mesioBuccal),
-					distoLingual: updateSite(existingTooth?.distoLingual),
-					midLingual: updateSite(existingTooth?.midLingual),
-					mesioLingual: updateSite(existingTooth?.mesioLingual),
+					distoBuccal: updateSite(existingTooth?.distoBuccal, "DV"),
+					midBuccal: updateSite(existingTooth?.midBuccal, "V"),
+					mesioBuccal: updateSite(existingTooth?.mesioBuccal, "MV"),
+					distoLingual: updateSite(existingTooth?.distoLingual, "DL"),
+					midLingual: updateSite(existingTooth?.midLingual, "L"),
+					mesioLingual: updateSite(existingTooth?.mesioLingual, "ML"),
+					sites: [
+						{ toothNumber, siteCode: "DV", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+						{ toothNumber, siteCode: "V", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+						{ toothNumber, siteCode: "MV", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+						{ toothNumber, siteCode: "DL", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+						{ toothNumber, siteCode: "L", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+						{ toothNumber, siteCode: "ML", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
+					],
 				};
 
 				if (idx >= 0) {
@@ -152,7 +185,10 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 
 			void fetch(`/api/periodontogram/${encodeURIComponent(patientId.trim())}`, {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: getDenteAuthHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				}),
 				body: JSON.stringify({
 					teeth: [{ toothNumber, isPresent: true, isImplant: Boolean(existingToothMeta?.isImplant), mobility: newMobility, furcationBuccal: furcationB, furcationLingual: furcationL }],
 					sites: [

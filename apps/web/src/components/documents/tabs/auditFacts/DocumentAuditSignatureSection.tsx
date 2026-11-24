@@ -31,21 +31,21 @@ export const DocumentAuditSignatureSection: React.FC<DocumentAuditSignatureSecti
 		return (
 			<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-2.5">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">Сведения о подписании и выдаче</span>
-					<span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-500/10 text-[var(--teal)] border border-teal-500/30">
+					<span className="text-xs font-bold text-[var(--ink)]">Сведения о подписании и выдаче</span>
+					<span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30">
 						{documentSourceStatusLabels?.[facts.sourceStatus] ?? "Сверено с источником"}
 					</span>
 				</div>
 
 				{attestation ? (
-					<div className={`p-2.5 px-3 rounded-lg border flex flex-col gap-1.5 ${isSmsOtp ? "bg-teal-500/10 border-[var(--teal)]" : "bg-[var(--paper-soft)] border-[var(--line)]"}`}>
+					<div className={`p-2.5 px-3 rounded-lg border flex flex-col gap-1.5 ${isSmsOtp ? "bg-[var(--primary)]/10 border border-[var(--primary)]" : "bg-[var(--paper-soft)] border-[var(--line)]"}`}>
 						<div className="flex items-center gap-2">
 							{isSmsOtp ? (
-								<Smartphone className="w-4 h-4 text-[var(--teal)] shrink-0" />
+								<Smartphone className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							) : isTablet ? (
-								<CheckCheck className="w-4 h-4 text-[var(--teal)] shrink-0" />
+								<CheckCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							) : (
-								<FileSignature className="w-4 h-4 text-[var(--teal)] shrink-0" />
+								<FileSignature className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							)}
 							<strong className="text-xs font-bold text-[var(--ink)]">
 								{isSmsOtp

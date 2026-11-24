@@ -78,6 +78,7 @@ export const validApexReadings: ReadonlySet<string> = new Set([
  */
 export const endoUpsertPayloadSchema = z
 	.object({
+		toothNumber: z.number().int().min(11).max(85).optional().nullable(),
 		canals: z.array(endoCanalMeasurementSchema).default([]),
 		irrigation: z.string().trim().max(1000).optional().nullable(),
 		rotarySystem: z.string().trim().max(1000).optional().nullable(),
@@ -229,12 +230,16 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		});
 
 		if (!tooth) {
-			return reply.send({
-				success: true,
+			const emptyPayload = {
 				toothNumber,
 				state: "Healthy",
 				clinicalData: null,
 				canalMeasurements: [],
+			};
+			return reply.send({
+				success: true,
+				data: emptyPayload,
+				...emptyPayload,
 			});
 		}
 
@@ -258,14 +263,19 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			};
 		}
 
-		return reply.send({
-			success: true,
+		const payload = {
 			toothNumber: tooth.toothNumber,
 			state: tooth.state,
 			surfaces: tooth.surfaces,
 			notes: tooth.notes && !tooth.notes.startsWith("{") ? tooth.notes : (resolvedClinicalData?.notes || ""),
 			canalMeasurements: tooth.canalMeasurements || resolvedClinicalData?.canals || [],
 			clinicalData: resolvedClinicalData,
+		};
+
+		return reply.send({
+			success: true,
+			data: payload,
+			...payload,
 		});
 	};
 
@@ -647,7 +657,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		}
 	};
 
-	// Регистрация обоих вариантов путей для 100% совместимости
+	// Регистрация канонического пути (в хендлере поддержан алиас :tooth)
 	app.get("/api/patients/:patientId/tooth-states/:toothNumber/endo", getEndoHandler);
 	app.post("/api/patients/:patientId/tooth-states/:toothNumber/endo", postEndoHandler);
 }

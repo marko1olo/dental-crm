@@ -285,7 +285,12 @@ export async function handleStornoRequest(
 							status: newBatchRemaining > 0 ? "active" : existingBatch.status,
 							updatedAt: new Date(),
 						})
-						.where(eq(stockBatches.id, existingBatch.id));
+						.where(
+							and(
+								eq(stockBatches.id, existingBatch.id),
+								eq(stockBatches.organizationId, organizationId),
+							),
+						);
 					restoredBatchId = existingBatch.id;
 				} else {
 					const defaultExpDate = targetItem.expirationDate || getDefaultExpirationDate();

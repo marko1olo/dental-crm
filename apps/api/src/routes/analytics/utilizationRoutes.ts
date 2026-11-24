@@ -48,20 +48,27 @@ export interface DoctorProfitabilityItem {
 	doctorId: string | null;
 	name: string;
 	revenue: number;
+	revenueKopecks?: number | undefined;
 	appointmentsCount: number;
 	avgTicketRub: number;
+	avgTicketKopecks?: number | undefined;
 	workedHours: number;
 	hourlyRevenueRub: number;
+	hourlyRevenueKopecks?: number | undefined;
 	margin: number | null;
 	completionRate: number | null;
 	servicesCount: number;
-	catalogServicesCount?: number;
-	services804nCount?: number;
+	catalogServicesCount?: number | undefined;
+	services804nCount?: number | undefined;
 	labOrdersCount: number;
 	labOrdersCostRub: number;
-	materialsCostRub?: number;
+	labOrdersCostKopecks?: number | undefined;
+	materialsCostRub?: number | undefined;
+	materialsCostKopecks?: number | undefined;
 	doctorPayrollRub: number;
+	doctorPayrollKopecks?: number | undefined;
 	clinicMarginRub: number;
+	clinicMarginKopecks?: number | undefined;
 }
 
 import {
@@ -213,7 +220,7 @@ export async function calculateDoctorProfitability(
 	startDate?: Date,
 ): Promise<DoctorProfitabilityItem[]> {
 	// [SEV-3.1] Прямое суммирование копеек amountKopecks
-	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	const docProfRes = await db
 		.select({
 			doctorId: appointments.doctorUserId,
@@ -281,6 +288,7 @@ export async function calculateDoctorProfitability(
 		.select({
 			doctorId: labOrders.doctorId,
 			labOrdersCount: sql<number>`count(*)::int`,
+			labOrdersCostKopecks: sql<number>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, 0)), 0)::bigint`,
 			labOrdersCostRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
@@ -295,8 +303,11 @@ export async function calculateDoctorProfitability(
 	const docLabMap = new Map(
 		docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCount || 0)]),
 	);
-	const docLabCostMap = new Map(
-		docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCostRub || 0)]),
+	const docLabCostKopecksMap = new Map(
+		docLabRes.map((l) => [
+			l.doctorId ?? "unassigned",
+			Number(l.labOrdersCostKopecks || rublesToKopecks(Number(l.labOrdersCostRub || 0))),
+		]),
 	);
 
 	// 2c. Зарплатные ведомости:
@@ -324,15 +335,15 @@ export async function calculateDoctorProfitability(
 		)
 		.groupBy(doctorPayrollStatements.doctorId, doctorPayrollStatements.isFinalized);
 
-	const finalizedPayrollMap = new Map<string, number>();
-	const draftPayrollMap = new Map<string, number>();
+	const finalizedPayrollKopMap = new Map<string, number>();
+	const draftPayrollKopMap = new Map<string, number>();
 
 	for (const p of docPayrollRes) {
-		const rub = kopecksToRubles(Number(p.payrollKopecks || 0));
+		const kop = Number(p.payrollKopecks || 0);
 		if (p.isFinalized) {
-			finalizedPayrollMap.set(p.doctorId, (finalizedPayrollMap.get(p.doctorId) || 0) + rub);
+			finalizedPayrollKopMap.set(p.doctorId, (finalizedPayrollKopMap.get(p.doctorId) || 0) + kop);
 		} else {
-			draftPayrollMap.set(p.doctorId, (draftPayrollMap.get(p.doctorId) || 0) + rub);
+			draftPayrollKopMap.set(p.doctorId, (draftPayrollKopMap.get(p.doctorId) || 0) + kop);
 		}
 	}
 
@@ -365,6 +376,7 @@ export async function calculateDoctorProfitability(
 	const docMaterialsRes = await db
 		.select({
 			doctorId: appointments.doctorUserId,
+			materialsCostKopecks: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(coalesce(${inventoryTransactions.unitCostKopecks}, round(${inventoryTransactions.unitCostRub} * 100)::bigint), 0)), 0)::bigint`,
 			materialsCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
 		})
 		.from(inventoryTransactions)
@@ -378,8 +390,11 @@ export async function calculateDoctorProfitability(
 			),
 		)
 		.groupBy(appointments.doctorUserId);
-	const docMaterialsMap = new Map(
-		docMaterialsRes.map((m) => [m.doctorId ?? "unassigned", Number(m.materialsCostRub || 0)]),
+	const docMaterialsKopecksMap = new Map(
+		docMaterialsRes.map((m) => [
+			m.doctorId ?? "unassigned",
+			Number(m.materialsCostKopecks || rublesToKopecks(Number(m.materialsCostRub || 0))),
+		]),
 	);
 
 	const allDoctorIds = Array.from(
@@ -397,10 +412,10 @@ export async function calculateDoctorProfitability(
 	// если закрытой ведомости (isFinalized: true) или черновика еще нет в БД.
 	// Исключает искажение маржинальности (0 ₽ ФОТ) в середине расчетного месяца.
 	const missingDocIds = allDoctorIds.filter(
-		(id): id is string => Boolean(id && !finalizedPayrollMap.has(id) && !draftPayrollMap.has(id)),
+		(id): id is string => Boolean(id && !finalizedPayrollKopMap.has(id) && !draftPayrollKopMap.has(id)),
 	);
 
-	const operativePayrollMap = new Map<string, number>();
+	const operativePayrollKopMap = new Map<string, number>();
 	if (missingDocIds.length > 0) {
 		const fromDate = startDate ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0);
 		const toDate = new Date();
@@ -440,17 +455,17 @@ export async function calculateDoctorProfitability(
 					});
 
 					const payoutKop = payrollResult.earnedBaseCommissionKop || payrollResult.netPayoutToDoctorKop;
-					operativePayrollMap.set(docId, kopecksToRubles(payoutKop));
+					operativePayrollKopMap.set(docId, payoutKop);
 				} catch {
 					// Fallback на оперативный расчет по ставке врача от чистой базы выручки (выручка минус ЗТЛ и материалы)
 					const docProf = docProfRes.find((p) => p.doctorId === docId);
 					const docRevenueKopecks = Number(docProf?.revenueKopecks || 0);
-					const docLabKopecks = rublesToKopecks(docLabCostMap.get(docId) || 0);
-					const docMatKopecks = rublesToKopecks(docMaterialsMap.get(docId) || 0);
+					const docLabKopecks = docLabCostKopecksMap.get(docId) || 0;
+					const docMatKopecks = docMaterialsKopecksMap.get(docId) || 0;
 					const netBaseKopecks = Math.max(0, docRevenueKopecks - docLabKopecks - docMatKopecks);
 					const commissionPct = commMap.get(docId) ?? 25;
 					const fallbackPayoutKopecks = calculatePercentDiscountKopecks(netBaseKopecks, commissionPct);
-					operativePayrollMap.set(docId, kopecksToRubles(fallbackPayoutKopecks));
+					operativePayrollKopMap.set(docId, fallbackPayoutKopecks);
 				}
 			}),
 		);
@@ -462,41 +477,51 @@ export async function calculateDoctorProfitability(
 				(p) => (p.doctorId ?? null) === (docId ?? null),
 			);
 			const appt = docApptMap.get(docId ?? "unassigned");
-			const revenue = kopecksToRubles(Number(prof?.revenueKopecks || 0));
+			const revenueKopecks = Number(prof?.revenueKopecks || 0);
+			const revenue = kopecksToRubles(revenueKopecks);
 			const appointmentsCount = Number(appt?.totalAppointments || 0);
 			const completedCount = Number(appt?.completedAppointments || 0);
 			const workedMinutes = Number(appt?.totalMinutes || 0);
 			const workedHours = Math.round((workedMinutes / 60) * 10) / 10;
-			const avgTicketRub =
+			const avgTicketKopecks =
 				completedCount > 0
-					? Math.round(revenue / completedCount)
+					? Math.round(revenueKopecks / completedCount)
 					: appointmentsCount > 0
-						? Math.round(revenue / appointmentsCount)
+						? Math.round(revenueKopecks / appointmentsCount)
 						: 0;
-			const hourlyRevenueRub =
+			const avgTicketRub = kopecksToRubles(avgTicketKopecks);
+			const hourlyRevenueKopecks =
 				workedMinutes > 0
-					? Math.round(revenue / (workedMinutes / 60))
+					? Math.round(revenueKopecks / (workedMinutes / 60))
 					: 0;
+			const hourlyRevenueRub = kopecksToRubles(hourlyRevenueKopecks);
 			const completionRate =
 				appointmentsCount > 0
 					? Math.round((completedCount / appointmentsCount) * 100)
 					: null;
 			const servicesCount = docServicesMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
-			const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
-			const materialsCostRub = docMaterialsMap.get(docId ?? "unassigned") || 0;
-			const doctorPayrollRub = docId
-				? (finalizedPayrollMap.get(docId) ??
-					draftPayrollMap.get(docId) ??
-					operativePayrollMap.get(docId) ??
+			const labOrdersCostKopecks = docLabCostKopecksMap.get(docId ?? "unassigned") || 0;
+			const labOrdersCostRub = kopecksToRubles(labOrdersCostKopecks);
+			const materialsCostKopecks = docMaterialsKopecksMap.get(docId ?? "unassigned") || 0;
+			const materialsCostRub = kopecksToRubles(materialsCostKopecks);
+			const doctorPayrollKopecks = docId
+				? (finalizedPayrollKopMap.get(docId) ??
+					draftPayrollKopMap.get(docId) ??
+					operativePayrollKopMap.get(docId) ??
 					0)
 				: 0;
+			const doctorPayrollRub = kopecksToRubles(doctorPayrollKopecks);
 			// [SEV-2.4] Канонический паритет с P&L: Выручка минус ЗТЛ, материалы со склада и ФОТ врача (честный учет отрицательной маржи)
-			const clinicMarginRub = revenue > 0
-				? revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub
+			const clinicMarginKopecks = revenueKopecks > 0
+				? revenueKopecks - labOrdersCostKopecks - doctorPayrollKopecks - materialsCostKopecks
 				: 0;
-			const margin = revenue > 0
-				? Math.round((clinicMarginRub / revenue) * 100)
+			const clinicMarginRub = kopecksToRubles(clinicMarginKopecks);
+			const marginRatio = revenueKopecks > 0
+				? clinicMarginKopecks / revenueKopecks
+				: null;
+			const margin = marginRatio !== null
+				? Math.round(marginRatio * 100)
 				: null;
 
 			return {
@@ -505,10 +530,13 @@ export async function calculateDoctorProfitability(
 					? docMap.get(docId) || "Врач клиники"
 					: "Общая касса",
 				revenue,
+				revenueKopecks,
 				appointmentsCount,
 				avgTicketRub,
+				avgTicketKopecks,
 				workedHours,
 				hourlyRevenueRub,
+				hourlyRevenueKopecks,
 				margin,
 				completionRate,
 				servicesCount,
@@ -516,9 +544,13 @@ export async function calculateDoctorProfitability(
 				services804nCount: servicesCount,
 				labOrdersCount,
 				labOrdersCostRub,
+				labOrdersCostKopecks,
 				materialsCostRub,
+				materialsCostKopecks,
 				doctorPayrollRub,
+				doctorPayrollKopecks,
 				clinicMarginRub,
+				clinicMarginKopecks,
 			};
 		})
 		.filter(
@@ -611,7 +643,7 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			// [ANL-04] Чтение фактических расходов клиники по строгим реляционным категориям (PostgreSQL 18 SSOT):
 			// 1) metadata->>'category' (rent, utilities, salaries, marketing, etc.)
 			// 2) reasonCode регламентированного справочника (100: аренда, 1: ФОТ, 10/7: коммуналка/связь, 6: маркетинг, 4: санпин)
-			const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(${cashOperations.amountRub} * 100)::bigint)`;
+			const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, 0)::bigint`;
 			const [actualExpenses] = await db
 				.select({
 					rentKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,

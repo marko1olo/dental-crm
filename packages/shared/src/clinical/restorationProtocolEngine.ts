@@ -3,9 +3,9 @@
  *
  * Чистая клиническая бизнес-логика терапевтической реставрации зубов:
  * - Классификация кариозных полостей по Блэку (Black Cavity Classes I–VI).
- * - Каталог сертифицированных реставрационных материалов (Filtek Ultimate, Estelite Asteria, Harmonize, SDR Plus Flow).
- * - Каталог адгезивных протоколов (OptiBond FL, Single Bond 2, Clearfil SE Bond, OptiBond Universal).
- * - Системы финишной обработки и полировки (Sof-Lex, Enhance, Prisma Gloss, Bausch 40 мкм).
+ * - Каталог сертифицированных реставрационных материалов (светоотверждаемые наногибриды, субмикронные композиты, Bulk-fill).
+ * - Каталог адгезивных протоколов (IV, V, VI, VIII поколения адгезивных систем).
+ * - Системы финишной обработки и полировки (абразивные диски, эластичные полиры, алмазная паста, артикуляционная бумага).
  * - Расчет гарантийных сроков и срока службы по стандартам Стоматологической Ассоциации России (СтАР).
  * - Привязка к Номенклатуре медицинских услуг Минздрава РФ (Приказ № 804н).
  * - Полное соблюдение Мандата 8d: ноль мультяшных эмодзи в протоколах.
@@ -38,6 +38,7 @@ export type CompositeMaterialBrand =
 export interface CompositeMaterialInfo {
 	readonly id: CompositeMaterialBrand;
 	readonly tradeNameRu: string;
+	readonly shortLabelRu?: string | undefined;
 	readonly manufacturer: string;
 	readonly category: "nanohybrid" | "submicron" | "bulk_fill_flow" | "flowable" | "giomer";
 	readonly fillerPercentageWeight: number;
@@ -47,56 +48,63 @@ export interface CompositeMaterialInfo {
 export const COMPOSITE_MATERIALS_CATALOG: Record<CompositeMaterialBrand, CompositeMaterialInfo> = {
 	filtek_ultimate: {
 		id: "filtek_ultimate",
-		tradeNameRu: "Filtek Ultimate (3M ESPE)",
-		manufacturer: "3M ESPE (США / Германия)",
+		tradeNameRu: "Светоотверждаемый наногибридный композит",
+		shortLabelRu: "Наногибридный композит",
+		manufacturer: "Универсальный реставрационный нанокомпозит",
 		category: "nanohybrid",
 		fillerPercentageWeight: 78.5,
 		indicationRu: "Универсальный нанокластерный композит для высокоэстетичных реставраций жевательных и фронтальных зубов",
 	},
 	estelite_asteria: {
 		id: "estelite_asteria",
-		tradeNameRu: "Estelite Asteria (Tokuyama Dental)",
-		manufacturer: "Tokuyama Dental (Япония)",
+		tradeNameRu: "Субмикронный композит естественной эстетики",
+		shortLabelRu: "Субмикронный композит",
+		manufacturer: "Субмикронный реставрационный материал",
 		category: "submicron",
 		fillerPercentageWeight: 82.0,
 		indicationRu: "Субмикронный сферический композит упрощенной схемы стратификации с эффектом хамелеона",
 	},
 	harmonize: {
 		id: "harmonize",
-		tradeNameRu: "Harmonize (Kerr)",
-		manufacturer: "Kerr (США)",
+		tradeNameRu: "Универсальный наногибридный композит",
+		shortLabelRu: "Универсальный наногибрид",
+		manufacturer: "Высоконаполненный наногибридный композит",
 		category: "nanohybrid",
 		fillerPercentageWeight: 81.0,
-		indicationRu: "Универсальный наногибридный композит с технологией адаптивного отклика (ART)",
+		indicationRu: "Универсальный наногибридный композит с технологией адаптивного отклика",
 	},
 	sdr_plus_flow: {
 		id: "sdr_plus_flow",
-		tradeNameRu: "SDR Plus Flowable (Dentsply Sirona)",
-		manufacturer: "Dentsply Sirona (Германия)",
+		tradeNameRu: "Текучий объемный композит (Bulk-fill)",
+		shortLabelRu: "Bulk-fill композит",
+		manufacturer: "Низкомодульный объемный композит",
 		category: "bulk_fill_flow",
 		fillerPercentageWeight: 68.0,
 		indicationRu: "Текучий базовый композит с самовыравниванием и компенсацией полимеризационного стресса (слой до 4 мм)",
 	},
 	filtek_flow: {
 		id: "filtek_flow",
-		tradeNameRu: "Filtek Supreme Flowable (3M)",
-		manufacturer: "3M ESPE (США)",
+		tradeNameRu: "Текучий светоотверждаемый нанокомпозит",
+		shortLabelRu: "Текучий нанокомпозит",
+		manufacturer: "Текучий реставрационный нанокомпозит",
 		category: "flowable",
 		fillerPercentageWeight: 65.0,
 		indicationRu: "Текучий нанокомпозит для адаптивного лайнерного слоя, реставрации клиновидных дефектов и мелких полостей",
 	},
 	beautifil_flow: {
 		id: "beautifil_flow",
-		tradeNameRu: "Beautifil Flow Plus F00/F03 (Shofu)",
-		manufacturer: "Shofu Inc. (Япония)",
+		tradeNameRu: "Биоактивный инжектируемый гибрид",
+		shortLabelRu: "Биоактивный гиомер",
+		manufacturer: "Биоактивный фторвыделяющий гибрид",
 		category: "giomer",
 		fillerPercentageWeight: 67.0,
-		indicationRu: "Биоактивный инжектируемый гибрид Giomer с длительным выделением и накоплением ионов фтора",
+		indicationRu: "Биоактивный инжектируемый гибрид с длительным выделением и накоплением ионов фтора",
 	},
 	gradia_direct: {
 		id: "gradia_direct",
-		tradeNameRu: "GC Gradia Direct (GC Corporation)",
-		manufacturer: "GC (Япония)",
+		tradeNameRu: "Микрогибридный композит светового отверждения",
+		shortLabelRu: "Микрогибридный композит",
+		manufacturer: "Светоотверждаемый микрогибрид",
 		category: "nanohybrid",
 		fillerPercentageWeight: 77.0,
 		indicationRu: "Светоотверждаемый микрогибридный композит с широким выбором опаковых и эмалевых оттенков",
@@ -113,6 +121,7 @@ export type AdhesiveSystemBrand =
 export interface AdhesiveSystemInfo {
 	readonly id: AdhesiveSystemBrand;
 	readonly tradeNameRu: string;
+	readonly shortLabelRu?: string | undefined;
 	readonly manufacturer: string;
 	readonly generation: number;
 	readonly technique: "total_etch" | "self_etch" | "universal_selective_etch";
@@ -124,28 +133,31 @@ export interface AdhesiveSystemInfo {
 export const ADHESIVE_SYSTEMS_CATALOG: Record<AdhesiveSystemBrand, AdhesiveSystemInfo> = {
 	optibond_fl: {
 		id: "optibond_fl",
-		tradeNameRu: "OptiBond FL (Kerr)",
-		manufacturer: "Kerr (США)",
+		tradeNameRu: "Адгезивная система тотального протравливания (IV поколение)",
+		shortLabelRu: "IV поколение (Total-etch)",
+		manufacturer: "Двухкомпонентная адгезивная система тотального травления",
 		generation: 4,
 		technique: "total_etch",
 		etchingTimeEnamelSeconds: 15,
 		etchingTimeDentinSeconds: 10,
-		protocolSummaryRu: "4-е поколение (золотой стандарт адгезии): протравливание 37% H3PO4, праймер 20 сек, адгезив с 48% наполнителем, полимеризация 20 сек",
+		protocolSummaryRu: "4-е поколение (золотой стандарт адгезии): протравливание 37% H3PO4, праймер 20 сек, высоконаполненный адгезив (48%), полимеризация 20 сек",
 	},
 	single_bond_2: {
 		id: "single_bond_2",
-		tradeNameRu: "Single Bond 2 / Scotchbond 1 XT (3M)",
-		manufacturer: "3M ESPE (США)",
+		tradeNameRu: "Однокомпонентный адгезив тотального протравливания (V поколение)",
+		shortLabelRu: "V поколение (Однобутылочный)",
+		manufacturer: "Однокомпонентная адгезивная система тотального травления",
 		generation: 5,
 		technique: "total_etch",
 		etchingTimeEnamelSeconds: 15,
 		etchingTimeDentinSeconds: 10,
-		protocolSummaryRu: "5-е поколение (1-бутылочный тотальный бондинг): протравливание 37% H3PO4 15 сек, 2 слоя адгезива, бережное раздувание, полимеризация 10 сек",
+		protocolSummaryRu: "5-е поколение (однобутылочный тотальный бондинг): протравливание 37% H3PO4 15 сек, 2 слоя адгезива, бережное раздувание, полимеризация 10 сек",
 	},
 	clearfil_se_bond: {
 		id: "clearfil_se_bond",
-		tradeNameRu: "Clearfil SE Bond (Kuraray)",
-		manufacturer: "Kuraray Noritake (Япония)",
+		tradeNameRu: "Самопротравливающая адгезивная система (VI поколение)",
+		shortLabelRu: "VI поколение (Self-etch)",
+		manufacturer: "Двухшаговая самопротравливающая адгезивная система",
 		generation: 6,
 		technique: "self_etch",
 		etchingTimeEnamelSeconds: 0,
@@ -154,13 +166,14 @@ export const ADHESIVE_SYSTEMS_CATALOG: Record<AdhesiveSystemBrand, AdhesiveSyste
 	},
 	optibond_universal: {
 		id: "optibond_universal",
-		tradeNameRu: "OptiBond Universal (Kerr)",
-		manufacturer: "Kerr (США)",
+		tradeNameRu: "Универсальная самопротравливающая адгезивная система (VIII поколение)",
+		shortLabelRu: "VIII поколение (Universal)",
+		manufacturer: "Универсальный однокомпонентный адгезив",
 		generation: 8,
 		technique: "universal_selective_etch",
 		etchingTimeEnamelSeconds: 15,
 		etchingTimeDentinSeconds: 0,
-		protocolSummaryRu: "8-е поколение (универсальный однокомпонентный адгезив с мономером GPDM): селективное протравливание эмали, втирание 20 сек, полимеризация 10 сек",
+		protocolSummaryRu: "8-е поколение (универсальный однокомпонентный адгезив с функциональным мономером GPDM): селективное протравливание эмали, втирание 20 сек, полимеризация 10 сек",
 	},
 };
 
@@ -168,22 +181,22 @@ export const ADHESIVE_SYSTEMS_CATALOG: Record<AdhesiveSystemBrand, AdhesiveSyste
 export const FINISHING_SYSTEMS_CATALOG = [
 	{
 		id: "soflex_discs",
-		nameRu: "Диски шлифовальные 3M Sof-Lex (от грубых до супермягких)",
+		nameRu: "Полировочные абразивные диски различной дисперсности (грубые / средние / мягкие)",
 		purposeRu: "Контурирование проксимальных поверхностей и режущего края",
 	},
 	{
 		id: "enhance_cups",
-		nameRu: "Полировочные головки Dentsply Enhance (чашечки, конусы, диски)",
+		nameRu: "Полировочные эластичные головки (чашечки, конусы, диски)",
 		purposeRu: "Финишная обработка анатомических скатов бугров и фиссур без абразивных повреждений",
 	},
 	{
 		id: "prisma_gloss",
-		nameRu: "Алмазная полировочная паста Prisma Gloss (Regular / Extra Fine)",
+		nameRu: "Алмазная полировочная паста для финишного блеска",
 		purposeRu: "Создание сухого зеркального блеска реставрации со щеткой из натуральной щетины",
 	},
 	{
 		id: "bausch_articulating_paper",
-		nameRu: "Артикуляционная бумага Bausch 40 мкм с прогрессивным выделением цвета",
+		nameRu: "Артикуляционная бумага 40 мкм с прогрессивным выделением цвета",
 		purposeRu: "Выверка статических и динамических окклюзионных контактов (латеро- и протрузия)",
 	},
 ] as const;
@@ -448,14 +461,14 @@ export function formatRestorationProtocolDetails(data: ToothRestorationData): st
 			? "система коффердам (абсолютная изоляция)"
 			: data.isolationType === "retraction_cord"
 				? "ретракционная нить + коагуляция"
-				: "OptraGate + слюноотсос";
+				: "ротовой ретрактор + слюноотсос";
 
 	return [
 		`• Локализация: Зуб ${data.toothNumber}, поверхности: ${surfacesStr} (${blackDesc}).`,
 		`• Изоляция: ${isolationText}.`,
 		`• Адгезивный протокол: ${adh.tradeNameRu} (${adh.protocolSummaryRu}).`,
 		`• Реставрационный материал: ${comp.tradeNameRu}${shadesStr}.`,
-		`• Окклюзионная интеграция: пришлифовка по артикуляционной бумаге Bausch 40 мкм, полировка Enhance + Prisma Gloss до зеркального блеска.`,
+		`• Окклюзионная интеграция: пришлифовка по артикуляционной бумаге 40 мкм, полировка эластичными головками и алмазной пастой до зеркального блеска.`,
 		`• Гарантийные обязательства: гарантия ${data.warrantyMonths} мес. в соответствии со стандартами СтАР.`,
 	].join("\n");
 }

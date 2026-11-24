@@ -5,8 +5,8 @@
  * Строгая типизация без any (Мандат 8be), кэширование React Query.
  */
 import { useQuery } from "@tanstack/react-query";
+import { rublesToKopecks, type TaxDeductionPaymentItem } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import { type TaxDeductionPaymentItem } from "../../finance/taxDeductionEngine";
 
 interface RawReceiptItem {
 	readonly id?: string | undefined;
@@ -52,7 +52,7 @@ export const useTaxDeduction = (
 						fiscalSign: "0",
 						serviceName: r.serviceName || "Стоматологические медицинские услуги",
 						amountRub: rub,
-						amountKopecks: Math.round(rub * 100),
+						amountKopecks: rublesToKopecks(rub),
 						taxCode: r.deductionCode === "2" ? "2" : "1",
 					};
 				});

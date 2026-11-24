@@ -485,6 +485,7 @@ export const generatedDocumentSchema = z.object({
 	 * копейки теперь обязательна.
 	 */
 	totalAmountRub: nonNegativeMoneyRubSchema.nullable(),
+	totalAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 	taxYear: z
 		.number()
 		.int()

@@ -141,3 +141,9 @@ export * from "./dentalLabEvents";
 export * from "./expressLabOrderHelper";
 export * from "./ordersView";
 export * from "./mobile/MobileLabOrdersTimeline";
+export {
+	FORM_ZTL_1_METADATA,
+	STATUTORY_LAB_ORDER_METADATA,
+	formatPatientAnonymizedName,
+	formatPatientName152Fz,
+} from "./clinicalStages/statutoryZtl1Metadata";

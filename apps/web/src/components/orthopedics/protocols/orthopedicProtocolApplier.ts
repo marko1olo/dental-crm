@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useVisitStore } from "../../../store/visitStore.js";
 import type { ApplyOrthopedicProtocolParams, Order804nServiceItem } from "./orthopedicProtocolTypes.js";
@@ -30,16 +31,35 @@ function dispatchOrthopedicEvents(
 		window.dispatchEvent(new CustomEvent("dente-estimate-stage-add", {
 			detail: { stageKind: "stage_3_orthopedics", toothFdi: primaryTooth, teethFdi: teethNumbers, protocolId: protocol.id, services: protocol.order804nServices },
 		}));
-		const invoiceServices = protocol.order804nServices.map((s) => ({
-			code: s.code, nameRu: s.nameRu, name: s.nameRu,
-			priceRub: s.priceRub ?? s.suggestedPriceRub ?? 0,
-			suggestedPriceRub: s.suggestedPriceRub ?? s.priceRub ?? 0,
-			toothNumber: primaryTooth, stageKind: s.stageKind,
-			labOrderId: options?.labOrderId, labOrderNumber: options?.labOrderNumber,
-			technicianName: options?.technicianName, materialName: options?.material, warrantyPassport: options?.warrantyPassport,
-		}));
+		const invoiceServices = protocol.order804nServices.map((s) => {
+			const priceRub = s.priceRub ?? s.suggestedPriceRub ?? 0;
+			const priceKopecks = rublesToKopecks(priceRub);
+			return {
+				code: s.code, nameRu: s.nameRu, name: s.nameRu,
+				priceRub,
+				priceKopecks,
+				amountKopecks: BigInt(priceKopecks),
+				suggestedPriceRub: s.suggestedPriceRub ?? s.priceRub ?? 0,
+				toothNumber: primaryTooth, stageKind: s.stageKind,
+				labOrderId: options?.labOrderId, labOrderNumber: options?.labOrderNumber,
+				technicianName: options?.technicianName, materialName: options?.material, warrantyPassport: options?.warrantyPassport,
+			};
+		});
+		const totalKopecks = invoiceServices.reduce((sum, s) => sum + s.amountKopecks, 0n);
 		window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
-			detail: { toothNumber: primaryTooth, teethNumbers, services: invoiceServices, labOrderId: options?.labOrderId, labOrderNumber: options?.labOrderNumber, technicianName: options?.technicianName, material: options?.material, warrantyPassport: options?.warrantyPassport },
+			detail: {
+				toothNumber: primaryTooth,
+				teethNumbers,
+				services: invoiceServices,
+				totalKopecks,
+				priceKopecks: Number(totalKopecks),
+				amountKopecks: totalKopecks,
+				labOrderId: options?.labOrderId,
+				labOrderNumber: options?.labOrderNumber,
+				technicianName: options?.technicianName,
+				material: options?.material,
+				warrantyPassport: options?.warrantyPassport,
+			},
 		}));
 	} catch (err) {
 		console.warn("Failed to dispatch orthopedic DOM events", err);

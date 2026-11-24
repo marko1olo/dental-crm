@@ -59,17 +59,17 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 			const s1 = PLAN_STAGE_METADATA.stage_1_therapy;
 			assert.strictEqual(s1.stageNumber, 1);
 			assert.ok(s1.titleRu.includes("Этап 1"));
-			assert.ok(s1.defaultOrder804nPrefixes.includes("A16.07.002"));
+			assert.ok(s1.defaultOrder804nPrefixes?.includes("A16.07.002"));
 
 			const s2 = PLAN_STAGE_METADATA.stage_2_surgery;
 			assert.strictEqual(s2.stageNumber, 2);
 			assert.ok(s2.titleRu.includes("Этап 2"));
-			assert.ok(s2.defaultOrder804nPrefixes.includes("A16.07.054"));
+			assert.ok(s2.defaultOrder804nPrefixes?.includes("A16.07.054"));
 
 			const s3 = PLAN_STAGE_METADATA.stage_3_orthopedics;
 			assert.strictEqual(s3.stageNumber, 3);
 			assert.ok(s3.titleRu.includes("Этап 3"));
-			assert.ok(s3.defaultOrder804nPrefixes.includes("A16.07.004"));
+			assert.ok(s3.defaultOrder804nPrefixes?.includes("A16.07.004"));
 		});
 
 		it("1.3 verifies tier configurations and default parameters", () => {

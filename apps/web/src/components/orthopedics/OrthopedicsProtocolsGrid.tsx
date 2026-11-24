@@ -67,30 +67,30 @@ export function OrthopedicsProtocolsGrid({
 											</span>
 										)}
 									</div>
-									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-subtle)] text-[var(--muted)] border border-[var(--line)] shrink-0">
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-subtle)] text-[var(--ink-muted)] border border-[var(--line)] shrink-0">
 										{proto.defaultIcd10}
 									</span>
 								</div>
-								<p className="text-xs text-[var(--muted)] line-clamp-2 mt-0.5 leading-relaxed">
+								<p className="text-xs text-[var(--ink-muted)] line-clamp-2 mt-0.5 leading-relaxed">
 									{proto.treatment}
 								</p>
 								{isMasterPreset && (
 									<div className="mt-1 text-[11px] text-[var(--primary)] font-medium">
-										Расходные материалы визита: А-силикон (Silagum), PMMA (Protemp 4), цемент (GC Fuji Plus / RelyX U200).
+										Расходные материалы визита: А-силикон прецизионный (VPS), бис-акрил (PMMA), цемент двойного отверждения / СИЦ.
 									</div>
 								)}
 							</div>
 						</div>
 
 						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)] flex-wrap">
-							<div className="text-[11px] font-medium text-[var(--muted)]">
+							<div className="text-[11px] font-medium text-[var(--ink-muted)]">
 								Каталог процедур: <span className="font-mono text-[var(--ink)]">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
 							</div>
 
 							<button
 								type="button"
 								onClick={() => onApplyProtocol(proto)}
-								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 									isApplied
 										? "dente-btn-secondary text-[var(--primary)] border-[var(--primary)]/40 bg-[var(--primary)]/10"
 										: "dente-btn-secondary border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"

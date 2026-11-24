@@ -12,27 +12,27 @@ export interface CementBrandPreset {
 export const CEMENT_BRAND_PRESETS: readonly CementBrandPreset[] = [
 	{
 		id: "variolink_esthetic",
-		name: "Variolink Esthetic",
-		manufacturer: "Ivoclar",
-		clinicalIndication: "световой/двойной для виниров и E.max",
+		name: "Светоотверждаемый композитный цемент",
+		manufacturer: "Адгезивная фиксация",
+		clinicalIndication: "для виниров, ультраниров и прессованной керамики (E.max)",
 	},
 	{
 		id: "relyx_u200",
-		name: "RelyX U200",
-		manufacturer: "3M",
-		clinicalIndication: "самоадгезивный для диоксида циркония",
+		name: "Самоадгезивный композитный цемент",
+		manufacturer: "Двойное отверждение",
+		clinicalIndication: "для диоксида циркония (ZrO2) и металлокерамики",
 	},
 	{
 		id: "fuji_plus",
-		name: "Fuji Plus",
-		manufacturer: "GC",
-		clinicalIndication: "стеклоиономерный для стандартных коронок",
+		name: "Стеклоиономерный модифицированный цемент (СИЦ)",
+		manufacturer: "Химическое отверждение",
+		clinicalIndication: "для коронок на витальные зубы и культевых вкладок",
 	},
 	{
 		id: "panavia_v5",
-		name: "Panavia V5",
-		manufacturer: "Kuraray",
-		clinicalIndication: "для сложных адгезивных конструкций",
+		name: "Адгезивный композитный цемент с праймером MDP",
+		manufacturer: "Универсальный протокол",
+		clinicalIndication: "для сложных реставраций и адгезивной фиксации к оксиду циркония",
 	},
 ] as const;
 
@@ -70,7 +70,7 @@ export function ZtlFixationSelector({
 						Вид фиксации и окклюзионные антагонисты:
 					</span>
 				</div>
-				<span className="text-[11px] text-[var(--muted)] truncate">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate">
 					Протокол посадки и соотношение зубных рядов
 				</span>
 			</div>
@@ -93,25 +93,25 @@ export function ZtlFixationSelector({
 						>
 							<div className="flex items-center justify-between gap-1 min-w-0 w-full mb-0.5">
 								<span className="text-xs font-bold text-[var(--ink)] truncate">{fix.titleRu}</span>
-								<span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--paper-subtle)] text-[var(--muted)] shrink-0 font-semibold">
+								<span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--paper-subtle)] text-[var(--ink-muted)] shrink-0 font-semibold">
 									{fix.shortBadge}
 								</span>
 							</div>
-							<span className="text-[11px] text-[var(--muted)] leading-tight truncate">{fix.sublabelRu}</span>
+							<span className="text-[11px] text-[var(--ink-muted)] leading-tight truncate">{fix.sublabelRu}</span>
 						</button>
 					);
 				})}
 			</div>
 
-			{/* TASK-PROSTH-01: Быстрые чипы выбора брендов цементов при фиксации "cement" */}
+			{/* Выбор адгезивного протокола и типа цемента при фиксации "cement" */}
 			{fixationType === "cement" && (
 				<div className="mb-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]" data-testid="cement-brands-section">
 					<div className="flex items-center justify-between gap-1 mb-1.5">
 						<span className="text-[11px] font-semibold text-[var(--ink)]">
-							Бренд цемента / адгезивный протокол:
+							Адгезивный протокол / тип цемента:
 						</span>
-						<span className="text-[10px] text-[var(--muted)] font-mono">
-							Мандат 8am
+						<span className="text-[10px] text-[var(--ink-muted)]">
+							Клинический регламент
 						</span>
 					</div>
 					<div className="flex flex-wrap gap-1.5" data-testid="cement-brand-chips">
@@ -127,7 +127,7 @@ export function ZtlFixationSelector({
 									title={`${cement.name} (${cement.manufacturer}) — ${cement.clinicalIndication}`}
 									className={`dente-btn-pill min-h-[44px] sm:min-h-[32px] px-2.5 py-1 text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 rounded-full border ${
 										isSelected
-											? "bg-[rgba(13,148,136,0.12)] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-semibold shadow-2xs"
+											? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)] font-semibold shadow-2xs"
 											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
@@ -151,7 +151,7 @@ export function ZtlFixationSelector({
 					/>
 					<span>Слепок/скан антагонистов (окклюзионный регистрат в прикусе)</span>
 				</label>
-				<span className="text-[11px] text-[var(--muted)] font-mono">
+				<span className="text-[11px] text-[var(--ink-muted)] font-mono">
 					{hasAntagonists ? "Антагонисты переданы в ЗТЛ" : "Без антагонистов (одиночная вкладка)"}
 				</span>
 			</div>

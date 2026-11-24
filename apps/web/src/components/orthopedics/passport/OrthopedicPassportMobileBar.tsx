@@ -35,7 +35,7 @@ export function OrthopedicPassportMobileBar({
 			<button
 				type="button"
 				onClick={onClose}
-				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center justify-center active:scale-95"
+				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] inline-flex items-center justify-center active:scale-95"
 			>
 				Закрыть
 			</button>

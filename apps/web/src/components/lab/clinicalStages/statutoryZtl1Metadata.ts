@@ -8,6 +8,8 @@ export const FORM_ZTL_1_METADATA = {
 	warrantyGostRu: "2 года гарантии (Стандарт клиники / Гарантия лаборатории)",
 } as const;
 
+export const STATUTORY_LAB_ORDER_METADATA = FORM_ZTL_1_METADATA;
+
 export function formatPatientAnonymizedName(fullName?: string | null): {
 	fullName: string;
 	courierMaskedName: string;

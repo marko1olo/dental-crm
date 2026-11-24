@@ -107,7 +107,8 @@ describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 				toothNumber: "26",
 				quantity: 1,
 				priceRub: 4500, // 4,500.00 RUB
-				category: "therapy",
+				discountRub: 0,
+				category: "therapy" as const,
 			},
 			{
 				serviceId: "item-2",
@@ -116,7 +117,8 @@ describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 				toothNumber: "26",
 				quantity: 3,
 				priceRub: 1200, // 1,200.00 RUB * 3 = 3,600.00 RUB
-				category: "therapy",
+				discountRub: 0,
+				category: "therapy" as const,
 			},
 			{
 				serviceId: "item-3",
@@ -124,7 +126,8 @@ describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 				serviceName: "Профессиональное отбеливание зубов (косметика)",
 				quantity: 1,
 				priceRub: 15000, // 15,000.00 RUB
-				category: "therapy",
+				discountRub: 0,
+				category: "therapy" as const,
 				isExcluded: true, // Non-covered cosmetic service
 			},
 		];
@@ -174,7 +177,8 @@ describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 				serviceName: "Внутрикостная дентальная имплантация",
 				quantity: 1,
 				priceRub: 40000, // 40,000.00 RUB
-				category: "surgery",
+				discountRub: 0,
+				category: "surgery" as const,
 			},
 		];
 

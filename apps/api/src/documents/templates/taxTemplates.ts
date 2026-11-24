@@ -12,6 +12,7 @@ import {
 	type TaxDeductionRelationship,
 	rublesToKopecks,
 } from "@dental/shared";
+import { TaxPayerRequisitesRequiredError } from "../../services/documents/ndflTaxService.js";
 import {
 	DocumentRenderContext,
 	escapeHtml,
@@ -95,16 +96,19 @@ export function taxDeductionCertificate(
 	const items: TaxDeductionPaymentItem[] = taxPayments.map((p, idx) => {
 		const isCode2 = p.taxDeductionCode === "2" || (p as { deductionCode?: string }).deductionCode === "2";
 		const dateIso = p.fiscalReceiptIssuedAt || p.paidAt || (typeof document.issuedAt === "string" ? document.issuedAt : new Date().toISOString());
-		const receiptNumber = p.fiscalReceiptNumber || `ЧЕК-${idx + 1}`;
+		const receiptNumber = p.fiscalReceiptNumber?.trim() || (p.id ? `ПЛ-${p.id.slice(0, 8)}` : "—");
 		const amountRub = typeof p.amountRub === "number" ? p.amountRub : 0;
 		const amountKopecks = rublesToKopecks(amountRub);
+		const rawFiscalSign = (p as { fiscalSign?: string | null }).fiscalSign;
+		const fiscalSign = typeof rawFiscalSign === "string" && rawFiscalSign.trim() ? rawFiscalSign.trim() : "—";
+		const fiscalDocumentNumber = p.fiscalReceiptNumber?.trim() || "—";
 
 		return {
 			id: p.id,
 			dateIso,
 			receiptNumber,
-			fiscalDocumentNumber: p.fiscalReceiptNumber || `ФД-${idx + 1}`,
-			fiscalSign: `ФП-${idx + 1}`,
+			fiscalDocumentNumber,
+			fiscalSign,
 			serviceName: "Медицинские стоматологические услуги",
 			amountRub,
 			amountKopecks,
@@ -124,9 +128,9 @@ export function taxDeductionCertificate(
 		items.push({
 			id: document.id,
 			dateIso: issueDateIso,
-			receiptNumber: "СПР-1",
-			fiscalDocumentNumber: "ФД-1",
-			fiscalSign: "ФП-1",
+			receiptNumber: document.title?.trim() || "—",
+			fiscalDocumentNumber: "—",
+			fiscalSign: "—",
 			serviceName: "Медицинские стоматологические услуги",
 			amountRub,
 			amountKopecks,
@@ -134,21 +138,37 @@ export function taxDeductionCertificate(
 		});
 	}
 
-	const safePatientName = (patient.fullName || "").replace(/_{3,}/g, "").trim() || "Иванов Иван Иванович";
+	const safePatientName = (patient.fullName || "").replace(/_{3,}/g, "").trim();
+	if (!safePatientName) {
+		throw new TaxPayerRequisitesRequiredError("Для формирования справки КНД 1151156 необходимо указать ФИО пациента.");
+	}
 	const safePayerName = (payerFullName || "").replace(/_{3,}/g, "").trim() || safePatientName;
+
+	const clinicLegalName = (context.clinicProfile?.legalName || context.clinicProfile?.clinicName || "").trim();
+	if (!clinicLegalName) {
+		throw new TaxPayerRequisitesRequiredError("Для формирования справки КНД 1151156 в профиле клиники должно быть указано юридическое наименование организации.");
+	}
+	const clinicInn = (context.clinicProfile?.inn || "").trim();
+	if (!clinicInn || clinicInn === "0000000000") {
+		throw new TaxPayerRequisitesRequiredError("Для формирования справки КНД 1151156 в профиле клиники должен быть указан корректный ИНН организации.");
+	}
+	const clinicAddress = (context.clinicProfile?.address || "").trim();
+	if (!clinicAddress) {
+		throw new TaxPayerRequisitesRequiredError("Для формирования справки КНД 1151156 в профиле клиники должен быть указан юридический адрес.");
+	}
 
 	const params: TaxDeductionCertificateParams = {
 		certificateNumber: document.title || `СПР-${taxYear}/001`,
 		issueDateIso,
 		taxYear,
 		clinic: {
-			legalName: context.clinicProfile?.legalName || context.clinicProfile?.clinicName || "ООО Стоматологическая клиника",
-			inn: context.clinicProfile?.inn || "0000000000",
+			legalName: clinicLegalName,
+			inn: clinicInn,
 			kpp: context.clinicProfile?.kpp || undefined,
 			ogrn: context.clinicProfile?.ogrn || undefined,
 			licenseNumber: context.clinicProfile?.medicalLicenseNumber || undefined,
 			licenseDate: context.clinicProfile?.medicalLicenseIssuedAt || undefined,
-			address: context.clinicProfile?.address || "г. Москва",
+			address: clinicAddress,
 			chiefDoctorName: context.clinicProfile?.signatoryName || undefined,
 		},
 		payer: {

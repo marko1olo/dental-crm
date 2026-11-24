@@ -45,7 +45,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					<div className="document-primary-intake-btn-group document-intake-quick-action-bar" data-testid="document-intake-quick-action-bar">
 						<button
 							type="button"
-							className="primary-button document-intake-quick-print-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] text-white px-3.5 font-semibold text-[13px] flex items-center gap-1.5 cursor-pointer"
+							className="primary-button document-intake-quick-print-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary)] text-white px-3.5 font-semibold text-[13px] flex items-center gap-1.5 cursor-pointer"
 							data-tour="print-contract-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
@@ -74,7 +74,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						{setIsPatientConsentSignDrawerOpen && (
 							<button
 								type="button"
-								className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--paper)] text-[var(--teal,#0d9488)] px-3 text-[12.5px] font-semibold flex items-center gap-1.5 cursor-pointer"
+								className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-3 text-[12.5px] font-semibold flex items-center gap-1.5 cursor-pointer"
 								onClick={() => setIsPatientConsentSignDrawerOpen(true)}
 								data-testid="btn-open-patient-consent-drawer"
 							>
@@ -89,7 +89,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 								onClick={() => setIsA4PrintPreviewOpen(true)}
 								data-testid="btn-open-pro-a4-modal"
 							>
-								<Printer size={14} className="text-[var(--primary,#0d9488)]" aria-hidden="true" />
+								<Printer size={14} className="text-[var(--primary)]" aria-hidden="true" />
 								<span>Бланки А4 (Договор / Акт / Карта)</span>
 							</button>
 						)}

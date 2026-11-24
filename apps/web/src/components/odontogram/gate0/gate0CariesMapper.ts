@@ -40,21 +40,22 @@ export function mapSurfacesToCariesType(
 
 	const norm = (surfaces ?? [])
 		.flatMap((s) => s.toUpperCase().split(""))
-		.filter((c) => ["O", "V", "L", "M", "D", "C"].includes(c));
+		.filter((c) => ["O", "I", "V", "L", "M", "D", "C"].includes(c));
 	const set = new Set(norm);
 	const anterior = isAnteriorTooth(toothNumber);
+	const hasIncisalOrOcclusal = set.has("I") || set.has("O");
 
 	if (set.has("V") || set.has("C")) {
-		if (!set.has("O") && !set.has("M") && !set.has("D")) return "class5";
+		if (!hasIncisalOrOcclusal && !set.has("M") && !set.has("D")) return "class5";
 	}
-	if (set.has("L") && !set.has("M") && !set.has("D") && !set.has("O")) return "class1";
-	if (set.has("M") && set.has("D") && set.has("O")) return "class2_mod";
-	if (set.has("M") && set.has("O")) return anterior ? "class4" : "class2_mo";
-	if (set.has("D") && set.has("O")) return anterior ? "class4" : "class2_do";
+	if (set.has("L") && !set.has("M") && !set.has("D") && !hasIncisalOrOcclusal) return "class1";
+	if (set.has("M") && set.has("D") && hasIncisalOrOcclusal) return anterior ? "class4" : "class2_mod";
+	if (set.has("M") && hasIncisalOrOcclusal) return anterior ? "class4" : "class2_mo";
+	if (set.has("D") && hasIncisalOrOcclusal) return anterior ? "class4" : "class2_do";
 	if (set.has("M") || set.has("D")) {
 		return anterior ? "class3" : (set.has("M") ? "class2_m" : "class2_d");
 	}
-	if (set.has("O")) return anterior ? "class4" : "class1";
+	if (hasIncisalOrOcclusal) return anterior ? "class4" : "class1";
 	if (set.has("V") || set.has("C")) return "class5";
 
 	return anterior ? "class3" : "class1";
@@ -74,19 +75,20 @@ export function mapClinicalDataToCariesDepth(
 	return "media";
 }
 
-export function mapCariesTypeToSurfaces(cariesType?: CariesType): string[] {
+export function mapCariesTypeToSurfaces(cariesType?: CariesType, toothNumber?: number): string[] {
+	const anterior = toothNumber ? isAnteriorTooth(toothNumber) : false;
 	switch (cariesType) {
-		case "class1": return ["O"];
+		case "class1": return [anterior ? "I" : "O"];
 		case "class2_m": return ["M"];
 		case "class2_d": return ["D"];
 		case "class2_mo": return ["M", "O"];
 		case "class2_do": return ["D", "O"];
 		case "class2_mod": return ["M", "O", "D"];
 		case "class3": return ["M"];
-		case "class4": return ["M", "O"];
+		case "class4": return ["M", anterior ? "I" : "O"];
 		case "class5": return ["V"];
 		case "white_spot": return ["V"];
-		default: return ["O"];
+		default: return [anterior ? "I" : "O"];
 	}
 }
 

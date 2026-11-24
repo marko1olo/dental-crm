@@ -30,6 +30,7 @@ export type TimelineGranularity = "day" | "week" | "month";
 export type RevenueTimelinePoint = {
 	readonly bucket: string;
 	readonly revenueRub: number;
+	readonly revenueKopecks?: number | undefined;
 	readonly paymentCount: number;
 	readonly payingPatients: number;
 };
@@ -38,6 +39,7 @@ export type RevenueTimeline = {
 	readonly granularity: TimelineGranularity;
 	readonly points: RevenueTimelinePoint[];
 	readonly totalRub: number;
+	readonly totalKopecks?: number | undefined;
 	readonly isEmpty: boolean;
 };
 
@@ -45,6 +47,7 @@ export type DoctorPerformanceRow = {
 	readonly doctorUserId: string | null;
 	readonly doctorName: string;
 	readonly revenueRub: number;
+	readonly revenueKopecks?: number | undefined;
 	readonly appointmentsTotal: number;
 	readonly appointmentsCompleted: number;
 	readonly appointmentsCancelled: number;
@@ -55,6 +58,7 @@ export type DoctorPerformanceRow = {
 	readonly noShowRate: number | null;
 	/** Средний чек: выручка на завершённый приём. null — завершённых не было. */
 	readonly averageTicketRub: number | null;
+	readonly averageTicketKopecks?: number | null | undefined;
 	/**
 	 * Маржа не считается: себестоимости материалов и процента врача в базе нет.
 	 * Поле оставлено, чтобы интерфейс показывал прочерк осознанно.
@@ -66,6 +70,7 @@ export type DoctorPerformanceReport = {
 	readonly rows: DoctorPerformanceRow[];
 	/** Выручка, которую не удалось отнести к врачу (платёж без приёма). */
 	readonly unattributedRevenueRub: number;
+	readonly unattributedRevenueKopecks?: number | undefined;
 	/**
 	 * Пояснение к «не отнесено». Молчаливая строка с суммой без причины выглядит
 	 * как ошибка расчёта, хотя это ограничение связей в данных.
@@ -177,14 +182,19 @@ export type ServiceSalesRow = {
 	readonly title: string;
 	readonly quantity: number;
 	readonly plannedRub: number;
+	readonly plannedKopecks?: number | undefined;
 	readonly averagePriceRub: number;
+	readonly averagePriceKopecks?: number | undefined;
 	readonly discountRub: number;
+	readonly discountKopecks?: number | undefined;
 };
 
 export type ServiceSalesReport = {
 	readonly rows: ServiceSalesRow[];
 	readonly plannedTotalRub: number;
+	readonly plannedTotalKopecks?: number | undefined;
 	readonly discountTotalRub: number;
+	readonly discountTotalKopecks?: number | undefined;
 	readonly note: string;
 	readonly isEmpty: boolean;
 };

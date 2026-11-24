@@ -156,6 +156,8 @@ export function formatWorkingLengthDisplay(wl: unknown): string {
 
 export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[] {
 	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+	const isDeciduous = toothNumber >= 51 && toothNumber <= 85;
+	const minWl = isDeciduous ? 5 : 10;
 	return defaultCanals.map((c, idx) => {
 		const rawLen = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
 		const safeLen = Number.isFinite(rawLen) && rawLen > 0 ? rawLen : getAnatomicalWorkingLength(toothNumber, c.canalName);
@@ -165,7 +167,7 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 		return {
 			id: c.id || `canal-${toothNumber}-${c.canalName.toLowerCase().replace(/[^a-z0-9]/g, "") || `k${idx + 1}`}`,
 			name: c.canalName,
-			workingLengthMm: Math.max(10, Math.min(35, Math.round(safeLen * 2) / 2)),
+			workingLengthMm: Math.max(minWl, Math.min(35, Math.round(safeLen * 2) / 2)),
 			masterApicalFile,
 			taper: c.taper?.includes(".06") ? ".06" : ".04",
 			obturationType: "gutta_sealer",

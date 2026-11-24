@@ -32,7 +32,7 @@ export function useDicomViewerModalAi(
 		setIsAnalyzing(true);
 		setFormulaFailure(null);
 		try {
-			const res = await fetch("/api/imaging/visiograph-ai", {
+			const res = await fetch("/api/imaging/ai-analysis", {
 				method: "POST",
 				headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ imageBase64: currentImageSrc }),

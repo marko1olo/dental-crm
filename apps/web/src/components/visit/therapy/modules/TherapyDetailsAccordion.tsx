@@ -31,19 +31,20 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 					{COMPOSITES.map((matId) => {
 						const info = COMPOSITE_MATERIALS_CATALOG[matId];
 						const isSelected = selectedComposite === matId;
+						const label = info.shortLabelRu ?? info.tradeNameRu;
 						return (
 							<button
 								key={matId}
 								type="button"
 								onClick={() => onSelectComposite(matId)}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition whitespace-normal break-words leading-snug flex items-center cursor-pointer ${
 									isSelected
 										? "border-[var(--primary)] bg-[var(--paper-soft)] font-bold text-[var(--ink)] ring-1 ring-[var(--primary)]"
 										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={info.indicationRu}
 							>
-								{info.tradeNameRu}
+								{label}
 							</button>
 						);
 					})}
@@ -56,19 +57,20 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 					{ADHESIVES.map((adhId) => {
 						const info = ADHESIVE_SYSTEMS_CATALOG[adhId];
 						const isSelected = selectedAdhesive === adhId;
+						const label = info.shortLabelRu ?? info.tradeNameRu;
 						return (
 							<button
 								key={adhId}
 								type="button"
 								onClick={() => onSelectAdhesive(adhId)}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition whitespace-normal break-words leading-snug flex items-center cursor-pointer ${
 									isSelected
 										? "border-[var(--primary)] bg-[var(--paper-soft)] font-bold text-[var(--ink)] ring-1 ring-[var(--primary)]"
 										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={info.protocolSummaryRu}
 							>
-								{info.tradeNameRu}
+								{label}
 							</button>
 						);
 					})}

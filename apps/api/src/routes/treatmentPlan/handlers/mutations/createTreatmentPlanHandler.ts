@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks, computePayloadHash } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
@@ -9,7 +9,6 @@ import {
 	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import { idempotencyKeys } from "../../../../db/schema/idempotency.js";
 import { debtNumericText } from "../../../../money/patientDebt.js";
 import { syncUpsertPlanLedgerItems, type SyncPlanLedgerItemInput } from "./planLedgerSync.js";
 import { createTreatmentPlanSchema } from "./schemas.js";
@@ -34,27 +33,6 @@ export async function handleCreateTreatmentPlan(
 	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
 	if (idempotencyKey) {
 		reply.header("Idempotency-Key", idempotencyKey);
-
-		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo, 8zp)
-		const [existingRecord] = await db
-			.select()
-			.from(idempotencyKeys)
-			.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
-			.limit(1);
-
-		if (existingRecord) {
-			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-			}
-			if (existingRecord.status === "in_flight") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция создания плана лечения с данным Idempotency-Key уже выполняется.",
-				});
-			}
-		}
 	}
 
 	const parsed = createTreatmentPlanSchema.safeParse(request.body);
@@ -301,27 +279,6 @@ export async function handleCreateTreatmentPlan(
 			stages: createdStages,
 			itemsCount: createdItems.length,
 		};
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: organizationId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: responsePayload,
-					responseCode: 201,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: responsePayload,
-						responseCode: 201,
-					},
-				});
-		}
 
 		return responsePayload;
 	});

@@ -13,6 +13,7 @@ import {
 import {
 	insuranceCreateBodySchema,
 	insuranceUpdateBodySchema,
+	quickAttachBodySchema,
 } from "../types.js";
 
 export async function registerPolicyMutationRoutes(app: FastifyInstance) {
@@ -115,6 +116,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					coverageOrthoPct: clamp(coverageOrthoPct),
 					coverageHygienePct: clamp(coverageHygienePct),
 					annualLimitRub: annualLimitRub ?? null,
+					annualLimitKopecks: annualLimitRub !== undefined && annualLimitRub !== null ? BigInt(rublesToKopecks(annualLimitRub)) : null,
 					patientFranchisePct: clamp(patientFranchisePct),
 					requiresGuaranteeLetter,
 					isActive: true,
@@ -248,7 +250,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					...(coverageHygienePct !== undefined && {
 						coverageHygienePct: clamp(coverageHygienePct),
 					}),
-					...(annualLimitRub !== undefined && { annualLimitRub }),
+					...(annualLimitRub !== undefined && {
+						annualLimitRub,
+						annualLimitKopecks: annualLimitRub !== null ? BigInt(rublesToKopecks(annualLimitRub)) : null,
+					}),
 					...(patientFranchisePct !== undefined && {
 						patientFranchisePct: clamp(patientFranchisePct),
 					}),
@@ -366,8 +371,15 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const body = request.body;
-		if (!body || !body.patientId || !body.insurerKey || !body.policyNumber?.trim()) {
+		const parsed = quickAttachBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Укажите пациента, страховую компанию и номер полиса ДМС.",
+			});
+		}
+		const body = parsed.data;
+		if (!body.policyNumber.trim()) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Укажите пациента, страховую компанию и номер полиса ДМС.",
@@ -461,10 +473,13 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					validFrom: todayIso,
 					validUntil: oneYearLaterIso,
 					maxCoverageRub: maxCoverage,
+					maxCoverageKopecks: BigInt(maxCoverageKop),
 					usedAmountRub: 0,
+					usedAmountKopecks: 0n,
 					franchisePct: 0,
 					franchiseType: "percent",
 					franchiseFixedRub: 0,
+					franchiseFixedKopecks: 0n,
 					programExclusions: [],
 					approvedServiceCodes: [],
 					approvedTeethFdi: [],

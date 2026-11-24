@@ -4,12 +4,23 @@ import { EmkServicesSection } from "../emk/EmkServicesSection";
 import { Icd10ClinicalSelector } from "../../diagnostics/Icd10ClinicalSelector";
 import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
 import type { VisitEmkServicesBillingProps } from "./types";
+import type { LinkedChairsideLabOrderInfo } from "../../orthopedics/OrthopedicsChairsidePanel";
 
 const OrthopedicsChairsidePanel = lazy(() =>
 	import("../../orthopedics/OrthopedicsChairsidePanel").then((m) => ({
 		default: m.OrthopedicsChairsidePanel,
 	})),
 );
+
+interface LabOrderRecord extends LinkedChairsideLabOrderInfo {
+	patientId?: string | number | undefined;
+}
+
+interface AppointmentWithLab {
+	id?: string | number | undefined;
+	patientId?: string | number | undefined;
+	labOrder?: LinkedChairsideLabOrderInfo | undefined;
+}
 
 export function VisitEmkServicesBilling({
 	openVisitId,
@@ -21,29 +32,26 @@ export function VisitEmkServicesBilling({
 	effectiveActiveTooth,
 }: VisitEmkServicesBillingProps) {
 	const { hasDentalLab } = useWorkspaceProfile();
-	const linkedLabOrder = React.useMemo(() => {
-		interface AppointmentWithLab {
-			id?: string | number;
-			patientId?: string | number;
-			labOrder?: unknown;
-		}
-		interface LabOrderRecord {
-			id?: string | number;
-			patientId?: string | number;
-		}
+	const linkedLabOrder: LinkedChairsideLabOrderInfo | undefined = React.useMemo(() => {
 		const appts: AppointmentWithLab[] = Array.isArray(dashboard?.appointments)
 			? (dashboard.appointments as AppointmentWithLab[])
 			: [];
 		const currentAppt = appts.find((a) => String(a?.id) === String(openVisitId));
 		if (currentAppt?.labOrder) {
-			return currentAppt.labOrder;
+			return {
+				...currentAppt.labOrder,
+				id: currentAppt.labOrder.id ? String(currentAppt.labOrder.id) : undefined,
+			};
 		}
 		if (activePatient?.id) {
 			const patientApptWithLab = appts.find(
 				(a) => String(a?.patientId) === String(activePatient.id) && a?.labOrder,
 			);
 			if (patientApptWithLab?.labOrder) {
-				return patientApptWithLab.labOrder;
+				return {
+					...patientApptWithLab.labOrder,
+					id: patientApptWithLab.labOrder.id ? String(patientApptWithLab.labOrder.id) : undefined,
+				};
 			}
 			const labOrders: LabOrderRecord[] = Array.isArray(dashboard?.labOrders)
 				? (dashboard.labOrders as LabOrderRecord[])
@@ -52,7 +60,10 @@ export function VisitEmkServicesBilling({
 				(lo) => String(lo?.patientId) === String(activePatient.id),
 			);
 			if (foundOrder) {
-				return foundOrder;
+				return {
+					...foundOrder,
+					id: foundOrder.id ? String(foundOrder.id) : undefined,
+				};
 			}
 		}
 		return undefined;
@@ -67,7 +78,7 @@ export function VisitEmkServicesBilling({
 						className="group border-t border-[var(--line)] pt-2 bg-transparent"
 						data-testid="emk-orthopedics-details"
 					>
-						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+						<summary className="cursor-pointer text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
 							<span className="flex items-center gap-1.5">
 								<Award size={14} className="text-amber-500" />
 								<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
@@ -75,6 +86,7 @@ export function VisitEmkServicesBilling({
 						</summary>
 						<div className="pt-2">
 							<OrthopedicsChairsidePanel
+								key={`ortho-${activePatient?.id ?? "anon"}-${effectiveActiveTooth ?? "all"}-${linkedLabOrder?.id ?? "new"}`}
 								patientId={activePatient?.id}
 								activeToothFdi={effectiveActiveTooth ?? undefined}
 								initialLabOrder={linkedLabOrder}

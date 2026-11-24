@@ -13,7 +13,7 @@ export const CANONICAL_5_CLINICAL_LAB_STATUSES: readonly Canonical5LabStatusItem
 	{
 		id: "sent",
 		step: 1,
-		labelRu: "1. Слепок / Скан (Отправлен в ЗТЛ)",
+		labelRu: "1. Слепок / Скан (Отправлен в лабораторию)",
 		shortLabelRu: "Слепок/Скан",
 		descRu: "Оттиски (силикон/скан) и клиническое задание переданы в лабораторию",
 		badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
@@ -67,7 +67,7 @@ export const CANONICAL_MANUFACTURING_5_STAGES: readonly CanonicalManufacturing5S
 		step: 1,
 		labelRu: "1. Слепок / Скан",
 		shortLabelRu: "Слепок/Скан",
-		descRu: "Слепок или интраоральный 3D-скан передан в ЗТЛ",
+		descRu: "Слепок или интраоральный 3D-скан передан в лабораторию",
 		badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
 	},
 	{

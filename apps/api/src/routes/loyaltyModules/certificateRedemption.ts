@@ -174,7 +174,12 @@ export async function executeRedeemGiftCertificate(
 				status: newStatus,
 				updatedAt: new Date(),
 			})
-			.where(eq(giftCertificates.id, cert.id));
+			.where(
+				and(
+					eq(giftCertificates.id, cert.id),
+					eq(giftCertificates.organizationId, orgId),
+				),
+			);
 
 		let paymentId: string | null = null;
 		let invoicePaid = false;

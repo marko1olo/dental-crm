@@ -25,7 +25,7 @@ export function ZtlManufacturingStageTracker({
 						Этапы изготовления ЗТЛ:
 					</span>
 				</div>
-				<span className="text-[11px] text-[var(--muted)] truncate">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate">
 					Слепок/Скан → Каркас → Керамика → Готовая работа → Фиксация
 				</span>
 			</div>
@@ -46,7 +46,7 @@ export function ZtlManufacturingStageTracker({
 									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm ring-2 ring-[var(--primary)]/40"
 									: isPassed
 									? "bg-[var(--primary)]/10 text-[var(--ink)] border-[var(--primary)]/30"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--paper-subtle)]"
+									: "bg-[var(--paper)] text-[var(--ink-muted)] border-[var(--line)] hover:bg-[var(--paper-subtle)]"
 							}`}
 							data-testid={`chairside-stage-${stg.id}`}
 							title={stg.descRu}

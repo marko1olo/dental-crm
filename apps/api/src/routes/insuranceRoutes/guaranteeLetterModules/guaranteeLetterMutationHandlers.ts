@@ -3,6 +3,7 @@ import {
 	dmsGuaranteeLetterCreateSchema,
 	dmsGuaranteeLetterUpdateSchema,
 	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -83,6 +84,20 @@ export async function handleCreateGuaranteeLetter(
 		});
 	}
 
+	const effectiveMaxKop = data.maxCoverageKopecks && data.maxCoverageKopecks > 0
+		? BigInt(data.maxCoverageKopecks)
+		: (data.limitKopecks && data.limitKopecks > 0 ? BigInt(data.limitKopecks) : BigInt(rublesToKopecks(effectiveMaxRub)));
+
+	const effectiveUsedRub = data.usedAmountRub ?? (data.usedKopecks ? kopecksToRubles(data.usedKopecks) : 0);
+	const effectiveUsedKop = data.usedAmountKopecks !== undefined && data.usedAmountKopecks !== null
+		? BigInt(data.usedAmountKopecks)
+		: (data.usedKopecks !== undefined && data.usedKopecks !== null ? BigInt(data.usedKopecks) : BigInt(rublesToKopecks(effectiveUsedRub)));
+
+	const effectiveFranchiseFixedRub = data.franchiseFixedRub ?? 0;
+	const effectiveFranchiseFixedKop = data.franchiseFixedKopecks !== undefined && data.franchiseFixedKopecks !== null
+		? BigInt(data.franchiseFixedKopecks)
+		: BigInt(rublesToKopecks(effectiveFranchiseFixedRub));
+
 	const effectiveValidUntil = data.validUntil || data.validTo || "";
 	if (data.validFrom > effectiveValidUntil) {
 		return reply.code(400).send({
@@ -156,10 +171,13 @@ export async function handleCreateGuaranteeLetter(
 				validFrom: data.validFrom,
 				validUntil: effectiveValidUntil,
 				maxCoverageRub: effectiveMaxRub,
-				usedAmountRub: data.usedAmountRub ?? (data.usedKopecks ? kopecksToRubles(data.usedKopecks) : 0),
+				maxCoverageKopecks: effectiveMaxKop,
+				usedAmountRub: effectiveUsedRub,
+				usedAmountKopecks: effectiveUsedKop,
 				franchisePct: data.franchisePct ?? 0,
 				franchiseType: data.franchiseType ?? "percent",
-				franchiseFixedRub: data.franchiseFixedRub ?? 0,
+				franchiseFixedRub: effectiveFranchiseFixedRub,
+				franchiseFixedKopecks: effectiveFranchiseFixedKop,
 				programExclusions: data.programExclusions ?? [],
 				approvedServiceCodes: data.approvedServiceCodes ?? [],
 				approvedTeethFdi: data.approvedTeethFdi ?? [],
@@ -329,15 +347,35 @@ export async function handleUpdateGuaranteeLetter(
 		if (d.validFrom !== undefined) updateData.validFrom = d.validFrom;
 		if (d.validUntil !== undefined) updateData.validUntil = d.validUntil;
 		else if (d.validTo !== undefined) updateData.validUntil = d.validTo;
-		if (d.maxCoverageRub !== undefined) updateData.maxCoverageRub = d.maxCoverageRub;
-		else if (d.limitKopecks !== undefined) updateData.maxCoverageRub = kopecksToRubles(d.limitKopecks);
-		else if (d.maxCoverageKopecks !== undefined) updateData.maxCoverageRub = kopecksToRubles(d.maxCoverageKopecks);
-		if (d.usedAmountRub !== undefined) updateData.usedAmountRub = d.usedAmountRub;
-		else if (d.usedKopecks !== undefined) updateData.usedAmountRub = kopecksToRubles(d.usedKopecks);
-		else if (d.usedAmountKopecks !== undefined) updateData.usedAmountRub = kopecksToRubles(d.usedAmountKopecks);
+		if (d.maxCoverageRub !== undefined) {
+			updateData.maxCoverageRub = d.maxCoverageRub;
+			updateData.maxCoverageKopecks = BigInt(rublesToKopecks(d.maxCoverageRub));
+		} else if (d.limitKopecks !== undefined) {
+			updateData.maxCoverageRub = kopecksToRubles(d.limitKopecks);
+			updateData.maxCoverageKopecks = BigInt(d.limitKopecks);
+		} else if (d.maxCoverageKopecks !== undefined) {
+			updateData.maxCoverageRub = kopecksToRubles(d.maxCoverageKopecks);
+			updateData.maxCoverageKopecks = BigInt(d.maxCoverageKopecks);
+		}
+		if (d.usedAmountRub !== undefined) {
+			updateData.usedAmountRub = d.usedAmountRub;
+			updateData.usedAmountKopecks = BigInt(rublesToKopecks(d.usedAmountRub));
+		} else if (d.usedKopecks !== undefined) {
+			updateData.usedAmountRub = kopecksToRubles(d.usedKopecks);
+			updateData.usedAmountKopecks = BigInt(d.usedKopecks);
+		} else if (d.usedAmountKopecks !== undefined) {
+			updateData.usedAmountRub = kopecksToRubles(d.usedAmountKopecks);
+			updateData.usedAmountKopecks = BigInt(d.usedAmountKopecks);
+		}
 		if (d.franchisePct !== undefined) updateData.franchisePct = d.franchisePct;
 		if (d.franchiseType !== undefined) updateData.franchiseType = d.franchiseType;
-		if (d.franchiseFixedRub !== undefined) updateData.franchiseFixedRub = d.franchiseFixedRub;
+		if (d.franchiseFixedRub !== undefined) {
+			updateData.franchiseFixedRub = d.franchiseFixedRub;
+			updateData.franchiseFixedKopecks = BigInt(rublesToKopecks(d.franchiseFixedRub));
+		} else if (d.franchiseFixedKopecks !== undefined) {
+			updateData.franchiseFixedRub = kopecksToRubles(d.franchiseFixedKopecks);
+			updateData.franchiseFixedKopecks = BigInt(d.franchiseFixedKopecks);
+		}
 		if (d.programExclusions !== undefined) updateData.programExclusions = d.programExclusions;
 		if (d.approvedServiceCodes !== undefined) updateData.approvedServiceCodes = d.approvedServiceCodes;
 		if (d.approvedTeethFdi !== undefined) updateData.approvedTeethFdi = d.approvedTeethFdi;

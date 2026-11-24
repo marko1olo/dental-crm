@@ -65,6 +65,12 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 						.code(existingRecord.responseCode || 200)
 						.send(existingRecord.responseBody);
 				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция закрытия осмотра пародонтограммы с данным Idempotency-Key уже выполняется.",
+					});
+				}
 			}
 		}
 

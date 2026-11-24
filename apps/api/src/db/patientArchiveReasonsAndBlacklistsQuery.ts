@@ -1,5 +1,6 @@
 import { and, eq, or } from "drizzle-orm";
 import { db } from "./client.js";
+import { withTenantCtx, type TenantDb } from "./rls.js";
 import { patientArchiveReasonsAndBlacklists, patients } from "./schema.js";
 import {
 	nameFuzzySimilarity,
@@ -11,8 +12,9 @@ export const inMemoryBlacklist = new Set<string>();
 export async function getPatientArchiveReasonsAndBlacklistsFromDb(
 	orgId: string,
 	_patientId?: string,
+	txOrDb?: TenantDb,
 ) {
-	return db
+	return (txOrDb ?? db)
 		.select()
 		.from(patientArchiveReasonsAndBlacklists)
 		.where(eq(patientArchiveReasonsAndBlacklists.organizationId, orgId));
@@ -216,32 +218,48 @@ export async function setPatientArchiveStatusInDb(
 	patientId: string,
 	isBlacklisted: boolean,
 	patientName?: string,
+	txOrDb?: TenantDb,
 ) {
-	if (isBlacklisted) {
-		await db.insert(patientArchiveReasonsAndBlacklists).values({
-			organizationId: orgId,
-			patientId: patientId,
-			patientName: patientName || "Пациент",
-			archiveReason: "Внесен в черный список администратором",
-			isBookingBlocked: true,
-			warningBadge: "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)",
-		});
-		inMemoryBlacklist.add(`${orgId}:${patientId}`);
-	} else {
-		await db
-			.delete(patientArchiveReasonsAndBlacklists)
-			.where(
-				and(
-					eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
-					or(
-						eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
-						eq(
-							patientArchiveReasonsAndBlacklists.patientName,
-							patientName || "",
+	const execute = async (tx: TenantDb) => {
+		if (isBlacklisted) {
+			await tx.insert(patientArchiveReasonsAndBlacklists).values({
+				organizationId: orgId,
+				patientId: patientId,
+				patientName: patientName || "Пациент",
+				archiveReason: "Внесен в черный список администратором",
+				isBookingBlocked: true,
+				isBlacklisted: true,
+				warningBadge: "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)",
+			});
+			inMemoryBlacklist.add(`${orgId}:${patientId}`);
+		} else {
+			await tx
+				.delete(patientArchiveReasonsAndBlacklists)
+				.where(
+					and(
+						eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
+						or(
+							eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
+							eq(
+								patientArchiveReasonsAndBlacklists.patientName,
+								patientName || "",
+							),
 						),
 					),
-				),
-			);
-		inMemoryBlacklist.delete(`${orgId}:${patientId}`);
+				);
+			await tx
+				.update(patients)
+				.set({ status: "active", updatedAt: new Date() })
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+			inMemoryBlacklist.delete(`${orgId}:${patientId}`);
+		}
+	};
+
+	if (txOrDb) {
+		await execute(txOrDb);
+	} else {
+		await withTenantCtx(orgId, async (ctxTx) => {
+			await execute(ctxTx);
+		});
 	}
 }

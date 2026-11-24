@@ -29,7 +29,7 @@ export const DocumentScenariosAccordion: React.FC<DocumentScenariosAccordionProp
 			<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
 				<summary className="document-scenarios-summary">
 					<div className="flex items-center gap-2">
-						<Zap size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />
+						<Zap size={14} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 						<span className="font-bold text-xs text-[var(--ink)]">
 							Быстрые сценарии оформления документов
 						</span>

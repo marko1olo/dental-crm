@@ -194,6 +194,7 @@ export async function seedFixtureRows(
 			patientId: string;
 			visitId?: string | undefined;
 			amountRub: number;
+			amountKopecks: bigint;
 			status: "planned" | "paid" | "refunded" | "voided";
 			paidAt: Date;
 		}> = [
@@ -202,6 +203,7 @@ export async function seedFixtureRows(
 				patientId: cfg.patientOld,
 				visitId: cfg.visitId,
 				amountRub: 10_000,
+				amountKopecks: 1_000_000n,
 				status: "paid",
 				paidAt: inPeriod,
 			},
@@ -210,6 +212,7 @@ export async function seedFixtureRows(
 				patientId: cfg.patientOld,
 				visitId: cfg.visitId,
 				amountRub: 50_000,
+				amountKopecks: 5_000_000n,
 				status: "planned",
 				paidAt: inPeriod,
 			},
@@ -221,6 +224,7 @@ export async function seedFixtureRows(
 				patientId: cfg.patientNew,
 				visitId: undefined,
 				amountRub: 7_000,
+				amountKopecks: 700_000n,
 				status: "refunded",
 				paidAt: inPeriod,
 			});
@@ -240,6 +244,9 @@ export async function seedFixtureRows(
 					priceRub: 8_000,
 					unitPriceRub: 8_000,
 					discountRub: 2_000,
+					priceKopecks: 800_000n,
+					unitPriceKopecks: 800_000n,
+					discountKopecks: 200_000n,
 					status: "completed",
 				},
 				{
@@ -251,6 +258,9 @@ export async function seedFixtureRows(
 					priceRub: 16_000,
 					unitPriceRub: 16_000,
 					discountRub: 0,
+					priceKopecks: 1_600_000n,
+					unitPriceKopecks: 1_600_000n,
+					discountKopecks: 0n,
 					status: "completed",
 				},
 			])

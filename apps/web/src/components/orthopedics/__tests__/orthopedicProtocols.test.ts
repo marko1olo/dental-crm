@@ -145,6 +145,8 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 				assert.ok(s.name, "Услуга должна содержать name");
 				assert.equal(typeof s.priceRub, "number", "priceRub должен быть числом");
 				assert.ok(s.priceRub > 0, "priceRub должен быть > 0");
+				assert.equal(typeof (s as Record<string, unknown>).priceKopecks, "number", "priceKopecks должен быть числом");
+				assert.equal(typeof (s as Record<string, unknown>).amountKopecks, "bigint", "amountKopecks должен быть bigint");
 				assert.equal(s.toothNumber, 21, "toothNumber должен совпадать с зубом");
 				assert.equal(s.stageKind, "stage_3_orthopedics");
 			}
@@ -293,9 +295,9 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 		assert.ok(masterProto.consumables && masterProto.consumables.length >= 4, "Должен содержать расходные материалы");
 
 		const consumableNames = masterProto.consumables!.map((c) => c.item);
-		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Silagum") || n!.includes("Express"))), "Слепочная масса А-силикон");
-		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Protemp") || n!.includes("Luxatemp"))), "Временная пластмасса PMMA");
-		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Fuji") || n!.includes("RelyX"))), "Постоянный цемент");
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("А-силикон") || n!.includes("VPS"))), "Слепочная масса А-силикон");
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Бис-акриловый") || n!.includes("провизорных"))), "Временная пластмасса PMMA");
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("цемент") || n!.includes("СИЦ"))), "Постоянный цемент");
 
 		const serviceCodes = masterProto.order804nServices.map((s) => s.code);
 		assert.ok(serviceCodes.includes("A16.07.004"), "A16.07.004 (коронка)");

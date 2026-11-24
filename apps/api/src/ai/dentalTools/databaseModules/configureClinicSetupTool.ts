@@ -4,7 +4,7 @@
  */
 
 import { eq } from "drizzle-orm";
-import { db as defaultDb } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { clinics, organizations } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { provisionChairs, provisionDoctorsAndShifts, provisionInitialServices, provisionKkm } from "./clinicSetupProvisioner.js";
@@ -15,7 +15,6 @@ export * from "./clinicSetupServices.js";
 
 export async function handleConfigureClinicSetup(args: ConfigureClinicSetupInput, context: DentalToolContext) {
 	const parsedArgs = configureClinicSetupSchema.parse(args);
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const now = new Date();
 
@@ -27,56 +26,58 @@ export async function handleConfigureClinicSetup(args: ConfigureClinicSetupInput
 		else calculatedMode = "network_clinic";
 	}
 
-	await activeDb
-		.update(organizations)
-		.set({
-			name: parsedArgs.clinicName,
-			legalAddress: parsedArgs.legalAddress ?? null,
-			inn: parsedArgs.inn ?? null,
-			kpp: parsedArgs.kpp ?? null,
-			ogrn: parsedArgs.ogrn ?? null,
-			email: parsedArgs.email ?? null,
-			clinicMode: calculatedMode,
-			clinicSchedule: parsedArgs.schedule,
-			workspaceFeatureFlags: { schedule: true, emr: true, billing: true, imaging: true, kkm: true, inventory: true, analytics: true },
-			updatedAt: now,
-		})
-		.where(eq(organizations.id, orgId));
+	return await withTenantCtx(orgId, async (tx) => {
+		await tx
+			.update(organizations)
+			.set({
+				name: parsedArgs.clinicName,
+				legalAddress: parsedArgs.legalAddress ?? null,
+				inn: parsedArgs.inn ?? null,
+				kpp: parsedArgs.kpp ?? null,
+				ogrn: parsedArgs.ogrn ?? null,
+				email: parsedArgs.email ?? null,
+				clinicMode: calculatedMode,
+				clinicSchedule: parsedArgs.schedule,
+				workspaceFeatureFlags: { schedule: true, emr: true, billing: true, imaging: true, kkm: true, inventory: true, analytics: true },
+				updatedAt: now,
+			})
+			.where(eq(organizations.id, orgId));
 
-	let targetClinicId: string;
-	const existingClinics = await activeDb.select().from(clinics).where(eq(clinics.organizationId, orgId)).limit(1);
-	if (existingClinics.length > 0 && existingClinics[0]) {
-		targetClinicId = existingClinics[0].id;
-		await activeDb.update(clinics).set({ name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).where(eq(clinics.id, targetClinicId));
-	} else {
-		const [c] = await activeDb.insert(clinics).values({ organizationId: orgId, name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).returning({ id: clinics.id });
-		if (!c) {
-			throw new Error("Не удалось инициализировать профиль клиники");
+		let targetClinicId: string;
+		const existingClinics = await tx.select().from(clinics).where(eq(clinics.organizationId, orgId)).limit(1);
+		if (existingClinics.length > 0 && existingClinics[0]) {
+			targetClinicId = existingClinics[0].id;
+			await tx.update(clinics).set({ name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).where(eq(clinics.id, targetClinicId));
+		} else {
+			const [c] = await tx.insert(clinics).values({ organizationId: orgId, name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).returning({ id: clinics.id });
+			if (!c) {
+				throw new Error("Не удалось инициализировать профиль клиники");
+			}
+			targetClinicId = c.id;
 		}
-		targetClinicId = c.id;
-	}
 
-	const createdChairs = await provisionChairs(activeDb, orgId, targetClinicId, parsedArgs.chairsCount, parsedArgs.chairNames, parsedArgs.schedule);
-	const { createdDoctors, createdShifts } = await provisionDoctorsAndShifts(activeDb, orgId, parsedArgs.doctors, parsedArgs.schedule, createdChairs);
+		const createdChairs = await provisionChairs(tx, orgId, targetClinicId, parsedArgs.chairsCount, parsedArgs.chairNames, parsedArgs.schedule);
+		const { createdDoctors, createdShifts } = await provisionDoctorsAndShifts(tx, orgId, parsedArgs.doctors, parsedArgs.schedule, createdChairs);
 
-	let servicesAddedCount = 0;
-	if (parsedArgs.activateStandardPricelist) {
-		servicesAddedCount = await provisionInitialServices(activeDb, orgId);
-	}
+		let servicesAddedCount = 0;
+		if (parsedArgs.activateStandardPricelist) {
+			servicesAddedCount = await provisionInitialServices(tx, orgId);
+		}
 
-	const configuredKkmModel = await provisionKkm(activeDb, orgId, parsedArgs.kkmSettings, now);
+		const configuredKkmModel = await provisionKkm(tx, orgId, parsedArgs.kkmSettings, now);
 
-	return {
-		success: true,
-		clinicName: parsedArgs.clinicName,
-		clinicMode: calculatedMode,
-		chairsConfigured: createdChairs.length,
-		doctorsRegistered: createdDoctors.length,
-		shiftsScheduled: createdShifts.length,
-		servicesActivated: servicesAddedCount,
-		cashRegisterConfigured: { model: configuredKkmModel, active: parsedArgs.kkmSettings?.kkmActive, port: parsedArgs.kkmSettings?.defaultPort },
-		message: `Клиника '${parsedArgs.clinicName}' успешно настроена под ключ: создано ${createdChairs.length} кресел, ${createdDoctors.length} врачей, ${createdShifts.length} смен, ${servicesAddedCount} услуг и подключена касса ${configuredKkmModel}.`,
-	};
+		return {
+			success: true,
+			clinicName: parsedArgs.clinicName,
+			clinicMode: calculatedMode,
+			chairsConfigured: createdChairs.length,
+			doctorsRegistered: createdDoctors.length,
+			shiftsScheduled: createdShifts.length,
+			servicesActivated: servicesAddedCount,
+			cashRegisterConfigured: { model: configuredKkmModel, active: parsedArgs.kkmSettings?.kkmActive, port: parsedArgs.kkmSettings?.defaultPort },
+			message: `Клиника '${parsedArgs.clinicName}' успешно настроена под ключ: создано ${createdChairs.length} кресел, ${createdDoctors.length} врачей, ${createdShifts.length} смен, ${servicesAddedCount} услуг и подключена касса ${configuredKkmModel}.`,
+		};
+	});
 }
 
 export const configureClinicSetupTool: DentalToolEntry<typeof configureClinicSetupSchema> = {

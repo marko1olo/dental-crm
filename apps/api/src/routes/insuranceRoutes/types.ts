@@ -13,14 +13,14 @@ export const calculateCoverageBodySchema = z.object({
 export type CalculateCoverageBody = z.infer<typeof calculateCoverageBodySchema>;
 
 export const splitInvoiceBodySchema = z.object({
-	letterId: z.string().optional(),
-	contractId: z.string().optional(),
-	patientId: z.string().optional(),
+	letterId: z.string().uuid("Некорректный ID гарантийного письма").optional(),
+	contractId: z.string().uuid("Некорректный ID договора ДМС").optional(),
+	patientId: z.string().uuid("Некорректный ID пациента").optional(),
 	visitDate: z.string().optional(),
 	isEmergency: z.boolean().optional(),
 	hasAcutePain: z.boolean().optional(),
 	items: z.array(dmsSplitCalculationItemSchema).min(1, "Передайте как минимум одну услугу для расчёта разделения счёта."),
-});
+}).strict();
 
 export type SplitInvoiceBody = z.infer<typeof splitInvoiceBodySchema>;
 
@@ -28,14 +28,16 @@ export const recordUsageBodySchema = z
 	.object({
 		amountRub: nonNegativeMoneyRubSchema.optional(),
 		amountKopecks: z.number().int().positive("Сумма списания должна быть больше 0 коп.").optional(),
-		invoiceId: z.string().optional(),
+		invoiceId: z.string().uuid("Некорректный ID счёта").optional(),
 		notes: z.string().optional(),
+		reason: z.string().optional(),
 		isEmergency: z.boolean().optional(),
 		hasAcutePain: z.boolean().optional(),
 		allowOverdraft: z.boolean().optional(),
 		clientMutationId: z.string().optional(),
 		idempotencyKey: z.string().optional(),
 	})
+	.strict()
 	.refine(
 		(v) =>
 			(v.amountKopecks !== undefined && v.amountKopecks > 0) ||
@@ -61,7 +63,9 @@ export const insuranceCreateBodySchema = z.object({
 	annualLimitRub: z.number().finite().optional(),
 	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
 	requiresGuaranteeLetter: z.boolean().optional(),
-});
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
+}).strict();
 
 export type InsuranceCreateBody = z.infer<typeof insuranceCreateBodySchema>;
 
@@ -76,7 +80,9 @@ export const insuranceUpdateBodySchema = z.object({
 	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
 	requiresGuaranteeLetter: z.boolean().optional(),
 	isActive: z.boolean().optional(),
-});
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
+}).strict();
 
 export type InsuranceUpdateBody = z.infer<typeof insuranceUpdateBodySchema>;
 
@@ -102,7 +108,7 @@ export const registryQuerySchema = z.object({
 export type RegistryQuery = z.infer<typeof registryQuerySchema>;
 
 export const quickAttachBodySchema = z.object({
-	patientId: z.string(),
+	patientId: z.string().uuid("Некорректный ID пациента"),
 	insurerKey: z.string(),
 	policyNumber: z.string(),
 	patientFullName: z.string().optional(),
@@ -111,7 +117,9 @@ export const quickAttachBodySchema = z.object({
 	maxCoverageRub: z.number().optional(),
 	maxCoverageKopecks: z.number().int().nonnegative().optional(),
 	limitKopecks: z.number().int().nonnegative().optional(),
-});
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
+}).strict();
 
 export type QuickAttachBody = z.infer<typeof quickAttachBodySchema>;
 
@@ -130,14 +138,16 @@ export const transitionStatusBodySchema = z.object({
 	]),
 	notes: z.string().optional(),
 	resolutionReason: z.string().optional(),
-});
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
+}).strict();
 
 export type TransitionStatusBody = z.infer<typeof transitionStatusBodySchema>;
 
 export const preAuthRequestBodySchema = z.object({
-	letterId: z.string().uuid().optional(),
+	letterId: z.string().uuid("Некорректный ID гарантийного письма").optional(),
 	patientId: z.string().uuid("Некорректный ID пациента"),
-	contractId: z.string().uuid().optional(),
+	contractId: z.string().uuid("Некорректный ID договора ДМС").optional(),
 	insurerKey: z.string().optional(),
 	insurerName: z.string().optional(),
 	policyNumber: z.string().optional(),
@@ -151,6 +161,8 @@ export const preAuthRequestBodySchema = z.object({
 	estimatedCostRub: z.number().nonnegative().optional(),
 	estimatedCostKopecks: z.number().int().nonnegative().optional(),
 	notes: z.string().optional(),
-});
+	clientMutationId: z.string().optional(),
+	idempotencyKey: z.string().optional(),
+}).strict();
 
 export type PreAuthRequestBody = z.infer<typeof preAuthRequestBodySchema>;

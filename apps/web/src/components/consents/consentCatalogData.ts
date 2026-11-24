@@ -8,7 +8,7 @@
  * Хэширование целостности подписи и генератор печати бланка А4.
  */
 
-import { type DocumentKind, kopecksToRubles, resolveTaxDeductionCategoryShared } from "@dental/shared";
+import { calculatePercentDiscountKopecks, type DocumentKind, kopecksToRubles, resolveTaxDeductionCategoryShared } from "@dental/shared";
 import type React from "react";
 import {
 	ClipboardList,
@@ -464,13 +464,27 @@ export interface DocumentLegalContext {
 	readonly consentSubKind?: ConsentSubKind | undefined;
 }
 
+export function extractCityFromAddress(address?: string | null): string {
+	if (!address || typeof address !== "string") return "";
+	const match = address.match(/(?:г\.|город)\s*([^,]+)/i);
+	if (match?.[1]) {
+		return `г. ${match[1].trim()}`;
+	}
+	const parts = address.split(",");
+	const first = parts[0]?.trim();
+	if (first && (first.startsWith("г.") || first.toLowerCase().includes("город") || first.toLowerCase().includes("москва") || first.toLowerCase().includes("петербург"))) {
+		return first;
+	}
+	return first || "";
+}
+
 export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
 	name: 'ООО "Стоматологическая клиника ДЕНТЕ"',
 	inn: "7701234567",
 	ogrn: "1237700456789",
-	address: "г. Москва, ул. Клиническая, д. 12, стр. 1",
+	address: "ул. Клиническая, д. 12, стр. 1",
 	phone: "+7 (495) 789-01-23",
-	license: "ЛО41-01137-77/00561234 от 14.02.2021 выдана ДЗМ",
+	license: "[Лицензия не указана в профиле]",
 };
 
 /**
@@ -533,6 +547,8 @@ export function generateContractTemplate(ctx: DocumentLegalContext): string {
 	const patientPassport = ctx.patient.passport.trim() || "паспорт: серия ____ № ______ выдан ________________________________";
 	const patientPhone = ctx.patient.phone.trim() || "+7 (___) ___-__-__";
 	const patientAddress = ctx.patient.address.trim() || "________________________________________________";
+	const city = extractCityFromAddress(ctx.clinic.address);
+	const clinicLicense = ctx.clinic.license?.trim() || "[Лицензия не указана в профиле]";
 
 	const costSection = ctx.totalAmountKopecks > 0
 		? `3.1. Предварительная стоимость услуг по согласованному плану лечения составляет: ${formatKopecksToRubles(ctx.totalAmountKopecks)}.`
@@ -540,10 +556,10 @@ export function generateContractTemplate(ctx: DocumentLegalContext): string {
 
 	return `ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ № ${ctx.documentNumber}
 
-г. Москва                                                              Дата: ${ctx.documentDate}
+${city ? `${city}                                                              ` : ""}Дата: ${ctx.documentDate}
 
 1. СТОРОНЫ ДОГОВОРА
-Исполнитель: ${ctx.clinic.name}, ОГРН ${ctx.clinic.ogrn}, ИНН ${ctx.clinic.inn}, адрес: ${ctx.clinic.address}, лицензия: ${ctx.clinic.license}.
+Исполнитель: ${ctx.clinic.name}, ОГРН ${ctx.clinic.ogrn}, ИНН ${ctx.clinic.inn}, адрес: ${ctx.clinic.address}, лицензия: ${clinicLicense}.
 Заказчик (Пациент): ${patientName}, дата рождения: ${patientBirthDate}, ${patientPassport}, телефон: ${patientPhone}, адрес: ${patientAddress}.
 
 2. ПРЕДМЕТ ДОГОВОРА
@@ -570,11 +586,12 @@ export function generateInformedConsentTemplate(
 		anesthesia: { label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ", desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.", risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии." },
 	};
 	const cur = titles[subKind] || titles.therapy;
+	const city = extractCityFromAddress(ctx.clinic.address);
 
 	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА ${cur.label}
 К медицинской карте пациента: ${ctx.patient.fullName}
 
-г. Москва                                                              Дата: ${ctx.documentDate}
+${city ? `${city}                                                              ` : ""}Дата: ${ctx.documentDate}
 
 Я, ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р., проживающий по адресу: ${ctx.patient.address},
 уполномочиваю клинику «${ctx.clinic.name}» и лечащего врача ${ctx.doctor.fullName} провести стоматологическое вмешательство.
@@ -615,10 +632,11 @@ export function generateActTemplate(ctx: DocumentLegalContext): string {
 	const itemsRows = ctx.services.length > 0
 		? ctx.services.map((s, idx) => `${idx + 1}. ${s.title} — ${s.quantity} шт. × ${formatKopecksToRubles(s.priceKopecks)} = ${formatKopecksToRubles(s.amountKopecks)}`).join("\n")
 		: (ctx.totalAmountKopecks > 0 ? `1. Стоматологический приём и санация — 1 усл. = ${formatKopecksToRubles(ctx.totalAmountKopecks)}` : "Перечень услуг пуст.");
+	const city = extractCityFromAddress(ctx.clinic.address);
 
 	return `АКТ ВЫПОЛНЕННЫХ УСЛУГ К ДОГОВОРУ № ${ctx.documentNumber}
 
-г. Москва                                                              Дата: ${ctx.documentDate}
+${city ? `${city}                                                              ` : ""}Дата: ${ctx.documentDate}
 
 Исполнитель: ${ctx.clinic.name}
 Пациент: ${ctx.patient.fullName} (паспорт: ${ctx.patient.passport})
@@ -656,8 +674,10 @@ export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): strin
 	}
 
 	const totalKopecks = code01Kopecks + code02Kopecks > 0 ? code01Kopecks + code02Kopecks : Math.max(0, Math.round(ctx.totalAmountKopecks || 0));
-	const eligibleCode01Kopecks = Math.min(code01Kopecks, 15000000);
-	const refund13Kopecks = Math.round((eligibleCode01Kopecks * 0.13) + (code02Kopecks * 0.13));
+	const code01LimitKopecks = year >= 2024 ? 15000000 : 12000000;
+	const eligibleCode01Kopecks = Math.min(code01Kopecks, code01LimitKopecks);
+	const refund13Kopecks = calculatePercentDiscountKopecks(eligibleCode01Kopecks + code02Kopecks, 13);
+	const clinicLicense = ctx.clinic.license?.trim() || "[Лицензия не указана в профиле]";
 
 	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)
 Номер справки: ${ctx.documentNumber}
@@ -666,7 +686,7 @@ export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): strin
 
 1. Сведения о медицинской организации:
 Наименование: ${ctx.clinic.name} | ИНН: ${ctx.clinic.inn} | ОГРН: ${ctx.clinic.ogrn}
-Лицензия на медицинскую деятельность: ${ctx.clinic.license}
+Лицензия на медицинскую деятельность: ${clinicLicense}
 Адрес местонахождения: ${ctx.clinic.address} · Телефон: ${ctx.clinic.phone}
 
 2. Сведения о налогоплательщике и пациенте:

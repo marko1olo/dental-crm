@@ -57,6 +57,6 @@ export const createCertificateBodySchema = z.object({
 	nextRecallDate: z.string().optional().nullable(),
 	integritySha256: z.string().trim().min(16, "Некорректный хеш целостности"),
 	notes: z.string().trim().max(2000).optional().nullable(),
-});
+}).strict();
 
 export type CreateCertificateBody = z.infer<typeof createCertificateBodySchema>;

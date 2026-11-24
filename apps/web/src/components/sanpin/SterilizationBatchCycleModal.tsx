@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { ShieldCheck, X, User, CheckCircle2, PackageCheck, Barcode, FlaskConical, Printer } from "lucide-react";
+import { ShieldCheck, X, User, CheckCircle2, PackageCheck, FlaskConical, Printer } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
@@ -77,7 +77,6 @@ export function SterilizationBatchCycleModal({
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");
 	const [selectedTemplateId, setSelectedTemplateId] = useState<string>("therapy");
 	const [indicatorClass, setIndicatorClass] = useState<"4" | "5">("5");
-	const [barcodeInput, setBarcodeInput] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
@@ -123,7 +122,7 @@ export function SterilizationBatchCycleModal({
 			cycleName: isPrion ? "Антиприонный цикл 134°C (18 мин)" : isStandard ? "Стандартный цикл 134°C (5 мин)" : isDelicate ? "Деликатный цикл 121°C (20 мин)" : "Экспресс цикл 134°C",
 			itemsDescription: itemsDescription || `Партия стерилизации (${packagesCount} крафт-пакетов)`,
 			indicatorClass, indicatorType: indicatorClass === "4" ? "class4_multivariable" : "class5_integrating",
-			barcode: barcodeInput.trim() || undefined,
+			barcode: undefined,
 		};
 		try {
 			const idempotencyKey = crypto.randomUUID();
@@ -154,7 +153,7 @@ export function SterilizationBatchCycleModal({
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [regime, packagesCount, deviceName, autoclaveId, operatorName, indicatorClass, barcodeInput, isStandard, isDelicate, isPrion, itemsDescription, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated, onClose]);
+	}, [regime, packagesCount, deviceName, autoclaveId, operatorName, indicatorClass, isStandard, isDelicate, isPrion, itemsDescription, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated, onClose]);
 
 	const handleLaunchShiftMacroBatch = useCallback(async () => {
 		setIsSubmitting(true);
@@ -255,15 +254,9 @@ export function SterilizationBatchCycleModal({
 							)}
 						</div>
 					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-						<div className="flex flex-col gap-1">
-							<label htmlFor="pouch-barcode-input" className="font-semibold text-[var(--ink)] flex items-center gap-1"><Barcode size={12} className="text-[var(--primary)]" /><span>Штрихкод крафт-пакета (опция):</span></label>
-							<input id="pouch-barcode-input" type="text" placeholder="Сканируйте или авто..." value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)} className="w-full h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]" />
-						</div>
-						<div className="flex flex-col gap-1">
-							<label htmlFor="nurse-name-input" className="font-semibold text-[var(--ink)] flex items-center gap-1"><User size={12} className="text-[var(--ink-muted)]" /><span>Ответственная медсестра:</span></label>
-							<input id="nurse-name-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} placeholder="Дежурная медсестра ЦСО" data-testid="sanpin-operator-input" className="w-full h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--primary)]" />
-						</div>
+					<div className="flex flex-col gap-1">
+						<label htmlFor="nurse-name-input" className="font-semibold text-[var(--ink)] flex items-center gap-1"><User size={12} className="text-[var(--ink-muted)]" /><span>Ответственная медсестра:</span></label>
+						<input id="nurse-name-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} placeholder="Дежурная медсестра ЦСО" data-testid="sanpin-operator-input" className="w-full h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--primary)]" />
 					</div>
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
 						<div className="flex items-center justify-between text-xs">

@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
 	basisPointsFromPercent,
-	computePayloadHash,
 	kopecksToRubles,
 	percentageOfKopecks,
 	rublesToKopecks,
@@ -12,7 +11,6 @@ import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems } from "../../../db/schema/clinical.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { patients } from "../../../db/schema/patients.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../invoiceCalculationHelpers.js";
@@ -55,49 +53,6 @@ export async function handleCreateInvoice(
 			message: "Некорректные параметры создания счёта.",
 			details: parsed.error.issues,
 		});
-	}
-
-	const rawIdempotencyKey =
-		(request.headers["idempotency-key"] as string | undefined) ??
-		(request.headers["x-idempotency-key"] as string | undefined) ??
-		(typeof body.clientMutationId === "string" ? body.clientMutationId : undefined) ??
-		(typeof body.idempotencyKey === "string" ? body.idempotencyKey : undefined);
-
-	const idempotencyKey =
-		typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-			? rawIdempotencyKey.trim()
-			: undefined;
-
-	if (idempotencyKey) {
-		reply.header("Idempotency-Key", idempotencyKey);
-		const existingRecord = await withTenantCtx(orgId, async (tx) => {
-			const [rec] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-			return rec ?? null;
-		});
-
-		if (existingRecord) {
-			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				return reply
-					.code(existingRecord.responseCode || 200)
-					.send(existingRecord.responseBody);
-			}
-			if (existingRecord.status === "in_flight") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Создание счёта с данным Idempotency-Key уже выполняется.",
-				});
-			}
-		}
 	}
 
 	const data: CreateInvoiceInput = parsed.data;
@@ -349,29 +304,6 @@ export async function handleCreateInvoice(
 			itemsCount: result.items.length,
 		};
 
-		if (idempotencyKey) {
-			await withTenantCtx(orgId, async (tx) => {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-						},
-					});
-			});
-		}
-
 		return reply.code(200).send(responsePayload);
 	}
 
@@ -437,29 +369,6 @@ export async function handleCreateInvoice(
 		items: returnedItems,
 		itemsCount: returnedItems.length,
 	};
-
-	if (idempotencyKey) {
-		await withTenantCtx(orgId, async (tx) => {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: responsePayload,
-					responseCode: 201,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: responsePayload,
-						responseCode: 201,
-					},
-				});
-		});
-	}
 
 	return reply.code(201).send(responsePayload);
 }

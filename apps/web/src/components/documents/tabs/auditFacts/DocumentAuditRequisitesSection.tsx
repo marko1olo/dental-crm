@@ -18,17 +18,17 @@ export const DocumentAuditRequisitesSection: React.FC<DocumentAuditRequisitesSec
 		return (
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 				<div>
-					<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Вид документа</span>
+					<span className="text-[11px] font-bold text-[var(--muted)] block">Вид документа</span>
 					<strong className="block text-sm text-[var(--ink)] mt-0.5">{documentLabels?.[facts.kind] ?? facts.kind}</strong>
 				</div>
 				<div>
-					<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Статус и дата выдачи</span>
+					<span className="text-[11px] font-bold text-[var(--muted)] block">Статус и дата выдачи</span>
 					<div className="flex items-center gap-2 mt-0.5">
 						<span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11.5px] font-bold border ${
 							isIssued
-								? "bg-teal-500/15 text-[var(--teal)] border-teal-500/30"
+								? "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30"
 								: isVoided
-									? "bg-rose-500/15 text-rose-600 border-rose-500/30"
+									? "bg-[var(--danger)]/15 text-[var(--danger)] border-[var(--danger)]/30"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
 						}`}>
 							{documentStatusLabels?.[facts.status] ?? CANONICAL_DOCUMENT_STATUS_LABELS[facts.status] ?? facts.status}
@@ -39,7 +39,7 @@ export const DocumentAuditRequisitesSection: React.FC<DocumentAuditRequisitesSec
 					</div>
 				</div>
 				<div>
-					<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Контрольный отпечаток</span>
+					<span className="text-[11px] font-bold text-[var(--muted)] block">Контрольный отпечаток</span>
 					<div className="flex items-center gap-1.5 mt-0.5">
 						<Hash className="w-3.5 h-3.5 text-[var(--muted)]" />
 						<code className="text-[11.5px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]">

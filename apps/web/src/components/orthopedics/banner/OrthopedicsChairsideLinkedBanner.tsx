@@ -30,7 +30,7 @@ export function OrthopedicsChairsideLabOrderBanner({
 				</div>
 				<div
 					data-testid="ortho-chairside-bound-attributes"
-					className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-medium text-[var(--muted)]"
+					className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-medium text-[var(--ink-muted)]"
 				>
 					<span>
 						Наряд: <strong className="font-mono text-[var(--ink)]">{orderNumber}</strong>
@@ -52,7 +52,7 @@ export function OrthopedicsChairsideLabOrderBanner({
 						type="button"
 						data-testid="banner-orthopedic-passport-btn"
 						onClick={onOpenPassportA4}
-						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold inline-flex items-center gap-1.5 shrink-0 focus:outline-none"
+						className="secondary-button min-h-[44px] sm:h-9 px-3 text-xs font-bold inline-flex items-center gap-1.5 shrink-0 focus:outline-none"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
 						<FileText size={14} className="text-[var(--primary)] shrink-0" />
@@ -63,7 +63,7 @@ export function OrthopedicsChairsideLabOrderBanner({
 					type="button"
 					data-testid="ortho-chairside-confirm-fitting-btn"
 					onClick={onConfirmFitting}
-					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none ${
+					className={`min-h-[44px] sm:h-9 px-3.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none ${
 						fittingConfirmed
 							? "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--primary)]/40 shadow-xs"
 							: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] shadow-xs"

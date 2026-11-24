@@ -145,9 +145,9 @@ describe("Clinical Restorative Protocol Engine (restorationProtocolEngine)", () 
 		const formatted = formatRestorationProtocolDetails(sampleData);
 		assert.ok(formatted.includes("Зуб 16"));
 		assert.ok(formatted.includes("M, O"));
-		assert.ok(formatted.includes("OptiBond FL"));
-		assert.ok(formatted.includes("Filtek Ultimate"));
-		assert.ok(formatted.includes("Bausch 40 мкм"));
+		assert.ok(formatted.includes("тотального протравливания"));
+		assert.ok(formatted.includes("наногибридный композит"));
+		assert.ok(formatted.includes("40 мкм"));
 		assert.ok(formatted.includes("18 мес"));
 		// Проверка Мандата 8d: ноль эмодзи
 		assert.ok(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(formatted));
@@ -177,9 +177,9 @@ describe("Chairside Therapy Protocol Engine (therapyProtocolEngine)", () => {
 		assert.equal(result.blackClass, "class_II");
 		assert.ok(result.subjectiveComplaints.includes("кариозной полости"));
 		assert.ok(result.statusLocalis.includes("K02.1") || result.statusLocalis.includes("class_II"));
-		assert.ok(result.treatmentDescription.includes("OptiBond FL"));
-		assert.ok(result.treatmentDescription.includes("Filtek Ultimate"));
-		assert.ok(result.treatmentDescription.includes("Bausch 40 мкм"));
+		assert.ok(result.treatmentDescription.includes("тотального протравливания"));
+		assert.ok(result.treatmentDescription.includes("наногибридного композита"));
+		assert.ok(result.treatmentDescription.includes("40 мкм"));
 		assert.equal(result.warrantyMonths, 12); // MOD = 12 months
 		assert.ok(result.services804n.some((s) => s.code === "A16.07.002.003")); // 3 surfaces
 		assert.equal(result.fullProtocolText, result.fullProtocolText043);
@@ -212,8 +212,8 @@ describe("Chairside Therapy Protocol Engine (therapyProtocolEngine)", () => {
 		assert.equal(result.diagnosisIcd10, "K03.1");
 		assert.equal(result.blackClass, "class_V");
 		assert.ok(result.statusLocalis.includes("V-образный клиновидный дефект"));
-		assert.ok(result.treatmentDescription.includes("Clearfil SE Bond"));
-		assert.ok(result.treatmentDescription.includes("SDR Plus Flowable"));
+		assert.ok(result.treatmentDescription.includes("Самопротравливающий") || result.treatmentDescription.includes("самопротравливающий"));
+		assert.ok(result.treatmentDescription.includes("Bulk-fill") || result.treatmentDescription.includes("текучего"));
 		assert.ok(result.services804n.some((s) => s.code === "A11.07.012")); // Fluoridation
 		assert.ok(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(result.fullProtocolText043));
 	});

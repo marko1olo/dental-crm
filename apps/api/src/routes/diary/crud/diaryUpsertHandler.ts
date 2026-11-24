@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { computePayloadHash } from "@dental/shared";
 import {
 	requireClinicalMutationAccess,
 	resolveOrganizationId,
@@ -8,7 +7,6 @@ import {
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { visits } from "../../../db/schema.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { DiarySigningError } from "../../../services/clinical/DiarySigningCeremonyService.js";
@@ -34,50 +32,6 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 
 	const orgId = await resolveOrganizationId(req);
 	if (!orgId) return reply.code(403).send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE });
-
-	if (idempotencyKey) {
-		try {
-			const [existingKey] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingKey) {
-				if (existingKey.status === "completed" && existingKey.responseBody) {
-					reply.header("Idempotent-Replay", "true");
-					return reply.code(existingKey.responseCode || 200).send(existingKey.responseBody);
-				}
-				if (existingKey.status === "in_flight") {
-					reply.header("Retry-After", "1");
-					return reply.code(409).send({
-						error: "Conflict",
-						message: "Операция сохранения дневника приёма уже выполняется в фоновом режиме. Повторите запрос через секунду.",
-					});
-				}
-			}
-
-			await db
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					payloadHash: computePayloadHash(req.body ?? {}),
-					responseCode: 0,
-					responseBody: null,
-					lockedAt: new Date(),
-				})
-				.onConflictDoNothing();
-		} catch (idemErr) {
-			req.log.warn({ err: idemErr, idempotencyKey }, "[diaryUpsertHandler] Предупреждение проверки idempotencyKeys");
-		}
-	}
 
 	const identity = getRequestIdentity(req);
 	const staffRole = identity.role ?? req.user?.role ?? null;
@@ -134,51 +88,8 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 			hash: outcome.signing?.hash ?? outcome.draftHash ?? null,
 		};
 
-		if (idempotencyKey) {
-			try {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(req.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-						lockedAt: new Date(),
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-							lockedAt: new Date(),
-						},
-					});
-			} catch (idemSaveErr) {
-				req.log.warn({ err: idemSaveErr, idempotencyKey }, "[diaryUpsertHandler] Ошибка сохранения результата в idempotencyKeys");
-			}
-		}
-
 		return reply.send(responsePayload);
 	} catch (err) {
-		if (idempotencyKey) {
-			try {
-				await db
-					.delete(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-							eq(idempotencyKeys.status, "in_flight"),
-						),
-					);
-			} catch (cleanErr) {
-				req.log.warn({ err: cleanErr, idempotencyKey }, "[diaryUpsertHandler] Ошибка снятия in_flight замка при сбое");
-			}
-		}
-
 		if (err instanceof DiarySigningError) {
 			if (err.code === "AlreadyLocked") {
 				return reply.code(403).send({ error: "DiaryLocked", message: err.message });
@@ -194,33 +105,6 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 					warning: "InsufficientStockOverdraft",
 					message: "Дневник приёма сохранён. Склад переведён в режим мягкого овердрафта.",
 				};
-
-				if (idempotencyKey) {
-					try {
-						await db
-							.insert(idempotencyKeys)
-							.values({
-								clinicId: orgId,
-								key: idempotencyKey,
-								status: "completed",
-								payloadHash: computePayloadHash(req.body ?? {}),
-								responseBody: overdraftPayload,
-								responseCode: 200,
-								lockedAt: new Date(),
-							})
-							.onConflictDoUpdate({
-								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-								set: {
-									status: "completed",
-									responseBody: overdraftPayload,
-									responseCode: 200,
-									lockedAt: new Date(),
-								},
-							});
-					} catch (idemSaveErr) {
-						req.log.warn({ err: idemSaveErr, idempotencyKey }, "[diaryUpsertHandler] Ошибка сохранения overdraft в idempotencyKeys");
-					}
-				}
 
 				return reply.send(overdraftPayload);
 			}

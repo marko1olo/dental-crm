@@ -24,7 +24,7 @@ export function OrthopedicsChairsideTopBar({
 					<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] tracking-tight">
 						Ортопедический протокол у кресла
 					</h3>
-					<p className="text-[11px] text-[var(--muted)]">
+					<p className="text-[11px] text-[var(--ink-muted)]">
 						Клинические протоколы · Оттенки VITA · Наряды ЗТЛ
 					</p>
 				</div>
@@ -42,16 +42,16 @@ export function OrthopedicsChairsideTopBar({
 						onChange={(e) => onChangeActiveTeethInput(e.target.value)}
 						placeholder="16, 21"
 						aria-label="Номера зубов FDI"
-						className="min-h-[44px] sm:min-h-[34px] w-20 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
+						className="min-h-[44px] sm:h-9 w-20 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
 						data-testid="ortho-teeth-input"
 					/>
 				</div>
 
 				<div
-					className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-xs min-h-[44px] sm:min-h-[34px]"
+					className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-xs min-h-[44px] sm:h-9"
 					data-testid="attached-xray-badge"
 				>
-					<Camera size={15} className={activeXrayUrl ? "text-[var(--primary)] shrink-0" : "text-[var(--muted)] shrink-0"} />
+					<Camera size={15} className={activeXrayUrl ? "text-[var(--primary)] shrink-0" : "text-[var(--ink-muted)] shrink-0"} />
 					{activeXrayUrl ? (
 						<div className="flex items-center gap-1.5">
 							<span className="text-[var(--primary)] font-bold truncate max-w-[110px]" title="Снимок визита прикреплен к наряду ЗТЛ">
@@ -60,14 +60,14 @@ export function OrthopedicsChairsideTopBar({
 							<button
 								type="button"
 								onClick={onDetachXray}
-								className="text-xs text-[var(--muted)] hover:text-[var(--danger)] cursor-pointer font-bold px-0.5 inline-flex items-center"
+								className="text-xs text-[var(--ink-muted)] hover:text-[var(--danger)] cursor-pointer font-bold px-0.5 inline-flex items-center"
 								title="Открепить снимок"
 							>
 								<X className="w-3 h-3" />
 							</button>
 						</div>
 					) : (
-						<span className="text-[var(--muted)] font-medium">Без снимка</span>
+						<span className="text-[var(--ink-muted)] font-medium">Без снимка</span>
 					)}
 				</div>
 
@@ -92,7 +92,7 @@ export function OrthopedicsChairsideTopBar({
 								className={`min-h-[44px] sm:min-h-[30px] px-2.5 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 									isSelected
 										? "bg-[var(--primary)] text-white shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 								title={labels[scope].full}
 								data-testid={`jaw-scope-${scope}-btn`}
@@ -107,7 +107,7 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={onToggle3dViewer}
-						className={`min-h-[44px] sm:min-h-[34px] px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+						className={`min-h-[44px] sm:h-9 px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
 							is3dViewerOpen
 								? "bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/40 shadow-xs"
 								: "bg-[var(--paper-subtle)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
@@ -124,14 +124,14 @@ export function OrthopedicsChairsideTopBar({
 					value={selectedMaterial}
 					onChange={(e) => onChangeSelectedMaterial(e.target.value)}
 					aria-label="Материал конструкции"
-					className="min-h-[44px] sm:min-h-[34px] px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
+					className="min-h-[44px] sm:h-9 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
 				>
-					<option value="ZrO2 Multi-Layer">ZrO2 Multi-Layer</option>
-					<option value="IPS e.max Press">IPS e.max Press</option>
-					<option value="Металлокерамика Noritake">Металлокерамика Noritake</option>
+					<option value="ZrO2 Multi-Layer">ZrO2 Multi-Layer (диоксид циркония)</option>
+					<option value="Прессованная стеклокерамика">Прессованная стеклокерамика</option>
+					<option value="Металлокерамика Co-Cr">Металлокерамика Co-Cr</option>
 					<option value="PMMA CAD/CAM">PMMA CAD/CAM</option>
-					<option value="Acry-Free / Квадротти">Acry-Free / Квадротти</option>
-					<option value="Временная Protemp 4">Временная Protemp 4</option>
+					<option value="Термопластический протез">Термопластический протез</option>
+					<option value="Временная провизорная коронка">Временная провизорная коронка</option>
 				</select>
 			</div>
 		</div>

@@ -23,7 +23,7 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={onInsertToClinicalDiary}
-					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] px-4 py-2.5 text-sm font-medium text-white shadow-xs transition active:scale-98 cursor-pointer touch-manipulation"
+					className="inline-flex min-h-[44px] h-11 px-4 rounded-xl text-sm font-medium sm:min-h-0 sm:h-9 sm:px-3.5 sm:rounded-lg sm:text-sm items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs transition active:scale-[0.98] cursor-pointer touch-manipulation shrink-0"
 					data-testid="therapy-btn-apply-diary"
 				>
 					<FileText className="h-4 w-4 shrink-0" />
@@ -33,10 +33,10 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3.5 py-2.5 text-sm font-medium transition active:scale-98 cursor-pointer touch-manipulation"
+					className="inline-flex min-h-[44px] h-11 px-4 rounded-xl text-sm font-medium sm:min-h-0 sm:h-9 sm:px-3.5 sm:rounded-lg sm:text-sm items-center justify-center gap-2 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition active:scale-[0.98] cursor-pointer touch-manipulation shrink-0"
 					data-testid="therapy-btn-add-invoice"
 				>
-					<Coins className="h-4 w-4 text-[var(--primary)] shrink-0" />
+					<Coins className="h-4 w-4 shrink-0" />
 					<span>В смету ({servicesCount})</span>
 				</button>
 			</div>

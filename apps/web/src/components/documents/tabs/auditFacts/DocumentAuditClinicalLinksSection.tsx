@@ -19,8 +19,8 @@ export const DocumentAuditClinicalLinksSection: React.FC<DocumentAuditClinicalLi
 			<>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 					<div className="p-2.5 px-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
-						<div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--muted)] uppercase">
-							<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+						<div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--muted)]">
+							<Calendar className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span>Привязанный клинический приём</span>
 						</div>
 						<strong className="text-xs text-[var(--ink)]">
@@ -28,8 +28,8 @@ export const DocumentAuditClinicalLinksSection: React.FC<DocumentAuditClinicalLi
 						</strong>
 					</div>
 					<div className="p-2.5 px-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
-						<div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--muted)] uppercase">
-							<FileCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+						<div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--muted)]">
+							<FileCheck className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span>Привязанный план лечения</span>
 						</div>
 						<strong className="text-xs text-[var(--ink)]">

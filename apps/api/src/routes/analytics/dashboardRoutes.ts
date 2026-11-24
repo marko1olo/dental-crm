@@ -196,7 +196,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// 2) Распаковка комбинированных сплит-чеков ('split') по тендерам (касса, карты, СБП, аванс, ДМС)
 			// 3) Строгая сходимость сумм всех тендеров с totalKopecks
 			// 4) Прямое чтение целочисленных копеек coalesce(amountKopecks, round(amountRub * 100))
-			const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+			const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 			const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 			const methodText = sql`${payments.method}::text`;
@@ -267,6 +267,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					id: treatmentPlans.id,
 					name: treatmentPlans.name,
 					status: treatmentPlans.status,
+					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
 					totalPriceRub: treatmentPlans.totalPriceRub,
 					totalPrice: treatmentPlans.totalPrice,
 					alternativeTier: treatmentPlans.alternativeTier,
@@ -298,6 +299,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					label: string;
 					totalPlans: number;
 					acceptedPlans: number;
+					totalKopecks: number;
 					totalRub: number;
 				}
 			> = {
@@ -305,25 +307,31 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					label: "Базовый (эконом)",
 					totalPlans: 0,
 					acceptedPlans: 0,
+					totalKopecks: 0,
 					totalRub: 0,
 				},
 				optimum: {
 					label: "Оптимальный (стандарт)",
 					totalPlans: 0,
 					acceptedPlans: 0,
+					totalKopecks: 0,
 					totalRub: 0,
 				},
 				premium: {
 					label: "Премиум (комплексный)",
 					totalPlans: 0,
 					acceptedPlans: 0,
+					totalKopecks: 0,
 					totalRub: 0,
 				},
 			};
 
 			// [ANL-05] Реляционная классификация по alternativeTier вместо строкового поиска подстрок в имени и цен
 			for (const plan of allPlans) {
-				const price = Number(plan.totalPriceRub || plan.totalPrice || 0);
+				const priceKopecks =
+					plan.totalPriceKopecks != null
+						? Number(plan.totalPriceKopecks)
+						: rublesToKopecks(Number(plan.totalPriceRub || plan.totalPrice || 0));
 				const rawTier = (plan.alternativeTier || "").toLowerCase().trim();
 				let tier: TierKey = "optimum";
 				if (rawTier === "premium" || rawTier === "vip") {
@@ -347,7 +355,8 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					plan.status === "Completed";
 				if (isAccepted) {
 					tierGroups[tier].acceptedPlans += 1;
-					tierGroups[tier].totalRub += price;
+					tierGroups[tier].totalKopecks += priceKopecks;
+					tierGroups[tier].totalRub = kopecksToRubles(tierGroups[tier].totalKopecks);
 				}
 			}
 
@@ -388,6 +397,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						totalPlans: group.totalPlans,
 						acceptedPlans: group.acceptedPlans,
 						acceptanceRatePercent,
+						totalKopecks: group.totalKopecks,
 						totalRub: group.totalRub,
 					};
 				}),
@@ -417,26 +427,26 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				totalPayingPatients > 0
 					? Math.round(totalRevenueKopecks / totalPayingPatients)
 					: 0;
-			const avgChk = Math.round(kopecksToRubles(avgCheckKopecks));
+			const avgChk = kopecksToRubles(avgCheckKopecks);
 
 			const data = {
 				kpis: {
 					totalPatients: totalRegisteredPatients,
-					totalRevenue: Math.round(kopecksToRubles(totalRevenueKopecks)),
+					totalRevenue: kopecksToRubles(totalRevenueKopecks),
 					totalRevenueKopecks,
-					cashRevenue: Math.round(kopecksToRubles(cashKopecks)),
+					cashRevenue: kopecksToRubles(cashKopecks),
 					cashKopecks,
-					cardRevenue: Math.round(kopecksToRubles(cardKopecks)),
+					cardRevenue: kopecksToRubles(cardKopecks),
 					cardKopecks,
-					cashlessRevenue: Math.round(kopecksToRubles(cashlessKopecks)),
+					cashlessRevenue: kopecksToRubles(cashlessKopecks),
 					cashlessKopecks,
-					advanceRevenue: Math.round(kopecksToRubles(advanceKopecks)),
+					advanceRevenue: kopecksToRubles(advanceKopecks),
 					advanceKopecks,
-					sbpRevenue: Math.round(kopecksToRubles(sbpKopecks)),
+					sbpRevenue: kopecksToRubles(sbpKopecks),
 					sbpKopecks,
-					bankTransferRevenue: Math.round(kopecksToRubles(bankTransferKopecks)),
+					bankTransferRevenue: kopecksToRubles(bankTransferKopecks),
 					bankTransferKopecks,
-					insuranceRevenue: Math.round(kopecksToRubles(insuranceKopecks)),
+					insuranceRevenue: kopecksToRubles(insuranceKopecks),
 					insuranceKopecks,
 					bonusRevenue: 0,
 					totalAppointments: Number(apptCountRow?.count ?? 0),

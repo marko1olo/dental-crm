@@ -148,26 +148,16 @@ export function parseAndValidateKraftBarcode(
 		};
 	}
 
-	// Простой штрихкод или номер партии: динамическое извлечение даты стерилизации
+	// Простой штрихкод или номер партии: структурированное извлечение даты стерилизации
 	const clean = trimmed.toUpperCase();
 	let packDateIso = refDate;
 	const isoMatch = clean.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
-	const kbMatch = clean.match(/^KB([23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
-	const yyyymmddMatch = clean.match(/(?:^|[^0-9])(20[23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
-	const yymmddMatch = clean.match(/(?:^|[^0-9])([23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+	const kbMatch = clean.match(/^KB(?:-)?([2-9]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
 
 	if (isoMatch?.[1] && isoMatch[2] && isoMatch[3]) {
-		const [, y, m, d] = isoMatch;
-		if (y && m && d) packDateIso = `${y}-${m}-${d}`;
+		packDateIso = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
 	} else if (kbMatch?.[1] && kbMatch[2] && kbMatch[3]) {
-		const [, y, m, d] = kbMatch;
-		if (y && m && d) packDateIso = `20${y}-${m}-${d}`;
-	} else if (yyyymmddMatch?.[1] && yyyymmddMatch[2] && yyyymmddMatch[3]) {
-		const [, y, m, d] = yyyymmddMatch;
-		if (y && m && d) packDateIso = `${y}-${m}-${d}`;
-	} else if (yymmddMatch?.[1] && yymmddMatch[2] && yymmddMatch[3]) {
-		const [, y, m, d] = yymmddMatch;
-		if (y && m && d) packDateIso = `20${y}-${m}-${d}`;
+		packDateIso = `20${kbMatch[1]}-${kbMatch[2]}-${kbMatch[3]}`;
 	}
 
 	const expDateIso = addDaysToIso(packDateIso, 50);
@@ -217,57 +207,4 @@ export function parseAndValidateKraftBarcode(
 	};
 }
 
-export function attachKraftPackageToDiary(
-	diaryOrText: string,
-	parsedKraft: ParsedKraftBarcode,
-): string;
-export function attachKraftPackageToDiary<
-	T extends {
-		appliedMaterials?: string | null | undefined;
-		treatmentDescription?: string | null | undefined;
-	},
->(
-	diaryOrText: T,
-	parsedKraft: ParsedKraftBarcode,
-): T;
-export function attachKraftPackageToDiary(
-	diaryOrText:
-		| string
-		| {
-				appliedMaterials?: string | null | undefined;
-				treatmentDescription?: string | null | undefined;
-		  },
-	parsedKraft: ParsedKraftBarcode,
-):
-	| string
-	| {
-			appliedMaterials?: string | null | undefined;
-			treatmentDescription?: string | null | undefined;
-	  } {
-	const snippet = parsedKraft.formattedProtocolRecord043 || parsedKraft.formattedSterilizationDiaryRecord;
-	const barcode = parsedKraft.batchId || parsedKraft.rawInput;
-
-	if (typeof diaryOrText === "string") {
-		if (barcode && diaryOrText.includes(barcode)) {
-			return diaryOrText;
-		}
-		const trimmed = diaryOrText.trim();
-		if (!trimmed) {
-			return snippet;
-		}
-		return `${trimmed}\n\n${snippet}`;
-	}
-
-	const existing = diaryOrText.treatmentDescription ?? "";
-	if (barcode && existing.includes(barcode)) {
-		return diaryOrText;
-	}
-	const updatedDesc = existing.trim() ? `${existing.trim()}\n\n${snippet}` : snippet;
-	return {
-		...diaryOrText,
-		treatmentDescription: updatedDesc,
-	};
-}
-
-export const attachKraftPackageTo043Diary = attachKraftPackageToDiary;
 

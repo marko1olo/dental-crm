@@ -831,7 +831,7 @@
 | `GET` | `/api/imaging/studies/:id/preview.svg` | [imaging.ts:9482](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts#L9482) | Clinical Read Secret | — | 200 | — |
 | `GET` | `/api/imaging/studies/:id/viewer-session` | [imaging.ts:9231](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts#L9231) | Clinical Mutation Secret | `imagingViewerSessionResponseSchema` | 403 | — |
 | `PUT` | `/api/imaging/studies/:id/viewer-session` | [imaging.ts:9273](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts#L9273) | Clinical Mutation Secret | `imagingViewerSessionResponseSchema` | 200, 400 | — |
-| `POST` | `/api/imaging/visiograph-ai` | [imaging.ts:8726](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts#L8726) | Clinical Read Secret | `Inline Zod safeParse` | 400, 500 | — |
+| `POST` | `/api/imaging/ai-analysis` | [aiAnalysisRoutes.ts:81](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/aiAnalysisRoutes.ts#L81) | Clinical Read Secret | `imagingAiAnalysisBodySchema` | 200, 400, 503 | — |
 | `GET` | `/api/integrations/diagnocat/reports/:patientId` | [diagnocat.ts:37](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/diagnocat.ts#L37) | Verified Tenant Org | — | 403 | `patients, diagnocatReports` |
 | `POST` | `/api/integrations/diagnocat/webhook` | [diagnocat.ts:11](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/integrations/diagnocat.ts#L11) | Public / OTP / Webhook | — | 400, 403 | `patients` |
 | `POST` | `/api/xray/scans` | [xray.ts:357](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/xray.ts#L357) | Clinical Mutation Secret | `createXrayScanSchema` | 201, 400, 500 | — |

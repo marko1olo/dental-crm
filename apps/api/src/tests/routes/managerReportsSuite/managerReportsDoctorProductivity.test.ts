@@ -68,6 +68,7 @@ describe("отчёты руководителю: продуктивность в
 					organizationId: ctx.orgId,
 					patientId: ctx.patientNew,
 					amountRub: 3_000,
+					amountKopecks: 300_000n,
 					status: "paid",
 					paidAt: inPeriod,
 				})

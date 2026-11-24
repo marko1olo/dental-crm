@@ -398,6 +398,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.select({
 			status: treatmentPlans.status,
 			count: sql<number>`count(*)::int`,
+			totalPriceKopecks: sql<number>`coalesce(sum(coalesce(${treatmentPlans.totalPriceKopecks}, 0)), 0)::bigint`,
 			totalRub: sql<number>`coalesce(sum(${treatmentPlans.totalPriceRub}), 0)`,
 		})
 		.from(treatmentPlans)
@@ -418,7 +419,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	for (const row of planStats) {
 		const count = Number(row.count || 0);
-		const volKop = rublesToKopecks(Number(row.totalRub || 0));
+		const volKop = Number(row.totalPriceKopecks || rublesToKopecks(Number(row.totalRub || 0)));
 		plansPresentedCount += count;
 		plansPresentedVolumeKopecks += volKop;
 
@@ -433,7 +434,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа, исключая аннулированные счета)
 	// (Мандат 8bm: прямое суммирование копеек без float-дрейфа)
-	const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	const [paymentsSummary] = await db
 		.select({
 			paidRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} else 0 end), 0)::bigint`,
@@ -486,15 +487,15 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const totalMethodsKopecks = cashKopecks + cardDmsKopecks + sbpKopecks + depositKopecks;
 	const paymentBreakdown = {
-		cashRub: Math.round(kopecksToRubles(cashKopecks)),
+		cashRub: kopecksToRubles(cashKopecks),
 		cashPercent: totalMethodsKopecks > 0 ? Math.round((cashKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
-		cardDmsRub: Math.round(kopecksToRubles(cardDmsKopecks)),
+		cardDmsRub: kopecksToRubles(cardDmsKopecks),
 		cardDmsPercent: totalMethodsKopecks > 0 ? Math.round((cardDmsKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
-		sbpRub: Math.round(kopecksToRubles(sbpKopecks)),
+		sbpRub: kopecksToRubles(sbpKopecks),
 		sbpPercent: totalMethodsKopecks > 0 ? Math.round((sbpKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
-		depositRub: Math.round(kopecksToRubles(depositKopecks)),
+		depositRub: kopecksToRubles(depositKopecks),
 		depositPercent: totalMethodsKopecks > 0 ? Math.round((depositKopecks / totalMethodsKopecks) * 1000) / 10 : 0,
-		totalRub: Math.round(kopecksToRubles(totalMethodsKopecks)),
+		totalRub: kopecksToRubles(totalMethodsKopecks),
 		cashKopecks,
 		cardDmsKopecks,
 		sbpKopecks,
@@ -503,7 +504,7 @@ export async function queryExecutiveKpiAndFunnel(
 	};
 
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
-	const cashOperationKopExpr = sql`coalesce(nullif(${cashOperations.amountKopecks}, 0), round(${cashOperations.amountRub} * 100)::bigint)`;
+	const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, 0)::bigint`;
 	const cashExpenseRows = await db
 		.select({
 			reasonCode: cashOperations.reasonCode,
@@ -550,6 +551,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const [labOrdersRow] = await db
 		.select({
+			totalCostKopecks: sql<number>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, 0)), 0)::bigint`,
 			totalRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
@@ -566,10 +568,11 @@ export async function queryExecutiveKpiAndFunnel(
 	// [P&L / Метод начисления]: прямые затраты на лабораторию и материалы формируются
 	// строго по факту нарядов ЗТЛ и списаний со склада за период (Мандаты 8ap & 8bm),
 	// исключая смешивание с кассовым ДДС (cashLabExpensesKopecks / cashMaterialsExpensesKopecks).
-	const directLabCostKopecks = rublesToKopecks(Number(labOrdersRow?.totalRub || 0));
+	const directLabCostKopecks = Number(labOrdersRow?.totalCostKopecks || rublesToKopecks(Number(labOrdersRow?.totalRub || 0)));
 
 	const [materialsUsageRow] = await db
 		.select({
+			totalCostKopecks: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(coalesce(${inventoryTransactions.unitCostKopecks}, round(${inventoryTransactions.unitCostRub} * 100)::bigint), 0)), 0)::bigint`,
 			totalCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
 		})
 		.from(inventoryTransactions)
@@ -582,7 +585,7 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const directMaterialsCostKopecks = rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0));
+	const directMaterialsCostKopecks = Number(materialsUsageRow?.totalCostKopecks || rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0)));
 
 	// Начисленная зарплата врачей по ведомостям doctorPayrollStatements (метод начисления P&L)
 	// с фолбэком на кассовые операции по статье заработной платы при отсутствии начисленных ведомостей (Мандат 8ap)

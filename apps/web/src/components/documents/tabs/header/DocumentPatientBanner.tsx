@@ -36,7 +36,7 @@ export const DocumentPatientBanner: React.FC<DocumentPatientBannerProps> = React
 				</div>
 				<div className="document-patient-stats">
 					<span className="document-stat-pill" title="Выданные и подписанные документы">
-						<CheckCircle2 size={13} className="inline mr-1 text-[var(--primary,#0d9488)]" aria-hidden="true" />
+						<CheckCircle2 size={13} className="inline mr-1 text-[var(--primary)]" aria-hidden="true" />
 						Выдано: {patientIssuedDocsCount}
 					</span>
 					<span className="document-stat-pill" title="Черновики в работе">

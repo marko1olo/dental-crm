@@ -113,9 +113,9 @@ export const FIXATION_TYPE_PRESETS: readonly FixationTypePreset[] = [
 		id: "cement",
 		labelRu: "Цементная",
 		titleRu: "Цементная",
-		sublabelRu: "Fuji Plus / RelyX U200",
+		sublabelRu: "СИЦ / композитный цемент",
 		shortBadge: "Цемент",
-		description: "Фиксация на стеклоиономерный цемент Fuji Plus или композитный цемент RelyX",
+		description: "Фиксация на стеклоиономерный модифицированный цемент (СИЦ) или самоадгезивный композитный цемент",
 	},
 	{
 		id: "screw",
@@ -129,7 +129,7 @@ export const FIXATION_TYPE_PRESETS: readonly FixationTypePreset[] = [
 		id: "clasp",
 		labelRu: "Кламмерная / Замковая",
 		titleRu: "Кламмерная / Замковая",
-		sublabelRu: "Опорно-удерживающие замки / Bredent",
+		sublabelRu: "Опорно-удерживающие замки / микрозамки",
 		shortBadge: "Замки/Кламмеры",
 		description: "Опорно-удерживающие кламмеры или прецизионные микрозамковые крепления",
 	},
@@ -191,7 +191,7 @@ export const VITA_3D_MASTER_SHADE_GROUPS: readonly Vita3dShadeGroup[] = [
 
 export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 	{
-		id: "zirconia", name: "Диоксид циркония", material: "ZrO2 Multi-Layer (Prettau)",
+		id: "zirconia", name: "Диоксид циркония", material: "Диоксид циркония Multi-Layer (градиентный)",
 		constructionType: "single_crown", badge: "ZrO2 Multi",
 		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
 		warrantyMonths: 60, warrantyLabelRu: "5 лет",
@@ -204,8 +204,8 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		fixationType: "cement", hasAntagonists: true,
 	},
 	{
-		id: "emax", name: "Прессованная керамика E-max", material: "IPS e.max Press (дисиликат лития)",
-		constructionType: "single_crown", badge: "e.max Press",
+		id: "emax", name: "Прессованная стеклокерамика", material: "Дисиликат лития (пресс-керамика)",
+		constructionType: "single_crown", badge: "Пресс-керамика",
 		description: "Прессованная дисиликатная стеклокерамика высокой эстетики для фронта",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
 		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks,
@@ -217,8 +217,8 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		fixationType: "cement", hasAntagonists: true,
 	},
 	{
-		id: "veneer_emax", name: "Керамический винир E-max", material: "IPS e.max Ceram / Press",
-		constructionType: "veneer", badge: "Винир e.max",
+		id: "veneer_emax", name: "Керамический винир", material: "Полевошпатная керамика / дисиликат лития",
+		constructionType: "veneer", badge: "Винир керамика",
 		description: "Микропротезирование зоны улыбки с минимальным препарированием эмали",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
 		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks + 200000,
@@ -241,7 +241,7 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		turnaroundBusinessDays: 7, fixationType: "cement", hasAntagonists: true,
 	},
 	{
-		id: "metal_ceramic", name: "Металлокерамика", material: "Металлокерамика Co-Cr (Noritake)",
+		id: "metal_ceramic", name: "Металлокерамика", material: "Металлокерамика Co-Cr (КХС)",
 		constructionType: "single_crown", badge: "МК Co-Cr",
 		description: "Классическая металлокерамика на биосовместимом CoCr каркасе",
 		warrantyMonths: 24, warrantyLabelRu: "2 года",

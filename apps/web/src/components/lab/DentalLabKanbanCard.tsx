@@ -200,7 +200,7 @@ export function KanbanCardActions({
 
 	if (columnId === "draft") {
 		advanceLabel = "Отправить";
-		advanceTitle = "Отправить наряд-заказ и слепки в ЗТЛ";
+		advanceTitle = "Отправить наряд-заказ и слепки в лабораторию";
 		AdvanceIcon = Send;
 	} else if (columnId === "sent_to_lab") {
 		advanceLabel = "В работу";

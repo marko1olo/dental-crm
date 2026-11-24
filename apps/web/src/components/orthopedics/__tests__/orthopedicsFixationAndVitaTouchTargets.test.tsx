@@ -22,17 +22,17 @@ describe("Domain 24 Orthopedics: TASK-PROSTH-01 Cement Brand Chips & TASK-PROSTH
 			assert.ok(html.includes('data-testid="cement-brands-section"'), "Must render cement brands section");
 			assert.ok(html.includes('data-testid="cement-brand-chips"'), "Must render chips container");
 
-			// Проверка всех 4 канонических цементов
-			assert.ok(html.includes("Variolink Esthetic"), "Must render Variolink Esthetic");
-			assert.ok(html.includes("RelyX U200"), "Must render RelyX U200");
-			assert.ok(html.includes("Fuji Plus"), "Must render Fuji Plus");
-			assert.ok(html.includes("Panavia V5"), "Must render Panavia V5");
+			// Проверка всех 4 канонических клинических категорий цементов (Мандаты 8x, 8ap)
+			assert.ok(html.includes("Светоотверждаемый композитный цемент"), "Must render Light-cured composite");
+			assert.ok(html.includes("Самоадгезивный композитный цемент"), "Must render Self-adhesive composite");
+			assert.ok(html.includes("Стеклоиономерный модифицированный цемент (СИЦ)"), "Must render RMGI (Fuji Plus category)");
+			assert.ok(html.includes("Адгезивный композитный цемент с праймером MDP"), "Must render MDP adhesive composite");
 
-			// Проверка производителей
-			assert.ok(html.includes("Ivoclar"), "Must include manufacturer Ivoclar");
-			assert.ok(html.includes("3M"), "Must include manufacturer 3M");
-			assert.ok(html.includes("GC"), "Must include manufacturer GC");
-			assert.ok(html.includes("Kuraray"), "Must include manufacturer Kuraray");
+			// Проверка клинических протоколов фиксации
+			assert.ok(html.includes("Адгезивная фиксация"), "Must include protocol note");
+			assert.ok(html.includes("Двойное отверждение"), "Must include dual cure note");
+			assert.ok(html.includes("Химическое отверждение"), "Must include chemical cure note");
+			assert.ok(html.includes("Универсальный протокол"), "Must include universal protocol note");
 
 			// Проверка testid для каждого чипа
 			for (const cement of CEMENT_BRAND_PRESETS) {
@@ -42,9 +42,9 @@ describe("Domain 24 Orthopedics: TASK-PROSTH-01 Cement Brand Chips & TASK-PROSTH
 				);
 			}
 
-			// Проверка активного стиля: dente-btn-pill и тиловый акцент rgba(13, 148, 136, 0.12)
+			// Проверка активного стиля: dente-btn-pill и семантический токен var(--primary)
 			assert.ok(html.includes("dente-btn-pill"), "Chips must use .dente-btn-pill class (Mandate 8am)");
-			assert.ok(html.includes("bg-[rgba(13,148,136,0.12)]"), "Active chip must use noble teal tint bg-[rgba(13,148,136,0.12)]");
+			assert.ok(html.includes("bg-[var(--primary)]/10"), "Active chip must use semantic token bg-[var(--primary)]/10");
 
 			// Проверка Apple HIG тач-таргета: min-h-[44px] sm:min-h-[32px]
 			assert.ok(html.includes("min-h-[44px]"), "Chips must enforce min-h-[44px] on mobile (Mandate 8ze, Apple HIG)");

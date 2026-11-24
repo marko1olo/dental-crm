@@ -22,6 +22,7 @@ export interface DentalLabConstructionDef {
 	readonly requiresStumpShade: boolean;
 	readonly requiresTranslucency: boolean;
 	readonly defaultPatientPriceKopecks: number;
+	readonly defaultLabCostKopecks: number;
 	readonly defaultZtlCostKopecks: number;
 	readonly descriptionRu: string;
 }
@@ -39,7 +40,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: true,
 		requiresTranslucency: true,
 		defaultPatientPriceKopecks: 2400000, // 24 000 руб
-		defaultZtlCostKopecks: 750000,       // 7 500 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 750000,       // 7 500 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 750000,       // 7 500 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Анатомическая монолитная коронка из высокопрочного диоксида циркония с плавным градиентом цвета.",
 	},
 	crown_emax: {
@@ -54,7 +56,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: true,
 		requiresTranslucency: true,
 		defaultPatientPriceKopecks: 2600000, // 26 000 руб
-		defaultZtlCostKopecks: 850000,       // 8 500 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 850000,       // 8 500 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 850000,       // 8 500 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Цельнокерамическая реставрация с естественной опалесценцией для фронтальной и жевательной зоны.",
 	},
 	metal_ceramic: {
@@ -69,7 +72,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: false,
 		requiresTranslucency: false,
 		defaultPatientPriceKopecks: 1400000, // 14 000 руб
-		defaultZtlCostKopecks: 380000,       // 3 800 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 380000,       // 3 800 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 380000,       // 3 800 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Металлокерамическая коронка на прочном кобальт-хромовом каркасе с керамической облицовкой.",
 	},
 	clasp_denture: {
@@ -84,7 +88,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: false,
 		requiresTranslucency: false,
 		defaultPatientPriceKopecks: 3800000, // 38 000 руб — каноническая синхронизированная цена
-		defaultZtlCostKopecks: 1300000,      // 13 000 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 1300000,      // 13 000 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 1300000,      // 13 000 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Дуговой протез с замковыми аттачменами или литыми удерживающими кламмерами.",
 	},
 	aligner_splint: {
@@ -98,7 +103,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: false,
 		requiresTranslucency: false,
 		defaultPatientPriceKopecks: 1800000, // 18 000 руб
-		defaultZtlCostKopecks: 550000,       // 5 500 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 550000,       // 5 500 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 550000,       // 5 500 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Прозрачная индивидуальная каппа для ортодонтического перемещения или окклюзионной декомпрессии.",
 	},
 	surgical_guide: {
@@ -113,7 +119,8 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		requiresStumpShade: false,
 		requiresTranslucency: false,
 		defaultPatientPriceKopecks: 1500000, // 15 000 руб
-		defaultZtlCostKopecks: 500000,       // 5 000 руб себестоимость ЗТЛ
+		defaultLabCostKopecks: 500000,       // 5 000 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 500000,       // 5 000 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Точный шаблон на основе совмещения КЛКТ и оптического скана со направляющими втулками.",
 	},
 };

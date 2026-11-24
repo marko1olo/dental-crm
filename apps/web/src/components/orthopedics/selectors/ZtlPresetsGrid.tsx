@@ -17,7 +17,7 @@ export function ZtlPresetsGrid({ activeZtlPresetId, onSelectZtlPreset }: ZtlPres
 						Стандарты ЗТЛ и гарантия:
 					</span>
 				</div>
-				<span className="text-[11px] text-[var(--muted)] truncate">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate">
 					Авторасчет сроков и спецификации
 				</span>
 			</div>
@@ -41,11 +41,11 @@ export function ZtlPresetsGrid({ activeZtlPresetId, onSelectZtlPreset }: ZtlPres
 								<span className="text-xs font-bold text-[var(--ink)] leading-snug break-words">
 									{preset.name}
 								</span>
-								<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper-subtle)] text-[var(--muted)] shrink-0 font-semibold">
+								<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper-subtle)] text-[var(--ink-muted)] shrink-0 font-semibold">
 									{preset.badge}
 								</span>
 							</div>
-							<span className="text-[11px] text-[var(--muted)] leading-tight min-w-0 w-full mb-1 break-words">
+							<span className="text-[11px] text-[var(--ink-muted)] leading-tight min-w-0 w-full mb-1 break-words">
 								{preset.material}
 							</span>
 							<div className="flex items-center gap-1 text-[11px] text-[var(--primary)] font-medium min-w-0 w-full mt-auto">

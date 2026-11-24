@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronDown, ExternalLink, Plus, SlidersHorizontal, Check } from "lucide-react";
-import { generateUuidV7, kopecksToRubles, type EndoCanalData } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks, type EndoCanalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -88,7 +88,18 @@ export function executeChairsideTransferToDiary({
 				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
 						toothNumber: activeTooth, teethNumbers: [activeTooth],
-						services: billing.services804n.map((s) => ({ code: s.code804n, code804n: s.code804n, name: s.title, nameRu: s.title, price: s.priceRub, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия" })),
+						services: billing.services804n.map((s) => ({
+							code: s.code804n,
+							code804n: s.code804n,
+							name: s.title,
+							nameRu: s.title,
+							price: s.priceRub,
+							priceRub: s.priceRub,
+							amountKopecks: Number(s.totalPriceKopecks ?? s.priceKopecks ?? rublesToKopecks(s.priceRub)),
+							quantity: s.quantity || 1,
+							toothNumber: activeTooth,
+							category: "Эндодонтия",
+						})),
 					},
 				}));
 

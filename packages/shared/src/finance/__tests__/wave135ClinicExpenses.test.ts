@@ -479,6 +479,8 @@ describe("Wave 135: Clinic Expenses & Chair-Hour Cost Allocation Engine", () => 
 				maintenance: 0,
 				marketing: 300_000,
 				license_software: 200_000,
+				lab_costs: 0,
+				taxes_fees: 0,
 				other: 0,
 			},
 			sampleVisits: [sampleVisitMargin],

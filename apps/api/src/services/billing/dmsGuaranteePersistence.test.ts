@@ -11,8 +11,9 @@ import Fastify from "fastify";
 import { insuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { organizations, patients } from "../../db/schema.js";
+import { dmsGuaranteeLetters, organizations, patients } from "../../db/schema.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -119,9 +120,20 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.ok(createJson.id, "Letter must have generated UUID");
 		assert.equal(createJson.insurerKey, "sogaz");
 		assert.equal(createJson.maxCoverageRub, 100000);
+		assert.equal(createJson.maxCoverageKopecks, 10000000);
+		assert.equal(createJson.usedAmountKopecks, 0);
 		assert.deepEqual(createJson.approvedTeethFdi, ["16", "26", "36", "46"]);
 
 		const letterId = createJson.id;
+
+		// 2.1 Verify direct DB persistence of kopecks (Mandate 8bm)
+		const [dbRow] = await db
+			.select()
+			.from(dmsGuaranteeLetters)
+			.where(eq(dmsGuaranteeLetters.id, letterId));
+		assert.ok(dbRow, "Letter must exist in DB");
+		assert.equal(dbRow.maxCoverageKopecks, 10000000n, "maxCoverageKopecks must be 10000000n in DB");
+		assert.equal(dbRow.usedAmountKopecks, 0n, "usedAmountKopecks must be 0n on creation in DB");
 
 		// 3. Query via GET /api/insurance/guarantee-letters
 		const listRes = await app.inject({
@@ -137,6 +149,8 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		const foundLetter = listJson.find((l: { id: string }) => l.id === letterId);
 		assert.ok(foundLetter, "Created letter must be retrieved from database");
 		assert.equal(foundLetter.insurerName, "АО «СОГАЗ»");
+		assert.equal(foundLetter.maxCoverageKopecks, 10000000);
+		assert.equal(foundLetter.usedAmountKopecks, 0);
 
 		// 4. Record partial usage of 40,000 RUB
 		const usage1Res = await app.inject({
@@ -158,6 +172,17 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.equal(usage1Json.usedAmountRub, 40000);
 		assert.equal(usage1Json.remainingCoverageRub, 60000);
 		assert.equal(usage1Json.status, "active");
+
+		// Verify via GET that usedAmountKopecks reflects 40,000 RUB = 4,000,000 kop
+		const listAfterUsage1 = await app.inject({
+			method: "GET",
+			url: `/api/insurance/guarantee-letters?patientId=${testPatient.id}`,
+			headers,
+		});
+		const letterAfterUsage1 = listAfterUsage1.json().find((l: { id: string }) => l.id === letterId);
+		assert.equal(letterAfterUsage1.maxCoverageKopecks, 10000000);
+		assert.equal(letterAfterUsage1.usedAmountKopecks, 4000000);
+		assert.equal(letterAfterUsage1.remainingLimitKopecks, 6000000);
 
 		// 5. Usage that exceeds remaining coverage (70,000 > 60,000) under Mandate 8e:
 		// Quietly debits remaining 60,000, transfers 10,000 difference to patient co-pay, auto-transitions to "exhausted"
@@ -184,7 +209,19 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.equal(overflowJson.remainingCoverageRub, 0);
 		assert.equal(overflowJson.status, "exhausted");
 
-		// 7. Any further usage on exhausted letter must fail
+		// Verify via GET that letter is exhausted with usedAmountKopecks = 10,000,000 kop
+		const listAfterOverflow = await app.inject({
+			method: "GET",
+			url: `/api/insurance/guarantee-letters?patientId=${testPatient.id}`,
+			headers,
+		});
+		const letterAfterOverflow = listAfterOverflow.json().find((l: { id: string }) => l.id === letterId);
+		assert.equal(letterAfterOverflow.maxCoverageKopecks, 10000000);
+		assert.equal(letterAfterOverflow.usedAmountKopecks, 10000000);
+		assert.equal(letterAfterOverflow.remainingLimitKopecks, 0);
+		assert.equal(letterAfterOverflow.status, "exhausted");
+
+		// 7. Any further usage on exhausted letter routes 100% to patient co-pay without blocking doctor (Mandate 8e)
 		const postExhaustRes = await app.inject({
 			method: "POST",
 			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
@@ -197,6 +234,15 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 			},
 		});
 
-		assert.equal(postExhaustRes.statusCode, 400);
+		assert.equal(postExhaustRes.statusCode, 200, "Exhausted letter routes usage to patient co-pay under Mandate 8e");
+		const postExhaustJson = postExhaustRes.json();
+		assert.equal(postExhaustJson.success, true);
+		assert.equal(postExhaustJson.debitedAmountRub, 0);
+		assert.equal(postExhaustJson.debitedDmsKopecks, 0);
+		assert.equal(postExhaustJson.patientCoPayRub, 1000);
+		assert.equal(postExhaustJson.patientCoPayKopecks, 100000);
+		assert.equal(postExhaustJson.remainingCoverageRub, 0);
+		assert.equal(postExhaustJson.remainingCoverageKopecks, 0);
+		assert.equal(postExhaustJson.status, "exhausted");
 	});
 });

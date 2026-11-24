@@ -1,11 +1,11 @@
 import { and, eq, or } from "drizzle-orm";
-import { withSuperuserBypass } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { payments } from "../../db/schema.js";
 
-/** Queries payment status for SBP operation */
+/** Queries payment status for SBP operation with mandatory tenant isolation */
 export async function getSbpPaymentStatus(
 	operationId: string,
-	orgId?: string,
+	orgId: string,
 ): Promise<{
 	readonly found: boolean;
 	readonly status: string | null;
@@ -13,24 +13,23 @@ export async function getSbpPaymentStatus(
 	readonly paidAt: Date | null;
 	readonly paymentId: string | null;
 } | null> {
-	return await withSuperuserBypass(async (tx) => {
+	if (!orgId || typeof orgId !== "string" || !orgId.trim()) {
+		throw new Error("Контекст организации (orgId) обязателен для проверки статуса СБП.");
+	}
+
+	return await withTenantCtx(orgId, async (tx) => {
 		const mutationId = `sbp:${operationId}`;
 		const query = tx
 			.select()
 			.from(payments)
 			.where(
-				orgId
-					? and(
-							eq(payments.organizationId, orgId),
-							or(
-								eq(payments.clientMutationId, mutationId),
-								eq(payments.clientMutationId, String(operationId)),
-							),
-						)
-					: or(
-							eq(payments.clientMutationId, mutationId),
-							eq(payments.clientMutationId, String(operationId)),
-						),
+				and(
+					eq(payments.organizationId, orgId),
+					or(
+						eq(payments.clientMutationId, mutationId),
+						eq(payments.clientMutationId, String(operationId)),
+					),
+				),
 			)
 			.limit(1);
 

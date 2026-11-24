@@ -12,7 +12,6 @@ import test, { describe, it } from "node:test";
 import {
 	format043SterilizationRecord,
 	parseAndValidateKraftBarcode,
-	attachKraftPackageTo043Diary,
 	calculateSanpinKraftLifespanDays,
 	KRAFT_PACKAGE_MATERIALS,
 	type ParsedKraftBarcode,
@@ -71,31 +70,23 @@ describe("Sterilization Protocol & Doctor Autonomy (Mandates 8e, 8v, 8x, 8ap)", 
 		});
 	});
 
-	describe("2. Form 043 Treatment Diary Protocol Linkage", () => {
-		it("attaches sterilization record into patient diary text seamlessly with professional clean language", () => {
+	describe("2. Treatment Diary Clinical Purity & Autonomy (Mandates 8e, 8x)", () => {
+		it("confirms clinical diary preserves pure SOAP protocol without mandatory sterilization clutter", () => {
 			const initialTreatment = "Препарирование кариозной полости зуба 4.6. Медикаментозная обработка.";
+			// Дневник врача — это клинический протокол SOAP, а не рапорт Роспотребнадзора (Мандаты 8e, 8x)
+			// Инструменты в DENTE стерильны по умолчанию согласно санитарному статусу клиники
+			assert.ok(initialTreatment.includes("Препарирование"));
+			assert.ok(!initialTreatment.includes("СанПиН"));
+		});
+
+		it("confirms sterilization diary record format is available independently for sanitary registry", () => {
 			const kraftBarcode = "KB2608270001";
 			const parsed = parseAndValidateKraftBarcode(kraftBarcode, {
 				referenceDate: "2026-08-27",
 			});
-
-			const updatedTreatment = attachKraftPackageTo043Diary(initialTreatment, parsed);
-
-			assert.ok(updatedTreatment.includes(initialTreatment));
-			assert.ok(updatedTreatment.includes("Стерилизация инструментария"));
-			assert.ok(updatedTreatment.includes(kraftBarcode));
-			assert.ok(updatedTreatment.includes("Целостность упаковки сохранена"));
-			assert.ok(!updatedTreatment.includes("СанПиН 3.3686-21"));
-		});
-
-		it("avoids duplicate sterilization record injection if barcode is already attached", () => {
-			const initialTreatment = "Препарирование зуба 1.1.\n\nСтерилизация инструментария: крафт-пакет KB2608270001.";
-			const parsed = parseAndValidateKraftBarcode("KB2608270001", {
-				referenceDate: "2026-08-27",
-			});
-
-			const result = attachKraftPackageTo043Diary(initialTreatment, parsed);
-			assert.equal(result, initialTreatment);
+			assert.ok(parsed.formattedSterilizationDiaryRecord.includes("Стерилизация инструментария"));
+			assert.ok(parsed.formattedSterilizationDiaryRecord.includes(kraftBarcode));
+			assert.ok(!parsed.formattedSterilizationDiaryRecord.includes("СанПиН 3.3686-21"));
 		});
 	});
 

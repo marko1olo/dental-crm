@@ -24,7 +24,7 @@ import {
 	currentMonthPeriod,
 } from "../services/reports/managerReports.js";
 import { doctorPayrollReport } from "../services/reports/managerReports/financialExecutiveReports.js";
-import { resolvePeriodBoundary } from "./reports/reportsShared.js";
+import { CALENDAR_DATE_PATTERN, resolvePeriodBoundary } from "./reports/reportsShared.js";
 import {
 	appointments,
 	cashBoxes,
@@ -39,8 +39,6 @@ import {
 	treatmentItems,
 	visits,
 } from "../db/schema.js";
-
-const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const periodBoundarySchema = z.union([
 	z.string().regex(CALENDAR_DATE_PATTERN),
@@ -78,8 +76,12 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			? resolvePeriodBoundary(parsed.data.to, "to", orgTimeZone) ?? defaultPeriod.to
 			: defaultPeriod.to;
 
-		const fromDateStr = fromDate.toISOString().slice(0, 10);
-		const toDateStr = toDate.toISOString().slice(0, 10);
+		const fromDateStr = parsed.data.from && CALENDAR_DATE_PATTERN.test(parsed.data.from)
+			? parsed.data.from
+			: fromDate.toISOString().slice(0, 10);
+		const toDateStr = parsed.data.to && CALENDAR_DATE_PATTERN.test(parsed.data.to)
+			? parsed.data.to
+			: toDate.toISOString().slice(0, 10);
 
 		return withTenantCtx(orgId, async (tx) => {
 			const [clinic] = await tx
@@ -92,6 +94,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			const periodPayments = await tx
 				.select({
 					id: payments.id,
+					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 					method: payments.method,
 					visitId: payments.visitId,
@@ -119,7 +122,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			let visitItems: Array<{
 				visitId: string | null;
 				category: string | null;
-				priceRub: number;
+				priceKopecks: number;
 			}> = [];
 
 			if (periodVisitIds.length > 0) {
@@ -127,7 +130,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					.select({
 						visitId: treatmentItems.visitId,
 						category: services.category,
-						priceRub: treatmentItems.priceRub,
+						priceKopecks: sql<number>`coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint)::bigint`,
 					})
 					.from(treatmentItems)
 					.innerJoin(services, eq(services.id, treatmentItems.serviceId))
@@ -140,7 +143,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			}
 
 			// Группируем услуги по визитам для предотвращения category clobbering
-			const visitItemsMap = new Map<string, Array<{ category: string; priceRub: number }>>();
+			const visitItemsMap = new Map<string, Array<{ category: string; priceKopecks: number }>>();
 			for (const vi of visitItems) {
 				if (vi.visitId && vi.category) {
 					let cat = vi.category;
@@ -148,7 +151,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					if (cat === "preventive") cat = "hygiene";
 
 					const list = visitItemsMap.get(vi.visitId) || [];
-					list.push({ category: cat, priceRub: Number(vi.priceRub || 0) });
+					list.push({ category: cat, priceKopecks: Number(vi.priceKopecks || 0) });
 					visitItemsMap.set(vi.visitId, list);
 				}
 			}
@@ -171,12 +174,12 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					const catTotalsKop = new Map<string, number>();
 					let sumPricesKop = 0;
 					for (const it of items) {
-						const itPriceKop = rublesToKopecks(it.priceRub);
+						const itPriceKop = it.priceKopecks;
 						catTotalsKop.set(it.category, (catTotalsKop.get(it.category) || 0) + itPriceKop);
 						sumPricesKop += itPriceKop;
 					}
 
-					const totalPaymentKop = rublesToKopecks(p.amountRub);
+					const totalPaymentKop = p.amountKopecks != null ? Number(p.amountKopecks) : rublesToKopecks(p.amountRub);
 					if (sumPricesKop > 0) {
 						let allocatedKop = 0;
 						const entries = Array.from(catTotalsKop.entries());
@@ -207,7 +210,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					}
 				} else {
 					paymentRows.push({
-						amountRub: p.amountRub,
+						amountRub: p.amountKopecks != null ? kopecksToRubles(Number(p.amountKopecks)) : p.amountRub,
 						department: "unassigned",
 						cashBoxType: boxType,
 					});
@@ -217,6 +220,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			// 3. Получаем расходы по кассовым операциям с фильтрацией по expenseDate
 			const expenseOps = await tx
 				.select({
+					amountKopecks: cashOperations.amountKopecks,
 					amountRub: cashOperations.amountRub,
 					reasonCode: cashOperations.reasonCode,
 				})
@@ -232,7 +236,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 			const expenseRows = expenseOps.map((e) => ({
 				reasonId: e.reasonCode || 10,
-				amountRub: e.amountRub,
+				amountRub: e.amountKopecks != null ? kopecksToRubles(Number(e.amountKopecks)) : e.amountRub,
 			}));
 
 			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostKopecks / labCostRub), не проведенных через кассовую операцию
@@ -274,6 +278,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				.select({
 					qty: inventoryTransactions.qty,
 					quantityChanged: inventoryTransactions.quantityChanged,
+					unitCostKopecks: inventoryTransactions.unitCostKopecks,
 					unitCostRub: inventoryTransactions.unitCostRub,
 				})
 				.from(inventoryTransactions)
@@ -289,9 +294,11 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			let actualMaterialsCostKop = 0;
 			for (const row of materialsUsage) {
 				const qty = Math.abs(Number(row.qty ?? row.quantityChanged ?? 0));
-				const unitCostRub = Number(row.unitCostRub ?? 0);
-				if (qty > 0 && unitCostRub > 0) {
-					actualMaterialsCostKop += rublesToKopecks(qty * unitCostRub);
+				const unitCostKop = row.unitCostKopecks != null
+					? Number(row.unitCostKopecks)
+					: rublesToKopecks(Number(row.unitCostRub ?? 0));
+				if (qty > 0 && unitCostKop > 0) {
+					actualMaterialsCostKop += Math.round(qty * unitCostKop);
 				}
 			}
 

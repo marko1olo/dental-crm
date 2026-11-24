@@ -28,7 +28,7 @@ export function ZtlSoloEconomicsCard({
 					</span>
 				</div>
 				{dueDate && (
-					<div className="flex items-center gap-1 text-[11px] font-medium text-[var(--muted)] shrink-0">
+					<div className="flex items-center gap-1 text-[11px] font-medium text-[var(--ink-muted)] shrink-0">
 						<Calendar size={13} className="text-[var(--primary)] shrink-0" />
 						<span>Готовность ЗТЛ: <strong className="font-mono text-[var(--ink)]">{dueDate}</strong></span>
 					</div>
@@ -36,20 +36,20 @@ export function ZtlSoloEconomicsCard({
 			</div>
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
-					<span className="text-[10px] text-[var(--muted)] truncate min-w-0">Пациент (выручка)</span>
+					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Пациент (выручка)</span>
 					<span className="text-xs font-bold text-[var(--ink)] font-mono truncate min-w-0">
 						{grossPriceRub.toLocaleString("ru-RU")} ₽
 					</span>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
-					<span className="text-[10px] text-[var(--muted)] truncate min-w-0">Лаборатория (ЗТЛ)</span>
+					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Лаборатория (ЗТЛ)</span>
 					<span className="text-xs font-bold text-[var(--ink)] font-mono truncate min-w-0">
 						- {ztlCostRub.toLocaleString("ru-RU")} ₽
 					</span>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
-					<span className="text-[10px] text-[var(--muted)] truncate min-w-0">Расходные материалы</span>
-					<span className="text-xs font-bold text-[var(--muted)] font-mono truncate min-w-0">
+					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Расходные материалы</span>
+					<span className="text-xs font-bold text-[var(--ink-muted)] font-mono truncate min-w-0">
 						- {materialsCostRub.toLocaleString("ru-RU")} ₽
 					</span>
 				</div>

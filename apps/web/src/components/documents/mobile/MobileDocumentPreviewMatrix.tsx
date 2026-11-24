@@ -37,13 +37,13 @@ export function MobileDocumentPreviewMatrix({
 			<div className="flex items-center justify-between p-3 rounded-[14px] bg-[var(--paper-soft)] border border-[var(--line)]">
 				<div className="flex items-center gap-2.5">
 					{isEds ? (
-						<CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<CheckCircle2 size={18} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 					) : isDraft ? (
 						<Clock size={18} className="text-amber-500 shrink-0" aria-hidden="true" />
 					) : isVoided ? (
-						<AlertCircle size={18} className="text-rose-500 shrink-0" aria-hidden="true" />
+						<AlertCircle size={18} className="text-[var(--danger)] shrink-0" aria-hidden="true" />
 					) : (
-						<CheckCircle2 size={18} className="text-emerald-500 shrink-0" aria-hidden="true" />
+						<CheckCircle2 size={18} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 					)}
 					<div className="text-[13px] font-semibold text-[var(--ink)]">
 						{isEds
@@ -56,12 +56,12 @@ export function MobileDocumentPreviewMatrix({
 					</div>
 				</div>
 				<span
-					className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+					className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
 						isDraft
 							? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
 							: isVoided
-								? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-								: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+								? "bg-[var(--danger-soft)] text-[var(--danger)]"
+								: "bg-[var(--success-soft)] text-[var(--success)]"
 					}`}
 				>
 					{statusLabel}

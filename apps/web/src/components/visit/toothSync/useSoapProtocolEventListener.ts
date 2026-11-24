@@ -88,9 +88,16 @@ export function useSoapProtocolEventListener({
 			}
 			if (toothNum && detail.finding) {
 				const icd = detail.finding.icd10Override || soapFromFinding?.diagnosisIcd10;
+				const surfaces = detail.finding.surfaces && detail.finding.surfaces.length > 0 ? [...detail.finding.surfaces] : undefined;
+				const cavity = surfaces && surfaces.length > 0 ? surfaces.join("") : undefined;
 				useVisitStore.getState().setVisitToothRecord(String(toothNum), {
-					toothNumber: toothNum, state: toVisitToothUiState(detail.finding.state),
-					diagnosis: incomingDiag, treatmentPlan: incomingPlan, ...(icd ? { diagnosisIcd10: icd } : {}),
+					toothNumber: toothNum,
+					state: toVisitToothUiState(detail.finding.state),
+					diagnosis: incomingDiag,
+					treatmentPlan: incomingPlan,
+					...(icd ? { diagnosisIcd10: icd } : {}),
+					...(surfaces ? { surfaces } : {}),
+					...(cavity ? { cavity } : {}),
 				});
 			}
 		};

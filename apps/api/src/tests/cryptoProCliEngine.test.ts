@@ -288,6 +288,7 @@ PrivateKey: Present
 
 	describe("6. Fastify Routes Integration (/api/crypto/*)", () => {
 		const prevEnv = { ...process.env };
+		const authHeaders = { "x-dente-clinic-token": "demo-showcase-clinic-token" };
 
 		before(() => {
 			process.env.NODE_ENV = "test";
@@ -316,6 +317,7 @@ PrivateKey: Present
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/crypto/status",
+				headers: authHeaders,
 			});
 
 			assert.strictEqual(response.statusCode, 200);
@@ -327,6 +329,7 @@ PrivateKey: Present
 			const nativeResponse = await app.inject({
 				method: "GET",
 				url: "/api/cryptopro/native/status",
+				headers: authHeaders,
 			});
 			assert.strictEqual(nativeResponse.statusCode, 200);
 			const nativeBody = JSON.parse(nativeResponse.body);
@@ -342,6 +345,7 @@ PrivateKey: Present
 				const response = await app.inject({
 					method: "GET",
 					url: "/api/crypto/certificates",
+					headers: authHeaders,
 				});
 
 				assert.strictEqual(response.statusCode, 503);
@@ -353,6 +357,7 @@ PrivateKey: Present
 				const nativeRes = await app.inject({
 					method: "GET",
 					url: "/api/cryptopro/native/certificates",
+					headers: authHeaders,
 				});
 				assert.strictEqual(nativeRes.statusCode, 503);
 				const nativeBody = JSON.parse(nativeRes.body);
@@ -369,6 +374,7 @@ PrivateKey: Present
 				const response = await app.inject({
 					method: "POST",
 					url: "/api/crypto/sign",
+					headers: authHeaders,
 					payload: {
 						data: "<ClinicalDocument>Test CDA R3</ClinicalDocument>",
 						thumbprint: "38F8B1029384756A1029384756A1029384756A10",
@@ -384,6 +390,7 @@ PrivateKey: Present
 				const nativeRes = await app.inject({
 					method: "POST",
 					url: "/api/cryptopro/native/sign",
+					headers: authHeaders,
 					payload: {
 						data: "<ClinicalDocument>Test CDA R3</ClinicalDocument>",
 						thumbprint: "38F8B1029384756A1029384756A1029384756A10",
@@ -404,6 +411,7 @@ PrivateKey: Present
 			const res1 = await app.inject({
 				method: "POST",
 				url: "/api/crypto/sign",
+				headers: authHeaders,
 				payload: {
 					thumbprint: "38F8B1029384756A1029384756A1029384756A10",
 				},
@@ -414,6 +422,7 @@ PrivateKey: Present
 			const res2 = await app.inject({
 				method: "POST",
 				url: "/api/crypto/sign",
+				headers: authHeaders,
 				payload: {
 					data: "Hello world",
 				},
@@ -428,6 +437,7 @@ PrivateKey: Present
 			const res = await app.inject({
 				method: "GET",
 				url: "/api/crypto/certificates/invalid-thumbprint-123",
+				headers: authHeaders,
 			});
 			assert.strictEqual(res.statusCode, 400);
 			const body = JSON.parse(res.body);
@@ -441,6 +451,7 @@ PrivateKey: Present
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/crypto/sign",
+				headers: authHeaders,
 				payload: {
 					data: "Test",
 					thumbprint: "NOT-HEX-40-CHARS",

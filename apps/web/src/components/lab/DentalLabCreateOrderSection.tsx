@@ -202,7 +202,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 					<label htmlFor="lab-partner-select" className="text-xs font-semibold text-[var(--ink)] block">Лаборатория / Зубной техник</label>
 					{!isAddingCustomLab && (
 						<button type="button" onClick={() => setIsAddingCustomLab(true)} className="text-[10px] text-[var(--primary)] hover:underline cursor-pointer bg-transparent border-0">
-							+ Своя ЗТЛ / Техник
+							+ Своя лаборатория / Техник
 						</button>
 					)}
 				</div>
@@ -213,7 +213,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 							data-testid="lab-custom-name-input"
 							value={customLabInput}
 							onChange={(e) => setCustomLabInput(e.target.value)}
-							placeholder="Название ЗТЛ или ФИО техника..."
+							placeholder="Название лаборатории или ФИО техника..."
 							className="flex-1 text-xs font-semibold p-1.5 rounded-xl border border-[var(--primary)] bg-[var(--paper-strong)] text-[var(--ink)]"
 						/>
 						<button
@@ -304,7 +304,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 				<textarea id="lab-notes-input" rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
 			</div>
 			<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2 space-y-0.5 text-xs">
-				<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость ЗТЛ ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
+				<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость лаборатории ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
 				<div className="flex justify-between text-[var(--ink-muted)]"><span>Прайс для пациента:</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalPatientPriceKopecks)}</strong></div>
 				<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--primary)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
 			</div>

@@ -241,7 +241,12 @@ export async function registerTechCardNormHandlers(
 
 			await tx
 				.delete(treatmentConsumables)
-				.where(eq(treatmentConsumables.id, id));
+				.where(
+					and(
+						eq(treatmentConsumables.id, id),
+						eq(treatmentConsumables.organizationId, orgId),
+					),
+				);
 
 			// Also remove from canonical procedure_tech_card_items if techCard exists
 			const [techCard] = await tx

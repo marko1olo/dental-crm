@@ -311,7 +311,7 @@ export type DmsSplitCalculationResult = z.infer<typeof dmsSplitCalculationResult
  * Единственный SSOT для DmsStudio, Fastify роутов и биллинговых интеграций DENTE CRM.
  */
 export function calculateDmsGuaranteeSplit(
-	letter: DmsGuaranteeLetter | null | undefined,
+	letter: Partial<DmsGuaranteeLetter> | null | undefined,
 	items: readonly DmsSplitCalculationItem[],
 	options: {
 		visitDate?: string | undefined;
@@ -712,8 +712,8 @@ export function calculateDmsGuaranteeSplit(
 				const clampedPct = Math.min(100, Math.max(0, franchisePctVal));
 				const splitItem = calculateItemDmsSplit(lineTotalKop, clampedPct, true);
 				franchiseDeductionKop = splitItem.patientKopecks;
-			} else if (letter.franchiseType === "fixed_rub" && letter.franchiseFixedRub > 0) {
-				const fixedKop = rublesToKopecks(letter.franchiseFixedRub);
+			} else if (letter.franchiseType === "fixed_rub" && (letter.franchiseFixedRub ?? 0) > 0) {
+				const fixedKop = rublesToKopecks(letter.franchiseFixedRub ?? 0);
 				franchiseDeductionKop = Math.min(lineTotalKop, fixedKop);
 			}
 		}

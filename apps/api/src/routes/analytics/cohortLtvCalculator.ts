@@ -31,7 +31,7 @@ export async function calculateCohortLtv(
 	const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
 	const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
 
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 
 	// 1. Пациенты по когортам: знаменатель когорты = общее число созданных карт пациентов за календарный месяц
 	const cohortPatientsRaw = await db
@@ -114,7 +114,7 @@ export async function calculateCohortLtv(
 				const periodKopecks = paymentsMap.get(`${key}:${offset}`) || 0;
 				cumulativeKopecks += periodKopecks;
 				const avgKopecks = Math.round(cumulativeKopecks / patientCount);
-				const ltvRub = Math.round(kopecksToRubles(avgKopecks));
+				const ltvRub = kopecksToRubles(avgKopecks);
 				item[`Month ${m}`] = ltvRub;
 			}
 

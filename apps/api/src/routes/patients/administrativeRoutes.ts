@@ -4,7 +4,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import {
 	getPatientByIdFromDb,
@@ -270,29 +270,27 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted
 			) {
 				if (!requestedBlacklisted) {
-					await db
-						.update(patients)
-						.set({ status: "active", updatedAt: new Date() })
-						.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+					await withTenantCtx(orgId, async (tx) => {
+						await tx
+							.update(patients)
+							.set({ status: "active", updatedAt: new Date() })
+							.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+					});
 				}
 				return reply
 					.status(200)
 					.send({ success: true, isBlacklisted: requestedBlacklisted });
 			}
 
-			await setPatientArchiveStatusInDb(
-				orgId,
-				patientId,
-				requestedBlacklisted,
-				patient.fullName,
-			);
-
-			if (!requestedBlacklisted) {
-				await db
-					.update(patients)
-					.set({ status: "active", updatedAt: new Date() })
-					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
-			}
+			await withTenantCtx(orgId, async (tx) => {
+				await setPatientArchiveStatusInDb(
+					orgId,
+					patientId,
+					requestedBlacklisted,
+					patient.fullName,
+					tx,
+				);
+			});
 
 			const rowsAfter = selectPatientArchiveRows(
 				await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),

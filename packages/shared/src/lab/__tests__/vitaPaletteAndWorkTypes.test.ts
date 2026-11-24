@@ -46,10 +46,14 @@ describe("Shared Dental Lab — VITA Palette & Work Types Catalog", () => {
 	});
 
 	test("DENTAL_LAB_CONSTRUCTIONS integrates 6 clinical constructions with integer kopecks", () => {
-		const keys = Object.keys(DENTAL_LAB_CONSTRUCTIONS);
-		assert.equal(keys.length, 6);
-		assert.ok(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks > 0);
-		assert.ok(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks > 0);
+		const items = Object.values(DENTAL_LAB_CONSTRUCTIONS);
+		assert.equal(items.length, 6);
+		for (const item of items) {
+			assert.ok((item.defaultLabCostKopecks ?? 0) > 0, `${item.id} must have positive defaultLabCostKopecks`);
+			assert.equal(item.defaultLabCostKopecks, item.defaultZtlCostKopecks, `${item.id} defaultLabCostKopecks must match defaultZtlCostKopecks`);
+		}
+		assert.ok((DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks ?? 0) > 0);
+		assert.ok((DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks ?? 0) > 0);
 	});
 
 	test("calculateLabWageDeductionKopecks deducts lab cost before doctor percentage", () => {

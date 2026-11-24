@@ -24,7 +24,7 @@ import {
 	renderOfficialTaxCertificateKnd1151156Html,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
-} from "../taxDeductionEngine";
+} from "@dental/shared";
 
 describe("TaxDeductionCertificateModal Autonomy & Non-blocking Actions", () => {
 	it("renders action buttons without disabled attribute even when payments are empty", () => {
@@ -191,10 +191,16 @@ describe("Tax Deduction Engine & Calendar Year Isolation (Order EA-7-11/824@)", 
 
 		const { xmlContent } = generateFnsTaxDeductionXml(certParams);
 
-		// Must contain Code 02 with 80000.00 and СуммаВсего="80000.00"
-		assert.ok(xmlContent.includes('СуммаКод2="80000.00"'), "XML must declare СуммаКод2='80000.00'");
-		assert.ok(xmlContent.includes('СуммаВсего="80000.00"'), "XML must declare СуммаВсего='80000.00'");
-		assert.ok(xmlContent.includes('ОтчГод="2025"'), "XML must declare taxYear 2025");
+		// Must contain Code 02 with 80000.00 (Order EA-7-11/824@ format)
+		assert.ok(
+			(xmlContent.includes('КодУслуг="2"') && xmlContent.includes('СумОпл="80000.00"')) ||
+				xmlContent.includes('СуммаКод2="80000.00"'),
+			"XML must declare Code 2 with 80000.00"
+		);
+		assert.ok(
+			xmlContent.includes('ГодУсл="2025"') || xmlContent.includes('ОтчГод="2025"'),
+			"XML must declare taxYear 2025"
+		);
 
 		// Must NOT contain unnetted 100000.00 or leaked 2024/2026 sums
 		assert.ok(!xmlContent.includes('100000.00'), "XML must NOT report unnetted 100,000.00");

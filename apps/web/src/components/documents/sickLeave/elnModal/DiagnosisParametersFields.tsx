@@ -1,7 +1,7 @@
 import React from "react";
 import { Stethoscope } from "lucide-react";
 import { IncapacityReasonCode, INCAPACITY_REASON_CODES } from "../sickLeaveElnPresets";
-import type { SickLeaveFormState } from "../sickLeaveElnEngine";
+import type { SickLeaveFormState, IncapacityRegimeType } from "../sickLeaveElnEngine";
 
 interface Props {
 	formState: SickLeaveFormState;
@@ -38,7 +38,16 @@ export function DiagnosisParametersFields({ formState, setFormState }: Props) {
 
 				<div className="sick-leave-field">
 					<label className="sick-leave-label">Режим лечения</label>
-					<select className="sick-leave-select" value={formState.regimeType} disabled>
+					<select
+						className="sick-leave-select"
+						value={formState.regimeType}
+						onChange={(e) =>
+							setFormState((prev) => ({
+								...prev,
+								regimeType: e.target.value as IncapacityRegimeType,
+							}))
+						}
+					>
 						<option value="ambulatory">01 - Амбулаторный</option>
 					</select>
 				</div>

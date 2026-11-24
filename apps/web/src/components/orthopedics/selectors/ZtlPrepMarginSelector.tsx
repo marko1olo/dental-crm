@@ -20,7 +20,7 @@ export function ZtlPrepMarginSelector({
 						Граница препарирования:
 					</span>
 				</div>
-				<span className="text-[11px] text-[var(--muted)] truncate">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate">
 					Тип уступа для прецизионного прилегания
 				</span>
 			</div>
@@ -43,7 +43,7 @@ export function ZtlPrepMarginSelector({
 							<span className="text-xs font-bold text-[var(--ink)] leading-snug truncate">
 								{margin.labelRu}
 							</span>
-							<span className="text-[11px] text-[var(--muted)] font-mono leading-tight mt-1">
+							<span className="text-[11px] text-[var(--ink-muted)] font-mono leading-tight mt-1">
 								{margin.shortBadge}
 							</span>
 						</button>

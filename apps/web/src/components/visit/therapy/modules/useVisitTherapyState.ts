@@ -3,6 +3,7 @@ import {
 	type TherapyPresetId, type TherapyProtocolPreset, type CompositeMaterialBrand,
 	type AdhesiveSystemBrand, type BlackCavityClass, detectBlackClass,
 	calculateRestorationWarrantyMonths, resolve804nServicesForRestoration, generateTherapySoapProtocol,
+	resolveBlackRestorationService, generateUuidV7, kopecksToRubles,
 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import { useVisitStore } from "../../../../store/visitStore";
@@ -46,11 +47,12 @@ export function useVisitTherapyState({
 	const toggleSurface = useCallback((surf: string) => {
 		setSelectedSurfaces((prev) => {
 			const next = prev.includes(surf) ? prev.filter((s) => s !== surf) : [...prev, surf];
-			const sanitized = next.length > 0 ? next : ["O"];
+			const fallbackSurface = isAnterior ? "I" : "O";
+			const sanitized = next.length > 0 ? next : [fallbackSurface];
 			onSelectSurfaces?.(sanitized);
 			return sanitized;
 		});
-	}, [onSelectSurfaces]);
+	}, [isAnterior, onSelectSurfaces]);
 
 	const handleApplySurfacePreset = useCallback((surfs: readonly string[]) => {
 		setSelectedSurfaces([...surfs]);
@@ -86,7 +88,9 @@ export function useVisitTherapyState({
 			useVisitStore.getState().setVisitNoteForm((prev) => ({
 				...prev, objectiveStatus: prev.objectiveStatus?.trim() ? `${prev.objectiveStatus.trim()}\n\n${text}` : text,
 			}));
-		} catch { /* fallback */ }
+		} catch (err) {
+			console.error("[useVisitTherapyState] Ошибка при обновлении visitNoteForm:", err);
+		}
 		try {
 			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 				detail: {
@@ -95,7 +99,9 @@ export function useVisitTherapyState({
 					mode: "smart_append", immediate: true,
 				},
 			}));
-		} catch { /* fallback */ }
+		} catch (err) {
+			console.error("[useVisitTherapyState] Ошибка при отправке события dente-apply-soap-protocol:", err);
+		}
 		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
 	}, [isToothSelected, activeTooth, soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
 
@@ -104,33 +110,51 @@ export function useVisitTherapyState({
 			showToast("Выберите зуб на зубной формуле для добавления услуг в смету", "warning", 3000);
 			return;
 		}
-		const invoiceServices = therapyServices.map((s) => ({
-			code: s.code,
-			code804n: s.code,
-			name: s.nameRu,
-			nameRu: s.nameRu,
-			toothNumber: effectiveTooth,
-			toothCode: String(effectiveTooth),
-			quantity: 1,
-			priceKopecks: 0,
-			priceRub: 0,
-			idempotencyKey: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined,
-		}));
+
+		const blackServiceResolution = resolveBlackRestorationService(selectedSurfaces);
+
+		const invoiceServices = therapyServices.map((s) => {
+			const isRestoration = s.code.startsWith("A16.07.002");
+			const priceKopecks = isRestoration
+				? blackServiceResolution.priceKopecks
+				: s.code === "A16.07.031"
+					? 150_000
+					: s.code === "A16.07.025"
+						? 80_000
+						: 200_000;
+			const priceRub = kopecksToRubles(priceKopecks);
+			const idempotencyKey = generateUuidV7();
+
+			return {
+				code: s.code,
+				code804n: s.code,
+				name: s.nameRu,
+				nameRu: s.nameRu,
+				toothNumber: effectiveTooth,
+				toothCode: String(effectiveTooth),
+				quantity: 1,
+				priceKopecks,
+				priceRub,
+				idempotencyKey,
+			};
+		});
 
 		onAddToInvoice?.(invoiceServices);
 		try {
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 				detail: {
-					idempotencyKey: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined,
+					idempotencyKey: generateUuidV7(),
 					toothNumber: effectiveTooth,
 					toothCode: String(effectiveTooth),
 					services: invoiceServices,
 				},
 			}));
-		} catch { /* fallback */ }
+		} catch (err) {
+			console.error("[useVisitTherapyState] Ошибка при отправке события dente-add-services-to-invoice:", err);
+		}
 		const codesList = therapyServices.map((s) => s.code).join(", ");
 		showToast(`Услуги (${codesList}) добавлены в смету зуба ${effectiveTooth}`, "success", 3500);
-	}, [isToothSelected, activeTooth, therapyServices, effectiveTooth, onAddToInvoice]);
+	}, [isToothSelected, activeTooth, therapyServices, effectiveTooth, selectedSurfaces, onAddToInvoice]);
 
 	return {
 		effectiveTooth, isToothSelected, isAnterior, activePresetId, selectedSurfaces, selectedComposite, setSelectedComposite,

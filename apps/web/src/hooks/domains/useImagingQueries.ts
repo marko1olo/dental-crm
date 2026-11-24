@@ -55,7 +55,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 		imageBase64: string;
 		focus?: "caries" | "perio" | "endo" | null;
 	}) => {
-		return fetchWithHandling("/api/imaging/visiograph-ai", {
+		return fetchWithHandling("/api/imaging/ai-analysis", {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",

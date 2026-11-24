@@ -27,17 +27,25 @@ export function safeToIsoString(date: unknown, fallback?: string): string {
 export type DbGuaranteeLetterRow = typeof dmsGuaranteeLetters.$inferSelect;
 
 export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso: string = new Date().toISOString().slice(0, 10)) {
+	const maxRub = Number(l.maxCoverageRub);
+	const usedRub = Number(l.usedAmountRub);
+	const limitKop = l.maxCoverageKopecks != null
+		? Number(l.maxCoverageKopecks)
+		: rublesToKopecks(maxRub);
+	const usedKop = l.usedAmountKopecks != null && Number(l.usedAmountKopecks) > 0
+		? Number(l.usedAmountKopecks)
+		: rublesToKopecks(usedRub);
+	const remainingLimitKop = Math.max(0, limitKop - usedKop);
+	const franchiseFixedKop = l.franchiseFixedKopecks != null
+		? Number(l.franchiseFixedKopecks)
+		: rublesToKopecks(Number(l.franchiseFixedRub));
+
 	let computedStatus = l.status;
 	if ((l.status === "active" || l.status === "approved") && l.validUntil && l.validUntil < todayIso) {
 		computedStatus = "expired";
-	} else if ((l.status === "active" || l.status === "approved") && Number(l.usedAmountRub) >= Number(l.maxCoverageRub)) {
+	} else if ((l.status === "active" || l.status === "approved") && (limitKop > 0 ? usedKop >= limitKop : usedRub >= maxRub)) {
 		computedStatus = "exhausted";
 	}
-	const maxRub = Number(l.maxCoverageRub);
-	const usedRub = Number(l.usedAmountRub);
-	const limitKop = rublesToKopecks(maxRub);
-	const usedKop = rublesToKopecks(usedRub);
-	const remainingLimitKop = Math.max(0, limitKop - usedKop);
 
 	return {
 		...l,
@@ -47,6 +55,7 @@ export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso:
 		remainingLimitKopecks: remainingLimitKop,
 		maxCoverageKopecks: limitKop,
 		usedAmountKopecks: usedKop,
+		franchiseFixedKopecks: franchiseFixedKop,
 		status: computedStatus as DmsGuaranteeLetter["status"],
 		maxCoverageRub: maxRub,
 		usedAmountRub: usedRub,

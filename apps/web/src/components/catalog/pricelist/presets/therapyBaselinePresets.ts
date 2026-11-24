@@ -14,7 +14,7 @@ export const THERAPY_BASELINE_PART1: readonly ServicePricelistItem[] = [
 		code804n: "A11.07.012",
 		statutoryTitle804n:
 			"Инъекционное введение лекарственных препаратов в челюстно-лицевую область (инфильтрационная анестезия)",
-		commercialTitle: "Инфильтрационная анестезия (Артикаин/Ультракаин)",
+		commercialTitle: "Инфильтрационная анестезия (Артикаин 4%)",
 		category: "therapy",
 		specialty: "therapist",
 		basePriceRub: 950,
@@ -50,7 +50,7 @@ export const THERAPY_BASELINE_PART1: readonly ServicePricelistItem[] = [
 		code804n: "A16.07.002.009",
 		statutoryTitle804n:
 			"Изоляция операционного поля (наложение коффердама / раббердама)",
-		commercialTitle: "Изоляция зуба коффердамом / раббердамом (Sanctuary / OptiDam)",
+		commercialTitle: "Изоляция зуба системой коффердам (раббердам)",
 		category: "therapy",
 		specialty: "therapist",
 		basePriceRub: 650,
@@ -87,7 +87,7 @@ export const THERAPY_BASELINE_PART1: readonly ServicePricelistItem[] = [
 		statutoryTitle804n:
 			"Восстановление зуба пломбой при лечении среднего кариеса (светоотверждаемый композит)",
 		commercialTitle:
-			"Лечение среднего кариеса светоотверждаемым композитом (Estelite / Filtek)",
+			"Лечение среднего кариеса светоотверждаемым нанокомпозитом",
 		category: "therapy",
 		specialty: "therapist",
 		basePriceRub: 4200,

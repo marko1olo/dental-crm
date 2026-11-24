@@ -436,13 +436,6 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 
 		const organizationId = context.organizationId;
 		const tenantContext = await getTenantCryptoContext(request, organizationId);
-		if (!organizationId && !tenantContext.isBypass) {
-			return reply.status(403).send({
-				success: false,
-				code: "TENANT_CONTEXT_REQUIRED",
-				message: "Для операции подписания требуется контекст авторизованной организации",
-			});
-		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {

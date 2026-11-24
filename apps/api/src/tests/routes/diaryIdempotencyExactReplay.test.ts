@@ -23,6 +23,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import registerDiaryRoutes from "../../routes/diary.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
@@ -82,6 +83,7 @@ describe("Дневники приёма: сквозная идемпотентн
 		);
 
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerDiaryRoutes(app);
 		await app.ready();
 	});

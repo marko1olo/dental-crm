@@ -51,7 +51,7 @@ export function ChairsideCanalRow({
 								key={ap}
 								type="button"
 								onClick={() => onUpdate(c.id, { apexLocatorReading: `${ap} Apex` })}
-								className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${(c.apexLocatorReading || "0.0 Apex").startsWith(ap) ? "bg-[var(--success)] text-white border-[var(--success)] font-bold" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+								className={`min-h-[44px] min-w-[44px] sm:min-h-[22px] sm:min-w-0 px-2.5 py-1 sm:px-1.5 sm:py-0.5 rounded text-xs sm:text-[10px] font-mono border transition-all cursor-pointer inline-flex items-center justify-center ${(c.apexLocatorReading || "0.0 Apex").startsWith(ap) ? "bg-[var(--success)] text-white border-[var(--success)] font-bold" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 							>
 								{ap}
 							</button>
@@ -75,7 +75,7 @@ export function ChairsideCanalRow({
 						<button
 							type="button"
 							onClick={() => onRemove(c.id)}
-							className="w-7 h-7 rounded-lg text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-transparent hover:border-[var(--danger)]/20 flex items-center justify-center cursor-pointer transition-colors"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[28px] sm:w-7 sm:h-7 rounded-lg text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-transparent hover:border-[var(--danger)]/20 flex items-center justify-center cursor-pointer transition-colors"
 							title="Удалить канал"
 						>
 							<Trash2 size={13} />
@@ -90,14 +90,14 @@ export function ChairsideCanalRow({
 					<button
 						type="button"
 						onClick={() => onAdjustLength(c.id, -0.5)}
-						className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[24px] sm:min-w-[24px] sm:w-6 sm:h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer"
 					>
 						-
 					</button>
 					<button
 						type="button"
 						onClick={() => onAdjustLength(c.id, 0.5)}
-						className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[24px] sm:min-w-[24px] sm:w-6 sm:h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-xs font-bold flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer"
 					>
 						+
 					</button>
@@ -107,7 +107,7 @@ export function ChairsideCanalRow({
 						key={len}
 						type="button"
 						onClick={() => onUpdate(c.id, { workingLengthMm: len, isObliterated: false })}
-						className={`chip-length-${c.name}-${len} ${c.name === "MB1" ? `chip-length-MB-${len}` : ""} px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${c.workingLengthMm === len && !c.isObliterated ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+						className={`chip-length-${c.name}-${len} ${c.name === "MB1" ? `chip-length-MB-${len}` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.workingLengthMm === len && !c.isObliterated ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 					>
 						{len}
 					</button>
@@ -125,7 +125,7 @@ export function ChairsideCanalRow({
 								key={opt.label}
 								type="button"
 								onClick={() => onUpdate(c.id, { masterApicalFile: opt.maf, taper: opt.taper })}
-								className={`chip-maf-${c.name}-${cleanKey} ${c.name === "MB1" ? `chip-maf-MB-${cleanKey}` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${isSelected ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+								className={`chip-maf-${c.name}-${cleanKey} ${c.name === "MB1" ? `chip-maf-MB-${cleanKey}` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${isSelected ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 							>
 								{opt.label}
 							</button>
@@ -137,21 +137,21 @@ export function ChairsideCanalRow({
 					<button
 						type="button"
 						onClick={() => onUpdate(c.id, { obturationType: "gutta_sealer", sealer: "AH Plus" })}
-						className={`chip-obturation-gutta-${c.name} ${c.name === "MB1" ? `chip-obturation-gutta-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "gutta_sealer" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
+						className={`chip-obturation-gutta-${c.name} ${c.name === "MB1" ? `chip-obturation-gutta-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "gutta_sealer" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
 						AH Plus
 					</button>
 					<button
 						type="button"
 						onClick={() => onUpdate(c.id, { obturationType: "bioceramic", sealer: "BioRoot" })}
-						className={`chip-obturation-bio-${c.name} ${c.name === "MB1" ? `chip-obturation-bio-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "bioceramic" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
+						className={`chip-obturation-bio-${c.name} ${c.name === "MB1" ? `chip-obturation-bio-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "bioceramic" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
 						Биокерамика
 					</button>
 					<button
 						type="button"
 						onClick={() => onUpdate(c.id, { obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)" })}
-						className={`chip-obturation-caoh2-${c.name} ${c.name === "MB1" ? `chip-obturation-caoh2-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "temp_caoh2" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
+						className={`chip-obturation-caoh2-${c.name} ${c.name === "MB1" ? `chip-obturation-caoh2-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "temp_caoh2" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
 						Ca(OH)2
 					</button>

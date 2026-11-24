@@ -17,6 +17,7 @@ import {
 	createDefaultPerioTeeth,
 } from "@dental/shared";
 import { PerioStudioModal } from "../components/perio/PerioStudioModal";
+import { ToothDrawerPerioAccordion } from "../components/diagnostics/toothDrawer/ToothDrawerPerioAccordion";
 import {
 	applyHealthyPeriodontiumPreset,
 	calculatePsrSextants,
@@ -152,5 +153,30 @@ describe("192-Point Periodontal Probing Release Isolation & Runtime Contract Aud
 		assert.equal(tooth16Rehydrated.midBuccal.probingDepthMm, 6, "Rehydrated depth must be 6mm");
 		assert.equal(tooth16Rehydrated.midBuccal.bleedingOnProbing, true, "Rehydrated BOP must be true");
 		assert.equal(tooth16Rehydrated.midBuccal.calMm, 8, "Rehydrated CAL must be calculated as 6 + 2 = 8mm");
+	});
+
+	it("5. ToothDrawerPerioAccordion renders cleanly via SSR and supports SEPA cache hydration", () => {
+		const html = renderToString(
+			React.createElement(ToothDrawerPerioAccordion, {
+				toothNumber: 16,
+				patientId: "patient-perio-test",
+				patientName: "Петров Петр Петрович",
+				activeSection: "perio",
+				toggleSection: () => {},
+			}),
+		);
+
+		assert.ok(
+			html.includes("data-testid=\"tooth-perio-accordion\""),
+			"ToothDrawerPerioAccordion must render",
+		);
+		assert.ok(
+			html.includes("data-testid=\"perio-probing-depth-section\""),
+			"Probing depth section must render",
+		);
+		assert.ok(
+			html.includes("data-testid=\"perio-mobility-section\""),
+			"Mobility section must render",
+		);
 	});
 });

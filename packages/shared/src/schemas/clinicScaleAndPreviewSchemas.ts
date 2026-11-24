@@ -169,6 +169,7 @@ export const createDocumentSchema = z
 		 * контракт расходился сам с собой на запись и на чтение.
 		 */
 		totalAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		totalAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		taxYear: z
 			.number()
 			.int()

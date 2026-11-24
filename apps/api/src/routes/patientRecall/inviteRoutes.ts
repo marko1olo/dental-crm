@@ -104,7 +104,12 @@ export function registerInviteRoutes(app: FastifyInstance) {
 						notes,
 						updatedAt: now,
 					})
-					.where(eq(patientRecalls.id, existingRecalls[0].id));
+					.where(
+						and(
+							eq(patientRecalls.id, existingRecalls[0].id),
+							eq(patientRecalls.organizationId, context.organizationId),
+						),
+					);
 			} else {
 				await tx.insert(patientRecalls).values({
 					organizationId: context.organizationId,

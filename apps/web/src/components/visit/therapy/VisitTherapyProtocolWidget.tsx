@@ -52,6 +52,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				selectedSurfaces={s.selectedSurfaces}
 				onApplySurfacePreset={s.handleApplySurfacePreset}
 				onToggleSurface={s.toggleSurface}
+				isAnterior={s.isAnterior}
 			/>
 			<TherapyDetailsAccordion
 				showDetailsAccordion={s.showDetailsAccordion}

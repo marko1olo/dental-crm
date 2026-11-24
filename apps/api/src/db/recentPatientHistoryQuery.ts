@@ -1,5 +1,5 @@
 import { and, desc, eq, notInArray } from "drizzle-orm";
-import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import { patients, recentPatientHistory } from "./schema.js";
 
 /**
@@ -23,17 +23,19 @@ export async function getRecentPatientHistoryFromDb(
 	orgId: string,
 	userId: string,
 ) {
-	return db
-		.select()
-		.from(recentPatientHistory)
-		.where(
-			and(
-				eq(recentPatientHistory.organizationId, orgId),
-				eq(recentPatientHistory.userId, userId),
-			),
-		)
-		.orderBy(desc(recentPatientHistory.lastViewedAt))
-		.limit(KEEP_PER_USER);
+	return withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select()
+			.from(recentPatientHistory)
+			.where(
+				and(
+					eq(recentPatientHistory.organizationId, orgId),
+					eq(recentPatientHistory.userId, userId),
+				),
+			)
+			.orderBy(desc(recentPatientHistory.lastViewedAt))
+			.limit(KEEP_PER_USER);
+	});
 }
 
 /**
@@ -54,66 +56,68 @@ export async function recordPatientViewInDb(
 	userId: string,
 	patientId: string,
 ): Promise<{ recorded: boolean }> {
-	const [patient] = await db
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-		})
-		.from(patients)
-		.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-		.limit(1);
-	if (!patient) return { recorded: false };
+	return withTenantCtx(orgId, async (tx) => {
+		const [patient] = await tx
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+			})
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+		if (!patient) return { recorded: false };
 
-	await db
-		.delete(recentPatientHistory)
-		.where(
-			and(
-				eq(recentPatientHistory.organizationId, orgId),
-				eq(recentPatientHistory.userId, userId),
-				eq(recentPatientHistory.patientId, patientId),
-			),
-		);
-
-	await db.insert(recentPatientHistory).values({
-		organizationId: orgId,
-		userId,
-		patientId,
-		patientName: patient.fullName,
-		phone: patient.phone ?? null,
-		lastViewedAt: new Date(),
-	});
-
-	/*
-	 * Хвост за пределами десятки удаляем сразу, а не по расписанию: иначе
-	 * таблица растёт на строку с каждым открытием карточки и за год работы
-	 * клиники превращается в журнал на сотни тысяч записей, который никто не
-	 * читает.
-	 */
-	const keep = await db
-		.select({ id: recentPatientHistory.id })
-		.from(recentPatientHistory)
-		.where(
-			and(
-				eq(recentPatientHistory.organizationId, orgId),
-				eq(recentPatientHistory.userId, userId),
-			),
-		)
-		.orderBy(desc(recentPatientHistory.lastViewedAt))
-		.limit(KEEP_PER_USER);
-
-	if (keep.length === KEEP_PER_USER) {
-		await db.delete(recentPatientHistory).where(
-			and(
-				eq(recentPatientHistory.organizationId, orgId),
-				eq(recentPatientHistory.userId, userId),
-				notInArray(
-					recentPatientHistory.id,
-					keep.map((row) => row.id),
+		await tx
+			.delete(recentPatientHistory)
+			.where(
+				and(
+					eq(recentPatientHistory.organizationId, orgId),
+					eq(recentPatientHistory.userId, userId),
+					eq(recentPatientHistory.patientId, patientId),
 				),
-			),
-		);
-	}
+			);
 
-	return { recorded: true };
+		await tx.insert(recentPatientHistory).values({
+			organizationId: orgId,
+			userId,
+			patientId,
+			patientName: patient.fullName,
+			phone: patient.phone ?? null,
+			lastViewedAt: new Date(),
+		});
+
+		/*
+		 * Хвост за пределами десятки удаляем сразу, а не по расписанию: иначе
+		 * таблица растёт на строку с каждым открытием карточки и за год работы
+		 * клиники превращается в журнал на сотни тысяч записей, который никто не
+		 * читает.
+		 */
+		const keep = await tx
+			.select({ id: recentPatientHistory.id })
+			.from(recentPatientHistory)
+			.where(
+				and(
+					eq(recentPatientHistory.organizationId, orgId),
+					eq(recentPatientHistory.userId, userId),
+				),
+			)
+			.orderBy(desc(recentPatientHistory.lastViewedAt))
+			.limit(KEEP_PER_USER);
+
+		if (keep.length === KEEP_PER_USER) {
+			await tx.delete(recentPatientHistory).where(
+				and(
+					eq(recentPatientHistory.organizationId, orgId),
+					eq(recentPatientHistory.userId, userId),
+					notInArray(
+						recentPatientHistory.id,
+						keep.map((row) => row.id),
+					),
+				),
+			);
+		}
+
+		return { recorded: true };
+	});
 }

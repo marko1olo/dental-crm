@@ -32,9 +32,9 @@ export const DicomClippingControls: React.FC<Props> = ({
 				flex: 1,
 				height: "24px",
 				borderRadius: "4px",
-				border: clippingDir === dir ? "1px solid #0d9488" : "1px solid #334155",
-				backgroundColor: clippingDir === dir ? "#134e4a" : "#1e293b",
-				color: clippingDir === dir ? "#2dd4bf" : "#cbd5e1",
+				border: clippingDir === dir ? "1px solid var(--primary)" : "1px solid var(--line)",
+				backgroundColor: clippingDir === dir ? "var(--primary)" : "var(--paper-soft)",
+				color: clippingDir === dir ? "#ffffff" : "var(--ink)",
 				cursor: "pointer",
 				fontWeight: 600,
 			}}
@@ -46,7 +46,7 @@ export const DicomClippingControls: React.FC<Props> = ({
 	return (
 		<>
 			<div style={{ marginBottom: "6px" }}>
-				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>Плоскость:</label>
+				<label style={{ display: "block", color: "var(--ink-muted)", marginBottom: "3px" }}>Плоскость:</label>
 				<select value={clippingPlane} onChange={(e) => onChangeClippingPlane(e.target.value as ClippingPlane)} style={selectInputStyle}>
 					<option value="sagittal">Сагиттальная</option>
 					<option value="coronal">Фронтальная (Корональная)</option>
@@ -56,7 +56,7 @@ export const DicomClippingControls: React.FC<Props> = ({
 			</div>
 
 			<div style={{ marginBottom: "8px" }}>
-				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>Ориентир:</label>
+				<label style={{ display: "block", color: "var(--ink-muted)", marginBottom: "3px" }}>Ориентир:</label>
 				<select value={clippingRef} onChange={(e) => onChangeClippingRef(e.target.value as ClippingRef)} style={selectInputStyle}>
 					<option value="user">Пользователь</option>
 					<option value="arch_center">Центр зубной дуги</option>
@@ -65,7 +65,7 @@ export const DicomClippingControls: React.FC<Props> = ({
 			</div>
 
 			<div style={{ marginBottom: "10px" }}>
-				<span style={{ display: "block", color: "#94a3b8", marginBottom: "4px" }}>Направление:</span>
+				<span style={{ display: "block", color: "var(--ink-muted)", marginBottom: "4px" }}>Направление:</span>
 				<div style={{ display: "flex", gap: "4px" }}>
 					{dirBtn("right", "Справа")}
 					{dirBtn("left", "Слева")}

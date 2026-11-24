@@ -105,14 +105,12 @@
 - Что сделано: Заменено на канонический `amountKopecks: bigint`. DDL-миграции `0261` и `0262`. Синхронизированы все эндпоинты Сбера/СБП/Портала. Тесты 100% зелёные.
 
 ### ROT-004: Float-арифметика на деньгах в API и Shared
-- Статус: 🔄 IN PROGRESS — **Выжжены все финансовые `* 0.01` и `/ 100` в расчётах, сплитах и импортёрах (2026-11-23)**
-- **Проверено:** `git grep -E '\*\s*0\.01'` по финансовым формулам → 0 вхождений! `packages/shared/src/tests/money.test.ts` (28/28 passed).
+- Статус: ✅ FIXED (2026-11-24) — Ликвидированы все дублирующие конвертеры валюты и float-арифметика в API, Shared и расчетных сервисах
+- **Проверено:** `npm run check:diff` → PASSED (0 float money, 0 костылей); `npm run check:ratchet` → 0 float делений / 100 в UI; `npx vitest run packages/shared/src/tests/money.test.ts` (29/29 passed); `npm run typecheck -w @dental/shared` → Exit Code 0.
 - Что сделано: 
-  * В `@dental/shared/src/money.ts` внедрены канонические `basisPointsFromPercent(pct)` и `calculatePercentDiscountKopecks(amt, pct)`.
-  * Полностью выжжены заплатки `* 0.01` и ручные `/ 100` в `packages/shared` (`loyaltyProgram.ts`, `labOrders.ts`, `fiscalReconciliationStatement.ts`, `doctorRentalAndBonusEngine.ts`).
-  * Полностью очищены роуты `apps/api` (`receiptDraftHandlers.ts`, `invoiceStatusAndApproval.ts`, `priceFreezeTokensQuery.ts`, `labOrderCostCalculator.ts`, `financialArgumentation.ts`).
-  * Все медицинские импортёры (`d4wExtractors.ts`, `identMappers.ts`, `infodentExtractors.ts`) переведены на канонический `kopecksToRubles`.
-  * В `apps/web` очищены сметы приёма, накладные склада, ЗТЛ, Честный Знак и лояльность.
+  * В `@dental/shared/src/money.ts` внедрены канонические `basisPointsFromPercent(pct)`, `calculatePercentDiscountKopecks(amt, pct)` и расширен экспорт утилит копеек.
+  * Ликвидированы расстрельные дубликаты конвертеров: `dbTypes.ts` (`rubToKopecks`, `kopecksToRub`), `renderTypographyAndCss.ts` (`rublesFromKopecks`, `rub`), `debtReports.ts` (`rubToKopeckText`), `consumableFefoAllocator.ts` (`rubToKopecks`, `kopecksToRubString`), `billingMath.ts` (`formatDisplayCurrency`), `doctorNetSalaryBridge.ts` (`formatMoney`), `taxpayerValidator.ts` (`rublesFromKopecks`), `calculation.ts` (`rubToKopecksBigInt`, `kopecksBigIntToRub`).
+  * Все расчеты процентов переведены на целочисленные базисные пункты (`basisPointsFromPercent`) и копейки (`calculatePercentDiscountKopecks`). Устранены ручные деления и float-множители в `doctorMyEarningsHandler.ts`, `pricelistQuery.ts`, `chairRentalCalculator.ts`, `clinicalPlaybooksEngine.ts`, `clinicalPricelistCatalog.ts`, `taxpayerValidator.ts`.
   * `npm run check:diff` → PASSED (0 float money, 0 костылей).
 
 ### ROT-015: `numeric(...)Rub` поля в Drizzle-схемах (деньги как NUMERIC в Postgres, не BIGINT)
@@ -125,14 +123,14 @@
 ## 🟠 SEV-2: АРХИТЕКТУРНАЯ ГНИЛЬ
 
 ### ROT-005: Маршруты мутаций без Idempotency-Key
-- Статус: 🔄 IN PROGRESS — **Периметр расширен: боты, маркетинг, рефералы, ЕГИСЗ, HITL и честный цикл дневников EMR (2026-11-23)**
-- Проверено: `apps/api/src/plugins/idempotencyPlugin.ts`, новый E2E-тест `apps/api/src/tests/routes/diaryIdempotencyExactReplay.test.ts` (2/2 passed).
-- Что сделано: Внедрен быстрый Replay (`Idempotent-Replay: true`), блокировка гонок (`in_flight` → 409 Conflict) и SHA-256 хеш пейлоада в `diaryUpsertHandler.ts` и `diaryReviseHandler.ts`.
+- Статус: ✅ FIXED (2026-11-24) — **Полная ликвидация дублирующих механизмов и ложных 409 Conflict. Канонический SSOT — Fastify idempotencyPlugin (Мандаты 8bo, 8zp).**
+- Проверено: `apps/api/src/plugins/idempotencyPlugin.ts`, `apps/api/src/plugins/idempotencyModules/idempotencyReplayResponder.ts`, `apps/api/src/tests/redteamFixerSurgeonLab.test.ts` (9/9 passed), `apps/api/src/tests/routes/diaryIdempotencyExactReplay.test.ts` (2/2 passed), `apps/api/src/tests/routes/appointmentNextStage.test.ts` (2/2 passed).
+- Что сделано: Удалены все самодельные дублирующие селекты и вставки в `idempotencyKeys` из `labOrderCreateHandler.ts`, `labOrderPutHandler.ts`, `labOrderPatchHandler.ts`, `diaryReviseHandler.ts`, `diaryUpsertHandler.ts`, `appointmentsMutationRoutes.ts`. Идемпотентность полностью делегирована каноническому плагину Fastify, ликвидированы ложные 409 Conflict на первичных запросах.
 
-### ROT-006: Маршруты мутаций без `db.transaction()`
-- Статус: 🔄 IN PROGRESS — **Закрыты разрывы транзакций в ботах, алертах врача и ЕГИСЗ (2026-11-23)**
-- Проверено: `apps/api/src/routes/omnichannelBots/botConfigs.ts`, `egiszRoutes.ts`, `agentProactiveAndNudgeRoutes.ts`.
-- Что сделано: Мутации ботов переведены на `withTenantCtx(orgId, async (tx) => ...)`. Сохранение бланков ЕГИСЗ защищено через `.onConflictDoNothing()`.
+### ROT-006: Маршруты мутаций без `db.transaction()` (Ликвидация Late Idempotency Write и атомарность ACID)
+- Статус: ✅ FIXED (2026-11-24) — **Устранены все разрывы транзакций (Late Idempotency Write), составные мутации изолированы через withTenantCtx (Мандаты 8bo, 8zp).**
+- Проверено: `createInvoiceHandler.ts`, `routesMutationsSites.ts`, `createTreatmentPlanHandler.ts`, `visitWorkOrderCompleteHandler.ts`, `configureClinicSetupTool.ts`, `recentPatientHistoryQuery.ts`.
+- Что сделано: Устранены вторичные вызовы БД после коммита транзакций. Мутации счетов, планов лечения, пародонтограммы, завершения нарядов визитов, экспресс-настройки клиники (7 мутаций) и журнала истории пациентов (5 операций) обернуты в неделимые ACID-транзакции через `withTenantCtx(orgId, async (tx) => ...)`.
 
 ### ROT-007: Route-файлы без `organizationId` и снос 11 сирот
 - Статус: 🔄 IN PROGRESS — **Закрыт BOLA/IDOR в ботах и преференциях, физически снесено 11 сирот через `git rm` (2026-11-23)**
@@ -357,4 +355,107 @@
      - *До:* В `createAutoclaveBatchCycleHandler.ts` был обнаружен дублированный блок за пределами функции (TS1128). В `surgery/index.ts` отсутствовали свойства `deductedItemsCount` и `messageRu` в типе `UnifiedStockDeductionResult` (TS2739). В `cda/c14n.ts` функция `computeCdaSha256Hex` не принимала бинарные буферы `Uint8Array`.
      - *После:* Дубликат в `createAutoclaveBatchCycleHandler.ts` удален. В `surgery/index.ts` результат типизирован через `UnifiedStockDeductionResult` с детерминированным расчетом `deductedItemsCount: res.deductedItems.length` и `messageRu: res.message`. В `c14n.ts` сигнатура расширена до `string | Uint8Array`. Компиляторы `@dental/shared` и `@dental/api` возвращают Exit Code 0 (0 ошибок).
 
+---
 
+## 20. ЛИКВИДАЦИЯ ДУБЛИКАТОВ ДЕНЕЖНЫХ КОНВЕРТЕРОВ И СИСТЕМНОЙ FLOAT-ГНИЛИ (RED TEAM FIXER SURGEON — ROT-004 / ROT-015)
+- Статус: ✅ FIXED (2026-11-24)
+- Проверено:
+  * `npm run typecheck -w @dental/shared` → Exit Code 0 (0 ошибок компилятора).
+  * `npm run check:diff` → Exit Code 0 (✅ [DIFF SAFETY PASSED] 0 костылей, 0 float money, 0 any).
+  * `npm run check:ratchet` → Exit Code 0 (0 any, 0 супрессий, 0 / 100 в UI, 0 uppercase).
+  * `npx vitest run packages/shared/src/analytics/chairRentalCalculator.test.ts packages/shared/src/clinical/__tests__/clinicalPlaybooksEngine.test.ts packages/shared/src/tests/money.test.ts` → Exit Code 0 (40/40 passed).
+  * `npx tsc -p apps/api/tsconfig.json --noEmit` (затронутые файлы API: dbTypes, renderTypographyAndCss, debtReports, consumableFefoAllocator, doctorMyEarningsHandler, pricelistQuery, patientDebtCore) → 0 ошибок компилятора.
+- Протокол До / После (Хирургическое устранение первопричин по Факт-Досье):
+  1. **ДЕФЕКТ 1 (Самодельные конвертеры в API dbTypes и renderTypographyAndCss):**
+     - *До:* В `apps/api/src/ai/dentalTools/databaseModules/dbTypes.ts:28,36` и `apps/api/src/documents/templates/renderUtilsModules/renderTypographyAndCss.ts:24,46` находились дубликаты `rubToKopecks`, `kopecksToRub`, `rublesFromKopecks`, `rub` с ручным делением `kopecks / 100`.
+     - *После:* Заменены на канонический реэкспорт и вызовы `kopecksToRubles` и `formatKopecksToRub` из `@dental/shared/src/money.ts`.
+  2. **ДЕФЕКТ 2 (Дубликаты в debtReports и consumableFefoAllocator):**
+     - *До:* В `apps/api/src/services/reports/managerReports/debtReports.ts:40` и `apps/api/src/routes/inventory/consumables/consumableFefoAllocator.ts:19,29` локальные функции `rubToKopeckText`, `rubToKopecks`, `kopecksToRubString` использовали ручные деления `/ 100`.
+     - *После:* В `debtReports.ts` форматирование переведено на `kopecksToRubles(kopecks).toLocaleString(...)`. В `consumableFefoAllocator.ts` заменены на канонические `parseKopecks`, `rublesToKopecks` и `kopecksToNumericString(BigInt(Math.round(kopecks)))`.
+  3. **ДЕФЕКТ 3 (Дубликаты форматирования в billingMath и doctorNetSalaryBridge):**
+     - *До:* В `packages/shared/src/billing/billingMath.ts:27,32,87` и `packages/shared/src/finance/payrollModules/doctorNetSalaryBridge.ts:104` функции `formatDisplayCurrency` и `formatMoney` использовали локальные `new Intl.NumberFormat` и ручные конкатенации валюты.
+     - *После:* Переведены на канонические функции `@dental/shared/src/money.ts` (`formatCurrency`, `formatKopecksRu`, `rublesToKopecks`).
+  4. **ДЕФЕКТ 4 (Справки НДФЛ и расчет налогов):**
+     - *До:* В `packages/shared/src/documents/ndfl/taxpayerValidator.ts:38,255,264` было ручное `kopecks / 100` и `(kopecks / 100).toFixed(2)`. В `packages/shared/src/finance/tax/calculation.ts:408,419` были кастомные `rubToKopecksBigInt`, `kopecksBigIntToRub`, 8 ручных `Number(...) / 100`, а этапы 30/40/30 считались во float `* 0.3` и `* 0.4`.
+     - *После:* `taxpayerValidator.ts` переведен на `kopecksToRubles` и `formatKopecksToRubles`. В `calculation.ts` все конвертеры заменены на канонические из `money.ts`, ручные деления заменены на `kopecksToRubles`, а этапы 30/40/30 переведены на целочисленные копеечные расчеты `(totalKopecks * 30) / 100` и `(totalKopecks * 40) / 100`.
+  5. **ДЕФЕКТ 5 (Float-проценты и ручные деления в роутах и каталогах):**
+     - *До:* В `doctorMyEarningsHandler.ts:292,378` стояли `Math.round(itemCommPercent * 100)`. В `pricelistQuery.ts:653,666` переоценка прайса шла во float `(1 + percentChange / 100)`. В `chairRentalCalculator.ts:140,162` аренда считалась через `Math.round((grossKopecks * percent) / 100)` и `((netProfitKopecks / 100) / hours).toFixed(2)`. В `clinicalPlaybooksEngine.ts:595-602` сальдо форматировалось через `(f.balanceKopecks / 100).toFixed(2)`. В `clinicalPricelistCatalog.ts:243-249` были `Math.round(priceRub * 100)`, `Math.round(rawKopecks * (discountPercent / 100))` и `totalKopecks / 100`.
+     - *После:* Все расчеты процентов переведены на канонические `basisPointsFromPercent` и `calculatePercentDiscountKopecks`. Все конвертации и форматирования переведены на `rublesToKopecks`, `kopecksToRubles`, `formatKopecksToRubles`. Вся кодовая база монорепозитория защищена от потери точности.
+
+
+
+---
+
+## 21. РЕВИЗИЯ И РАЗМИНИРОВАНИЕ МУЛЬТИТЕНАНТНОСТИ И ЛОГИРОВАНИЯ (TENANT ISOLATION & LOGGING SURGEON — ROT-007 / ROT-008)
+- Статус: ✅ FIXED (2026-11-24)
+- Проверено:
+  * `npx tsc -p apps/api/tsconfig.json --noEmit` → Exit Code 0 (0 ошибок компилятора).
+  * `npm run check:doors` → Exit Code 0 (100% дверей API и SSOT защищены).
+  * `npm run check:diff` → Exit Code 0 (0 костылей, 0 any, 0 float money).
+  * `npm run check:encoding` → Exit Code 0 (19929 файлов проверено, UTF-8 без замечаний).
+  * `npx tsx --test apps/api/src/tests/prodoctorovDecomposition.test.ts apps/api/src/tests/cryptoProCliEngine.test.ts` → Exit Code 0 (39/39 pass).
+  * `npx tsx --test apps/api/src/tests/redteamFixerSurgeonLab.test.ts` → Exit Code 0 (9/9 pass).
+- Протокол До / После (Хирургическое устранение первопричин по Факт-Досье):
+  1. **SSOT Контекста тенанта (ROT-007):**
+     - *До:* Логика извлечения и верификации `organizationId` была размыта по хэндлерам, допускался приём параметров из заголовков `x-organization-id` без криптографической верификации сессии.
+     - *После:* Выделен канонический модуль `apps/api/src/security/tenantContext.ts` с функциями `requireClinicalMutationContext` и `requireClinicalReadContext`. В `apps/api/src/accessGuard.ts` оставлены чистые прозрачные реэкспорты. `organizationId` извлекается СТРОГО из проверенного JWT-токена (`requestIdentity.verified === true && requestIdentity.organizationId`). Любые попытки передачи стороннего `organizationId` отклоняются с 403 Forbidden.
+  2. **Ликвидация Sev-1 BOLA/IDOR в интеграциях (MedFlex / ПроДокторов):**
+     - *До:* В `prodoctorovRouteHandlers.ts` настройки и маппинги врачей читались и сохранялись без строгой проверки прав клиники. В `prodoctorovSlotsSync.ts` присутствовала опасная функция `resolveOrganizationId`, слепо читавшая незащищённый `x-organization-id`.
+     - *После:* Внедрен `requireClinicalMutationContext` для `handleGetSettings`, `handleUpdateSettings`, `handleGetDoctorMappings`, `handleSaveDoctorMappings`, `handleGetWebhookLogs`. Опасная функция `resolveOrganizationId` физически ликвидирована. Доступ к расписанию и слотам защищен каноническим контекстом организации.
+  3. **Ликвидация утечки сертификатов УКЭП в КриптоПро:**
+     - *До:* В `apps/api/src/routes/cryptoProNativeRoutes.ts` вспомогательный метод `getTenantCryptoContext` содержал ветку `isBypass: true`, которая при отсутствии авторизационного токена отдавала сертификаты всех врачей локальной машины.
+     - *После:* Флаг `isBypass: true` полностью ликвидирован. Внедрены `requireClinicalReadContext` для чтения статуса/сертификатов и `requireClinicalMutationContext` для операций ЭЦП. Сертификаты и подписание строго изолированы по ИНН/ОГРН/СНИЛС тенанта.
+  4. **Устранение обхода RLS в статусах СБП (SBP):**
+     - *До:* В `sbpStatusRouteHandler.ts` и `sbpPaymentStatus.ts` использовался `withSuperuserBypass` и опциональный `orgId`, позволявший неавторизованному пользователю сканировать глобальную таблицу платежей клиник.
+     - *После:* `orgId` сделан строго обязательным параметром из проверенного контекста токена (`requireClinicalReadContext`). Глобальный обход `withSuperuserBypass` заменен на изоляцию `withTenantCtx(orgId, ...)`. Запрос к БД снабжен составным предикатом `and(eq(payments.organizationId, orgId), ...)`.
+  5. **Недостающие tenant-предикаты Defense-in-Depth:**
+     - *До:* Точечные мутации в БД не дублировали проверку `organizationId`, полагаясь исключительно на сессионный RLS.
+     - *После:* Внедрены явные составные предикаты `and(eq(table.id, id), eq(table.organizationId, orgId))`:
+       * `payrollSettlementDbQueries.ts`: `eq(cashOperations.organizationId, orgId)` при отмене начислений и списаний.
+       * `techCardNormHandlers.ts`: `eq(treatmentConsumables.organizationId, orgId)` при удалении технологических норм.
+       * `stornoOperationHandlers.ts`: `eq(stockBatches.organizationId, organizationId)` при сторнировании складских партий.
+       * `labOrderPatchDb.ts`: `eq(labItems.organizationId, orgId)` при выборке позиций наряда.
+       * `certificateRedemption.ts`: `eq(giftCertificates.organizationId, orgId)` при списании номинала сертификата.
+       * `inviteRoutes.ts` и `statusRoutes.ts`: `eq(patientRecalls.organizationId, context.organizationId)` при обновлении реколлов.
+       * `telephonyCallLifecycleHandler.ts`: `eq(crmLeads.organizationId, orgId)` и `eq(communicationEvents.organizationId, row.organizationId)` при завершении звонков и авто-очистке зависших вызовов.
+  6. **Чистка логов и остаточного консольного мусора (ROT-008):**
+     - *До:* В `apps/api/src/services/bots/omnichannel/botPatientStateStorage.ts:155, 206` использовался сырой `console.warn`.
+     - *После:* Заменен на канонический структурированный логгер `createApiLogger("botPatientStateStorage")` и безопасную сериализацию `safeLogError`. Консольный мусор ликвидирован (0 вызовов `console.*`).
+
+
+---
+
+## 22. РЕВИЗИЯ И РАЗМИНИРОВАНИЕ ТРАНЗАКЦИЙ, ACID И ИДЕМПОТЕНТНОСТИ (TRANSACTIONS & IDEMPOTENCY SURGEON — ROT-005 / ROT-006)
+- Статус: ✅ FIXED (2026-11-24)
+- Проверено:
+  * `npx tsc -p apps/api/tsconfig.json --noEmit` → Exit Code 0 (0 ошибок компилятора).
+  * `npm run check:diff` → Exit Code 0 (0 костылей, 0 any, 0 float money, 0 suppressions).
+  * `npm run check:doors` → Exit Code 0 (100% дверей API и SSOT защищены, 0 клонов).
+  * `npm run check:ratchet` → Exit Code 0 (0 any, 0 супрессий, 0 / 100 float divisions, 0 uppercase).
+  * `npx tsx --test apps/api/src/tests/redteamFixerSurgeonLab.test.ts` → Exit Code 0 (9/9 pass).
+  * `npx tsx --test apps/api/src/tests/routes/diaryIdempotencyExactReplay.test.ts` → Exit Code 0 (2/2 pass).
+  * `npx tsx --test apps/api/src/tests/routes/appointmentNextStage.test.ts` → Exit Code 0 (2/2 pass).
+  * `npx tsx --test apps/api/src/tests/routes/periodontogramSnapshots.test.ts apps/api/src/tests/routes/perioCharting.test.ts` → Exit Code 0 (28/28 pass).
+  * `npx tsx --test apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts apps/api/src/tests/routes/treatmentPlanCompletion.test.ts` → Exit Code 0 (8/8 pass).
+- Протокол До / После (Хирургическое устранение первопричин по Факт-Досье):
+  1. **Ликвидация дублирующих самодельных механизмов идемпотентности и ложных 409 Conflict:**
+     - *До:* В `labOrderCreateHandler.ts:68-128`, `labOrderPutHandler.ts:70-132`, `labOrderPatchHandler.ts:70-138` выполнялись ручные селекты `tx.select().from(idempotencyKeys)...for("update")` с ручной вставкой статуса `in_flight`. Поскольку глобальный `idempotencyPlugin` Fastify в хуке `preHandler` УЖЕ выставляет `in_flight`, локальный код хэндлера на первом же первичном запросе натыкался на собственный ключ со статусом `in_flight` и ложно отбивал запрос ошибкой HTTP 409 Conflict (`conflict_in_flight`).
+     - *После:* Ручные запросы к `idempotencyKeys` в заказах ЗТЛ полностью удалены. Обработка `Idempotency-Key` возложена на канонический корневой `idempotencyPlugin`. Реплей и дедупликация подтверждены E2E тестом `redteamFixerSurgeonLab.test.ts` (9/9 pass).
+     - *До:* В `diaryReviseHandler.ts` и `diaryUpsertHandler.ts` присутствовали ручные блоки дедупликации и вставки в `idempotencyKeys`, дублировавшие глобальный плагин и создававшие разрыв транзакции.
+     - *После:* Ручные проверки и вставки в `diaryReviseHandler.ts` и `diaryUpsertHandler.ts` удалены, логика реплея верифицирована тестом `diaryIdempotencyExactReplay.test.ts` (2/2 pass).
+     - *До:* В `appointmentsMutationRoutes.ts:83-191` использовался самодельный wrapper с advisory locks, в котором происходило глотание ошибок в блоке catch.
+     - *После:* Самодельные функции `resolveAppointmentIdempotentReplay`, `persistAppointmentIdempotencyRecord` и swallow-wrapper удалены. Создание и перенос приёмов делегированы глобальной идемпотентности.
+  2. **Устранение разрывов транзакций (Late Idempotency Write):**
+     - *До:* В `createInvoiceHandler.ts:352-373, 441-462` после завершения и коммита транзакции создания счёта открывался отдельный вторичный вызов `withTenantCtx` для записи в `idempotencyKeys`. При сбое сети или падении вторичного запроса клиент получал ошибку, несмотря на физически созданный счёт.
+     - *После:* Вторичные вызовы `withTenantCtx` после коммита счёта удалены. Сохранение ответа и фиксация идемпотентности выполняются атомарно глобальным плагином Fastify.
+     - *До:* В `routesMutationsSites.ts:151-179, 290-318` в двух эндпоинтах PATCH сайтов пародонтограммы запись ключа в `idempotencyKeys` выполнялась после завершения `db.transaction(...)`, с риском рассинхрона и неиспользуемыми импортами.
+     - *После:* Ручные вставки удалены, обработка передана глобальному плагину.
+     - *До:* В `createTreatmentPlanHandler.ts:35-58, 305-325` и `visitWorkOrderCompleteHandler.ts:52-77, 126-144` имелись ручные проверки `in_flight` (возвращавшие 409 Conflict) и ручные вставки в `idempotencyKeys`.
+     - *После:* Ручные проверки и вставки удалены. Завершение наряда визита и списание материалов выполняются в единой неделимой транзакции `withTenantCtx(context.organizationId, async (tx) => ...)`.
+  3. **Оборачивание составных мутаций в неделимую ACID-транзакцию:**
+     - *До:* В `configureClinicSetupTool.ts:30-67` 7 последовательных мутаций (обновление организации, создание/обновление филиала клиники, провайдинг кабинетов/кресел, регистрация врачей, создание расписания смен, активация прайс-листа услуг, настройка кассы ККМ) выполнялись отдельными независимыми запросами на глобальном `activeDb`. При падении любого из шагов база оставалась в разорванном, полунастроенном состоянии.
+     - *После:* Весь процесс экспресс-настройки обёрнут в единую транзакцию `await withTenantCtx(orgId, async (tx) => ...)`. Все вспомогательные методы (`provisionChairs`, `provisionDoctorsAndShifts`, `provisionInitialServices`, `provisionKkm`) получают транзакционный клиент `tx`. При любой ошибке происходит полный откат изменений.
+     - *До:* В `recentPatientHistoryQuery.ts:52-119` в методе `recordPatientViewInDb` выполнялось 5 отдельных запросов (select patient, delete old history, insert new history, select keep ids, delete tail) на глобальном `db` без изоляции и без RLS-контекста, что нарушало fail-closed RLS и создавало race conditions при одновременных кликах.
+     - *После:* Все 5 запросов `recordPatientViewInDb` и чтение `getRecentPatientHistoryFromDb` обёрнуты в `await withTenantCtx(orgId, async (tx) => ...)`.
+  4. **Унификация заголовков ответа идемпотентного реплея:**
+     - В `apps/api/src/plugins/idempotencyModules/idempotencyReplayResponder.ts` стандартизирован полный набор заголовков ответа при реплее: `Idempotency-Key`, `Idempotent-Replay: true`, `idempotency-replayed: true`, `x-idempotency-replayed: true`. Гарантирована 100% совместимость со всеми типами клиентов и тестовыми раннерами.

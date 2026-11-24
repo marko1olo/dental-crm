@@ -26,7 +26,7 @@ export const THERAPY_CARIES_PRESETS: readonly ServicePricelistItem[] = [
 		statutoryTitle804n:
 			"Восстановление зуба пломбой I, V, VI класс по Блэку с использованием материалов из фотополимеров",
 		commercialTitle:
-			"Лечение поверхностного/среднего кариеса с фотополимерной пломбой (Estelite/Filtek)",
+			"Лечение поверхностного/среднего кариеса с фотополимерной пломбой из нанокомпозита",
 		category: "therapy",
 		specialty: "therapist",
 		basePriceRub: 5500,
@@ -40,7 +40,7 @@ export const THERAPY_CARIES_PRESETS: readonly ServicePricelistItem[] = [
 		estimatedDurationMin: 45,
 		isActive: true,
 		isArchived: false,
-		tags: ["кариес", "пломба", "композит", "estelite", "filtek"],
+		tags: ["кариес", "пломба", "композит", "нанокомпозит", "фотополимер"],
 	},
 	{
 		id: "srv-a16-07-002-002",
@@ -233,11 +233,11 @@ export const THERAPY_ENDO_RETREAT_PRESETS: readonly ServicePricelistItem[] = [
 		],
 	},
 	{
-		id: "srv-a16-07-002-005",
-		code804n: "A16.07.002.005",
+		id: "srv-a16-07-002-009",
+		code804n: "A16.07.002.009",
 		statutoryTitle804n: "Наложение коффердама (раббердама)",
 		commercialTitle:
-			"Изоляция операционного поля системой Коффердам / ОптраГейт",
+			"Изоляция операционного поля системой коффердам",
 		category: "therapy",
 		specialty: "therapist",
 		basePriceRub: 900,
@@ -251,10 +251,10 @@ export const THERAPY_ENDO_RETREAT_PRESETS: readonly ServicePricelistItem[] = [
 		estimatedDurationMin: 10,
 		isActive: true,
 		isArchived: false,
-		tags: ["коффердам", "раббердам", "изоляция", "оптрагейт"],
+		tags: ["коффердам", "раббердам", "изоляция"],
 	},
 	{
-		id: "srv-a16-07-002-005-erosion",
+		id: "srv-a16-07-002-005",
 		code804n: "A16.07.002.005",
 		statutoryTitle804n:
 			"Наложение пломбы при клиновидных дефектах и эрозии эмали",

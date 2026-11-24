@@ -17,6 +17,7 @@ import {
 import { siteItemSchema } from "../../services/periodontogramService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { organizations, patients, users } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -610,5 +611,57 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(closeRes2.headers["idempotency-replayed"], "true");
 		const closeJson2 = JSON.parse(closeRes2.body);
 		assert.equal(closeJson2.success, true);
+	});
+
+	it("POST /api/periodontogram/snapshots/:id/close returns 409 Conflict if idempotency key status is in_flight", async () => {
+		const inFlightKey = "01933a00-2222-7000-8000-000000000099";
+		await db.insert(idempotencyKeys).values({
+			clinicId: ORG_ID,
+			key: inFlightKey,
+			status: "in_flight",
+			lockedAt: new Date(),
+		});
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/periodontogram/snapshots/${SNAPSHOT_ID}/close`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": inFlightKey,
+			},
+			payload: { notes: "Попытка закрытия при in_flight" },
+		});
+
+		assert.equal(res.statusCode, 409);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "Conflict");
+		assert.equal(res.headers["retry-after"], "1");
+	});
+
+	it("POST /api/perio/:patientId returns 409 Conflict if idempotency key status is in_flight", async () => {
+		const inFlightKey = "01933a00-3333-7000-8000-000000000099";
+		await db.insert(idempotencyKeys).values({
+			clinicId: ORG_ID,
+			key: inFlightKey,
+			status: "in_flight",
+			lockedAt: new Date(),
+		});
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/perio/${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": inFlightKey,
+			},
+			payload: { notes: "Попытка сохранения при in_flight" },
+		});
+
+		assert.equal(res.statusCode, 409);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "Conflict");
+		assert.equal(res.headers["retry-after"], "1");
 	});
 });

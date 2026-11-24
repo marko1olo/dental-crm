@@ -129,7 +129,7 @@ async function resolvePublicCertificate(certNum: string) {
 
 			const baseDate = order.completedAt ?? order.createdAt;
 			const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
-			const formattedOrderNum = order.orderNumber && (order.orderNumber.startsWith("ЗТЛ-") || order.orderNumber.startsWith("ЛО-"))
+			const formattedOrderNum = order.orderNumber && (order.orderNumber.startsWith("ЛАБ-") || order.orderNumber.startsWith("ЗТЛ-") || order.orderNumber.startsWith("ЛО-"))
 				? order.orderNumber
 				: (order.orderNumber ? `ЛО-${baseYear}-${order.orderNumber}` : `ЗТЛ-${baseYear}-${order.id.slice(0, 6).toUpperCase()}`);
 			const orgShortHash = order.organizationId.replace(/-/g, "").slice(0, 6).toUpperCase();
