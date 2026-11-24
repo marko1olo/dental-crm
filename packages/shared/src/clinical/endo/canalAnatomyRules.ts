@@ -694,7 +694,7 @@ export const TOOTH_CANAL_ANATOMY_MAP: Readonly<Record<number, ToothCanalConfig>>
 	13: { fdiNumber: 13, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Клык верхней челюсти справа (1 мощный длинный корень, 1 широкий канал)" },
 	14: { fdiNumber: 14, defaultCanals: 2, isPrimary: false, isMultiRooted: true, commonVariations: ["standard"], descriptionRu: "Первый премоляр верхней челюсти справа (2 корня/канала: щечный и небный в 85-90%)" },
 	15: { fdiNumber: 15, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Второй премоляр верхней челюсти справа (преимущественно 1 корень и 1 канал)" },
-	16: { fdiNumber: 16, defaultCanals: 4, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти справа (3 корня, 4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
+	16: { fdiNumber: 16, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти справа (3 корня, 3-4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
 	17: { fdiNumber: 17, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Второй моляр верхней челюсти справа (3 корня, 3-4 канала: МБ1, МБ2, ДБ, Н)" },
 	18: { fdiNumber: 18, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["c_shaped"], descriptionRu: "Третий моляр верхней челюсти справа (вариативная анатомия, стандартно 3 канала)" },
 
@@ -704,7 +704,7 @@ export const TOOTH_CANAL_ANATOMY_MAP: Readonly<Record<number, ToothCanalConfig>>
 	23: { fdiNumber: 23, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Клык верхней челюсти слева (1 длинный корень, 1 канал)" },
 	24: { fdiNumber: 24, defaultCanals: 2, isPrimary: false, isMultiRooted: true, commonVariations: ["standard"], descriptionRu: "Первый премоляр верхней челюсти слева (2 корня/канала: щечный и небный)" },
 	25: { fdiNumber: 25, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Второй премоляр верхней челюсти слева (1 корень, 1 канал)" },
-	26: { fdiNumber: 26, defaultCanals: 4, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти слева (3 корня, 4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
+	26: { fdiNumber: 26, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти слева (3 корня, 3-4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
 	27: { fdiNumber: 27, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Второй моляр верхней челюсти слева (3 корня, 3-4 канала: МБ1, МБ2, ДБ, Н)" },
 	28: { fdiNumber: 28, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["c_shaped"], descriptionRu: "Третий моляр верхней челюсти слева (вариативная анатомия, стандартно 3 канала)" },
 
@@ -785,8 +785,6 @@ export function getAnatomicalRootCanalCount(
 		return 1;
 	}
 	if (pos === 5) return 1;
-	// Верхние первые моляры (16, 26) анатомически имеют 4 канала (МБ1, МБ2, ДБ, Н) по Wheeler/Hess в 70-90% случаев (анатомический канон Wheeler)
-	if (fdiNumber === 16 || fdiNumber === 26) return 4;
 	// Моляры постоянного прикуса по умолчанию имеют 3 канала
 	if (pos >= 6) return 3;
 	return 1;

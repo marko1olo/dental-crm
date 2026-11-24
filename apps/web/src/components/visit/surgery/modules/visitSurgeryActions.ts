@@ -127,13 +127,13 @@ export function executeApplyToVisitDiary(
 		void registerImplantInstallationOnce({
 			patientId: options.patientId,
 			toothNumberFdi: options.effectiveTooth ?? 46,
-			implantBrand: options.implantBrand || "osstem",
+			implantBrand: options.implantBrand || "Корейская конусная система 11° SLA",
 			implantDiameterMm: options.implantDiameter ?? 4.0,
 			implantLengthMm: options.implantLength ?? 10.0,
 			finalInsertionTorqueNcm: options.implantTorque ?? 35,
 			baselineIsqMesiodistal: options.implantIsq ?? 72,
 			baselineIsqBuccolingual: options.implantIsq ?? 72,
-			sutureMaterial: options.implantSuture || "Викрил 4-0",
+			sutureMaterial: options.implantSuture || "Полигликолид / ПГА 4-0 (плетеный)",
 			visitId: options.visitId,
 			notes: protocolText,
 			idempotencyKey: options.idempotencyKey,
@@ -174,13 +174,13 @@ export function executePrintProtocolTab(
 			implantDetails:
 				s.selectedNormId === "surgery_implant_standard"
 					? {
-							implantBrand: s.implantBrand || "Dentium",
+							implantBrand: s.implantBrand || "Корейская конусная система 11° SLA",
 							diameterMm: s.implantDiameter || 4.0,
 							lengthMm: s.implantLength || 10.0,
 							torqueNcm: s.implantTorque || 35,
 							isq: s.implantIsq || 72,
 							capType: s.implantCap || "fdm",
-							sutureMaterial: s.implantSuture || "Prolene 4-0",
+							sutureMaterial: s.implantSuture || "Полипропилен 4-0 (монофиламент)",
 						}
 					: undefined,
 		});
@@ -228,13 +228,13 @@ export async function executeQuickDeduct(params: ExecuteQuickDeductParams) {
 			void registerImplantInstallationOnce({
 				patientId: params.patientId,
 				toothNumberFdi: params.effectiveTooth,
-				implantBrand: params.implantBrand || "osstem",
+				implantBrand: params.implantBrand || "Корейская конусная система 11° SLA",
 				implantDiameterMm: params.implantDiameter ?? 4.0,
 				implantLengthMm: params.implantLength ?? 10.0,
 				finalInsertionTorqueNcm: params.implantTorque ?? 35,
 				baselineIsqMesiodistal: params.implantIsq ?? 72,
 				baselineIsqBuccolingual: params.implantIsq ?? 72,
-				sutureMaterial: params.implantSuture || "Викрил 4-0",
+				sutureMaterial: params.implantSuture || "Полигликолид / ПГА 4-0 (плетеный)",
 				visitId: params.visitId,
 			});
 		}

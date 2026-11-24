@@ -93,9 +93,9 @@ export const EXTRACTION_COMPLEXITY_OPTIONS = [
 ] as const;
 
 export const SURGICAL_HEMOSTASIS_OPTIONS = [
-	{ id: "alvogyl" as const, nameRu: "Альвожил (паста/губка)", shortBadge: "Альвожил", descriptionRu: "Антисептический компресс с йодоформом в лунку" },
-	{ id: "hemostatic_sponge" as const, nameRu: "Гемостатическая губка", shortBadge: "Губка", descriptionRu: "Коллагеновая губка для надежного гемостаза" },
-	{ id: "vicryl_suture" as const, nameRu: "Шовный материал (ПГА / полиглактин) 4-0", shortBadge: "ПГА 4-0", descriptionRu: "Сближение краев лунки узловыми швами" },
+	{ id: "alvogyl" as const, nameRu: "Антисептический йодоформный компресс", shortBadge: "Йодоформный компресс", descriptionRu: "Антисептический компресс с йодоформом в лунку" },
+	{ id: "hemostatic_sponge" as const, nameRu: "Гемостатическая коллагеновая губка", shortBadge: "Коллагеновая губка", descriptionRu: "Коллагеновая губка для надежного гемостаза" },
+	{ id: "vicryl_suture" as const, nameRu: "Шовный материал (полигликолид / ПГА 4-0)", shortBadge: "ПГА 4-0", descriptionRu: "Сближение краев лунки узловыми швами" },
 	{ id: "tampon" as const, nameRu: "Давящий марлевый тампон", shortBadge: "Тампон", descriptionRu: "Механическое сдавление марлевым шариком 20 минут" },
 ] as const;
 
@@ -184,14 +184,14 @@ export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEF
 	const match = item.name.match(/Ø(\d+(?:\.\d+)?)[xх](\d+(?:\.\d+)?)мм/i);
 	const diameterMm = match?.[1] ? parseFloat(match[1]) : 4.0;
 	const lengthMm = match?.[2] ? parseFloat(match[2]) : 10.0;
-	let brand = "Osstem";
-	let model = "TS III SA";
-	if (item.name.includes("Straumann")) { brand = "Straumann"; model = "Bone Level SLA"; }
-	else if (item.name.includes("Nobel")) { brand = "Nobel Biocare"; model = "Parallel CC"; }
-	else if (item.name.includes("Dentium")) { brand = "Dentium"; model = "SuperLine SLA"; }
-	else if (item.name.includes("Ankylos")) { brand = "Ankylos"; model = "C/X TissueCare"; }
-	else if (item.name.includes("Astra")) { brand = "Astra Tech"; model = "OsseoSpeed EV"; }
-	else if (item.name.includes("AnyRidge")) { brand = "MegaGen AnyRidge"; model = "AnyRidge"; }
+	let brand = "Корейская конусная система 11° SLA";
+	let model = "SLA";
+	if (item.name.includes("Straumann")) { brand = "Премиальная конусная система активного типа"; model = "Active SLA"; }
+	else if (item.name.includes("Nobel")) { brand = "Кортикальная система с микрорезьбой"; model = "Parallel CC"; }
+	else if (item.name.includes("Dentium")) { brand = "Система с конусным переключением платформ"; model = "Conical SLA"; }
+	else if (item.name.includes("Ankylos")) { brand = "Конусная система с субкрестальной посадкой 5.7°"; model = "TissueCare"; }
+	else if (item.name.includes("Astra")) { brand = "Коническая система с микрорезьбой шейки (EV)"; model = "EV"; }
+	else if (item.name.includes("AnyRidge")) { brand = "Система с самонарезающей резьбой"; model = "AnyRidge"; }
 
 	return {
 		id: item.id,
@@ -207,19 +207,23 @@ export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEF
 	};
 });
 export const SURGERY_GRAFT_CATALOG = [
-	{ id: "graft-xeno-05", name: "Ксеногенный костный гранулят 0.5 г", unitPriceRub: 8500 },
-	{ id: "graft-xeno-10", name: "Ксеногенный костный гранулят 1.0 г", unitPriceRub: 14200 },
-	{ id: "graft-allo-05", name: "Аллогенный костный матрикс 0.5 г", unitPriceRub: 7800 },
+	{ id: "graft-xeno-05", name: "Ксеногенный гранулят 0.5 см³", unitPriceRub: 8500 },
+	{ id: "graft-xeno-10", name: "Ксеногенный гранулят 1.0 см³", unitPriceRub: 14200 },
+	{ id: "graft-allo-05", name: "Аллогенный костный матрикс", unitPriceRub: 7800 },
+	{ id: "graft-auto-chip", name: "Аутогенная костная стружка", unitPriceRub: 6500 },
+	{ id: "graft-synth-tcp", name: "Синтетический фосфат кальция / бета-ТКФ", unitPriceRub: 5500 },
 ] as const;
 export const SURGERY_MEMBRANE_CATALOG = [
-	{ id: "memb-collagen-1622", name: "Коллагеновая резорбируемая мембрана 16×22 мм", unitPriceRub: 9800 },
-	{ id: "memb-collagen-2525", name: "Коллагеновая резорбируемая мембрана 25×25 мм", unitPriceRub: 15400 },
-	{ id: "memb-pericard-1520", name: "Нативная перикардиальная мембрана 15×20 мм", unitPriceRub: 11200 },
+	{ id: "memb-collagen-2525", name: "Резорбируемая коллагеновая мембрана 25×25 мм", unitPriceRub: 15400 },
+	{ id: "memb-collagen-1622", name: "Резорбируемая коллагеновая мембрана 16×22 мм", unitPriceRub: 9800 },
+	{ id: "memb-pericard-1520", name: "Перикардиальная мембрана", unitPriceRub: 11200 },
+	{ id: "memb-dptfe", name: "Нерассасывающаяся d-PTFE мембрана", unitPriceRub: 13500 },
 ] as const;
 export const SURGERY_SUTURE_CATALOG = [
-	{ id: "sut-pga-40", name: "Плетеный синтетический шовный материал (ПГА / полиглактин) 4-0", unitPriceRub: 950 },
-	{ id: "sut-mono-40", name: "Монофиламентный шовный материал (полипропилен) 4-0", unitPriceRub: 1150 },
-	{ id: "sut-mono-50", name: "Монофиламентный шовный материал 5-0", unitPriceRub: 850 },
+	{ id: "sut-pga-40", name: "Полигликолид / ПГА 4-0 (плетеный)", unitPriceRub: 950 },
+	{ id: "sut-prolene-40", name: "Полипропилен 4-0 (монофиламент)", unitPriceRub: 1100 },
+	{ id: "sut-silk-30", name: "Шелк 3-0", unitPriceRub: 750 },
+	{ id: "sut-polyamide-50", name: "Полиамид 5-0", unitPriceRub: 850 },
 ] as const;
 
 export const SURGERY_SCENARIOS: Record<SurgeryScenarioType, SurgeryScenarioDefinition> = {
@@ -454,11 +458,11 @@ export function buildStandardExtractionProtocolText(params: {
 	const hemo = params.hemostasis ?? ["alvogyl", "tampon"];
 	const suture = params.sutureMaterial || "ПГА 4-0";
 	const hemoParts: string[] = [];
-	if (hemo.includes("alvogyl")) hemoParts.push("в лунку внесен антисептический компресс Альвожил");
+	if (hemo.includes("alvogyl")) hemoParts.push("в лунку внесен антисептический йодоформный компресс");
 	if (hemo.includes("hemostatic_sponge")) hemoParts.push("лунка заполнена рассасывающейся гемостатической коллагеновой губкой");
 	if (hemo.includes("vicryl_suture") || complexity === "complex" || complexity === "impacted_dystopic") hemoParts.push(`края раны сближены, наложены узловые швы (${suture})`);
 	if (hemo.includes("tampon")) hemoParts.push("наложен давящий марлевый тампон на 20 минут");
-	const hemoText = hemoParts.length > 0 ? `Местный гемостаз: ${hemoParts.join(", ")}.` : "Местный гемостаз: в лунку внесен Альвожил, наложен давящий марлевый тампон.";
+	const hemoText = hemoParts.length > 0 ? `Местный гемостаз: ${hemoParts.join(", ")}.` : "Местный гемостаз: в лунку внесен антисептический йодоформный компресс, наложен давящий марлевый тампон.";
 	const xrayText = params.postOpXray ? " Выполнен контрольный радиовизиографический снимок: остатков корней и инородных тел в лунке нет." : "";
 	if (complexity === "complex") {
 		const anesth = params.anesthesia || "Инфильтрационная и проводниковая анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл.";
@@ -474,7 +478,7 @@ export function buildStandardExtractionProtocolText(params: {
 
 export function buildStandardImplantationProtocolText(params: StandardImplantationParams = {}): string {
 	const toothStr = params.toothFdi ? `зуба FDI #${params.toothFdi}` : "имплантации";
-	const brand = params.brand || "Dentium";
+	const brand = params.brand || "Корейская конусная система 11° SLA";
 	const model = params.model ? ` ${params.model}` : "";
 	const dia = params.diameterMm ?? 4.0;
 	const len = params.lengthMm ?? 10.0;

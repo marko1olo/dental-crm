@@ -102,7 +102,7 @@ export function ZtlOcclusionDrawer({
 						Окклюзия и артикулятор:
 					</span>
 					<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)]">
-						Exocad CAD/CAM
+						Цифровое моделирование CAD/CAM
 					</span>
 				</div>
 				<span className="text-[11px] text-[var(--ink-muted)] truncate">
@@ -114,8 +114,8 @@ export function ZtlOcclusionDrawer({
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-3">
 				<div className="flex flex-wrap items-center gap-1.5">
 					{[
-						{ id: "bio_art" as const, label: "Bio-Art" },
-						{ id: "kavo_protar" as const, label: "KaVo Protar" },
+						{ id: "bio_art" as const, label: "Полурегулируемый (Arcon)" },
+						{ id: "kavo_protar" as const, label: "Полностью регулируемый (Non-Arcon)" },
 						{ id: "average_anatomical" as const, label: "Среднеанатомический" },
 					].map((art) => {
 						const isSelected = currentArticulator === art.id;

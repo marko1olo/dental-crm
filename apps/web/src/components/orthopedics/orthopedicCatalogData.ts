@@ -140,7 +140,7 @@ export const PREPARATION_MARGIN_PRESETS: readonly PreparationMarginPreset[] = [
 		id: "chamfer",
 		labelRu: "Желобоватый уступ (Chamfer)",
 		shortBadge: "Chamfer 0.8мм",
-		description: "Круговой желоб со скругленным углом — оптимально для ZrO2 и e.max",
+		description: "Круговой желоб со скругленным углом — оптимально для оксида циркония и дисиликата лития",
 	},
 	{
 		id: "shoulder_90",

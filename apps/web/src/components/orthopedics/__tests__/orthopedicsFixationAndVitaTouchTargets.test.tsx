@@ -15,7 +15,7 @@ describe("Domain 24 Orthopedics: TASK-PROSTH-01 Cement Brand Chips & TASK-PROSTH
 					onSelectFixationType={() => {}}
 					hasAntagonists={true}
 					onToggleAntagonists={() => {}}
-					cementBrand="relyx_u200"
+					cementBrand="self_adhesive_dual_cure"
 				/>,
 			);
 
@@ -81,8 +81,8 @@ describe("Domain 24 Orthopedics: TASK-PROSTH-01 Cement Brand Chips & TASK-PROSTH
 				/>,
 			);
 			assert.ok(panelHtml.includes('data-testid="cement-brands-section"'), "Chairside panel must render cement brands section by default");
-			assert.ok(panelHtml.includes('data-testid="cement-brand-chip-variolink_esthetic"'));
-			assert.ok(panelHtml.includes('data-testid="cement-brand-chip-relyx_u200"'));
+			assert.ok(panelHtml.includes('data-testid="cement-brand-chip-light_cure_resin"'));
+			assert.ok(panelHtml.includes('data-testid="cement-brand-chip-self_adhesive_dual_cure"'));
 		});
 	});
 

@@ -43,7 +43,7 @@ export function OrthopedicsZtlSelectors({
 	onChangeBennettAngle,
 }: OrthopedicsZtlSelectorsProps) {
 	const [internalFixation, setInternalFixation] = useState<"cement" | "screw" | "clasp">(fixationType);
-	const [internalCementBrand, setInternalCementBrand] = useState<string>("relyx_u200");
+	const [internalCementBrand, setInternalCementBrand] = useState<string>("self_adhesive_dual_cure");
 	const [internalAntagonists, setInternalAntagonists] = useState<boolean>(hasAntagonists);
 	const [internalArticulator, setInternalArticulator] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
 	const [internalFacebow, setInternalFacebow] = useState<boolean>(false);

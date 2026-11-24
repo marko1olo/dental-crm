@@ -42,13 +42,13 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 	const [hasWarehouseDelay, setHasWarehouseDelay] = useState<boolean>(false);
 	const [isMaterialsDeducted, setIsMaterialsDeducted] = useState<boolean>(false);
 
-	const [implantBrand, setImplantBrand] = useState<string>("Dentium");
+	const [implantBrand, setImplantBrand] = useState<string>("Корейская конусная система 11° SLA");
 	const [implantDiameter, setImplantDiameter] = useState<number>(4.0);
 	const [implantLength, setImplantLength] = useState<number>(10.0);
 	const [implantTorque, setImplantTorque] = useState<number>(35);
 	const [implantIsq, setImplantIsq] = useState<number>(72);
 	const [implantCap, setImplantCap] = useState<"fdm" | "plug">("fdm");
-	const [implantSuture, setImplantSuture] = useState<string>("Prolene 4-0");
+	const [implantSuture, setImplantSuture] = useState<string>("Полипропилен 4-0 (монофиламент)");
 
 	const effectiveTooth = activeTooth ?? selectedTooth;
 	useSurgerySyncDiary(protocolText);
@@ -68,7 +68,7 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 		} else if (norm.category === "extraction") {
 			const complexity = norm.id === "surgery_extraction_complex" ? "complex" : norm.id === "surgery_extraction_atypical" ? "impacted_dystopic" : "simple";
 			setProtocolText(buildStandardExtractionProtocolText({
-				toothFdi: effectiveTooth, complexity, hemostasis: ["alvogyl", "hemostatic_sponge", "vicryl_suture", "tampon"], sutureMaterial: "Викрил 4-0", postOpXray: true,
+				toothFdi: effectiveTooth, complexity, hemostasis: ["alvogyl", "hemostatic_sponge", "vicryl_suture", "tampon"], sutureMaterial: "Полигликолид / ПГА 4-0 (плетеный)", postOpXray: true,
 			}));
 		} else {
 			setProtocolText(norm.standardProtocolTextRu);

@@ -35,7 +35,7 @@ export const ORTHOPEDIC_STATUTORY_PRESETS_PART1: readonly ServicePricelistItem[]
 		code804n: "A16.07.006.002",
 		statutoryTitle804n: "Протезирование зуба коронкой из диоксида циркония",
 		commercialTitle:
-			"Коронка из диоксида циркония цельнофрезерованная MultiLayer (Katana/Prettau)",
+			"Коронка из диоксида циркония цельнофрезерованная MultiLayer",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 24000,
@@ -49,14 +49,14 @@ export const ORTHOPEDIC_STATUTORY_PRESETS_PART1: readonly ServicePricelistItem[]
 		estimatedDurationMin: 60,
 		isActive: true,
 		isArchived: false,
-		tags: ["цирконий", "zirconia", "коронка", "katana", "prettau"],
+		tags: ["цирконий", "zirconia", "коронка"],
 	},
 	{
 		id: "srv-a16-07-006-003",
 		code804n: "A16.07.006.003",
 		statutoryTitle804n: "Протезирование цельнокерамической коронкой / виниром",
 		commercialTitle:
-			"Керамический винир / коронка из прессованной керамики E.max (IPS e.max Press)",
+			"Керамический винир / коронка из прессованной стеклокерамики (дисиликат лития)",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 28000,
@@ -70,7 +70,7 @@ export const ORTHOPEDIC_STATUTORY_PRESETS_PART1: readonly ServicePricelistItem[]
 		estimatedDurationMin: 75,
 		isActive: true,
 		isArchived: false,
-		tags: ["винир", "emax", "керамика", "эстетика", "e.max"],
+		tags: ["винир", "дисиликат лития", "керамика", "эстетика"],
 	},
 	{
 		id: "srv-a16-07-006-005",
@@ -108,7 +108,7 @@ export const ORTHOPEDIC_STATUTORY_PRESETS_PART2: readonly ServicePricelistItem[]
 		statutoryTitle804n:
 			"Восстановление зуба коронкой из диоксида циркония с винтовой фиксацией на имплантате",
 		commercialTitle:
-			"Анатомическая коронка из диоксида циркония (Zirconia Prettau/Katana) на имплантате с винтовой фиксацией",
+			"Анатомическая коронка из диоксида циркония на имплантате с винтовой фиксацией",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 26000,
@@ -127,8 +127,6 @@ export const ORTHOPEDIC_STATUTORY_PRESETS_PART2: readonly ServicePricelistItem[]
 			"винтовая фиксация",
 			"цирконий",
 			"zirconia",
-			"dentalia",
-			"prettau",
 		],
 	},
 	{
@@ -185,7 +183,7 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		code804n: "A16.07.006.004",
 		statutoryTitle804n: "Восстановление зуба коронкой из диоксида циркония",
 		commercialTitle:
-			"Коронка из цельного диоксида циркония (Prettau / Katana)",
+			"Коронка из цельного диоксида циркония (Multi-Layer)",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 25000,
@@ -202,7 +200,7 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		id: "srv-base-13",
 		code804n: "A16.07.006.002",
 		statutoryTitle804n: "Восстановление зуба коронкой металлокерамической",
-		commercialTitle: "Коронка металлокерамическая (Duceram / Vita)",
+		commercialTitle: "Коронка металлокерамическая",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 14500,
@@ -219,8 +217,8 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		id: "srv-base-14",
 		code804n: "A16.07.003.001",
 		statutoryTitle804n:
-			"Восстановление зуба керамической вкладкой / виниром (E.max)",
-		commercialTitle: "Керамическая вкладка / винир E.max Press",
+			"Восстановление зуба керамической вкладкой / виниром (дисиликат лития)",
+		commercialTitle: "Керамическая вкладка / винир из дисиликата лития",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 24000,
@@ -231,7 +229,7 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		estimatedDurationMin: 60,
 		isActive: true,
 		isArchived: false,
-		tags: ["винир", "керамика", "e.max", "вкладка"],
+		tags: ["винир", "керамика", "дисиликат лития", "вкладка"],
 	},
 	{
 		id: "srv-base-15",
@@ -239,7 +237,7 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		statutoryTitle804n:
 			"Снятие оттиска с одной челюсти эластомерным материалом (А-силикон)",
 		commercialTitle:
-			"Снятие двухслойного прецизионного слепка А-силиконом (Elite HD+ / Honigum)",
+			"Снятие двухслойного прецизионного слепка А-силиконом",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 2500,
@@ -258,7 +256,7 @@ export const ORTHOPEDIC_BASELINE_SERVICES_PART1: readonly ServicePricelistItem[]
 		statutoryTitle804n:
 			"Фиксация на постоянный цемент несъемных ортопедических конструкций (1 единица)",
 		commercialTitle:
-			"Постоянная фиксация коронки на цемент двойного отверждения (Fuji Plus / RelyX)",
+			"Постоянная фиксация коронки на цемент двойного отверждения / СИЦ",
 		category: "orthopedics",
 		specialty: "orthopedist",
 		basePriceRub: 1500,
