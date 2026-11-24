@@ -60,6 +60,8 @@ export const createLabItemSchema = z.object({
 		.nullable(),
 	priceRub: labItemPriceSchema,
 	priceKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
-});
+	labCostRub: labItemPriceSchema,
+	labCostKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
+}).strict();
 
 export const updateLabItemSchema = createLabItemSchema.partial();

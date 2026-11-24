@@ -104,6 +104,7 @@ export function SpecialtyProtocolDrawer({
 
 	return (
 		<div
+			key={resolvedVisitId ?? activePatient?.id ?? "specialty-drawer"}
 			data-testid="specialty-protocol-drawer"
 			className="specialty-protocol-drawer p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-md animate-in fade-in slide-in-from-top-2 duration-150"
 		>
@@ -115,7 +116,7 @@ export function SpecialtyProtocolDrawer({
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen(false)}
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)] font-semibold text-xs cursor-pointer px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs transition-colors min-h-[32px] touch-manipulation"
+					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)] font-semibold text-xs cursor-pointer px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 shadow-2xs transition-colors min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 touch-manipulation"
 					aria-label="Свернуть специализированный клинический бланк"
 				>
 					<X size={13} className="shrink-0" aria-hidden="true" />
@@ -125,6 +126,7 @@ export function SpecialtyProtocolDrawer({
 
 			{isChildDentition ? (
 				<VisitPediatricProtocolWidget
+					key={`${activePatient?.id ?? "pt"}-${activeTooth ?? "pedia"}`}
 					activeTooth={activeTooth}
 					onSelectActiveTooth={setActiveTooth}
 					activeSurfaces={activeSurfaces}

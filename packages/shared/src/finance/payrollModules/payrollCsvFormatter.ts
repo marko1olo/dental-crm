@@ -4,6 +4,7 @@
  * Mandate 8b: <= 120 lines.
  */
 
+import { formatKopecksToRubles } from "../../money.js";
 import type { DoctorPayrollResult } from "./payrollTypes.js";
 
 /**
@@ -12,13 +13,13 @@ import type { DoctorPayrollResult } from "./payrollTypes.js";
 export function generateDoctorPayrollCsv(results: readonly DoctorPayrollResult[]): string {
 	const header = "Табельный ID;Врач;Специальность;Период;Выручка (руб);Вычет Лаб (руб);Вычет Мат (руб);Базовый %;Начислено (руб);KPI %;KPI Премия (руб);НДФЛ 13% (руб);К выплате на руки (руб)\n";
 	const rows = results.map((r) => {
-		const grossRub = (r.totalGrossRevenueKop / 100).toFixed(2);
-		const labRub = (r.totalLabDeductionsKop / 100).toFixed(2);
-		const matRub = (r.totalMaterialDeductionsKop / 100).toFixed(2);
-		const baseEarnedRub = (r.earnedBaseCommissionKop / 100).toFixed(2);
-		const kpiEarnedRub = (r.kpiBonusEarnedKop / 100).toFixed(2);
-		const taxRub = (r.ndfl13TaxKop / 100).toFixed(2);
-		const netRub = (r.netPayoutToDoctorKop / 100).toFixed(2);
+		const grossRub = formatKopecksToRubles(r.totalGrossRevenueKop);
+		const labRub = formatKopecksToRubles(r.totalLabDeductionsKop);
+		const matRub = formatKopecksToRubles(r.totalMaterialDeductionsKop);
+		const baseEarnedRub = formatKopecksToRubles(r.earnedBaseCommissionKop);
+		const kpiEarnedRub = formatKopecksToRubles(r.kpiBonusEarnedKop);
+		const taxRub = formatKopecksToRubles(r.ndfl13TaxKop);
+		const netRub = formatKopecksToRubles(r.netPayoutToDoctorKop);
 
 		return `${r.doctorId};"${r.doctorName}";"${r.specialtyTitleRu}";"${r.periodLabelRu}";${grossRub};${labRub};${matRub};${r.baseCommissionPercent}%;${baseEarnedRub};${r.kpiBonusPercent}%;${kpiEarnedRub};${taxRub};${netRub}`;
 	});

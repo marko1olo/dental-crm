@@ -177,21 +177,10 @@ export async function insertLabOrderInDb(
 		}
 	}
 
-	// Автономия врача у кресла (Мандаты 8e, 8n): если ID врача не передан или не найден в клинике,
-	// подставляем первого активного врача/пользователя организации
+	// Строгий контроль автора наряда ЗТЛ: запрещен тихий подхват случайного сотрудника через .limit(1)!
+	// Если врач не передан явно и не определен по текущему пользователю/ФИО — возвращаем doctor_not_found (Дефект 5).
 	if (!effectiveDoctorId) {
-		const [firstStaff] = await tx
-			.select({ id: users.id, fullName: users.fullName })
-			.from(users)
-			.where(eq(users.organizationId, orgId))
-			.limit(1);
-		if (firstStaff) {
-			effectiveDoctorId = firstStaff.id;
-			doctorName = data.doctorName || firstStaff.fullName;
-		} else {
-			// Если в клинике нет пользователей (например в изолированных тестах или соло-практике), не падаем с 404
-			doctorName = data.doctorName || "Врач-ортопед";
-		}
+		return { kind: "doctor_not_found" as const };
 	}
 
 	const generatedOrderId = crypto.randomUUID();

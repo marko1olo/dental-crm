@@ -46,6 +46,8 @@ import {
 	patients,
 	visits,
 	periodontogramSnapshots,
+	toothStates,
+	toothStateHistory,
 } from "../db/schema.js";
 import { idempotencyKeys } from "../db/schema/idempotency.js";
 import {
@@ -95,6 +97,8 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID));
 			await tx.delete(periodontogramSnapshots).where(eq(periodontogramSnapshots.organizationId, ORG_ID));
+			await tx.delete(toothStateHistory).where(eq(toothStateHistory.organizationId, ORG_ID));
+			await tx.delete(toothStates).where(eq(toothStates.organizationId, ORG_ID));
 			await tx.delete(visits).where(eq(visits.organizationId, ORG_ID));
 			await tx.delete(patients).where(eq(patients.organizationId, ORG_ID));
 			await tx.delete(users).where(eq(users.organizationId, ORG_ID));

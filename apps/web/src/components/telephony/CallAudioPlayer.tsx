@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
 	CallAudioEmptyState,
 	CallAudioPlaybackControls,
@@ -41,6 +40,7 @@ export function CallAudioPlayer({
 	}, [p.audioRef]);
 
 	const [blobAudioSrc, setBlobAudioSrc] = useState<string>("");
+	const activeBlobRef = useRef<string>("");
 
 	// Resolve canonical protected stream endpoint without leaking tokens into query params
 	const streamEndpoint = useMemo(() => {
@@ -56,31 +56,37 @@ export function CallAudioPlayer({
 		return uuidMatch ? `/api/telephony/recordings/${uuidMatch[0]}/stream` : "";
 	}, [recordingUrl, eventId]);
 
-	// Authorized fetch to create local secure blob URL — prevents CORS and IP leaks
+	// Authorized fetch to create local secure blob URL — prevents CORS, 401 and memory leaks
 	useEffect(() => {
 		if (!recordingUrl || recordingUrl.trim() === "") {
+			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+				activeBlobRef.current = "";
+			}
 			setBlobAudioSrc("");
 			return;
 		}
 		const trimmed = recordingUrl.trim();
 		if (trimmed.startsWith("blob:")) {
+			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:") && activeBlobRef.current !== trimmed) {
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+			}
+			activeBlobRef.current = trimmed;
 			setBlobAudioSrc(trimmed);
 			return;
 		}
 		if (!streamEndpoint) {
 			p.setPlaybackError(true);
+			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+				activeBlobRef.current = "";
+			}
 			setBlobAudioSrc("");
 			return;
 		}
 
 		let active = true;
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
-		const headers: Record<string, string> = {
-			...denteAdminSecretRequestHeaders(),
-			...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-			...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-		};
+		const headers = getDenteAuthHeaders();
 
 		fetch(streamEndpoint, { headers })
 			.then((res) => {
@@ -88,19 +94,31 @@ export function CallAudioPlayer({
 				return res.blob();
 			})
 			.then((blob) => {
-				if (active) setBlobAudioSrc(URL.createObjectURL(blob));
+				if (active) {
+					if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+						try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+					}
+					const newUrl = URL.createObjectURL(blob);
+					activeBlobRef.current = newUrl;
+					setBlobAudioSrc(newUrl);
+				}
 			})
 			.catch(() => {
 				if (active) {
 					p.setPlaybackError(true);
+					if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+						try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+						activeBlobRef.current = "";
+					}
 					setBlobAudioSrc("");
 				}
 			});
 
 		return () => {
 			active = false;
-			if (blobAudioSrc.startsWith("blob:")) {
-				try { URL.revokeObjectURL(blobAudioSrc); } catch {}
+			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+				activeBlobRef.current = "";
 			}
 		};
 	}, [recordingUrl, streamEndpoint]);
@@ -158,6 +176,7 @@ export function CallAudioPlayer({
 				isMuted={p.isMuted}
 				onToggleMute={p.toggleMute}
 				recordingUrl={recordingUrl}
+				blobAudioSrc={blobAudioSrc}
 			/>
 
 			<CallAudioWaveformBar

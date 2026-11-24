@@ -85,6 +85,9 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 		};
 	}
 
+	const origGetDocStatus = N3EventLogClient.prototype.getDocumentStatus;
+	const origQueueReexport = N3EventLogClient.prototype.queueForReexport;
+
 	before(async () => {
 		process.env.NODE_ENV = "development";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
@@ -99,6 +102,23 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 		process.env.EGISZ_N3_VIPNET_ACTIVE = "1";
 
 		resetAuthSecretCacheForTests();
+
+		N3EventLogClient.prototype.getDocumentStatus = async (idDocumentMis: string) => {
+			return {
+				idDocumentMis,
+				status: "Registered",
+				statusCode: 1,
+				statusDescription: "Зарегистрирован в РЭМД ЕГИСЗ",
+				timestamp: new Date().toISOString(),
+			};
+		};
+
+		N3EventLogClient.prototype.queueForReexport = async (idDocumentMis: string, queue: string) => {
+			return {
+				success: true,
+				message: `Документ ${idDocumentMis} успешно поставлен в очередь ${queue}`,
+			};
+		};
 
 		clinicTokenMine = signToken({ organizationId: ORG_ID_MINE }, TEST_SECRET, 3600);
 		clinicTokenAlien = signToken({ organizationId: ORG_ID_ALIEN }, TEST_SECRET, 3600);
@@ -133,8 +153,7 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 				id: testVisitId,
 				organizationId: ORG_ID_MINE,
 				patientId: testPatientId,
-				doctorId: testDoctorId,
-				status: "completed",
+				status: "signed",
 			}).onConflictDoNothing();
 
 			await db.insert(egiszOutbox).values({
@@ -159,6 +178,8 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 	});
 
 	after(async () => {
+		N3EventLogClient.prototype.getDocumentStatus = origGetDocStatus;
+		N3EventLogClient.prototype.queueForReexport = origQueueReexport;
 		try {
 			await db.delete(egiszOutbox).where(eq(egiszOutbox.id, testDocId));
 		} catch {
@@ -400,6 +421,28 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 			});
 			assert.equal(res.status, 404);
 			assert.equal(res.json?.error, "PatientNotFound");
+		});
+
+		test("GET /api/egisz/n3health/eventlog/status/:idDocumentMis returns 200 for document belonging to caller organization", async () => {
+			const res = await inject("GET", "/api/egisz/n3health/eventlog/status/DOC-MINE-001", {
+				token: clinicTokenMine,
+			});
+			assert.equal(res.status, 200);
+			assert.equal(res.json?.ok, true);
+			assert.equal(res.json?.idDocumentMis, "DOC-MINE-001");
+			assert.equal(res.json?.status, "Registered");
+		});
+
+		test("POST /api/egisz/n3health/eventlog/reexport returns 200 for document belonging to caller organization", async () => {
+			const res = await inject("POST", "/api/egisz/n3health/eventlog/reexport", {
+				token: clinicTokenMine,
+				body: {
+					idDocumentMis: "DOC-MINE-001",
+					queue: "REMD",
+				},
+			});
+			assert.equal(res.status, 200);
+			assert.equal(res.json?.ok, true);
 		});
 	});
 });

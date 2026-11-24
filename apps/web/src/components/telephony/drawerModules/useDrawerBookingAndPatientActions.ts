@@ -129,13 +129,6 @@ export function useDrawerBookingAndPatientActions(params: {
 			isCitoEmergency: slotType === "today_cito",
 		};
 		useScheduleStore.getState().setPendingStageBooking(slotInfo);
-		if (typeof window !== "undefined") {
-			try {
-				window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo }));
-			} catch (dispatchErr) {
-				console.warn("[TelephonyDrawer] Ошибка отправки события dente-book-stage-appointment:", dispatchErr);
-			}
-		}
 		if (activeCall && activeCall.status === "ringing") answerCall();
 		if (useAppStore.getState().currentView !== "schedule") useAppStore.getState().setCurrentView("schedule");
 		useUiSurfaceStore.getState().openDrawer("quick_booking");

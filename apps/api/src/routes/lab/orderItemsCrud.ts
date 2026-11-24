@@ -21,6 +21,7 @@ export async function recalculateLabOrderFromItemsTx(
 		.select({
 			id: labOrders.id,
 			isWarranty: labOrders.isWarranty,
+			warrantyLiabilityType: labOrders.warrantyLiabilityType,
 		})
 		.from(labOrders)
 		.where(and(eq(labOrders.id, labOrderId), eq(labOrders.organizationId, orgId)))
@@ -42,7 +43,7 @@ export async function recalculateLabOrderFromItemsTx(
 	const uniqueTeeth = Array.from(new Set(allItems.map((it) => it.toothFdi))).sort((a, b) => a - b);
 	const teethFdi = uniqueTeeth.length > 0 ? uniqueTeeth.join(",") : null;
 
-	const sumKopecks = allItems.reduce((acc, it) => {
+	const sumPriceKopecks = allItems.reduce((acc, it) => {
 		const kop =
 			it.priceKopecks != null
 				? Number(it.priceKopecks)
@@ -52,8 +53,8 @@ export async function recalculateLabOrderFromItemsTx(
 		return acc + kop;
 	}, 0);
 
-	const priceKopecks = order.isWarranty ? 0 : sumKopecks;
-	const priceRub = order.isWarranty ? 0 : kopecksToRubles(sumKopecks);
+	const priceKopecks = order.isWarranty ? 0 : sumPriceKopecks;
+	const priceRub = order.isWarranty ? 0 : kopecksToRubles(sumPriceKopecks);
 
 	const [updatedOrder] = await tx
 		.update(labOrders)

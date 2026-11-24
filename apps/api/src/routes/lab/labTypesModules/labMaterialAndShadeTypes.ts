@@ -131,12 +131,12 @@ export const createLabOrderSchema = z.object({
 	overrideActive: z.boolean().optional().nullable(),
 	overrideReason: z.string().trim().optional().nullable(),
 	clientMutationId: z.string().trim().optional().nullable(),
-});
+}).strict();
 
 export const checkPlanContinuitySchema = z.object({
 	patientId: z.string().uuid(),
 	treatmentPlanId: z.string().uuid().optional().nullable(),
 	planAgeDays: z.number().int().nonnegative().optional().default(0),
-});
+}).strict();
 
 

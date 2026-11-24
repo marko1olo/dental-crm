@@ -29,6 +29,7 @@ export function AdministrativeModalsSubcontainer({
 		<>
 			{isGlobalLabCreateOrderOpen && (
 				<DentalLabStudioModal
+					key={labCreateOrderContext?.patientId ? `global-lab-${labCreateOrderContext.patientId}` : "new_global_order"}
 					isOpen={isGlobalLabCreateOrderOpen}
 					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
 					onOrderCreated={() => setIsGlobalLabCreateOrderOpen(false)}

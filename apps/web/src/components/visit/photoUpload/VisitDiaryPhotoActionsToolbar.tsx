@@ -26,15 +26,25 @@ export function VisitDiaryPhotoActionsToolbar({
 	onDsdOpen,
 }: VisitDiaryPhotoActionsToolbarProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const cameraInputRef = useRef<HTMLInputElement>(null);
 
 	const handleAttachClick = () => {
 		if (isUploading) return;
 		fileInputRef.current?.click();
 	};
 
+	const handleCameraClick = () => {
+		if (isUploading) return;
+		if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) {
+			cameraInputRef.current?.click();
+			return;
+		}
+		onCameraOpen();
+	};
+
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2">
-			<div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase text-[var(--muted)]">
+			<div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--muted)]">
 				<Camera className="w-4 h-4 text-[var(--bad-fg)]" />
 				<span>Вложения (Фотографии)</span>
 			</div>
@@ -92,11 +102,11 @@ export function VisitDiaryPhotoActionsToolbar({
 
 					<button
 						type="button"
-						onClick={onCameraOpen}
+						onClick={handleCameraClick}
 						className={`cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] flex items-center gap-1.5 active:scale-[0.98] ${
 							isUploading ? "opacity-60 cursor-wait" : ""
 						}`}
-						title="Сделать снимок с интраоральной USB/UVC камеры или веб-камеры (WebRTC захват)"
+						title="Сделать снимок с интраоральной USB/UVC камеры или веб-камеры (WebRTC захват, на мобильном — камера планшета)"
 					>
 						<Camera className="w-4 h-4 text-[var(--accent)]" />
 						<span>{isUploading ? "Сжатие..." : "Снимок с камеры"}</span>
@@ -119,6 +129,15 @@ export function VisitDiaryPhotoActionsToolbar({
 						id="visit-diary-photo-upload"
 						type="file"
 						accept="image/*,.heic,.heif,image/heic,image/heif"
+						className="hidden"
+						onChange={onFileInputChange}
+					/>
+					<input
+						ref={cameraInputRef}
+						id="visit-diary-camera-upload"
+						type="file"
+						accept="image/*,.heic,.heif,image/heic,image/heif"
+						capture="environment"
 						className="hidden"
 						onChange={onFileInputChange}
 					/>

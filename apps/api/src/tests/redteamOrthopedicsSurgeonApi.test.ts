@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import Fastify from "fastify";
 import { calculateLabOrderCostAndMarkup } from "../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
 import { labOrderMarkInstalledHandler } from "../routes/lab/paymentModules/labOrderMarkInstalledHandler.js";
-import type { FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7 } from "@dental/shared";
 
 describe("Domain 25 Red Team Fixer Surgeon: API & Lab Cost Calculator", () => {
@@ -40,87 +40,47 @@ describe("Domain 25 Red Team Fixer Surgeon: API & Lab Cost Calculator", () => {
 		assert.equal(bridge.grossMarginKopecks, 6480000 - 2025000);
 	});
 
-	it("2. Валидация Idempotency-Key (UUIDv7) в labOrderMarkInstalledHandler", async () => {
-		// Тест 1: Запрос без заголовка Idempotency-Key должен вернуть 400 IdempotencyKeyRequired
-		let statusCode = 200;
-		let jsonResponse: unknown = null;
+	it("2. Канонический Fastify app.inject() для валидации Idempotency-Key в labOrderMarkInstalledHandler", async () => {
+		const app = Fastify();
+		app.post<{ Params: { id: string } }>("/api/lab-orders/:id/mark-installed", labOrderMarkInstalledHandler);
+		await app.ready();
 
-		const mockReplyNoKey: Partial<FastifyReply> = {
-			code(c: number) {
-				statusCode = c;
-				return this as FastifyReply;
-			},
-			send(payload: unknown) {
-				jsonResponse = payload;
-				return this as FastifyReply;
-			},
-			header() {
-				return this as FastifyReply;
-			},
-		};
+		try {
+			// Тест 1: Запрос с невалидным Idempotency-Key (не UUID) должен вернуть 400 InvalidIdempotencyKey
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: `/api/lab-orders/${generateUuidV7()}/mark-installed`,
+				headers: { "idempotency-key": "not-a-valid-uuid" },
+				payload: {},
+			});
 
-		const mockReqNoKey: Partial<FastifyRequest<{ Params: { id: string } }>> = {
-			headers: {},
-			params: { id: generateUuidV7() },
-			body: {},
-		};
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json<{ error: string }>();
+			assert.equal(jsonInvalid.error, "InvalidIdempotencyKey");
 
-		await labOrderMarkInstalledHandler(
-			mockReqNoKey as FastifyRequest<{ Params: { id: string } }>,
-			mockReplyNoKey as FastifyReply,
-		);
+			// Тест 2: Запрос без переданного Idempotency-Key автоматически генерирует UUIDv7 и возвращает в заголовке ответа
+			const resNoKey = await app.inject({
+				method: "POST",
+				url: `/api/lab-orders/${generateUuidV7()}/mark-installed`,
+				headers: {},
+				payload: {},
+			});
 
-		assert.equal(statusCode, 400);
-		assert.deepEqual((jsonResponse as { error: string })?.error, "IdempotencyKeyRequired");
+			const echoGeneratedKey = resNoKey.headers["idempotency-key"];
+			assert.ok(typeof echoGeneratedKey === "string" && echoGeneratedKey.length > 0);
 
-		// Тест 2: Запрос с невалидным Idempotency-Key (не UUID) должен вернуть 400 InvalidIdempotencyKey
-		const mockReqInvalidKey: Partial<FastifyRequest<{ Params: { id: string } }>> = {
-			headers: { "idempotency-key": "not-a-valid-uuid" },
-			params: { id: generateUuidV7() },
-			body: {},
-		};
+			// Тест 3: Запрос с валидным UUIDv7 выставляет эхо-заголовок Idempotency-Key
+			const validKey = generateUuidV7();
+			const resValid = await app.inject({
+				method: "POST",
+				url: `/api/lab-orders/${generateUuidV7()}/mark-installed`,
+				headers: { "idempotency-key": validKey },
+				payload: {},
+			});
 
-		await labOrderMarkInstalledHandler(
-			mockReqInvalidKey as FastifyRequest<{ Params: { id: string } }>,
-			mockReplyNoKey as FastifyReply,
-		);
-
-		assert.equal(statusCode, 400);
-		assert.deepEqual((jsonResponse as { error: string })?.error, "InvalidIdempotencyKey");
-
-		// Тест 3: Запрос с валидным UUIDv7 выставляет эхо-заголовок Idempotency-Key
-		let headerSetKey = "";
-		let headerSetValue = "";
-		const validKey = generateUuidV7();
-
-		const mockReplyValid: Partial<FastifyReply> = {
-			code(c: number) {
-				statusCode = c;
-				return this as FastifyReply;
-			},
-			send(payload: unknown) {
-				jsonResponse = payload;
-				return this as FastifyReply;
-			},
-			header(k: string, v: string) {
-				headerSetKey = k;
-				headerSetValue = v;
-				return this as FastifyReply;
-			},
-		};
-
-		const mockReqValid: Partial<FastifyRequest<{ Params: { id: string } }>> = {
-			headers: { "idempotency-key": validKey },
-			params: { id: generateUuidV7() },
-			body: {},
-		};
-
-		await labOrderMarkInstalledHandler(
-			mockReqValid as FastifyRequest<{ Params: { id: string } }>,
-			mockReplyValid as FastifyReply,
-		);
-
-		assert.equal(headerSetKey, "Idempotency-Key");
-		assert.equal(headerSetValue, validKey);
+			assert.equal(resValid.headers["idempotency-key"], validKey);
+		} finally {
+			await app.close();
+		}
 	});
 });

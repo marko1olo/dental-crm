@@ -168,7 +168,7 @@ export function useVisitDiaryPhotoUploadState({
 	}, [attachments, photoObjectUrls, unreadablePhotoIds, selectedPrintIds]);
 
 	const uploadBlobAttachment = useCallback(
-		async (compressedBlob: Blob, fileName?: string) => {
+		async (compressedBlob: Blob, fileName?: string, toothNumber?: string | number) => {
 			if (isLocked) {
 				showToast("Дневник уже подписан", "info");
 				return;
@@ -177,10 +177,16 @@ export function useVisitDiaryPhotoUploadState({
 			setIsUploading(true);
 			try {
 				const formData = new FormData();
-				formData.append("file", compressedBlob, fileName || "photo.webp");
+				const targetFileName = toothNumber
+					? `tooth-${toothNumber}-${fileName || "photo.webp"}`
+					: (fileName || "photo.webp");
+				formData.append("file", compressedBlob, targetFileName);
 				formData.append("entityType", "diary");
 				if (diaryId) {
 					formData.append("entityId", diaryId);
+				}
+				if (toothNumber !== undefined && toothNumber !== null && String(toothNumber).trim()) {
+					formData.append("toothNumber", String(toothNumber).trim());
 				}
 				const clinicToken = readDenteClinicToken() || null;
 
@@ -239,6 +245,19 @@ export function useVisitDiaryPhotoUploadState({
 		enabled: !isLocked,
 		onPhotoReceived: uploadBlobAttachment,
 	});
+
+	useEffect(() => {
+		const handleToothPhoto = (e: Event) => {
+			const detail = (e as CustomEvent<{ file?: Blob; fileName?: string; toothNumber?: string | number }>)?.detail;
+			if (detail?.file instanceof Blob) {
+				void uploadBlobAttachment(detail.file, detail.fileName, detail.toothNumber);
+			}
+		};
+		window.addEventListener("dente:tooth-photo-captured", handleToothPhoto);
+		return () => {
+			window.removeEventListener("dente:tooth-photo-captured", handleToothPhoto);
+		};
+	}, [uploadBlobAttachment]);
 
 	const handlePhotoUpload = useCallback(
 		async (e: React.ChangeEvent<HTMLInputElement>) => {

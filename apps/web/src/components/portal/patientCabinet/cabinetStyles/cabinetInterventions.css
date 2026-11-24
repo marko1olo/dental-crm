@@ -50,13 +50,11 @@
 .pc-meds-table th {
 	background: var(--pc-bg);
 	color: var(--pc-text-muted);
-	font-weight: 800;
+	font-weight: 600;
 	text-align: left;
 	padding: 10px 12px;
 	border-bottom: 2px solid var(--pc-border);
 	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
 }
 
 .pc-meds-table td {

@@ -27,7 +27,6 @@ import {
 	appointments,
 	cashBoxes,
 	cashBoxShifts,
-	cashLedger,
 	fiscalReceiptQueue,
 	stockBatches,
 	inventoryItems,

@@ -73,14 +73,14 @@ export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
 					</div>
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+							<span className="text-xs font-semibold text-[var(--ink-muted)]">
 								Ваш доктор:
 							</span>
-							<span className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+							<span className="font-bold text-sm text-[var(--ink)] truncate">
 								{selectedDoctor.fullName}
 							</span>
 						</div>
-						<div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
+						<div className="flex items-center gap-2 text-xs text-[var(--ink-muted)] flex-wrap mt-0.5">
 							<span className="truncate">
 								{selectedDoctor.specialties.join(", ")}{selectedDoctor.experienceYears ? ` • Опыт ${selectedDoctor.experienceYears} лет` : ""}
 							</span>
@@ -100,7 +100,7 @@ export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
 	if (activeDoctors.length > 1) {
 		return (
 			<div className="mb-4">
-				<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+				<div className="text-xs font-semibold normal-case text-[var(--ink-muted)] mb-2">
 					Лечащий врач:
 				</div>
 				<div className="dbw-doctors-list">

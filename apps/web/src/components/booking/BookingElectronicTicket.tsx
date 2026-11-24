@@ -32,7 +32,7 @@ export const BookingElectronicTicket: React.FC<BookingElectronicTicketProps> = (
 			<div className="dbw-pass-header">
 				<div className="flex items-center gap-2">
 					<Sparkles size={16} />
-					<span className="text-xs font-bold uppercase tracking-wider">Электронный талон на приём</span>
+					<span className="text-xs font-semibold normal-case">Электронный талон на приём</span>
 				</div>
 				{isUnconfirmed ? (
 					<span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-500/30 text-white flex items-center gap-1" data-testid="confirmation-status-badge">

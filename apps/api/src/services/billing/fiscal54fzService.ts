@@ -82,6 +82,9 @@ import {
 	getOrder804nEndoProcedureForTooth,
 	isMultiRootedTooth,
 	kopecksToNumericString,
+	type Kopecks,
+	multiplyKopecks,
+	multiplyKopecksFractional,
 	parseChestnyZnakDataMatrix,
 } from "@dental/shared";
 
@@ -511,7 +514,9 @@ export class Fiscal54FzService {
 				);
 			}
 
-			const amountKopecks = Math.round(priceKopecks * pos.quantity);
+			const amountKopecks = Number.isInteger(pos.quantity)
+				? multiplyKopecks(priceKopecks as Kopecks, pos.quantity)
+				: multiplyKopecksFractional(priceKopecks as Kopecks, pos.quantity);
 			totalItemsKopecks += amountKopecks;
 
 			const subject =

@@ -10,6 +10,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
+	idempotencyKeys,
 	patientInvoices,
 	patients,
 	payments,
@@ -46,6 +47,33 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 			const organizationId = await requireOrganizationContext(request, reply);
 			if (!organizationId) return;
 
+			const rawIdempotencyKey =
+				(request.headers["idempotency-key"] as string | undefined) ||
+				(request.headers["x-idempotency-key"] as string | undefined);
+			const idempotencyKey = rawIdempotencyKey?.trim();
+
+			if (idempotencyKey) {
+				const [existing] = await withTenantCtx(organizationId, async (tx) => {
+					return await tx
+						.select()
+						.from(idempotencyKeys)
+						.where(
+							and(
+								eq(idempotencyKeys.clinicId, organizationId),
+								eq(idempotencyKeys.key, idempotencyKey),
+							),
+						)
+						.limit(1);
+				});
+
+				if (existing && existing.status === "completed" && existing.responseBody) {
+					return reply
+						.header("idempotency-replayed", "true")
+						.status(existing.responseCode)
+						.send(existing.responseBody);
+				}
+			}
+
 			const parsed = sberbankPayBodySchema.safeParse(request.body);
 			if (!parsed.success) {
 				return reply.status(400).send({
@@ -55,7 +83,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 				});
 			}
 
-			const { patientId, amount, visitId, documentId, invoiceId } = parsed.data;
+			const { patientId, amountKopecks, visitId, documentId, invoiceId } = parsed.data;
 
 			// Проверяем принадлежность пациента к организации клиники
 			const [patient] = await withTenantCtx(organizationId, async (tx) => {
@@ -91,7 +119,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 				: "http://localhost:3000/cabinet";
 
 			try {
-				const res = await client.registerOrder(orderNumber, amount, returnUrl);
+				const res = await client.registerOrder(orderNumber, amountKopecks, returnUrl);
 
 				if (!res.orderId || !res.formUrl) {
 					return reply.status(500).send({
@@ -109,12 +137,36 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						documentId: documentId || null,
 						invoiceId: invoiceId || null,
 						orderId: sberbankOrderId,
-						amountKopecks: BigInt(amount),
+						amountKopecks: BigInt(amountKopecks),
 						status: "pending",
 					});
 				});
 
-				return { success: true, orderId: res.orderId, formUrl: res.formUrl };
+				const responsePayload = { success: true, orderId: res.orderId, formUrl: res.formUrl };
+
+				if (idempotencyKey) {
+					await withTenantCtx(organizationId, async (tx) => {
+						await tx
+							.insert(idempotencyKeys)
+							.values({
+								clinicId: organizationId,
+								key: idempotencyKey,
+								status: "completed",
+								responseCode: 200,
+								responseBody: responsePayload,
+							})
+							.onConflictDoUpdate({
+								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+								set: {
+									status: "completed",
+									responseCode: 200,
+									responseBody: responsePayload,
+								},
+							});
+					});
+				}
+
+				return responsePayload;
 			} catch (error) {
 				return reply.status(500).send({
 					error: "SberbankError",

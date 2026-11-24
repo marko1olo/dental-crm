@@ -199,12 +199,18 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			exactHashes: ["#portal", "#patient-cabinet", "#patient_cabinet"],
 			hashPrefixes: ["#portal?", "#portal/", "#patient-cabinet?", "#patient_cabinet?"],
 		},
-		render: () => (
-			<PatientCabinetModal
-				isOpen={true}
-				onClose={() => clearUrlTokens(["portal", "patient-cabinet", "patient_cabinet", "cabinet"])}
-			/>
-		),
+		render: () => {
+			const currentPatientId = typeof window !== "undefined"
+				? new URLSearchParams(window.location.search).get("patientId") || localStorage.getItem("dente_portal_token")
+				: null;
+			return (
+				<PatientCabinetModal
+					key={currentPatientId || "cabinet"}
+					isOpen={true}
+					onClose={() => clearUrlTokens(["portal", "patient-cabinet", "patient_cabinet", "cabinet"])}
+				/>
+			);
+		},
 	},
 	// 4. Зуботехническая лаборатория и наряды
 	{

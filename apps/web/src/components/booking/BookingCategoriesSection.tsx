@@ -28,7 +28,7 @@ export const BookingCategoriesSection: React.FC<BookingCategoriesSectionProps> =
 			<div className="dbw-section-header-row mb-3 flex items-center justify-between">
 				<h3
 					id="booking-categories-heading"
-					className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+					className="text-xs font-semibold normal-case text-[var(--ink-muted)]"
 				>
 					Выберите услугу или повод для визита:
 				</h3>

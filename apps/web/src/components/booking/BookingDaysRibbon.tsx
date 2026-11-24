@@ -73,7 +73,7 @@ export const BookingDaysRibbon: React.FC<BookingDaysRibbonProps> = ({
 	return (
 		<div className="dbw-ribbon-section">
 			<div className="dbw-ribbon-header">
-				<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+				<div className="text-xs font-semibold normal-case text-[var(--ink-muted)]">
 					Ближайшие дни:
 				</div>
 				<button

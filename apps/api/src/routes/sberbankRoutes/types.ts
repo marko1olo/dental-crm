@@ -2,14 +2,28 @@ import { z } from "zod";
 
 /**
  * Zod validation schema for POST /api/sberbank/pay request body.
+ * Supports amountKopecks (canonical) and amount (legacy alias) per Mandate 8bm.
  */
-export const sberbankPayBodySchema = z.object({
-	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
-	amount: z.number().int().positive("Сумма должна быть положительным целым числом копеек"),
-	visitId: z.string().uuid().optional().nullable(),
-	documentId: z.string().uuid().optional().nullable(),
-	invoiceId: z.string().uuid().optional().nullable(),
-});
+export const sberbankPayBodySchema = z.preprocess(
+	(val) => {
+		if (val && typeof val === "object") {
+			const obj = { ...(val as Record<string, unknown>) };
+			if (obj.amountKopecks === undefined && obj.amount !== undefined) {
+				obj.amountKopecks = obj.amount;
+			}
+			return obj;
+		}
+		return val;
+	},
+	z.object({
+		patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
+		amountKopecks: z.number().int().positive("Сумма должна быть положительным целым числом копеек"),
+		amount: z.number().int().positive().optional(),
+		visitId: z.string().uuid().optional().nullable(),
+		documentId: z.string().uuid().optional().nullable(),
+		invoiceId: z.string().uuid().optional().nullable(),
+	}),
+);
 
 export type SberbankPayBody = z.infer<typeof sberbankPayBodySchema>;
 
@@ -37,11 +51,19 @@ export type SberbankCancelReconcileBody = z.infer<typeof sberbankCancelReconcile
  */
 export const sberbankPayFastifySchema = {
 	schema: {
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+			},
+		},
 		body: {
 			type: "object",
-			required: ["patientId", "amount"],
+			required: ["patientId"],
 			properties: {
 				patientId: { type: "string", format: "uuid" },
+				amountKopecks: { type: "integer", minimum: 1 },
 				amount: { type: "integer", minimum: 1 },
 				visitId: { type: "string" },
 				documentId: { type: "string" },

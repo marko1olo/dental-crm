@@ -59,9 +59,7 @@
 .pc-tax-stat-label {
 	font-size: 0.75rem;
 	color: var(--pc-text-muted);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	font-weight: 600;
 }
 
 .pc-tax-stat-value {

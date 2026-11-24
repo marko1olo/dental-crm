@@ -21,6 +21,7 @@ import {
 	getCephSessionStorageKey,
 } from "../cephStudioSyncChannel";
 import { detectOptimalCephBackend } from "../cephAiInferenceService";
+import { parseCephMeasurementsArray } from "../useOrthodonticsStudioHydration";
 
 describe("Домен 45: Ред Тим инварианты ортодонтии и цефалометрии (DEF-ORTHO-SEV1-01 - SEV4-01)", () => {
 	const originalWindow = (globalThis as { window?: unknown }).window;
@@ -203,5 +204,32 @@ describe("Домен 45: Ред Тим инварианты ортодонтии
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
+	});
+
+	// DEF-ORTHO-FE-01: Корректная распаковка study.analysis.measurements в углы ТРГ
+	it("DEF-ORTHO-FE-01: parseCephMeasurementsArray корректно распаковывает массив measurements по m.id без затирания пустым ключом", () => {
+		const sampleMeasurements = [
+			{ id: "SNA", value: 82.5 },
+			{ id: "SNB", value: 80.0 },
+			{ id: "ANB", value: 2.5 },
+			{ id: "1-NA-Angle", value: 22.0 },
+			{ id: "1-NB-Angle", value: 25.0 },
+			{ id: "FMA", value: 25.5 },
+			{ id: "Wits", value: 1.2 },
+			{ id: "", value: 99.9 },
+			{ id: undefined, value: 50 },
+			{ id: "Invalid", value: null },
+		];
+
+		const parsed = parseCephMeasurementsArray(sampleMeasurements);
+		assert.equal(parsed.sna, 82.5);
+		assert.equal(parsed.snb, 80.0);
+		assert.equal(parsed.anb, 2.5);
+		assert.equal(parsed.u1_na, 22.0);
+		assert.equal(parsed.l1_nb, 25.0);
+		assert.equal(parsed.fma, 25.5);
+		assert.equal(parsed.wits, 1.2);
+		// Гарантия, что под пустым ключом "" ничего не сохранено
+		assert.equal(parsed[""], undefined);
 	});
 });

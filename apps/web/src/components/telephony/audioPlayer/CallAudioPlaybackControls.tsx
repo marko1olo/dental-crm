@@ -7,7 +7,8 @@ import {
 	Volume2,
 	VolumeX,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { formatDurationTimer } from "../../../store/telephonyStore";
 import {
 	CALL_AUDIO_PLAYBACK_SPEEDS,
@@ -25,15 +26,45 @@ export function CallAudioPlaybackControls({
 	isMuted,
 	onToggleMute,
 	recordingUrl,
+	blobAudioSrc,
 }: CallAudioPlaybackControlsProps) {
-	const handleDownload = () => {
-		if (!recordingUrl) return;
-		const a = document.createElement("a");
-		a.href = recordingUrl;
-		a.download = `call-record-${Date.now()}.mp3`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
+	const [isDownloading, setIsDownloading] = useState(false);
+
+	const handleDownload = async () => {
+		const inMemoryBlob = (blobAudioSrc && blobAudioSrc.startsWith("blob:")) ? blobAudioSrc : null;
+		if (inMemoryBlob) {
+			const a = document.createElement("a");
+			a.href = inMemoryBlob;
+			a.download = `call-record-${Date.now()}.mp3`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			return;
+		}
+
+		if (!recordingUrl || isDownloading) return;
+
+		try {
+			setIsDownloading(true);
+			const headers = getDenteAuthHeaders();
+			const res = await fetch(recordingUrl, { headers });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const blob = await res.blob();
+			const tempBlobUrl = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = tempBlobUrl;
+			a.download = `call-record-${Date.now()}.mp3`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			setTimeout(() => {
+				try { URL.revokeObjectURL(tempBlobUrl); } catch {}
+			}, 2000);
+		} catch (err: unknown) {
+			console.error("[CallAudioPlaybackControls] Download failed:", err);
+		} finally {
+			setIsDownloading(false);
+		}
 	};
 
 	return (
@@ -43,7 +74,7 @@ export function CallAudioPlaybackControls({
 				<button
 					type="button"
 					onClick={onTogglePlay}
-					className="dnt-player-play-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:min-h-[36px] sm:min-w-[36px] sm:w-9 sm:h-9 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-sm flex items-center justify-center transition-all cursor-pointer active:scale-95 focus:outline-none focus:ring-2 focus:ring-[var(--teal)] touch-manipulation"
+					className="dnt-player-play-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:min-h-[36px] sm:min-w-[36px] sm:w-9 sm:h-9 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm flex items-center justify-center transition-all cursor-pointer active:scale-95 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] touch-manipulation"
 					title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					data-testid="call-audio-player-toggle"
@@ -114,7 +145,8 @@ export function CallAudioPlaybackControls({
 					<button
 						type="button"
 						onClick={handleDownload}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-11 w-11 sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#f1f5f9)] inline-flex items-center justify-center transition-all cursor-pointer touch-manipulation"
+						disabled={isDownloading}
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-11 w-11 sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--primary)] hover:bg-[var(--paper-soft,#f1f5f9)] inline-flex items-center justify-center transition-all cursor-pointer touch-manipulation disabled:opacity-50"
 						title="Скачать запись разговора (MP3)"
 						aria-label="Скачать запись разговора"
 					>

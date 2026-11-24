@@ -1,18 +1,20 @@
+import type { Kopecks } from "@dental/shared";
+
 export interface LabOrderCostBreakdown {
 	suggestedPriceRub: number;
 	estimatedCostRub: number;
 	grossMarginRub: number;
 	grossMarginPercent: number;
 	unitsCount: number;
-	suggestedPriceKopecks?: number;
-	estimatedCostKopecks?: number;
-	grossMarginKopecks?: number;
-	abutmentsCount?: number;
-	ponticsCount?: number;
-	abutmentsCostKopecks?: number;
-	ponticsCostKopecks?: number;
-	abutmentsPriceKopecks?: number;
-	ponticsPriceKopecks?: number;
+	suggestedPriceKopecks?: Kopecks | undefined;
+	estimatedCostKopecks?: Kopecks | undefined;
+	grossMarginKopecks?: Kopecks | undefined;
+	abutmentsCount?: number | undefined;
+	ponticsCount?: number | undefined;
+	abutmentsCostKopecks?: Kopecks | undefined;
+	ponticsCostKopecks?: Kopecks | undefined;
+	abutmentsPriceKopecks?: Kopecks | undefined;
+	ponticsPriceKopecks?: Kopecks | undefined;
 }
 
 export interface LabOrderTurnaroundResult {

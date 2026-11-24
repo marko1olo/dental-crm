@@ -125,73 +125,57 @@ export async function handleFiscalReceipt(
 	// ─────────────────────────────────────────────────────────────────────────
 	const compiled = FiscalReceiptFactory.buildFfd12Receipt(data);
 
-	if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
-		const mutationId = data.clientMutationId.trim();
-
-		// Phase 1: Fast Transaction (Advisory Lock + Idempotency Check + Outbox Buffer)
-		const preflight = await withTenantCtx(orgId, async (tx) => {
-			await tx.execute(
-				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
-			);
-
-			const check = await checkExistingIdempotentReceipt(tx, orgId, mutationId, data);
-			if (check.isExisting) {
-				return {
-					isExisting: true,
-					statusCode: check.statusCode || 200,
-					responseData: check.responseData,
-					queueRow: undefined,
-				};
-			}
-
-			const queueRow = await bufferPendingFiscalReceipt(tx, orgId, data, compiled);
-			return { isExisting: false, queueRow };
+	if (!data.clientMutationId || data.clientMutationId.trim().length === 0) {
+		return reply.status(400).send({
+			error: "IdempotencyKeyRequired",
+			message:
+				"Для проведения фискального чека 54-ФЗ требуется обязательный заголовок Idempotency-Key или поле clientMutationId (Мандат 8bo / RFC 9562).",
 		});
-
-		if (preflight.isExisting) {
-			const statusCode = preflight.statusCode ?? 200;
-			return reply.status(statusCode).send(preflight.responseData);
-		}
-
-		if (!preflight.queueRow) {
-			return reply.status(500).send({
-				error: "FiscalBufferError",
-				message: "Не удалось буферизовать чек в очереди фискализации",
-			});
-		}
-
-		// Phase 2: Network I/O OUTSIDE of database transaction (Outbox Pattern)
-		const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
-
-		// Phase 3: Fast Transaction (Finalize Queue Item + Cashbox Ledger)
-		const finalResult = await withTenantCtx(orgId, async (tx) => {
-			return await finalizeKktPrintAndBuffer(
-				tx,
-				orgId,
-				preflight.queueRow.id,
-				data,
-				compiled,
-				printResult,
-			);
-		});
-
-		return reply.status(201).send(finalResult);
 	}
 
-	// No mutationId (Standard print with Outbox)
-	const queueRow = await withTenantCtx(orgId, async (tx) => {
-		return await bufferPendingFiscalReceipt(tx, orgId, data, compiled);
+	const mutationId = data.clientMutationId.trim();
+
+	// Phase 1: Fast Transaction (Advisory Lock + Idempotency Check + Outbox Buffer)
+	const preflight = await withTenantCtx(orgId, async (tx) => {
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
+		);
+
+		const check = await checkExistingIdempotentReceipt(tx, orgId, mutationId, data);
+		if (check.isExisting) {
+			return {
+				isExisting: true,
+				statusCode: check.statusCode || 200,
+				responseData: check.responseData,
+				queueRow: undefined,
+			};
+		}
+
+		const queueRow = await bufferPendingFiscalReceipt(tx, orgId, data, compiled);
+		return { isExisting: false, queueRow };
 	});
 
-	// Phase 2: Network I/O outside transaction
+	if (preflight.isExisting) {
+		const statusCode = preflight.statusCode ?? 200;
+		return reply.status(statusCode).send(preflight.responseData);
+	}
+
+	if (!preflight.queueRow) {
+		return reply.status(500).send({
+			error: "FiscalBufferError",
+			message: "Не удалось буферизовать чек в очереди фискализации",
+		});
+	}
+
+	// Phase 2: Network I/O OUTSIDE of database transaction (Outbox Pattern)
 	const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
 
-	// Phase 3: Fast Transaction
+	// Phase 3: Fast Transaction (Finalize Queue Item + Cashbox Ledger)
 	const finalResult = await withTenantCtx(orgId, async (tx) => {
 		return await finalizeKktPrintAndBuffer(
 			tx,
 			orgId,
-			queueRow.id,
+			preflight.queueRow.id,
 			data,
 			compiled,
 			printResult,

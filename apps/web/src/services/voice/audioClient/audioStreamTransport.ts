@@ -389,6 +389,7 @@ export class AudioStreamTransport {
 		const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
 		if (!SpeechRec) {
 			console.warn("Web Speech API not supported in this browser");
+			this.host.onFatalSpeechError("Web Speech API не поддерживается в данном браузере или окружении");
 			return;
 		}
 
@@ -432,6 +433,11 @@ export class AudioStreamTransport {
 			recognition.start();
 		} catch (err) {
 			console.warn("Failed to initialize Web Speech Recognition:", err);
+			this.host.onFatalSpeechError(
+				err instanceof Error
+					? `Не удалось запустить распознавание речи браузера: ${err.message}`
+					: "Не удалось запустить распознавание речи браузера",
+			);
 		}
 	}
 

@@ -1,4 +1,4 @@
-import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks, toExactKopecks, type Kopecks } from "@dental/shared";
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import type { TenantDb } from "../../../db/rls.js";
@@ -238,26 +238,26 @@ export function calculateLabOrderCostAndMarkup(params: {
 		? Math.round(params.ponticCostKopecks)
 		: percentageOfKopecks(abutmentCostKop, 7000);
 
-	let estimatedCostKopecks: number;
-	let suggestedPriceKopecks: number;
+	let estimatedCostKopecks: Kopecks;
+	let suggestedPriceKopecks: Kopecks;
 
 	if (hasBridgeCounts && pontics > 0) {
-		estimatedCostKopecks = (abutmentCostKop * abutments) + (ponticCostKop * pontics);
+		estimatedCostKopecks = toExactKopecks((abutmentCostKop * abutments) + (ponticCostKop * pontics));
 		suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
-			? Math.round(Number(params.priceKopecks))
+			? toExactKopecks(Math.round(Number(params.priceKopecks)))
 			: params.priceRub != null && params.priceRub >= 0
 				? rublesToKopecks(params.priceRub)
-				: (abutmentPriceKop * abutments) + (ponticPriceKop * pontics);
+				: toExactKopecks((abutmentPriceKop * abutments) + (ponticPriceKop * pontics));
 	} else {
-		estimatedCostKopecks = defaultCostPerUnitKopecks * units;
+		estimatedCostKopecks = toExactKopecks(defaultCostPerUnitKopecks * units);
 		suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
-			? Math.round(Number(params.priceKopecks))
+			? toExactKopecks(Math.round(Number(params.priceKopecks)))
 			: params.priceRub != null && params.priceRub >= 0
 				? rublesToKopecks(params.priceRub)
-				: defaultPricePerUnitKopecks * units;
+				: toExactKopecks(defaultPricePerUnitKopecks * units);
 	}
 
-	const grossMarginKopecks = Math.max(0, suggestedPriceKopecks - estimatedCostKopecks);
+	const grossMarginKopecks = toExactKopecks(Math.max(0, suggestedPriceKopecks - estimatedCostKopecks));
 	const grossMarginPercent = suggestedPriceKopecks > 0
 		? Math.round((grossMarginKopecks / suggestedPriceKopecks) * 100)
 		: 0;
@@ -273,10 +273,10 @@ export function calculateLabOrderCostAndMarkup(params: {
 		grossMarginKopecks,
 		abutmentsCount: abutments,
 		ponticsCount: pontics,
-		abutmentsCostKopecks: abutmentCostKop * abutments,
-		ponticsCostKopecks: ponticCostKop * pontics,
-		abutmentsPriceKopecks: abutmentPriceKop * abutments,
-		ponticsPriceKopecks: ponticPriceKop * pontics,
+		abutmentsCostKopecks: toExactKopecks(abutmentCostKop * abutments),
+		ponticsCostKopecks: toExactKopecks(ponticCostKop * pontics),
+		abutmentsPriceKopecks: toExactKopecks(abutmentPriceKop * abutments),
+		ponticsPriceKopecks: toExactKopecks(ponticPriceKop * pontics),
 	};
 }
 

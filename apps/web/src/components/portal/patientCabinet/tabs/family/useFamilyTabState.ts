@@ -1,8 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
 import type { PatientCabinetFamilyMember, PatientPersonalCabinetData } from "../../patientCabinetEngine";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../../../lib/demoMode.js";
-import { denteAdminSecretRequestHeaders } from "../../../../../lib/denteRequestHeaders.js";
 import { RELATIONSHIP_OPTIONS, DEFAULT_FAMILY_MEMBERS } from "./familyConstants";
+
+function getPortalAuthHeaders(): HeadersInit {
+	const headers: Record<string, string> = { "Content-Type": "application/json" };
+	const token = typeof localStorage !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+	if (token) {
+		headers["Authorization"] = `Bearer ${token}`;
+	}
+	return headers;
+}
 
 export function useFamilyTabState(
 	data: PatientPersonalCabinetData,
@@ -53,12 +61,10 @@ export function useFamilyTabState(
 		}
 
 		try {
-			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
-			const resp = await fetch("/api/finance/family/permissions", {
+			const resp = await fetch("/api/portal/family/permissions", {
 				method: "PATCH",
-				headers,
+				headers: getPortalAuthHeaders(),
 				body: JSON.stringify({
-					patientId: data.patientId,
 					memberId,
 					canSpendFamilyWallet: nextPermission,
 				}),
@@ -118,53 +124,34 @@ export function useFamilyTabState(
 		}
 
 		try {
-			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
-			const linkResp = await fetch("/api/loyalty/family/link", {
+			const resp = await fetch("/api/portal/family/members", {
 				method: "POST",
-				headers,
+				headers: getPortalAuthHeaders(),
 				body: JSON.stringify({
-					primaryPatientId: data.patientId,
-					relativePatientId: cleanName,
-					relationRole: newRelationship,
+					fullName: cleanName,
+					relationship: newRelationship,
+					phone: newPhone.trim() || undefined,
+					birthDate: newBirthDate || undefined,
+					cardNumber: cleanCard || undefined,
+					allowSpendFamilyBalance: newAllowSpend,
+					allowBooking: newAllowBooking,
 				}),
 			});
 
-			if (!linkResp.ok) {
-				const errBody = (await linkResp.json().catch(() => null)) as { message?: string } | null;
-				// Если пациента нет в клинике, создаем карту и привязываем
-				if (linkResp.status === 404 && newPhone.trim()) {
-					const createResp = await fetch("/api/patients", {
-						method: "POST",
-						headers,
-						body: JSON.stringify({
-							fullName: cleanName,
-							phone: newPhone.trim(),
-							birthDate: newBirthDate || undefined,
-						}),
-					});
-					if (createResp.ok) {
-						const created = (await createResp.json()) as { id?: string; data?: { id: string } };
-						const createdId = created?.id || created?.data?.id;
-						if (createdId) {
-							await fetch("/api/loyalty/family/link", {
-								method: "POST",
-								headers,
-								body: JSON.stringify({
-									primaryPatientId: data.patientId,
-									relativePatientId: createdId,
-									relationRole: newRelationship,
-								}),
-							});
-						}
-					} else {
-						throw new Error("Не удалось создать карточку нового члена семьи");
-					}
-				} else {
-					throw new Error(errBody?.message || `Ошибка привязки члена семьи (код ${linkResp.status})`);
-				}
+			if (!resp.ok) {
+				const errBody = (await resp.json().catch(() => null)) as { message?: string } | null;
+				throw new Error(errBody?.message || `Ошибка добавления члена семьи (код ${resp.status})`);
 			}
 
-			setMembers((prev) => [...prev, newMember]);
+			const created = (await resp.json().catch(() => null)) as { memberId?: string } | null;
+			const finalMemberId = created?.memberId || memberId;
+
+			const persistedMember: PatientCabinetFamilyMember = {
+				...newMember,
+				id: finalMemberId,
+			};
+
+			setMembers((prev) => [...prev, persistedMember]);
 			setIsAddingMember(false);
 			setNewFullName(""); setNewBirthDate(""); setNewPhone(""); setNewCardNumber("");
 			onShowToast?.(`Член семьи ${cleanName} успешно добавлен в семейный профиль`);

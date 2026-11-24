@@ -23,6 +23,7 @@ export interface CallAudioPlaybackControlsProps {
 	isMuted: boolean;
 	onToggleMute: () => void;
 	recordingUrl?: string | null | undefined;
+	blobAudioSrc?: string | null | undefined;
 }
 
 export interface CallAudioWaveformBarProps {

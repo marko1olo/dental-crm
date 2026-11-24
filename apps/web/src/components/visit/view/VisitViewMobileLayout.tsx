@@ -1,5 +1,4 @@
 import React from "react";
-import { CryptoProSigner } from "../CryptoProSigner";
 import { MobileChairsideVisitWorkspace } from "../MobileChairsideVisitWorkspace";
 import { VisitViewModals } from "./VisitViewModals";
 import type { useVisitViewState } from "./useVisitViewState";
@@ -81,15 +80,6 @@ export function VisitViewMobileLayout({ s }: VisitViewMobileLayoutProps) {
 				setToothState={s.setToothState}
 				visitNoteForm={s.visitNoteForm}
 			/>
-			<div className="sm:hidden px-4 py-2 border-t border-[var(--line)] bg-[var(--paper)] flex justify-end">
-				<CryptoProSigner
-					diaryHash={null}
-					isLocked={false}
-					lockedAt={null}
-					ensureDraftSaved={async () => null}
-					onLock={async () => {}}
-				/>
-			</div>
 		</>
 	);
 }

@@ -299,37 +299,6 @@ export const sberbankTransactions = pgTable(
 	}),
 );
 
-/**
- * Кассовая книга: движение денег по счетам.
- *
- * Без этого объявления не загружался services/syncDaemon.ts.
- *
- * Сумма объявлена как numeric(12,2) — ровно так колонка создана в 0000. Драйвер
- * отдаёт numeric строкой: складывать такие значения через Number() нельзя,
- * потеряются копейки.
- */
-export const cashLedger = pgTable(
-	"cash_ledger",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		invoiceId: uuid("invoice_id").notNull(),
-		paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
-		amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
-		amountKopecks: bigint("amount_kopecks", { mode: "bigint" })
-			.notNull()
-			.default(sql`0`),
-		operatorId: uuid("operator_id"),
-		timestamp: timestamp("timestamp", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(table) => ({
-		invoiceIdIdx: index("cash_ledger_invoice_id_idx").on(table.invoiceId),
-		timestampIdx: index("cash_ledger_timestamp_idx").on(table.timestamp),
-		operatorIdIdx: index("cash_ledger_operator_id_idx").on(table.operatorId),
-	}),
-);
-
 export const paymentsRelations = relations(payments, ({ one }) => ({
 	organization: one(organizations, {
 		fields: [payments.organizationId],

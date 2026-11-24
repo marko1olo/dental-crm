@@ -13,7 +13,7 @@ import {
 
 export const labOrdersQuerySchema = z.object({
 	patientId: z.string().uuid("Параметр patientId должен быть валидным UUID.").optional().nullable(),
-});
+}).strict();
 export type LabOrdersQuery = z.infer<typeof labOrdersQuerySchema>;
 
 export const updateLabOrderSchema = z.object({
@@ -58,7 +58,7 @@ export const updateLabOrderSchema = z.object({
 	parentLabOrderId: z.string().uuid().optional().nullable(),
 	fittingAppointmentId: z.string().uuid().optional().nullable(),
 	laboratoryId: z.string().trim().optional().nullable(),
-});
+}).strict();
 export type UpdateLabOrderInput = z.infer<typeof updateLabOrderSchema>;
 
 export { createLabOrderSchema };

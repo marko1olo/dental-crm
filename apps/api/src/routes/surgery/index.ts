@@ -324,9 +324,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 							s.priceRub ??
 							s.suggestedPriceRub ??
 							(s.priceKopecks != null
-								? typeof s.priceKopecks === "bigint"
-									? Number(s.priceKopecks) / 100
-									: s.priceKopecks / 100
+								? kopecksToRubles(s.priceKopecks)
 								: 0),
 						quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
 						toothNumber: s.toothNumber ?? undefined,
@@ -350,9 +348,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 								s.priceRub ??
 								s.suggestedPriceRub ??
 								(s.priceKopecks != null
-									? typeof s.priceKopecks === "bigint"
-										? Number(s.priceKopecks) / 100
-										: s.priceKopecks / 100
+									? kopecksToRubles(s.priceKopecks)
 									: 0),
 							quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
 							toothNumber: s.toothNumber ?? undefined,

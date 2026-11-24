@@ -19,7 +19,7 @@ export const labOrderPatchSchema = z.object({
 	warrantyLiabilityType: z.enum(["clinic_warranty", "lab_defect", "patient_fault"]).optional(),
 	isRemake: z.boolean().optional(),
 	remakeReason: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 
 export type LabOrderPatchBody = z.infer<typeof labOrderPatchSchema>;
 

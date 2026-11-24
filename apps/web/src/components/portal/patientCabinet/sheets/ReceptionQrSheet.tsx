@@ -47,7 +47,7 @@ export const ReceptionQrSheet: React.FC<ReceptionQrSheetProps> = ({
 				<div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-teal, #0d9488)", fontWeight: 800, fontSize: "0.875rem" }}>
 						<Sparkles size={18} />
-						<span>МАКСИМАЛЬНАЯ ЯРКОСТЬ</span>
+						<span>Максимальная яркость</span>
 					</div>
 					<button
 						type="button"
@@ -102,7 +102,7 @@ export const ReceptionQrSheet: React.FC<ReceptionQrSheetProps> = ({
 						}}
 					>
 						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--pc-primary)", textTransform: "uppercase" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--pc-primary)" }}>
 								Ближайший прием
 							</span>
 							<span className="pc-next-visit-time" style={{ color: "var(--pc-primary)" }}>

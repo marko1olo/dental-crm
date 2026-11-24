@@ -11,6 +11,8 @@ import { LabTrackingDrawer } from "./LabTrackingDrawer";
 import { LabAttachScanModal } from "./LabAttachScanModal";
 import { DentalLabReadyInClinicModal } from "./DentalLabReadyInClinicModal";
 import { LabActionPromptModal } from "./LabActionPromptModal";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
 if (typeof document !== "undefined") { void import("./dentalLab.css"); }
 
 export type { DentalLabOrdersViewProps } from "./ordersView/types";
@@ -126,7 +128,10 @@ export function DentalLabOrdersView({
 					onFittingDateUpdate={async (orderId, dates) => {
 						const res = await fetch(`/api/lab/orders/${encodeURIComponent(orderId)}/status`, {
 							method: "PATCH",
-							headers: { "Content-Type": "application/json" },
+							headers: denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+								"Idempotency-Key": generateUuidV7(),
+							}),
 							body: JSON.stringify({
 								frameworkTrialDate: dates.frameworkTrialDate ?? null,
 								ceramicTrialDate: dates.ceramicTrialDate ?? null,

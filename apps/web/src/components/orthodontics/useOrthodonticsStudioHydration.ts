@@ -8,6 +8,35 @@ import { useEffect } from "react";
 import { createDefaultOrthoProtocolState, type AngleClass, type OrthoProtocolState, type VerticalBite } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
 
+export interface RawCephMeasurement {
+	id?: string;
+	parameterKey?: string;
+	parameter?: string;
+	value?: number | null;
+}
+
+export function parseCephMeasurementsArray(
+	measurements: RawCephMeasurement[],
+): Record<string, number> {
+	const vals: Record<string, number> = {};
+	for (const m of measurements) {
+		if (typeof m.value !== "number") continue;
+		const rawId = m.id || m.parameterKey || m.parameter || "";
+		if (!rawId) continue;
+		if (rawId === "SNA") vals.sna = m.value;
+		else if (rawId === "SNB") vals.snb = m.value;
+		else if (rawId === "ANB") vals.anb = m.value;
+		else if (rawId === "1-NA-Angle") vals.u1_na = m.value;
+		else if (rawId === "1-NB-Angle") vals.l1_nb = m.value;
+		else if (rawId === "FMA") vals.fma = m.value;
+		else {
+			const k = rawId.toLowerCase().replace(/[^a-z0-9]/g, "_");
+			if (k) vals[k] = m.value;
+		}
+	}
+	return vals;
+}
+
 export function useOrthodonticsStudioHydration(
 	patientId: string | undefined,
 	setProtocol: React.Dispatch<React.SetStateAction<OrthoProtocolState>>,
@@ -103,7 +132,7 @@ export function useOrthodonticsStudioHydration(
 		};
 	}, [patientId, setProtocol]);
 
-	// 2. Честная гидратация ТРГ-анализа пациента из базы PostgreSQL 18 (DEF-ORTHO-03)
+	// 2. Честная гидратация ТРГ-анализа пациента из базы PostgreSQL 18 (DEF-ORTHO-03, DEF-ORTHO-FE-01)
 	useEffect(() => {
 		if (!patientId) return;
 		let isCancelled = false;
@@ -123,23 +152,35 @@ export function useOrthodonticsStudioHydration(
 								u1NaDeg?: number;
 								l1NbDeg?: number;
 								fmaDeg?: number;
+								measurements?: RawCephMeasurement[];
 							};
 						};
 					};
 					if (!isCancelled && data?.study?.analysis) {
 						const ca = data.study.analysis;
-						setProtocol((prev) => ({
-							...prev,
-							trgValues: {
-								...(prev.trgValues || {}),
-								...(typeof ca.sna === "number" ? { sna: ca.sna } : {}),
-								...(typeof ca.snb === "number" ? { snb: ca.snb } : {}),
-								...(typeof ca.anb === "number" ? { anb: ca.anb } : {}),
-								...(typeof ca.u1NaDeg === "number" ? { u1_na: ca.u1NaDeg } : {}),
-								...(typeof ca.l1NbDeg === "number" ? { l1_nb: ca.l1NbDeg } : {}),
-								...(typeof ca.fmaDeg === "number" ? { fma: ca.fmaDeg } : {}),
-							},
-						}));
+						const extracted: Record<string, number> = {};
+
+						if (Array.isArray(ca.measurements)) {
+							Object.assign(extracted, parseCephMeasurementsArray(ca.measurements));
+						}
+
+						// Сохранение обратной совместимости на случай плоских свойств
+						if (typeof ca.sna === "number") extracted.sna = ca.sna;
+						if (typeof ca.snb === "number") extracted.snb = ca.snb;
+						if (typeof ca.anb === "number") extracted.anb = ca.anb;
+						if (typeof ca.u1NaDeg === "number") extracted.u1_na = ca.u1NaDeg;
+						if (typeof ca.l1NbDeg === "number") extracted.l1_nb = ca.l1NbDeg;
+						if (typeof ca.fmaDeg === "number") extracted.fma = ca.fmaDeg;
+
+						if (Object.keys(extracted).length > 0) {
+							setProtocol((prev) => ({
+								...prev,
+								trgValues: {
+									...(prev.trgValues || {}),
+									...extracted,
+								},
+							}));
+						}
 					}
 				}
 			} catch (err) {
@@ -155,24 +196,28 @@ export function useOrthodonticsStudioHydration(
 		};
 	}, [patientId, setProtocol]);
 
-	// 3. Реактивная синхронизация ТРГ через BroadcastChannel (DEF-ORTHO-SEV1-04: изоляция по patientId)
+	// 3. Реактивная синхронизация ТРГ через BroadcastChannel (DEF-ORTHO-SEV1-04: изоляция по patientId, DEF-ORTHO-FE-01)
 	useEffect(() => {
 		if (!patientId) return;
 
 		const cachedStudy = getActiveCephStudy<{
 			patientId?: string;
-			analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
-			measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
+			analysis?: {
+				sna?: number;
+				snb?: number;
+				anb?: number;
+				u1NaDeg?: number;
+				l1NbDeg?: number;
+				fmaDeg?: number;
+				measurements?: RawCephMeasurement[];
+			};
+			measurements?: RawCephMeasurement[];
 		}>(patientId);
 
 		if (cachedStudy) {
-			const mList = cachedStudy.measurements;
+			const mList = cachedStudy.measurements || cachedStudy.analysis?.measurements;
 			if (Array.isArray(mList) && mList.length > 0) {
-				const vals: Record<string, number> = {};
-				for (const m of mList) {
-					const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
-					if (typeof m.value === "number") vals[k] = m.value;
-				}
+				const vals = parseCephMeasurementsArray(mList);
 				if (Object.keys(vals).length > 0) {
 					setProtocol((prev) => ({
 						...prev,
@@ -191,19 +236,23 @@ export function useOrthodonticsStudioHydration(
 			if (msg.type === "CEPH_STUDY_CACHED" || msg.type === "CEPH_ANALYSIS_UPDATED") {
 				const study = msg.payload as {
 					patientId?: string;
-					measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
-					analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
+					measurements?: RawCephMeasurement[];
+					analysis?: {
+						sna?: number;
+						snb?: number;
+						anb?: number;
+						u1NaDeg?: number;
+						l1NbDeg?: number;
+						fmaDeg?: number;
+						measurements?: RawCephMeasurement[];
+					};
 				};
 				if (study?.patientId && study.patientId !== patientId) {
 					return;
 				}
-				const mList = study?.measurements;
+				const mList = study?.measurements || study?.analysis?.measurements;
 				if (Array.isArray(mList) && mList.length > 0) {
-					const vals: Record<string, number> = {};
-					for (const m of mList) {
-						const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
-						if (typeof m.value === "number") vals[k] = m.value;
-					}
+					const vals = parseCephMeasurementsArray(mList);
 					if (Object.keys(vals).length > 0) {
 						setProtocol((prev) => ({
 							...prev,

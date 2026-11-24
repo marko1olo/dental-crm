@@ -145,7 +145,7 @@ export const DirectTelephonyLauncher: React.FC = () => {
 			data-testid="direct-telephony-launcher-root"
 			className="fixed inset-0 z-[100000] w-full h-full bg-[var(--paper)] text-[var(--ink)] flex flex-col items-center justify-center p-2 sm:p-4"
 		>
-			<TelephonyStudioModal isOpen={isOpen} onClose={handleClose} />
+			<TelephonyStudioModal key={isOpen ? "telephony-open" : "telephony-closed"} isOpen={isOpen} onClose={handleClose} />
 		</main>
 	);
 };

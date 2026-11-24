@@ -512,6 +512,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 				{/* Модальный кабинет пациента */}
 				{isCabinetModalOpen && (
 					<PatientCabinetModal
+						key={patientData?.patientId || portalToken || "cabinet"}
 						isOpen={isCabinetModalOpen}
 						onClose={() => setIsCabinetModalOpen(false)}
 						initialData={patientData}

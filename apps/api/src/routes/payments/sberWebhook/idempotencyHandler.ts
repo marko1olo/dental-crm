@@ -446,15 +446,15 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			.limit(1);
 
 		const config = {
-			terminalId: input.terminalId || "19827340",
-			merchantId: "981273948192031",
+			terminalId: input.terminalId || "POS-TERM-01",
+			merchantId: process.env.SBER_MERCHANT_ID || input.terminalId || "SBER_MERCHANT",
 			hostIp: "127.0.0.1",
 			hostPort: 4000,
 			protocol: "pilot_nt" as const,
 			hardwareModel: "sber_smartpos" as const,
 			timeoutMs: 60000,
 			retryCount: 2,
-			clinicName: org?.name || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			clinicName: org?.name || "Клиника",
 			clinicAddress: org?.legalAddress || "",
 			clinicInn: org?.inn || "",
 		};
@@ -464,8 +464,8 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			amountKop: input.amountKopecks,
 			rrn,
 			authCode,
-			cardHash: input.cardHash || "2200********4819",
-			cardIssuer: input.cardIssuer || "МИР",
+			cardHash: input.cardHash || "••••",
+			cardIssuer: input.cardIssuer || "BANK_CARD",
 			aid: "A0000006581010",
 			tvr: "0000008000",
 			dateTime: nowIso.slice(0, 19).replace("T", " "),

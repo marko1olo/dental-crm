@@ -110,8 +110,28 @@ export function useIncomingCallPopupController(
 	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
 	const [isCapturingLead, setIsCapturingLead] = useState(false);
 
-	const incomingData = useIncomingCallData(activeCall, dashboard, dismissCall);
+	const handleDismissCall = () => {
+		setIsExpanded(false);
+		setShowOutcomePanel(false);
+		setShowTransferPanel(false);
+		setShowQuickBooking(false);
+		setShowBadgeMoreMenu(false);
+		dismissCall();
+	};
+
+	const incomingData = useIncomingCallData(activeCall, dashboard, handleDismissCall);
 	const { currentCall, resolvedPatient, upcomingAppointment, callerName, formattedPhone } = incomingData;
+
+	const callIdentifier = activeCall?.callId || activeCall?.id;
+	useEffect(() => {
+		if (activeCall && callIdentifier) {
+			setIsExpanded(initialExpanded);
+			setShowOutcomePanel(false);
+			setShowTransferPanel(false);
+			setShowQuickBooking(false);
+			setShowBadgeMoreMenu(false);
+		}
+	}, [callIdentifier, initialExpanded]);
 
 	// Keyboard & Outside Click listener
 	useEffect(() => {
@@ -182,9 +202,6 @@ export function useIncomingCallPopupController(
 			useAppStore.getState().setCurrentView("schedule");
 		}
 		useUiSurfaceStore.getState().openDrawer("quick_booking");
-		if (typeof window !== "undefined") {
-			try { window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo })); } catch {}
-		}
 
 		useTelephonyStore.getState().recordCallOutcome("booked");
 		const targetSlot = quickSlots.find((s) => s.type === slotType);
@@ -331,11 +348,15 @@ export function useIncomingCallPopupController(
 	const handleAnswerCall = () => {
 		answerCall();
 		openCallDrawer();
+		setIsExpanded(false);
+		setShowOutcomePanel(false);
 		showToast(`Вызов принят (${formattedPhone})`, "success");
 	};
 
 	const handleReject = () => {
 		rejectCall();
+		setIsExpanded(false);
+		setShowOutcomePanel(false);
 		showToast(`Вызов ${formattedPhone} отклонён`, "info");
 	};
 
@@ -382,6 +403,8 @@ export function useIncomingCallPopupController(
 
 	const handleRecordOutcome = (outcome: CallOutcome) => {
 		recordCallOutcome(outcome);
+		setIsExpanded(false);
+		setShowOutcomePanel(false);
 		dismissCall();
 		showToast(
 			outcome === "callback_15m" ? "Запланирован перезвон через 15 минут" : "Исход зафиксирован",
@@ -465,7 +488,7 @@ export function useIncomingCallPopupController(
 		setShowQuickBooking,
 		setShowOutcomePanel,
 		closeCallDrawer,
-		dismissCall,
+		dismissCall: handleDismissCall,
 		toggleMute,
 		handleToggleCardDrawer,
 		handleOpenFullPatientView,

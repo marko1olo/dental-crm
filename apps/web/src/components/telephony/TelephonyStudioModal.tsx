@@ -21,7 +21,10 @@ import { TelephonyCallList } from "./TelephonyCallList";
 import { CallAudioPlayer } from "./CallAudioPlayer";
 import { initiateOutboundCall } from "./initiateOutboundCall";
 import { showToast } from "../GlobalToast";
+import { useAppStore } from "../../store/appStore";
+import { useScheduleStore } from "../../store/scheduleStore";
 import { useTelephonyStore } from "../../store/telephonyStore";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 if (typeof document !== "undefined") {
@@ -378,10 +381,19 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 
 	const handleBookAction = useCallback(() => {
 		if (!selectedCall) return;
+		useScheduleStore.getState().setPendingStageBooking({
+			patientId: selectedCall.patientId || null,
+			patientName: selectedCall.callerName || "",
+			patientPhone: selectedCall.phone || "",
+			startsAt: new Date().toISOString(),
+			reason: "Запись по звонку из студии телефонии",
+		});
+		if (useAppStore.getState().currentView !== "schedule") {
+			useAppStore.getState().setCurrentView("schedule");
+		}
+		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		if (onBookAppointment && selectedCall.patientId) {
 			onBookAppointment(selectedCall.patientId, selectedCall.phone, selectedCall.callerName);
-		} else {
-			triggerBookAppointment(selectedCall.patientId || undefined, selectedCall.phone, selectedCall.callerName);
 		}
 		onClose();
 	}, [selectedCall, onBookAppointment, onClose]);
@@ -429,9 +441,6 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				.catch(() => showToast("Ошибка сети при сохранении заметки", "error"));
 		}
 
-		window.dispatchEvent(new CustomEvent("dente:telephony-note-saved", {
-			detail: { callId: selectedCall?.id, patientId: selectedCall?.patientId, note: noteToSave, timestamp: new Date().toISOString() },
-		}));
 		if (noteTimerRef.current) {
 			clearTimeout(noteTimerRef.current);
 		}
