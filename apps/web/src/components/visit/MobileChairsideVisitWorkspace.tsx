@@ -70,12 +70,12 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
               data-testid={`${testId}-norm-btn`}
             >
               <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={22} className="shrink-0 text-[var(--teal,#0d9488)]" />
+                <CheckCircle2 size={22} className="shrink-0 text-[var(--primary)]" />
                 <span className="text-[15px] font-bold">
                   {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
                 </span>
               </div>
-              <span className="text-[12px] text-[var(--muted,#64748b)] font-medium">Внести в карту</span>
+              <span className="text-[12px] text-[var(--muted)] font-medium">Внести в карту</span>
             </button>
 
             <ChairsideSmartMicrophone
@@ -133,8 +133,9 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         ) : null}
       </main>
 
-      {/* Native iOS Bottom Sheet: Клинический дневник приёма (SOAP) */}
+      {/* Native iOS Bottom Sheet: Клинический дневник приёма (SOAP) (Keyed Remount, Mandate 8bn) */}
       <MobileBottomSheet
+        key={`diary-sheet-${activeAppointment?.id || activePatient?.id || "default"}`}
         isOpen={ws.isDiarySheetOpen}
         onClose={() => ws.setIsDiarySheetOpen(false)}
         title="Дневник приёма (SOAP)"
@@ -151,7 +152,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
                 }
                 showToast("Дневник приёма сохранён", "success");
               }}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 min-h-[48px] rounded-xl bg-[var(--teal,#0d9488)] text-white text-[15px] font-bold shadow-md active:scale-[0.98] transition-transform cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 min-h-[48px] rounded-xl bg-[var(--primary)] text-white text-[15px] font-bold shadow-md active:scale-[0.98] transition-transform cursor-pointer"
               data-testid={`${testId}-diary-sheet-save-btn`}
             >
               <CheckCircle2 size={18} className="stroke-[2.5]" />
@@ -169,21 +170,21 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             data-testid={`${testId}-diary-sheet-norm-btn`}
           >
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 size={20} className="shrink-0 text-[var(--teal,#0d9488)]" />
+              <CheckCircle2 size={20} className="shrink-0 text-[var(--primary)]" />
               <span className="text-[14px] font-bold">
                 {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
               </span>
             </div>
-            <span className="text-[11px] text-[var(--muted,#64748b)] font-medium">Внести в карту</span>
+            <span className="text-[11px] text-[var(--muted)] font-medium">Внести в карту</span>
           </button>
 
           {/* Passive Non-blocking Allergy Warning (Mandates 8e, 8y) */}
           {Boolean(activePatient?.allergies?.length || consolidatedAllergyChip) && (
             <div
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-border,rgba(245,158,11,0.3))] text-[var(--warning)] text-xs font-semibold"
               data-testid={`${testId}-diary-sheet-allergy-alert`}
             >
-              <AlertTriangle size={15} className="shrink-0 text-amber-500" />
+              <AlertTriangle size={15} className="shrink-0 text-[var(--warning)]" />
               <span>
                 Аллергии: {consolidatedAllergyChip || (Array.isArray(activePatient?.allergies) ? activePatient.allergies.join(", ") : String(activePatient?.allergies || "Отягощен"))}
               </span>

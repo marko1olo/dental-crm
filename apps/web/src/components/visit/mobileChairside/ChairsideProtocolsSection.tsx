@@ -91,7 +91,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
               }
             >
               <div className="flex items-center gap-3">
-                <Stethoscope size={18} className="text-teal-600" />
+                <Stethoscope size={18} className="text-[var(--primary)]" />
                 <div>
                   <div className="text-[14px] font-semibold text-[var(--ink)]">
                     Острая боль от температурных раздражителей
@@ -194,7 +194,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                 data-testid={`${testId}-diag-${diag.code}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center shrink-0">
+                  <span className="w-9 h-9 rounded-lg bg-[var(--primary)]/15 text-[var(--primary)] font-bold text-xs flex items-center justify-center shrink-0">
                     {diag.code}
                   </span>
                   <div>
@@ -269,7 +269,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
         <div className="space-y-3" data-testid={`${testId}-step5-content`}>
           {/* Total Due Hero Card */}
           <div className="mobile-billing-hero-card">
-            <div className="text-[12px] font-bold text-[var(--muted)] uppercase tracking-wider">
+            <div className="text-[12px] font-bold text-[var(--muted)] tracking-wider">
               К оплате по приёму
             </div>
             <div
@@ -287,7 +287,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title flex items-center justify-between">
               <span>Оказанные услуги и манипуляции</span>
-              <span className="text-[11px] text-teal-600 font-bold">Каталог процедур</span>
+              <span className="text-[11px] text-[var(--primary)] font-bold">Каталог процедур</span>
             </div>
 
             {billingItems.map((item) => (
@@ -321,7 +321,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
 
           {/* Quick 1-Tap Services Adding */}
           <div className="mobile-chairside-grouped-card p-3">
-            <div className="text-[13px] font-bold text-[var(--muted)] uppercase mb-2">
+            <div className="text-[13px] font-bold text-[var(--muted)] mb-2">
               + Быстрое добавление услуг
             </div>
             <div className="mobile-quick-services-grid">
@@ -343,8 +343,9 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
         </div>
       )}
 
-      {/* NATIVE BOTTOM SHEET: ОПЛАТА И СЧЁТ */}
+      {/* NATIVE BOTTOM SHEET: ОПЛАТА И СЧЁТ (Keyed Remount, Mandate 8bn) */}
       <MobileBottomSheet
+        key={`checkout-sheet-${activeAppointment?.id || activePatient?.id || "default"}`}
         isOpen={isCheckoutSheetOpen}
         onClose={onCloseCheckoutSheet}
         title="Оплата и формирование счёта"
@@ -354,7 +355,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           <button
             type="button"
             className="mobile-chairside-primary-cta w-full"
-            onClick={onConfirmCheckout}
+            onClick={() => onConfirmCheckout(selectedPaymentMethod)}
             data-testid={`${testId}-confirm-checkout-btn`}
           >
             <CheckCircle2 size={20} />
@@ -364,7 +365,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
       >
         <div className="space-y-3 py-2">
           <div className="text-center py-4 bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)]">
-            <div className="text-[12px] font-bold text-[var(--muted)] uppercase">
+            <div className="text-[12px] font-bold text-[var(--muted)]">
               Сумма к оплате
             </div>
             <div className="text-[32px] font-extrabold font-mono text-[var(--ink)] mt-1">
@@ -373,7 +374,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           </div>
 
           <div className="space-y-2">
-            <div className="text-[13px] font-bold text-[var(--muted)] uppercase px-1">
+            <div className="text-[13px] font-bold text-[var(--muted)] px-1">
               Способ оплаты
             </div>
             {PAYMENT_METHOD_OPTIONS.map((method) => (
@@ -381,7 +382,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                 key={method.id}
                 className={`mobile-chairside-row-item rounded-xl border ${
                   selectedPaymentMethod === method.id
-                    ? "border-teal-500 bg-teal-500/10"
+                    ? "border-[var(--primary)] bg-[var(--primary)]/10"
                     : "border-[var(--line)]"
                 }`}
                 onClick={() => {
@@ -394,7 +395,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                   <div className="text-[12px] text-[var(--muted)]">{method.desc}</div>
                 </div>
                 {selectedPaymentMethod === method.id ? (
-                  <CheckCircle2 size={20} className="text-teal-600" />
+                  <CheckCircle2 size={20} className="text-[var(--primary)]" />
                 ) : (
                   <div className="w-5 h-5 rounded-full border border-[var(--line)]" />
                 )}

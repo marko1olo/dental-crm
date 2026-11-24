@@ -20,8 +20,8 @@
   display: inline-flex; align-items: center; justify-content: center;
   gap: 10px; font-size: 16px; font-weight: 700; border: none; cursor: pointer;
   transition: transform 0.15s ease, filter 0.15s ease;
-  background: var(--teal, #0d9488);
-  color: #ffffff; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+  background: var(--primary);
+  color: #ffffff; box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 25%, transparent);
   -webkit-tap-highlight-color: transparent;
 }
 .mobile-chairside-primary-cta:active { transform: scale(0.97); filter: brightness(0.95); }
@@ -38,14 +38,14 @@
 .mobile-chairside-stage-cta {
   min-height: 52px; height: 52px; border-radius: 16px; padding: 0 16px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-size: 15px; font-weight: 700; border: 1.5px solid var(--teal, #0d9488);
-  background: color-mix(in srgb, var(--teal, #0d9488) 12%, var(--paper, #ffffff));
-  color: var(--teal, #0d9488); cursor: pointer;
+  font-size: 15px; font-weight: 700; border: 1.5px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--paper));
+  color: var(--primary); cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
   white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
 }
 .mobile-chairside-stage-cta:active {
-  transform: scale(0.97); background: color-mix(in srgb, var(--teal, #0d9488) 22%, var(--paper, #ffffff));
+  transform: scale(0.97); background: color-mix(in srgb, var(--primary) 22%, var(--paper));
 }
 
 /* ── Dark Mode Overrides ── */
@@ -57,10 +57,10 @@
 
 [data-theme="dark"] .mobile-chairside-secondary-cta,
 .dark .mobile-chairside-secondary-cta {
-  background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: #f1f5f9;
+  background: var(--paper-soft); border-color: var(--line); color: var(--ink);
 }
 
 [data-theme="dark"] .mobile-chairside-stage-cta,
 .dark .mobile-chairside-stage-cta {
-  background: rgba(13, 148, 136, 0.2); border-color: rgba(13, 148, 136, 0.6); color: #2dd4bf;
+  background: color-mix(in srgb, var(--primary) 20%, transparent); border-color: color-mix(in srgb, var(--primary) 60%, transparent); color: var(--primary);
 }

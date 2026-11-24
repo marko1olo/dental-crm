@@ -23,16 +23,16 @@ export const DsdEmptyState: React.FC<DsdEmptyStateProps> = ({
 	return (
 		<div
 			data-testid="dsd-empty-state"
-			className="flex flex-col items-center justify-center gap-3 p-8 text-center rounded-2xl bg-slate-900/90 border-2 border-dashed border-slate-700 max-w-md w-full mx-4 shadow-xl"
+			className="flex flex-col items-center justify-center gap-3 p-8 text-center rounded-2xl bg-[var(--paper-soft)] border-2 border-dashed border-[var(--line)] max-w-md w-full mx-4 shadow-xl"
 		>
-			<div className="w-14 h-14 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center">
+			<div className="w-14 h-14 rounded-full bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary,#0d9488)] flex items-center justify-center">
 				<Camera size={28} />
 			</div>
 			<div className="flex flex-col gap-1">
-				<h4 className="text-sm sm:text-base font-bold text-white m-0">
+				<h4 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">
 					Снимок не загружен
 				</h4>
-				<p className="text-xs text-slate-400 m-0 leading-relaxed">
+				<p className="text-xs text-[var(--ink-muted)] m-0 leading-relaxed">
 					Перетащите фото анфас с улыбкой или откройте QR-код для съемки со смартфона
 				</p>
 			</div>
@@ -49,7 +49,7 @@ export const DsdEmptyState: React.FC<DsdEmptyStateProps> = ({
 				<button
 					type="button"
 					onClick={handleQrOpen}
-					className="min-h-[44px] px-4 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 inline-flex items-center gap-2 cursor-pointer"
+					className="min-h-[44px] px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-2 cursor-pointer"
 					data-testid="btn-dsd-qr-bridge"
 				>
 					<Camera size={16} />

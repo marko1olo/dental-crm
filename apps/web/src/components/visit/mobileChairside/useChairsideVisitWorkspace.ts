@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
@@ -40,6 +41,7 @@ export function useChairsideVisitWorkspace({
   currentStepRef.current = currentStep;
   const visitNoteFormRef = useRef(visitNoteForm);
   visitNoteFormRef.current = visitNoteForm;
+  const dictationBaselineRef = useRef<{ step: MobileChairsideStep; text: string } | null>(null);
 
   const {
     isRecording,
@@ -55,20 +57,38 @@ export function useChairsideVisitWorkspace({
       setRecognizedVoiceSnippet(transcript);
       const step = currentStepRef.current;
       const form = visitNoteFormRef.current;
+
+      let baseline = "";
+      if (dictationBaselineRef.current && dictationBaselineRef.current.step === step) {
+        baseline = dictationBaselineRef.current.text;
+      } else {
+        if (step === "complaints") baseline = typeof form?.complaint === "string" ? form.complaint : "";
+        else if (step === "exam") baseline = typeof form?.objectiveStatus === "string" ? form.objectiveStatus : "";
+        else if (step === "diagnosis") baseline = typeof form?.diagnosis === "string" ? form.diagnosis : "";
+        else if (step === "treatment") baseline = typeof form?.treatmentPlan === "string" ? form.treatmentPlan : "";
+        dictationBaselineRef.current = { step, text: baseline };
+      }
+
+      const merged = baseline.trim() ? `${baseline.trim()} ${transcript.trim()}` : transcript.trim();
+
       if (step === "complaints") {
-        const cur = form?.complaint || "";
-        updateVisitNoteField("complaint", cur ? `${cur} ${transcript}` : transcript);
+        updateVisitNoteField("complaint", merged);
       } else if (step === "exam") {
-        const cur = form?.objectiveStatus || "";
-        updateVisitNoteField("objectiveStatus", cur ? `${cur} ${transcript}` : transcript);
+        updateVisitNoteField("objectiveStatus", merged);
       } else if (step === "diagnosis") {
-        updateVisitNoteField("diagnosis", transcript);
+        updateVisitNoteField("diagnosis", merged);
       } else if (step === "treatment") {
-        const cur = form?.treatmentPlan || "";
-        updateVisitNoteField("treatmentPlan", cur ? `${cur} ${transcript}` : transcript);
+        updateVisitNoteField("treatmentPlan", merged);
       }
     },
   });
+
+  // Reset dictation baseline when recording stops to eliminate snowball compounding
+  useEffect(() => {
+    if (!isRecording) {
+      dictationBaselineRef.current = null;
+    }
+  }, [isRecording]);
 
   // In-session chairside billing items (derived from treatment plan or completed store items)
   const [billingItems, setBillingItems] = useState<MobileChairsideBillingItem[]>(() => {
@@ -112,30 +132,105 @@ export function useChairsideVisitWorkspace({
     return [];
   });
 
-  // Listen to external billing items added from catalog or tooth protocol
+  // Listen to external billing items added from catalog, tooth protocol or Copilot HUD
   useEffect(() => {
     const handleAddBillingEvent = (e: Event) => {
       const detail = (e as CustomEvent)?.detail;
       if (!detail) return;
-      const it = detail.item || detail;
-      if (!it) return;
-      const newItem: MobileChairsideBillingItem = {
-        id: it.id || `billing-${it.toothNumber || it.toothCode || "gen"}-${String(it.code || it.code804n || "srv").replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}`,
-        code804n: it.code || it.code804n || "A16.07.002",
-        title: it.title || it.name || "Услуга приёма",
-        priceRub: Number(it.unitPriceRub || it.priceRub || it.price || 0),
-        quantity: Number(it.quantity || 1),
-        toothCode: it.toothNumber ? String(it.toothNumber) : it.toothCode,
-      };
-      setBillingItems((prev) => {
-        const exists = prev.some(
-          (p) =>
-            p.id === newItem.id ||
-            (p.toothCode === newItem.toothCode &&
-              ((p.code804n && p.code804n === newItem.code804n) || p.title === newItem.title)),
+
+      const rawItems: unknown[] = Array.isArray(detail.items)
+        ? detail.items
+        : Array.isArray(detail)
+          ? detail
+          : detail.item
+            ? [detail.item]
+            : [detail];
+
+      const parsedNewItems: MobileChairsideBillingItem[] = [];
+
+      for (let idx = 0; idx < rawItems.length; idx++) {
+        const raw = rawItems[idx] as Record<string, unknown> | null | undefined;
+        if (!raw || typeof raw !== "object") continue;
+
+        const titleCandidate =
+          (typeof raw.title === "string" && raw.title.trim()) ||
+          (typeof raw.name === "string" && raw.name.trim()) ||
+          (typeof raw.serviceName === "string" && raw.serviceName.trim()) ||
+          (typeof raw.shortTitle === "string" && raw.shortTitle.trim()) ||
+          "";
+
+        if (!titleCandidate && !raw.code && !raw.code804n && !raw.priceRub && !raw.price && !raw.unitPriceRub) {
+          continue;
+        }
+
+        const title = titleCandidate || "Услуга приёма";
+        const code804n =
+          (typeof raw.code === "string" && raw.code) ||
+          (typeof raw.code804n === "string" && raw.code804n) ||
+          (typeof raw.serviceCode === "string" && raw.serviceCode) ||
+          "A16.07.002";
+
+        const priceRub = Number(
+          raw.unitPriceRub ??
+          raw.priceRub ??
+          (typeof raw.priceKopecks === "number" ? kopecksToRubles(raw.priceKopecks) : undefined) ??
+          raw.price ??
+          0
         );
-        if (exists) return prev;
-        return [...prev, newItem];
+
+        const quantity = Math.max(1, Number(raw.quantity ?? 1));
+        const toothCandidate = raw.toothNumber ?? raw.toothCode;
+        const toothCode = toothCandidate !== undefined && toothCandidate !== null ? String(toothCandidate) : undefined;
+        const serviceId =
+          (typeof raw.id === "string" && raw.id) ||
+          (typeof raw.serviceId === "string" && raw.serviceId) ||
+          `billing-${toothCode || "gen"}-${code804n.replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}-${idx}`;
+
+        const item: MobileChairsideBillingItem = {
+          id: serviceId,
+          code804n,
+          title,
+          priceRub,
+          quantity,
+          toothCode,
+        };
+
+        parsedNewItems.push(item);
+
+        // Mandate 8e & 8bm: Directly synchronize into global visit store
+        try {
+          useVisitStore.getState().addCompletedService({
+            serviceId,
+            code804n,
+            name: title,
+            title,
+            priceRub,
+            priceKopecks: rublesToKopecks(priceRub),
+            quantity,
+            toothNumber: toothCode,
+            toothCode,
+          });
+        } catch {
+          // ignore
+        }
+      }
+
+      if (parsedNewItems.length === 0) return;
+
+      setBillingItems((prev) => {
+        const next = [...prev];
+        for (const newItem of parsedNewItems) {
+          const exists = next.some(
+            (p) =>
+              p.id === newItem.id ||
+              (p.toothCode === newItem.toothCode &&
+                ((p.code804n && p.code804n === newItem.code804n) || p.title === newItem.title)),
+          );
+          if (!exists) {
+            next.push(newItem);
+          }
+        }
+        return next;
       });
     };
 
@@ -145,9 +240,17 @@ export function useChairsideVisitWorkspace({
     };
   }, []);
 
-  const totalBillingAmountRub = useMemo(() => {
-    return billingItems.reduce((sum, item) => sum + item.priceRub * item.quantity, 0);
+  // Mandate 8bm: Exact integer kopecks arithmetic without floating point drift
+  const totalBillingAmountKopecks = useMemo(() => {
+    return billingItems.reduce((sumKop, item) => {
+      const itemKop = rublesToKopecks(item.priceRub);
+      return sumKop + itemKop * (item.quantity || 1);
+    }, 0);
   }, [billingItems]);
+
+  const totalBillingAmountRub = useMemo(() => {
+    return kopecksToRubles(totalBillingAmountKopecks);
+  }, [totalBillingAmountKopecks]);
 
   // Callback to take treatment plan stage into active visit
   const handleTakeStageFromBanner = useCallback(
@@ -164,13 +267,13 @@ export function useChairsideVisitWorkspace({
         const stageDiaryText = `Взят в работу этап: «${stageTitle}»:\n${items
           .map((it: PlanStageItem, idx: number) => `${idx + 1}. ${it.title || it.name || "Услуга"}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`)
           .join("\n")}`;
-        const currentPlan = visitNoteForm?.treatmentPlan || "";
+        const currentPlan = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
         updateVisitNoteField("treatmentPlan", currentPlan ? `${currentPlan}\n\n${stageDiaryText}` : stageDiaryText);
       }
 
       const newItems: MobileChairsideBillingItem[] = items.map((it: PlanStageItem, idx: number) => ({
         id: `stage-item-${Date.now()}-${idx}`,
-        code804n: it.serviceCode || it.code804n || "A16.07.002",
+        code804n: it.serviceCode || it.code804n || (typeof it["code"] === "string" ? it["code"] : "") || "A16.07.002",
         title: it.name || it.title || "Услуга плана",
         priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
         quantity: Number(it.quantity || 1),
@@ -179,15 +282,42 @@ export function useChairsideVisitWorkspace({
       setBillingItems((prev) => [...prev, ...newItems]);
 
       for (const it of items) {
+        const serviceId = `stage-${Date.now()}-${it.id || it.serviceCode || "srv"}`;
+        const priceRub = Number(it.price || it.priceRub || it.unitPriceRub || 0);
+        const code804n = it.serviceCode || it.code804n || (typeof it["code"] === "string" ? it["code"] : "") || "A16.07.002";
+        const title = it.name || it.title || "Услуга плана";
+        const toothNumber = it.toothNumber ? String(it.toothNumber) : undefined;
+
+        try {
+          useVisitStore.getState().addCompletedService({
+            serviceId,
+            code804n,
+            name: title,
+            title,
+            priceRub,
+            priceKopecks: rublesToKopecks(priceRub),
+            quantity: Number(it.quantity || 1),
+            toothNumber,
+            toothCode: toothNumber,
+          });
+        } catch {
+          // ignore
+        }
+
         window.dispatchEvent(
           new CustomEvent("dente-add-billing-item", {
             detail: {
               item: {
-                code804n: it.code || it.code804n || "A16.07.002",
-                title: it.name || it.title || "Услуга плана",
+                id: serviceId,
+                code804n,
+                title,
+                name: title,
                 quantity: Number(it.quantity || 1),
-                unitPriceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+                unitPriceRub: priceRub,
+                priceRub,
+                priceKopecks: rublesToKopecks(priceRub),
                 discountRub: 0,
+                toothNumber,
               },
             },
           }),
@@ -343,51 +473,117 @@ export function useChairsideVisitWorkspace({
     flushPendingVisitSaves,
   ]);
 
-  const addBillingItem = (item: { code804n: string; title: string; priceRub: number }) => {
+  const addBillingItem = (item: { code804n: string; title: string; priceRub: number; toothCode?: string }) => {
     triggerHaptic("selection");
+    const serviceId = `item-${Date.now()}`;
+    const priceKopecks = rublesToKopecks(item.priceRub);
     const newItem: MobileChairsideBillingItem = {
-      id: `item-${Date.now()}`,
+      id: serviceId,
       code804n: item.code804n,
       title: item.title,
       priceRub: item.priceRub,
       quantity: 1,
+      toothCode: item.toothCode,
     };
     setBillingItems((prev) => [...prev, newItem]);
-    window.dispatchEvent(
-      new CustomEvent("dente-add-billing-item", {
-        detail: {
-          item: {
-            code804n: item.code804n,
-            title: item.title,
-            quantity: 1,
-            unitPriceRub: item.priceRub,
-            discountRub: 0,
+
+    // Mandate 8e & 8bm: Directly synchronize into global visit store
+    try {
+      useVisitStore.getState().addCompletedService({
+        serviceId,
+        code804n: item.code804n,
+        name: item.title,
+        title: item.title,
+        priceRub: item.priceRub,
+        priceKopecks,
+        quantity: 1,
+        toothNumber: item.toothCode,
+        toothCode: item.toothCode,
+      });
+    } catch {
+      // ignore
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("dente-add-billing-item", {
+          detail: {
+            item: {
+              id: serviceId,
+              code804n: item.code804n,
+              title: item.title,
+              name: item.title,
+              quantity: 1,
+              unitPriceRub: item.priceRub,
+              priceRub: item.priceRub,
+              priceKopecks,
+              discountRub: 0,
+              toothNumber: item.toothCode,
+            },
           },
-        },
-      }),
-    );
+        }),
+      );
+    }
     showToast(`Добавлено в чек: ${item.title}`, "success");
   };
 
   const removeBillingItem = (id: string) => {
     triggerHaptic("selection");
     setBillingItems((prev) => prev.filter((it) => it.id !== id));
+    try {
+      useVisitStore.getState().setCompletedServices((prev) =>
+        prev.filter((it) => (it.serviceId ? it.serviceId !== id : true))
+      );
+    } catch {
+      // ignore
+    }
   };
 
-  const executeFinalCheckout = async () => {
+  const executeFinalCheckout = async (paymentMethod: "sbp" | "card" | "cash" = "sbp") => {
     if (inFlightCheckoutRef.current) return;
     inFlightCheckoutRef.current = true;
     try {
       triggerHaptic("success");
       setIsCheckoutSheetOpen(false);
+
+      // Save preferred payment method for cashier
+      try {
+        const stored = sessionStorage.getItem("dente_pending_checkout");
+        if (stored) {
+          const parsed = JSON.parse(stored) as Record<string, unknown>;
+          parsed.paymentMethod = paymentMethod;
+          sessionStorage.setItem("dente_pending_checkout", JSON.stringify(parsed));
+          localStorage.setItem("dente_pending_checkout", JSON.stringify(parsed));
+        }
+      } catch {
+        // ignore
+      }
+
       if (handleFinishVisitAction) {
         await handleFinishVisitAction();
       }
       if (flushPendingVisitSaves) {
         await flushPendingVisitSaves();
       }
+
+      // Reinforce payment method in pending checkout after handleFinishVisitAction runs
+      try {
+        const stored = sessionStorage.getItem("dente_pending_checkout");
+        if (stored) {
+          const parsed = JSON.parse(stored) as Record<string, unknown>;
+          parsed.paymentMethod = paymentMethod;
+          sessionStorage.setItem("dente_pending_checkout", JSON.stringify(parsed));
+          localStorage.setItem("dente_pending_checkout", JSON.stringify(parsed));
+        }
+      } catch {
+        // ignore
+      }
+
       showToast("Приём завершён, счёт сформирован", "success");
-      if (onClose) onClose();
+      // Do not call onClose() when navigating to finance - handleFinishVisitAction navigates to #finance
+      if (typeof window !== "undefined" && window.location.hash !== "#finance" && onClose) {
+        onClose();
+      }
     } finally {
       inFlightCheckoutRef.current = false;
     }
@@ -415,6 +611,7 @@ export function useChairsideVisitWorkspace({
     recognizedVoiceSnippet,
     billingItems,
     totalBillingAmountRub,
+    totalBillingAmountKopecks,
     handleTakeStageFromBanner,
     handleTakeActivePlanStage,
     onApplyChairsideNorm,

@@ -25,6 +25,7 @@ import { DsdStudioHeader } from './DsdStudioHeader';
 import { DsdEmptyState } from './DsdEmptyState';
 import { showToast } from '../../GlobalToast';
 import { compressChairsidePhotoToBlobUrl } from '../chairsidePhotoCompressor';
+import { getDenteAuthHeaders } from '../../../lib/denteRequestHeaders';
 
 // Канонический экспорт константы фото-слота (без карикатурных моков)
 export const DEFAULT_CLINICAL_SMILE_PHOTO = '';
@@ -305,7 +306,10 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				try {
 					const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: getDenteAuthHeaders({
+							'Content-Type': 'application/json',
+							'Idempotency-Key': crypto.randomUUID(),
+						}),
 						body: JSON.stringify({
 							presetId: 'dsd_aesthetic_protocol',
 							slots: { [slotId]: { imageUrl: activePhotoUrl, dsdAnalysis: fullAnalysisPayload, landmarks } },
@@ -366,7 +370,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			<div className="relative w-full h-full max-w-7xl max-h-[96vh] max-sm:max-h-full bg-[var(--paper,#ffffff)] dark:bg-[var(--paper,#0f172a)] border border-[var(--line,#cbd5e1)] rounded-none sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)]">
 				{/* Apple HIG: Mobile Drag Handle */}
 				<div
-					className="sm:hidden w-10 h-[5px] bg-slate-400 dark:bg-slate-600 rounded-full mx-auto my-2 shrink-0"
+					className="sm:hidden w-9 h-1.5 bg-[var(--line)] rounded-full mx-auto my-2 shrink-0"
 					aria-hidden="true"
 				/>
 
@@ -414,7 +418,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				<div className="flex-1 flex overflow-hidden">
 					{/* Интерактивный холст (слева) или честный Empty State */}
 					<div
-						className={`flex-1 relative flex items-center justify-center p-2 sm:p-4 bg-slate-950 overflow-hidden ${
+						className={`flex-1 relative flex items-center justify-center p-2 sm:p-4 bg-[var(--paper-soft)] overflow-hidden ${
 							activeMobileTab === 'canvas' ? 'flex' : 'max-sm:hidden'
 						}`}
 					>

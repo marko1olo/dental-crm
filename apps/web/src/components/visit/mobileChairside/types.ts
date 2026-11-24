@@ -172,7 +172,7 @@ export interface ChairsideProtocolsSectionProps {
   onRemoveBillingItem: (id: string) => void;
   isCheckoutSheetOpen: boolean;
   onCloseCheckoutSheet: () => void;
-  onConfirmCheckout: () => void;
+  onConfirmCheckout: (paymentMethod?: "sbp" | "card" | "cash") => void;
   testId?: string | undefined;
 }
 

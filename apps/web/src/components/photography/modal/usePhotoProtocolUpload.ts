@@ -203,6 +203,7 @@ export function usePhotoProtocolUpload(
 					headers: {
 						...denteAdminSecretRequestHeaders(),
 						'Content-Type': 'application/json',
+						'Idempotency-Key': crypto.randomUUID(),
 					},
 					body: JSON.stringify({
 						presetId: activePreset.id,

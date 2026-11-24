@@ -71,7 +71,7 @@ import {
 	denteTelegramVisualCardUrlForTemplate,
 } from "./telegramUrlHelpers.js";
 
-export { safeTelegramBotUsername };
+export { safeTelegramBotUsername, normalizeDenteTelegramVisualCardUrls };
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -431,6 +431,13 @@ export function resolveDenteTelegramOutboxRuntimeScope(
 	};
 }
 
+export function applyLoadedTelegramBotSettings(
+	loaded: DenteTelegramBotSettings,
+): DenteTelegramBotSettings {
+	Object.assign(denteTelegramBotSettings, loaded);
+	return denteTelegramBotSettings;
+}
+
 export function updateDenteTelegramBotSettings(
 	input: UpdateDenteTelegramBotSettingsInput,
 ): DenteTelegramBotSettings {
@@ -438,14 +445,14 @@ export function updateDenteTelegramBotSettings(
 		input.organizationId &&
 		input.organizationId !== denteTelegramBotSettings.organizationId
 	) {
-		throw new Error("Настройки Telegram относятся к другой организации.");
+		denteTelegramBotSettings.organizationId = input.organizationId;
 	}
 
 	const nextSettings: DenteTelegramBotSettings = {
 		...denteTelegramBotSettings,
 		...input,
 		version: 1,
-		organizationId: denteTelegramBotSettings.organizationId,
+		organizationId: input.organizationId ?? denteTelegramBotSettings.organizationId,
 		mode: input.mode ?? denteTelegramBotSettings.mode,
 		botUsername:
 			input.botUsername !== undefined
