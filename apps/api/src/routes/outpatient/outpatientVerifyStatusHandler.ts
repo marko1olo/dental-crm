@@ -1,17 +1,44 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import {
+	requireClinicalMutationAccess,
+	requireResolvedOrganizationId,
+	unguardedBypassAllowed,
+} from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { outpatientVerifications, visits } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import {
 	updateOutpatientVerificationStatusSchema,
 	updateVerificationParamsSchema,
 } from "./outpatientTypes.js";
 
 export async function updateVerificationStatusHandler(request: FastifyRequest, reply: FastifyReply) {
+	if (!(await requireClinicalMutationAccess(request, reply, "outpatient verify status"))) return;
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
+
+	const identity = getRequestIdentity(request);
+	const rawRole = identity.role ?? request.user?.role ?? null;
+	const normalizedRole = rawRole?.trim().toLowerCase() ?? null;
+	const evalAccess = evaluateClinicalAccess(rawRole);
+	const isCmoOrLead =
+		normalizedRole === "owner" ||
+		normalizedRole === "admin" ||
+		normalizedRole === "chief_doctor" ||
+		normalizedRole === "chiefdoctor" ||
+		normalizedRole === "head_doctor";
+	const allowUnguarded =
+		rawRole === null && unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS");
+	if (!evalAccess.hasClinicalAccess && !isCmoOrLead && !allowUnguarded) {
+		return reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "clinical.outpatient.verify",
+			role: rawRole,
+			message: "Верификация качества медицинских карт доступна только главному врачу или клиническому руководству.",
+		});
+	}
 
 	const paramsParsed = updateVerificationParamsSchema.safeParse(request.params);
 	if (!paramsParsed.success) {
@@ -38,7 +65,6 @@ export async function updateVerificationStatusHandler(request: FastifyRequest, r
 		});
 	}
 
-	const identity = getRequestIdentity(request);
 	const isFinished = bodyParsed.data.status === "approved" || bodyParsed.data.status === "rejected";
 
 	const updated = await withTenantCtx(orgId, async (tx) => {

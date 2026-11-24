@@ -215,4 +215,18 @@ describe("N3.Health ViPNet EGISZ Fastify Routes", () => {
 		assert.equal(res.json.ok, false);
 		assert.equal(res.json.error, "ValidationError");
 	});
+
+	test("POST /api/egisz/n3health/emk/close-case with dryRun=false rejects unknown/foreign idCaseMis with 404 CaseNotFound", async () => {
+		const res = await inject("POST", "/api/egisz/n3health/emk/close-case", {
+			body: {
+				dryRun: false,
+				idCaseMis: "00000000-0000-4000-8000-000000009997",
+				closeDate: "2026-09-21",
+			},
+		});
+
+		assert.equal(res.status, 404);
+		assert.equal(res.json.ok, false);
+		assert.equal(res.json.error, "CaseNotFound");
+	});
 });

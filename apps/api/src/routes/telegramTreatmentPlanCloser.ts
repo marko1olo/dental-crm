@@ -9,7 +9,8 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { resolveOrganizationId } from "../accessGuard.js";
+import { requireResolvedOrganizationId } from "../accessGuard.js";
+import { resolveTelegramRuntimeContext } from "./telegram/telegramRuntimeResolver.js";
 import {
 	TelegramTreatmentPlanCloserService,
 	formatRub,
@@ -20,11 +21,11 @@ import {
 // ============================================================================
 
 const pendingPlansParamsSchema = z.object({
-	patientId: z.string().min(1),
+	patientId: z.string().uuid("Некорректный UUID пациента."),
 });
 
 const installmentCalcParamsSchema = z.object({
-	planId: z.string().min(1),
+	planId: z.string().uuid("Некорректный UUID плана лечения."),
 });
 
 const installmentCalcBodySchema = z.object({
@@ -34,13 +35,16 @@ const installmentCalcBodySchema = z.object({
 });
 
 const sendFollowupParamsSchema = z.object({
-	planId: z.string().min(1),
+	planId: z.string().uuid("Некорректный UUID плана лечения."),
 });
 
-const sendFollowupBodySchema = z.object({
-	force: z.boolean().default(false),
-	botToken: z.string().optional(),
-});
+const sendFollowupBodySchema = z
+	.object({
+		force: z.boolean().default(false),
+		/** Поле оставлено только для обратной совместимости схемы; клиентский токен игнорируется на сервере. */
+		botToken: z.string().optional(),
+	})
+	.strict();
 
 // ============================================================================
 // РЕГИСТРАЦИЯ МАРШРУТОВ
@@ -54,6 +58,13 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 	app.get(
 		"/api/telegram/treatment-plans/pending/:patientId",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram pending treatment plans",
+			);
+			if (!organizationId) return;
+
 			const parsedParams = pendingPlansParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
 				return reply.code(400).send({
@@ -64,12 +75,6 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 			}
 
 			const { patientId } = parsedParams.data;
-			const organizationId =
-				(await resolveOrganizationId(request)) ||
-				(typeof (request.query as Record<string, unknown>)?.organizationId === "string"
-					? ((request.query as Record<string, unknown>).organizationId as string)
-					: undefined);
-
 			const plans = await TelegramTreatmentPlanCloserService.getPendingTreatmentPlansForPatient(
 				patientId,
 				organizationId,
@@ -90,6 +95,13 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 	app.post(
 		"/api/telegram/treatment-plans/:planId/installment-calc",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram installment calc",
+			);
+			if (!organizationId) return;
+
 			const parsedParams = installmentCalcParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
 				return reply.code(400).send({
@@ -111,10 +123,9 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 			const { planId } = parsedParams.data;
 			const { monthsCount, downPaymentRub, bankProvider } = parsedBody.data;
 
-			const organizationId = await resolveOrganizationId(request);
 			const plan = await TelegramTreatmentPlanCloserService.getPendingPlanById(
 				planId,
-				organizationId ?? undefined,
+				organizationId,
 			);
 
 			if (!plan) {
@@ -157,6 +168,13 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 	app.post(
 		"/api/telegram/treatment-plans/:planId/send-followup",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram send followup",
+			);
+			if (!organizationId) return;
+
 			const parsedParams = sendFollowupParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
 				return reply.code(400).send({
@@ -167,11 +185,21 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 			}
 
 			const parsedBody = sendFollowupBodySchema.safeParse(request.body ?? {});
-			const { planId } = parsedParams.data;
-			const { force, botToken } = parsedBody.success ? parsedBody.data : { force: false, botToken: undefined };
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры отправки напоминания.",
+					details: parsedBody.error.issues,
+				});
+			}
 
+			const { planId } = parsedParams.data;
+			const { force } = parsedBody.data;
+
+			const runtimeRes = resolveTelegramRuntimeContext(organizationId);
+			const orgToken = runtimeRes.ok ? runtimeRes.context.botToken : null;
 			const resolvedBotToken =
-				botToken ||
+				orgToken ||
 				process.env.TELEGRAM_BOT_TOKEN ||
 				process.env.DENTE_TELEGRAM_BOT_TOKEN ||
 				"";
@@ -183,24 +211,12 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 				});
 			}
 
-			const organizationId = await resolveOrganizationId(request);
-			const followUpOptions: {
-				planId: string;
-				botToken: string;
-				organizationId?: string;
-				force?: boolean;
-			} = {
+			const result = await TelegramTreatmentPlanCloserService.sendPlanFollowUpMessage({
 				planId,
 				botToken: resolvedBotToken,
-			};
-			if (organizationId) {
-				followUpOptions.organizationId = organizationId;
-			}
-			if (typeof force === "boolean") {
-				followUpOptions.force = force;
-			}
-
-			const result = await TelegramTreatmentPlanCloserService.sendPlanFollowUpMessage(followUpOptions);
+				organizationId,
+				force,
+			});
 
 			if (!result.ok) {
 				return reply.code(422).send({

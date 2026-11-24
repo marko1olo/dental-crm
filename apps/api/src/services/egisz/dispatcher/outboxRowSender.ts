@@ -6,7 +6,7 @@
 
 import { N3HealthVipnetGateway } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	egiszLogs,
 	egiszOutbox,
@@ -47,28 +47,31 @@ export async function processOutboxRow(
 	activeClient: OiisGatewayClient,
 ): Promise<ProcessOutboxRowResult> {
 	try {
-		const [patientRow] = await db
-			.select({
-				fullName: patients.fullName,
-				birthDate: patients.birthDate,
-				administrativeProfile: patients.administrativeProfile,
-			})
-			.from(patients)
-			.where(eq(patients.id, row.patientId))
-			.limit(1);
-
-		let doctorRow: { fullName: string; snils: string | null } | undefined = undefined;
-		if (row.doctorId) {
-			const [doc] = await db
+		const { patientRow, doctorRow } = await withTenantCtx(row.organizationId, async (tx) => {
+			const [p] = await tx
 				.select({
-					fullName: users.fullName,
-					snils: users.snils,
+					fullName: patients.fullName,
+					birthDate: patients.birthDate,
+					administrativeProfile: patients.administrativeProfile,
 				})
-				.from(users)
-				.where(eq(users.id, row.doctorId))
+				.from(patients)
+				.where(and(eq(patients.id, row.patientId), eq(patients.organizationId, row.organizationId)))
 				.limit(1);
-			doctorRow = doc;
-		}
+
+			let d: { fullName: string; snils: string | null } | undefined = undefined;
+			if (row.doctorId) {
+				const [doc] = await tx
+					.select({
+						fullName: users.fullName,
+						snils: users.snils,
+					})
+					.from(users)
+					.where(and(eq(users.id, row.doctorId), eq(users.organizationId, row.organizationId)))
+					.limit(1);
+				d = doc;
+			}
+			return { patientRow: p, doctorRow: d };
+		});
 
 		let snils = patientRow ? extractSnils(patientRow.administrativeProfile) : "";
 		const adminProfile = (patientRow?.administrativeProfile && typeof patientRow.administrativeProfile === "object")
@@ -319,7 +322,7 @@ export async function processOutboxRow(
 				...(receipt ? { receipt } : {}),
 			};
 
-			await db.transaction(async (tx) => {
+			await withTenantCtx(row.organizationId, async (tx) => {
 				await tx
 					.update(egiszOutbox)
 					.set({
@@ -331,7 +334,7 @@ export async function processOutboxRow(
 						lockedBy: null,
 						updatedAt: new Date(),
 					})
-					.where(eq(egiszOutbox.id, row.id));
+					.where(and(eq(egiszOutbox.id, row.id), eq(egiszOutbox.organizationId, row.organizationId)));
 
 				await tx
 					.update(egiszLogs)
@@ -407,7 +410,7 @@ export async function processOutboxRow(
 				? `[DLQ] Исчерпан лимит ${row.maxAttempts} попыток отправки: ${submissionRes.errorMessage || "Ошибка передачи"}`
 				: submissionRes.errorMessage || "Ошибка при передаче документа в РЭМД";
 
-			await db.transaction(async (tx) => {
+			await withTenantCtx(row.organizationId, async (tx) => {
 				await tx
 					.update(egiszOutbox)
 					.set({
@@ -420,7 +423,7 @@ export async function processOutboxRow(
 						lockedBy: null,
 						updatedAt: new Date(),
 					})
-					.where(eq(egiszOutbox.id, row.id));
+					.where(and(eq(egiszOutbox.id, row.id), eq(egiszOutbox.organizationId, row.organizationId)));
 
 				await tx
 					.update(egiszLogs)
@@ -486,7 +489,7 @@ export async function processOutboxRow(
 			? `[DLQ] Исчерпан лимит ${row.maxAttempts} попыток отправки (сетевой сбой): ${errorMsg}`
 			: errorMsg;
 
-		await db.transaction(async (tx) => {
+		await withTenantCtx(row.organizationId, async (tx) => {
 			await tx
 				.update(egiszOutbox)
 				.set({
@@ -499,7 +502,7 @@ export async function processOutboxRow(
 					lockedBy: null,
 					updatedAt: new Date(),
 				})
-				.where(eq(egiszOutbox.id, row.id));
+				.where(and(eq(egiszOutbox.id, row.id), eq(egiszOutbox.organizationId, row.organizationId)));
 
 			await appendEgiszAuditLog(tx, {
 				organizationId: row.organizationId,

@@ -8,10 +8,16 @@ import {
 } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { protocolTemplates } from "../db/schema.js";
 import { ensureClinicalTemplatesSeeded } from "../scripts/seedTemplates.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
+
+const TEMPLATE_UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const TEMPLATE_INVALID_ID_MESSAGE =
+	"Протокол приёма с таким номером не найден. Обновите список протоколов и откройте нужный шаблон заново.";
 
 function mapProtocolTemplateToLegacy(row: typeof protocolTemplates.$inferSelect) {
 	return {
@@ -177,10 +183,12 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 			});
 
 		// Auto-seed built-in templates if none exist
-		const existing = await db
-			.select()
-			.from(protocolTemplates)
-			.where(eq(protocolTemplates.organizationId, orgId));
+		const existing = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(protocolTemplates)
+				.where(eq(protocolTemplates.organizationId, orgId)),
+		);
 
 		let seedFailure: unknown = null;
 		if (existing.length === 0) {
@@ -194,10 +202,14 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 			}
 		}
 
-		const templates = (await db
-			.select()
-			.from(protocolTemplates)
-			.where(eq(protocolTemplates.organizationId, orgId))).map(mapProtocolTemplateToLegacy);
+		const templates = (
+			await withTenantCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(protocolTemplates)
+					.where(eq(protocolTemplates.organizationId, orgId)),
+			)
+		).map(mapProtocolTemplateToLegacy);
 
 		if (seedFailure && templates.length === 0) {
 			return reply.code(503).send({
@@ -235,15 +247,24 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 				message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
 			});
 
-		const [templateRow] = await db
-			.select()
-			.from(protocolTemplates)
-			.where(
-				and(
-					eq(protocolTemplates.id, id),
-					eq(protocolTemplates.organizationId, orgId),
+		if (!TEMPLATE_UUID_PATTERN.test(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: TEMPLATE_INVALID_ID_MESSAGE,
+			});
+		}
+
+		const [templateRow] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(protocolTemplates)
+				.where(
+					and(
+						eq(protocolTemplates.id, id),
+						eq(protocolTemplates.organizationId, orgId),
+					),
 				),
-			);
+		);
 
 		if (!templateRow)
 			return reply
@@ -280,27 +301,33 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 		const str = (v: unknown): string | undefined =>
 			typeof v === "string" ? v : undefined;
 
-		const [inserted] = await db
-			.insert(protocolTemplates)
-			.values({
-				organizationId: orgId,
-				title,
-				visitReason: str(parsedBody.data.category) || "",
-				specialty: resolveTemplateSpecialty(parsedBody.data.specialty),
-				complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
-				objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
-				treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",
-				diagnosisHints: parsedBody.data.defaultIcd10 ? [String(parsedBody.data.defaultIcd10)] : [],
-				defaultDurationMinutes: 30,
-				requiredDocuments: [],
-				suggestedImaging: [],
-				safetyWarnings: [],
-				updatedAt: new Date(),
-			})
-			.returning();
+		const [inserted] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.insert(protocolTemplates)
+				.values({
+					organizationId: orgId,
+					title,
+					visitReason: str(parsedBody.data.category) || "",
+					specialty: resolveTemplateSpecialty(parsedBody.data.specialty),
+					complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
+					objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
+					treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",
+					diagnosisHints: parsedBody.data.defaultIcd10 ? [String(parsedBody.data.defaultIcd10)] : [],
+					defaultDurationMinutes: 30,
+					requiredDocuments: [],
+					suggestedImaging: [],
+					safetyWarnings: [],
+					updatedAt: new Date(),
+				})
+				.returning(),
+		);
 
 		if (!inserted) {
-			return reply.code(500).send({ error: "FailedToInsertTemplate" });
+			return reply.code(500).send({
+				error: "FailedToInsertTemplate",
+				message:
+					"Новый протокол приёма не сохранился из-за сбоя записи в базе клиники. Проверьте поля формы и повторите сохранение или обновите страницу.",
+			});
 		}
 
 		return reply.code(201).send({ template: mapProtocolTemplateToLegacy(inserted) });
@@ -317,29 +344,42 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 				message: TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE,
 			});
 
-		const [template] = await db
-			.select()
-			.from(protocolTemplates)
-			.where(
-				and(
-					eq(protocolTemplates.id, id),
-					eq(protocolTemplates.organizationId, orgId),
-				),
-			);
+		if (!TEMPLATE_UUID_PATTERN.test(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: TEMPLATE_INVALID_ID_MESSAGE,
+			});
+		}
 
-		if (!template)
+		const deletedOutcome = await withTenantCtx(orgId, async (tx) => {
+			const [template] = await tx
+				.select()
+				.from(protocolTemplates)
+				.where(
+					and(
+						eq(protocolTemplates.id, id),
+						eq(protocolTemplates.organizationId, orgId),
+					),
+				);
+
+			if (!template) return false;
+
+			await tx
+				.delete(protocolTemplates)
+				.where(
+					and(
+						eq(protocolTemplates.id, id),
+						eq(protocolTemplates.organizationId, orgId),
+					),
+				);
+			return true;
+		});
+
+		if (!deletedOutcome)
 			return reply
 				.code(404)
 				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
 
-		await db
-			.delete(protocolTemplates)
-			.where(
-				and(
-					eq(protocolTemplates.id, id),
-					eq(protocolTemplates.organizationId, orgId),
-				),
-			);
 		return reply.send({ success: true });
 	});
 
@@ -354,10 +394,12 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 			});
 
 		await ensureClinicalTemplatesSeeded(orgId);
-		const templates = await db
-			.select()
-			.from(protocolTemplates)
-			.where(eq(protocolTemplates.organizationId, orgId));
+		const templates = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(protocolTemplates)
+				.where(eq(protocolTemplates.organizationId, orgId)),
+		);
 		return reply.send({ success: true, count: templates.length });
 	});
 }

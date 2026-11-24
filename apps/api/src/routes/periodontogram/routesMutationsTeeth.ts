@@ -1,10 +1,8 @@
-import { computePayloadHash } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { periodontogramTeeth } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import {
 	batchUpsertTeeth,
 	patchTeethPayloadSchema,
@@ -49,32 +47,7 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 					});
 				}
 				reply.header("Idempotency-Key", idempotencyKey);
-
-				// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
-					}
-				}
 			}
-
-			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
-			if (!snapshot) return;
 
 			const parsed = patchToothBodySchema.safeParse(req.body);
 			if (!parsed.success) {
@@ -106,8 +79,11 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 			if (keratinizedGingivaMm !== undefined)
 				updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
 
-			const updatedTooth = await db.transaction(async (tx) => {
-				const [result] = await tx
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+				if (!snapshot) return { kind: "snapshot_rejected" as const };
+
+				const [updatedTooth] = await tx
 					.update(periodontogramTeeth)
 					.set(updateValues)
 					.where(
@@ -117,48 +93,22 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 						),
 					)
 					.returning();
-				return result;
+
+				if (!updatedTooth) {
+					return { kind: "tooth_not_found" as const };
+				}
+				return { kind: "updated" as const, updatedTooth };
 			});
 
-			if (!updatedTooth) {
+			if (txResult.kind === "snapshot_rejected") return;
+			if (txResult.kind === "tooth_not_found") {
 				return reply.code(404).send({
 					error: "ToothNotFound",
 					message: `Зуб ${toothNumber} не найден в данном осмотре`,
 				});
 			}
 
-			const responsePayload = { success: true, data: updatedTooth };
-
-			if (idempotencyKey) {
-				try {
-					await db
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(req.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-								lockedAt: new Date(),
-							},
-						});
-				} catch (idemErr) {
-					req.log.warn(
-						{ err: idemErr, idempotencyKey, orgId },
-						"[periodontogram] Не удалось сохранить ключ идемпотентности",
-					);
-				}
-			}
-
-			return reply.send(responsePayload);
+			return reply.send({ success: true, data: txResult.updatedTooth });
 		},
 	);
 
@@ -175,6 +125,13 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 		const { id } = req.params as { id: string };
 
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({
+				error: "InvalidSnapshotId",
+				message: "Некорректный идентификатор осмотра",
+			});
+		}
+
 		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
 		if (idempotencyKey) {
 			if (!UUID_REGEX.test(idempotencyKey)) {
@@ -184,32 +141,7 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
-
-			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-			}
 		}
-
-		const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
-		if (!snapshot) return;
 
 		const parsed = patchTeethPayloadSchema.safeParse(req.body);
 		if (!parsed.success) {
@@ -222,43 +154,18 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 		const rawList = Array.isArray(parsed.data)
 			? parsed.data
 			: parsed.data.teeth;
-		if (rawList.length === 0) return reply.send({ success: true, data: [] });
 
-		const updatedList = await db.transaction(async (tx) => {
-			return await batchUpsertTeeth(tx, id, rawList);
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+			if (!snapshot) return { kind: "snapshot_rejected" as const };
+			if (rawList.length === 0) return { kind: "empty" as const };
+			const updatedList = await batchUpsertTeeth(tx, id, rawList);
+			return { kind: "updated" as const, updatedList };
 		});
 
-		const responsePayload = { success: true, data: updatedList };
+		if (txResult.kind === "snapshot_rejected") return;
+		if (txResult.kind === "empty") return reply.send({ success: true, data: [] });
 
-		if (idempotencyKey) {
-			try {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(req.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-							lockedAt: new Date(),
-						},
-					});
-			} catch (idemErr) {
-				req.log.warn(
-					{ err: idemErr, idempotencyKey, orgId },
-					"[periodontogram] Не удалось сохранить ключ идемпотентности",
-				);
-			}
-		}
-
-		return reply.send(responsePayload);
+		return reply.send({ success: true, data: txResult.updatedList });
 	});
 }

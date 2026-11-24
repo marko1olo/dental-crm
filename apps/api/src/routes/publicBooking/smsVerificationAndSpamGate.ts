@@ -8,12 +8,14 @@
 import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass } from "../../db/rls.js";
-import { organizations, patients, portalOtpCodes, users } from "../../db/schema.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { hashCredential, verifyCredential } from "../../utils/cryptoHelper.js";
 import { resolveChannelCredentials, sendThroughChannel } from "../../services/communications/channelRouter.js";
 import { RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from "./types.js";
+
+const logger = createApiLogger("publicBookingOtp");
 
 export const OTP_TTL_MS = 5 * 60 * 1000; // 5 минут
 export const OTP_COOLDOWN_MS = 60 * 1000; // 60 секунд
@@ -173,26 +175,28 @@ export class BookingVerificationEngine {
 		try {
 			const targetOrgId = organizationId ? await resolveDefaultOrganizationId(organizationId) : null;
 			if (targetOrgId) {
-				const [pt] = await db
-					.select({ id: patients.id })
-					.from(patients)
-					.where(
-						and(
-							eq(patients.organizationId, targetOrgId),
-							or(eq(patients.phone, phone), eq(patients.phone, cleanPhone)),
-						),
-					)
-					.limit(1);
+				await withTenantCtx(targetOrgId, async (tx) => {
+					const [pt] = await tx
+						.select({ id: patients.id })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, targetOrgId),
+								or(eq(patients.phone, phone), eq(patients.phone, cleanPhone)),
+							),
+						)
+						.limit(1);
 
-				const hashed = await hashCredential(code);
-				await db.insert(portalOtpCodes).values({
-					organizationId: targetOrgId,
-					patientId: pt?.id ?? null,
-					phone: cleanPhone,
-					codeHash: hashed,
-					channel: method,
-					deliveryStatus: "sent",
-					expiresAt: new Date(now + OTP_TTL_MS),
+					const hashed = await hashCredential(code);
+					await tx.insert(portalOtpCodes).values({
+						organizationId: targetOrgId,
+						patientId: pt?.id ?? null,
+						phone: cleanPhone,
+						codeHash: hashed,
+						channel: method,
+						deliveryStatus: "sent",
+						expiresAt: new Date(now + OTP_TTL_MS),
+					});
 				});
 
 				// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
@@ -212,13 +216,19 @@ export class BookingVerificationEngine {
 								credentials,
 							);
 						}
-					} catch {
-						// Safe fallback: provider unconfigured or dispatch error — flow continues without hanging
+					} catch (smsErr) {
+						logger.warn(
+							{ err: safeLogError(smsErr), organizationId: targetOrgId, challengeId },
+							"Public booking SMS dispatch failed; in-memory OTP challenge remains active",
+						);
 					}
 				}
 			}
-		} catch {
-			// In test/offline environments, in-memory challenge remains active
+		} catch (dbErr) {
+			logger.warn(
+				{ err: safeLogError(dbErr), organizationId },
+				"Failed to persist public booking OTP challenge to DB; in-memory challenge remains active",
+			);
 		}
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";

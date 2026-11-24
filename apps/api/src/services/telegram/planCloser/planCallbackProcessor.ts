@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { rublesToKopecks } from "@dental/shared";
-import { db } from "../../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	crmLeads,
 	denteTelegramChatLinks,
@@ -56,20 +55,10 @@ export async function getPendingTreatmentPlansForPatient(
 	organizationId?: string,
 ): Promise<PendingTreatmentPlanSummary[]> {
 	try {
-		// Если orgId не передан, получаем его из пациента
-		let resolvedOrgId = organizationId;
-		if (!resolvedOrgId) {
-			const [pat] = await db
-				.select({ organizationId: patients.organizationId })
-				.from(patients)
-				.where(eq(patients.id, patientId))
-				.limit(1);
-			resolvedOrgId = pat?.organizationId;
-		}
-
-		if (!resolvedOrgId) {
+		if (!organizationId) {
 			return [];
 		}
+		const resolvedOrgId = organizationId;
 
 		return await withTenantCtx(resolvedOrgId, async (tx) => {
 			// Загружаем пациента
@@ -296,30 +285,25 @@ export async function getPendingPlanById(
 	organizationId?: string,
 ): Promise<PendingTreatmentPlanSummary | null> {
 	try {
-		const planRow = await (organizationId
-			? withTenantCtx(organizationId, async (tx) => {
-					const [row] = await tx
-						.select()
-						.from(treatmentPlans)
-						.where(eq(treatmentPlans.id, planId))
-						.limit(1);
-					return row;
-				})
-			: withSuperuserBypass(async (tx) => {
-					const [row] = await tx
-						.select()
-						.from(treatmentPlans)
-						.where(eq(treatmentPlans.id, planId))
-						.limit(1);
-					return row;
-				}));
+		if (!organizationId) {
+			logger.warn({ planId }, "getPendingPlanById rejected: organizationId is required");
+			return null;
+		}
+
+		const planRow = await withTenantCtx(organizationId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(treatmentPlans)
+				.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+				.limit(1);
+			return row;
+		});
 
 		if (!planRow) {
 			return null;
 		}
 
-		const resolvedOrgId = organizationId || planRow.organizationId;
-		const list = await getPendingTreatmentPlansForPatient(planRow.patientId, resolvedOrgId);
+		const list = await getPendingTreatmentPlansForPatient(planRow.patientId, organizationId);
 		const found = list.find((p) => p.planId === planId);
 		if (found) return found;
 

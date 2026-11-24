@@ -7,21 +7,24 @@ import { clinicWorkflows } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
-const createWorkflowSchema = z.object({
-	name: z.string().min(1).max(255),
-	definition: z.union([z.string(), z.record(z.unknown()), z.array(z.unknown())]),
-	trigger: z.string().optional().nullable(),
-	active: z.boolean().optional().default(false),
-});
+const createWorkflowSchema = z
+	.object({
+		name: z.string().min(1).max(255),
+		definition: z.union([z.string(), z.record(z.unknown()), z.array(z.unknown())]),
+		trigger: z.string().optional().nullable(),
+		active: z.boolean().optional().default(false),
+	})
+	.strict();
 
 const toggleWorkflowBodySchema = z
 	.object({
 		active: z.boolean().optional(),
 	})
+	.strict()
 	.optional();
 
 const workflowParamsSchema = z.object({
-	id: z.string().min(1),
+	id: z.string().uuid(),
 });
 
 function serializeWorkflow(wf: typeof clinicWorkflows.$inferSelect) {
@@ -168,7 +171,14 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 		}
 
 		const body = toggleWorkflowBodySchema.safeParse(request.body ?? {});
-		const requestedActive = body.success ? body.data?.active : undefined;
+		if (!body.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры переключения сценария.",
+				details: body.error.format(),
+			});
+		}
+		const requestedActive = body.data?.active;
 
 		const [existing] = await db
 			.select()

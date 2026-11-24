@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "./client.js";
+import { type TenantDb, withTenantCtx } from "./rls.js";
 
 /**
  * Доступ к таблице `clinical_tasks`.
@@ -148,6 +149,7 @@ async function assertBelongsToOrganization(
 	id: string,
 	organizationId: string,
 	humanName: string,
+	txDb: TenantDb = db,
 ): Promise<void> {
 	const tableRef =
 		table === "patients"
@@ -155,7 +157,7 @@ async function assertBelongsToOrganization(
 			: table === "treatment_plans"
 				? sql`treatment_plans`
 				: sql`users`;
-	const found = await db.execute(
+	const found = await txDb.execute(
 		sql`SELECT 1 FROM ${tableRef} WHERE id = ${id}::uuid AND organization_id = ${organizationId}::uuid LIMIT 1`,
 	);
 	if ((found.rows ?? []).length === 0) {
@@ -171,47 +173,53 @@ async function assertBelongsToOrganization(
  *
  * Повторная отправка того же завершения этапа не плодит дубли: если у пациента
  * уже висит незакрытая задача с тем же типом, заголовком и текстом, возвращается
- * она же. Это защита от двойного нажатия, а не транзакционная гарантия —
- * уникального индекса на таблице нет, и при двух одновременных запросах гонка
- * всё ещё возможна. Индекс требует миграции и вынесен в долг.
+ * она же. Транзакционная защита обеспечивается `withTenantCtx` + `pg_advisory_xact_lock`.
  */
 export async function insertClinicalTaskInDb(
 	organizationId: string,
 	input: NewClinicalTask,
 ): Promise<ClinicalTaskRecord> {
-	await assertBelongsToOrganization(
-		"patients",
-		"patientId",
-		input.patientId,
-		organizationId,
-		"Пациент",
-	);
-	if (input.treatmentPlanId) {
-		await assertBelongsToOrganization(
-			"treatment_plans",
-			"treatmentPlanId",
-			input.treatmentPlanId,
-			organizationId,
-			"План лечения",
+	return withTenantCtx(organizationId, async (tx) => {
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', 'clinical_task', ${organizationId}::text, ${input.patientId}::text, ${input.taskType}::text, ${input.title}::text)))`,
 		);
-	}
-	if (input.assignedDoctorId) {
+
 		await assertBelongsToOrganization(
-			"users",
-			"assignedDoctorId",
-			input.assignedDoctorId,
+			"patients",
+			"patientId",
+			input.patientId,
 			organizationId,
-			"Врач",
+			"Пациент",
+			tx,
 		);
-	}
+		if (input.treatmentPlanId) {
+			await assertBelongsToOrganization(
+				"treatment_plans",
+				"treatmentPlanId",
+				input.treatmentPlanId,
+				organizationId,
+				"План лечения",
+				tx,
+			);
+		}
+		if (input.assignedDoctorId) {
+			await assertBelongsToOrganization(
+				"users",
+				"assignedDoctorId",
+				input.assignedDoctorId,
+				organizationId,
+				"Врач",
+				tx,
+			);
+		}
 
-	const description = input.description ?? null;
-	const treatmentPlanId = input.treatmentPlanId ?? null;
-	const assignedDoctorId = input.assignedDoctorId ?? null;
-	const dueAt = toIsoOrNull(input.dueAt);
-	const status: ClinicalTaskStatus = input.status ?? "pending";
+		const description = input.description ?? null;
+		const treatmentPlanId = input.treatmentPlanId ?? null;
+		const assignedDoctorId = input.assignedDoctorId ?? null;
+		const dueAt = toIsoOrNull(input.dueAt);
+		const status: ClinicalTaskStatus = input.status ?? "pending";
 
-	const inserted = await db.execute(sql`
+		const inserted = await tx.execute(sql`
     INSERT INTO clinical_tasks (
       organization_id, patient_id, treatment_plan_id, assigned_doctor_id,
       task_type, status, title, description, due_at
@@ -232,11 +240,11 @@ export async function insertClinicalTaskInDb(
     RETURNING *
   `);
 
-	const insertedRow = (inserted.rows ?? [])[0];
-	if (insertedRow)
-		return mapClinicalTaskRow(insertedRow as Record<string, unknown>);
+		const insertedRow = (inserted.rows ?? [])[0];
+		if (insertedRow)
+			return mapClinicalTaskRow(insertedRow as Record<string, unknown>);
 
-	const existing = await db.execute(sql`
+		const existing = await tx.execute(sql`
     SELECT * FROM clinical_tasks
     WHERE organization_id = ${organizationId}::uuid
       AND patient_id = ${input.patientId}::uuid
@@ -247,13 +255,14 @@ export async function insertClinicalTaskInDb(
     ORDER BY created_at ASC
     LIMIT 1
   `);
-	const existingRow = (existing.rows ?? [])[0];
-	if (!existingRow) {
-		throw new Error(
-			"Клиническая задача не записана и не найдена повторно — вставка была отменена условием защиты от дублей, но открытой задачи в базе нет.",
-		);
-	}
-	return mapClinicalTaskRow(existingRow as Record<string, unknown>);
+		const existingRow = (existing.rows ?? [])[0];
+		if (!existingRow) {
+			throw new Error(
+				"Клиническая задача не записана и не найдена повторно — вставка была отменена условием защиты от дублей, но открытой задачи в базе нет.",
+			);
+		}
+		return mapClinicalTaskRow(existingRow as Record<string, unknown>);
+	});
 }
 
 /** Читает задачи организации; при указанном пациенте — только его. */
@@ -261,10 +270,12 @@ export async function getClinicalTasksFromDb(
 	organizationId: string,
 	patientId?: string,
 ): Promise<ClinicalTaskRecord[]> {
-	const query = patientId
-		? sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid AND patient_id = ${patientId}::uuid ORDER BY created_at DESC`
-		: sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid ORDER BY created_at DESC`;
-	const res = await db.execute(query);
+	const res = await withTenantCtx(organizationId, async (tx) => {
+		const query = patientId
+			? sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid AND patient_id = ${patientId}::uuid ORDER BY created_at DESC`
+			: sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid ORDER BY created_at DESC`;
+		return tx.execute(query);
+	});
 	// `row: unknown`, а не выведенный any: у сырого SQL через db.execute тип строки
 	// неизвестен, и приведение к Record<string, unknown> уже стоит внутри вызова.
 	// Аннотация делает это явным для noImplicitAny и не меняет поведения.
@@ -281,7 +292,8 @@ export async function setClinicalTaskStatusInDb(
 	taskId: string,
 	status: ClinicalTaskStatus,
 ): Promise<ClinicalTaskRecord | null> {
-	const query = sql`
+	const res = await withTenantCtx(organizationId, async (tx) => {
+		const query = sql`
 		UPDATE clinical_tasks
 		SET
 			status = ${status}::clinical_task_status,
@@ -291,7 +303,8 @@ export async function setClinicalTaskStatusInDb(
 		  AND id = ${taskId}::uuid
 		RETURNING *
 	`;
-	const res = await db.execute(query);
+		return tx.execute(query);
+	});
 	const row = (res.rows ?? [])[0];
 	return row ? mapClinicalTaskRow(row as Record<string, unknown>) : null;
 }

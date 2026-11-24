@@ -42,6 +42,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Transform, type TransformCallback } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
+import zlib from "node:zlib";
 import { createApiLogger, safeLogError } from "../observability/index.js";
 
 const logger = createApiLogger("backupWorker");
@@ -674,6 +675,137 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 		if (filePath) removePartialFile(filePath);
 		const message = error instanceof Error ? error.message : String(error);
 		logger.error({ err: safeLogError(error), filePath }, "Исключение при создании копии");
+		return { success: false, error: message };
+	}
+}
+
+const TENANT_BACKUP_FORMAT = "DENTE_TENANT_BACKUP_V1";
+
+/**
+ * Создаёт строго изолированную зашифрованную резервную копию ОДНОЙ клиники
+ * внутри PG18 FORCE RLS транзакции (`withTenantCtx(organizationId)`).
+ * Исключает утечку данных других арендаторов через `pg_dump` всей БД.
+ */
+export async function createTenantEncryptedBackup(
+	organizationId: string,
+): Promise<BackupResult> {
+	const keyResult = resolveEncryptionKey();
+	if ("error" in keyResult) {
+		logger.error(
+			{ err: keyResult.error, organizationId },
+			"CLINIC_ENCRYPTION_KEY invalid or missing for tenant backup",
+		);
+		return { success: false, error: keyResult.error };
+	}
+
+	let filePath = "";
+	try {
+		const backupsDir = backupsDirectory();
+		fs.mkdirSync(backupsDir, { recursive: true });
+
+		// Ленивый импорт: не тянем db/client.ts при старте офлайн-демона или unit-тестов без DATABASE_URL.
+		const [{ eq }, { withTenantCtx }, schema] = await Promise.all([
+			import("drizzle-orm"),
+			import("../db/rls.js"),
+			import("../db/schema.js"),
+		]);
+
+		const snapshot = await withTenantCtx(organizationId, async (tx) => {
+			const [org] = await tx
+				.select()
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.limit(1);
+			if (!org) {
+				return null;
+			}
+			const [
+				clinicsRows,
+				chairsRows,
+				usersRows,
+				patientsRows,
+				appointmentsRows,
+				visitsRows,
+				treatmentPlansRows,
+				invoicesRows,
+				paymentsRows,
+				consentsRows,
+			] = await Promise.all([
+				tx.select().from(schema.clinics).where(eq(schema.clinics.organizationId, organizationId)),
+				tx.select().from(schema.chairs).where(eq(schema.chairs.organizationId, organizationId)),
+				tx.select({
+					id: schema.users.id,
+					organizationId: schema.users.organizationId,
+					fullName: schema.users.fullName,
+					role: schema.users.role,
+					email: schema.users.email,
+					phone: schema.users.phone,
+					isActive: schema.users.isActive,
+					createdAt: schema.users.createdAt,
+				}).from(schema.users).where(eq(schema.users.organizationId, organizationId)),
+				tx.select().from(schema.patients).where(eq(schema.patients.organizationId, organizationId)),
+				tx.select().from(schema.appointments).where(eq(schema.appointments.organizationId, organizationId)),
+				tx.select().from(schema.visits).where(eq(schema.visits.organizationId, organizationId)),
+				tx.select().from(schema.treatmentPlans).where(eq(schema.treatmentPlans.organizationId, organizationId)),
+				tx.select().from(schema.invoices).where(eq(schema.invoices.organizationId, organizationId)),
+				tx.select().from(schema.payments).where(eq(schema.payments.organizationId, organizationId)),
+				tx.select().from(schema.patientConsents).where(eq(schema.patientConsents.organizationId, organizationId)),
+			]);
+
+			return {
+				format: TENANT_BACKUP_FORMAT,
+				organizationId,
+				exportedAt: new Date().toISOString(),
+				tables: {
+					organization: org,
+					clinics: clinicsRows,
+					chairs: chairsRows,
+					users: usersRows,
+					patients: patientsRows,
+					appointments: appointmentsRows,
+					visits: visitsRows,
+					treatmentPlans: treatmentPlansRows,
+					invoices: invoicesRows,
+					payments: paymentsRows,
+					patientConsents: consentsRows,
+				},
+			};
+		});
+
+		if (!snapshot) {
+			return {
+				success: false,
+				error: "Организация не найдена для создания резервной копии.",
+			};
+		}
+
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		filePath = path.join(backupsDir, `org_${organizationId}_backup_${timestamp}.dentalbackup`);
+
+		const compressed = zlib.gzipSync(Buffer.from(JSON.stringify(snapshot), "utf8"));
+		const iv = crypto.randomBytes(12);
+		const cipher = crypto.createCipheriv("aes-256-gcm", keyResult.key, iv);
+		cipher.setAAD(Buffer.from(`${TENANT_BACKUP_FORMAT}:${organizationId}`, "utf8"));
+		const encrypted = Buffer.concat([cipher.update(compressed), cipher.final()]);
+		const authTag = cipher.getAuthTag();
+		const header = Buffer.from("DENTETB1", "ascii");
+
+		fs.writeFileSync(filePath, Buffer.concat([header, iv, authTag, encrypted]), { mode: 0o600 });
+
+		logger.info(
+			{
+				organizationId,
+				filePath,
+				patientsCount: snapshot.tables.patients.length,
+				visitsCount: snapshot.tables.visits.length,
+			},
+			"Изолированная резервная копия клиники успешно создана и зашифрована",
+		);
+		return { success: true, filePath };
+	} catch (error) {
+		if (filePath) removePartialFile(filePath);
+		const message = error instanceof Error ? error.message : String(error);
+		logger.error({ err: safeLogError(error), organizationId, filePath }, "Ошибка создания изолированной копии клиники");
 		return { success: false, error: message };
 	}
 }

@@ -1,5 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { organizations, protocolTemplates, dentalSpecialty } from "../db/schema.js";
 import { createApiLogger } from "../observability/logger.js";
 
@@ -463,39 +464,50 @@ function normalizeSpecialty(val: string): (typeof dentalSpecialty.enumValues)[nu
 export async function ensureClinicalTemplatesSeeded(
 	organizationId: string,
 ): Promise<void> {
-	const existing = await db
-		.select()
-		.from(protocolTemplates)
-		.where(eq(protocolTemplates.organizationId, organizationId));
-	const existingTitles = new Set(existing.map((t) => t.title));
+	const seededCount = await withTenantCtx(organizationId, async (tx) => {
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', 'seed_clinical_templates', ${organizationId}::text)))`,
+		);
 
-	const toInsert = BUILT_IN_TEMPLATES.filter(
-		(t) => !existingTitles.has(t.title),
-	);
-	if (toInsert.length === 0) {
+		const existing = await tx
+			.select()
+			.from(protocolTemplates)
+			.where(eq(protocolTemplates.organizationId, organizationId));
+		const existingTitles = new Set(existing.map((t) => t.title));
+
+		const toInsert = BUILT_IN_TEMPLATES.filter(
+			(t) => !existingTitles.has(t.title),
+		);
+		if (toInsert.length === 0) {
+			return 0;
+		}
+
+		await tx.insert(protocolTemplates).values(
+			toInsert.map((template) => ({
+				organizationId,
+				title: template.title,
+				specialty: normalizeSpecialty(template.specialty),
+				visitReason: template.category || "",
+				complaintPrompt: template.prefilledAnamnesis || "",
+				objectiveTemplate: template.prefilledObjective || "",
+				treatmentPlanTemplate: template.prefilledTreatment || "",
+				diagnosisHints: template.defaultIcd10 ? [template.defaultIcd10] : [],
+				defaultDurationMinutes: 30,
+				requiredDocuments: [],
+				suggestedImaging: [],
+				safetyWarnings: [],
+				updatedAt: new Date(),
+			})),
+		);
+		return toInsert.length;
+	});
+
+	if (seededCount === 0) {
 		templatesLogger.info("[Templates] All built-in templates already seeded.");
 		return;
 	}
-
-	for (const template of toInsert) {
-		await db.insert(protocolTemplates).values({
-			organizationId,
-			title: template.title,
-			specialty: normalizeSpecialty(template.specialty),
-			visitReason: template.category || "",
-			complaintPrompt: template.prefilledAnamnesis || "",
-			objectiveTemplate: template.prefilledObjective || "",
-			treatmentPlanTemplate: template.prefilledTreatment || "",
-			diagnosisHints: template.defaultIcd10 ? [template.defaultIcd10] : [],
-			defaultDurationMinutes: 30,
-			requiredDocuments: [],
-			suggestedImaging: [],
-			safetyWarnings: [],
-			updatedAt: new Date(),
-		});
-	}
 	templatesLogger.info(
-		`[Templates] Seeded ${toInsert.length} built-in clinical templates.`,
+		`[Templates] Seeded ${seededCount} built-in clinical templates.`,
 	);
 }
 

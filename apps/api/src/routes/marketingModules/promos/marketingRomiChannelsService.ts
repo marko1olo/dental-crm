@@ -3,7 +3,7 @@
  */
 
 import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	type AdvertisingChannelInput,
@@ -14,7 +14,7 @@ export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise
 	flags: Record<string, unknown>;
 	channels: AdvertisingChannelInput[];
 }> {
-	return db.transaction(async (tx) => {
+	return withTenantCtx(orgId, async (tx) => {
 		const [org] = await tx
 			.select({ flags: organizations.workspaceFeatureFlags })
 			.from(organizations)

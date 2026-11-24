@@ -4,6 +4,7 @@ import {
 	updateChairWorkingHoursSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	createChairInDb,
 	deactivateChairInDb,
@@ -38,7 +39,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/chairs", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const settings = await getClinicSettingsFromDb(orgId);
+		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
 		return settings.chairs.map((c) => chairSchema.parse(c));
 	});
 
@@ -66,9 +67,11 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				message: chairCreateValidationMessage,
 			};
 		}
-		await createChairInDb(orgId, input);
-		const settings = await getClinicSettingsFromDb(orgId);
-		const created = settings.chairs.find((c) => c.name === input.name);
+		const created = await withTenantCtx(orgId, async () => {
+			await createChairInDb(orgId, input);
+			const settings = await getClinicSettingsFromDb(orgId);
+			return settings.chairs.find((c) => c.name === input.name);
+		});
 		reply.code(201);
 		return chairSchema.parse(created);
 	});
@@ -99,6 +102,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 					message: chairWorkingHoursRouteValidationMessage,
 				};
 			}
+			const chairId = params.chairId;
 			const input = parseSettingsPayload(
 				updateChairWorkingHoursSchema,
 				request.body,
@@ -111,10 +115,13 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				};
 			}
 			try {
-				await updateChairWorkingHoursInDb(orgId, params.chairId, input);
-				const settings = await getClinicSettingsFromDb(orgId);
-				const updated = settings.chairs.find((c) => c.id === params.chairId);
-				if (!updated) throw new Error("Кресло не найдено.");
+				const updated = await withTenantCtx(orgId, async () => {
+					await updateChairWorkingHoursInDb(orgId, chairId, input);
+					const settings = await getClinicSettingsFromDb(orgId);
+					const found = settings.chairs.find((c) => c.id === chairId);
+					if (!found) throw new Error("Кресло не найдено.");
+					return found;
+				});
 				return chairSchema.parse(updated);
 			} catch (error) {
 				return chairWorkingHoursRejection(reply, error);
@@ -152,6 +159,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				message: chairProfileRouteValidationMessage,
 			};
 		}
+		const chairId = params.chairId;
 		const input = parseSettingsPayload(updateChairProfileSchema, request.body);
 		if (!input) {
 			reply.code(400);
@@ -168,10 +176,13 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			await updateChairProfileInDb(orgId, params.chairId, input);
-			const settings = await getClinicSettingsFromDb(orgId);
-			const updated = settings.chairs.find((c) => c.id === params.chairId);
-			if (!updated) throw new Error("Кресло не найдено.");
+			const updated = await withTenantCtx(orgId, async () => {
+				await updateChairProfileInDb(orgId, chairId, input);
+				const settings = await getClinicSettingsFromDb(orgId);
+				const found = settings.chairs.find((c) => c.id === chairId);
+				if (!found) throw new Error("Кресло не найдено.");
+				return found;
+			});
 			return chairSchema.parse(updated);
 		} catch (error) {
 			return chairMutationRejection(
@@ -215,11 +226,15 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				message: chairDeactivateRouteValidationMessage,
 			};
 		}
+		const chairId = params.chairId;
 		try {
-			await deactivateChairInDb(orgId, params.chairId);
-			const settings = await getClinicSettingsFromDb(orgId);
-			const updated = settings.chairs.find((c) => c.id === params.chairId);
-			if (!updated) throw new Error("Кресло не найдено.");
+			const updated = await withTenantCtx(orgId, async () => {
+				await deactivateChairInDb(orgId, chairId);
+				const settings = await getClinicSettingsFromDb(orgId);
+				const found = settings.chairs.find((c) => c.id === chairId);
+				if (!found) throw new Error("Кресло не найдено.");
+				return found;
+			});
 			return chairSchema.parse(updated);
 		} catch (error) {
 			return chairMutationRejection(

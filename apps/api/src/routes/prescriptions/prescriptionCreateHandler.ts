@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -43,36 +43,6 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 		});
 	}
 	const input = parsed.data;
-
-	const [patient] = await db
-		.select()
-		.from(patients)
-		.where(and(eq(patients.id, input.patientId), eq(patients.organizationId, orgId)))
-		.limit(1);
-
-	if (!patient) {
-		return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
-	}
-
-	if (!patient.birthDate) {
-		return reply.code(422).send({
-			error: "PatientBirthDateRequired",
-			message: "Для выписки электронного рецепта необходимо указать дату рождения пациента в его медицинской карте.",
-		});
-	}
-
-	if (isAnonymousOmsPatient(patient, input.patientOmsPolicy, input.preferentialBenefitCode)) {
-		return reply.code(422).send({
-			error: "OmsIdentificationRequiredError",
-			message: "Отказ: выписка льготных рецептов и привязка полиса ОМС для анонимных пациентов запрещена.",
-		});
-	}
-
-	const doctor = await findPrescribingDoctor(orgId, input.prescribingDoctorId, identity.userId);
-	if (!doctor) {
-		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден." });
-	}
-
 	const now = new Date();
 	const { validityDaysNum, expiresAt, prefix, prescriptionNumber } =
 		calculatePrescriptionValidityAndNumber(input.formType, input.validityPeriod, now);
@@ -81,42 +51,90 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 		[item.tradeName, item.innLatin].filter((n): n is string => typeof n === "string" && n.trim().length > 0),
 	);
 
-	const { ddiAudit, safetyAuditSnapshotJson } = await auditPrescriptionDdiAndAllergies(
-		orgId,
-		input.patientId,
-		proposedDrugNames,
-		now,
-	);
+	const outcome = await withTenantCtx(orgId, async (tx) => {
+		const [patient] = await tx
+			.select()
+			.from(patients)
+			.where(and(eq(patients.id, input.patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
 
-	const created = await insertPrescriptionWithItems(
-		orgId,
-		patient,
-		doctor.id,
-		doctor.fullName,
-		input,
-		prefix,
-		prescriptionNumber,
-		expiresAt,
-		safetyAuditSnapshotJson,
-		ddiAudit.drugInteractions.length === 0,
-		now,
-	);
+		if (!patient) {
+			return { kind: "patient_not_found" as const };
+		}
 
-	await auditMedicalAccessFromRequest(request, {
-		organizationId: orgId,
-		patientId: created.patientId,
-		action: "CREATE_PRESCRIPTION",
-		diagnosis: created.clinicalDiagnosisMkb10 ?? "Назначение лекарственных препаратов",
-		metadata: {
-			prescriptionId: created.id,
-			prescriptionNumber: created.prescriptionNumber,
-			formType: created.formType,
-		},
+		if (!patient.birthDate) {
+			return { kind: "birth_date_required" as const };
+		}
+
+		if (isAnonymousOmsPatient(patient, input.patientOmsPolicy, input.preferentialBenefitCode)) {
+			return { kind: "oms_anonymous_denied" as const };
+		}
+
+		const doctor = await findPrescribingDoctor(orgId, input.prescribingDoctorId, identity.userId, tx);
+		if (!doctor) {
+			return { kind: "doctor_not_found" as const };
+		}
+
+		const { ddiAudit, safetyAuditSnapshotJson } = await auditPrescriptionDdiAndAllergies(
+			orgId,
+			input.patientId,
+			proposedDrugNames,
+			now,
+			tx,
+		);
+
+		const created = await insertPrescriptionWithItems(
+			orgId,
+			patient,
+			doctor.id,
+			doctor.fullName,
+			input,
+			prefix,
+			prescriptionNumber,
+			expiresAt,
+			safetyAuditSnapshotJson,
+			ddiAudit.drugInteractions.length === 0,
+			now,
+			tx,
+		);
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: created.patientId,
+			action: "CREATE_PRESCRIPTION",
+			diagnosis: created.clinicalDiagnosisMkb10 ?? "Назначение лекарственных препаратов",
+			metadata: {
+				prescriptionId: created.id,
+				prescriptionNumber: created.prescriptionNumber,
+				formType: created.formType,
+			},
+		});
+
+		return { kind: "created" as const, created };
 	});
+
+	if (outcome.kind === "patient_not_found") {
+		return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
+	}
+	if (outcome.kind === "birth_date_required") {
+		return reply.code(422).send({
+			error: "PatientBirthDateRequired",
+			message: "Для выписки электронного рецепта необходимо указать дату рождения пациента в его медицинской карте.",
+		});
+	}
+	if (outcome.kind === "oms_anonymous_denied") {
+		return reply.code(422).send({
+			error: "OmsIdentificationRequiredError",
+			message: "Отказ: выписка льготных рецептов и привязка полиса ОМС для анонимных пациентов запрещена.",
+		});
+	}
+	if (outcome.kind === "doctor_not_found") {
+		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден." });
+	}
 
 	return reply.code(201).send({
 		success: true,
-		prescription: created,
+		prescription: outcome.created,
 		expiresAt: expiresAt.toISOString(),
 		validityDays: validityDaysNum,
 	});

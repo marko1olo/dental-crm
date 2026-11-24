@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { calculatePrescriptionExpiration } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import { type patients, users } from "../../db/schema.js";
 
 type PatientRow = typeof patients.$inferSelect;
@@ -47,14 +48,19 @@ export function isAnonymousOmsPatient(patient: PatientRow, patientOmsPolicy?: st
 	return isAnon && Boolean(patientOmsPolicy || benefitCode);
 }
 
-export async function findPrescribingDoctor(orgId: string, doctorId?: string | null, currentUserId?: string | null) {
+export async function findPrescribingDoctor(
+	orgId: string,
+	doctorId?: string | null,
+	currentUserId?: string | null,
+	txDb: TenantDb = db,
+) {
 	const targetDoctorId = doctorId || currentUserId;
 	let [doctor] = targetDoctorId
-		? await db.select().from(users).where(and(eq(users.id, targetDoctorId), eq(users.organizationId, orgId))).limit(1)
+		? await txDb.select().from(users).where(and(eq(users.id, targetDoctorId), eq(users.organizationId, orgId))).limit(1)
 		: [undefined];
 
 	if (!doctor) {
-		const [firstOrgUser] = await db.select().from(users).where(eq(users.organizationId, orgId)).limit(1);
+		const [firstOrgUser] = await txDb.select().from(users).where(eq(users.organizationId, orgId)).limit(1);
 		doctor = firstOrgUser;
 	}
 	return doctor || null;

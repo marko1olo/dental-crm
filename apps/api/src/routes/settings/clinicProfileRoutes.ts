@@ -6,6 +6,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { withTenantCtx } from "../../db/rls.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	applyClinicScalePresetInDb,
@@ -49,14 +50,14 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/clinic", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const settings = await getClinicSettingsFromDb(orgId);
+		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
 		return clinicSettingsSchema.parse(settings);
 	});
 
 	const handleGetClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const settings = await getClinicSettingsFromDb(orgId);
+		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
 		return clinicSettingsSchema.parse(settings).profile;
 	};
 
@@ -66,7 +67,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/clinic/fiscal", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		return getClinicFiscalSettingsFromDb(orgId);
+		return withTenantCtx(orgId, async () => getClinicFiscalSettingsFromDb(orgId));
 	});
 
 	const handleUpdateFiscalSettings = async (
@@ -86,7 +87,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 				message: "Некорректные параметры налогообложения СНО или кассы 54-ФЗ.",
 			};
 		}
-		return updateClinicFiscalSettingsInDb(orgId, input);
+		return withTenantCtx(orgId, async () => updateClinicFiscalSettingsInDb(orgId, input));
 	};
 
 	app.put("/api/settings/clinic/fiscal", handleUpdateFiscalSettings);
@@ -103,8 +104,10 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 				message: clinicModeValidationMessage,
 			};
 		}
-		await updateClinicModeInDb(orgId, input.mode);
-		const settings = await getClinicSettingsFromDb(orgId);
+		const settings = await withTenantCtx(orgId, async () => {
+			await updateClinicModeInDb(orgId, input.mode);
+			return getClinicSettingsFromDb(orgId);
+		});
 		return clinicSettingsSchema.parse(settings);
 	});
 
@@ -125,10 +128,12 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 				message: clinicScalePresetValidationMessage,
 			};
 		}
-		const settings = await applyClinicScalePresetInDb(
-			orgId,
-			input.preset,
-			input.confirmResetExtraChairs,
+		const settings = await withTenantCtx(orgId, async () =>
+			applyClinicScalePresetInDb(
+				orgId,
+				input.preset,
+				input.confirmResetExtraChairs,
+			),
 		);
 		return clinicSettingsSchema.parse(settings);
 	};
@@ -161,8 +166,10 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			await updateClinicProfileInDb(orgId, input);
-			const settings = await getClinicSettingsFromDb(orgId);
+			const settings = await withTenantCtx(orgId, async () => {
+				await updateClinicProfileInDb(orgId, input);
+				return getClinicSettingsFromDb(orgId);
+			});
 			return clinicSettingsSchema.parse(settings);
 		} catch (error) {
 			return clinicProfileMutationRejection(reply, error);

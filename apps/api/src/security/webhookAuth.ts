@@ -20,10 +20,12 @@
 import { createHmac } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { denteVkBotConfigs, denteWhatsappBotConfigs } from "../db/schema.js";
 import { namedDevelopmentModeActive } from "../accessGuard.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const WEBHOOK_SECRET_HEADER = "x-dente-webhook-secret";
 
@@ -200,11 +202,16 @@ export function verifyWebhookSecret(
  * Получение кода подтверждения Callback API для сообщества ВКонтакте.
  */
 export async function getVkConfirmationCode(organizationId: string): Promise<string> {
-	const [cfg] = await db
-		.select({ confirmationCode: denteVkBotConfigs.confirmationCode })
-		.from(denteVkBotConfigs)
-		.where(eq(denteVkBotConfigs.organizationId, organizationId))
-		.limit(1);
+	if (!UUID_REGEX.test(organizationId)) {
+		return process.env.VK_CONFIRMATION_TOKEN || "ok";
+	}
+	const [cfg] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({ confirmationCode: denteVkBotConfigs.confirmationCode })
+			.from(denteVkBotConfigs)
+			.where(eq(denteVkBotConfigs.organizationId, organizationId))
+			.limit(1),
+	);
 
 	return cfg?.confirmationCode || process.env.VK_CONFIRMATION_TOKEN || "ok";
 }
@@ -221,11 +228,15 @@ export async function handleWebhookGetHandshake(
 ): Promise<{ handled: boolean; statusCode: number; payload: string }> {
 	// WhatsApp Webhook Challenge
 	if (channel === "whatsapp" && query["hub.mode"] === "subscribe") {
-		const [waConfig] = await db
-			.select({ webhookVerifyToken: denteWhatsappBotConfigs.webhookVerifyToken })
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
-			.limit(1);
+		const [waConfig] = UUID_REGEX.test(organizationId)
+			? await withTenantCtx(organizationId, async (tx) =>
+					tx
+						.select({ webhookVerifyToken: denteWhatsappBotConfigs.webhookVerifyToken })
+						.from(denteWhatsappBotConfigs)
+						.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
+						.limit(1),
+				)
+			: [];
 
 		const expectedToken =
 			waConfig?.webhookVerifyToken ||

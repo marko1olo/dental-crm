@@ -2,6 +2,7 @@ import { and, desc, eq, like, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	attachments,
 	patientPhotoProtocols,
@@ -268,75 +269,85 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 
 		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 
-		// Если передан visitId, проверяем его существование
-		if (visitId) {
-			const [visitRow] = await db
-				.select({ id: visits.id })
-				.from(visits)
-				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-				.limit(1);
-			if (!visitRow) {
-				request.log.warn({ visitId }, "Visit not found for photo protocol binding");
-			}
-		}
-
 		try {
-			// Проверяем наличие существующего протокола той же стадии (stage) и визита для версионности (Мандат 8aq, D-12)
 			const effectiveStage = stage || "before";
-			const conditions = [
-				eq(patientPhotoProtocols.patientId, patientId),
-				eq(patientPhotoProtocols.organizationId, orgId),
-				eq(patientPhotoProtocols.stage, effectiveStage),
-			];
-			if (visitId) {
-				conditions.push(eq(patientPhotoProtocols.visitId, visitId));
-			}
+			const txOutcome = await withTenantCtx(orgId, async (tx) => {
+				if (visitId) {
+					const [visitRow] = await tx
+						.select({ id: visits.id })
+						.from(visits)
+						.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+						.limit(1);
+					if (!visitRow) {
+						return { kind: "visit_not_found" as const };
+					}
+				}
 
-			const [existing] = await db
-				.select({ id: patientPhotoProtocols.id })
-				.from(patientPhotoProtocols)
-				.where(and(...conditions))
-				.orderBy(desc(patientPhotoProtocols.updatedAt))
-				.limit(1);
+				// Проверяем наличие существующего протокола той же стадии (stage) и визита для версионности (Мандат 8aq, D-12)
+				const conditions = [
+					eq(patientPhotoProtocols.patientId, patientId),
+					eq(patientPhotoProtocols.organizationId, orgId),
+					eq(patientPhotoProtocols.stage, effectiveStage),
+				];
+				if (visitId) {
+					conditions.push(eq(patientPhotoProtocols.visitId, visitId));
+				}
 
-			let savedProtocol;
-			if (existing) {
-				const [updated] = await db
-					.update(patientPhotoProtocols)
-					.set({
-						presetId,
-						slots: effectiveSlots,
-						notes: notes || null,
-						visitId: visitId || null,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(patientPhotoProtocols.id, existing.id),
-							eq(patientPhotoProtocols.organizationId, orgId),
-						),
-					)
-					.returning();
-				savedProtocol = updated;
-			} else {
-				const [created] = await db
-					.insert(patientPhotoProtocols)
-					.values({
-						organizationId: orgId,
-						patientId,
-						visitId: visitId || null,
-						presetId,
-						slots: effectiveSlots,
-						stage: effectiveStage,
-						notes: notes || null,
-					})
-					.returning();
-				savedProtocol = created;
+				const [existing] = await tx
+					.select({ id: patientPhotoProtocols.id })
+					.from(patientPhotoProtocols)
+					.where(and(...conditions))
+					.orderBy(desc(patientPhotoProtocols.updatedAt))
+					.limit(1);
+
+				let savedProtocol;
+				if (existing) {
+					const [updated] = await tx
+						.update(patientPhotoProtocols)
+						.set({
+							presetId,
+							slots: effectiveSlots,
+							notes: notes || null,
+							visitId: visitId || null,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientPhotoProtocols.id, existing.id),
+								eq(patientPhotoProtocols.organizationId, orgId),
+							),
+						)
+						.returning();
+					savedProtocol = updated;
+				} else {
+					const [created] = await tx
+						.insert(patientPhotoProtocols)
+						.values({
+							organizationId: orgId,
+							patientId,
+							visitId: visitId || null,
+							presetId,
+							slots: effectiveSlots,
+							stage: effectiveStage,
+							notes: notes || null,
+						})
+						.returning();
+					savedProtocol = created;
+				}
+
+				return { kind: "saved" as const, savedProtocol };
+			});
+
+			if (txOutcome.kind === "visit_not_found") {
+				return reply.code(404).send({
+					error: "VisitNotFound",
+					message: "Указанный приём не найден в этой клинике.",
+				});
 			}
 
 			return reply.code(200).send({
 				success: true,
-				protocol: savedProtocol,
+				protocol: txOutcome.savedProtocol,
 			});
 		} catch (error) {
 			request.log.error(error, "Failed to persist patient photo protocol");

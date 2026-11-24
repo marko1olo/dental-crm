@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
@@ -18,19 +19,20 @@ export async function auditPrescriptionDdiAndAllergies(
 	patientId: string,
 	proposedDrugNames: readonly string[],
 	now: Date,
+	txDb: TenantDb = db,
 ) {
-	const allergies = await db
+	const allergies = await txDb
 		.select()
 		.from(patientDrugAllergies)
 		.where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, patientId)));
 
-	const [patientRow] = await db
+	const [patientRow] = await txDb
 		.select({ notes: patients.notes })
 		.from(patients)
 		.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
 		.limit(1);
 
-	const recent = await db
+	const recent = await txDb
 		.select({ innLatin: electronicPrescriptionItems.innLatin })
 		.from(electronicPrescriptionItems)
 		.innerJoin(electronicPrescriptions, eq(electronicPrescriptionItems.prescriptionId, electronicPrescriptions.id))
@@ -84,8 +86,9 @@ export async function insertPrescriptionWithItems(
 	snapshot: Record<string, unknown>,
 	passed: boolean,
 	now: Date,
+	existingTx?: TenantDb,
 ) {
-	return await db.transaction(async (tx) => {
+	const runInsert = async (tx: TenantDb) => {
 		if (!patient.birthDate) {
 			throw new Error("Для выписки электронного рецепта необходимо указать дату рождения пациента в его медицинской карте.");
 		}
@@ -142,5 +145,10 @@ export async function insertPrescriptionWithItems(
 			);
 		}
 		return presc;
-	});
+	};
+
+	if (existingTx) {
+		return runInsert(existingTx);
+	}
+	return await withTenantCtx(orgId, runInsert);
 }

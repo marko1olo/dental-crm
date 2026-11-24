@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -18,6 +19,14 @@ import {
 	resolveClinicalStaffRole,
 	UUID_PATTERN,
 } from "./types.js";
+
+const clinicalTaskStatusUpdateSchema = z
+	.object({
+		status: z
+			.enum(["pending", "in_progress", "completed", "cancelled"])
+			.default("completed"),
+	})
+	.strict();
 
 /**
  * Treatment phases, handovers, clinical routing tasks, and CRM tasks.
@@ -167,6 +176,18 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
+		const staffRole = resolveClinicalStaffRole(request);
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.tasks.write",
+				role: staffRole,
+				message:
+					"Изменение статуса клинических задач ограничено 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			});
+		}
+
 		const { taskId } = request.params as { taskId?: string };
 		if (!taskId || !UUID_PATTERN.test(taskId)) {
 			return reply.code(400).send({
@@ -175,21 +196,16 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const body = (
-			request.body && typeof request.body === "object" ? request.body : {}
-		) as { status?: string };
-		const status = body.status ?? "completed";
-		if (
-			status !== "pending" &&
-			status !== "in_progress" &&
-			status !== "completed" &&
-			status !== "cancelled"
-		) {
+		const parsedBody = clinicalTaskStatusUpdateSchema.safeParse(
+			request.body ?? {},
+		);
+		if (!parsedBody.success) {
 			return reply.code(400).send({
 				error: "ClinicalTaskValidationError",
 				message: "Недопустимый статус клинической задачи.",
 			});
 		}
+		const { status } = parsedBody.data;
 
 		try {
 			const updated = await new ClinicalRouter().updateTaskStatus(

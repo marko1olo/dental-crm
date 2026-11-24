@@ -1,10 +1,12 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteVkBotConfigs } from "../../db/schema.js";
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
 import { getVkConfirmationCode } from "../../security/webhookAuth.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Обработка входящих событий VK Callback API (confirmation, message_new).
@@ -16,14 +18,23 @@ export async function handleVkWebhook(
 	organizationId: string,
 	incomingSecret?: string | null,
 ): Promise<{ statusCode: number; payload: string }> {
+	if (!UUID_REGEX.test(organizationId)) {
+		return {
+			statusCode: 400,
+			payload: "Bad Request: invalid organizationId UUID",
+		};
+	}
+
 	const secretFromPayload = typeof body.secret === "string" ? body.secret : null;
 	const candidateSecret = incomingSecret ?? secretFromPayload;
 
-	const [cfg] = await db
-		.select({ secretKey: denteVkBotConfigs.secretKey })
-		.from(denteVkBotConfigs)
-		.where(eq(denteVkBotConfigs.organizationId, organizationId))
-		.limit(1);
+	const [cfg] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({ secretKey: denteVkBotConfigs.secretKey })
+			.from(denteVkBotConfigs)
+			.where(eq(denteVkBotConfigs.organizationId, organizationId))
+			.limit(1),
+	);
 
 	const configuredSecret =
 		cfg?.secretKey?.trim() ||

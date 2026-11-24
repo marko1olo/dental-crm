@@ -5,7 +5,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	requireClinicalMutationAccess,
@@ -30,6 +30,12 @@ import {
 	readOrSeedOrganizationPromos,
 } from "./marketingPromoDefaults.js";
 import { readOrSeedOrganizationRomiChannels } from "./marketingRomiChannelsService.js";
+
+const promoStatusUpdateSchema = z
+	.object({
+		status: z.enum(["active", "archived", "paused"]).optional(),
+	})
+	.strict();
 
 export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	/**
@@ -89,7 +95,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const { nextPromos } = await db.transaction(async (tx) => {
+			const { nextPromos } = await withTenantCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -139,10 +145,18 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { id } = request.params as { id: string };
-		const body = (request.body as { status?: "active" | "archived" | "paused" } | null) || {};
+		const parsedStatus = promoStatusUpdateSchema.safeParse(request.body ?? {});
+		if (!parsedStatus.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный статус акции",
+				details: parsedStatus.error.issues,
+			});
+		}
+		const body = parsedStatus.data;
 
 		try {
-			const result = await db.transaction(async (tx) => {
+			const result = await withTenantCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -306,7 +320,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const finalCampaigns = await db.transaction(async (tx) => {
+			const finalCampaigns = await withTenantCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -399,7 +413,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			await db.transaction(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -444,7 +458,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 
 		try {
 			const resetChannels = buildDenteDefaultAdvertisingChannels();
-			await db.transaction(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)

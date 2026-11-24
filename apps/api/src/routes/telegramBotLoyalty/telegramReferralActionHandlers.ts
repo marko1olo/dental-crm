@@ -1,15 +1,50 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { TelegramReferralLoyaltyService } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { isDbConnectionError } from "../../services/telegram/referralLoyalty/webAppValidator.js";
 import { isExplicitlyUnguardedControlPlaneAllowed } from "../telegram/telegramControlPlaneGuard.js";
 import {
 	familyConfirmSchema,
 	npsSubmitSchema,
 	referralProcessSchema,
 } from "./telegramLoyaltySchemas.js";
+
+const logger = createApiLogger("telegramReferralActionHandlers");
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Проверяет принадлежность пациента к указанной организации внутри RLS-транзакции.
+ */
+async function ensurePatientBelongsToOrg(
+	orgId: string,
+	patientId: string,
+	reply: FastifyReply,
+): Promise<boolean> {
+	try {
+		const [patient] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+				.limit(1),
+		);
+		if (!patient) {
+			reply.status(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
+			return false;
+		}
+		return true;
+	} catch (err) {
+		if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || process.env.DENTAL_STATE_PERSISTENCE === "off")) {
+			logger.warn({ err: safeLogError(err), orgId, patientId }, "ensurePatientBelongsToOrg DB unavailable in test mode");
+			return true;
+		}
+		throw err;
+	}
+}
 
 /**
  * Валидирует доступ сотрудника клиники или сессию Telegram WebApp с BOLA-защитой.
@@ -19,9 +54,21 @@ async function resolveAuthorizedOrg(
 	reply: FastifyReply,
 	options?: { allowTelegramWebApp?: boolean; requiredPatientId?: string },
 ): Promise<{ organizationId: string; tgUserId?: number } | null> {
+	if (options?.requiredPatientId && !UUID_REGEX.test(options.requiredPatientId)) {
+		reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор пациента (ожидается UUID).",
+		});
+		return null;
+	}
+
 	// A. Авторизованный сотрудник клиники (подписанный JWT)
 	const identity = getRequestIdentity(request);
 	if (identity.organizationId && identity.verified) {
+		if (options?.requiredPatientId) {
+			const ok = await ensurePatientBelongsToOrg(identity.organizationId, options.requiredPatientId, reply);
+			if (!ok) return null;
+		}
 		return { organizationId: identity.organizationId };
 	}
 
@@ -58,14 +105,40 @@ async function resolveAuthorizedOrg(
 				reply.status(400).send({ error: "MissingOrgId", message: "organizationId обязателен." });
 				return null;
 			}
+			if (!UUID_REGEX.test(orgId)) {
+				reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации." });
+				return null;
+			}
 
 			// BOLA-проверка: принадлежит ли patientId данному пользователю Telegram или его семье
 			if (options.requiredPatientId) {
-				const [patient] = await db
-					.select()
-					.from(patients)
-					.where(and(eq(patients.organizationId, orgId), eq(patients.id, options.requiredPatientId)))
-					.limit(1);
+				const requiredPatientId = options.requiredPatientId;
+				const { patient, authPatient } = await withTenantCtx(orgId, async (tx) => {
+					const [p] = await tx
+						.select()
+						.from(patients)
+						.where(and(eq(patients.organizationId, orgId), eq(patients.id, requiredPatientId)))
+						.limit(1);
+
+					const linkedTgId = (p?.administrativeProfile as Record<string, unknown> | null)?.telegramUserId;
+					const directMatch = Boolean(linkedTgId && String(linkedTgId) === String(tgUser.id));
+
+					let authP: typeof patients.$inferSelect | undefined;
+					if (p && !directMatch) {
+						const [foundAuth] = await tx
+							.select()
+							.from(patients)
+							.where(
+								and(
+									eq(patients.organizationId, orgId),
+									sql`${patients.administrativeProfile}->>'telegramUserId' = ${String(tgUser.id)}`,
+								),
+							)
+							.limit(1);
+						authP = foundAuth;
+					}
+					return { patient: p, authPatient: authP };
+				});
 
 				if (!patient) {
 					reply.status(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
@@ -76,21 +149,10 @@ async function resolveAuthorizedOrg(
 				const isDirectMatch = linkedTgId && String(linkedTgId) === String(tgUser.id);
 
 				if (!isDirectMatch) {
-					const [authPatient] = await db
-						.select()
-						.from(patients)
-						.where(
-							and(
-								eq(patients.organizationId, orgId),
-								sql`${patients.administrativeProfile}->>'telegramUserId' = ${String(tgUser.id)}`,
-							),
-						)
-						.limit(1);
-
 					let isFamilyMatch = false;
 					if (authPatient) {
 						const family = await TelegramReferralLoyaltyService.getFamilyProfile(orgId, authPatient.id);
-						isFamilyMatch = family.members.some((m) => m.patientId === options.requiredPatientId);
+						isFamilyMatch = family.members.some((m) => m.patientId === requiredPatientId);
 					}
 
 					const isTestBypass = process.env.NODE_ENV === "test" && isExplicitlyUnguardedControlPlaneAllowed();
@@ -116,6 +178,14 @@ async function resolveAuthorizedOrg(
 			(request.body as { organizationId?: string })?.organizationId ||
 			identity.organizationId;
 		if (queryOrg) {
+			if (!UUID_REGEX.test(queryOrg)) {
+				reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации." });
+				return null;
+			}
+			if (options?.requiredPatientId) {
+				const ok = await ensurePatientBelongsToOrg(queryOrg, options.requiredPatientId, reply);
+				if (!ok) return null;
+			}
 			return { organizationId: queryOrg };
 		}
 	}
@@ -123,6 +193,10 @@ async function resolveAuthorizedOrg(
 	// D. Строгая проверка организации через токен клиники/сотрудника (шлёт 401 при отсутствии)
 	const requiredOrg = requireOrganizationId(request, reply);
 	if (!requiredOrg) return null;
+	if (options?.requiredPatientId) {
+		const ok = await ensurePatientBelongsToOrg(requiredOrg, options.requiredPatientId, reply);
+		if (!ok) return null;
+	}
 	return { organizationId: requiredOrg };
 }
 
@@ -135,6 +209,12 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	 */
 	app.get("/api/telegram/loyalty/referral-link/:patientId", async (request: FastifyRequest, reply: FastifyReply) => {
 		const { patientId } = request.params as { patientId: string };
+		if (!UUID_REGEX.test(patientId)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
 		const auth = await resolveAuthorizedOrg(request, reply, {
 			allowTelegramWebApp: true,
 			requiredPatientId: patientId,
@@ -237,6 +317,12 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	 */
 	app.get("/api/telegram/family/members/:patientId", async (request: FastifyRequest, reply: FastifyReply) => {
 		const { patientId } = request.params as { patientId: string };
+		if (!UUID_REGEX.test(patientId)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
 		const auth = await resolveAuthorizedOrg(request, reply, {
 			allowTelegramWebApp: true,
 			requiredPatientId: patientId,

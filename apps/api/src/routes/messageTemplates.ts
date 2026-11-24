@@ -90,6 +90,12 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { id } = request.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
+			});
+		}
 		const template = await getMessageTemplateById(orgId, id);
 
 		if (!template) {
@@ -176,6 +182,12 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = request.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
+			});
+		}
 		const parsedInput = updateMessageTemplateSchema.safeParse(request.body);
 		if (!parsedInput.success) {
 			return reply.code(400).send({
@@ -237,6 +249,12 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = request.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
+			});
+		}
 		try {
 			await deleteMessageTemplate(organizationId, id);
 			return reply.send({ success: true });

@@ -33,6 +33,9 @@ import {
 	mergePatients,
 } from "../services/patients/patientMerge.js";
 
+const PATIENT_DUPLICATES_UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const listQuerySchema = z.object({
 	minConfidence: z.coerce.number().min(0).max(1).optional(),
 	limit: z.coerce.number().int().min(1).max(500).optional(),
@@ -107,7 +110,9 @@ export async function registerPatientDuplicateRoutes(app: FastifyInstance) {
 			return;
 
 		const patientId = (request.params as { patientId?: string }).patientId;
-		if (!patientId) return validationError(reply, "Не указан пациент.");
+		if (!patientId || !PATIENT_DUPLICATES_UUID_PATTERN.test(patientId)) {
+			return validationError(reply, "Некорректный идентификатор пациента (ожидается формат UUID).");
+		}
 		if (
 			!(await patientBelongsToOrganization(context.organizationId, patientId))
 		) {

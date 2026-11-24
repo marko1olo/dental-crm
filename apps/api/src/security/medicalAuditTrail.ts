@@ -14,7 +14,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
-import { db } from "../db/client.js";
+import { withSavepoint, withTenantCtx } from "../db/rls.js";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
 
 const logger = createApiLogger("medicalAuditTrail");
@@ -63,49 +63,53 @@ export async function getPatientActiveDiagnosisFromDb(
 	patientId: string,
 ): Promise<string | null> {
 	try {
-		// 1. Проверяем последний дневник приема (visitDiaries)
-		const latestDiaries = await db
-			.select({
-				diagnosisIcd10: visitDiaries.diagnosisIcd10,
-				diagnosisTooth: visitDiaries.diagnosisTooth,
-			})
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.organizationId, organizationId),
-					eq(visitDiaries.patientId, patientId),
-				),
-			)
-			.orderBy(desc(visitDiaries.createdAt))
-			.limit(1);
+		return await withTenantCtx(organizationId, async (tx) =>
+			withSavepoint(tx, async (spTx) => {
+				// 1. Проверяем последний дневник приема (visitDiaries)
+				const latestDiaries = await spTx
+					.select({
+						diagnosisIcd10: visitDiaries.diagnosisIcd10,
+						diagnosisTooth: visitDiaries.diagnosisTooth,
+					})
+					.from(visitDiaries)
+					.where(
+						and(
+							eq(visitDiaries.organizationId, organizationId),
+							eq(visitDiaries.patientId, patientId),
+						),
+					)
+					.orderBy(desc(visitDiaries.createdAt))
+					.limit(1);
 
-		const [diary] = latestDiaries;
-		if (diary?.diagnosisIcd10) {
-			return diary.diagnosisTooth
-				? `${diary.diagnosisIcd10} (зуб ${diary.diagnosisTooth})`
-				: diary.diagnosisIcd10;
-		}
+				const [diary] = latestDiaries;
+				if (diary?.diagnosisIcd10) {
+					return diary.diagnosisTooth
+						? `${diary.diagnosisIcd10} (зуб ${diary.diagnosisTooth})`
+						: diary.diagnosisIcd10;
+				}
 
-		// 2. Проверяем утвержденный план лечения
-		const latestPlan = await db
-			.select({
-				title: treatmentPlans.title,
-			})
-			.from(treatmentPlans)
-			.where(
-				and(
-					eq(treatmentPlans.organizationId, organizationId),
-					eq(treatmentPlans.patientId, patientId),
-				),
-			)
-			.orderBy(desc(treatmentPlans.updatedAt))
-			.limit(1);
+				// 2. Проверяем утвержденный план лечения
+				const latestPlan = await spTx
+					.select({
+						title: treatmentPlans.title,
+					})
+					.from(treatmentPlans)
+					.where(
+						and(
+							eq(treatmentPlans.organizationId, organizationId),
+							eq(treatmentPlans.patientId, patientId),
+						),
+					)
+					.orderBy(desc(treatmentPlans.updatedAt))
+					.limit(1);
 
-		if (latestPlan.length > 0 && latestPlan[0]?.title) {
-			return latestPlan[0].title;
-		}
+				if (latestPlan.length > 0 && latestPlan[0]?.title) {
+					return latestPlan[0].title;
+				}
 
-		return null;
+				return null;
+			}),
+		);
 	} catch (err) {
 		logger.warn(
 			{ err: safeLogError(err), organizationId, patientId },
@@ -135,59 +139,61 @@ export async function recordMedicalRecordAccessAudit(
 		const validPatientUuid =
 			input.patientId && UUID_SHAPE.test(input.patientId) ? input.patientId : null;
 
-		let validActorUserId: string | null = null;
-		let resolvedActorLogin: string | null = input.actorLogin ?? null;
-		if (validActorUuid) {
-			const [existingUser] = await db
-				.select({ id: users.id, fullName: users.fullName })
-				.from(users)
-				.where(
-					and(
-						eq(users.id, validActorUuid),
-						eq(users.organizationId, input.organizationId),
-					),
-				)
-				.limit(1);
-			if (existingUser) {
-				validActorUserId = existingUser.id;
-				if (!resolvedActorLogin) {
-					resolvedActorLogin = existingUser.fullName ?? null;
+		await withTenantCtx(input.organizationId, async (tx) =>
+			withSavepoint(tx, async (spTx) => {
+				let validActorUserId: string | null = null;
+				let resolvedActorLogin: string | null = input.actorLogin ?? null;
+				if (validActorUuid) {
+					const [existingUser] = await spTx
+						.select({ id: users.id, fullName: users.fullName })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, validActorUuid),
+								eq(users.organizationId, input.organizationId),
+							),
+						)
+						.limit(1);
+					if (existingUser) {
+						validActorUserId = existingUser.id;
+						if (!resolvedActorLogin) {
+							resolvedActorLogin = existingUser.fullName ?? null;
+						}
+					}
 				}
-			}
-		}
 
-		await db.transaction(async (tx) => {
-			await tx.insert(auditEvents).values({
-				id: auditId,
-				organizationId: input.organizationId,
-				actorUserId: validActorUserId,
-				entityType: "patient_diagnosis",
-				entityId: input.patientId ?? "unknown",
-				action: eventAction,
-				reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${resolvedActorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
-			});
+				await spTx.insert(auditEvents).values({
+					id: auditId,
+					organizationId: input.organizationId,
+					actorUserId: validActorUserId,
+					entityType: "patient_diagnosis",
+					entityId: input.patientId ?? "unknown",
+					action: eventAction,
+					reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${resolvedActorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
+				});
 
-			await tx.insert(clinicalAuditLogs).values({
-				id: auditId,
-				organizationId: input.organizationId,
-				patientId: validPatientUuid,
-				actorUserId: validActorUserId,
-				userId: validActorUserId,
-				actorLogin: resolvedActorLogin,
-				eventType,
-				action: eventAction,
-				resourceType: "patient_diagnosis",
-				entityType: "patient_diagnosis",
-				entityId: input.patientId ?? "unknown",
-				ipAddress: input.ipAddress ?? null,
-				userAgent: input.userAgent ?? null,
-				meta: {
-					diagnosis: diagnosisText,
-					actorRole: input.actorRole ?? null,
-					...(input.metadata ?? {}),
-				},
-			});
-		});
+				await spTx.insert(clinicalAuditLogs).values({
+					id: auditId,
+					organizationId: input.organizationId,
+					patientId: validPatientUuid,
+					actorUserId: validActorUserId,
+					userId: validActorUserId,
+					actorLogin: resolvedActorLogin,
+					eventType,
+					action: eventAction,
+					resourceType: "patient_diagnosis",
+					entityType: "patient_diagnosis",
+					entityId: input.patientId ?? "unknown",
+					ipAddress: input.ipAddress ?? null,
+					userAgent: input.userAgent ?? null,
+					meta: {
+						diagnosis: diagnosisText,
+						actorRole: input.actorRole ?? null,
+						...(input.metadata ?? {}),
+					},
+				});
+			}),
+		);
 	} catch (error) {
 		// Аварийный канал протоколирования: запись аудита не должна ронять клинический прием,
 		// но отказ должен быть зафиксирован с полным содержимым события
@@ -294,13 +300,6 @@ export async function getMedicalAccessAuditTrailFromDb(
 		clinicalConditions.push(eq(clinicalAuditLogs.actorUserId, options.actorUserId));
 	}
 
-	const clinicalRows = await db
-		.select()
-		.from(clinicalAuditLogs)
-		.where(and(...clinicalConditions))
-		.orderBy(desc(clinicalAuditLogs.createdAt))
-		.limit(limit);
-
 	const eventConditions = [
 		eq(auditEvents.organizationId, organizationId),
 		eq(auditEvents.entityType, "patient_diagnosis"),
@@ -312,12 +311,23 @@ export async function getMedicalAccessAuditTrailFromDb(
 		eventConditions.push(eq(auditEvents.actorUserId, options.actorUserId));
 	}
 
-	const eventRows = await db
-		.select()
-		.from(auditEvents)
-		.where(and(...eventConditions))
-		.orderBy(desc(auditEvents.createdAt))
-		.limit(limit);
+	const { clinicalRows, eventRows } = await withTenantCtx(organizationId, async (tx) => {
+		const clinicalRowsInner = await tx
+			.select()
+			.from(clinicalAuditLogs)
+			.where(and(...clinicalConditions))
+			.orderBy(desc(clinicalAuditLogs.createdAt))
+			.limit(limit);
+
+		const eventRowsInner = await tx
+			.select()
+			.from(auditEvents)
+			.where(and(...eventConditions))
+			.orderBy(desc(auditEvents.createdAt))
+			.limit(limit);
+
+		return { clinicalRows: clinicalRowsInner, eventRows: eventRowsInner };
+	});
 
 	const mergedById = new Map<string, MedicalAuditRecord>();
 

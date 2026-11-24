@@ -15,7 +15,7 @@ import {
 	parseWhatsappStatuses,
 } from "../../services/communications/deliveryReceipts.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp, createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Квитанции о доставке.
@@ -488,6 +488,39 @@ describe("приём квитанций без настроенного секр
 			await app.close();
 			if (savedSecret !== undefined)
 				process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = savedSecret;
+		}
+	});
+});
+
+describe("идемпотентность приёма квитанций (idempotencyPlugin exempt)", () => {
+	test("POST /api/communications/receipts/smsru и /smsc принимают callback без Idempotency-Key", async () => {
+		const savedSecret = process.env.DENTE_COMMUNICATION_RECEIPT_SECRET;
+		process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = SECRET;
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerCommunicationReceiptRoutes(idemApp);
+		try {
+			const smsruRes = await idemApp.inject({
+				method: "POST",
+				url: "/api/communications/receipts/smsru",
+				headers: { "x-dente-receipt-secret": SECRET },
+				payload: { data: "" },
+			});
+			assert.equal(smsruRes.statusCode, 200, smsruRes.body);
+
+			const smscRes = await idemApp.inject({
+				method: "POST",
+				url: "/api/communications/receipts/smsc",
+				headers: { "x-dente-receipt-secret": SECRET },
+				payload: { id: "non-existent-smsc-id", status: "1" },
+			});
+			assert.equal(smscRes.statusCode, 200, smscRes.body);
+		} finally {
+			await idemApp.close();
+			if (savedSecret === undefined) {
+				delete process.env.DENTE_COMMUNICATION_RECEIPT_SECRET;
+			} else {
+				process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = savedSecret;
+			}
 		}
 	});
 });

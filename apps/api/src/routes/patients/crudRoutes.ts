@@ -298,6 +298,9 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				null,
 		};
 		try {
+			const allowDuplicate =
+				rawBody.allowDuplicate === true ||
+				(input as { allowDuplicate?: boolean }).allowDuplicate === true;
 			const safeResult = await createPatientSafeInDb(
 				orgId,
 				inputWithSnils,
@@ -306,14 +309,11 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 						requireDistinguishingData: true,
 					});
 				},
+				{ allowDuplicate },
 			);
 
 			if (safeResult.type === "duplicate") {
 				const dup = safeResult.duplicate as PatientDuplicateResult | null;
-				if (rawBody.allowDuplicate === true || (input as { allowDuplicate?: boolean }).allowDuplicate === true) {
-					const created = await createPatientInDb(orgId, inputWithSnils);
-					return reply.code(201).send(patientSchema.parse(created));
-				}
 				if (dup?.isNameOnlyDuplicate) {
 					return sendPatientNameOnlyDuplicate(reply, dup.candidate);
 				}

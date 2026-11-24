@@ -7,7 +7,7 @@ import { renderPrescriptionUniversalHtml } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	clinics,
 	electronicPrescriptionItems,
@@ -19,6 +19,8 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { buildPrescriptionPrintPayload } from "./prescriptionPrintPayloadBuilder.js";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface PrescriptionPrintParams {
 	id: string;
@@ -56,52 +58,67 @@ export async function handlePrescriptionPrintHtml(
 	}
 
 	const { id } = request.params;
+	if (!UUID_PATTERN.test(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор рецепта (ожидается формат UUID).",
+		});
+	}
 
-	const [presc] = await db
-		.select()
-		.from(electronicPrescriptions)
-		.where(
-			and(
-				eq(electronicPrescriptions.id, id),
-				eq(electronicPrescriptions.organizationId, orgId),
-			),
-		)
-		.limit(1);
+	const loaded = await withTenantCtx(orgId, async (tx) => {
+		const [presc] = await tx
+			.select()
+			.from(electronicPrescriptions)
+			.where(
+				and(
+					eq(electronicPrescriptions.id, id),
+					eq(electronicPrescriptions.organizationId, orgId),
+				),
+			)
+			.limit(1);
 
-	if (!presc) {
+		if (!presc) {
+			return null;
+		}
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: presc.patientId,
+			action: "PRINT_PRESCRIPTION",
+			diagnosis: presc.clinicalDiagnosisMkb10 ?? "Печать рецептурного бланка",
+			metadata: { prescriptionId: presc.id },
+		});
+
+		const [[org], [clinic], [patient], items] = await Promise.all([
+			tx.select().from(organizations).where(eq(organizations.id, orgId)).limit(1),
+			tx.select({ phone: clinics.phone }).from(clinics).where(eq(clinics.organizationId, orgId)).limit(1),
+			tx
+				.select({ administrativeProfile: patients.administrativeProfile })
+				.from(patients)
+				.where(and(eq(patients.id, presc.patientId), eq(patients.organizationId, orgId)))
+				.limit(1),
+			tx
+				.select()
+				.from(electronicPrescriptionItems)
+				.where(
+					and(
+						eq(electronicPrescriptionItems.prescriptionId, presc.id),
+						eq(electronicPrescriptionItems.organizationId, orgId),
+					),
+				)
+				.orderBy(electronicPrescriptionItems.itemIndex),
+		]);
+
+		return { presc, org, clinic, patient, items };
+	});
+
+	if (!loaded) {
 		return reply.code(404).send({
 			error: "PrescriptionNotFound",
 			message: "Рецепт не найден.",
 		});
 	}
-
-	await auditMedicalAccessFromRequest(request, {
-		organizationId: orgId,
-		patientId: presc.patientId,
-		action: "PRINT_PRESCRIPTION",
-		diagnosis: presc.clinicalDiagnosisMkb10 ?? "Печать рецептурного бланка",
-		metadata: { prescriptionId: presc.id },
-	});
-
-	const [[org], [clinic], [patient], items] = await Promise.all([
-		db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1),
-		db.select({ phone: clinics.phone }).from(clinics).where(eq(clinics.organizationId, orgId)).limit(1),
-		db
-			.select({ administrativeProfile: patients.administrativeProfile })
-			.from(patients)
-			.where(and(eq(patients.id, presc.patientId), eq(patients.organizationId, orgId)))
-			.limit(1),
-		db
-			.select()
-			.from(electronicPrescriptionItems)
-			.where(
-				and(
-					eq(electronicPrescriptionItems.prescriptionId, presc.id),
-					eq(electronicPrescriptionItems.organizationId, orgId),
-				),
-			)
-			.orderBy(electronicPrescriptionItems.itemIndex),
-	]);
+	const { presc, org, clinic, patient, items } = loaded;
 
 	const rawAdminProfile = patient?.administrativeProfile;
 	const patientProfile: PatientAddressProfile | null =

@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { and, eq, sql } from "drizzle-orm";
+import { withTenantCtx } from "../../../db/rls.js";
 import { denteTelegramBotConfigs } from "../../../db/schema.js";
 import { TelegramBotPresetsEngine } from "../TelegramBotPresets.js";
 import { TelegramTokenCrypto } from "./tokenCrypto.js";
@@ -210,29 +210,16 @@ export class TelegramHostingCoreService {
 
 		const botConfigId = params.botConfigId || "default";
 		const now = new Date();
-
-		// 3. Проверяем наличие записи
-		const [existing] = await db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
-				),
-			)
-			.limit(1);
-
 		let webhookReady = false;
 
-		// 4. Настройка команд бота
+		// 3. Настройка команд бота (внешний HTTP-вызов Telegram API строго вне PG TX)
 		try {
 			await this.setBotCommands(trimmedToken, DEFAULT_PATIENT_BOT_COMMANDS);
 		} catch {
 			// Не блокируем подключение при сбое установки команд
 		}
 
-		// 5. Настройка вебхука при наличии базового URL
+		// 4. Настройка вебхука при наличии базового URL (внешний HTTP-вызов Telegram API строго вне PG TX)
 		const webhookUrl = params.webhookBaseUrl
 			? `${params.webhookBaseUrl.replace(/\/+$/, "")}/api/telegram/webhook`
 			: null;
@@ -245,35 +232,53 @@ export class TelegramHostingCoreService {
 			webhookReady = webhookRes.ok;
 		}
 
-		if (existing) {
-			await db
-				.update(denteTelegramBotConfigs)
-				.set({
-					clinicId: params.clinicId ?? existing.clinicId,
+		// 5. Атомарное сохранение конфигурации в PG TX под advisory lock
+		await withTenantCtx(params.organizationId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', 'telegram_bot_config', ${params.organizationId}::text, ${botConfigId}::text)))`,
+			);
+
+			const [existing] = await tx
+				.select()
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+					),
+				)
+				.limit(1);
+
+			if (existing) {
+				await tx
+					.update(denteTelegramBotConfigs)
+					.set({
+						clinicId: params.clinicId ?? existing.clinicId,
+						mode: "clinic_owned_bot",
+						botUsername: verifyResult.username,
+						ownBotUsername: verifyResult.username,
+						tokenSecretRef: encryptedToken,
+						webhookBaseUrl: webhookUrl || existing.webhookBaseUrl,
+						isActive: true,
+						updatedAt: now,
+					})
+					.where(eq(denteTelegramBotConfigs.id, existing.id));
+			} else {
+				await tx.insert(denteTelegramBotConfigs).values({
+					organizationId: params.organizationId,
+					clinicId: params.clinicId ?? null,
+					botConfigId,
 					mode: "clinic_owned_bot",
 					botUsername: verifyResult.username,
 					ownBotUsername: verifyResult.username,
 					tokenSecretRef: encryptedToken,
-					webhookBaseUrl: webhookUrl || existing.webhookBaseUrl,
+					webhookBaseUrl: webhookUrl,
 					isActive: true,
 					updatedAt: now,
-				})
-				.where(eq(denteTelegramBotConfigs.id, existing.id));
-		} else {
-			await db.insert(denteTelegramBotConfigs).values({
-				organizationId: params.organizationId,
-				clinicId: params.clinicId ?? null,
-				botConfigId,
-				mode: "clinic_owned_bot",
-				botUsername: verifyResult.username,
-				ownBotUsername: verifyResult.username,
-				tokenSecretRef: encryptedToken,
-				webhookBaseUrl: webhookUrl,
-				isActive: true,
-				updatedAt: now,
-				createdAt: now,
-			});
-		}
+					createdAt: now,
+				});
+			}
+		});
 
 		// 6. Регистрация в пуле инстансов
 		TelegramBotInstancePool.registerInstance({
@@ -309,17 +314,19 @@ export class TelegramHostingCoreService {
 	): Promise<GetBotStatusResult> {
 		const botConfigId = params.botConfigId || "default";
 
-		const [config] = await db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
-					eq(denteTelegramBotConfigs.isActive, true),
-				),
-			)
-			.limit(1);
+		const [config] = await withTenantCtx(params.organizationId, async (tx) =>
+			tx
+				.select()
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+						eq(denteTelegramBotConfigs.isActive, true),
+					),
+				)
+				.limit(1),
+		);
 
 		if (!config || config.mode === "disabled" || !config.tokenSecretRef) {
 			return {
@@ -361,19 +368,21 @@ export class TelegramHostingCoreService {
 	): Promise<DisconnectBotResult> {
 		const botConfigId = params.botConfigId || "default";
 
-		await db
-			.update(denteTelegramBotConfigs)
-			.set({
-				mode: "disabled",
-				isActive: false,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+		await withTenantCtx(params.organizationId, async (tx) =>
+			tx
+				.update(denteTelegramBotConfigs)
+				.set({
+					mode: "disabled",
+					isActive: false,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+					),
 				),
-			);
+		);
 
 		TelegramBotInstancePool.unregisterInstance(params.organizationId, botConfigId);
 
@@ -390,16 +399,18 @@ export class TelegramHostingCoreService {
 
 		if (!token) {
 			const botConfigId = params.botConfigId || "default";
-			const [config] = await db
-				.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
-				.from(denteTelegramBotConfigs)
-				.where(
-					and(
-						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
-					),
-				)
-				.limit(1);
+			const [config] = await withTenantCtx(params.organizationId, async (tx) =>
+				tx
+					.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
+					.from(denteTelegramBotConfigs)
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+							eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+						),
+					)
+					.limit(1),
+			);
 
 			if (!config?.tokenSecretRef) {
 				return {

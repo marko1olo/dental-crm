@@ -4,12 +4,11 @@ import {
 	canonicalizeHomoglyphs,
 	type PatientDuplicateCandidate,
 } from "../../services/patients/duplicateDetection.js";
-import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	createPatientInDb,
 	getPatientsFromDb,
-	rowToPatient,
 	useInMemory,
 } from "./patientSearchCore.js";
 import type { CreatePatientSafeResult } from "./types.js";
@@ -18,18 +17,21 @@ export async function createPatientSafeInDb(
 	organizationId: string,
 	input: CreatePatientInput,
 	duplicateCheckFn: (patients: readonly PatientDuplicateCandidate[], input: CreatePatientInput) => unknown,
+	options?: { allowDuplicate?: boolean },
 ): Promise<CreatePatientSafeResult> {
 	if (useInMemory()) {
-		const dbPatients = await getPatientsFromDb(organizationId);
-		const duplicate = duplicateCheckFn(dbPatients, input);
-		if (duplicate) return { type: "duplicate", duplicate };
+		if (!options?.allowDuplicate) {
+			const dbPatients = await getPatientsFromDb(organizationId);
+			const duplicate = duplicateCheckFn(dbPatients, input);
+			if (duplicate) return { type: "duplicate", duplicate };
+		}
 		return {
 			type: "success",
 			patient: await createPatientInDb(organizationId, input),
 		};
 	}
 
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		const phoneDigits = (input.phone ?? "").replace(/\D/g, "");
 		const phoneKey = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
 		const normalizedName = canonicalizeHomoglyphs(input.fullName ?? "")
@@ -74,48 +76,17 @@ export async function createPatientSafeInDb(
 			sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, ${phoneKey}::text, ${normalizedName}::text)))`,
 		);
 
-		const rawPatients = await tx
-			.select()
-			.from(schema.patients)
-			.where(eq(schema.patients.organizationId, organizationId));
+		if (!options?.allowDuplicate) {
+			const rawPatients = await tx
+				.select()
+				.from(schema.patients)
+				.where(eq(schema.patients.organizationId, organizationId));
 
-		const duplicate = duplicateCheckFn(rawPatients, input);
-		if (duplicate) return { type: "duplicate", duplicate };
+			const duplicate = duplicateCheckFn(rawPatients, input);
+			if (duplicate) return { type: "duplicate", duplicate };
+		}
 
-		const mergedAdminProfile =
-			input.administrativeProfile ||
-			input.isAnonymous !== undefined ||
-			input.anonymousCode !== undefined
-				? {
-						...(input.administrativeProfile ?? {}),
-						...(input.isAnonymous !== undefined
-							? { isAnonymous: input.isAnonymous }
-							: {}),
-						...(input.anonymousCode !== undefined
-							? { anonymousCode: input.anonymousCode }
-							: {}),
-					}
-				: null;
-
-		const [created] = await tx
-			.insert(schema.patients)
-			.values({
-				organizationId,
-				fullName: input.fullName,
-				birthDate: input.birthDate ?? null,
-				phone: input.phone ?? null,
-				email: input.email ?? null,
-				notes: input.notes ?? null,
-				weightKg:
-					input.weightKg !== undefined && input.weightKg !== null
-						? String(input.weightKg)
-						: null,
-				administrativeProfile: (mergedAdminProfile as Partial<PatientAdministrativeProfile>) ?? null,
-			})
-			.returning();
-
-		if (!created) throw new Error("Не удалось создать карточку пациента в базе данных");
-
-		return { type: "success", patient: rowToPatient(created, 0) };
+		const created = await createPatientInDb(organizationId, input, tx);
+		return { type: "success", patient: created };
 	});
 }

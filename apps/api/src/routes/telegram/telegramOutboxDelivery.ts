@@ -1,7 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
-import { db } from "../../db/client.js";
 import { communicationTasks } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("telegramOutboxDelivery");
 import {
 	denteTelegramOutboxSendResponseSchema,
 	type DenteTelegramOutboxItem, type DenteTelegramOutboxSendRequest,
@@ -483,17 +485,27 @@ export async function executeTelegramOutboxSend(
 			const targetOrgId = runtimeResult.runtime.context.organizationId;
 			if (targetTaskId && targetOrgId) {
 				try {
-					await db
-						.update(communicationTasks)
-						.set({ dueAt: newDueAt, lastEventAt: new Date() })
-						.where(
-							and(
-								eq(communicationTasks.id, targetTaskId),
-								eq(communicationTasks.organizationId, targetOrgId),
-							),
-						);
-				} catch {
-					// Изоляция отката при отсутствии соединения с БД
+					await withTenantCtx(targetOrgId, async (tx) => {
+						await tx
+							.update(communicationTasks)
+							.set({ dueAt: newDueAt, lastEventAt: new Date() })
+							.where(
+								and(
+									eq(communicationTasks.id, targetTaskId),
+									eq(communicationTasks.organizationId, targetOrgId),
+								),
+							);
+					});
+				} catch (retryUpdateErr) {
+					logger.warn(
+						{
+							err: safeLogError(retryUpdateErr),
+							targetTaskId,
+							targetOrgId,
+							retryAfterSeconds,
+						},
+						"Не удалось обновить dueAt для задачи рассылки Telegram после 429",
+					);
 				}
 			}
 		}

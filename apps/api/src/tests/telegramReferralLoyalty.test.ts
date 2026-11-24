@@ -1046,4 +1046,46 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 			assert.ok(painRes.screen?.text.includes("чувствительности"));
 		});
 	});
+
+	describe("10. Security: Staff-Mode BOLA, UUID Validation & FORCE RLS Isolation", () => {
+		it("rejects non-UUID patientId on referral-link and family/members with 400 ValidationError", async () => {
+			const badRef = await app.inject({
+				method: "GET",
+				url: `/api/telegram/loyalty/referral-link/not-a-uuid?organizationId=${TEST_ORG_ID}`,
+				headers: { "x-organization-id": TEST_ORG_ID },
+			});
+			assert.equal(badRef.statusCode, 400);
+			assert.equal(JSON.parse(badRef.body).error, "ValidationError");
+
+			const badFamily = await app.inject({
+				method: "GET",
+				url: `/api/telegram/family/members/not-a-uuid?organizationId=${TEST_ORG_ID}`,
+				headers: { "x-organization-id": TEST_ORG_ID },
+			});
+			assert.equal(badFamily.statusCode, 400);
+			assert.equal(JSON.parse(badFamily.body).error, "ValidationError");
+		});
+
+		it("blocks cross-tenant or unknown patientId in staff mode with 404 PatientNotFound", async (context) => {
+			if (!isDbAvailable) return context.skip("база недоступна");
+			const missingPatientId = "00000000-0000-4000-8000-000000009999";
+			const res = await app.inject({
+				method: "GET",
+				url: `/api/telegram/loyalty/referral-link/${missingPatientId}?organizationId=${TEST_ORG_ID}`,
+				headers: { "x-organization-id": TEST_ORG_ID },
+			});
+			assert.equal(res.statusCode, 404);
+			assert.equal(JSON.parse(res.body).error, "PatientNotFound");
+		});
+
+		it("rejects confirmFamilyAppointment for unrelated/cross-tenant appointment", async () => {
+			const foreignApptId = "00000000-0000-4000-8000-000000009998";
+			const res = await TelegramReferralLoyaltyService.confirmFamilyAppointment(
+				TEST_ORG_ID,
+				REFERRER_PATIENT_ID,
+				foreignApptId,
+			);
+			assert.equal(res.success, false);
+		});
+	});
 });

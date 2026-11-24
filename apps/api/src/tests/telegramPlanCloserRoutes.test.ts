@@ -442,5 +442,71 @@ describe("Telegram Treatment Plan Closer: Routes, Webhooks & Leads Integration",
 			const errBody = JSON.parse(invalidCalc.body);
 			assert.strictEqual(errBody.error, "ValidationError");
 		});
+
+		it("rejects unauthenticated requests even when ?organizationId query is supplied", async () => {
+			const unauthPending = await app.inject({
+				method: "GET",
+				url: `/api/telegram/treatment-plans/pending/${PATIENT_ID}?organizationId=${TEST_ORG_ID}`,
+			});
+			assert.strictEqual(unauthPending.statusCode, 401);
+
+			const unauthFollowup = await app.inject({
+				method: "POST",
+				url: `/api/telegram/treatment-plans/${PLAN_ID}/send-followup`,
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ force: true }),
+			});
+			assert.strictEqual(unauthFollowup.statusCode, 401);
+		});
+
+		it("enforces tenant isolation and ignores spoofed ?organizationId query", async () => {
+			const FOREIGN_ORG_ID = fixtureUuid("tg-plan-closer-test", 99);
+			const pendingRes = await app.inject({
+				method: "GET",
+				url: `/api/telegram/treatment-plans/pending/${PATIENT_ID}?organizationId=${TEST_ORG_ID}`,
+				headers: { "x-organization-id": FOREIGN_ORG_ID },
+			});
+			assert.strictEqual(pendingRes.statusCode, 200);
+			const pendingBody = JSON.parse(pendingRes.body);
+			assert.strictEqual(pendingBody.plans.length, 0);
+
+			const calcRes = await app.inject({
+				method: "POST",
+				url: `/api/telegram/treatment-plans/${PLAN_ID}/installment-calc`,
+				headers: {
+					"x-organization-id": FOREIGN_ORG_ID,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({ monthsCount: 12 }),
+			});
+			assert.strictEqual(calcRes.statusCode, 404);
+			assert.strictEqual(JSON.parse(calcRes.body).error, "PlanNotFound");
+		});
+
+		it("ignores client-supplied botToken in send-followup and requires server bot configuration", async () => {
+			const prevTg = process.env.TELEGRAM_BOT_TOKEN;
+			const prevDenteTg = process.env.DENTE_TELEGRAM_BOT_TOKEN;
+			delete process.env.TELEGRAM_BOT_TOKEN;
+			delete process.env.DENTE_TELEGRAM_BOT_TOKEN;
+			try {
+				const res = await app.inject({
+					method: "POST",
+					url: `/api/telegram/treatment-plans/${PLAN_ID}/send-followup`,
+					headers: {
+						"x-organization-id": TEST_ORG_ID,
+						"content-type": "application/json",
+					},
+					body: JSON.stringify({
+						force: true,
+						botToken: "999999999:SPOOFED_CLIENT_BOT_TOKEN",
+					}),
+				});
+				assert.strictEqual(res.statusCode, 503);
+				assert.strictEqual(JSON.parse(res.body).error, "TelegramBotTokenMissing");
+			} finally {
+				if (prevTg !== undefined) process.env.TELEGRAM_BOT_TOKEN = prevTg;
+				if (prevDenteTg !== undefined) process.env.DENTE_TELEGRAM_BOT_TOKEN = prevDenteTg;
+			}
+		});
 	});
 });

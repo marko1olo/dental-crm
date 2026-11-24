@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { asc, desc, eq } from "drizzle-orm";
-import type { db } from "../../db/client.js";
+import type { db, TenantDb } from "../../db/client.js";
 import { egiszAuditLogs } from "../../db/schema/clinical.js";
 
 export type DbTransaction =
 	| Parameters<Parameters<typeof db.transaction>[0]>[0]
-	| typeof db;
+	| typeof db
+	| TenantDb;
 
 export const GENESIS_HASH =
 	"0000000000000000000000000000000000000000000000000000000000000000";

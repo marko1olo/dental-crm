@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteMaxBotConfigs } from "../../db/schema.js";
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Обработка входящих событий корпоративного мессенджера MAX (VK Max) — Национальный корпоративный мессенджер.
@@ -14,6 +16,14 @@ export async function handleMaxWebhook(
 	organizationId: string,
 	incomingSecret?: string | null,
 ): Promise<{ ok: boolean; error?: string; statusCode?: number }> {
+	if (!UUID_REGEX.test(organizationId)) {
+		return {
+			ok: false,
+			statusCode: 400,
+			error: "Bad Request: invalid organizationId UUID",
+		};
+	}
+
 	const secretFromPayload =
 		typeof body.secret === "string"
 			? body.secret
@@ -22,14 +32,16 @@ export async function handleMaxWebhook(
 				: null;
 	const candidateSecret = incomingSecret ?? secretFromPayload;
 
-	const [cfg] = await db
-		.select({
-			maxBotToken: denteMaxBotConfigs.maxBotToken,
-			tokenSecretRef: denteMaxBotConfigs.tokenSecretRef,
-		})
-		.from(denteMaxBotConfigs)
-		.where(eq(denteMaxBotConfigs.organizationId, organizationId))
-		.limit(1);
+	const [cfg] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({
+				maxBotToken: denteMaxBotConfigs.maxBotToken,
+				tokenSecretRef: denteMaxBotConfigs.tokenSecretRef,
+			})
+			.from(denteMaxBotConfigs)
+			.where(eq(denteMaxBotConfigs.organizationId, organizationId))
+			.limit(1),
+	);
 
 	const configuredSecret =
 		cfg?.tokenSecretRef?.trim() ||

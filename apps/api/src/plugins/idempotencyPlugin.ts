@@ -82,10 +82,13 @@ export interface IdempotencyPluginOptions {
 export const DEFAULT_IDEMPOTENCY_EXEMPT_PATHS: RegExp[] = [
 	/^\/api\/auth\/(?:login|refresh|logout|staff\/unlock)$/,
 	/^\/api\/portal\/auth\/(?:send-code|verify-code|refresh)$/,
+	/^\/api\/public\/consents\/sign$/,
 	/^\/(?:api\/)?(?:health|ping)$/,
 	/^\/api\/telephony(?:\/.*)?\/webhook$/,
 	/^\/api\/(?:v1\/webhooks\/whatsapp|whatsapp\/webhook)$/,
 	/^\/api\/public\/[^/]+\/vk\/webhook$/,
+	/^\/api\/bots\/webhook\/[^/]+\/[^/]+$/,
+	/^\/api\/communications\/receipts\/(?:smsru|smsc)$/,
 	/^\/api\/integrations\/diagnocat\/webhook$/,
 	/^\/api\/clinical-ai\/webhook$/,
 	/^\/api\/integrations\/flexbe\/webhook$/,

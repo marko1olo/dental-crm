@@ -17,6 +17,8 @@ import { handleWebhookGetHandshake } from "../security/webhookAuth.js";
 import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
 import { BotPatientStateStorage } from "../services/bots/omnichannel/botPatientStateStorage.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots/index.js";
+import { createIdempotentTenantTestApp } from "./support/tenantTestApp.js";
 
 describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 	const prevSecret = process.env.DENTE_TELEGRAM_WEBHOOK_SECRET;
@@ -203,6 +205,41 @@ describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 			assert.equal(res.ok, true);
 		} finally {
 			delete process.env.MAX_WEBHOOK_SECRET;
+		}
+	});
+
+	it("idempotencyPlugin exempts POST /api/bots/webhook/vk and /max without Idempotency-Key", async () => {
+		const prevVk = process.env.VK_WEBHOOK_SECRET;
+		const prevMax = process.env.MAX_WEBHOOK_SECRET;
+		process.env.VK_WEBHOOK_SECRET = "vk_idem_secret_123";
+		process.env.MAX_WEBHOOK_SECRET = "max_idem_secret_456";
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerOmnichannelBotRoutes(idemApp);
+		try {
+			const vkRes = await idemApp.inject({
+				method: "POST",
+				url: "/api/bots/webhook/vk/00000000-0000-4000-8000-000000000001",
+				headers: { "content-type": "application/json" },
+				payload: { type: "message_new", secret: "vk_idem_secret_123" },
+			});
+			assert.equal(vkRes.statusCode, 200, vkRes.body);
+
+			const maxRes = await idemApp.inject({
+				method: "POST",
+				url: "/api/bots/webhook/max/00000000-0000-4000-8000-000000000001",
+				headers: {
+					"content-type": "application/json",
+					"x-max-secret": "max_idem_secret_456",
+				},
+				payload: { text: "ping" },
+			});
+			assert.equal(maxRes.statusCode, 200, maxRes.body);
+		} finally {
+			await idemApp.close();
+			if (prevVk === undefined) delete process.env.VK_WEBHOOK_SECRET;
+			else process.env.VK_WEBHOOK_SECRET = prevVk;
+			if (prevMax === undefined) delete process.env.MAX_WEBHOOK_SECRET;
+			else process.env.MAX_WEBHOOK_SECRET = prevMax;
 		}
 	});
 });

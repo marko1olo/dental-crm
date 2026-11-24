@@ -6,7 +6,7 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -27,111 +27,113 @@ import type {
 
 /**
  * Получение семейного профиля и переключение между членами семьи.
- * Родитель может видеть всех своих детей и подтверждать записи в 1 клик.
+ * Родитель может видеть всех своих детей и подтверждать записи.
  */
 export async function getFamilyProfile(
 	organizationId: string,
 	patientId: string,
+	existingTx?: TenantDb,
 ): Promise<FamilyProfileResult> {
-	try {
-		return await withTenantCtx(organizationId, async () => {
-			const [primary] = await db
+	const run = async (tx: TenantDb): Promise<FamilyProfileResult> => {
+		const [primary] = await tx
+			.select()
+			.from(patients)
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+			.limit(1);
+
+		if (!primary) {
+			return {
+				familyGroupId: null,
+				familyGroupName: "Личный профиль",
+				headPatientId: null,
+				familyBalanceRub: 0,
+				members: [],
+			};
+		}
+
+		let groupMembers: Array<typeof patients.$inferSelect> = [primary];
+		let familyGroupRecord: typeof familyGroups.$inferSelect | undefined;
+
+		if (primary.familyGroupId) {
+			const [fg] = await tx
+				.select()
+				.from(familyGroups)
+				.where(and(eq(familyGroups.organizationId, organizationId), eq(familyGroups.id, primary.familyGroupId)))
+				.limit(1);
+			familyGroupRecord = fg;
+
+			const allInGroup = await tx
 				.select()
 				.from(patients)
-				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.familyGroupId, primary.familyGroupId),
+					),
+				);
+			if (allInGroup.length > 0) {
+				groupMembers = allInGroup;
+			}
+		}
+
+		// Собираем членов семьи
+		const memberItems: FamilyMemberItem[] = [];
+
+		for (const m of groupMembers) {
+			const [bonus] = await tx
+				.select({ active: patientBonusBalances.activePoints })
+				.from(patientBonusBalances)
+				.where(and(eq(patientBonusBalances.organizationId, organizationId), eq(patientBonusBalances.patientId, m.id)))
 				.limit(1);
 
-			if (!primary) {
-				return {
-					familyGroupId: null,
-					familyGroupName: "Личный профиль",
-					headPatientId: null,
-					familyBalanceRub: 0,
-					members: [],
-				};
+			const upcomingAppointments = await tx
+				.select({ id: appointments.id })
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, organizationId),
+						eq(appointments.patientId, m.id),
+						sql`${appointments.status} IN ('planned', 'confirmed')`,
+					),
+				);
+
+			const isPrimary = m.id === primary.id;
+			// Эвристика определения ребенка по возрасту (если дата рождения есть и возраст < 18)
+			let isChild = false;
+			if (m.birthDate) {
+				const birth = new Date(m.birthDate);
+				const age = (Date.now() - birth.getTime()) / (365.25 * 24 * 3600 * 1000);
+				if (age < 18) isChild = true;
 			}
 
-			let groupMembers: Array<typeof patients.$inferSelect> = [primary];
-			let familyGroupRecord: typeof familyGroups.$inferSelect | undefined;
+			memberItems.push({
+				patientId: m.id,
+				fullName: m.fullName,
+				birthDate: m.birthDate,
+				phone: m.phone,
+				relation: isPrimary ? "self" : isChild ? "child" : "spouse",
+				activeBonusPoints: bonus ? Number(bonus.active) : 0,
+				upcomingAppointmentsCount: upcomingAppointments.length,
+			});
+		}
 
-			if (primary.familyGroupId) {
-				const [fg] = await db
-					.select()
-					.from(familyGroups)
-					.where(and(eq(familyGroups.organizationId, organizationId), eq(familyGroups.id, primary.familyGroupId)))
-					.limit(1);
-				familyGroupRecord = fg;
+		return {
+			familyGroupId: familyGroupRecord?.id || null,
+			familyGroupName: familyGroupRecord?.name || familyGroupRecord?.groupName || `Семья (${primary.fullName.split(" ")[0]})`,
+			headPatientId: familyGroupRecord?.headPatientId || primary.id,
+			familyBalanceRub: familyGroupRecord ? Number(familyGroupRecord.balance || 0) : 0,
+			members: memberItems,
+		};
+	};
 
-				const allInGroup = await db
-					.select()
-					.from(patients)
-					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							eq(patients.familyGroupId, primary.familyGroupId),
-						),
-					);
-				if (allInGroup.length > 0) {
-					groupMembers = allInGroup;
-				}
-			}
-
-			// Собираем членов семьи
-			const memberItems: FamilyMemberItem[] = [];
-
-			for (const m of groupMembers) {
-				const [bonus] = await db
-					.select({ active: patientBonusBalances.activePoints })
-					.from(patientBonusBalances)
-					.where(and(eq(patientBonusBalances.organizationId, organizationId), eq(patientBonusBalances.patientId, m.id)))
-					.limit(1);
-
-				const upcomingAppointments = await db
-					.select({ id: appointments.id })
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.organizationId, organizationId),
-							eq(appointments.patientId, m.id),
-							sql`${appointments.status} IN ('planned', 'confirmed')`,
-						),
-					);
-
-				const isPrimary = m.id === primary.id;
-				// Эвристика определения ребенка по возрасту (если дата рождения есть и возраст < 18)
-				let isChild = false;
-				if (m.birthDate) {
-					const birth = new Date(m.birthDate);
-					const age = (Date.now() - birth.getTime()) / (365.25 * 24 * 3600 * 1000);
-					if (age < 18) isChild = true;
-				}
-
-				memberItems.push({
-					patientId: m.id,
-					fullName: m.fullName,
-					birthDate: m.birthDate,
-					phone: m.phone,
-					relation: isPrimary ? "self" : isChild ? "child" : "spouse",
-					activeBonusPoints: bonus ? Number(bonus.active) : 0,
-					upcomingAppointmentsCount: upcomingAppointments.length,
-				});
-			}
-
-			return {
-				familyGroupId: familyGroupRecord?.id || null,
-				familyGroupName: familyGroupRecord?.name || familyGroupRecord?.groupName || `Семья (${primary.fullName.split(" ")[0]})`,
-				headPatientId: familyGroupRecord?.headPatientId || primary.id,
-				familyBalanceRub: familyGroupRecord ? Number(familyGroupRecord.balance || 0) : 0,
-				members: memberItems,
-			};
-		});
-	} catch (err) {
-		throw err;
+	if (existingTx) {
+		return run(existingTx);
 	}
+	return withTenantCtx(organizationId, run);
 }
 
 /**
- * Подтверждение или перенос записи ребенка/члена семьи в 1 клик родителем.
+ * Подтверждение или перенос записи ребенка/члена семьи родителем.
  */
 export async function confirmFamilyAppointment(
 	organizationId: string,
@@ -139,11 +141,11 @@ export async function confirmFamilyAppointment(
 	appointmentId: string,
 ): Promise<{ success: boolean; appointmentId: string; message: string; newStatus?: string }> {
 	try {
-		return await withTenantCtx(organizationId, async () => {
-			const familyProfile = await getFamilyProfile(organizationId, parentPatientId);
+		return await withTenantCtx(organizationId, async (tx) => {
+			const familyProfile = await getFamilyProfile(organizationId, parentPatientId, tx);
 			const allowedPatientIds = familyProfile.members.map((m) => m.patientId);
 
-			const [appt] = await db
+			const [appt] = await tx
 				.select()
 				.from(appointments)
 				.where(and(eq(appointments.organizationId, organizationId), eq(appointments.id, appointmentId)))
@@ -161,12 +163,12 @@ export async function confirmFamilyAppointment(
 				};
 			}
 
-			await db
+			await tx
 				.update(appointments)
 				.set({
 					status: "confirmed",
 				})
-				.where(eq(appointments.id, appointmentId));
+				.where(and(eq(appointments.id, appointmentId), eq(appointments.organizationId, organizationId)));
 
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "appointment_confirmed_by_family",
@@ -208,7 +210,7 @@ export async function findChurnCandidates(
 	options: { minMonths?: number; limit?: number } = {},
 ): Promise<ChurnCandidateItem[]> {
 	try {
-		return await withTenantCtx(organizationId, async () => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			const minMonths = options.minMonths ?? 6;
 			const limit = options.limit ?? 50;
 
@@ -217,7 +219,7 @@ export async function findChurnCandidates(
 			cutoffDate.setMonth(cutoffDate.getMonth() - minMonths);
 
 			// Находим пациентов, у которых был завершенный визит до cutoffDate и нет будущих записей
-			const candidates = await db
+			const candidates = await tx
 				.select({
 					patientId: patients.id,
 					fullName: patients.fullName,
@@ -238,7 +240,7 @@ export async function findChurnCandidates(
 
 			for (const c of candidates) {
 				// Проверяем, нет ли будущих запланированных приёмов
-				const [futureAppt] = await db
+				const [futureAppt] = await tx
 					.select({ id: appointments.id })
 					.from(appointments)
 					.where(
@@ -253,7 +255,7 @@ export async function findChurnCandidates(
 				if (futureAppt) continue; // Пациент уже записан на будущее, пропускаем
 
 				// Ищем telegram chat link
-				const [tgLink] = await db
+				const [tgLink] = await tx
 					.select({ chatId: denteTelegramChatLinks.chatFingerprint })
 					.from(denteTelegramChatLinks)
 					.where(

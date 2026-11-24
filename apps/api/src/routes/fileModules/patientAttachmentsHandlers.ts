@@ -5,11 +5,13 @@ import { pipeline } from "node:stream/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface PatientAttachmentParams {
 	patientId: string;
@@ -32,47 +34,65 @@ export const getPatientAttachmentsHandler = async (
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 		const { patientId } = request.params;
+		if (!UUID_PATTERN.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
+			});
+		}
 
-		const [patient] = await db
-			.select({ id: patients.id, status: patients.status })
-			.from(patients)
-			.where(
-				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-			)
-			.limit(1);
+		const loaded = await withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
+				.select({ id: patients.id, status: patients.status })
+				.from(patients)
+				.where(
+					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+				)
+				.limit(1);
 
-		if (!patient) {
+			if (!patient) {
+				return { kind: "not_found" as const };
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Защита вложений архивированного пациента
+			if (patient.status === "archived") {
+				const identity = getRequestIdentity(request);
+				const staffRole = identity.role ?? request.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return { kind: "forbidden" as const, staffRole };
+				}
+			}
+
+			const rows = await tx
+				.select()
+				.from(attachments)
+				.where(
+					and(
+						eq(attachments.patientId, patientId),
+						eq(attachments.organizationId, orgId),
+					),
+				);
+
+			return { kind: "ok" as const, rows };
+		});
+
+		if (loaded.kind === "not_found") {
 			return reply.code(404).send({
 				error: "PatientNotFound",
 				message: "Пациент не найден в этой клинике.",
 			});
 		}
-
-		// 152-ФЗ / 323-ФЗ ст. 13: Защита вложений архивированного пациента
-		if (patient.status === "archived") {
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "patients.archived.attachments",
-					role: staffRole,
-					message:
-						"Отказ в доступе к вложениям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение файлов списанного в архив пациента неклиническим персоналом запрещено.",
-				});
-			}
+		if (loaded.kind === "forbidden") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archived.attachments",
+				role: loaded.staffRole,
+				message:
+					"Отказ в доступе к вложениям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение файлов списанного в архив пациента неклиническим персоналом запрещено.",
+			});
 		}
-
-		const rows = await db
-			.select()
-			.from(attachments)
-			.where(
-				and(
-					eq(attachments.patientId, patientId),
-					eq(attachments.organizationId, orgId),
-				),
-			);
+		const { rows } = loaded;
 
 		return reply.send({
 			files: rows.map((a) => ({
@@ -99,14 +119,23 @@ export const postPatientAttachmentsHandler = async (
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 		const { patientId } = request.params;
+		if (!UUID_PATTERN.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
+			});
+		}
 
-		const [patient] = await db
-			.select({ id: patients.id, status: patients.status })
-			.from(patients)
-			.where(
-				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-			)
-			.limit(1);
+		const patient = await withTenantCtx(orgId, async (tx) => {
+			const [found] = await tx
+				.select({ id: patients.id, status: patients.status })
+				.from(patients)
+				.where(
+					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+				)
+				.limit(1);
+			return found ?? null;
+		});
 
 		if (!patient) {
 			return reply.code(404).send({
@@ -162,17 +191,19 @@ export const postPatientAttachmentsHandler = async (
 		await pipeline(data.file, writeStream);
 		sha256 = hash.digest("hex");
 
-		const [attachment] = await db
-			.insert(attachments)
-			.values({
-				organizationId: orgId,
-				patientId,
-				fileName: data.filename,
-				mimeType: data.mimetype,
-				storagePath: filename,
-				sha256,
-			})
-			.returning();
+		const [attachment] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.insert(attachments)
+				.values({
+					organizationId: orgId,
+					patientId,
+					fileName: data.filename,
+					mimeType: data.mimetype,
+					storagePath: filename,
+					sha256,
+				})
+				.returning(),
+		);
 
 		if (!attachment) {
 			return reply.code(500).send({

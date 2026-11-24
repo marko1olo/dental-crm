@@ -12,8 +12,9 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { after, before, describe, it } from "node:test";
-import type { FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import { sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { clinics, doctorPreferences, organizations, users } from "../../db/schema.js";
@@ -58,25 +59,39 @@ describe("Settings & Branch Hardening Integration Suite", () => {
 
 		await withFixtureTenant(ORG_ID, async () => {
 			await db.delete(doctorPreferences).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(clinics).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(users).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(organizations).where(sql`id = ${ORG_ID}`);
+			const existingAudit = await db.execute(
+				sql`SELECT 1 FROM audit_events WHERE organization_id = ${ORG_ID} LIMIT 1`,
+			);
+			if (existingAudit.rows.length === 0) {
+				await db.delete(clinics).where(sql`organization_id = ${ORG_ID}`);
+				await db.delete(users).where(sql`organization_id = ${ORG_ID}`);
+				await db.delete(organizations).where(sql`id = ${ORG_ID}`);
+			}
 
-			await db.insert(organizations).values({
-				id: ORG_ID,
-				name: "Клиника Dente Харденинг",
-			});
-			await db.insert(clinics).values({
-				id: CLINIC_ID,
-				organizationId: ORG_ID,
-				name: "Клиника Dente Харденинг",
-			});
-			await db.insert(users).values({
-				id: OWNER_USER_ID,
-				organizationId: ORG_ID,
-				fullName: "Главный Врач Владелец",
-				role: "owner",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника Dente Харденинг",
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(clinics)
+				.values({
+					id: CLINIC_ID,
+					organizationId: ORG_ID,
+					name: "Клиника Dente Харденинг",
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(users)
+				.values({
+					id: OWNER_USER_ID,
+					organizationId: ORG_ID,
+					fullName: "Главный Врач Владелец",
+					role: "owner",
+				})
+				.onConflictDoNothing();
 		});
 
 		app = createTenantTestApp();
@@ -92,9 +107,14 @@ describe("Settings & Branch Hardening Integration Suite", () => {
 
 		await withFixtureTenant(ORG_ID, async () => {
 			await db.delete(doctorPreferences).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(clinics).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(users).where(sql`organization_id = ${ORG_ID}`);
-			await db.delete(organizations).where(sql`id = ${ORG_ID}`);
+			const existingAudit = await db.execute(
+				sql`SELECT 1 FROM audit_events WHERE organization_id = ${ORG_ID} LIMIT 1`,
+			);
+			if (existingAudit.rows.length === 0) {
+				await db.delete(clinics).where(sql`organization_id = ${ORG_ID}`);
+				await db.delete(users).where(sql`organization_id = ${ORG_ID}`);
+				await db.delete(organizations).where(sql`id = ${ORG_ID}`);
+			}
 		});
 
 		if (app) {
@@ -198,5 +218,51 @@ describe("Settings & Branch Hardening Integration Suite", () => {
 		assert.equal(printBody.success, true);
 		assert.ok(printBody.result.bytesSent > 0);
 		assert.ok(printBody.result.rawHexPreview);
+	});
+
+	it("4. Settings routes (branches & tenant-scoped backup) work under PG18 FORCE RLS without createTenantTestApp onRoute hook", async () => {
+		const rawApp = Fastify();
+		await registerSettingsRoutes(rawApp);
+		let createdFilePath: string | undefined;
+		try {
+			const branchesRes = await rawApp.inject({
+				method: "GET",
+				url: "/api/branches",
+				headers: authHeaders(ORG_ID),
+			});
+			assert.equal(branchesRes.statusCode, 200, branchesRes.payload);
+			const branchesBody = JSON.parse(branchesRes.payload) as {
+				success: boolean;
+				data: unknown[];
+				total: number;
+			};
+			assert.equal(branchesBody.success, true);
+			assert.ok(Array.isArray(branchesBody.data));
+			assert.ok(branchesBody.total >= 1);
+
+			const backupRes = await rawApp.inject({
+				method: "POST",
+				url: "/api/settings/backup/create",
+				headers: authHeaders(ORG_ID),
+				payload: {},
+			});
+			assert.equal(backupRes.statusCode, 200, backupRes.payload);
+			const backupBody = JSON.parse(backupRes.payload) as {
+				success: boolean;
+				filename: string;
+				filePath: string;
+				sizeBytes: number;
+			};
+			assert.equal(backupBody.success, true);
+			assert.ok(backupBody.filename.startsWith(`org_${ORG_ID}_backup_`));
+			assert.ok(backupBody.filename.endsWith(".dentalbackup"));
+			assert.ok(backupBody.sizeBytes > 0);
+			createdFilePath = backupBody.filePath;
+		} finally {
+			if (createdFilePath && fs.existsSync(createdFilePath)) {
+				fs.unlinkSync(createdFilePath);
+			}
+			await rawApp.close();
+		}
 	});
 });

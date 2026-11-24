@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
@@ -11,6 +11,8 @@ import {
 } from "../../db/schema.js";
 import { validatePrescriptionAllergiesAndSafety } from "../../services/clinical/prescriptionValidationService.js";
 import { FORBIDDEN_NARCOTIC_INN_PATTERNS } from "./prescriptionSchemas.js";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type StatutoryValidationPayload = Parameters<typeof verifyPrescriptionStatutoryValidity>[0] & {
 	patientAllergies?: string[];
@@ -76,16 +78,26 @@ export async function handleValidatePrescription(
 		patientAllergies = customAllergies.filter(Boolean);
 	}
 	const maybePatientId = body.patientId;
-	if (maybePatientId && typeof maybePatientId === "string") {
-		const dbAllergies = await db
-			.select()
-			.from(patientDrugAllergies)
-			.where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, maybePatientId)));
-		const [patientRow] = await db
-			.select({ notes: patients.notes })
-			.from(patients)
-			.where(and(eq(patients.organizationId, orgId), eq(patients.id, maybePatientId)))
-			.limit(1);
+	if (typeof maybePatientId === "string" && maybePatientId.trim().length > 0) {
+		const trimmedPatientId = maybePatientId.trim();
+		if (!UUID_PATTERN.test(trimmedPatientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
+			});
+		}
+		const { dbAllergies, patientRow } = await withTenantCtx(orgId, async (tx) => {
+			const dbAllergiesInner = await tx
+				.select()
+				.from(patientDrugAllergies)
+				.where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, trimmedPatientId)));
+			const [patientRowInner] = await tx
+				.select({ notes: patients.notes })
+				.from(patients)
+				.where(and(eq(patients.organizationId, orgId), eq(patients.id, trimmedPatientId)))
+				.limit(1);
+			return { dbAllergies: dbAllergiesInner, patientRow: patientRowInner };
+		});
 		const dbAllergyStrings = dbAllergies
 			.map((a) => a.allergenGroup || a.drugInnLatin)
 			.filter((s): s is string => typeof s === "string" && s.length > 0);
@@ -129,20 +141,36 @@ export async function handleVerifyPrescription(
 	if (!orgId) return;
 
 	const { id } = request.params;
-	const [presc] = await db
-		.select()
-		.from(electronicPrescriptions)
-		.where(and(eq(electronicPrescriptions.id, id), eq(electronicPrescriptions.organizationId, orgId)))
-		.limit(1);
-
-	if (!presc) {
-		return reply.code(404).send({ error: "PrescriptionNotFound", message: "Рецепт не найден." });
+	if (!UUID_PATTERN.test(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор рецепта (ожидается формат UUID).",
+		});
 	}
 
-	const items = await db
-		.select()
-		.from(electronicPrescriptionItems)
-		.where(and(eq(electronicPrescriptionItems.prescriptionId, presc.id), eq(electronicPrescriptionItems.organizationId, orgId)));
+	const loaded = await withTenantCtx(orgId, async (tx) => {
+		const [prescInner] = await tx
+			.select()
+			.from(electronicPrescriptions)
+			.where(and(eq(electronicPrescriptions.id, id), eq(electronicPrescriptions.organizationId, orgId)))
+			.limit(1);
+
+		if (!prescInner) {
+			return null;
+		}
+
+		const itemsInner = await tx
+			.select()
+			.from(electronicPrescriptionItems)
+			.where(and(eq(electronicPrescriptionItems.prescriptionId, prescInner.id), eq(electronicPrescriptionItems.organizationId, orgId)));
+
+		return { presc: prescInner, items: itemsInner };
+	});
+
+	if (!loaded) {
+		return reply.code(404).send({ error: "PrescriptionNotFound", message: "Рецепт не найден." });
+	}
+	const { presc, items } = loaded;
 
 	const validityDaysNum =
 		presc.validityPeriod === "days_15"

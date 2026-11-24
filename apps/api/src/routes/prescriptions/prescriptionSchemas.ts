@@ -47,26 +47,29 @@ export const createPrescriptionBodySchema = z
 		notes: z.string().max(500).optional().nullable(),
 		items: z
 			.array(
-				z.object({
-					catalogDrugId: z.string().max(64).optional().nullable(),
-					innLatin: z.string().min(2).max(240),
-					dosageFormLatin: z.string().min(2).max(120),
-					dosageDoseConcentration: z.string().min(1).max(80),
-					dispenseInstructionLatin: z.string().min(2).max(200),
-					signatureDirectionRussian: z.string().min(5).max(500),
-					tradeName: z.string().max(120).optional().nullable(),
-					quantityPackages: z.number().int().min(1).default(1),
-					durationDays: z.number().int().min(1).default(7),
-					frequencyTimesPerDay: z.number().int().min(1).default(2),
-					mealRelation: z
-						.enum(["before_meal", "with_meal", "after_meal", "independent"])
-						.default("after_meal"),
-				}),
+				z
+					.object({
+						catalogDrugId: z.string().max(64).optional().nullable(),
+						innLatin: z.string().min(2).max(240),
+						dosageFormLatin: z.string().min(2).max(120),
+						dosageDoseConcentration: z.string().min(1).max(80),
+						dispenseInstructionLatin: z.string().min(2).max(200),
+						signatureDirectionRussian: z.string().min(5).max(500),
+						tradeName: z.string().max(120).optional().nullable(),
+						quantityPackages: z.number().int().min(1).default(1),
+						durationDays: z.number().int().min(1).default(7),
+						frequencyTimesPerDay: z.number().int().min(1).default(2),
+						mealRelation: z
+							.enum(["before_meal", "with_meal", "after_meal", "independent"])
+							.default("after_meal"),
+					})
+					.strict(),
 			)
 			.min(1)
 			.max(3),
 		ukepSignature: prescriptionDoctorUkepSchema.optional().nullable(),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		// Мандат 8i / 8s: Запрет выписки наркотических анальгетиков Списка II/III в частной амбулаторной стоматологии
 		for (let i = 0; i < data.items.length; i++) {
@@ -100,14 +103,16 @@ export const createPrescriptionBodySchema = z
 	});
 
 /** Schema for UKEP signing */
-export const signUkepBodySchema = z.object({
-	pkcs7Signature: z.string().min(1, { message: "pkcs7Signature is required" }),
-	certificateSerialNumber: z.string().max(64).optional(),
-	certificateThumbprint: z.string().max(64).optional(),
-	certificateIssuer: z.string().max(160).optional(),
-	certificateValidFrom: z.string().max(32).optional(),
-	certificateValidTo: z.string().max(32).optional(),
-	doctorSnils: z.string().max(32).optional(),
-	signatureAlgorithm: z.string().max(64).default("ГОСТ Р 34.10-2012 (256 бит)"),
-	egiszDocumentId: z.string().max(64).optional(),
-});
+export const signUkepBodySchema = z
+	.object({
+		pkcs7Signature: z.string().min(1, { message: "pkcs7Signature is required" }),
+		certificateSerialNumber: z.string().max(64).optional(),
+		certificateThumbprint: z.string().max(64).optional(),
+		certificateIssuer: z.string().max(160).optional(),
+		certificateValidFrom: z.string().max(32).optional(),
+		certificateValidTo: z.string().max(32).optional(),
+		doctorSnils: z.string().max(32).optional(),
+		signatureAlgorithm: z.string().max(64).default("ГОСТ Р 34.10-2012 (256 бит)"),
+		egiszDocumentId: z.string().max(64).optional(),
+	})
+	.strict();

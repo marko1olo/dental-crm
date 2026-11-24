@@ -3,14 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	backupsDirectory,
-	createEncryptedBackup,
+	createTenantEncryptedBackup,
 } from "../../services/backupWorker.js";
 import {
-	requireSettingsAccess,
 	requireSettingsMutationAccess,
 	requireSettingsSensitiveReadAccess,
 } from "./helpers.js";
@@ -101,7 +101,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			};
 		}
 
-		const outcome = await createEncryptedBackup();
+		const outcome = await createTenantEncryptedBackup(orgId);
 		if (!outcome.success || !outcome.filePath) {
 			reply.code(500);
 			return {
@@ -133,13 +133,19 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
 		try {
-			await recordAuditEventInDb(orgId, {
-				entityType: "backup",
-				entityId: finalFilename,
-				action: "BACKUP_CREATED",
-				actorUserId: identity.userId,
-				reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
-			});
+			await withTenantCtx(orgId, async (tx) =>
+				recordAuditEventInDb(
+					orgId,
+					{
+						entityType: "backup",
+						entityId: finalFilename,
+						action: "BACKUP_CREATED",
+						actorUserId: identity.userId,
+						reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
+					},
+					tx,
+				),
+			);
 		} catch (auditErr: unknown) {
 			request.log.warn(
 				{ err: safeLogError(auditErr), organizationId: orgId, filename: finalFilename },

@@ -10,6 +10,7 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal/index.js";
+import { registerConsentRoutes } from "../../routes/consents/index.js";
 import {
 	createSignatureRecord,
 	generateFallbackTextSignatureDataUrl,
@@ -22,6 +23,7 @@ import {
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 const FIXTURE = "portalConsentsAutonomy";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -276,5 +278,32 @@ describe("Patient Portal Consents Autonomy (Mandates 8e, 8i, 8k)", () => {
 			documentHash: "deadbeef",
 		});
 		assert.ok(record.signaturePng.startsWith("data:image/svg+xml;base64,"));
+	});
+
+	test("Test 4: POST /api/public/consents/sign is exempt from Idempotency-Key requirement under idempotencyPlugin", async (context) => {
+		if (!databaseAvailable) return context.skip("База данных недоступна");
+
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerConsentRoutes(idemApp);
+		try {
+			const publicToken = signToken(
+				{ scope: "consent_share", pid: PATIENT_ID, oid: ORG_ID, kind: "informed_consent" },
+				requireAuthTokenSecret(),
+				3600,
+			);
+			const res = await idemApp.inject({
+				method: "POST",
+				url: "/api/public/consents/sign",
+				payload: {
+					token: publicToken,
+					signatureType: "patient_portal",
+				},
+			});
+			assert.equal(res.statusCode, 201, res.body);
+			const body = JSON.parse(res.body) as { success: boolean };
+			assert.equal(body.success, true);
+		} finally {
+			await idemApp.close();
+		}
 	});
 });

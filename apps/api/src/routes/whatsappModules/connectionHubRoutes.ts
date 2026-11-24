@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -14,6 +14,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
 import { WhatsappConnectionHubService } from "../../services/messaging/whatsappConnectionHub.js";
@@ -140,12 +141,6 @@ export async function registerConnectionHubRoutes(
 		const input = parsed.data;
 		const now = new Date();
 
-		const [existing] = await db
-			.select({ id: denteWhatsappBotConfigs.id })
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
-
 		let encryptedToken: string | null = null;
 		if (input.accessToken) {
 			encryptedToken = OmnichannelTokenVault.isEncrypted(input.accessToken)
@@ -162,56 +157,69 @@ export async function registerConnectionHubRoutes(
 				: OmnichannelTokenVault.encrypt(input.greenApiToken, orgId);
 		}
 
-		if (existing) {
-			const updateValues: Partial<typeof denteWhatsappBotConfigs.$inferInsert> =
-				{ updatedAt: now };
+		await withTenantCtx(orgId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', 'whatsapp_settings', ${orgId}::text)))`,
+			);
 
-			if (input.phoneNumberId !== undefined)
-				updateValues.phoneNumberId = input.phoneNumberId;
-			if (encryptedToken) {
-				updateValues.accessToken = encryptedToken;
-				updateValues.tokenSecretRef = encryptedToken;
-			}
-			if (encryptedGreenToken) {
-				updateValues.greenApiToken = encryptedGreenToken;
-			}
-			if (input.provider !== undefined) {
-				updateValues.provider = input.provider;
-			}
-			if (input.greenApiInstanceId !== undefined) {
-				updateValues.greenApiInstanceId = input.greenApiInstanceId;
-			}
-			if (input.webhookVerifyToken !== undefined)
-				updateValues.webhookVerifyToken = input.webhookVerifyToken;
-			if (input.enabledFeatures !== undefined)
-				updateValues.enabledFeaturesJson = JSON.stringify(
-					input.enabledFeatures,
-				);
-			if (input.staffRouting !== undefined)
-				updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-			if (input.isActive !== undefined) updateValues.isActive = input.isActive;
+			const [existing] = await tx
+				.select({ id: denteWhatsappBotConfigs.id })
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.limit(1)
+				.for("update");
 
-			await db
-				.update(denteWhatsappBotConfigs)
-				.set(updateValues)
-				.where(eq(denteWhatsappBotConfigs.organizationId, orgId));
-		} else {
-			await db.insert(denteWhatsappBotConfigs).values({
-				organizationId: orgId,
-				phoneNumberId: input.phoneNumberId ?? null,
-				provider: input.provider ?? "cloud_api",
-				greenApiInstanceId: input.greenApiInstanceId ?? null,
-				greenApiToken: encryptedGreenToken,
-				accessToken: encryptedToken,
-				tokenSecretRef: encryptedToken,
-				webhookVerifyToken: input.webhookVerifyToken ?? null,
-				enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
-				staffRoutingJson: JSON.stringify(
-					input.staffRouting ?? { defaultUserId: null, rules: [] },
-				),
-				isActive: input.isActive ?? false,
-			});
-		}
+			if (existing) {
+				const updateValues: Partial<typeof denteWhatsappBotConfigs.$inferInsert> =
+					{ updatedAt: now };
+
+				if (input.phoneNumberId !== undefined)
+					updateValues.phoneNumberId = input.phoneNumberId;
+				if (encryptedToken) {
+					updateValues.accessToken = encryptedToken;
+					updateValues.tokenSecretRef = encryptedToken;
+				}
+				if (encryptedGreenToken) {
+					updateValues.greenApiToken = encryptedGreenToken;
+				}
+				if (input.provider !== undefined) {
+					updateValues.provider = input.provider;
+				}
+				if (input.greenApiInstanceId !== undefined) {
+					updateValues.greenApiInstanceId = input.greenApiInstanceId;
+				}
+				if (input.webhookVerifyToken !== undefined)
+					updateValues.webhookVerifyToken = input.webhookVerifyToken;
+				if (input.enabledFeatures !== undefined)
+					updateValues.enabledFeaturesJson = JSON.stringify(
+						input.enabledFeatures,
+					);
+				if (input.staffRouting !== undefined)
+					updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
+				if (input.isActive !== undefined) updateValues.isActive = input.isActive;
+
+				await tx
+					.update(denteWhatsappBotConfigs)
+					.set(updateValues)
+					.where(eq(denteWhatsappBotConfigs.id, existing.id));
+			} else {
+				await tx.insert(denteWhatsappBotConfigs).values({
+					organizationId: orgId,
+					phoneNumberId: input.phoneNumberId ?? null,
+					provider: input.provider ?? "cloud_api",
+					greenApiInstanceId: input.greenApiInstanceId ?? null,
+					greenApiToken: encryptedGreenToken,
+					accessToken: encryptedToken,
+					tokenSecretRef: encryptedToken,
+					webhookVerifyToken: input.webhookVerifyToken ?? null,
+					enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
+					staffRoutingJson: JSON.stringify(
+						input.staffRouting ?? { defaultUserId: null, rules: [] },
+					),
+					isActive: input.isActive ?? false,
+				});
+			}
+		});
 
 		reply.code(200);
 		return { ok: true };
