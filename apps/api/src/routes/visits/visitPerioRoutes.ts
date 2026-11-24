@@ -1,3 +1,4 @@
+import { computePayloadHash } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -7,7 +8,9 @@ import {
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { db as database } from "../../db/client.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { visitDiaries, visits } from "../../db/schema.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	upsertPatientFullPeriodontogram,
@@ -87,6 +90,45 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+
+			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
+			const [existingRecord] = await database
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, context.organizationId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция сохранения пародонтограммы с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
+
 		const [visit] = await database
 			.select({
 				id: visits.id,
@@ -136,17 +178,26 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const rawBody = (request.body as Record<string, unknown>) || {};
-		const { teethData, psr, ...restBody } = rawBody;
-		const normalizedBody = {
-			...restBody,
-			teeth: Array.isArray(rawBody.teeth)
-				? rawBody.teeth
-				: Array.isArray(teethData)
-					? teethData
-					: undefined,
-			psrData: (rawBody.psrData ?? psr ?? undefined) as Record<string, unknown> | undefined,
-		};
+		const rawBody = (typeof request.body === "object" && request.body !== null ? request.body : {}) as Record<string, unknown>;
+		const teeth = Array.isArray(rawBody.teeth)
+			? rawBody.teeth
+			: Array.isArray(rawBody.teethData)
+				? rawBody.teethData
+				: undefined;
+		const psrData = (rawBody.psrData ?? rawBody.psr ?? undefined) as Record<string, unknown> | undefined;
+
+		const normalizedBody: Record<string, unknown> = {};
+		if (rawBody.visitId !== undefined) normalizedBody.visitId = rawBody.visitId;
+		if (teeth !== undefined) normalizedBody.teeth = teeth;
+		if (rawBody.sites !== undefined) normalizedBody.sites = rawBody.sites;
+		if (rawBody.notes !== undefined) normalizedBody.notes = rawBody.notes;
+		if (rawBody.status !== undefined) normalizedBody.status = rawBody.status;
+		if (rawBody.autoClose !== undefined) normalizedBody.autoClose = rawBody.autoClose;
+		if (psrData !== undefined) normalizedBody.psrData = psrData;
+		if (rawBody.psrCode !== undefined) normalizedBody.psrCode = rawBody.psrCode;
+		if (rawBody.hasAsterisk !== undefined) normalizedBody.hasAsterisk = rawBody.hasAsterisk;
+		if (rawBody.indices !== undefined) normalizedBody.indices = rawBody.indices;
+
 		const parsed = upsertPatientFullPeriodontogramBodySchema.safeParse(normalizedBody);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -174,13 +225,44 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			psrData: validData.psrData,
 		});
 
-		return reply.send({
+		const responsePayload = {
 			ok: true,
 			success: true,
 			visitId: visit.id,
 			patientId: visit.patientId,
 			data: savedSnapshot,
-		});
+		};
+
+		if (idempotencyKey) {
+			try {
+				await database
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: context.organizationId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+							lockedAt: new Date(),
+						},
+					});
+			} catch (idemErr) {
+				request.log.warn(
+					{ err: idemErr, idempotencyKey, orgId: context.organizationId },
+					"[visitPerio] Не удалось сохранить ключ идемпотентности",
+				);
+			}
+		}
+
+		return reply.send(responsePayload);
 	};
 
 	// Регистрация обоих путей: /api/visits/:visitId/perio и /api/clinical/visits/:visitId/perio

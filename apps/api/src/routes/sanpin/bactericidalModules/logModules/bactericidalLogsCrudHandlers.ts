@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
@@ -25,33 +25,35 @@ export async function handleGetBactericidalLogs(
 	);
 	if (!organizationId) return;
 
-	const logs = await db
-		.select({
-			id: bactericidalIrradiatorLogs.id,
-			organizationId: bactericidalIrradiatorLogs.organizationId,
-			equipmentId: bactericidalIrradiatorLogs.equipmentId,
-			roomName: bactericidalEquipments.roomName,
-			deviceBrand: bactericidalEquipments.deviceBrand,
-			serialNumber: bactericidalEquipments.serialNumber,
-			date: bactericidalIrradiatorLogs.date,
-			sessionStartTime: bactericidalIrradiatorLogs.sessionStartTime,
-			sessionEndTime: bactericidalIrradiatorLogs.sessionEndTime,
-			durationMinutes: bactericidalIrradiatorLogs.durationMinutes,
-			operatingMode: bactericidalIrradiatorLogs.operatingMode,
-			cumulativeHoursAfterSession: bactericidalIrradiatorLogs.cumulativeHoursAfterSession,
-			operatorId: bactericidalIrradiatorLogs.operatorId,
-			operatorName: users.fullName,
-			notes: bactericidalIrradiatorLogs.notes,
-			createdAt: bactericidalIrradiatorLogs.createdAt,
-		})
-		.from(bactericidalIrradiatorLogs)
-		.innerJoin(
-			bactericidalEquipments,
-			eq(bactericidalEquipments.id, bactericidalIrradiatorLogs.equipmentId),
-		)
-		.leftJoin(users, eq(users.id, bactericidalIrradiatorLogs.operatorId))
-		.where(eq(bactericidalIrradiatorLogs.organizationId, organizationId))
-		.orderBy(desc(bactericidalIrradiatorLogs.date), desc(bactericidalIrradiatorLogs.sessionStartTime));
+	const logs = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select({
+				id: bactericidalIrradiatorLogs.id,
+				organizationId: bactericidalIrradiatorLogs.organizationId,
+				equipmentId: bactericidalIrradiatorLogs.equipmentId,
+				roomName: bactericidalEquipments.roomName,
+				deviceBrand: bactericidalEquipments.deviceBrand,
+				serialNumber: bactericidalEquipments.serialNumber,
+				date: bactericidalIrradiatorLogs.date,
+				sessionStartTime: bactericidalIrradiatorLogs.sessionStartTime,
+				sessionEndTime: bactericidalIrradiatorLogs.sessionEndTime,
+				durationMinutes: bactericidalIrradiatorLogs.durationMinutes,
+				operatingMode: bactericidalIrradiatorLogs.operatingMode,
+				cumulativeHoursAfterSession: bactericidalIrradiatorLogs.cumulativeHoursAfterSession,
+				operatorId: bactericidalIrradiatorLogs.operatorId,
+				operatorName: users.fullName,
+				notes: bactericidalIrradiatorLogs.notes,
+				createdAt: bactericidalIrradiatorLogs.createdAt,
+			})
+			.from(bactericidalIrradiatorLogs)
+			.innerJoin(
+				bactericidalEquipments,
+				eq(bactericidalEquipments.id, bactericidalIrradiatorLogs.equipmentId),
+			)
+			.leftJoin(users, eq(users.id, bactericidalIrradiatorLogs.operatorId))
+			.where(eq(bactericidalIrradiatorLogs.organizationId, organizationId))
+			.orderBy(desc(bactericidalIrradiatorLogs.date), desc(bactericidalIrradiatorLogs.sessionStartTime));
+	});
 
 	return logs.map((l) => ({
 		...l,
@@ -80,16 +82,18 @@ export async function handleCreateBactericidalLog(
 	}
 	const data = parsed.data;
 
-	const [equipment] = await db
-		.select()
-		.from(bactericidalEquipments)
-		.where(
-			and(
-				eq(bactericidalEquipments.id, data.equipmentId),
-				eq(bactericidalEquipments.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const [equipment] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.id, data.equipmentId),
+					eq(bactericidalEquipments.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+	});
 
 	if (!equipment) {
 		return reply.code(404).send({ error: "NotFound", message: "Бактерицидный облучатель не найден." });
@@ -106,7 +110,7 @@ export async function handleCreateBactericidalLog(
 		`${data.date}T${data.sessionEndTime.length === 5 ? data.sessionEndTime + ":00" : data.sessionEndTime}`,
 	);
 
-	const [log] = await db.transaction(async (tx) => {
+	const [log] = await withTenantCtx(organizationId, async (tx) => {
 		await tx
 			.update(bactericidalEquipments)
 			.set({ totalOperatingHours: String(newTotalHours), lampStatus: lampLife.status, updatedAt: new Date() })

@@ -403,57 +403,21 @@ export async function handleFiscalQueueRetry(
 	}
 	const { id } = parsedParams.data;
 
-	const [queueItem] = await db
-		.select()
-		.from(fiscalReceiptQueue)
-		.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
-		.limit(1);
+	const result = await FiscalQueueRetryWorker.retrySingleReceipt(orgId, id);
 
-	if (!queueItem) {
+	if (result.error === "QueueItemNotFound" || (!result.item && !result.success)) {
 		return reply.status(404).send({
 			error: "QueueItemNotFound",
 			message: "Запись очереди фискализации не найдена",
 		});
 	}
 
-	const deviceStatus = await LanKktDriverService.checkDeviceStatus();
-
-	if (!deviceStatus.online || !deviceStatus.paperOk) {
-		const [updated] = await db
-			.update(fiscalReceiptQueue)
-			.set({
-				status: "hardware_offline",
-				lastError: deviceStatus.error || "KKT connection timed out or printer offline",
-				retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
-				updatedAt: new Date(),
-			})
-			.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
-			.returning();
-
-		return reply.status(200).send({
-			success: false,
-			status: "hardware_offline",
-			retryCount: updated?.retryCount,
-			item: updated,
-		});
-	}
-
-	const [updated] = await db
-		.update(fiscalReceiptQueue)
-		.set({
-			status: "printed",
-			printedAt: new Date(),
-			lastError: null,
-			retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
-			updatedAt: new Date(),
-		})
-		.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
-		.returning();
-
 	return reply.status(200).send({
-		success: true,
-		status: "printed",
-		item: updated,
+		success: result.success,
+		status: result.status,
+		retryCount: result.retryCount,
+		item: result.item,
+		...(result.error ? { error: result.error } : {}),
 	});
 }
 

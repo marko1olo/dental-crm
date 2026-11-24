@@ -17,22 +17,22 @@ export const emkAddDocumentBodySchema = z.object({
 		idPatientMis: z.string().min(1), snils: z.string().min(11),
 		familyName: z.string().min(1), givenName: z.string().min(1),
 		middleName: z.string().optional(), birthDate: z.string(), gender: z.enum(["1", "2"]),
-	}),
+	}).strict(),
 	doctor: z.object({
 		snils: z.string().min(11), familyName: z.string().min(1), givenName: z.string().min(1),
 		middleName: z.string().optional(), positionCode: z.string().optional(), specialtyCode: z.string().optional(),
-	}),
+	}).strict(),
 	signatures: z.array(z.object({
 		signatureType: z.enum(["Doctor", "Clinic"]), signatureBase64: z.string().min(1), signerSnils: z.string().optional(),
-	})).optional(),
-});
+	}).strict()).optional(),
+}).strict();
 
 export const emkSendDocumentBodySchema = z.object({
 	idDocumentMis: z.string().min(1),
 	idCaseMis: z.string().optional(),
 	targetSystem: z.enum(["REMD", "IEMK", "ALL"]).default("REMD"),
 	dryRun: z.boolean().optional().default(false),
-});
+}).strict();
 
 export const emkCloseCaseBodySchema = z.object({
 	idCaseMis: z.string().min(1),
@@ -40,26 +40,26 @@ export const emkCloseCaseBodySchema = z.object({
 	resultCode: z.string().optional().default("301"),
 	outcomeCode: z.string().optional().default("301"),
 	dryRun: z.boolean().optional().default(false),
-});
+}).strict();
 
 export const pixPatientBodySchema = z.object({
 	dryRun: z.boolean().optional().default(false),
 	idPatientMis: z.string().min(1),
 	familyName: z.string().min(1), givenName: z.string().min(1), middleName: z.string().optional(),
 	birthDate: z.string(), gender: z.enum(["1", "2"]), snils: z.string().min(11),
-	omsPolicy: z.object({ number: z.string().min(1), type: z.string().optional(), issuer: z.string().optional() }).optional(),
-	document: z.object({ docType: z.string().min(1), series: z.string().optional(), number: z.string().min(1), issueDate: z.string().optional(), issuer: z.string().optional() }).optional(),
+	omsPolicy: z.object({ number: z.string().min(1), type: z.string().optional(), issuer: z.string().optional() }).strict().optional(),
+	document: z.object({ docType: z.string().min(1), series: z.string().optional(), number: z.string().min(1), issueDate: z.string().optional(), issuer: z.string().optional() }).strict().optional(),
 	phone: z.string().optional(),
-});
+}).strict();
 
 export const pixFindPatientsBodySchema = z.object({
 	dryRun: z.boolean().optional().default(false),
 	idPatientMis: z.string().optional(), snils: z.string().optional(),
 	familyName: z.string().optional(), givenName: z.string().optional(),
 	middleName: z.string().optional(), birthDate: z.string().optional(), omsNumber: z.string().optional(),
-});
+}).strict();
 
 export const eventLogReexportBodySchema = z.object({
 	idDocumentMis: z.string().min(1),
 	queue: z.enum(["REMD", "IEMK"]).default("REMD"),
-});
+}).strict();

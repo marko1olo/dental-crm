@@ -37,6 +37,22 @@ export {
 	generateMonthBatchRows,
 } from "./shiftAutofillModules/shiftAutofillCalculators.js";
 
+const sanpinAutofillMutationOptions = {
+	schema: {
+		description:
+			"SanPiN autofill mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				"organizationid": { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+};
+
 /**
  * Canonical Facade: Автопилот смены и месяца журналов СанПиН (Журнал автоклавирования и предстерилизационной очистки)
  * Decomposed into modular architecture in ./shiftAutofillModules/
@@ -50,52 +66,24 @@ export function registerSanpinShiftAutofillRoutes(app: FastifyInstance) {
 	// 7. Автопилот смены журналов СанПиН
 	app.post(
 		"/api/registers/autofill-shift",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Автопилот смены журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
-				},
-			},
-		},
+		sanpinAutofillMutationOptions,
 		handleAutofillShift,
 	);
 	app.post(
 		"/api/sanpin/shift-autofill",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Автопилот смены журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
-				},
-			},
-		},
+		sanpinAutofillMutationOptions,
 		handleAutofillShift,
 	);
 
 	// 8. Автопилот месяца журналов СанПиН
 	app.post(
 		"/api/registers/autofill-month",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Автопилот месяца журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
-				},
-			},
-		},
+		sanpinAutofillMutationOptions,
 		handleAutofillMonth,
 	);
 	app.post(
 		"/api/sanpin/month-autofill",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Автопилот месяца журналов СанПиН: проверка organizationId и заголовок Idempotency-Key",
-				},
-			},
-		},
+		sanpinAutofillMutationOptions,
 		handleAutofillMonth,
 	);
 }

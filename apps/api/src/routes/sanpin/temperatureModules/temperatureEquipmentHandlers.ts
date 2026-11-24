@@ -8,7 +8,7 @@ import { createTemperatureHumidityEquipmentDtoSchema } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { temperatureHumidityEquipments } from "../../../db/schema.js";
 
 export async function handleGetTemperatureEquipments(req: FastifyRequest, reply: FastifyReply) {
@@ -19,11 +19,13 @@ export async function handleGetTemperatureEquipments(req: FastifyRequest, reply:
 	);
 	if (!organizationId) return;
 
-	const list = await db
-		.select()
-		.from(temperatureHumidityEquipments)
-		.where(eq(temperatureHumidityEquipments.organizationId, organizationId))
-		.orderBy(temperatureHumidityEquipments.name);
+	const list = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.select()
+			.from(temperatureHumidityEquipments)
+			.where(eq(temperatureHumidityEquipments.organizationId, organizationId))
+			.orderBy(temperatureHumidityEquipments.name);
+	});
 
 	return list.map((e) => ({
 		...e,
@@ -51,23 +53,25 @@ export async function handlePostTemperatureEquipment(req: FastifyRequest, reply:
 	}
 	const data = parsed.data;
 
-	const [created] = await db
-		.insert(temperatureHumidityEquipments)
-		.values({
-			organizationId,
-			equipmentType: data.equipmentType,
-			name: data.name,
-			location: data.location,
-			meterDeviceName: data.meterDeviceName,
-			meterSerialNumber: data.meterSerialNumber ?? null,
-			verificationExpiryDate: data.verificationExpiryDate ?? null,
-			targetTempMinCelsius: String(data.targetTempMinCelsius),
-			targetTempMaxCelsius: String(data.targetTempMaxCelsius),
-			targetHumidityMinPercent: data.targetHumidityMinPercent ? String(data.targetHumidityMinPercent) : null,
-			targetHumidityMaxPercent: data.targetHumidityMaxPercent ? String(data.targetHumidityMaxPercent) : null,
-			isActive: data.isActive ?? true,
-		})
-		.returning();
+	const [created] = await withTenantCtx(organizationId, async (tx) => {
+		return tx
+			.insert(temperatureHumidityEquipments)
+			.values({
+				organizationId,
+				equipmentType: data.equipmentType,
+				name: data.name,
+				location: data.location,
+				meterDeviceName: data.meterDeviceName,
+				meterSerialNumber: data.meterSerialNumber ?? null,
+				verificationExpiryDate: data.verificationExpiryDate ?? null,
+				targetTempMinCelsius: String(data.targetTempMinCelsius),
+				targetTempMaxCelsius: String(data.targetTempMaxCelsius),
+				targetHumidityMinPercent: data.targetHumidityMinPercent ? String(data.targetHumidityMinPercent) : null,
+				targetHumidityMaxPercent: data.targetHumidityMaxPercent ? String(data.targetHumidityMaxPercent) : null,
+				isActive: data.isActive ?? true,
+			})
+			.returning();
+	});
 
 	return reply.code(201).send(created);
 }

@@ -367,46 +367,22 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 			loyaltyTierRu: "Базовый",
 			appointments: appointments.map((app) => ({
 				id: app.id,
-				dateIso: `${taxYear}-06-15T14:00:00.000Z`,
+				dateIso: app.dateStr || `${taxYear}-01-01T00:00:00.000Z`,
 				dateRu: app.dateStr,
 				timeRu: app.timeStr,
-				doctorId: "doc-1",
+				doctorId: "",
 				doctorName: app.doctorName,
 				doctorSpecialtyRu: app.doctorRole,
-				roomNumber: app.cabinet || "Кабинет 1",
-				clinicName: "DENTE",
-				clinicAddressRu: "г. Москва, Клинический переулок, д. 4",
+				roomNumber: app.cabinet || "",
+				clinicName: clinicName || "Стоматологическая клиника",
+				clinicAddressRu: "",
 				titleRu: app.procedureTitle || "Стоматологический приём",
 				status: app.isPast ? ("completed" as const) : ("scheduled" as const),
 				priceRub: app.costRub,
 				reminderSent: false,
 			})),
 			treatmentPlans: [],
-			invoices: invoices.length > 0
-				? invoices
-				: appointments
-						.filter((app) => app.isPast && typeof app.costRub === "number" && app.costRub > 0)
-						.map((app, idx) => ({
-							id: `inv-${app.id || idx}`,
-							invoiceNumber: `Ч-${idx + 1}`,
-							issueDateIso: `${taxYear}-06-15`,
-							paidAtIso: `${taxYear}-06-15`,
-							titleRu: app.procedureTitle || "Стоматологическое лечение",
-							totalAmountRub: app.costRub ?? 0,
-							paidAmountRub: app.costRub ?? 0,
-							remainingAmountRub: 0,
-							status: "paid" as const,
-							fiscalReceiptNumber: `ФД-${1000 + idx}`,
-							items: [
-								{
-									code: "A16.07.002.001",
-									titleRu: app.procedureTitle || "Стоматологическое лечение",
-									quantity: 1,
-									priceRub: app.costRub ?? 0,
-									totalRub: app.costRub ?? 0,
-								},
-							],
-						})),
+			invoices: invoices || [],
 			warranties: [],
 			passport: payerPassport.trim() || undefined,
 		};
@@ -428,7 +404,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		appointments,
 		taxYear,
 		sessionToken,
-		isDemo,
+		clinicName,
+		invoices,
 		payerPassport,
 	]);
 

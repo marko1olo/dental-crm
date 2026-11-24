@@ -265,6 +265,12 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 							</div>
 
 							{/* Сводка и итоговая кнопка */}
+							{totalYearExpense === 0 ? (
+								<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs">
+									За {taxYear} год оплат не зарегистрировано. Справка для налогового вычета формируется строго на основании фактических фискальных чеков.
+								</div>
+							) : null}
+
 							<div className="tg-deduction-summary-box">
 								<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
 									Расчетная сумма вычета:

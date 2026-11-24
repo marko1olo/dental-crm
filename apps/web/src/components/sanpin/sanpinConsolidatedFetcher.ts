@@ -150,8 +150,8 @@ export async function fetchLiveConsolidatedSanpinData(ctx: FetchSanpinContext): 
 		tempLogsRes,
 	] = await Promise.allSettled([
 		fetch("/api/registers/pso", { headers }),
-		fetch("/api/registers/sterilization", { headers }),
-		fetch("/api/registers/sterilizers/equipments", { headers }),
+		fetch("/api/sanpin/sterilization", { headers }),
+		fetch("/api/sanpin/sterilization/equipments", { headers }),
 		fetch("/api/registers/bactericidal/logs", { headers }),
 		fetch("/api/registers/bactericidal/equipments", { headers }),
 		fetch("/api/registers/cleaning", { headers }),

@@ -18,11 +18,13 @@ interface RawSterilizationCycleItem {
 	readonly barcode?: string;
 }
 
-function getSterilizerHeaders(isJson = false): HeadersInit {
+function getSterilizerHeaders(isJson = false, isMutation = false): HeadersInit {
 	const clinicToken = readDenteClinicToken();
 	const staffToken = readDenteStaffToken();
+	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `sanpin-sterilizer-${Date.now()}`;
 	return {
 		...(isJson ? { "Content-Type": "application/json" } : {}),
+		...(isMutation ? { "Idempotency-Key": idempotencyKey } : {}),
 		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 	};
@@ -36,7 +38,7 @@ export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentNam
 	const fetchCycles = async () => {
 		try {
 			setLoading(true);
-			const res = await fetch("/api/registers/sterilization", { headers: getSterilizerHeaders() }).catch(() => null);
+			const res = await fetch("/api/sanpin/sterilization", { headers: getSterilizerHeaders() }).catch(() => null);
 			if (res && res.ok) {
 				const data = (await res.json()) as unknown;
 				if (Array.isArray(data)) {
@@ -85,7 +87,7 @@ export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentNam
 				passedIndicator: true, indicatorType: "integral_class_5", packagingType: "kraft_bag_combined", date: todayDateStr,
 			};
 
-			const res = await fetch("/api/registers/sterilization", { method: "POST", headers: getSterilizerHeaders(true), body: JSON.stringify(payload) });
+			const res = await fetch("/api/sanpin/sterilization", { method: "POST", headers: getSterilizerHeaders(true, true), body: JSON.stringify(payload) });
 
 			if (res.ok) {
 				showToast("Цикл 134°C завершён успешно: индикаторы 5 класса норма", "success");

@@ -11,6 +11,7 @@ import {
 	getDefaultBactericidalEquipments,
 	getDefaultTemperatureHumidityEquipments,
 } from "../shiftAutofillCalculators.js";
+import { buildCanonicalShiftWasteRecords } from "../../wasteModules/canonicalShiftWasteRecords.js";
 
 export async function executeShiftBactericidalAndClimateLogs(
 	tx: TenantDb,
@@ -77,19 +78,12 @@ export async function executeShiftBactericidalAndClimateLogs(
 		);
 	}
 
-	await tx.insert(medicalWasteLogs).values({
+	const wasteRecords = buildCanonicalShiftWasteRecords({
 		organizationId,
-		operationType: "accumulation",
-		wasteClass: "class_B",
-		wasteDescription: "Отработанные расходные материалы (перчатки, маски, слюноотсосы)",
-		packageType: "yellow_bag",
-		packageCount: 2,
-		weightKg: "1.850",
-		disinfectionMethod: "chemical_soaking",
-		disinfectantUsed: "Оптимакс Про 1.5%",
-		disposalCompany: "ООО «ЭкоМедСервис»",
-		transferActNumber: `АКТ-Б-${todayStr.replace(/-/g, "")}`,
-		responsibleStaffId: operatorId,
-		notes: "Автопилот смены: сбор и обеззараживание отходов класса Б",
+		logDate: new Date(),
+		operatorId,
+		dateStr: todayStr,
+		defaultOperatorName: "Медсестра ЦСО",
 	});
+	await tx.insert(medicalWasteLogs).values(wasteRecords);
 }

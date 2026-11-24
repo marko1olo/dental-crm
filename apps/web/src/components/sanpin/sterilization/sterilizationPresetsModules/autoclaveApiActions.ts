@@ -20,10 +20,11 @@ export async function saveQuickAutoclaveCycleToApi(
 			notes: `${cycle.programName || ""} • ${cycle.indicatorPointsStatus || ""}`.trim(),
 		};
 
-		const res = await fetch("/api/registers/sterilization", {
+		const res = await fetch("/api/sanpin/sterilization", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"Idempotency-Key": typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `sanpin-autoclave-${Date.now()}`,
 				...denteAdminSecretRequestHeaders(),
 			},
 			body: JSON.stringify(payload),
@@ -44,7 +45,7 @@ export async function saveQuickAutoclaveCycleToApi(
 
 export async function fetchSterilizationLogsFromApi(): Promise<Record<string, unknown>[]> {
 	try {
-		const res = await fetch("/api/registers/sterilization", {
+		const res = await fetch("/api/sanpin/sterilization", {
 			headers: {
 				"Content-Type": "application/json",
 				...denteAdminSecretRequestHeaders(),

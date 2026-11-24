@@ -81,7 +81,7 @@ export const informedConsentPayloadSchema = z.object({
 	patientQuestionsAnswered: z.literal(true),
 	patientUnderstandsRisks: z.literal(true),
 	patientMayWithdrawBeforeIntervention: z.literal(true),
-});
+}).strict();
 
 export type InformedConsentPayload = z.infer<
 	typeof informedConsentPayloadSchema
@@ -111,7 +111,7 @@ export const procedureSpecificConsentPayloadSchema = z.object({
 	patientQuestionsAnswered: z.literal(true),
 	exactProcedureConfirmed: z.literal(true),
 	patientUnderstandsSpecificRisks: z.literal(true),
-});
+}).strict();
 
 export type ProcedureSpecificConsentPayload = z.infer<
 	typeof procedureSpecificConsentPayloadSchema
@@ -138,7 +138,7 @@ export const personalDataProcessingConsentPayloadSchema = z.object({
 	consentGivenAt: documentDateLikeStringSchema,
 	patientConfirmedVoluntaryConsent: z.literal(true),
 	medicalDataProcessingAcknowledged: z.literal(true),
-});
+}).strict();
 
 export type PersonalDataProcessingConsentPayload = z.infer<
 	typeof personalDataProcessingConsentPayloadSchema
@@ -159,7 +159,7 @@ export const medicalInterventionRefusalPayloadSchema = z.object({
 	patientUnderstandsConsequences: z.literal(true),
 	secondOpinionOffered: z.literal(true),
 	emergencyCareExplained: z.literal(true),
-});
+}).strict();
 
 export type MedicalInterventionRefusalPayload = z.infer<
 	typeof medicalInterventionRefusalPayloadSchema

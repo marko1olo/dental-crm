@@ -101,10 +101,26 @@ export async function downloadPatientTaxCertificate1151156(
 	const sanitizedName = data.fullName.replace(/\s+/g, "_");
 	const filename = `Spravka_FNS_KND_1151156_${sanitizedName}_${taxYear}.html`;
 
-	// Попытка гидратации с канонического API бэкенда при наличии сессии
+	// Попытка скачивания официального PDF с канонического API бэкенда для ЛК Налогоплательщика
 	try {
 		const token = tokenOverride || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
 		const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+		const pdfResp = await fetch(`/api/portal/tax-certificate/pdf?year=${taxYear}`, { headers });
+		if (pdfResp.ok) {
+			const blob = await pdfResp.blob();
+			if (blob && blob.size > 0 && blob.type.includes("pdf")) {
+				const pdfFilename = `Spravka_FNS_KND_1151156_${sanitizedName}_${taxYear}.pdf`;
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = pdfFilename;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				return;
+			}
+		}
 		const resp = await fetch(`/api/portal/tax-certificate/html?year=${taxYear}`, { headers });
 		if (resp.ok) {
 			const html = await resp.text();

@@ -6,6 +6,7 @@
 
 import type { TenantDb } from "../../../db/rls.js";
 import { medicalWasteLogs } from "../../../db/schema.js";
+import { buildCanonicalShiftWasteRecords } from "../wasteModules/canonicalShiftWasteRecords.js";
 
 export async function saveShiftWasteRecords(
 	tx: TenantDb,
@@ -40,42 +41,21 @@ export async function saveShiftWasteRecords(
 	}
 
 	const w = body.waste as Record<string, unknown> | undefined;
-	if (w) {
-		const wasteInserts = [
-			{
-				organizationId,
-				operationType: "accumulation" as const,
-				logDate: new Date(dateStr),
-				wasteClass: "class_B" as const,
-				wasteDescription: `Отработанные пустые карпулы анестетиков стеклянные (${w.carpulesCount ?? 8} шт.), иглы/скальпели (${w.needlesCount ?? 8} шт.)`,
-				packageType: String(w.packageType || "yellow_container_sharps"),
-				packageCount: 1,
-				weightKg: String(w.classBWeightKg || 0.45),
-				disinfectionMethod: "chemical_soaking" as const,
-				disinfectantUsed: "Аламинол 5% / Дезофран",
-				transferActNumber: String(w.barcode || `ACT-B-${dateStr}`),
-				responsibleStaffId: operatorId,
-				notes: `Пломба ${(w.sealNumber as string) || "DNT-PL-01"}. Сдано: ${defaultOperatorName}`,
-			},
-			{
-				organizationId,
-				operationType: "accumulation" as const,
-				logDate: new Date(dateStr),
-				wasteClass: "class_A" as const,
-				wasteDescription: "Неопасные отходы (канцелярия, упаковочная бумага, бытовой мусор)",
-				packageType: "white_bag",
-				packageCount: 1,
-				weightKg: String(w.classAWeightKg || 1.8),
-				disinfectionMethod: "not_required" as const,
-				disinfectantUsed: null,
-				transferActNumber: null,
-				responsibleStaffId: operatorId,
-				notes: "ТКО по санитарным нормам",
-			},
-		];
-		await tx.insert(medicalWasteLogs).values(wasteInserts);
-		return wasteInserts.length;
-	}
+	const canonicalRecords = buildCanonicalShiftWasteRecords({
+		organizationId,
+		logDate: new Date(dateStr),
+		operatorId,
+		dateStr,
+		defaultOperatorName,
+		barcode: w?.barcode ? String(w.barcode) : undefined,
+		sealNumber: w?.sealNumber ? String(w.sealNumber) : undefined,
+		classAWeightKg: w?.classAWeightKg ? Number(w.classAWeightKg) : undefined,
+		classBSoftWeightKg: w?.classBSoftWeightKg ? Number(w.classBSoftWeightKg) : undefined,
+		classBSharpsWeightKg: w?.classBWeightKg ? Number(w.classBWeightKg) : undefined,
+		carpulesCount: typeof w?.carpulesCount === "number" ? w.carpulesCount : undefined,
+		needlesCount: typeof w?.needlesCount === "number" ? w.needlesCount : undefined,
+	});
 
-	return 0;
+	await tx.insert(medicalWasteLogs).values(canonicalRecords);
+	return canonicalRecords.length;
 }

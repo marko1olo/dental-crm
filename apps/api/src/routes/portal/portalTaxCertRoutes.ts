@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import {
 	type TaxDeductionRelationship,
 } from "@dental/shared";
 import { db } from "../../db/client.js";
+import { writeIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
@@ -25,6 +27,7 @@ import {
 	users,
 	visitDiaries,
 } from "../../db/schema.js";
+import { renderIssuedHtmlToPdf } from "../documents/shared.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 
 const taxCertificateQuerySchema = z.object({
@@ -164,6 +167,75 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 			relationship?: string;
 		};
 	}>("/tax-certificate/html", handleTaxCertificateExport);
+
+	// Канонический медицинский эндпоинт генерации и скачивания PDF справки для ЛК Налогоплательщика (ФНС)
+	const handleTaxCertificatePdf = async (
+		request: FastifyRequest<{
+			Querystring: {
+				year?: string;
+				payerInn?: string;
+				payerFullName?: string;
+				relationship?: string;
+			};
+		}>,
+		reply: FastifyReply,
+	) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const queryParsed = taxCertificateQuerySchema.safeParse(request.query);
+		if (!queryParsed.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры запроса справки.",
+				details: queryParsed.error.issues,
+			};
+		}
+
+		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
+
+		const data = await withTenantCtx(auth.organizationId, async () => {
+			return buildTaxCertificatePayload(
+				auth.patientId,
+				auth.organizationId,
+				targetYear,
+				queryParsed.data.payerFullName,
+				queryParsed.data.payerInn,
+				queryParsed.data.relationship,
+			);
+		});
+
+		if (!data) {
+			reply.status(404);
+			return { error: "PatientNotFound" };
+		}
+
+		const html = renderOfficialTaxCertificateKnd1151156Html(data.certParams);
+		const result = await renderIssuedHtmlToPdf(html);
+		if (!result.ok) {
+			reply.status(503);
+			return { error: "PdfRenderFailed", message: result.error };
+		}
+
+		const filename = `tax-certificate-${targetYear}-${auth.patientId.slice(0, 8)}.pdf`;
+		return reply
+			.header("Content-Disposition", `attachment; filename="${filename}"`)
+			.type("application/pdf")
+			.send(result.pdf);
+	};
+
+	server.get<{
+		Querystring: {
+			year?: string;
+			payerInn?: string;
+			payerFullName?: string;
+			relationship?: string;
+		};
+	}>("/tax-certificate/pdf", handleTaxCertificatePdf);
 
 	// Алиас для обратной совместимости
 	server.get<{
@@ -405,8 +477,9 @@ async function buildTaxCertificatePayload(
 	};
 
 	const qrSvg = generateTaxCertificateQrSvg(certParams, { size: 160 });
+	const certHtml = renderOfficialTaxCertificateKnd1151156Html(certParams);
 
-	// Атомарная фиксация справки в БД клиники (Мандат 8e, 8n): создаем черновик/заявку или возвращаем существующий
+	// Атомарная фиксация справки в БД клиники (Мандат 8e, 8n): сохраняем в статусе "issued" с архивным снимком и хешем
 	const [existingDoc] = await db
 		.select({ id: generatedDocuments.id, status: generatedDocuments.status })
 		.from(generatedDocuments)
@@ -421,23 +494,49 @@ async function buildTaxCertificatePayload(
 		.limit(1);
 
 	let documentId = existingDoc?.id;
-	if (!existingDoc) {
+	if (existingDoc) {
+		const snapshot = writeIssuedDocumentSnapshot(existingDoc.id, certHtml);
+		await db
+			.update(generatedDocuments)
+			.set({
+				status: "issued",
+				title: `Справка для налогового вычета за ${targetYear} год (${effectivePayerFullName})`,
+				taxPayerInn: effectivePayerInn || null,
+				totalAmountRub: totalSumRub,
+				totalAmountKopecks: BigInt(totalStandardKopBi + totalExpensiveKopBi),
+				taxPaymentSnapshotJson: JSON.stringify(mappedPayments),
+				payloadJson: JSON.stringify(certParams),
+				storagePath: snapshot.snapshotPath,
+				issuedSnapshotSha256: snapshot.sha256,
+				issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
+				issuedAt: new Date(issueDateIso),
+			})
+			.where(eq(generatedDocuments.id, existingDoc.id));
+	} else {
+		const docId = randomUUID();
+		const snapshot = writeIssuedDocumentSnapshot(docId, certHtml);
 		const [newDoc] = await db
 			.insert(generatedDocuments)
 			.values({
+				id: docId,
 				organizationId,
 				patientId,
 				kind: "tax_deduction_certificate",
-				status: "draft",
+				status: "issued",
 				title: `Справка для налогового вычета за ${targetYear} год (${effectivePayerFullName})`,
 				taxYear: targetYear,
 				taxPayerInn: effectivePayerInn || null,
 				totalAmountRub: totalSumRub,
+				totalAmountKopecks: BigInt(totalStandardKopBi + totalExpensiveKopBi),
 				taxPaymentSnapshotJson: JSON.stringify(mappedPayments),
 				payloadJson: JSON.stringify(certParams),
+				storagePath: snapshot.snapshotPath,
+				issuedSnapshotSha256: snapshot.sha256,
+				issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
+				issuedAt: new Date(issueDateIso),
 			})
 			.returning({ id: generatedDocuments.id });
-		documentId = newDoc?.id;
+		documentId = newDoc?.id ?? docId;
 	}
 
 	return {

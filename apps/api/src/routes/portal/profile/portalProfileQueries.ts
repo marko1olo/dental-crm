@@ -110,6 +110,7 @@ export async function fetchPatientFamilyData(
 		name: string | null;
 		groupName: string;
 		balanceRub: number;
+		balanceKopecks: number;
 	} | null = null;
 
 	if (familyGroupId) {
@@ -129,6 +130,7 @@ export async function fetchPatientFamilyData(
 				name: fg.name,
 				groupName: fg.groupName,
 				balanceRub: Number(fg.balance || 0),
+				balanceKopecks: Number(fg.balanceKopecks || 0),
 			};
 		}
 	}

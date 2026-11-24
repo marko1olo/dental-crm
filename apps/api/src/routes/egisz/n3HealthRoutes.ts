@@ -5,6 +5,7 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
@@ -16,6 +17,26 @@ import { registerN3PixRoutes } from "./n3/n3PixRoutes.js";
 import { registerN3EventLogAndNsiRoutes } from "./n3/n3EventLogAndNsiRoutes.js";
 
 export { n3ConfigUpdateBodySchema, resolveN3HealthConfig } from "./n3/n3Config.js";
+
+export const n3ConfigHeadersSchema = z
+	.object({
+		"idempotency-key": z.string().uuid().optional(),
+		organizationid: z.string().uuid().optional(),
+	})
+	.passthrough();
+
+export const n3ConfigRouteOptions = {
+	schema: {
+		description: "N3.Health ViPNet config with optional RFC 9562 Idempotency-Key",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+			},
+		},
+	},
+};
 
 export async function registerN3HealthRoutes(app: FastifyInstance) {
 	app.get("/api/egisz/n3health/status", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -42,10 +63,23 @@ export async function registerN3HealthRoutes(app: FastifyInstance) {
 		});
 	});
 
-	app.post("/api/egisz/n3health/config", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "egisz n3health config update"))) return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	app.post(
+		"/api/egisz/n3health/config",
+		n3ConfigRouteOptions,
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const headerValidation = n3ConfigHeadersSchema.safeParse(request.headers);
+			if (!headerValidation.success) {
+				return reply.status(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: "Некорректный формат заголовков (idempotency-key / organizationid).",
+					issues: headerValidation.error.issues,
+				});
+			}
+
+			if (!(await requireClinicalMutationAccess(request, reply, "egisz n3health config update"))) return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
 
 		const parsed = n3ConfigUpdateBodySchema.safeParse(request.body);
 		if (!parsed.success) {

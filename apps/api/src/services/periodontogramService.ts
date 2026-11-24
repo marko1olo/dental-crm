@@ -43,7 +43,7 @@ export type PatchToothInput = z.infer<typeof patchToothBodySchema>;
 
 export const patchTeethPayloadSchema = z.union([
 	z.array(patchToothBodySchema),
-	z.object({ teeth: z.array(patchToothBodySchema) }),
+	z.object({ teeth: z.array(patchToothBodySchema) }).strict(),
 ]);
 
 export const perioSiteCodeInputSchema = z
@@ -79,7 +79,7 @@ export type SiteItemInput = z.infer<typeof siteItemSchema>;
 
 export const patchSitesPayloadSchema = z.union([
 	z.array(siteItemSchema),
-	z.object({ sites: z.array(siteItemSchema) }),
+	z.object({ sites: z.array(siteItemSchema) }).strict(),
 	siteItemSchema,
 ]);
 
@@ -96,7 +96,7 @@ export const psrSextantEntrySchema = z.object({
 	hasAsterisk: z.boolean().optional(),
 	highestPocketDepthMm: z.number().optional(),
 	teethCount: z.number().optional(),
-});
+}).strict();
 export type PsrSextantEntry = z.infer<typeof psrSextantEntrySchema>;
 
 export const psrDataSchema = z.record(z.string(), psrSextantEntrySchema);

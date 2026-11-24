@@ -51,11 +51,9 @@ export async function register(app: FastifyInstance) {
 						apiError("Некорректный идентификатор документа (ожидается UUID)"),
 					);
 			}
-			// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
-			// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
-			// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
-			// Организация теперь берётся только из проверенного токена (401 иначе).
-			const orgId = requireOrganizationId(request, reply);
+			// Организация берётся из проверенного токена портала или кабинета клиники (401 иначе).
+			const portalPatient = extractPortalPatient(request);
+			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return;
 			const document = await withTenantCtx(orgId, () =>
 				getDocumentById(orgId, id),
@@ -65,7 +63,6 @@ export async function register(app: FastifyInstance) {
 			}
 
 			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
-			const portalPatient = extractPortalPatient(request);
 			if (portalPatient) {
 				if (document.patientId !== portalPatient.patientId) {
 					return reply
@@ -176,11 +173,8 @@ export async function register(app: FastifyInstance) {
 		"/api/documents/:id/treatment-plan-pdf",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
-			// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
-			// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
-			// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
-			// Организация теперь берётся только из проверенного токена (401 иначе).
-			const orgId = requireOrganizationId(request, reply);
+			const portalPatient = extractPortalPatient(request);
+			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return;
 			const { id } = request.params;
 			const UUID_REGEX =
@@ -209,7 +203,6 @@ export async function register(app: FastifyInstance) {
 			}
 
 			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
-			const portalPatient = extractPortalPatient(request);
 			if (portalPatient) {
 				if (document.patientId !== portalPatient.patientId) {
 					return reply

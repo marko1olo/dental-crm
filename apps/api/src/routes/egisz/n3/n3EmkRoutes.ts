@@ -33,7 +33,18 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 			return reply.status(400).send({ ok: false, error: "ValidationError", message: "Некорректные параметры документа.", issues: parsed.error.issues });
 		}
 
-		// IDOR / Tenant Guard: проверка принадлежности пациента текущей клинике
+		const { config } = await resolveN3HealthConfig(orgId);
+		if (!config) {
+			return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
+		}
+
+		const payload: EmkAddDocumentPayload = parsed.data;
+		if (parsed.data.dryRun) {
+			const xml = buildEmkAddDocumentSoapXml(config, payload);
+			return reply.status(200).send({ ok: true, dryRun: true, soapAction: "http://tempuri.org/IEMKService/AddDocument", endpointUrl: config.emkServiceUrl, generatedSoapEnvelopeLength: xml.length, previewSnippet: xml.slice(0, 500) });
+		}
+
+		// IDOR / Tenant Guard: проверка принадлежности пациента текущей клинике при боевой регистрации
 		const [patient] = await db
 			.select({ id: patients.id })
 			.from(patients)
@@ -54,16 +65,6 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const { config } = await resolveN3HealthConfig(orgId);
-		if (!config) {
-			return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
-		}
-
-		const payload: EmkAddDocumentPayload = parsed.data;
-		if (parsed.data.dryRun) {
-			const xml = buildEmkAddDocumentSoapXml(config, payload);
-			return reply.status(200).send({ ok: true, dryRun: true, soapAction: "http://tempuri.org/IEMKService/AddDocument", endpointUrl: config.emkServiceUrl, generatedSoapEnvelopeLength: xml.length, previewSnippet: xml.slice(0, 500) });
-		}
 		const gateway = new N3HealthVipnetGateway(config);
 		const result = await gateway.emkAddDocument(payload);
 		return reply.status(result.success ? 200 : 502).send({ ok: result.success, httpStatusCode: result.httpStatusCode, idDocumentGlobal: result.idDocumentGlobal, faultString: result.faultString, errorCode: result.errorCode });
@@ -77,7 +78,16 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 		const parsed = emkSendDocumentBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Некорректные параметры SendDocument." });
 
-		// IDOR / Outbox Guard: проверка владения документом через egiszOutbox
+		const { config } = await resolveN3HealthConfig(orgId);
+		if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
+
+		const payload: EmkSendDocumentPayload = { idDocumentMis: parsed.data.idDocumentMis, idCaseMis: parsed.data.idCaseMis, targetSystem: parsed.data.targetSystem };
+		if (parsed.data.dryRun) {
+			const xml = buildEmkSendDocumentSoapXml(config, payload);
+			return reply.status(200).send({ ok: true, dryRun: true, soapAction: "http://tempuri.org/IEMKService/SendDocument", previewSnippet: xml.slice(0, 500) });
+		}
+
+		// IDOR / Outbox Guard: проверка владения документом через egiszOutbox при боевой отправке
 		const [existingDoc] = await db
 			.select({
 				id: egiszOutbox.id,
@@ -104,15 +114,6 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 				error: "Document not found or access denied",
 				message: "Документ не найден или не принадлежит текущей организации.",
 			});
-		}
-
-		const { config } = await resolveN3HealthConfig(orgId);
-		if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
-
-		const payload: EmkSendDocumentPayload = { idDocumentMis: parsed.data.idDocumentMis, idCaseMis: parsed.data.idCaseMis, targetSystem: parsed.data.targetSystem };
-		if (parsed.data.dryRun) {
-			const xml = buildEmkSendDocumentSoapXml(config, payload);
-			return reply.status(200).send({ ok: true, dryRun: true, soapAction: "http://tempuri.org/IEMKService/SendDocument", previewSnippet: xml.slice(0, 500) });
 		}
 		const gateway = new N3HealthVipnetGateway(config);
 		const result = await gateway.emkSendDocument(payload);

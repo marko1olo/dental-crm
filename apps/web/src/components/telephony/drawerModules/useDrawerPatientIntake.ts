@@ -32,6 +32,7 @@ export function useDrawerPatientIntake(params: {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
 					"x-dente-staff-token": readDenteStaffToken(),
 					"x-dente-clinic-token": readDenteClinicToken(),
 				},
@@ -39,29 +40,46 @@ export function useDrawerPatientIntake(params: {
 			});
 			if (!res.ok) {
 				let errMsg = "Ошибка при создании пациента";
-				try { const data = await res.json(); if (data?.message) errMsg = data.message; } catch {}
+				try {
+					const data = await res.json();
+					if (data && typeof data === "object" && "message" in data && typeof data.message === "string") {
+						errMsg = data.message;
+					}
+				} catch (err: unknown) {
+					console.warn("[useDrawerPatientIntake] Failed to parse error response:", err);
+				}
 				showToast(errMsg, "error");
 				return;
 			}
-			const createdPatient = await res.json();
-			setSelectedPatientId(createdPatient.id);
+			const rawJson: unknown = await res.json();
+			const payload = (rawJson && typeof rawJson === "object" && "data" in rawJson && rawJson.data)
+				? (rawJson.data as Patient)
+				: (rawJson as Patient);
+
+			if (!payload?.id) {
+				showToast("Не удалось определить идентификатор созданного пациента", "error");
+				return;
+			}
+
+			const patientFullName = payload.fullName || targetName;
+			setSelectedPatientId(payload.id);
 			setNewPatientNameInput("");
 			const active = useTelephonyStore.getState().activeCall;
-			if (active) triggerIncomingCall({ ...active, patientId: createdPatient.id, patientName: createdPatient.fullName });
+			if (active) triggerIncomingCall({ ...active, patientId: payload.id, patientName: patientFullName });
 			if (ctx?.setDashboard) {
 				ctx.setDashboard((curr: Dashboard | null) =>
 					curr
 						? {
 								...curr,
 								patients: [
-									createdPatient,
-									...curr.patients.filter((p: Patient) => p.id !== createdPatient.id),
+									payload,
+									...curr.patients.filter((p: Patient) => p.id !== payload.id),
 								],
 							}
 						: null,
 				);
 			}
-			showToast(`Создана амбулаторная карта: ${createdPatient.fullName} (${callData.formattedPhone})`, "success");
+			showToast(`Создана амбулаторная карта: ${patientFullName} (${callData.formattedPhone})`, "success");
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось сохранить пациента", "error");
 		} finally {

@@ -6,6 +6,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	applyClinicScalePresetInDb,
 	getClinicFiscalSettingsFromDb,
@@ -42,7 +43,7 @@ const updateClinicFiscalSettingsSchema = z.object({
 	kkmSerialNumber: z.string().trim().max(64).nullable().optional(),
 	branchId: z.string().trim().max(120).nullable().optional(),
 	kkmActive: z.boolean().optional(),
-});
+}).strict();
 
 export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/clinic", async (request, reply) => {
@@ -138,6 +139,19 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	const handleUpdateClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const input = parseSettingsPayload(updateClinicProfileSchema, request.body);
 		if (!input) {
 			reply.code(400);

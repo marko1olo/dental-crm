@@ -10,12 +10,13 @@ import {
 	handleOutboxDispatch,
 	handleOutboxStatus,
 	handleOutboxSyncStatus,
+	outboxDispatchRouteOptions,
 } from "./outbox/outboxActionHandlers.js";
 
 export function registerEgiszOutboxRoutes(app: FastifyInstance): void {
 	// Action routes
-	app.post("/api/clinical/egisz/outbox/dispatch", handleOutboxDispatch);
-	app.post("/api/egisz/outbox/dispatch", handleOutboxDispatch);
+	app.post("/api/clinical/egisz/outbox/dispatch", outboxDispatchRouteOptions, handleOutboxDispatch);
+	app.post("/api/egisz/outbox/dispatch", outboxDispatchRouteOptions, handleOutboxDispatch);
 	app.post("/api/clinical/egisz/outbox/sync-status", handleOutboxSyncStatus);
 	app.post("/api/egisz/outbox/sync-status", handleOutboxSyncStatus);
 	app.get("/api/clinical/egisz/outbox/status", handleOutboxStatus);

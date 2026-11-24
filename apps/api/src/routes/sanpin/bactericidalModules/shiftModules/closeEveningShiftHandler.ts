@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
@@ -37,7 +37,7 @@ export async function handleCloseEveningShift(
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const results = await db.transaction(async (tx) => {
+	const results = await withTenantCtx(organizationId, async (tx) => {
 		const activeEquipments = await tx
 			.select()
 			.from(bactericidalEquipments)

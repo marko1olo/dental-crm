@@ -33,7 +33,7 @@ export const installmentPaymentSchedulePayloadSchema = z.object({
 				dueDate: documentDateLikeStringSchema,
 				amountRub: positiveMoneyRubSchema,
 				status: installmentPaymentStatusSchema,
-			}),
+			}).strict(),
 		)
 		.min(1)
 		.max(36),
@@ -43,7 +43,7 @@ export const installmentPaymentSchedulePayloadSchema = z.object({
 	patientAcceptedSchedule: z.literal(true),
 	scheduleDoesNotReplaceFiscalReceipt: z.literal(true),
 	changesRequireWrittenAgreement: z.literal(true),
-});
+}).strict();
 
 export type InstallmentPaymentSchedulePayload = z.infer<
 	typeof installmentPaymentSchedulePayloadSchema
@@ -71,7 +71,7 @@ export const minorLegalRepresentativeConsentPayloadSchema = z.object({
 	informedConsentExplained: z.literal(true),
 	medicalRecordConsentStored: z.literal(true),
 	ageAppropriateExplanationGiven: z.literal(true),
-});
+}).strict();
 
 export type MinorLegalRepresentativeConsentPayload = z.infer<
 	typeof minorLegalRepresentativeConsentPayloadSchema
@@ -99,7 +99,7 @@ export const warrantyServiceMemoPayloadSchema = z.object({
 	localWarrantyPolicyApplied: z.literal(true),
 	patientReceivedAftercare: z.literal(true),
 	patientUnderstandsControlVisits: z.literal(true),
-});
+}).strict();
 
 export type WarrantyServiceMemoPayload = z.infer<
 	typeof warrantyServiceMemoPayloadSchema
@@ -254,7 +254,7 @@ export const anesthesiaDoseRowSchema = z.object({
 	doseMl: z.string().trim().min(1).max(40),
 	zone: z.string().trim().min(1).max(160),
 	reaction: z.string().trim().max(240).nullable().optional(),
-});
+}).strict();
 
 export type AnesthesiaDoseRow = z.infer<typeof anesthesiaDoseRowSchema>;
 
@@ -269,7 +269,7 @@ export const anesthesiaConsentPayloadSchema = z.object({
 	patientAnesthesiaRisksExplained: z.literal(true),
 	allergyAndRestrictionStatusChecked: z.literal(true),
 	patientConfirmedAnesthesiaConsent: z.literal(true),
-});
+}).strict();
 
 export type AnesthesiaConsentPayload = z.infer<
 	typeof anesthesiaConsentPayloadSchema
@@ -317,7 +317,7 @@ export const clinicalToothRowSchema = z.object({
 	periodontalStatus: z.string().trim().max(300).nullable().optional(),
 	implantOrProstheticNotes: z.string().trim().max(300).nullable().optional(),
 	orthodonticNotes: z.string().trim().max(300).nullable().optional(),
-});
+}).strict();
 
 export type ClinicalToothRow = z.infer<typeof clinicalToothRowSchema>;
 
@@ -371,7 +371,7 @@ export const prescriptionMedicationPayloadSchema = z.object({
 	medications: z.array(prescriptionMedicationRowSchema).min(1).max(10),
 	safetyNotes: z.array(z.string().trim().min(1).max(240)).min(1).max(8),
 	urgentContactReason: z.string().trim().min(1).max(300),
-});
+}).strict();
 
 export type PrescriptionMedicationPayload = z.infer<
 	typeof prescriptionMedicationPayloadSchema
@@ -386,7 +386,7 @@ export const labWorkOrderPayloadSchema = z.object({
 	source: z.string().trim().min(1).max(200),
 	deadline: z.string().trim().min(1).max(120),
 	technicianNotes: z.string().trim().max(800).nullable().optional(),
-});
+}).strict();
 
 export type LabWorkOrderPayload = z.infer<typeof labWorkOrderPayloadSchema>;
 
