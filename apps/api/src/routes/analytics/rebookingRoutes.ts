@@ -1,15 +1,15 @@
 import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
-	idempotencyKeys,
 	organizations,
 	patients,
 	rebookingConversionRules,
@@ -33,6 +33,20 @@ import {
 	resolvePeriodBoundary,
 } from "../reports/reportsShared.js";
 
+const rebookingQuerySchema = z
+	.object({
+		range: z.string().trim().min(1).max(32).optional(),
+		startDate: z.string().trim().min(1).max(64).optional(),
+		endDate: z.string().trim().min(1).max(64).optional(),
+		period_start: z.string().trim().min(1).max(64).optional(),
+		period_end: z.string().trim().min(1).max(64).optional(),
+		doctorId: z.string().trim().min(1).max(64).optional(),
+		doctor_id: z.string().trim().min(1).max(64).optional(),
+		specialty: z.string().trim().max(120).optional(),
+		isSoloDoctor: z.union([z.boolean(), z.enum(["true", "false", "1", "0"])]).optional(),
+	})
+	.strict();
+
 /**
  * ====================================================================
  *  ФИЧА #54 / #61 — АЛГОРИТМ 15-МИНУТНОГО ОКНА КОНВЕРСИИ ПОВТОРНОЙ ЗАПИСИ
@@ -55,6 +69,17 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const queryParse = rebookingQuerySchema.safeParse(request.query ?? {});
+		if (!queryParse.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message:
+					queryParse.error.issues.map((i) => i.message).join(", ") ||
+					"Некорректные параметры запроса конверсии повторной записи.",
+			});
+		}
+
 		try {
 			const {
 				range = "month",
@@ -66,17 +91,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				doctor_id: qDoctorIdSnake,
 				specialty: qSpecialty,
 				isSoloDoctor: qIsSoloDoctor,
-			} = request.query as {
-				range?: string;
-				startDate?: string;
-				endDate?: string;
-				period_start?: string;
-				period_end?: string;
-				doctorId?: string;
-				doctor_id?: string;
-				specialty?: string;
-				isSoloDoctor?: string | boolean;
-			};
+			} = queryParse.data;
 
 			const targetDoctorId = qDoctorId || qDoctorIdSnake || undefined;
 			const targetSpecialty = qSpecialty?.trim() || undefined;
@@ -89,31 +104,6 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				qIsSoloDoctor === true ||
 				qIsSoloDoctor === "true" ||
 				qIsSoloDoctor === "1";
-
-			if (!isSoloDoctor) {
-				const [orgRecord] = await db
-					.select({ clinicMode: organizations.clinicMode })
-					.from(organizations)
-					.where(eq(organizations.id, orgId))
-					.limit(1);
-
-				if (
-					orgRecord?.clinicMode === "solo_doctor" ||
-					orgRecord?.clinicMode === "one_chair"
-				) {
-					isSoloDoctor = true;
-				} else {
-					const chairsList = await db
-						.select({ id: chairs.id })
-						.from(chairs)
-						.where(eq(chairs.organizationId, orgId))
-						.limit(2);
-
-					if (chairsList.length <= 1) {
-						isSoloDoctor = true;
-					}
-				}
-			}
 
 			const timeZone = await clinicTimeZone(orgId);
 			const now = new Date();
@@ -167,90 +157,127 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				endDate = now;
 			}
 
-			// 1. Загружаем уже зафиксированные правила из таблицы rebooking_conversion_rules
-			const storedRules = await db
-				.select()
-				.from(rebookingConversionRules)
-				.where(
-					and(
-						eq(rebookingConversionRules.organizationId, orgId),
-						startDate ? gte(rebookingConversionRules.createdAt, startDate) : undefined,
-						endDate ? lte(rebookingConversionRules.createdAt, endDate) : undefined,
-					),
-				);
+			const { storedRules, completedVisits, appointmentsPool, soloResolved } =
+				await withTenantCtx(orgId, async (tx) => {
+					let soloFlag = isSoloDoctor;
+					if (!soloFlag) {
+						const [orgRecord] = await tx
+							.select({ clinicMode: organizations.clinicMode })
+							.from(organizations)
+							.where(eq(organizations.id, orgId))
+							.limit(1);
 
-			// 2. Загружаем завершённые визиты клиники за указанный период
-			const completedVisits = await db
-				.select({
-					visitId: visits.id,
-					patientId: visits.patientId,
-					patientName: patients.fullName,
-					appointmentId: visits.appointmentId,
-					signedAt: visits.signedAt,
-					updatedAt: visits.updatedAt,
-					createdAt: visits.createdAt,
-					doctorUserId: appointments.doctorUserId,
-					doctorName: users.fullName,
-					doctorRole: users.role,
-					doctorSpecialties: users.specialties,
-					appointmentStartsAt: appointments.startsAt,
-					appointmentEndsAt: appointments.endsAt,
-				})
-				.from(visits)
-				.innerJoin(patients, and(eq(visits.patientId, patients.id), eq(patients.organizationId, orgId)))
-				.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
-				.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
-				.where(
-					and(
-						eq(visits.organizationId, orgId),
-						or(
-							eq(visits.status, "signed"),
-							sql`${visits.signedAt} is not null`,
-						),
-						startDate
-							? gte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, startDate)
-							: undefined,
-						endDate
-							? lte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, endDate)
-							: undefined,
-						targetDoctorId ? eq(appointments.doctorUserId, targetDoctorId) : undefined,
-					),
-				);
+						if (
+							orgRecord?.clinicMode === "solo_doctor" ||
+							orgRecord?.clinicMode === "one_chair"
+						) {
+							soloFlag = true;
+						} else {
+							const chairsList = await tx
+								.select({ id: chairs.id })
+								.from(chairs)
+								.where(eq(chairs.organizationId, orgId))
+								.limit(2);
 
-			// 3. Загружаем все последующие приёмы пациентов для расчёта дельты \Delta t
-			const patientIds = Array.from(
-				new Set(completedVisits.map((v) => v.patientId).filter(Boolean)),
-			);
+							if (chairsList.length <= 1) {
+								soloFlag = true;
+							}
+						}
+					}
 
-			const appointmentsPool =
-				patientIds.length > 0
-					? await db
-							.select({
-								id: appointments.id,
-								patientId: appointments.patientId,
-								doctorUserId: appointments.doctorUserId,
-								startsAt: appointments.startsAt,
-								endsAt: appointments.endsAt,
-								status: appointments.status,
-								createdAt: appointments.createdAt,
-								rebookingSourceVisitId: appointments.rebookingSourceVisitId,
-								rebookingDeltaMinutes: appointments.rebookingDeltaMinutes,
-								attributedRole: appointments.attributedRole,
-								attributedUserId: appointments.attributedUserId,
-								attributionReason: appointments.attributionReason,
-								doctorName: users.fullName,
-								doctorSpecialties: users.specialties,
-							})
-							.from(appointments)
-							.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
-							.where(
-								and(
-									eq(appointments.organizationId, orgId),
-									inArray(appointments.patientId, patientIds),
-									ne(appointments.status, "cancelled"),
+					// 1. Загружаем уже зафиксированные правила из таблицы rebooking_conversion_rules
+					const rulesRows = await tx
+						.select()
+						.from(rebookingConversionRules)
+						.where(
+							and(
+								eq(rebookingConversionRules.organizationId, orgId),
+								startDate ? gte(rebookingConversionRules.createdAt, startDate) : undefined,
+								endDate ? lte(rebookingConversionRules.createdAt, endDate) : undefined,
+							),
+						);
+
+					// 2. Загружаем завершённые визиты клиники за указанный период
+					const visitsRows = await tx
+						.select({
+							visitId: visits.id,
+							patientId: visits.patientId,
+							patientName: patients.fullName,
+							appointmentId: visits.appointmentId,
+							signedAt: visits.signedAt,
+							updatedAt: visits.updatedAt,
+							createdAt: visits.createdAt,
+							doctorUserId: appointments.doctorUserId,
+							doctorName: users.fullName,
+							doctorRole: users.role,
+							doctorSpecialties: users.specialties,
+							appointmentStartsAt: appointments.startsAt,
+							appointmentEndsAt: appointments.endsAt,
+						})
+						.from(visits)
+						.innerJoin(patients, and(eq(visits.patientId, patients.id), eq(patients.organizationId, orgId)))
+						.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
+						.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
+						.where(
+							and(
+								eq(visits.organizationId, orgId),
+								or(
+									eq(visits.status, "signed"),
+									sql`${visits.signedAt} is not null`,
 								),
-							)
-					: [];
+								startDate
+									? gte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, startDate)
+									: undefined,
+								endDate
+									? lte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, endDate)
+									: undefined,
+								targetDoctorId ? eq(appointments.doctorUserId, targetDoctorId) : undefined,
+							),
+						);
+
+					// 3. Загружаем все последующие приёмы пациентов для расчёта дельты \Delta t
+					const patientIds = Array.from(
+						new Set(visitsRows.map((v) => v.patientId).filter(Boolean)),
+					);
+
+					const apptsRows =
+						patientIds.length > 0
+							? await tx
+									.select({
+										id: appointments.id,
+										patientId: appointments.patientId,
+										doctorUserId: appointments.doctorUserId,
+										startsAt: appointments.startsAt,
+										endsAt: appointments.endsAt,
+										status: appointments.status,
+										createdAt: appointments.createdAt,
+										rebookingSourceVisitId: appointments.rebookingSourceVisitId,
+										rebookingDeltaMinutes: appointments.rebookingDeltaMinutes,
+										attributedRole: appointments.attributedRole,
+										attributedUserId: appointments.attributedUserId,
+										attributionReason: appointments.attributionReason,
+										doctorName: users.fullName,
+										doctorSpecialties: users.specialties,
+									})
+									.from(appointments)
+									.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
+									.where(
+										and(
+											eq(appointments.organizationId, orgId),
+											inArray(appointments.patientId, patientIds),
+											ne(appointments.status, "cancelled"),
+										),
+									)
+							: [];
+
+					return {
+						storedRules: rulesRows,
+						completedVisits: visitsRows,
+						appointmentsPool: apptsRows,
+						soloResolved: soloFlag,
+					};
+				});
+			isSoloDoctor = soloResolved;
 
 			// 4. Анализируем завершённые визиты и вычисляем конверсию по окну 15 минут
 			const computedEvents: RebookingEvent[] = [];
@@ -589,15 +616,6 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const rawIdempotencyKey =
-			(request.headers?.["idempotency-key"] as string | undefined) ??
-			(request.headers?.["x-idempotency-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
 		try {
 			const parseRes = rebookingConversionBodySchema.safeParse(request.body);
 			if (!parseRes.success) {
@@ -616,95 +634,53 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 			const appointmentDate =
 				body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
 
-			let isSoloDoctor = body.isSoloDoctor;
-			if (isSoloDoctor === undefined) {
-				const [orgRecord] = await db
-					.select({ clinicMode: organizations.clinicMode })
-					.from(organizations)
-					.where(eq(organizations.id, orgId))
-					.limit(1);
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				let isSoloDoctor = body.isSoloDoctor;
+				if (isSoloDoctor === undefined) {
+					const [orgRecord] = await tx
+						.select({ clinicMode: organizations.clinicMode })
+						.from(organizations)
+						.where(eq(organizations.id, orgId))
+						.limit(1);
 
-				if (
-					orgRecord?.clinicMode === "solo_doctor" ||
-					orgRecord?.clinicMode === "one_chair"
-				) {
-					isSoloDoctor = true;
-				} else {
-					const chairsList = await db
-						.select({ id: chairs.id })
-						.from(chairs)
-						.where(eq(chairs.organizationId, orgId))
-						.limit(2);
-
-					if (chairsList.length <= 1) {
+					if (
+						orgRecord?.clinicMode === "solo_doctor" ||
+						orgRecord?.clinicMode === "one_chair"
+					) {
 						isSoloDoctor = true;
-					}
-				}
-			}
-
-			let timeDeltaMinutes = body.timeDeltaMinutes;
-			let creditedRole = body.creditedRole;
-
-			if (typeof timeDeltaMinutes !== "number") {
-				if (body.createdAt && body.completedAt) {
-					const deltaCalc = calculateRebookingDeltaMinutes(
-						body.createdAt,
-						body.completedAt,
-						isSoloDoctor,
-					);
-					timeDeltaMinutes = deltaCalc.deltaMinutes;
-					if (!creditedRole) creditedRole = deltaCalc.creditedRole;
-				} else {
-					timeDeltaMinutes = 0;
-				}
-			}
-
-			if (!creditedRole) {
-				creditedRole =
-					isSoloDoctor || timeDeltaMinutes <= 15 ? "doctor" : "administrator";
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-
-			const txResult = await db.transaction(async (tx) => {
-				if (idempotencyKey) {
-					const [existingKey] = await tx
-						.select()
-						.from(idempotencyKeys)
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, orgId),
-								eq(idempotencyKeys.key, idempotencyKey),
-							),
-						)
-						.for("update");
-
-					if (existingKey) {
-						if (existingKey.status === "completed" && existingKey.responseBody) {
-							return {
-								replayed: true,
-								conflict: false,
-								code: existingKey.responseCode || 200,
-								body: existingKey.responseBody,
-							};
-						}
-						if (existingKey.status === "in_flight") {
-							return {
-								replayed: false,
-								conflict: true,
-								code: 409,
-								body: null,
-							};
-						}
 					} else {
-						await tx.insert(idempotencyKeys).values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "in_flight",
-						});
+						const chairsList = await tx
+							.select({ id: chairs.id })
+							.from(chairs)
+							.where(eq(chairs.organizationId, orgId))
+							.limit(2);
+
+						if (chairsList.length <= 1) {
+							isSoloDoctor = true;
+						}
 					}
+				}
+
+				let timeDeltaMinutes = body.timeDeltaMinutes;
+				let creditedRole = body.creditedRole;
+
+				if (typeof timeDeltaMinutes !== "number") {
+					if (body.createdAt && body.completedAt) {
+						const deltaCalc = calculateRebookingDeltaMinutes(
+							body.createdAt,
+							body.completedAt,
+							isSoloDoctor,
+						);
+						timeDeltaMinutes = deltaCalc.deltaMinutes;
+						if (!creditedRole) creditedRole = deltaCalc.creditedRole;
+					} else {
+						timeDeltaMinutes = 0;
+					}
+				}
+
+				if (!creditedRole) {
+					creditedRole =
+						isSoloDoctor || timeDeltaMinutes <= 15 ? "doctor" : "administrator";
 				}
 
 				const [inserted] = await tx
@@ -732,42 +708,11 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					},
 				};
 
-				if (idempotencyKey) {
-					await tx
-						.update(idempotencyKeys)
-						.set({
-							status: "completed",
-							responseCode: 201,
-							responseBody: responsePayload,
-						})
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, orgId),
-								eq(idempotencyKeys.key, idempotencyKey),
-							),
-						);
-				}
-
 				return {
-					replayed: false,
-					conflict: false,
 					code: 201,
 					body: responsePayload,
 				};
 			});
-
-			if (txResult.conflict) {
-				return reply.code(409).header("Retry-After", "1").send({
-					success: false,
-					error: "Conflict",
-					message: "Операция фиксации правила повторной записи с данным Idempotency-Key уже выполняется.",
-				});
-			}
-
-			if (txResult.replayed) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-			}
 
 			return reply.code(txResult.code).send(txResult.body);
 		} catch (e) {
