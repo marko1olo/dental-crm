@@ -87,12 +87,14 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1" data-testid="btn-invoices-open-cash-drawer" title="Касса">
 					<Wallet size={14} className="text-teal-600" /> <span className="hidden sm:inline">Касса</span>
 				</button>
-				<button type="button" onClick={onOpenShift} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-shift-modal">
-					<ShieldCheck size={14} className="text-emerald-600" /> <span>Смена</span>
-				</button>
-				<button type="button" onClick={onOpenInstallments} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-installments">
-					<Clock size={14} className="text-blue-600" /> <span>Рассрочки</span>
-				</button>
+				<div className="hidden sm:flex items-center gap-1.5 shrink-0">
+					<button type="button" onClick={onOpenShift} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 inline-flex items-center gap-1" data-testid="btn-invoices-open-shift-modal">
+						<ShieldCheck size={14} className="text-emerald-600" /> <span>Смена</span>
+					</button>
+					<button type="button" onClick={onOpenInstallments} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 inline-flex items-center gap-1" data-testid="btn-invoices-open-installments">
+						<Clock size={14} className="text-blue-600" /> <span>Рассрочки</span>
+					</button>
+				</div>
 
 				<div className="relative" ref={toolbarMenuRef}>
 					<button type="button" onClick={() => setIsToolbarMenuOpen((prev) => !prev)} className="secondary-button w-8 h-8 p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" data-testid="invoices-toolbar-options-btn" aria-label="Опции реестра">
