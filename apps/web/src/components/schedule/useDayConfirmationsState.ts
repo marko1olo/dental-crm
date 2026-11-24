@@ -4,7 +4,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import {
@@ -64,10 +66,16 @@ export function useDayConfirmationsState() {
   const handleStatusChange = async (row: ConfirmationRow, newStatus: "confirmed" | "cancelled") => {
     setStatusUpdatingId(row.appointmentId);
     try {
-      const headers = authRef.current ? authRef.current.denteClinicalReadHeaders() : {};
+      const baseHeaders = authRef.current?.denteClinicalMutationHeaders
+        ? authRef.current.denteClinicalMutationHeaders()
+        : denteClinicalMutationHeaders();
       const res = await fetch(`/api/appointments/${row.appointmentId}/status`, {
         method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
+        headers: {
+          ...baseHeaders,
+          "Content-Type": "application/json",
+          "Idempotency-Key": generateUuidV7(),
+        },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error(`Ошибка смены статуса: ${res.status}`);

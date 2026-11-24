@@ -12,6 +12,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { CbctViewportType } from "../cbctMprMath";
 
 export interface UseCbctClipboardSnapshotProps {
@@ -240,7 +241,9 @@ export function useCbctClipboardSnapshot({
 				showToast("Снимок скопирован в буфер (готов для WhatsApp/Telegram)", "success", 4000);
 				return true;
 			} catch (err) {
-				console.error("[useCbctClipboardSnapshot] Failed to copy frame to clipboard:", err);
+				clientLogger.error("[useCbctClipboardSnapshot] Failed to copy frame to clipboard", err, {
+					module: "useCbctClipboardSnapshot",
+				});
 				showToast("Не удалось скопировать снимок в буфер обмена", "error");
 				return false;
 			} finally {

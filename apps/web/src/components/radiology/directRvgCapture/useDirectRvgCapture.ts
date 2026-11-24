@@ -14,7 +14,8 @@ import { useDirectRvgSensorAcquisition } from "./useDirectRvgSensorAcquisition";
 import { useDirectRvgEmrActions } from "./useDirectRvgEmrActions";
 import { useAppStore } from "../../../store/appStore";
 import { useVisitStore } from "../../../store/visitStore";
-import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 
 export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const {
@@ -66,10 +67,10 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 		try {
 			const res = await fetch("/api/imaging/ai-analysis", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					...denteClinicalReadHeaders(),
-				},
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					imageBase64: sensorAcq.capturedImage,
 					toothCode: primaryTooth,

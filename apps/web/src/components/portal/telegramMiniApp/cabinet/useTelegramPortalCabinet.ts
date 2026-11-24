@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	calculatePercentDiscountKopecks,
+	generateUuidV7,
 	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
+import { clientLogger } from "../../../../services/logging/clientLogger";
+import { showToast } from "../../../GlobalToast";
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
 import { downloadPatientTaxCertificate1151156 } from "../../patientCabinet/documents/documentsTaxCertificate";
 import type { PatientPersonalCabinetData } from "../../patientCabinet/patientCabinetEngine";
@@ -135,7 +138,10 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 			try {
 				const res = await fetch("/api/telegram/webapp/session", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
 					body: JSON.stringify({
 						initData: initData || undefined,
 						organizationId: effectiveOrgId || "demo-clinic-org",
@@ -143,7 +149,10 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 					}),
 				});
 
-				if (!res.ok) return;
+				if (!res.ok) {
+					clientLogger.warn("[useTelegramPortalCabinet] Ошибка открытия сессии WebApp:", res.status);
+					return;
+				}
 				const data = await res.json();
 				if (!isMounted || !data) return;
 
@@ -166,7 +175,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 							}
 						})
 						.catch((err) => {
-							console.warn("[useTelegramPortalCabinet] Ошибка загрузки профиля портала:", err);
+							clientLogger.warn("[useTelegramPortalCabinet] Ошибка загрузки профиля портала:", err);
 						});
 				}
 				if (Array.isArray(data.invoices) && data.invoices.length > 0) {
@@ -274,7 +283,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 					}));
 					setFamilyMembers(mappedFamily);
 				}
-			} catch {
+			} catch (err) {
+				clientLogger.warn("[useTelegramPortalCabinet] Ошибка гидратации сессии WebApp:", err);
 				// В оффлайне или при ошибке сети сохраняются клинические дефолты (Zero Dead-Ends)
 			}
 		};
@@ -295,23 +305,26 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		try {
 			const effectiveOrgId = propOrganizationId || (isDemo ? "demo-clinic-org" : "");
 			if (effectiveOrgId) {
-				await fetch("/api/telegram/webapp/family/confirm", {
+				const res = await fetch("/api/telegram/webapp/family/confirm", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"Idempotency-Key": crypto.randomUUID(),
+						"Idempotency-Key": generateUuidV7(),
 					},
 					body: JSON.stringify({
 						organizationId: effectiveOrgId,
 						parentPatientId: propPatientId || id,
 						appointmentId: id,
 					}),
-				}).catch((err) => {
-					console.warn("[useTelegramPortalCabinet] Ошибка подтверждения визита в Telegram:", err);
 				});
+				if (!res.ok) {
+					clientLogger.warn("[useTelegramPortalCabinet] Сервер отклонил подтверждение визита:", res.status);
+					showToast("Не удалось подтвердить визит на сервере", "error");
+				}
 			}
-		} catch {
-			// Оптимистичное обновление UI уже произошло
+		} catch (err) {
+			clientLogger.warn("[useTelegramPortalCabinet] Ошибка подтверждения визита в Telegram:", err);
+			showToast("Ошибка сети при подтверждении визита", "error");
 		}
 	}, [propOrganizationId, propPatientId, isDemo, triggerHaptic]);
 
@@ -398,7 +411,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 			await downloadPatientTaxCertificate1151156(cabinetData, taxYear, sessionToken);
 			setIsTaxCertGenerated(true);
 		} catch (err: unknown) {
-			console.error("Failed to download tax certificate:", err);
+			clientLogger.error("Failed to download tax certificate:", err);
+			showToast("Не удалось сформировать справку для налогового вычета", "error");
 		} finally {
 			setTimeout(() => setTaxCopiedNotice(false), 3000);
 		}

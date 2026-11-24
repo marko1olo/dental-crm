@@ -1,4 +1,5 @@
-import type { Dashboard, CreateAppointmentInput } from "@dental/shared";
+import { generateUuidV7, type Dashboard, type CreateAppointmentInput } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
 import type { WaitlistCandidateItem } from "../../waitlist/waitlistTypes";
 import type { TargetSlotInfo } from "./scheduleModalsTypes";
@@ -51,7 +52,10 @@ export async function handleBookWaitlistSlot({
         `/api/appointments/${encodeURIComponent(slot.appointmentId)}`,
         {
           method: "PATCH",
-          headers,
+          headers: {
+            ...headers,
+            "Idempotency-Key": generateUuidV7(),
+          },
           body: JSON.stringify({
             patientId: candidate.patientId,
             status: "planned",
@@ -101,7 +105,10 @@ export async function handleBookWaitlistSlot({
 
       const createRes = await fetch("/api/appointments", {
         method: "POST",
-        headers,
+        headers: {
+          ...headers,
+          "Idempotency-Key": generateUuidV7(),
+        },
         body: JSON.stringify(payload),
       });
 
@@ -116,10 +123,7 @@ export async function handleBookWaitlistSlot({
     // 3. Переводим заявку в листе ожидания в канонический статус 'fulfilled' на бэкенде
     const entryId = candidate.id;
     if (entryId) {
-      const idempotencyKey =
-        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `waitlist-fulfill-${Date.now()}`;
+      const idempotencyKey = generateUuidV7();
 
       const waitlistHeaders: Record<string, string> = {
         ...headers,
@@ -139,9 +143,14 @@ export async function handleBookWaitlistSlot({
         // Запасной вызов PUT /api/waitlist/:id со статусом fulfilled
         await fetch(`/api/waitlist/${encodeURIComponent(entryId)}`, {
           method: "PUT",
-          headers: waitlistHeaders,
+          headers: {
+            ...headers,
+            "Idempotency-Key": generateUuidV7(),
+          },
           body: JSON.stringify({ status: "fulfilled" }),
-        }).catch(() => {});
+        }).catch((err) => {
+          clientLogger.warn("[waitlistSlotBookingHandler] Fallback PUT /api/waitlist failed:", err);
+        });
       }
     }
 

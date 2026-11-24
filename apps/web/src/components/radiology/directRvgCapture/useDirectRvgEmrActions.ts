@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { SENSOR_MODELS } from "../directRvgTypes";
 import type { RadiologyStudy } from "../types";
 import { exportDirectRvgImageOrDicom, persistRvgScanToServer } from "../directRvgFileValidation";
@@ -144,7 +145,9 @@ export function useDirectRvgEmrActions({
 					}
 				}
 			} catch (err) {
-				console.warn("[DirectRvgCaptureModal] Failed to update visit store:", err);
+				clientLogger.warn("[DirectRvgCaptureModal] Failed to update visit store", err, {
+					module: "DirectRvgCaptureModal",
+				});
 			}
 
 			try {
@@ -159,8 +162,10 @@ export function useDirectRvgEmrActions({
 						},
 					}),
 				);
-			} catch {
-				// ignore
+			} catch (soapErr) {
+				clientLogger.warn("[DirectRvgCaptureModal] Failed to dispatch SOAP protocol event", soapErr, {
+					module: "DirectRvgCaptureModal",
+				});
 			}
 
 			try {
@@ -173,8 +178,10 @@ export function useDirectRvgEmrActions({
 						},
 					}),
 				);
-			} catch {
-				// ignore
+			} catch (scanEventErr) {
+				clientLogger.warn("[DirectRvgCaptureModal] Failed to dispatch rvg-scan-saved event", scanEventErr, {
+					module: "DirectRvgCaptureModal",
+				});
 			}
 
 			showToast(`Снимок зуба ${selectedTeeth.join(", ")} сохранён в медицинскую карту ${patientCardNumber}`, "success");

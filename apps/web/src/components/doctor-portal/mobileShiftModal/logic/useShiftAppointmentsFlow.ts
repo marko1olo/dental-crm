@@ -23,7 +23,7 @@ function getShowcaseShiftAppointments(
 	doctorSpecialty: string,
 	shiftDateIso: string,
 ): DoctorShiftAppointment[] {
-	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().slice(0, 10);
 	return SAMPLE_DOCTOR_SHIFT_APPOINTMENTS.map((apt) => {
 		const timeStart = apt.startsAtIso.split("T")[1] || "09:00:00.000Z";
 		const timeEnd = apt.endsAtIso.split("T")[1] || "10:00:00.000Z";
@@ -153,9 +153,10 @@ export function useShiftAppointmentsFlow({
 		}
 
 		// Боевой режим (Production: !isDemoShowcaseMode()): загружаем живые приемы лечащего врача из API
+		if (!initialDoctorId) return;
 		let isMounted = true;
 		const targetDate =
-			initialShiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+			initialShiftDateIso?.split("T")[0] || new Date().toISOString().slice(0, 10);
 
 		const fetchLiveAppointments = async () => {
 			try {

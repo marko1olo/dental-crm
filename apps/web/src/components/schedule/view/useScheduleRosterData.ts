@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
 import {
   safeLocalStorageGetItem,
   safeLocalStorageSetItem,
@@ -142,6 +142,7 @@ export function useScheduleRosterData({
       if (typeof fetch !== "undefined") {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
+          "Idempotency-Key": generateUuidV7(),
           ...(auth?.denteClinicalMutationHeaders
             ? auth.denteClinicalMutationHeaders()
             : {}),

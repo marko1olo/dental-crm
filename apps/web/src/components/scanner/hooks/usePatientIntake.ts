@@ -5,8 +5,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { ExtractedOmsData, ExtractedPassportData, ExtractedSnilsData } from "../documentScannerEngine";
 import { DEMO_COCKPIT_PATIENTS, type NewPatientIntakeDraft, type ScannerAttachmentSummary, type ScannerPatientSummary } from "../scannerTypes";
@@ -36,10 +38,15 @@ export function usePatientIntake(
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/attachments`, { headers: denteClinicalReadHeaders() });
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data)) setRecentAttachments(data.slice(0, 5));
+				const list = Array.isArray(data) ? data : (Array.isArray(data?.files) ? data.files : null);
+				if (list) setRecentAttachments(list.slice(0, 5));
+			} else {
+				clientLogger.warn("[usePatientIntake] Ошибка загрузки вложений пациента:", res.status);
+				showToast("Не удалось загрузить вложения пациента", "error");
 			}
 		} catch (err) {
-			console.warn("[usePatientIntake] Не удалось загрузить вложения пациента:", err);
+			clientLogger.warn("[usePatientIntake] Не удалось загрузить вложения пациента:", err);
+			showToast("Не удалось загрузить вложения пациента", "error");
 		} finally { setIsLoadingAttachments(false); }
 	}, []);
 	useEffect(() => {
@@ -61,7 +68,8 @@ export function usePatientIntake(
 					}
 				}
 				if (isDemoShowcaseMode() && !isCancelled) setSearchResults(DEMO_COCKPIT_PATIENTS.filter((p) => p.fullName.toLowerCase().includes(query.toLowerCase())));
-			} catch {
+			} catch (err) {
+				clientLogger.warn("[usePatientIntake] Ошибка поиска пациентов:", err);
 				if (isDemoShowcaseMode() && !isCancelled) setSearchResults(DEMO_COCKPIT_PATIENTS);
 			} finally { if (!isCancelled) setIsSearching(false); }
 		}, 200);
@@ -102,10 +110,14 @@ export function usePatientIntake(
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({ fullName, phone: newPatientForm.phone.trim() || undefined, birthDate: newPatientForm.birthDate.trim() || undefined }),
 			});
+			if (!createRes.ok && !isDemoShowcaseMode()) {
+				const errJson = (await createRes.json().catch(() => null)) as { message?: string } | null;
+				throw new Error(errJson?.message || `Ошибка создания карты пациента (${createRes.status})`);
+			}
 			const createdData = createRes.ok ? await createRes.json() : null;
 			const createdId = createdData?.id ? String(createdData.id) : (isDemoShowcaseMode() ? `pat-demo-${Date.now()}` : null);
 			if (createdId && capturedBlob) await uploadPatientAttachment(createdId, capturedBlob, presetTitle);

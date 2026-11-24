@@ -1,4 +1,5 @@
 import type { RadiologyStudy } from "../types.js";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface RadiologyFilmstripItem {
 	readonly id: string;
@@ -44,7 +45,7 @@ export function formatFilmstripDateTime(rawDate: string): { dateStr: string; tim
 			return { dateStr: `${day}.${month}.${year}`, timeStr: `${hours}:${mins}:${secs}` };
 		}
 	} catch (err) {
-		console.warn("[filmstripTypes] Date parse fallback:", err);
+		clientLogger.warn("[filmstripTypes] Date parse fallback", err, { module: "filmstripTypes" });
 	}
 
 	return { dateStr: rawDate, timeStr: "" };

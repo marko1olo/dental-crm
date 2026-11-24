@@ -6,6 +6,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { reconstructPanoramicView } from "../../dentalCurveEngine";
 import {
 	DEFAULT_TUNER_PARAMS,
@@ -99,7 +101,8 @@ export function useCbctTunerPlaygroundState(initialPatientId = "zakharov") {
 					renderPanoToCanvas(canvas, panoResult, currentZMm);
 				}
 			} catch (err) {
-				console.error("[CbctTuner] Pano reconstruction error:", err);
+				clientLogger.error("[CbctTuner] Pano reconstruction error", err, { module: "CbctTuner" });
+				showToast("Не удалось построить панорамную реконструкцию", "error");
 			}
 		}, 60);
 
@@ -138,7 +141,8 @@ export function useCbctTunerPlaygroundState(initialPatientId = "zakharov") {
 			setAttachFeedback(true);
 			setTimeout(() => setAttachFeedback(false), 2500);
 		} catch (err) {
-			console.warn("[CbctTuner] Attach slice fallback:", err);
+			clientLogger.warn("[CbctTuner] Attach slice fallback", err, { module: "CbctTuner" });
+			showToast("Не удалось сохранить срез КЛКТ в сессию", "warning");
 			setAttachFeedback(true);
 			setTimeout(() => setAttachFeedback(false), 2500);
 		}

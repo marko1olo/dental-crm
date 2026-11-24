@@ -7,6 +7,7 @@
  * - Mandate 8d: Apple HIG & Medical Density (touch targets >= 44x44px, 0 emojis)
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { safeLocalStorageGetJson } from "../../../lib/safeLocalStorage";
@@ -300,6 +301,7 @@ export async function syncShiftsWithServer(
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({ shifts: shiftsToSend, dateIso: targetDateKey }),
 			});

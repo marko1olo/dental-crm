@@ -26,12 +26,15 @@ import {
 	type TracedCanalPath,
 	generateEndoProtocol043,
 	generateEndoCanalsTable043,
+	generateUuidV7,
 	getIsoEndoColorInfo,
 } from "@dental/shared";
 import type { EndoCompassClinicalData, EndoCanalSummaryItem } from "./mpr/workspaces/EndoCompassPanel";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { savePersistedCustomPlanItem } from "./ctImplantIntegrationBridge";
 
 export interface EndoClinicalExportParams {
@@ -391,9 +394,10 @@ export function exportEndoToDiary(
 				if (origin) {
 					void fetch(`${origin}/api/patients/${params.patientId}/tooth-states/${params.toothFdi}/endo`, {
 						method: "POST",
-						headers: {
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
-						},
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify({
 							toothNumber: params.toothFdi,
 							canals: endoCanals.map((c) => ({
@@ -409,39 +413,66 @@ export function exportEndoToDiary(
 							})),
 							state: "Root_Canal_Treated",
 						}),
-					}).catch((endoErr) => {
-						console.warn("[endoClinicalIntegrationBridge] Ошибка сохранения endo, fallback на status:", endoErr);
-						// fallback to odontogram status endpoint
-						void fetch(`${origin}/api/odontogram/status`, {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-							},
-							body: JSON.stringify({
-								patientId: params.patientId,
-								toothNumber: params.toothFdi,
-								toothNumbers: [params.toothFdi],
-								state: "Root_Canal_Treated",
-								canalMeasurements: endoCanals.map((c) => ({
-									canalName: c.canalName,
-									workingLengthMm: c.workingLengthMm,
-									referencePoint: c.referencePoint || "Режущий край / бугор",
-									apexLocatorReading: "0.0 (Apex)",
-									masterFile: c.masterApicalFile || "",
-									masterCone: "",
-									taper: c.taper || ".04",
-									sealer: c.sealer || "AH Plus",
-									obturationTechnique: c.obturationTechnique || "Латеральная компакция",
-								})),
-							}),
-						}).catch((statusErr) => {
-							console.warn("[endoClinicalIntegrationBridge] Fallback на odontogram status также завершился с ошибкой:", statusErr);
+					})
+						.then((res) => {
+							if (!res.ok) {
+								throw new Error(`HTTP ${res.status}`);
+							}
+						})
+						.catch((endoErr) => {
+							clientLogger.warn(
+								"[endoClinicalIntegrationBridge] Ошибка сохранения endo, fallback на status",
+								endoErr,
+								{ module: "endoClinicalIntegrationBridge" },
+							);
+							// fallback to odontogram status endpoint
+							void fetch(`${origin}/api/odontogram/status`, {
+								method: "POST",
+								headers: denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+									"Idempotency-Key": generateUuidV7(),
+								}),
+								body: JSON.stringify({
+									patientId: params.patientId,
+									toothNumber: params.toothFdi,
+									toothNumbers: [params.toothFdi],
+									state: "Root_Canal_Treated",
+									canalMeasurements: endoCanals.map((c) => ({
+										canalName: c.canalName,
+										workingLengthMm: c.workingLengthMm,
+										referencePoint: c.referencePoint || "Режущий край / бугор",
+										apexLocatorReading: "0.0 (Apex)",
+										masterFile: c.masterApicalFile || "",
+										masterCone: "",
+										taper: c.taper || ".04",
+										sealer: c.sealer || "AH Plus",
+										obturationTechnique: c.obturationTechnique || "Латеральная компакция",
+									})),
+								}),
+							})
+								.then((fallbackRes) => {
+									if (!fallbackRes.ok) {
+										throw new Error(`HTTP ${fallbackRes.status}`);
+									}
+								})
+								.catch((statusErr) => {
+									clientLogger.error(
+										"[endoClinicalIntegrationBridge] Fallback на odontogram status также завершился с ошибкой",
+										statusErr,
+										{ module: "endoClinicalIntegrationBridge" },
+									);
+									showToast(
+										"Протокол применён локально, но не удалось сохранить эндо-статус на сервере",
+										"error",
+									);
+								});
 						});
-					});
 				}
 			}
 		} catch (storageErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка локального сохранения каналов:", storageErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка локального сохранения каналов", storageErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -462,7 +493,9 @@ export function exportEndoToDiary(
 			});
 		}
 	} catch (noteErr) {
-		console.warn("[endoClinicalIntegrationBridge] Ошибка обновления формы визита:", noteErr);
+		clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка обновления формы визита", noteErr, {
+			module: "endoClinicalIntegrationBridge",
+		});
 	}
 
 	// 3. Dispatch global SOAP event for useVisitDiaryLogic
@@ -483,7 +516,9 @@ export function exportEndoToDiary(
 				}),
 			);
 		} catch (soapEventErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка отправки события SOAP:", soapEventErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка отправки события SOAP", soapEventErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -503,7 +538,9 @@ export function exportEndoToDiary(
 				}),
 			);
 		} catch (toothStateErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба:", toothStateErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба", toothStateErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -532,7 +569,9 @@ export function exportEndoToDiary(
 			existing.push(emrAttachment);
 			window.localStorage.setItem(storageKey, JSON.stringify(existing));
 		} catch (emrErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка сохранения среза в EMR:", emrErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка сохранения среза в EMR", emrErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -602,7 +641,9 @@ export function exportEndoToTreatmentPlan(
 				new CustomEvent("dente-treatment-plan-attachment-added", { detail: planAttachment }),
 			);
 		} catch (attachErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка добавления вложения в план:", attachErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка добавления вложения в план", attachErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -622,7 +663,9 @@ export function exportEndoToTreatmentPlan(
 				}),
 			);
 		} catch (stateErr) {
-			console.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба:", stateErr);
+			clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка обновления статуса зуба", stateErr, {
+				module: "endoClinicalIntegrationBridge",
+			});
 		}
 	}
 
@@ -641,7 +684,9 @@ export function exportEndoToTreatmentPlan(
 					}),
 				);
 			} catch (eventErr) {
-				console.warn("[endoClinicalIntegrationBridge] Ошибка диспатча элемента плана:", eventErr);
+				clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка диспатча элемента плана", eventErr, {
+					module: "endoClinicalIntegrationBridge",
+				});
 			}
 		}
 	}
@@ -676,7 +721,9 @@ export function loadPersistedEndoCanals(
 		const parsed = JSON.parse(raw);
 		return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
 	} catch (loadErr) {
-		console.warn("[endoClinicalIntegrationBridge] Ошибка чтения каналов из localStorage:", loadErr);
+		clientLogger.warn("[endoClinicalIntegrationBridge] Ошибка чтения каналов из localStorage", loadErr, {
+			module: "endoClinicalIntegrationBridge",
+		});
 		return null;
 	}
 }

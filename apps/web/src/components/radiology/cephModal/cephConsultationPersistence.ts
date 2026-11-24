@@ -1,4 +1,5 @@
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { useVisitStore } from "../../../store/visitStore";
 import { saveCephalometricAnalysisToEmr } from "../../orthodontics/cephalometricPersistence";
 import { cacheActiveCephStudy } from "../../orthodontics/cephStudioSyncChannel";
@@ -43,6 +44,7 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 	);
 	if (onInsertToProtocol) onInsertToProtocol(consultationText);
 
+	let emrSaveFailed = false;
 	try {
 		saveCephalometricAnalysisToEmr({
 			patientId: patientId || undefined,
@@ -56,7 +58,8 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 			isCalibratedFallback: false,
 		});
 	} catch (err) {
-		console.warn("[CephModal] Error saving consultation to EMR:", err);
+		emrSaveFailed = true;
+		clientLogger.warn("[CephModal] Error saving consultation to EMR", err, { module: "CephModal" });
 	}
 
 	try {
@@ -75,8 +78,10 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 					: "Ортодонтическое лечение: диагностический сетап, санация, согласование брекетов/элайнеров.",
 			}));
 		}
-	} catch {
-		/* ignore */
+	} catch (storeErr) {
+		clientLogger.warn("[CephModal] Error updating visit store for consultation", storeErr, {
+			module: "CephModal",
+		});
 	}
 
 	if (typeof window !== "undefined") {
@@ -91,14 +96,24 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 					},
 				}),
 			);
-		} catch {
-			/* ignore */
+		} catch (eventErr) {
+			clientLogger.warn("[CephModal] Error dispatching SOAP protocol event", eventErr, {
+				module: "CephModal",
+			});
 		}
 	}
 	if (navigator?.clipboard?.writeText) {
-		navigator.clipboard.writeText(consultationText).catch(() => {});
+		navigator.clipboard.writeText(consultationText).catch((clipErr) => {
+			clientLogger.warn("[CephModal] Error copying consultation text to clipboard", clipErr, {
+				module: "CephModal",
+			});
+		});
 	}
-	showToast("Консультация сохранена в карту (без полного ТРГ-расчета)", "success");
+	if (emrSaveFailed) {
+		showToast("Консультация добавлена в визит, но не удалось сохранить запись в ЭМК", "warning");
+	} else {
+		showToast("Консультация сохранена в карту (без полного ТРГ-расчета)", "success");
+	}
 	onClose();
 }
 

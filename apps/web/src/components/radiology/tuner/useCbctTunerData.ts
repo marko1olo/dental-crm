@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { CbctVoxelVolume } from "../cbctMprMath";
 import type { DentalArchCurve } from "../dentalCurveEngine";
 import {
@@ -187,7 +188,7 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 				}
 			}
 		} catch (err: unknown) {
-			console.error("[CbctTunerData] Failed to load volume:", err);
+			clientLogger.error("[CbctTunerData] Failed to load volume", err, { module: "CbctTunerData" });
 			setLoadStatus("Ошибка загрузки КТ. Используется резервный режим.");
 		} finally {
 			if (currentLoadId === activeLoadIdRef.current) {

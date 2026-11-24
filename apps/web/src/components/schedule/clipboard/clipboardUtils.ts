@@ -1,10 +1,14 @@
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 
 export function clipboardWriteHeaders(): Record<string, string> {
-	return denteClinicalMutationHeaders({ "Content-Type": "application/json" });
+	return denteClinicalMutationHeaders({
+		"Content-Type": "application/json",
+		"Idempotency-Key": generateUuidV7(),
+	});
 }
 
 export function formatCopiedAt(iso: string): string {

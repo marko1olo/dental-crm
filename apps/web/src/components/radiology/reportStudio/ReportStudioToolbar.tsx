@@ -114,38 +114,38 @@ export const ReportStudioToolbar: React.FC<ReportStudioToolbarProps> = ({
 					</button>
 				</div>
 
-				<div className="h-5 w-px bg-zinc-700/60 mx-1" />
+				<div className="h-5 w-px bg-[var(--line)] mx-1" />
 
 				{/* Insert & Reset Tools */}
 				<button
 					type="button"
 					onClick={onAddImageFrame}
-					className="radiology-tool-btn"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					data-testid="btn-add-image-frame"
 					title="Добавить снимок в макет"
 				>
-					<ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+					<ImageIcon className="w-4 h-4 shrink-0" />
 					<span>+ Снимок</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onAddTextFrame}
-					className="radiology-tool-btn"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					data-testid="btn-add-text-frame"
 					title="Добавить текстовый блок описания"
 				>
-					<Type className="w-3.5 h-3.5 text-blue-400" />
+					<Type className="w-4 h-4 shrink-0" />
 					<span>+ Текст</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onResetFrames}
-					className="radiology-tool-btn"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					title="Сбросить макет к стандарту"
 				>
-					<RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+					<RotateCcw className="w-4 h-4 shrink-0" />
 					<span>Сброс</span>
 				</button>
 
@@ -153,11 +153,11 @@ export const ReportStudioToolbar: React.FC<ReportStudioToolbarProps> = ({
 					<button
 						type="button"
 						onClick={onDeleteSelected}
-						className="radiology-tool-btn danger"
+						className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-[var(--danger-soft)] transition-colors cursor-pointer"
 						data-testid="btn-delete-frame"
 						title="Удалить выбранную рамку"
 					>
-						<Trash2 className="w-3.5 h-3.5" />
+						<Trash2 className="w-4 h-4 shrink-0" />
 						<span>Удалить</span>
 					</button>
 				)}
@@ -165,66 +165,67 @@ export const ReportStudioToolbar: React.FC<ReportStudioToolbarProps> = ({
 
 			{/* Right: Scale Zoom, Settings & Primary CTAs */}
 			<div className="flex items-center gap-2">
-				<div className="radiology-zoom-group">
+				<div className="flex items-center gap-1">
 					<button
 						type="button"
 						onClick={() => onZoomChange((z) => Math.max(50, z - 10))}
-						className="radiology-zoom-btn"
+						className="h-8 w-8 rounded-md inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Уменьшить масштаб"
 					>
-						<ZoomOut className="w-3.5 h-3.5" />
+						<ZoomOut className="w-3.5 h-3.5 shrink-0" />
 					</button>
-					<span className="radiology-zoom-label">{viewZoom}%</span>
+					<span className="font-mono text-xs text-[var(--ink-muted)] px-1.5 tabular-nums">{viewZoom}%</span>
 					<button
 						type="button"
 						onClick={() => onZoomChange((z) => Math.min(150, z + 10))}
-						className="radiology-zoom-btn"
+						className="h-8 w-8 rounded-md inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Увеличить масштаб"
 					>
-						<ZoomIn className="w-3.5 h-3.5" />
+						<ZoomIn className="w-3.5 h-3.5 shrink-0" />
 					</button>
 				</div>
 
 				<button
 					type="button"
 					onClick={onOpenSettings}
-					className="radiology-tool-btn"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					data-testid="btn-open-print-settings"
 					title="Настройки параметров листа и колонтитулов"
 				>
-					<Settings className="w-3.5 h-3.5 text-zinc-400" />
+					<Settings className="w-4 h-4 shrink-0" />
 					<span>Параметры</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onExportPdf}
-					className="radiology-btn-pdf"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 					title="Экспорт отчета в PDF"
 				>
-					<Download className="w-3.5 h-3.5" />
+					<Download className="w-4 h-4 shrink-0" />
 					<span>Экспорт PDF</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onPrint}
-					className="radiology-btn-primary"
+					className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm transition-colors cursor-pointer"
 					data-testid="btn-execute-print"
 					title="Печать отчета (Ctrl+P)"
 				>
-					<Printer className="w-3.5 h-3.5" />
+					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать (Ctrl+P)</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onClose}
-					className="radiology-tool-btn !px-2 ml-1"
+					className="h-9 w-9 rounded-lg inline-flex items-center justify-center shrink-0 bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer ml-1"
 					data-testid="btn-close-report-studio"
 					title="Закрыть студию отчетов (Esc)"
+					aria-label="Закрыть"
 				>
-					<X className="w-4 h-4 text-zinc-400" />
+					<X className="w-4 h-4 shrink-0" />
 				</button>
 			</div>
 		</header>

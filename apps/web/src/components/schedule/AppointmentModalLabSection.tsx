@@ -1,5 +1,5 @@
 import type { Appointment, MinimalLabOrderForSchedule } from "@dental/shared";
-import { evaluateAppointmentLabStatus, getVitaShadeHex } from "@dental/shared";
+import { evaluateAppointmentLabStatus, generateUuidV7, getVitaShadeHex } from "@dental/shared";
 import {
   AlertTriangle,
   Calendar,
@@ -179,7 +179,10 @@ export function AppointmentModalLabSection({
       try {
         const res = await fetch(`/api/lab/orders/${item.id}/status`, {
           method: "PATCH",
-          headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+          headers: denteClinicalMutationHeaders({
+            "Content-Type": "application/json",
+            "Idempotency-Key": generateUuidV7(),
+          }),
           body: JSON.stringify({
             status: "fitted",
             stage: "fitting_scheduled",

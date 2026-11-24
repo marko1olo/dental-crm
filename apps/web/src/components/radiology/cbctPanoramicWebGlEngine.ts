@@ -6,6 +6,7 @@
  */
 
 import type { CbctVoxelVolume } from "./cbctMprMath";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	type DentalArchCurve,
 	calculateArchTangentsAndNormals,
@@ -303,7 +304,9 @@ export class WebGl2PanoramicEngine {
 				this.volumeDataRef = volume.data;
 				this.uploadDim = { width: uploadW, height: uploadH, depth: uploadD, factor };
 			} catch (err) {
-				console.warn("[cbctPanoramicWebGlEngine] texImage3D failed, releasing texture:", err);
+				clientLogger.warn("[cbctPanoramicWebGlEngine] texImage3D failed, releasing texture", err, {
+					module: "cbctPanoramicWebGlEngine",
+				});
 				gl.deleteTexture(tex);
 				this.volumeTexture = null;
 				this.volumeDataRef = null;

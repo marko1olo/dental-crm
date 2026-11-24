@@ -7,6 +7,7 @@
 
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { rublesToKopecks } from "@dental/shared";
 import { useVisitStore } from "../../../store/visitStore";
 import { useDocumentStore } from "../../../store/documentStore";
@@ -43,6 +44,8 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 		amountKopecks,
 	};
 
+	let hasFailure = false;
+
 	try {
 		const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 		if (typeof setVisitNoteForm === "function") {
@@ -53,7 +56,10 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 			});
 		}
 	} catch (error) {
-		console.error("[implantFinanceBridge] Failed to update visit note form with CBCT service:", error);
+		hasFailure = true;
+		clientLogger.error("[implantFinanceBridge] Failed to update visit note form with CBCT service", error, {
+			module: "implantFinanceBridge",
+		});
 	}
 
 	try {
@@ -66,7 +72,10 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 			docState.setCompletedActTotalRub(String(currentTotal + priceRub));
 		}
 	} catch (error) {
-		console.error("[implantFinanceBridge] Failed to update document store completed act summary:", error);
+		hasFailure = true;
+		clientLogger.error("[implantFinanceBridge] Failed to update document store completed act summary", error, {
+			module: "implantFinanceBridge",
+		});
 	}
 
 	if (typeof window !== "undefined") {
@@ -94,8 +103,15 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 				}),
 			);
 		} catch (error) {
-			console.error("[implantFinanceBridge] Failed to dispatch invoice service event:", error);
+			hasFailure = true;
+			clientLogger.error("[implantFinanceBridge] Failed to dispatch invoice service event", error, {
+				module: "implantFinanceBridge",
+			});
 		}
+	}
+
+	if (hasFailure) {
+		showToast("Не удалось полностью добавить услугу КЛКТ в финансовый акт", "error");
 	}
 
 	return serviceRecord;
@@ -131,6 +147,7 @@ export function addCbctServiceToTreatmentPlan(params: AddCbctToFinanceParams = {
 		savePersistedCustomPlanItem(params.patientId, planItem);
 	}
 
+	let hasFailure = false;
 	try {
 		const docState = useDocumentStore.getState();
 		if (docState && typeof docState.setTreatmentPlanStages === "function") {
@@ -153,7 +170,10 @@ export function addCbctServiceToTreatmentPlan(params: AddCbctToFinanceParams = {
 			docState.setTreatmentPlanEstimatedTotalRub(String(currentTotal + priceRub));
 		}
 	} catch (error) {
-		console.error("[implantFinanceBridge] Failed to update document store treatment plan stages:", error);
+		hasFailure = true;
+		clientLogger.error("[implantFinanceBridge] Failed to update document store treatment plan stages", error, {
+			module: "implantFinanceBridge",
+		});
 	}
 
 	if (typeof window !== "undefined") {
@@ -168,8 +188,15 @@ export function addCbctServiceToTreatmentPlan(params: AddCbctToFinanceParams = {
 				}),
 			);
 		} catch (error) {
-			console.error("[implantFinanceBridge] Failed to dispatch treatment plan item event:", error);
+			hasFailure = true;
+			clientLogger.error("[implantFinanceBridge] Failed to dispatch treatment plan item event", error, {
+				module: "implantFinanceBridge",
+			});
 		}
+	}
+
+	if (hasFailure) {
+		showToast("Не удалось полностью добавить услугу КЛКТ в план лечения", "error");
 	}
 
 	return planItem;
@@ -284,7 +311,9 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 		}
 	} catch (error) {
 		hasFailure = true;
-		console.error("[implantFinanceBridge] Failed to update visit note form with surgical package:", error);
+		clientLogger.error("[implantFinanceBridge] Failed to update visit note form with surgical package", error, {
+			module: "implantFinanceBridge",
+		});
 	}
 
 	try {
@@ -298,7 +327,9 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 		}
 	} catch (error) {
 		hasFailure = true;
-		console.error("[implantFinanceBridge] Failed to update document store with surgical act:", error);
+		clientLogger.error("[implantFinanceBridge] Failed to update document store with surgical act", error, {
+			module: "implantFinanceBridge",
+		});
 	}
 
 	if (typeof window !== "undefined") {
@@ -325,7 +356,9 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 			);
 		} catch (error) {
 			hasFailure = true;
-			console.error("[implantFinanceBridge] Failed to dispatch surgical invoice services:", error);
+			clientLogger.error("[implantFinanceBridge] Failed to dispatch surgical invoice services", error, {
+				module: "implantFinanceBridge",
+			});
 		}
 	}
 
@@ -349,7 +382,9 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 			);
 		} catch (error) {
 			hasFailure = true;
-			console.error("[implantFinanceBridge] Failed to update tooth state:", error);
+			clientLogger.error("[implantFinanceBridge] Failed to update tooth state", error, {
+				module: "implantFinanceBridge",
+			});
 		}
 	}
 

@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function useCameraStream(isCapturing = true, isModalOpen = true) {
 	const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -31,7 +32,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 				}
 			}
 		} catch (err) {
-			console.warn("[useCameraStream] Failed to enumerate cameras:", err);
+			clientLogger.warn("[useCameraStream] Failed to enumerate cameras:", err);
 		}
 	}, [selectedCameraId]);
 
@@ -41,7 +42,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 				try {
 					track.stop();
 				} catch (err) {
-					console.warn("[useCameraStream] Track stop warning:", err);
+					clientLogger.warn("[useCameraStream] Track stop warning:", err);
 				}
 			}
 			cameraStreamRef.current = null;
@@ -51,7 +52,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 				try {
 					track.stop();
 				} catch (err) {
-					console.warn("[useCameraStream] Active track stop warning:", err);
+					clientLogger.warn("[useCameraStream] Active track stop warning:", err);
 				}
 			}
 			setCameraStream(null);
@@ -63,7 +64,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 					for (const track of (srcObj as MediaStream).getTracks()) { track.stop(); }
 				}
 			} catch (err) {
-				console.warn("[useCameraStream] Video element track teardown warning:", err);
+				clientLogger.warn("[useCameraStream] Video element track teardown warning:", err);
 			}
 			videoElement.srcObject = null;
 		}
@@ -78,7 +79,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 					try {
 						track.stop();
 					} catch (err) {
-						console.warn("[useCameraStream] Previous stream stop warning:", err);
+						clientLogger.warn("[useCameraStream] Previous stream stop warning:", err);
 					}
 				}
 				cameraStreamRef.current = null;
@@ -93,7 +94,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 					try {
 						track.stop();
 					} catch (err) {
-						console.warn("[useCameraStream] Unmounted stream stop warning:", err);
+						clientLogger.warn("[useCameraStream] Unmounted stream stop warning:", err);
 					}
 				}
 				return;
@@ -103,7 +104,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 			if (videoElement) {
 				videoElement.srcObject = stream;
 				await videoElement.play().catch((err) => {
-					console.warn("[useCameraStream] Video autoplay warning:", err);
+					clientLogger.warn("[useCameraStream] Video autoplay warning:", err);
 				});
 			}
 			void enumerateCameras();
@@ -120,7 +121,7 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 					try {
 						track.stop();
 					} catch (err) {
-						console.warn("[useCameraStream] Cleanup track stop warning:", err);
+						clientLogger.warn("[useCameraStream] Cleanup track stop warning:", err);
 					}
 				}
 				cameraStreamRef.current = null;

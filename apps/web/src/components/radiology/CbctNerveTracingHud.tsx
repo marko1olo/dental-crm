@@ -168,7 +168,7 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 				</div>
 			</div>
 
-			{/* 4. КНОПКИ УПРАВЛЕНИЯ ТРАССОЙ (1-КЛИК СБРОС И УДАЛЕНИЕ УЗЛА) */}
+			{/* 4. КНОПКИ УПРАВЛЕНИЯ ТРАССОЙ (БЫСТРЫЙ СБРОС И УДАЛЕНИЕ УЗЛА) */}
 			<div className="flex items-center gap-1 pl-1 border-l border-zinc-800 shrink-0">
 				{selectedNerveNodeIdx !== null &&
 					selectedNerveNodeIdx !== undefined &&

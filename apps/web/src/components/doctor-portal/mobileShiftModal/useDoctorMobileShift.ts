@@ -15,10 +15,10 @@ import { useShiftEmergencyVisit } from "./logic/useShiftEmergencyVisit";
  */
 export function useDoctorMobileShift(props: DoctorMobileShiftModalProps): UseDoctorMobileShiftReturn {
 	const {
-		initialDoctorId = "doc-1",
+		initialDoctorId = "",
 		initialDoctorName = "Врач не выбран",
 		initialDoctorSpecialty = "Врач-стоматолог терапевт-ортопед",
-		initialShiftDateIso = new Date().toISOString().split("T")[0]!,
+		initialShiftDateIso = new Date().toISOString().slice(0, 10),
 		initialAppointments,
 		rawAppointments,
 		patients,

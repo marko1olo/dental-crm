@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import { generateUuidV7, type Appointment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
@@ -21,7 +21,9 @@ export async function openVisitWithBackendSync(
 				`/api/appointments/${encodeURIComponent(appointment.id)}/visit`,
 				{
 					method: "POST",
-					headers: denteClinicalMutationHeaders(),
+					headers: denteClinicalMutationHeaders({
+						"Idempotency-Key": generateUuidV7(),
+					}),
 				},
 			);
 			if (res.ok) {

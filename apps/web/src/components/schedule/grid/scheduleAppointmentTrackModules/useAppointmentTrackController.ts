@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { safeBuildSlotIso } from "../gridSlotMath";
 import {
   checkAppointmentResourceCollision,
@@ -227,6 +228,7 @@ export function useAppointmentTrackController(
             method: "PUT",
             headers: denteClinicalMutationHeaders({
               "Content-Type": "application/json",
+              "Idempotency-Key": generateUuidV7(),
             }),
             body: JSON.stringify({ status: "fulfilled" }),
           }).catch((err) => {

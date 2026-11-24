@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
 import { UnifiedAudioClient, parseDentalVoiceSpeech } from "../../../services/voice";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
@@ -364,6 +365,7 @@ export function useCephLandmarks({
 		}
 
 		// Честное сохранение структурированных данных цефалометрии в ЭМК и базу данных
+		let emrSaveFailed = false;
 		try {
 			saveCephalometricAnalysisToEmr({
 				patientId,
@@ -377,7 +379,8 @@ export function useCephLandmarks({
 				isCalibratedFallback: aiStats?.isCalibratedFallback,
 			});
 		} catch (err) {
-			console.warn("[CephModal] Error saving cephalometrics to EMR:", err);
+			emrSaveFailed = true;
+			clientLogger.warn("[CephModal] Error saving cephalometrics to EMR", err, { module: "CephModal" });
 		}
 
 		try {
@@ -390,16 +393,28 @@ export function useCephLandmarks({
 					treatmentPlan: prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] Диагностический протокол ТРГ сохранен: ${analysis.diagnosis.skeletalClassRu}.` : `Ортодонтическое лечение: протокол ТРГ сохранен (${analysis.diagnosis.skeletalClassRu}), согласование аппаратуры.`,
 				}));
 			}
-		} catch { /* ignore */ }
+		} catch (storeErr) {
+			clientLogger.warn("[CephModal] Error updating visit store with ceph protocol", storeErr, {
+				module: "CephModal",
+			});
+		}
 
 		if (typeof window !== "undefined") {
 			try {
 				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 					detail: { protocolText: currentEffectiveProtocolText, title: "Протокол ТРГ (Медицинская карта)", soap: { treatmentDescription: currentEffectiveProtocolText }, mode: "smart_append" },
 				}));
-			} catch { /* ignore */ }
+			} catch (eventErr) {
+				clientLogger.warn("[CephModal] Error dispatching SOAP protocol event", eventErr, {
+					module: "CephModal",
+				});
+			}
 		}
-		showToast("Протокол ТРГ успешно вставлен в медицинскую карту!", "success");
+		if (emrSaveFailed) {
+			showToast("Протокол ТРГ вставлен в карту визита, но не удалось сохранить исследование в ЭМК", "warning");
+		} else {
+			showToast("Протокол ТРГ успешно вставлен в медицинскую карту!", "success");
+		}
 		onClose();
 	};
 

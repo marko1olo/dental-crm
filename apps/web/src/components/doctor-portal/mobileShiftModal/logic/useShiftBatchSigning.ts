@@ -6,55 +6,7 @@ import {
 	type EmrBatchSigningSession,
 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-
-async function persistBatchSigningToApi(
-	doctorId: string,
-	doctorName: string,
-	shiftDateIso: string,
-	protocolHash: string,
-	signedAtIso: string,
-	targetIds: readonly string[],
-	updatedAppts: readonly DoctorShiftAppointment[],
-): Promise<void> {
-	try {
-		await fetch("/api/schedule/shifts", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				shifts: [
-					{
-						doctorId,
-						doctorName,
-						dateIso: shiftDateIso,
-						shiftDateIso,
-						protocolHash,
-						signedAtIso,
-						signedAppointmentIds: targetIds,
-						appointments: updatedAppts,
-					},
-				],
-			}),
-		});
-	} catch {
-		// Non-blocking
-	}
-
-	for (const aptId of targetIds) {
-		try {
-			await fetch(`/api/diaries/${encodeURIComponent(aptId)}/lock`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					pkcs7Signature: protocolHash,
-					pepProtocolHash: protocolHash,
-					signedAtIso,
-				}),
-			});
-		} catch {
-			// Non-blocking
-		}
-	}
-}
+import { persistBatchSigningToApi } from "../shiftApiUtils";
 
 export interface UseShiftBatchSigningParams {
 	initialDoctorId: string;

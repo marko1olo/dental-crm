@@ -1,5 +1,7 @@
 import React from "react";
 import { Activity, FileText } from "lucide-react";
+import { showToast } from "../../../../../GlobalToast.js";
+import { clientLogger } from "../../../../../../services/logging/clientLogger.js";
 import { exportAlveolarRidgeToEmr, type EdentulousToothFdi, type AlveolarRidgeMeasurement } from "../../../../alveolarRidgeMorphometry.js";
 
 export interface ImplantRidgeMorphometryCardProps {
@@ -33,7 +35,10 @@ export const ImplantRidgeMorphometryCard: React.FC<ImplantRidgeMorphometryCardPr
 					detail: { soap: { statusLocalis: edited043Text, treatmentDescription: "", diagnosisIcd10: "K08.1", diagnosisTooth: String(edentulousTooth) }, immediate: true, mode: "smart_append" },
 				}));
 			} catch (error) {
-				console.error("[ImplantRidgeMorphometryCard] Failed to dispatch SOAP protocol event:", error);
+				clientLogger.error("[ImplantRidgeMorphometryCard] Failed to dispatch SOAP protocol event", error, {
+					module: "ImplantRidgeMorphometryCard",
+				});
+				showToast("Не удалось передать протокол морфометрии в дневник приёма", "error");
 			}
 		}
 	};

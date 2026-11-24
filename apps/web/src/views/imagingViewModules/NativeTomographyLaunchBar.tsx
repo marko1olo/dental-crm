@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ExternalLink, FolderOpen, Loader2 } from "lucide-react";
 import { launchExternalCtViewer } from "../../native/desktop/ctViewerBridge";
 import { showToast } from "../../components/GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 export interface NativeTomographyLaunchBarProps {
@@ -32,7 +33,9 @@ export function NativeTomographyLaunchBar({
 				}
 			}
 		} catch (err: unknown) {
-			console.warn("[NativeTomographyLaunchBar] Failed to launch external viewer:", err);
+			clientLogger.warn("[NativeTomographyLaunchBar] Failed to launch external viewer", err, {
+				module: "NativeTomographyLaunchBar",
+			});
 			showToast(`Сбой запуска ${vendorName}`, "error");
 		} finally {
 			setLaunchingApp(null);

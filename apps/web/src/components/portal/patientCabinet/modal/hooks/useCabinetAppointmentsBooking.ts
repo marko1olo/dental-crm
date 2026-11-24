@@ -1,4 +1,6 @@
 import { useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../../../services/logging/clientLogger";
 import type {
 	PatientAppointment,
 	PatientPersonalCabinetData,
@@ -28,7 +30,7 @@ export function useCabinetAppointmentsBooking(
 						headers: {
 							Authorization: `Bearer ${token}`,
 							"Content-Type": "application/json",
-							"Idempotency-Key": crypto.randomUUID(),
+							"Idempotency-Key": generateUuidV7(),
 						},
 						body: JSON.stringify({
 							startsAt: startDateTime.toISOString(),
@@ -57,7 +59,7 @@ export function useCabinetAppointmentsBooking(
 					handleShowCabinetToast(json?.message || "Не удалось перенести запись на выбранное время.");
 					return;
 				} catch (err) {
-					console.error("[PatientCabinetModal] Failed to reschedule appointment:", err);
+					clientLogger.error("[PatientCabinetModal] Failed to reschedule appointment:", err);
 					handleShowCabinetToast("Ошибка сети при переносе записи. Попробуйте позже.");
 					return;
 				}
@@ -129,7 +131,7 @@ export function useCabinetAppointmentsBooking(
 						return;
 					}
 				} catch (err) {
-					console.error("[PatientCabinetModal] Failed to post /api/portal/appointments:", err);
+					clientLogger.error("[PatientCabinetModal] Failed to post /api/portal/appointments:", err);
 					handleShowCabinetToast("Ошибка сети при оформлении записи. Попробуйте позже.");
 					return;
 				}
@@ -147,12 +149,23 @@ export function useCabinetAppointmentsBooking(
 				try {
 					const res = await fetch(`/api/portal/appointments/${encodeURIComponent(aptId)}/cancel`, {
 						method: "PATCH",
-						headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+						headers: {
+							Authorization: `Bearer ${token}`,
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						},
 						body: JSON.stringify({ reason }),
 					});
-					if (res.ok) handleShowCabinetToast("Запись успешно отменена.");
+					if (!res.ok) {
+						const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
+						handleShowCabinetToast(errJson?.message || "Не удалось отменить запись. Попробуйте позже.");
+						return;
+					}
+					handleShowCabinetToast("Запись успешно отменена.");
 				} catch (err) {
-					console.error("[PatientCabinetModal] Failed to cancel appointment:", err);
+					clientLogger.error("[PatientCabinetModal] Failed to cancel appointment:", err);
+					handleShowCabinetToast("Ошибка сети при отмене записи. Попробуйте позже.");
+					return;
 				}
 			}
 			setData((prev) => ({

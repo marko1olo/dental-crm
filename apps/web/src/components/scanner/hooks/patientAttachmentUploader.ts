@@ -4,7 +4,8 @@
  * Dedicated helper for uploading patient document attachments to Fastify API.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 
 export async function uploadPatientAttachment(
 	patientId: string,
@@ -19,7 +20,9 @@ export async function uploadPatientAttachment(
 
 	const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/attachments`, {
 		method: "POST",
-		headers: denteAdminSecretRequestHeaders(),
+		headers: denteClinicalMutationHeaders({
+			"Idempotency-Key": generateUuidV7(),
+		}),
 		body: formData,
 	});
 

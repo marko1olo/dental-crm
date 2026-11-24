@@ -7,6 +7,13 @@
  */
 
 import { decodeDicomString } from "./dicomMultiFrameLoader";
+import { clientLogger } from "../../services/logging/clientLogger";
+
+function logNonFatalDicomTagError(err: unknown): void {
+  clientLogger.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped", err, {
+    module: "dicomSliceHeaderParser",
+  });
+}
 
 /**
  * DICOM Part 10 Well-known Transfer Syntax UIDs
@@ -242,7 +249,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             .replace(/\0+$/, "")
             .trim();
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0010 && element === 0x0010) {
@@ -253,7 +260,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const decoded = decodeDicomString(raw);
           if (decoded) patientName = decoded;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0008 && element === 0x0008) {
@@ -265,7 +272,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             .replace(/\0+$/, "")
             .trim();
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0008 && element === 0x0020) {
@@ -274,7 +281,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
         try {
           studyDate = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, Math.min(tagLen, 12))).trim();
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0018 && element === 0x0050) {
@@ -285,7 +292,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) sliceThickness = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0020 && element === 0x0032) {
@@ -302,7 +309,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             }
           }
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0020 && element === 0x0037) {
@@ -322,7 +329,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             ];
           }
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0020 && element === 0x1041) {
@@ -335,7 +342,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             sliceLocationZ = num;
           }
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0020 && element === 0x0013) {
@@ -346,7 +353,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseInt(str, 10);
           if (!Number.isNaN(num)) instanceNumber = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x0008) {
@@ -365,7 +372,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             if (binVal > 0) numberOfFrames = binVal;
           }
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x0010) {
@@ -394,7 +401,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             if (!Number.isNaN(parts[1]) && (parts[1] ?? 0) > 0) pixelSpacingX = parts[1] ?? 0.20;
           }
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x1050) {
@@ -405,7 +412,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num)) windowCenter = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x1051) {
@@ -416,7 +423,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num) && num > 0) windowWidth = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x1052) {
@@ -427,7 +434,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num)) rescaleIntercept = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x0028 && element === 0x1053) {
@@ -438,7 +445,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) rescaleSlope = num;
         } catch (err) {
-          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+          logNonFatalDicomTagError(err);
         }
       }
     } else if (group === 0x7fe0 && element === 0x0010) {

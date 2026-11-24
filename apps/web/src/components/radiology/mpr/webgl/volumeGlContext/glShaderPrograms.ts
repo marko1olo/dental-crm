@@ -6,6 +6,7 @@
 import { CBCT_MPR_FRAGMENT_SHADER, CBCT_MPR_VERTEX_SHADER } from "../cbctMprShaders";
 import { CBCT_CROSS_SECTION_FRAGMENT_SHADER, CBCT_CROSS_SECTION_VERTEX_SHADER } from "../cbctCrossSectionShaders";
 import type { GlUniformLocations } from "./types";
+import { clientLogger } from "../../../../../services/logging/clientLogger";
 
 export interface GlCompiledProgram {
 	program: WebGLProgram; vertexShader: WebGLShader; fragmentShader: WebGLShader; uniforms: GlUniformLocations;
@@ -17,7 +18,9 @@ export function compileGlShader(gl: WebGL2RenderingContext, source: string, type
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
 	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		console.error("[CbctVolumeGlContext] Shader compile failed:", gl.getShaderInfoLog(shader));
+		clientLogger.error("[CbctVolumeGlContext] Shader compile failed", gl.getShaderInfoLog(shader), {
+			module: "CbctVolumeGlContext",
+		});
 		gl.deleteShader(shader);
 		return null;
 	}
@@ -54,8 +57,15 @@ function buildGlProgram(gl: WebGL2RenderingContext, vsSource: string, fsSource: 
 	gl.attachShader(program, vertexShader); gl.attachShader(program, fragmentShader); gl.linkProgram(program);
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 		const log = gl.getProgramInfoLog(program);
-		if (isCrossSection) console.warn("[CbctVolumeGlContext] Cross-section link failed:", log);
-		else console.error("[CbctVolumeGlContext] Program link failed:", log);
+		if (isCrossSection) {
+			clientLogger.warn("[CbctVolumeGlContext] Cross-section link failed", log, {
+				module: "CbctVolumeGlContext",
+			});
+		} else {
+			clientLogger.error("[CbctVolumeGlContext] Program link failed", log, {
+				module: "CbctVolumeGlContext",
+			});
+		}
 		gl.deleteShader(vertexShader); gl.deleteShader(fragmentShader); gl.deleteProgram(program); return null;
 	}
 	return { program, vertexShader, fragmentShader, uniforms: extractUniformLocations(gl, program) };

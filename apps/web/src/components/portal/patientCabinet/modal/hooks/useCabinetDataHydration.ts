@@ -5,6 +5,7 @@ import {
 } from "../../patientCabinetEngine.js";
 import { DEMO_PATIENT_CABINET } from "../../patientCabinetPresets.js";
 import { isDemoShowcaseMode } from "../../../../../lib/demoMode.js";
+import { clientLogger } from "../../../../../services/logging/clientLogger.js";
 import { useOfflinePatientSync } from "../../../../../pwa/patientOfflineStorage.js";
 import { mapServerPortalMeToCabinetData } from "../../patientCabinetMapper.js";
 import type { AvailableDoctorItem } from "../types.js";
@@ -37,42 +38,49 @@ export function useCabinetDataHydration(initialData?: PatientPersonalCabinetData
 			try {
 				const [res, consentsRes] = await Promise.all([
 					fetch("/api/portal/me", { headers: { Authorization: `Bearer ${token}` } }),
-					fetch("/api/portal/consents", { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+					fetch("/api/portal/consents", { headers: { Authorization: `Bearer ${token}` } }).catch((err) => {
+						clientLogger.warn("[PatientCabinetModal] Failed to fetch /api/portal/consents:", err);
+						return null;
+					}),
 				]);
-				if (res.ok) {
-					const json = await res.json();
-					let serverConsents: Array<Record<string, unknown>> | undefined;
-					if (consentsRes && consentsRes.ok) {
-						try {
-							const consentsJson = (await consentsRes.json()) as { consents?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | null;
-							if (consentsJson && typeof consentsJson === "object") {
-								if ("consents" in consentsJson && Array.isArray(consentsJson.consents)) {
-									serverConsents = consentsJson.consents;
-								} else if (Array.isArray(consentsJson)) {
-									serverConsents = consentsJson;
-								}
+				if (!res.ok) {
+					clientLogger.warn("[PatientCabinetModal] /api/portal/me returned non-OK status:", res.status);
+					if (isMounted) handleShowCabinetToast("Не удалось обновить данные личного кабинета");
+					return;
+				}
+				const json = await res.json();
+				let serverConsents: Array<Record<string, unknown>> | undefined;
+				if (consentsRes && consentsRes.ok) {
+					try {
+						const consentsJson = (await consentsRes.json()) as { consents?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | null;
+						if (consentsJson && typeof consentsJson === "object") {
+							if ("consents" in consentsJson && Array.isArray(consentsJson.consents)) {
+								serverConsents = consentsJson.consents;
+							} else if (Array.isArray(consentsJson)) {
+								serverConsents = consentsJson;
 							}
-						} catch {
-							// Silent fallback to empty consents
 						}
+					} catch (err) {
+						clientLogger.warn("[PatientCabinetModal] Failed to parse /api/portal/consents:", err);
 					}
-					if (isMounted && json && json.patient) {
-						const mapped = mapServerPortalMeToCabinetData(json, serverConsents);
-						setData(mapped);
-						if (Array.isArray(json.doctors)) {
-							setAvailableDoctors(json.doctors);
-						}
+				}
+				if (isMounted && json && json.patient) {
+					const mapped = mapServerPortalMeToCabinetData(json, serverConsents);
+					setData(mapped);
+					if (Array.isArray(json.doctors)) {
+						setAvailableDoctors(json.doctors);
 					}
 				}
 			} catch (err) {
-				console.error("[PatientCabinetModal] Failed to fetch /api/portal/me:", err);
+				clientLogger.error("[PatientCabinetModal] Failed to fetch /api/portal/me:", err);
+				if (isMounted) handleShowCabinetToast("Ошибка сети при загрузке данных кабинета");
 			} finally {
 				if (isMounted) setIsFetchingMe(false);
 			}
 		};
 		void fetchMe();
 		return () => { isMounted = false; };
-	}, [token]);
+	}, [token, handleShowCabinetToast]);
 
 	return {
 		data, setData, isFetchingMe, availableDoctors,

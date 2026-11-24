@@ -1,4 +1,4 @@
-import type { Patient } from "@dental/shared";
+import { generateUuidV7, type Patient } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
 import { logger } from "../../utils/logger";
@@ -52,7 +52,10 @@ export async function resolveOrAutoCreateSubmitPatient(
     try {
       const resp = await fetch("/api/patients", {
         method: "POST",
-        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        headers: denteClinicalMutationHeaders({
+          "Content-Type": "application/json",
+          "Idempotency-Key": generateUuidV7(),
+        }),
         body: JSON.stringify({
           fullName: fallbackName,
           phone: rawPhone || null,

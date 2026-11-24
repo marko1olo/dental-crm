@@ -4,7 +4,9 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
@@ -101,7 +103,11 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 			const res = await fetch(`/api/documents${queryParam}`, {
 				headers: denteClinicalReadHeaders(),
 			});
-			if (!res.ok) return;
+			if (!res.ok) {
+				clientLogger.warn("[useUkepSigningEngine] API returned error while loading documents:", res.status);
+				setErrorMessage(`Не удалось загрузить документы для подписания (${res.status})`);
+				return;
+			}
 			const data = await res.json();
 			if (data && Array.isArray(data.documents)) {
 				const mapped: UkepDocumentItem[] = data.documents.map((d: RawUkepApiDocumentItem) => ({
@@ -127,7 +133,8 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 				}
 			}
 		} catch (e) {
-			console.warn("[useUkepSigningEngine] Failed to load documents from API:", e);
+			clientLogger.warn("[useUkepSigningEngine] Failed to load documents from API:", e);
+			setErrorMessage("Не удалось загрузить список документов с сервера");
 		}
 	}, [patientId, patientFullName, initialDocs]);
 
@@ -173,7 +180,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					pkcs7Signature: signature,
@@ -230,7 +237,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					signatureSvg,

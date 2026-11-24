@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 import type { FamilyMember } from "./TelegramMiniAppTopHeader";
 import type { TelegramTab } from "./TelegramMiniAppView";
@@ -61,7 +62,7 @@ export function useTelegramMiniAppState(initialTab?: TelegramTab, options?: UseT
 		try {
 			(window as unknown as TelegramWebAppWindow).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(style);
 		} catch (err) {
-			console.warn("[useTelegramMiniAppState] Haptic feedback unavailable:", err);
+			clientLogger.warn("[useTelegramMiniAppState] Haptic feedback unavailable:", err);
 		}
 	}, []);
 

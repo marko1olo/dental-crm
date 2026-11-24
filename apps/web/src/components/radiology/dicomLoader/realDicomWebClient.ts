@@ -3,6 +3,7 @@
  */
 
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { CbctVoxelVolume } from "../cbctMprMath";
 import type { CbctWorkerBridge } from "../mpr/cbctWorkerBridge";
 import type { DicomStreamingUploadTarget, DicomVolumeIngestionOptions } from "./realDicomTypes";
@@ -14,7 +15,9 @@ function getViteApiUrl(): string {
 			return import.meta.env.VITE_API_URL;
 		}
 	} catch (err) {
-		console.warn("[realDicomWebClient] VITE_API_URL unavailable:", err);
+		clientLogger.warn("[realDicomWebClient] VITE_API_URL unavailable", err, {
+			module: "realDicomWebClient",
+		});
 	}
 	return "";
 }

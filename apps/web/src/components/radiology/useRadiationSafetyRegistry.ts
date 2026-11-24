@@ -6,6 +6,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import type { RadiationSafetyRecord } from "./radiationSafetyTypes.js";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 export function useRadiationSafetyRegistry(
 	initialRecords: RadiationSafetyRecord[] = [],
@@ -70,7 +71,9 @@ export function useRadiationSafetyRegistry(
 					});
 				}
 			} catch (err) {
-				console.warn("[RadiationSafetyRegistry] Не удалось загрузить дозиметрию пациента:", err);
+				clientLogger.warn("[RadiationSafetyRegistry] Не удалось загрузить дозиметрию пациента", err, {
+					module: "RadiationSafetyRegistry",
+				});
 			}
 		};
 		void load();

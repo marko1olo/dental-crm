@@ -1,7 +1,9 @@
 import {
+	generateUuidV7,
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function getShowcaseShiftAppointments(
@@ -10,7 +12,7 @@ export function getShowcaseShiftAppointments(
 	doctorSpecialty: string,
 	shiftDateIso: string,
 ): DoctorShiftAppointment[] {
-	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().slice(0, 10);
 	return SAMPLE_DOCTOR_SHIFT_APPOINTMENTS.map((apt) => {
 		const timeStart = apt.startsAtIso.split("T")[1] || "09:00:00.000Z";
 		const timeEnd = apt.endsAtIso.split("T")[1] || "10:00:00.000Z";
@@ -35,9 +37,12 @@ export async function persistBatchSigningToApi(
 	updatedAppts: readonly DoctorShiftAppointment[],
 ): Promise<void> {
 	try {
-		await fetch("/api/schedule/shifts", {
+		const shiftRes = await fetch("/api/schedule/shifts", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify({
 				shifts: [
 					{
@@ -53,6 +58,12 @@ export async function persistBatchSigningToApi(
 				],
 			}),
 		});
+		if (!shiftRes.ok) {
+			clientLogger.warn(
+				"[DoctorMobileShiftModal] /api/schedule/shifts returned error status:",
+				shiftRes.status,
+			);
+		}
 	} catch (err) {
 		clientLogger.warn(
 			"[DoctorMobileShiftModal] Ошибка отправки статуса смены на /api/schedule/shifts",
@@ -62,17 +73,29 @@ export async function persistBatchSigningToApi(
 
 	for (const aptId of targetIds) {
 		try {
-			await fetch(`/api/diaries/${encodeURIComponent(aptId)}/lock`, {
+			const lockRes = await fetch(`/api/diaries/${encodeURIComponent(aptId)}/lock`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					pkcs7Signature: protocolHash,
 					pepProtocolHash: protocolHash,
 					signedAtIso,
 				}),
 			});
-		} catch {
-			// Non-blocking fallback
+			if (!lockRes.ok) {
+				clientLogger.warn(
+					"[DoctorMobileShiftModal] /api/diaries/lock returned error status:",
+					lockRes.status,
+				);
+			}
+		} catch (err) {
+			clientLogger.warn(
+				"[DoctorMobileShiftModal] Ошибка блокировки дневника /api/diaries/lock",
+				err,
+			);
 		}
 	}
 }
@@ -85,7 +108,7 @@ export function buildEmergencyAppointment(
 	const now = new Date();
 	const nowTimeStr = now.toTimeString().slice(0, 5);
 	const endHour = new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5);
-	const shiftDate = shiftDateIso ?? now.toISOString().split("T")[0]!;
+	const shiftDate = shiftDateIso ?? now.toISOString().slice(0, 10);
 
 	return {
 		id: `apt-emerg-${now.getTime()}`,

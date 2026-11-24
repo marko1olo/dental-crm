@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../../../services/logging/clientLogger";
 import {
 	sendPortalSmsOtp,
 	signConsentViaServerApi,
@@ -124,7 +125,7 @@ export function useCabinetConsentSigning(
 					return;
 				}
 			} catch (err) {
-				console.warn("[useCabinetConsentSigning] Ошибка подписания согласия в ЛК:", err);
+				clientLogger.warn("[useCabinetConsentSigning] Ошибка подписания согласия в ЛК:", err);
 				setOtpError("Сетевая ошибка при подписании согласия. Повторите попытку.");
 				return;
 			}

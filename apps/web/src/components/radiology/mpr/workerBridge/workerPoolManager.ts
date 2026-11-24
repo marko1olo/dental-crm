@@ -7,6 +7,7 @@
  */
 
 import { calculateDynamicWorkerPoolSize } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { MprPlane } from "../../cbctMprMath";
 import type {
 	CbctWorkerInboundMessage,
@@ -64,9 +65,10 @@ export class WorkerPoolManager {
 			}
 			this._isWorkerActive = this.workers.length > 0;
 		} catch (err) {
-			console.warn(
-				"[CbctWorkerBridge] Web Worker instantiation unavailable, falling back to main-thread rendering:",
+			clientLogger.warn(
+				"[CbctWorkerBridge] Web Worker instantiation unavailable, falling back to main-thread rendering",
 				err,
+				{ module: "CbctWorkerBridge" },
 			);
 			this._isWorkerActive = false;
 			this.workers = [];
@@ -79,7 +81,9 @@ export class WorkerPoolManager {
 		};
 
 		worker.onerror = (err: ErrorEvent) => {
-			console.error("[CbctWorkerBridge] Worker error encountered:", err.message);
+			clientLogger.error("[CbctWorkerBridge] Worker error encountered", err.message, {
+				module: "CbctWorkerBridge",
+			});
 			this.onError(err);
 		};
 	}
@@ -117,8 +121,10 @@ export class WorkerPoolManager {
 		for (const w of this.workers) {
 			try {
 				w.postMessage(msg);
-			} catch {
-				// Ignore if worker is closed or unreachable
+			} catch (err) {
+				clientLogger.debug("[CbctWorkerBridge] broadcast skipped for closed worker", err, {
+					module: "CbctWorkerBridge",
+				});
 			}
 		}
 	}
@@ -136,8 +142,10 @@ export class WorkerPoolManager {
 		for (const w of this.workers) {
 			try {
 				w.postMessage(abortMsg);
-			} catch {
-				// Ignore if worker is closed or unreachable
+			} catch (err) {
+				clientLogger.debug("[CbctWorkerBridge] broadcastAbort skipped for closed worker", err, {
+					module: "CbctWorkerBridge",
+				});
 			}
 		}
 	}
@@ -153,8 +161,10 @@ export class WorkerPoolManager {
 						type: "DISPOSE_VOLUME",
 						volumeId: initializedVolumeId,
 					});
-				} catch {
-					// Ignore postMessage failure on closing worker
+				} catch (err) {
+					clientLogger.debug("[CbctWorkerBridge] DISPOSE_VOLUME postMessage skipped on closing worker", err, {
+						module: "CbctWorkerBridge",
+					});
 				}
 			}
 			w.terminate();

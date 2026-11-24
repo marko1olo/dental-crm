@@ -1,6 +1,7 @@
-import type { Dashboard, Patient } from "@dental/shared";
+import { generateUuidV7, type Dashboard, type Patient } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { logger } from "../../utils/logger";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
 import { showToast } from "../GlobalToast";
@@ -233,6 +234,7 @@ export function useQuickBookingPatientSearch({
             method: "POST",
             headers: denteClinicalMutationHeaders({
               "Content-Type": "application/json",
+              "Idempotency-Key": generateUuidV7(),
             }),
             body: JSON.stringify({
               fullName: nameCandidate,
@@ -261,8 +263,8 @@ export function useQuickBookingPatientSearch({
               createdPatient = existing as Patient;
             }
           }
-        } catch {
-          // Fallback optimistic
+        } catch (err) {
+          clientLogger.warn("[useQuickBookingPatientSearch] POST /api/patients failed, using local fallback:", err);
         }
       }
 

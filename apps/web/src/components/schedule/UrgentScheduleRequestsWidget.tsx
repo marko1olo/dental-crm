@@ -1,4 +1,4 @@
-import type { UrgentScheduleRequest } from "@dental/shared";
+import { generateUuidV7, type UrgentScheduleRequest } from "@dental/shared";
 import { AlertTriangle, Check, Clock, Flame, Stethoscope, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getDenteAuthHeaders, denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
@@ -59,7 +59,9 @@ export function UrgentScheduleRequestsWidget({
 				{
 					method: "PATCH",
 					credentials: "include",
-					headers: denteClinicalMutationHeaders(),
+					headers: denteClinicalMutationHeaders({
+						"Idempotency-Key": generateUuidV7(),
+					}),
 				},
 			);
 			if (res.ok) {

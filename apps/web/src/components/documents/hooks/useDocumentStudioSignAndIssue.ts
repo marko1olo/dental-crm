@@ -7,6 +7,7 @@
 import { useCallback } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	printTaxCertificate,
 	buildTaxCertificateDocumentData,
@@ -219,7 +220,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 			downloadFnsTaxXmlFile(certParams);
 			options.showToast("XML-файл справки выгружен для ТКС", "success");
 		} catch (err) {
-			console.error("[useDocumentStudioSignAndIssue] Сбой генерации XML справки:", err);
+			clientLogger.error("[useDocumentStudioSignAndIssue] Сбой генерации XML справки:", err);
 			options.showToast("Ошибка формирования XML справки", "error");
 		}
 	}, [buildCertParams, options]);
@@ -234,7 +235,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 			downloadFnsNoMedoplXmlFile(certParams);
 			options.showToast("Файл электронного реестра NO_MEDOPL (5.01) выгружен", "success");
 		} catch (err) {
-			console.error("[useDocumentStudioSignAndIssue] Сбой генерации NO_MEDOPL:", err);
+			clientLogger.error("[useDocumentStudioSignAndIssue] Сбой генерации NO_MEDOPL:", err);
 			options.showToast("Ошибка формирования реестра NO_MEDOPL", "error");
 		}
 	}, [buildCertParams, options]);
@@ -257,7 +258,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 				"Idempotency-Key": generateUuidV7(),
 			});
 			try {
-				await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
+				const consentRes = await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
 					method: "POST",
 					headers,
 					body: JSON.stringify({
@@ -274,11 +275,18 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 						notes: "Подписание на бумажном носителе подтверждено врачом",
 					}),
 				});
+				if (!consentRes.ok) {
+					clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия на сервере:", consentRes.status);
+					options.showToast("Подписание подтверждено локально, но не удалось сохранить согласие на сервере", "error");
+					return;
+				}
 				void queryClient.invalidateQueries({ queryKey: ["documents"] });
 				void queryClient.invalidateQueries({ queryKey: ["patient-consents", options.effectivePatientId] });
 				void queryClient.invalidateQueries({ queryKey: ["patient", options.effectivePatientId] });
 			} catch (err) {
-				console.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия:", err);
+				clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия:", err);
+				options.showToast("Подписание подтверждено локально, но не удалось сохранить согласие на сервере", "error");
+				return;
 			}
 		}
 
@@ -431,7 +439,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 								"Content-Type": "application/json",
 								"Idempotency-Key": generateUuidV7(),
 							});
-							await fetch(`/api/documents/${encodeURIComponent(docObj.id)}/issue`, {
+							const issueRes = await fetch(`/api/documents/${encodeURIComponent(docObj.id)}/issue`, {
 								method: "POST",
 								headers: issueHeaders,
 								body: JSON.stringify({
@@ -450,11 +458,19 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 									signatureSvg: signatureDataUrl ?? null,
 								}),
 							});
+							if (!issueRes.ok) {
+								clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка выпуска документа на сервере:", issueRes.status);
+								options.showToast("Документ создан, но не удалось зафиксировать выпуск на сервере", "error");
+							}
 						}
 						options.recordConsentLocally(options.currentConsentKey, nowIso);
+					} else {
+						clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка создания документа на сервере:", res.status);
+						options.showToast("Не удалось зарегистрировать документ на сервере", "error");
 					}
 				} catch (err) {
-					console.warn("[useDocumentStudioSignAndIssue] Сбой регистрации документа:", err);
+					clientLogger.warn("[useDocumentStudioSignAndIssue] Сбой регистрации документа:", err);
+					options.showToast("Сбой регистрации документа на сервере", "error");
 				}
 
 				const consentPayload = {
@@ -476,13 +492,18 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					});
-					await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
+					const consentRes = await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
 						method: "POST",
 						headers: consentHeaders,
 						body: JSON.stringify(consentPayload),
 					});
+					if (!consentRes.ok) {
+						clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения согласия на сервере:", consentRes.status);
+						options.showToast("Не удалось сохранить согласие в карте пациента на сервере", "error");
+					}
 				} catch (err) {
-					console.warn("[useDocumentStudioSignAndIssue] Сбой сохранения согласия на сервере:", err);
+					clientLogger.warn("[useDocumentStudioSignAndIssue] Сбой сохранения согласия на сервере:", err);
+					options.showToast("Сбой сохранения согласия на сервере", "error");
 				}
 			}
 

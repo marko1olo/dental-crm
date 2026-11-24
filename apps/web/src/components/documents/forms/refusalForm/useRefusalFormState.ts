@@ -3,6 +3,7 @@ import { generateMedicalInterventionRefusal1051nHtml } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { usePatientStore } from "../../../../store/patientStore";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
 import type { DocumentVisitHints } from "../documentFormTypes";
 
@@ -87,7 +88,7 @@ export function useRefusalFormState({
 			"Последствия: пациенту разъяснен риск прогрессирования процесса, одонтогенных осложнений и потери зуба.",
 		].join("\n");
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(summary).catch((err) => console.warn("Clipboard failed:", err));
+			navigator.clipboard.writeText(summary).catch((err) => clientLogger.warn("[useRefusalFormState] Clipboard failed:", err));
 		}
 		showToast("Выжимка отказа скопирована в буфер обмена", "success", 3000);
 	};

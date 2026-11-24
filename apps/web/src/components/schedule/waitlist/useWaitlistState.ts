@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import { generateUuidV7, type Dashboard } from "@dental/shared";
 import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 import type { TargetSlotInfo, WaitlistCandidateItem, WaitlistUrgency } from "./waitlistTypes";
 import { filterWaitlistCandidates, generateWaitlistOfferMessage } from "./waitlistTypes";
@@ -148,6 +148,7 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "Idempotency-Key": generateUuidV7(),
         };
         if (auth?.denteClinicalMutationHeaders) {
           Object.assign(headers, auth.denteClinicalMutationHeaders());

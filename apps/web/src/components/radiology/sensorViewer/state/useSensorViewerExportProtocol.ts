@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import type React from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger.js";
 import { renderClinicalExportBlob } from "../../dentalViewerCanvasDraw.js";
 import { RADIOLOGY_STANDARD_PROTOCOLS, applyRadiologyProtocolToForm043 } from "../../radiologyProtocols.js";
 import { useVisitStore } from "../../../../store/visitStore.js";
@@ -48,13 +50,17 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				return { ...prev, objectiveStatus: current.trim() ? `${current.trim()}\n${statement}` : statement };
 			});
 		} catch (visitErr) {
-			console.warn("[SensorViewerExport] Не удалось записать статус в дневник визита:", visitErr);
+			clientLogger.warn("[SensorViewerExport] Не удалось записать статус в дневник визита", visitErr, {
+				module: "SensorViewerExport",
+			});
 		}
 
 		p.onInsertToProtocol?.(statement);
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(statement).catch((clipErr) => {
-				console.warn("[SensorViewerExport] Не удалось скопировать заключение в буфер обмена:", clipErr);
+				clientLogger.warn("[SensorViewerExport] Не удалось скопировать заключение в буфер обмена", clipErr, {
+					module: "SensorViewerExport",
+				});
 			});
 		}
 
@@ -150,7 +156,9 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				const id = usePatientStore.getState().selectedPatientId;
 				if (id) patientId = id;
 			} catch (storeErr) {
-				console.warn("[SensorViewerExport] Ошибка получения selectedPatientId:", storeErr);
+				clientLogger.warn("[SensorViewerExport] Ошибка получения selectedPatientId", storeErr, {
+					module: "SensorViewerExport",
+				});
 			}
 
 			const hasValidUuid = Boolean(
@@ -165,7 +173,7 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					patientId,
@@ -194,7 +202,9 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				showToast(`Снимок «${file.name}» успешно открыт`, "info");
 			}
 		} catch (uploadErr) {
-			console.warn("[SensorViewerExport] Ошибка сохранения снимка на сервере:", uploadErr);
+			clientLogger.warn("[SensorViewerExport] Ошибка сохранения снимка на сервере", uploadErr, {
+				module: "SensorViewerExport",
+			});
 			showToast(`Снимок «${file.name}» открыт локально`, "info");
 		}
 	}, [p]);

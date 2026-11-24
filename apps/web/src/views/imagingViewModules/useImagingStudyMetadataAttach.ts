@@ -4,7 +4,9 @@
  */
 
 import { useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 export function useImagingStudyMetadataAttach(
@@ -17,9 +19,16 @@ export function useImagingStudyMetadataAttach(
 		if (!selectedImagingStudy?.id) return;
 		props.onStudyUpdated?.({ ...selectedImagingStudy, toothCode: toothCode || null });
 		try {
+			const idempotencyKey = generateUuidV7();
 			const headers = auth?.denteClinicalMutationHeaders
-				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
-				: { "Content-Type": "application/json" };
+				? auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					})
+				: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					};
 			const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}`, {
 				method: "PATCH",
 				headers,
@@ -39,9 +48,18 @@ export function useImagingStudyMetadataAttach(
 				}
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast(toothCode ? `Снимок привязан к зубу ${toothCode}` : "Привязка к зубу снята", "success");
+			} else {
+				clientLogger.warn(
+					"[useImagingStudyMetadataAttach] Failed to attach tooth",
+					{ status: res.status },
+					{ module: "useImagingStudyMetadataAttach" },
+				);
+				showToast("Не удалось обновить привязку к зубу", "error");
 			}
 		} catch (err: unknown) {
-			console.warn("[useImagingStudyMetadataAttach] Error attaching tooth:", err);
+			clientLogger.warn("[useImagingStudyMetadataAttach] Error attaching tooth", err, {
+				module: "useImagingStudyMetadataAttach",
+			});
 			showToast("Не удалось обновить привязку к зубу", "error");
 		}
 	}, [selectedImagingStudy, auth, props, appLogic]);
@@ -49,9 +67,16 @@ export function useImagingStudyMetadataAttach(
 	const handleAttachVisit = useCallback(async (visitId: string) => {
 		if (!selectedImagingStudy?.id) return;
 		try {
+			const idempotencyKey = generateUuidV7();
 			const headers = auth?.denteClinicalMutationHeaders
-				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
-				: { "Content-Type": "application/json" };
+				? auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					})
+				: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					};
 			const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}`, {
 				method: "PATCH",
 				headers,
@@ -63,9 +88,18 @@ export function useImagingStudyMetadataAttach(
 				props.onStudyUpdated?.(payload);
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast("Снимок привязан к текущему приёму", "success");
+			} else {
+				clientLogger.warn(
+					"[useImagingStudyMetadataAttach] Failed to attach visit",
+					{ status: res.status },
+					{ module: "useImagingStudyMetadataAttach" },
+				);
+				showToast("Не удалось обновить привязку к визиту", "error");
 			}
 		} catch (err: unknown) {
-			console.warn("[useImagingStudyMetadataAttach] Error attaching visit:", err);
+			clientLogger.warn("[useImagingStudyMetadataAttach] Error attaching visit", err, {
+				module: "useImagingStudyMetadataAttach",
+			});
 			showToast("Не удалось обновить привязку к визиту", "error");
 		}
 	}, [selectedImagingStudy?.id, auth, props, appLogic]);

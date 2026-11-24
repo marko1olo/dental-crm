@@ -10,6 +10,8 @@
  * 5. Automatic 2D canvas fallback for headless / non-WebGL environments.
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export interface RvgGlRenderParams {
 	brightness: number; // 0..200 (100 is neutral)
 	contrast: number; // 50..300 (100 is neutral)
@@ -152,7 +154,9 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string):
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
 	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		console.warn("[RvgGlRenderer] Shader compile error:", gl.getShaderInfoLog(shader));
+		clientLogger.warn("[RvgGlRenderer] Shader compile error", gl.getShaderInfoLog(shader), {
+			module: "RvgGlRenderer",
+		});
 		gl.deleteShader(shader);
 		return null;
 	}
@@ -223,7 +227,9 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 	gl.linkProgram(program);
 
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		console.warn("[RvgGlRenderer] Program link error:", gl.getProgramInfoLog(program));
+		clientLogger.warn("[RvgGlRenderer] Program link error", gl.getProgramInfoLog(program), {
+			module: "RvgGlRenderer",
+		});
 		gl.deleteProgram(program);
 		return null;
 	}

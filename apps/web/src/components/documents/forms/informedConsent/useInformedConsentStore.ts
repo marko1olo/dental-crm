@@ -5,6 +5,7 @@ import { usePatientStore } from "../../../../store/patientStore";
 import { informedConsentGuidanceReview } from "../../informedConsentGuiding";
 import { generateSingleConsentTemplatePrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { InformedConsentFormProps } from "../InformedConsentForm";
 
 export function useInformedConsentStore({
@@ -59,7 +60,9 @@ export function useInformedConsentStore({
 			"Памятка: после вмешательства возможно появление локальной чувствительности (1-3 дня). Строго соблюдайте рекомендации врача.",
 		];
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(lines.join("\n")).catch(() => {});
+			navigator.clipboard.writeText(lines.join("\n")).catch((err) => {
+				clientLogger.warn("[useInformedConsentStore] Clipboard failed:", err);
+			});
 		}
 		showToast("Выжимка ИДС скопирована в буфер обмена", "success", 3000);
 	};

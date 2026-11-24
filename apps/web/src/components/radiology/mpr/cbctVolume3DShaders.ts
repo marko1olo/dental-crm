@@ -15,6 +15,7 @@
  */
 
 import type { CbctVoxelVolume } from "../cbctMprMath";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { downsampleVolumeData } from "../cbctPanoramicReconstructionMath";
 import { downsampleVolumeBoxFilter } from "@dental/shared";
 import {
@@ -75,27 +76,27 @@ export interface WebGlVolume3DState {
 export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVolume3DState | null {
 	const vs = gl.createShader(gl.VERTEX_SHADER);
 	if (!vs) {
-		console.error("[CbctVolume3D] createShader VS returned null");
+		clientLogger.error("[CbctVolume3D] createShader VS returned null", undefined, { module: "CbctVolume3D" });
 		return null;
 	}
 	gl.shaderSource(vs, CBCT_VOLUME_3D_VERTEX_SHADER);
 	gl.compileShader(vs);
 	if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-		console.error("[CbctVolume3D VS ERROR]", gl.getShaderInfoLog(vs));
+		clientLogger.error("[CbctVolume3D VS ERROR]", gl.getShaderInfoLog(vs), { module: "CbctVolume3D" });
 		gl.deleteShader(vs);
 		return null;
 	}
 
 	const fs = gl.createShader(gl.FRAGMENT_SHADER);
 	if (!fs) {
-		console.error("[CbctVolume3D] createShader FS returned null");
+		clientLogger.error("[CbctVolume3D] createShader FS returned null", undefined, { module: "CbctVolume3D" });
 		gl.deleteShader(vs);
 		return null;
 	}
 	gl.shaderSource(fs, CBCT_VOLUME_3D_FRAGMENT_SHADER);
 	gl.compileShader(fs);
 	if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-		console.error("[CbctVolume3D FS ERROR]", gl.getShaderInfoLog(fs));
+		clientLogger.error("[CbctVolume3D FS ERROR]", gl.getShaderInfoLog(fs), { module: "CbctVolume3D" });
 		gl.deleteShader(vs);
 		gl.deleteShader(fs);
 		return null;
@@ -103,7 +104,7 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 
 	const program = gl.createProgram();
 	if (!program) {
-		console.error("[CbctVolume3D] createProgram returned null");
+		clientLogger.error("[CbctVolume3D] createProgram returned null", undefined, { module: "CbctVolume3D" });
 		gl.deleteShader(vs);
 		gl.deleteShader(fs);
 		return null;
@@ -115,14 +116,14 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 	gl.deleteShader(fs);
 
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		console.error("[CbctVolume3D LINK ERROR]", gl.getProgramInfoLog(program));
+		clientLogger.error("[CbctVolume3D LINK ERROR]", gl.getProgramInfoLog(program), { module: "CbctVolume3D" });
 		gl.deleteProgram(program);
 		return null;
 	}
 
 	const vao = gl.createVertexArray();
 	if (!vao) {
-		console.error("[CbctVolume3D] createVertexArray returned null");
+		clientLogger.error("[CbctVolume3D] createVertexArray returned null", undefined, { module: "CbctVolume3D" });
 		gl.deleteProgram(program);
 		return null;
 	}
@@ -242,7 +243,7 @@ export function renderWebGl2VolumeRaymarching(
 				state.uploadDim = { width: uploadW, height: uploadH, depth: uploadD };
 				state.targetLimitRef = targetLimit;
 			} catch (err) {
-				console.warn("[CbctVolume3DViewport] 3D texture upload failed:", err);
+				clientLogger.warn("[CbctVolume3DViewport] 3D texture upload failed", err, { module: "CbctVolume3D" });
 				gl.deleteTexture(tex);
 				state.volumeTexture = null;
 				state.volumeDataRef = null;

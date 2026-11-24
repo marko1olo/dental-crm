@@ -7,6 +7,8 @@
  * Governed by Mandate 8b (file length <= 800 lines) and Mandate 8e (Doctor Autonomy).
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export interface MultiFrameDicomHeader {
   rows: number;
   cols: number;
@@ -138,7 +140,9 @@ export function isMultiFrameDicom(buffer: ArrayBuffer): boolean {
             return frames > 1;
           }
         } catch (err) {
-          console.warn("[dicomMultiFrameParser] NumberOfFrames ASCII parse skipped:", err);
+          clientLogger.warn("[dicomMultiFrameParser] NumberOfFrames ASCII parse skipped", err, {
+            module: "dicomMultiFrameParser",
+          });
         }
       }
 

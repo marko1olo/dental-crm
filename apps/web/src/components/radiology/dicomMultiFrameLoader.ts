@@ -10,6 +10,7 @@
  */
 
 import type { CbctVoxelVolume } from "./cbctMprMath";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
   parseMultiFrameDicomHeader,
   isMultiFrameDicom,
@@ -355,7 +356,9 @@ export async function buildVolumeFromMultiFrameDicom(
       const previewVol = generateMultiFrameProgressiveLodVolume(buffer, header);
       onProgressiveVolumeReady(previewVol);
     } catch (err) {
-      console.warn("[dicomMultiFrameLoader] Failed to generate progressive LOD preview:", err);
+      clientLogger.warn("[dicomMultiFrameLoader] Failed to generate progressive LOD preview", err, {
+        module: "dicomMultiFrameLoader",
+      });
     }
   }
 
@@ -426,13 +429,17 @@ export async function buildVolumeFromMultiFrameDicom(
               null,
             );
           } catch (err) {
-            console.warn("[dicomMultiFrameLoader] Direct GPU texture allocation failed:", err);
+            clientLogger.warn("[dicomMultiFrameLoader] Direct GPU texture allocation failed", err, {
+              module: "dicomMultiFrameLoader",
+            });
             canDirectStreamGpu = false;
           }
         }
       } else {
-        console.warn(
+        clientLogger.warn(
           `[dicomMultiFrameLoader] Volume dimensions (${width}x${height}x${depth}) exceed GPU MAX_3D_TEXTURE_SIZE (${max3dSize}). Direct streaming skipped, deferred to downstream downsampling.`,
+          undefined,
+          { module: "dicomMultiFrameLoader" },
         );
       }
     }

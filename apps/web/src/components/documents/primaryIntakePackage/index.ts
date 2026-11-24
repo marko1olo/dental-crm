@@ -6,4 +6,3 @@ export * from "./consentSheet";
 export * from "./personalDataSheet";
 export * from "./questionnaireSheet";
 export * from "./generateHtml";
-export * from "./printRunner";

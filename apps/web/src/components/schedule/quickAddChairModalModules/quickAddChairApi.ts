@@ -1,4 +1,6 @@
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { QuickAddChairData } from "./types";
 
@@ -22,9 +24,12 @@ export async function submitChairData(params: {
 			const endpoint = isEditMode && initialData?.id
 				? `/api/settings/chairs/${initialData.id}`
 				: "/api/settings/chairs";
-			await fetch(endpoint, {
+			const res = await fetch(endpoint, {
 				method: isEditMode ? "PUT" : "POST",
-				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,
@@ -33,8 +38,15 @@ export async function submitChairData(params: {
 					active: payload.isActive,
 					defaultDoctorId: payload.defaultDoctorId,
 				}),
-			}).catch(() => {});
+			});
+			if (!res.ok) {
+				clientLogger.warn("[quickAddChairApi] Ошибка сохранения кресла:", res.status);
+				showToast(`Не удалось сохранить кресло (${res.status})`, "error", 4000);
+			}
 		}
+	} catch (err) {
+		clientLogger.warn("[quickAddChairApi] Сетевая ошибка сохранения кресла:", err);
+		showToast("Ошибка сети при сохранении кресла", "error", 4000);
 	} finally {
 		onClose();
 	}
@@ -71,9 +83,12 @@ export async function duplicateChairData(params: {
 		if (onAddChair) {
 			await Promise.resolve(onAddChair(payload));
 		} else {
-			await fetch("/api/settings/chairs", {
+			const res = await fetch("/api/settings/chairs", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,
@@ -82,8 +97,15 @@ export async function duplicateChairData(params: {
 					active: payload.isActive,
 					defaultDoctorId: payload.defaultDoctorId,
 				}),
-			}).catch(() => {});
+			});
+			if (!res.ok) {
+				clientLogger.warn("[quickAddChairApi] Ошибка дублирования кресла:", res.status);
+				showToast(`Не удалось создать копию кресла (${res.status})`, "error", 4000);
+			}
 		}
+	} catch (err) {
+		clientLogger.warn("[quickAddChairApi] Сетевая ошибка дублирования кресла:", err);
+		showToast("Ошибка сети при дублировании кресла", "error", 4000);
 	} finally {
 		onClose();
 	}

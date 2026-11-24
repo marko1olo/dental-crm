@@ -1,5 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { DirectRvgCaptureModalProps } from "./directRvgTypes";
 import {
 	useDirectRvgCapture,
@@ -93,7 +95,10 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 						try {
 							window.print();
 						} catch (error) {
-							console.error("[DirectRvgCaptureModal] Failed to execute window.print:", error);
+							clientLogger.error("[DirectRvgCaptureModal] Failed to execute window.print", error, {
+								module: "DirectRvgCaptureModal",
+							});
+							showToast("Не удалось открыть печать снимка", "error");
 						}
 					}}
 				/>

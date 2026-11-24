@@ -5,6 +5,7 @@
  */
 
 import type { CbctVoxelVolume, MprPlane, Point3D, SlabProjectionMode } from "../../cbctMprMath";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { Point2D } from "../../cbctCaliperNerveMath";
 import { worldMmToSlicePxContinuous } from "../../cbctCoordinateMath";
 import {
@@ -570,7 +571,11 @@ export function uploadVolumeTo3DTexture(
 	let uploadDepth = volume.dimensions.depth;
 
 	if (step > 1) {
-		console.warn(`[CbctVolumeGlTextures] Volume downsampled ${step}x with 3D box-filter for GPU limits (${targetCeiling}).`);
+		clientLogger.warn(
+			`[CbctVolumeGlTextures] Volume downsampled ${step}x with 3D box-filter for GPU limits (${targetCeiling}).`,
+			undefined,
+			{ module: "CbctVolumeGlTextures" },
+		);
 		const downsampled = downsampleVolumeBoxFilter(rawData, volume.dimensions, step, step, step);
 		uploadData = downsampled.data;
 		uploadWidth = downsampled.width;
@@ -603,9 +608,10 @@ export function uploadVolumeTo3DTexture(
 			uploadSuccess = true;
 			break;
 		} catch (err) {
-			console.warn(
-				`[CbctVolumeGlTextures] gl.texImage3D failed at ${uploadWidth}x${uploadHeight}x${uploadDepth} (step ${step}x), retrying with progressive 2x downsample:`,
+			clientLogger.warn(
+				`[CbctVolumeGlTextures] gl.texImage3D failed at ${uploadWidth}x${uploadHeight}x${uploadDepth} (step ${step}x), retrying with progressive 2x downsample`,
 				err,
+				{ module: "CbctVolumeGlTextures" },
 			);
 			step *= 2;
 			if (step > 8) {
@@ -620,7 +626,11 @@ export function uploadVolumeTo3DTexture(
 	}
 
 	if (!uploadSuccess) {
-		console.error("[CbctVolumeGlTextures] gl.texImage3D failed after progressive downsampling.");
+		clientLogger.error(
+			"[CbctVolumeGlTextures] gl.texImage3D failed after progressive downsampling.",
+			undefined,
+			{ module: "CbctVolumeGlTextures" },
+		);
 		gl.deleteTexture(texture);
 		return null;
 	}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { auth } from "../../../AppConstants";
 import { showToast } from "../../GlobalToast";
 import type { CalendarFeedData } from "./DoctorCalendarSyncLinks";
@@ -81,7 +82,10 @@ export function useDoctorCalendarSync(
 				`/api/schedule/ical/doctor/${encodeURIComponent(selectedDoctorId)}/rotate`,
 				{
 					method: "POST",
-					headers: auth.denteClinicalMutationHeaders(),
+					headers: {
+						...auth.denteClinicalMutationHeaders(),
+						"Idempotency-Key": generateUuidV7(),
+					},
 				},
 			);
 			if (!res.ok) {

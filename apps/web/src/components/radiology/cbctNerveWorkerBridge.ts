@@ -11,6 +11,7 @@
  */
 
 import type { CbctVoxelVolume, Point3D } from "./cbctMprMath.js";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	NerveWorkerComputePayload,
 	NerveWorkerOutboundMessage,
@@ -73,14 +74,15 @@ export class CbctNerveWorkerBridge {
 			};
 
 			this.worker.onerror = (err: ErrorEvent) => {
-				console.warn("[CbctNerveWorkerBridge] Worker error:", err.message);
+				clientLogger.warn("[CbctNerveWorkerBridge] Worker error", err.message, { module: "CbctNerveWorkerBridge" });
 			};
 
 			this.isReady = true;
 		} catch (err) {
-			console.warn(
-				"[CbctNerveWorkerBridge] Web Worker init failed, falling back to sync execution:",
+			clientLogger.warn(
+				"[CbctNerveWorkerBridge] Web Worker init failed, falling back to sync execution",
 				err,
+				{ module: "CbctNerveWorkerBridge" },
 			);
 			this.worker = null;
 			this.isReady = false;

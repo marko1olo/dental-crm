@@ -1,5 +1,7 @@
 import { useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { FDI_TOOTH_NAMES } from "../radiologyMath";
 import type { RadiologyStudy } from "../types";
 import type { HotFolderItem } from "../hotFolderTypes";
@@ -117,7 +119,7 @@ export function useHotFolderEmrDispatcher({
 						method: "POST",
 						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
-							"Idempotency-Key": crypto.randomUUID(),
+							"Idempotency-Key": generateUuidV7(),
 						}),
 						body: JSON.stringify({
 							patientId,
@@ -131,15 +133,29 @@ export function useHotFolderEmrDispatcher({
 						}),
 					});
 					if (!response.ok) {
-						console.warn("[HotFolderEmrDispatcher] Не удалось сохранить снимок на сервере, статус:", response.status);
+						clientLogger.warn(
+							"[HotFolderEmrDispatcher] Не удалось сохранить снимок на сервере",
+							{ status: response.status },
+							{ module: "HotFolderEmrDispatcher" },
+						);
+						showToast(
+							"Снимок прикреплён к карте локально, но не удалось сохранить на сервере",
+							"warning",
+						);
 					}
 				} catch (uploadErr) {
-					console.warn("[HotFolderEmrDispatcher] Ошибка при сохранении снимка из HotFolder:", uploadErr);
+					clientLogger.warn(
+						"[HotFolderEmrDispatcher] Ошибка при сохранении снимка из HotFolder",
+						uploadErr,
+						{ module: "HotFolderEmrDispatcher" },
+					);
+					showToast("Ошибка сети при сохранении снимка на сервер", "error");
 				}
 			})();
 		}
 
 		// Update visit store & reactive tooth state
+		let localDispatchFailed = false;
 		try {
 			const primaryToothCode = selectedTeeth[0] || "16";
 			const rvgDiaryStatement = `[Автозахват снимка ${activeItem.modalityLabel}] Зуб #${selectedTeeth.join(", ")}: доза ${doseMicrosv} мкЗв. ${protocolNote}`;
@@ -160,7 +176,10 @@ export function useHotFolderEmrDispatcher({
 				}
 			}
 		} catch (err) {
-			console.warn("[HotFolderIntakeModal] Failed to update visit store:", err);
+			localDispatchFailed = true;
+			clientLogger.warn("[HotFolderIntakeModal] Failed to update visit store", err, {
+				module: "HotFolderEmrDispatcher",
+			});
 		}
 
 		// Dispatch global SOAP event & reactive scan event
@@ -182,13 +201,23 @@ export function useHotFolderEmrDispatcher({
 				}),
 			);
 		} catch (eventErr) {
-			console.warn("[HotFolderEmrDispatcher] Ошибка при отправке клинического события:", eventErr);
+			localDispatchFailed = true;
+			clientLogger.warn("[HotFolderEmrDispatcher] Ошибка при отправке клинического события", eventErr, {
+				module: "HotFolderEmrDispatcher",
+			});
 		}
 
-		showToast(
-			`Снимок (${activeItem.filename}) успешно прикреплен к медицинской карте пациента ${patientName}!`,
-			"success",
-		);
+		if (localDispatchFailed) {
+			showToast(
+				`Снимок (${activeItem.filename}) загружен, но возник сбой обновления карты приёма`,
+				"warning",
+			);
+		} else {
+			showToast(
+				`Снимок (${activeItem.filename}) успешно прикреплен к медицинской карте пациента ${patientName}!`,
+				"success",
+			);
+		}
 	}, [
 		activeItem,
 		patientId,

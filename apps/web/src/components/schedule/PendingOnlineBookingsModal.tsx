@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Globe, X } from "lucide-react";
-import type { Appointment } from "@dental/shared";
+import { generateUuidV7, type Appointment } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import type { PendingOnlineBookingsModalProps } from "./pendingOnlineBookingsTypes";
@@ -26,7 +26,10 @@ export const PendingOnlineBookingsModal: React.FC<PendingOnlineBookingsModalProp
       setConfirmingId(booking.id);
       const res = await fetch(`/api/appointments/${booking.id}`, {
         method: "PATCH",
-        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        headers: denteClinicalMutationHeaders({
+          "Content-Type": "application/json",
+          "Idempotency-Key": generateUuidV7(),
+        }),
         body: JSON.stringify({ status: "confirmed" }),
       });
       if (!res.ok) {

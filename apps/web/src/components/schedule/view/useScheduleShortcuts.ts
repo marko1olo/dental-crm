@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
 import { motionSafeScrollIntoView } from "../../../motionPreference";
 import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { actionFailureToast } from "../../../lib/panelStateText";
@@ -401,6 +401,7 @@ export function useScheduleShortcuts({
           method: "POST",
           headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
+            "Idempotency-Key": generateUuidV7(),
           }),
           body: JSON.stringify({ appointmentId: appointment.id }),
         });

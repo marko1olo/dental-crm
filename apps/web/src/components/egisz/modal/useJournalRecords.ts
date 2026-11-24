@@ -4,8 +4,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { EgiszClinicInfo } from "../egiszRemdEngine";
 import { type RemdDocumentRecord, type RemdDocumentStatus } from "../egiszJournalData";
 import { fetchOutboxRecordsFromBackend } from "../egiszPackageSender";
@@ -32,9 +34,11 @@ export function useJournalRecords(
 				setRecords(outboxDocs || []);
 				setIsLoadingJournal(false);
 			})
-			.catch(() => {
+			.catch((err) => {
+				clientLogger.warn("[useJournalRecords] Ошибка загрузки журнала РЭМД:", err);
 				if (!isMounted) return;
 				setIsLoadingJournal(false);
+				showToast("Не удалось загрузить журнал РЭМД с сервера", "error");
 			});
 		return () => { isMounted = false; };
 	}, [isOpen, clinic]);
@@ -52,7 +56,8 @@ export function useJournalRecords(
 			const outboxDocs = await fetchOutboxRecordsFromBackend(clinic);
 			setRecords(outboxDocs || []);
 			showToast(outboxDocs?.length ? `Журнал РЭМД синхронизирован (${outboxDocs.length} записей из БД)` : "Журнал РЭМД пуст", "info");
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[useJournalRecords] Ошибка синхронизации журнала РЭМД:", err);
 			showToast("Ошибка синхронизации журнала с сервером", "error");
 		} finally {
 			setIsLoadingJournal(false);
@@ -64,7 +69,10 @@ export function useJournalRecords(
 		try {
 			const res = await fetch("/api/egisz/outbox/dispatch", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 			});
 			if (!res.ok) {
 				const errJson = (await res.json().catch(() => null)) as { message?: string } | null;

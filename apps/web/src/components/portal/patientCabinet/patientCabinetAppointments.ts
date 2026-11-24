@@ -7,6 +7,7 @@
  * - Каталог клинических кейсов «До / После» (виниры, отбеливание, имплантация)
  */
 
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { PatientAppointment } from "./patientCabinetEngine.js";
 
 // ============================================================================
@@ -89,7 +90,7 @@ export function downloadIcsCalendarFile(
 		document.body.removeChild(link);
 		setTimeout(() => URL.revokeObjectURL(url), 5000);
 	} catch (e) {
-		console.error("Failed to download .ics calendar file:", e);
+		clientLogger.error("Failed to download .ics calendar file:", e);
 	}
 }
 

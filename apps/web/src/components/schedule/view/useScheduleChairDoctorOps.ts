@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { Dashboard } from "@dental/shared";
+import { generateUuidV7, type Dashboard } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import {
   safeLocalStorageSetItem,
@@ -69,6 +69,7 @@ export function useScheduleChairDoctorOps({
           method,
           headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
+            "Idempotency-Key": generateUuidV7(),
           }),
           body: JSON.stringify({
             name: chairData.name,
@@ -118,6 +119,7 @@ export function useScheduleChairDoctorOps({
           method: "POST",
           headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
+            "Idempotency-Key": generateUuidV7(),
           }),
           body: JSON.stringify({
             fullName: doctorData.fullName,
@@ -180,6 +182,7 @@ export function useScheduleChairDoctorOps({
           if (typeof fetch !== "undefined") {
             const headers: Record<string, string> = {
               "Content-Type": "application/json",
+              "Idempotency-Key": generateUuidV7(),
               ...(auth?.denteClinicalMutationHeaders
                 ? auth.denteClinicalMutationHeaders()
                 : {}),

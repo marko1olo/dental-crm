@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { ImagingStudy } from "../../imaging/types.js";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import {
 	findComparisonStudy,
 	formatModalityTitle,
@@ -46,7 +47,9 @@ export function useMobileRadiologyController(
 				navigator.vibrate(10);
 			}
 		} catch (err) {
-			console.warn("[Radiology Mobile] Тактильный отклик недоступен:", err);
+			clientLogger.warn("[Radiology Mobile] Тактильный отклик недоступен", err, {
+				module: "MobileRadiology",
+			});
 		}
 	}, []);
 

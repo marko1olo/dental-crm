@@ -13,6 +13,7 @@
  */
 
 import type React from "react";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import {
 	DEFAULT_VIEWPORT_TRANSFORM,
 	type MprSliceExtractionResult,
@@ -298,7 +299,9 @@ export function renderOrthogonalMprSlices(ctx: OrthogonalMprSliceRenderContext):
 			if (isStaleSliceRequestError(err)) {
 				return;
 			}
-			console.warn("[useCbctSliceRenderer] Background slice render error:", err);
+			clientLogger.warn("[useCbctSliceRenderer] Background slice render error", err, {
+				module: "SlicePixelBufferBuilder",
+			});
 		});
 }
 

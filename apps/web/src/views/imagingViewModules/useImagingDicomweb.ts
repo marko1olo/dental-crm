@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { showToast } from "../../components/GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 interface UseImagingDicomwebParams {
@@ -81,7 +82,9 @@ export function useImagingDicomweb({
 			setLocalImageIds(wadoImageIds);
 			showToast(`Загружено ${wadoImageIds.length} срезов из DICOMweb PACS`, "success");
 		} catch (err: unknown) {
-			console.warn("[useImagingDicomweb] Error loading from DICOMweb:", err);
+			clientLogger.warn("[useImagingDicomweb] Error loading from DICOMweb", err, {
+				module: "useImagingDicomweb",
+			});
 			const msg = err instanceof Error ? err.message : "Сбой загрузки из DICOMweb";
 			if (!options?.silentOnError) showToast(msg, "error");
 		} finally {

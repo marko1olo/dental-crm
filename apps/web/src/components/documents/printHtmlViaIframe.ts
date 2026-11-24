@@ -5,6 +5,9 @@
  * Eliminates popup-blocker issues caused by window.open.
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
+
 export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"): void {
 	if (typeof window === "undefined" || typeof document === "undefined") {
 		return;
@@ -30,7 +33,8 @@ export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"
 
 		const doc = iframe.contentWindow?.document;
 		if (!doc) {
-			console.error("[printHtmlViaIframe] Unable to access iframe document");
+			clientLogger.error("[printHtmlViaIframe] Unable to access iframe document");
+			showToast("Не удалось подготовить область печати, использована системная печать", "error");
 			window.print();
 			return;
 		}
@@ -44,7 +48,8 @@ export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"
 				iframe.contentWindow?.focus();
 				iframe.contentWindow?.print();
 			} catch (err) {
-				console.error("[printHtmlViaIframe] Direct print trigger failed:", err);
+				clientLogger.error("[printHtmlViaIframe] Direct print trigger failed:", err);
+				showToast("Ошибка запуска печати документа", "error");
 				window.print();
 			}
 		};
@@ -58,7 +63,8 @@ export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"
 		// Fallback timeout in case onload does not fire for document.write
 		setTimeout(triggerPrint, 250);
 	} catch (err) {
-		console.error("[printHtmlViaIframe] Failed to create or write to iframe:", err);
+		clientLogger.error("[printHtmlViaIframe] Failed to create or write to iframe:", err);
+		showToast("Ошибка формирования документа для печати", "error");
 		window.print();
 	}
 }

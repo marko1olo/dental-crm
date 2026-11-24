@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Link2, Unlink, X } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import {
 	type PatientSearchCandidate,
 	StudyPatientBindStudyPreview,
@@ -89,6 +94,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 		setIsSearching(true);
 		try {
 			const res = await fetch(`/api/patients?search=${encodeURIComponent(trimmed)}`, {
+				headers: denteClinicalReadHeaders(),
 				signal: controller.signal,
 			});
 			if (seq !== searchSeqRef.current) return;
@@ -154,12 +160,16 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 		try {
 			const res = await fetch(`/api/imaging/studies/${encodeURIComponent(study.id)}/bind-patient`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ patientId: targetPatientId }),
 			});
 
 			if (res.ok) {
-				const updated = await res.json();
+				const json = await res.json();
+				const updated = (json && typeof json === "object" && "data" in json ? json.data : json) as ImagingStudy;
 				showToast(`Исследование успешно привязано: ${selectedPatient?.fullName || currentPatientName}`, "success");
 				if (onStudyUpdated) onStudyUpdated(updated);
 				onClose();
@@ -193,10 +203,14 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 		try {
 			const res = await fetch(`/api/imaging/studies/${encodeURIComponent(study.id)}/unbind-patient`, {
 				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Idempotency-Key": generateUuidV7(),
+				}),
 			});
 
 			if (res.ok) {
-				const updated = await res.json();
+				const json = await res.json();
+				const updated = (json && typeof json === "object" && "data" in json ? json.data : json) as ImagingStudy;
 				showToast("Исследование отвязано от пациента", "info");
 				if (onStudyUpdated) onStudyUpdated(updated);
 				onClose();

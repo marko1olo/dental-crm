@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Box, Layers, Copy, Compass, Check, FilePlus } from "lucide-react";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { EndoFileCanal } from "../../../icons/DentalIcons";
 import type { WorkspaceCommonProps } from "./workspaceTypes";
 import { EndoCompassPanel, type EndoCompassClinicalData } from "./EndoCompassPanel";
@@ -117,7 +118,9 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 				}
 			}
 		} catch (err) {
-			console.warn("[EndoWorkspace] Async analysis failed, using sync fallback:", err);
+			clientLogger.warn("[EndoWorkspace] Async analysis failed, using sync fallback", err, {
+				module: "EndoWorkspace",
+			});
 			const syncRes = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
 			setCompassData(syncRes);
 			if (syncRes && syncRes.canals.length > 0) {

@@ -4,7 +4,9 @@
  * Standards: Mandate 8b (<= 800 lines), Mandate 8e (Doctor Autonomy).
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,
@@ -230,7 +232,9 @@ export function convertDicomBufferToDataUrl(buffer: ArrayBuffer): string | null 
 		ctx.putImageData(imgData, 0, 0);
 		return canvas.toDataURL("image/png");
 	} catch (err) {
-		console.warn("[directRvgFileValidation] Failed to decode DICOM pixel data to data URL:", err);
+		clientLogger.warn("[directRvgFileValidation] Failed to decode DICOM pixel data to data URL", err, {
+			module: "directRvgFileValidation",
+		});
 		return null;
 	}
 }
@@ -311,9 +315,10 @@ export function exportDirectRvgImageOrDicom({
 				scaleMmPerPixel: pixelSpacingMm || 0.035,
 			});
 		} catch (err) {
-			console.warn(
+			clientLogger.warn(
 				"DirectRvgCaptureModal: Failed to generate DICOM buffer, falling back to honest image export",
 				err,
+				{ module: "directRvgFileValidation" },
 			);
 		}
 	}
@@ -397,9 +402,7 @@ export async function persistRvgScanToServer({
 			});
 		}
 
-		const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-			? crypto.randomUUID()
-			: `rvg-${patientId}-${Date.now()}`;
+		const idempotencyKey = generateUuidV7();
 
 		const response = await fetch("/api/imaging/studies", {
 			method: "POST",
@@ -439,7 +442,9 @@ export async function persistRvgScanToServer({
 		return { success: true, data };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		console.warn("[DirectRvgCaptureModal] Server save error:", err);
+		clientLogger.warn("[DirectRvgCaptureModal] Server save error", err, {
+			module: "directRvgFileValidation",
+		});
 		return { success: false, error: message };
 	}
 }

@@ -3,7 +3,9 @@
  * Mandate 8b compliant (<= 120 lines).
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { EgiszClinicInfo } from "../egiszRemdEngine";
 import { type RemdDocumentRecord, mapOutboxRowToRemdRecord } from "../egiszJournalData";
 import type { SubmitCdaPackageOptions, SubmitFnsTaxOptions } from "./packageSenderTypes";
@@ -14,15 +16,15 @@ export async function fetchOutboxRecordsFromBackend(
 	const endpoints = ["/api/egisz/journal", "/api/egisz/outbox", "/api/clinical/egisz/outbox"];
 	for (const endpoint of endpoints) {
 		try {
-			const res = await fetch(endpoint, { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch(endpoint, { headers: denteClinicalReadHeaders() });
 			if (!res.ok) continue;
 			const data = (await res.json()) as { items?: unknown[]; success?: boolean } | unknown[];
 			const rawItems = Array.isArray(data) ? data : data.items || [];
 			if (Array.isArray(rawItems)) {
 				return rawItems.map((item) => mapOutboxRowToRemdRecord(item, clinic));
 			}
-		} catch {
-			// Try fallback endpoint
+		} catch (err) {
+			clientLogger.warn(`[remdApiSubmissions] Endpoint ${endpoint} failed:`, err);
 		}
 	}
 	return [];
@@ -70,7 +72,10 @@ export async function submitCdaPackageToRemd({
 
 	const res = await fetch("/api/egisz/packages", {
 		method: "POST",
-		headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+		headers: denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
+		}),
 		body: JSON.stringify(packageBody),
 	});
 

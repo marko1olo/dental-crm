@@ -3,9 +3,10 @@
  */
 
 import { useState } from "react";
-import type { DentalSpecialty } from "@dental/shared";
+import { generateUuidV7, type DentalSpecialty } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
 import {
 	QUICK_DOCTOR_SPECIALTIES,
@@ -70,19 +71,27 @@ export function useQuickAddDoctorSubmit({
 			if (addDoctorFn) {
 				await Promise.resolve(addDoctorFn(doctorData));
 			} else if (typeof fetch === "function") {
-				await fetch("/api/settings/staff", {
+				const res = await fetch("/api/settings/staff", {
 					method: "POST",
-					headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						fullName: finalName, role: "doctor", specialties: [specialty], phone: phone.trim() || null,
 					}),
-				}).catch(() => {});
+				});
+				if (!res.ok) {
+					const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
+					throw new Error(errJson?.message || `Ошибка добавления врача (${res.status})`);
+				}
 			}
 
 			showToast(`Врач ${shortName} успешно добавлен и доступен в расписании`, "success", 4000);
 			onClose();
-		} catch {
-			onClose();
+		} catch (err) {
+			clientLogger.warn("[useQuickAddDoctorSubmit] Не удалось добавить врача:", err);
+			showToast(err instanceof Error ? err.message : "Не удалось добавить врача на сервере", "error", 4000);
 		} finally {
 			setIsSubmitting(false);
 		}

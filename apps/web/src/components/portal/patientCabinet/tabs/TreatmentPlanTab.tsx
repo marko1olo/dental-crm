@@ -13,6 +13,7 @@ import {
 import { openPrintWindow } from "../patientCabinetDocuments.js";
 import { PatientPlanDentalFormula } from "../PatientPlanDentalFormula.js";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
+import { clientLogger } from "../../../../services/logging/clientLogger.js";
 import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinetPresets.js";
 import { TreatmentPlanEmptyState } from "./treatmentPlan/TreatmentPlanEmptyState.js";
 import { TreatmentPlanHeroCard } from "./treatmentPlan/TreatmentPlanHeroCard.js";
@@ -86,7 +87,6 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 	if (!currentPlan) return <TreatmentPlanEmptyState curatingDoctor={data.curatingDoctor} onBookAppointment={onBookAppointment} />;
 
 	const handleApprovePlan = () => {
-		setLocalApproved(true);
 		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
 		const pepTrace = `ПЭП-63ФЗ-ВЕРИФИЦИРОВАНО:${Date.now()}`;
 		const signed = signTreatmentPlanWithPep(currentPlan, data.phone, pepTrace, data.fullName);
@@ -102,15 +102,21 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 			})
 				.then((res) => {
 					if (!res.ok) {
-						console.warn("[TreatmentPlanTab] Ошибка согласования плана на сервере:", res.status);
+						clientLogger.warn("[TreatmentPlanTab] Ошибка согласования плана на сервере:", res.status);
 						onShowToast?.(`Не удалось сохранить согласование на сервере (${res.status})`);
+						return;
 					}
+					setLocalApproved(true);
+					if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
+					if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
 				})
 				.catch((err) => {
-					console.warn("[TreatmentPlanTab] Сетевая ошибка согласования плана:", err);
+					clientLogger.warn("[TreatmentPlanTab] Сетевая ошибка согласования плана:", err);
 					onShowToast?.("Сетевая ошибка при сохранении согласования плана");
 				});
+			return;
 		}
+		setLocalApproved(true);
 		if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
 		if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
 	};
@@ -119,24 +125,29 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 		setSelectedTier(tier);
 		const tierName = tier === "basic" ? "Эконом" : tier === "premium" ? "Премиум" : "Оптимум";
 		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
-		if (basePlan?.id) {
+		if (basePlan?.id && token) {
 			void fetch(`/api/portal/treatment-plans/${encodeURIComponent(basePlan.id)}/select-tier`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({ tierId: tier }),
 			})
 				.then((res) => {
 					if (!res.ok) {
-						console.warn("[TreatmentPlanTab] Ошибка сохранения тарифа на сервере:", res.status);
+						clientLogger.warn("[TreatmentPlanTab] Ошибка сохранения тарифа на сервере:", res.status);
+						onShowToast?.(`Не удалось сохранить выбранный тариф на сервере (${res.status})`);
+						return;
 					}
+					onShowToast?.(`Выбран тариф «${tierName}». План лечения пересчитан.`);
 				})
 				.catch((err) => {
-					console.warn("[TreatmentPlanTab] Сетевая ошибка сохранения тарифа:", err);
+					clientLogger.warn("[TreatmentPlanTab] Сетевая ошибка сохранения тарифа:", err);
+					onShowToast?.("Сетевая ошибка при сохранении выбранного тарифа");
 				});
+			return;
 		}
 		if (onShowToast) {
 			onShowToast(`Выбран тариф «${tierName}». План лечения пересчитан.`);

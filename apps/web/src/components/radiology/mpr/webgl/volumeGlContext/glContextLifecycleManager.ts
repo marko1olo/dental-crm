@@ -1,3 +1,5 @@
+import { clientLogger } from "../../../../../services/logging/clientLogger";
+
 export class GlContextLifecycleManager {
 	public contextLostState = false;
 	public contextLossCount = 0;
@@ -26,14 +28,26 @@ export class GlContextLifecycleManager {
 		this.contextLostState = true;
 		this.contextLossCount++;
 		for (const cb of this.contextLostListeners) {
-			try { cb(); } catch (err) { console.error("[CbctVolumeGlContext] contextLostListener error:", err); }
+			try {
+				cb();
+			} catch (err) {
+				clientLogger.error("[CbctVolumeGlContext] contextLostListener error", err, {
+					module: "CbctVolumeGlContext",
+				});
+			}
 		}
 	}
 
 	public notifyContextRestored(): void {
 		this.contextLostState = false;
 		for (const cb of this.contextRestoredListeners) {
-			try { cb(); } catch (err) { console.error("[CbctVolumeGlContext] contextRestoredListener error:", err); }
+			try {
+				cb();
+			} catch (err) {
+				clientLogger.error("[CbctVolumeGlContext] contextRestoredListener error", err, {
+					module: "CbctVolumeGlContext",
+				});
+			}
 		}
 	}
 

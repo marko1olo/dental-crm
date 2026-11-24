@@ -11,6 +11,7 @@ import {
 import { useCbctKeyboardShortcuts, applyStepZoom } from "../useCbctKeyboardShortcuts";
 import { getSharedCbctGlContext } from "../mpr/webgl/CbctVolumeGlContext";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { useCbctStudioModalState } from "./useCbctStudioModalState";
 
 export interface UseCbctStudioHotkeysProps {
@@ -34,7 +35,9 @@ export function useCbctStudioHotkeys({
 			try {
 				getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0);
 			} catch (error) {
-				console.error("[useCbctStudioHotkeys] Failed to set sharpen amount on CBCT GL context:", error);
+				clientLogger.error("[useCbctStudioHotkeys] Failed to set sharpen amount on CBCT GL context", error, {
+					module: "useCbctStudioHotkeys",
+				});
 			}
 			showToast(next ? "Резкость трабекул: ВКЛ (SHARP ON)" : "Резкость: Исходный воксел (RAW VOXEL)", "info");
 			return next;

@@ -3,7 +3,10 @@
  * Print actions for blank contracts and informed consents (Mandate 8b <= 120 lines, Mandate 8e)
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { printHtmlViaWindowOrIframe } from "../../consents/consentTemplates";
 import { showToast } from "../../GlobalToast";
 import type { BlankContractOptions, BlankContractPatientInfo } from "./blankContractTypes";
 import { LEGAL_CLAUSES } from "./blankContractTypes";
@@ -11,30 +14,8 @@ import { generateBlankContractFallbackHtml } from "./blankContractHtml";
 import { generateBlankConsentFallbackHtml } from "./blankConsentHtml";
 
 function printViaWindowOrIframe(html: string, toastMessage: string): void {
-	let printedViaWindow = false;
-	const printWindow = window.open("", "_blank");
-	if (printWindow && !printWindow.closed) {
-		try {
-			printWindow.document.write(html);
-			printWindow.document.close();
-			printWindow.focus();
-			printedViaWindow = true;
-			showToast(toastMessage, "success", 4000);
-		} catch {
-			printedViaWindow = false;
-		}
-	}
-	if (!printedViaWindow) {
-		const iframe = document.createElement("iframe");
-		Object.assign(iframe.style, { position: "fixed", right: "0", bottom: "0", width: "0", height: "0", border: "0" });
-		document.body.appendChild(iframe);
-		iframe.contentDocument?.write(html);
-		iframe.contentDocument?.close();
-		iframe.contentWindow?.focus();
-		iframe.contentWindow?.print();
-		setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 1500);
-		showToast(toastMessage, "success", 4000);
-	}
+	printHtmlViaWindowOrIframe(html);
+	showToast(toastMessage, "success", 4000);
 }
 
 export async function printBlankMedicalContract(
@@ -52,7 +33,7 @@ export async function printBlankMedicalContract(
 		try {
 			const headers = denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			});
 			const todayIso = new Date().toISOString().slice(0, 10);
 			const contractNum = options?.contractNumber?.trim() || `БЛАНК-${Date.now().toString().slice(-6)}`;
@@ -93,7 +74,7 @@ export async function printBlankMedicalContract(
 				}
 			}
 		} catch (err) {
-			console.warn("Backend blank contract creation unavailable, using instant fallback:", err);
+			clientLogger.warn("Backend blank contract creation unavailable, using instant fallback:", err);
 		}
 	}
 
@@ -101,7 +82,7 @@ export async function printBlankMedicalContract(
 		const fallbackHtml = generateBlankContractFallbackHtml(patient, options);
 		printViaWindowOrIframe(fallbackHtml, "Бланк договора (со строками _______) готов к печати");
 	} catch (fallbackErr) {
-		console.error("Critical error during blank contract printing:", fallbackErr);
+		clientLogger.error("Critical error during blank contract printing:", fallbackErr);
 		showToast("Не удалось открыть окно печати договора", "error", 4000);
 	}
 }
@@ -116,7 +97,7 @@ export async function printBlankMedicalConsent(
 		const fallbackHtml = generateBlankConsentFallbackHtml(patient, options);
 		printViaWindowOrIframe(fallbackHtml, "Бланк ИДС (со строками _______) готов к печати");
 	} catch (fallbackErr) {
-		console.error("Critical error during blank consent printing:", fallbackErr);
+		clientLogger.error("Critical error during blank consent printing:", fallbackErr);
 		showToast("Не удалось открыть окно печати бланка ИДС", "error", 4000);
 	}
 }

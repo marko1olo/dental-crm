@@ -1,3 +1,4 @@
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { printHtmlViaIframe } from "../../../documents/printHtmlViaIframe";
 
 export function downloadHtmlFile(htmlContent: string, fileName: string): void {
@@ -15,7 +16,7 @@ export function downloadHtmlFile(htmlContent: string, fileName: string): void {
 		document.body.removeChild(link);
 		setTimeout(() => URL.revokeObjectURL(url), 5000);
 	} catch (e) {
-		console.error("Failed to download HTML file:", e);
+		clientLogger.error("Failed to download HTML file:", e);
 	}
 }
 

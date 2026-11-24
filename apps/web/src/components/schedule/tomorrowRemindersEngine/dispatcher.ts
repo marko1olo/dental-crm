@@ -1,4 +1,6 @@
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { BatchDispatchResult, TomorrowReminderItem } from "./types";
 
 export async function dispatchBatchReminders(
@@ -53,12 +55,18 @@ export async function dispatchBatchReminders(
 				if (item.preferredChannel === "whatsapp" && item.patientId) {
 					const res = await fetch("/api/whatsapp/send", {
 						method: "POST",
-						headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify({
 							patientId: item.patientId,
 							message: item.reminderText,
 						}),
-					}).catch(() => null);
+					}).catch((err) => {
+						clientLogger.warn("[tomorrowRemindersEngine] /api/whatsapp/send failed:", err);
+						return null;
+					});
 
 					if (res && (res.ok || res.status === 200 || res.status === 201)) {
 						networkDispatched = true;
@@ -75,9 +83,15 @@ export async function dispatchBatchReminders(
 					};
 					const res = await fetch("/api/communications/outbox", {
 						method: "POST",
-						headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify(outboxPayload),
-					}).catch(() => null);
+					}).catch((err) => {
+						clientLogger.warn("[tomorrowRemindersEngine] /api/communications/outbox failed:", err);
+						return null;
+					});
 
 					if (res && (res.ok || res.status === 200 || res.status === 201)) {
 						networkDispatched = true;

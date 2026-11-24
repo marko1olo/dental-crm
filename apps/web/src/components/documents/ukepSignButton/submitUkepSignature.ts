@@ -1,3 +1,5 @@
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { CryptoProCertificate } from "../../../utils/cryptoPro";
 
 export async function submitUkepSignature(
@@ -5,9 +7,12 @@ export async function submitUkepSignature(
 	signature: string,
 	selectedCert: CryptoProCertificate,
 ): Promise<Response> {
-	return fetch(`/api/documents/${documentId}/sign-ukep`, {
+	return fetch(`/api/documents/${encodeURIComponent(documentId)}/sign-ukep`, {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
+		}),
 		body: JSON.stringify({
 			pkcs7Signature: signature,
 			certificateSerialNumber: selectedCert.serialNumber,
