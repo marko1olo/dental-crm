@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BactericidalEquipment, BactericidalLogEntry } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { executePreShift30Min } from "../bactericidalShiftHelpers";
 import { closeEveningShiftAction, openMorningShiftAction } from "./bactericidalShiftActions";
 import { provisionEquipmentAction, replaceLampsAction } from "./bactericidalEquipmentActions";
@@ -39,7 +40,7 @@ export function useBactericidalState() {
 				setLogs(Array.isArray(logData) ? logData : []);
 			}
 		} catch (err) {
-			console.error("Failed to load bactericidal data", err);
+			clientLogger.error("Failed to load bactericidal data", err);
 		} finally {
 			setLoading(false);
 		}

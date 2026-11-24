@@ -1,4 +1,7 @@
 import React, { useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 
@@ -30,15 +33,19 @@ export function useRetroactiveDayCycle({
 			};
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
-			await fetch("/api/sanpin/sterilization/quick-norm", {
+			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 				},
 				body: JSON.stringify(payload),
-			}).catch(() => null);
+			});
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`);
+			}
 
 			showToast(
 				"Дневной цикл автоклавирования зафиксирован: 134°C, 2.1 бар, 5 мин, индикаторы 5 класса — норма. Крафт-пакеты списаны со склада.",
@@ -46,8 +53,13 @@ export function useRetroactiveDayCycle({
 			);
 			if (onSuccess) onSuccess();
 		} catch (err) {
-			console.error("Day cycle error", err);
-			showToast("Дневной цикл зафиксирован (автономный режим)", "info");
+			clientLogger.error("Day cycle error", err);
+			if (isDemoShowcaseMode()) {
+				showToast("Дневной цикл зафиксирован (демо-режим)", "info");
+				if (onSuccess) onSuccess();
+			} else {
+				showToast("Не удалось зафиксировать дневной цикл автоклавирования на сервере", "error");
+			}
 		} finally {
 			setIsLoggingDayCycle(false);
 			inFlightRef.current = false;

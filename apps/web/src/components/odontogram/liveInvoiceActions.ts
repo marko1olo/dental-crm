@@ -1,5 +1,6 @@
 import { showToast } from "../GlobalToast";
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import type {
 	LiveInvoiceCashierExport,
 	LiveInvoiceItem,
@@ -94,11 +95,14 @@ export async function exportLiveInvoiceToCashier({
 
 	if (patientId) {
 		try {
+			const mutationId = generateUuidV7();
 			const invoicePayload = {
 				patientId,
-				totalAmountRub: grossTotalPrice,
-				discountAmountRub: totalDiscountRub,
-				finalAmountRub: netTotalPrice,
+				totalAmountRub: netTotalPrice,
+				totalAmountKopecks: rublesToKopecks(netTotalPrice),
+				discountRub: totalDiscountRub,
+				discountPercent,
+				clientMutationId: mutationId,
 				items: baseItems.map((item) => ({
 					nameRu: item.title,
 					title: item.title,
@@ -118,13 +122,10 @@ export async function exportLiveInvoiceToCashier({
 
 			const response = await fetch("/api/invoices", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key":
-						typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-							? crypto.randomUUID()
-							: `live-inv-${Date.now()}`,
-				},
+					"Idempotency-Key": mutationId,
+				}),
 				body: JSON.stringify(invoicePayload),
 			});
 

@@ -16,7 +16,7 @@ export const RefundSummaryCalculationPanel: React.FC<RefundSummaryCalculationPan
 	return (
 		<div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
+				<div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-xs">
 					<ShieldAlert className="w-4 h-4" />
 					<span>Итоговый пересчет операции (ACID):</span>
 				</div>

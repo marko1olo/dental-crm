@@ -26,8 +26,7 @@ export const ShiftKpiItem: React.FC<ShiftKpiItemProps> = ({ label, children, isH
 				fontSize: "11px",
 				fontWeight: isHighlight ? 700 : 600,
 				color: isHighlight ? "var(--teal-dark, #0f766e)" : "var(--muted)",
-				textTransform: "uppercase",
-				letterSpacing: "0.02em",
+				letterSpacing: "0.01em",
 				whiteSpace: "nowrap",
 			}}
 		>

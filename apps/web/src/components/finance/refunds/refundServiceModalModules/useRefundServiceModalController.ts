@@ -6,8 +6,8 @@ import {
 	type RefundableInvoiceItem,
 	type RefundReasonCategory,
 } from "@dental/shared";
-import { kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { generateUuidV7, kopecksToRubles } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../../GlobalToast";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
@@ -22,8 +22,6 @@ import type {
 } from "./types";
 import { DEFAULT_CLINIC_INFO, DEFAULT_FALLBACK_SERVICES } from "./refundConstants";
 import { buildRefundFiscalPayload, mapServicesToRefundableItems } from "./refundUtils";
-
-let refundMutationSeq = 0;
 
 export function useRefundServiceModalController(props: RefundServiceModalProps) {
 	const {
@@ -115,7 +113,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		}
 		setIsProcessing(true);
 
-		const clientMutationId = `refund-${invoiceId || "inv"}-${Date.now()}-${++refundMutationSeq}`;
+		const clientMutationId = generateUuidV7();
 
 		const {
 			refundPayload,
@@ -144,8 +142,10 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		let finalQueueId: string | undefined = undefined;
 		let isOffline = false;
 
+		let refundSucceeded = false;
+
 		try {
-			const headers = denteAdminSecretRequestHeaders({
+			const headers = denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,
 			});
@@ -154,11 +154,12 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 			const isInvoiceUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId || "");
 
 			const refundCashboxPayload = {
-				paymentId: isPaymentUuid ? originalPaymentId : undefined,
-				invoiceId: isInvoiceUuid ? invoiceId : undefined,
+				...(isPaymentUuid && originalPaymentId ? { paymentId: originalPaymentId } : {}),
+				...(isInvoiceUuid && invoiceId ? { invoiceId } : {}),
 				amountRub: calculation.totalRefundRub,
 				reasonText: reasonText.slice(0, 500),
 				cashierFullName: "Кассир-администратор",
+				clientMutationId,
 			};
 
 			const res = await fetch("/api/cashbox/refund", {
@@ -168,6 +169,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 			});
 
 			if (res.ok) {
+				refundSucceeded = true;
 				const resData = (await res.json()) as {
 					success?: boolean;
 					replayed?: boolean;
@@ -236,35 +238,16 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				});
 			} else {
 				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-				console.warn("[RefundServiceModal] /api/fiscal/refund returned status:", res.status, errData);
-				isOffline = true;
-				finalQueueId = clientMutationId;
-				FiscalReceiptQueueManager.enqueueReceipt(
-					{
-						operationType: "income_return",
-						customerContact: patientPhone || "",
-						cashierFullName: "Кассир-администратор",
-						totalRub: calculation.totalRefundRub,
-						items: calculation.refundedItems.map((it) => ({
-							name: it.name,
-							priceRub: it.unitPriceRub,
-							quantity: it.quantityRefunded,
-							amountRub: it.refundedNetRub,
-							paymentMethod: "full_payment",
-							paymentSubject: "service",
-						})),
-						cashRub: kopecksToRubles(refundCashKopecks),
-						electronicRub: kopecksToRubles(refundElectronicKopecks),
-						prepaidRub: kopecksToRubles(refundPrepaidKopecks),
-						taxationSystem: "usn_income",
-					},
-					"Сбой связи с сервером кассы: чек возврата сохранен локально",
-					finalQueueId,
-				);
-				showToast("Сбой связи с сервером кассы: операция возврата зафиксирована локально", "warning");
+				console.warn("[RefundServiceModal] /api/cashbox/refund returned status:", res.status, errData);
+				const errMsg =
+					typeof errData.message === "string" && errData.message.trim()
+						? errData.message
+						: `Не удалось оформить возврат (HTTP ${res.status})`;
+				showToast(errMsg, "error");
 			}
 		} catch (fetchErr) {
 			console.warn("[RefundServiceModal] Network error during refund fiscalization:", fetchErr);
+			refundSucceeded = true;
 			isOffline = true;
 			finalQueueId = clientMutationId;
 			FiscalReceiptQueueManager.enqueueReceipt(
@@ -291,20 +274,22 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 			);
 			showToast("ККТ временно недоступна: чек возврата сохранен в локальную очередь", "warning");
 		} finally {
-			setFiscalInfo({
-				fnSerial: finalFnSerial,
-				fiscalDocNumber: finalDocNumber,
-				fiscalSign: finalFiscalSign,
-				ofdUrl: finalOfdUrl,
-				queueId: finalQueueId,
-				isOfflineBuffered: isOffline,
-			});
-			setCompletedResult(calculation);
-			setActiveTab("receipt");
-			setIsProcessing(false);
-			if (onRefundSuccess) {
-				onRefundSuccess(calculation);
+			if (refundSucceeded) {
+				setFiscalInfo({
+					fnSerial: finalFnSerial,
+					fiscalDocNumber: finalDocNumber,
+					fiscalSign: finalFiscalSign,
+					ofdUrl: finalOfdUrl,
+					queueId: finalQueueId,
+					isOfflineBuffered: isOffline,
+				});
+				setCompletedResult(calculation);
+				setActiveTab("receipt");
+				if (onRefundSuccess) {
+					onRefundSuccess(calculation);
+				}
 			}
+			setIsProcessing(false);
 		}
 	};
 

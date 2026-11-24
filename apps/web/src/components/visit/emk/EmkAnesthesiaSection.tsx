@@ -3,6 +3,7 @@ import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { EmkAnesthesiaAlert } from "./EmkAnesthesiaAlert";
 import { EmkAnesthesiaPresetChips, ANESTHESIA_METHODS } from "./EmkAnesthesiaPresetChips";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -99,11 +100,11 @@ export function EmkAnesthesiaSection({
 			if (res.ok) {
 				showToast("Экстренная укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
 			} else {
-				console.error("[EmkAnesthesiaSection] Emergency antishock write-off failed with status:", res.status);
+				clientLogger.error("Emergency antishock write-off failed", { status: res.status }, { module: "EmkAnesthesiaSection" });
 				showToast("Списание укладки не зафиксировано на сервере, зафиксируйте вручную", "error", 6000);
 			}
 		} catch (err) {
-			console.error("[EmkAnesthesiaSection] Emergency antishock network error:", err);
+			clientLogger.error("Emergency antishock network error", err, { module: "EmkAnesthesiaSection" });
 			showToast("Списание укладки не зафиксировано на сервере, зафиксируйте вручную", "error", 6000);
 		}
 	};

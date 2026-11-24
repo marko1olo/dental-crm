@@ -6,8 +6,11 @@
  * тем же контуром, что и живой раздел «Касса» (демо-режим — та же база).
  */
 
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../../lib/denteRequestHeaders";
 
 export interface LauncherPatient {
 	id: string;
@@ -25,7 +28,7 @@ export interface LauncherFamilyGroup {
 
 async function getJson<T>(url: string): Promise<T | null> {
 	try {
-		const res = await fetch(url, { headers: denteAdminSecretRequestHeaders() });
+		const res = await fetch(url, { headers: denteClinicalReadHeaders() });
 		if (!res.ok) return null;
 		return (await res.json()) as T;
 	} catch {
@@ -155,17 +158,22 @@ export async function submitCashOperation(
 ): Promise<boolean> {
 	const primary = direction === "in" ? "/api/cash/cash-introduction" : "/api/cash/cash-withdrawal";
 	const fallback = direction === "in" ? "/api/fiscal/cash-in" : "/api/fiscal/cash-out";
+	const idempotencyKey = generateUuidV7();
+	const headers = denteClinicalMutationHeaders({
+		"Content-Type": "application/json",
+		"Idempotency-Key": idempotencyKey,
+	});
 	try {
 		const res = await fetch(primary, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			headers,
 			body: JSON.stringify(payload),
 		});
 		if (res.ok) return true;
 		if (res.status === 404 || res.status === 405) {
 			const fb = await fetch(fallback, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers,
 				body: JSON.stringify(payload),
 			});
 			return fb.ok;

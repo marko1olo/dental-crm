@@ -1,6 +1,6 @@
 import React from "react";
-import { calculateAge, rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { calculateAge, generateUuidV7, rublesToKopecks } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
@@ -228,9 +228,9 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 									`/api/patients/${patientId}/tooth-states/${endoTooth}/endo`,
 									{
 										method: "POST",
-										headers: denteAdminSecretRequestHeaders({
+										headers: denteClinicalMutationHeaders({
 											"Content-Type": "application/json",
-											"Idempotency-Key": crypto.randomUUID(),
+											"Idempotency-Key": generateUuidV7(),
 										}),
 										body: JSON.stringify({
 											canals: canals || clinicalData?.canals || [],
@@ -339,8 +339,9 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 							try {
 								const res = await fetch("/api/ai/parse-dictation", {
 									method: "POST",
-									headers: denteAdminSecretRequestHeaders({
+									headers: denteClinicalMutationHeaders({
 										"Content-Type": "application/json",
+										"Idempotency-Key": generateUuidV7(),
 									}),
 									body: JSON.stringify({ text, type: "visit" }),
 								});
@@ -574,6 +575,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{isFastCheckoutOpen && (
 				<React.Suspense fallback={null}>
 					<CashRegisterStudioModal
+						key={patientId || "fast-checkout"}
 						isOpen={isFastCheckoutOpen}
 						onClose={() => setIsFastCheckoutOpen(false)}
 						mode="checkout"

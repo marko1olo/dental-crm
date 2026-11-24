@@ -206,7 +206,7 @@ export function generateMedicalCardExtractHtml(
       <div class="minzdrav-form-box">
         Медицинская документация<br>
         <strong>Медицинская карта приёма</strong><br>
-        Выписка из амбулаторной карты (Форма № 043/у)
+        Выписка из амбулаторной карты
       </div>
     </div>
 

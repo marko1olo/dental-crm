@@ -19,6 +19,7 @@ import {
 	triggerHaptic,
 	type ParsedGs1DataMatrix,
 } from "../../native/mobileBridge";
+import { logger } from "../../utils/logger";
 
 export const parseGs1DataMatrix = parseGs1DataMatrixFn;
 export type { ParsedGs1DataMatrix };
@@ -577,7 +578,7 @@ export class UsbBarcodeScanner {
 			try {
 				subscriber(event);
 			} catch (err) {
-				console.error("[UsbBarcodeScanner] Error in scan subscriber:", err);
+				logger.error("[UsbBarcodeScanner] Error in scan subscriber:", err);
 			}
 		}
 	}

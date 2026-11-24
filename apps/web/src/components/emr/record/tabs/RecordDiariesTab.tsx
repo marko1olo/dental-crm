@@ -21,6 +21,7 @@ import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../../lib/queryClient";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
 export interface RecordDiariesTabProps {
@@ -92,7 +93,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 					}
 				}
 			} catch (error) {
-				console.warn("[RecordDiariesTab] Не удалось восстановить черновик из sessionStorage:", error);
+				clientLogger.warn("Не удалось восстановить черновик из sessionStorage", error, { module: "RecordDiariesTab" });
 			}
 		}, [draftStorageKey]);
 
@@ -115,7 +116,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 							sessionStorage.setItem(draftStorageKey, JSON.stringify(state));
 						}
 					} catch (error) {
-						console.warn("[RecordDiariesTab] Ошибка сохранения черновика в sessionStorage:", error);
+						clientLogger.warn("Ошибка сохранения черновика в sessionStorage", error, { module: "RecordDiariesTab" });
 					}
 				}, 600);
 			},
@@ -160,7 +161,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 			try {
 				if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(draftStorageKey);
 			} catch (error) {
-				console.warn("[RecordDiariesTab] Ошибка очистки черновика из sessionStorage:", error);
+				clientLogger.warn("Ошибка очистки черновика из sessionStorage", error, { module: "RecordDiariesTab" });
 			}
 		}, [draftStorageKey]);
 
@@ -229,7 +230,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 							if (!reviseRes.ok) {
 								const errJson = (await reviseRes.json().catch(() => null)) as { error?: string; message?: string } | null;
 								const errorMsg = errJson?.message || "Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
-								console.warn("[RecordDiariesTab] отказ ревизии дневника в /api/diaries/:id/revise", errJson);
+								clientLogger.warn("Отказ ревизии дневника в /api/diaries/:id/revise", errJson, { module: "RecordDiariesTab" });
 								showToast(errorMsg, "error", 5000);
 								return;
 							}
@@ -254,7 +255,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 							setIsFormOpen(false);
 							showToast("Исправление в дневнике приёма сохранено («Исправленному верить»)", "success", 3000);
 						} catch (reviseErr) {
-							console.warn("[RecordDiariesTab] Ошибка вызова /api/diaries/:id/revise:", reviseErr);
+							clientLogger.warn("Ошибка вызова /api/diaries/:id/revise", reviseErr, { module: "RecordDiariesTab" });
 							showToast("Сетевая ошибка сохранения ревизии дневника приёма", "error", 5000);
 						}
 					})();
@@ -319,7 +320,8 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 					setCopiedIndex(idx);
 					setTimeout(() => setCopiedIndex(null), 2000);
 				}).catch((error) => {
-					console.warn("[RecordDiariesTab] Ошибка копирования в буфер обмена:", error);
+					clientLogger.warn("Ошибка копирования в буфер обмена", error, { module: "RecordDiariesTab" });
+					showToast("Не удалось скопировать текст дневника в буфер обмена", "error", 3500);
 				});
 			}
 		}, []);

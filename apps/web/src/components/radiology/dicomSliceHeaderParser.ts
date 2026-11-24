@@ -241,7 +241,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             .decode(new Uint8Array(buffer, tagValOff, tagLen))
             .replace(/\0+$/, "")
             .trim();
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0010 && element === 0x0010) {
       // PatientName
@@ -250,7 +252,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const raw = new Uint8Array(buffer, tagValOff, Math.min(tagLen, 64));
           const decoded = decodeDicomString(raw);
           if (decoded) patientName = decoded;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0008 && element === 0x0008) {
       // ImageType
@@ -260,14 +264,18 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             .decode(new Uint8Array(buffer, tagValOff, tagLen))
             .replace(/\0+$/, "")
             .trim();
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0008 && element === 0x0020) {
       // StudyDate
       if (tagLen >= 8 && tagValOff + tagLen <= byteLength) {
         try {
           studyDate = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, Math.min(tagLen, 12))).trim();
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0018 && element === 0x0050) {
       // SliceThickness
@@ -276,7 +284,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) sliceThickness = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0020 && element === 0x0032) {
       // ImagePositionPatient [X, Y, Z] (Cartesian coordinate in mm)
@@ -291,7 +301,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
               hasImagePositionPatient = true;
             }
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0020 && element === 0x0037) {
       // ImageOrientationPatient [Xx, Xy, Xz, Yx, Yy, Yz]
@@ -309,7 +321,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
               parts[5] ?? 0,
             ];
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0020 && element === 0x1041) {
       // SliceLocation (only use if ImagePositionPatient is not available)
@@ -320,7 +334,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           if (!Number.isNaN(num) && !hasImagePositionPatient) {
             sliceLocationZ = num;
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0020 && element === 0x0013) {
       // InstanceNumber
@@ -329,7 +345,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseInt(str, 10);
           if (!Number.isNaN(num)) instanceNumber = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x0008) {
       // NumberOfFrames
@@ -346,7 +364,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             const binVal = view.getUint32(tagValOff, true);
             if (binVal > 0) numberOfFrames = binVal;
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x0010) {
       // Rows
@@ -373,7 +393,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
             if (!Number.isNaN(parts[0]) && (parts[0] ?? 0) > 0) pixelSpacingY = parts[0] ?? 0.20;
             if (!Number.isNaN(parts[1]) && (parts[1] ?? 0) > 0) pixelSpacingX = parts[1] ?? 0.20;
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x1050) {
       // WindowCenter
@@ -382,7 +404,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num)) windowCenter = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x1051) {
       // WindowWidth
@@ -391,7 +415,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num) && num > 0) windowWidth = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x1052) {
       // RescaleIntercept
@@ -400,7 +426,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num)) rescaleIntercept = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x0028 && element === 0x1053) {
       // RescaleSlope
@@ -409,7 +437,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) rescaleSlope = num;
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomSliceHeaderParser] Non-fatal DICOM tag parse skipped:", err);
+        }
       }
     } else if (group === 0x7fe0 && element === 0x0010) {
       // PixelData

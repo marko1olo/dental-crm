@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { createDefaultOrthoProtocolState, type AngleClass, type OrthoProtocolState, type VerticalBite } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { CephalometricSavedStudy } from "./cephalometricPersistence";
 
 export interface OrthodonticsHydrationResult {
@@ -134,7 +135,7 @@ export function useOrthodonticsStudioHydration(
 				}
 			} catch (err) {
 				if (!isCancelled) {
-					console.warn("[useOrthodonticsStudioHydration] Failed to fetch ortho progress:", err);
+					clientLogger.warn("Failed to fetch ortho progress", err, { module: "useOrthodonticsStudioHydration" });
 				}
 			}
 		};

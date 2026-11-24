@@ -5,6 +5,8 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	CANONICAL_DENTAL_DRUGS,
 	findDrugById,
@@ -146,18 +148,7 @@ export function usePrescriptionWorkspaceState({
 
 	const handleCopyPatientMemo = useCallback(() => {
 		if (selectedDrugs.length === 0) {
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente-toast", {
-						detail: { text: "Выберите хотя бы один препарат", type: "warning" },
-					}),
-				);
-				window.dispatchEvent(
-					new CustomEvent("dente:toast", {
-						detail: { text: "Выберите хотя бы один препарат", type: "warning" },
-					}),
-				);
-			}
+			showToast("Выберите хотя бы один препарат", "warning");
 			return;
 		}
 		const memoMeds = selectedDrugs.map((d) => {
@@ -182,24 +173,10 @@ export function usePrescriptionWorkspaceState({
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(memo);
 		}
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-toast", {
-					detail: {
-						text: "Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
-						type: "success",
-					},
-				}),
-			);
-			window.dispatchEvent(
-				new CustomEvent("dente:toast", {
-					detail: {
-						text: "Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
-						type: "success",
-					},
-				}),
-			);
-		}
+		showToast(
+			"Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
+			"success",
+		);
 		setIsMemoCopied(true);
 		setTimeout(() => setIsMemoCopied(false), 3000);
 	}, [clinicName, clinicPhone, patientName, doctorName, selectedDrugs]);
@@ -214,10 +191,31 @@ export function usePrescriptionWorkspaceState({
 		const rxText = formatSoapPrescriptionText(selectedDrugs);
 		if (onInsertToDiary) onInsertToDiary(rxText);
 
+		const resolvedPatientId = patient?.id?.trim();
+		if (!resolvedPatientId) {
+			if (onInsertToDiary) {
+				setIsInsertedToDiary(true);
+				showToast(
+					"Рецепт внесён в медицинскую карту приёма",
+					"success",
+				);
+				setTimeout(() => {
+					setIsInsertedToDiary(false);
+					onClose();
+				}, 800);
+			} else {
+				showToast(
+					"Не выбран пациент для сохранения рецепта в реестре",
+					"warning",
+				);
+			}
+			return;
+		}
+
 		try {
 			const payload: CreatePrescriptionApiPayload = {
-				patientId: patient?.id || "pat_solo_default",
-				prescribingDoctorId: "doc_solo_default",
+				patientId: resolvedPatientId,
+				prescribingDoctorId: null,
 				formType: formType === "special" ? "form_148_1_u_88" : "form_107_1_u",
 				validityPeriod: "days_60",
 				clinicalDiagnosisMkb10: diary?.diagnosisIcd10 || "K04.0",
@@ -232,28 +230,23 @@ export function usePrescriptionWorkspaceState({
 					tradeName: d.tradeName,
 				})),
 			};
-			const res = await savePrescriptionToBackend(payload).catch(() => ({
-				id: `rx_local_${Date.now()}`,
-			}));
+			const res = await savePrescriptionToBackend(payload);
 			if (onSave) onSave(res);
-		} catch {
-			// Soft fallback for offline solo doctor
-		} finally {
 			setIsInsertedToDiary(true);
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente:toast", {
-						detail: {
-							text: "Рецепт успешно выписан и внесен в медицинскую карту приёма",
-							type: "success",
-						},
-					}),
-				);
-			}
+			showToast(
+				"Рецепт успешно выписан и внесен в медицинскую карту приёма",
+				"success",
+			);
 			setTimeout(() => {
 				setIsInsertedToDiary(false);
 				onClose();
 			}, 800);
+		} catch (err) {
+			clientLogger.warn("[usePrescriptionWorkspaceState] Failed to save prescription to backend:", err);
+			showToast(
+				err instanceof Error ? err.message : "Не удалось сохранить рецепт на сервере",
+				"error",
+			);
 		}
 	}, [
 		selectedDrugs,

@@ -3,6 +3,7 @@ import { PhotoProtocolPreset, PhotoSlotRecord, EXPRESS_6_SLOT_PROTOCOL, getPrese
 import { compressChairsidePhotoToBlobUrl } from '../chairsidePhotoCompressor';
 import { showToast } from '../../GlobalToast';
 import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
+import { clientLogger } from '../../../services/logging/clientLogger';
 
 export interface UsePhotoProtocolUploadProps {
 	patientId?: string | undefined;
@@ -120,7 +121,9 @@ export function usePhotoProtocolUpload(
 					}
 				};
 				reader.readAsDataURL(blob);
-			} catch {}
+			} catch (storageErr) {
+				clientLogger.debug('Не удалось сохранить временный снимок фотопротокола в localStorage', storageErr, { module: 'usePhotoProtocolUpload' });
+			}
 			return null;
 		}
 		try {
@@ -167,7 +170,7 @@ export function usePhotoProtocolUpload(
 				}
 			}
 		} catch (err) {
-			console.error('[ClinicalPhotoProtocolModal] Upload error:', err);
+			clientLogger.error('Upload error', err, { module: 'usePhotoProtocolUpload' });
 			showToast('Ошибка при обработке изображения. Попробуйте другой формат.', 'error');
 			updateSlotRecord(slotId, { isUploading: false });
 		} finally {
@@ -214,9 +217,11 @@ export function usePhotoProtocolUpload(
 				});
 				if (res.ok) {
 					persistedInDb = true;
+				} else {
+					clientLogger.warn('Failed to save photo protocol to Fastify API', { status: res.status, patientId }, { module: 'usePhotoProtocolUpload' });
 				}
 			} catch (e) {
-				console.warn('Network issue saving photo protocol to Fastify API, falling back to local cache', e);
+				clientLogger.warn('Network issue saving photo protocol to Fastify API, falling back to local cache', e, { module: 'usePhotoProtocolUpload' });
 			}
 		}
 
@@ -232,7 +237,7 @@ export function usePhotoProtocolUpload(
 				detail: { patientId, visitId, slots: sanitizedSlots, presetId: activePreset.id, persistedInDb },
 			}));
 		} catch (e) {
-			console.warn('Failed to persist photo protocol to localStorage', e);
+			clientLogger.warn('Failed to persist photo protocol to localStorage', e, { module: 'usePhotoProtocolUpload' });
 		}
 
 		if (onSaveProtocol) {
@@ -240,7 +245,15 @@ export function usePhotoProtocolUpload(
 		}
 
 		setIsSaving(false);
-		showToast(persistedInDb ? 'Клинический фотопротокол сохранён в базе данных' : 'Фотопротокол сохранён локально', 'success', 3000);
+		showToast(
+			persistedInDb
+				? 'Клинический фотопротокол сохранён в базе данных'
+				: patientId
+					? 'Фотопротокол сохранён локально (ошибка синхронизации с сервером)'
+					: 'Фотопротокол сохранён локально',
+			persistedInDb || !patientId ? 'success' : 'warning',
+			3000,
+		);
 		onClose();
 	}, [onSaveProtocol, slotsData, activePreset.id, patientId, visitId, onClose]);
 

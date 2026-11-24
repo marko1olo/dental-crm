@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { getMobileNativeApi } from "./platform";
 import { triggerHaptic } from "./hapticsAndAudio";
+import { logger } from "../../utils/logger";
 
 /**
  * Parses and normalizes incoming mobile deep link URL (e.g. `dente://open-visit?patientId=pat-100&visitId=vis-200`).

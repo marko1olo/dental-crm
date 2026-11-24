@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	applyOrthopedicProtocolToVisit,
 	type OrthopedicProtocolPreset, type FormatOrthopedicProtocolOptions,
@@ -42,7 +43,7 @@ export function useOrthopedicsChairsideActions(
 					body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
 				});
 				if (!res.ok) {
-					console.warn("Failed to update lab order stage on server", res.status);
+					clientLogger.warn("Failed to update lab order stage on server", { status: res.status }, { module: "useOrthopedicsChairsideActions" });
 					showToast(`Не удалось обновить этап на сервере (${res.status})`, "error", 3000);
 				}
 			} catch (err) {

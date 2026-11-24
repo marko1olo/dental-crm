@@ -3,8 +3,10 @@ import { ChevronDown, ChevronUp, Scan } from "lucide-react";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { WarmAccordionSection } from "./toothDrawerTypes";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ToothDrawerRvgAccordionProps {
 	toothNumber: number;
@@ -79,7 +81,7 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 							});
 
 							// 2. Персистентная загрузка в клинический архив PACS (/api/imaging/studies)
-							if (patientId) {
+							if (patientId && UUID_REGEX.test(patientId)) {
 								try {
 									const reader = new FileReader();
 									reader.onload = async () => {
@@ -87,18 +89,19 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 										try {
 											const res = await fetch("/api/imaging/studies", {
 												method: "POST",
-												headers: {
+												headers: denteClinicalMutationHeaders({
 													"Content-Type": "application/json",
-													...denteAdminSecretRequestHeaders(),
-												},
+													"Idempotency-Key": crypto.randomUUID(),
+												}),
 												body: JSON.stringify({
 													patientId,
 													imageBase64: base64Data,
 													title: `Прицельный снимок RVG зуба #${toothNumber}`,
 													toothCode: String(toothNumber),
 													kind: "periapical",
-													originalFilename: file.name,
-													notes: `Прицельный снимок RVG зуба #${toothNumber}`,
+													sourceKind: "manual_upload",
+													sourceName: file.name.slice(0, 160),
+													aiSummary: `Прицельный снимок RVG зуба #${toothNumber}`,
 												}),
 											});
 

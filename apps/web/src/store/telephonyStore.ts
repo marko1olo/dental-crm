@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import { logger } from "../utils/logger";
 import { getSharedTelephonyAudioStreamManager } from "./telephonyModules/telephonyAudioStreamManager";
 import { createTelephonyCallActions } from "./telephonyModules/telephonyCallActions";
 import {
@@ -54,7 +55,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		try {
 			getSharedTelephonyAudioStreamManager().setMicrophoneMute(nextMuted);
 		} catch (err) {
-			console.warn("[TelephonyStore] Failed to toggle microphone mute:", err);
+			logger.warn("[TelephonyStore] Failed to toggle microphone mute:", err);
 		}
 		set({ isMuted: nextMuted });
 	},
@@ -63,7 +64,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		try {
 			getSharedTelephonyAudioStreamManager().setStreamVolume(clamped);
 		} catch (err) {
-			console.warn("[TelephonyStore] Failed to set stream volume:", err);
+			logger.warn("[TelephonyStore] Failed to set stream volume:", err);
 		}
 		set({ volumeLevel: clamped });
 	},
@@ -99,10 +100,19 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		})),
 }));
 
+interface TelephonyImportMeta {
+	env?: {
+		VITE_WS_URL?: string | undefined;
+		VITE_API_ORIGIN?: string | undefined;
+	} | undefined;
+}
+
+interface WindowWithTelephonyStore extends Window {
+	__denteTelephonyStore?: typeof useTelephonyStore;
+}
+
 export function resolveTelephonyWsUrl(): string {
-	const configured = (
-		import.meta as unknown as { env?: Record<string, string> }
-	).env?.VITE_WS_URL;
+	const configured = (import.meta as TelephonyImportMeta).env?.VITE_WS_URL;
 	if (configured) return configured;
 	if (typeof window === "undefined") return "";
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -116,7 +126,7 @@ export function resolveTelephonyWsUrl(): string {
  * TELEPHONY_INCOMING_CALL не доходят до софтфона.
  */
 export function resolveTelephonyFallbackWsUrl(): string {
-	const env = (import.meta as unknown as { env?: Record<string, string> }).env;
+	const env = (import.meta as TelephonyImportMeta).env;
 	if (env?.VITE_WS_URL) return "";
 	if (typeof window === "undefined") return "";
 	const apiOrigin = env?.VITE_API_ORIGIN || "http://127.0.0.1:4100";
@@ -124,15 +134,14 @@ export function resolveTelephonyFallbackWsUrl(): string {
 		const parsed = new URL(apiOrigin);
 		const scheme = parsed.protocol === "https:" ? "wss:" : "ws:";
 		return `${scheme}//${parsed.host}/api/ws/telephony`;
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[telephonyStore] Invalid VITE_API_ORIGIN, falling back to localhost WS URL:", err);
 		return "ws://127.0.0.1:4100/api/ws/telephony";
 	}
 }
 
 if (typeof window !== "undefined") {
-	(
-		window as unknown as { __denteTelephonyStore?: typeof useTelephonyStore }
-	).__denteTelephonyStore = useTelephonyStore;
+	(window as WindowWithTelephonyStore).__denteTelephonyStore = useTelephonyStore;
 }
 
 /**

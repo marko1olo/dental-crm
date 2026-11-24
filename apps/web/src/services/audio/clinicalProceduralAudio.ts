@@ -10,6 +10,7 @@ import {
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage.js";
 import { getSharedAudioContext, resetSharedAudioContext } from "./sharedAudioContext.js";
+import { logger } from "../../utils/logger.js";
 
 interface WindowWithWebkitAudio {
 	webkitAudioContext?: typeof AudioContext;
@@ -172,8 +173,8 @@ export class ClinicalProceduralAudioEngine {
 		for (const listener of this.listeners) {
 			try {
 				listener(event);
-			} catch {
-				// Ignore listener errors
+			} catch (err: unknown) {
+				logger.debug("[ClinicalProceduralAudio] Listener error:", err);
 			}
 		}
 		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
@@ -188,8 +189,8 @@ export class ClinicalProceduralAudioEngine {
 		if (typeof navigator !== "undefined" && "vibrate" in navigator && typeof navigator.vibrate === "function") {
 			try {
 				navigator.vibrate(pattern);
-			} catch {
-				// Non-blocking
+			} catch (err: unknown) {
+				logger.debug("[ClinicalProceduralAudio] navigator.vibrate skipped:", err);
 			}
 		}
 	}
@@ -206,8 +207,8 @@ export class ClinicalProceduralAudioEngine {
 		if (ctx.state === "suspended") {
 			try {
 				await ctx.resume();
-			} catch {
-				// Non-blocking resume
+			} catch (err: unknown) {
+				logger.debug("[ClinicalProceduralAudio] AudioContext resume skipped:", err);
 			}
 		}
 
@@ -222,7 +223,9 @@ export class ClinicalProceduralAudioEngine {
 		this.idleSuspendTimer = setTimeout(() => {
 			const ctx = this.getAudioContext();
 			if (ctx && ctx.state === "running") {
-				ctx.suspend().catch(() => {});
+				ctx.suspend().catch((err: unknown) => {
+					logger.debug("[ClinicalProceduralAudio] AudioContext suspend skipped:", err);
+				});
 			}
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
@@ -290,7 +293,7 @@ export class ClinicalProceduralAudioEngine {
 			osc2.start(t2);
 			osc2.stop(t2 + SCANNER_CHIRP_DURATION_S + 0.005);
 		} catch (err) {
-			console.warn("[ClinicalProceduralAudio] playScannerBeep error:", err);
+			logger.warn("[ClinicalProceduralAudio] playScannerBeep error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -348,7 +351,7 @@ export class ClinicalProceduralAudioEngine {
 			osc2.start(now + 0.008);
 			osc2.stop(now + CASHIER_DURATION_S + 0.01);
 		} catch (err) {
-			console.warn("[ClinicalProceduralAudio] playCashierKaching error:", err);
+			logger.warn("[ClinicalProceduralAudio] playCashierKaching error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -391,7 +394,7 @@ export class ClinicalProceduralAudioEngine {
 			osc.start(now);
 			osc.stop(now + AUTOSAVE_WHISPER_DURATION_S + 0.005);
 		} catch (err) {
-			console.warn("[ClinicalProceduralAudio] playAutosaveWhisper error:", err);
+			logger.warn("[ClinicalProceduralAudio] playAutosaveWhisper error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -448,7 +451,7 @@ export class ClinicalProceduralAudioEngine {
 			osc2.start(now);
 			osc2.stop(now + SOMATIC_DANGER_DURATION_S + 0.01);
 		} catch (err) {
-			console.warn("[ClinicalProceduralAudio] playSomaticDangerChord error:", err);
+			logger.warn("[ClinicalProceduralAudio] playSomaticDangerChord error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -470,9 +473,13 @@ export class ClinicalProceduralAudioEngine {
 		if (this.customAudioContext) {
 			try {
 				if (typeof this.customAudioContext.close === "function") {
-					this.customAudioContext.close().catch(() => {});
+					this.customAudioContext.close().catch((err: unknown) => {
+						logger.debug("[ClinicalProceduralAudio] AudioContext close rejected:", err);
+					});
 				}
-			} catch { /* Non-blocking */ }
+			} catch (err: unknown) {
+				logger.debug("[ClinicalProceduralAudio] AudioContext close failed:", err);
+			}
 			this.customAudioContext = null;
 		}
 	}

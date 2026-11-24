@@ -6,6 +6,7 @@
 
 import type { ModalBackHandlerEntry } from "./types";
 import { triggerHaptic } from "./hapticsAndAudio";
+import { logger } from "../../utils/logger";
 
 const modalBackStack: ModalBackHandlerEntry[] = [];
 let isHardwareBackListenerInitialized = false;
@@ -91,7 +92,7 @@ export function handleHardwareBackAction(): boolean {
 		triggerHaptic("light");
 		return true;
 	} catch (err: unknown) {
-		console.error("[HardwareBack] Error in modal back handler:", err);
+		logger.error("[HardwareBack] Error in modal back handler:", err);
 		return true;
 	}
 }

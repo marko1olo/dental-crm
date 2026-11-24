@@ -18,6 +18,7 @@ import {
 	type DesktopDicomFileEvent,
 } from "../../native/desktopBridge.js";
 import type { RadiographyScanEvent, VisiographWatchConfig } from "./hardwareTypes.js";
+import { logger } from "../../utils/logger.js";
 
 type RadiographyScanListener = (event: RadiographyScanEvent) => void;
 
@@ -208,7 +209,7 @@ export class VisiographPacsWatcherService {
 			try {
 				listener(event);
 			} catch (err) {
-				console.error("[VisiographPacsWatcherService] Scan listener error:", err);
+				logger.error("[VisiographPacsWatcherService] Scan listener error:", err);
 			}
 		}
 

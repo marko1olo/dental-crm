@@ -6,14 +6,13 @@
  */
 
 import {
-	createCompositeIdempotencyKey,
 	generateUuidV7,
 	kopecksToRubles,
 	parseKopecks,
 } from "@dental/shared";
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import type { FamilyGroupDetails, TopupPaymentMethod } from "./types";
 
@@ -53,18 +52,14 @@ export function useFamilyTopupMutation({
 		setSubmitting(true);
 		try {
 			const payerId = topupPayerId || patientId;
-			const clientMutationId = createCompositeIdempotencyKey(
-				`fam-topup:${familyData.id}:${payerId}:${generateUuidV7()}`,
-				{ familyGroupId: familyData.id, amountKopecks, method: topupMethod },
-			);
+			const clientMutationId = generateUuidV7();
 
 			const res = await fetch("/api/finance/family/topup", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": clientMutationId,
-					...denteAdminSecretRequestHeaders(),
-				},
+				}),
 				body: JSON.stringify({
 					familyGroupId: familyData.id,
 					amountRub: num,

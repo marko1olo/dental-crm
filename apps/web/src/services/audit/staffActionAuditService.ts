@@ -53,7 +53,11 @@ export class StaffActionAuditService {
 				organizationId: params.organizationId,
 			});
 		} catch (err) {
-			console.warn("[StaffAuditService] Не удалось зафиксировать действие персонала:", err);
+			try {
+				clientLogger.warn("[StaffAuditService] Не удалось зафиксировать действие персонала:", err);
+			} catch {
+				return null;
+			}
 			return null;
 		}
 	}

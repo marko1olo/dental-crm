@@ -8,6 +8,7 @@ import { usePatientStore } from "../../../store/patientStore";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
 import { captureLeadFromIncomingCall } from "../telephonyAttribution";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function useDrawerPatientIntake(params: {
 	currentCall: IncomingCallPayload | null;
@@ -46,7 +47,7 @@ export function useDrawerPatientIntake(params: {
 						errMsg = data.message;
 					}
 				} catch (err: unknown) {
-					console.warn("[useDrawerPatientIntake] Failed to parse error response:", err);
+					clientLogger.warn("[useDrawerPatientIntake] Failed to parse error response:", err);
 				}
 				showToast(errMsg, "error");
 				return;

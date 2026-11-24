@@ -8,6 +8,7 @@
 
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { calculateOhiSScore, rublesToKopecks } from "@dental/shared";
 
 export type OhiSLevel = "ideal" | "fair" | "poor" | "severe";
@@ -331,7 +332,7 @@ export async function deductWarehouseHygieneConsumables(options: {
 			return true;
 		}
 		if (response.status !== 401) {
-			console.warn("[HygieneCatalog] Warehouse deduction responded with status:", response.status);
+			clientLogger.warn("Warehouse deduction responded with non-OK status", { status: response.status }, { module: "hygieneCatalogData" });
 		}
 	} catch (err) {
 		console.warn("[HygieneCatalog] Warehouse deduction network failure:", err);

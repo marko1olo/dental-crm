@@ -3,6 +3,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { initiateOutboundCall } from "../telephony/initiateOutboundCall";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	buildQuickTemplates,
 	type QuickTemplateItem,

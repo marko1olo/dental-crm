@@ -6,8 +6,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, UserPlus, Users, Search, Check, X } from "lucide-react";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import {
+	denteClinicalReadHeaders,
+} from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
+import { showToast } from "../../../GlobalToast";
 
 interface PatientSearchResult {
 	id: string;
@@ -63,7 +66,7 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 				try {
 					const res = await fetch(
 						`/api/patients?search=${encodeURIComponent(searchQuery.trim())}&limit=10`,
-						{ headers: denteAdminSecretRequestHeaders() },
+						{ headers: denteClinicalReadHeaders() },
 					);
 					if (res.ok) {
 						const data = await res.json();
@@ -90,7 +93,12 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 
 		const handleCreateGroup = async (e: React.FormEvent) => {
 			e.preventDefault();
-			if (!groupName.trim() || !onCreateFamilyGroup) return;
+			if (isSubmitting) return;
+			if (!groupName.trim()) {
+				showToast("Введите название семейной группы", "warning");
+				return;
+			}
+			if (!onCreateFamilyGroup) return;
 			setIsSubmitting(true);
 			try {
 				await onCreateFamilyGroup(groupName.trim());
@@ -102,7 +110,12 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 
 		const handleAddSelectedMember = async (e: React.FormEvent) => {
 			e.preventDefault();
-			if (!selectedPatient || !onAddMember) return;
+			if (isSubmitting) return;
+			if (!selectedPatient) {
+				showToast("Выберите пациента из списка для прикрепления", "warning");
+				return;
+			}
+			if (!onAddMember) return;
 			setIsSubmitting(true);
 			try {
 				await onAddMember(selectedPatient.id, canSpend);
@@ -143,8 +156,8 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 						/>
 						<button
 							type="submit"
-							disabled={isSubmitting || !groupName.trim()}
-							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs transition-all cursor-pointer disabled:opacity-50"
+							aria-busy={isSubmitting}
+							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs transition-all cursor-pointer"
 							data-testid="btn-submit-create-family-group"
 						>
 							<Plus className="w-4 h-4" />
@@ -233,8 +246,8 @@ export const FamilyMemberAddSection: React.FC<FamilyMemberAddSectionProps> = Rea
 									</button>
 									<button
 										type="submit"
-										disabled={isSubmitting}
-										className="h-8 px-3.5 rounded-lg text-xs font-medium gap-1.5 inline-flex items-center justify-center bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs transition-all cursor-pointer disabled:opacity-50"
+										aria-busy={isSubmitting}
+										className="h-8 px-3.5 rounded-lg text-xs font-medium gap-1.5 inline-flex items-center justify-center bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs transition-all cursor-pointer"
 										data-testid="btn-confirm-add-family-member"
 									>
 										<Check className="w-3.5 h-3.5" />

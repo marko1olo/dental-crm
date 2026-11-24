@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Activity, CheckCircle2, AlertCircle, RefreshCw, Radio } from "lucide-react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface ImportProgressEvent {
 	taskId: string;
@@ -54,7 +55,7 @@ export function MigrationStreamProgress({
 					}
 				}
 			} catch (err) {
-				console.warn("[MigrationStream] Failed to parse progress event:", err);
+				clientLogger.warn("[MigrationStream] Failed to parse progress event:", err);
 			}
 		};
 
@@ -71,7 +72,7 @@ export function MigrationStreamProgress({
 				setConnected(false);
 			};
 		} catch (err) {
-			console.warn("[MigrationStream] Failed to initialize EventSource:", err);
+			clientLogger.warn("[MigrationStream] Failed to initialize EventSource:", err);
 			setConnected(false);
 		}
 

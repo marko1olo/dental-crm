@@ -8,6 +8,7 @@ import { useAppStore } from "../../store/appStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface ChatPatientBookingInfo {
 	id?: string | null | undefined;
@@ -71,7 +72,7 @@ export function executeBookAppointmentFromChat(
 		try {
 			window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo }));
 		} catch (dispatchErr) {
-			console.warn("[BookFromChat] Ошибка отправки события dente-book-stage-appointment:", dispatchErr);
+			clientLogger.warn("[BookFromChat] Ошибка отправки события dente-book-stage-appointment:", dispatchErr);
 		}
 	}
 

@@ -6,6 +6,7 @@
 
 import { AudioStreamManager } from "../../../components/audio/AudioStreamManager";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { logger } from "../../../utils/logger";
 import type { PendingTranscriptionRecord, VoiceOfflineQueue } from "../VoiceOfflineQueue";
 import { calculatePcmDurationMs, combineBufferedPcmChunks, encodeBlobToBase64, encodePcm16ToBase64 } from "./pcmAudioProcessor";
 import type { InternalUnifiedAudioClientOptions, PcmAudioChunk, UnifiedAudioMode, UnifiedAudioState } from "./types";
@@ -134,7 +135,7 @@ export class AudioStreamTransport {
 				);
 				flushedCount++;
 			} catch (err) {
-				console.warn("Error flushing buffered PCM chunk:", err);
+				logger.warn("[DENTE Voice] Error flushing buffered PCM chunk:", err);
 				this.pcmRingBuffer.unshift(chunk);
 				break;
 			}
@@ -148,7 +149,7 @@ export class AudioStreamTransport {
 				const base64 = encodePcm16ToBase64(pcm);
 				this.ws.send(JSON.stringify({ type: "audio_chunk", audioBase64: base64, data: base64, rms, timestamp: Date.now() }));
 			} catch (err) {
-				console.warn("Error sending audio chunk via WebSocket:", err);
+				logger.warn("[DENTE Voice] Error sending audio chunk via WebSocket:", err);
 				this.bufferPcmChunk(pcm, rms);
 				void this.reconnectGeminiLiveWs();
 			}
@@ -218,23 +219,23 @@ export class AudioStreamTransport {
 							if (text.trim()) this.host.onFinalSegment(text.trim());
 							this.host.onInterimTranscript("");
 						} else if (data.type === "reconnecting") {
-							console.info(`[DENTE Voice] Gemini Live reconnecting/rotating (attempt ${data.attempt}):`, data.reason);
+							logger.info(`[DENTE Voice] Gemini Live reconnecting/rotating (attempt ${data.attempt}):`, data.reason);
 						} else if (data.type === "key_rotated") {
-							console.info("[DENTE Voice] Gemini Live key successfully rotated");
+							logger.info("[DENTE Voice] Gemini Live key successfully rotated");
 						} else if (data.type === "error" || data.type === "provider_error") {
-							console.warn("Gemini Live server error:", data.message);
+							logger.warn("[DENTE Voice] Gemini Live server error:", data.message);
 							if (this.host.getOptions().autoFallback) {
 								void this.host.onProviderFallback(data.message || "Ошибка распознавания Gemini Live");
 							}
 						}
 					} catch (e) {
-						console.error("Error parsing WebSocket message:", e);
+						logger.error("[DENTE Voice] Error parsing WebSocket message:", e);
 					}
 				};
 
 				ws.onerror = (err) => {
 					this.clearConnectTimeout();
-					console.warn("Gemini Live WebSocket error:", err);
+					logger.warn("[DENTE Voice] Gemini Live WebSocket error:", err);
 					if (this.host.getState() === "listening" && !this.isReconnecting && !this.host.getIsDisposed()) {
 						void this.reconnectGeminiLiveWs();
 					}
@@ -254,7 +255,7 @@ export class AudioStreamTransport {
 					}
 				};
 			} catch (err) {
-				console.warn("WebSocket creation failed:", err);
+				logger.warn("[DENTE Voice] WebSocket creation failed:", err);
 				resolve(false);
 			}
 		});
@@ -272,7 +273,7 @@ export class AudioStreamTransport {
 
 		const opts = this.host.getOptions();
 		if (this.reconnectAttempts >= opts.maxReconnectAttempts) {
-			console.warn(`[DENTE Voice] Max WebSocket reconnect attempts (${opts.maxReconnectAttempts}) reached.`);
+			logger.warn(`[DENTE Voice] Max WebSocket reconnect attempts (${opts.maxReconnectAttempts}) reached.`);
 			if (opts.autoFallback) {
 				if (this.pcmRingBuffer.length > 0) {
 					const combinedPcm = combineBufferedPcmChunks(this.pcmRingBuffer);
@@ -288,7 +289,7 @@ export class AudioStreamTransport {
 		this.reconnectAttempts++;
 		this.detachAndCloseSocket(false);
 
-		console.info(
+		logger.info(
 			`[DENTE Voice] Reconnecting WebSocket (attempt ${this.reconnectAttempts}/${opts.maxReconnectAttempts}, buffered chunks: ${this.pcmRingBuffer.length})...`,
 		);
 
@@ -301,7 +302,7 @@ export class AudioStreamTransport {
 				this.reconnectTimer = null;
 			}
 			const flushed = this.flushBufferedPcmChunks();
-			console.info(`[DENTE Voice] WebSocket reconnected successfully. Flushed ${flushed} buffered audio chunks without speech loss.`);
+			logger.info(`[DENTE Voice] WebSocket reconnected successfully. Flushed ${flushed} buffered audio chunks without speech loss.`);
 			return true;
 		}
 
@@ -357,7 +358,7 @@ export class AudioStreamTransport {
 			const text = (data?.chunk?.transcript ?? data?.text ?? "").trim();
 			if (text) this.host.onFinalSegment(text);
 		} catch (error) {
-			console.warn("Server Whisper transcription error:", error);
+			logger.warn("[DENTE Voice] Server Whisper transcription error:", error);
 			try {
 				void this.host
 					.getOfflineQueue()
@@ -375,9 +376,9 @@ export class AudioStreamTransport {
 						},
 					})
 					.then((rec) => this.host.onOfflineRecordSaved(rec))
-					.catch((queueErr) => console.warn("Failed to save transcription segment to offline queue:", queueErr));
+					.catch((queueErr) => logger.warn("[DENTE Voice] Failed to save transcription segment to offline queue:", queueErr));
 			} catch (queueErr) {
-				console.warn("Failed to save transcription segment to offline queue:", queueErr);
+				logger.warn("[DENTE Voice] Failed to save transcription segment to offline queue:", queueErr);
 			}
 			if (opts.autoFallback) await this.host.onProviderFallback("Сбой бэкенда Whisper");
 		}
@@ -388,7 +389,7 @@ export class AudioStreamTransport {
 		const win = window as Window & WindowWithSpeechRecognition;
 		const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
 		if (!SpeechRec) {
-			console.warn("Web Speech API not supported in this browser");
+			logger.warn("[DENTE Voice] Web Speech API not supported in this browser");
 			this.host.onFatalSpeechError("Web Speech API не поддерживается в данном браузере или окружении");
 			return;
 		}
@@ -414,7 +415,7 @@ export class AudioStreamTransport {
 			};
 
 			recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
-				console.warn("Browser Speech Recognition error:", event.error);
+				logger.warn("[DENTE Voice] Browser Speech Recognition error:", event.error);
 				if (event.error === "not-allowed" || event.error === "service-not-allowed") {
 					this.host.onFatalSpeechError("Доступ к распознаванию речи в браузере заблокирован");
 				}
@@ -425,14 +426,14 @@ export class AudioStreamTransport {
 					try {
 						recognition.start();
 					} catch (err: unknown) {
-						console.warn("[UnifiedAudioClient] Error restarting SpeechRecognition onend:", err);
+						logger.warn("[UnifiedAudioClient] Error restarting SpeechRecognition onend:", err);
 					}
 				}
 			};
 
 			recognition.start();
 		} catch (err) {
-			console.warn("Failed to initialize Web Speech Recognition:", err);
+			logger.warn("[DENTE Voice] Failed to initialize Web Speech Recognition:", err);
 			this.host.onFatalSpeechError(
 				err instanceof Error
 					? `Не удалось запустить распознавание речи браузера: ${err.message}`
@@ -453,7 +454,7 @@ export class AudioStreamTransport {
 			}
 			this.ws.close();
 		} catch (err: unknown) {
-			console.warn("[UnifiedAudioClient] Error closing WebSocket:", err);
+			logger.warn("[UnifiedAudioClient] Error closing WebSocket:", err);
 		}
 		this.ws = null;
 	}
@@ -475,7 +476,7 @@ export class AudioStreamTransport {
 				this.browserRecognition.onend = null;
 				this.browserRecognition.stop();
 			} catch (err: unknown) {
-				console.warn("[UnifiedAudioClient] Error stopping SpeechRecognition on stop:", err);
+				logger.warn("[UnifiedAudioClient] Error stopping SpeechRecognition on stop:", err);
 			}
 			this.browserRecognition = null;
 		}

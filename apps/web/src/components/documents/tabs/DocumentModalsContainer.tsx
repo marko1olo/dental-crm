@@ -29,6 +29,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 				<DocumentRegulatoryModals {...props} />
 				{isA4PrintPreviewOpen && setIsA4PrintPreviewOpen && (
 					<DocumentsStudioModal
+						key={activePatient?.id || "a4-preview-docs"}
 						isOpen={isA4PrintPreviewOpen}
 						onClose={() => setIsA4PrintPreviewOpen(false)}
 						initialTemplate={mappedTemplate}

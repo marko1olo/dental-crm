@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { clientLogger } from "../services/logging/clientLogger";
 import {
 	Banknote,
 	BookOpen,

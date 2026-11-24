@@ -22,7 +22,7 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 	return (
 		<div>
 			<div className="flex items-center justify-between mb-2">
-				<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+				<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 					Тип операции (
 					{isCashIn ? "Каталог приходов клиники" : "Каталог расходов клиники"}):
 				</span>

@@ -15,6 +15,7 @@ import {
 	type ResamplingWorkletOptions,
 } from "./ResamplingAudioWorklet";
 import { VadEngine, type VadEngineConfig } from "./VadEngine";
+import { logger } from "../../utils/logger";
 
 interface WindowWithWebkitAudio {
 	webkitAudioContext?: typeof AudioContext;
@@ -67,7 +68,7 @@ export function revokeResamplingAudioWorkletBlobUrl(): void {
 		try {
 			URL.revokeObjectURL(cachedWorkletBlobUrl);
 		} catch (err: unknown) {
-			console.warn("[audioWorkletLoader] Failed to revoke blob URL:", err);
+			logger.warn("[audioWorkletLoader] Failed to revoke blob URL:", err);
 		}
 		cachedWorkletBlobUrl = null;
 	}
@@ -108,7 +109,7 @@ export async function registerResamplingAudioWorklet(
 			registeredContexts.add(audioContext);
 			return true;
 		}
-		console.warn("Failed to register resampling audio worklet module:", error);
+		logger.warn("[audioWorkletLoader] Failed to register resampling audio worklet module:", error);
 		return false;
 	}
 }
@@ -205,25 +206,25 @@ export async function createResamplingAudioCapturePipeline(config: {
 		try {
 			sourceNode.disconnect();
 		} catch (err: unknown) {
-			console.warn("[audioWorkletLoader] sourceNode disconnect error:", err);
+			logger.warn("[audioWorkletLoader] sourceNode disconnect error:", err);
 		}
 		try {
 			workletNode.disconnect();
 		} catch (err: unknown) {
-			console.warn("[audioWorkletLoader] workletNode disconnect error:", err);
+			logger.warn("[audioWorkletLoader] workletNode disconnect error:", err);
 		}
 		stream.getTracks().forEach((track) => {
 			try {
 				track.stop();
 			} catch (err: unknown) {
-				console.warn("[audioWorkletLoader] media track stop error:", err);
+				logger.warn("[audioWorkletLoader] media track stop error:", err);
 			}
 		});
 		if (!config.audioContext && audioCtx.state !== "closed") {
 			try {
 				audioCtx.close();
 			} catch (err: unknown) {
-				console.warn("[audioWorkletLoader] audioContext close error:", err);
+				logger.warn("[audioWorkletLoader] audioContext close error:", err);
 			}
 		}
 	};

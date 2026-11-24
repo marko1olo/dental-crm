@@ -13,10 +13,8 @@ import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
-import {
-	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, getAnatomicalWorkingLength,
-	type EndoStageStamp, type QuickCanalState,
-} from "./endodonticsCatalogData";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, getAnatomicalWorkingLength, type EndoStageStamp, type QuickCanalState } from "./endodonticsCatalogData";
 import { generateSoapEndoProtocol } from "./chairsideEndoSoapBuilder";
 import { ChairsideCanalRow } from "./ChairsideCanalRow";
 export { getChairsideDefaultCanals, generateSoapEndoProtocol, type QuickCanalState, type EndoStageStamp };
@@ -43,6 +41,7 @@ export function executeChairsideTransferToDiary({
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2"), isBio = canals.some((c) => c.obturationType === "bioceramic");
 	const stageStamp: EndoStageStamp = isTemp ? "TEMP_CAOH2" : "COMPLETED";
 	const soapProtocol = generateSoapEndoProtocol({ activeTooth, toothAnatomicalName, currentCanals: canals, toothState });
+	let hasLocalSyncError = false;
 
 	try {
 		// Протокол направляется в treatment (SOAP-дневник) и treatmentPlan без засорения objectiveStatus
@@ -51,7 +50,8 @@ export function executeChairsideTransferToDiary({
 			return { ...prev, treatment: tr ? `${tr}\n\n${soapProtocol}` : soapProtocol, treatmentPlan: pl ? `${pl}\n\n${soapProtocol}` : soapProtocol };
 		});
 	} catch (err) {
-		console.error("[ChairsideEndoQuickBar] Ошибка обновления формы визита:", err);
+		hasLocalSyncError = true;
+		clientLogger.error("Ошибка обновления формы визита", err, { module: "ChairsideEndoQuickBar" });
 	}
 
 	const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
@@ -90,7 +90,8 @@ export function executeChairsideTransferToDiary({
 				}
 				store.applyServicesToToothState({ toothNumber: activeTooth, services: billing.services804n.map((s) => ({ code: s.code804n || "A16.07.030", name: s.title, price: s.priceRub, toothNumber: activeTooth })) });
 			} catch (err) {
-				console.error("[ChairsideEndoQuickBar] Ошибка обновления стора визита услугами:", err);
+				hasLocalSyncError = true;
+				clientLogger.error("Ошибка обновления стора визита услугами", err, { module: "ChairsideEndoQuickBar" });
 			}
 
 			if (typeof window !== "undefined") {
@@ -129,9 +130,9 @@ export function executeChairsideTransferToDiary({
 								notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
 							}),
 						}).then(async (res) => {
-							if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание материалов завершилось со статусом:", res.status);
+							if (!res.ok) clientLogger.warn("Списание материалов завершилось с ошибкой", { status: res.status }, { module: "ChairsideEndoQuickBar" });
 						}).catch((err) => {
-							console.error("[ChairsideEndoQuickBar] Ошибка списания материалов:", err);
+							clientLogger.error("Ошибка списания материалов", err, { module: "ChairsideEndoQuickBar" });
 							showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000);
 						});
 					}
@@ -139,7 +140,8 @@ export function executeChairsideTransferToDiary({
 			}
 		}
 	} catch (err) {
-		console.error("[ChairsideEndoQuickBar] Ошибка расчёта сметы эндодонтии:", err);
+		hasLocalSyncError = true;
+		clientLogger.error("Ошибка расчёта сметы эндодонтии", err, { module: "ChairsideEndoQuickBar" });
 	}
 	if (patientId) {
 		const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" ? window.location.origin : "";
@@ -154,18 +156,24 @@ export function executeChairsideTransferToDiary({
 				}),
 			}).then(async (res) => {
 				if (!res.ok) {
-					console.warn("[ChairsideEndoQuickBar] Сохранение параметров каналов завершилось со статусом:", res.status);
+					clientLogger.warn("Сохранение параметров каналов завершилось с ошибкой", { status: res.status }, { module: "ChairsideEndoQuickBar" });
 					showToast("Не удалось синхронизировать параметры каналов с сервером", "warning", 3500);
 				}
 			}).catch((err) => {
-				console.error("[ChairsideEndoQuickBar] Ошибка сохранения параметров каналов:", err);
+				clientLogger.error("Ошибка сохранения параметров каналов", err, { module: "ChairsideEndoQuickBar" });
 				showToast("Ошибка соединения при сохранении протокола каналов", "warning", 3500);
 			});
 		}
 	}
 
 	if (onInsertToDiary) onInsertToDiary(soapProtocol, sharedCanals);
-	showToast(`Протокол эндодонтии зуба #${activeTooth} перенесён в дневник!`, "success", 3000);
+	showToast(
+		hasLocalSyncError
+			? `Протокол зуба #${activeTooth} перенесён частично — проверьте начисление услуг`
+			: `Протокол эндодонтии зуба #${activeTooth} перенесён в дневник!`,
+		hasLocalSyncError ? "warning" : "success",
+		3000,
+	);
 }
 
 export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {

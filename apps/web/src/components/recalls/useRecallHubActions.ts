@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { showToast } from "../GlobalToast";
 import { useScheduleStore } from "../../store/scheduleStore";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { QuickBookingSlotInfo } from "../schedule/QuickBookingDrawerTypes";
 import { buildRecallQuickBookingSlot } from "./recallBookingHelper";
 import {
@@ -56,7 +57,7 @@ export function useRecallHubActions({
 				channel,
 				note,
 			}).catch((err) => {
-				console.error("[RecallActions] Status persist error:", err);
+				clientLogger.error("[RecallActions] Status persist error:", err);
 				showToast("Не удалось сохранить статус осмотра на сервере", "error");
 			});
 

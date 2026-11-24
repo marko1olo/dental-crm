@@ -9,6 +9,7 @@
 
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { useCopilotStore } from "../../../store/copilotStore";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { findBestClinicalProtocol } from "../../visit/clinicalCatalog/clinicalProtocolsCatalog";
 import type {
   ChairsideThoughtStep,
@@ -218,7 +219,7 @@ export async function executeCopilotAgentRequest(
       return parsed;
     }
   } catch (err) {
-    console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
+    clientLogger.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
   }
 
   // Local fallback parsing (Mandate 8a / T.A.R.S. 100% honesty: explicit offline badge)

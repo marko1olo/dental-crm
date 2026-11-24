@@ -9,6 +9,7 @@ import {
 } from "../../../surgery/surgeryCatalogData";
 import { useVisitStore } from "../../../../store/visitStore";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { useVisitSurgeryState } from "./useVisitSurgeryState";
 
 export interface PrintProtocolParams {
@@ -67,22 +68,22 @@ async function registerImplantInstallationOnce(payload: {
 	readonly visitId?: string | undefined;
 	readonly notes?: string | undefined;
 	readonly idempotencyKey?: string | undefined;
-}): Promise<void> {
+}): Promise<boolean> {
 	const idempKey =
 		payload.idempotencyKey ||
 		getSurgeryInstallationIdempotencyKey(payload.patientId, payload.toothNumberFdi, payload.visitId);
 
 	if (inFlightOrRegisteredInstallations.has(idempKey)) {
-		return;
+		return true;
 	}
 	inFlightOrRegisteredInstallations.add(idempKey);
 
 	try {
-		await fetch("/api/clinical/implants/installations", {
+		const res = await fetch("/api/clinical/implants/installations", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"X-Idempotency-Key": idempKey,
+				"Idempotency-Key": idempKey,
 				...getDenteAuthHeaders(),
 			},
 			body: JSON.stringify({
@@ -90,8 +91,18 @@ async function registerImplantInstallationOnce(payload: {
 				idempotencyKey: idempKey,
 			}),
 		});
+		if (!res.ok) {
+			inFlightOrRegisteredInstallations.delete(idempKey);
+			clientLogger.warn("Implant installation registration returned non-OK status", { status: res.status }, { module: "visitSurgeryActions" });
+			showToast("Протокол записан в карту, но сервер не подтвердил регистрацию имплантата", "warning", 4000);
+			return false;
+		}
+		return true;
 	} catch (err) {
-		console.warn("[visitSurgeryActions] Non-blocking installation registration:", err);
+		inFlightOrRegisteredInstallations.delete(idempKey);
+		clientLogger.warn("Non-blocking installation registration error", err, { module: "visitSurgeryActions" });
+		showToast("Протокол записан в карту, но возникла сетевая ошибка регистрации имплантата", "warning", 4000);
+		return false;
 	}
 }
 
@@ -102,6 +113,7 @@ export function executeApplyToVisitDiary(
 ) {
 	const onApplyToDiary = typeof optionsOrOnApply === "function" ? optionsOrOnApply : (optionsOrOnApply?.onApplyToDiary ?? maybeOptions?.onApplyToDiary);
 	const options = typeof optionsOrOnApply === "object" ? optionsOrOnApply : maybeOptions;
+	let hasLocalError = false;
 
 	try {
 		useVisitStore.getState().setVisitNoteForm((prev) => {
@@ -109,7 +121,8 @@ export function executeApplyToVisitDiary(
 			return { ...prev, objectiveStatus: existingObj ? `${existingObj}\n\n${protocolText}` : protocolText };
 		});
 	} catch (err) {
-		console.warn("[visitSurgeryActions] Не удалось обновить заметки визита в visitStore:", err);
+		hasLocalError = true;
+		clientLogger.warn("Не удалось обновить заметки визита в visitStore", err, { module: "visitSurgeryActions" });
 	}
 	onApplyToDiary?.(protocolText);
 	try {
@@ -119,7 +132,8 @@ export function executeApplyToVisitDiary(
 			}),
 		);
 	} catch (err) {
-		console.warn("[visitSurgeryActions] Не удалось отправить событие dente-apply-soap-protocol:", err);
+		hasLocalError = true;
+		clientLogger.warn("Не удалось отправить событие dente-apply-soap-protocol", err, { module: "visitSurgeryActions" });
 	}
 
 	// Клиническая цепочка данных (Мандат 8e / DEFECT 3): единая дедуплицированная регистрация установки имплантата
@@ -137,10 +151,19 @@ export function executeApplyToVisitDiary(
 			visitId: options.visitId,
 			notes: protocolText,
 			idempotencyKey: options.idempotencyKey,
+		}).then((registered) => {
+			if (registered && !hasLocalError) {
+				showToast("Хирургический протокол внесён в медицинскую карту", "success");
+			}
 		});
+		return;
 	}
 
-	showToast("Хирургический протокол внесён в медицинскую карту", "success");
+	if (hasLocalError) {
+		showToast("Протокол частично применён, но возникла ошибка обновления карты", "warning");
+	} else {
+		showToast("Хирургический протокол внесён в медицинскую карту", "success");
+	}
 }
 
 export function executePrintProtocol(params: PrintProtocolParams) {
@@ -253,7 +276,7 @@ export async function executeQuickDeduct(params: ExecuteQuickDeductParams) {
 		showToast(result.messageRu, result.isOverdraft ? "info" : "success");
 		return true;
 	} catch (err) {
-		console.error("Failed to deduct surgery materials:", err);
+		clientLogger.error("Failed to deduct surgery materials", err, { module: "visitSurgeryActions" });
 		showToast("Материалы списаны с мягким овердрафтом", "info");
 		return true;
 	}

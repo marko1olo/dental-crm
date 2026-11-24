@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import {
 	BANK_INSTALLMENT_PROVIDERS,
@@ -101,7 +103,10 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 		try {
 			const res = await fetch("/api/v1/communications/send-sms", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					phone: cleanPhone,
 					message: linkData.formattedSmsText,

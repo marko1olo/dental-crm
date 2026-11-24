@@ -1,4 +1,5 @@
-import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import type { ClinicalVisitCompletionResult, ClinicalEstimateItem } from "../clinicalVisitWorkflow";
@@ -40,6 +41,7 @@ export async function createVisitInvoiceInApi(
 	}
 
 	try {
+		const mutationId = generateUuidV7();
 		const invoicePayload = {
 			visitId: isUuid(effectiveVisitId) ? effectiveVisitId : undefined,
 			patientId: effectivePatientId,
@@ -63,16 +65,15 @@ export async function createVisitInvoiceInApi(
 				totalRub: it.totalRub,
 			})),
 			notes: notes || `Счёт по завершённому приёму ${effectiveVisitId}`,
-			clientMutationId: `invoice-${effectiveVisitId}-${Date.now()}`,
+			clientMutationId: mutationId,
 		};
 
 		const response = await fetchWithHandling("/api/invoices", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				"Idempotency-Key": `invoice-create-${effectiveVisitId}`,
-				...getDenteAuthHeaders(),
-			},
+				"Idempotency-Key": mutationId,
+			}),
 			body: JSON.stringify(invoicePayload),
 		});
 

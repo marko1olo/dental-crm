@@ -6,6 +6,7 @@
  */
 
 import { create } from "zustand";
+import { logger } from "../utils/logger";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson, readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { type ContextTelemetryData, PRODUCTION_TELEMETRY, SHOWCASE_TELEMETRY } from "../components/copilot/telemetry/telemetryTypes";
@@ -256,7 +257,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				safeLocalStorageSetJson("dente_copilot_memory", remoteFacts);
 			}
 		} catch (err) {
-			console.info("[copilotStore] Offline fallback for memory facts:", err);
+			logger.info("[copilotStore] Offline fallback for memory facts:", err);
 		}
 		await get().loadRemoteSettings();
 		try {
@@ -279,7 +280,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				return { threads: merged, activeThreadId: activeId };
 			});
 		} catch (err) {
-			console.info("[copilotStore] Offline fallback for remote sessions:", err);
+			logger.info("[copilotStore] Offline fallback for remote sessions:", err);
 		}
 	},
 
@@ -290,7 +291,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
 				set((state) => { const merged = { ...state.settings, ...remoteSettings }; safeLocalStorageSetJson("dente_copilot_settings", merged); return { settings: merged }; });
 			}
-		} catch (err) { console.info("[copilotStore] Offline fallback for remote settings:", err); }
+		} catch (err) { logger.info("[copilotStore] Offline fallback for remote settings:", err); }
 	},
 
 	loadThreadMessages: async (threadId: string): Promise<CopilotMessage[]> => {
@@ -318,7 +319,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				return parsed;
 			}
 		} catch (err) {
-			console.info("[copilotStore] Offline fallback for thread messages:", err);
+			logger.info("[copilotStore] Offline fallback for thread messages:", err);
 		}
 		return cached || [];
 	},

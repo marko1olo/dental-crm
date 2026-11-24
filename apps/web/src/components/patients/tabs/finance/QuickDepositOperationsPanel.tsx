@@ -25,6 +25,7 @@ export const QuickDepositOperationsPanel: React.FC<QuickDepositOperationsPanelPr
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (disabled || isSubmitting) return;
 		const parsed = Number.parseInt(customAmountStr.replace(/\s+/g, ""), 10);
 		if (!parsed || parsed <= 0) {
 			showToast("Введите корректную сумму в рублях", "warning");
@@ -32,6 +33,15 @@ export const QuickDepositOperationsPanel: React.FC<QuickDepositOperationsPanelPr
 		}
 		onExecute(parsed, activeMode, targetWallet, paymentMethod);
 		setCustomAmountStr("");
+	};
+
+	const handlePresetExecute = (amt: number) => {
+		if (disabled || isSubmitting) return;
+		if (amt <= 0) {
+			showToast("На балансе нет доступного аванса", "warning");
+			return;
+		}
+		onExecute(amt, activeMode, targetWallet, paymentMethod);
 	};
 
 	return (
@@ -84,17 +94,17 @@ export const QuickDepositOperationsPanel: React.FC<QuickDepositOperationsPanelPr
 				<span className="text-xs font-medium text-[var(--muted)]">{activeMode === "topup" ? "Быстрый выбор суммы пополнения:" : "Быстрый выбор суммы списания:"}</span>
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 					{activeMode === "topup" ? PRESET_TOPUP_AMOUNTS.map((amt) => (
-						<button key={amt} type="button" data-testid={`btn-quick-deposit-${amt}`} disabled={disabled || isSubmitting} onClick={() => onExecute(amt, activeMode, targetWallet, paymentMethod)} className="min-h-[48px] h-12 px-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-98 text-emerald-800 dark:text-emerald-200 text-sm font-black inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+						<button key={amt} type="button" data-testid={`btn-quick-deposit-${amt}`} aria-busy={isSubmitting} onClick={() => handlePresetExecute(amt)} className="min-h-[48px] h-12 px-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-98 text-emerald-800 dark:text-emerald-200 text-sm font-black inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
 							<Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>{amt.toLocaleString("ru-RU")} ₽</span>
 						</button>
 					)) : (
 						<>
 							{PRESET_CHARGE_AMOUNTS.map((amt) => (
-								<button key={amt} type="button" data-testid={`btn-quick-charge-${amt}`} disabled={disabled || isSubmitting} onClick={() => onExecute(amt, activeMode, targetWallet, paymentMethod)} className="min-h-[48px] h-12 px-3 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 active:scale-98 text-rose-800 dark:text-rose-200 text-sm font-black inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+								<button key={amt} type="button" data-testid={`btn-quick-charge-${amt}`} aria-busy={isSubmitting} onClick={() => handlePresetExecute(amt)} className="min-h-[48px] h-12 px-3 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 active:scale-98 text-rose-800 dark:text-rose-200 text-sm font-black inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs">
 									<ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" /><span>-{amt.toLocaleString("ru-RU")} ₽</span>
 								</button>
 							))}
-							<button type="button" data-testid="btn-quick-charge-all" disabled={disabled || isSubmitting || personalBalance <= 0} onClick={() => onExecute(personalBalance, activeMode, targetWallet, paymentMethod)} className="min-h-[48px] h-12 px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 active:scale-98 text-rose-900 dark:text-rose-100 text-xs font-black inline-flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs">
+							<button type="button" data-testid="btn-quick-charge-all" aria-busy={isSubmitting} onClick={() => handlePresetExecute(personalBalance)} className="min-h-[48px] h-12 px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 active:scale-98 text-rose-900 dark:text-rose-100 text-xs font-black inline-flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs">
 								<span>Весь аванс ({personalBalance.toLocaleString("ru-RU")} ₽)</span>
 							</button>
 						</>
@@ -106,7 +116,7 @@ export const QuickDepositOperationsPanel: React.FC<QuickDepositOperationsPanelPr
 				<div className="relative flex-1 min-w-[200px]">
 					<input id={customInputId} type="text" inputMode="numeric" data-testid="input-custom-deposit-amount" value={customAmountStr} onChange={(e) => setCustomAmountStr(e.target.value)} placeholder="Произвольная сумма (например, 7 500)" className="w-full min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-bold placeholder:text-[var(--muted)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)] transition-all font-mono" />
 				</div>
-				<button type="submit" data-testid="btn-submit-custom-deposit" disabled={disabled || isSubmitting || !customAmountStr.trim()} className={`min-h-[44px] h-11 px-5 rounded-xl text-xs font-black inline-flex items-center justify-center gap-2 text-white transition-all cursor-pointer shadow-xs whitespace-nowrap ${activeMode === "topup" ? "bg-emerald-600 hover:bg-emerald-700 active:scale-98" : "bg-rose-600 hover:bg-rose-700 active:scale-98"}`}>
+				<button type="submit" data-testid="btn-submit-custom-deposit" aria-busy={isSubmitting} className={`min-h-[44px] h-11 px-5 rounded-xl text-xs font-black inline-flex items-center justify-center gap-2 text-white transition-all cursor-pointer shadow-xs whitespace-nowrap ${activeMode === "topup" ? "bg-emerald-600 hover:bg-emerald-700 active:scale-98" : "bg-rose-600 hover:bg-rose-700 active:scale-98"}`}>
 					<CheckCircle2 className="w-4 h-4 shrink-0" /><span>{activeMode === "topup" ? "Внести на счёт" : "Списать со счёта"}</span>
 				</button>
 			</form>

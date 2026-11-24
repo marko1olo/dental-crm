@@ -2,6 +2,7 @@ import type { Appointment } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 interface ExtendedAppointment extends Appointment {
 	priceRub?: number | string | null;

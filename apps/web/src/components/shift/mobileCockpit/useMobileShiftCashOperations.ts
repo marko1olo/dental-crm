@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 
 export interface UseMobileShiftCashOperationsParams {
@@ -23,6 +23,7 @@ export function useMobileShiftCashOperations({
 	const [isSubmittingCashOut, setIsSubmittingCashOut] = useState(false);
 
 	const handleConfirmCashIn = async () => {
+		if (isSubmittingCashIn) return;
 		if (cashInAmount <= 0) {
 			showToast("Укажите корректную сумму внесения", "warning");
 			return;
@@ -31,15 +32,14 @@ export function useMobileShiftCashOperations({
 		try {
 			const res = await fetch("/api/cash/cash-introduction", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					amountRub: cashInAmount,
 					reasonText: cashInReason,
-					operationType: "income",
-					basis: "change_float",
+					typeAlias: "change_float",
 				}),
 			});
 			if (!res.ok) {
@@ -48,15 +48,16 @@ export function useMobileShiftCashOperations({
 			}
 			showToast(`Внесено в кассу: ${cashInAmount} ₽ (${cashInReason})`, "success");
 			setIsCashInSheetOpen(false);
-		} catch {
-			showToast("Сумма зафиксирована локально", "info");
-			setIsCashInSheetOpen(false);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось провести внесение наличных";
+			showToast(msg, "error");
 		} finally {
 			setIsSubmittingCashIn(false);
 		}
 	};
 
 	const handleConfirmCashOutAndZReport = async () => {
+		if (isSubmittingCashOut) return;
 		setIsSubmittingCashOut(true);
 		try {
 			const withdrawAmount =
@@ -67,31 +68,33 @@ export function useMobileShiftCashOperations({
 						: 0;
 
 			if (withdrawAmount > 0) {
-				await fetch("/api/cash/cash-withdrawal", {
+				const withdrawRes = await fetch("/api/cash/cash-withdrawal", {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						amountRub: withdrawAmount,
 						reasonText: "Инкассация выручки за смену в главную кассу",
-						operationType: "expense",
-						basis: "encashment",
+						typeAlias: "encashment",
 					}),
 				});
+				if (!withdrawRes.ok) {
+					const err = await withdrawRes.json().catch(() => null);
+					throw new Error(err?.message || `Ошибка инкассации (${withdrawRes.status})`);
+				}
 			}
 
 			const resClose = await fetch("/api/cashbox/shift/close", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					shiftNumber,
-					closeReason: "regular_shift_close",
-					encashedRub: withdrawAmount,
+					force: true,
 				}),
 			});
 			if (!resClose.ok) {
@@ -101,9 +104,9 @@ export function useMobileShiftCashOperations({
 
 			showToast(`Фискальный Z-отчёт смены снят. Инкассировано: ${withdrawAmount} ₽`, "success");
 			setIsCashOutSheetOpen(false);
-		} catch {
-			showToast("Z-отчёт и инкассация зафиксированы локально", "info");
-			setIsCashOutSheetOpen(false);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось закрыть смену и снять Z-отчёт";
+			showToast(msg, "error");
 		} finally {
 			setIsSubmittingCashOut(false);
 		}

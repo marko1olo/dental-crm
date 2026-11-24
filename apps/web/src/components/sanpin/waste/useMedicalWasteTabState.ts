@@ -1,6 +1,7 @@
 import type { MedicalWasteLog } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { WasteSummaryStats } from "./MedicalWasteKpiGrid";
 import { executeQuickShiftWaste } from "./wasteQuickShiftAction";
 
@@ -29,7 +30,7 @@ export function useMedicalWasteTabState() {
 				setLogs(data);
 			}
 		} catch (err) {
-			console.error("Failed to load waste logs", err);
+			clientLogger.error("Failed to load waste logs", err);
 		} finally {
 			setLoading(false);
 		}

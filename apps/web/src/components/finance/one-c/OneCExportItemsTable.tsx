@@ -15,7 +15,7 @@ export const OneCExportItemsTable: React.FC<OneCExportItemsTableProps> = ({
 		<div className="rounded-2xl border border-[var(--border,#cbd5e1)] overflow-hidden bg-[var(--paper,#ffffff)] shadow-2xs">
 			<div className="overflow-x-auto touch-pan-x min-w-0 [WebkitOverflowScrolling:touch]">
 				<table className="w-full text-xs text-left min-w-[560px]">
-					<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] font-bold uppercase text-[10px] tracking-wider">
+					<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] font-bold text-xs">
 						<tr>
 							<th className="py-2.5 px-3 w-10 text-center">№</th>
 							<th className="py-2.5 px-3 min-w-[180px]">Код услуги / Наименование</th>

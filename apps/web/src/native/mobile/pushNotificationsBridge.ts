@@ -13,6 +13,7 @@ import type {
 import { isNativePlatform, getMobileNativeApi } from "./platform";
 import { triggerHaptic, playClinicalAudioFeedback } from "./hapticsAndAudio";
 import { saveSecureToken } from "./offlineStorageBridge";
+import { logger } from "../../utils/logger";
 
 /**
  * Requests push notification permissions in browser / mobile environment.
@@ -32,7 +33,7 @@ export async function requestPushNotificationPermission(): Promise<{
 					status: granted ? "granted" : result.receive === "prompt" ? "default" : "denied",
 				};
 			} catch (err) {
-				console.warn("[Push] Capacitor push permission request error:", err);
+				logger.warn("[Push] Capacitor push permission request error:", err);
 			}
 		}
 	}
@@ -50,7 +51,7 @@ export async function requestPushNotificationPermission(): Promise<{
 		const permission = await Notification.requestPermission();
 		return { granted: permission === "granted", status: permission };
 	} catch (err: unknown) {
-		console.warn("[mobileBridge] Notification.requestPermission failed:", err);
+		logger.warn("[mobileBridge] Notification.requestPermission failed:", err);
 		return { granted: false, status: "denied" };
 	}
 }

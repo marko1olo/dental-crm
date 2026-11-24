@@ -649,7 +649,6 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							})),
 							isOverdraftActive: Boolean(inventoryOverdraftActive),
 							notes: scenarioConfig.defaultRecommendationsRu,
-							idempotencyKey: idempKey,
 						}),
 					});
 					if (!protoRes.ok) {
@@ -658,7 +657,10 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					} else {
 						await fetch("/api/surgery/materials/quick-deduct", {
 							method: "POST",
-							headers,
+							headers: getDenteAuthHeaders({
+								"Content-Type": "application/json",
+								"X-Idempotency-Key": crypto.randomUUID(),
+							}),
 							body: JSON.stringify({
 								bundleType: activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery",
 								toothNumberFdi: toothFdi,

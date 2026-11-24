@@ -7,6 +7,7 @@
  */
 
 import { formatRuDateShort } from "../../../../utils/dateUtils";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { A4DocumentMedicalCardData } from "@dental/shared";
 import type {
 	FastPrintPatientContext,
@@ -77,7 +78,7 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle = "Печ�
 			iframe.contentWindow?.focus();
 			iframe.contentWindow?.print();
 		} catch (e) {
-			console.error("[fastPrint] Error invoking print dialog:", e);
+			clientLogger.error("Error invoking print dialog", e, { module: "fastPrintDiaryBuilder" });
 		} finally {
 			setTimeout(() => {
 				if (document.body.contains(iframe)) {

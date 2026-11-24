@@ -4,6 +4,7 @@
  * Dedicated sub-module for service catalog CRUD operations within legacy appLogic bag.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { responseErrorMessage } from "../../../../AppHelpers";
 
 export interface ServiceCatalogCompatibilityHelpers {
@@ -20,9 +21,10 @@ export function buildServiceCatalogCompatibility(
 	const createServiceCatalogItem = async (data: unknown) => {
 		try {
 			const settingsAccess = auth.settingsAccessHeaders;
-			const headers = typeof settingsAccess === "function"
+			const baseHeaders = typeof settingsAccess === "function"
 				? (settingsAccess as (h: Record<string, string>) => Record<string, string>)({ "Content-Type": "application/json" })
 				: { "Content-Type": "application/json" };
+			const headers = { ...baseHeaders, "Idempotency-Key": generateUuidV7() };
 			const response = await fetch("/api/settings/catalog", {
 				method: "POST",
 				headers,
@@ -51,9 +53,10 @@ export function buildServiceCatalogCompatibility(
 	const updateServiceCatalogItem = async (serviceId: string, updates: unknown) => {
 		try {
 			const settingsAccess = auth.settingsAccessHeaders;
-			const headers = typeof settingsAccess === "function"
+			const baseHeaders = typeof settingsAccess === "function"
 				? (settingsAccess as (h: Record<string, string>) => Record<string, string>)({ "Content-Type": "application/json" })
 				: { "Content-Type": "application/json" };
+			const headers = { ...baseHeaders, "Idempotency-Key": generateUuidV7() };
 			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
 				method: "PUT",
 				headers,
@@ -82,9 +85,10 @@ export function buildServiceCatalogCompatibility(
 	const deleteServiceCatalogItem = async (serviceId: string) => {
 		try {
 			const settingsAccess = auth.settingsAccessHeaders;
-			const headers = typeof settingsAccess === "function"
+			const baseHeaders = typeof settingsAccess === "function"
 				? (settingsAccess as () => Record<string, string>)()
 				: {};
+			const headers = { ...baseHeaders, "Idempotency-Key": generateUuidV7() };
 			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
 				method: "DELETE",
 				headers,

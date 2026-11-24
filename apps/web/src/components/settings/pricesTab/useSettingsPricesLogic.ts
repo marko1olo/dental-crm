@@ -1,4 +1,5 @@
 import {
+	generateUuidV7,
 	kopecksToRubles,
 	type DentalSpecialty,
 	type PricelistCollisionStrategy,
@@ -191,6 +192,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		try {
 			const effectiveHeaders = {
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...staffMutationHeaders((accessHeaders as SettingsAccessHeaders | undefined) ?? (mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
 			};
 			const statutoryCode = editServiceForm.standardCode || editServiceForm.catalogCode || editServiceForm.order804nCode || editServiceForm.code || null;
@@ -207,8 +209,6 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				active: editServiceForm.active !== false,
 				materialsCostRub: Number(editServiceForm.materialsCostRub) || 0,
 				order804nCode: statutoryCode,
-				catalogCode: statutoryCode,
-				standardCode: statutoryCode,
 			};
 
 			if (!editServiceId) {
@@ -262,6 +262,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			} else {
 				const effectiveHeaders = {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					...staffMutationHeaders((accessHeaders as SettingsAccessHeaders | undefined) ?? (mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
 				};
 				const res = await fetch(`/api/settings/catalog/${id}`, { method: "DELETE", headers: effectiveHeaders });
@@ -323,7 +324,10 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			let seededCount = 0;
 			let apiSucceeded = false;
 			try {
-				const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined));
+				const headers = {
+					"Idempotency-Key": generateUuidV7(),
+					...staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
+				};
 				let response = await fetch("/api/pricelist/seed-standard-catalog", {
 					method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ replace }),
 				});
@@ -367,7 +371,10 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setIsScanningPricelist(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
+			const headers = {
+				"Idempotency-Key": generateUuidV7(),
+				...staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders),
+			};
 			const payload = {
 				commit: false, collisionStrategy: scannerCollisionStrategy, filename: opts.filename || "pricelist.csv",
 				...(opts.fileBase64 ? { fileBase64: opts.fileBase64 } : {}),
@@ -415,12 +422,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setIsCommittingImport(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
+			const headers = {
+				"Idempotency-Key": generateUuidV7(),
+				...staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders),
+			};
 			const payload = {
 				commit: true, collisionStrategy: scannerCollisionStrategy,
 				approvedItems: approvedItems.map((it) => ({
 					cleanedTitle: it.cleanedTitle, code: it.code804n ? undefined : it.cleanedTitle,
-					code804n: it.code804n, standardCode: it.code804n, catalogCode: it.code804n,
+					code804n: it.code804n,
 					category: it.category, specialty: it.specialty, priceRub: it.priceRub,
 					durationMinutes: 30, suggestedAction: it.suggestedAction,
 					matchedExistingServiceId: it.matchedExistingServiceId, isApproved: true,
@@ -458,7 +468,10 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setIsCommittingImport(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
+			const headers = {
+				"Idempotency-Key": generateUuidV7(),
+				...staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders),
+			};
 			const payload = {
 				commit: true, collisionStrategy: scannerCollisionStrategy, filename: opts.filename || "pricelist.csv",
 				...(opts.fileBase64 ? { fileBase64: opts.fileBase64 } : {}),

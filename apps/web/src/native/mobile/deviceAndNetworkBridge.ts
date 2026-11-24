@@ -7,6 +7,7 @@
 
 import type { DeviceFormFactor } from "./types";
 import { getMobileNativeApi } from "./platform";
+import { logger } from "../../utils/logger";
 
 // Re-export core platform classifications
 export {
@@ -79,7 +80,7 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 			const res = await nativeApi.acquireWakeLock();
 			return res.success;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] native acquireWakeLock failed:", err);
+			logger.warn("[mobileBridge] native acquireWakeLock failed:", err);
 		}
 	}
 
@@ -95,7 +96,7 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 			}
 			return true;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] navigator wakeLock.request failed:", err);
+			logger.warn("[mobileBridge] navigator wakeLock.request failed:", err);
 			return false;
 		}
 	}

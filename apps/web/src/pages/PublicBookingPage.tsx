@@ -17,6 +17,7 @@ import { PublicBookingWidget } from "../components/booking/PublicBookingWidget";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patientCabinetPresets";
 import type { PatientPersonalCabinetData } from "../components/portal/patientCabinet/patientCabinetEngine";
+import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { AuthArtBackground } from "../components/auth/AuthArtBackground";
 import "./PublicBookingWidget.css";
@@ -128,7 +129,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 			if (tg.initData && effectiveOrgId) {
 				void fetch("/api/portal/auth/telegram-webapp", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
 					body: JSON.stringify({ initData: tg.initData, organizationId: effectiveOrgId }),
 				})
 					.then((res) => (res.ok ? res.json() : null))
@@ -142,7 +146,9 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 							setIsCabinetModalOpen(true);
 						}
 					})
-					.catch(() => {});
+					.catch((err) => {
+						console.warn("[PublicBookingPage] Telegram WebApp auth check failed:", err);
+					});
 			}
 		}
 	}, [effectiveOrgId]);
@@ -159,7 +165,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 		try {
 			const res = await fetch("/api/portal/auth/send-otp", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				},
 				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: effectiveOrgId || "default" }),
 			});
 			if (res.ok || res.status === 202) {
@@ -186,7 +195,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 		try {
 			const res = await fetch("/api/portal/auth/verify-otp", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				},
 				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: effectiveOrgId || "default" }),
 			});
 			if (res.ok) {

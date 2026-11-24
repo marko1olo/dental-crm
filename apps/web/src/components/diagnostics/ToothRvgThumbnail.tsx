@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Scan } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
 import { ToothRvgViewport } from "./rvg/ToothRvgViewport";
 import { ToothRvgControls } from "./rvg/ToothRvgControls";
@@ -63,7 +64,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 				await navigator.clipboard.writeText(text);
 				showToast("Заключение скопировано в буфер", "success");
 			} catch (err) {
-				console.warn("[ToothRvgThumbnail] Clipboard write error:", err);
+				clientLogger.warn("Clipboard write error", err, { module: "ToothRvgThumbnail" });
 				showToast("Не удалось скопировать", "error");
 			}
 		}

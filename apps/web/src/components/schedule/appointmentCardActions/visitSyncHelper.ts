@@ -1,5 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { playIntercomChime } from "../../../lib/intercomSound";
 import { useAppStore } from "../../../store/appStore";
@@ -34,7 +35,7 @@ export async function openVisitWithBackendSync(
 				}
 			}
 		} catch (err) {
-			console.warn("[openVisitWithBackendSync] network fallback:", err);
+			clientLogger.warn("network fallback", err, { module: "openVisitWithBackendSync" });
 		}
 	}
 	if (typeof window !== "undefined") {

@@ -5,6 +5,7 @@ import {
   isCitoAppointment,
 } from "../../../../utils/scheduleCollisionUtils";
 import { showToast, showRollbackToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { useScheduleDensity } from "../../useScheduleState";
 import { dragGhostManager } from "../DecoupledDragGhost";
@@ -229,7 +230,7 @@ export function useAppointmentTrackController(
             }),
             body: JSON.stringify({ status: "fulfilled" }),
           }).catch((err) => {
-            console.warn("Failed to fulfill waitlist item:", err);
+            clientLogger.warn("Failed to fulfill waitlist item", err, { module: "useAppointmentTrackController" });
           });
         }
 

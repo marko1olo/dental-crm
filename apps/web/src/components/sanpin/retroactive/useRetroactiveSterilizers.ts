@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { loadSavedClinicAutoclaves } from "../sanpinCatalogData";
 
 export function useRetroactiveSterilizers() {
@@ -34,7 +35,7 @@ export function useRetroactiveSterilizers() {
 				}
 			}
 		} catch (err) {
-			console.error("Failed to load sterilizers for batch tab", err);
+			clientLogger.error("Failed to load sterilizers for batch tab", err);
 		}
 
 		const localDevs = loadSavedClinicAutoclaves();

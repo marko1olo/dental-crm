@@ -8,6 +8,7 @@
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface SaveOrthoProtocolOptions {
 	readonly protocol: OrthoProtocolState;
@@ -55,7 +56,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 		try {
 			await onSaveProtocol(updatedProtocol, soapSummary);
 		} catch (err) {
-			console.warn("[saveOrthodonticProtocolToApi] onSaveProtocol error:", err);
+			clientLogger.warn("onSaveProtocol error", err, { module: "orthodonticsStudioPersistence" });
 		}
 	}
 

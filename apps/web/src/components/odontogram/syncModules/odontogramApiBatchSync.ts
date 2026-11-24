@@ -6,8 +6,12 @@
  * with graceful offline fallback and status notifications.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { ToothData, ToothState } from "../ToothChart";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { logger } from "../../../utils/logger";
 import {
@@ -96,15 +100,16 @@ export async function sendToothStatesBatch(
 			);
 			return false;
 		} catch (e) {
-			// fallback
+			logger.warn("[odontogramApiBatchSync] Offline enqueue status failed:", e);
 		}
 	}
 
 	try {
 		const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -196,8 +201,9 @@ export async function flushPendingOdontogramMutations(
 			try {
 				const res = await fetch(`/api/patients/${payload.patientId}/tooth-states/batch`, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						patientId: payload.patientId,
@@ -296,16 +302,17 @@ export async function sendToothResorptionBatch(
 				6000,
 			);
 			return false;
-		} catch {
-			// fallback
+		} catch (e) {
+			logger.warn("[odontogramApiBatchSync] Offline enqueue resorption failed:", e);
 		}
 	}
 
 	try {
 		const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -361,7 +368,7 @@ export async function fetchToothStatesFromServer(
 
 	try {
 		const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 			...(signal ? { signal } : {}),
 		});
 

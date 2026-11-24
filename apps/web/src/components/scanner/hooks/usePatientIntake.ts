@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { ExtractedOmsData, ExtractedPassportData, ExtractedSnilsData } from "../documentScannerEngine";
 import { DEMO_COCKPIT_PATIENTS, type NewPatientIntakeDraft, type ScannerAttachmentSummary, type ScannerPatientSummary } from "../scannerTypes";
@@ -33,12 +33,14 @@ export function usePatientIntake(
 		if (!patientId) return;
 		setIsLoadingAttachments(true);
 		try {
-			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/attachments`, { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/attachments`, { headers: denteClinicalReadHeaders() });
 			if (res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data)) setRecentAttachments(data.slice(0, 5));
 			}
-		} catch {} finally { setIsLoadingAttachments(false); }
+		} catch (err) {
+			console.warn("[usePatientIntake] Не удалось загрузить вложения пациента:", err);
+		} finally { setIsLoadingAttachments(false); }
 	}, []);
 	useEffect(() => {
 		const query = searchQuery.trim();
@@ -47,7 +49,7 @@ export function usePatientIntake(
 		setIsSearching(true);
 		const timer = setTimeout(async () => {
 			try {
-				const res = await fetch(`/api/patients?search=${encodeURIComponent(query)}&limit=10`, { headers: denteAdminSecretRequestHeaders() });
+				const res = await fetch(`/api/patients?search=${encodeURIComponent(query)}&limit=10`, { headers: denteClinicalReadHeaders() });
 				if (res.ok && !isCancelled) {
 					const data = await res.json();
 					if (Array.isArray(data)) {
@@ -97,7 +99,11 @@ export function usePatientIntake(
 		setIsUploading(true);
 		try {
 			const createRes = await fetch("/api/patients", {
-				method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" },
+				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				}),
 				body: JSON.stringify({ fullName, phone: newPatientForm.phone.trim() || undefined, birthDate: newPatientForm.birthDate.trim() || undefined }),
 			});
 			const createdData = createRes.ok ? await createRes.json() : null;

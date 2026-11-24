@@ -1,3 +1,5 @@
+import { clientLogger } from "../../../services/logging/clientLogger";
+
 export interface BookingReceiptData {
 	bookingId: string;
 	referenceNumber: string;

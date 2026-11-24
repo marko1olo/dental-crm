@@ -165,7 +165,9 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 								setInvoices(profileData.invoices);
 							}
 						})
-						.catch(() => {});
+						.catch((err) => {
+							console.warn("[useTelegramPortalCabinet] Ошибка загрузки профиля портала:", err);
+						});
 				}
 				if (Array.isArray(data.invoices) && data.invoices.length > 0) {
 					setInvoices(data.invoices);
@@ -295,13 +297,18 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 			if (effectiveOrgId) {
 				await fetch("/api/telegram/webapp/family/confirm", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": crypto.randomUUID(),
+					},
 					body: JSON.stringify({
 						organizationId: effectiveOrgId,
 						parentPatientId: propPatientId || id,
 						appointmentId: id,
 					}),
-				}).catch(() => {});
+				}).catch((err) => {
+					console.warn("[useTelegramPortalCabinet] Ошибка подтверждения визита в Telegram:", err);
+				});
 			}
 		} catch {
 			// Оптимистичное обновление UI уже произошло

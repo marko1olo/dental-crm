@@ -23,6 +23,7 @@ import {
 	type TracedCanalPath,
 	type FrangiParameters,
 } from "@dental/shared";
+import { logger } from "../utils/logger";
 import type {
 	EndoCanalWorkerComputePayload,
 	EndoCanalWorkerOutboundMessage,

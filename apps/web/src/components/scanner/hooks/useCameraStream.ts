@@ -30,19 +30,29 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 					setSelectedCameraId(videoInputs[0].deviceId);
 				}
 			}
-		} catch {}
+		} catch (err) {
+			console.warn("[useCameraStream] Failed to enumerate cameras:", err);
+		}
 	}, [selectedCameraId]);
 
 	const stopCamera = useCallback((videoElement?: HTMLVideoElement | null) => {
 		if (cameraStreamRef.current) {
 			for (const track of cameraStreamRef.current.getTracks()) {
-				try { track.stop(); } catch {}
+				try {
+					track.stop();
+				} catch (err) {
+					console.warn("[useCameraStream] Track stop warning:", err);
+				}
 			}
 			cameraStreamRef.current = null;
 		}
 		if (cameraStream) {
 			for (const track of cameraStream.getTracks()) {
-				try { track.stop(); } catch {}
+				try {
+					track.stop();
+				} catch (err) {
+					console.warn("[useCameraStream] Active track stop warning:", err);
+				}
 			}
 			setCameraStream(null);
 		}
@@ -52,7 +62,9 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 				if (srcObj && "getTracks" in (srcObj as MediaStream)) {
 					for (const track of (srcObj as MediaStream).getTracks()) { track.stop(); }
 				}
-			} catch {}
+			} catch (err) {
+				console.warn("[useCameraStream] Video element track teardown warning:", err);
+			}
 			videoElement.srcObject = null;
 		}
 	}, [cameraStream]);
@@ -62,7 +74,13 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 		try {
 			if (!navigator?.mediaDevices?.getUserMedia) throw new Error("Камера не поддерживается в этом браузере.");
 			if (cameraStreamRef.current) {
-				for (const track of cameraStreamRef.current.getTracks()) { try { track.stop(); } catch {} }
+				for (const track of cameraStreamRef.current.getTracks()) {
+					try {
+						track.stop();
+					} catch (err) {
+						console.warn("[useCameraStream] Previous stream stop warning:", err);
+					}
+				}
 				cameraStreamRef.current = null;
 			}
 			const videoConstraints: MediaTrackConstraints = selectedCameraId
@@ -71,12 +89,23 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 
 			const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
 			if (!isMountedRef.current || !isOpenRef.current || !isCapturingRef.current) {
-				for (const track of stream.getTracks()) { try { track.stop(); } catch {} }
+				for (const track of stream.getTracks()) {
+					try {
+						track.stop();
+					} catch (err) {
+						console.warn("[useCameraStream] Unmounted stream stop warning:", err);
+					}
+				}
 				return;
 			}
 			cameraStreamRef.current = stream;
 			setCameraStream(stream);
-			if (videoElement) { videoElement.srcObject = stream; await videoElement.play().catch(() => {}); }
+			if (videoElement) {
+				videoElement.srcObject = stream;
+				await videoElement.play().catch((err) => {
+					console.warn("[useCameraStream] Video autoplay warning:", err);
+				});
+			}
 			void enumerateCameras();
 		} catch (err: unknown) {
 			setCameraError(err instanceof Error ? err.message : "Не удалось подключиться к камере. Используйте загрузку файла.");
@@ -87,7 +116,13 @@ export function useCameraStream(isCapturing = true, isModalOpen = true) {
 		return () => {
 			isMountedRef.current = false;
 			if (cameraStreamRef.current) {
-				for (const track of cameraStreamRef.current.getTracks()) { try { track.stop(); } catch {} }
+				for (const track of cameraStreamRef.current.getTracks()) {
+					try {
+						track.stop();
+					} catch (err) {
+						console.warn("[useCameraStream] Cleanup track stop warning:", err);
+					}
+				}
 				cameraStreamRef.current = null;
 			}
 		};

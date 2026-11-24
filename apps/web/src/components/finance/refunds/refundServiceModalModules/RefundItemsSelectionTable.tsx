@@ -20,7 +20,7 @@ export const RefundItemsSelectionTable: React.FC<RefundItemsSelectionTableProps>
 }) => {
 	return (
 		<div>
-			<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2">
+			<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-2">
 				1. Выберите позицию(и) из счета для возврата:
 			</label>
 			{rawServices.length === 0 ? (

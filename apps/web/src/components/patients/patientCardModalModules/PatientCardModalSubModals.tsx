@@ -60,6 +60,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 		{isDmsLetterModalOpen && (
 			<React.Suspense fallback={null}>
 				<DmsStudioModal
+					key={patientData.id || "card-dms"}
 					isOpen={isDmsLetterModalOpen}
 					onClose={() => setIsDmsLetterModalOpen(false)}
 					initialTab="policies"
@@ -75,6 +76,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 		)}
 		{isTaxDeductionModalOpen && (
 			<TaxDeductionCertificateModal
+				key={patientData.id || "card-tax-deduction"}
 				isOpen={isTaxDeductionModalOpen}
 				onClose={() => setIsTaxDeductionModalOpen(false)}
 				initialTab={initialTaxTab}

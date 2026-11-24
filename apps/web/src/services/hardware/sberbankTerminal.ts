@@ -32,7 +32,9 @@ import {
 	kopecksToSberAmount,
 	SBER_POS_ERROR_CODES,
 	formatKopecksToRub,
+	generateUuidV7,
 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { hardwarePrinter } from "./HardwarePrinter.js";
 import { showToast } from "../../components/GlobalToast.js";
 import { logger } from "../../utils/logger.js";
@@ -245,7 +247,10 @@ export class SberbankTerminalService {
 		try {
 			const res = await fetch("/api/payments/sberbank/pos/reconcile-rrn", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ rrn, orderId, terminalId: this.config.terminalId }),
 			});
 
@@ -423,9 +428,13 @@ export class SberbankTerminalService {
 		invoiceId?: string | undefined;
 		paymentMethodType: "pos_card" | "sberpay_qr";
 	}): Promise<void> {
+		const mutationId = generateUuidV7();
 		const res = await fetch("/api/payments/sberbank/pos/initiate", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": mutationId,
+			}),
 			body: JSON.stringify({
 				patientId: payload.patientId,
 				amountKopecks: payload.amountKopecks,
@@ -434,7 +443,7 @@ export class SberbankTerminalService {
 				visitId: payload.visitId || null,
 				documentId: payload.documentId || null,
 				invoiceId: payload.invoiceId || null,
-				clientMutationId: payload.orderId,
+				clientMutationId: mutationId,
 			}),
 		});
 
@@ -486,7 +495,10 @@ export class SberbankTerminalService {
 			try {
 				const proxyRes = await fetch("/api/payments/sberbank/pos/transaction", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						terminalId: this.config.terminalId,
 						operation: req.operation,

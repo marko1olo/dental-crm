@@ -20,6 +20,7 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
+import { logger } from "../utils/logger";
 
 export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => void): AppSessionAuthState {
 	const isDemo = isDemoUrlActive();

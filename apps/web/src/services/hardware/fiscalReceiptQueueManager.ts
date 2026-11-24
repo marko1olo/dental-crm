@@ -22,6 +22,7 @@ import type {
 	QueuedFiscalReceiptItem,
 } from "./hardwareTypes.js";
 import { KktLanPrinterService } from "./kktLanPrinter.js";
+import { logger } from "../../utils/logger.js";
 
 type QueueEventListener = (items: QueuedFiscalReceiptItem[]) => void;
 type ReceiptPrintedListener = (receipt: QueuedFiscalReceiptItem, result: FiscalReceiptPrintResult) => void;
@@ -54,7 +55,7 @@ export class FiscalReceiptQueueManager {
 				}
 			}
 		} catch (err) {
-			console.warn("[FiscalReceiptQueueManager] Storage load error:", err);
+			logger.warn("[FiscalReceiptQueueManager] Storage load error:", err);
 		}
 	}
 
@@ -68,7 +69,7 @@ export class FiscalReceiptQueueManager {
 				.slice(-200);
 			safeLocalStorageSetItem(this.STORAGE_KEY, JSON.stringify(itemsToSave), true);
 		} catch (err) {
-			console.warn("[FiscalReceiptQueueManager] Storage save error:", err);
+			logger.warn("[FiscalReceiptQueueManager] Storage save error:", err);
 		}
 	}
 
@@ -99,7 +100,7 @@ export class FiscalReceiptQueueManager {
 			try {
 				listener(items);
 			} catch (err) {
-				console.error("[FiscalReceiptQueueManager] Listener error:", err);
+				logger.error("[FiscalReceiptQueueManager] Listener error:", err);
 			}
 		}
 	}
@@ -209,7 +210,7 @@ export class FiscalReceiptQueueManager {
 				if (failedItems.length > 0) {
 					this.inMemoryQueue.delete(failedItems[0]!.id);
 				} else {
-					console.warn("[FiscalReceiptQueueManager] Queue capacity reached max limit, forcing oldest unprinted item eviction to prevent OOM.");
+					logger.warn("[FiscalReceiptQueueManager] Queue capacity reached max limit, forcing oldest unprinted item eviction to prevent OOM.");
 					const oldest = this.getAllQueuedItems().reverse()[0];
 					if (oldest) this.inMemoryQueue.delete(oldest.id);
 				}
@@ -324,7 +325,7 @@ export class FiscalReceiptQueueManager {
 				try {
 					listener(updatedItem, printResult);
 				} catch (err) {
-					console.error("[FiscalReceiptQueueManager] OnPrinted listener error:", err);
+					logger.error("[FiscalReceiptQueueManager] OnPrinted listener error:", err);
 				}
 			}
 
@@ -413,7 +414,7 @@ export class FiscalReceiptQueueManager {
 			this.visibilityListener = () => {
 				if (!document.hidden && this.getPendingItems().length > 0) {
 					void this.flushAllPending().catch((err) => {
-						console.error("[FiscalReceiptQueueManager] Visibility resume flush error:", err);
+						logger.error("[FiscalReceiptQueueManager] Visibility resume flush error:", err);
 					});
 				}
 			};
@@ -427,7 +428,7 @@ export class FiscalReceiptQueueManager {
 				try {
 					await this.flushAllPending();
 				} catch (err) {
-					console.error("[FiscalReceiptQueueManager] Auto-retry loop error:", err);
+					logger.error("[FiscalReceiptQueueManager] Auto-retry loop error:", err);
 				}
 			}
 		}, intervalMs);

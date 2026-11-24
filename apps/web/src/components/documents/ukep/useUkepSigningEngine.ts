@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
@@ -99,7 +99,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 		try {
 			const queryParam = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
 			const res = await fetch(`/api/documents${queryParam}`, {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (!res.ok) return;
 			const data = await res.json();
@@ -171,10 +171,10 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 			const certIssuer = selectedCert.issuerName || "Удостоверяющий центр";
 			const res = await fetch(`/api/documents/${encodeURIComponent(selectedDoc.id)}/sign-ukep`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
+					"Idempotency-Key": crypto.randomUUID(),
+				}),
 				body: JSON.stringify({
 					pkcs7Signature: signature,
 					certificateSerialNumber: certSerial,
@@ -228,10 +228,10 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 
 			const res = await fetch(`/api/documents/${encodeURIComponent(selectedDoc.id)}/signature`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
+					"Idempotency-Key": crypto.randomUUID(),
+				}),
 				body: JSON.stringify({
 					signatureSvg,
 					mode: "simple_electronic_signature",

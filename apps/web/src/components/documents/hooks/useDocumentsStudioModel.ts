@@ -7,7 +7,7 @@
 
 import { useMemo } from "react";
 import type { Patient } from "@dental/shared";
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { resolveTaxDeductionCategory, type TaxDeductionPaymentItem } from "../taxCertificateEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
@@ -180,7 +180,7 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 					const amtKopecks =
 						typeof p["amountKopecks"] === "number"
 							? (p["amountKopecks"] as number)
-							: Math.round(Number(p["amountRub"] || p["amount"] || 0) * 100);
+							: rublesToKopecks(Number(p["amountRub"] || p["amount"] || 0) || 0);
 					const code804n = typeof p["code804n"] === "string" ? (p["code804n"] as string) : undefined;
 					const srvName = typeof p["serviceName"] === "string" ? (p["serviceName"] as string) : typeof p["description"] === "string" ? (p["description"] as string) : undefined;
 					const rcptNo = typeof p["receiptNumber"] === "string" ? (p["receiptNumber"] as string) : undefined;
@@ -216,7 +216,7 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 				const amtKop =
 					typeof p["amountKopecks"] === "number"
 						? (p["amountKopecks"] as number)
-						: Math.round(Number(p["amountRub"] || p["amount"] || 0) * 100);
+						: rublesToKopecks(Number(p["amountRub"] || p["amount"] || 0) || 0);
 				const code804n = typeof p["code804n"] === "string" ? (p["code804n"] as string) : undefined;
 				const serviceName = typeof p["serviceName"] === "string" ? (p["serviceName"] as string) : typeof p["description"] === "string" ? (p["description"] as string) : "Оплата медицинских услуг";
 				const rawTaxCode = typeof p["taxCode"] === "string" ? (p["taxCode"] as string) : resolveTaxDeductionCategory(code804n || "", serviceName);
@@ -249,7 +249,7 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 		let c1 = 0;
 		let c2 = 0;
 		for (const p of taxReceiptItems) {
-			const amt = p.amountKopecks || Math.round(p.amountRub * 100);
+			const amt = p.amountKopecks || rublesToKopecks(p.amountRub);
 			if (p.taxCode === "2") {
 				c2 += amt;
 			} else {

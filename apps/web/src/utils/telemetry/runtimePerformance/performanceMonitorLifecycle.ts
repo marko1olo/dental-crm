@@ -2,6 +2,8 @@
  * DENTE CRM — Performance Monitor Lifecycle & Event Observers
  */
 
+import { logger } from "../../logger.js";
+
 export interface LifecycleContext {
 	onVisibilityChange: (visible: boolean) => void;
 	onLongTask: (durationMs: number, startTime: number) => void;

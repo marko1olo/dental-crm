@@ -7,6 +7,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	CLEANING_PROTOCOLS,
 	HOME_CARE_PLANS,
@@ -62,7 +63,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					setDynamicPreviousOhiS(json.latest);
 				}
 			} catch (err) {
-				console.warn("[HygieneStudio] Failed to load latest hygiene indices:", err);
+				clientLogger.warn("Failed to load latest hygiene indices", err, { module: "HygieneStudioModal" });
 			}
 		}
 		void loadLatest();

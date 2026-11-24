@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { getDemoMessages } from "./staffMessengerDemoData";
 
 export function useStaffMessages(channels: StaffChatChannel[], activeChannelId: string | null) {
@@ -30,7 +31,7 @@ export function useStaffMessages(channels: StaffChatChannel[], activeChannelId: 
 				setMessages(getDemoMessages(channelId, activeCh?.slug || undefined));
 			}
 		} catch (e) {
-			console.error("Ошибка загрузки сообщений:", e);
+			clientLogger.error("Ошибка загрузки сообщений:", e);
 			if (isDemoShowcaseMode()) {
 				const activeCh = channels.find((c) => c.id === channelId);
 				setMessages(getDemoMessages(channelId, activeCh?.slug || undefined));
@@ -59,7 +60,7 @@ export function useStaffMessages(channels: StaffChatChannel[], activeChannelId: 
 				showToast("Не удалось отправить сообщение", "warning");
 			}
 		} catch (e) {
-			console.error("Ошибка отправки сообщения:", e);
+			clientLogger.error("Ошибка отправки сообщения:", e);
 			showToast("Сетевая ошибка при отправке", "error");
 		} finally {
 			setIsSending(false);

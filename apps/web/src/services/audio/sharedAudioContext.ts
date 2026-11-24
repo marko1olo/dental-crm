@@ -5,6 +5,8 @@
  * Исключает утечки дескрипторов аудио-устройств ОС и конфликты параллельных контекстов на iOS Safari.
  */
 
+import { logger } from "../../utils/logger.js";
+
 interface WindowWithWebkitAudio {
 	webkitAudioContext?: typeof AudioContext;
 }
@@ -28,7 +30,7 @@ export function getSharedAudioContext(): AudioContext | null {
 			try {
 				sharedContext = new AudioCtxClass();
 			} catch (err) {
-				console.warn("[SharedAudioContext] Failed to initialize AudioContext:", err);
+				logger.warn("[SharedAudioContext] Failed to initialize AudioContext:", err);
 			}
 		}
 	}
@@ -50,10 +52,12 @@ export function resetSharedAudioContext(): void {
 	if (sharedContext) {
 		try {
 			if (typeof sharedContext.close === "function") {
-				sharedContext.close().catch(() => {});
+				sharedContext.close().catch((err: unknown) => {
+					logger.debug("[SharedAudioContext] AudioContext close rejected:", err);
+				});
 			}
-		} catch {
-			// Non-blocking
+		} catch (err: unknown) {
+			logger.debug("[SharedAudioContext] AudioContext close failed:", err);
 		}
 		sharedContext = null;
 	}

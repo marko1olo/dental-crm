@@ -46,7 +46,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 				patientFullName: rawPayload?.patientFullName || "Пациент",
 				patientBirthDate: rawPayload?.patientBirthDate || "1990-01-01",
 				patientSex: rawPayload?.patientSex || "male",
-				medicalCardNumber: rawPayload?.medicalCardNumber || "043/у",
+				medicalCardNumber: rawPayload?.medicalCardNumber || "Медкарта",
 				reportingYear: year,
 				exposureEntries: newRecords,
 				annualSummary: {

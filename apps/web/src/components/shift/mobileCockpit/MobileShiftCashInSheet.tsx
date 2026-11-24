@@ -96,7 +96,7 @@ export const MobileShiftCashInSheet: React.FC<MobileShiftCashInSheetProps> = ({
 						type="button"
 						className="mobile-shift-btn-primary-cta"
 						onClick={handleConfirmCashIn}
-						disabled={isSubmittingCashIn}
+						aria-busy={isSubmittingCashIn}
 						data-testid="btn-confirm-cash-in"
 					>
 						<Check size={18} />

@@ -14,6 +14,7 @@ import { showToast } from "../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
   extractTeethList,
   resolveAppointmentLabStatus,
@@ -162,7 +163,7 @@ export function AppointmentModalLabSection({
     );
   };
 
-  const handleConfirmFitting = (item: NormalizedLabItem) => {
+  const handleConfirmFitting = async (item: NormalizedLabItem) => {
     if (typeof window !== "undefined") {
       const detail = {
         orderId: item.id,
@@ -175,17 +176,26 @@ export function AppointmentModalLabSection({
       window.dispatchEvent(new CustomEvent("dente-lab-order-fitting-confirmed", { detail }));
     }
     if (item.id && !item.id.startsWith("appt-lab-")) {
-      fetch(`/api/lab/orders/${item.id}/status`, {
-        method: "PATCH",
-        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          status: "fitted",
-          stage: "fitting_scheduled",
-          notes: "Примерка успешно подтверждена у кресла",
-        }),
-      }).catch((err) => {
-        console.warn("Failed to confirm fitting on server:", err);
-      });
+      try {
+        const res = await fetch(`/api/lab/orders/${item.id}/status`, {
+          method: "PATCH",
+          headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            status: "fitted",
+            stage: "fitting_scheduled",
+            notes: "Примерка успешно подтверждена у кресла",
+          }),
+        });
+        if (!res.ok) {
+          clientLogger.warn("Failed to confirm fitting on server", { status: res.status, orderId: item.id }, { module: "AppointmentModalLabSection" });
+          showToast(`Не удалось подтвердить примерку наряда ${item.orderNumber} на сервере`, "warning", 4000);
+          return;
+        }
+      } catch (err) {
+        clientLogger.warn("Failed to confirm fitting on server", err, { module: "AppointmentModalLabSection" });
+        showToast(`Сетевая ошибка при подтверждении примерки наряда ${item.orderNumber}`, "warning", 4000);
+        return;
+      }
     }
     showToast(`Примерка наряда ${item.orderNumber} успешно подтверждена!`, "success", 3000);
   };

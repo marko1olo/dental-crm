@@ -90,6 +90,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSubmitting) return;
 		setErrorMessage(null);
 
 		const amountNum = parseFloat(amountRubStr.replace(/\s+/g, "").replace(",", "."));
@@ -145,7 +146,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 						type="button"
 						className="quick-expense-close-btn"
 						onClick={onClose}
-						disabled={isSubmitting}
+						aria-busy={isSubmitting}
 						title="Закрыть (Esc)"
 						aria-label="Закрыть"
 					>
@@ -305,14 +306,14 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 							type="button"
 							className="quick-expense-cancel-btn"
 							onClick={onClose}
-							disabled={isSubmitting}
+							aria-busy={isSubmitting}
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							className="quick-expense-submit-btn"
-							disabled={isSubmitting}
+							aria-busy={isSubmitting}
 						>
 							<CheckCircle size={14} />
 							{isSubmitting ? "Сохранение..." : "Провести расход"}

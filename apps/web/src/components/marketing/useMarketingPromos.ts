@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { DEFAULT_MARKETING_PROMOS } from "./marketingPresets";
 import type { MarketingPromo } from "./marketingTypes";
 

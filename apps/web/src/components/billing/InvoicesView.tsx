@@ -17,7 +17,7 @@ import { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices } from "./
 import { DEFAULT_DOM_CHUNK_STEP, DEFAULT_DOM_PAGE_SIZE } from "../../utils/domVirtualizationHelper.js";
 import { useInvoicesData } from "./useInvoicesData.js";
 import { useInvoicesViewLogic, InvoicesToolbar, InvoicesList, InvoicesEmptyState } from "./invoices/index.js";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 
 export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
@@ -30,7 +30,7 @@ export const INVOICE_STATUS_CLASSES = {
 
 /**
  * Wave 61 (Feature 250) Server Sync Contracts & Invariant Manifest:
- * - denteAdminSecretRequestHeaders()
+ * - denteClinicalMutationHeaders()
  * - GET /api/invoices
  * - saveStoredInvoices(updated)
  * - /api/invoices/generate-from-plan
@@ -71,11 +71,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		try {
 			const res = await fetch("/api/invoices", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...denteAdminSecretRequestHeaders(),
-				},
+				}),
 				body: JSON.stringify({
 					patientId,
 					totalAmountRub: finalAmount,

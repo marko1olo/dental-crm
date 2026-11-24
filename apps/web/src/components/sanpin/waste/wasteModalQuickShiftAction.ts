@@ -1,4 +1,7 @@
+import { generateUuidV7 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import {
 	generateWasteBarcode,
@@ -77,17 +80,25 @@ export async function executeModalQuickShiftWaste(
 	};
 
 	try {
-		await fetch("/api/registers/medical-waste/quick-shift-bundle", {
+		const res = await fetch("/api/registers/medical-waste/quick-shift-bundle", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 			},
 			body: JSON.stringify({ departmentName }),
 		});
+		if (!res.ok) {
+			throw new Error(`HTTP ${res.status}`);
+		}
 	} catch (err) {
-		console.warn("API quick-shift-bundle fallback to local journal state", err);
+		clientLogger.warn("API quick-shift-bundle failed:", err);
+		if (!isDemoShowcaseMode()) {
+			showToast("Не удалось зафиксировать отходы смены на сервере", "error");
+			return [];
+		}
 	}
 
 	showToast(

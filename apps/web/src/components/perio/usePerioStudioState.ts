@@ -18,6 +18,7 @@ import {
 	generateComprehensivePerioProtocolText, generateFullMouthProbingSequence, generateUuidV7,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { useVisitStore } from "../../store/visitStore";
 import { useDraftStore } from "../../store/patientStore";
 import { denteQueryClient } from "../../lib/queryClient";
@@ -204,7 +205,7 @@ export function usePerioStudioState({
 				}
 			}
 		} catch (err) {
-			console.warn("[PerioStudio] Failed to read from local draft/cache:", err);
+			clientLogger.warn("Failed to read from local draft/cache", err, { module: "usePerioStudioState" });
 		}
 
 		async function fetchPerio() {

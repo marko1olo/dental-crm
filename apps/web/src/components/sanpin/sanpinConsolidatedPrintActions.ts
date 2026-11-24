@@ -3,6 +3,7 @@ import {
 	generateSanpinConsolidatedInspectionHtml,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	fetchLiveConsolidatedSanpinData,
 	type FetchSanpinContext,
@@ -44,7 +45,7 @@ export async function printConsolidatedBinderAction(ctx: FetchSanpinContext): Pr
 			}
 		}
 	} catch (err) {
-		console.error("Failed to print consolidated binder", err);
+		clientLogger.error("Failed to print consolidated binder", err);
 		showToast("Ошибка при формировании сводного сшива", "error");
 	}
 }
@@ -66,7 +67,7 @@ export async function exportConsolidatedCsvAction(ctx: FetchSanpinContext): Prom
 		URL.revokeObjectURL(url);
 		showToast("Сводный архив журналов (CSV) успешно экспортирован", "success");
 	} catch (err) {
-		console.error("Failed to export consolidated CSV", err);
+		clientLogger.error("Failed to export consolidated CSV", err);
 		showToast("Ошибка при экспорте сводного архива журналов", "error");
 	}
 }

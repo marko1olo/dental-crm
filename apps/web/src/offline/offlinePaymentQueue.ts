@@ -11,7 +11,7 @@
  * Provides resilient, optimistic queueing of cash, card, and mixed payments when network is down.
  */
 
-import { kopecksToRub } from "@dental/shared";
+import { generateUuidV7, kopecksToRub } from "@dental/shared";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -109,13 +109,14 @@ export function generateOfflinePaymentId(): string {
 /**
  * Generates composite idempotency key for exact payment deduplication.
  */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function generatePaymentIdempotencyKey(
-	patientId: string,
-	totalKopecks: number,
-	timestamp = Date.now(),
+	_patientId: string,
+	_totalKopecks: number,
+	_timestamp = Date.now(),
 ): string {
-	const rand = getCryptoRandomString(5);
-	return `idem_${patientId}_${totalKopecks}_${timestamp}_${rand}`;
+	return generateUuidV7();
 }
 
 /**
@@ -271,7 +272,7 @@ export function getCachedDailyPayments(dateStr?: string): OfflinePaymentItem[] {
 			}
 		}
 	} catch (e) {
-		// Ignore
+		logger.warn("[OfflinePaymentQueue] Failed to read cached daily payments:", e);
 	}
 
 	return [];
@@ -318,6 +319,9 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 	isPaymentFlushing = true;
 	try {
 		return await syncOfflinePaymentQueue(async (payment) => {
+		const validIdempotencyKey = UUID_PATTERN.test(payment.idempotencyKey)
+			? payment.idempotencyKey
+			: generateUuidV7();
 		const payload: Record<string, unknown> = {
 			patientId: payment.patientId && payment.patientId !== "pat-walkin" ? payment.patientId : undefined,
 			visitId: payment.visitId,
@@ -328,7 +332,7 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 			isWarranty: payment.paymentType === "cash" && payment.totalKopecks === 0,
 			cashierFullName: payment.cashierName || "Кассир",
 			clientType: "physical_person",
-			clientMutationId: payment.idempotencyKey || payment.id,
+			clientMutationId: validIdempotencyKey,
 			note: "Синхронизация из офлайн-очереди кассы DENTE",
 		};
 
@@ -357,6 +361,7 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 			method: "POST",
 			headers: getDenteAuthHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": validIdempotencyKey,
 			}),
 			body: JSON.stringify(payload),
 		});

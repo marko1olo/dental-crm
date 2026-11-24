@@ -88,6 +88,7 @@ function StandaloneDmsHost({ onClose }: { onClose: () => void }) {
 	return (
 		<Suspense fallback={<AppLoadingState message="Загрузка гарантийного письма ДМС..." />}>
 			<DmsStudioModal
+				key={patient?.id || patientId || "standalone-dms"}
 				isOpen={true}
 				onClose={onClose}
 				patient={patient ?? undefined}

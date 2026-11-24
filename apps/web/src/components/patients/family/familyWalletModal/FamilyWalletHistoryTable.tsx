@@ -35,7 +35,7 @@ export const FamilyWalletHistoryTable: React.FC<FamilyWalletHistoryTableProps> =
 		return (
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
+					<span className="text-xs font-bold text-[var(--ink)]">
 						История операций семьи ({transactions.length})
 					</span>
 					<span className="text-[11px] text-[var(--muted)]">

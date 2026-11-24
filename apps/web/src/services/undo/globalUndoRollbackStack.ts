@@ -15,6 +15,7 @@
 
 import { generateUuidV7 } from "@dental/shared";
 import { showRollbackToast } from "../../components/GlobalToast.js";
+import { logger } from "../../utils/logger.js";
 
 export type UndoEntityType =
 	| "visit_service"

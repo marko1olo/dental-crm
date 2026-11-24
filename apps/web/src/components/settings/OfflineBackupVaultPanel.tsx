@@ -18,6 +18,8 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import { OfflineSyncGuardModal } from "../sync/OfflineSyncGuardModal";
 import {
 	type ExportBackupResult,
@@ -148,7 +150,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				}));
 			}
 		} catch (err) {
-			console.error("Integrity check failed:", err);
+			clientLogger.error("Integrity check failed:", err);
+			showToast(
+				err instanceof Error ? err.message : "Не удалось проверить целостность локального буфера",
+				"error",
+			);
 		} finally {
 			setIsCheckingIntegrity(false);
 		}

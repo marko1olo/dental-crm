@@ -28,7 +28,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-amount-input"
-					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
 				>
 					Сумма операции (₽):
 				</label>
@@ -75,7 +75,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-basis-input"
-					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
 				>
 					Основание операции / Назначение платежа:
 				</label>
@@ -93,7 +93,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-person-input"
-					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
 				>
 					{isCashIn
 						? "ФИО плательщика / сотрудника (опционально):"

@@ -16,6 +16,8 @@ import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
 import {
 	CANONICAL_ENDO_PROTOCOLS, CANONICAL_IRRIGATION_SOLUTIONS, NITI_SYSTEM_OPTIONS,
@@ -158,7 +160,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				}
 			})
 			.catch((err) => {
-				console.error("[EndoStudioModal] Ошибка загрузки эндодонтических данных:", err);
+				clientLogger.error("Ошибка загрузки эндодонтических данных", err, { module: "EndodonticStudioModal" });
 			})
 			.finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
 		return () => { cancelled = true; };
@@ -385,7 +387,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				};
 			});
 		} catch (err) {
-			console.warn("[EndoStudioModal] Не удалось обновить дневник визита:", err);
+			clientLogger.warn("Не удалось обновить дневник визита", err, { module: "EndodonticStudioModal" });
 		}
 
 		try {
@@ -424,7 +426,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				}
 			}
 		} catch (err) {
-			console.warn("[EndoStudioModal] Ошибка применения услуг эндодонтии к визиту/счету:", err);
+			clientLogger.warn("Ошибка применения услуг эндодонтии к визиту/счету", err, { module: "EndodonticStudioModal" });
 		}
 
 		// Сквозная связка протокола каналов со списанием расходных материалов на складе по мягкому овердрафту (Soft Negative Stock, Мандат 8aa)
@@ -458,7 +460,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				}));
 			}
 		} catch (err) {
-			console.warn("[EndoStudioModal] Ошибка отправки складского события списания:", err);
+			clientLogger.warn("Ошибка отправки складского события списания", err, { module: "EndodonticStudioModal" });
 		}
 
 		const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
@@ -490,21 +492,25 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			})
 				.then(async (res) => {
 					if (!res.ok) {
-						console.warn("[EndoStudioModal] Фоновое списание материалов завершилось со статусом:", res.status);
+						clientLogger.warn("Фоновое списание материалов завершилось с ошибкой", { status: res.status }, { module: "EndodonticStudioModal" });
 					}
 				})
 				.catch((err) => {
-					console.error("[EndoStudioModal] Ошибка фонового списания материалов:", err);
+					clientLogger.error("Ошибка фонового списания материалов", err, { module: "EndodonticStudioModal" });
 					showToast("Склад: задержка фонового списания материалов (Soft Overdraft сохранён)", "warning", 3000);
 				});
 		}
 
+		let apiSaveFailed = false;
 		if (props.onSaveCanals) {
 			try {
 				await props.onSaveCanals(sanitized, clinicalData);
 			} catch (err) {
-				console.error("[EndoStudioModal] onSaveCanals handler failed:", err);
-				showToast("Предупреждение: локальный обработчик сохранения завершился с ошибкой", "warning", 3000);
+				clientLogger.error("onSaveCanals handler failed", err, { module: "EndodonticStudioModal" });
+				if (!isDemoShowcaseMode()) {
+					apiSaveFailed = true;
+					showToast("Не удалось сохранить протокол каналов на сервере — проверьте соединение", "warning", 4000);
+				}
 			}
 		} else if (props.patientId && origin) {
 			try {
@@ -528,10 +534,18 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					}),
 				});
 				if (!res.ok) {
-					console.warn("[EndoStudioModal] Fallback сохранение каналов завершилось со статусом:", res.status);
+					clientLogger.warn("Fallback сохранение каналов завершилось с ошибкой", { status: res.status, activeTooth }, { module: "EndodonticStudioModal" });
+					if (!isDemoShowcaseMode()) {
+						apiSaveFailed = true;
+						showToast(`Не удалось сохранить протокол каналов на сервере (${res.status})`, "warning", 4000);
+					}
 				}
 			} catch (err) {
-				console.error("[EndoStudioModal] Ошибка fallback сохранения каналов в API:", err);
+				clientLogger.error("Ошибка fallback сохранения каналов в API", err, { module: "EndodonticStudioModal" });
+				if (!isDemoShowcaseMode()) {
+					apiSaveFailed = true;
+					showToast("Ошибка соединения при сохранении протокола каналов на сервере", "error", 4000);
+				}
 			}
 		}
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);
@@ -539,7 +553,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 		draftsByTooth.current.clear();
 		setIsSaving(false);
-		showToast(`Протокол каналов зуба #${activeTooth} успешно зафиксирован!`, "success", 2500);
+		if (!apiSaveFailed) {
+			showToast(`Протокол каналов зуба #${activeTooth} успешно зафиксирован!`, "success", 2500);
+		}
 		handleClose();
 	}, [canals, activeTooth, stageStamp, irrigation, rotarySystem, radiologyControl, generatedProtocolText, costEstimate, props, handleClose]);
 

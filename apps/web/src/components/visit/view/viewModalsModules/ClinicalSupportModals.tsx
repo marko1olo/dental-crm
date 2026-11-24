@@ -23,6 +23,7 @@ import { InformedConsentModal } from "../../../documents/DocumentsStudioModal";
 import { PrescriptionModal } from "../../../prescriptions/PrescriptionModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visit";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 import type {
 	VisitModalPatientEntity,
@@ -294,7 +295,7 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 									quantity: 1,
 								});
 							} catch (addErr) {
-								console.warn("Non-blocking: could not add warranty service to visit store", addErr);
+								clientLogger.warn("Non-blocking: could not add warranty service to visit store", addErr, { module: "ClinicalSupportModals" });
 							}
 							showToast(`Гарантийный случай ${order.orderNumber} (0 ₽) добавлен в визит`, "success");
 						}}

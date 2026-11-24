@@ -8,6 +8,7 @@ import {
 } from "../../lib/safeLocalStorage";
 import { clinicalProceduralAudio } from "./clinicalProceduralAudio.js";
 import { getSharedAudioContext, resetSharedAudioContext } from "./sharedAudioContext.js";
+import { logger } from "../../utils/logger.js";
 
 interface WindowWithWebkitAudio {
 	webkitAudioContext?: typeof AudioContext;
@@ -166,7 +167,7 @@ export class SoundFeedbackService {
 			try {
 				navigator.vibrate(pattern);
 			} catch (err: unknown) {
-				console.warn("[SoundFeedbackService] navigator.vibrate failed:", err);
+				logger.warn("[SoundFeedbackService] navigator.vibrate failed:", err);
 			}
 		}
 	}
@@ -187,7 +188,7 @@ export class SoundFeedbackService {
 			try {
 				await ctx.resume();
 			} catch (err) {
-				console.warn("[SoundFeedbackService] AudioContext resume blocked:", err);
+				logger.warn("[SoundFeedbackService] AudioContext resume blocked:", err);
 			}
 		}
 
@@ -205,7 +206,9 @@ export class SoundFeedbackService {
 		this.idleSuspendTimer = setTimeout(() => {
 			const ctx = this.getAudioContext();
 			if (ctx && ctx.state === "running") {
-				ctx.suspend().catch(() => {});
+				ctx.suspend().catch((err: unknown) => {
+					logger.debug("[SoundFeedbackService] AudioContext suspend skipped:", err);
+				});
 			}
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
@@ -247,7 +250,7 @@ export class SoundFeedbackService {
 			osc.start(now);
 			osc.stop(now + duration + 0.01);
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playMicStart error:", err);
+			logger.warn("[SoundFeedbackService] playMicStart error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -286,7 +289,7 @@ export class SoundFeedbackService {
 			osc.start(now);
 			osc.stop(now + duration + 0.01);
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playMicStop error:", err);
+			logger.warn("[SoundFeedbackService] playMicStop error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -324,7 +327,7 @@ export class SoundFeedbackService {
 			osc.start(now);
 			osc.stop(now + duration + 0.005);
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playSpeechCaptured error:", err);
+			logger.warn("[SoundFeedbackService] playSpeechCaptured error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -377,7 +380,7 @@ export class SoundFeedbackService {
 				osc.stop(now + duration + 0.01);
 			}
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playActionSuccess error:", err);
+			logger.warn("[SoundFeedbackService] playActionSuccess error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -432,7 +435,7 @@ export class SoundFeedbackService {
 				osc.stop(now + duration + 0.01);
 			}
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playWarningAlert error:", err);
+			logger.warn("[SoundFeedbackService] playWarningAlert error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -481,7 +484,7 @@ export class SoundFeedbackService {
 			osc2.start(now + 0.2);
 			osc2.stop(now + 0.5);
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playOnlineBookingChime error:", err);
+			logger.warn("[SoundFeedbackService] playOnlineBookingChime error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -530,7 +533,7 @@ export class SoundFeedbackService {
 			osc2.start(now + 0.17);
 			osc2.stop(now + 0.55);
 		} catch (err) {
-			console.warn("[SoundFeedbackService] playSlotEndWarningChime error:", err);
+			logger.warn("[SoundFeedbackService] playSlotEndWarningChime error:", err);
 		} finally {
 			this.scheduleIdleSuspend();
 		}
@@ -584,11 +587,11 @@ export class SoundFeedbackService {
 			try {
 				if (typeof this.customAudioContext.close === "function") {
 					this.customAudioContext.close().catch((err: unknown) => {
-						console.warn("[SoundFeedbackService] AudioContext close async rejection:", err);
+						logger.warn("[SoundFeedbackService] AudioContext close async rejection:", err);
 					});
 				}
 			} catch (err: unknown) {
-				console.warn("[SoundFeedbackService] AudioContext close failed:", err);
+				logger.warn("[SoundFeedbackService] AudioContext close failed:", err);
 			}
 			this.customAudioContext = null;
 		}

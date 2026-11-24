@@ -15,6 +15,7 @@ import {
 import { useVisitStore } from "../../store/visitStore";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices, calculatePsrSextants,
@@ -176,7 +177,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 		});
 		if (!res.ok) {
 			const errMsg = `Сбой списания расходников: сервер вернул код ${res.status}`;
-			console.warn("[PerioCatalog] Фоновое пакетное списание материалов завершилось со статусом:", res.status);
+			clientLogger.warn("Фоновое пакетное списание материалов завершилось с ошибкой", { status: res.status }, { module: "perioCatalogData" });
 			return { success: false, deductedCount: 0, messageRu: errMsg };
 		}
 		const data = (await res.json().catch(() => null)) as { isOverdraft?: boolean } | null;

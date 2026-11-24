@@ -295,7 +295,7 @@ describe("Unified Offline Subsystem Test Suite", () => {
 	});
 
 	describe("4. Offline Payment Queue & Exact Kopeck Math", () => {
-		it("enqueues payment with kopeck-exact math and composite idempotency key", async () => {
+		it("enqueues payment with kopeck-exact math and UUIDv7 idempotency key", async () => {
 			setMockAppRuntimeKind("web_browser");
 
 			const payment = await enqueueOfflinePayment({
@@ -319,7 +319,11 @@ describe("Unified Offline Subsystem Test Suite", () => {
 			expect(payment.totalKopecks).toBe(500000);
 			expect(payment.totalRub).toBe(5000);
 			expect(payment.paymentType).toBe("mixed");
-			expect(payment.idempotencyKey).toContain("pat_fin_001");
+			expect(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+					payment.idempotencyKey,
+				),
+			).toBe(true);
 			expect(payment.status).toBe("queued");
 			// On web runtime, fiscal receipt is buffered offline without error
 			expect(payment.fiscalStatus).toBe("buffered");

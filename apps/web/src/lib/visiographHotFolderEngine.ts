@@ -22,6 +22,7 @@ import {
 } from "../components/radiology/directRvgFileValidation";
 import { VisiographPacsWatcherService } from "../services/hardware/visiographPacsWatcher";
 import { isDemoPatientId } from "./demoMode";
+import { logger } from "../utils/logger";
 import type {
 	VisiographDetectedScan,
 	HotFolderWatcherConfig,

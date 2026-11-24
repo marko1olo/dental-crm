@@ -7,6 +7,7 @@ import { useState, useRef } from "react";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ClinicAutoclaveDeviceLike } from "../autoclaveMonthlyJournalPrint.js";
 import { DEFAULT_CYCLES, type SanPinCycleEntry, type SanPinJournalPeriod } from "./sanpinJournalTypes";
 
@@ -81,7 +82,7 @@ export function useSanPinBatchActions(
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify(body),
 			}).catch((err) => {
-				console.warn("[useSanPinBatchActions] Primary autofill request error:", err);
+				clientLogger.warn("[useSanPinBatchActions] Primary autofill request error:", err);
 				return null;
 			});
 
@@ -91,7 +92,7 @@ export function useSanPinBatchActions(
 					headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 					body: JSON.stringify(body),
 				}).catch((err) => {
-					console.warn("[useSanPinBatchActions] Fallback autofill request error:", err);
+					clientLogger.warn("[useSanPinBatchActions] Fallback autofill request error:", err);
 					showToast("Ошибка сети при заполнении журнала", "error");
 					return null;
 				});
@@ -140,7 +141,7 @@ export function useSanPinBatchActions(
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify(payload),
 			}).catch((err) => {
-				console.warn("[useSanPinBatchActions] Quick batch network error:", err);
+				clientLogger.warn("[useSanPinBatchActions] Quick batch network error:", err);
 				showToast("Ошибка сети при проведении цикла автоклава", "error");
 				return null;
 			});
@@ -169,7 +170,7 @@ export function useSanPinBatchActions(
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
 			}).catch((err) => {
-				console.warn("[useSanPinBatchActions] Quick PSO network error:", err);
+				clientLogger.warn("[useSanPinBatchActions] Quick PSO network error:", err);
 				showToast("Ошибка сети при фиксации контроля очистки", "error");
 				return null;
 			});

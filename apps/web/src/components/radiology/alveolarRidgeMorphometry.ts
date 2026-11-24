@@ -63,8 +63,8 @@ export const EDENTULOUS_REFERENCE_PROFILES: Record<number, AlveolarRidgeMeasurem
 			required: true,
 			technique: "closed_crestal_summers",
 			techniqueRu: "Закрытый трансальвеолярный синус-лифтинг (метод Саммерса)",
-			graftMaterialRu: "Остеопластический ксеноматериал с медленной резорбцией (Bio-Oss / Cerabone, фракция 0.5–1.0 мм, 0.5 см³)",
-			membraneRu: "Коллагеновая резорбируемая мембрана (Bio-Gide 13x25 мм)",
+			graftMaterialRu: "Остеопластический ксеноматериал с медленной резорбцией (фракция 0.5–1.0 мм, 0.5 см³)",
+			membraneRu: "Коллагеновая резорбируемая мембрана (13×25 мм)",
 			clinicalRationaleRu: "Остаточная высота H=5.8 мм достаточна для закрытого поднятия дна пазухи на 3.5–4.0 мм с одновременной установкой имплантата Ø4.0x10.0 мм при достижении торка >= 25 Н·см.",
 		},
 		caliperData: {
@@ -103,7 +103,7 @@ export const EDENTULOUS_REFERENCE_PROFILES: Record<number, AlveolarRidgeMeasurem
 			technique: "open_lateral_window",
 			techniqueRu: "Открытый синус-лифтинг (латеральное окно по Tatum)",
 			graftMaterialRu: "Комбинированный графт: аутокостная стружка 50% + ксеноматериал 50% (1.0 см³)",
-			membraneRu: "Барьерная резорбируемая мембрана Bio-Gide перекрывает латеральное окно",
+			membraneRu: "Барьерная резорбируемая коллагеновая мембрана перекрывает латеральное окно",
 			clinicalRationaleRu: "Критический вертикальный дефицит H=5.2 мм и низкая плотность губчатой кости D4 (210 HU). Рекомендована двухэтапная методика с отсроченной имплантацией через 6 месяцев для обеспечения стабильной остеоинтеграции.",
 		},
 		caliperData: {
@@ -218,8 +218,8 @@ export function measureAlveolarRidgeFromVolume(
 				: isHDeficit
 					? "Закрытый трансальвеолярный синус-лифтинг (метод Саммерса)"
 					: "Без костной пластики",
-			graftMaterialRu: "Остеопластический ксеноматериал (Bio-Oss / Cerabone, 0.5 см³)",
-			membraneRu: "Коллагеновая резорбируемая мембрана Bio-Gide",
+			graftMaterialRu: "Остеопластический ксеноматериал (0.5 см³)",
+			membraneRu: "Коллагеновая резорбируемая мембрана",
 			clinicalRationaleRu: isSevereDeficit
 				? `Критический дефицит высоты H=${effectiveH.toFixed(1)} мм требует двухэтапного латерального синус-лифтинга.`
 				: isHDeficit

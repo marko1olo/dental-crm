@@ -39,6 +39,7 @@ import {
 } from "./usbDeviceScanner.js";
 import { scanLocalNetworkDevices } from "./networkDeviceScanner.js";
 import { verifyKraftPackageBarcode } from "./sanpinPackageVerifier.js";
+import { logger } from "../../../utils/logger.js";
 import {
 	classifyCameraErrorCode,
 	classifyCameraErrorMessage,
@@ -175,14 +176,14 @@ export class HardwareScanner {
 							supportedFormats = supportedFormats.filter((f) => available.includes(f));
 						}
 					} catch (formatErr: unknown) {
-						console.warn("[HardwareScanner] BarcodeDetector.getSupportedFormats failed:", formatErr);
+						logger.warn("[HardwareScanner] BarcodeDetector.getSupportedFormats failed:", formatErr);
 					}
 				}
 				this.barcodeDetectorInstance = new window.BarcodeDetector({
 					formats: supportedFormats.length > 0 ? supportedFormats : ["qr_code", "data_matrix", "code_128"],
 				});
 			} catch (err) {
-				console.warn("[HardwareScanner] BarcodeDetector init fallback:", err);
+				logger.warn("[HardwareScanner] BarcodeDetector init fallback:", err);
 			}
 		}
 	}
@@ -356,7 +357,7 @@ export class HardwareScanner {
 					try {
 						track.stop();
 					} catch (trackErr: unknown) {
-						console.warn("[HardwareScanner] track.stop error:", trackErr);
+						logger.warn("[HardwareScanner] track.stop error:", trackErr);
 					}
 				}
 			}
@@ -675,7 +676,7 @@ export class HardwareScanner {
 			try {
 				sub(result);
 			} catch (e) {
-				console.error("[HardwareScanner] Subscriber error:", e);
+				logger.error("[HardwareScanner] Subscriber error:", e);
 			}
 		}
 	}
@@ -685,7 +686,7 @@ export class HardwareScanner {
 			try {
 				sub(error, code);
 			} catch (e) {
-				console.error("[HardwareScanner] Error subscriber error:", e);
+				logger.error("[HardwareScanner] Error subscriber error:", e);
 			}
 		}
 	}
@@ -751,7 +752,7 @@ export class HardwareScanner {
 			try {
 				cleanup();
 			} catch (err) {
-				console.warn("[HardwareScanner] Disposal error:", err);
+				logger.warn("[HardwareScanner] Disposal error:", err);
 			}
 		}
 		this.cleanupCallbacks = [];

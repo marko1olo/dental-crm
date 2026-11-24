@@ -1,5 +1,6 @@
 import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { useVisitStore } from "../../../store/visitStore.js";
 import type { ApplyOrthopedicProtocolParams, OrthopedicServiceItem, Order804nServiceItem } from "./orthopedicProtocolTypes.js";
 import { formatOrthopedicProtocolStatement } from "./orthopedicProtocolFormatter.js";
@@ -9,8 +10,8 @@ function dispatchOrthopedicEvents(
 	protocol: ApplyOrthopedicProtocolParams["protocol"],
 	teethNumbers: number[],
 	options: ApplyOrthopedicProtocolParams["options"],
-) {
-	if (typeof window === "undefined") return;
+): boolean {
+	if (typeof window === "undefined") return true;
 	try {
 		const protocolServices = protocol.clinicalServices ?? protocol.services ?? protocol.order804nServices;
 		window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
@@ -62,8 +63,10 @@ function dispatchOrthopedicEvents(
 				warrantyPassport: options?.warrantyPassport,
 			},
 		}));
+		return true;
 	} catch (err) {
-		console.warn("Failed to dispatch orthopedic DOM events", err);
+		clientLogger.warn("Failed to dispatch orthopedic DOM events", err, { module: "orthopedicProtocolApplier" });
+		return false;
 	}
 }
 
@@ -78,7 +81,7 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 	const rawTeeth = options?.teethFdi && options.teethFdi.length > 0 ? [...options.teethFdi] : options?.toothFdi ? [options.toothFdi] : [];
 	const teethNumbers = rawTeeth.map((t) => Number(String(t).replace(/\D/g, ""))).filter((n) => Number.isInteger(n) && n >= 11 && n <= 85);
 
-	dispatchOrthopedicEvents(formatted, protocol, teethNumbers, options);
+	let hasPartialError = !dispatchOrthopedicEvents(formatted, protocol, teethNumbers, options);
 
 	const protocolServices = protocol.clinicalServices ?? protocol.services ?? protocol.order804nServices;
 
@@ -86,7 +89,8 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 		try {
 			params.onAddToInvoice(protocolServices);
 		} catch (err) {
-			console.warn("Failed to add orthopedic services to invoice", err);
+			hasPartialError = true;
+			clientLogger.warn("Failed to add orthopedic services to invoice", err, { module: "orthopedicProtocolApplier" });
 		}
 	}
 
@@ -98,12 +102,13 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 			diagnosis: prev.diagnosis || protocol.defaultIcd10Label,
 		}));
 	} catch (err) {
-		console.warn("Failed to update visit store with orthopedic protocol", err);
+		hasPartialError = true;
+		clientLogger.warn("Failed to update visit store with orthopedic protocol", err, { module: "orthopedicProtocolApplier" });
 	}
 
 	if (params.copyToClipboard !== false && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 		navigator.clipboard.writeText(`ЖАЛОБЫ:\n${formatted.anamnesis}\n\nОБЪЕКТИВНО:\n${formatted.objective}\n\nЛЕЧЕНИЕ:\n${formatted.treatment}\n\nРЕКОМЕНДАЦИИ:\n${formatted.recommendations}`).catch((err) => {
-			console.warn("Failed to copy orthopedic protocol to clipboard", err);
+			clientLogger.warn("Failed to copy orthopedic protocol to clipboard", err, { module: "orthopedicProtocolApplier" });
 		});
 	}
 
@@ -113,12 +118,16 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 				detail: { protocolId: protocol.id, bundleType: protocol.warehouseBundleType, toothNumber: teethNumbers[0], teethNumbers, consumables: protocol.consumables },
 			}));
 		} catch (err) {
-			console.warn("Failed to dispatch inventory writeoff event", err);
+			clientLogger.warn("Failed to dispatch inventory writeoff event", err, { module: "orthopedicProtocolApplier" });
 		}
 	}
 
 	if (params.showNotification !== false) {
-		showToast(`Протокол «${protocol.shortLabel}» внесен в дневник приёма, смету и Этап 3 (Ортопедия)`, "success", 3500);
+		if (hasPartialError) {
+			showToast(`Протокол «${protocol.shortLabel}» применён частично: не все разделы карты или сметы обновились`, "warning", 4000);
+		} else {
+			showToast(`Протокол «${protocol.shortLabel}» внесен в дневник приёма, смету и Этап 3 (Ортопедия)`, "success", 3500);
+		}
 	}
 	params.onSuccess?.(formatted.summaryLine);
 

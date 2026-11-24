@@ -19,7 +19,7 @@ export const RefundPaymentMethodSelector: React.FC<RefundPaymentMethodSelectorPr
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<div>
-				<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
+				<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1.5">
 					2. Причина возврата:
 				</label>
 				<select
@@ -36,7 +36,7 @@ export const RefundPaymentMethodSelector: React.FC<RefundPaymentMethodSelectorPr
 			</div>
 
 			<div>
-				<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
+				<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1.5">
 					3. Способ возврата средств:
 				</label>
 				<div className="grid grid-cols-3 gap-1.5">

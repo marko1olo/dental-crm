@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
@@ -103,7 +104,7 @@ export function useOdontogramHydration({
 			fetch(`/api/patients/${patientId}/tooth-states`, { headers: getDenteAuthHeaders(), signal: controller.signal })
 				.then(async (res) => {
 					if (!res.ok) {
-						console.error("[useOdontogramHydration] Failed to fetch tooth states, status:", res.status);
+						clientLogger.error("Failed to fetch tooth states", { status: res.status }, { module: "useOdontogramHydration" });
 						showToast("Не удалось загрузить зубную формулу пациента", "error");
 						return;
 					}
@@ -118,7 +119,7 @@ export function useOdontogramHydration({
 				})
 				.catch((err) => {
 					if (err?.name !== "AbortError") {
-						console.error("[useOdontogramHydration] Error fetching tooth states:", err);
+						clientLogger.error("Error fetching tooth states", err, { module: "useOdontogramHydration" });
 						showToast("Не удалось загрузить зубную формулу пациента", "error");
 					}
 				})

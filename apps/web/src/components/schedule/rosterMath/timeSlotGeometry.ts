@@ -8,6 +8,7 @@
  */
 
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { safeLocalStorageGetJson } from "../../../lib/safeLocalStorage";
 import {
 	addDaysToDateIso,

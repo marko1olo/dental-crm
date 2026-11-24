@@ -1,3 +1,5 @@
+import { clientLogger } from "../../../services/logging/clientLogger";
+
 export function dispatchAddServicesToInvoice(payload: unknown): void {
 	try {
 		if (typeof window !== "undefined") {
@@ -8,7 +10,7 @@ export function dispatchAddServicesToInvoice(payload: unknown): void {
 			);
 		}
 	} catch (err) {
-		console.warn("dente-add-services-to-invoice dispatch error:", err);
+		clientLogger.warn("dente-add-services-to-invoice dispatch error", err, { module: "completedServicesEngine" });
 	}
 }
 

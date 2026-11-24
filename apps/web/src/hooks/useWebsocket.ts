@@ -4,6 +4,7 @@ import {
 	DENTE_STAFF_TOKEN_KEY,
 	safeLocalStorageGetItem,
 } from "../lib/safeLocalStorage";
+import { logger } from "../utils/logger";
 
 type WebSocketMessage = {
 	type: string;

@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import { generateUuidV7, getAppointmentDoctorId, type Dashboard } from "@dental/shared";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../lib/denteRequestHeaders";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../lib/safeLocalStorage";
 import { staffTelemetryService } from "./../services/logging/staffTelemetryService";
+import { logger } from "../utils/logger";
 import {
 	type ShiftCloseSummary,
 	type ShiftFinancialMode,
@@ -9,7 +14,6 @@ import {
 	type ShiftViewStats,
 	getDashboardRuntimeMeta,
 } from "./shiftViewTypes";
-import { getAppointmentDoctorId } from "@dental/shared";
 import { useShiftFinancialModeState } from "./useShiftFinancialModeState";
 
 export const DEFAULT_MAX_SHIFT_DURATION_HOURS = 12;
@@ -50,7 +54,13 @@ export function useShiftViewController({
 	}, [dashboard, inChairAppointment, staffById]);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
-		try { const s = safeLocalStorageGetItem("dente_doctor_shift_active"); return s !== null ? s === "true" : true; } catch { return true; }
+		try {
+			const s = safeLocalStorageGetItem("dente_doctor_shift_active");
+			return s !== null ? s === "true" : true;
+		} catch (err) {
+			logger.warn("[useShiftViewController] Failed to read shift state:", err);
+			return true;
+		}
 	});
 
 	const handleAutoCloseShift = async (reason = "auto_close_timeout") => {
@@ -59,7 +69,9 @@ export function useShiftViewController({
 		try {
 			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
 			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
-		} catch {}
+		} catch (err) {
+			logger.warn("[useShiftViewController] Failed to clear shift storage:", err);
+		}
 		const meta = getDashboardRuntimeMeta(dashboard);
 		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName, {
 			totalAppointments: shiftStats?.totalAppointments ?? 0,
@@ -72,15 +84,18 @@ export function useShiftViewController({
 		try {
 			await fetch("/api/fiscal/shift/close", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					force: true,
 					closedByUserId: meta?.activeAppointment?.doctorId,
-					autoClosedByTimeout: true,
-					reason,
 				}),
 			});
-		} catch {}
+		} catch (err) {
+			logger.warn("[useShiftViewController] Auto-close shift request failed:", err);
+		}
 	};
 
 	// Anti-Hang Shift Law: Auto-close shift if limit exceeded or past midnight
@@ -112,7 +127,9 @@ export function useShiftViewController({
 				if (startDate !== currentDate && elapsed > 60_000) {
 					void handleAutoCloseShift("auto_close_timeout_midnight");
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[useShiftViewController] Shift timeout check error:", err);
+			}
 		};
 
 		checkShiftTimeout();
@@ -125,16 +142,31 @@ export function useShiftViewController({
 		async function sync() {
 			try {
 				try {
-					await fetch("/api/shifts/auto-close-check", { method: "POST" });
-				} catch {}
-				const res = await fetch("/api/cash/shift-reconciliation");
+					await fetch("/api/shifts/auto-close-check", {
+						method: "POST",
+						headers: denteClinicalMutationHeaders({
+							"Idempotency-Key": generateUuidV7(),
+						}),
+					});
+				} catch (err) {
+					logger.warn("[useShiftViewController] auto-close-check failed:", err);
+				}
+				const res = await fetch("/api/cash/shift-reconciliation", {
+					headers: denteClinicalReadHeaders(),
+				});
 				if (!res.ok) return;
 				const data = await res.json();
 				if (!isCancelled && data && typeof data.hasOpenShift === "boolean") {
 					setIsShiftOpen(data.hasOpenShift);
-					try { safeLocalStorageSetItem("dente_doctor_shift_active", String(data.hasOpenShift)); } catch {}
+					try {
+						safeLocalStorageSetItem("dente_doctor_shift_active", String(data.hasOpenShift));
+					} catch (storageErr) {
+						logger.warn("[useShiftViewController] Failed to save shift active flag:", storageErr);
+					}
 				}
-			} catch {}
+			} catch (err) {
+				logger.warn("[useShiftViewController] Shift reconciliation sync failed:", err);
+			}
 		}
 		void sync();
 		const onHash = () => { if (typeof window !== "undefined" && ["#queue", "#/queue"].includes(window.location.hash.toLowerCase())) setIsQueueBoardModalOpen(true); };
@@ -152,15 +184,23 @@ export function useShiftViewController({
 			try {
 				safeLocalStorageSetItem("dente_doctor_shift_active", "true");
 				safeLocalStorageSetItem(SHIFT_START_TIME_KEY, String(now));
-			} catch {}
+			} catch (err) {
+				logger.warn("[useShiftViewController] Failed to persist shift start:", err);
+			}
 			const meta = getDashboardRuntimeMeta(dashboard);
 			staffTelemetryService.logShiftOpen("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName);
 			try {
 				await fetch("/api/fiscal/shift/open", {
-					method: "POST", headers: { "Content-Type": "application/json" },
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({ openedByUserId: meta?.activeAppointment?.doctorId }),
 				});
-			} catch {}
+			} catch (err) {
+				logger.warn("[useShiftViewController] Shift open request failed:", err);
+			}
 		}
 	};
 
@@ -170,7 +210,9 @@ export function useShiftViewController({
 		try {
 			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
 			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
-		} catch {}
+		} catch (err) {
+			logger.warn("[useShiftViewController] Failed to clear shift start:", err);
+		}
 		const meta = getDashboardRuntimeMeta(dashboard);
 		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName, {
 			totalAppointments: shiftStats.totalAppointments,
@@ -182,12 +224,14 @@ export function useShiftViewController({
 		try {
 			await fetch("/api/fiscal/shift/close", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					force: true,
 					closedByUserId: meta?.activeAppointment?.doctorId,
 					countedCashRub: summary?.countedCashRub,
-					printZReport: summary?.printZReport,
 					incomeCashRub: shiftStats?.cashBreakdown?.cashRub,
 					incomeElectronicRub: shiftStats?.cashBreakdown?.cardRub,
 					incomeSbpRub: shiftStats?.cashBreakdown?.sbpRub,
@@ -195,7 +239,9 @@ export function useShiftViewController({
 					netRevenueRub: shiftStats?.totalRevenueRub,
 				}),
 			});
-		} catch {}
+		} catch (err) {
+			logger.warn("[useShiftViewController] Shift close request failed:", err);
+		}
 	};
 
 	function runRecommendedAction(action: ShiftRecommendedAction | null | undefined) {

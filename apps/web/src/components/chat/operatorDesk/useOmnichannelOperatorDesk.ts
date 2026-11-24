@@ -5,6 +5,7 @@ import { useWebsocket } from "../../../hooks/useWebsocket";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type {
 	BotChannel,
 	ChatMessageItem,

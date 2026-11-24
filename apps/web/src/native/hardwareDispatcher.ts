@@ -263,9 +263,9 @@ export async function dispatchThermalLabelPrint(
 			if (res.success) {
 				return res;
 			}
-			console.warn("[HardwareDispatcher] Desktop thermal label spooler failed, falling back to OS print dialog:", res.error);
+			logger.warn("[HardwareDispatcher] Desktop thermal label spooler failed, falling back to OS print dialog:", res.error);
 		} catch (e) {
-			console.warn("[HardwareDispatcher] Desktop thermal label spooler exception, falling back to OS print dialog:", e);
+			logger.warn("[HardwareDispatcher] Desktop thermal label spooler exception, falling back to OS print dialog:", e);
 		}
 	}
 
@@ -353,9 +353,9 @@ export async function dispatchEscPosReceiptPrint(
 			if (res.success) {
 				return res;
 			}
-			console.warn("[HardwareDispatcher] Desktop direct socket ESC/POS failed, falling back to OS print dialog:", res.error);
+			logger.warn("[HardwareDispatcher] Desktop direct socket ESC/POS failed, falling back to OS print dialog:", res.error);
 		} catch (e) {
-			console.warn("[HardwareDispatcher] Desktop direct socket ESC/POS exception, falling back to OS print dialog:", e);
+			logger.warn("[HardwareDispatcher] Desktop direct socket ESC/POS exception, falling back to OS print dialog:", e);
 		}
 	}
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { SterilizerCycleLogItem } from "./types.js";
 
 interface RawSterilizationCycleItem {
@@ -68,7 +69,7 @@ export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentNam
 				}
 			}
 		} catch (err) {
-			console.warn("Failed to fetch sterilizer cycles", err);
+			clientLogger.warn("Failed to fetch sterilizer cycles", err);
 		} finally {
 			setLoading(false);
 		}

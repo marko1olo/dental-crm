@@ -56,7 +56,7 @@ export const DocumentsA4Preview: React.FC<DocumentsA4PreviewProps> = ({
 					</div>
 					<div className="dente-a4-date-badge">
 						<div>Дата: {currentDate}</div>
-						<div className="text-teal-700 font-medium mt-1">
+						<div className="text-teal-700 font-medium mt-1 whitespace-nowrap">
 							Сумма: {formatKopecksToRubles(totalDisplayAmountKopecks)}
 						</div>
 					</div>

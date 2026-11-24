@@ -12,7 +12,7 @@ import {
 	normalizeInvoiceStatus,
 	resolveInvoiceTotalAmountRub,
 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
 import type { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import type { BillingInvoice, InvoiceLineItem } from "./invoiceTypes.js";
 import { loadStoredInvoices, saveStoredInvoices } from "./invoicesStorage.js";
@@ -49,7 +49,7 @@ export function useInvoicesData({
 				const res = await fetch(url, {
 					signal: abortController.signal,
 					headers: {
-						...denteAdminSecretRequestHeaders(),
+						...denteClinicalReadHeaders(),
 					},
 				});
 				if (!res.ok) return;

@@ -167,7 +167,7 @@ export function auditCorticalPlateEnvelope(
 		buccalStatus = "graft_required";
 		severity = "warning";
 		warningRu = `Толщина вестибулярной пластинки ${buccalDist.toFixed(1)} мм (< ${BUCCAL_CORTICAL_PLATE_MIN_RECOMMENDED_MM} мм). Рекомендована НКР для предотвращения отдаленной рецессии десны.`;
-		gbrProtocolRu = "Рекомендована сопутствующая НКР (GBR): депротеинизированный бычий ксенографт (Bio-Oss / Cerabone) + резорбируемая коллагеновая мембрана (Bio-Gide / Jason).";
+		gbrProtocolRu = "Рекомендована сопутствующая НКР (GBR): депротеинизированный остеопластический ксенографт + резорбируемая коллагеновая мембрана.";
 	} else {
 		warningRu = `Вестибулярный кортикал достаточен: ${buccalDist.toFixed(1)} мм (норма >= ${BUCCAL_CORTICAL_PLATE_MIN_RECOMMENDED_MM} мм).`;
 	}

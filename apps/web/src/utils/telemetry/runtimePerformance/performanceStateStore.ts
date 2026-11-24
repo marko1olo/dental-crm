@@ -8,6 +8,7 @@ import type {
 	DynamicPerformanceMetrics,
 	DynamicPerformanceSnapshot,
 } from "./performanceTypes.js";
+import { logger } from "../../logger.js";
 
 export function createInitialMetrics(isTabVisible: boolean): DynamicPerformanceMetrics {
 	return {

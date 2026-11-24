@@ -85,20 +85,23 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	});
 
 	const handleRefresh = async () => {
+		if (isRefreshing) return;
 		setIsRefreshing(true);
 		try {
 			const res = await fetch("/api/cashbox/shifts", {
 				headers: denteClinicalReadHeaders(),
-			}).catch(() => null);
-			if (res && res.ok) {
-				const json = await res.json().catch(() => null);
-				const list = json?.data ?? json?.shifts;
-				if (Array.isArray(list)) {
-					setShifts(list);
-				}
+			});
+			if (!res.ok) {
+				console.warn(`[CashShiftJournalView] Ошибка загрузки смен: HTTP ${res.status}`);
+				return;
 			}
-		} catch {
-			// Fallback silently
+			const json = await res.json().catch(() => null);
+			const list = json?.data ?? json?.shifts;
+			if (Array.isArray(list)) {
+				setShifts(list);
+			}
+		} catch (err) {
+			console.warn("[CashShiftJournalView] Не удалось обновить журнал смен:", err);
 		} finally {
 			setTimeout(() => setIsRefreshing(false), 300);
 		}
@@ -134,7 +137,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 					<button
 						type="button"
 						onClick={handleRefresh}
-						disabled={isRefreshing}
+						aria-busy={isRefreshing}
 						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-1.5"
 						title="Обновить список смен"
 					>

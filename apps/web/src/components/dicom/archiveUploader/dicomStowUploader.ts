@@ -3,7 +3,7 @@
  * Mandate 8b: Модульность, строго < 120 строк.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 
 export interface DicomWadoLoader {
@@ -65,8 +65,9 @@ export async function uploadDicomFileToStow(
 		const qs = params.toString() ? `?${params.toString()}` : "";
 		const res = await fetch(`/api/dicomweb/studies${qs}`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/dicom",
+				"Idempotency-Key": crypto.randomUUID(),
 			}),
 			body: arrayBuf,
 		});

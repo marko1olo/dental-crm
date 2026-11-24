@@ -74,7 +74,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	onApplySplitToCashbox,
 }) => {
 	const isDemo = isDemoShowcaseMode();
-	const patient = propPatient || (isDemo ? { id: "pat-1", fullName: "Соколова Анна Викторовна", birthDate: "15.04.1990", policyNumber: "СГЗ-2026-998811" } : { id: "", fullName: "Пациент", birthDate: "", policyNumber: "" });
+	const patient = propPatient || (isDemo ? { id: "", fullName: "Соколова Анна Викторовна", birthDate: "15.04.1990", policyNumber: "СГЗ-2026-998811" } : { id: "", fullName: "Пациент", birthDate: "", policyNumber: "" });
 
 	const {
 		activeTab,

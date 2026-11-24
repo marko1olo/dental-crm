@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { isNativePlatform, getMobileNativeApi } from "./platform";
 import { triggerHaptic } from "./hapticsAndAudio";
+import { logger } from "../../utils/logger";
 
 /**
  * Captures chairside dental clinical photo directly into the patient card.
@@ -150,7 +151,7 @@ export async function captureAndAttachPatientPhoto(params: {
 				},
 			);
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] saveOfflineRecord photo attachment failed:", err);
+			logger.warn("[mobileBridge] saveOfflineRecord photo attachment failed:", err);
 			// Storage failure does not discard captured photo in memory
 		}
 

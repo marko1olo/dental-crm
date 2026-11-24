@@ -3,6 +3,8 @@
  */
 
 import { useCallback } from "react";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import type {
 	PrescriptionDrugItem,
 	PrescriptionFormType,
@@ -32,17 +34,28 @@ export interface PrescriptionBackendSyncParams {
 		| undefined;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function usePrescriptionBackendSync(p: PrescriptionBackendSyncParams) {
 	const persistPrescriptionToBackend = useCallback(async () => {
-		if (!p.patientId) return;
+		const patientId = p.patientId?.trim();
+		if (!patientId || !UUID_RE.test(patientId)) {
+			if (patientId) {
+				clientLogger.warn("[PrescriptionCockpit] Skip backend sync: non-UUID patientId", { patientId });
+			}
+			return;
+		}
+		const doctorId = p.doctorId?.trim();
+		const validDoctorId = doctorId && UUID_RE.test(doctorId) ? doctorId : null;
+		const visitId = p.visitId?.trim();
+		const validVisitId = visitId && UUID_RE.test(visitId) ? visitId : null;
 		try {
 			const isSpecial =
 				p.activeForm === "special" || p.activeForm === "148-1u-88";
 			const payload: CreatePrescriptionApiPayload = {
-				patientId: p.patientId,
-				visitId: p.visitId || null,
-				prescribingDoctorId:
-					p.doctorId || "00000000-0000-0000-0000-000000000001",
+				patientId,
+				visitId: validVisitId,
+				prescribingDoctorId: validDoctorId,
 				formType: isSpecial ? "form_148_1_u_88" : "form_107_1_u",
 				validityPeriod:
 					p.validityDays === "15"
@@ -77,7 +90,11 @@ export function usePrescriptionBackendSync(p: PrescriptionBackendSyncParams) {
 			const res = await savePrescriptionToBackend(payload);
 			if (p.onPrescriptionCreated) p.onPrescriptionCreated(res.prescription);
 		} catch (e) {
-			console.warn("[PrescriptionCockpit] backend sync notice:", e);
+			clientLogger.warn("[PrescriptionCockpit] backend sync failed:", e);
+			showToast(
+				e instanceof Error ? e.message : "Не удалось сохранить рецепт на сервере",
+				"error",
+			);
 		}
 	}, [
 		p.patientId,

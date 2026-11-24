@@ -13,6 +13,7 @@ import {
 	type ConsentDocumentId,
 } from "./consentCatalogData";
 import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export { generateConsentPrintHtml } from "./consentCatalogData";
 

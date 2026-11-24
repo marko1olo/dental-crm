@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { DENTAL_ICD10_MAP, type DentalIcd10Item } from "../../icd10DentalCatalog";
 import { Icd10MatchingEngine, type Icd10SearchResult, type Icd10SearchOptions } from "../../icd10MatchingEngine";
 import { useIcd10KeyboardNav } from "./useIcd10KeyboardNav";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { UseIcd10SelectorStateProps } from "./useIcd10SelectorTypes";
 
 export * from "./useIcd10SelectorTypes";
@@ -84,7 +85,7 @@ export function useIcd10SelectorState({
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch (err) {
-			console.warn("[Icd10Selector] Failed to copy code to clipboard:", err);
+			clientLogger.warn("Failed to copy code to clipboard", err, { module: "useIcd10SelectorState" });
 		}
 	}, []);
 

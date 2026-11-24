@@ -33,6 +33,7 @@ import {
 	printHtmlWithBrowserPopupFallback,
 } from "./webUsbAndNetworkTransport.js";
 import { printThermalLabelWithTransport } from "./zplSterilizationLabelBuilder.js";
+import { logger } from "../../../utils/logger.js";
 
 export * from "./types.js";
 export * from "./zplSterilizationLabelBuilder.js";
@@ -102,7 +103,7 @@ export class HardwarePrinter {
 					};
 				}
 			} catch (btErr) {
-				console.warn("[HardwarePrinter] Bluetooth ticket print fallback:", btErr);
+				logger.warn("[HardwarePrinter] Bluetooth ticket print fallback:", btErr);
 			}
 		}
 
@@ -177,7 +178,7 @@ export class HardwarePrinter {
 				};
 			} catch (btErr: unknown) {
 				const msg = btErr instanceof Error ? btErr.message : "Сбой Bluetooth печати чека";
-				console.warn("[HardwarePrinter] Bluetooth print error, enqueuing:", msg);
+				logger.warn("[HardwarePrinter] Bluetooth print error, enqueuing:", msg);
 				FiscalReceiptQueueManager.enqueueReceipt(payload, msg);
 				return {
 					success: false,
@@ -204,7 +205,7 @@ export class HardwarePrinter {
 					};
 				}
 			} catch (err: unknown) {
-				console.warn(
+				logger.warn(
 					"[HardwarePrinter] Desktop KKT LAN socket failed, falling back to OS spooler/dialog:",
 					err,
 				);
@@ -256,7 +257,7 @@ export class HardwarePrinter {
 					downloadFilename: `receipt_${Date.now()}.html`,
 				});
 			} catch (printErr: unknown) {
-				console.warn("[HardwarePrinter] Web browser print fallback failed:", printErr);
+				logger.warn("[HardwarePrinter] Web browser print fallback failed:", printErr);
 				return {
 					success: false,
 					status: "failed",
@@ -358,7 +359,7 @@ export class HardwarePrinter {
 					...options,
 				});
 			} catch (err) {
-				console.warn("[HardwarePrinter] Desktop print fallback error:", err);
+				logger.warn("[HardwarePrinter] Desktop print fallback error:", err);
 			}
 		}
 

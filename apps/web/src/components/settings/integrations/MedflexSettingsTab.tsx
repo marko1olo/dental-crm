@@ -19,6 +19,7 @@ import {
 	ShieldCheck,
 	UserCheck,
 } from "lucide-react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 function getAuthHeaders(): Record<string, string> {
@@ -99,6 +100,8 @@ export const MedflexSettingsTab: React.FC = () => {
 				if (settingsJson.settings) {
 					setSettings(settingsJson.settings);
 				}
+			} else {
+				showToast(`Не удалось загрузить настройки МедФлекс (${settingsRes.status})`, "error");
 			}
 
 			// 2. Загрузка маппингов врачей
@@ -119,7 +122,8 @@ export const MedflexSettingsTab: React.FC = () => {
 				}
 			}
 		} catch (e) {
-			console.error("Ошибка загрузки данных MedFlex:", e);
+			clientLogger.error("Ошибка загрузки данных MedFlex:", e);
+			showToast("Не удалось загрузить данные интеграции МедФлекс", "error");
 		} finally {
 			setIsLoading(false);
 		}

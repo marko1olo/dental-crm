@@ -1,4 +1,7 @@
+import { generateUuidV7 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import type { DisinfectionJournalRecord, DisinfectionRoomType, DisinfectionApplicationMethod } from "./disinfectionTypes.js";
 
@@ -69,17 +72,24 @@ export async function submitGeneralCleaningRecord(p: SubmitCleaningParams): Prom
 	};
 
 	try {
-		await fetch("/api/registers/cleaning", {
+		const res = await fetch("/api/registers/cleaning", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 			},
 			body: JSON.stringify(payload),
 		});
+		if (!res.ok) {
+			throw new Error(`HTTP ${res.status}`);
+		}
 	} catch (err) {
-		console.warn("Fallback to local disinfection journal state", err);
+		clientLogger.warn("Failed to submit cleaning record to API:", err);
+		if (!isDemoShowcaseMode()) {
+			throw err;
+		}
 	}
 
 	showToast(

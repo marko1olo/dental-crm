@@ -2,6 +2,7 @@ import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { QuickTemplateItem } from "../../chat/whatsAppChatTemplates";
 import type { ChatChannel, MobileChatMessageItem } from "./types";
 
@@ -69,7 +70,7 @@ export function useMobileMessageSender(
 			setChatMessages((prev) => prev.map((m) => (m.id === newMsg.id ? { ...m, status: data.event?.status ?? "sent" } : m)));
 			showToast(`Сообщение отправлено в ${communicationChannelLabels[activeChannel] || activeChannel}`, "success");
 		} catch (err) {
-			console.error("Failed to send mobile message via API:", err);
+			clientLogger.error("Failed to send mobile message via API:", err);
 			showToast("Сбой сети при отправке сообщения", "error");
 			setChatMessages((prev) => prev.map((m) => (m.id === newMsg.id ? { ...m, status: "failed" } : m)));
 		} finally {

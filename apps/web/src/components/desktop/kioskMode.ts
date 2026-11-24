@@ -20,6 +20,7 @@ import {
 	type DesktopWindowState,
 } from "../../native/desktopBridge";
 import { triggerHaptic } from "../../native/mobileBridge";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export type KioskProfile =
 	| "reception_self_checkin"

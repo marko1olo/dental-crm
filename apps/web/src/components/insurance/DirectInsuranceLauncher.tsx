@@ -12,7 +12,7 @@ import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { DmsStudioModal } from "./DmsStudioModal.js";
 
 const DEMO_INSURANCE_PATIENT = {
-	id: "pat-dms-01",
+	id: "",
 	fullName: "Соколова Анна Викторовна",
 	birthDate: "15.04.1990",
 	cardNumber: "К-4821",
@@ -96,6 +96,7 @@ export const DirectInsuranceLauncher: React.FC = () => {
 
 	return (
 		<DmsStudioModal
+			key={targetPatient?.id || "direct-dms"}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patient={targetPatient}

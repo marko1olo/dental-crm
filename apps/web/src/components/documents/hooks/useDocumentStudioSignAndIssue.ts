@@ -6,7 +6,7 @@
  */
 import { useCallback } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	printTaxCertificate,
 	buildTaxCertificateDocumentData,
@@ -24,7 +24,7 @@ import type {
 	DocumentPackageKey,
 	PatientRequisites,
 } from "../../consents/consentCatalogData";
-import { kopecksToRubles, type TaxDeductionRelationship } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, type TaxDeductionRelationship } from "@dental/shared";
 
 export interface ClinicRequisitesDto {
 	readonly name: string;
@@ -252,9 +252,9 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 		});
 
 		if (options.effectivePatientId) {
-			const headers = denteAdminSecretRequestHeaders({
+			const headers = denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			});
 			try {
 				await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
@@ -328,7 +328,10 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 							? "Выписка из медицинской карты"
 							: "Договор на оказание платных медицинских услуг";
 
-				const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+				const headers = denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				});
 				const totalRub = kopecksToRubles(options.totalAmountKopecks);
 				const effectiveDoctor = options.effectiveDoctorName || "Врач-стоматолог";
 				const effectivePayerName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName.trim() || "Пациент";
@@ -410,9 +413,9 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 
 				let createdDocId: string | undefined;
 				try {
-					const createHeaders = denteAdminSecretRequestHeaders({
+					const createHeaders = denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-						"Idempotency-Key": crypto.randomUUID(),
+						"Idempotency-Key": generateUuidV7(),
 					});
 					const res = await fetch("/api/documents", {
 						method: "POST",
@@ -424,20 +427,27 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 						const docObj = (createdDoc && typeof createdDoc === "object") ? (createdDoc as { id?: string }) : undefined;
 						if (docObj?.id) {
 							createdDocId = docObj.id;
-							const issueHeaders = denteAdminSecretRequestHeaders({
+							const issueHeaders = denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
-								"Idempotency-Key": crypto.randomUUID(),
+								"Idempotency-Key": generateUuidV7(),
 							});
 							await fetch(`/api/documents/${encodeURIComponent(docObj.id)}/issue`, {
 								method: "POST",
 								headers: issueHeaders,
 								body: JSON.stringify({
 									signatureAttestation: {
-										staffFullName: options.effectiveDoctorName || "Врач-стоматолог",
-										staffRole: "врач",
+										mode: isDigital ? "simple_electronic_signature" : "paper_signed",
 										signedAt: nowIso,
-										verificationMethod: isDigital ? "tablet_stylus" : "paper_signed",
+										recipientFullName: effectivePayerName,
+										recipientRole: "пациент/законный представитель",
+										staffFullName: effectiveDoctor,
+										staffRole: "врач",
+										identityChecked: true,
+										documentOpenedAndChecked: true,
+										recipientSigned: true,
+										clinicRepresentativeSigned: true,
 									},
+									signatureSvg: signatureDataUrl ?? null,
 								}),
 							});
 						}
@@ -462,9 +472,9 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 				};
 
 				try {
-					const consentHeaders = denteAdminSecretRequestHeaders({
+					const consentHeaders = denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-						"Idempotency-Key": crypto.randomUUID(),
+						"Idempotency-Key": generateUuidV7(),
 					});
 					await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
 						method: "POST",

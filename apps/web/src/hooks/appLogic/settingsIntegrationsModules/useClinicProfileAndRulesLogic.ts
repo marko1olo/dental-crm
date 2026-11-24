@@ -6,10 +6,11 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import type {
-	CommunicationTaskOutcome,
-	Dashboard,
-	DentalPricelistAnalysisResponse,
+import {
+	generateUuidV7,
+	type CommunicationTaskOutcome,
+	type Dashboard,
+	type DentalPricelistAnalysisResponse,
 } from "@dental/shared";
 import {
 	buildClinicProfileUpdatePayload,
@@ -196,8 +197,9 @@ export function useClinicProfileAndRulesLogic({
 		try {
 			const response = await fetch("/api/pricelist/analyze", {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					sourceName: pricelistImageName || "manual-pricelist",
@@ -277,6 +279,7 @@ export function useClinicProfileAndRulesLogic({
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						taskId,
@@ -337,6 +340,7 @@ export function useClinicProfileAndRulesLogic({
 				method: "POST",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					title: newRuleTitle.trim(),

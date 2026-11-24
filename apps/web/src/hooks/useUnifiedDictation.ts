@@ -19,6 +19,7 @@ import {
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { showToast } from "../components/GlobalToast";
+import { logger } from "../utils/logger";
 
 export interface UseUnifiedDictationOptions {
 	preferredMode?: UnifiedAudioMode | undefined;
@@ -207,7 +208,7 @@ export function useUnifiedDictation(
 			const finalRes = await clientRef.current.stop();
 			return finalRes;
 		} catch (err) {
-			console.warn("Error stopping dictation:", err);
+			logger.warn("[useUnifiedDictation] Error stopping dictation:", err);
 			return fullTranscript;
 		}
 	}, [fullTranscript]);

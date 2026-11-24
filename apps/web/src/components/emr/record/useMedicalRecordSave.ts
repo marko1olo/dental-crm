@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { resolveDentalSpecialty, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { denteQueryClient } from "../../../lib/queryClient";
 import { deleteOfflineDraft } from "../../../services/offline/storage/idbDraftOps";
 import type { MedicalRecordData } from "../types/recordDataTypes";
@@ -114,13 +115,13 @@ export function useMedicalRecordSave({
 								anyDiaryFailed = true;
 								const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
 								const errorMessage = errJson?.message || errJson?.error || "Ошибка сохранения дневника приёма в базу данных";
-								console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
+								clientLogger.warn("Ошибка сохранения дневника в /api/diaries", errJson, { module: "useMedicalRecordSave" });
 								showToast(errorMessage, "error", 5000);
 							}
 						}
 					} catch (diaryPersistErr) {
 						anyDiaryFailed = true;
-						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
+						clientLogger.warn("Ошибка персистентности в /api/diaries", diaryPersistErr, { module: "useMedicalRecordSave" });
 						showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
 					}
 

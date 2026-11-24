@@ -5,6 +5,7 @@
  * Mandates 8e (Doctor Autonomy), 8s (Friction-Killer), 8t (Unit Verification).
  */
 
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	DENTE_QUEST_PROGRESS_STORAGE_KEY,
 	DENTE_TOUR_STORAGE_KEY,
@@ -92,7 +93,7 @@ export function saveQuestProgress(state: QuestProgressState): void {
 			window.dispatchEvent(evt);
 		}
 	} catch (e) {
-		console.warn("DENTE Quest Tour Engine: failed to persist quest progress", e);
+		clientLogger.warn("DENTE Quest Tour Engine: failed to persist quest progress", e);
 	}
 }
 

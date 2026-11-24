@@ -1,5 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { rublesToKopecks, kopecksToRubles, calculatePercentDiscountKopecks } from "@dental/shared";
+import {
+	rublesToKopecks,
+	kopecksToRubles,
+	calculatePercentDiscountKopecks,
+	generateUuidV7,
+} from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { showToast } from "../../GlobalToast";
 import type { DoctorShiftStats } from "../controlBarModules/shiftControlBarTypes";
@@ -130,7 +136,10 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		try {
 			const res = await fetch("/api/shifts/send-shift-summary", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					doctorFullName,
 					doctorSpecialtyRu,

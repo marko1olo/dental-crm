@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Check, FileText, Printer } from "lucide-react";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	type FranklRating,
 	type FranklRatingDefinition,
@@ -128,7 +129,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				await navigator.clipboard.writeText(text);
 				showToast("Протокол резорбции скопирован", "success");
 			} catch (err) {
-				console.warn("[ToothPediatric] Failed to copy resorption protocol:", err);
+				clientLogger.warn("Failed to copy resorption protocol", err, { module: "ToothPediatricContext" });
 				showToast("Не удалось скопировать", "error");
 			}
 		}
@@ -144,7 +145,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				await navigator.clipboard.writeText(text);
 				showToast("Протокол адаптации скопирован", "success");
 			} catch (err) {
-				console.warn("[ToothPediatric] Failed to copy psychological protocol:", err);
+				clientLogger.warn("Failed to copy psychological protocol", err, { module: "ToothPediatricContext" });
 				showToast("Не удалось скопировать", "error");
 			}
 		}

@@ -4,6 +4,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { LandmarkMap, CephalometricAnalysisResult, CephalometricMeasurement } from "./cephalometric";
 
 export interface CephalometricSavedStudy {
@@ -67,7 +68,7 @@ export async function saveCephalometricAnalysisToApi(
 			return payload?.study ?? null;
 		}
 	} catch (err) {
-		console.warn("[CephPersistence] API save offline fallback:", err);
+		clientLogger.warn("API save offline fallback", err, { module: "cephalometricPersistence" });
 	}
 	return null;
 }

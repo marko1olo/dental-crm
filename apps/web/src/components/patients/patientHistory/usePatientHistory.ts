@@ -3,6 +3,7 @@ import type { Dashboard } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ClinicalSpecialty, ClinicalVisitItem } from "./types";
 import { DEFAULT_CLINICAL_VISITS } from "./types";
 import { mapApiRecordsToClinicalVisits, type ApiVisitRow, type ApiDiaryRow } from "./patientRecordsApiMapper";

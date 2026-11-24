@@ -5,6 +5,7 @@ import { RADIOLOGY_STANDARD_PROTOCOLS, applyRadiologyProtocolToForm043 } from ".
 import { useVisitStore } from "../../../../store/visitStore.js";
 import { usePatientStore } from "../../../../store/patientStore.js";
 import { showToast } from "../../../GlobalToast.js";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders.js";
 import type { RadiologyFilmstripItem } from "../../RadiologyFilmstripDock.js";
 import type { RadiologyStudy } from "../../types.js";
 import type { ViewerRulerMeasurement, ViewerCurvedMeasurement } from "../../dentalViewerMath.js";
@@ -152,18 +153,26 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				console.warn("[SensorViewerExport] Ошибка получения selectedPatientId:", storeErr);
 			}
 
+			const hasValidUuid = Boolean(
+				patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId),
+			);
+			if (!hasValidUuid) {
+				showToast(`Снимок «${file.name}» успешно открыт`, "info");
+				return;
+			}
+
 			const res = await fetch("/api/imaging/studies", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": crypto.randomUUID(),
-				},
+				}),
 				body: JSON.stringify({
-					...(patientId && patientId.length === 36 ? { patientId } : {}),
+					patientId,
 					title: file.name,
 					imageBase64: dataUrl,
-					originalFilename: file.name,
-					mimeType: file.type || "image/jpeg",
+					sourceKind: "sensor_bridge",
+					sourceName: file.name.slice(0, 160),
 					...(p.effectiveTooth ? { toothCode: p.effectiveTooth } : {}),
 					kind: "periapical",
 				}),

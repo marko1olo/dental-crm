@@ -26,7 +26,7 @@ export async function listDesktopSerialPorts(): Promise<DesktopSerialPortInfo[]>
 	try {
 		return await api.listSerialPorts();
 	} catch (err: unknown) {
-		console.warn("[desktopBridge] listSerialPorts failed:", err);
+		logger.warn("[desktopBridge] listSerialPorts failed:", err);
 		return [];
 	}
 }
@@ -40,7 +40,7 @@ export async function listDesktopTwainDevices(): Promise<DesktopTwainDevice[]> {
 	try {
 		return await api.listTwainDevices();
 	} catch (err: unknown) {
-		console.warn("[desktopBridge] listTwainDevices failed:", err);
+		logger.warn("[desktopBridge] listTwainDevices failed:", err);
 		return [];
 	}
 }

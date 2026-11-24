@@ -151,12 +151,12 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 	});
 
 	describe("2. Server Synchronization & Persistence (DEF-03, DEF-04, Mandates 8e, 8n)", () => {
-		it("InvoicesView source wires server fetch with denteAdminSecretRequestHeaders", () => {
+		it("InvoicesView source wires server fetch with denteClinicalMutationHeaders", () => {
 			const source = fs.readFileSync(invoicesFilePath, "utf-8");
 
 			assert.ok(
-				source.includes("denteAdminSecretRequestHeaders()"),
-				"Must wire denteAdminSecretRequestHeaders in fetch",
+				source.includes("denteClinicalMutationHeaders("),
+				"Must wire denteClinicalMutationHeaders in fetch",
 			);
 			assert.ok(
 				source.includes("/api/invoices"),

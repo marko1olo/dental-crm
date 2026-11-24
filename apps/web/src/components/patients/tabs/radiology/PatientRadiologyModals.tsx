@@ -76,6 +76,7 @@ export const PatientRadiologyModals: React.FC<PatientRadiologyModalsProps> = ({
 
 			{activeControlStudy && (
 				<StudyPatientBindControlModal
+					key={activeControlStudy.id}
 					isOpen={Boolean(activeControlStudy)}
 					onClose={() => setActiveControlStudy(null)}
 					study={activeControlStudy}

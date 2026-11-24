@@ -10,6 +10,7 @@ import {
 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger.js";
 import type {
 	ChairStatusType,
 	DoctorMobileShiftModalProps,

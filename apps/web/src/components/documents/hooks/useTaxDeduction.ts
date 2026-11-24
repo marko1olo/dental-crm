@@ -6,7 +6,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { rublesToKopecks, type TaxDeductionPaymentItem } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 
 interface RawReceiptItem {
 	readonly id?: string | undefined;
@@ -33,7 +33,7 @@ export const useTaxDeduction = (
 		queryKey: ["tax-deduction-preview", patientId, taxYear],
 		queryFn: async (): Promise<readonly TaxDeductionPaymentItem[]> => {
 			if (!isOpen || activePackage !== "tax_certificate" || !patientId) return [];
-			const headers = denteAdminSecretRequestHeaders();
+			const headers = denteClinicalReadHeaders();
 			const res = await fetch(`/api/documents/tax-deduction/preview/${encodeURIComponent(patientId)}?year=${taxYear}`, {
 				headers,
 			});

@@ -8,7 +8,31 @@
  */
 
 import { logger } from "../../utils/logger.js";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function mapViewKindToImagingStudyKind(
+	viewKind?: ClinicalSnapshotPayload["viewKind"],
+): "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | "other" {
+	switch (viewKind) {
+		case "bitewing":
+			return "bitewing";
+		case "panoramic_mpr":
+			return "opg";
+		case "tele_xray":
+			return "ceph";
+		case "mpr_axial":
+		case "mpr_sagittal":
+		case "mpr_coronal":
+		case "visiograph_3d":
+			return "cbct";
+		case "periapical_2d":
+			return "periapical";
+		default:
+			return "other";
+	}
+}
 import { VISIOGRAPH_WINDOW_PRESETS, type VisiographWindowPreset } from "../dicom/VisiographWindowPresets.js";
 
 export interface HighDpiCaptureOptions {
@@ -316,10 +340,10 @@ export async function exportSnapshotToClinicalRecord(
 	const protocol043 = buildForm043ProtocolText(payload);
 	const tooth = payload.fdiToothCode || payload.toothCode;
 
-	if (!payload.patientId) {
+	if (!payload.patientId || !UUID_REGEX.test(payload.patientId)) {
 		return {
 			success: false,
-			message: "Пациент не выбран. Выберите пациента для прикрепления снимка к медицинской карте.",
+			message: "Пациент не выбран. Выберите сохранённого пациента для прикрепления снимка к медицинской карте.",
 			protocol043Text: protocol043,
 		};
 	}
@@ -338,21 +362,20 @@ export async function exportSnapshotToClinicalRecord(
 			: "Рентгенологический снимок — Протокол лучевого исследования";
 		const res = await fetch("/api/imaging/studies", {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
 				...authHeaders,
 			}),
 			body: JSON.stringify({
 				patientId: payload.patientId,
 				imageBase64: payload.imageDataUri,
 				title: summaryTitle,
-				originalFilename: `snapshot_${payload.viewKind || "xray"}_${tooth || "jaw"}_${Date.now()}.jpg`,
-				mimeType: "image/jpeg",
-				kind: payload.viewKind || "periapical",
+				kind: mapViewKindToImagingStudyKind(payload.viewKind),
+				sourceKind: "manual_upload",
+				sourceName: `snapshot_${payload.viewKind || "xray"}_${tooth || "jaw"}`.slice(0, 160),
 				toothCode: tooth || null,
-				aiReport: protocol043,
-				aiSummary: summaryTitle,
-				status: "available",
+				aiSummary: (protocol043 || summaryTitle).slice(0, 2000),
 			}),
 		});
 

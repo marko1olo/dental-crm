@@ -12,6 +12,7 @@
 import {
 	CORRELATION_ID_HEADER,
 	generateCorrelationId,
+	generateUuidV7,
 	type StaffActionAuditEntry,
 } from "@dental/shared";
 import {
@@ -160,6 +161,7 @@ export async function sendTelemetryBatch(events: StaffActionAuditEntry[]): Promi
 			headers: {
 				"Content-Type": "application/json",
 				[CORRELATION_ID_HEADER]: correlationId,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			credentials: "include",
 			body: JSON.stringify({ events }),
@@ -188,17 +190,37 @@ export async function sendTelemetryBatch(events: StaffActionAuditEntry[]): Promi
 }
 
 /**
- * Fallback-отправка через Beacon API при закрытии вкладки
+ * Fallback-отправка через fetch keepalive (с Idempotency-Key и Correlation-ID) при закрытии вкладки
  */
 export function sendTelemetryBeaconFallback(events: StaffActionAuditEntry[]): boolean {
-	if (typeof navigator === "undefined" || !navigator.sendBeacon || events.length === 0) {
+	if (typeof fetch !== "function" || events.length === 0) {
 		return false;
 	}
 	try {
+		const correlationId = generateCorrelationId("staff_audit");
 		const payload = JSON.stringify({ events });
-		const blob = new Blob([payload], { type: "application/json" });
-		return navigator.sendBeacon("/api/audit/events/batch", blob);
-	} catch {
+		void fetch("/api/audit/events/batch", {
+			method: "POST",
+			keepalive: true,
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json",
+				[CORRELATION_ID_HEADER]: correlationId,
+				"Idempotency-Key": generateUuidV7(),
+			},
+			body: payload,
+		}).catch((err) => {
+			activeLoggerBridge?.warn(
+				"[StaffTelemetry] Keepalive dispatch failed during page unload",
+				err,
+			);
+		});
+		return true;
+	} catch (err) {
+		activeLoggerBridge?.warn(
+			"[StaffTelemetry] Unable to schedule keepalive dispatch",
+			err,
+		);
 		return false;
 	}
 }

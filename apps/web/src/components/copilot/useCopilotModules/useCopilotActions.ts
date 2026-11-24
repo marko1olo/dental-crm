@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast } from "../../GlobalToast";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -126,7 +128,7 @@ export async function executeCopilotConfirmation({
 			}
 		}
 	} catch (apiErr) {
-		console.warn("[executeCopilotConfirmation] Fastify confirm fallback:", apiErr);
+		clientLogger.warn("[executeCopilotConfirmation] Fastify confirm fallback:", apiErr);
 	}
 
 	return apiOk;
@@ -208,6 +210,12 @@ export function useCopilotActions({
 			reason?: string | undefined,
 		) => {
 			if (busy) return;
+			const previousPending = pending;
+			const targetMsg = messages.find(
+				(m) => m.kind === "confirmation" && m.callId === callId,
+			) as ConfirmUiMessage | undefined;
+			const previousResolved = targetMsg?.resolved;
+
 			setMessages((prev) =>
 				prev.map((m) =>
 					m.kind === "confirmation" && m.callId === callId
@@ -223,12 +231,9 @@ export function useCopilotActions({
 			setBusy(true);
 			setPhase("working");
 
-			const targetMsg = messages.find(
-				(m) => m.kind === "confirmation" && m.callId === callId,
-			) as ConfirmUiMessage | undefined;
-			const actionName = targetMsg?.name || pending?.name || "action";
+			const actionName = targetMsg?.name || previousPending?.name || "action";
 			const actionArgs = {
-				...(targetMsg?.args || pending?.args || {}),
+				...(targetMsg?.args || previousPending?.args || {}),
 				...(modifiedArgs || {}),
 			};
 
@@ -236,8 +241,26 @@ export function useCopilotActions({
 				? conversationId
 				: generateUuidV7();
 
+			const revertConfirmationUi = () => {
+				setMessages((prev) =>
+					prev.map((m) => {
+						if (m.kind === "confirmation" && m.callId === callId) {
+							if (previousResolved !== undefined) {
+								return { ...m, resolved: previousResolved };
+							}
+							const { resolved: _prevResolved, ...rest } = m;
+							return rest;
+						}
+						return m;
+					}),
+				);
+				if (previousPending) {
+					setPending(previousPending);
+				}
+			};
+
 			try {
-				await executeCopilotConfirmation({
+				const ok = await executeCopilotConfirmation({
 					callId,
 					decision,
 					actionName,
@@ -248,8 +271,14 @@ export function useCopilotActions({
 					sessionId: sessId,
 					patientId: (targetMsg?.args?.patientId as string) || undefined,
 				});
+				if (!ok) {
+					revertConfirmationUi();
+					showToast("Не удалось подтвердить действие на сервере", "error");
+				}
 			} catch (e) {
-				console.error("Error confirming copilot action:", e);
+				clientLogger.error("Error confirming copilot action:", e);
+				revertConfirmationUi();
+				showToast("Ошибка при подтверждении действия", "error");
 			} finally {
 				setBusy(false);
 				setPhase(null);
@@ -316,7 +345,7 @@ export function useCopilotActions({
 				setNudges(json.nudges || json.data || json || []);
 			}
 		} catch (err) {
-			console.info("[useCopilotActions] Load nudges offline fallback:", err);
+			clientLogger.info("[useCopilotActions] Load nudges offline fallback:", err);
 			setNudges([]);
 		}
 	}, [apiBaseUrl, setNudges]);
@@ -335,7 +364,7 @@ export function useCopilotActions({
 					body: JSON.stringify({ id }),
 				});
 			} catch (err) {
-				console.info("[useCopilotActions] Dismiss nudge offline fallback:", err);
+				clientLogger.info("[useCopilotActions] Dismiss nudge offline fallback:", err);
 			}
 		},
 		[apiBaseUrl, setNudges],
@@ -348,17 +377,10 @@ export function useCopilotActions({
 					c.approvalId === approvalId ? { ...c, status: "approved" } : c,
 				),
 			);
-			setProactiveAlerts((prev) =>
-				prev.filter(
-					(a) =>
-						a.id !== `alert_hitl_${approvalId}` &&
-						a.data?.approvalId !== approvalId,
-				),
-			);
 
 			try {
 				const token = readDenteClinicToken() || readDenteStaffToken() || "";
-				await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/approve`, {
+				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/approve`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -366,8 +388,24 @@ export function useCopilotActions({
 					},
 					body: JSON.stringify({ approvalId, modifiedReply, sendNow: true }),
 				});
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				setProactiveAlerts((prev) =>
+					prev.filter(
+						(a) =>
+							a.id !== `alert_hitl_${approvalId}` &&
+							a.data?.approvalId !== approvalId,
+					),
+				);
 			} catch (e) {
-				console.error("Error approving proactive whatsapp card:", e);
+				clientLogger.error("Error approving proactive whatsapp card:", e);
+				setWhatsappHitLCards((prev) =>
+					prev.map((c) =>
+						c.approvalId === approvalId ? { ...c, status: "pending" } : c,
+					),
+				);
+				showToast("Не удалось одобрить отправку сообщения", "error");
 			}
 		},
 		[apiBaseUrl, setWhatsappHitLCards, setProactiveAlerts],
@@ -380,17 +418,10 @@ export function useCopilotActions({
 					c.approvalId === approvalId ? { ...c, status: "rejected" } : c,
 				),
 			);
-			setProactiveAlerts((prev) =>
-				prev.filter(
-					(a) =>
-						a.id !== `alert_hitl_${approvalId}` &&
-						a.data?.approvalId !== approvalId,
-				),
-			);
 
 			try {
 				const token = readDenteClinicToken() || readDenteStaffToken() || "";
-				await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/reject`, {
+				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/reject`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -398,8 +429,24 @@ export function useCopilotActions({
 					},
 					body: JSON.stringify({ approvalId, reason }),
 				});
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				setProactiveAlerts((prev) =>
+					prev.filter(
+						(a) =>
+							a.id !== `alert_hitl_${approvalId}` &&
+							a.data?.approvalId !== approvalId,
+					),
+				);
 			} catch (e) {
-				console.error("Error rejecting proactive whatsapp card:", e);
+				clientLogger.error("Error rejecting proactive whatsapp card:", e);
+				setWhatsappHitLCards((prev) =>
+					prev.map((c) =>
+						c.approvalId === approvalId ? { ...c, status: "pending" } : c,
+					),
+				);
+				showToast("Не удалось отклонить карточку сообщения", "error");
 			}
 		},
 		[apiBaseUrl, setWhatsappHitLCards, setProactiveAlerts],
@@ -419,7 +466,7 @@ export function useCopilotActions({
 					body: JSON.stringify({ alertId }),
 				});
 			} catch (err) {
-				console.info("[useCopilotActions] Dismiss proactive alert offline fallback:", err);
+				clientLogger.info("[useCopilotActions] Dismiss proactive alert offline fallback:", err);
 			}
 		},
 		[apiBaseUrl, setProactiveAlerts],

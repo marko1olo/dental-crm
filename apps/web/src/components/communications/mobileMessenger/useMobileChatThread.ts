@@ -1,6 +1,8 @@
+import { generateUuidV7 } from "@dental/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { ChatChannel, MobileChatMessageItem, MobileCommunicationsMessengerProps } from "./types";
 
@@ -53,18 +55,27 @@ export function useMobileChatThread(
 	const handleMobileTakeoverChat = useCallback(async () => {
 		if (!selectedPatientId) return;
 		try {
-			await fetch(`/api/bots/chats/${encodeURIComponent(selectedPatientId)}/takeover`, {
+			const res = await fetch(`/api/bots/chats/${encodeURIComponent(selectedPatientId)}/takeover`, {
 				method: "POST",
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					channel: activeChannel,
 					operatorName: "Оператор клиники",
 				}),
-			}).catch(() => {});
-		} catch {}
+			});
+			if (!res.ok) {
+				showToast("Не удалось перехватить диалог на сервере", "error");
+				return;
+			}
+		} catch (err) {
+			clientLogger.error("[useMobileChatThread] Takeover failed:", err);
+			showToast("Сетевая ошибка при перехвате диалога", "error");
+			return;
+		}
 
 		setInterceptedDialogs((prev) => ({ ...prev, [selectedPatientId]: true }));
 		const takeoverMsg: MobileChatMessageItem = {
@@ -113,7 +124,9 @@ export function useMobileChatThread(
 					return;
 				}
 			}
-		} catch { /* fallback */ }
+		} catch (err) {
+			clientLogger.debug("[useMobileChatThread] Inbox thread fallback:", err);
+		}
 
 		const events = (dashboard?.communicationEvents ??
 			[]) as RawCommunicationEvent[];

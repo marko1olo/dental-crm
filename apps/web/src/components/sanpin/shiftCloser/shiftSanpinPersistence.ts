@@ -1,3 +1,4 @@
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import type {
 	PersistShiftSanpinOptions,
 	PersistShiftSanpinResult,
@@ -64,7 +65,7 @@ export async function persistShiftSanpinAutoClose(
 				};
 			}
 		} catch (err) {
-			console.warn("[shiftAutoCloserEngine] Фоновая фиксация смены в API отложена (офлайн-режим):", err);
+			clientLogger.warn("[shiftAutoCloserEngine] Фоновая фиксация смены в API отложена (офлайн-режим):", err);
 		}
 	}
 

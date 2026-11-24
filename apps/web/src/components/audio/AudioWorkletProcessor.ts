@@ -10,6 +10,8 @@
  * 5. Устойчивость к перегрузкам и динамическая настройка параметров через MessagePort.
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export const DENTAL_AUDIO_WORKLET_PROCESSOR_NAME = "dental-audio-worklet-processor";
 
 export interface AudioWorkletPcmPayload {

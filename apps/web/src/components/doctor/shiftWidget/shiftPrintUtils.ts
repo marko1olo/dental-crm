@@ -6,6 +6,7 @@
 
 import { type ChairsideShiftEarningsSummary, generateDoctorEarningsPayslipHtml } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 
 export function printShiftPayslip(
 	summary: ChairsideShiftEarningsSummary,

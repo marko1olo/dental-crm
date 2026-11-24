@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Download, Layers, ReceiptText, ShieldCheck } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
 import type { PatientDentalPassport, PatientPersonalCabinetData, PatientTreatmentPlan, TreatmentPlanStage } from "../patientCabinetEngine.js";
 import {
 	computePatientTeethFromStages,
@@ -94,10 +95,21 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({ pepCode: pepTrace, selectedTier }),
-			}).catch(() => {});
+			})
+				.then((res) => {
+					if (!res.ok) {
+						console.warn("[TreatmentPlanTab] Ошибка согласования плана на сервере:", res.status);
+						onShowToast?.(`Не удалось сохранить согласование на сервере (${res.status})`);
+					}
+				})
+				.catch((err) => {
+					console.warn("[TreatmentPlanTab] Сетевая ошибка согласования плана:", err);
+					onShowToast?.("Сетевая ошибка при сохранении согласования плана");
+				});
 		}
 		if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
 		if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
@@ -108,14 +120,23 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 		const tierName = tier === "basic" ? "Эконом" : tier === "premium" ? "Премиум" : "Оптимум";
 		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
 		if (basePlan?.id) {
-			void fetch(`/api/portal/treatment-plans/${basePlan.id}/select-tier`, {
+			void fetch(`/api/portal/treatment-plans/${encodeURIComponent(basePlan.id)}/select-tier`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					...(token ? { Authorization: `Bearer ${token}` } : {}),
 				},
 				body: JSON.stringify({ tierId: tier }),
-			}).catch(() => {});
+			})
+				.then((res) => {
+					if (!res.ok) {
+						console.warn("[TreatmentPlanTab] Ошибка сохранения тарифа на сервере:", res.status);
+					}
+				})
+				.catch((err) => {
+					console.warn("[TreatmentPlanTab] Сетевая ошибка сохранения тарифа:", err);
+				});
 		}
 		if (onShowToast) {
 			onShowToast(`Выбран тариф «${tierName}». План лечения пересчитан.`);

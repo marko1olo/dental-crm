@@ -56,7 +56,7 @@ export function StaffActionJournalSection(): React.JSX.Element {
 			);
 			setRows(mapped);
 		} catch (err) {
-			console.warn("[StaffActionJournalSection] Ошибка загрузки журнала:", err);
+			clientLogger.warn("[StaffActionJournalSection] Ошибка загрузки журнала:", err);
 		} finally {
 			setIsLoading(false);
 		}

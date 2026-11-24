@@ -18,6 +18,7 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 			<>
 				{isPrimaryIntakeOpen && (
 					<DocumentsStudioModal
+						key={activePatient?.id || "primary-intake-docs"}
 						isOpen={isPrimaryIntakeOpen}
 						onClose={() => setIsPrimaryIntakeOpen(false)}
 						patient={activePatient ?? undefined}
@@ -29,6 +30,7 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 
 				{isSurgicalPackageOpen && (
 					<DocumentsStudioModal
+						key={activePatient?.id || "surgical-pkg-docs"}
 						isOpen={isSurgicalPackageOpen}
 						onClose={() => setIsSurgicalPackageOpen(false)}
 						patient={activePatient ?? undefined}
@@ -41,6 +43,7 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 
 				{props.isPatientConsentSignDrawerOpen && props.setIsPatientConsentSignDrawerOpen && (
 					<ConsentStudioModal
+						key={activePatient?.id || "consent-studio"}
 						isOpen={props.isPatientConsentSignDrawerOpen}
 						onClose={() => props.setIsPatientConsentSignDrawerOpen!(false)}
 						patient={activePatient ?? undefined}

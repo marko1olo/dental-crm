@@ -14,6 +14,7 @@ import type {
 	FiscalReceiptPrintPayload,
 	HardwarePrintResult,
 } from "./types.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * Checks whether the current runtime environment is a Capacitor / native mobile shell.
@@ -139,13 +140,13 @@ export async function printHtmlWithBrowserPopupFallback(
 			"width=460,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes",
 		);
 	} catch (popupErr: unknown) {
-		console.warn("[HardwarePrinter] window.open failed due to popup restriction:", popupErr);
+		logger.warn("[HardwarePrinter] window.open failed due to popup restriction:", popupErr);
 		printWindow = null;
 	}
 
 	// 2. Intercept Popup Blocker
 	if (!printWindow || printWindow.closed || typeof printWindow.closed === "undefined") {
-		console.warn("[HardwarePrinter] Popup blocker intercepted on window.open. Triggering fallback channels.");
+		logger.warn("[HardwarePrinter] Popup blocker intercepted on window.open. Triggering fallback channels.");
 		options.onPopupBlocked?.();
 		showToast(
 			"Всплывающее окно печати заблокировано браузером (Safari / Chrome). Применяется фоновая печать.",
@@ -166,7 +167,7 @@ export async function printHtmlWithBrowserPopupFallback(
 					iframe.contentWindow?.focus();
 					iframe.contentWindow?.print();
 				} catch (framePrintErr) {
-					console.warn("[HardwarePrinter] Iframe print failed, offering direct download:", framePrintErr);
+					logger.warn("[HardwarePrinter] Iframe print failed, offering direct download:", framePrintErr);
 					onDownloadFallback(htmlContent, filename);
 					options.onFallbackExecuted?.("download");
 				} finally {
@@ -194,7 +195,7 @@ export async function printHtmlWithBrowserPopupFallback(
 				};
 			}
 		} catch (iframeErr) {
-			console.warn("[HardwarePrinter] Hidden iframe creation error:", iframeErr);
+			logger.warn("[HardwarePrinter] Hidden iframe creation error:", iframeErr);
 		}
 
 		// Fallback B: Direct download of printable receipt
@@ -225,7 +226,7 @@ export async function printHtmlWithBrowserPopupFallback(
 			};
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Ошибка записи во всплывающее окно печати";
-			console.warn("[HardwarePrinter] Popup write error, falling back to download:", msg);
+			logger.warn("[HardwarePrinter] Popup write error, falling back to download:", msg);
 			onDownloadFallback(htmlContent, filename);
 			return {
 				success: true,

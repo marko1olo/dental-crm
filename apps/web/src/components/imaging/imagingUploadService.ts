@@ -4,7 +4,7 @@
  */
 
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
 import { inferStudyKind, type InferredImagingKind } from "./upload/inferStudyKind.js";
 import { createLocalFallbackStudy } from "./upload/localFallbackStudy.js";
@@ -60,10 +60,9 @@ export async function uploadImagingScanFile(
 
 		const res = await fetch("/api/imaging/upload", {
 			method: "POST",
-			headers: {
-				...denteAdminSecretRequestHeaders(),
+			headers: denteClinicalMutationHeaders({
 				"Idempotency-Key": idempotencyKey,
-			},
+			}),
 			body: formData,
 		});
 

@@ -2,6 +2,7 @@ import { type IntercomLocationItem, type StaffChatChannel, type StaffMemberPrese
 import { useCallback, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { getDemoChannels, getDemoLocations } from "./staffMessengerDemoData";
 
 export function useStaffChannels(cabinetNumber = "Каб. 1") {
@@ -27,7 +28,7 @@ export function useStaffChannels(cabinetNumber = "Каб. 1") {
 				}
 			}
 		} catch (e) {
-			console.error("Ошибка загрузки локаций:", e);
+			clientLogger.error("Ошибка загрузки локаций:", e);
 		}
 		if (isDemoShowcaseMode()) {
 			const fallback = getDemoLocations();
@@ -59,7 +60,7 @@ export function useStaffChannels(cabinetNumber = "Каб. 1") {
 				if (!activeChannelId && fallback[0]) setActiveChannelId(fallback[0].id);
 			}
 		} catch (e) {
-			console.error("Ошибка загрузки каналов:", e);
+			clientLogger.error("Ошибка загрузки каналов:", e);
 			if (isDemoShowcaseMode()) {
 				const fallback = getDemoChannels();
 				setChannels(fallback);

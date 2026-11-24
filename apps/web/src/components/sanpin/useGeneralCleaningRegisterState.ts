@@ -1,6 +1,7 @@
 import type { GeneralCleaningLog } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	executeAutopilotMonthCleaning,
 	executeQuickRecordNormCleaning,
@@ -33,7 +34,7 @@ export function useGeneralCleaningRegisterState() {
 				setLogs(data);
 			}
 		} catch (err) {
-			console.error("Failed to load cleaning logs", err);
+			clientLogger.error("Failed to load cleaning logs", err);
 		} finally {
 			setLoading(false);
 		}

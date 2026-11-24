@@ -43,7 +43,9 @@ export function formatFilmstripDateTime(rawDate: string): { dateStr: string; tim
 			const secs = String(d.getSeconds()).padStart(2, "0");
 			return { dateStr: `${day}.${month}.${year}`, timeStr: `${hours}:${mins}:${secs}` };
 		}
-	} catch {}
+	} catch (err) {
+		console.warn("[filmstripTypes] Date parse fallback:", err);
+	}
 
 	return { dateStr: rawDate, timeStr: "" };
 }

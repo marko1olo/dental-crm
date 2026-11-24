@@ -14,7 +14,10 @@
  * Mandate 8e (zero cashier friction), Mandate 8i (exact kopecks), Mandate 8n.
  */
 
-import { generateQrCodeSvg, rublesToKopecks } from "@dental/shared";
+import { generateQrCodeSvg, generateUuidV7, rublesToKopecks } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+
+const SBP_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface SbpDynamicQrConfig {
 	readonly sumRub: number;
@@ -59,10 +62,17 @@ export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<Sbp
 	// Схема сервера принимает TTL от 60 секунд.
 	const ttlSeconds = Math.max(60, config.ttlSeconds ?? 300);
 
+	const idempotencyKey = SBP_UUID_PATTERN.test(config.operationId)
+		? config.operationId
+		: generateUuidV7();
+
 	try {
 		const res = await fetch("/api/sbp/generate-qr", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+			}),
 			body: JSON.stringify({
 				operationId: config.operationId,
 				amountKopecks: sumKopecks,

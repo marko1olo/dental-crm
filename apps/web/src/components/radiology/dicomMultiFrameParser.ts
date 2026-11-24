@@ -137,7 +137,9 @@ export function isMultiFrameDicom(buffer: ArrayBuffer): boolean {
           if (!Number.isNaN(frames)) {
             return frames > 1;
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[dicomMultiFrameParser] NumberOfFrames ASCII parse skipped:", err);
+        }
       }
 
       // Non-standard binary fallback (uint16 / uint32)

@@ -68,6 +68,8 @@ const DEFAULT_DEMO_SERVICES: readonly DmsBillableItem[] = [
 	{ id: "b-5", serviceCode: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", quantity: 1, unitPriceKopecks: 650000, isExcluded: false },
 ];
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function useDmsStudioState({
 	isOpen,
 	onClose,
@@ -157,6 +159,31 @@ export function useDmsStudioState({
 	const [newLetterLimitRub, setNewLetterLimitRub] = useState<number>(50000);
 	const [liveRegistryRecords, setLiveRegistryRecords] = useState<readonly DmsRegistryServiceRecord[]>([]);
 
+	// Zero-Leak Draft Reset (Мандаты 8zq, 8bn): сброс черновика при закрытии или смене пациента
+	useEffect(() => {
+		if (!isOpen) {
+			setActiveTab(initialTab);
+			setFranchisePercent(0);
+			setPaymentMethod("card");
+			setMixedCashRubInput("0");
+			setIsSplitApproved(false);
+			setNewLetterNumber("ГП-2026-002");
+			setNewLetterLimitRub(50000);
+			setLetters([]);
+			setActiveLetterId("");
+			setLiveRegistryRecords([]);
+			return;
+		}
+		setActiveTab(initialTab);
+		setFranchisePercent(0);
+		setPaymentMethod("card");
+		setMixedCashRubInput("0");
+		setIsSplitApproved(false);
+		setLetters(initialLetters);
+		setActiveLetterId(initialLetters[0]?.id || "");
+		setLiveRegistryRecords([]);
+	}, [isOpen, patient?.id, initialTab, initialLetters]);
+
 	// Fastify API Live Query for Clinic Contracts, Patient Guarantee Letters & Registry
 	useEffect(() => {
 		if (!isOpen) return;
@@ -191,33 +218,56 @@ export function useDmsStudioState({
 					}
 				}
 			})
-			.catch(() => {});
-
-		// 2. Fetch patient guarantee letters
-		const query = patient?.id ? `?patientId=${encodeURIComponent(patient.id)}` : "";
-		fetch(`/api/insurance/guarantee-letters${query}`, {
-			headers: denteClinicalReadHeaders(),
-		})
-			.then((res) => (res.ok ? res.json() : []))
-			.then((data: unknown) => {
-				if (!isMounted) return;
-				if (Array.isArray(data) && data.length > 0) {
-					const list = data as DmsGuaranteeLetter[];
-					setLetters(list);
-					const firstLetter = list[0];
-					if (firstLetter?.id) setActiveLetterId(String(firstLetter.id));
-				} else if (isDemo && initialLetters.length > 0) {
-					setLetters(initialLetters);
-				} else {
-					setLetters([]);
-				}
-			})
-			.catch(() => {
-				if (isMounted && isDemo) setLetters(initialLetters);
+			.catch((err) => {
+				console.warn("[useDmsStudioState] Не удалось загрузить договоры ДМС:", err);
 			});
 
+		// 2. Fetch patient guarantee letters (only send patientId when it is a valid UUID)
+		const hasValidPatientUuid = Boolean(patient?.id && UUID_REGEX.test(patient.id));
+		if (patient?.id && !hasValidPatientUuid) {
+			setLetters(isDemo ? initialLetters : []);
+		} else {
+			const query = hasValidPatientUuid ? `?patientId=${encodeURIComponent(patient.id)}` : "";
+			fetch(`/api/insurance/guarantee-letters${query}`, {
+				headers: denteClinicalReadHeaders(),
+			})
+				.then((res) => (res.ok ? res.json() : []))
+				.then((data: unknown) => {
+					if (!isMounted) return;
+					if (Array.isArray(data) && data.length > 0) {
+						const list = data as DmsGuaranteeLetter[];
+						setLetters(list);
+						const firstLetter = list[0];
+						if (firstLetter?.id) setActiveLetterId(String(firstLetter.id));
+					} else if (isDemo && initialLetters.length > 0) {
+						setLetters(initialLetters);
+					} else {
+						setLetters([]);
+					}
+				})
+				.catch((err) => {
+					console.warn("[useDmsStudioState] Ошибка загрузки гарантийных писем:", err);
+					if (isMounted && isDemo) setLetters(initialLetters);
+				});
+		}
+
 		// 3. Fetch insurance claims registry (live production mode)
-		const regQuery = selectedInsurerId ? `?insurerKey=${encodeURIComponent(selectedInsurerId)}` : "";
+		const selectedContract = contracts.find((c) => c.id === selectedInsurerId);
+		const regParams = new URLSearchParams();
+		if (selectedContract) {
+			if (selectedContract.insurerKey) {
+				regParams.set("insurerKey", selectedContract.insurerKey);
+			} else if (UUID_REGEX.test(selectedContract.id)) {
+				regParams.set("contractId", selectedContract.id);
+			}
+		} else if (selectedInsurerId) {
+			if (UUID_REGEX.test(selectedInsurerId)) {
+				regParams.set("contractId", selectedInsurerId);
+			} else {
+				regParams.set("insurerKey", selectedInsurerId);
+			}
+		}
+		const regQuery = regParams.toString() ? `?${regParams.toString()}` : "";
 		fetch(`/api/insurance/registry${regQuery}`, {
 			headers: denteClinicalReadHeaders(),
 		})
@@ -230,12 +280,14 @@ export function useDmsStudioState({
 					setLiveRegistryRecords(recs);
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("[useDmsStudioState] Ошибка загрузки реестра ДМС:", err);
+			});
 
 		return () => {
 			isMounted = false;
 		};
-	}, [isOpen, patient?.id, isDemo, initialLetters, selectedInsurerId]);
+	}, [isOpen, patient?.id, isDemo, initialLetters, selectedInsurerId, contracts]);
 
 	// Billable items: honest visit items or demo fallback
 	const effectiveBillItems = useMemo<readonly DmsBillableItem[]>(() => {
@@ -343,6 +395,11 @@ export function useDmsStudioState({
 		setLetters((prev) => [newLetterItem, ...prev]);
 		setActiveLetterId(newLetterItem.id);
 		setNewLetterNumber(`ГП-${Date.now().toString().slice(-4)}`);
+
+		if (!patient.id || !UUID_REGEX.test(patient.id)) {
+			showToast("Гарантийное письмо прикреплено локально", "info");
+			return;
+		}
 
 		try {
 			const res = await fetch("/api/insurance/guarantee-letters", {

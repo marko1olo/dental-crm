@@ -2,7 +2,7 @@
  * persistenceApi.ts — HTTP API сохранения и загрузки разметки планирования (Мандат 8b <= 120 строк).
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	type CtPlanningMarkup,
 	type CtPlanningSaveOutcome,
@@ -39,7 +39,10 @@ export async function saveCtPlanningMarkup(
 	try {
 		response = await fetch(CT_PLANNING_SAVE_URL, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+			}),
 			body: JSON.stringify(ctPlanningSaveBody(patientId, studyInstanceUid, markup)),
 		});
 	} catch {
@@ -59,7 +62,7 @@ export async function loadCtPlanningMarkup(
 	let response: Response;
 	try {
 		response = await fetch(ctPlanningLoadUrl(patientId, studyInstanceUid), {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		});
 	} catch {
 		return { status: "refused", message: ctPlanningLoadRefusalText(null, null) };

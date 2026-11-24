@@ -12,6 +12,8 @@ import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
 import { RadiologyConsultationSplit } from "../../../radiology/RadiologyConsultationSplit";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
+import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { VisitModalPatientEntity, VisitModalDashboardEntity } from "./visitViewModalsTypes";
 import type { VisitDashboardEntity } from "../VisitViewProps";
 import type { Dashboard } from "@dental/shared";
@@ -99,10 +101,16 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 								}),
 							});
 							if (!res.ok) {
-								console.warn("[EndoAndImagingModals] onSaveCanals POST failed with status:", res.status);
+								clientLogger.warn("onSaveCanals POST failed", { status: res.status, toothNum }, { module: "EndoAndImagingModals" });
+								showToast(`Не удалось сохранить протокол каналов на сервере (${res.status})`, "error", 4000);
+								throw new Error(`HTTP ${res.status}`);
 							}
 						} catch (saveErr) {
-							console.error("[EndoAndImagingModals] onSaveCanals error:", saveErr);
+							clientLogger.error("onSaveCanals error", saveErr, { module: "EndoAndImagingModals" });
+							if (!(saveErr instanceof Error && saveErr.message.startsWith("HTTP "))) {
+								showToast("Ошибка соединения при сохранении протокола каналов", "error", 4000);
+							}
+							throw saveErr;
 						}
 					}}
 				/>

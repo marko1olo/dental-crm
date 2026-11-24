@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { playIntercomChime } from "../../lib/intercomSound";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export function useChairsideIntercomPing(
 	cabinetNumber: string,
@@ -34,7 +35,7 @@ export function useChairsideIntercomPing(
 				showToast("Ошибка отправки сигнала интеркома", "warning");
 			}
 		} catch (e) {
-			console.error("Сбой интеркома у кресла:", e);
+			clientLogger.error("Сбой интеркома у кресла:", e);
 			showToast("Сетевая ошибка вызова интеркома", "error");
 		} finally {
 			setIsSending(false);

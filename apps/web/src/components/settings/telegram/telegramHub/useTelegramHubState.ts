@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { TelegramAccountStatus, TelegramBotStatus } from "./types";
 
 export interface UseTelegramHubStateProps {
@@ -31,7 +32,7 @@ export function useTelegramHubState({
 				}
 			}
 		} catch (err) {
-			console.error("Failed to load telegram bot status:", err);
+			clientLogger.error("Failed to load telegram bot status:", err);
 		} finally {
 			setIsBotLoading(false);
 		}
@@ -48,7 +49,7 @@ export function useTelegramHubState({
 				setAccountStatus(data);
 			}
 		} catch (err) {
-			console.error("Failed to load telegram account status:", err);
+			clientLogger.error("Failed to load telegram account status:", err);
 		} finally {
 			setIsAccountLoading(false);
 		}

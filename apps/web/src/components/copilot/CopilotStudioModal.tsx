@@ -8,6 +8,7 @@ import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, Boo
 import "./styles/copilotStudio.css";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode";
 import { CLINICAL_QUICK_PRESETS, CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
@@ -73,7 +74,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
           setMessages(p); saveThreadMessages(sId, p); return true;
         }
       }
-    } catch (err) { console.warn("[CopilotStudioModal] Hydrate session offline:", err); }
+    } catch (err) { clientLogger.warn("[CopilotStudioModal] Hydrate session offline:", err); }
     return false;
   }, [saveThreadMessages]);
   useEffect(() => {
@@ -242,7 +243,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
       }
     } catch (err) {
       streamFailed = true;
-      console.warn("[CopilotStudioModal] Streaming error:", err);
+      clientLogger.warn("[CopilotStudioModal] Streaming error:", err);
       showToast("Сбой соединения со шлюзом ИИ. Нажмите «Повторить» для повторной отправки.", "error", 6000, { label: "Повторить", onAction: () => { void handleSendMessage(query); } });
     }
     setIsStreaming(false);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { SanpinRegisterTab } from "../sanpinNavigationConfig";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
@@ -40,7 +41,7 @@ export function useSanpinRegistersLogic(
 				}
 			}
 		} catch (err) {
-			console.error("Failed to load SanPiN summary", err);
+			clientLogger.error("Failed to load SanPiN summary", err);
 		}
 	}, [auth]);
 
@@ -80,14 +81,19 @@ export function useSanpinRegistersLogic(
 			const headers = auth && auth.denteClinicalMutationHeaders
 				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
 				: { "Content-Type": "application/json" };
-			await fetch("/api/registers/autofill-shift", {
+			const res = await fetch("/api/registers/autofill-shift", {
 				method: "POST", headers, body: JSON.stringify(bundle),
-			}).catch(() => null);
+			});
+			if (!res.ok) {
+				showToast("Сервер отклонил авто-заполнение смены", "error");
+				return;
+			}
 
 			showToast(`Смена заполнена: автоклавы ${bundle.summary.totalSterilizationCycles} цикла, очистка ${bundle.summary.totalPsoSamplesTested} проб (100% норма).`, "success");
 			fetchSummary();
 			setRefreshCounter((p) => p + 1);
-		} catch {
+		} catch (err) {
+			clientLogger.error("Failed to autofill shift registers:", err);
 			showToast("Ошибка при авто-заполнении смены", "error");
 		} finally {
 			setAutoFilling(false);
@@ -102,17 +108,22 @@ export function useSanpinRegistersLogic(
 			const headers = auth && auth.denteClinicalMutationHeaders
 				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
 				: { "Content-Type": "application/json" };
-			await fetch("/api/registers/autofill-month", {
+			const res = await fetch("/api/registers/autofill-month", {
 				method: "POST", headers, body: JSON.stringify({
 					year: now.getFullYear(), month: now.getMonth() + 1,
 					operatorFullName: appLogic?.activeDoctor?.fullName || "Медсестра ЦСО",
 					headNurseFullName: appLogic?.clinic?.legalEntityName || "Ответственный",
 				}),
-			}).catch(() => null);
+			});
+			if (!res.ok) {
+				showToast("Сервер отклонил авто-заполнение журналов за период", "error");
+				return;
+			}
 			showToast("Журналы за период успешно зафиксированы в базе данных (100% норма)", "success");
 			setRefreshCounter((p) => p + 1);
 			fetchSummary();
-		} catch {
+		} catch (err) {
+			clientLogger.error("Failed to autofill period registers:", err);
 			showToast("Ошибка при авто-заполнении журналов", "error");
 		} finally {
 			setAutoFilling(false);

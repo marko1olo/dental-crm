@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../../lib/panelStateText";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import {
 	autoDetectColumnMappings,
@@ -250,9 +251,27 @@ export function useMigrationWizardController() {
 				if (result.ok) {
 					setReport(result.data);
 					setStep("report");
+				} else {
+					setError({ code: result.code, message: result.message });
+					showToast(
+						result.message || "Не удалось загрузить отчёт миграции",
+						"error",
+					);
 				}
 			} catch (e) {
-				console.error("[migration] failed to load report:", e);
+				clientLogger.error("[migration] failed to load report:", e);
+				const msg =
+					e instanceof Error
+						? e.message
+						: "Не удалось загрузить отчёт миграции.";
+				setError({ code: "NetworkError", message: msg });
+				showToast(
+					actionFailureToast(
+						"Ошибка загрузки отчёта миграции",
+						(e as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 			}
 		},
 		[clinicalReadHeaders],

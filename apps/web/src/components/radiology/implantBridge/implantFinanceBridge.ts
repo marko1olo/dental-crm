@@ -227,7 +227,7 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 			},
 			{
 				code: "A16.07.041",
-				title: `Костная пластика: биоматериал Geistlich Bio-Oss (1.0 г)${toothSuffix}`,
+				title: `Костная пластика: остеопластический ксенографт (1.0 г)${toothSuffix}`,
 				priceRub: 18000,
 				priceKopecks: rublesToKopecks(18000),
 				amountKopecks: BigInt(rublesToKopecks(18000)),
@@ -244,7 +244,7 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 			},
 			{
 				code: "A16.07.041",
-				title: `Костная пластика: биоматериал Geistlich Bio-Oss (0.5 см³)${toothSuffix}`,
+				title: `Костная пластика: остеопластический ксенографт (0.5 см³)${toothSuffix}`,
 				priceRub: 15000,
 				priceKopecks: rublesToKopecks(15000),
 				amountKopecks: BigInt(rublesToKopecks(15000)),
@@ -253,7 +253,7 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 	} else if (w !== null && w < 5.5) {
 		services.push({
 			code: "A16.07.041",
-			title: `Направленная костная регенерация (НКР) альвеолярного гребня Bio-Oss${toothSuffix}`,
+			title: `Направленная костная регенерация (НКР) альвеолярного гребня ксенографтом${toothSuffix}`,
 			priceRub: 16000,
 			priceKopecks: rublesToKopecks(16000),
 			amountKopecks: BigInt(rublesToKopecks(16000)),

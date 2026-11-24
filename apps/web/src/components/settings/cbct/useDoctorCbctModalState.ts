@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	CANONICAL_CBCT_SETTINGS,
 	type CbctInterpolationMethod,
@@ -78,7 +79,7 @@ export function useDoctorCbctModalState(
 				const currentZMm = volume.originMm && volume.spacingMm ? volume.originMm.z + sliceZIndex * volume.spacingMm.z : undefined;
 				const panoResult = reconstructPanoramicView(volume, archCurve, { windowWidth, windowLevel, gamma, useSoftKnee: false, softKneeCeiling: 255, airCutoffHU, projectionMode: "average", focalTroughThicknessMm: Math.max(1.0, panoThicknessMm), ...(currentZMm !== undefined ? { centerZMm: currentZMm } : {}), heightMm, invert: false, coarsePreview: false });
 				if (!isCancelled && panoResult) renderPanoToCanvas(canvas, panoResult, currentZMm);
-			} catch (err) { console.error("[DoctorCbctSettingsModal] Pano render failed:", err); }
+			} catch (err) { clientLogger.error("[DoctorCbctSettingsModal] Pano render failed:", err); }
 		}, 60);
 		return () => { isCancelled = true; clearTimeout(timer); };
 	}, [isOpen, previewTab, volume, archCurve, sliceZIndex, windowWidth, windowLevel, gamma, airCutoffHU, panoThicknessMm]);

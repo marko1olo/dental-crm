@@ -13,7 +13,9 @@ function getViteApiUrl(): string {
 		if (typeof import.meta !== "undefined" && import.meta.env && typeof import.meta.env.VITE_API_URL === "string") {
 			return import.meta.env.VITE_API_URL;
 		}
-	} catch {}
+	} catch (err) {
+		console.warn("[realDicomWebClient] VITE_API_URL unavailable:", err);
+	}
 	return "";
 }
 

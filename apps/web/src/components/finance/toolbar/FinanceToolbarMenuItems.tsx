@@ -12,6 +12,8 @@ import {
 	UploadCloud,
 	FileSpreadsheet,
 } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
 import type { FinanceToolbarMenuProps } from "./FinanceToolbarMenu.js";
 import { showToast } from "../../GlobalToast.js";
 
@@ -49,7 +51,10 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 			const content = await file.text();
 			const response = await fetch("/api/finance/bank-statements/upload", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ content }),
 			});
 

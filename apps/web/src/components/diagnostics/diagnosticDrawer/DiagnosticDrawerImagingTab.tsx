@@ -3,6 +3,7 @@ import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProto
 import { DirectRvgCaptureModal } from "../../radiology/DirectRvgCaptureModal";
 import { SensorStudyViewer } from "../../radiology/SensorStudyViewer";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { detectConnectedSensors } from "../../radiology/sensorGateway/hardwareDetection";
 import { usePatientStore } from "../../../store/patientStore";
 import { useVisitStore } from "../../../store/visitStore";
@@ -39,7 +40,7 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 		} catch (err) {
 			setIsCheckingSensors(false);
 			setSensorStatus("Датчик не обнаружен");
-			console.warn("[DiagnosticDrawerImagingTab] Sensor detection failed:", err);
+			clientLogger.warn("Sensor detection failed", err, { module: "DiagnosticDrawerImagingTab" });
 			showToast("Ошибка опроса оборудования", "warning", 3000);
 		}
 	};

@@ -21,7 +21,7 @@ import {
 	generate152FzAuditActHtml,
 } from '../auditTrailEngine';
 import { mapRawToAuditEntryParams } from './auditUtils';
-import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
+import { denteClinicalReadHeaders } from '../../../lib/denteRequestHeaders';
 import clientLogger from '../../../services/logging/clientLogger';
 
 export interface UseAuditTrailHubModalControllerParams {
@@ -83,7 +83,7 @@ export function useAuditTrailHubModalController({
 
 		async function fetchLiveAudit() {
 			try {
-				const headers = denteAdminSecretRequestHeaders({ 'Content-Type': 'application/json' });
+				const headers = denteClinicalReadHeaders({ 'Content-Type': 'application/json' });
 				const [logsRes, medRes] = await Promise.allSettled([
 					fetch('/api/audit/logs?limit=50', { headers }),
 					fetch('/api/audit/medical-access?limit=50', { headers }),

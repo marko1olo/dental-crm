@@ -9,6 +9,7 @@ import { generateUuidV7 } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface SaveOrReviseDiaryParams {
 	readonly effectiveVisitId: string;
@@ -88,9 +89,10 @@ export async function executeSaveOrReviseDiary(
 						}
 					}
 				} catch (fetchErr) {
-					console.warn(
+					clientLogger.warn(
 						"saveOrReviseDiaryAction: ошибка поиска diaryId для ревизии",
 						fetchErr,
+						{ module: "saveOrReviseDiaryAction" },
 					);
 				}
 			}
@@ -123,9 +125,10 @@ export async function executeSaveOrReviseDiary(
 					const errorMsg =
 						errJson?.message ||
 						"Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
-					console.warn(
+					clientLogger.warn(
 						"saveOrReviseDiaryAction: отказ ревизии дневника в /api/diaries/:id/revise",
 						errJson,
+						{ module: "saveOrReviseDiaryAction" },
 					);
 					showToast(errorMsg, "error", 5000);
 					return false;
@@ -160,9 +163,10 @@ export async function executeSaveOrReviseDiary(
 						error?: string;
 						message?: string;
 					} | null;
-					console.warn(
+					clientLogger.warn(
 						"saveOrReviseDiaryAction: ошибка сохранения ревизии дневника по visitId в /api/diaries",
 						errJson,
+						{ module: "saveOrReviseDiaryAction" },
 					);
 					showToast(errJson?.message || "Ошибка сохранения ревизии дневника приёма", "error", 5000);
 					return false;
@@ -221,9 +225,10 @@ export async function executeSaveOrReviseDiary(
 				error?: string;
 				message?: string;
 			} | null;
-			console.warn(
+			clientLogger.warn(
 				"saveOrReviseDiaryAction: ошибка сохранения дневника в /api/diaries",
 				errJson,
+				{ module: "saveOrReviseDiaryAction" },
 			);
 			showToast(errJson?.message || "Ошибка сохранения дневника приёма", "error", 5000);
 			return false;
@@ -254,9 +259,10 @@ export async function executeSaveOrReviseDiary(
 
 		return true;
 	} catch (diaryErr) {
-		console.warn(
+		clientLogger.warn(
 			"saveOrReviseDiaryAction: сетевая ошибка сохранения дневника в /api/diaries",
 			diaryErr,
+			{ module: "saveOrReviseDiaryAction" },
 		);
 		showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
 		return false;

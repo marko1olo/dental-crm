@@ -4,6 +4,7 @@
  */
 
 import type { HardwareDevice, HardwareDeviceKind } from "./types.js";
+import { logger } from "../../../utils/logger.js";
 
 // Known Medical & Retail Barcode Scanner Vendors (Chestny ZNAK 2D DataMatrix)
 const KNOWN_BARCODE_VENDORS: Record<number, { name: string; kind: HardwareDeviceKind }> = {
@@ -93,7 +94,7 @@ export async function getAvailableUsbDevices(): Promise<HardwareDevice[]> {
 		const devices: UsbDeviceLike[] = await usb.getDevices();
 		return devices.map((d) => mapUsbDeviceToHardwareDevice(d));
 	} catch (err) {
-		console.warn("[UsbDeviceScanner] Failed to enumerate WebUSB devices:", err);
+		logger.warn("[UsbDeviceScanner] Failed to enumerate WebUSB devices:", err);
 		return [];
 	}
 }
@@ -127,7 +128,7 @@ export async function requestUsbDevice(): Promise<HardwareDevice | null> {
 	} catch (err) {
 		const name = (err as { name?: string })?.name;
 		if (name !== "NotFoundError" && name !== "AbortError") {
-			console.warn("[UsbDeviceScanner] USB device request cancelled or failed:", err);
+			logger.warn("[UsbDeviceScanner] USB device request cancelled or failed:", err);
 		}
 		return null;
 	}
@@ -156,7 +157,7 @@ export function subscribeUsbDeviceEvents(
 				onConnect(mapUsbDeviceToHardwareDevice(device));
 			}
 		} catch (err) {
-			console.warn("[UsbDeviceScanner] Connect event handling error:", err);
+			logger.warn("[UsbDeviceScanner] Connect event handling error:", err);
 		}
 	};
 
@@ -164,7 +165,7 @@ export function subscribeUsbDeviceEvents(
 		try {
 			onDisconnect();
 		} catch (err) {
-			console.warn("[UsbDeviceScanner] Disconnect event handling error:", err);
+			logger.warn("[UsbDeviceScanner] Disconnect event handling error:", err);
 		}
 	};
 

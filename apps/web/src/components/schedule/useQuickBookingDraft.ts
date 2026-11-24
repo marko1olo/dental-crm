@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 import type { useQuickBookingPatientSearch } from "./useQuickBookingPatientSearch";
@@ -42,7 +43,7 @@ export function useQuickBookingDraft({
         globalThis.localStorage.removeItem("dente_quick_booking_draft");
       }
     } catch (err: unknown) {
-      console.warn("[useQuickBookingDraft] Failed to purge storage draft:", err);
+      clientLogger.warn("Failed to purge storage draft", err, { module: "useQuickBookingDraft" });
     }
     patientSearch.setSelectedPatient(null);
     patientSearch.setPatientId("");

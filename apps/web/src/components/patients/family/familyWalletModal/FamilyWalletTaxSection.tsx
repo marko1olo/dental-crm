@@ -9,7 +9,7 @@
 import { AlertCircle, Download, FileText, Loader2, Printer, RefreshCw, Users } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { money } from "../../../../AppHelpers";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
 import type { FamilyGroupDetails } from "./types";
@@ -162,7 +162,7 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 				const res = await fetch(
 					`/api/finance/family/${familyData.id}/tax-certificates?taxYear=${year}`,
 					{
-						headers: denteAdminSecretRequestHeaders(),
+						headers: denteClinicalReadHeaders(),
 					},
 				);
 				if (!res.ok) {

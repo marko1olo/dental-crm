@@ -12,7 +12,10 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { generateUuidV7, formatRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders.js";
 import {
 	enqueueOfflinePayment,
 	type PaymentMethodKind,
@@ -330,7 +333,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		async function fetchRecentOps() {
 			try {
 				const res = await fetch("/api/cash/operation-list", {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) return;
 				const json = await res.json().catch(() => null);
@@ -539,7 +542,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			}
 
 			try {
-				const headers = denteAdminSecretRequestHeaders({
+				const headers = denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": clientMutationId,
 				});
@@ -594,7 +597,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		}
 
 		try {
-			const headers = denteAdminSecretRequestHeaders({
+			const headers = denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,
 			});
@@ -747,7 +750,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				if (closeFn) {
 					await closeFn();
 				} else {
-					const headers = denteAdminSecretRequestHeaders({
+					const headers = denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					});
@@ -771,7 +774,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				if (openFn) {
 					await openFn();
 				} else {
-					const headers = denteAdminSecretRequestHeaders({
+					const headers = denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					});

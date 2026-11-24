@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { useCameraStream } from "../hooks/useCameraStream";
 import { useDocumentPresets } from "../hooks/useDocumentPresets";
@@ -80,7 +80,9 @@ export function useScannerModalState(
 			const formData = new FormData();
 			formData.append("file", capture.capturedBlob, fileName);
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/attachments`, {
-				method: "POST", headers: denteAdminSecretRequestHeaders(), body: formData,
+				method: "POST",
+				headers: denteClinicalMutationHeaders({ "Idempotency-Key": crypto.randomUUID() }),
+				body: formData,
 			});
 			if (!res.ok) throw new Error(`Ошибка загрузки: ${res.status}`);
 			showToast(`Документ «${fileName}» прикреплен к медкарте.`, "success", 6000);

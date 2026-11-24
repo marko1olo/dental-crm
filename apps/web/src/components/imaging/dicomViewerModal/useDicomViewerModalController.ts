@@ -114,6 +114,13 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 			setViewportState(DEFAULT_DICOM_VIEWPORT_STATE);
 
 			const targetPatientId = patientId || selectedPatientId;
+			const hasValidPatientUuid = Boolean(
+				targetPatientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPatientId),
+			);
+			if (!hasValidPatientUuid) {
+				showToast(`Снимок «${file.name}» открыт в просмотрщике`, "info");
+				return;
+			}
 			try {
 				const headers = denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
@@ -123,11 +130,11 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 					method: "POST",
 					headers,
 					body: JSON.stringify({
-						...(targetPatientId && targetPatientId.length === 36 ? { patientId: targetPatientId } : {}),
+						patientId: targetPatientId,
 						title: file.name,
 						imageBase64: dataUrl,
-						originalFilename: file.name,
-						mimeType: file.type || "image/jpeg",
+						sourceKind: "manual_upload",
+						sourceName: file.name.slice(0, 160),
 						...(toothFdiCode ? { toothCode: String(toothFdiCode) } : {}),
 						kind: "periapical",
 					}),

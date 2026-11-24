@@ -129,7 +129,7 @@ export const DoctorShiftEarningsCard: React.FC<DoctorShiftEarningsCardProps> = (
 						gap: "4px",
 					}}
 				>
-					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--teal-dark, #0f766e)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--teal-dark, #0f766e)", letterSpacing: "0.01em" }}>
 						Начислено к выплате
 					</span>
 					<strong style={{ fontSize: "20px", fontWeight: 800, color: "var(--teal-dark, #0f766e)", fontVariantNumeric: "tabular-nums" }}>
@@ -151,7 +151,7 @@ export const DoctorShiftEarningsCard: React.FC<DoctorShiftEarningsCardProps> = (
 						gap: "4px",
 					}}
 				>
-					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", letterSpacing: "0.01em" }}>
 						Выработка по услугам
 					</span>
 					<strong style={{ fontSize: "18px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
@@ -173,7 +173,7 @@ export const DoctorShiftEarningsCard: React.FC<DoctorShiftEarningsCardProps> = (
 						gap: "4px",
 					}}
 				>
-					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+					<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", letterSpacing: "0.01em" }}>
 						Пациенты за смену
 					</span>
 					<div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>

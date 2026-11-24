@@ -15,8 +15,6 @@ import { OneCExportFooter } from "./one-c/OneCExportFooter";
 export type { Billing1CExportModalProps };
 
 export function Billing1CExportModal(props: Billing1CExportModalProps): React.ReactElement | null {
-	if (!props.isOpen) return null;
-
 	const patientName = props.patientName || "Пациент";
 	const patientId = props.patientId || "00000000-0000-0000-0000-000000000001";
 	const clinicName = props.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
@@ -40,6 +38,8 @@ export function Billing1CExportModal(props: Billing1CExportModalProps): React.Re
 		initialDoctorName: doctorName,
 		initialTotalRub: props.totalRub,
 	});
+
+	if (!props.isOpen) return null;
 
 	return (
 		<div

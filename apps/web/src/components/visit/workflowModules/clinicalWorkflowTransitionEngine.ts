@@ -11,6 +11,7 @@ import type {
 	ClinicalWorkflowStep,
 } from "./clinicalWorkflowTypes";
 import { assembleClinicalVisitEstimate } from "./workflowEstimateAssembler";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export {
 	extractProceduresFromDiary,
@@ -68,7 +69,7 @@ export async function executeWorkflowStepTransition(
 		try {
 			await context.onAutosave(context.formData);
 		} catch (err) {
-			console.warn("[clinicalWorkflow] Фоновое сохранение при переходе шага:", err);
+			clientLogger.warn("Фоновое сохранение при переходе шага", err, { module: "clinicalWorkflowTransitionEngine" });
 		}
 	}
 	return { success: true, nextStep: toStep };

@@ -2,6 +2,8 @@
  * prescriptionIframePrinter.ts — Pure helper to print HTML via detached invisible iframe
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export function printHtmlViaDetachedIframe(printHtml: string): void {
 	if (typeof document === "undefined") return;
 	try {

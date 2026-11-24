@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { AlertCircle } from "lucide-react";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { CLINICAL_PRESETS, type ClinicalPreset, defaultPreset } from "./chairside/chairsidePresets";
 import { mapToCanonicalToothState } from "./chairside/canonicalToothStateMapper";
 import {
@@ -143,7 +144,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
           setFallbackBanner(null);
         }
       } catch (err) {
-        console.warn("[ChairsideCopilotHUD] Agent execution failed:", err);
+        clientLogger.warn("[ChairsideCopilotHUD] Agent execution failed:", err);
       } finally {
         setIsExecutingAgent(false);
       }

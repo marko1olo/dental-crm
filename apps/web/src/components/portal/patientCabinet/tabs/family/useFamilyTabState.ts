@@ -1,10 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import type { PatientCabinetFamilyMember, PatientPersonalCabinetData } from "../../patientCabinetEngine";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../../../lib/demoMode.js";
 import { RELATIONSHIP_OPTIONS, DEFAULT_FAMILY_MEMBERS } from "./familyConstants";
 
-function getPortalAuthHeaders(): HeadersInit {
+function getPortalAuthHeaders(includeIdempotency = false): HeadersInit {
 	const headers: Record<string, string> = { "Content-Type": "application/json" };
+	if (includeIdempotency) {
+		headers["Idempotency-Key"] = generateUuidV7();
+	}
 	const token = typeof localStorage !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
@@ -63,7 +67,7 @@ export function useFamilyTabState(
 		try {
 			const resp = await fetch("/api/portal/family/permissions", {
 				method: "PATCH",
-				headers: getPortalAuthHeaders(),
+				headers: getPortalAuthHeaders(true),
 				body: JSON.stringify({
 					memberId,
 					canSpendFamilyWallet: nextPermission,
@@ -126,7 +130,7 @@ export function useFamilyTabState(
 		try {
 			const resp = await fetch("/api/portal/family/members", {
 				method: "POST",
-				headers: getPortalAuthHeaders(),
+				headers: getPortalAuthHeaders(true),
 				body: JSON.stringify({
 					fullName: cleanName,
 					relationship: newRelationship,

@@ -177,7 +177,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
+			cardNumber: "МК-2026/891",
 			confidence: 92,
 		},
 		metadata: {
@@ -207,7 +207,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
+			cardNumber: "МК-2026/891",
 			confidence: 90,
 		},
 		metadata: {
@@ -237,7 +237,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент клиники",
-			cardNumber: "043/у-2026/042",
+			cardNumber: "МК-2026/042",
 			confidence: 94,
 		},
 		metadata: {

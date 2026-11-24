@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { calculateProgressiveNdflTax, generateDoctorEarningsPayslipHtml, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { closeSettlementPeriodApi } from "../../payroll/closeSettlementPeriodApi.js";
 import type { EarningsDataState } from "./types.js";
 

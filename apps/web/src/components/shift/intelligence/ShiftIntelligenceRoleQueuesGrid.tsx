@@ -61,8 +61,7 @@ export const ShiftIntelligenceRoleQueuesGrid: React.FC<ShiftIntelligenceRoleQueu
 											gap: "6px",
 											fontSize: "11px",
 											fontWeight: 700,
-											textTransform: "uppercase",
-											letterSpacing: "0.06em",
+											letterSpacing: "0.02em",
 											color: isActive ? "var(--teal-dark)" : "var(--muted)",
 										}}
 									>

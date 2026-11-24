@@ -11,6 +11,7 @@ import {
 	type ExpenseRecord,
 	type MonthlyExpensesSummary,
 	type NetProfitSummary,
+	generateUuidV7,
 } from "@dental/shared";
 import { handleApiResponse } from "./apiResponseHandler.js";
 
@@ -46,10 +47,12 @@ export async function createExpense(
 	headers: Record<string, string>,
 	payload: CreateExpensePayload,
 ): Promise<{ success: boolean; data: ExpenseRecord }> {
+	const idempotencyKey = headers["Idempotency-Key"] || headers["idempotency-key"] || generateUuidV7();
 	const res = await fetch("/api/v1/expenses", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
+			"Idempotency-Key": idempotencyKey,
 			...headers,
 		},
 		body: JSON.stringify(payload),
@@ -88,9 +91,13 @@ export async function deleteExpense(
 	headers: Record<string, string>,
 	expenseId: string,
 ): Promise<{ success: boolean; id: string }> {
+	const idempotencyKey = headers["Idempotency-Key"] || headers["idempotency-key"] || generateUuidV7();
 	const res = await fetch(`/api/v1/expenses/${encodeURIComponent(expenseId)}`, {
 		method: "DELETE",
-		headers,
+		headers: {
+			"Idempotency-Key": idempotencyKey,
+			...headers,
+		},
 	});
 	return handleApiResponse<{ success: boolean; id: string }>(res, "Ошибка удаления расхода");
 }

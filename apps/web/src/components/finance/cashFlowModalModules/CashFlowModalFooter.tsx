@@ -28,10 +28,12 @@ export const CashFlowModalFooter: React.FC<CashFlowModalFooterProps> = ({
 
 			<button
 				type="button"
-				onClick={onSubmit}
-				disabled={isProcessing}
+				onClick={() => {
+					if (!isProcessing) onSubmit();
+				}}
+				aria-busy={isProcessing}
 				data-testid="btn-confirm-cash-operation"
-				className={`min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-50 ${
+				className={`min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
 					isCashIn
 						? "bg-emerald-600 hover:bg-emerald-700"
 						: "bg-rose-600 hover:bg-rose-700"

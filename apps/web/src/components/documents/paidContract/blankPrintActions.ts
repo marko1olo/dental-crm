@@ -3,7 +3,7 @@
  * Print actions for blank contracts and informed consents (Mandate 8b <= 120 lines, Mandate 8e)
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { BlankContractOptions, BlankContractPatientInfo } from "./blankContractTypes";
 import { LEGAL_CLAUSES } from "./blankContractTypes";
@@ -50,7 +50,10 @@ export async function printBlankMedicalContract(
 
 	if (hasValidPatientUuid && patientId) {
 		try {
-			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+			const headers = denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+			});
 			const todayIso = new Date().toISOString().slice(0, 10);
 			const contractNum = options?.contractNumber?.trim() || `БЛАНК-${Date.now().toString().slice(-6)}`;
 			const res = await fetch("/api/documents", {

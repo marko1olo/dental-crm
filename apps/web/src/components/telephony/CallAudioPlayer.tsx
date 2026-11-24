@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	CallAudioEmptyState,
 	CallAudioPlaybackControls,
@@ -33,7 +34,7 @@ export function CallAudioPlayer({
 				p.audioRef.current.pause();
 				p.audioRef.current.currentTime = 0;
 				p.audioRef.current.src = "";
-				try { p.audioRef.current.removeAttribute("src"); } catch (err) { console.warn("[CallAudioPlayer] removeAttribute:", err); }
+				try { p.audioRef.current.removeAttribute("src"); } catch (err) { clientLogger.warn("[CallAudioPlayer] removeAttribute:", err); }
 				p.audioRef.current.load();
 			}
 		};

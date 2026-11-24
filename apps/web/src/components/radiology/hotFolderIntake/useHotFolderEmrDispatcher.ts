@@ -4,7 +4,9 @@ import { FDI_TOOTH_NAMES } from "../radiologyMath";
 import type { RadiologyStudy } from "../types";
 import type { HotFolderItem } from "../hotFolderTypes";
 import { useVisitStore } from "../../../store/visitStore";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface UseHotFolderEmrDispatcherProps {
 	readonly patientId: string;
@@ -96,6 +98,7 @@ export function useHotFolderEmrDispatcher({
 		// Persist scan to server
 		if (
 			patientId &&
+			UUID_REGEX.test(patientId) &&
 			activeItem.imageUrl &&
 			(activeItem.imageUrl.startsWith("data:image/") || activeItem.imageUrl.startsWith("blob:"))
 		) {
@@ -112,18 +115,19 @@ export function useHotFolderEmrDispatcher({
 					}
 					const response = await fetch("/api/imaging/studies", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": crypto.randomUUID(),
+						}),
 						body: JSON.stringify({
 							patientId,
 							imageBase64,
 							title: activeItem.filename || `Снимок Hot Folder ${selectedTeeth.join(", ")}`,
-							originalFilename:
-								activeItem.filename || `hf_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
-							mimeType: "image/jpeg",
 							kind: activeItem.detectedModality === "optg_panoramic" ? "opg" : "periapical",
+							sourceKind: "hot_folder",
+							sourceName: (activeItem.filename || activeItem.sourceLabel || "hot_folder").slice(0, 160),
 							toothCode: selectedTeeth[0] || null,
-							notes: protocolNote,
-							status: "available",
+							aiSummary: protocolNote ? protocolNote.slice(0, 2000) : null,
 						}),
 					});
 					if (!response.ok) {

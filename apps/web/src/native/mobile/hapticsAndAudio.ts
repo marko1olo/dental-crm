@@ -13,6 +13,7 @@ import type {
 	ClinicalAudioFeedbackType,
 } from "./types";
 import { getMobileNativeApi } from "./platform";
+import { logger } from "../../utils/logger";
 
 /**
  * Safe haptic feedback trigger for touch-first clinical operations.
@@ -32,7 +33,7 @@ export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 			api.hapticFeedback(type);
 			return;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] native hapticFeedback failed, falling back:", err);
+			logger.warn("[mobileBridge] native hapticFeedback failed, falling back:", err);
 			// Fall through to Web Vibration API
 		}
 	}
@@ -65,7 +66,7 @@ export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 					navigator.vibrate(20);
 			}
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] navigator.vibrate failed:", err);
+			logger.warn("[mobileBridge] navigator.vibrate failed:", err);
 			// Ignore vibration restrictions on web
 		}
 	}

@@ -1,4 +1,4 @@
-import { sha256Hex } from "@dental/shared";
+import { generateUuidV7, sha256Hex } from "@dental/shared";
 import type { ConsentSignatureAudit } from "./patientCabinetTypes.js";
 import type { PatientStatutoryConsent } from "./patientCabinetProfileTypes.js";
 
@@ -23,7 +23,10 @@ export async function sendPortalSmsOtp(
 	try {
 		const res = await fetch("/api/portal/auth/send-otp", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			},
 			body: JSON.stringify({ phone, organizationId }),
 		});
 		if (!res.ok) {
@@ -67,6 +70,7 @@ export async function signConsentViaServerApi(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
 				},
 				body: JSON.stringify({

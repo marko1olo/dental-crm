@@ -4,6 +4,7 @@ import { motionSafeScrollIntoView } from "../../../motionPreference";
 import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { AppointmentScheduleDraft } from "../../../AppHelpers";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 

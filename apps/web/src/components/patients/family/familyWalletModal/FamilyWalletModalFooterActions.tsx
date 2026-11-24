@@ -44,9 +44,11 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 						<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
 							<button
 								type="button"
-								onClick={onSavePermissions}
-								disabled={savingPermissions}
-								className="min-h-[44px] sm:min-h-[36px] h-9 px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] disabled:opacity-50 text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
+								onClick={() => {
+									if (!savingPermissions) onSavePermissions();
+								}}
+								aria-busy={savingPermissions}
+								className="min-h-[44px] sm:min-h-[36px] h-9 px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
 							>
 								{savingPermissions ? (
 									<Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />

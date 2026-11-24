@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { showRollbackToast } from "../components/GlobalToast";
+import { logger } from "../utils/logger";
 
 export interface RollbackActionOptions<T> {
 	/** Сохраняемый снимок состояния до удаления (для мгновенного возврата) */

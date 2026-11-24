@@ -3,7 +3,6 @@
  * Spend mutation operation for family wallet. Mandate 8b: <= 120 lines.
  */
 import {
-	createCompositeIdempotencyKey,
 	generateUuidV7,
 	kopecksToRubles,
 	parseKopecks,
@@ -11,7 +10,7 @@ import {
 } from "@dental/shared";
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import type { UseFamilySpendMutationArgs } from "./types";
 
@@ -59,23 +58,14 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 		try {
 			const targetPatientId = spendPatientId || patientId;
 			const payerId = familyData.headPatientId || patientId;
-			const keyPayload = {
-				familyGroupId: familyData.id,
-				amountKopecks,
-				payerPatientId: payerId,
-			};
-			const clientMutationId = createCompositeIdempotencyKey(
-				`fam-pay:${familyData.id}:${targetPatientId}:${generateUuidV7()}`,
-				keyPayload,
-			);
+			const clientMutationId = generateUuidV7();
 
 			const res = await fetch("/api/finance/family/pay", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": clientMutationId,
-					...denteAdminSecretRequestHeaders(),
-				},
+				}),
 				body: JSON.stringify({
 					familyGroupId: familyData.id,
 					patientId: targetPatientId,

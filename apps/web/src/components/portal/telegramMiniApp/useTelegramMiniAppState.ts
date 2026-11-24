@@ -60,7 +60,9 @@ export function useTelegramMiniAppState(initialTab?: TelegramTab, options?: UseT
 	const triggerHaptic = useCallback((style: "light" | "medium" | "heavy" = "light") => {
 		try {
 			(window as unknown as TelegramWebAppWindow).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(style);
-		} catch {}
+		} catch (err) {
+			console.warn("[useTelegramMiniAppState] Haptic feedback unavailable:", err);
+		}
 	}, []);
 
 	return {

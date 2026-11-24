@@ -138,6 +138,7 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 
 	return (
 		<DocumentsStudioModal
+			key={patient?.id || "fast-print-docs"}
 			isOpen={isOpen}
 			onClose={onClose}
 			initialTemplate={mappedTab === "act" ? "card_extract" : mappedTab === "treatment_plan" ? "intake" : "card_extract"}

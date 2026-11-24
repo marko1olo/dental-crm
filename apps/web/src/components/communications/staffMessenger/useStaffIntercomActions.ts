@@ -3,6 +3,7 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { playIntercomChime } from "../../../lib/intercomSound";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { IntercomAckType, MobileViewMode } from "./types";
 
@@ -42,7 +43,7 @@ export function useStaffIntercomActions(
 				showToast("Ошибка интеркома", "warning");
 			}
 		} catch (e) {
-			console.error("Ошибка интеркома:", e);
+			clientLogger.error("Ошибка интеркома:", e);
 			showToast("Сетевая ошибка интеркома", "error");
 		} finally {
 			setQuickNotePrompt(null);
@@ -61,9 +62,12 @@ export function useStaffIntercomActions(
 				playIntercomChime("normal");
 				showToast(ackType === "on_my_way" ? "Статус: Иду! (1 мин) передан врачу" : ackType === "coming_soon" ? "Статус: Через 3-5 мин передан" : "Статус: Занят передан", "success");
 				setMessages((prev) => prev.map((m) => (m.id === messageId ? data.message : m)));
+			} else {
+				showToast("Не удалось подтвердить сигнал интеркома", "warning");
 			}
 		} catch (e) {
-			console.error("Ошибка подтверждения:", e);
+			clientLogger.error("Ошибка подтверждения интеркома:", e);
+			showToast("Сетевая ошибка при подтверждении интеркома", "error");
 		}
 	}, [setMessages]);
 
@@ -78,9 +82,12 @@ export function useStaffIntercomActions(
 				setChannels((prev) => (prev.some((c) => c.id === data.channel.id) ? prev : [...prev, data.channel]));
 				setActiveChannelId(data.channel.id);
 				setMobileView("chat");
+			} else {
+				showToast("Не удалось открыть личный чат", "warning");
 			}
 		} catch (e) {
-			console.error("Ошибка открытия чата:", e);
+			clientLogger.error("Ошибка открытия чата:", e);
+			showToast("Сетевая ошибка при открытии личного чата", "error");
 		}
 	}, [setChannels, setActiveChannelId, setMobileView]);
 

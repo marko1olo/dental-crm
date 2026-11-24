@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../../lib/denteRequestHeaders";
+import { logger } from "../../../../utils/logger";
 import type { DepositOperationRecord, OperationMode, PaymentMethod, TargetWallet } from "./types";
 import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
 
@@ -50,7 +54,7 @@ export function useDepositOperations(
 		}
 
 		try {
-			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			const headers = { "Content-Type": "application/json", ...denteClinicalReadHeaders() };
 			const promises: Promise<unknown>[] = [
 				fetch(`/api/billing/payments?patientId=${encodeURIComponent(patient.id)}`, { headers })
 					.then((r) => (r.ok ? r.json() : null))
@@ -131,8 +135,8 @@ export function useDepositOperations(
 
 			// Сортировка от свежих к старым
 			setOperationsLog(records);
-		} catch {
-			// Офлайн или сетевой сбой — не крашим компонент
+		} catch (err) {
+			logger.warn("[useDepositOperations] Не удалось загрузить историю операций аванса:", err);
 		}
 	}, [patient?.id, patient?.familyGroupId]);
 
@@ -157,7 +161,7 @@ export function useDepositOperations(
 			}
 
 			setIsSubmitting(true);
-			const mutationId = `dep-${Date.now()}-${crypto.randomUUID()}`;
+			const mutationId = generateUuidV7();
 			const isTopup = mode === "topup";
 			const delta = isTopup ? amount : -amount;
 			const amountKopecks = rublesToKopecks(amount);
@@ -165,22 +169,30 @@ export function useDepositOperations(
 			try {
 				if (target === "family" && patient?.familyGroupId) {
 					const endpoint = isTopup ? "/api/finance/family/topup" : "/api/finance/family/pay";
+					const familyBody = isTopup
+						? {
+								familyGroupId: patient.familyGroupId,
+								patientId: patient.id,
+								amountRub: amount,
+								amountKopecks,
+								method: method === "sbp" ? "online" : method,
+								clientMutationId: mutationId,
+								comment: "Пополнение семейного аванса",
+							}
+						: {
+								familyGroupId: patient.familyGroupId,
+								patientId: patient.id,
+								amountRub: amount,
+								amountKopecks,
+								clientMutationId: mutationId,
+							};
 					const resp = await fetch(endpoint, {
 						method: "POST",
-						headers: {
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
 							"Idempotency-Key": mutationId,
-							...denteAdminSecretRequestHeaders(),
-						},
-						body: JSON.stringify({
-							familyGroupId: patient.familyGroupId,
-							patientId: patient.id,
-							amountRub: amount,
-							amountKopecks,
-							method,
-							clientMutationId: mutationId,
-							note: isTopup ? "Пополнение семейного аванса" : "Списание семейного аванса",
 						}),
+						body: JSON.stringify(familyBody),
 					});
 					if (!resp.ok) {
 						throw new Error(`Ошибка операции с семейным авансом (код ${resp.status})`);
@@ -190,11 +202,10 @@ export function useDepositOperations(
 						// Пополнение личного аванса (входящий приходный платёж)
 						const resp = await fetch("/api/finance/payments", {
 							method: "POST",
-							headers: {
+							headers: denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 								"Idempotency-Key": mutationId,
-								...denteAdminSecretRequestHeaders(),
-							},
+							}),
 							body: JSON.stringify({
 								patientId: patient.id,
 								amountRub: amount,
@@ -211,15 +222,15 @@ export function useDepositOperations(
 						// Списание личного аванса (канонический возврат / расходная операция через кассу 54-ФЗ)
 						const refundResp = await fetch("/api/cashbox/refund", {
 							method: "POST",
-							headers: {
+							headers: denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 								"Idempotency-Key": mutationId,
-								...denteAdminSecretRequestHeaders(),
-							},
+							}),
 							body: JSON.stringify({
 								amountRub: amount,
 								reasonText: `Списание аванса с лицевого счёта: ${patient.fullName || "Пациент"}`,
 								patientId: patient.id,
+								clientMutationId: mutationId,
 							}),
 						});
 						if (!refundResp.ok) {

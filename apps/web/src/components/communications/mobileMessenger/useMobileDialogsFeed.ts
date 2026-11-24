@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ChannelFilter, CommunicationEvent, MobileCommunicationsMessengerProps, MobilePatientDialogSummary } from "./types";
 
 interface InboxDialogResponseItem {
@@ -52,7 +53,7 @@ export function useMobileDialogsFeed(dashboard: MobileCommunicationsMessengerPro
 				}
 			}
 		} catch (error) {
-			console.error("[useMobileDialogsFeed] Failed to fetch server dialogs, falling back to local events:", error);
+			clientLogger.error("[useMobileDialogsFeed] Failed to fetch server dialogs, falling back to local events:", error);
 		}
 
 		const events = dashboard?.communicationEvents ?? [];

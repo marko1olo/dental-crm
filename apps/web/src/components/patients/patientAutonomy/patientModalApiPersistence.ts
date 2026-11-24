@@ -1,5 +1,7 @@
 import { type Patient, type Dashboard, rublesToKopecks } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast } from "../../GlobalToast";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { DEMO_SHOWCASE_MODAL_PATIENT } from "../patientCardModalModules/patientCardModalTypes";
@@ -107,7 +109,7 @@ export async function persistPatientCardModalToApi(
 			throw new Error(`[PatientPersistence] Ошибка сохранения административного профиля: статус ${resAdmin.status} ${errBody}`);
 		}
 	} catch (err: unknown) {
-		console.error("[PatientPersistence] Failed to persist patient card to API:", err);
+		clientLogger.error("[PatientPersistence] Failed to persist patient card to API:", err);
 		throw err;
 	}
 }
@@ -193,11 +195,23 @@ export async function executePatientCardModalSaveAutonomy({
 			body: JSON.stringify(adminPayload),
 		});
 		const latestRes = resAdmin.ok ? resAdmin : resCore;
+		if (!resCore.ok && !resAdmin.ok) {
+			clientLogger.error("[PatientPersistence] Patient card PUT failed", {
+				coreStatus: resCore.status,
+				adminStatus: resAdmin.status,
+			});
+			showToast("Не удалось сохранить изменения карты пациента на сервере", "error");
+			return;
+		}
 		if (latestRes.ok && setDashboard) {
 			const saved = (await latestRes.json()) as Patient;
 			setDashboard((curr) => curr ? { ...curr, patients: curr.patients.map((p: Patient) => (p.id === saved.id ? saved : p)) } : curr);
 		}
 	} catch (err: unknown) {
-		console.error("[PatientPersistence] Failed to execute patient card save autonomy:", err);
+		clientLogger.error("[PatientPersistence] Failed to execute patient card save autonomy:", err);
+		showToast(
+			err instanceof Error ? err.message : "Не удалось сохранить карту пациента",
+			"error",
+		);
 	}
 }

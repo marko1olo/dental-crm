@@ -4,6 +4,7 @@
  */
 
 import type React from "react";
+import { kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 import {
@@ -168,7 +169,7 @@ export function executeExportToPlan(params: CbctTreatmentPlanExportParams): void
 
 	const totalRub = suite.totalPriceRub.toLocaleString("ru-RU");
 	showToast(
-		`Хирургический этап #${targetTooth} со срезом КЛКТ: имплантат (${(suite.implantPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + формирователь + абатмент = ${totalRub} ₽ добавлен в план лечения!`,
+		`Хирургический этап #${targetTooth} со срезом КЛКТ: имплантат (${kopecksToRubles(suite.implantPriceKopecks).toLocaleString("ru-RU")} ₽) + формирователь + абатмент = ${totalRub} ₽ добавлен в план лечения!`,
 		"success",
 		5000,
 	);

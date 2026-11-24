@@ -31,7 +31,7 @@ export const InstallmentsReminderSubView: React.FC<InstallmentsReminderSubViewPr
 	return (
 		<div className="p-4 bg-[var(--paper-soft)] border-b border-[var(--line)]" data-testid="section-reminder-preview">
 			<div className="flex items-center justify-between mb-2">
-				<span className="font-bold text-xs uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
+				<span className="font-bold text-xs tracking-normal text-[var(--ink)] flex items-center gap-1.5">
 					<MessageSquare className="w-3.5 h-3.5 text-teal-600" />
 					<span>Автоматическое напоминание пациенту</span>
 				</span>

@@ -1,4 +1,5 @@
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	parseSafetyProfileFromText,
 	isSomaticProfilePhysiologicalNorm,
@@ -122,7 +123,7 @@ export function executeApplySomaticNormAutonomy({
 				}),
 			);
 		} catch (err) {
-			console.warn("[executeApplySomaticNormAutonomy] Event dispatch skipped in non-browser context:", err);
+			clientLogger.warn("Event dispatch skipped in non-browser context", err, { module: "executeApplySomaticNormAutonomy" });
 		}
 	}
 	showToastFn(toastMessage, "success");

@@ -26,7 +26,7 @@ export function generateDoseSheetHtml(
 ): string {
 	const clinicName = options.clinicName || 'ООО "Денте Клиник"';
 	const patientName = options.patientFullName || "Пациент";
-	const cardNum = options.medicalCardNumber || "043/у-0001";
+	const cardNum = options.medicalCardNumber || "МК-0001";
 	const reportingYear = options.reportingYear || new Date().getFullYear();
 
 	const normalized = records.map((r, i) => normalizeDoseRecord(r, i));

@@ -10,6 +10,7 @@ import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { subscribeCbctSyncEvents } from "../../radiology/mpr/cbctStudioSyncChannel";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { imagingWriteTarget, realVisitFieldId } from "../visitIdentity";
 import type {
 	DiagnosticStudy,
@@ -192,7 +193,7 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 						}
 					})
 					.catch((err) => {
-						console.warn("[useVisitDiagnosticsTab] Failed to bind study to visit:", err);
+						clientLogger.warn("Failed to bind study to visit", err, { module: "useVisitDiagnosticsTab" });
 					});
 			}
 

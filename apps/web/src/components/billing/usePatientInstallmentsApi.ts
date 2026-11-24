@@ -17,7 +17,7 @@ import {
 	type InternalInstallmentScheduleItem,
 	evaluateInstallmentStatus,
 } from "./installmentsEngine.js";
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 
 export function isUuid(val?: string | null): boolean {
 	return Boolean(
@@ -177,10 +177,15 @@ export function usePatientInstallmentsApi(options: {
 			if (!isUuid(params.patientId)) return null;
 			setIsLoading(true);
 			try {
+				const existingMutationHeaders = getMutationHeaders ? getMutationHeaders() : {};
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
-					...(getMutationHeaders ? getMutationHeaders() : {}),
+					"Idempotency-Key": generateUuidV7(),
+					...existingMutationHeaders,
 				};
+				if (!headers["Idempotency-Key"] && !headers["idempotency-key"]) {
+					headers["Idempotency-Key"] = generateUuidV7();
+				}
 				const res = await fetch("/api/installments", {
 					method: "POST",
 					headers,
@@ -224,11 +229,11 @@ export function usePatientInstallmentsApi(options: {
 				const existingMutationHeaders = getMutationHeaders ? getMutationHeaders() : {};
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 					...existingMutationHeaders,
 				};
 				if (!headers["Idempotency-Key"] && !headers["idempotency-key"]) {
-					headers["Idempotency-Key"] = crypto.randomUUID();
+					headers["Idempotency-Key"] = generateUuidV7();
 				}
 				const res = await fetch(`/api/installments/tranches/${trancheId}/pay`, {
 					method: "POST",

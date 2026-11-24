@@ -9,6 +9,7 @@ import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { useUnifiedDictation } from "../../../hooks/useUnifiedDictation";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { PlanStageItem } from "../visitPlanStageHandoff";
 import type {
   MobileChairsideBillingItem,
@@ -216,7 +217,7 @@ export function useChairsideVisitWorkspace({
             toothCode,
           });
         } catch (err) {
-          console.error("[useChairsideVisitWorkspace] Failed to sync billing item to visit store:", err);
+          clientLogger.error("Failed to sync billing item to visit store", err, { module: "useChairsideVisitWorkspace" });
         }
       }
 
@@ -266,7 +267,7 @@ export function useChairsideVisitWorkspace({
       triggerHaptic("success");
       setIsStageTaken(true);
       const stageTitle = stage?.title || "План лечения";
-      showToast(`Этап «${stageTitle}» взят в работу (${items.length} услуг)`, "success");
+      let hasStageError = false;
 
       if (updateVisitNoteField && items.length > 0) {
         const stageDiaryText = `Взят в работу этап: «${stageTitle}»:\n${items
@@ -311,7 +312,8 @@ export function useChairsideVisitWorkspace({
             toothCode: toothNumber,
           });
         } catch (err) {
-          console.error("[useChairsideVisitWorkspace] Failed to add stage service to visit store:", err);
+          hasStageError = true;
+          clientLogger.error("Failed to add stage service to visit store", err, { module: "useChairsideVisitWorkspace" });
         }
 
         window.dispatchEvent(
@@ -332,6 +334,12 @@ export function useChairsideVisitWorkspace({
             },
           }),
         );
+      }
+
+      if (hasStageError) {
+        showToast(`Этап «${stageTitle}» взят частично: не все услуги записались в визит`, "warning");
+      } else {
+        showToast(`Этап «${stageTitle}» взят в работу (${items.length} услуг)`, "success");
       }
     },
     [updateVisitNoteField, visitNoteForm?.treatmentPlan],
@@ -513,7 +521,7 @@ export function useChairsideVisitWorkspace({
       });
     } catch (err) {
       addSuccess = false;
-      console.error("[useChairsideVisitWorkspace] Failed to add completed service to visit store:", err);
+      clientLogger.error("Failed to add completed service to visit store", err, { module: "useChairsideVisitWorkspace" });
     }
 
     if (typeof window !== "undefined") {
@@ -537,7 +545,7 @@ export function useChairsideVisitWorkspace({
           }),
         );
       } catch (err) {
-        console.error("[useChairsideVisitWorkspace] Failed to dispatch billing event:", err);
+        clientLogger.error("Failed to dispatch billing event", err, { module: "useChairsideVisitWorkspace" });
       }
     }
 
@@ -556,7 +564,7 @@ export function useChairsideVisitWorkspace({
         prev.filter((it) => (it.serviceId ? it.serviceId !== id : true))
       );
     } catch (err) {
-      console.error("[useChairsideVisitWorkspace] Failed to remove service from visit store:", err);
+      clientLogger.error("Failed to remove service from visit store", err, { module: "useChairsideVisitWorkspace" });
     }
   };
 

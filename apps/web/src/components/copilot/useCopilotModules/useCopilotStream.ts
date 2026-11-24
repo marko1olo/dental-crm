@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -98,7 +99,7 @@ export function useCopilotStream({
 				setProactiveAlerts([]);
 			}
 		} catch (err: unknown) {
-			console.warn("[useCopilotStream] loadProactivePending error:", err);
+			clientLogger.warn("[useCopilotStream] loadProactivePending error:", err);
 		}
 	}, [apiBaseUrl, setProactiveAlerts]);
 

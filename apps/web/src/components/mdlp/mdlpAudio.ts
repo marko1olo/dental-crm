@@ -1,3 +1,5 @@
+import { clientLogger } from "../../services/logging/clientLogger";
+
 interface WindowWithWebkitAudio extends Window {
 	AudioContext?: typeof AudioContext;
 	webkitAudioContext?: typeof AudioContext;

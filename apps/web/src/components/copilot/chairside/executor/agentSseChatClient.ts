@@ -13,6 +13,7 @@ import type {
 } from "../chairsideTypes";
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { useCopilotStore } from "../../../../store/copilotStore";
 import { streamCopilotChat, toCleanUuid } from "../../client/copilotStreamClient";
 
@@ -192,7 +193,7 @@ export async function requestAgentSseStream(
     return null;
   } catch (err: unknown) {
     if ((err as Error)?.name !== "AbortError") {
-      console.error("[agentSseChatClient] SSE stream connection failed:", err);
+      clientLogger.error("[agentSseChatClient] SSE stream connection failed:", err);
       showToast("Сбой потокового соединения с клиническим ассистентом", "warning", 5000);
     }
     return null;

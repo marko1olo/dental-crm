@@ -2,6 +2,8 @@ import { useEffect, useCallback } from "react";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { safeLocalStorageSetItem } from "../../../../lib/safeLocalStorage";
 import { generateSha256 } from "../../../consents/consentIntegrityHash";
+import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { ConsentTemplateKey, ConsentSubstitutionContext } from "../../../consents/consentTemplates";
 import {
 	CONSENT_KEY_TO_DOCUMENT_KIND,
@@ -125,42 +127,15 @@ export function useConsentBackendSync({
 
 			if (!res.ok) {
 				const errData = await res.json().catch(() => ({}));
-				console.warn("[ConsentBackendSync] Failed to persist consent to backend:", res.status, errData);
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(
-						new CustomEvent("dente:toast", {
-							detail: {
-								type: "warning",
-								text: `Согласие сохранено локально. Ошибка синхронизации с сервером (${res.status}).`,
-							},
-						}),
-					);
-				}
+				clientLogger.warn("Failed to persist consent to backend", { status: res.status, errData }, { module: "useConsentBackendSync" });
+				showToast(`Согласие сохранено локально. Ошибка синхронизации с сервером (${res.status}).`, "warning");
 				return;
 			}
 
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente:toast", {
-						detail: {
-							type: "success",
-							text: `Согласие «${itemTitle}» успешно сохранено в базу данных клиники.`,
-						},
-					}),
-				);
-			}
+			showToast(`Согласие «${itemTitle}» успешно сохранено в базу данных клиники.`, "success");
 		} catch (err) {
-			console.error("[ConsentBackendSync] Network error persisting consent:", err);
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente:toast", {
-						detail: {
-							type: "warning",
-							text: "Согласие сохранено локально (автономный режим).",
-						},
-					}),
-				);
-			}
+			clientLogger.error("Network error persisting consent", err, { module: "useConsentBackendSync" });
+			showToast("Согласие сохранено локально (автономный режим).", "warning");
 		}
 	}, [activeAppointment?.id, patientId, substitutionContext.doctorName, substitutionContext.patientName]);
 

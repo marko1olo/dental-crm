@@ -44,6 +44,7 @@ export function CatalogPrimaryModals({
 		<>
 			{isLocalIntakeModalOpen && (
 				<DocumentsStudioModal
+					key={patient?.id || "catalog-intake-docs"}
 					isOpen={isLocalIntakeModalOpen}
 					onClose={() => setIsLocalIntakeModalOpen(false)}
 					patient={patient ?? undefined}
@@ -54,6 +55,7 @@ export function CatalogPrimaryModals({
 			)}
 			{isOutpatientCardModalOpen && (
 				<MedicalRecordStudioModal
+					key={patient?.id || "catalog-medical-record"}
 					isOpen={isOutpatientCardModalOpen}
 					onClose={() => setIsOutpatientCardModalOpen(false)}
 					initialData={{
@@ -68,6 +70,7 @@ export function CatalogPrimaryModals({
 			)}
 			{(selectedA4Tab || isContractModalOpen) && (
 				<DocumentsStudioModal
+					key={patient?.id || "catalog-a4-docs"}
 					isOpen={Boolean(selectedA4Tab || isContractModalOpen)}
 					onClose={() => {
 						setSelectedA4Tab(null);

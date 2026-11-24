@@ -3,6 +3,7 @@
  */
 
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	AiPersonalizeState,
 	AiProtocolPromptSettings,

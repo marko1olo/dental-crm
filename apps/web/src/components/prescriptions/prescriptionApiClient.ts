@@ -1,4 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface PrescriptionItemPayload {
 	catalogDrugId?: string | null;
@@ -17,7 +18,7 @@ export interface PrescriptionItemPayload {
 export interface CreatePrescriptionApiPayload {
 	patientId: string;
 	visitId?: string | null;
-	prescribingDoctorId: string;
+	prescribingDoctorId?: string | null | undefined;
 	formType: "form_107_1_u" | "form_148_1_u_88" | "form_148_1_u_04_l";
 	validityPeriod: "days_15" | "days_30" | "days_60" | "year_1";
 	isSpecialChronicIndication?: boolean;
@@ -71,7 +72,7 @@ export async function fetchPatientPrescriptions(patientId: string) {
 		const data = await res.json();
 		return data.prescriptions || [];
 	} catch (e) {
-		console.warn(
+		clientLogger.warn(
 			"[prescriptionApiClient] failed to fetch patient prescriptions:",
 			e,
 		);

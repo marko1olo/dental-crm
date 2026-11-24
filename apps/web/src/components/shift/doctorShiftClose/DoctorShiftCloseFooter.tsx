@@ -35,8 +35,10 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					{onSendTelegramSummary && (
 						<button
 							type="button"
-							onClick={onSendTelegramSummary}
-							disabled={isSendingTelegram}
+							onClick={() => {
+								if (!isSendingTelegram) onSendTelegramSummary();
+							}}
+							aria-busy={isSendingTelegram}
 							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 							data-testid="btn-send-telegram-shift-summary"
 							title="Отправить сводный отчёт смены руководству в Telegram"
@@ -94,8 +96,10 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					{onSendTelegramSummary && (
 						<button
 							type="button"
-							onClick={onSendTelegramSummary}
-							disabled={isSendingTelegram}
+							onClick={() => {
+								if (!isSendingTelegram) onSendTelegramSummary();
+							}}
+							aria-busy={isSendingTelegram}
 							className="flex-1 min-h-[44px] h-11 px-3 rounded-xl text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 							data-testid="btn-send-telegram-shift-summary-mobile"
 						>

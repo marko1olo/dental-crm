@@ -13,6 +13,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { ShieldCheck, X, User, CheckCircle2, PackageCheck, FlaskConical, Printer } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -143,7 +144,7 @@ export function SterilizationBatchCycleModal({
 			setFeedbackToast(`Цикл стерилизации запущен: ${packagesCount} пакетов списано со склада`);
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
 		} catch (err) {
-			console.error("[SanPiN] Error on cycle submission:", err);
+			clientLogger.error("[SanPiN] Error on cycle submission:", err);
 			if (isDemoShowcaseMode()) {
 				setFeedbackToast(`Цикл стерилизации запущен (демо): ${packagesCount} пакетов`);
 				setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
@@ -184,7 +185,7 @@ export function SterilizationBatchCycleModal({
 			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Списано со склада.");
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);
 		} catch (err) {
-			console.error("[SanPiN] Error on macro batch submission:", err);
+			clientLogger.error("[SanPiN] Error on macro batch submission:", err);
 			if (isDemoShowcaseMode()) {
 				setFeedbackToast("Автоклавирование смены запущено (демо): 2 цикла 134°C");
 				setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);

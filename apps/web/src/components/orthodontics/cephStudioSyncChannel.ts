@@ -3,6 +3,8 @@
  * Легковесный BroadcastChannel для синхронизации окон радиологии (Мандат 8b).
  */
 
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export interface CephSyncMessage {
 	type: string;
 	patientId?: string | undefined;
@@ -32,7 +34,7 @@ export function cacheActiveCephStudy(study: { patientId?: string } | unknown, ex
 			payload: study,
 		});
 	} catch (e) {
-		console.warn("[CephSyncChannel] Failed to cache active ceph study:", e);
+		clientLogger.warn("Failed to cache active ceph study", e, { module: "cephStudioSyncChannel" });
 	}
 }
 

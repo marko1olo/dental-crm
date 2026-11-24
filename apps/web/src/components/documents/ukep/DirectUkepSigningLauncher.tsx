@@ -64,6 +64,7 @@ export const DirectUkepSigningLauncher: React.FC = () => {
 	return (
 		<div className="w-full min-h-screen bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] flex items-center justify-center">
 			<UkepDocumentSigningModal
+				key={patientId || "direct-ukep"}
 				isOpen={true}
 				onClose={handleClose}
 				patientId={patientId}

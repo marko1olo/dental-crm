@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Activity, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 import type { EmkSectionProps } from "./EmkTypes";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { EmkPerioSummary } from "./EmkPerioSummary";
 import { EmkPerioMeasurements } from "./EmkPerioMeasurements";
 
@@ -126,7 +127,7 @@ export function EmkPerioSection({
 						else setPerioStatus("healthy");
 					}
 				} catch (cacheErr) {
-					console.warn("[EmkPerioSection] Failed to read periodontal snapshot cache fallback:", cacheErr);
+					clientLogger.warn("Failed to read periodontal snapshot cache fallback", cacheErr, { module: "EmkPerioSection" });
 				}
 			}
 		}
@@ -182,7 +183,7 @@ export function EmkPerioSection({
 						affectedRecords, pocketDepthMm: depth, hasBop: bop,
 					}));
 				} catch (storageErr) {
-					console.warn("[EmkPerioSection] Failed to persist periodontal screening to localStorage:", storageErr);
+					clientLogger.warn("Failed to persist periodontal screening to localStorage", storageErr, { module: "EmkPerioSection" });
 				}
 			}
 		};

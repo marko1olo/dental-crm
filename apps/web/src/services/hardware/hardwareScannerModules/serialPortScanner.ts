@@ -4,6 +4,7 @@
  */
 
 import type { HardwareDevice, HardwareDeviceKind } from "./types.js";
+import { logger } from "../../../utils/logger.js";
 
 // Known USB-to-UART and Fiscal Register Vendor IDs
 const KNOWN_SERIAL_VENDORS: Record<number, { name: string; kind: HardwareDeviceKind }> = {
@@ -93,7 +94,7 @@ export async function getAvailableSerialPorts(): Promise<HardwareDevice[]> {
 		const ports: SerialPortLike[] = await serial.getPorts();
 		return ports.map((port, idx) => mapSerialPortToDevice(port, idx));
 	} catch (err) {
-		console.warn("[SerialPortScanner] Failed to enumerate ports:", err);
+		logger.warn("[SerialPortScanner] Failed to enumerate ports:", err);
 		return [];
 	}
 }
@@ -130,7 +131,7 @@ export async function requestSerialPort(options?: {
 		// User cancellation is not an error
 		const name = (err as { name?: string })?.name;
 		if (name !== "NotFoundError" && name !== "AbortError") {
-			console.warn("[SerialPortScanner] Serial port request cancelled or failed:", err);
+			logger.warn("[SerialPortScanner] Serial port request cancelled or failed:", err);
 		}
 		return null;
 	}
@@ -159,7 +160,7 @@ export function subscribeSerialPortEvents(
 				onConnect(mapSerialPortToDevice(port, 0));
 			}
 		} catch (err) {
-			console.warn("[SerialPortScanner] Connect event handling error:", err);
+			logger.warn("[SerialPortScanner] Connect event handling error:", err);
 		}
 	};
 
@@ -167,7 +168,7 @@ export function subscribeSerialPortEvents(
 		try {
 			onDisconnect();
 		} catch (err) {
-			console.warn("[SerialPortScanner] Disconnect event handling error:", err);
+			logger.warn("[SerialPortScanner] Disconnect event handling error:", err);
 		}
 	};
 

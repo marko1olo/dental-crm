@@ -25,6 +25,7 @@
 import { isDesktopApp, watchDesktopDicomFolder } from "../../native/desktopBridge.js";
 import { VisiographPacsWatcherService } from "./visiographPacsWatcher.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { logger } from "../../utils/logger.js";
 
 export type HardwareDeviceCategory =
 	| "radiography_2d"
@@ -490,7 +491,7 @@ export function saveHardwareConfigs(configs: HardwareDeviceConfig[]): void {
 		localStorage.setItem(HARDWARE_STORAGE_KEY, JSON.stringify(configs));
 		window.dispatchEvent(new CustomEvent("dental-crm:hardware-configs-updated", { detail: configs }));
 	} catch (err) {
-		console.error("[HardwareStudio] Failed to save hardware configs:", err);
+		logger.error("[HardwareStudio] Failed to save hardware configs:", err);
 	}
 }
 

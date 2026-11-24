@@ -3,8 +3,9 @@
  * Query and state synchronization hook for family wallet details, relationships and history.
  * Mandate 8b: strictly modular and resilient.
  */
+import { generateUuidV7 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
 import { showToast } from "../../../GlobalToast";
 import type {
@@ -140,8 +141,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 
 			const batchRes = await fetch("/api/finance/family/permissions", {
 				method: "PATCH",
-				headers: getDenteAuthHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
 					familyGroupId: familyData?.id,
@@ -165,8 +167,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 							`/api/patients/${patientId}/relationships/${matchingRel.id}`,
 							{
 								method: "PATCH",
-								headers: getDenteAuthHeaders({
+								headers: denteClinicalMutationHeaders({
 									"Content-Type": "application/json",
+									"Idempotency-Key": generateUuidV7(),
 								}),
 								body: JSON.stringify({
 									canSpendFamilyWallet: canSpend,
@@ -179,8 +182,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 					} else if (member.id !== patientId) {
 						const res = await fetch(`/api/patients/${patientId}/relationships`, {
 							method: "POST",
-							headers: getDenteAuthHeaders({
+							headers: denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
+								"Idempotency-Key": generateUuidV7(),
 							}),
 							body: JSON.stringify({
 								relatedPatientId: member.id,
@@ -231,8 +235,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			try {
 				const res = await fetch("/api/finance/family", {
 					method: "POST",
-					headers: getDenteAuthHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						name: trimmed,
@@ -288,8 +293,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			try {
 				const res = await fetch(`/api/finance/family/${familyData.id}/members`, {
 					method: "POST",
-					headers: getDenteAuthHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						patientId: memberPatientId,
@@ -341,7 +347,9 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 					`/api/finance/family/${familyData.id}/members/${memberPatientId}`,
 					{
 						method: "DELETE",
-						headers: getDenteAuthHeaders(),
+						headers: denteClinicalMutationHeaders({
+							"Idempotency-Key": generateUuidV7(),
+						}),
 					},
 				);
 

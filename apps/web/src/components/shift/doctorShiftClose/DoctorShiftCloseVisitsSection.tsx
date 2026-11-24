@@ -30,7 +30,7 @@ export const DoctorShiftCloseVisitsSection: React.FC<DoctorShiftCloseVisitsSecti
 			{/* Metric: Patients reconciliation */}
 			<div className="border border-[var(--line,#e2e8f0)] rounded-xl p-3 sm:p-3.5 bg-[var(--paper-soft,#f8fafc)]">
 				<div className="flex items-center justify-between mb-2.5">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+					<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1.5">
 						<Users className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Прием пациентов
 					</span>
 					<span className="text-xs font-medium text-[var(--muted,#64748b)]">

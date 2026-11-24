@@ -1,7 +1,8 @@
-import type {
-	PricelistCollisionStrategy,
-	PricelistColumnTargetKey,
-	TabularImportAnalysis,
+import {
+	generateUuidV7,
+	type PricelistCollisionStrategy,
+	type PricelistColumnTargetKey,
+	type TabularImportAnalysis,
 } from "@dental/shared";
 import { useRef, useState } from "react";
 import type { IngestedMappingItem } from "../../catalog/mappingDiff/types";
@@ -61,7 +62,10 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 		setIsParsingFile(true);
 		setInternalImportResult(null);
 		try {
-			const headers = staffMutationHeaders(accessHeaders);
+			const headers = {
+				...staffMutationHeaders(accessHeaders),
+				"Idempotency-Key": generateUuidV7(),
+			};
 			const res = await fetch("/api/pricelist/parse-file", {
 				method: "POST",
 				headers,
@@ -197,7 +201,10 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 					specialty: it.specialty,
 					priceRub: it.priceRub,
 					durationMinutes: 30,
-					suggestedAction: it.suggestedAction,
+					suggestedAction:
+						it.suggestedAction === "link_existing"
+							? "identical"
+							: it.suggestedAction,
 					matchedExistingServiceId: it.matchedExistingServiceId,
 				}))
 			: tabularAnalysis.allRows
@@ -216,7 +223,7 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 							r.suggestedAction === "update_existing"
 								? "update_existing"
 								: r.suggestedAction === "identical"
-									? "link_existing"
+									? "identical"
 									: "create_new",
 						matchedExistingServiceId: r.matchedExistingServiceId,
 					}));
@@ -228,7 +235,10 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 		}
 
 		try {
-			const headers = staffMutationHeaders(accessHeaders);
+			const headers = {
+				...staffMutationHeaders(accessHeaders),
+				"Idempotency-Key": generateUuidV7(),
+			};
 			const response = await fetch("/api/pricelist/batch-import", {
 				method: "POST",
 				headers,

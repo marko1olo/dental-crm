@@ -2,6 +2,7 @@ import {
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function getShowcaseShiftAppointments(
 	doctorId: string,

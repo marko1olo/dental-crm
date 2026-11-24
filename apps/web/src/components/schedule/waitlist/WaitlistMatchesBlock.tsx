@@ -8,6 +8,7 @@ import { Check, ClipboardList, Loader2, Zap, AlertCircle } from "lucide-react";
 import type { Appointment, StaffMember, Chair } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { handleBookWaitlistSlot } from "./waitlistSlotBookingHandler";
 import type { WaitlistCandidateItem, TargetSlotInfo } from "./waitlistTypes";
 import {
@@ -128,7 +129,7 @@ export function WaitlistMatchesBlock({
           }
         }
       } catch (err: unknown) {
-        console.warn("[WaitlistMatchesBlock] Failed to load waitlist matches:", err);
+        clientLogger.warn("Failed to load waitlist matches", err, { module: "WaitlistMatchesBlock" });
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -330,7 +331,11 @@ export function WaitlistMatchesBlock({
                           },
                         });
                       } catch (bookingErr: unknown) {
-                        console.warn("[WaitlistMatchesBlock] Booking candidate failed:", bookingErr);
+                        clientLogger.warn("Booking candidate failed", bookingErr, { module: "WaitlistMatchesBlock" });
+                        showToast(
+                          bookingErr instanceof Error ? bookingErr.message : "Не удалось записать пациента из листа ожидания",
+                          "error",
+                        );
                       } finally {
                         setBookingEntryId(null);
                       }

@@ -12,6 +12,7 @@ import {
 	safeLocalStorageSetItem,
 } from "../../../lib/safeLocalStorage";
 import { soundFeedback } from "../../audio/SoundFeedbackService";
+import { logger } from "../../../utils/logger";
 import type { DentalDspProfile } from "../audioFilters";
 import {
 	globalVoiceOfflineQueue,
@@ -301,7 +302,7 @@ export class UnifiedAudioClient {
 			return;
 		}
 
-		console.info(`[DENTE Voice] Fallback: ${prevMode} -> ${nextMode}. Reason: ${reason}`);
+		logger.info(`[DENTE Voice] Fallback: ${prevMode} -> ${nextMode}. Reason: ${reason}`);
 		this.transport.cleanupBackend();
 		this.currentMode = nextMode;
 		this.emitModeChange(nextMode, prevMode, reason);

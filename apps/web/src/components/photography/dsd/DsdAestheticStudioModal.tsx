@@ -13,6 +13,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { clientLogger } from '../../../services/logging/clientLogger';
 import type { DsdAnalysisData } from '@dental/shared';
 import {
 	DsdCanvasOverlay,
@@ -153,7 +154,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 					}
 				}
 			} catch (storageErr) {
-				console.warn('[DSD] Failed reading cached landmarks:', storageErr);
+				clientLogger.warn('Failed reading cached landmarks', storageErr, { module: 'DsdAestheticStudioModal' });
 			}
 		}
 		return { ...DEFAULT_LANDMARKS, ...initialLandmarks };

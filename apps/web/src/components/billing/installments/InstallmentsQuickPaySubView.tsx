@@ -36,7 +36,7 @@ export const InstallmentsQuickPaySubView: React.FC<InstallmentsQuickPaySubViewPr
 	return (
 		<div className="p-4 bg-[var(--paper-soft)] border-b border-[var(--line)]" data-testid="section-quick-pay">
 			<div className="flex items-center justify-between mb-3">
-				<span className="font-bold text-xs uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
+				<span className="font-bold text-xs tracking-normal text-[var(--ink)] flex items-center gap-1.5">
 					<CreditCard className="w-3.5 h-3.5 text-teal-600" />
 					<span>Внести взнос по рассрочке</span>
 				</span>

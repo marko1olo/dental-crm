@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
+import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import type { MobileShiftConsumableItem } from "./types";
 
@@ -18,7 +19,9 @@ export function useMobileShiftConsumables() {
 				const parsed = JSON.parse(saved);
 				if (Array.isArray(parsed) && parsed.length > 0) return parsed;
 			}
-		} catch {}
+		} catch (err) {
+			logger.warn("[useMobileShiftConsumables] Failed to read saved consumables:", err);
+		}
 		return [...DEFAULT_CONSUMABLES];
 	});
 
@@ -36,7 +39,9 @@ export function useMobileShiftConsumables() {
 			});
 			try {
 				safeLocalStorageSetItem("dente_mobile_shift_consumables", JSON.stringify(updated));
-			} catch {}
+			} catch (err) {
+			logger.warn("[useMobileShiftConsumables] Failed to read saved consumables:", err);
+		}
 			return updated;
 		});
 		showToast(delta > 0 ? "Списание увеличено" : "Списание скорректировано", "info", 1500);

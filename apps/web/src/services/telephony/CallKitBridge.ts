@@ -22,6 +22,7 @@ import {
 } from "../../native/mobileBridge.js";
 import { useTelephonyStore } from "../../store/telephonyStore.js";
 import { UnifiedAudioClient } from "../voice/UnifiedAudioClient.js";
+import { logger } from "../../utils/logger.js";
 
 declare global {
 	interface Window {
@@ -152,7 +153,7 @@ export class CallKitBridge {
 				this.isInitialized = true;
 				return true;
 			} catch (err) {
-				console.warn("[CallKitBridge] RNCallKeep setup failed:", err);
+				logger.warn("[CallKitBridge] RNCallKeep setup failed:", err);
 			}
 		}
 
@@ -184,7 +185,7 @@ export class CallKitBridge {
 
 				triggerHaptic("warning");
 			} catch (err) {
-				console.warn("[CallKitBridge] Native incoming call display failed:", err);
+				logger.warn("[CallKitBridge] Native incoming call display failed:", err);
 			}
 		}
 
@@ -197,7 +198,7 @@ export class CallKitBridge {
 			});
 		} catch (err) {
 			// Telephony store might not be mounted in test environments
-			console.warn("[CallKitBridge] useTelephonyStore.triggerIncomingCall failed:", err);
+			logger.warn("[CallKitBridge] useTelephonyStore.triggerIncomingCall failed:", err);
 		}
 	}
 
@@ -213,7 +214,7 @@ export class CallKitBridge {
 		try {
 			useTelephonyStore.getState().answerCall();
 		} catch (err: unknown) {
-			console.warn("[CallKitBridge] useTelephonyStore.answerCall failed:", err);
+			logger.warn("[CallKitBridge] useTelephonyStore.answerCall failed:", err);
 		}
 
 		// Connect audio capture & speech dictation stream if enabled
@@ -227,7 +228,7 @@ export class CallKitBridge {
 				}
 				await this.audioClient.start();
 			} catch (audioErr) {
-				console.warn("[CallKitBridge] Audio stream handoff on answer failed:", audioErr);
+				logger.warn("[CallKitBridge] Audio stream handoff on answer failed:", audioErr);
 			}
 		}
 
@@ -246,7 +247,7 @@ export class CallKitBridge {
 			try {
 				this.audioClient.stop();
 			} catch (err: unknown) {
-				console.warn("[CallKitBridge] audioClient.stop failed:", err);
+				logger.warn("[CallKitBridge] audioClient.stop failed:", err);
 			}
 			this.audioClient = null;
 		}
@@ -254,14 +255,14 @@ export class CallKitBridge {
 		try {
 			useTelephonyStore.getState().rejectCall();
 		} catch (err: unknown) {
-			console.warn("[CallKitBridge] useTelephonyStore.rejectCall failed:", err);
+			logger.warn("[CallKitBridge] useTelephonyStore.rejectCall failed:", err);
 		}
 
 		if (typeof window !== "undefined" && window.RNCallKeep) {
 			try {
 				window.RNCallKeep.endCall(callId);
 			} catch (err: unknown) {
-				console.warn("[CallKitBridge] RNCallKeep.endCall failed:", err);
+				logger.warn("[CallKitBridge] RNCallKeep.endCall failed:", err);
 			}
 		}
 
@@ -284,7 +285,7 @@ export class CallKitBridge {
 				useTelephonyStore.getState().toggleMute();
 			}
 		} catch (err: unknown) {
-			console.warn("[CallKitBridge] useTelephonyStore.toggleMute failed:", err);
+			logger.warn("[CallKitBridge] useTelephonyStore.toggleMute failed:", err);
 		}
 
 		if (this.listeners.onMuteToggled) {
@@ -303,7 +304,7 @@ export class CallKitBridge {
 				useTelephonyStore.getState().unholdCall();
 			}
 		} catch (err: unknown) {
-			console.warn("[CallKitBridge] useTelephonyStore hold/unhold failed:", err);
+			logger.warn("[CallKitBridge] useTelephonyStore hold/unhold failed:", err);
 		}
 
 		if (this.listeners.onHoldToggled) {

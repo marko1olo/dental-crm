@@ -659,29 +659,25 @@
 		display: inline;
 	}
 
-	/* Horizontal smooth scroll for insurance company chips */
+	/* Wrap insurance company chips cleanly on mobile (zero clipping, >=44px touch) */
 	.dms-chips-bar {
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		scrollbar-width: none;
-		-webkit-overflow-scrolling: touch;
-		padding: 2px 0 6px;
-		min-height: 44px;
+		flex-wrap: wrap;
+		overflow-x: visible;
+		padding: 2px 0;
+		gap: 8px;
 		max-width: 100%;
 		flex-shrink: 0;
 	}
 
-	.dms-chips-bar::-webkit-scrollbar {
-		display: none;
-	}
-
-	.dms-chip-btn,
 	.dms-chips-label {
+		width: 100%;
 		flex-shrink: 0;
 	}
 
 	.dms-chip-btn {
-		min-height: 40px;
+		flex-shrink: 0;
+		min-height: 44px;
+		padding: 6px 12px;
 	}
 
 	.dms-btn-secondary,
@@ -716,19 +712,40 @@
 	}
 
 	.dms-table-container {
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		max-width: 100%;
-		display: block;
+		display: none;
 	}
 
-	.dms-table {
-		min-width: 540px;
+	.dms-mobile-cards {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
 	}
 
 	.dms-summary-grid {
 		grid-template-columns: 1fr;
 	}
+}
+
+.dms-mobile-cards {
+	display: none;
+}
+
+.dms-mobile-card {
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 12px 14px;
+	background: var(--paper-soft);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dms-mobile-card-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
 }
 
 /* Тёмная тема (WCAG AAA Dark — strictly tokens) */

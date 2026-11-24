@@ -1,4 +1,6 @@
 import type { Chair } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
+import { showToast } from "../../../GlobalToast";
 import type { SettingsAccessHeaders } from "../../staffMutationRequest";
 import { staffMutationHeaders } from "../../staffMutationRequest";
 
@@ -32,7 +34,7 @@ export async function persistChairDetails(
 
 		if (hasChanges) {
 			const resolvedActive = patch.active ?? patch.isActive;
-			await fetch(`/api/settings/chairs/${chairId}`, {
+			const res = await fetch(`/api/settings/chairs/${chairId}`, {
 				method: "PUT",
 				headers,
 				body: JSON.stringify({
@@ -48,8 +50,17 @@ export async function persistChairDetails(
 					defaultDoctorId: patch.defaultDoctorId,
 				}),
 			});
+			if (!res.ok) {
+				const errBody = await res.text().catch(() => "");
+				throw new Error(errBody || `Не удалось сохранить параметры кресла (${res.status})`);
+			}
 		}
 	} catch (err) {
-		console.warn("Failed to persist chair profile:", err);
+		clientLogger.warn("Failed to persist chair profile:", err);
+		showToast(
+			err instanceof Error ? err.message : "Не удалось сохранить параметры кресла",
+			"error",
+		);
+		throw err;
 	}
 }

@@ -3,6 +3,7 @@ import {
 	type GeneratedDocument,
 	type Patient,
 	documentKindMetadata,
+	generateUuidV7,
 	rublesToKopecks,
 } from "@dental/shared";
 import { useRef } from "react";
@@ -156,7 +157,7 @@ export function useFinanceLogic({
 				) ?? null;
 			let response: Response;
 			if (!paymentMutationIdRef.current) {
-				paymentMutationIdRef.current = browserGeneratedId("payment");
+				paymentMutationIdRef.current = generateUuidV7();
 			}
 			const paymentClientMutationId = paymentMutationIdRef.current;
 			const familyClientMutationId = paymentClientMutationId;

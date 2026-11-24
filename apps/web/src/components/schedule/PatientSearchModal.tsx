@@ -3,6 +3,8 @@ import { CalendarPlus, MessageSquare, FileText, Plus, UserPlus, Phone } from "lu
 import { generateUuidV7, type Patient } from "@dental/shared";
 import { parseSearchQueryForQuickPatient, searchPatientsQuick } from "./patientSearchEngine";
 import { showToast } from "../GlobalToast";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 import type { PatientSearchModalProps } from "./patientSearch/types";
 import { PatientSearchInputBar } from "./patientSearch/PatientSearchInputBar";
@@ -83,7 +85,11 @@ export function PatientSearchModal({
 		// Background asynchronous persistence to Fastify PostgreSQL
 		fetch("/api/patients", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+				...getDenteAuthHeaders(),
+			},
 			body: JSON.stringify({
 				id: generatedId,
 				fullName: trimmedName,
@@ -91,10 +97,12 @@ export function PatientSearchModal({
 			}),
 		}).then((res) => {
 			if (!res.ok) {
-				console.warn("[PatientSearchModal] Background patient creation returned HTTP", res.status);
+				clientLogger.warn("Background patient creation returned HTTP error", { status: res.status }, { module: "PatientSearchModal" });
+				notify("Пациент создан локально, но сервер не подтвердил сохранение", "warning", 4000);
 			}
 		}).catch((err) => {
-			console.warn("[PatientSearchModal] Background patient creation failed, using local UUIDv7:", err);
+			clientLogger.warn("Background patient creation failed, using local UUIDv7", err, { module: "PatientSearchModal" });
+			notify("Сетевая ошибка сохранения пациента на сервере — создана локальная карточка", "warning", 4000);
 		});
 
 		if (onSelectPatientForBooking) onSelectPatientForBooking(newPatient);

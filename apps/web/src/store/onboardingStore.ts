@@ -16,11 +16,12 @@ import {
 	DEFAULT_SCHEDULE_DRAFT,
 	ONBOARDING_WIZARD_STEPS,
 	STARTER_15_ESSENTIAL_DENTAL_SERVICES,
+	generateUuidV7,
 } from "@dental/shared";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { showToast } from "../components/GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
 import { saveWorkspaceFlags } from "../hooks/useWorkspaceProfile";
 import { logger } from "../utils/logger";
 
@@ -287,8 +288,9 @@ export const useOnboardingStore = create<OnboardingState>()(
 				try {
 					const res = await fetch("/api/pricelist/seed-baseline-804n", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
 						}),
 						body: JSON.stringify({ replace: false }),
 					});
@@ -307,8 +309,9 @@ export const useOnboardingStore = create<OnboardingState>()(
 					// Fallback to alternative seed endpoint
 					const fallbackRes = await fetch("/api/pricelist/seed", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
 						}),
 						body: JSON.stringify({ replace: false }),
 					});
@@ -364,8 +367,9 @@ export const useOnboardingStore = create<OnboardingState>()(
 					try {
 						await fetch("/api/onboarding/complete", {
 							method: "POST",
-							headers: denteAdminSecretRequestHeaders({
+							headers: denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
+								"Idempotency-Key": generateUuidV7(),
 							}),
 							body: JSON.stringify({
 								profile: {
@@ -412,8 +416,9 @@ export const useOnboardingStore = create<OnboardingState>()(
 					// 4. Save clinic profile details into PostgreSQL 18
 					const profileRes = await fetch("/api/settings/clinic/profile", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
 						}),
 						body: JSON.stringify({
 							clinicName: profile.clinicName,

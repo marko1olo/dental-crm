@@ -5,9 +5,9 @@
  * Calls KKT / cashbox endpoints with persistence and staff audit logging.
  */
 
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService.js";
-import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 
 export interface CloseShiftPayload {
 	readonly shiftNumber: number;
@@ -24,13 +24,11 @@ export interface OpenShiftPayload {
 	readonly startingBalanceRub?: number | undefined;
 }
 
-function getAuthHeaders(): Record<string, string> {
-	const headers: Record<string, string> = { "Content-Type": "application/json" };
-	const token = safeLocalStorageGetItem("dente_token") || safeLocalStorageGetItem("token");
-	if (token) headers.Authorization = `Bearer ${token}`;
-	const orgId = safeLocalStorageGetItem("dente_organization_id") || safeLocalStorageGetItem("organization_id");
-	if (orgId) headers["x-organization-id"] = orgId;
-	return headers;
+function buildShiftMutationHeaders(): Record<string, string> {
+	return denteClinicalMutationHeaders({
+		"Content-Type": "application/json",
+		"Idempotency-Key": generateUuidV7(),
+	});
 }
 
 export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload): Promise<boolean> {
@@ -39,10 +37,8 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 	const body = JSON.stringify({
 		shiftNumber: payload.shiftNumber,
 		cashierFullName: payload.cashierName || "Дежурный администратор",
-		cashierInn: payload.cashierInn || undefined,
-		actualCashInDrawerRub: payload.countedCashRub ?? payload.cashInDrawerRub ?? 0,
 		countedCashRub: payload.countedCashRub ?? payload.cashInDrawerRub ?? 0,
-		expectedCashInDrawerRub: payload.cashInDrawerRub ?? 0,
+		netRevenueRub: payload.netRevenueRub ?? 0,
 		force: true,
 		closedAt: new Date().toISOString(),
 	});
@@ -50,7 +46,7 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 	let succeeded = false;
 	let errorReason = "";
 	try {
-		const res = await fetch(canonicalEndpoint, { method: "POST", headers: getAuthHeaders(), body });
+		const res = await fetch(canonicalEndpoint, { method: "POST", headers: buildShiftMutationHeaders(), body });
 		if (res.ok) {
 			succeeded = true;
 		} else {
@@ -91,12 +87,11 @@ export async function executeOpenShiftDbTransaction(payload: OpenShiftPayload): 
 	const canonicalEndpoint = "/api/cashbox/shift/open";
 	const body = JSON.stringify({
 		cashierFullName: payload.cashierName || "Дежурный администратор",
-		startingBalanceRub: payload.startingBalanceRub || 0,
 		openedAt: new Date().toISOString(),
 	});
 
 	try {
-		const res = await fetch(canonicalEndpoint, { method: "POST", headers: getAuthHeaders(), body });
+		const res = await fetch(canonicalEndpoint, { method: "POST", headers: buildShiftMutationHeaders(), body });
 		if (res.ok) return true;
 	} catch (endpointErr: unknown) {
 		console.warn(`[executeOpenShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}:`, endpointErr);

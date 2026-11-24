@@ -8,6 +8,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { DEFAULT_CYCLES, type SanPinCycleEntry, type SanPinJournalPeriod } from "./sanpinJournalTypes";
 
 export interface RawSanPinCycleRow {
@@ -116,7 +117,7 @@ export function useSanPinCyclesFetch(period: SanPinJournalPeriod) {
 			}
 			setCycles(isDemoShowcaseMode() ? DEFAULT_CYCLES : []);
 		} catch (err) {
-			console.warn("Fastify API /api/sanpin/sterilization unavailable", err);
+			clientLogger.warn("Fastify API /api/sanpin/sterilization unavailable", err);
 			setCycles(isDemoShowcaseMode() ? DEFAULT_CYCLES : []);
 		} finally {
 			setIsLoading(false);

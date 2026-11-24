@@ -28,6 +28,7 @@
  * Установка вызывается один раз в main.tsx до рендера приложения.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import {
 	createResponseFromCachedEntry,
 	getCachedApiResponse,
@@ -54,6 +55,7 @@ const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
 const STAFF_TOKEN_STORAGE_KEY = DENTE_STAFF_TOKEN_KEY;
 const CLINIC_TOKEN_HEADER = "x-dente-clinic-token";
 const STAFF_TOKEN_HEADER = "x-dente-staff-token";
+const IDEMPOTENCY_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const INSTALLED_FLAG = "__denteApiAuthFetchInstalled";
 
@@ -335,21 +337,42 @@ export function installApiAuthFetch(): void {
 			headers.set(STAFF_TOKEN_HEADER, staffToken);
 		}
 
-		// Поддержка тотипотентности и идемпотентности (X-Idempotency-Key)
-		if (!headers.has("x-idempotency-key")) {
-			const existingIdempotency = headers.get("idempotency-key");
-			if (existingIdempotency) {
-				headers.set("X-Idempotency-Key", existingIdempotency);
-			} else if (init?.body && typeof init.body === "string" && (method === "POST" || method === "PUT" || method === "PATCH")) {
+		// Поддержка идемпотентности (строго валидный UUIDv7 в Idempotency-Key / X-Idempotency-Key)
+		if (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE") {
+			const headerXIdem = headers.get("x-idempotency-key")?.trim();
+			const headerIdem = headers.get("idempotency-key")?.trim();
+			let validUuid =
+				(headerXIdem && IDEMPOTENCY_UUID_PATTERN.test(headerXIdem) ? headerXIdem : null) ||
+				(headerIdem && IDEMPOTENCY_UUID_PATTERN.test(headerIdem) ? headerIdem : null);
+
+			if (!validUuid && init?.body && typeof init.body === "string") {
 				try {
-					const parsed = JSON.parse(init.body);
-					const idem = parsed?.idempotencyKey || parsed?.clientMutationId;
-					if (typeof idem === "string" && idem.trim()) {
-						headers.set("X-Idempotency-Key", idem.trim());
+					const parsed = JSON.parse(init.body) as {
+						idempotencyKey?: unknown;
+						clientMutationId?: unknown;
+					};
+					const candidate =
+						typeof parsed?.idempotencyKey === "string"
+							? parsed.idempotencyKey.trim()
+							: typeof parsed?.clientMutationId === "string"
+								? parsed.clientMutationId.trim()
+								: "";
+					if (candidate && IDEMPOTENCY_UUID_PATTERN.test(candidate)) {
+						validUuid = candidate;
 					}
 				} catch {
 					// Body is not JSON, ignore
 				}
+			}
+
+			if (!validUuid) {
+				validUuid = generateUuidV7();
+			}
+			if (!headerIdem || !IDEMPOTENCY_UUID_PATTERN.test(headerIdem)) {
+				headers.set("Idempotency-Key", validUuid);
+			}
+			if (!headerXIdem || !IDEMPOTENCY_UUID_PATTERN.test(headerXIdem)) {
+				headers.set("X-Idempotency-Key", validUuid);
 			}
 		}
 

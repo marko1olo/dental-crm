@@ -7,6 +7,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import { useVisitStore } from "../../../../store/visitStore";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 
 export interface UseVisitTherapyStateParams {
 	activeTooth?: number | null | undefined;
@@ -89,7 +90,7 @@ export function useVisitTherapyState({
 				...prev, objectiveStatus: prev.objectiveStatus?.trim() ? `${prev.objectiveStatus.trim()}\n\n${text}` : text,
 			}));
 		} catch (err) {
-			console.error("[useVisitTherapyState] Ошибка при обновлении visitNoteForm:", err);
+			clientLogger.error("Ошибка при обновлении visitNoteForm", err, { module: "useVisitTherapyState" });
 		}
 		try {
 			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
@@ -100,7 +101,7 @@ export function useVisitTherapyState({
 				},
 			}));
 		} catch (err) {
-			console.error("[useVisitTherapyState] Ошибка при отправке события dente-apply-soap-protocol:", err);
+			clientLogger.error("Ошибка при отправке события dente-apply-soap-protocol", err, { module: "useVisitTherapyState" });
 		}
 		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
 	}, [isToothSelected, activeTooth, soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);

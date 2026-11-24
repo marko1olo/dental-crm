@@ -6,6 +6,7 @@
 
 import { useEffect } from "react";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import {
 	type VisitBillingServiceItem,
 	DEFAULT_CHAIRSIDE_SERVICES,
@@ -60,7 +61,7 @@ export function useVisitBillingExternalEvents({
 							...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
 						});
 					} catch (cbErr) {
-						console.warn("[VisitServiceBillingWidget] Error in onAddBillingItem:", cbErr);
+						clientLogger.warn("Error in onAddBillingItem", cbErr, { module: "VisitServiceBillingWidget" });
 					}
 				});
 			}

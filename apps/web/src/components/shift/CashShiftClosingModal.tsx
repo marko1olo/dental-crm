@@ -27,7 +27,7 @@ import {
 	RefreshCw,
 	ArrowDownToLine,
 } from "lucide-react";
-import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import { generateUuidV7, kopecksToRub, rubToKopecks } from "@dental/shared";
 import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
@@ -134,7 +134,9 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					});
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("[CashShiftClosingModal] Не удалось загрузить данные кассовой смены:", err);
+			});
 		return () => {
 			isMounted = false;
 		};
@@ -236,6 +238,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const isCashMatched = Math.abs(discrepancyRub) < 0.01;
 
 	const handleExecuteCloseShift = async () => {
+		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMessage(null);
 
@@ -244,13 +247,12 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				? countedCashRub
 				: Math.max(0, countedCashRub - changeFundRetainRub);
 
-		const idempotencyKey = crypto.randomUUID();
+		const idempotencyKey = generateUuidV7();
 
 		const payload = {
 			shiftNumber,
 			cashierFullName,
 			countedCashRub,
-			expectedCashInDrawerRub: expectedCashInDrawer,
 			incomeCashRub: totalCashRevenue,
 			incomeElectronicRub: totalCardRevenue,
 			incomeSbpRub: totalSbpRevenue,
@@ -258,7 +260,6 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			netRevenueRub,
 			differenceRub: discrepancyRub,
 			isBalanced: isCashMatched,
-			encashmentAmountRub,
 			force: true, // Cashier autonomy: soft-close does not block
 			allowUnfinishedVisits: true,
 			idempotencyKey,
@@ -284,6 +285,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			const rawReport = (json?.zReportData || json?.reconciliation || payload) as Record<string, unknown>;
 			const zReport: ZReportData = {
 				...payload,
+				expectedCashInDrawerRub: expectedCashInDrawer,
+				encashmentAmountRub,
 				...rawReport,
 				fiscalDocNumber: (rawReport.fiscalDocNumber ?? json?.reconciliation?.fiscalDocNumber ?? json?.zReportData?.fiscalDocNumber) as string | number | undefined,
 				fiscalSign: (rawReport.fiscalSign ?? json?.reconciliation?.fiscalSign ?? json?.zReportData?.fiscalSign) as string | undefined,
@@ -585,7 +588,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						disabled={isSubmitting}
+						aria-busy={isSubmitting}
 						className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-medium text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors"
 					>
 						Отмена
@@ -594,7 +597,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<button
 						type="button"
 						onClick={handleExecuteCloseShift}
-						disabled={isSubmitting}
+						aria-busy={isSubmitting}
 						data-testid="btn-confirm-close-shift-z-report"
 						className="min-h-[44px] flex-1 max-w-md py-2.5 px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
 						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}

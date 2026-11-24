@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { formatDurationTimer } from "../../../store/telephonyStore";
+import { showToast } from "../../GlobalToast";
 import {
 	CALL_AUDIO_PLAYBACK_SPEEDS,
 	type CallAudioPlaybackControlsProps,
@@ -58,10 +60,15 @@ export function CallAudioPlaybackControls({
 			a.click();
 			document.body.removeChild(a);
 			setTimeout(() => {
-				try { URL.revokeObjectURL(tempBlobUrl); } catch {}
+				try {
+					URL.revokeObjectURL(tempBlobUrl);
+				} catch (revokeErr: unknown) {
+					clientLogger.debug("[CallAudioPlaybackControls] revokeObjectURL:", revokeErr);
+				}
 			}, 2000);
 		} catch (err: unknown) {
-			console.error("[CallAudioPlaybackControls] Download failed:", err);
+			clientLogger.error("[CallAudioPlaybackControls] Download failed:", err);
+			showToast("Не удалось скачать запись", "error");
 		} finally {
 			setIsDownloading(false);
 		}

@@ -245,7 +245,7 @@ export function getDirectRvgExportFileName(
 	hasDicomBuffer: boolean,
 	imageUrl: string,
 ): { filename: string; mimeType: string; isDicom: boolean } {
-	const sanitizedCard = (cardNumber || "043-u").replace(/[/\\?%*:|"<>]/g, "-");
+	const sanitizedCard = (cardNumber || "medcard").replace(/[/\\?%*:|"<>]/g, "-");
 	const toothTag = teeth.length > 0 ? teeth.join("_") : "unassigned";
 
 	if (hasDicomBuffer) {
@@ -320,7 +320,7 @@ export function exportDirectRvgImageOrDicom({
 
 	const exportInfo = getDirectRvgExportFileName(
 		selectedTeeth,
-		patientCardNumber || "043-u",
+		patientCardNumber || "medcard",
 		Boolean(dicomBytes && dicomBytes.length > 0),
 		capturedImage,
 	);
@@ -372,6 +372,9 @@ export async function persistRvgScanToServer({
 	if (!patientId || !capturedImage) {
 		return { success: false, error: "Отсутствует ID пациента или снимок" };
 	}
+	if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+		return { success: false, error: "Для сохранения снимка в архив требуется сохранённый пациент" };
+	}
 	if (!capturedImage.startsWith("data:image/") && !capturedImage.startsWith("blob:")) {
 		return { success: false, error: "Неверный формат изображения" };
 	}
@@ -408,12 +411,11 @@ export async function persistRvgScanToServer({
 				patientId,
 				imageBase64,
 				title: selectedTeeth.length > 0 ? `Прицельный снимок зуба ${selectedTeeth.join(", ")}` : "Прицельный рентгеновский снимок",
-				originalFilename: selectedTeeth.length > 0 ? `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg` : `rvg_scan_${Date.now()}.jpg`,
-				mimeType: "image/jpeg",
 				kind: "periapical",
+				sourceKind: "sensor_bridge",
+				sourceName: selectedTeeth.length > 0 ? `rvg_tooth_${selectedTeeth.join("_")}` : "rvg_scan",
 				toothCode: selectedTeeth[0] || null,
-				notes: clinicalNotes,
-				status: "done",
+				aiSummary: clinicalNotes ? clinicalNotes.slice(0, 2000) : null,
 			}),
 		});
 

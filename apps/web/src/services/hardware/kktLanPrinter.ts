@@ -10,14 +10,22 @@
  * - 54-FZ (FFD 1.2) compliant formatting with kopeck-exact arithmetic and Chestny ZNAK
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
 import {
 	checkDesktopKktStatusTcp,
 	isDesktopApp,
 	printDesktopFiscalReceiptTcp,
 	type DesktopFiscalReceiptPayload,
 } from "../../native/desktopBridge.js";
-import { computeFpd54Fz, format54FzFtsQrString, rublesToKopecks } from "@dental/shared";
+import {
+	computeFpd54Fz,
+	format54FzFtsQrString,
+	generateUuidV7,
+	rublesToKopecks,
+} from "@dental/shared";
 import { logger } from "../../utils/logger.js";
 import type {
 	CircuitBreakerState,
@@ -181,7 +189,7 @@ export class KktLanPrinterService {
 		// Web Browser Fallback: call local API route /api/fiscal/devices/status
 		try {
 			const res = await fetch("/api/fiscal/devices/status", {
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -385,12 +393,20 @@ export class KktLanPrinterService {
 		}
 
 		// 2. Web Mode: call API endpoint `/api/fiscal/receipts`
+		const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		const idempotencyKey =
+			payload.clientMutationId && uuidPattern.test(payload.clientMutationId)
+				? payload.clientMutationId
+				: generateUuidV7();
 		try {
 			const res = await fetch("/api/fiscal/receipts", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				}),
 				body: JSON.stringify({
-					clientMutationId: payload.clientMutationId || `kkt-${Date.now()}`,
+					clientMutationId: idempotencyKey,
 					patientId: payload.patientId,
 					visitId: payload.visitId,
 					operationType: payload.operationType,

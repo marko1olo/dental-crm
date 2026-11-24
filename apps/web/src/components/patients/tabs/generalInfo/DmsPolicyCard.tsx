@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Shield } from "lucide-react";
 import { rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
+import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders.js";
 import { POPULAR_DMS_COMPANIES } from "./constants";
 import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
@@ -20,7 +20,7 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 	useEffect(() => {
 		let isMounted = true;
 		fetch("/api/insurance/contracts", {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : []))
 			.then((data: unknown) => {
@@ -37,7 +37,9 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 				}
 				setContracts(list);
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("[DmsPolicyCard] Не удалось загрузить список договоров ДМС:", err);
+			});
 		return () => {
 			isMounted = false;
 		};

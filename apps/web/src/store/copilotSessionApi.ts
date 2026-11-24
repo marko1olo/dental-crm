@@ -6,23 +6,21 @@
  * Mandate 8b <= 150 lines.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 import { showToast } from "../components/GlobalToast";
+import { logger } from "../utils/logger";
 import type { CopilotThread, AiMemoryFact } from "./copilotStore";
 
 export function generateSessionUuid(): string {
 	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
 		return crypto.randomUUID();
 	}
-	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-		const r = (Math.random() * 16) | 0;
-		const v = c === "x" ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
+	return generateUuidV7();
 }
 
 export function isSessionUuid(id: string): boolean {
-	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -80,7 +78,7 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 			return thread;
 		});
 	} catch (err) {
-		console.error("fetchRemoteSessions failed:", err);
+		logger.error("[copilotSessionApi] fetchRemoteSessions failed:", err);
 		return null;
 	}
 }
@@ -100,13 +98,13 @@ export async function createRemoteSession(payload: {
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
-			console.error(`createRemoteSession HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] createRemoteSession HTTP ${res.status}`);
 			showToast("Не удалось сохранить сессию ассистента на сервере", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("createRemoteSession failed:", err);
+		logger.error("[copilotSessionApi] createRemoteSession failed:", err);
 		showToast("Не удалось создать сессию ассистента на сервере", "error");
 		return false;
 	}
@@ -125,13 +123,13 @@ export async function updateRemoteSession(id: string, patch: {
 			body: JSON.stringify(patch),
 		});
 		if (!res.ok) {
-			console.error(`updateRemoteSession HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] updateRemoteSession HTTP ${res.status}`);
 			showToast("Не удалось обновить сессию ассистента на сервере", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("updateRemoteSession failed:", err);
+		logger.error("[copilotSessionApi] updateRemoteSession failed:", err);
 		showToast("Не удалось обновить сессию ассистента на сервере", "error");
 		return false;
 	}
@@ -145,13 +143,13 @@ export async function deleteRemoteSession(id: string): Promise<boolean> {
 			headers: getAuthHeaders(),
 		});
 		if (!res.ok) {
-			console.error(`deleteRemoteSession HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] deleteRemoteSession HTTP ${res.status}`);
 			showToast("Не удалось удалить сессию ассистента на сервере", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("deleteRemoteSession failed:", err);
+		logger.error("[copilotSessionApi] deleteRemoteSession failed:", err);
 		showToast("Не удалось удалить сессию ассистента на сервере", "error");
 		return false;
 	}
@@ -168,7 +166,7 @@ export async function fetchRemoteMessages(sessionId: string): Promise<unknown[] 
 		const data = await res.json();
 		return Array.isArray(data?.messages) ? data.messages : [];
 	} catch (err) {
-		console.error("fetchRemoteMessages failed:", err);
+		logger.error("[copilotSessionApi] fetchRemoteMessages failed:", err);
 		return null;
 	}
 }
@@ -186,13 +184,13 @@ export async function appendRemoteMessage(sessionId: string, message: {
 			body: JSON.stringify(message),
 		});
 		if (!res.ok) {
-			console.error(`appendRemoteMessage HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] appendRemoteMessage HTTP ${res.status}`);
 			showToast("Не удалось сохранить сообщение в историю сессии", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("appendRemoteMessage failed:", err);
+		logger.error("[copilotSessionApi] appendRemoteMessage failed:", err);
 		showToast("Не удалось сохранить сообщение в историю сессии", "error");
 		return false;
 	}
@@ -208,7 +206,7 @@ export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
 		const data = await res.json();
 		return Array.isArray(data?.memoryFacts) ? data.memoryFacts : null;
 	} catch (err) {
-		console.error("fetchRemoteMemoryFacts failed:", err);
+		logger.error("[copilotSessionApi] fetchRemoteMemoryFacts failed:", err);
 		return null;
 	}
 }
@@ -221,13 +219,13 @@ export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promis
 			body: JSON.stringify({ memoryFacts }),
 		});
 		if (!res.ok) {
-			console.error(`saveRemoteMemoryFacts HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] saveRemoteMemoryFacts HTTP ${res.status}`);
 			showToast("Не удалось сохранить клиническую память на сервере", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("saveRemoteMemoryFacts failed:", err);
+		logger.error("[copilotSessionApi] saveRemoteMemoryFacts failed:", err);
 		showToast("Не удалось сохранить клиническую память на сервере", "error");
 		return false;
 	}
@@ -243,7 +241,7 @@ export async function fetchRemoteSettings(): Promise<Record<string, unknown> | n
 		const data = (await res.json()) as { ok?: boolean; settings?: Record<string, unknown> };
 		return (data?.settings && typeof data.settings === "object") ? data.settings : null;
 	} catch (err) {
-		console.error("fetchRemoteSettings failed:", err);
+		logger.error("[copilotSessionApi] fetchRemoteSettings failed:", err);
 		return null;
 	}
 }
@@ -256,13 +254,13 @@ export async function saveRemoteSettings(settings: Record<string, unknown>): Pro
 			body: JSON.stringify({ settings }),
 		});
 		if (!res.ok) {
-			console.error(`saveRemoteSettings HTTP ${res.status}`);
+			logger.error(`[copilotSessionApi] saveRemoteSettings HTTP ${res.status}`);
 			showToast("Не удалось сохранить настройки ассистента на сервере", "error");
 			return false;
 		}
 		return true;
 	} catch (err) {
-		console.error("saveRemoteSettings failed:", err);
+		logger.error("[copilotSessionApi] saveRemoteSettings failed:", err);
 		showToast("Не удалось сохранить настройки ассистента на сервере", "error");
 		return false;
 	}

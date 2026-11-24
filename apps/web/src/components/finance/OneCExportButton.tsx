@@ -182,8 +182,10 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
     <>
       <button
         type="button"
-        onClick={handleExport}
-        disabled={isExporting}
+        onClick={(e) => {
+          if (!isExporting) void handleExport(e);
+        }}
+        aria-busy={isExporting}
         title="Сформировать и скачать официальный файл выгрузки в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09) (Shift+Click: расширенная студия 1С)"
         data-testid="1c-export-xml-button"
         className={`h-9 px-3.5 rounded-xl text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap ${variantStyles[variant]} ${className}`.trim()}

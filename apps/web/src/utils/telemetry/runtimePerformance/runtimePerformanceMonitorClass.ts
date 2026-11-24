@@ -9,6 +9,7 @@ import { attachLifecycleObservers, detachLifecycleObservers, type LifecycleObser
 import { PerformanceSamplerLoop } from "./performanceSamplerLoop.js";
 import { PerformanceStateStore, createInitialMetrics } from "./performanceStateStore.js";
 import { DEFAULT_MONITOR_OPTIONS, type DynamicLoadState, type DynamicPerformanceSnapshot, type RuntimePerformanceMonitorOptions } from "./performanceTypes.js";
+import { logger } from "../../logger.js";
 
 export type ResolvedRuntimePerformanceMonitorOptions = Required<Omit<RuntimePerformanceMonitorOptions, "onStateChange">> & {
 	onStateChange?: ((snapshot: DynamicPerformanceSnapshot) => void) | undefined;

@@ -14,6 +14,7 @@ import {
 	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy, Loader2,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData, ClinicalAnamnesisData,
 } from "./types/recordDataTypes";
@@ -192,7 +193,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						600,
 					);
 				} catch (err) {
-					console.warn("MedicalRecordStudioModal: ошибка автосохранения в IndexedDB", err);
+					clientLogger.warn("Ошибка автосохранения в IndexedDB", err, { module: "MedicalRecordStudioModal" });
 				}
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };

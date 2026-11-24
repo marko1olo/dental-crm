@@ -498,7 +498,7 @@ export function buildCbctReportData(params: {
 			studyDate: isAnonymized ? "[СКРЫТО]" : studyDate,
 			reportDate: new Date().toLocaleDateString("ru-RU"),
 			clinicName: clinicName || "Стоматологический центр DENTE",
-			cardRecordNumber: isAnonymized ? "043/у-[СКРЫТО]" : `043/у-${targetToothFdi}`,
+			cardRecordNumber: isAnonymized ? "МК-[СКРЫТО]" : `МК-${targetToothFdi}`,
 			isAnonymized,
 			fov,
 			windowWidth,

@@ -9,6 +9,7 @@
 
 import { useCallback } from "react";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { useVisitStore } from "../../../../store/visitStore";
 import { completeClinicalVisitAndAssembleEstimate } from "../../clinicalVisitWorkflow";
 import { assembleVisitStoreCompletedServices } from "../../useVisitCompletion";
@@ -97,7 +98,7 @@ export function useVisitBillingState({
 					sessionStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
 					localStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
 				} catch (err) {
-					console.warn("[VisitViewState] Failed to write pending checkout to storage:", err);
+					clientLogger.warn("Failed to write pending checkout to storage", err, { module: "useVisitBillingState" });
 				}
 
 				window.dispatchEvent(
@@ -107,7 +108,7 @@ export function useVisitBillingState({
 					window.location.hash = "finance";
 				}
 			} catch (err) {
-				console.error("[VisitViewState] Ошибка расчёта сметы при закрытии приёма:", err);
+				clientLogger.error("Ошибка расчёта сметы при закрытии приёма", err, { module: "useVisitBillingState" });
 				showToast("Не удалось сформировать смету приёма. Повторите попытку.", "error", 5000);
 			}
 		}

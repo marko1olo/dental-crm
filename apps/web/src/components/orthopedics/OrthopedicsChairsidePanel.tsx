@@ -1,6 +1,7 @@
 import React, { useId, useMemo, useState } from "react";
 import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState";
 import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes";
 import { OrthopedicsChairsideTopBar, OrthopedicsChairsideLabOrderBanner, OrthopedicsChairsideFooterBar, type LinkedChairsideLabOrderInfo } from "./OrthopedicsChairsideLabOrderBanner";
 import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid";
@@ -62,7 +63,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 					}
 				}
 			} catch (err) {
-				console.warn("Failed to fetch warranty passport from server", err);
+				clientLogger.warn("Failed to fetch warranty passport from server", err, { module: "OrthopedicsChairsidePanel" });
 			} finally {
 				setIsPassportLoading(false);
 			}

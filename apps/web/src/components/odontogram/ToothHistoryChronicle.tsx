@@ -12,7 +12,7 @@ const DicomViewerModal = React.lazy(() =>
 		default: m.DicomViewerModal,
 	})),
 );
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import {
 	actionFailureToast,
 	type PanelSubject,
@@ -108,7 +108,7 @@ export function ToothHistoryChronicle({
 				const res = await fetch(
 					`/api/odontogram/tooth-history/${patientId}/${toothNumber}`,
 					{
-						headers: denteAdminSecretRequestHeaders(),
+						headers: denteClinicalReadHeaders(),
 					},
 				);
 				status = res.status;

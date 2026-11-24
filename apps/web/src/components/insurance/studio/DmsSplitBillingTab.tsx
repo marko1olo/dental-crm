@@ -88,105 +88,106 @@ export const DmsSplitBillingTab: React.FC<DmsSplitBillingTabProps> = ({
 				</div>
 			</div>
 
-			{effectiveBillItems.length === 0 && (
+			{lineItems.length === 0 ? (
 				<div
 					data-testid="dms-empty-bill-items"
 					style={{
-						padding: "10px 14px",
-						borderRadius: "10px",
+						padding: "24px 16px",
+						borderRadius: "14px",
+						border: "1px solid var(--line, #e2e8f0)",
 						background: "var(--paper-soft, #f8fafc)",
 						color: "var(--muted, #64748b)",
 						fontSize: "13px",
 						textAlign: "center",
 					}}
 				>
-					Нет позиций для распределения счёта
+					Нет услуг в счёте текущего визита для распределения ДМС
 				</div>
-			)}
-
-			{/* Bill Items Breakdown Table */}
-			<div className="dms-table-container">
-				<table className="dms-table">
-					<thead>
-						<tr>
-							<th>Услуга</th>
-							<th style={{ width: "60px" }}>Зуб</th>
-							<th style={{ width: "70px" }}>Кол-во</th>
-							<th style={{ textAlign: "right", width: "100px" }}>Всего</th>
-							<th
-								style={{
-									textAlign: "right",
-									width: "110px",
-									color: "var(--dms-teal)",
-								}}
-							>
-								Страховая
-							</th>
-							<th
-								style={{
-									textAlign: "right",
-									width: "110px",
-									color: "var(--dms-amber-ink)",
-								}}
-							>
-								Пациент
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						{lineItems.length === 0 ? (
-							<tr>
-								<td
-									colSpan={6}
-									style={{
-										padding: "20px",
-										textAlign: "center",
-										color: "var(--muted, #64748b)",
-									}}
-								>
-									Нет услуг в счёте текущего визита
-								</td>
-							</tr>
-						) : (
-							lineItems.map((item) => (
-								<tr key={item.serviceId}>
-									<td>
-										<div
-											style={{
-												fontWeight: 600,
-												color: "var(--ink)",
-											}}
-										>
-											{item.serviceName}
-										</div>
-										<div
-											style={{
-												fontSize: "11px",
-												color: "var(--muted)",
-											}}
-										>
-											{item.splitReason}
-										</div>
-									</td>
-									<td style={{ color: "var(--muted)" }}>
-										{item.toothNumber || "—"}
-									</td>
-									<td>{item.quantity}</td>
-									<td style={{ textAlign: "right", fontWeight: 600 }}>
-										{formatDisplayRub(item.totalPriceRub)}
-									</td>
-									<td className="dms-col-dms">
-										{formatDisplayRub(item.dmsCoveredRub)}
-									</td>
-									<td className="dms-col-patient">
-										{formatDisplayRub(item.patientCoPayRub)}
-									</td>
+			) : (
+				<>
+					{/* Desktop Bill Items Breakdown Table */}
+					<div className="dms-table-container">
+						<table className="dms-table">
+							<thead>
+								<tr>
+									<th>Услуга</th>
+									<th style={{ width: "60px" }}>Зуб</th>
+									<th style={{ width: "70px" }}>Кол-во</th>
+									<th style={{ textAlign: "right", width: "100px" }}>Всего</th>
+									<th
+										style={{
+											textAlign: "right",
+											width: "110px",
+											color: "var(--dms-teal)",
+										}}
+									>
+										Страховая
+									</th>
+									<th
+										style={{
+											textAlign: "right",
+											width: "110px",
+											color: "var(--dms-amber-ink)",
+										}}
+									>
+										Пациент
+									</th>
 								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
+							</thead>
+							<tbody>
+								{lineItems.map((item) => (
+									<tr key={item.serviceId}>
+										<td>
+											<div style={{ fontWeight: 600, color: "var(--ink)" }}>
+												{item.serviceName}
+											</div>
+											<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+												{item.splitReason}
+											</div>
+										</td>
+										<td style={{ color: "var(--muted)" }}>
+											{item.toothNumber || "—"}
+										</td>
+										<td>{item.quantity}</td>
+										<td style={{ textAlign: "right", fontWeight: 600 }}>
+											{formatDisplayRub(item.totalPriceRub)}
+										</td>
+										<td className="dms-col-dms">
+											{formatDisplayRub(item.dmsCoveredRub)}
+										</td>
+										<td className="dms-col-patient">
+											{formatDisplayRub(item.patientCoPayRub)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+
+					{/* Mobile Grouped List Cards (Apple HIG <= 768px) */}
+					<div className="dms-mobile-cards">
+						{lineItems.map((item) => (
+							<div key={item.serviceId} className="dms-mobile-card">
+								<div style={{ fontWeight: 600, fontSize: "14px", color: "var(--ink)" }}>
+									{item.serviceName}
+								</div>
+								<div style={{ fontSize: "12px", color: "var(--muted)" }}>
+									{item.toothNumber ? `Зуб ${item.toothNumber} • ` : ""}
+									Кол-во: {item.quantity} • {item.splitReason}
+								</div>
+								<div className="dms-mobile-card-row">
+									<span style={{ color: "var(--dms-teal)", fontWeight: 700 }}>
+										ДМС: {formatDisplayRub(item.dmsCoveredRub)}
+									</span>
+									<span style={{ color: "var(--dms-amber-ink)", fontWeight: 700 }}>
+										Пациент: {formatDisplayRub(item.patientCoPayRub)}
+									</span>
+								</div>
+							</div>
+						))}
+					</div>
+				</>
+			)}
 
 			{/* Summary Totals & Payment Method (Sentence Case) */}
 			<div className="dms-summary-grid">
