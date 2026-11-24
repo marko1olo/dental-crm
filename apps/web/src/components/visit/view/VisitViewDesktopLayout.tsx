@@ -10,54 +10,59 @@ export interface VisitViewDesktopLayoutProps {
 }
 
 export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
-	const toothNum = s.selectedToothForMenu
-		? Number.parseInt(s.selectedToothForMenu.code, 10) || 16
-		: 16;
-	const currentCode = s.selectedToothForMenu?.code ?? String(toothNum);
-	const rawState = s.toothStateByCode[currentCode] || s.selectedToothForMenu?.state || "Healthy";
+	const parsedCode = s.selectedToothForMenu?.code
+		? Number.parseInt(s.selectedToothForMenu.code, 10)
+		: null;
+	const toothNum = Number.isFinite(parsedCode) ? (parsedCode as number) : null;
+	const currentCode = s.selectedToothForMenu?.code ?? (toothNum !== null ? String(toothNum) : "");
+	const rawState = currentCode
+		? s.toothStateByCode[currentCode] || s.selectedToothForMenu?.state || "Healthy"
+		: "Healthy";
 
 	return (
 		<>
 			<VisitViewPanel s={s} />
 
-			<ToothContextDrawer
-				isOpen={Boolean(s.selectedToothForMenu)}
-				onClose={() => {
-					s.setSelectedSurfaces([]);
-					s.setSelectedToothForMenu(null);
-				}}
-				toothNumber={toothNum}
-				toothData={{
-					toothNumber: toothNum,
-					state: (rawState as ToothState) || "Healthy",
-				}}
-				patient={
-					s.activePatient
-						? {
-								id: s.activePatient.id,
-								fullName: s.activePatient.fullName,
-								ageYears: typeof s.patientAge === "number" ? s.patientAge : undefined,
-						  }
-						: undefined
-				}
-				doctorName={s.activeDoctor?.name || s.activeDoctor?.fullName || "Лечащий врач-стоматолог"}
-				onUpdateTooth={(num, updates) => {
-					if (updates?.state) {
-						s.setToothState(String(num), String(updates.state));
+			{s.selectedToothForMenu && toothNum !== null && (
+				<ToothContextDrawer
+					isOpen={Boolean(s.selectedToothForMenu)}
+					onClose={() => {
+						s.setSelectedSurfaces([]);
+						s.setSelectedToothForMenu(null);
+					}}
+					toothNumber={toothNum}
+					toothData={{
+						toothNumber: toothNum,
+						state: (rawState as ToothState) || "Healthy",
+					}}
+					patient={
+						s.activePatient
+							? {
+									id: s.activePatient.id,
+									fullName: s.activePatient.fullName,
+									ageYears: typeof s.patientAge === "number" ? s.patientAge : undefined,
+							  }
+							: undefined
 					}
-				}}
-				onUpdateToothStatus={(num, state) => {
-					s.setToothState(String(num), state);
-				}}
-				onInsertToProtocol={(text) => {
-					s.appendToEMKField("objective", text);
-				}}
-				onOpenFullRadiology={(num) => {
-					s.setSelectedSurfaces([]);
-					s.setSelectedToothForMenu(null);
-					s.setIsVisiographComparisonModalOpen(true);
-				}}
-			/>
+					doctorName={s.activeDoctor?.name || s.activeDoctor?.fullName || "Лечащий врач-стоматолог"}
+					onUpdateTooth={(num, updates) => {
+						if (updates?.state) {
+							s.setToothState(String(num), String(updates.state));
+						}
+					}}
+					onUpdateToothStatus={(num, state) => {
+						s.setToothState(String(num), state);
+					}}
+					onInsertToProtocol={(text) => {
+						s.appendToEMKField("objective", text);
+					}}
+					onOpenFullRadiology={(num) => {
+						s.setSelectedSurfaces([]);
+						s.setSelectedToothForMenu(null);
+						s.setIsVisiographComparisonModalOpen(true);
+					}}
+				/>
+			)}
 
 			<VisitViewModals
 				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}

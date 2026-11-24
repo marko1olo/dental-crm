@@ -20,7 +20,8 @@ export function calculateIndexPercentTenths(count: number, total: number): numbe
 }
 
 export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): PerioChartSummary {
-	let examinedTeeth = 0, totalSites = 0, bopSites = 0, plaqueSites = 0;
+	let examinedTeeth = 0, totalSites = 0, actualProbedSitesCount = 0;
+	let bopSites = 0, plaqueSites = 0;
 	let suppurationSites = 0, calculusSites = 0, deepPockets = 0, moderatePockets = 0;
 	let mobileTeeth = 0, furcationTeeth = 0, maxPd = 0, sumPd = 0, maxCal = 0, sumCal = 0;
 
@@ -40,6 +41,9 @@ export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): Perio
 			const gm = site.gingivalMarginMm ?? 0;
 			const cal = calculateClinicalAttachmentLevel(pd, gm);
 
+			const isProbed = pd > 0 || site.bleedingOnProbing || site.plaque || site.suppuration || site.calculus;
+			if (isProbed) actualProbedSitesCount++;
+
 			if (pd > maxPd) maxPd = pd;
 			sumPd += pd;
 			if (cal > maxCal) maxCal = cal;
@@ -55,10 +59,11 @@ export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): Perio
 		}
 	}
 
-	const fmbsPercent = calculateIndexPercentTenths(bopSites, totalSites);
-	const fmpsPercent = calculateIndexPercentTenths(plaqueSites, totalSites);
-	const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd * 10) / totalSites) / 10 : 0;
-	const meanCalMm = totalSites > 0 ? Math.round((sumCal * 10) / totalSites) / 10 : 0;
+	const effectiveDenominator = actualProbedSitesCount > 0 ? actualProbedSitesCount : totalSites;
+	const fmbsPercent = calculateIndexPercentTenths(bopSites, effectiveDenominator);
+	const fmpsPercent = calculateIndexPercentTenths(plaqueSites, effectiveDenominator);
+	const meanPocketDepthMm = effectiveDenominator > 0 ? Math.round((sumPd * 10) / effectiveDenominator) / 10 : 0;
+	const meanCalMm = effectiveDenominator > 0 ? Math.round((sumCal * 10) / effectiveDenominator) / 10 : 0;
 
 	let riskCategory: "low" | "moderate" | "high" = "low";
 	if (fmbsPercent >= 30 || deepPockets >= 9 || mobileTeeth >= 3 || furcationTeeth >= 2 || suppurationSites >= 3) {
@@ -80,7 +85,8 @@ export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): Perio
 	}
 
 	return {
-		totalTeethExamined: examinedTeeth, totalSitesProbed: totalSites,
+		totalTeethExamined: examinedTeeth,
+		totalSitesProbed: actualProbedSitesCount > 0 ? actualProbedSitesCount : totalSites,
 		fmbsPercent, fmpsPercent, deepPocketsCount: deepPockets,
 		moderatePocketsCount: moderatePockets, sitesWithSuppurationCount: suppurationSites,
 		sitesWithCalculusCount: calculusSites, teethWithMobilityCount: mobileTeeth,

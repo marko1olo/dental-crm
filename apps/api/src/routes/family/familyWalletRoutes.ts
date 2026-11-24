@@ -1,4 +1,4 @@
-import { kopecksToNumericString, rubToKopecks } from "@dental/shared";
+import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId,
@@ -109,9 +109,13 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				visitId: payParsed.data.visitId,
 			});
 
+			const finalBalKop =
+				result.newBalanceKopecks != null
+					? Number(result.newBalanceKopecks)
+					: parseKopecks(result.newBalanceRub);
 			return {
 				payment: result.payment,
-				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				newBalance: kopecksToNumericString(finalBalKop),
 				duplicate: result.duplicate,
 			};
 		} catch (err: unknown) {

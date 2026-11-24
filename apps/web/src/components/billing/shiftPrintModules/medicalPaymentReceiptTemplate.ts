@@ -2,6 +2,7 @@
  * medicalPaymentReceiptTemplate.ts — Modern Medical Payment Receipt HTML Template.
  * Mandate 8b: <= 120 lines. Zero Soviet bureaucracy (KO-1 / Goskomstat removed).
  */
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import type { PaymentReceiptPrintData, Ko1CashInflowVoucher } from "./types.js";
 
 export function generatePaymentReceiptHtml(receipt: PaymentReceiptPrintData): string {
@@ -46,7 +47,7 @@ export function generatePaymentReceiptHtml(receipt: PaymentReceiptPrintData): st
 			<tr><td class="label">Пациент / Плательщик:</td><td class="val">${receipt.patientFullName}</td></tr>
 			<tr><td class="label">Назначение платежа:</td><td class="val">${receipt.basisRu}</td></tr>
 			<tr><td class="label">Способ оплаты:</td><td class="val">${receipt.paymentMethodTitle || "Безналичный расчет / Наличные"}</td></tr>
-			<tr><td class="label">Сумма к оплате:</td><td class="val amount-highlight">${receipt.amountRub.toFixed(2)} ₽</td></tr>
+			<tr><td class="label">Сумма к оплате:</td><td class="val amount-highlight">${formatKopecksToRub(rublesToKopecks(receipt.amountRub))}</td></tr>
 			<tr><td class="label">Сумма прописью:</td><td class="val" style="font-style: italic;">${receipt.amountWordsRu}</td></tr>
 		</table>
 

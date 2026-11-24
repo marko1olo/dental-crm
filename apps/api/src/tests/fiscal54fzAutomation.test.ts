@@ -18,10 +18,8 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../db/schema.js";
-import {
-	registerSberPosWebhookRoutes,
-	verifySberPosWebhookChecksum,
-} from "../routes/payments/sberPosWebhookRoute.js";
+import { registerSberPosWebhookRoutes } from "../routes/payments/sberWebhook/index.js";
+import { verifySberPosWebhookChecksum } from "../routes/payments/sberWebhook/signatureVerifier.js";
 import {
 	FFD12_TAG_1054_OPERATION_CODES,
 	FFD12_TAG_1055_TAXATION_CODES,

@@ -99,21 +99,23 @@ export const endoWorkingLengthMmSchema = z
 		{ message: "Рабочая длина корневого канала должна быть числом от 0 до 35 мм" },
 	);
 
-export const endoCanalMeasurementSchema = z.object({
-	id: z.string().optional(),
-	canalName: z.string().trim().min(1).max(50),
-	referencePoint: z.string().trim().max(100).optional().default(""),
-	workingLengthMm: endoWorkingLengthMmSchema,
-	masterApicalFile: z.string().trim().max(100).optional().default(""),
-	masterFile: z.string().trim().max(100).optional().default(""),
-	masterCone: z.string().trim().max(100).optional().default(""),
-	apexLocatorReading: z.string().trim().max(100).optional().default("0.0 (Apex)"),
-	taper: z.string().trim().max(50).optional().default(""),
-	obturationTechnique: z.string().trim().max(200).optional().default(""),
-	sealer: z.string().trim().max(200).optional().default(""),
-	isObliterated: z.boolean().optional().default(false),
-	notes: z.string().trim().max(500).optional().default(""),
-});
+export const endoCanalMeasurementSchema = z
+	.object({
+		id: z.string().optional(),
+		canalName: z.string().trim().min(1).max(50),
+		referencePoint: z.string().trim().max(100).optional().default(""),
+		workingLengthMm: endoWorkingLengthMmSchema,
+		masterApicalFile: z.string().trim().max(100).optional().default(""),
+		masterFile: z.string().trim().max(100).optional().default(""),
+		masterCone: z.string().trim().max(100).optional().default(""),
+		apexLocatorReading: z.string().trim().max(100).optional().default("0.0 (Apex)"),
+		taper: z.string().trim().max(50).optional().default(""),
+		obturationTechnique: z.string().trim().max(200).optional().default(""),
+		sealer: z.string().trim().max(200).optional().default(""),
+		isObliterated: z.boolean().optional().default(false),
+		notes: z.string().trim().max(500).optional().default(""),
+	})
+	.strict();
 
 export const endoToothClinicalDataSchema = z
 	.object({
@@ -138,14 +140,16 @@ export const endoToothClinicalDataSchema = z
 
 export type EndoToothClinicalData = z.infer<typeof endoToothClinicalDataSchema>;
 
-export const toothEndoUpsertSchema = z.object({
-	canals: z.array(endoCanalMeasurementSchema).min(1),
-	irrigation: z.string().trim().max(1000).optional(),
-	radiologyControl: z.string().trim().max(1000).optional(),
-	state: clinicalToothStateSchema.optional(),
-	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
-	visitId: z.string().uuid().optional().nullable(),
-});
+export const toothEndoUpsertSchema = z
+	.object({
+		canals: z.array(endoCanalMeasurementSchema).min(1),
+		irrigation: z.string().trim().max(1000).optional(),
+		radiologyControl: z.string().trim().max(1000).optional(),
+		state: clinicalToothStateSchema.optional(),
+		surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+		visitId: z.string().uuid().optional().nullable(),
+	})
+	.strict();
 
 export const UUID_SHAPE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

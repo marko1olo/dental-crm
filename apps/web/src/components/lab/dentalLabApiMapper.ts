@@ -96,37 +96,55 @@ function normalizeLabWorkflowStatus(rawStage?: string | null): LabWorkflowStatus
 	switch (rawStage) {
 		case "draft":
 		case "sent_to_lab":
+		case "in_progress":
 		case "fitting_scheduled":
+		case "ready_in_clinic":
 		case "installed_completed":
 		case "warranty_rework":
 			return rawStage;
 		case "sent":
-		case "in_progress":
-		case "shipped":
 		case "impression_sent":
+		case "impression":
+		case "impression_scan":
+		case "scan_sent":
+		case "shipped":
+			return "sent_to_lab";
+		case "in_production":
 		case "cad_design":
+		case "cad_cam":
 		case "model_cad_design":
 		case "milling_wax_up":
 		case "framework_wax_milling":
 		case "sintering_ceramic_layering":
-			return "sent_to_lab";
-		case "received":
-		case "ready":
-		case "ready_in_clinic":
+		case "ceramic_layering":
+			return "in_progress";
+		case "fitting":
+		case "framework_fitting":
 		case "try_in_fitting":
+		case "fitting_in_mouth":
 		case "refitting":
 			return "fitting_scheduled";
-		case "fitted":
-		case "completed":
-		case "installed":
-		case "fixed":
-		case "delivered_to_clinic":
-		case "installed_in_mouth":
+		case "ready":
 		case "final_glaze":
 		case "glaze_finish":
+		case "received":
+		case "in_clinic":
+		case "delivered_to_clinic":
+		case "ready_fixation":
+			return "ready_in_clinic";
+		case "completed":
+		case "installed":
+		case "installed_in_mouth":
+		case "delivered":
+		case "delivered_completed":
+		case "fitted":
+		case "fixed":
+		case "patient_fixation":
 			return "installed_completed";
 		case "rejected_remake":
 		case "rework":
+		case "correction_remake":
+		case "correction_required":
 			return "warranty_rework";
 		default:
 			return "draft";

@@ -1,4 +1,8 @@
-import { calculateChairHourlyCost, kopecksToRubles } from "@dental/shared";
+import {
+	calculateChairHourlyCost,
+	calculateDoctorPeriodPayroll,
+	kopecksToRubles,
+} from "@dental/shared";
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -11,6 +15,7 @@ import {
 	appointments,
 	cashOperations,
 	chairs,
+	doctorCommissions,
 	doctorPayrollStatements,
 	inventoryTransactions,
 	labOrders,
@@ -21,6 +26,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
+import { fetchDoctorPayrollDataset } from "../doctorPayrollDbQueries.js";
 import {
 	calculateWorkingMinutesInPeriod,
 	resolveClinicScheduleWorkHours,
@@ -285,19 +291,21 @@ export async function calculateDoctorProfitability(
 		docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCostRub || 0)]),
 	);
 
-	// 2c. Зарплатные ведомости (начисленные сдельные комиссии врачей в копейках)
+	// 2c. Зарплатные ведомости:
+	// Сначала читаем существующие ведомости из doctorPayrollStatements (закрытые и черновики).
+	// Если ведомость за текущий период еще не закрыта/не создана, применяется оперативный расчет.
 	const docPayrollRes = await db
 		.select({
 			doctorId: doctorPayrollStatements.doctorId,
 			payrollKopecks: sql<number>`coalesce(sum(${doctorPayrollStatements.calculatedPieceworkKopecks}), 0)`,
 			labCostKopecks: sql<number>`coalesce(sum(${doctorPayrollStatements.labCostKopecks}), 0)`,
 			finalPayoutKopecks: sql<number>`coalesce(sum(${doctorPayrollStatements.netPayoutKopecks}), 0)`,
+			isFinalized: doctorPayrollStatements.isFinalized,
 		})
 		.from(doctorPayrollStatements)
 		.where(
 			and(
 				eq(doctorPayrollStatements.organizationId, orgId),
-				eq(doctorPayrollStatements.isFinalized, true),
 				startDate
 					? gte(
 							doctorPayrollStatements.period,
@@ -306,10 +314,44 @@ export async function calculateDoctorProfitability(
 					: sql`true`,
 			),
 		)
-		.groupBy(doctorPayrollStatements.doctorId);
-	const docPayrollMap = new Map(
-		docPayrollRes.map((p) => [p.doctorId, kopecksToRubles(Number(p.payrollKopecks || 0))]),
-	);
+		.groupBy(doctorPayrollStatements.doctorId, doctorPayrollStatements.isFinalized);
+
+	const finalizedPayrollMap = new Map<string, number>();
+	const draftPayrollMap = new Map<string, number>();
+
+	for (const p of docPayrollRes) {
+		const rub = kopecksToRubles(Number(p.payrollKopecks || 0));
+		if (p.isFinalized) {
+			finalizedPayrollMap.set(p.doctorId, (finalizedPayrollMap.get(p.doctorId) || 0) + rub);
+		} else {
+			draftPayrollMap.set(p.doctorId, (draftPayrollMap.get(p.doctorId) || 0) + rub);
+		}
+	}
+
+	// Читаем индивидуальные ставки врачей из doctorCommissions для точного оперативного расчета
+	const commRows = await db
+		.select({
+			userId: doctorCommissions.userId,
+			doctorId: doctorCommissions.doctorId,
+			commissionPct: doctorCommissions.commissionPct,
+			commissionPercent: doctorCommissions.commissionPercent,
+		})
+		.from(doctorCommissions)
+		.where(
+			and(
+				eq(doctorCommissions.organizationId, orgId),
+				eq(doctorCommissions.isActive, true),
+			),
+		);
+
+	const commMap = new Map<string, number>();
+	for (const c of commRows) {
+		const docKey = c.userId || c.doctorId;
+		if (docKey) {
+			const rate = Number(c.commissionPercent || c.commissionPct || 25);
+			commMap.set(docKey, rate);
+		}
+	}
 
 	// 2d. Себестоимость списанных материалов по врачам (складские проводки inventoryTransactions по визитам)
 	const docMaterialsRes = await db
@@ -343,6 +385,66 @@ export async function calculateDoctorProfitability(
 		]),
 	);
 
+	// 2e. [DEFECT 3 FIX] Оперативный расчет зарплаты врача за текущий период,
+	// если закрытой ведомости (isFinalized: true) или черновика еще нет в БД.
+	// Исключает искажение маржинальности (0 ₽ ФОТ) в середине расчетного месяца.
+	const missingDocIds = allDoctorIds.filter(
+		(id): id is string => Boolean(id && !finalizedPayrollMap.has(id) && !draftPayrollMap.has(id)),
+	);
+
+	const operativePayrollMap = new Map<string, number>();
+	if (missingDocIds.length > 0) {
+		const fromDate = startDate ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0);
+		const toDate = new Date();
+		const fromStr = fromDate.toISOString().slice(0, 10);
+		const toStr = toDate.toISOString().slice(0, 10);
+
+		await Promise.all(
+			missingDocIds.map(async (docId) => {
+				try {
+					const dataset = await fetchDoctorPayrollDataset({
+						orgId,
+						resolvedDocId: docId,
+						fromStr,
+						toStr,
+						fromDate,
+						toDate,
+					});
+
+					const commissionRate = commMap.get(docId) ?? 25;
+					const docName = docMap.get(docId) || "Врач";
+
+					const payrollResult = calculateDoctorPeriodPayroll({
+						doctorId: docId,
+						doctorName: docName,
+						specialtyId: "therapy",
+						periodStartIso: fromStr,
+						periodEndIso: toStr,
+						services: dataset.completedServices,
+						customBasePercentage: commissionRate,
+						payoutModel: "percentage",
+						chairRentalKop: 0,
+						advancePayoutKop: 0,
+						...(dataset.refundDeductions !== undefined ? { refundDeductions: dataset.refundDeductions } : {}),
+						...(dataset.unallocatedLabKop !== undefined ? { unallocatedLabKop: dataset.unallocatedLabKop } : {}),
+					});
+
+					const payoutKop = payrollResult.earnedBaseCommissionKop || payrollResult.netPayoutToDoctorKop;
+					operativePayrollMap.set(docId, kopecksToRubles(payoutKop));
+				} catch {
+					// Fallback на оперативный расчет по ставке врача от чистой базы выручки (выручка минус ЗТЛ и материалы)
+					const docProf = docProfRes.find((p) => p.doctorId === docId);
+					const docRevenue = kopecksToRubles(Number(docProf?.revenueKopecks || 0));
+					const docLab = docLabCostMap.get(docId) || 0;
+					const docMat = docMaterialsMap.get(docId) || 0;
+					const netBase = Math.max(0, docRevenue - docLab - docMat);
+					const rate = (commMap.get(docId) ?? 25) / 100;
+					operativePayrollMap.set(docId, Math.round(netBase * rate));
+				}
+			}),
+		);
+	}
+
 	return allDoctorIds
 		.map((docId) => {
 			const prof = docProfRes.find(
@@ -372,8 +474,12 @@ export async function calculateDoctorProfitability(
 			const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
 			const materialsCostRub = docMaterialsMap.get(docId ?? "unassigned") || 0;
-			const recordedPayroll = docId ? (docPayrollMap.get(docId) || 0) : 0;
-			const doctorPayrollRub = recordedPayroll;
+			const doctorPayrollRub = docId
+				? (finalizedPayrollMap.get(docId) ??
+					draftPayrollMap.get(docId) ??
+					operativePayrollMap.get(docId) ??
+					0)
+				: 0;
 			// [SEV-2.4] Канонический паритет с P&L: Выручка минус ЗТЛ, материалы со склада и ФОТ врача (честный учет отрицательной маржи)
 			const clinicMarginRub = revenue > 0
 				? revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub

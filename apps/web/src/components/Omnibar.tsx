@@ -120,13 +120,16 @@ export function Omnibar() {
 	}, [query]);
 
 	const mergedPatients = useMemo<Patient[]>(() => {
-		const local = (dashboard?.patients ?? []) as unknown as Patient[];
+		const local = dashboard?.patients ?? [];
 		const map = new Map<string, Patient>();
 		for (const p of local) {
 			if (p?.id) map.set(p.id, p);
 		}
 		for (const p of remotePatients) {
-			if (p?.id) map.set(p.id, { ...map.get(p.id), ...p } as Patient);
+			if (p?.id) {
+				const existing = map.get(p.id);
+				map.set(p.id, existing ? { ...existing, ...p } : p);
+			}
 		}
 		return Array.from(map.values());
 	}, [dashboard?.patients, remotePatients]);
@@ -299,12 +302,11 @@ export function Omnibar() {
 			return [];
 		}
 		return searchPatientsQuick(mergedPatients, q, 10).map((res) => {
-			const patientWithCard = res.patient as unknown as {
-				cardNumber?: string | null | undefined;
-				chartNumber?: string | null | undefined;
-				medicalCardNumber?: string | null | undefined;
-			};
-			const cardNum = patientWithCard.cardNumber || patientWithCard.chartNumber || patientWithCard.medicalCardNumber;
+			const candidate = res.patient as Record<string, unknown>;
+			const cardNum =
+				(typeof candidate["cardNumber"] === "string" ? candidate["cardNumber"] : null) ||
+				(typeof candidate["chartNumber"] === "string" ? candidate["chartNumber"] : null) ||
+				(typeof candidate["medicalCardNumber"] === "string" ? candidate["medicalCardNumber"] : null);
 			return {
 				id: `patient-${res.patient.id}`,
 				title: `${res.patient.fullName || "Пациент"}${res.patient.phone ? ` (${res.patient.phone})` : ""}${cardNum ? ` [Карта: ${cardNum}]` : ""}`,

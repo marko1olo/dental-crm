@@ -32,7 +32,7 @@ import {
 } from "../../db/schema.js";
 import { buildKnd1151156Xml } from "../../routes/documents/sharedDocUtils/index.js";
 import registerDiaryRoutes from "../../routes/diary.js";
-import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbank.js";
+import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbankRoutes/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";

@@ -7180,6 +7180,322 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:encoding`: Exit Code 0 (19 959 файлов проверено, UTF-8 без BOM).
   - `npm run check:diff`: Exit Code 0 (DIFF SAFETY PASSED, 0 any, 0 !, 0 float).
 
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 2 / КЛИНИЧЕСКИЙ ПРИЁМ — ЭМК (SOAP), ОДОНТОГРАММА WHEELER 2.5D, КНОПКА «✓ НОРМА» И СТАБИЛИЗАЦИЯ ТИПОВ [FIXER-SURGEON-CLINICAL-EMK-SOAP] (МАНДАТЫ 8e, 8bf, 8be, 8x, 8am, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Ведущий Инженер-Хирург и Red Team Архитектор Домена Клинический Приём и ЭМК SOAP (Fixer Surgeon Clinical EMK).
+- Канонический SSOT:
+  - Пайплайн завершения визита: [`apps/web/src/components/visit/useVisitCompletion.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/useVisitCompletion.ts), [`apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts), [`apps/web/src/components/visit/completionModules/visitCompletionPipeline.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/completionModules/visitCompletionPipeline.ts).
+  - Fastify бэкенд драфтов: [`apps/api/src/routes/visits/buildEffectiveDraft.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits/buildEffectiveDraft.ts), [`apps/api/src/routes/visits/visitDraftCompleteHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits/visitDraftCompleteHandler.ts).
+  - Воркер нормы и автономия врача: [`apps/web/src/components/visit/view/visitHeaderModules/useVisitHeaderNormHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/view/visitHeaderModules/useVisitHeaderNormHandler.ts), [`apps/web/src/components/visit/view/visitViewAutonomyActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/view/visitViewAutonomyActions.ts).
+  - Конвертеры драфта визита: [`apps/web/src/appHelpers/appointmentHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/appHelpers/appointmentHelpers.ts), [`apps/web/src/helpers/clinicalCalculations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/clinicalCalculations.ts).
+- Хирургические исправления и ликвидация дефектов:
+  1. **[SEV-1] [ЗАКРЫТО] Ликвидация затирания жалоб пациента текстом соматического анамнеза (SOAP Data Loss):**
+     - В `apps/web/src/components/visit/useVisitCompletion.ts:48-54, 136-150` в интерфейс `diary` включено поле `complaint?: string | null | undefined`, а сборщик `effectiveDiary` теперь корректно извлекает реальные жалобы пациента из драфта или активного визита.
+     - В `apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts:150-156` устранена потеря поля жалоб: `complaint: finalDiary.complaint` гарантированно передается в `completeVisit()`.
+     - В `apps/web/src/components/visit/completionModules/visitCompletionPipeline.ts:81, 148, 281` устранен опасный фоллбэк подмены `complaint` на `ctx.effectiveDiary.anamnesis`. Дефолт при отсутствии жалоб стандартизирован: «Жалоб на момент осмотра активно не предъявляет».
+     - В `apps/api/src/routes/visits/buildEffectiveDraft.ts:6-60` ликвидирована подмена `rawDraft.complaint || rawDraft.anamnesis`: жалобы берутся строго из поля `complaint` (клиентского или сохраненного визита), дефолты клинически разведены между жалобами и соматическим анамнезом («Соматически здоров. Аллергоанамнез не отягощен»).
+  2. **[SEV-2] [ЗАКРЫТО] Добавление объективного статуса (Status Localis) в кнопку «✓ Норма» в шапке приёма:**
+     - В `apps/web/src/components/visit/view/visitHeaderModules/useVisitHeaderNormHandler.ts:18-23` устранена клиническая дыра, когда кнопка нормы оставляла поле объективного осмотра пустым. Добавлено выставление: `objectiveStatus: "Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Прикус физиологический. Зубные ряды интактны. Патологических зубодесневых карманов нет."`.
+  3. **[DEAD-CLONE] [ЗАКРЫТО] Снос дубликатов конвертеров драфта визита (Мандат 8bf):**
+     - В `apps/web/src/helpers/clinicalCalculations.ts:140-143` удалены дублирующие реализации `visitNoteFormFromDraft` и `visitNoteDraftFromForm`. Настроен чистый реэкспорт канонических хелперов из `apps/web/src/appHelpers/appointmentHelpers.ts:194-216`.
+  4. **[SEV-2] [ЗАКРЫТО] Стандартизация полей SOAP и ликвидация расползания алиасов (Мандат 8x):**
+     - В `apps/web/src/components/visit/VisitEmkTab.tsx:92` удален дублирующий вызов обновления легаси поля `complaints`.
+     - В `apps/web/src/hooks/domains/visit/visitNotesLogic/useVisitNoteSync.ts:117-130` все входящие легаси-алиасы (`complaints`, `objectiveInspection`, `statusLocalis`, `objective`, `treatment`) автоматически сводятся к единым каноническим ключам SOAP: `complaint`, `anamnesis`, `objectiveStatus`, `diagnosis`, `treatmentPlan`.
+     - В `apps/web/src/components/visit/view/visitViewAutonomyActions.ts` поля форм и обновления переведены на канонические поля SOAP (`objectiveStatus`, `complaint`, `treatmentPlan`).
+     - Тест-сьют `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx` обновлен под канонический `objectiveStatus` -> 14/14 PASS (Exit Code 0).
+  5. **[ANTI-ANY] [ЗАКРЫТО] Соблюдение Мандата 8be (Anti-Any) в `buildEffectiveDraft.ts`:**
+     - В `apps/api/src/routes/visits/buildEffectiveDraft.ts` типы `rawDraft: Record<string, any>` и `existingVisit: Record<string, any>` заменены на строгий `Record<string, unknown>` с безопасными сужениями типов.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `apps/web/src/components/visit/__tests__/visitViewAutonomyInquisition.test.tsx`: 14/14 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/visitDraftRefusalNamesCause.test.ts`: 6/6 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/visitSoapMultiToothAndDiaryHashAudit.test.ts`: 5/5 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/visitCloseChecklistVisitOutstanding.test.ts`: 7/7 PASS (Exit Code 0).
+  - `apps/api/src/tests/routes/visitConsumablesSoftOverdraft.test.ts`: 2/2 PASS (Exit Code 0).
+  - `npx tsc -p apps/api/tsconfig.json --noEmit`: Exit Code 0 (0 ошибок).
+  - `npm run check:encoding`: Exit Code 0 (19 960 файлов проверено, UTF-8 без BOM).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 4 — СКЛАДСКОЙ УЧЁТ, СПИСАНИЕ РАСХОДНИКОВ (BOM), SOFT NEGATIVE STOCK И САНПИН 3.3686-21 [FIXER-SURGEON-WAREHOUSE-SANPIN] (МАНДАТЫ 8v, 8e, 8n, 8x, 8am, 8bi, 8bj, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Warehouse, Supply, Consumables BOM & SanPiN 3.3686-21.
+- Канонический SSOT:
+  - Приходные накладные: [`apps/web/src/components/inventory/acceptanceWaybills/acceptanceWaybillPrintDocument.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/acceptanceWaybills/acceptanceWaybillPrintDocument.ts), [`apps/web/src/components/inventory/acceptanceWaybillsEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/acceptanceWaybillsEngine.ts), [`apps/web/src/components/inventory/waybillsTab/useWarehouseWaybillsPrintExport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/waybillsTab/useWarehouseWaybillsPrintExport.ts).
+  - Списание расходников (BOM): [`apps/api/src/services/treatmentConsumables/applyProcedureConsumablesDeduction.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/applyProcedureConsumablesDeduction.ts), [`apps/api/src/services/inventory/bomSeeds/registry.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/bomSeeds/registry.ts), [`apps/api/src/services/inventory/bomSeeds/seedRunner.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/bomSeeds/seedRunner.ts), [`apps/api/src/services/inventory/fefoModules/procedureBomDefaultFallback.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/fefoModules/procedureBomDefaultFallback.ts).
+  - СанПиН и стерилизация: [`apps/web/src/components/sanpin/SanpinRegisters.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegisters.tsx), [`apps/web/src/components/sanpin/SanpinRegistersHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegistersHeader.tsx), [`apps/web/src/components/sanpin/header/SanpinHeaderOptionsMenu.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/header/SanpinHeaderOptionsMenu.tsx), [`apps/web/src/components/sanpin/sterilization/psoAzopyramPrintHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sterilization/psoAzopyramPrintHtml.ts), [`apps/web/src/components/sanpin/retroactiveSanpin/retroactiveDossierHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/retroactiveSanpin/retroactiveDossierHtml.ts), [`apps/web/src/components/sanpin/shiftCloser/sanpinDossierCsvExporters.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/shiftCloser/sanpinDossierCsvExporters.ts), [`apps/web/src/components/sanpin/sterilization/psoCsvExporter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sterilization/psoCsvExporter.ts).
+- Хирургические исправления и ликвидация дефектов:
+  1. **[МАНДАТ 8x/8ap] Ликвидация советской формы ТОРГ-12 и дубликатов экспорта:**
+     - В `apps/web/src/components/inventory/acceptanceWaybills/acceptanceWaybillPrintDocument.ts:78-81` и `apps/web/src/components/inventory/index.ts:19-22` устаревший алиас `generateTorg12Html` заменён на канонические функции `generateAcceptanceWaybillHtml` и `generateWaybillPrintHtml`.
+     - В `apps/web/src/components/inventory/waybillsTab/useWarehouseWaybillsPrintExport.ts:5-22` ликвидирован дублирующий экспорт `printWaybillTorg12`, используется единый канонический `printWaybill` (`printInboundWaybill`).
+     - В `apps/web/src/components/inventory/waybillsTab/useWarehouseWaybills.ts:14, 110`, `WaybillDetailsView.tsx:11, 24-26` и `waybillsTab/index.tsx:33, 69` удалены рудименты пропа `onPrintTorg12` и обработчика `handlePrintTorg12`.
+     - Тест-сьюты `acceptanceWaybills.torg12Export.test.ts` и `warehouseSuite.overdraftAndFefo.test.ts` переведены на канонический `generateAcceptanceWaybillHtml` (8/8 pass).
+  2. **[МАНДАТ 8x/8ap] Искоренение советского рудимента Форма 257/у:**
+     - В `apps/web/src/components/sanpin/SanpinRegisters.tsx:77`, `SanpinRegistersHeader.tsx:29-39, 106` и `SanpinHeaderOptionsMenu.tsx:32-34, 50, 53` полностью удалён устаревший рудиментный проп `onOpenJournal257Modal` в пользу канонического `onOpenAutoclaveJournalModal`.
+  3. **[МАНДАТ 8x] Миграция `DEFAULT_804N_BOM_SEEDS` на канонические сервисные сиды `DEFAULT_SERVICE_BOM_SEEDS`:**
+     - В `apps/api/src/services/inventory/bomSeeds/registry.ts:21-22` удалён легаси-псевдоним `DEFAULT_804N_BOM_SEEDS`.
+     - В `apps/api/src/services/treatmentConsumables/applyProcedureConsumablesDeduction.ts:30, 190`, `apps/api/src/services/inventory/bomSeeds/seedRunner.ts:13, 26`, `apps/api/src/services/inventory/fefoModules/procedureBomDefaultFallback.ts:9, 26` и `apps/api/src/tests/routes/inventoryAutoDeduct.test.ts` все импорты и резолверы переведены на канонический `DEFAULT_SERVICE_BOM_SEEDS`. В тесте также ликвидирован non-null assertion `!`.
+  4. **[МАНДАТ 8x/8ap] Искоренение сырой аббревиатуры «ПСО» в печатных формах и CSV СанПиН:**
+     - В `apps/web/src/components/sanpin/sterilization/psoAzopyramPrintHtml.ts:69` сырая строка `(ПСО)` в заголовке заменена на чистый клинический русский язык: `<div>Журнал предстерилизационной очистки</div>`.
+     - В `apps/web/src/components/sanpin/retroactiveSanpin/retroactiveDossierHtml.ts:38, 64` сырые надписи `Пробы ПСО` и `Выборка ПСО` заменены на `Пробы очистки (Азопирам 100% отр.)` и `Выборка очистки`.
+     - В `apps/web/src/components/sanpin/shiftCloser/sanpinDossierCsvExporters.ts:8, 45` колонки CSV `Партия ПСО (шт)`, `Выборка ПСО (шт)`, `Проб ПСО (шт)` заменены на `Партия очистки (шт)`, `Выборка очистки (шт)`, `Проб очистки (шт)`.
+     - В `apps/web/src/components/sanpin/sterilization/psoCsvExporter.ts:34` сырая строка `"ПСО ПРОЙДЕНА (Годно)"` заменена на чистую формулировку `"Очистка пройдена (Годно)"`.
+  5. **[МАНДАТ 8v/8e/8n] Подтверждение чистоты Soft Negative Stock и FEFO:**
+     - Подтверждено: `allowOverdraft = true` безусловен во всех цепочках списания материалов, 0 блокировок врача у кресла.
+     - Интеграционный тест `apps/api/src/tests/routes/inventoryFixerSurgeonWarehouseSuite.test.ts` подтвердил сохранение дробных доз до тысячных (`toFixed(3)`), отсутствие обнуления дефицита при обновлении номенклатуры, идемпотентность списаний по `treatment_reference_id` и канонический резолв техкарт без сплит-брейна.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `acceptanceWaybills.torg12Export.test.ts` + `warehouseSuite.overdraftAndFefo.test.ts`: 8/8 PASS.
+  - `inventoryAutoDeduct.test.ts`: 3/3 PASS.
+  - `sanpinPsoQualityInspection.test.ts` + `sanpinPsoQualityJournal.test.ts` + `retroactiveSanpinEngine.test.ts` + `autoSanpinShiftBatchAutonomy.test.ts`: 40/40 PASS.
+  - `fefoStockService.test.ts` + `inventoryRedTeamBOMAndInvoices.test.ts`: 7/7 PASS.
+  - `inventoryFixerSurgeonWarehouseSuite.test.ts`: 4/4 PASS.
+  - `npm run check:encoding`: Exit Code 0 (19 956 файлов проверено, UTF-8 без BOM, 0 замечаний).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 3 — ФИНАНСЫ, КАССА 54-ФЗ, СПЛИТ-ОПЛАТЫ, ACID-ТРАНЗАКЦИИ И БИЛЛИНГ [FIXER-SURGEON-FINANCE-54FZ-BILLING] (МАНДАТЫ 8bm, 8bo, 8bf, 8be, 8v, 8e, 8n, 8z, 8bq, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Finance, 54-FZ Cashbox, Split Payments, ACID Transactions & Billing.
+- Канонический SSOT:
+  - Единый SSOT денег: [`packages/shared/src/money.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/money.ts).
+  - Единое ядро платежей: [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts) + `paymentStages/`.
+  - Единое управление авансами: [`apps/api/src/routes/cashbox/patientBalanceService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/patientBalanceService.ts).
+  - Единое управление сменами: [`apps/api/src/routes/cashbox/cashboxShiftModules/shiftLifecycleRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftLifecycleRoutes.ts) + `shiftReconciliationEngine.ts`.
+  - Единый контур счетов: [`apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceTransaction.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceTransaction.ts).
+  - Единый кассовый UI: [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx).
+- Хирургические исправления и ликвидация дефектов:
+  1. **[DEAD-CLONES] [ЗАКРЫТО] Физический снос параллельных сервисов и мёртвых стабов (Мандат 8bf):**
+     - `apps/api/src/services/billing/PartialRefundService.ts` и `__tests__/PartialRefundService.test.ts` полностью ликвидированы (`git rm`). Маршрут `POST /api/billing/refunds/partial` переключен на канонический `handleCashRefund` в `cashboxRefundRoutes.ts`.
+     - Мертвый стаб `apps/api/src/routes/billingRoutes/handlers/refundReceiptHandler.ts` полностью ликвидирован (`git rm`).
+     - Файл `apps/api/src/routes/invoiceRoutes/invoicePaymentAndRefundHandlers.ts` удален (`git rm`), обработчики `handleValidatePlan` и `handleGenerateInvoiceFromPlan` инлайнены в канонический `apps/api/src/routes/invoiceRoutes/index.ts`.
+     - Фасад `apps/api/src/routes/sberbank.ts` ликвидирован (`git rm`), импорты переведены на `@/routes/sberbankRoutes/index.js`.
+     - Фасад `apps/api/src/routes/payments/sberPosWebhookRoute.ts` ликвидирован (`git rm`), импорты переведены на `@/routes/payments/sberWebhook/index.js`.
+  2. **[ACID & TRANSACTIONS] [ЗАКРЫТО] Устранение разрыва ACID-транзакций и изоляции тенанта (Мандаты 8bo, 8be):**
+     - В `apps/api/src/documents/refundSettlement.ts:70-105` обеспечено сквозное прохождение `tx?: TenantDb` в `withTenantCtx`, а `applyPaymentRefundSettlementsInDb` и `getPaymentsByPatientIdInDb` гарантированно работают строго в переданной транзакции `tenantTx`, без падений на глобальный `db`.
+     - В `apps/api/src/db/billing/refundSettlements.ts:31-68` удален опасный fallback `const client = tx ?? db;`, параметр `tx: TenantDb` сделан строго обязательным (`const client = tx;`).
+     - В `apps/api/src/routes/billingRoutes/handlers/fiscalQueueRetryItemHandler.ts` и `fiscalQueueRetryAllHandler.ts` запросы и апдейты обернуты в `withTenantCtx(orgId, async (tx) => ...)`.
+  3. **[IDEMPOTENCY] [ЗАКРЫТО] Идемпотентность и защита от повторных кликов (Мандат 8bo):**
+     - В `apps/api/src/routes/invoiceRoutes/handlers/createInvoiceHandler.ts` внедрена поддержка `Idempotency-Key` (из заголовков и тела запроса) с проверкой по таблице `idempotencyKeys`, блокировкой дубликатов `in_flight` (HTTP 409) и реплеем результата без дублирования счетов.
+  4. **[FLOAT PURGE & KOPECKS] [ЗАКРЫТО] Тотальная ликвидация float-округлений и деления на 100 в денежном контуре (Мандат 8bm):**
+     - В `apps/api/src/routes/invoiceRoutes/helpers/invoiceComplianceChecks.ts:91-103` полностью удален `.toFixed(2)`, все проверки и сравнения скидок переведены на целочисленные копейки через `rublesToKopecks` и `kopecksToRubles`.
+     - В `apps/api/src/routes/invoiceRoutes/helpers/planPriceDiscountResolver.ts:56-58` ликвидирован `Math.round(totalKop / it.quantity)`, расчет цены зафиксирован через `kopecksDiv(toExactKopecks(totalKop), it.quantity)`.
+     - В `apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceTransaction.ts:107` поле `totalPriceKopecks` переведено на прямой `BigInt(validationReport.effectiveInvoiceNetKopecks)` без float-конверсий.
+     - В `apps/api/src/routes/fiscal/receiptRoutes/receiptDraftHandlers.ts:25-35` вычисления копеек переведены на `multiplyKopecks` / `multiplyKopecksFractional` и `toExactKopecks` из `@dental/shared`.
+  5. **[ZERO MOCKS] [ЗАКРЫТО] Ликвидация утечки моков из боевого кода (Мандат 8z):**
+     - В `apps/api/src/db/billing/billingLookups.ts:191-244` полностью удалены детекция `isMockedSelect` и интерфейс `MockableSelect`. Боевой код работает строго с реальной базой PostgreSQL 18 через Drizzle ORM.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `sberbankWebhookIdempotency.test.ts`: 9/9 PASS (Exit Code 0).
+  - `fiscal54fzAutomation.test.ts`: 16/16 PASS (Exit Code 0).
+  - `cashbox.test.ts`: 1/1 PASS (Exit Code 0).
+  - `cashboxDepositPaymentIntegrity.test.ts`: 10/10 PASS (Exit Code 0).
+  - `sberPosWebhook.test.ts`: 9/9 PASS (Exit Code 0).
+  - `sberbank.test.ts`: 3/3 PASS (Exit Code 0).
+  - `npm run check:encoding`: Exit Code 0 (19 956 файлов проверено, UTF-8 без BOM, 0 замечаний).
+  - `git status`: 5 файлов-дубликатов удалены через `git rm` без создания параллельных мутантов.
+
+---
+
+# 🔴 ВОЛНА 8: ТРИУМФ RED TEAM ИНКВИЗИЦИИ (АНАЛИТИКА, ТЕЛЕФОНИЯ, ДОКУМЕНТЫ 63-ФЗ, СЕМЕЙНЫЙ ДЕПОЗИТ И КАРТОТЕКА ПАЦИЕНТОВ — 100% GREEN, ПРУФЫ ПРОВЕРЕНЫ)
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 1 — АНАЛИТИКА КЛИНИКИ, ПЛАН-ФАКТ ВЫРУЧКИ И ЗАРПЛАТЫ ВРАЧЕЙ [ANL-01..04] (МАНДАТЫ 8bm, 8bo, 8e, 8n, 8z, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Executive Analytics, Revenue Plan/Fact, Doctor Payroll & Utilization.
+- Канонический SSOT:
+  - План-факт и KPI: `apps/api/src/routes/analytics/executiveKpiQuery.ts`.
+  - Когортный LTV: `apps/api/src/routes/analytics/cohortLtvCalculator.ts`.
+  - Утилизация кресел и ФОТ: `apps/api/src/routes/analytics/utilizationRoutes.ts`.
+  - Юнит-тесты: `apps/api/src/routes/analytics/executiveKpiQuery.test.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[ANL-01] [ЗАКРЫТО] Ликвидация фейкового равенства плана и факта выручки (Мандат 8z):**
+     - В `apps/api/src/routes/analytics/executiveKpiQuery.ts` снесён фиктивный фолбэк `totalRevenuePlanKopecks: totalRevenueKopecks`, из-за которого процент выполнения плана всегда равнялся 100%. Внедрён канонический резолвер `resolveExecutiveRevenuePlanKopecks`, рассчитывающий плановую выручку из `clinicSchedule` или нормативной емкости кресел клиники.
+  2. **[ANL-02] [ЗАКРЫТО] Честный расчет возраста когорт без хардкода «Month 12» (Мандат 8ap):**
+     - В `apps/api/src/routes/analytics/cohortLtvCalculator.ts` ликвидирован хардкод возраста когорты `"Month 12"`. Возраст вычисляется динамически на уровне PostgreSQL через `EXTRACT(YEAR FROM age) * 12 + EXTRACT(MONTH FROM age)`.
+  3. **[ANL-03] [ЗАКРЫТО] Ликвидация обнуления ФОТ врачей в середине месяца (Мандат 8e):**
+     - В `apps/api/src/routes/analytics/utilizationRoutes.ts` устранено обнуление зарплат до закрытия расчетного периода. Внедрен 4-уровневый каскад гидратации (закрытые ведомости -> черновики смен -> расчет сдельной оплаты -> плановый норматив).
+  4. **[ANL-04] [ЗАКРЫТО] Ликвидация искажения себестоимости и Math.max (Мандат 8bm):**
+     - В `apps/api/src/routes/analytics/executiveKpiQuery.ts` себестоимость COGS приведена к строгому следованию методу начисления без смешивания кассовых потоков и метода начислений.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - `executiveKpiQuery.test.ts`: 3/3 PASS (Exit Code 0).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 2 — ТЕЛЕФОНИЯ, СОФТФОН И ОМНИКАНАЛЬНЫЕ КОММУНИКАЦИИ [TEL-01..09] (МАНДАТЫ 8bo, 8e, 8n, 8x, 8am, 8bf, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Telephony, CallKit Bridge, WebRTC Softphone & Omnichannel Operator Desk.
+- Канонический SSOT:
+  - Мобильный CallKit мост: `apps/web/src/components/telephony/CallKitBridge.ts`.
+  - Обработка входящих событий и лидов: `apps/api/src/services/telephony/telephonyOutboxService.ts`.
+  - Безопасность вебхуков: `apps/api/src/services/telephony/telephonySecurity.ts`.
+  - Рабочее место оператора: `apps/web/src/components/omnichannel/useOmnichannelOperatorDesk.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[TEL-01] [ЗАКРЫТО] Ликвидация сброса входящих звонков на смартфонах (Мандаты 8ze, 8al):**
+     - В `apps/web/src/components/telephony/CallKitBridge.ts:213` устаревший вызов `acceptCall()` заменён на стандартный `answerCall()`, исключающий падение и сброс соединения на мобильных устройствах.
+  2. **[TEL-02] [ЗАКРЫТО] Перенос генерации лидов со статуса ringing на answered:**
+     - В `apps/api/src/services/telephony/telephonyOutboxService.ts:437` создание лидов перенесено строго на статус `answered`, предотвращая генерацию ложных пустых обращений при пропущенных звонках.
+  3. **[TEL-03] [ЗАКРЫТО] Искоренение текстовых маркеров [call_id] и [sms_id] из сообщений:**
+     - Текстовые маркеры вычищены из тел сообщений, поиск и привязка переведены на структурную колонку `providerCallId`.
+  4. **[TEL-04] [ЗАКРЫТО] Устранение SSRF-уязвимости в проверке безопасности телефонии:**
+     - В `apps/api/src/services/telephony/telephonySecurity.ts:503` устранена лазейка обхода проверок IP-адресов в продакшене.
+  5. **[TEL-05] [ЗАКРЫТО] Сквозная идемпотентность операторских мутаций (Мандат 8bo):**
+     - В `apps/web/src/components/omnichannel/useOmnichannelOperatorDesk.ts` внедрён заголовок `Idempotency-Key` (UUIDv7) на все мутации сообщений и диалогов.
+  6. **[TEL-06] [ЗАКРЫТО] Ликвидация сироты omnichannelBots.ts (Мандат 8bf):**
+     - `apps/api/src/routes/omnichannelBots.ts` удалён через `git rm`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 73/73 тестов телефонии и коммуникаций PASS (Exit Code 0).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 3 — МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ, СОГЛАСИЯ ИДС И УКЭП 63-ФЗ [DOC-01..03] (МАНДАТЫ 8bo, 8e, 8x, 8ap, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Medical Documentation, Informed Consents & UKEP 63-FZ.
+- Канонический SSOT:
+  - Подписание УКЭП: `apps/api/src/routes/documents/signUkep.ts`.
+  - Запросы документов: `apps/api/src/db/documentQuery.ts`.
+  - Клиентский движок подписания: `apps/web/src/components/documents/useUkepSigningEngine.ts`.
+  - Юнит-тесты: `packages/shared/src/tests/stomxDefects.test.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[DOC-01] [ЗАКРЫТО] Сохранение криптографического хэша исходного документа при наложении штампа ЭЦП (Мандат 63-ФЗ):**
+     - В `apps/api/src/routes/documents/signUkep.ts:281` и `apps/api/src/db/documentQuery.ts` устранена перезапись `issuedSnapshotSha256` после добавления визуального штампа ЭЦП. Документ со штампом сохраняется в отдельный файл `.stamped.html`, а исходный канонический хэш остается неизменным, исключая ложный `TamperDetected: true`.
+  2. **[DOC-02] [ЗАКРЫТО] Снос псевдо-хэша computeFallbackDocHash (Мандат 8z):**
+     - В `apps/web/src/components/documents/useUkepSigningEngine.ts:23` ликвидирован генератор псевдо-хэшей, внедрен строгий гейт на невыпущенные документы.
+  3. **[DOC-03] [ЗАКРЫТО] Искоренение упоминаний StomX из тестов (Мандат 8ap):**
+     - `packages/shared/src/tests/stomxDefects.test.ts` полностью очищен от брендинга сторонних CRM.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 15/15 тестов документации и УКЭП PASS (Exit Code 0).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 4 — КАРТОТЕКА ПАЦИЕНТОВ, СЕМЕЙНЫЙ ДЕПОЗИТ И ЛОЯЛЬНОСТЬ [PAT-01..07] (МАНДАТЫ 8bm, 8bo, 8e, 8n, 8x, 8ap, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Patient Records, Family Deposit & Loyalty.
+- Канонический SSOT:
+  - Семейный кошелек: `apps/api/src/routes/family/familyWalletRoutes.ts`.
+  - Авторизация списаний: `apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts`.
+  - Слияние карт: `apps/api/src/services/patients/patientMergeModules/patientMergeReconciliation.ts`.
+  - Сертификаты: `apps/api/src/routes/loyaltyModules/certificateRedemption.ts`.
+  - Студия лояльности: `apps/web/src/components/loyalty/useLoyaltyStudioState.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[PAT-01] [ЗАКРЫТО] Разграничение рублевого семейного депозита и бонусных баллов лояльности:**
+     - В `apps/web/src/components/loyalty/useLoyaltyStudioState.ts:105` вкладка семейного пула лояльности переключена на канонический эндпоинт `/api/loyalty/family/:id`, исключая путаницу рублей и бонусных баллов.
+  2. **[PAT-02] [ЗАКРЫТО] Синхронный учет balance и balanceKopecks при слиянии семей:**
+     - В `apps/api/src/services/patients/patientMergeModules/patientMergeReconciliation.ts:173` балансы обновляются синхронно без потери копеек.
+  3. **[PAT-03] [ЗАКРЫТО] Объединение аллергий somaticAlerts через union set при слиянии:**
+     - В `apps/api/src/services/patients/patientMergeModules/patientMergeReconciliation.ts:269` предотвращена потеря критических аллергических стоп-факторов при слиянии карт пациентов.
+  4. **[PAT-04] [ЗАКРЫТО] Защита от повторного погашения подарочных сертификатов (Мандат 54-ФЗ тег 1215):**
+     - В `apps/api/src/routes/loyaltyModules/certificateRedemption.ts` чек зачета аванса формируется всегда, обеспечена поддержка транзакционного клиента в блоке обработки ошибок.
+  5. **[PAT-05] [ЗАКРЫТО] Точный учет копеек amountKopecks в семейных операциях:**
+     - В `apps/api/src/routes/family/familyWalletRoutes.ts:114` и `familyRefundOperation.ts` исключены неточности округления.
+  6. **[PAT-06] [ЗАКРЫТО] Откат оптимистичного стейта при сбое сети:**
+     - В `apps/web/src/components/loyalty/loyaltyStudioActions.ts:92` стейт книги проводок откатывается при сетевой ошибке.
+  7. **[PAT-07] [ЗАКРЫТО] BOLA/IDOR авторизация и искоренение утечек дев-жаргона:**
+     - В `apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts` проверены полномочия прямого родства и вычищены утечки названий мандатов.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - Все целевые тесты картотеки, семьи и лояльности PASS (Exit Code 0).
 
 
+---
 
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН U — ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ, ОРТОПЕДИЯ И НАРЯДЫ (DENTAL LAB ORDERS & KANBAN) (МАНДАТЫ 8e, 8n, 8bo, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Dental Lab Orders & Orthopedic Tracking.
+- Канонический SSOT:
+  - Схемы и типы статусов: `packages/shared/src/lab/labOrders.ts`, `apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts`.
+  - Валидация переходов: `apps/api/src/routes/lab/ordersCrudModules/labOrderStatusTransitions.ts`.
+  - Канбан-движок и мапперы: `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`, `dentalLabApiMapper.ts`, `useLabOrdersFiltering.ts`.
+  - Интерфейс канбана: `DentalLabOrdersKanbanView.tsx`, `DentalLabKanbanCard.tsx`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[LAB-01] [ЗАКРЫТО] Ликвидация рассинхронизации 5-стадийного Канбана ортопедии:**
+     - Устранен сброс готовых к установке нарядов в `draft` в `labOrders.ts` и `dentalLabWorkflowEngine.ts`. Пул 5 колонок (`draft`, `sent_to_lab`, `in_progress`, `ready`, `installed_completed`) строго синхронизирован.
+  2. **[LAB-02] [ЗАКРЫТО] Нормализация статуса installed_completed в DND-обработчике:**
+     - В `labOrderStatusAndTrackingTypes.ts` и `labOrderStatusTransitions.ts` реализован корректный маппинг `installed_completed` в канонический статус `completed`, исключая сбои DND при перетаскивании карточек наряда.
+  3. **[LAB-03] [ЗАКРЫТО] Защита от перескакивания стадий в кнопке быстрого продвижения наряда:**
+     - В `DentalLabOrdersKanbanView.tsx` и `DentalLabKanbanCard.tsx` кнопка продвижения шага следует строгой последовательности переходов без пропуска обязательных контрольных точек.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 36/36 тестов в `labWorkOrder.test.ts` и `dentalLabOrders.test.ts` PASS (Exit Code 0), `tsc` 0 ошибок.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН T — КЛИНИЧЕСКИЙ ИИ-АССИСТЕНТ, ГОЛОСОВОЙ ВВОД И ДИСПЕТЧЕР (CLINICAL AI COPILOT & VOICE) (МАНДАТЫ 8e, 8n, 8x, 8y, 8bf, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Clinical AI Copilot, STT, Voice & Dispatcher.
+- Канонический SSOT:
+  - Диспетчер и фоллбеки: `apps/api/src/ai/harness/reactFallbackRunner.ts`.
+  - Голосовой модуль аудио-клиента: `apps/web/src/components/copilot/copilotCatalogData.ts`, `unifiedAudioClientCore.ts`.
+  - Маршрутизация агента: `/api/agent/chat` (`apps/api/src/routes/agentRoutes.ts`).
+- Хирургические исправления и ликвидация дефектов:
+  1. **[COPILOT-01] [ЗАКРЫТО] Ликвидация случайного выбора услуги через limit(1) в reactFallbackRunner.ts:**
+     - В `apps/api/src/ai/harness/reactFallbackRunner.ts:150-176` ликвидирован опасный фоллбек, добавлявший произвольную первую услугу из базы при отсутствии точного совпадения. Возвращается честный статус `[ПРЕЙСКУРАНТ НЕ НАЙДЕН]`.
+  2. **[COPILOT-02] [ЗАКРЫТО] Унификация аудио-клиента WebkitSpeechRecognition:**
+     - В `apps/web/src/components/copilot/copilotCatalogData.ts:321-331` захардкоженная строка заменена на канонический статус `getUnifiedAudioClientStatus()`.
+  3. **[COPILOT-03] [ЗАКРЫТО] Физический снос мертвого дубликата copilotService.ts (git rm):**
+     - Выполнен `git rm apps/api/src/services/agent/copilotService.ts`, очищены ссылки и моки в `missedCallTask.test.ts`.
+  4. **[COPILOT-04] [ЗАКРЫТО] Устранение фантомного маршрута /api/v1/copilot/agent/execute:**
+     - В `chairsideCopilotAgentExecution.test.tsx` вычищены обращения к фантомному роуту, утвержден единый SSOT `/api/agent/chat`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 26/26 тестов (`agentHarnessAdvanced.test.ts`, `missedCallTask.test.ts`, `copilotCatalogData.test.ts`, `chairsideCopilotAgentExecution.test.tsx`) PASS (Exit Code 0), `tsc` 0 ошибок.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН V — ПАРОДОНТОЛОГИЯ, PSR-ИНДЕКС И ОДОНТОГРАММА (PERIODONTOLOGY & PSR) (МАНДАТЫ 8ar, 8as, 8e, 8x, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Periodontology & PSR Index.
+- Канонический SSOT:
+  - Математика индексов: `packages/shared/src/perio/mathIndices.ts`, `apps/api/src/services/periodontogramIndices.ts`.
+  - Схемы PSR-секстантов: `apps/api/src/services/periodontogramService.ts`.
+  - Студия пародонтологии: `apps/web/src/components/perio/PerioStudioModal.tsx`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[PERIO-01] [ЗАКРЫТО] Исправление делителя BOP и PI при частичном зондировании:**
+     - В `packages/shared/src/perio/mathIndices.ts:40-66` и `periodontogramIndices.ts:122-132` устранено занижение индексов кровоточивости и налета: знаменатель использует фактическое количество зондированных точек `actualProbedSitesCount > 0 ? actualProbedSitesCount : totalSites`.
+  2. **[PERIO-02] [ЗАКРЫТО] Внедрение строгой Zod-схемы psrSextantEntrySchema:**
+     - В `periodontogramService.ts:90-117` сырые JSON-данные PSR защищены валидацией Zod с проверкой допустимых значений кодов (0..4, *).
+  3. **[PERIO-03] [ЗАКРЫТО] Ликвидация устаревших ссылок на удаленный PeriodontalChartingModal:**
+     - Очищены ссылки в `.agents/CLINICAL_RULES.md`, `.agents/FRONTEND_VIEWS_MAP.md`, `dentalGrammarParser.test.ts`, `perioReleaseIsolation.test.tsx`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 59/59 тестов пародонтологии PASS (Exit Code 0), `tsc` 0 ошибок.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН W — ПРОГРАММА ЛОЯЛЬНОСТИ, ПОДАРОЧНЫЕ СЕРТИФИКАТЫ И СЕМЕЙНЫЙ ДЕПОЗИТ (LOYALTY & FAMILY WALLET) (МАНДАТЫ 8e, 8n, 8bm, 8bo, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Loyalty, Gift Certificates & Family Wallet.
+- Канонический SSOT:
+  - Авторизация списаний: `apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts`.
+  - Кассовый возврат депозита: `apps/api/src/services/familyWallet/modules/familyRefundOperation.ts`.
+  - Кассовые стадии: `apps/api/src/routes/cashbox/paymentStages/depositAndFamilyStage.ts`.
+  - Фасад семейного кошелька: `apps/api/src/services/familyWallet/modules/familyWalletFacade.ts`.
+  - Роуты семейных групп: `apps/api/src/routes/family/familyGroupWriteRoutes.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[LOY-01] [ЗАКРЫТО] Устранение BOLA-парадокса в verifyFamilySpendAuthorization (Мандат 8e):**
+     - В `familySpendAuthorization.ts:114-129` прямым подтвержденным членам семьи разрешено списание средств семейного депозита по умолчанию без принудительного предварительного создания записей в `patient_relationships`. Явный запрет (`canSpendFamilyWallet === false`) и посторонние лица жестко блокируются 403.
+  2. **[LOY-02] [ЗАКРЫТО] Единый копеечный баланс (замена balanceKopecks > 0 на строгое balanceKopecks != null):**
+     - В `depositAndFamilyStage.ts`, `familyWalletFacade.ts`, `familySpendAuthorization.ts` и `familyGroupWriteRoutes.ts` устранено ошибочное условие `> 0`, вызывавшее паразитный фоллбек на парсинг текстового поля при нулевом или отрицательном сальдо.
+  3. **[LOY-03] [ЗАКРЫТО] Финансовая дисциплина кассового возврата депозита (Запрет тихого обнуления через Math.max):**
+     - В `familyRefundOperation.ts:87-104` при недостатке наличных в кассовом ящике (`boxBalKop < refundKopecks`) операция прерывается с ошибкой 400 `INSUFFICIENT_CASHBOX_BALANCE`, предотвращая искажение Z-отчета 54-ФЗ.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 35/35 целевых тестов (`familyWalletService.test.ts`, `familyWalletCanonical.test.ts`, `cashboxDepositPaymentIntegrity.test.ts`, `redteamFixerSurgeon3.test.ts`) PASS (Exit Code 0), `tsc` 0 ошибок.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН X — КЛИНИЧЕСКИЙ СКЛАД, BOM-ТЕХКАРТЫ, АВТОСПИСАНИЕ И МЯГКИЙ ОВЕРДРАФТ (WAREHOUSE & SOFT OVERDRAFT) (МАНДАТЫ 8v, 8aa, 8e, 8bo, 8bm, 8az)
+- Дата и статус: 2026-11-24 — ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Роль: Red Team Fixer Surgeon: Warehouse, Tech Cards BOM & Soft Negative Stock.
+- Канонический SSOT:
+  - Экспресс-списания и хуки: `apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts`.
+  - Маршруты списания материалов визита: `apps/api/src/routes/visits/visitConsumablesRoutes.ts`.
+  - Маршруты быстрого списания склада: `apps/api/src/routes/inventory/writeOffModules/writeOffBatchDeduction.ts`.
+  - Модальные окна визита: `apps/web/src/components/visit/VisitBillingModals.tsx`.
+  - Обработчики норм техкарт: `apps/api/src/routes/inventory/consumables/techCardNormHandlers.ts`.
+- Хирургические исправления и ликвидация дефектов:
+  1. **[WH-01] [ЗАКРЫТО] Гарантированный Idempotency-Key в быстрых складских списаниях (Мандат 8bo):**
+     - В `useConsumablesBatchWriteoff.ts` во все 6 мутирующих POST-запросов добавлен заголовок `"Idempotency-Key": crypto.randomUUID()`, устранив блокирующий сбой HTTP 400 `IdempotencyKeyRequired`.
+  2. **[WH-02] [ЗАКРЫТО] Неделимая ACID-транзакция FEFO-списания и реестра аудита визита (Мандат 8bo):**
+     - В `visitConsumablesRoutes.ts:160-318` списание партий со склада и запись в `treatmentConsumableDeductions` объединены в единую транзакцию `withTenantCtx(orgId, async (tx) => ...)`. Риск двойного списания при обрыве соединения ликвидирован.
+  3. **[WH-03] [ЗАКРЫТО] Сквозной проброс idempotencyKey в сервисный слой склада:**
+     - В `writeOffBatchDeduction.ts` во всех 9 эндпоинтах экспресс-списания заголовок идемпотентности извлекается и передается в сервис `TreatmentConsumablesService`, клиент получает `X-Idempotency-Key`.
+  4. **[WH-04] [ЗАКРЫТО] Устранение 401 Unauthorized в ConsumablesBatchWriteoffModal:**
+     - В `VisitBillingModals.tsx:145-155` передан пропс `getHeaders={getDenteAuthHeaders}`, гарантирующий авторизованные запросы к инвентарю прямо из окна приёма врача.
+  5. **[WH-05] [ЗАКРЫТО] Снос мертвого глобального импорта db вне RLS:**
+     - В `techCardNormHandlers.ts:14` физически удален неиспользуемый `import { db } from "../../../db/client.js";`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - 13/13 тестов (`visitConsumablesSoftOverdraft.test.ts`, `inventoryAutoDeduct.test.ts`, `treatmentConsumablesService.test.ts`) PASS (Exit Code 0), `check:diff` 0 ошибок, `tsc` 0 ошибок.

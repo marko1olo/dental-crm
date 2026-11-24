@@ -28,7 +28,7 @@ import {
 } from "../routes/agentSessionRoutes.js";
 import { LanKktDriverService } from "../services/hardware/lanKktDriverService.js";
 import { verifyFamilySpendAuthorization } from "../services/familyWallet/modules/familySpendAuthorization.js";
-import { FamilyWalletError } from "../services/familyWallet/familyWalletTypes.js";
+import { FamilyWalletError, type FamilyGroupRow } from "../services/familyWallet/familyWalletTypes.js";
 import { patientReclamationCreateBodySchema } from "../routes/patients/types.js";
 
 describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination", () => {
@@ -234,20 +234,25 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 
 	// ─── 6. Family Spend Authorization & Mandate 8n ────────────────────────────
 	describe("6. Family Spend Authorization (familySpendAuthorization.ts)", () => {
-		const mockFamily = {
+		const mockFamily: FamilyGroupRow = {
 			id: "family-group-1",
 			headPatientId: "pat-head-uuid",
 			primaryPatientId: "pat-head-uuid",
 			balance: "500000", // 5 000 руб
+			balanceKopecks: 500000,
 			organizationId: "org-1",
 			name: "Семья Смирновых",
-			currency: "RUB",
+			groupName: "Семья Смирновых",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
 
+		function createMockTx(impl: object): Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"] {
+			return Object.assign(Object.create(null), impl);
+		}
+
 		test("подтверждённый член семьи имеет право на списание средств при подтверждении в patient_relationships (Мандаты 8n, 8e)", async () => {
-			const mockTx = {
+			const mockTx = createMockTx({
 				select: (fields?: unknown) => ({
 					from: (_table: unknown) => ({
 						where: (_clause: unknown) => ({
@@ -269,19 +274,19 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 						}),
 					}),
 				}),
-			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+			});
 
 			await verifyFamilySpendAuthorization({
 				tx: mockTx,
 				organizationId: "org-1",
-				family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+				family: mockFamily,
 				patientId: "pat-child-uuid",
 				debitKopecks: 120000,
 			});
 		});
 
 		test("блокирует списание при явном запрете canSpendFamilyWallet === false", async () => {
-			const mockTx = {
+			const mockTx = createMockTx({
 				select: (fields?: unknown) => ({
 					from: (_table: unknown) => ({
 						where: (_clause: unknown) => ({
@@ -303,14 +308,14 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 						}),
 					}),
 				}),
-			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+			});
 
 			await assert.rejects(
 				async () => {
 					await verifyFamilySpendAuthorization({
 						tx: mockTx,
 						organizationId: "org-1",
-						family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+						family: mockFamily,
 						patientId: "pat-child-uuid",
 						debitKopecks: 120000,
 					});
@@ -325,7 +330,7 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 		});
 
 		test("отклоняет списание для постороннего пациента, не состоящего в семье", async () => {
-			const mockTx = {
+			const mockTx = createMockTx({
 				select: (fields?: unknown) => ({
 					from: (_table: unknown) => ({
 						where: (_clause: unknown) => ({
@@ -338,14 +343,14 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 						}),
 					}),
 				}),
-			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+			});
 
 			await assert.rejects(
 				async () => {
 					await verifyFamilySpendAuthorization({
 						tx: mockTx,
 						organizationId: "org-1",
-						family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+						family: mockFamily,
 						patientId: "pat-stranger-uuid",
 						debitKopecks: 50000,
 					});
@@ -357,6 +362,33 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 					return true;
 				},
 			);
+		});
+
+		test("разрешает списание прямому члену семьи (familyGroupId совпадает) без отдельной записи в patient_relationships (устранение BOLA-парадокса)", async () => {
+			const mockTx = createMockTx({
+				select: (fields?: unknown) => ({
+					from: (_table: unknown) => ({
+						where: (_clause: unknown) => ({
+							limit: async (_n: number) => {
+								if (fields && typeof fields === "object" && "familyGroupId" in fields) {
+									return [{ id: "pat-direct-child-uuid", familyGroupId: "family-group-1" }];
+								}
+								// В patient_relationships отдельной строки нет
+								return [];
+							},
+						}),
+					}),
+				}),
+			});
+
+			// Списание должно пройти успешно без исключения 403 UNAUTHORIZED_FAMILY_SPEND
+			await verifyFamilySpendAuthorization({
+				tx: mockTx,
+				organizationId: "org-1",
+				family: mockFamily,
+				patientId: "pat-direct-child-uuid",
+				debitKopecks: 25000,
+			});
 		});
 	});
 

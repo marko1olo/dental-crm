@@ -4,7 +4,7 @@ import type { InventoryItem } from "../useInventoryLogic.js";
 import { getFefoTrafficLight } from "../fefoTrafficLight.js";
 import {
 	reconcileOverdraftOnReceipt,
-	generateTorg12Html,
+	generateAcceptanceWaybillHtml,
 	createSampleDentalWaybill,
 	calculateWaybillTotals,
 	createWaybillItem,
@@ -99,7 +99,7 @@ describe("Warehouse Suite: Overdraft & FEFO & Waybills", () => {
 
 	it("генерирует валидный HTML печатной формы приходной накладной", () => {
 		const sampleWaybill = createSampleDentalWaybill();
-		const html = generateTorg12Html(sampleWaybill);
+		const html = generateAcceptanceWaybillHtml(sampleWaybill);
 		assert.ok(html.includes("Приходная накладная") || html.includes("ПРИХОДНАЯ НАКЛАДНАЯ"));
 		assert.ok(html.includes(sampleWaybill.waybillNumber));
 		assert.ok(html.includes(sampleWaybill.supplier.name));

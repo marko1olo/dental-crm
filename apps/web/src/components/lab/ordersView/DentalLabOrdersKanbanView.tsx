@@ -1,6 +1,7 @@
 import React from "react";
 import type { useDentalLabOrders } from "./useDentalLabOrders";
 import { DentalLabOrdersKanbanBoard } from "../DentalLabOrdersKanbanBoard";
+import { getNextLabProductionStage } from "../dentalLabWorkflowEngine";
 
 export interface DentalLabOrdersKanbanViewProps {
 	readonly logic: ReturnType<typeof useDentalLabOrders>;
@@ -30,8 +31,10 @@ export function DentalLabOrdersKanbanView({ logic }: DentalLabOrdersKanbanViewPr
 						if (orig) handleOpenEditOrder(orig);
 					}}
 					onAdvanceStage={async (wfOrder) => {
-						const nextStatus = wfOrder.currentStage === "draft" ? "sent_to_lab" : wfOrder.currentStage === "sent_to_lab" ? "fitting_scheduled" : "installed_completed";
-						await handleStatusChange(wfOrder.id, nextStatus);
+						const nextStatus = getNextLabProductionStage(wfOrder.currentStage);
+						if (nextStatus) {
+							await handleStatusChange(wfOrder.id, nextStatus);
+						}
 					}}
 					onPrintBlank={(wfOrder) => {
 						const orig = orders.find((o) => o.id === wfOrder.id);

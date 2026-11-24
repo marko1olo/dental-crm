@@ -18,12 +18,12 @@ import {
 import {
 	registerSberbankRoutes,
 	verifySberbankChecksum,
-} from "../../routes/sberbank.js";
+} from "../../routes/sberbankRoutes/index.js";
 import {
 	registerSbpRoutes as registerSbpQrRoutes,
 	verifySbpWebhookSignature,
 } from "../../routes/sbp/index.js";
-import { registerSberPosWebhookRoutes } from "../../routes/payments/sberPosWebhookRoute.js";
+import { registerSberPosWebhookRoutes } from "../../routes/payments/sberWebhook/index.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {

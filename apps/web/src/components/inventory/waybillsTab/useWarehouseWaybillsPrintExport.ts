@@ -3,11 +3,10 @@ import {
 	type AcceptanceWaybillDocument,
 	exportWaybillToCsv,
 	generateAcceptanceWaybillHtml,
-	generateTorg12Html,
 } from "../acceptanceWaybillsEngine.js";
 
 export function printInboundWaybill(wb: AcceptanceWaybillDocument): void {
-	const html = generateAcceptanceWaybillHtml ? generateAcceptanceWaybillHtml(wb) : generateTorg12Html(wb);
+	const html = generateAcceptanceWaybillHtml(wb);
 	const printWin = window.open("", "_blank");
 	if (printWin) {
 		printWin.document.write(html);
@@ -18,7 +17,6 @@ export function printInboundWaybill(wb: AcceptanceWaybillDocument): void {
 }
 
 export const printWaybill = printInboundWaybill;
-export const printWaybillTorg12 = printInboundWaybill;
 
 export function exportWaybillCsv(wb: AcceptanceWaybillDocument): void {
 	const csvContent = exportWaybillToCsv(wb);

@@ -94,7 +94,7 @@ export function useVisitCompletionWorkflow({
 				complaint:
 					typeof visitNoteForm?.complaint === "string" && visitNoteForm.complaint.trim() !== ""
 						? visitNoteForm.complaint
-						: "Жалоб нет",
+						: "Жалоб на момент осмотра активно не предъявляет",
 				anamnesis:
 					typeof visitNoteForm?.anamnesis === "string" && visitNoteForm.anamnesis.trim() !== ""
 						? visitNoteForm.anamnesis
@@ -148,6 +148,7 @@ export function useVisitCompletionWorkflow({
 				patientName: effectivePatientName,
 				doctorName: effectiveDoctorName,
 				diary: {
+					complaint: finalDiary.complaint,
 					anamnesis: finalDiary.anamnesis,
 					statusLocalis: finalDiary.objectiveStatus,
 					diagnosisIcd10: finalDiary.diagnosis,

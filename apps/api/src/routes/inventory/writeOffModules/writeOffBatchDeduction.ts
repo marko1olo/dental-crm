@@ -146,14 +146,8 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	[
 		"/:organizationId/shift-batch-deduct",
 		"/shift-batch-deduct",
-		"/:organizationId/batch-deduct",
-		"/batch-deduct",
 		"/:organizationId/shift-deduct",
 		"/shift-deduct",
-		"/:organizationId/batch-shift-writeoff",
-		"/batch-shift-writeoff",
-		"/:organizationId/shift-deduction",
-		"/shift-deduction",
 		"/:organizationId/batch-writeoff",
 		"/batch-writeoff",
 	].forEach((p) => server.post(p, handleShiftDeduct));
@@ -177,24 +171,32 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	server.post<{ Params?: OrgParams; Body?: StandardKitBody }>("/:organizationId/quick-writeoff-standard-kit", async (req, rep) => {
 		const org = await checkOrg(req, rep, "standard kit"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
 			organizationId: org,
 			userId: uid,
 			visitId: req.body?.visitId,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	});
 
 	const handleSteril = async (req: FastifyRequest<{ Params?: OrgParams; Body?: SterilizationKitBody }>, rep: FastifyReply) => {
 		const org = await checkOrg(req, rep, "steril kit"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
 			organizationId: org,
 			count: req.body?.count ?? 1,
 			userId: uid,
 			visitId: req.body?.visitId,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	};
 	server.post("/:organizationId/quick-writeoff-sterilization-kit", handleSteril);
 	server.post("/quick-writeoff-sterilization-kit", handleSteril);
@@ -203,7 +205,8 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		const org = await checkOrg(req, rep, "carpules"); if (!org) return;
 		const b = req.body ?? {};
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 			organizationId: org,
 			carpulesCount: b.carpulesCount ?? b.count ?? 1,
 			needlesCount: b.needlesCount,
@@ -212,7 +215,10 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 			userId: uid,
 			visitId: b.visitId,
 			notes: b.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	};
 	server.post("/:organizationId/quick-writeoff-carpules", handleCarp);
 	server.post("/quick-writeoff-carpules", handleCarp);
@@ -221,46 +227,59 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		const org = await checkOrg(req, rep, "shift bundle"); if (!org) return;
 		const b = req.body ?? {};
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffShiftBundle(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffShiftBundle(tx, {
 			organizationId: org,
 			bundleType: b.bundleType || "therapy",
 			userId: uid,
 			visitId: b.visitId,
 			notes: b.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	});
 
 	server.post<{ Params?: OrgParams; Body?: VisitBundleBody }>("/:organizationId/quick-writeoff-visit-bundle", async (req, rep) => {
 		const org = await checkOrg(req, rep, "visit bundle"); if (!org) return;
 		const b = req.body ?? {};
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 			organizationId: org,
 			visitType: b.visitType || "therapy",
 			userId: uid,
 			visitId: b.visitId,
 			notes: b.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	});
 
 	server.post<{ Params?: OrgParams; Body?: OrthopedicProtocolBody }>("/:organizationId/quick-writeoff-orthopedic", async (req, rep) => {
 		const org = await checkOrg(req, rep, "orthopedic"); if (!org) return;
 		const b = req.body ?? {};
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
 			organizationId: org,
 			protocolId: b.protocolId || "ortho_prep_zirconia_emax",
 			userId: uid,
 			toothNumber: b.toothNumber,
 			visitId: b.visitId,
 			notes: b.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	});
 
 	const handleSurg = async (req: FastifyRequest<{ Params?: OrgParams; Body?: SurgeryBody }>, rep: FastifyReply) => {
 		const org = await checkOrg(req, rep, "surgery"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSurgery(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSurgery(tx, {
 			organizationId: org,
 			userId: uid,
 			category: req.body?.category || "extraction",
@@ -268,7 +287,10 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 			toothNumber: req.body?.toothNumber,
 			visitId: req.body?.visitId,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	};
 	server.post("/:organizationId/quick-writeoff-surgery", handleSurg);
 	server.post("/quick-writeoff-surgery", handleSurg);
@@ -276,13 +298,17 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	const handleHygiene = async (req: FastifyRequest<{ Params?: OrgParams; Body?: { visitId?: string; notes?: string } }>, rep: FastifyReply) => {
 		const org = await checkOrg(req, rep, "hygiene"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 			organizationId: org,
 			visitType: "hygiene",
 			userId: uid,
 			visitId: req.body?.visitId,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	};
 	server.post("/:organizationId/quick-writeoff-hygiene", handleHygiene);
 	server.post("/quick-writeoff-hygiene", handleHygiene);
@@ -290,27 +316,35 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	server.post<{ Params?: OrgParams; Body?: QuickPackageBody }>("/:organizationId/quick-writeoff-package", async (req, rep) => {
 		const org = await checkOrg(req, rep, "package"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => executeQuickPackageWriteOff(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => executeQuickPackageWriteOff(tx, {
 			organizationId: org,
 			effectiveUserId: uid,
 			packageId: req.body?.packageId,
 			quantityMultiplier: req.body?.quantityMultiplier,
 			visitId: req.body?.visitId,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	});
 
 	const handleAntishock = async (req: FastifyRequest<{ Params?: OrgParams; Body?: AntishockBody }>, rep: FastifyReply) => {
 		const org = await checkOrg(req, rep, "antishock"); if (!org) return;
 		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
+		const idempotencyKey = (req.headers["idempotency-key"] as string) || (req.headers["x-idempotency-key"] as string) || undefined;
+		const result = await withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
 			organizationId: org,
 			userId: uid,
 			visitId: req.body?.visitId,
 			patientName: req.body?.patientName,
 			doctorName: req.body?.doctorName,
 			notes: req.body?.notes,
+			idempotencyKey,
 		}));
+		if (idempotencyKey) { rep.header("X-Idempotency-Key", idempotencyKey); }
+		return result;
 	};
 	server.post("/:organizationId/quick-writeoff-emergency-antishock", handleAntishock);
 	server.post("/quick-writeoff-emergency-antishock", handleAntishock);

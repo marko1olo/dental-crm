@@ -89,7 +89,11 @@ export async function linkBillingAndOdontogram(
 
 		if (existingInvoice) {
 			linkedInvoiceId = existingInvoice.id;
-			const currentTotalKopecks = BigInt(parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0));
+			const currentTotalKopecks = BigInt(
+				existingInvoice.totalPriceKopecks && existingInvoice.totalPriceKopecks > 0n
+					? existingInvoice.totalPriceKopecks
+					: parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0),
+			);
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -97,6 +101,7 @@ export async function linkBillingAndOdontogram(
 				.set({
 					totalAmountRub: updatedTotalRub,
 					totalRub: String(updatedTotalRub),
+					totalPriceKopecks: newTotalKopecks,
 				})
 				.where(
 					and(
@@ -122,7 +127,11 @@ export async function linkBillingAndOdontogram(
 
 		if (existing) {
 			linkedInvoiceId = existing.id;
-			const currentTotalKopecks = BigInt(parseKopecks(existing.totalAmountRub ?? existing.totalRub ?? 0));
+			const currentTotalKopecks = BigInt(
+				existing.totalPriceKopecks && existing.totalPriceKopecks > 0n
+					? existing.totalPriceKopecks
+					: parseKopecks(existing.totalAmountRub ?? existing.totalRub ?? 0),
+			);
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -130,6 +139,7 @@ export async function linkBillingAndOdontogram(
 				.set({
 					totalAmountRub: updatedTotalRub,
 					totalRub: String(updatedTotalRub),
+					totalPriceKopecks: newTotalKopecks,
 				})
 				.where(
 					and(
@@ -150,6 +160,7 @@ export async function linkBillingAndOdontogram(
 				visitId: input.visitId ?? null,
 				totalAmountRub: invoiceTotalRub,
 				totalRub: String(invoiceTotalRub),
+				totalPriceKopecks: operationPriceKopecks,
 				status: "issued",
 				issuedAt: new Date(),
 			})

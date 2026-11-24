@@ -191,7 +191,7 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 			{/* 2. Сегментный контроль жизненного цикла сетапа */}
 			{onCaseStageChange && (
 				<div className="flex flex-col gap-1 pt-1">
-					<span className="text-[11px] font-semibold text-[var(--ink-muted)] uppercase tracking-wider">
+					<span className="text-xs font-medium text-[var(--ink-muted)]">
 						Этап сетапа и производства:
 					</span>
 					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">

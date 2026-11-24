@@ -114,14 +114,20 @@ export function useVisitNoteSync({
 	const updateVisitNoteField = useCallback(
 		(field: VisitNoteField | string, value: string) => {
 			visitDraftUserEditedRef.current = true;
-			const canonicalKey = field === "complaints" ? "complaint" : field;
-			const pluralKey = field === "complaint" ? "complaints" : field;
+			const canonicalKey =
+				field === "complaints"
+					? "complaint"
+					: field === "objectiveInspection" ||
+							field === "statusLocalis" ||
+							field === "objective"
+						? "objectiveStatus"
+						: field === "treatment"
+							? "treatmentPlan"
+							: field;
 
 			setVisitNoteForm((current) => ({
 				...current,
-				[field]: value,
 				[canonicalKey]: value,
-				[pluralKey]: value,
 			}));
 		},
 		[visitDraftUserEditedRef, setVisitNoteForm],

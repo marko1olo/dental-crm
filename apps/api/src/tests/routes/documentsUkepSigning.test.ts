@@ -570,4 +570,40 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 		assert.strictEqual(unstamped.includes("BEGIN_GOST_SIGNATURE_STAMP"), false);
 		assert.strictEqual(unstamped, plainHtml);
 	});
+
+	it("preserves cryptographic hash when signature stamp is applied (63-FZ cryptographic validity parity)", () => {
+		// 1. Исходный выпущенный снимок документа
+		const issuedSnapshotHtml = "<!DOCTYPE html><html><body><h1>Протокол лечения</h1></body></html>";
+		const originalHashHex = createHash("sha256").update(issuedSnapshotHtml, "utf8").digest("hex");
+
+		// 2. Врач подписывает хэш оригинального снимка
+		const genuineSig = createDemonstrationGostCmsSignature({
+			documentId: "doc-orig-stamp-test",
+			documentKind: "informed_consent",
+			documentHashHex: originalHashHex,
+			doctorFullName: "Врач-стоматолог",
+		});
+
+		// 3. Валидация подписи по оригинальному хэшу успешна
+		const verifyBeforeStamp = validateGostCmsPkcs7Signature(genuineSig.signatureBase64, originalHashHex);
+		assert.strictEqual(verifyBeforeStamp.valid, true);
+
+		// 4. Наложение визуального штампа меняет байты HTML
+		const stampedHtml = injectVisualSignatureStampIntoHtml(
+			issuedSnapshotHtml,
+			'<div class="gost-stamp">ШТАМП ЭП</div>',
+		);
+		const stampedHashHex = createHash("sha256").update(stampedHtml, "utf8").digest("hex");
+		assert.notStrictEqual(stampedHashHex, originalHashHex, "Хэш файла со штампом отличается от оригинального");
+
+		// 5. Критический инвариант 63-ФЗ: базовый issuedSnapshotSha256 обязан сохранять originalHashHex.
+		// Если бы issuedSnapshotSha256 перезаписался на stampedHashHex, проверка дала бы TamperDetected!
+		const verifyAgainstStampedHash = validateGostCmsPkcs7Signature(genuineSig.signatureBase64, stampedHashHex);
+		assert.strictEqual(verifyAgainstStampedHash.valid, false);
+		assert.strictEqual(verifyAgainstStampedHash.errorCode, "TamperDetected");
+
+		// Но проверка против сохраненного оригинального issuedSnapshotSha256 остается 100% валидной!
+		const verifyAgainstOriginalSha256 = validateGostCmsPkcs7Signature(genuineSig.signatureBase64, originalHashHex);
+		assert.strictEqual(verifyAgainstOriginalSha256.valid, true);
+	});
 });

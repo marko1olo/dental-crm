@@ -12,7 +12,7 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js"
 import { db } from "../../db/client.js";
 import {
 	readIssuedDocumentSnapshot,
-	writeIssuedDocumentSnapshot,
+	writeStampedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { generatedDocuments } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -156,17 +156,28 @@ export async function register(app: FastifyInstance) {
 				});
 			}
 
-			// Проверка целостности документа: сверка хэша архивного снимка со значением в подписи
-			if (doc.issuedSnapshotSha256) {
-				const tamperCheck = validateGostCmsPkcs7Signature(pkcs7Signature, doc.issuedSnapshotSha256);
-				if (!tamperCheck.valid) {
-					return reply.code(400).send({
-						error: "SignatureVerificationFailed",
-						errorCode: tamperCheck.errorCode ?? "TamperDetected",
-						tamperDetected: tamperCheck.tamperDetected ?? true,
-						message: "Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
-					});
-				}
+			// Проверка целостности документа: сверка хэша архивного снимка со значением в подписи.
+			// Документ ОБЯЗАН иметь реальный issuedSnapshotSha256 перед подписанием УКЭП (63-ФЗ).
+			if (!doc.issuedSnapshotSha256) {
+				return reply.code(400).send({
+					error: "DocumentNotIssued",
+					message:
+						"Документ должен быть сформирован (выпущен) перед подписанием УКЭП.",
+				});
+			}
+
+			const tamperCheck = validateGostCmsPkcs7Signature(
+				pkcs7Signature,
+				doc.issuedSnapshotSha256,
+			);
+			if (!tamperCheck.valid) {
+				return reply.code(400).send({
+					error: "SignatureVerificationFailed",
+					errorCode: tamperCheck.errorCode ?? "TamperDetected",
+					tamperDetected: tamperCheck.tamperDetected ?? true,
+					message:
+						"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+				});
 			}
 
 			// Prevent replay of the exact same PKCS#7 signature.
@@ -278,19 +289,10 @@ export async function register(app: FastifyInstance) {
 							snapshotHtml,
 							stampHtml,
 						);
-						const written = writeIssuedDocumentSnapshot(doc.id, stampedHtml);
-						await tx
-							.update(generatedDocuments)
-							.set({
-								issuedSnapshotSha256: written.sha256,
-								storagePath: written.snapshotPath,
-							})
-							.where(
-								and(
-									eq(generatedDocuments.id, doc.id),
-									eq(generatedDocuments.organizationId, orgId),
-								),
-							);
+						// Сохраняем штампованный HTML в отдельный файл .stamped.html для архивного просмотра,
+						// НИКОГДА не перезаписывая базовый криптографический хэш doc.issuedSnapshotSha256
+						// подписанного контента (иначе повторная валидация УКЭП давала TamperDetected по 63-ФЗ!).
+						writeStampedDocumentSnapshot(doc.id, stampedHtml);
 					}
 				}
 

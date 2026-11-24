@@ -49,9 +49,9 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 			data-testid="visit-surgery-sinus-gbr-bar"
 		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--primary)]">
 					<Layers size={16} />
-					<span>Костная пластика & Синус-лифтинг:</span>
+					<span>Костная пластика и синус-лифтинг:</span>
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
@@ -62,7 +62,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 								triggerHaptic("selection");
 								state.setIsMobileSheetOpen(true);
 							}}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--primary)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
 							data-testid="btn-open-sinus-mobile-sheet"
 							title="Открыть параметры костной пластики в Bottom Sheet"
 						>
@@ -74,17 +74,17 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 					<button
 						type="button"
 						onClick={state.handleApplyUncomplicatedGbrNorm}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2 cursor-pointer shadow-xs transition-all touch-manipulation"
 						data-testid="btn-uncomplicated-gbr-norm"
 						title="Физиологическая норма: остеопластика, мембрана Шнайдера интактна, гемостаз полный"
 					>
-						<Zap size={14} className="text-amber-300" />
+						<Zap size={14} className="shrink-0" />
 						<span>Норма НКР: мембрана Шнайдера интактна, графт внесен, гемостаз устойчивый</span>
 					</button>
 					<button
 						type="button"
 						onClick={state.handleAddServicesToInvoice}
-						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer touch-manipulation"
+						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
 						data-testid="btn-sinus-bar-add-to-invoice"
 						title="Добавить хирургические услуги в смету визита"
 					>
@@ -109,7 +109,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 								state.handleAddServicesToInvoice();
 								state.setIsMobileSheetOpen(false);
 							}}
-							className="flex-1 min-h-[48px] py-3 rounded-xl font-black text-sm bg-[var(--teal,#0d9488)] text-white shadow-xs touch-manipulation"
+							className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs touch-manipulation"
 							data-testid="btn-mobile-apply-sinus-sheet"
 						>
 							Применить в протокол и смету

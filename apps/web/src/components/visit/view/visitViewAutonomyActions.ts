@@ -8,11 +8,8 @@ import { formatSafetyProfileToDiaryText } from "../../patients/patientSafetyEval
 
 export interface AutonomyVisitNoteForm {
 	complaint?: string | null | undefined;
-	complaints?: string | null | undefined;
 	anamnesis?: string | null | undefined;
 	objectiveStatus?: string | null | undefined;
-	objectiveInspection?: string | null | undefined;
-	treatment?: string | null | undefined;
 	treatmentPlan?: string | null | undefined;
 	recommendations?: string | null | undefined;
 	diagnosis?: string | null | undefined;
@@ -48,10 +45,9 @@ export async function executePolishTranscriptAutonomy({
 			setTranscript(standardClinicalDraft);
 		}
 		if (typeof updateVisitNoteField === "function") {
-			const currentObj = visitNoteForm?.objectiveInspection || visitNoteForm?.objectiveStatus || "";
+			const currentObj = visitNoteForm?.objectiveStatus || "";
 			if (!currentObj) {
 				const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
-				updateVisitNoteField("objectiveInspection", objNorm);
 				updateVisitNoteField("objectiveStatus", objNorm);
 			}
 			const currentAnamnesis = visitNoteForm?.anamnesis || "";
@@ -105,9 +101,8 @@ export function executeApplySomaticNormAutonomy({
 		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
-		const currentObj = visitNoteForm?.objectiveInspection || visitNoteForm?.objectiveStatus || "";
+		const currentObj = visitNoteForm?.objectiveStatus || "";
 		if (!currentObj) {
-			updateVisitNoteField("objectiveInspection", objNorm);
 			updateVisitNoteField("objectiveStatus", objNorm);
 		}
 	}
@@ -146,20 +141,17 @@ export function executeApplyHygienePresetAutonomy({
 		if (!visitNoteForm?.diagnosis) {
 			updateVisitNoteField("diagnosis", "K03.6 Отложения [наросты] на зубах (зубной камень, пигментированный налёт)");
 		}
-		if (!visitNoteForm?.complaints && !visitNoteForm?.complaint) {
+		if (!visitNoteForm?.complaint) {
 			const hygieneComplaints = "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.";
-			updateVisitNoteField("complaints", hygieneComplaints);
 			updateVisitNoteField("complaint", hygieneComplaints);
 		}
 		const hygieneObj = "Индекс гигиены OHI-S = 1.8. Обильный пигментированный налёт и наддесневой зубной камень во фронтальном отделе нижней челюсти. Слизистая десны умеренно гиперемирована в области десневых сосочков.";
-		if (!visitNoteForm?.objectiveInspection && !visitNoteForm?.objectiveStatus) {
-			updateVisitNoteField("objectiveInspection", hygieneObj);
+		if (!visitNoteForm?.objectiveStatus) {
 			updateVisitNoteField("objectiveStatus", hygieneObj);
 		}
 		const hygieneTreatment = "Проведена комплексная профессиональная гигиена полости рта: ультразвуковое удаление над- и поддесневых зубных отложений (скалер Woodpecker), воздушно-абразивная полировка Air-Flow (порошок на основе глицина), полировка пастой Kerr Cleanic. Антисептическая обработка десневого края 0.05% раствором хлоргексидина. Глубокое фторирование эмали фторлаком Bifluorid 12.";
-		const currentTreatment = visitNoteForm?.treatment || visitNoteForm?.treatmentPlan || "";
+		const currentTreatment = visitNoteForm?.treatmentPlan || "";
 		const updatedTreatment = currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment;
-		updateVisitNoteField("treatment", updatedTreatment);
 		updateVisitNoteField("treatmentPlan", updatedTreatment);
 
 		const hygieneRec = "Щадящая чистка зубов мягкой щёткой в течение 2 дней. Исключить красящие продукты (кофе, чай, ягоды) на 48 часов. Контрольный осмотр через 6 месяцев.";
@@ -226,9 +218,8 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	}
 
 	if (typeof updateVisitNoteField === "function") {
-		const current = visitNoteForm?.treatment || visitNoteForm?.treatmentPlan || "";
+		const current = visitNoteForm?.treatmentPlan || "";
 		const updatedTreatment = current ? `${current}\n\n${anesthesiaText}` : anesthesiaText;
-		updateVisitNoteField("treatment", updatedTreatment);
 		updateVisitNoteField("treatmentPlan", updatedTreatment);
 	}
 	showToastFn(toastMessage, "success");

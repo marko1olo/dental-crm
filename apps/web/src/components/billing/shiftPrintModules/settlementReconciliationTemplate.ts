@@ -2,6 +2,7 @@
  * settlementReconciliationTemplate.ts — Modern Settlement Reconciliation Act & Cash Outflow Receipt.
  * Mandate 8b: <= 120 lines. Zero Soviet bureaucracy (KO-2 / Goskomstat removed).
  */
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import type { SettlementReconciliationPrintData, Ko2CashOutflowVoucher } from "./types.js";
 
 export function generateSettlementReconciliationHtml(data: SettlementReconciliationPrintData): string {
@@ -9,9 +10,9 @@ export function generateSettlementReconciliationHtml(data: SettlementReconciliat
 		<tr>
 			<td>${it.dateRu}</td>
 			<td>${it.description}</td>
-			<td style="text-align: right;">${it.accruedRub ? `${it.accruedRub.toFixed(2)} ₽` : "—"}</td>
-			<td style="text-align: right;">${it.paidRub ? `${it.paidRub.toFixed(2)} ₽` : "—"}</td>
-			<td style="text-align: right; font-weight: 600;">${it.balanceRub.toFixed(2)} ₽</td>
+			<td style="text-align: right;">${it.accruedRub ? formatKopecksToRub(rublesToKopecks(it.accruedRub)) : "—"}</td>
+			<td style="text-align: right;">${it.paidRub ? formatKopecksToRub(rublesToKopecks(it.paidRub)) : "—"}</td>
+			<td style="text-align: right; font-weight: 600;">${formatKopecksToRub(rublesToKopecks(it.balanceRub))}</td>
 		</tr>
 	`).join("");
 
@@ -46,19 +47,19 @@ export function generateSettlementReconciliationHtml(data: SettlementReconciliat
 			<tr><th>Дата</th><th>Операция / Услуга</th><th>Начислено</th><th>Оплачено</th><th>Сальдо</th></tr>
 		</thead>
 		<tbody>
-			<tr><td colspan="4">Входящее сальдо на начало периода:</td><td style="text-align: right; font-weight: 600;">${data.openingBalanceRub.toFixed(2)} ₽</td></tr>
+			<tr><td colspan="4">Входящее сальдо на начало периода:</td><td style="text-align: right; font-weight: 600;">${formatKopecksToRub(rublesToKopecks(data.openingBalanceRub))}</td></tr>
 			${rows}
 			<tr style="background: #f8fafc; font-weight: 700;">
 				<td colspan="2">Итого за период:</td>
-				<td style="text-align: right;">${data.totalAccruedRub.toFixed(2)} ₽</td>
-				<td style="text-align: right;">${data.totalPaidRub.toFixed(2)} ₽</td>
-				<td style="text-align: right;">${data.closingBalanceRub.toFixed(2)} ₽</td>
+				<td style="text-align: right;">${formatKopecksToRub(rublesToKopecks(data.totalAccruedRub))}</td>
+				<td style="text-align: right;">${formatKopecksToRub(rublesToKopecks(data.totalPaidRub))}</td>
+				<td style="text-align: right;">${formatKopecksToRub(rublesToKopecks(data.closingBalanceRub))}</td>
 			</tr>
 		</tbody>
 	</table>
 
 	<div class="summary-box">
-		Конечное сальдо на ${data.dateRu}: <strong>${data.closingBalanceRub >= 0 ? `Аванс пациента: ${data.closingBalanceRub.toFixed(2)} ₽` : `Задолженность: ${Math.abs(data.closingBalanceRub).toFixed(2)} ₽`}</strong>
+		Конечное сальдо на ${data.dateRu}: <strong>${data.closingBalanceRub >= 0 ? `Аванс пациента: ${formatKopecksToRub(rublesToKopecks(data.closingBalanceRub))}` : `Задолженность: ${formatKopecksToRub(rublesToKopecks(Math.abs(data.closingBalanceRub)))}`}</strong>
 	</div>
 
 	<div class="sig-grid">
@@ -101,7 +102,7 @@ export function generateKo2Html(v: Ko2CashOutflowVoucher): string {
 		<table>
 			<tr><td style="width: 35%; color: #64748b;">Выдано (получатель):</td><td><strong>${v.issuedTo}</strong></td></tr>
 			<tr><td style="color: #64748b;">Основание выдачи:</td><td>${v.basisRu}</td></tr>
-			<tr><td style="color: #64748b;">Сумма:</td><td style="font-size: 12pt; font-weight: 800; color: #be123c;">${v.amountRub.toFixed(2)} ₽</td></tr>
+			<tr><td style="color: #64748b;">Сумма:</td><td style="font-size: 12pt; font-weight: 800; color: #be123c;">${formatKopecksToRub(rublesToKopecks(v.amountRub))}</td></tr>
 			<tr><td style="color: #64748b;">Сумма прописью:</td><td style="font-weight: 600;">${v.amountWordsRu}</td></tr>
 		</table>
 		<div class="sig">

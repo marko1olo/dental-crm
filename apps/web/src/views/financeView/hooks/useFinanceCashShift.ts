@@ -193,8 +193,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) + rublesToKopecks(amountRub);
 				const next = kopecksToRubles(nextKop);
-				safeLocalStorageSetItem("dente_cash_shift_delta_kop", nextKop.toString());
-				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
+				safeLocalStorageSetItem("dente_cash_shift_delta_kop", String(nextKop));
 				return next;
 			});
 			void loadDashboard?.();
@@ -235,8 +234,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) - rublesToKopecks(amountRub);
 				const next = kopecksToRubles(nextKop);
-				safeLocalStorageSetItem("dente_cash_shift_delta_kop", nextKop.toString());
-				safeLocalStorageSetItem("dente_cash_shift_delta", next.toFixed(2));
+				safeLocalStorageSetItem("dente_cash_shift_delta_kop", String(nextKop));
 				return next;
 			});
 			void loadDashboard?.();

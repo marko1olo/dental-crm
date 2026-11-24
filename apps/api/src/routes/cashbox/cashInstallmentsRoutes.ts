@@ -574,16 +574,26 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const bodySchema = z.object({
-			cashBoxId: z.string().uuid().optional(),
-			operatorId: z.string().uuid().optional(),
-			amountPaidKopecks: z.number().int().positive().optional(),
-			amountRub: positiveMoneyRubSchema.optional(),
-			clientMutationId: z.string().trim().optional(),
-			idempotencyKey: z.string().trim().optional(),
-		}).strict();
+		const bodySchema = z
+			.object({
+				cashBoxId: z.string().uuid().optional(),
+				operatorId: z.string().uuid().optional(),
+				amountPaidKopecks: z.number().int().positive().optional(),
+				amountRub: positiveMoneyRubSchema.optional(),
+				notes: z.string().trim().optional(),
+				clientMutationId: z.string().trim().optional(),
+				idempotencyKey: z.string().trim().optional(),
+			})
+			.strict();
 		const parsed = bodySchema.safeParse(request.body || {});
-		const payData = parsed.success ? parsed.data : {};
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры для оплаты транша рассрочки.",
+				details: parsed.error.issues,
+			});
+		}
+		const payData = parsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			// Дедупликация повторного запроса с тем же Idempotency-Key в payments или cashOperations

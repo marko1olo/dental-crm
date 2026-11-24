@@ -233,6 +233,62 @@ export function calculateWorkingMinutesInPeriod(
 	return { workingDays, availableMinutesPerChair };
 }
 
+/**
+ * [ANL-01 / Мандат 8bm] Честный расчет плановой выручки клиники за период.
+ * 1. Если в organizations.clinicSchedule задан явный месячный план (revenuePlanKopecks или revenuePlanRub),
+ *    он масштабируется пропорционально длительности периода (daysCount / 30).
+ * 2. Иначе эталонный план вычисляется динамически исходя из производственной мощности:
+ *    доступные часы кресел (totalAvailableMinutes / 60) × целевая выработка кресло-часа
+ *    (по умолчанию 3 500 ₽/час = 350 000 коп./час при нормативной загрузке 65-70%).
+ */
+export function resolveExecutiveRevenuePlanKopecks(params: {
+	readonly clinicScheduleRaw: unknown;
+	readonly totalAvailableMinutes: number;
+	readonly daysCount: number;
+	readonly execPeriod: ExecutivePeriod;
+}): number {
+	const raw =
+		params.clinicScheduleRaw && typeof params.clinicScheduleRaw === "object"
+			? (params.clinicScheduleRaw as Record<string, unknown>)
+			: null;
+
+	const explicitPlanKopecks =
+		typeof raw?.revenuePlanKopecks === "number" && raw.revenuePlanKopecks > 0
+			? raw.revenuePlanKopecks
+			: typeof raw?.revenuePlanRub === "number" && raw.revenuePlanRub > 0
+				? rublesToKopecks(raw.revenuePlanRub)
+				: null;
+
+	if (explicitPlanKopecks !== null) {
+		switch (params.execPeriod) {
+			case "month":
+				return Math.round(explicitPlanKopecks);
+			case "quarter":
+				return Math.round(explicitPlanKopecks * 3);
+			case "year":
+				return Math.round(explicitPlanKopecks * 12);
+			case "week":
+				return Math.round((explicitPlanKopecks * 7) / 30);
+			case "day":
+			case "yesterday":
+				return Math.round(explicitPlanKopecks / 30);
+			case "custom":
+			default:
+				return Math.round((explicitPlanKopecks * Math.max(1, params.daysCount)) / 30);
+		}
+	}
+
+	const hourlyTargetKopecks =
+		typeof raw?.targetHourlyRevenueKopecks === "number" && raw.targetHourlyRevenueKopecks > 0
+			? raw.targetHourlyRevenueKopecks
+			: typeof raw?.targetHourlyRevenueRub === "number" && raw.targetHourlyRevenueRub > 0
+				? rublesToKopecks(raw.targetHourlyRevenueRub)
+				: 350_000; // 3 500 ₽/час доступного фонда кресла
+
+	const availableHours = Math.max(1, params.totalAvailableMinutes / 60);
+	return Math.round(availableHours * hourlyTargetKopecks);
+}
+
 export interface ExecutiveKpiQueryResult {
 	readonly kpis: ExecutiveKpisSummary;
 	readonly funnelStages: ExecutiveFunnelStageItem[];
@@ -506,10 +562,10 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const directLabCostKopecks = Math.max(
-		cashLabExpensesKopecks,
-		rublesToKopecks(Number(labOrdersRow?.totalRub || 0)),
-	);
+	// [P&L / Метод начисления]: прямые затраты на лабораторию и материалы формируются
+	// строго по факту нарядов ЗТЛ и списаний со склада за период (Мандаты 8ap & 8bm),
+	// исключая смешивание с кассовым ДДС (cashLabExpensesKopecks / cashMaterialsExpensesKopecks).
+	const directLabCostKopecks = rublesToKopecks(Number(labOrdersRow?.totalRub || 0));
 
 	const [materialsUsageRow] = await db
 		.select({
@@ -525,10 +581,7 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const directMaterialsCostKopecks = Math.max(
-		cashMaterialsExpensesKopecks,
-		rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0)),
-	);
+	const directMaterialsCostKopecks = rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0));
 
 	const totalCogsKopecks =
 		directLabCostKopecks +
@@ -629,10 +682,17 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
+	const totalRevenuePlanKopecks = resolveExecutiveRevenuePlanKopecks({
+		clinicScheduleRaw: orgRow?.clinicSchedule,
+		totalAvailableMinutes,
+		daysCount,
+		execPeriod,
+	});
+
 	const kpis = calculateExecutiveKpisSummary({
 		period: execPeriod,
 		totalRevenueKopecks,
-		totalRevenuePlanKopecks: totalRevenueKopecks,
+		totalRevenuePlanKopecks,
 		primaryRevenueKopecks: Number(primaryRevenueRow?.totalRevenueKopecks || 0),
 		repeatRevenueKopecks: Number(repeatRevenueRow?.totalRevenueKopecks || 0),
 		primaryPatientsCount: Number(primaryRevenueRow?.patientsCount || 0),

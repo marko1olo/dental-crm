@@ -319,8 +319,8 @@ export class HotFolderSyncEngine {
 					height,
 					options?.normalization,
 				);
-			} catch (e) {
-				// Ошибка превью не блокирует сохранение снимка
+			} catch (previewErr) {
+				console.warn("[HotFolderSyncEngine] Ошибка генерации превью снимка (сохранение не блокируется):", previewErr);
 			}
 		}
 
@@ -381,7 +381,9 @@ export class HotFolderSyncEngine {
 				for (const l of this.onErrorListeners) {
 					try {
 						l(err);
-					} catch {}
+					} catch (listenerErr) {
+						console.error("[HotFolderSyncEngine] Ошибка в обработчике ошибки:", listenerErr);
+					}
 				}
 			}
 		}

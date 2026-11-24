@@ -226,7 +226,9 @@ export { DENTAL_LAB_CONSTRUCTIONS };
 export type LabWorkflowStatus =
 	| "draft"
 	| "sent_to_lab"
+	| "in_progress"
 	| "fitting_scheduled"
+	| "ready_in_clinic"
 	| "installed_completed"
 	| "warranty_rework";
 
@@ -264,9 +266,19 @@ export const LAB_WORKFLOW_STATUSES: Record<LabWorkflowStatus, LabWorkflowStatusD
 		badgeClass: "badge-blue",
 		colorHex: "#3b82f6",
 	},
+	in_progress: {
+		id: "in_progress",
+		stepIndex: 3,
+		nameRu: "В работе у техника",
+		shortTitleRu: "В работе ЗТЛ",
+		descriptionRu: "Конструкция находится в активном моделировании и производстве в лаборатории.",
+		icon: "Layers",
+		badgeClass: "badge-indigo",
+		colorHex: "#8b5cf6",
+	},
 	fitting_scheduled: {
 		id: "fitting_scheduled",
-		stepIndex: 3,
+		stepIndex: 4,
 		nameRu: "Примерка назначена",
 		shortTitleRu: "Примерка",
 		descriptionRu: "Работа изготовлена ЗТЛ, назначена дата клинической примерки или сдачи в расписании приема.",
@@ -274,9 +286,19 @@ export const LAB_WORKFLOW_STATUSES: Record<LabWorkflowStatus, LabWorkflowStatusD
 		badgeClass: "badge-amber",
 		colorHex: "#f59e0b",
 	},
+	ready_in_clinic: {
+		id: "ready_in_clinic",
+		stepIndex: 5,
+		nameRu: "Готово в клинике",
+		shortTitleRu: "Готово в клинике",
+		descriptionRu: "Готовая работа доставлена курьером в клинику и ожидает визита пациента на фиксацию.",
+		icon: "PackageCheck",
+		badgeClass: "badge-teal",
+		colorHex: "#0d9488",
+	},
 	installed_completed: {
 		id: "installed_completed",
-		stepIndex: 4,
+		stepIndex: 6,
 		nameRu: "Сдано пациенту",
 		shortTitleRu: "Сдано",
 		descriptionRu: "Ортопедическая конструкция окончательно зафиксирована в полости рта пациента, наряд закрыт.",
@@ -286,7 +308,7 @@ export const LAB_WORKFLOW_STATUSES: Record<LabWorkflowStatus, LabWorkflowStatusD
 	},
 	warranty_rework: {
 		id: "warranty_rework",
-		stepIndex: 5,
+		stepIndex: 7,
 		nameRu: "Гарантийная переделка / рекламация",
 		shortTitleRu: "Переделка / Рекламация",
 		descriptionRu: "Работа направлена в ЗТЛ на гарантийную переделку или доработку.",
@@ -299,7 +321,9 @@ export const LAB_WORKFLOW_STATUSES: Record<LabWorkflowStatus, LabWorkflowStatusD
 export const LAB_WORKFLOW_STATUS_ORDER: readonly LabWorkflowStatus[] = [
 	"draft",
 	"sent_to_lab",
+	"in_progress",
 	"fitting_scheduled",
+	"ready_in_clinic",
 	"installed_completed",
 ];
 
@@ -317,14 +341,20 @@ export function canAdvanceLabStage(
 ): boolean {
 	if (currentStage === targetStage) return true;
 	if (targetStage === "warranty_rework") {
-		return currentStage === "installed_completed" || currentStage === "fitting_scheduled";
+		return currentStage === "installed_completed" || currentStage === "fitting_scheduled" || currentStage === "ready_in_clinic";
 	}
 	if (currentStage === "warranty_rework") {
-		return targetStage === "sent_to_lab" || targetStage === "fitting_scheduled" || targetStage === "installed_completed";
+		return (
+			targetStage === "sent_to_lab" ||
+			targetStage === "in_progress" ||
+			targetStage === "fitting_scheduled" ||
+			targetStage === "ready_in_clinic" ||
+			targetStage === "installed_completed"
+		);
 	}
 	const currentIndex = LAB_WORKFLOW_STATUSES[currentStage]?.stepIndex ?? 1;
 	const targetIndex = LAB_WORKFLOW_STATUSES[targetStage]?.stepIndex ?? 1;
-	return targetIndex >= 1 && targetIndex <= 5 && currentIndex >= 1;
+	return targetIndex >= 1 && targetIndex <= 7 && currentIndex >= 1;
 }
 
 export function getNextLabProductionStage(

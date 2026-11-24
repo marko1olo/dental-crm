@@ -1,3 +1,4 @@
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type {
 	CatalogRow,
 	GenerateInvoiceFromPlanBody,
@@ -88,8 +89,11 @@ export function findDiscountLimitViolation(
 			(matchingDbPlanItem ? Number(matchingDbPlanItem.price || 0) : undefined) ??
 			it.unitPriceRub ??
 			Number(matchingCatalog?.basePriceRub ?? 0);
-		const lineGrossRub = Number((effectivePriceRub * it.quantity).toFixed(2));
-		if (it.discountRub !== undefined && it.discountRub > lineGrossRub) {
+		const effectivePriceKopecks = rublesToKopecks(effectivePriceRub);
+		const lineGrossKopecks = BigInt(effectivePriceKopecks) * BigInt(it.quantity);
+		const lineGrossRub = kopecksToRubles(lineGrossKopecks);
+		const discountKopecks = it.discountRub !== undefined ? BigInt(rublesToKopecks(it.discountRub)) : BigInt(0);
+		if (it.discountRub !== undefined && discountKopecks > lineGrossKopecks) {
 			return {
 				nameRu: it.nameRu,
 				discountRub: it.discountRub,

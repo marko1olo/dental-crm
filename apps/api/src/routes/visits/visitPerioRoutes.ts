@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
@@ -15,9 +16,6 @@ import {
 	type SiteItemInput,
 } from "../../services/periodontogramService.js";
 
-const UUID_REGEX =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export function registerVisitPerioRoutes(app: FastifyInstance) {
 	const getHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalReadContext(
@@ -28,7 +26,8 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		if (!context) return;
 
 		const { visitId } = request.params as { visitId: string };
-		if (!UUID_REGEX.test(visitId)) {
+		const visitIdValidation = z.string().uuid().safeParse(visitId);
+		if (!visitIdValidation.success) {
 			return reply.code(400).send({
 				error: "InvalidVisitId",
 				message: "Некорректный идентификатор приёма",
@@ -80,7 +79,8 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		if (!context) return;
 
 		const { visitId } = request.params as { visitId: string };
-		if (!UUID_REGEX.test(visitId)) {
+		const visitIdValidation = z.string().uuid().safeParse(visitId);
+		if (!visitIdValidation.success) {
 			return reply.code(400).send({
 				error: "InvalidVisitId",
 				message: "Некорректный идентификатор приёма",
@@ -137,14 +137,15 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		}
 
 		const rawBody = (request.body as Record<string, unknown>) || {};
+		const { teethData, psr, ...restBody } = rawBody;
 		const normalizedBody = {
-			...rawBody,
+			...restBody,
 			teeth: Array.isArray(rawBody.teeth)
 				? rawBody.teeth
-				: Array.isArray(rawBody.teethData)
-					? rawBody.teethData
+				: Array.isArray(teethData)
+					? teethData
 					: undefined,
-			psrData: (rawBody.psrData ?? rawBody.psr ?? undefined) as Record<string, unknown> | undefined,
+			psrData: (rawBody.psrData ?? psr ?? undefined) as Record<string, unknown> | undefined,
 		};
 		const parsed = upsertPatientFullPeriodontogramBodySchema.safeParse(normalizedBody);
 		if (!parsed.success) {

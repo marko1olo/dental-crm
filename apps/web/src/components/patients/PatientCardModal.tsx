@@ -296,6 +296,27 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									patientName={patientData.fullName}
 									onSave={(newProfile) => { setSafetyProfile(newProfile); setIsDirty(true); }}
 									onApplyNorm={(normProfile) => { setSafetyProfile(normProfile); handleApplyNorm(); }}
+									onSyncToDiary={(diarySnippet) => {
+										if (typeof window !== "undefined") {
+											window.dispatchEvent(
+												new CustomEvent("dente-apply-soap-protocol", {
+													detail: {
+														patientId: patientData.id,
+														anamnesis: diarySnippet,
+														soap: { anamnesis: diarySnippet },
+													},
+												}),
+											);
+											window.dispatchEvent(
+												new CustomEvent("dente-apply-soap-anamnesis", {
+													detail: {
+														patientId: patientData.id,
+														anamnesis: diarySnippet,
+													},
+												}),
+											);
+										}
+									}}
 								/>
 							</div>
 						) : activeTab === "visits" ? (

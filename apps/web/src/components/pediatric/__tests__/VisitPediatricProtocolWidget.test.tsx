@@ -232,8 +232,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				`${preset.id} has ICD-10 diagnosis code`,
 			);
 			assert.ok(
-				preset.serviceCode804n && (preset.serviceCode804n.startsWith("A") || preset.serviceCode804n.startsWith("B")),
-				`${preset.id} has Order 804n code starting with A or B`,
+				preset.serviceCode && (preset.serviceCode.startsWith("A") || preset.serviceCode.startsWith("B")),
+				`${preset.id} has service code starting with A or B`,
 			);
 			assert.ok(preset.materials.length > 0, `${preset.id} has materials list`);
 			assert.ok(
@@ -361,7 +361,7 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 	it("sanitizes invalid tooth numbers to default 54 without throwing (Defect 5)", () => {
 		const html = renderToStaticMarkup(
 			createElement(VisitPediatricProtocolWidget, {
-				activeTooth: 58 as any, // Invalid tooth number
+				activeTooth: 58, // Invalid tooth number
 				initialFranklRating: 3,
 			}),
 		);

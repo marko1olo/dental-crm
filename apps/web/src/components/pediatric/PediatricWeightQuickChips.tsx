@@ -30,19 +30,19 @@ export const PediatricWeightQuickChips: React.FC<PediatricWeightQuickChipsProps>
 	);
 
 	return (
-		<div className={`flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 ${className}`.trim()}>
+		<div className={`flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5 ${className}`.trim()}>
 			<div className="flex items-center gap-2">
 				<div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
 					<Scale className="h-4 w-4" />
 				</div>
 				<div>
-					<h4 className="text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)]">
+					<h4 className="text-xs sm:text-sm font-semibold text-[var(--ink)]">
 						Вес ребенка: <span className="text-[var(--primary)] font-mono">{weightKg} кг</span>
 						{typeof patientAgeYears === "number" && (
-							<span className="text-[11px] font-normal text-[var(--ink-muted,#64748b)] ml-1">({patientAgeYears} лет)</span>
+							<span className="text-[11px] font-normal text-[var(--ink-muted)] ml-1">({patientAgeYears} лет)</span>
 						)}
 					</h4>
-					<p className="text-[10px] text-[var(--ink-muted,#64748b)]">Выбор весовой категории для дозировки</p>
+					<p className="text-[10px] text-[var(--ink-muted)]">Выбор весовой категории для дозировки</p>
 				</div>
 			</div>
 
@@ -57,7 +57,7 @@ export const PediatricWeightQuickChips: React.FC<PediatricWeightQuickChipsProps>
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border text-xs font-medium transition cursor-pointer active:scale-95 ${
 								isActive
 									? "border-[var(--primary)] bg-[var(--primary)]/15 text-[var(--primary)] ring-1 ring-[var(--primary)]/30 font-semibold"
-									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)]"
+									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 							}`}
 							data-testid={`btn-weight-preset-${preset.weight}`}
 						>
@@ -73,11 +73,11 @@ export const PediatricWeightQuickChips: React.FC<PediatricWeightQuickChipsProps>
 						max={100}
 						value={weightKg}
 						onChange={handleInputChange}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 w-16 px-2 text-xs font-mono font-medium text-center rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 w-16 px-2 text-xs font-mono font-medium text-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
 						title="Точный вес ребенка в кг"
 						data-testid="pediatric-weight-input"
 					/>
-					<span className="text-xs font-medium text-[var(--ink-muted,#64748b)]">кг</span>
+					<span className="text-xs font-medium text-[var(--ink-muted)]">кг</span>
 				</div>
 			</div>
 		</div>

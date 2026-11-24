@@ -58,16 +58,38 @@ export function ClinicalImagingModals({
 	const exportStudy: ImagingStudy | undefined = React.useMemo(() => {
 		if (selectedImagingStudyId) {
 			const found = allStudies.find((st) => String(st.id) === String(selectedImagingStudyId));
-			if (found) return found as unknown as ImagingStudy;
+			if (found) {
+				return {
+					...found,
+					kind: found.kind,
+					title: found.title || "Снимок",
+					capturedAt: found.capturedAt || new Date().toISOString(),
+				};
+			}
 		}
 		if (selectedPatientId) {
 			const patientStudies = allStudies.filter((st) => String(st.patientId) === String(selectedPatientId));
 			if (patientStudies.length > 0) {
 				if (effectiveToothFdi) {
 					const toothStudy = patientStudies.find((st) => String(st.toothCode) === String(effectiveToothFdi));
-					if (toothStudy) return toothStudy as unknown as ImagingStudy;
+					if (toothStudy) {
+						return {
+							...toothStudy,
+							kind: toothStudy.kind,
+							title: toothStudy.title || "Снимок",
+							capturedAt: toothStudy.capturedAt || new Date().toISOString(),
+						};
+					}
 				}
-				return patientStudies[0] as unknown as ImagingStudy;
+				const first = patientStudies[0];
+				if (first) {
+					return {
+						...first,
+						kind: first.kind,
+						title: first.title || "Снимок",
+						capturedAt: first.capturedAt || new Date().toISOString(),
+					};
+				}
 			}
 			return {
 				id: `study-patient-${selectedPatientId}`,

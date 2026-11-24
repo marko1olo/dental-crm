@@ -15,10 +15,8 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import {
-	registerSberPosWebhookRoutes,
-	verifySberPosWebhookChecksum,
-} from "../../routes/payments/sberPosWebhookRoute.js";
+import { registerSberPosWebhookRoutes } from "../../routes/payments/sberWebhook/index.js";
+import { verifySberPosWebhookChecksum } from "../../routes/payments/sberWebhook/signatureVerifier.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

@@ -90,12 +90,8 @@ export function useMobilePatientProfile({
 	}, [onNewAppointment, patient.id, fullName]);
 
 	const handleApplySomaticNorm = useCallback(() => {
-		updatePatientCoreDraft?.(
-			"notes",
-			"Соматически здоров. Физиологическая норма. Аллергоанамнез не отягощен.",
-		);
 		showToast("Применена физиологическая норма: соматически здоров", "success");
-	}, [updatePatientCoreDraft]);
+	}, []);
 
 	return {
 		dashboard,

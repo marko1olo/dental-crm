@@ -119,7 +119,11 @@ export function useConsumablesBatchWriteoff({
 				await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
 			}
 
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const idempotencyKey = crypto.randomUUID();
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": idempotencyKey,
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const payload = {
 				date: data.date,
@@ -185,7 +189,10 @@ export function useConsumablesBatchWriteoff({
 
 	const handleQuickCarpules = async () => {
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": crypto.randomUUID(),
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-carpules`, {
 				method: "POST",
@@ -208,7 +215,10 @@ export function useConsumablesBatchWriteoff({
 
 	const handleQuickAnesthesiaPackage = async () => {
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": crypto.randomUUID(),
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-package`, {
 				method: "POST",
@@ -231,7 +241,10 @@ export function useConsumablesBatchWriteoff({
 
 	const handleQuickTherapy = async () => {
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": crypto.randomUUID(),
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-visit-bundle`, {
 				method: "POST",
@@ -254,7 +267,10 @@ export function useConsumablesBatchWriteoff({
 
 	const handleQuickSurgery = async () => {
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": crypto.randomUUID(),
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-surgery`, {
 				method: "POST",
@@ -277,7 +293,10 @@ export function useConsumablesBatchWriteoff({
 
 	const handleQuickHygiene = async () => {
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers: Record<string, string> = {
+				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
+				"Idempotency-Key": crypto.randomUUID(),
+			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			let res = await fetch(`/api/inventory${orgParam}/quick-writeoff-hygiene`, {
 				method: "POST",

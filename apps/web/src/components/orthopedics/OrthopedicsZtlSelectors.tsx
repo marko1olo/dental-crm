@@ -20,6 +20,8 @@ export function OrthopedicsZtlSelectors({
 	onSelectStumpShade,
 	fixationType = "cement",
 	onSelectFixationType,
+	cementBrand,
+	onSelectCementBrand,
 	hasAntagonists = true,
 	onToggleAntagonists,
 	grossPriceRub = 24000,
@@ -41,6 +43,7 @@ export function OrthopedicsZtlSelectors({
 	onChangeBennettAngle,
 }: OrthopedicsZtlSelectorsProps) {
 	const [internalFixation, setInternalFixation] = useState<"cement" | "screw" | "clasp">(fixationType);
+	const [internalCementBrand, setInternalCementBrand] = useState<string>("relyx_u200");
 	const [internalAntagonists, setInternalAntagonists] = useState<boolean>(hasAntagonists);
 	const [internalArticulator, setInternalArticulator] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
 	const [internalFacebow, setInternalFacebow] = useState<boolean>(false);
@@ -49,6 +52,7 @@ export function OrthopedicsZtlSelectors({
 	const [internalBennett, setInternalBennett] = useState<number>(15);
 
 	const activeFixation = fixationType ?? internalFixation;
+	const activeCementBrand = cementBrand ?? internalCementBrand;
 	const activeAntagonists = hasAntagonists ?? internalAntagonists;
 	const activeArticulator = articulatorType ?? internalArticulator;
 	const activeFacebow = hasFacebow ?? internalFacebow;
@@ -63,6 +67,8 @@ export function OrthopedicsZtlSelectors({
 			<ZtlFixationSelector
 				fixationType={activeFixation}
 				onSelectFixationType={(type) => { setInternalFixation(type); onSelectFixationType?.(type); }}
+				cementBrand={activeCementBrand}
+				onSelectCementBrand={(b) => { setInternalCementBrand(b); onSelectCementBrand?.(b); }}
 				hasAntagonists={activeAntagonists}
 				onToggleAntagonists={(checked) => { setInternalAntagonists(checked); onToggleAntagonists?.(checked); }}
 			/>

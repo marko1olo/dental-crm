@@ -23,7 +23,7 @@ export interface PediatricTreatmentStepsProps {
 	readonly onSelectPreset: (preset: PediatricProtocolDefinition) => void;
 	readonly isInvasiveProtocol: boolean;
 	readonly representative: LegalRepresentativeData;
-	readonly onSignConsent323Fz: () => void;
+	readonly onConfirmConsent: () => void;
 	readonly selectedSurfaces: readonly string[];
 	readonly onToggleSurface: (surf: string) => void;
 	readonly onApplySurfacePreset: (surfs: readonly string[]) => void;
@@ -49,7 +49,7 @@ export const PediatricTreatmentSteps: React.FC<PediatricTreatmentStepsProps> = (
 	onSelectPreset,
 	isInvasiveProtocol,
 	representative,
-	onSignConsent323Fz,
+	onConfirmConsent,
 	selectedSurfaces,
 	onToggleSurface,
 	onApplySurfacePreset,
@@ -75,7 +75,7 @@ export const PediatricTreatmentSteps: React.FC<PediatricTreatmentStepsProps> = (
 				onSelectPreset={onSelectPreset}
 				isInvasiveProtocol={isInvasiveProtocol}
 				consentSigned={representative.consentSigned}
-				onSignConsent323Fz={onSignConsent323Fz}
+				onConfirmConsent={onConfirmConsent}
 			/>
 
 			<div>

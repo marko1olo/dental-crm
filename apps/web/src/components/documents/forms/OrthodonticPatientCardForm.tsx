@@ -313,7 +313,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 
 							<h4 style={{ margin: "10px 0" }}>Ширина коронок резцов (мм)</h4>
 							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-								<div style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
+								<div style={{ background: "var(--paper-soft)", padding: "10px", borderRadius: "6px" }}>
 									<div style={{ fontWeight: 600, marginBottom: "6px" }}>Верхние 4 резца (SI)</div>
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
 										{(["t12", "t11", "t21", "t22"] as const).map((k) => (
@@ -332,7 +332,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 									</div>
 								</div>
 
-								<div style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
+								<div style={{ background: "var(--paper-soft)", padding: "10px", borderRadius: "6px" }}>
 									<div style={{ fontWeight: 600, marginBottom: "6px" }}>Нижние 4 резца (Si)</div>
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
 										{(["t42", "t41", "t31", "t32"] as const).map((k) => (
@@ -386,7 +386,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 								<h4 style={{ margin: 0 }}>Цефалометрический анализ ТРГ в боковой проекции</h4>
 								{syncedCephStudy && (
 									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-										<span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: "var(--teal-subtle, rgba(13,148,136,0.12))", color: "var(--teal, #0d9488)", fontWeight: 600 }}>
+										<span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: "var(--primary-subtle, rgba(var(--primary-rgb, 13, 148, 136), 0.12))", color: "var(--primary)", fontWeight: 600 }}>
 											<CheckCircle2 size={13} />
 											Синхронизировано с ТРГ {syncedCephStudy.date ? `(${new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(syncedCephStudy.date))})` : ""}
 										</span>

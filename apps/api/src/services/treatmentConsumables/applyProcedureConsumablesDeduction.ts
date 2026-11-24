@@ -27,7 +27,7 @@ import {
 	procedureTechCards,
 	treatmentConsumableDeductions,
 } from "../../db/schema.js";
-import { DEFAULT_804N_BOM_SEEDS } from "../inventory/bomSeeds/index.js";
+import { DEFAULT_SERVICE_BOM_SEEDS } from "../inventory/bomSeeds/index.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
 import type { DbTransaction } from "../inventory/fefo/types.js";
 
@@ -187,7 +187,7 @@ export async function applyProcedureConsumablesDeduction(
 					continue;
 				}
 
-				const seed = DEFAULT_804N_BOM_SEEDS.find((s) => s.serviceCode === code);
+				const seed = DEFAULT_SERVICE_BOM_SEEDS.find((s) => s.serviceCode === code);
 				if (seed && seed.materials.length > 0) {
 					for (const mat of seed.materials) {
 						const needed = mat.quantityToDeduct * procedureCount;

@@ -3,7 +3,8 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import { motionSafeScrollIntoView } from "../../../motionPreference";
 import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { actionFailureToast } from "../../../lib/panelStateText";
-import { denteAdminSecretRequestHeaders, type AppointmentScheduleDraft } from "../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import type { AppointmentScheduleDraft } from "../../../AppHelpers";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 
 export interface UseScheduleShortcutsParams {
@@ -397,7 +398,7 @@ export function useScheduleShortcuts({
       try {
         response = await fetch("/api/schedule/clipboard-items", {
           method: "POST",
-          headers: denteAdminSecretRequestHeaders({
+          headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
           }),
           body: JSON.stringify({ appointmentId: appointment.id }),

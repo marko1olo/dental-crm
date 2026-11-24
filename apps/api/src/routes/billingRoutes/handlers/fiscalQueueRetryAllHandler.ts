@@ -4,7 +4,7 @@ import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { fiscalReceiptQueue } from "../../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../../security/permissions.js";
 
@@ -25,39 +25,60 @@ export async function handleRetryAllFiscalQueue(
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
 
-	const pendingItems = await db
-		.select()
-		.from(fiscalReceiptQueue)
-		.where(
-			and(
-				eq(fiscalReceiptQueue.organizationId, orgId),
-				inArray(fiscalReceiptQueue.status, ["pending_print", "hardware_offline", "failed"]),
-			),
-		)
-		.limit(100);
+	return withTenantCtx(orgId, async (tx) => {
+		const pendingItems = await tx
+			.select()
+			.from(fiscalReceiptQueue)
+			.where(
+				and(
+					eq(fiscalReceiptQueue.organizationId, orgId),
+					inArray(fiscalReceiptQueue.status, ["pending_print", "hardware_offline", "failed"]),
+				),
+			)
+			.limit(100);
 
-	if (pendingItems.length === 0) {
-		return reply.code(200).send({
-			success: true,
-			retriedCount: 0,
-			processedCount: 0,
-			failedCount: 0,
-			status: "idle",
-			message: "Нет чеков, ожидающих печати.",
-		});
-	}
+		if (pendingItems.length === 0) {
+			return reply.code(200).send({
+				success: true,
+				retriedCount: 0,
+				processedCount: 0,
+				failedCount: 0,
+				status: "idle",
+				message: "Нет чеков, ожидающих печати.",
+			});
+		}
 
-	const isKktOffline = process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
+		const isKktOffline = process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
 
-	if (isKktOffline) {
-		await db
-			.update(fiscalReceiptQueue)
-			.set({
+		if (isKktOffline) {
+			await tx
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "hardware_offline",
+					lastError: "KKT connection timed out (5000ms) or printer offline",
+					retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, orgId),
+						inArray(fiscalReceiptQueue.id, pendingItems.map((it) => it.id)),
+					),
+				);
+
+			return reply.code(200).send({
+				success: false,
 				status: "hardware_offline",
-				lastError: "KKT connection timed out (5000ms) or printer offline",
-				retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
-				updatedAt: new Date(),
-			})
+				retriedCount: pendingItems.length,
+				processedCount: pendingItems.length,
+				failedCount: pendingItems.length,
+				error: "KKT connection timed out (5000ms) or printer offline",
+			});
+		}
+
+		await tx
+			.update(fiscalReceiptQueue)
+			.set({ status: "printed", printedAt: new Date(), lastError: null, updatedAt: new Date() })
 			.where(
 				and(
 					eq(fiscalReceiptQueue.organizationId, orgId),
@@ -66,30 +87,11 @@ export async function handleRetryAllFiscalQueue(
 			);
 
 		return reply.code(200).send({
-			success: false,
-			status: "hardware_offline",
+			success: true,
+			status: "printed",
 			retriedCount: pendingItems.length,
 			processedCount: pendingItems.length,
-			failedCount: pendingItems.length,
-			error: "KKT connection timed out (5000ms) or printer offline",
+			failedCount: 0,
 		});
-	}
-
-	await db
-		.update(fiscalReceiptQueue)
-		.set({ status: "printed", printedAt: new Date(), lastError: null, updatedAt: new Date() })
-		.where(
-			and(
-				eq(fiscalReceiptQueue.organizationId, orgId),
-				inArray(fiscalReceiptQueue.id, pendingItems.map((it) => it.id)),
-			),
-		);
-
-	return reply.code(200).send({
-		success: true,
-		status: "printed",
-		retriedCount: pendingItems.length,
-		processedCount: pendingItems.length,
-		failedCount: 0,
 	});
 }

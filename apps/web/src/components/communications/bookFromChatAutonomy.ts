@@ -70,7 +70,9 @@ export function executeBookAppointmentFromChat(
 	if (typeof window !== "undefined") {
 		try {
 			window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo }));
-		} catch {}
+		} catch (dispatchErr) {
+			console.warn("[BookFromChat] Ошибка отправки события dente-book-stage-appointment:", dispatchErr);
+		}
 	}
 
 	if (useAppStore.getState().currentView !== "schedule") {

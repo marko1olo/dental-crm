@@ -90,7 +90,11 @@ export async function actionApplyPoints(params: {
 			allowFullCoverage: isDoctorOverride,
 		});
 		setPointsBalance(famResult.remainingFamilyBalanceRub);
-		setLedger((prev) => [famResult.ledgerEntry, ...prev]);
+		let prevLedger: readonly LoyaltyLedgerEntry[] = [];
+		setLedger((prev) => {
+			prevLedger = prev;
+			return [famResult.ledgerEntry, ...prev];
+		});
 		try {
 			const res = await postLoyaltyJson("/api/loyalty/family/debit", {
 				sponsorPatientId: patientId,
@@ -102,6 +106,7 @@ export async function actionApplyPoints(params: {
 				const errJson = await res.json().catch(() => ({}));
 				showToast(errJson.message || "Ошибка списания баллов с семейного счета", "error");
 				setPointsBalance(prevPointsBalance);
+				setLedger(() => prevLedger);
 				return;
 			}
 			showToast(famResult.messageRu, "success");
@@ -110,6 +115,7 @@ export async function actionApplyPoints(params: {
 			console.error("[LoyaltyStudioActions] Family debit failed:", err);
 			showToast("Сетевой сбой при списании семейных баллов", "error");
 			setPointsBalance(prevPointsBalance);
+			setLedger(() => prevLedger);
 		}
 	} else {
 		const newBal = pointsBalance - redemption.actualRedeemedPointsRub;
@@ -129,7 +135,11 @@ export async function actionApplyPoints(params: {
 			staffNameRu: "Администратор / Касса",
 			noteRu: `Списание ${redemption.actualRedeemedPointsRub} ₽ бонусов по счету`,
 		};
-		setLedger((prev) => [entry, ...prev]);
+		let prevLedger: readonly LoyaltyLedgerEntry[] = [];
+		setLedger((prev) => {
+			prevLedger = prev;
+			return [entry, ...prev];
+		});
 		try {
 			const invoiceRub = currentInvoiceAmountKop > 0 ? kopecksToRubles(currentInvoiceAmountKop) : redemption.actualRedeemedPointsRub;
 			const amountKop = currentInvoiceAmountKop > 0 ? currentInvoiceAmountKop : rublesToKopecks(redemption.actualRedeemedPointsRub);
@@ -145,6 +155,7 @@ export async function actionApplyPoints(params: {
 				const errJson = await res.json().catch(() => ({}));
 				showToast(errJson.message || "Не удалось списать бонусы в базе данных", "error");
 				setPointsBalance(prevPointsBalance);
+				setLedger(() => prevLedger);
 				return;
 			}
 			const data = await res.json().catch(() => ({}));
@@ -155,6 +166,7 @@ export async function actionApplyPoints(params: {
 			console.error("[LoyaltyStudioActions] Redeem call failed:", err);
 			showToast("Сетевой сбой при списании бонусов. Проверьте соединение", "error");
 			setPointsBalance(prevPointsBalance);
+			setLedger(() => prevLedger);
 		}
 	}
 }
@@ -183,24 +195,28 @@ export async function actionAccruePoints(params: {
 	const prevPointsBalance = pointsBalance;
 	const newBal = pointsBalance + amount;
 	setPointsBalance(newBal);
-	setLedger((prev) => [
-		{
-			id: `acc-${Date.now().toString().slice(-4)}`,
-			timestampIso: new Date().toLocaleString("ru-RU"),
-			patientId: patientId || "",
-			patientName,
-			medicalCardNumber,
-			operationType: "accrual",
-			operationTypeRu: "Начисление бонусов",
-			invoiceAmountKop: 0,
-			pointsDeltaRub: amount,
-			balanceAfterRub: newBal,
-			paymentMethodRu: "Программа лояльности",
-			staffNameRu: "Администратор / Врач",
-			noteRu: `Начислено ${amount} бонусов пациенту ${patientName}`,
-		},
-		...prev,
-	]);
+	let prevLedger: readonly LoyaltyLedgerEntry[] = [];
+	setLedger((prev) => {
+		prevLedger = prev;
+		return [
+			{
+				id: `acc-${Date.now().toString().slice(-4)}`,
+				timestampIso: new Date().toLocaleString("ru-RU"),
+				patientId: patientId || "",
+				patientName,
+				medicalCardNumber,
+				operationType: "accrual",
+				operationTypeRu: "Начисление бонусов",
+				invoiceAmountKop: 0,
+				pointsDeltaRub: amount,
+				balanceAfterRub: newBal,
+				paymentMethodRu: "Программа лояльности",
+				staffNameRu: "Администратор / Врач",
+				noteRu: `Начислено ${amount} бонусов пациенту ${patientName}`,
+			},
+			...prev,
+		];
+	});
 	try {
 		const res = await postLoyaltyJson("/api/loyalty/accrue", {
 			patientId,
@@ -211,6 +227,7 @@ export async function actionAccruePoints(params: {
 			const errJson = await res.json().catch(() => ({}));
 			showToast(errJson.message || "Ошибка начисления бонусов", "error");
 			setPointsBalance(prevPointsBalance);
+			setLedger(() => prevLedger);
 			return;
 		}
 		const data = await res.json().catch(() => ({}));
@@ -223,6 +240,7 @@ export async function actionAccruePoints(params: {
 		console.error("[LoyaltyStudioActions] Accrue call failed:", err);
 		showToast("Сетевой сбой при начислении бонусов", "error");
 		setPointsBalance(prevPointsBalance);
+		setLedger(() => prevLedger);
 	}
 }
 

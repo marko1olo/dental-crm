@@ -26,6 +26,7 @@ export async function quickWriteoffShiftBundle(
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const bundleType = params.bundleType || "therapy";
@@ -39,6 +40,7 @@ export async function quickWriteoffShiftBundle(
 		userId: params.userId,
 		visitId: params.visitId,
 		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
 		reasonPrefix: `Списание стандартного комплекта смены «${bundleNameRu}»`,
 		successMessageTemplate: (count) =>
 			`Списание стандартного комплекта смены «${bundleNameRu}» выполнено (${count} поз.).`,
@@ -53,6 +55,7 @@ export async function quickWriteoffVisitBundle(
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const visitType = params.visitType || "therapy";
@@ -66,6 +69,7 @@ export async function quickWriteoffVisitBundle(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
 		reasonPrefix: `Списание клинического набора «${visitNameRu}»`,
 		successMessageTemplate: (count) =>
 			`Клинический набор «${visitNameRu}» успешно списан (${count} поз.).`,
@@ -81,6 +85,7 @@ export async function quickWriteoffOrthopedicProtocol(
 		visitId?: string | null | undefined;
 		toothNumber?: string | number | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const { protocolId, toothNumber, notes } = params;
@@ -105,5 +110,6 @@ export async function quickWriteoffOrthopedicProtocol(
 		userId: params.userId,
 		visitId: params.visitId,
 		notes: combinedNotes,
+		idempotencyKey: params.idempotencyKey,
 	});
 }

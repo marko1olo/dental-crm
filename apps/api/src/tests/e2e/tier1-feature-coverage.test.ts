@@ -79,7 +79,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import registerDiaryRoutes from "../../routes/diary.js";
-import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbank.js";
+import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbankRoutes/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {

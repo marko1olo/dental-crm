@@ -65,11 +65,12 @@ export interface ClinicalVisitCompletionInput {
 	readonly doctorSpecialty?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly diary: DiaryState | {
-		readonly anamnesis?: string | null;
-		readonly statusLocalis?: string | null;
-		readonly diagnosisIcd10?: string | null;
-		readonly diagnosisTooth?: string | null;
-		readonly treatmentDescription?: string | null;
+		readonly complaint?: string | null | undefined;
+		readonly anamnesis?: string | null | undefined;
+		readonly statusLocalis?: string | null | undefined;
+		readonly diagnosisIcd10?: string | null | undefined;
+		readonly diagnosisTooth?: string | null | undefined;
+		readonly treatmentDescription?: string | null | undefined;
 		readonly recommendations?: string | null | undefined;
 		readonly order804nServices?: readonly RawOrder804nService[] | undefined;
 	};

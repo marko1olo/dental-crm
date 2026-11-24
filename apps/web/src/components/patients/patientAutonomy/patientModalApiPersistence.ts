@@ -1,5 +1,5 @@
 import { type Patient, type Dashboard, rublesToKopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { DEMO_SHOWCASE_MODAL_PATIENT } from "../patientCardModalModules/patientCardModalTypes";
@@ -9,7 +9,6 @@ import {
 } from "../../../utils/clinicProfileUtils";
 import { emptyPatientAdministrativeProfileDraft } from "../../../utils/draftDefaults";
 import {
-	formatSafetyProfileToDiaryText,
 	type PatientClinicalSafetyProfile,
 } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
@@ -58,19 +57,26 @@ export async function persistPatientCardModalToApi(
 	if (isDemo && isDemoId) {
 		return;
 	}
-	const diaryNotes = patientData.doctorClinicalNotes?.trim() || formatSafetyProfileToDiaryText(safetyProfile);
+	const diaryNotes = patientData.doctorClinicalNotes?.trim() || null;
 	const covLimitRub = typeof patientData.dmsCoverageLimitRub === "number" ? patientData.dmsCoverageLimitRub : (patientData.dmsCoverageLimitRub ? Number(patientData.dmsCoverageLimitRub) : null);
 	const covLimitKop = patientData.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? rublesToKopecks(covLimitRub) : null);
 	try {
 		const resCore = await fetch(`/api/patients/${patientData.id}`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+				...getDenteAuthHeaders(),
+			},
 			body: JSON.stringify({
 				fullName: patientData.fullName?.trim() || undefined,
 				phone: patientData.phone?.trim() || null,
 				birthDate: patientData.birthDate?.trim() || null,
 				email: patientData.email?.trim() || null,
-				notes: diaryNotes || null,
+				notes: diaryNotes,
+				allergies: safetyProfile.allergies?.trim() || safetyProfile.customAllergyNotes?.trim() || null,
+				somaticNotes: safetyProfile.somaticNotes?.trim() || safetyProfile.customChronicNotes?.trim() || null,
+				clinicalSafetyProfile: safetyProfile,
 			}),
 		});
 		if (!resCore.ok) {
@@ -89,7 +95,11 @@ export async function persistPatientCardModalToApi(
 		};
 		const resAdmin = await fetch(`/api/patients/${patientData.id}/administrative-profile`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+				...getDenteAuthHeaders(),
+			},
 			body: JSON.stringify(adminPayload),
 		});
 		if (!resAdmin.ok) {
@@ -145,13 +155,20 @@ export async function executePatientCardModalSaveAutonomy({
 	try {
 		const resCore = await fetchWithHandling(`/api/patients/${selectedPatient.id}`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+				...getDenteAuthHeaders(),
+			},
 			body: JSON.stringify({
 				fullName: updatedGeneral.fullName?.trim() || selectedPatient.fullName,
 				phone: updatedGeneral.phone?.trim() || null,
 				birthDate: updatedGeneral.birthDate?.trim() || null,
 				email: updatedGeneral.email?.trim() || selectedPatient.email || null,
 				notes: updatedGeneral.doctorClinicalNotes?.trim() || selectedPatient.notes || null,
+				allergies: updatedSafety.allergies?.trim() || updatedSafety.customAllergyNotes?.trim() || null,
+				somaticNotes: updatedSafety.somaticNotes?.trim() || updatedSafety.customChronicNotes?.trim() || null,
+				clinicalSafetyProfile: updatedSafety,
 			}),
 		});
 		const covLimitRub = typeof updatedGeneral.dmsCoverageLimitRub === "number" ? updatedGeneral.dmsCoverageLimitRub : (updatedGeneral.dmsCoverageLimitRub ? Number(updatedGeneral.dmsCoverageLimitRub) : null);
@@ -168,7 +185,11 @@ export async function executePatientCardModalSaveAutonomy({
 		};
 		const resAdmin = await fetchWithHandling(`/api/patients/${selectedPatient.id}/administrative-profile`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+				...getDenteAuthHeaders(),
+			},
 			body: JSON.stringify(adminPayload),
 		});
 		const latestRes = resAdmin.ok ? resAdmin : resCore;

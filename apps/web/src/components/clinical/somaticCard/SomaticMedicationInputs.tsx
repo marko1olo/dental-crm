@@ -18,12 +18,12 @@ export const SomaticMedicationInputs: React.FC<SomaticMedicationInputsProps> = (
 	}
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
+		<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 			{profile.takesAnticoagulants && (
 				<div className="flex flex-col gap-1">
 					<label
 						htmlFor={anticoagulantInputId}
-						className="text-[11px] font-bold text-[var(--ink,#0f172a)] dark:text-slate-200"
+						className="text-xs font-medium text-[var(--ink)]"
 					>
 						Препарат антикоагулянта и МНО (INR):
 					</label>
@@ -35,7 +35,7 @@ export const SomaticMedicationInputs: React.FC<SomaticMedicationInputsProps> = (
 							setProfile((prev) => ({ ...prev, anticoagulantName: e.target.value }))
 						}
 						placeholder="Варфарин (МНО 2.1), Ксарелто 20 мг..."
-						className="h-8 px-2.5 text-xs rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+						className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 sm:px-2.5 text-sm sm:text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 					/>
 				</div>
 			)}
@@ -43,7 +43,7 @@ export const SomaticMedicationInputs: React.FC<SomaticMedicationInputsProps> = (
 				<div className="flex flex-col gap-1">
 					<label
 						htmlFor={bisphosphonateInputId}
-						className="text-[11px] font-bold text-[var(--ink,#0f172a)] dark:text-slate-200"
+						className="text-xs font-medium text-[var(--ink)]"
 					>
 						Препарат бисфосфонатов (MRONJ):
 					</label>
@@ -55,7 +55,7 @@ export const SomaticMedicationInputs: React.FC<SomaticMedicationInputsProps> = (
 							setProfile((prev) => ({ ...prev, bisphosphonateName: e.target.value }))
 						}
 						placeholder="Акласта 5 мг, Пролиа, Фосамакс..."
-						className="h-8 px-2.5 text-xs rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+						className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 sm:px-2.5 text-sm sm:text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 					/>
 				</div>
 			)}

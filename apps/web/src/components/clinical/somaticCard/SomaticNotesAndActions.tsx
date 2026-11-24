@@ -26,7 +26,7 @@ export const SomaticNotesAndActions: React.FC<SomaticNotesAndActionsProps> = ({
 			<div className="flex flex-col gap-1.5">
 				<label
 					htmlFor={customNotesId}
-					className="text-xs font-semibold text-[var(--muted,#64748b)]"
+					className="text-xs font-medium text-[var(--ink-muted)]"
 				>
 					Клиническое примечание врача к соматическому анамнезу:
 				</label>
@@ -47,33 +47,33 @@ export const SomaticNotesAndActions: React.FC<SomaticNotesAndActionsProps> = ({
 				<button
 					type="button"
 					onClick={onApplyPhysiologicalNorm}
-					className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 min-h-[32px] rounded-xl text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+					className="inline-flex items-center gap-1.5 px-3.5 h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 					title="Сбросить все риски до физиологической нормы"
 				>
-					<RotateCcw className="w-3.5 h-3.5" />
+					<RotateCcw className="w-3.5 h-3.5 shrink-0" />
 					<span>Сброс в норму</span>
 				</button>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={onSyncToDiary}
-						className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-hover)] transition-colors cursor-pointer"
+						className="inline-flex items-center gap-1.5 px-3.5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-xl text-xs font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 						data-testid="sync-diary-btn"
 						title="Перенести текущую формулировку в дневник приёма"
 					>
-						<FileText className="w-4 h-4 text-[var(--primary)]" />
+						<FileText className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>В дневник приёма</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onSave}
-						className="inline-flex items-center gap-1.5 px-4 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs transition-all cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-4 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs transition-all cursor-pointer active:scale-98 shrink-0"
 						data-testid="save-somatic-btn"
 						title="Сохранить соматический профиль пациента"
 					>
-						<Save className="w-4 h-4" />
+						<Save className="w-4 h-4 shrink-0" />
 						<span>Сохранить статус</span>
 					</button>
 				</div>

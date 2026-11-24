@@ -35,7 +35,7 @@ export function generateRetroactiveDossierPrintHtml(
 		</div>
 		<div class="cover-stats-box">
 			<div class="stat-cell"><strong>${stats.totalTraysProcessed} шт.</strong><span>Инструментов обработано</span></div>
-			<div class="stat-cell"><strong>${stats.totalPsoSamplesTested} проб</strong><span>Пробы ПСО (Азопирам 100% отр.)</span></div>
+			<div class="stat-cell"><strong>${stats.totalPsoSamplesTested} проб</strong><span>Пробы очистки (Азопирам 100% отр.)</span></div>
 			<div class="stat-cell"><strong>${stats.totalAutoclaveCycles} циклов</strong><span>Стерилизация 134°C (5 точек ОК)</span></div>
 			<div class="stat-cell"><strong>${stats.totalWasteKg} кг</strong><span>Медотходы А/Б обезврежены</span></div>
 		</div>
@@ -61,7 +61,7 @@ export function generateRetroactiveDossierPrintHtml(
 			<thead>
 				<tr>
 					<th style="width: 25px;">№</th><th style="width: 65px;">Дата</th><th style="width: 80px;">Кабинеты</th>
-					<th style="width: 55px;">Партия</th><th style="width: 70px;">Выборка ПСО</th><th style="width: 75px;">Проба</th>
+					<th style="width: 55px;">Партия</th><th style="width: 70px;">Выборка очистки</th><th style="width: 75px;">Проба</th>
 					<th style="width: 50px;">Циклов</th><th>Режим / Индикаторы</th><th style="width: 65px;">5 точек</th>
 					<th style="width: 70px;">Результат</th><th style="width: 85px;">Медсестра</th><th style="width: 100px;">Штамп ЭЦП</th>
 				</tr>

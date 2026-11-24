@@ -18,20 +18,20 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 	const isMinor15Plus = patientAge !== null && patientAge !== undefined && patientAge >= 15;
 
 	return (
-		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 space-y-2.5">
+		<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 space-y-2.5">
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-1.5">
 					<UserCheck className="h-4 w-4 text-[var(--primary)] shrink-0" />
-					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+					<span className="text-xs font-semibold text-[var(--ink)]">
 						Родитель / Законный представитель:
 					</span>
 				</div>
-				<span className="text-[11px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-md border border-[var(--primary)]/20">
+				<span className="text-[11px] font-medium text-[var(--primary)] bg-[var(--primary-soft)] px-2 py-0.5 rounded-md border border-[var(--primary)]/20">
 					Родитель на приёме (норма)
 				</span>
 			</div>
 
-			<div className="text-[11px] text-[var(--ink-muted,#64748b)] font-medium">
+			<div className="text-[11px] text-[var(--ink-muted)] font-medium">
 				<span>Законный представитель ребёнка</span>
 				<span className="ml-1 opacity-75">(родитель / опекун)</span>
 			</div>
@@ -48,7 +48,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-medium transition cursor-pointer active:scale-95 ${
 								isSelected
 									? "bg-[var(--primary)] text-white shadow-xs"
-									: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 							}`}
 							data-testid={`chip-rep-role-${r.toLowerCase()}`}
 						>
@@ -64,7 +64,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					value={representative.fullName}
 					onChange={(e) => setRepresentative((prev) => ({ ...prev, fullName: e.target.value }))}
 					placeholder="ФИО родителя (необязательно)"
-					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden"
+					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden"
 					data-testid="input-pediatric-rep-name"
 				/>
 				<input
@@ -72,13 +72,13 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					value={representative.phone}
 					onChange={(e) => setRepresentative((prev) => ({ ...prev, phone: e.target.value }))}
 					placeholder="+7 (___) ___-__-__"
-					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden font-mono"
+					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden font-mono"
 					data-testid="input-pediatric-rep-phone"
 				/>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--line,#e2e8f0)]">
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--ink,#0f172a)] min-h-[44px] sm:min-h-0">
+			<div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--line)]">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--ink)] min-h-[44px] sm:min-h-0">
 					<input
 						type="checkbox"
 						checked={representative.consentSigned}
@@ -89,7 +89,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					<span>Согласие на приём оформлено</span>
 				</label>
 				{isMinor15Plus && (
-					<span className="text-[10px] font-bold text-[var(--primary)]">
+					<span className="text-[10px] font-medium text-[var(--primary)]">
 						Пациент старше 15 лет (вправе подписать согласие лично)
 					</span>
 				)}
@@ -108,7 +108,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					<button
 						type="button"
 						onClick={() => setRepresentative((prev) => ({ ...prev, consentSigned: true }))}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-lg font-medium text-xs shrink-0 cursor-pointer active:scale-95 transition"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] rounded-lg font-medium text-xs shrink-0 cursor-pointer active:scale-95 transition"
 						data-testid="btn-one-click-sign-consent"
 					>
 						Подтвердить согласие

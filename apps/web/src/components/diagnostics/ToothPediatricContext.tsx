@@ -213,9 +213,9 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				<button
 					type="button"
 					onClick={handleInsertPsychologicalProtocol}
-					className="dente-secondary-btn min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+					className="dente-secondary-btn min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg text-xs font-medium transition flex items-center gap-2 cursor-pointer"
 				>
-					<FileText size={15} />
+					<FileText className="w-4 h-4 shrink-0" />
 					<span>Вставить статус Франкла в карту</span>
 				</button>
 
@@ -223,10 +223,10 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 					<button
 						type="button"
 						onClick={() => onOpenEndo(toothNumber)}
-						className="dente-secondary-btn min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30 hover:bg-[var(--teal,#0d9488)]/10"
+						className="dente-secondary-btn min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg text-xs font-medium transition flex items-center gap-2 cursor-pointer text-[var(--primary)] border-[var(--primary)]/30 hover:bg-[var(--primary-soft)]"
 						title="Открыть эндодонтический журнал каналов для молочного зуба"
 					>
-						<Activity size={15} />
+						<Activity className="w-4 h-4 shrink-0" />
 						<span>Каналы (Metapex/ZOE)</span>
 					</button>
 				)}
@@ -240,9 +240,9 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 							setIsLocalMemoOpen(true);
 						}
 					}}
-					className="dente-primary-action-btn min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+					className="dente-primary-action-btn min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-medium transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
 				>
-					<Printer size={15} />
+					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать памятки для родителей</span>
 				</button>
 			</div>

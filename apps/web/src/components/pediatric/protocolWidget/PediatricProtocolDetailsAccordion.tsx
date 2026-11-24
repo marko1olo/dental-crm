@@ -9,25 +9,23 @@ export interface PediatricProtocolDetailsAccordionProps {
 	readonly currentTooth: number;
 	readonly onSelectTooth: (tooth: number) => void;
 	readonly fullClinicalNoteText?: string | undefined;
-	/** @deprecated Использовать fullClinicalNoteText */
-	readonly fullProtocolText043?: string | undefined;
 }
 
 export const PediatricProtocolDetailsAccordion: React.FC<
 	PediatricProtocolDetailsAccordionProps
-> = ({ show, currentTooth, onSelectTooth, fullClinicalNoteText, fullProtocolText043 }) => {
+> = ({ show, currentTooth, onSelectTooth, fullClinicalNoteText }) => {
 	if (!show) return null;
 
-	const displayedText = fullClinicalNoteText || fullProtocolText043 || "";
+	const displayedText = fullClinicalNoteText || "";
 
 	return (
 		<div
-			className="mb-4 space-y-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3.5"
+			className="mb-4 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3.5"
 			data-testid="pediatric-details-accordion-content"
 		>
 			{/* Быстрый выбор зуба */}
 			<div>
-				<div className="mb-1.5 block text-xs font-bold text-[var(--ink,#0f172a)]">
+				<div className="mb-1.5 block text-xs font-bold text-[var(--ink)]">
 					Быстро сменить зуб FDI (молочные моляры / резцы / постоянные 16,
 					26, 36, 46):
 				</div>
@@ -41,8 +39,8 @@ export const PediatricProtocolDetailsAccordion: React.FC<
 								onClick={() => onSelectTooth(t)}
 								className={`min-h-[48px] min-w-[48px] px-2.5 rounded-xl font-mono text-xs font-bold border transition cursor-pointer select-none flex items-center justify-center ${
 									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs scale-105"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs scale-105"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`pediatric-tooth-chip-${t}`}
 								title={`Зуб #${t} (${PEDIATRIC_TEETH_NAMES[t] ?? t})`}
@@ -56,10 +54,10 @@ export const PediatricProtocolDetailsAccordion: React.FC<
 
 			{/* Превью записи в медицинскую карту */}
 			<div>
-				<div className="mb-1 text-xs font-bold text-[var(--ink,#0f172a)]">
+				<div className="mb-1 text-xs font-bold text-[var(--ink)]">
 					Превью записи в медицинскую карту пациента (дневник приёма):
 				</div>
-				<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-[var(--ink,#0f172a)] font-mono whitespace-pre-wrap">
+				<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-[11px] leading-relaxed text-[var(--ink)] font-mono whitespace-pre-wrap">
 					{displayedText}
 				</pre>
 			</div>

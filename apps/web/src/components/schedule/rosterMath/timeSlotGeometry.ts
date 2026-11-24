@@ -7,7 +7,7 @@
  * - Mandate 8d: Apple HIG & Medical Density (touch targets >= 44x44px, 0 emojis)
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson } from "../../../lib/safeLocalStorage";
 import {
 	addDaysToDateIso,
@@ -297,10 +297,9 @@ export async function syncShiftsWithServer(
 		try {
 			const response = await fetch("/api/schedule/shifts", {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-				},
+				}),
 				body: JSON.stringify({ shifts: shiftsToSend, dateIso: targetDateKey }),
 			});
 			return response.ok;

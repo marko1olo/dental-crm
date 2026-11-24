@@ -1,10 +1,10 @@
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 
 export function clipboardWriteHeaders(): Record<string, string> {
-	return denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+	return denteClinicalMutationHeaders({ "Content-Type": "application/json" });
 }
 
 export function formatCopiedAt(iso: string): string {

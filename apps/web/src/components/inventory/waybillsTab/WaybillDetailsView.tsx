@@ -8,21 +8,17 @@ import { WaybillItemsGrid } from "./WaybillItemsGrid.js";
 export interface WaybillDetailsViewProps {
 	readonly waybill: AcceptanceWaybillDocument;
 	readonly onPrintWaybill?: ((wb: AcceptanceWaybillDocument) => void) | undefined;
-	readonly onPrintTorg12?: ((wb: AcceptanceWaybillDocument) => void) | undefined;
 	readonly onExportCsv: (wb: AcceptanceWaybillDocument) => void;
 }
 
 export const WaybillDetailsView: React.FC<WaybillDetailsViewProps> = ({
 	waybill,
 	onPrintWaybill,
-	onPrintTorg12,
 	onExportCsv,
 }) => {
 	const handlePrint = () => {
 		if (onPrintWaybill) {
 			onPrintWaybill(waybill);
-		} else if (onPrintTorg12) {
-			onPrintTorg12(waybill);
 		}
 	};
 

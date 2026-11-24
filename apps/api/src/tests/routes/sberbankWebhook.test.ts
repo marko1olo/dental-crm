@@ -12,7 +12,7 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
-import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbank.js";
+import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbankRoutes/index.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,

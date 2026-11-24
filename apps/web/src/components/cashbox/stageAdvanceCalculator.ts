@@ -76,7 +76,7 @@ export function calculateStageAdvanceAmount(
 	const sanitizedPrevPaidKop = Number.isFinite(advanceAlreadyPaidKop) ? Math.max(0, Math.round(advanceAlreadyPaidKop)) : 0;
 
 	if (mode === "advance_30") {
-		const requiredAmountKop = Math.round((sanitizedStageKop * 3000) / 10000);
+		const requiredAmountKop = percentageOfKopecks(toExactKopecks(sanitizedStageKop), 3000);
 		return {
 			mode: "advance_30",
 			totalStageAmountKop: sanitizedStageKop,
@@ -93,7 +93,7 @@ export function calculateStageAdvanceAmount(
 	}
 
 	if (mode === "advance_50") {
-		const requiredAmountKop = Math.round((sanitizedStageKop * 5000) / 10000);
+		const requiredAmountKop = percentageOfKopecks(toExactKopecks(sanitizedStageKop), 5000);
 		return {
 			mode: "advance_50",
 			totalStageAmountKop: sanitizedStageKop,

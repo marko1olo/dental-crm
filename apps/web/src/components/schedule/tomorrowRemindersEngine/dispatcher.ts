@@ -1,4 +1,4 @@
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { BatchDispatchResult, TomorrowReminderItem } from "./types";
 
 export async function dispatchBatchReminders(
@@ -53,7 +53,7 @@ export async function dispatchBatchReminders(
 				if (item.preferredChannel === "whatsapp" && item.patientId) {
 					const res = await fetch("/api/whatsapp/send", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
 							patientId: item.patientId,
 							message: item.reminderText,
@@ -75,7 +75,7 @@ export async function dispatchBatchReminders(
 					};
 					const res = await fetch("/api/communications/outbox", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify(outboxPayload),
 					}).catch(() => null);
 

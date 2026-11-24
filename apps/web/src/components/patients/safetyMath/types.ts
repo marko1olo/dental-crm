@@ -66,6 +66,8 @@ export interface PatientClinicalSafetyProfile {
 	readonly customAllergyNotes?: string | undefined;
 	readonly customAllergiesNotes?: string | undefined;
 	readonly customChronicNotes?: string | undefined;
+	readonly allergies?: string | undefined;
+	readonly somaticNotes?: string | undefined;
 	readonly currentMedicationsList?: string | undefined;
 	readonly lastUpdated?: string | undefined;
 }

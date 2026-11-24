@@ -25,7 +25,7 @@ describe("VisitPediatricProtocolWidget Presets & Metadata Completeness", () => {
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {
 			assert.ok(preset.titleRu.length > 0);
 			assert.ok(preset.diagnosisIcd10.length > 0);
-			assert.ok(preset.serviceCode804n && (preset.serviceCode804n.startsWith("A") || preset.serviceCode804n.startsWith("B")));
+			assert.ok(preset.serviceCode && (preset.serviceCode.startsWith("A") || preset.serviceCode.startsWith("B")));
 			assert.ok(preset.materials.length > 0);
 			assert.ok(preset.defaultMaterial.length > 0);
 			assert.ok(preset.defaultToothFindingState.length > 0);

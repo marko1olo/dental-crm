@@ -20,17 +20,6 @@ export interface UseUkepSigningEngineOptions {
 	readonly initialDocs?: readonly UkepDocumentItem[] | undefined;
 }
 
-function computeFallbackDocHash(id: string, title?: string, date?: string): string {
-	const raw = `${id}:${title || ""}:${date || ""}`;
-	let hash = 0;
-	for (let i = 0; i < raw.length; i++) {
-		hash = (hash << 5) - hash + raw.charCodeAt(i);
-		hash |= 0;
-	}
-	const hex = Math.abs(hash).toString(16).padStart(16, "0");
-	return hex.repeat(4);
-}
-
 function mapDocKindToType(kind?: string): UkepDocumentType {
 	if (!kind) return "contract";
 	if (kind.includes("card") || kind.includes("diary") || kind.includes("soap")) return "emr_record";
@@ -122,7 +111,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 					patientFullName: patientFullName || (patientId ? "Пациент клиники" : "Пациент"),
 					date: d.createdAt ? new Date(d.createdAt).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
 					documentNumber: d.id.slice(0, 8),
-					hashHex: d.issuedSnapshotSha256 || computeFallbackDocHash(d.id, d.title || undefined, d.createdAt || undefined),
+					hashHex: d.issuedSnapshotSha256 || "",
 					status: d.cryptoSignaturePkcs7 ? "signed_ukep" : (d.signatureAttestation ? "signed_pep" : "draft"),
 					signedAt: d.doctorSignedAt || d.issuedAt || undefined,
 					signerFullName: d.doctorCertSubject || d.signatureAttestation?.staffFullName || undefined,
@@ -162,6 +151,12 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 			if (!selectedCert) {
 				throw new Error(
 					"Не выбран личный сертификат врача. Проверьте установленные сертификаты в хранилище КриптоПро или используйте альтернативный способ заверения.",
+				);
+			}
+
+			if (!selectedDoc.hashHex) {
+				throw new Error(
+					"Документ должен быть сформирован (выпущен) перед подписанием УКЭП.",
 				);
 			}
 

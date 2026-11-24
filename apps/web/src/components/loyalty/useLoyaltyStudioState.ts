@@ -106,16 +106,18 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 						if (typeof data.lifetimeExpiredPoints === "number") setLifetimeExpiredPoints(data.lifetimeExpiredPoints);
 					}
 				}
-				const famRes = await fetch(`/api/finance/family/patient/${encodeURIComponent(currentPatientId)}`, { headers });
+				const famRes = await fetch(`/api/loyalty/family/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (famRes.ok) {
 					const famData = await famRes.json();
-					if (!isCancelled && famData?.members?.length > 0) {
+					if (!isCancelled && famData?.hasFamilyGroup && famData?.members?.length > 0) {
 						setHasFamilyGroup(true);
-						if (famData.name) setFamilyName(famData.name);
-						if (famData.id) setFamilyGroupId(famData.id);
+						if (famData.familyName) setFamilyName(famData.familyName);
+						else if (famData.name) setFamilyName(famData.name);
+						if (famData.familyGroupId) setFamilyGroupId(famData.familyGroupId);
+						else if (famData.id) setFamilyGroupId(famData.id);
 						setFamilyMembers(famData.members.map((m: ApiFamilyMemberResponse) => ({
-							patientId: m.id || m.patientId || "", fullName: m.fullName || m.name || "Член семьи", roleRu: m.roleRu || m.relation || "Член семьи",
-							individualPointsBalance: Number(m.balancePoints ?? m.individualPointsBalance ?? 0), lifetimeSpentKop: Number(m.lifetimeSpentKop ?? 0), isBonusSpendingAllowed: true,
+							patientId: m.patientId || m.id || "", fullName: m.fullName || m.name || "Член семьи", roleRu: m.roleRu || m.relation || "Член семьи",
+							individualPointsBalance: Number(m.individualPointsBalance ?? m.balancePoints ?? 0), lifetimeSpentKop: Number(m.lifetimeSpentKop ?? 0), isBonusSpendingAllowed: true,
 						})));
 					} else if (!isCancelled) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); setFamilyGroupId(null); }
 				} else if (!isCancelled) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); setFamilyGroupId(null); }

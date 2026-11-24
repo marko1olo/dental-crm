@@ -145,7 +145,7 @@ describe("3. 1-Click Printable Documents (Hero Diploma)", () => {
 			diplomaNumber: "54-2026",
 		});
 
-		assert.ok(html.includes("ДИПЛОМ ЗА ХРАБРОСТЬ"));
+		assert.ok(html.includes("Диплом за храбрость"));
 		assert.ok(html.includes("Михаил Кузнецов"));
 		assert.ok(html.includes("Зубной Феей"));
 		assert.ok(html.includes("Д-р Смирнова Е.В."));

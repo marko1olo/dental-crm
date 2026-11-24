@@ -1,4 +1,4 @@
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { QuickAddChairData } from "./types";
 
@@ -24,7 +24,7 @@ export async function submitChairData(params: {
 				: "/api/settings/chairs";
 			await fetch(endpoint, {
 				method: isEditMode ? "PUT" : "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,
@@ -73,7 +73,7 @@ export async function duplicateChairData(params: {
 		} else {
 			await fetch("/api/settings/chairs", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,

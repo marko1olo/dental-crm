@@ -349,7 +349,7 @@ describe("Voice AI Dental STT Grammar Parser (dentalGrammarParser.ts)", () => {
 		});
 	});
 
-	describe("10. Periodontal Probing & Indices Voice Dictation (PeriodontalChartingModal)", () => {
+	describe("10. Periodontal Probing & Indices Voice Dictation (PerioStudioModal)", () => {
 		it("extracts 6-point probing depths and BOP from Russian speech: 'зуб один шесть медиально три щечно два дистально три кровоточивость плюс'", () => {
 			const items = extractPerioVoiceMeasurements("зуб один шесть медиально три щечно два дистально три кровоточивость плюс");
 			assert.strictEqual(items.length, 1);

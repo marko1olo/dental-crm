@@ -46,6 +46,7 @@ export interface UseVisitCompletionOptions {
 	treatmentPlanId?: string | null | undefined;
 	stageNumber?: number | null | undefined;
 	diary?: DiaryState | {
+		complaint?: string | null | undefined;
 		anamnesis?: string | null | undefined;
 		statusLocalis?: string | null | undefined;
 		diagnosisIcd10?: string | null | undefined;
@@ -133,9 +134,25 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					"Стоматологическая клиника «DENTE»";
 
 				const rawDiary = overrideInput?.diary || options?.diary || {};
+				const diaryAny = rawDiary as Record<string, unknown>;
+				const effectiveComplaint =
+					(typeof diaryAny.complaint === "string" && diaryAny.complaint.trim()) ||
+					(typeof activeVisit?.complaint === "string" && activeVisit.complaint.trim()) ||
+					"Жалоб на момент осмотра активно не предъявляет.";
+				const effectiveAnamnesis =
+					(typeof rawDiary.anamnesis === "string" && rawDiary.anamnesis.trim()) ||
+					(typeof activeVisit?.anamnesis === "string" && activeVisit.anamnesis.trim()) ||
+					"Соматически здоров. Аллергоанамнез не отягощен.";
+				const effectiveStatusLocalis =
+					(typeof rawDiary.statusLocalis === "string" && rawDiary.statusLocalis.trim()) ||
+					(typeof (rawDiary as { objectiveStatus?: unknown }).objectiveStatus === "string" &&
+						String((rawDiary as { objectiveStatus?: unknown }).objectiveStatus).trim()) ||
+					(typeof activeVisit?.objectiveStatus === "string" && activeVisit.objectiveStatus.trim()) ||
+					"Слизистая оболочка полости рта бледно-розовая, влажная.";
 				const effectiveDiary = {
-					anamnesis: rawDiary.anamnesis || "Жалоб на момент осмотра активно не предъявляет.",
-					statusLocalis: rawDiary.statusLocalis || "Слизистая оболочка полости рта бледно-розовая, влажная.",
+					complaint: effectiveComplaint,
+					anamnesis: effectiveAnamnesis,
+					statusLocalis: effectiveStatusLocalis,
 					diagnosisIcd10: rawDiary.diagnosisIcd10 || "Z01.2",
 					diagnosisTooth: rawDiary.diagnosisTooth || "",
 					treatmentDescription: rawDiary.treatmentDescription || "Проведен осмотр и санация полости рта.",

@@ -1,4 +1,11 @@
-import { basisPointsFromPercent, kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
+import {
+	basisPointsFromPercent,
+	kopecksDiv,
+	kopecksToRubles,
+	percentageOfKopecks,
+	rublesToKopecks,
+	toExactKopecks,
+} from "@dental/shared";
 import type {
 	CatalogRow,
 	FrozenPriceItem,
@@ -47,7 +54,7 @@ export function resolvePlanPrice(params: {
 		}
 		if (it.quantity > planQty && !isAdminOverrideVerified) {
 			const totalKop = rublesToKopecks(planItemPrice) * planQty;
-			const price = kopecksToRubles(Math.round(totalKop / it.quantity));
+			const price = kopecksToRubles(kopecksDiv(toExactKopecks(totalKop), it.quantity));
 			return { planPriceRub: price, effectivePriceRub: price };
 		}
 		return { planPriceRub: planItemPrice, effectivePriceRub: planItemPrice };

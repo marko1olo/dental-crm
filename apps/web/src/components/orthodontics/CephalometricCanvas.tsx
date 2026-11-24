@@ -115,6 +115,9 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 	const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isHandToolActive, setIsHandToolActive] = useState<boolean>(false);
 
+	// SEV-2-03: Реальные габариты снимка для исключения геометрического дрифта SVG
+	const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number }>({ width: 800, height: 800 });
+
 	// Двухточечная калибровка линейки (DEF-ORTHO-05, 10/50 мм)
 	const [isCalibrating, setIsCalibrating] = useState<boolean>(false);
 	const [calibPoint1, setCalibPoint1] = useState<PointCoord>({ x: 120, y: 700 });
@@ -377,40 +380,53 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 				</div>
 			) : (
 				<div
-					className="relative w-full h-full flex items-center justify-center"
+					className="relative w-full h-full flex items-center justify-center pointer-events-none"
 					style={{
 						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
 						transformOrigin: "center center",
 						transition: isPanning || draggingKey ? "none" : "transform 0.1s ease-out",
 					}}
-					onClick={handleCanvasClick}
 				>
-					{/* Изображение рентгенограммы ТРГ */}
-					<img
-						src={imageUrl}
-						alt="Боковая телерентгенограмма (ТРГ)"
-						className="max-w-full max-h-full object-contain pointer-events-none"
-						style={{ filter: getFilterStyle() }}
-						draggable={false}
-					/>
-
-					{/* Интерактивный векторный SVG-оверлей плоскостей и ориентиров */}
-					<svg
-						ref={svgRef}
-						viewBox="0 0 800 800"
-						className="absolute inset-0 w-full h-full"
-						style={{ overflow: "visible", pointerEvents: "auto" }}
+					{/* SEV-2-03: Контейнер рентгенограммы и SVG со строгим aspect-ratio без геометрического дрифта */}
+					<div
+						className="relative max-w-full max-h-full flex items-center justify-center pointer-events-auto"
+						style={{
+							aspectRatio: `${imageDimensions.width} / ${imageDimensions.height}`,
+						}}
+						onClick={handleCanvasClick}
 					>
-						{/* 1. Краниофациальный полигон */}
-						{showPolygon && pS && pN && pA && pB && pMe && pGo && (
-							<polygon
-								points={`${pS.x},${pS.y} ${pN.x},${pN.y} ${pA.x},${pA.y} ${pB.x},${pB.y} ${pPog ? `${pPog.x},${pPog.y} ` : ""}${pGn ? `${pGn.x},${pGn.y} ` : ""}${pMe.x},${pMe.y} ${pGo.x},${pGo.y}`}
-								fill="rgba(13, 148, 136, 0.08)"
-								stroke="var(--primary)"
-								strokeWidth="1.5"
-								strokeDasharray="4 3"
-							/>
-						)}
+						{/* Изображение рентгенограммы ТРГ */}
+						<img
+							src={imageUrl}
+							alt="Боковая телерентгенограмма (ТРГ)"
+							className="w-full h-full object-contain pointer-events-none block"
+							style={{ filter: getFilterStyle() }}
+							draggable={false}
+							onLoad={(e) => {
+								const img = e.currentTarget;
+								if (img.naturalWidth && img.naturalHeight) {
+									setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+								}
+							}}
+						/>
+
+						{/* Интерактивный векторный SVG-оверлей плоскостей и ориентиров */}
+						<svg
+							ref={svgRef}
+							viewBox={`0 0 ${imageDimensions.width} ${imageDimensions.height}`}
+							className="absolute inset-0 w-full h-full"
+							style={{ overflow: "visible", pointerEvents: "auto" }}
+						>
+							{/* 1. Краниофациальный полигон */}
+							{showPolygon && pS && pN && pA && pB && pMe && pGo && (
+								<polygon
+									points={`${pS.x},${pS.y} ${pN.x},${pN.y} ${pA.x},${pA.y} ${pB.x},${pB.y} ${pPog ? `${pPog.x},${pPog.y} ` : ""}${pGn ? `${pGn.x},${pGn.y} ` : ""}${pMe.x},${pMe.y} ${pGo.x},${pGo.y}`}
+									fill="var(--primary-subtle, rgba(13, 148, 136, 0.08))"
+									stroke="var(--primary)"
+									strokeWidth="1.5"
+									strokeDasharray="4 3"
+								/>
+							)}
 
 						{/* 2. Анатомические плоскости (DEF-ORTHO-01) */}
 						{showPlanes && (
@@ -657,6 +673,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 							</g>
 						)}
 					</svg>
+					</div>
 				</div>
 			)}
 

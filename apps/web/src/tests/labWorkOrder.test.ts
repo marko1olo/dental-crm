@@ -31,6 +31,13 @@ import {
 	detectLabDeadlineAlert,
 	processPartialDeliveryAndRework,
 } from "../components/lab/dentalLabOrderEngine.js";
+import {
+	getNextLabProductionStage,
+	canAdvanceLabStage,
+	LAB_WORKFLOW_STATUSES,
+	LAB_WORKFLOW_STATUS_ORDER,
+} from "../components/lab/dentalLabWorkflowEngine.js";
+import { mapRawApiOrderToWorkflowOrder } from "../components/lab/dentalLabApiMapper.js";
 import type { DentalLabOrderData } from "../components/lab/math/labDataTypes.js";
 
 describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canonical SSOT)", () => {
@@ -542,6 +549,55 @@ describe("Statutory Dental Laboratory Work Order & Tracking Studio Suite (Canoni
 			assert.equal(splitResult.reworkOrder.warrantyLiabilityType, "clinic_warranty");
 			assert.equal(splitResult.deliveredOrder.patientPriceKopecks, 1500000);
 			assert.equal(splitResult.deliveredOrder.priceRub, 15000);
+		});
+	});
+
+	describe("8. Kanban 5-Stage Workflow Pipeline and Status Synchronization (Domain U Red Team)", () => {
+		it("contains all 5 canonical production stages in LAB_WORKFLOW_STATUS_ORDER", () => {
+			assert.deepEqual(LAB_WORKFLOW_STATUS_ORDER, [
+				"draft",
+				"sent_to_lab",
+				"in_progress",
+				"fitting_scheduled",
+				"ready_in_clinic",
+				"installed_completed",
+			]);
+		});
+
+		it("advances sequentially step-by-step through getNextLabProductionStage without skipping in_progress or ready_in_clinic", () => {
+			assert.equal(getNextLabProductionStage("draft"), "sent_to_lab");
+			assert.equal(getNextLabProductionStage("sent_to_lab"), "in_progress");
+			assert.equal(getNextLabProductionStage("in_progress"), "fitting_scheduled");
+			assert.equal(getNextLabProductionStage("fitting_scheduled"), "ready_in_clinic");
+			assert.equal(getNextLabProductionStage("ready_in_clinic"), "installed_completed");
+			assert.equal(getNextLabProductionStage("installed_completed"), null);
+			assert.equal(getNextLabProductionStage("warranty_rework"), "sent_to_lab");
+		});
+
+		it("correctly maps API order status to workflow stages without loss or collapsing to draft", () => {
+			const rawSent: DentalLabOrderData = { id: "o-1", orderNumber: "1", patientId: "p-1", status: "sent" };
+			const wfSent = mapRawApiOrderToWorkflowOrder(rawSent, 0, "p-1", "Иванов И.И.");
+			assert.equal(wfSent.currentStage, "sent_to_lab");
+
+			const rawProg: DentalLabOrderData = { id: "o-2", orderNumber: "2", patientId: "p-1", status: "in_progress" };
+			const wfProg = mapRawApiOrderToWorkflowOrder(rawProg, 1, "p-1", "Иванов И.И.");
+			assert.equal(wfProg.currentStage, "in_progress");
+
+			const rawFitting: DentalLabOrderData = { id: "o-3", orderNumber: "3", patientId: "p-1", status: "fitting" };
+			const wfFitting = mapRawApiOrderToWorkflowOrder(rawFitting, 2, "p-1", "Иванов И.И.");
+			assert.equal(wfFitting.currentStage, "fitting_scheduled");
+
+			const rawReady: DentalLabOrderData = { id: "o-4", orderNumber: "4", patientId: "p-1", status: "ready_in_clinic" };
+			const wfReady = mapRawApiOrderToWorkflowOrder(rawReady, 3, "p-1", "Иванов И.И.");
+			assert.equal(wfReady.currentStage, "ready_in_clinic");
+
+			const rawComp: DentalLabOrderData = { id: "o-5", orderNumber: "5", patientId: "p-1", status: "completed" };
+			const wfComp = mapRawApiOrderToWorkflowOrder(rawComp, 4, "p-1", "Иванов И.И.");
+			assert.equal(wfComp.currentStage, "installed_completed");
+
+			const rawInst: DentalLabOrderData = { id: "o-6", orderNumber: "6", patientId: "p-1", currentStage: "installed_completed" };
+			const wfInst = mapRawApiOrderToWorkflowOrder(rawInst, 5, "p-1", "Иванов И.И.");
+			assert.equal(wfInst.currentStage, "installed_completed");
 		});
 	});
 

@@ -6,7 +6,7 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import { inventoryItems } from "../../../db/schema/inventory.js";
 import { DEFAULT_804N_CONSUMABLE_LINKS, kopecksToRubles } from "@dental/shared";
-import { DEFAULT_804N_BOM_SEEDS } from "../bomSeeds/registry.js";
+import { DEFAULT_SERVICE_BOM_SEEDS } from "../bomSeeds/registry.js";
 import type { DbTransaction } from "./types.js";
 import type { ServiceMeta } from "./procedureBomResolver.js";
 
@@ -23,7 +23,7 @@ export async function resolveDefaultFallbackItems(
 	const itemsToDeduct: Array<{ inventoryItemId: string; quantity: number }> = [];
 	const safeServiceId = (serviceId || "").toLowerCase();
 
-	const proto = DEFAULT_804N_BOM_SEEDS.find(
+	const proto = DEFAULT_SERVICE_BOM_SEEDS.find(
 		(s) =>
 			s.serviceCode === meta.serviceCode ||
 			(meta.order804nCode && s.serviceCode === meta.order804nCode) ||

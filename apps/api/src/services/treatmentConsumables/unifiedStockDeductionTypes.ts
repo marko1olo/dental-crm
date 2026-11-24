@@ -35,6 +35,7 @@ export interface UnifiedStockDeductionParams {
 	notes?: string | null | undefined;
 	reasonPrefix?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
+	idempotencyKey?: string | null | undefined;
 	successMessageTemplate?: ((deductedCount: number, hasOverdraft: boolean) => string) | undefined;
 }
 

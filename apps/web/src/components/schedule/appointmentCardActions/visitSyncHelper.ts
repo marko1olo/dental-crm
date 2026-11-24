@@ -1,6 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { playIntercomChime } from "../../../lib/intercomSound";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
@@ -20,7 +20,7 @@ export async function openVisitWithBackendSync(
 				`/api/appointments/${encodeURIComponent(appointment.id)}/visit`,
 				{
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalMutationHeaders(),
 				},
 			);
 			if (res.ok) {

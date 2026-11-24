@@ -68,7 +68,12 @@ export function useMobilePatientSafetyAlerts(patient: PatientWithSafetyFields | 
 		}
 
 		// 2. Выделенное поле аллергий пациента
-		const directAllergies = p.allergies || p.anamnesis?.allergies || "";
+		const rawDirectAllergies = p.allergies || p.anamnesis?.allergies || "";
+		const directAllergies = Array.isArray(rawDirectAllergies)
+			? rawDirectAllergies.join(", ")
+			: typeof rawDirectAllergies === "string"
+				? rawDirectAllergies
+				: "";
 		let directAllergyText = "";
 		if (typeof directAllergies === "string" && directAllergies.trim() && !isNegativeAllergyStatement(directAllergies)) {
 			const match = directAllergies.match(/(?:аллерги[яиею]|аллергическ\w*)\s*(?:на|:)?\s*([^.,;!\n]+)/i);

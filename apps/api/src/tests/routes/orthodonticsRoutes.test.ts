@@ -520,6 +520,146 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(secondLigRes.headers["idempotency-replayed"], "true");
 		const secondLigBody = JSON.parse(secondLigRes.body);
 		assert.deepEqual(secondLigBody, firstLigBody);
+
+		// 12d. aligners/issue-set performs idempotent replay and prevents double billing
+		const idemKeyAligners = fixtureUuid(NAMESPACE, 23);
+		const firstAlignerRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyAligners,
+			},
+			payload: {
+				alignerCount: 2,
+				wearDaysPerAligner: 14,
+				note: "Выдача кап №1-2",
+			},
+		});
+		assert.equal(firstAlignerRes.statusCode, 200);
+		const firstAlignerBody = JSON.parse(firstAlignerRes.body);
+		assert.equal(firstAlignerBody.success, true);
+
+		const secondAlignerRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyAligners,
+			},
+			payload: {
+				alignerCount: 2,
+				wearDaysPerAligner: 14,
+			},
+		});
+		assert.equal(secondAlignerRes.statusCode, 200);
+		assert.equal(secondAlignerRes.headers["idempotency-replayed"], "true");
+		const secondAlignerBody = JSON.parse(secondAlignerRes.body);
+		assert.deepEqual(secondAlignerBody, firstAlignerBody);
+
+		// 12e. stages/advance performs idempotent replay
+		const idemKeyStage = fixtureUuid(NAMESPACE, 24);
+		const firstStageRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/stages/advance`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyStage,
+			},
+			payload: {
+				nextStage: 4,
+				stageTitle: "Активация дуг и закрытие промежутков",
+			},
+		});
+		assert.equal(firstStageRes.statusCode, 200);
+		const firstStageBody = JSON.parse(firstStageRes.body);
+		assert.equal(firstStageBody.success, true);
+
+		const secondStageRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/stages/advance`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyStage,
+			},
+			payload: {
+				nextStage: 4,
+			},
+		});
+		assert.equal(secondStageRes.statusCode, 200);
+		assert.equal(secondStageRes.headers["idempotency-replayed"], "true");
+		const secondStageBody = JSON.parse(secondStageRes.body);
+		assert.deepEqual(secondStageBody, firstStageBody);
+
+		// 12f. rebracket performs idempotent replay and prevents double deduction
+		const idemKeyRebracket = fixtureUuid(NAMESPACE, 25);
+		const firstRebracketRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyRebracket,
+			},
+			payload: {
+				toothNumber: 14,
+				bracketType: "Damon Clear 2",
+			},
+		});
+		assert.equal(firstRebracketRes.statusCode, 200);
+		const firstRebracketBody = JSON.parse(firstRebracketRes.body);
+		assert.equal(firstRebracketBody.success, true);
+
+		const secondRebracketRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyRebracket,
+			},
+			payload: {
+				toothNumber: 14,
+				bracketType: "Damon Clear 2",
+			},
+		});
+		assert.equal(secondRebracketRes.statusCode, 200);
+		assert.equal(secondRebracketRes.headers["idempotency-replayed"], "true");
+		const secondRebracketBody = JSON.parse(secondRebracketRes.body);
+		assert.deepEqual(secondRebracketBody, firstRebracketBody);
+
+		// 12g. deduct-materials performs idempotent replay
+		const idemKeyDeduct = fixtureUuid(NAMESPACE, 26);
+		const firstDeductRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyDeduct,
+			},
+			payload: {
+				action: "bonding",
+				quantity: 2,
+			},
+		});
+		assert.equal(firstDeductRes.statusCode, 200);
+		const firstDeductBody = JSON.parse(firstDeductRes.body);
+		assert.equal(firstDeductBody.success, true);
+
+		const secondDeductRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
+			headers: {
+				...ORG_HEADERS,
+				"idempotency-key": idemKeyDeduct,
+			},
+			payload: {
+				action: "bonding",
+				quantity: 2,
+			},
+		});
+		assert.equal(secondDeductRes.statusCode, 200);
+		assert.equal(secondDeductRes.headers["idempotency-replayed"], "true");
+		const secondDeductBody = JSON.parse(secondDeductRes.body);
+		assert.deepEqual(secondDeductBody, firstDeductBody);
 	});
 
 	it("13. DEF-ORTHO-API-02: Sealed Zod schemas with .strict() reject extra unknown properties (Mandate 8bq)", async (t) => {

@@ -15,12 +15,14 @@ import {
 } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import {
+	cashBoxes,
 	familyGroups,
 	organizations,
 	patientRelationships,
 	patients,
 	payments,
 } from "../../../db/schema.js";
+import { FamilyWalletError } from "../familyWalletTypes.js";
 import {
 	fixtureUuid,
 	withFixtureTenant,
@@ -507,6 +509,69 @@ describe("Domain 3.2: FamilyWalletService Live PostgreSQL 18 Integration (ACID, 
 			assert.equal(refundRes.success, true);
 			assert.equal(refundRes.refundedRub, 10000);
 			assert.equal(refundRes.newBalanceRub, 21000);
+
+			// 4.1 Дисциплина кассового возврата: отказ с кодом 400 при недостатке наличных в кассе (boxBalKop < refundKopecks)
+			const cashBoxId = fixtureUuid("familyWalletLive", 6);
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(cashBoxes).values({
+					id: cashBoxId,
+					organizationId: orgId,
+					name: "Главная касса",
+					type: "main",
+					balanceRub: 1000,
+					balanceKopecks: 100000,
+				});
+			});
+
+			await assert.rejects(
+				async () => {
+					await familyWalletService.refund({
+						organizationId: orgId,
+						familyGroupId: familyId,
+						patientId: dadPatientId,
+						amountRub: 5000,
+						method: "cash",
+						cashBoxId,
+						clientMutationId: `mut-refund-cashbox-fail-${Date.now()}`,
+						reasonText: "Возврат наличными при пустой кассе",
+					});
+				},
+				(err: unknown) => {
+					assert.ok(err instanceof FamilyWalletError);
+					assert.equal(err.statusCode, 400);
+					assert.equal(err.code, "INSUFFICIENT_CASHBOX_BALANCE");
+					return true;
+				},
+			);
+
+			// 4.2 Дисциплина кассового возврата: успешный возврат и точное списание без тихого обнуления через Math.max
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.update(cashBoxes).set({
+					balanceRub: 10000,
+					balanceKopecks: 1000000,
+				}).where(eq(cashBoxes.id, cashBoxId));
+			});
+
+			const refundCashRes = await familyWalletService.refund({
+				organizationId: orgId,
+				familyGroupId: familyId,
+				patientId: dadPatientId,
+				amountRub: 5000,
+				method: "cash",
+				cashBoxId,
+				clientMutationId: `mut-refund-cashbox-ok-${Date.now()}`,
+				reasonText: "Возврат наличными при наличии средств",
+			});
+			assert.equal(refundCashRes.success, true);
+			assert.equal(refundCashRes.refundedRub, 5000);
+			assert.equal(refundCashRes.newBalanceRub, 16000);
+
+			// Проверяем, что в кассе осталось ровно 10000 - 5000 = 5000 руб (500000 копеек)
+			const [boxAfter] = await withFixtureTenant(orgId, async (tx) => {
+				return await tx.select().from(cashBoxes).where(eq(cashBoxes.id, cashBoxId));
+			});
+			assert.equal(Number(boxAfter?.balanceRub), 5000);
+			assert.equal(boxAfter?.balanceKopecks, 500000);
 
 			// 5. Генерация справок ФНС КНД 1151156 для семьи
 			const currentYear = new Date().getFullYear().toString();

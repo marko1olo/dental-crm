@@ -72,6 +72,7 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 			sent_to_lab: [],
 			in_progress: [],
 			fitting_scheduled: [],
+			ready_in_clinic: [],
 			installed_completed: [],
 			warranty_rework: [],
 		};

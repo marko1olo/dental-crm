@@ -1,7 +1,7 @@
 import {
 	applyPaymentRefundSettlementsInDb,
 	getPaymentsByPatientIdInDb,
-} from "../db/billingQuery.js";
+} from "../db/billing/index.js";
 import { getDocumentsByPatientId } from "../db/documentQuery.js";
 import { paymentRefundSettlements } from "./guards.js";
 
@@ -72,9 +72,9 @@ export async function settleRefundedPaymentsForPatient(
 	patientId: string,
 	tx?: TenantDb | undefined,
 ): Promise<RefundSettlementOutcome> {
-	return withTenantCtx(organizationId, async () => {
+	const run = async (tenantTx: TenantDb) => {
 		const [payments, documents] = await Promise.all([
-			getPaymentsByPatientIdInDb(organizationId, patientId),
+			getPaymentsByPatientIdInDb(organizationId, patientId, tenantTx),
 			getDocumentsByPatientId(organizationId, patientId),
 		]);
 		const settlements = paymentRefundSettlements(payments, documents);
@@ -84,7 +84,7 @@ export async function settleRefundedPaymentsForPatient(
 		const applied = await applyPaymentRefundSettlementsInDb(
 			organizationId,
 			settlements,
-			tx,
+			tenantTx,
 		);
 		return {
 			refunded: applied.refunded,
@@ -97,5 +97,10 @@ export async function settleRefundedPaymentsForPatient(
 					amountKopecks: item.amountKopecks,
 				})),
 		};
-	});
+	};
+
+	if (tx) {
+		return run(tx);
+	}
+	return withTenantCtx(organizationId, run);
 }

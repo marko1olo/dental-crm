@@ -28,7 +28,7 @@ export const inventoryCreateBodySchema = z.object({
 	barcode: z.string().nullable().optional(),
 	lotNumber: z.string().nullable().optional(),
 	expirationDate: z.string().nullable().optional(),
-});
+}).strict();
 
 export const inventoryUpdateBodySchema = z.object({
 	name: z.string().optional(),
@@ -37,7 +37,7 @@ export const inventoryUpdateBodySchema = z.object({
 	purchasePriceKopecks: z.number().int().nonnegative().optional(),
 	unitPriceKopecks: z.number().int().nonnegative().optional(),
 	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
-	stockQuantity: z.number().finite().nonnegative().optional(),
+	stockQuantity: z.number().finite().optional(),
 	packageMultiplier: z.number().finite().positive().optional(),
 	unit: z.string().nullable().optional(),
 	category: z.string().nullable().optional(),
@@ -46,209 +46,233 @@ export const inventoryUpdateBodySchema = z.object({
 	barcode: z.string().nullable().optional(),
 	lotNumber: z.string().nullable().optional(),
 	expirationDate: z.string().nullable().optional(),
-});
+}).strict();
 
-export const inventoryStockBodySchema = z.object({
-	adjustment: z
-		.number({
-			required_error:
-				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-			invalid_type_error:
-				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-		})
-		.finite({
-			message:
-				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-		}),
-	allowOverdraft: z.boolean().default(true).optional(),
-	reason: z.string().optional(),
-	isClinicalOperation: z.boolean().optional(),
-	visitId: z.string().uuid().optional(),
-	batchNumber: z.string().optional(),
-	lotNumber: z.string().optional(),
-	expirationDate: z.string().optional(),
-	manufactureDate: z.string().nullable().optional(),
-	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
-	barcode: z.string().nullable().optional(),
-});
+export const inventoryStockBodySchema = z
+	.object({
+		adjustment: z
+			.number({
+				required_error:
+					"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+				invalid_type_error:
+					"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+			})
+			.finite({
+				message:
+					"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+			}),
+		allowOverdraft: z.boolean().default(true).optional(),
+		reason: z.string().optional(),
+		isClinicalOperation: z.boolean().optional(),
+		visitId: z.string().uuid().optional(),
+		batchNumber: z.string().optional(),
+		lotNumber: z.string().optional(),
+		expirationDate: z.string().optional(),
+		manufactureDate: z.string().nullable().optional(),
+		purchasePricePerUnit: z.number().finite().nonnegative().optional(),
+		barcode: z.string().nullable().optional(),
+	})
+	.strict();
 
-export const inventoryReceiveBatchBodySchema = z.object({
-	inventoryItemId: z
-		.string({
-			required_error: "Укажите ID материала",
-			invalid_type_error: "ID материала должен быть строкой",
-		})
-		.min(1, { message: "Укажите ID материала" }),
-	warehouseId: z.string().nullable().optional(),
-	batchNumber: z.string().optional(),
-	lotNumber: z.string().optional(),
-	expirationDate: z.string().optional(),
-	manufactureDate: z.string().nullable().optional(),
-	quantity: z
-		.number({
-			required_error: "Укажите количество для оприходования",
-			invalid_type_error: "Количество должно быть числом",
-		})
-		.finite({ message: "Количество должно быть числом" })
-		.positive({ message: "Количество приходуемой партии должно быть больше 0" }),
-	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
-	barcode: z.string().nullable().optional(),
-	notes: z.string().optional(),
-});
+export const inventoryReceiveBatchBodySchema = z
+	.object({
+		inventoryItemId: z
+			.string({
+				required_error: "Укажите ID материала",
+				invalid_type_error: "ID материала должен быть строкой",
+			})
+			.min(1, { message: "Укажите ID материала" }),
+		warehouseId: z.string().nullable().optional(),
+		batchNumber: z.string().optional(),
+		lotNumber: z.string().optional(),
+		expirationDate: z.string().optional(),
+		manufactureDate: z.string().nullable().optional(),
+		quantity: z
+			.number({
+				required_error: "Укажите количество для оприходования",
+				invalid_type_error: "Количество должно быть числом",
+			})
+			.finite({ message: "Количество должно быть числом" })
+			.positive({ message: "Количество приходуемой партии должно быть больше 0" }),
+		purchasePricePerUnit: z.number().finite().nonnegative().optional(),
+		barcode: z.string().nullable().optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 
-export const acceptanceWaybillItemSchema = z.object({
-	inventoryItemId: z.string().optional(),
-	name: z.string().min(1, "Наименование материала обязательно"),
-	category: z.string().optional(),
-	unit: z.string().default("шт"),
-	packageMultiplier: z.number().finite().positive().optional(),
-	batchNumber: z.string().optional().default(""),
-	lotNumber: z.string().optional(),
-	expirationDate: z.string().optional().default(""),
-	manufactureDate: z.string().nullable().optional(),
-	quantity: z.number().finite().positive("Количество должно быть больше нуля"),
-	purchasePriceKopecks: z.number().int().nonnegative().optional(),
-	unitPriceKopecks: z.number().int().nonnegative().optional(),
-	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
-	vatRate: z.number().finite().default(0),
-	barcode: z.string().nullable().optional(),
-	sku: z.string().nullable().optional(),
-	notes: z.string().nullable().optional(),
-});
+export const acceptanceWaybillItemSchema = z
+	.object({
+		inventoryItemId: z.string().optional(),
+		name: z.string().min(1, "Наименование материала обязательно"),
+		category: z.string().optional(),
+		unit: z.string().default("шт"),
+		packageMultiplier: z.number().finite().positive().optional(),
+		batchNumber: z.string().optional().default(""),
+		lotNumber: z.string().optional(),
+		expirationDate: z.string().optional().default(""),
+		manufactureDate: z.string().nullable().optional(),
+		quantity: z.number().finite().positive("Количество должно быть больше нуля"),
+		purchasePriceKopecks: z.number().int().nonnegative().optional(),
+		unitPriceKopecks: z.number().int().nonnegative().optional(),
+		purchasePricePerUnit: z.number().finite().nonnegative().optional(),
+		vatRate: z.number().finite().default(0),
+		barcode: z.string().nullable().optional(),
+		sku: z.string().nullable().optional(),
+		notes: z.string().nullable().optional(),
+	})
+	.strict();
 
-export const acceptanceWaybillBodySchema = z.object({
-	supplierName: z.string().min(1, "Наименование поставщика обязательно"),
-	supplierInn: z.string().nullable().optional(),
-	waybillNumber: z.string().min(1, "Номер накладной обязателен"),
-	receiptDate: z.string().min(1, "Дата прихода обязательна"),
-	warehouseId: z.string().nullable().optional(),
-	warehouseName: z.string().nullable().optional(),
-	items: z.array(acceptanceWaybillItemSchema).min(1, "Накладная должна содержать хотя бы одну позицию"),
-	notes: z.string().nullable().optional(),
-	organizationId: z.string().optional(),
-	clientMutationId: z.string().nullable().optional(),
-	idempotencyKey: z.string().nullable().optional(),
-});
+export const acceptanceWaybillBodySchema = z
+	.object({
+		supplierName: z.string().min(1, "Наименование поставщика обязательно"),
+		supplierInn: z.string().nullable().optional(),
+		waybillNumber: z.string().min(1, "Номер накладной обязателен"),
+		receiptDate: z.string().min(1, "Дата прихода обязательна"),
+		warehouseId: z.string().nullable().optional(),
+		warehouseName: z.string().nullable().optional(),
+		items: z.array(acceptanceWaybillItemSchema).min(1, "Накладная должна содержать хотя бы одну позицию"),
+		notes: z.string().nullable().optional(),
+		organizationId: z.string().optional(),
+		clientMutationId: z.string().nullable().optional(),
+		idempotencyKey: z.string().nullable().optional(),
+	})
+	.strict();
 
-export const inventoryDeductItemSchema = z.object({
-	inventoryItemId: z.string().optional(),
-	id: z.string().optional(),
-	itemId: z.string().optional(),
-	name: z.string().optional(),
-	itemName: z.string().optional(),
-	quantity: z
-		.number({
-			required_error: "Укажите количество для списания",
-			invalid_type_error: "Количество должно быть числом",
-		})
-		.finite({ message: "Количество должно быть числом" })
-		.positive({ message: "Количество для списания должно быть больше 0" }),
-	unitCostRub: z.union([z.number(), z.string()]).optional(),
-	unitCostKopecks: z.number().int().optional(),
-	allowOverdraft: z.boolean().default(true).optional(),
-	reason: z.string().optional(),
-	notes: z.string().optional(),
-	lotNumber: z.string().nullable().optional(),
-	expirationDate: z.string().nullable().optional(),
-});
+export const inventoryDeductItemSchema = z
+	.object({
+		inventoryItemId: z.string().optional(),
+		id: z.string().optional(),
+		itemId: z.string().optional(),
+		name: z.string().optional(),
+		itemName: z.string().optional(),
+		quantity: z
+			.number({
+				required_error: "Укажите количество для списания",
+				invalid_type_error: "Количество должно быть числом",
+			})
+			.finite({ message: "Количество должно быть числом" })
+			.positive({ message: "Количество для списания должно быть больше 0" }),
+		unitCostRub: z.union([z.number(), z.string()]).optional(),
+		unitCostKopecks: z.number().int().optional(),
+		allowOverdraft: z.boolean().default(true).optional(),
+		reason: z.string().optional(),
+		notes: z.string().optional(),
+		lotNumber: z.string().nullable().optional(),
+		expirationDate: z.string().nullable().optional(),
+	})
+	.strict();
 
 export const inventoryDeductBatchBodySchema = z.union([
 	z.array(inventoryDeductItemSchema),
-	z.object({
-		items: z.array(inventoryDeductItemSchema).optional(),
-		materials: z.array(inventoryDeductItemSchema).optional(),
-		organizationId: z.string().optional(),
-		reason: z.string().optional(),
-		notes: z.string().optional(),
-		operationTitle: z.string().optional(),
-		hasWarehouseDelay: z.boolean().optional(),
-		visitId: z.string().optional(),
-		cabinetId: z.string().optional(),
-		doctorName: z.string().optional(),
-		nurseName: z.string().optional(),
-		allowOverdraft: z.boolean().default(true).optional(),
-	}),
+	z
+		.object({
+			items: z.array(inventoryDeductItemSchema).optional(),
+			materials: z.array(inventoryDeductItemSchema).optional(),
+			organizationId: z.string().optional(),
+			reason: z.string().optional(),
+			notes: z.string().optional(),
+			operationTitle: z.string().optional(),
+			hasWarehouseDelay: z.boolean().optional(),
+			visitId: z.string().optional(),
+			cabinetId: z.string().optional(),
+			doctorName: z.string().optional(),
+			nurseName: z.string().optional(),
+			allowOverdraft: z.boolean().default(true).optional(),
+		})
+		.strict(),
 	inventoryDeductItemSchema,
 ]);
 
-export const inventoryRuleBodySchema = z.object({
-	serviceId: z
-		.string({
-			required_error: "Missing required fields",
-			invalid_type_error: "Missing required fields",
-		})
-		.min(1, { message: "Missing required fields" }),
-	inventoryItemId: z
-		.string({
-			required_error: "Missing required fields",
-			invalid_type_error: "Missing required fields",
-		})
-		.min(1, { message: "Missing required fields" }),
-	quantityToDeduct: z
-		.number({
-			required_error: "Missing required fields",
-			invalid_type_error: "Missing required fields",
-		})
-		.finite({ message: "Количество должно быть числом" })
-		.positive({ message: "Количество должно быть больше 0" }),
-});
+export const inventoryRuleBodySchema = z
+	.object({
+		serviceId: z
+			.string({
+				required_error: "Missing required fields",
+				invalid_type_error: "Missing required fields",
+			})
+			.min(1, { message: "Missing required fields" }),
+		inventoryItemId: z
+			.string({
+				required_error: "Missing required fields",
+				invalid_type_error: "Missing required fields",
+			})
+			.min(1, { message: "Missing required fields" }),
+		quantityToDeduct: z
+			.number({
+				required_error: "Missing required fields",
+				invalid_type_error: "Missing required fields",
+			})
+			.finite({ message: "Количество должно быть числом" })
+			.positive({ message: "Количество должно быть больше 0" }),
+	})
+	.strict();
 
-export const inventoryStornoItemSchema = z.object({
-	inventoryItemId: z.string().optional(),
-	id: z.string().optional(),
-	name: z.string().optional(),
-	quantity: z
-		.number({
-			required_error: "Укажите количество для сторно",
-			invalid_type_error: "Количество должно быть числом",
-		})
-		.finite({ message: "Количество должно быть числом" })
-		.positive({ message: "Количество для возврата на склад должно быть больше 0" }),
-	reason: z.string().optional(),
-	notes: z.string().optional(),
-});
+export const inventoryStornoItemSchema = z
+	.object({
+		inventoryItemId: z.string().optional(),
+		id: z.string().optional(),
+		name: z.string().optional(),
+		quantity: z
+			.number({
+				required_error: "Укажите количество для сторно",
+				invalid_type_error: "Количество должно быть числом",
+			})
+			.finite({ message: "Количество должно быть числом" })
+			.positive({ message: "Количество для возврата на склад должно быть больше 0" }),
+		reason: z.string().optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 
-export const inventoryStornoServiceSchema = z.object({
-	serviceId: z.string().optional(),
-	serviceCode: z.string().optional(),
-	code804n: z.string().optional(),
-	title: z.string().optional(),
-	toothCode: z.string().optional(),
-	toothNumber: z.union([z.number(), z.string()]).optional(),
-	quantity: z.number().finite().positive().default(1),
-	reason: z.string().optional(),
-});
+export const inventoryStornoServiceSchema = z
+	.object({
+		serviceId: z.string().optional(),
+		serviceCode: z.string().optional(),
+		code804n: z.string().optional(),
+		title: z.string().optional(),
+		toothCode: z.string().optional(),
+		toothNumber: z.union([z.number(), z.string()]).optional(),
+		quantity: z.number().finite().positive().default(1),
+		reason: z.string().optional(),
+	})
+	.strict();
 
-export const inventoryStornoBodySchema = z.object({
-	visitId: z.string().optional(),
-	service: inventoryStornoServiceSchema.optional(),
-	services: z.array(inventoryStornoServiceSchema).optional(),
-	items: z.array(inventoryStornoItemSchema).optional(),
-	materials: z.array(inventoryStornoItemSchema).optional(),
-	reason: z.string().optional(),
-	notes: z.string().optional(),
-	cancelVisit: z.boolean().optional(),
-	organizationId: z.string().optional(),
-});
+export const inventoryStornoBodySchema = z
+	.object({
+		visitId: z.string().optional(),
+		service: inventoryStornoServiceSchema.optional(),
+		services: z.array(inventoryStornoServiceSchema).optional(),
+		items: z.array(inventoryStornoItemSchema).optional(),
+		materials: z.array(inventoryStornoItemSchema).optional(),
+		reason: z.string().optional(),
+		notes: z.string().optional(),
+		cancelVisit: z.boolean().optional(),
+		organizationId: z.string().optional(),
+	})
+	.strict();
 
-export const inventoryOverdraftAlertBodySchema = z.object({
-	visitId: z.string().optional(),
-	visitNumber: z.union([z.string(), z.number()]).optional(),
-	chairId: z.string().optional(),
-	cabinetId: z.string().optional(),
-	message: z.string().optional(),
-	items: z
-		.array(
-			z.object({
-				itemId: z.string().optional(),
-				inventoryItemId: z.string().optional(),
-				itemName: z.string().optional(),
-				deficitQty: z.number().finite().optional(),
-				quantity: z.number().finite().optional(),
-			}),
-		)
-		.default([]),
-});
+export const inventoryOverdraftAlertBodySchema = z
+	.object({
+		visitId: z.string().optional(),
+		visitNumber: z.union([z.string(), z.number()]).optional(),
+		chairId: z.string().optional(),
+		cabinetId: z.string().optional(),
+		message: z.string().optional(),
+		items: z
+			.array(
+				z
+					.object({
+						itemId: z.string().optional(),
+						inventoryItemId: z.string().optional(),
+						itemName: z.string().optional(),
+						deficitQty: z.number().finite().optional(),
+						quantity: z.number().finite().optional(),
+					})
+					.strict(),
+			)
+			.default([]),
+	})
+	.strict();
 
 /**
  * Метка «дату прислали, но разобрать её нельзя».

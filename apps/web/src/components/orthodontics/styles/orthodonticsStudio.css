@@ -37,9 +37,9 @@
 	flex-direction: column;
 	overflow-x: clip;
 	overflow-y: hidden;
-	background-color: var(--paper-strong, #ffffff);
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	border-top-left-radius: 24px;
 	border-top-right-radius: 24px;
 	border-bottom-left-radius: 0;
@@ -73,7 +73,7 @@
 	width: 36px;
 	height: 5px;
 	border-radius: 9999px;
-	background-color: var(--line, #cbd5e1);
+	background-color: var(--line);
 }
 
 .ortho-header {
@@ -81,8 +81,8 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 0.75rem 1rem;
-	background-color: var(--paper-strong, #ffffff);
-	border-bottom: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
 }
 
@@ -106,15 +106,15 @@
 	align-items: center;
 	justify-content: center;
 	border-radius: 0.75rem;
-	color: var(--ink-muted, #64748b);
+	color: var(--ink-muted);
 	background: transparent;
 	border: none;
 	cursor: pointer;
 	transition: background-color 0.15s ease, color 0.15s ease;
 }
 .ortho-close-btn:hover {
-	color: var(--ink, #0f172a);
-	background-color: var(--paper, #f8fafc);
+	color: var(--ink);
+	background-color: var(--paper);
 }
 
 .ortho-subbar {
@@ -122,8 +122,8 @@
 	flex-direction: column;
 	gap: 0.5rem;
 	padding: 0.5rem 1rem;
-	background-color: var(--paper, #f8fafc);
-	border-bottom: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper);
+	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
 }
 
@@ -153,8 +153,8 @@
 	flex-direction: column;
 	gap: 0.375rem;
 	padding: 0.375rem 0.5rem;
-	background-color: var(--paper-strong, #ffffff);
-	border-bottom: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
 	overflow-x: clip;
 }
@@ -199,10 +199,10 @@
 	min-width: 0;
 	font-size: 0.75rem;
 	font-weight: 600;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	border-radius: 0.5rem;
-	background: var(--paper, #f8fafc);
-	color: var(--ink-muted, #64748b);
+	background: var(--paper);
+	color: var(--ink-muted);
 	cursor: pointer;
 	white-space: nowrap;
 	flex-shrink: 0;
@@ -222,7 +222,7 @@
 	}
 }
 .ortho-tab-btn:hover {
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 }
 .ortho-tab-btn.active {
 	color: var(--primary);
@@ -233,7 +233,7 @@
 	.ortho-tab-btn.active {
 		border-color: transparent;
 		border-bottom-color: var(--primary);
-		background-color: var(--paper, #f8fafc);
+		background-color: var(--paper);
 	}
 }
 
@@ -255,8 +255,8 @@
 .ortho-card {
 	padding: 0.875rem;
 	border-radius: 0.75rem;
-	border: 1px solid var(--line, #e2e8f0);
-	background-color: var(--paper, #f8fafc);
+	border: 1px solid var(--line);
+	background-color: var(--paper);
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
@@ -269,9 +269,9 @@
 	font-size: 0.75rem;
 	line-height: 1.2;
 	border-radius: 0.5rem;
-	border: 1px solid var(--line, #e2e8f0);
-	background-color: var(--paper-strong, #ffffff);
-	color: var(--ink, #0f172a);
+	border: 1px solid var(--line);
+	background-color: var(--paper-strong);
+	color: var(--ink);
 	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
@@ -281,8 +281,8 @@
 	text-align: center;
 }
 .ortho-touch-button:hover {
-	background-color: var(--paper, #f8fafc);
-	border-color: var(--ink-muted, #94a3b8);
+	background-color: var(--paper);
+	border-color: var(--ink-muted);
 }
 .ortho-touch-button:active {
 	transform: scale(0.97);
@@ -299,7 +299,7 @@
 	width: 100%;
 	height: 8px;
 	border-radius: 9999px;
-	background-color: var(--line, #e2e8f0);
+	background-color: var(--line);
 	overflow: hidden;
 }
 
@@ -330,8 +330,8 @@
 	min-height: 90px;
 	padding: 0.75rem;
 	border-radius: 0.75rem;
-	border: 1px solid var(--line, #e2e8f0);
-	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line);
+	background-color: var(--paper-strong);
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
@@ -350,8 +350,8 @@
 	gap: 0.75rem;
 	padding: 0.75rem 1rem;
 	padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-	background-color: var(--paper-strong, #ffffff);
-	border-top: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong);
+	border-top: 1px solid var(--line);
 	flex-shrink: 0;
 }
 @media (min-width: 640px) {
@@ -366,14 +366,14 @@
 	font-size: 0.875rem;
 	font-weight: 500;
 	border-radius: 0.75rem;
-	border: 1px solid var(--line, #e2e8f0);
-	background-color: var(--paper, #f8fafc);
-	color: var(--ink, #0f172a);
+	border: 1px solid var(--line);
+	background-color: var(--paper);
+	color: var(--ink);
 	cursor: pointer;
 	transition: background-color 0.15s ease;
 }
 .ortho-secondary-btn:hover {
-	background-color: var(--line-subtle, #f1f5f9);
+	background-color: var(--paper-soft);
 }
 
 .ortho-primary-cta {

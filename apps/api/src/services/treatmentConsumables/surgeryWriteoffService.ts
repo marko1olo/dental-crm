@@ -17,6 +17,7 @@ export interface QuickWriteoffSurgeryParams extends BuildSurgeryMaterialsOptions
 	visitId?: string | null | undefined;
 	userId?: string | null | undefined;
 	notes?: string | null | undefined;
+	idempotencyKey?: string | null | undefined;
 }
 
 export async function quickWriteoffSurgery(tx: DbExecutor, params: QuickWriteoffSurgeryParams) {
@@ -28,6 +29,7 @@ export async function quickWriteoffSurgery(tx: DbExecutor, params: QuickWriteoff
 		visitId,
 		userId,
 		notes,
+		idempotencyKey,
 	} = params;
 
 	const opTitle =
@@ -50,6 +52,7 @@ export async function quickWriteoffSurgery(tx: DbExecutor, params: QuickWriteoff
 		visitId,
 		userId,
 		notes,
+		idempotencyKey,
 		reasonPrefix: `Списание материалов хирургического протокола «${opTitle}»${toothSuffix}`,
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Материалы операции «${opTitle}»${toothSuffix} (${count} поз.) успешно списаны со склада${

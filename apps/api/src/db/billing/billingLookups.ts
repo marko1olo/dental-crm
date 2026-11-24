@@ -188,17 +188,10 @@ export async function getDocumentForBilling(
 	});
 }
 
-interface MockableSelect {
-	readonly mock?: unknown;
-}
-
-function isMockedSelect(fn: typeof db.select): fn is typeof db.select & MockableSelect {
-	return Boolean((fn as typeof db.select & MockableSelect).mock);
-}
-
 export async function getPaymentsByPatientIdInDb(
 	organizationId: string,
 	patientId: string,
+	tx?: TenantDb | undefined,
 ): Promise<Payment[]> {
 	if (!patientId || !UUID_PATTERN.test(patientId.trim())) return [];
 	const runQuery = async (client: TenantDb) => {
@@ -239,11 +232,11 @@ export async function getPaymentsByPatientIdInDb(
 		);
 	};
 
-	if (isMockedSelect(db.select)) {
-		return runQuery(db);
+	if (tx) {
+		return runQuery(tx);
 	}
 
-	return withTenantCtx(organizationId, async (tx) => {
-		return runQuery(tx);
+	return withTenantCtx(organizationId, async (tenantTx) => {
+		return runQuery(tenantTx);
 	});
 }

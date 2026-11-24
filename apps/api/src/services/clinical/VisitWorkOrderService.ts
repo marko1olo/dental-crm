@@ -26,6 +26,7 @@ import {
 	TreatmentConsumablesService,
 	type StockDeductionRecord,
 } from "../treatmentConsumables/index.js";
+import type { DbExecutor } from "../treatmentConsumables/types.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -65,6 +66,7 @@ export interface CompleteVisitWorkOrderInput {
 	readonly visitId: string;
 	readonly actorUserId?: string | null | undefined;
 	readonly status?: "signed" | "draft" | "voided" | "completed" | "in_progress" | undefined;
+	readonly tx?: DbExecutor | undefined;
 }
 
 export interface CompleteVisitWorkOrderResult extends Record<string, unknown> {
@@ -569,7 +571,7 @@ export class VisitWorkOrderService {
 	static async completeVisitWorkOrder(
 		params: CompleteVisitWorkOrderInput,
 	): Promise<CompleteVisitWorkOrderResult> {
-		const { organizationId, visitId, actorUserId, status = "signed" } = params;
+		const { organizationId, visitId, actorUserId, status = "signed", tx: passedTx } = params;
 
 		if (!UUID_REGEX.test(visitId)) {
 			throw new VisitWorkOrderError(
@@ -579,7 +581,7 @@ export class VisitWorkOrderService {
 			);
 		}
 
-		return await db.transaction(async (tx) => {
+		const executeInTx = async (tx: DbExecutor) => {
 			// 1. Проверка существования и доступности приёма с блокировкой FOR UPDATE
 			const [visit] = await tx
 				.select({
@@ -658,6 +660,11 @@ export class VisitWorkOrderService {
 				isOverdraft: hasOverdraft,
 				...(hasOverdraft ? { warning: "soft_overdraft" } : {}),
 			};
-		});
+		};
+
+		if (passedTx) {
+			return await executeInTx(passedTx);
+		}
+		return await db.transaction(async (tx) => executeInTx(tx));
 	}
 }

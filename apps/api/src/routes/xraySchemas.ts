@@ -32,28 +32,6 @@ export const createXrayScanSchema = z.object({
 	status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
 });
 
-export const _xrayScanResponseSchema = z.object({
-	id: z.string(),
-	patientId: z.string(),
-	visitId: z.string().nullable().optional(),
-	status: z.string(),
-	kind: z.string(),
-	toothCode: z.string().nullable().optional(),
-	originalFilename: z.string().nullable().optional(),
-	aiReport: z.string().nullable().optional(),
-	aiSummary: z.string().nullable().optional(),
-	aiToothStates: z.record(z.string()).nullable().optional(),
-	aiModelName: z.string().nullable().optional(),
-	aiAnalyzedAt: z.string().nullable().optional(),
-	aiError: z.string().nullable().optional(),
-	notes: z.string().nullable().optional(),
-	capturedAt: z.string(),
-	createdAt: z.string(),
-	hasImage: z.boolean(),
-	fileUrl: z.string().optional(),
-	storagePath: z.string().nullable().optional(),
-});
-
 /** Целое из окружения с зажимом в границы. Ноль хардкода сроков в коде. */
 export function xrayIntFromEnv(
 	name: string,

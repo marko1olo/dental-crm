@@ -18,6 +18,7 @@ export async function quickWriteoffStandardKit(
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const items = getStandardKitDefinitions();
@@ -28,6 +29,7 @@ export async function quickWriteoffStandardKit(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
 		reasonPrefix: "Списание базового набора приёма",
 		successMessageTemplate: () =>
 			"Базовый набор приёма списан (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.).",
@@ -45,6 +47,7 @@ export async function quickWriteoffCarpules(
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const count = Math.max(1, Math.min(20, params.carpulesCount ?? 1));
@@ -67,6 +70,7 @@ export async function quickWriteoffCarpules(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
 		reasonPrefix: "Списание анестезии (СанПиН 3.3686-21)",
 		successMessageTemplate: () =>
 			needleQty > 0
@@ -83,6 +87,7 @@ export async function quickWriteoffSterilizationKit(
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
 	const kitMultiplier = Math.max(1, Math.min(100, params.count ?? 1));
@@ -95,6 +100,7 @@ export async function quickWriteoffSterilizationKit(
 		visitId: params.visitId,
 		userId: params.userId,
 		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
 		reasonPrefix: `Списание комплекта стерилизации ЦСО (лотков: ${kitMultiplier} шт.)`,
 		successMessageTemplate: () =>
 			`Комплект стерилизации ЦСО списан (обработано лотков/наборов: ${kitMultiplier} шт.).`,

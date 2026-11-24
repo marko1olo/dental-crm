@@ -58,7 +58,7 @@ export async function processDepositAndFamilyStage(
 			}
 
 			ctx.lockedTopupFamilyGroup = fg;
-			ctx.topupPrevBalKop = fg.balanceKopecks != null && fg.balanceKopecks > 0
+			ctx.topupPrevBalKop = fg.balanceKopecks != null && (Number(fg.balanceKopecks) !== 0 || !fg.balance || parseKopecks(fg.balance) === 0)
 				? BigInt(fg.balanceKopecks)
 				: BigInt(parseKopecks(fg.balance ?? 0));
 			ctx.topupNewBalKop = ctx.topupPrevBalKop + totalKopecks;
@@ -179,7 +179,7 @@ export async function processDepositAndFamilyStage(
 
 		ctx.lockedFamilyGroup = lockedFamilyGroup;
 		const familyBalanceKop = lockedFamilyGroup
-			? (lockedFamilyGroup.balanceKopecks != null && lockedFamilyGroup.balanceKopecks > 0
+			? (lockedFamilyGroup.balanceKopecks != null && (Number(lockedFamilyGroup.balanceKopecks) !== 0 || !lockedFamilyGroup.balance || parseKopecks(lockedFamilyGroup.balance) === 0)
 				? BigInt(lockedFamilyGroup.balanceKopecks)
 				: BigInt(parseKopecks(lockedFamilyGroup.balance ?? 0)))
 			: 0n;
@@ -360,13 +360,11 @@ export async function processDepositAndFamilyStage(
 			});
 			const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
 
-			// SEV-2.3: Сальдо леджера выступает строгим верхним лимитом (cap) доступного личного аванса.
-			// Пациент не может потратить больше, чем физическая переплата клиники по леджеру.
-			const personalAvailableKop = ledgerOverpaidKop <= 0n
-				? 0n
-				: (advanceTotalKop > 0n
-					? (advanceTotalKop < ledgerOverpaidKop ? advanceTotalKop : ledgerOverpaidKop)
-					: ledgerOverpaidKop);
+			// Доступный личный аванс: максимум из размеченных авансов (advanceDepositTaggings) и сальдо леджера переплаты.
+			const personalAvailableKop =
+				advanceTotalKop > ledgerOverpaidKop
+					? advanceTotalKop
+					: (ledgerOverpaidKop > 0n ? ledgerOverpaidKop : 0n);
 
 			if (personalAvailableKop < requiredDepositKopecks) {
 				const availableRub = kopecksToNumericString(Number(personalAvailableKop));

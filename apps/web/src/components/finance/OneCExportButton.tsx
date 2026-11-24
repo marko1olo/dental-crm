@@ -4,6 +4,7 @@ import {
   generateOneCEnterpriseXml,
   type OneCDocumentType,
   type OneCExportParams,
+  rublesToKopecks,
 } from '@dental/shared';
 import { showToast } from '../GlobalToast';
 
@@ -126,8 +127,8 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
             },
             items: items.map((it, idx) => {
               const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
-              const unitPriceKop = Math.round(it.priceRub * 100);
-              const discKop = Math.round((it.discountRub || 0) * 100);
+              const unitPriceKop = rublesToKopecks(it.priceRub);
+              const discKop = rublesToKopecks(it.discountRub || 0);
               const grossKop = unitPriceKop * qty;
               const discountPercent = grossKop > 0 && discKop > 0
                 ? Math.min(100, Math.max(0, Math.round((discKop / grossKop) * 100)))
@@ -146,7 +147,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
                 vatAmountKopecks: 0,
               };
             }),
-            totalKopecks: Math.round(totalRub * 100),
+            totalKopecks: rublesToKopecks(totalRub),
             contractNumber: contractNumber || null,
             contractDate: contractDate || null,
             attendingDoctorName: doctorName,

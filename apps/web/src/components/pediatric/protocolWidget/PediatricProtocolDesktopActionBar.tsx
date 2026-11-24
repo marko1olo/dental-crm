@@ -4,8 +4,6 @@ import type { PediatricServiceItem } from "./types";
 
 export interface PediatricProtocolDesktopActionBarProps {
 	readonly onInsertToClinicalNote?: () => void;
-	/** @deprecated Использовать onInsertToClinicalNote */
-	readonly onInsertToForm043?: () => void;
 	readonly onAddServicesToInvoice: () => void;
 	readonly onOpenMemoModal: () => void;
 	readonly onOpenDiplomaModal: () => void;
@@ -16,7 +14,6 @@ export interface PediatricProtocolDesktopActionBarProps {
 
 export const PediatricProtocolDesktopActionBar: React.FC<PediatricProtocolDesktopActionBarProps> = ({
 	onInsertToClinicalNote,
-	onInsertToForm043,
 	onAddServicesToInvoice,
 	onOpenMemoModal,
 	onOpenDiplomaModal,
@@ -24,7 +21,7 @@ export const PediatricProtocolDesktopActionBar: React.FC<PediatricProtocolDeskto
 	diagnosisIcd10,
 	primaryService,
 }) => {
-	const handleApply = onInsertToClinicalNote || onInsertToForm043 || (() => {});
+	const handleApply = onInsertToClinicalNote || (() => {});
 
 	return (
 		<div className="hidden md:flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[var(--line)] min-w-0">

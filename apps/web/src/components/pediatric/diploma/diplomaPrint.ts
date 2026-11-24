@@ -39,7 +39,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 <div class="diploma">
   <div class="clinic">${clinic}</div>
   <div class="badge">★ Зубной супергерой • № ${number} ★</div>
-  <h1 class="title" aria-label="ДИПЛОМ ЗА ХРАБРОСТЬ">Диплом за храбрость</h1>
+  <h1 class="title" aria-label="Диплом за храбрость">Диплом за храбрость</h1>
   <div class="subtitle">Орден отваги и ослепительной улыбки</div>
   <div class="hero-box"><div class="hero-name">Герой: ${heroName}</div></div>
   <p class="praise">${praise}</p>

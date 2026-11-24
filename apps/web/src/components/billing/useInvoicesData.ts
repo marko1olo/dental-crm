@@ -72,13 +72,6 @@ export function useInvoicesData({
 						discountRub: raw.discountRub as number | string | null | undefined,
 					});
 
-					if (raw.number && raw.status && Array.isArray(raw.items)) {
-						return {
-							...(raw as unknown as BillingInvoice),
-							totalAmountRub: resolvedTotal,
-						};
-					}
-
 					const invoiceNumber = String(
 						raw.number ||
 							raw.invoiceNumber ||
@@ -99,6 +92,49 @@ export function useInvoicesData({
 									total,
 									paid,
 								);
+
+					const rawItemsList = Array.isArray(raw.items) ? raw.items : [];
+					const items: InvoiceLineItem[] = rawItemsList.length > 0
+						? rawItemsList
+								.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+								.map((item, itemIdx) => {
+									const itemTotal = typeof item.totalAmountRub === "number"
+										? item.totalAmountRub
+										: typeof item.totalRub === "number"
+											? item.totalRub
+											: typeof item.priceRub === "number"
+												? item.priceRub * (Number(item.quantity) || 1)
+												: 0;
+									return {
+										id: typeof item.id === "string" ? item.id : `li-${String(raw.id || idx)}-${itemIdx}`,
+										code: typeof item.code === "string" ? item.code : typeof item.serviceCode === "string" ? item.serviceCode : undefined,
+										code804n: typeof item.code804n === "string" ? item.code804n : undefined,
+										serviceCode: typeof item.serviceCode === "string" ? item.serviceCode : null,
+										name: typeof item.name === "string" ? item.name : typeof item.title === "string" ? item.title : "Стоматологические услуги",
+										serviceName: typeof item.serviceName === "string" ? item.serviceName : undefined,
+										title: typeof item.title === "string" ? item.title : undefined,
+										quantity: typeof item.quantity === "number" ? item.quantity : Number(item.quantity) || 1,
+										priceRub: typeof item.priceRub === "number" ? item.priceRub : Number(item.priceRub) || total,
+										unitPriceRub: typeof item.unitPriceRub === "number" ? item.unitPriceRub : undefined,
+										totalRub: typeof item.totalRub === "number" ? item.totalRub : undefined,
+										totalAmountRub: itemTotal,
+										toothNumber: typeof item.toothNumber === "number" || typeof item.toothNumber === "string" ? item.toothNumber : null,
+									};
+								})
+						: total > 0
+							? [
+									{
+										id: `li-${String(raw.id || idx)}`,
+										code: String(raw.code || raw.serviceCode || ""),
+										name: String(
+											raw.title || raw.name || "Стоматологические услуги",
+										),
+										quantity: Number(raw.quantity) || 1,
+										priceRub: total,
+										totalAmountRub: total,
+									},
+								]
+							: [];
 
 					return {
 						id: String(raw.id || `inv-${Date.now()}-${idx}`),
@@ -126,23 +162,7 @@ export function useInvoicesData({
 						totalAmountRub: total,
 						paidAmountRub: paid,
 						status: normalizedStatus,
-						items:
-							Array.isArray(raw.items) && raw.items.length > 0
-								? (raw.items as InvoiceLineItem[])
-								: total > 0
-									? [
-											{
-												id: `li-${String(raw.id || idx)}`,
-												code: String(raw.code || raw.serviceCode || ""),
-												name: String(
-													raw.title || raw.name || "Стоматологические услуги",
-												),
-												quantity: Number(raw.quantity) || 1,
-												priceRub: total,
-												totalAmountRub: total,
-											},
-										]
-									: [],
+						items,
 						createdAt:
 							typeof raw.createdAt === "string"
 								? raw.createdAt
@@ -151,6 +171,14 @@ export function useInvoicesData({
 						paymentMethod:
 							typeof raw.paymentMethod === "string"
 								? raw.paymentMethod
+								: undefined,
+						fiscalStatus:
+							typeof raw.fiscalStatus === "string"
+								? (raw.fiscalStatus as BillingInvoice["fiscalStatus"])
+								: undefined,
+						isOfflineQueued:
+							typeof raw.isOfflineQueued === "boolean"
+								? raw.isOfflineQueued
 								: undefined,
 						notes: typeof raw.notes === "string" ? raw.notes : undefined,
 					};

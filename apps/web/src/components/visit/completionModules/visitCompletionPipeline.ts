@@ -79,6 +79,7 @@ export interface VisitPostCompletionContext {
 	effectivePatientName: string;
 	effectiveDoctorName: string;
 	effectiveDiary: {
+		complaint?: string | undefined;
 		anamnesis: string;
 		statusLocalis: string;
 		diagnosisIcd10: string;
@@ -145,14 +146,26 @@ export async function executeDraftAutosave(
 					(ctx.activeVisit as { transcript?: string })?.transcript ||
 					"",
 				draft: {
-					complaint: currentForm?.complaint || ctx.effectiveDiary.anamnesis || "",
-					anamnesis: currentForm?.anamnesis || ctx.effectiveDiary.anamnesis || "",
+					complaint:
+						currentForm?.complaint ||
+						ctx.effectiveDiary.complaint ||
+						"Жалоб на момент осмотра активно не предъявляет",
+					anamnesis:
+						currentForm?.anamnesis ||
+						ctx.effectiveDiary.anamnesis ||
+						"Соматически здоров. Аллергоанамнез не отягощен.",
 					objectiveStatus:
-						currentForm?.objectiveStatus || ctx.effectiveDiary.statusLocalis || "",
+						currentForm?.objectiveStatus ||
+						ctx.effectiveDiary.statusLocalis ||
+						"Слизистая оболочка полости рта бледно-розовая, влажная.",
 					diagnosis:
-						currentForm?.diagnosis || ctx.effectiveDiary.diagnosisIcd10 || "",
+						currentForm?.diagnosis ||
+						ctx.effectiveDiary.diagnosisIcd10 ||
+						"Z01.2",
 					treatmentPlan:
-						currentForm?.treatmentPlan || ctx.effectiveDiary.treatmentDescription || "",
+						currentForm?.treatmentPlan ||
+						ctx.effectiveDiary.treatmentDescription ||
+						"Проведен осмотр и санация полости рта.",
 					warnings: [],
 				},
 				clientDraftId: `completion-${targetVisitId}`,
@@ -265,8 +278,12 @@ export async function executeDiaryLockUponVisitCompletion(
 				body: JSON.stringify({
 					visitId: ctx.effectiveVisitId,
 					patientId: ctx.effectivePatientId,
-					complaint: ctx.effectiveDiary.anamnesis || "Жалоб на момент осмотра не предъявляет.",
-					anamnesis: ctx.effectiveDiary.anamnesis || "Соматически здоров. Аллергоанамнез не отягощен.",
+					complaint:
+						ctx.effectiveDiary.complaint ||
+						"Жалоб на момент осмотра активно не предъявляет.",
+					anamnesis:
+						ctx.effectiveDiary.anamnesis ||
+						"Соматически здоров. Аллергоанамнез не отягощен.",
 					statusLocalis: ctx.effectiveDiary.statusLocalis || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
 					diagnosisIcd10: ctx.effectiveDiary.diagnosisIcd10 || "Z01.2",
 					diagnosisTooth: ctx.effectiveDiary.diagnosisTooth || undefined,

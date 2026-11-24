@@ -13,6 +13,7 @@ import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pr
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";
 import { rublesToKopecks, type DmsGuaranteeLetter, type PatientPaymentMethod } from "@dental/shared";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders.js";
 
 export interface VisitBillingModalsProps {
 	isPaymentModalOpen: boolean;
@@ -145,6 +146,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 					doctorName={doctorName}
 					patientName={patientName}
 					toothNumber={selectedBomService.toothCode ? Number(selectedBomService.toothCode) || null : null}
+					getHeaders={getDenteAuthHeaders}
 					onConfirmDeduction={() => {
 						onCloseBomModal();
 						showToast("Расходные материалы успешно списаны со склада по FEFO", "success", 3000);

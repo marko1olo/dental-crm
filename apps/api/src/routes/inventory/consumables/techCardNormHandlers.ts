@@ -6,11 +6,11 @@
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { isValidUuid } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
@@ -118,16 +118,19 @@ export async function registerTechCardNormHandlers(
 				.returning();
 
 			// Sync with canonical procedure_tech_cards and procedure_tech_card_items (Mandate 8bf & SSOT)
+			const isCodeUuid = isValidUuid(body.catalogItemCode);
 			const [service] = await tx
 				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code, title: serviceCatalogItems.title })
 				.from(serviceCatalogItems)
 				.where(
 					and(
 						eq(serviceCatalogItems.organizationId, orgId),
-						or(
-							eq(serviceCatalogItems.code, body.catalogItemCode),
-							eq(serviceCatalogItems.id, body.catalogItemCode),
-						),
+						isCodeUuid
+							? or(
+									eq(serviceCatalogItems.code, body.catalogItemCode),
+									eq(serviceCatalogItems.id, body.catalogItemCode),
+								)
+							: eq(serviceCatalogItems.code, body.catalogItemCode),
 					),
 				)
 				.limit(1);

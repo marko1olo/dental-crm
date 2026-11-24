@@ -326,12 +326,35 @@ export async function createPatientInDb(
 	}
 	try {
 		const executor = tx || db;
-		const mergedAdminProfile =
-			input.administrativeProfile || input.isAnonymous !== undefined || input.anonymousCode !== undefined
+		const inputAdmin = (input.administrativeProfile ?? {}) as Record<string, unknown>;
+		const inputClinicalSafety =
+			input.clinicalSafetyProfile !== undefined
+				? (input.clinicalSafetyProfile as Record<string, unknown>)
+				: (inputAdmin.clinicalSafetyProfile as Record<string, unknown> | undefined);
+
+		const mergedClinicalSafety =
+			inputClinicalSafety || input.allergies !== undefined || input.somaticNotes !== undefined
 				? {
-						...(input.administrativeProfile ?? {}),
+						...(inputClinicalSafety ?? {}),
+						...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+						...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+					}
+				: undefined;
+
+		const mergedAdminProfile =
+			input.administrativeProfile ||
+			input.isAnonymous !== undefined ||
+			input.anonymousCode !== undefined ||
+			input.allergies !== undefined ||
+			input.somaticNotes !== undefined ||
+			mergedClinicalSafety !== undefined
+				? {
+						...inputAdmin,
 						...(input.isAnonymous !== undefined ? { isAnonymous: input.isAnonymous } : {}),
 						...(input.anonymousCode !== undefined ? { anonymousCode: input.anonymousCode } : {}),
+						...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+						...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+						...(mergedClinicalSafety !== undefined ? { clinicalSafetyProfile: mergedClinicalSafety } : {}),
 					}
 				: null;
 		const [created] = await executor
@@ -418,6 +441,12 @@ export async function updatePatientInDb(
 		 * привязкой проверяем, что группа существует в ЭТОЙ организации: иначе
 		 * можно было бы привязать пациента к чужой клинике по угаданному UUID.
 		 */
+		const hasAdminUpdates =
+			input.allergies !== undefined ||
+			input.somaticNotes !== undefined ||
+			input.clinicalSafetyProfile !== undefined ||
+			input.administrativeProfile !== undefined;
+
 		const updateData: {
 			fullName?: string;
 			birthDate?: string | null;
@@ -426,6 +455,7 @@ export async function updatePatientInDb(
 			notes?: string | null;
 			weightKg?: string | null;
 			familyGroupId?: string | null;
+			administrativeProfile?: typeof schema.patients.$inferSelect["administrativeProfile"];
 			updatedAt: Date;
 		} = {
 			updatedAt: new Date(),
@@ -439,19 +469,12 @@ export async function updatePatientInDb(
 			updateData.weightKg =
 				input.weightKg !== null ? String(input.weightKg) : null;
 
-		if (input.familyGroupId !== undefined) {
-			/*
-			 * Нельзя «перепрыгнуть» из семьи A в семью B одним PUT.
-			 * БЫЛО: updatePatientInDb просто писал новый family_group_id —
-			 * пациент исчезал из members A без аудита и без проверки, что
-			 * оператор осознанно отвязал. UI «Присоединить к семье» мог
-			 * утащить главу чужой семьи в новую группу одним кликом.
-			 * СТАЛО: смена на ДРУГОЙ UUID при уже ненулевом familyGroupId →
-			 * ошибка; сначала familyGroupId: null, потом привязка к новой.
-			 * null и тот же UUID (идемпотентный re-link после create) — ок.
-			 */
+		if (input.familyGroupId !== undefined || hasAdminUpdates) {
 			const [current] = await db
-				.select({ familyGroupId: schema.patients.familyGroupId })
+				.select({
+					familyGroupId: schema.patients.familyGroupId,
+					administrativeProfile: schema.patients.administrativeProfile,
+				})
 				.from(schema.patients)
 				.where(
 					and(
@@ -461,17 +484,22 @@ export async function updatePatientInDb(
 				)
 				.limit(1);
 
-			if (
-				current?.familyGroupId &&
-				input.familyGroupId !== null &&
-				input.familyGroupId !== current.familyGroupId
-			) {
-				throw new Error(
-					"Пациент уже состоит в другой семейной группе. Сначала отвяжите его (familyGroupId: null), затем привяжите к новой.",
-				);
+			if (!current) {
+				return null;
 			}
 
-			if (input.familyGroupId !== null) {
+			if (input.familyGroupId !== undefined) {
+				if (
+					current.familyGroupId &&
+					input.familyGroupId !== null &&
+					input.familyGroupId !== current.familyGroupId
+				) {
+					throw new Error(
+						"Пациент уже состоит в другой семейной группе. Сначала отвяжите его (familyGroupId: null), затем привяжите к новой.",
+					);
+				}
+
+				if (input.familyGroupId !== null) {
 				const [family] = await db
 					.select({
 						id: schema.familyGroups.id,
@@ -547,6 +575,50 @@ export async function updatePatientInDb(
 			}
 			updateData.familyGroupId = input.familyGroupId;
 		}
+
+		if (hasAdminUpdates) {
+			const existingAdmin =
+				current.administrativeProfile &&
+				typeof current.administrativeProfile === "object" &&
+				!Array.isArray(current.administrativeProfile)
+					? (current.administrativeProfile as Record<string, unknown>)
+					: {};
+
+			const existingSafety =
+				existingAdmin.clinicalSafetyProfile &&
+				typeof existingAdmin.clinicalSafetyProfile === "object" &&
+				!Array.isArray(existingAdmin.clinicalSafetyProfile)
+					? (existingAdmin.clinicalSafetyProfile as Record<string, unknown>)
+					: {};
+
+			const inputSafety =
+				input.clinicalSafetyProfile &&
+				typeof input.clinicalSafetyProfile === "object" &&
+				!Array.isArray(input.clinicalSafetyProfile)
+					? (input.clinicalSafetyProfile as Record<string, unknown>)
+					: {};
+
+			const mergedSafety = {
+				...existingSafety,
+				...inputSafety,
+				...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+				...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+			};
+
+			const mergedAdmin = {
+				...existingAdmin,
+				...(input.administrativeProfile && typeof input.administrativeProfile === "object"
+					? (input.administrativeProfile as Record<string, unknown>)
+					: {}),
+				...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+				...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+				clinicalSafetyProfile: mergedSafety,
+			};
+
+			updateData.administrativeProfile =
+				mergedAdmin as typeof schema.patients.$inferSelect["administrativeProfile"];
+		}
+	}
 
 		const [updated] = await db
 			.update(schema.patients)

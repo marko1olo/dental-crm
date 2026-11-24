@@ -84,7 +84,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	}, [calculation.maxSafeCarpulesCount]);
 
 	return (
-		<div className={`rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-4 shadow-xs space-y-3 ${className}`.trim()} data-testid="pediatric-anesthesia-calculator">
+		<div className={`rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-3 sm:p-4 shadow-xs space-y-3 ${className}`.trim()} data-testid="pediatric-anesthesia-calculator">
 			<PediatricWeightQuickChips weightKg={weightKg} onWeightChange={setWeightKg} patientAgeYears={patientAgeYears} />
 			<PediatricAnesthesiaQuickSelector
 				selectedDrugId={selectedDrugId} onSelectDrugId={setSelectedDrugId}

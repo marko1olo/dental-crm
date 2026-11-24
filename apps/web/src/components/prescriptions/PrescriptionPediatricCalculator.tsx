@@ -23,14 +23,14 @@ export const PrescriptionPediatricCalculator: React.FC<
 	return (
 		<div
 			data-testid="pediatric-dose-calculator-card"
-			className="p-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-100 flex flex-col gap-2 shrink-0"
+			className="p-3 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] text-[var(--ink)] flex flex-col gap-2 shrink-0"
 		>
 			<div className="flex items-center justify-between gap-2">
-				<span className="text-xs font-bold flex items-center gap-1.5 text-sky-800 dark:text-sky-200">
-					<Sparkles className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+				<span className="text-xs font-semibold flex items-center gap-1.5 text-[var(--ink)]">
+					<Sparkles className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 					Детская дозировка (Ибупрофен 100 мг / 5 мл):
 				</span>
-				<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-sky-600 text-white shrink-0">
+				<span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--primary)] text-white shrink-0">
 					10 мг/кг
 				</span>
 			</div>
@@ -38,7 +38,7 @@ export const PrescriptionPediatricCalculator: React.FC<
 				<div className="flex items-center gap-1.5">
 					<label
 						htmlFor="pediatric-weight-input"
-						className="text-xs text-[var(--muted)] font-medium"
+						className="text-xs text-[var(--ink-muted)] font-medium"
 					>
 						Вес ребенка:
 					</label>
@@ -53,12 +53,12 @@ export const PrescriptionPediatricCalculator: React.FC<
 							const val = Number.parseFloat(e.target.value);
 							onPatientWeightKgChange?.(Number.isNaN(val) ? undefined : val);
 						}}
-						className="w-20 px-2 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold text-center"
+						className="w-20 px-2 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-medium text-center"
 					/>
-					<span className="font-semibold text-[var(--ink)]">кг</span>
+					<span className="font-medium text-[var(--ink)]">кг</span>
 				</div>
-				<div className="text-xs text-sky-800 dark:text-sky-200">
-					Разово: <strong>{singleDoseMl} мл</strong> ({singleDoseMg} мг) до 3
+				<div className="text-xs text-[var(--ink-muted)]">
+					Разово: <strong className="text-[var(--ink)] font-semibold">{singleDoseMl} мл</strong> ({singleDoseMg} мг) до 3
 					р/д
 				</div>
 			</div>

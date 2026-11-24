@@ -131,7 +131,7 @@ describe("Red Team Inquisition: Pediatric Doctor Autonomy & Hero Diploma", () =>
 				diplomaNumber: "042",
 			});
 
-			assert.ok(html.includes("ДИПЛОМ ЗА ХРАБРОСТЬ"), "Must contain main diploma title");
+			assert.ok(html.includes("Диплом за храбрость"), "Must contain main diploma title");
 			assert.ok(html.includes("Герой: Артём Смирнов"), "Must contain child hero name");
 			assert.ok(html.includes("Клиника DENTE"), "Must contain clinic name");
 			assert.ok(html.includes("Д-р Иванов А.С."), "Must contain doctor name");

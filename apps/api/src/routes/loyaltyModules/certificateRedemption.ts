@@ -89,7 +89,7 @@ export async function executeRedeemGiftCertificate(
 						? existingCert.currentBalanceKopecks
 						: parseKopecks(existingCert.currentBalanceRub);
 					const currentBalRub = kopecksToRubles(currentBalKop);
-					const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+					const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : existingRedeemedKop;
 					const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
 					const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
 					return {
@@ -150,15 +150,16 @@ export async function executeRedeemGiftCertificate(
 			return { error: true, message: "Баланс сертификата равен 0 ₽", code: 400 };
 		}
 
-		const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+		const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : 0;
 		const requestedDeductionKop =
 			amountKopecks !== undefined
 				? amountKopecks
 				: amountToRedeemRub !== undefined
 					? parseKopecks(amountToRedeemRub)
-					: invoiceAmountKop;
+					: (invoiceAmountKop > 0 ? invoiceAmountKop : currentBalanceKop);
 
-		const redeemedKop = Math.min(currentBalanceKop, requestedDeductionKop, invoiceAmountKop);
+		const maxAllowedKop = invoiceAmountKop > 0 ? Math.min(currentBalanceKop, invoiceAmountKop) : currentBalanceKop;
+		const redeemedKop = Math.min(maxAllowedKop, requestedDeductionKop);
 		const redeemedRub = kopecksToRubles(redeemedKop);
 		const newBalanceKop = Math.max(0, currentBalanceKop - redeemedKop);
 		const newBalanceStr = kopecksToNumericString(newBalanceKop);
@@ -178,34 +179,34 @@ export async function executeRedeemGiftCertificate(
 		let paymentId: string | null = null;
 		let invoicePaid = false;
 
-		if (invoiceId) {
-			let targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || null;
-			if (!targetPatientId) {
-				const [invoice] = await tx
-					.select({ patientId: patientInvoices.patientId })
-					.from(patientInvoices)
-					.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)))
-					.limit(1);
-				if (invoice?.patientId) {
-					targetPatientId = invoice.patientId;
-				}
+		let targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || null;
+		if (invoiceId && !targetPatientId) {
+			const [invoice] = await tx
+				.select({ patientId: patientInvoices.patientId })
+				.from(patientInvoices)
+				.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)))
+				.limit(1);
+			if (invoice?.patientId) {
+				targetPatientId = invoice.patientId;
 			}
+		}
 
-			if (!targetPatientId) {
-				return {
-					error: true,
-					message: "Не удалось определить пациента для проведения платежа по счёту",
-					code: 400,
-				};
-			}
+		if (invoiceId && !targetPatientId) {
+			return {
+				error: true,
+				message: "Не удалось определить пациента для проведения платежа по счёту",
+				code: 400,
+			};
+		}
 
+		if (targetPatientId) {
 			// Проводка платежа: метод строго канонический "certificate" (SEV-1)
 			const [payRecord] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
 					patientId: targetPatientId,
-					documentId: invoiceId,
+					documentId: invoiceId || null,
 					amountRub: redeemedRub,
 					amountKopecks: BigInt(redeemedKop),
 					method: "certificate",
@@ -268,24 +269,26 @@ export async function executeRedeemGiftCertificate(
 				retryCount: 0,
 			});
 
-			const existingPayments = await tx
-				.select({ amountRub: payments.amountRub })
-				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.documentId, invoiceId),
-						eq(payments.status, "paid"),
-					),
-				);
+			if (invoiceId) {
+				const existingPayments = await tx
+					.select({ amountRub: payments.amountRub })
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.documentId, invoiceId),
+							eq(payments.status, "paid"),
+						),
+					);
 
-			const totalPaidKop = existingPayments.reduce((acc, p) => acc + parseKopecks(p.amountRub), 0);
-			if (totalPaidKop >= invoiceAmountKop) {
-				await tx
-					.update(patientInvoices)
-					.set({ status: "paid", paidAt: new Date() })
-					.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)));
-				invoicePaid = true;
+				const totalPaidKop = existingPayments.reduce((acc, p) => acc + parseKopecks(p.amountRub), 0);
+				if (totalPaidKop >= invoiceAmountKop) {
+					await tx
+						.update(patientInvoices)
+						.set({ status: "paid", paidAt: new Date() })
+						.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)));
+					invoicePaid = true;
+				}
 			}
 		}
 
@@ -318,7 +321,8 @@ export async function executeRedeemGiftCertificate(
 			return await db.transaction(execute);
 		} catch (err) {
 			if (isPgUniqueViolation(err)) {
-				const [existingPayment] = await db
+				const queryClient = txClient ?? db;
+				const [existingPayment] = await queryClient
 					.select()
 					.from(payments)
 					.where(
@@ -330,7 +334,7 @@ export async function executeRedeemGiftCertificate(
 					.limit(1);
 
 				if (existingPayment) {
-					const [existingCert] = await db
+					const [existingCert] = await queryClient
 						.select()
 						.from(giftCertificates)
 						.where(
@@ -348,7 +352,7 @@ export async function executeRedeemGiftCertificate(
 							? existingCert.currentBalanceKopecks
 							: parseKopecks(existingCert.currentBalanceRub);
 						const currentBalRub = kopecksToRubles(currentBalKop);
-						const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+						const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : existingRedeemedKop;
 						const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
 						const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
 						return {

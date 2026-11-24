@@ -28,8 +28,6 @@ export {
 	calculateClinicalProtocol,
 	buildPhysiologicalNormClinicalNoteText,
 	buildAdaptationVisitClinicalNoteText,
-	buildPhysiologicalNorm043Text,
-	buildAdaptationVisit043Text,
 } from "./protocolCalculation";
 
 export { PediatricBehaviorCard } from "./PediatricBehaviorCard";

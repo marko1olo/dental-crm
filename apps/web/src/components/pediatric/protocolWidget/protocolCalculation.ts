@@ -5,16 +5,12 @@ import {
 	buildFullClinicalNoteText,
 	buildPhysiologicalNormClinicalNoteText,
 	buildAdaptationVisitClinicalNoteText,
-	buildPhysiologicalNorm043Text,
-	buildAdaptationVisit043Text,
 } from "./clinicalNoteFormatters";
 import type { FranklExpressItem, PediatricProtocolDefinition, PediatricProtocolId, PediatricSedationState, PediatricServiceItem } from "./types";
 
 export {
 	buildPhysiologicalNormClinicalNoteText,
 	buildAdaptationVisitClinicalNoteText,
-	buildPhysiologicalNorm043Text,
-	buildAdaptationVisit043Text,
 };
 
 export interface ClinicalCalculationParams {
@@ -43,11 +39,7 @@ export interface ClinicalCalculationResult {
 	readonly treatmentDescription: string;
 	readonly recommendations: string;
 	readonly services: readonly PediatricServiceItem[];
-	/** @deprecated Использовать services (Мандат 8x/8ap: доменный язык без советских приказов) */
-	readonly services804n: readonly PediatricServiceItem[];
 	readonly fullClinicalNoteText: string;
-	/** @deprecated Использовать fullClinicalNoteText (Мандат 8x: искоренение советских шифров) */
-	readonly fullProtocolText043: string;
 	readonly toothFindingState: "Filled" | "EndoTreated" | "Watch" | "Healthy" | "Extracted" | "Crown";
 }
 
@@ -98,9 +90,7 @@ export function calculateClinicalProtocol(params: ClinicalCalculationParams): Cl
 		treatmentDescription,
 		recommendations: presetResult.recommendations,
 		services,
-		services804n: services,
 		fullClinicalNoteText,
-		fullProtocolText043: fullClinicalNoteText,
 		toothFindingState: params.activePreset.defaultToothFindingState,
 	};
 }

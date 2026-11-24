@@ -73,9 +73,6 @@ export function buildPhysiologicalNormClinicalNoteText(): string {
 	].join("\n");
 }
 
-/** @deprecated Использовать buildPhysiologicalNormClinicalNoteText */
-export const buildPhysiologicalNorm043Text = buildPhysiologicalNormClinicalNoteText;
-
 export function buildAdaptationVisitClinicalNoteText(): string {
 	return [
 		"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
@@ -105,7 +102,4 @@ export function buildAdaptationVisitClinicalNoteText(): string {
 		"Протокол осмотра и лечения в медицинской карте пациента.",
 	].join("\n");
 }
-
-/** @deprecated Использовать buildAdaptationVisitClinicalNoteText */
-export const buildAdaptationVisit043Text = buildAdaptationVisitClinicalNoteText;
 

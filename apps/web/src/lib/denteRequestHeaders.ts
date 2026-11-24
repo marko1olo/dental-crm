@@ -93,11 +93,21 @@ export function getDenteAuthHeaders(
 }
 
 export function denteAdminSecretRequestHeaders(
-	extra: Record<string, string> = {},
-	adminSecret?: string,
+	extraOrSecret?: Record<string, string> | string | null,
+	explicitAdminSecret?: string,
 ): Record<string, string> {
-	const secret = adminSecret?.trim();
-	const headers = secret
+	let extra: Record<string, string> = {};
+	let secret: string | undefined = explicitAdminSecret?.trim();
+
+	if (typeof extraOrSecret === "string") {
+		if (!secret) {
+			secret = extraOrSecret.trim();
+		}
+	} else if (extraOrSecret && typeof extraOrSecret === "object") {
+		extra = { ...extraOrSecret };
+	}
+
+	const headers: Record<string, string> = secret
 		? { ...extra, [denteAdminSecretHeaderName]: secret }
 		: { ...extra };
 

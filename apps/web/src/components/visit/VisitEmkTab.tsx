@@ -89,7 +89,6 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 		const curr = String(visitNoteForm?.[target] || "").trim();
 		const nextVal = curr ? `${curr} ${text}` : text;
 		updateVisitNoteField(target, nextVal);
-		if (target === "complaint") updateVisitNoteField("complaints", nextVal);
 		showToast("Голос добавлен в дневник приёма", "success", 2000);
 	}, [activeEmkTab, visitNoteForm, updateVisitNoteField]);
 

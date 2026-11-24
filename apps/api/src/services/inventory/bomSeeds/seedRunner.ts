@@ -10,7 +10,7 @@ import {
 	procedureMaterialRules,
 	serviceCatalogItems,
 } from "../../../db/schema.js";
-import { DEFAULT_804N_BOM_SEEDS } from "./registry.js";
+import { DEFAULT_SERVICE_BOM_SEEDS } from "./registry.js";
 import { loadSeedMaps } from "./seedHelpers.js";
 import type { SeedDefaultBomResult } from "./types.js";
 
@@ -23,7 +23,7 @@ export async function seedDefaultProcedureMaterialRules(
 
 	const { serviceMap, itemMap, ruleSet } = await loadSeedMaps(organizationId);
 
-	for (const proto of DEFAULT_804N_BOM_SEEDS) {
+	for (const proto of DEFAULT_SERVICE_BOM_SEEDS) {
 		let service = serviceMap.get(proto.serviceCode);
 
 		if (!service) {

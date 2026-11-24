@@ -95,7 +95,7 @@ export class FamilyWalletService {
 		const [familyBefore] = await withTenantCtx(params.organizationId, async (tx) =>
 			tx.select({ balance: familyGroups.balance, balanceKopecks: familyGroups.balanceKopecks }).from(familyGroups).where(and(eq(familyGroups.id, params.familyGroupId), eq(familyGroups.organizationId, params.organizationId))).limit(1),
 		);
-		const prevBalKop = familyBefore ? (familyBefore.balanceKopecks != null && familyBefore.balanceKopecks > 0 ? Number(familyBefore.balanceKopecks) : parseKopecks(familyBefore.balance ?? 0)) : 0;
+		const prevBalKop = familyBefore ? (familyBefore.balanceKopecks != null ? Number(familyBefore.balanceKopecks) : parseKopecks(familyBefore.balance ?? 0)) : 0;
 
 		const outcome = await processCashboxPayment(
 			params.organizationId,
@@ -135,7 +135,7 @@ export class FamilyWalletService {
 		const [familyAfter] = await withTenantCtx(params.organizationId, async (tx) =>
 			tx.select({ balance: familyGroups.balance, balanceKopecks: familyGroups.balanceKopecks }).from(familyGroups).where(and(eq(familyGroups.id, params.familyGroupId), eq(familyGroups.organizationId, params.organizationId))).limit(1),
 		);
-		const newBalKop = familyAfter ? (familyAfter.balanceKopecks != null && familyAfter.balanceKopecks > 0 ? Number(familyAfter.balanceKopecks) : parseKopecks(familyAfter.balance ?? 0)) : Math.max(0, prevBalKop - debitKop);
+		const newBalKop = familyAfter ? (familyAfter.balanceKopecks != null ? Number(familyAfter.balanceKopecks) : parseKopecks(familyAfter.balance ?? 0)) : Math.max(0, prevBalKop - debitKop);
 
 		return {
 			success: true,

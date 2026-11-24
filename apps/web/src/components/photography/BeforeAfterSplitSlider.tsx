@@ -157,11 +157,11 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 			{showControls && (
 				<div className="flex justify-between items-center gap-2 flex-wrap pb-1">
 					<div className="flex items-center gap-2">
-						<span className="text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)]">
+						<span className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 							Сплит До/После: {effectiveSplit}%
 						</span>
 						{beforeShade && afterShade && (
-							<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-md bg-[var(--surface,#f1f5f9)] font-semibold text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]">
+							<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] font-semibold text-[var(--ink)] border border-[var(--line)]">
 								VITA {beforeShade} → {afterShade}
 							</span>
 						)}
@@ -170,8 +170,8 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 					<div className="flex items-center gap-1.5">
 						<button
 							type="button"
-							className={`photo-touch-btn min-h-[36px] min-w-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] transition-colors inline-flex items-center justify-center gap-1 ${
-								orientation === 'vertical' ? 'bg-[var(--primary,#0d9488)] text-white' : 'bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)]'
+							className={`photo-touch-btn min-h-[36px] min-w-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] transition-colors inline-flex items-center justify-center gap-1 ${
+								orientation === 'vertical' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--paper)] text-[var(--ink)]'
 							}`}
 							onClick={() => setOrientation('vertical')}
 							title="Вертикальный сплит"
@@ -182,8 +182,8 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						</button>
 						<button
 							type="button"
-							className={`photo-touch-btn min-h-[36px] min-w-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] transition-colors inline-flex items-center justify-center gap-1 ${
-								orientation === 'horizontal' ? 'bg-[var(--primary,#0d9488)] text-white' : 'bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)]'
+							className={`photo-touch-btn min-h-[36px] min-w-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] transition-colors inline-flex items-center justify-center gap-1 ${
+								orientation === 'horizontal' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--paper)] text-[var(--ink)]'
 							}`}
 							onClick={() => setOrientation('horizontal')}
 							title="Горизонтальный сплит"
@@ -194,7 +194,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						</button>
 						<button
 							type="button"
-							className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
+							className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center"
 							onClick={() => updateSplit(50)}
 							title="Сброс шторки на 50%"
 							aria-label="Сброс шторки"
@@ -204,7 +204,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						{onSwap && (
 							<button
 								type="button"
-								className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
+								className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center"
 								onClick={handleSwap}
 								title="Поменять местами До и После"
 								aria-label="Поменять местами"
@@ -214,7 +214,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						)}
 						<button
 							type="button"
-							className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
+							className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center"
 							onClick={() => setIsFullscreen((prev) => !prev)}
 							title={isFullscreen ? 'Свернуть' : 'На весь экран'}
 							aria-label="Режим презентации"
@@ -224,7 +224,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						{onClose && (
 							<button
 								type="button"
-								className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
+								className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center"
 								onClick={onClose}
 								title="Закрыть"
 								aria-label="Закрыть"
@@ -240,16 +240,16 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 			{isEmpty ? (
 				<div
 					data-testid="before-after-empty-state"
-					className="flex flex-col items-center justify-center gap-3 p-8 sm:p-12 text-center rounded-2xl bg-[var(--paper-soft,#f8fafc)] border-2 border-dashed border-[var(--line,#cbd5e1)] min-h-[340px]"
+					className="flex flex-col items-center justify-center gap-3 p-8 sm:p-12 text-center rounded-2xl bg-[var(--paper-soft)] border-2 border-dashed border-[var(--line)] min-h-[340px]"
 				>
-					<div className="w-14 h-14 rounded-full bg-[var(--primary,#0d9488)]/10 text-[var(--primary,#0d9488)] flex items-center justify-center">
+					<div className="w-14 h-14 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center">
 						<Camera size={28} />
 					</div>
 					<div className="flex flex-col gap-1 max-w-md">
-						<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
+						<h4 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">
 							Снимки клинического протокола До / После не загружены
 						</h4>
-						<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
+						<p className="text-xs text-[var(--ink-muted)] m-0 leading-relaxed">
 							Загрузите фотографии в клинический фотопротокол карточки пациента для интерактивного сопоставления результатов эстетического и ортодонтического лечения.
 						</p>
 					</div>
@@ -258,7 +258,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 							<button
 								type="button"
 								onClick={onUpload}
-								className="photo-touch-btn primary min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--primary,#0d9488)] text-white hover:opacity-95 inline-flex items-center gap-2 shadow-sm"
+								className="photo-touch-btn primary min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--primary)] text-white hover:opacity-95 inline-flex items-center gap-2 shadow-sm"
 								data-testid="btn-upload-from-empty-state"
 							>
 								<Upload size={16} />
@@ -270,7 +270,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 			) : (
 				<div
 					ref={containerRef}
-					className="ba-slider-container relative w-full rounded-2xl overflow-hidden bg-[var(--paper-strong,#020617)] shadow-inner"
+					className="ba-slider-container relative w-full rounded-2xl overflow-hidden bg-[var(--paper-strong)] shadow-inner"
 					tabIndex={0}
 					role="slider"
 					aria-valuenow={effectiveSplit}
@@ -296,7 +296,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 							loading="lazy"
 						/>
 					) : (
-						<div className="absolute inset-0 flex items-center justify-center bg-[var(--paper-soft,#0f172a)] text-[var(--muted,#94a3b8)] text-xs font-medium">
+						<div className="absolute inset-0 flex items-center justify-center bg-[var(--paper-soft)] text-[var(--ink-muted)] text-xs font-medium">
 							Ожидает снимок ДО
 						</div>
 					)}
@@ -315,7 +315,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 						/>
 					) : (
 						<div
-							className="absolute inset-0 flex items-center justify-center bg-[var(--paper-soft,#0f172a)] text-[var(--muted,#94a3b8)] text-xs font-medium"
+							className="absolute inset-0 flex items-center justify-center bg-[var(--paper-soft)] text-[var(--ink-muted)] text-xs font-medium"
 							style={{ clipPath: clipPathStyle }}
 						>
 							Ожидает снимок ПОСЛЕ
@@ -344,12 +344,12 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 										height: '2px',
 										transform: 'translateY(-50%)',
 									}),
-							background: 'var(--primary, #0d9488)',
-							boxShadow: '0 0 10px rgba(13,148,136,0.9)',
+							background: 'var(--primary)',
+							boxShadow: '0 0 10px var(--primary)',
 						}}
 					>
 						<div
-							className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--primary,#0d9488)] border-2 border-white flex items-center justify-center text-white shadow-lg"
+							className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--primary)] border-2 border-white flex items-center justify-center text-white shadow-lg"
 							style={{ touchAction: 'none' }}
 						>
 							{orientation === 'vertical' ? <MoveHorizontal size={14} /> : <MoveVertical size={14} />}

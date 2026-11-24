@@ -4,7 +4,7 @@ import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { fiscalReceiptQueue } from "../../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../../security/permissions.js";
 import { fiscalQueueParamsSchema } from "../types.js";
@@ -35,56 +35,58 @@ export async function handleRetryFiscalQueueItem(
 	}
 	const { id } = parsedParams.data;
 
-	const [queueItem] = await db
-		.select()
-		.from(fiscalReceiptQueue)
-		.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
-		.limit(1);
+	return withTenantCtx(orgId, async (tx) => {
+		const [queueItem] = await tx
+			.select()
+			.from(fiscalReceiptQueue)
+			.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
+			.limit(1);
 
-	if (!queueItem) {
-		return reply.code(404).send({
-			error: "FiscalQueueItemNotFound",
-			message: "Запись фискального чека не найдена в этой клинике.",
-		});
-	}
+		if (!queueItem) {
+			return reply.code(404).send({
+				error: "FiscalQueueItemNotFound",
+				message: "Запись фискального чека не найдена в этой клинике.",
+			});
+		}
 
-	if (queueItem.status === "printed") {
-		return reply.code(200).send({
-			success: true,
-			status: "printed",
-			message: "Чек уже успешно распечатан на ККТ.",
-			item: queueItem,
-		});
-	}
+		if (queueItem.status === "printed") {
+			return reply.code(200).send({
+				success: true,
+				status: "printed",
+				message: "Чек уже успешно распечатан на ККТ.",
+				item: queueItem,
+			});
+		}
 
-	const isKktOffline = process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
+		const isKktOffline = process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
 
-	if (isKktOffline) {
-		const [updated] = await db
-			.update(fiscalReceiptQueue)
-			.set({
+		if (isKktOffline) {
+			const [updated] = await tx
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "hardware_offline",
+					lastError: "KKT connection timed out (5000ms) or printer offline",
+					retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
+				.returning();
+
+			return reply.code(200).send({
+				success: false,
 				status: "hardware_offline",
-				lastError: "KKT connection timed out (5000ms) or printer offline",
-				retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
-				updatedAt: new Date(),
-			})
+				error: "KKT connection timed out (5000ms) or printer offline",
+				retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
+				item: updated,
+			});
+		}
+
+		const [updated] = await tx
+			.update(fiscalReceiptQueue)
+			.set({ status: "printed", printedAt: new Date(), lastError: null, updatedAt: new Date() })
 			.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
 			.returning();
 
-		return reply.code(200).send({
-			success: false,
-			status: "hardware_offline",
-			error: "KKT connection timed out (5000ms) or printer offline",
-			retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
-			item: updated,
-		});
-	}
-
-	const [updated] = await db
-		.update(fiscalReceiptQueue)
-		.set({ status: "printed", printedAt: new Date(), lastError: null, updatedAt: new Date() })
-		.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
-		.returning();
-
-	return reply.code(200).send({ success: true, status: "printed", item: updated });
+		return reply.code(200).send({ success: true, status: "printed", item: updated });
+	});
 }

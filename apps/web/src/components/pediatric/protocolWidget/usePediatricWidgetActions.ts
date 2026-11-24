@@ -57,7 +57,7 @@ export function usePediatricWidgetActions(
 		if (state.anesthesiaCalculation?.isOverdose) {
 			showToast(`Внимание: доза анестетика (${state.anesthesiaCalculation.totalDoseAdministeredMg} мг) превышает МРД (${state.anesthesiaCalculation.maxAllowedTotalDoseMg} мг)!`, "warning", 5000);
 		}
-		const textToApply = clinicalCalculation.fullClinicalNoteText || clinicalCalculation.fullProtocolText043;
+		const textToApply = clinicalCalculation.fullClinicalNoteText;
 		onApplyProtocolText?.(textToApply);
 		state.setToothFindings((prev) => ({ ...prev, [state.currentTooth]: clinicalCalculation.toothFindingState }));
 		if (state.activePresetId === "extraction_primary_exfoliation") {
@@ -113,7 +113,7 @@ export function usePediatricWidgetActions(
 
 	return {
 		handleSelectFrankl, handleCycleFrankl, toggleSurface, handleApplySurfacePreset,
-		handleSelectPreset, handleSignInformedConsent, handleSignConsent323Fz: handleSignInformedConsent,
+		handleSelectPreset, handleSignInformedConsent,
 		handleInsertToClinicalNote, handleAddServicesToInvoice, handleApplyPhysiologicalNorm,
 		handleApplyPhysiologicalResorptionNorm, handleApplyAdaptationVisit, handleApplyMixedDentitionPreset,
 	};

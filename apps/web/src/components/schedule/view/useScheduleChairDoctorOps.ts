@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { Dashboard } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import {
   safeLocalStorageSetItem,
 } from "../../../lib/safeLocalStorage";
@@ -67,7 +67,7 @@ export function useScheduleChairDoctorOps({
         const method = isUpdate ? "PUT" : "POST";
         const res = await fetch(url, {
           method,
-          headers: denteAdminSecretRequestHeaders({
+          headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
           }),
           body: JSON.stringify({
@@ -116,7 +116,7 @@ export function useScheduleChairDoctorOps({
       try {
         const res = await fetch("/api/settings/staff", {
           method: "POST",
-          headers: denteAdminSecretRequestHeaders({
+          headers: denteClinicalMutationHeaders({
             "Content-Type": "application/json",
           }),
           body: JSON.stringify({

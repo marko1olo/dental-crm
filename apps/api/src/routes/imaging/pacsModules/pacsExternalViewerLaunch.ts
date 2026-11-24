@@ -20,7 +20,6 @@ export const launchExternalViewerSchema = z.object({
 	studyPath: z.string().trim().min(1).max(1024).optional(),
 	patientId: z.string().trim().min(1).max(128).optional(),
 	studyInstanceUid: z.string().trim().min(1).max(128).optional(),
-	args: z.array(z.string()).max(10).optional(),
 });
 
 export type ProcessSpawner = typeof spawn;

@@ -46,7 +46,10 @@ export {
 
 const SettingsSchema = z.object({
 	yandexCalendarId: z.string().nullable(),
-	yandexCalendarToken: z.any().nullable(),
+	yandexCalendarToken: z.union([
+		z.string(),
+		z.record(z.string(), z.unknown()),
+	]).nullable(),
 });
 
 interface TokenPayload {

@@ -420,8 +420,8 @@ export function VisitEmkInteractiveStage({
 			{(activeEmkTab === "ortho" || activeEmkTab === "orthopedics") && (
 				<div className="space-y-4 w-full min-w-0">
 					<OrthopedicsChairsidePanel
-						activeToothFdi={effectiveActiveTooth || 16}
-						selectedTeeth={[effectiveActiveTooth || 16]}
+						activeToothFdi={effectiveActiveTooth ?? undefined}
+						selectedTeeth={effectiveActiveTooth ? [effectiveActiveTooth] : []}
 						patientId={activePatient?.id}
 						patientName={activePatient?.fullName}
 						doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}

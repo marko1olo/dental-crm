@@ -19,29 +19,30 @@ export interface QuickPackageWriteOffParams {
 	effectiveUserId: string | null;
 	visitId?: string | null | undefined;
 	notes?: string | null | undefined;
+	idempotencyKey?: string | null | undefined;
 }
 
 export async function executeQuickPackageWriteOff(
 	tx: DatabaseTransaction,
 	params: QuickPackageWriteOffParams,
 ): Promise<UnifiedStockDeductionResult> {
-	const { organizationId, packageId = "anesthesia", quantityMultiplier = 1, effectiveUserId, visitId = null, notes = null } = params;
+	const { organizationId, packageId = "anesthesia", quantityMultiplier = 1, effectiveUserId, visitId = null, notes = null, idempotencyKey } = params;
 	const multiplier = Math.max(1, quantityMultiplier);
 
 	if (packageId === "anesthesia") {
 		return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
-			organizationId, carpulesCount: multiplier, userId: effectiveUserId, visitId, notes: notes ?? `Списание анестезии x${multiplier}`,
+			organizationId, carpulesCount: multiplier, userId: effectiveUserId, visitId, notes: notes ?? `Списание анестезии x${multiplier}`, idempotencyKey,
 		});
 	}
 	if (packageId === "sterilization_kit") {
 		return TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
-			organizationId, count: multiplier, userId: effectiveUserId, visitId, notes: notes ?? `Списание расходников стерилизации x${multiplier}`,
+			organizationId, count: multiplier, userId: effectiveUserId, visitId, notes: notes ?? `Списание расходников стерилизации x${multiplier}`, idempotencyKey,
 		});
 	}
 	if (packageId === "surgery" || packageId === "implant" || packageId === "sinus_gbr" || packageId === "implant_gbr") {
 		const vType: QuickWriteoffVisitBundleType = packageId === "implant_gbr" ? "sinus_gbr" : packageId;
 		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание хирургического пакета (${packageId}) x${multiplier}`,
+			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание хирургического пакета (${packageId}) x${multiplier}`, idempotencyKey,
 		});
 	}
 	if (packageId.startsWith("orthopedics_")) {
@@ -53,10 +54,10 @@ export async function executeQuickPackageWriteOff(
 				? packageId
 				: "orthopedics_prep";
 		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание ортопедического пакета (${packageId}) x${multiplier}`,
+			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание ортопедического пакета (${packageId}) x${multiplier}`, idempotencyKey,
 		});
 	}
 	return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-		organizationId, visitType: "therapy", userId: effectiveUserId, visitId, notes: notes ?? `Списание пакета приёма (${packageId}) x${multiplier}`,
+		organizationId, visitType: "therapy", userId: effectiveUserId, visitId, notes: notes ?? `Списание пакета приёма (${packageId}) x${multiplier}`, idempotencyKey,
 	});
 }

@@ -1,7 +1,7 @@
 import type { UrgentScheduleRequest } from "@dental/shared";
 import { AlertTriangle, Check, Clock, Flame, Stethoscope, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders, denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -24,7 +24,7 @@ export function UrgentScheduleRequestsWidget({
 		setError(null);
 		fetch("/api/schedule/urgent-schedule-requests", {
 			credentials: "include",
-			headers: denteAdminSecretRequestHeaders(),
+			headers: getDenteAuthHeaders(),
 		})
 			.then(async (res) => {
 				if (!res.ok) {
@@ -59,7 +59,7 @@ export function UrgentScheduleRequestsWidget({
 				{
 					method: "PATCH",
 					credentials: "include",
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalMutationHeaders(),
 				},
 			);
 			if (res.ok) {

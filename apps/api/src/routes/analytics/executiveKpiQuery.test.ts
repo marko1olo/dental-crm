@@ -4,6 +4,7 @@ import {
 	calculateWorkingMinutesInPeriod,
 	resolveClinicScheduleWorkHours,
 	resolveExecutiveDateRange,
+	resolveExecutiveRevenuePlanKopecks,
 } from "./executiveKpiQuery.js";
 
 describe("Executive Analytics Backend Query Resolvers", () => {
@@ -52,5 +53,36 @@ describe("Executive Analytics Backend Query Resolvers", () => {
 		const customResult = calculateWorkingMinutesInPeriod(mon, sun, customSchedule);
 		assert.equal(customResult.workingDays, 6);
 		assert.equal(customResult.availableMinutesPerChair, 6 * 10 * 60, "6 days * 10 hours = 3600 minutes");
+	});
+
+	it("[ANL-01] calculates honest revenue plan from clinicSchedule or chair capacity instead of fake plan=fact", () => {
+		// 1. Динамический эталонный план по мощности кресел (3 500 ₽/час = 350 000 коп./час)
+		// 2 кресла * 160 часов = 320 доступных часов = 19 200 минут
+		const dynamicPlan = resolveExecutiveRevenuePlanKopecks({
+			clinicScheduleRaw: null,
+			totalAvailableMinutes: 19_200,
+			daysCount: 30,
+			execPeriod: "month",
+		});
+		// 19200 / 60 = 320 часов * 350 000 = 112 000 000 копеек (1 120 000 ₽)
+		assert.equal(dynamicPlan, 112_000_000);
+
+		// 2. Явный план в clinicSchedule (2 000 000 ₽ = 200 000 000 копеек в месяц)
+		const explicitMonthlyPlan = resolveExecutiveRevenuePlanKopecks({
+			clinicScheduleRaw: { revenuePlanKopecks: 200_000_000 },
+			totalAvailableMinutes: 19_200,
+			daysCount: 30,
+			execPeriod: "month",
+		});
+		assert.equal(explicitMonthlyPlan, 200_000_000);
+
+		// 3. Масштабирование на неделю
+		const weekPlan = resolveExecutiveRevenuePlanKopecks({
+			clinicScheduleRaw: { revenuePlanKopecks: 300_000_000 },
+			totalAvailableMinutes: 4_800,
+			daysCount: 7,
+			execPeriod: "week",
+		});
+		assert.equal(weekPlan, Math.round((300_000_000 * 7) / 30));
 	});
 });

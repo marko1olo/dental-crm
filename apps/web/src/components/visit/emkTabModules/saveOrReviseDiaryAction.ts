@@ -105,15 +105,12 @@ export async function executeSaveOrReviseDiary(
 					},
 					credentials: "same-origin",
 					body: JSON.stringify({
-						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-						statusLocalis:
-							statusLocalisText ||
-							"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+						complaint: complaintText,
+						anamnesis: anamnesisText,
+						statusLocalis: statusLocalisText,
 						diagnosisIcd10: diagnosisIcd10Code || undefined,
 						diagnosisTooth: toothRaw,
-						treatmentDescription:
-							treatmentText || "Проведен осмотр, санация / консультация.",
+						treatmentDescription: treatmentText,
 						revisionReason: "Исправленному верить",
 					}),
 				});
@@ -148,14 +145,12 @@ export async function executeSaveOrReviseDiary(
 					body: JSON.stringify({
 						visitId: effectiveVisitId,
 						patientId: effectivePatientId,
-						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-						statusLocalis:
-							statusLocalisText ||
-							"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+						complaint: complaintText,
+						anamnesis: anamnesisText,
+						statusLocalis: statusLocalisText,
 						diagnosisIcd10: diagnosisIcd10Code || undefined,
 						diagnosisTooth: toothRaw,
-						treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
+						treatmentDescription: treatmentText,
 						status: "signed",
 					}),
 				});
@@ -211,14 +206,12 @@ export async function executeSaveOrReviseDiary(
 			body: JSON.stringify({
 				visitId: effectiveVisitId,
 				patientId: effectivePatientId,
-				complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
-				anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
-				statusLocalis:
-					statusLocalisText ||
-					"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+				complaint: complaintText,
+				anamnesis: anamnesisText,
+				statusLocalis: statusLocalisText,
 				diagnosisIcd10: diagnosisIcd10Code || undefined,
 				diagnosisTooth: toothRaw,
-				treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
+				treatmentDescription: treatmentText,
 				status: isSignedVisit ? "signed" : "draft",
 			}),
 		});

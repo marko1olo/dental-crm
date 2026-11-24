@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertTriangle, Check, ChevronRight, FileCheck, Loader2, QrCode, RefreshCw } from "lucide-react";
+import { useAppStore } from "../../../store/appStore";
 import type { VisitEmkCompletionSectionProps } from "./types";
 
 export function VisitEmkCompletionSection({
@@ -21,19 +22,19 @@ export function VisitEmkCompletionSection({
 			{/* Ненавязчивая плашка завершения приёма (Мандат 8e: свобода врача, ноль насильственного срыва в кассу) */}
 			{completionResult && (
 				<div
-					className="mt-2.5 p-3.5 sm:p-4 rounded-2xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal,#0d9488)]/10 text-[var(--ink)] text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+					className="mt-2.5 p-3.5 sm:p-4 rounded-2xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)] text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
 					data-testid="visit-completion-success-banner"
 					role="status"
 				>
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-xl bg-[var(--teal,#0d9488)] text-white flex items-center justify-center shrink-0 shadow-2xs">
+						<div className="w-8 h-8 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-2xs">
 							<Check size={18} />
 						</div>
 						<div className="flex flex-col min-w-0">
 							<span className="font-extrabold text-[var(--ink)]">
 								Приём завершён. Счёт №{completionResult.receiptNumber || completionResult.invoiceId} сформирован
 							</span>
-							<span className="text-[11px] text-[var(--muted,#64748b)]">
+							<span className="text-[11px] text-[var(--ink-muted)]">
 								Протокол и смета сохранены. К оплате: {completionResult.totalNetRub.toLocaleString("ru-RU")} ₽. Вы можете остаться в карте или перейти в кассу.
 							</span>
 						</div>
@@ -42,7 +43,7 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsSbpQrModalOpen(true)}
-							className="secondary-button min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line,#e2e8f0)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+							className="secondary-button min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
 							data-testid="btn-reopen-sbp-qr"
 							title="Показать QR-код СБП"
 						>
@@ -52,11 +53,13 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => {
+								useAppStore.getState().setCurrentView("finance");
 								if (typeof window !== "undefined") {
-									window.location.hash = "finance";
+									window.dispatchEvent(new CustomEvent("dente:open-cashbox"));
+									window.dispatchEvent(new CustomEvent("dente:navigate-to-finance"));
 								}
 							}}
-							className="primary-button min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+							className="primary-button min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
 							data-testid="btn-goto-cashbox"
 						>
 							<span>Перейти в кассу</span>

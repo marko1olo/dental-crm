@@ -13,6 +13,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
@@ -118,6 +119,12 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				return { kind: "box_not_found" as const };
 			}
 
+			const amountKopecks = rublesToKopecks(amountRub);
+			const beforeKop =
+				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+					? Number(targetBox.balanceKopecks)
+					: rublesToKopecks(targetBox.balanceRub);
+			const afterKop = beforeKop + amountKopecks;
 			const balanceBefore = targetBox.balanceRub;
 			const balanceAfter = calculateBalanceAdd(balanceBefore, amountRub);
 
@@ -140,6 +147,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				.update(cashBoxes)
 				.set({
 					balanceRub: balanceAfter,
+					balanceKopecks: afterKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
@@ -166,8 +174,11 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 					shiftId: activeShift?.id ?? null,
 					operationType: "introduction",
 					amountRub,
+					amountKopecks,
 					balanceBeforeRub: balanceBefore,
+					balanceBeforeKopecks: BigInt(beforeKop),
 					balanceAfterRub: balanceAfter,
+					balanceAfterKopecks: BigInt(afterKop),
 					reasonText,
 					operatorId: operatorId ?? null,
 					metadata: idempotencyKey ? { idempotencyKey } : null,
@@ -293,8 +304,13 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				return { kind: "box_not_found" as const };
 			}
 
+			const amountKopecks = rublesToKopecks(amountRub);
+			const beforeKop =
+				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+					? Number(targetBox.balanceKopecks)
+					: rublesToKopecks(targetBox.balanceRub);
 			const balanceBefore = targetBox.balanceRub;
-			if (balanceBefore < amountRub) {
+			if (balanceBefore < amountRub || beforeKop < amountKopecks) {
 				return {
 					kind: "insufficient_funds" as const,
 					balanceBefore,
@@ -302,6 +318,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				};
 			}
 
+			const afterKop = Math.max(0, beforeKop - amountKopecks);
 			const balanceAfter = calculateBalanceSubtract(balanceBefore, amountRub);
 
 			const [activeShift] = await tx
@@ -321,6 +338,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				.update(cashBoxes)
 				.set({
 					balanceRub: balanceAfter,
+					balanceKopecks: afterKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
@@ -345,8 +363,11 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 					shiftId: activeShift?.id ?? null,
 					operationType: "withdrawal",
 					amountRub,
+					amountKopecks,
 					balanceBeforeRub: balanceBefore,
+					balanceBeforeKopecks: BigInt(beforeKop),
 					balanceAfterRub: balanceAfter,
+					balanceAfterKopecks: BigInt(afterKop),
 					reasonText,
 					operatorId: operatorId ?? null,
 					metadata: idempotencyKey ? { idempotencyKey } : null,

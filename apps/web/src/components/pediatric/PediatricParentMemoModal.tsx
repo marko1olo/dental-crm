@@ -90,10 +90,10 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 
 	const content = (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-			<div className="relative w-full max-w-2xl rounded-3xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto">
-				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)]">
-					<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Памятка родителям после приёма</h3>
-					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
+			<div className="relative w-full max-w-2xl rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto">
+				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
+					<h3 className="text-base sm:text-lg font-semibold text-[var(--ink)]">Памятка родителям после приёма</h3>
+					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition cursor-pointer" aria-label="Закрыть">
 						<X className="h-5 w-5" />
 					</button>
 				</div>

@@ -79,8 +79,8 @@ import { registerPublicAppointmentActionRoutes } from "../routes/publicAppointme
 import { registerPublicBookingRoutes } from "../routes/publicBooking/index.js";
 import { registerReportRoutes } from "../routes/reports.js";
 import { registerManagerReportsRoutes } from "../routes/managerReportsRoutes.js";
-import { registerSberbankRoutes } from "../routes/sberbank.js";
-import { registerSberPosWebhookRoutes } from "../routes/payments/sberPosWebhookRoute.js";
+import { registerSberbankRoutes } from "../routes/sberbankRoutes/index.js";
+import { registerSberPosWebhookRoutes } from "../routes/payments/sberWebhook/index.js";
 import { registerFiscalReceiptRoutes } from "../routes/fiscal/fiscalReceiptRoutes.js";
 import { registerSbpRoutes as registerSbpQrRoutes } from "../routes/sbp/index.js";
 import { registerScheduleRoutes } from "../routes/schedule.js";

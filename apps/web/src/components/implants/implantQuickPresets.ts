@@ -190,7 +190,7 @@ export function getAnatomicalImplantDefaults(toothFdi: number): AnatomicalImplan
 
 export function computeOsteointegrationDate(dateIso: string, toothFdi: number): string {
 	const d = new Date(dateIso || Date.now());
-	const isUpperJaw = (toothFdi >= 11 && toothFdi <= 28) || (toothFdi >= 51 && toothFdi <= 65);
+	const isUpperJaw = toothFdi >= 11 && toothFdi <= 28;
 	const monthsToAdd = isUpperJaw ? 4 : 3;
 	d.setMonth(d.getMonth() + monthsToAdd);
 	return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
@@ -270,6 +270,29 @@ export function createDefaultPassportRecord(params: {
 	const resolvedExpiration = params.expirationDate || matchedStockItem?.expirationDate || "2028-11-30";
 	const resolvedInventoryId = params.inventoryItemId || matchedStockItem?.id;
 
+	const operationPriceKopecks =
+		params.operationPriceKopecks !== undefined && params.operationPriceKopecks !== null
+			? BigInt(params.operationPriceKopecks)
+			: BigInt(rublesToKopecks(params.operationPriceRub ?? 45000));
+	const implantCostKopecks =
+		params.implantCostKopecks !== undefined && params.implantCostKopecks !== null
+			? BigInt(params.implantCostKopecks)
+			: BigInt(rublesToKopecks(params.implantCostRub ?? 12500));
+	const consumablesCostKopecks =
+		params.consumablesCostKopecks !== undefined && params.consumablesCostKopecks !== null
+			? BigInt(params.consumablesCostKopecks)
+			: BigInt(rublesToKopecks(params.consumablesCostRub ?? 0));
+
+	const totalMaterialsCostKopecks = implantCostKopecks + consumablesCostKopecks;
+	const doctorGrossMarginKopecks = operationPriceKopecks - totalMaterialsCostKopecks;
+	const netDoctorIncomeKopecks = doctorGrossMarginKopecks > 0n ? doctorGrossMarginKopecks : 0n;
+
+	const operationPriceRub = params.operationPriceRub ?? Math.round(kopecksToRubles(operationPriceKopecks));
+	const implantCostRub = params.implantCostRub ?? Math.round(kopecksToRubles(implantCostKopecks));
+	const consumablesCostRub = params.consumablesCostRub ?? Math.round(kopecksToRubles(consumablesCostKopecks));
+	const doctorGrossMarginRub = kopecksToRubles(doctorGrossMarginKopecks);
+	const netDoctorIncomeRub = kopecksToRubles(netDoctorIncomeKopecks);
+
 	return {
 		passportId: `IMP-PASSPORT-${tooth}-${timestampSuffix}`,
 		toothFdi: tooth,
@@ -293,16 +316,16 @@ export function createDefaultPassportRecord(params: {
 		dateIso,
 		osteointegrationExpectedDate,
 		isWarehouseOverdraft: false,
-		operationPriceRub: params.operationPriceRub ?? (params.operationPriceKopecks ? Math.round(kopecksToRubles(params.operationPriceKopecks)) : 45000),
-		implantCostRub: params.implantCostRub ?? (params.implantCostKopecks ? Math.round(kopecksToRubles(params.implantCostKopecks)) : 12500),
-		consumablesCostRub: params.consumablesCostRub ?? (params.consumablesCostKopecks ? Math.round(kopecksToRubles(params.consumablesCostKopecks)) : 0),
-		doctorGrossMarginRub: (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)),
-		netDoctorIncomeRub: Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))),
-		operationPriceKopecks: params.operationPriceKopecks ? BigInt(params.operationPriceKopecks) : BigInt(rublesToKopecks(params.operationPriceRub ?? 45000)),
-		implantCostKopecks: params.implantCostKopecks ? BigInt(params.implantCostKopecks) : BigInt(rublesToKopecks(params.implantCostRub ?? 12500)),
-		consumablesCostKopecks: params.consumablesCostKopecks ? BigInt(params.consumablesCostKopecks) : BigInt(rublesToKopecks(params.consumablesCostRub ?? 0)),
-		doctorGrossMarginKopecks: BigInt(rublesToKopecks((params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)))),
-		netDoctorIncomeKopecks: BigInt(rublesToKopecks(Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))))),
+		operationPriceRub,
+		implantCostRub,
+		consumablesCostRub,
+		doctorGrossMarginRub,
+		netDoctorIncomeRub,
+		operationPriceKopecks,
+		implantCostKopecks,
+		consumablesCostKopecks,
+		doctorGrossMarginKopecks,
+		netDoctorIncomeKopecks,
 		isImmediateLoadingFeasible,
 	};
 }

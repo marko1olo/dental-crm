@@ -11,7 +11,7 @@ import {
 import React from "react";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
@@ -177,7 +177,7 @@ export function AppointmentModalLabSection({
     if (item.id && !item.id.startsWith("appt-lab-")) {
       fetch(`/api/lab/orders/${item.id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           status: "fitted",
           stage: "fitting_scheduled",

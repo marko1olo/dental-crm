@@ -74,7 +74,7 @@ function SanpinRegistersInner({
 				onOpenAutoclaveJournalModal={() => setIsDirectCycleModalOpen(true)}
 				onOpenAutoclaveLogModal={() => setIsDirectCycleModalOpen(true)}
 				onOpenSterilizationLogModal={() => setIsDirectCycleModalOpen(true)}
-				onOpenJournal257Modal={() => setIsDirectCycleModalOpen(true)}
+				onOpenSterilizationJournalModal={() => setIsDirectCycleModalOpen(true)}
 			/>
 
 			<SanpinRegisterTabsNav

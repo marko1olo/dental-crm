@@ -1,6 +1,6 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
 import { showToast } from "../GlobalToast";
@@ -231,7 +231,7 @@ export function useQuickBookingPatientSearch({
         try {
           const resp = await fetch("/api/patients", {
             method: "POST",
-            headers: denteAdminSecretRequestHeaders({
+            headers: denteClinicalMutationHeaders({
               "Content-Type": "application/json",
             }),
             body: JSON.stringify({

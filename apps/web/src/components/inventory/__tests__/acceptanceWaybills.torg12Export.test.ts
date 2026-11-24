@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import {
 	createSampleDentalWaybill,
 	exportWaybillToCsv,
-	generateTorg12Html,
+	generateAcceptanceWaybillHtml,
 } from "../acceptanceWaybillsEngine.js";
 
-describe("AcceptanceWaybills: ТОРГ-12 Form & CSV Export", () => {
-	it("генерирует регламентную форму ТОРГ-12 без больничной бюрократии", () => {
+describe("AcceptanceWaybills: Waybill Print Form & CSV Export", () => {
+	it("генерирует регламентную форму приходной накладной без больничной бюрократии", () => {
 		const waybill = createSampleDentalWaybill();
-		const html = generateTorg12Html(waybill, { nameRu: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", inn: "7701987654" });
+		const html = generateAcceptanceWaybillHtml(waybill, { nameRu: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", inn: "7701987654" });
 
 		assert.ok(html.includes("Приходная накладная материалов клиники"));
 		assert.ok(html.includes("ПРИХОДНАЯ НАКЛАДНАЯ МАТЕРИАЛОВ"));

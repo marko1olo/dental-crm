@@ -10,11 +10,12 @@ export function useOrthopedicsChairsideState({
 	patientId, activeToothFdi, selectedTeeth = [], recentToothXrayUrl, initialLabOrder,
 }: OrthopedicsChairsidePanelProps) {
 	const [activeTeethInput, setActiveTeethInput] = useState<string>(
-		initialLabOrder?.toothFdi ? String(initialLabOrder.toothFdi) : selectedTeeth.length > 0 ? selectedTeeth.join(", ") : activeToothFdi ? String(activeToothFdi) : "16",
+		initialLabOrder?.toothFdi ? String(initialLabOrder.toothFdi) : selectedTeeth.length > 0 ? selectedTeeth.join(", ") : activeToothFdi ? String(activeToothFdi) : "",
 	);
 	const [activeXrayUrl, setActiveXrayUrl] = useState<string | null>(recentToothXrayUrl ?? null);
 	const [jawScope, setJawScope] = useState<"upper" | "lower" | "both" | "none">(() => {
-		const t = Number(String(initialLabOrder?.toothFdi || activeToothFdi || "16").replace(/\D/g, "").slice(0, 2));
+		const raw = String(initialLabOrder?.toothFdi || activeToothFdi || "").replace(/\D/g, "").slice(0, 2);
+		const t = raw ? Number(raw) : 0;
 		if ((t >= 11 && t <= 28) || (t >= 51 && t <= 65)) return "upper";
 		if ((t >= 31 && t <= 48) || (t >= 71 && t <= 85)) return "lower";
 		return "upper";
@@ -27,6 +28,7 @@ export function useOrthopedicsChairsideState({
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
 	const [selectedStageId, setSelectedStageId] = useState<string>("impression_scan");
 	const [fixationType, setFixationType] = useState<"cement" | "screw" | "clasp">("cement");
+	const [cementBrand, setCementBrand] = useState<string>("relyx_u200");
 	const [hasAntagonists, setHasAntagonists] = useState<boolean>(true);
 	const [articulatorType, setArticulatorType] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
 	const [hasFacebow, setHasFacebow] = useState<boolean>(false);
@@ -70,7 +72,7 @@ export function useOrthopedicsChairsideState({
 		activeTeethInput, setActiveTeethInput, activeXrayUrl, setActiveXrayUrl, jawScope, setJawScope,
 		selectedMaterial, setSelectedMaterial, selectedShade, setSelectedShade, selectedStumpShade, setSelectedStumpShade,
 		shadeSystem, setShadeSystem, activeZtlPresetId, setActiveZtlPresetId, preparationMargin, setPreparationMargin,
-		selectedStageId, setSelectedStageId, fixationType, setFixationType, hasAntagonists, setHasAntagonists,
+		selectedStageId, setSelectedStageId, fixationType, setFixationType, cementBrand, setCementBrand, hasAntagonists, setHasAntagonists,
 		articulatorType, setArticulatorType, hasFacebow, setHasFacebow,
 		grossPriceRub, setGrossPriceRub, ztlCostRub, setZtlCostRub, materialsCostRub, setMaterialsCostRub,
 		netMarginRub, setNetMarginRub, marginPercent, setMarginPercent, dueDate, setDueDate,

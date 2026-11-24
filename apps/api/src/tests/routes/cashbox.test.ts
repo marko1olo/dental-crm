@@ -173,7 +173,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const instRes = await app.inject({
 				method: "POST",
 				url: "/api/installments",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					patientId,
 					totalAmountRub: 60000,
@@ -307,7 +310,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const closeShiftsRes = await app.inject({
 				method: "POST",
 				url: "/api/cash/cash-box-all-closing",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					closedByUserId: userId,
 					zReportNumber: "Z-DAILY-END",

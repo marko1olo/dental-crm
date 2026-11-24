@@ -11,7 +11,6 @@ import { useExpressWaybillState } from "./useExpressWaybillState.js";
 import {
 	exportWaybillCsv,
 	printWaybill,
-	printWaybillTorg12,
 } from "./useWarehouseWaybillsPrintExport.js";
 import {
 	fetchWaybillsFromApi,
@@ -107,7 +106,7 @@ export function useWarehouseWaybills({
 		handleChangeWaybillNumber: draftState.handleChangeWaybillNumber,
 		handleChangeReceiptDate: draftState.handleChangeReceiptDate,
 		...expressState, handlePostWaybill,
-		handlePrintWaybill: printWaybill, handlePrintTorg12: printWaybillTorg12, handleExportCsv: exportWaybillCsv,
+		handlePrintWaybill: printWaybill, handleExportCsv: exportWaybillCsv,
 		handleStartCreateNew, filteredWaybills,
 	};
 }

@@ -145,18 +145,18 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			data-testid="pediatric-bravery-diploma-modal"
 		>
 			<div
-				className="relative w-full max-w-2xl rounded-3xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto"
+				className="relative w-full max-w-2xl rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto"
 				data-testid="pediatric-hero-diploma-modal"
 			>
-				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)]">
+				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<Award className="h-5 w-5 text-[var(--primary,#0d9488)] shrink-0" />
-						<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Диплом за храбрость</h3>
+						<Award className="h-5 w-5 text-[var(--primary)] shrink-0" />
+						<h3 className="text-base sm:text-lg font-semibold text-[var(--ink)]">Диплом за храбрость</h3>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-8 w-8 rounded-full flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition cursor-pointer"
 						aria-label="Закрыть"
 					>
 						<X className="h-5 w-5" />
@@ -172,15 +172,15 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 					diplomaNumber={resolved.diplomaNumber}
 				/>
 
-				<div className="mt-4 pt-3 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-center justify-between gap-3">
+				<div className="mt-4 pt-3 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
 					<div className="flex items-center gap-2 w-full sm:w-auto">
-						<label htmlFor="diploma-hero-input" className="text-xs font-bold text-[var(--muted,#64748b)] shrink-0">Имя героя:</label>
+						<label htmlFor="diploma-hero-input" className="text-xs font-medium text-[var(--ink-muted)] shrink-0">Имя героя:</label>
 						<input
 							id="diploma-hero-input"
 							type="text"
 							value={heroName}
 							onChange={(e) => setHeroName(e.target.value)}
-							className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] w-full sm:w-48"
+							className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] w-full sm:w-48"
 							placeholder="Имя ребенка"
 							data-testid="diploma-hero-name-input"
 						/>
@@ -190,7 +190,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handleWhatsApp}
-							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium hover:bg-[var(--paper-soft)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-whatsapp-diploma"
 							title="Отправить родителям в WhatsApp"
 						>
@@ -201,7 +201,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handleTelegram}
-							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium hover:bg-[var(--paper-soft)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-telegram-diploma"
 							title="Отправить в Telegram"
 						>
@@ -212,7 +212,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handleCopyDiplomaText}
-							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-copy-diploma-text"
 						>
 							<Copy className="w-4 h-4 shrink-0" />
@@ -222,7 +222,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] sm:h-9 px-5 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
 							data-testid="btn-modal-print-diploma"
 						>
 							<Printer className="h-4 w-4 shrink-0" />

@@ -118,7 +118,7 @@
   - EndoCanalMeasurementDrawer ([`EndoCanalMeasurementDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx)): Выкатная шторка фиксации длины каналов по апекслокатору (МВ1, МВ2, ДВ, Н) и мастер-файлов.
   - ToothHistoryChronicle ([`ToothHistoryChronicle.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothHistoryChronicle.tsx)): Хронологическая лента истории вмешательств по конкретному зубу.
 - 🔵 Tier 3 (Cold Backoffice / Кабинетный режим):
-  - PeriodontalChartingModal ([`PeriodontalChartingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartingModal.tsx)): Полноэкранная периодонтограмма (глубина карманов в 6 точках, кровоточивость BOP, подвижность, рецессия).
+  - PerioStudioModal ([`PerioStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/perio/PerioStudioModal.tsx)): Полноэкранная периодонтограмма (глубина карманов в 6 точках, кровоточивость BOP, подвижность, рецессия).
   - PediatricMixedDentitionModal ([`PediatricMixedDentitionModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PediatricMixedDentitionModal.tsx)): Кабинет смешанного прикуса (молочные зубы, резорбция корней, кариограмма).
   - EndoCanalLogModal ([`EndoCanalLogModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/EndoCanalLogModal.tsx)): Полный протокол эндодонтического лечения с рентген-контролем обтурации.
 

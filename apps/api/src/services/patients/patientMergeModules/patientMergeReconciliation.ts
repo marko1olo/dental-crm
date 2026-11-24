@@ -1,4 +1,4 @@
-import type { PatientAdministrativeProfile } from "@dental/shared";
+import { kopecksToNumericString, parseKopecks, type PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import { familyGroups, patientReferrals, patients } from "../../../db/schema.js";
@@ -170,13 +170,23 @@ export async function reconcileFamilyGroups(
 		);
 
 		if (dupFamily && primFamily) {
-			const dupFamilyBal = Number(dupFamily.balance ?? 0);
-			if (dupFamilyBal > 0) {
-				const primFamilyBal = Number(primFamily.balance ?? 0);
-				const combinedFamilyBal = (primFamilyBal + dupFamilyBal).toFixed(2);
+			const dupBalKop =
+				dupFamily.balanceKopecks != null
+					? Number(dupFamily.balanceKopecks)
+					: parseKopecks(dupFamily.balance);
+			if (dupBalKop > 0) {
+				const primBalKop =
+					primFamily.balanceKopecks != null
+						? Number(primFamily.balanceKopecks)
+						: parseKopecks(primFamily.balance);
+				const totalBalKop = primBalKop + dupBalKop;
 				await inner
 					.update(familyGroups)
-					.set({ balance: combinedFamilyBal, updatedAt: new Date() })
+					.set({
+						balance: kopecksToNumericString(totalBalKop),
+						balanceKopecks: totalBalKop,
+						updatedAt: new Date(),
+					})
 					.where(
 						and(
 							eq(familyGroups.id, primary.familyGroupId),
@@ -186,7 +196,11 @@ export async function reconcileFamilyGroups(
 				// Обнуляем баланс поглощенной семейной группы
 				await inner
 					.update(familyGroups)
-					.set({ balance: "0.00", updatedAt: new Date() })
+					.set({
+						balance: "0.00",
+						balanceKopecks: 0,
+						updatedAt: new Date(),
+					})
 					.where(
 						and(
 							eq(familyGroups.id, duplicate.familyGroupId),
@@ -194,7 +208,7 @@ export async function reconcileFamilyGroups(
 						),
 					);
 				filledFields.push(
-					`семейный кошелек (${dupFamilyBal.toFixed(2)} ₽ перенесено в основную группу)`,
+					`семейный кошелек (${kopecksToNumericString(dupBalKop)} ₽ перенесено в основную группу)`,
 				);
 			}
 
@@ -265,9 +279,29 @@ export function reconcilePatientProfiles(
 			if (dupAdmin.insurancePolicyNumber) filledFields.push("полис ОМС/ДМС");
 			if (dupAdmin.taxpayerInn) filledFields.push("ИНН");
 			if (dupAdmin.registrationAddress || dupAdmin.residentialAddress) filledFields.push("адрес");
+			if (Array.isArray(dupAdmin.somaticAlerts) && dupAdmin.somaticAlerts.length > 0) {
+				filledFields.push("аллергии и стоп-факторы");
+			}
 		} else {
 			for (const [key, value] of Object.entries(dupAdmin)) {
 				const curVal = (nextAdminProfile as Record<string, unknown>)[key];
+				if (key === "somaticAlerts") {
+					if (Array.isArray(curVal) && Array.isArray(value)) {
+						const merged = Array.from(new Set([...curVal, ...value]));
+						if (merged.length > curVal.length) {
+							(nextAdminProfile as Record<string, unknown>)[key] = merged;
+							filledFields.push("аллергии и стоп-факторы");
+						}
+					} else if (
+						(curVal === null || curVal === undefined || (Array.isArray(curVal) && curVal.length === 0)) &&
+						Array.isArray(value) &&
+						value.length > 0
+					) {
+						(nextAdminProfile as Record<string, unknown>)[key] = Array.from(new Set(value));
+						filledFields.push("аллергии и стоп-факторы");
+					}
+					continue;
+				}
 				const isCurEmpty =
 					curVal === null ||
 					curVal === undefined ||

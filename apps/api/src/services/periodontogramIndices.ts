@@ -119,13 +119,15 @@ export function computeSnapshotIndices(
 		}
 	}
 
-	// BOP % and PI % (rounded to 1 decimal)
-	const bop_pct = denominator > 0 ? calculateIndexPercentTenths(bopCount, denominator) : 0;
-	const pi_pct = denominator > 0 ? calculateIndexPercentTenths(plaqueCount, denominator) : 0;
+	// Клинический расчет CAL, BOP % и PI % (ADR 0013 / Mandate 8e):
+	// Нормализация знаменателя по фактически зондированным сайтам (actualProbedSitesCount),
+	// исключая занижение тяжести локализованного пародонтита и маскировку воспаления делением на неисследованные зубы
+	const actualProbedSitesCount = totalProbed > 0 ? totalProbed : Math.max(bopCount, plaqueCount);
+	const effectiveDenominator = actualProbedSitesCount > 0 ? actualProbedSitesCount : denominator;
 
-	// Клинический расчет CAL: нормализация по фактически зондированным сайтам (actualProbedSitesCount),
-	// исключая занижение тяжести локализованного пародонтита делением на неисследованные зубы
-	const actualProbedSitesCount = totalProbed;
+	const bop_pct = effectiveDenominator > 0 ? calculateIndexPercentTenths(bopCount, effectiveDenominator) : 0;
+	const pi_pct = effectiveDenominator > 0 ? calculateIndexPercentTenths(plaqueCount, effectiveDenominator) : 0;
+
 	const probed_cal_mean_mm = actualProbedSitesCount > 0
 		? Math.round((calSum * 100) / actualProbedSitesCount) / 100
 		: 0;

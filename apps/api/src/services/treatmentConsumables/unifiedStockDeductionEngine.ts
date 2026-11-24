@@ -28,6 +28,7 @@ export async function executeUnifiedStockDeduction(
 		notes = null,
 		reasonPrefix = "Списание со склада",
 		metadata,
+		idempotencyKey,
 		successMessageTemplate,
 	} = params;
 
@@ -57,7 +58,10 @@ export async function executeUnifiedStockDeduction(
 		const deductQty = Number(target.qty);
 		const safeDeductQty = Number.isFinite(deductQty) && deductQty > 0 ? deductQty : 1;
 		const itemLabel = target.label || inv.name;
-		const txNote = notes || `${reasonPrefix} (${itemLabel})`;
+		const idemTag = idempotencyKey ? ` [idempotencyKey:${idempotencyKey}]` : "";
+		const txNote = notes
+			? `${notes}${idemTag}`
+			: `${reasonPrefix} (${itemLabel})${idemTag}`;
 
 		const fefoRes = await fefoStockService.deductFefo(tx as DbTransaction, {
 			organizationId,

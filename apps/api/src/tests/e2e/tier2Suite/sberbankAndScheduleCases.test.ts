@@ -11,7 +11,7 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../../../db/schema.js";
-import { verifySberbankChecksum } from "../../../routes/sberbank.js";
+import { verifySberbankChecksum } from "../../../routes/sberbankRoutes/index.js";
 import {
 	fixtureUuid,
 	withFixtureTenant,

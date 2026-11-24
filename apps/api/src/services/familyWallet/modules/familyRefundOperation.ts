@@ -7,18 +7,18 @@ import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyRefundParams, type FamilyRefundResult } from "../familyWalletTypes.js";
 
 export async function processFamilyRefund(params: FamilyRefundParams): Promise<FamilyRefundResult> {
-	const { organizationId, familyGroupId, amountRub, cashBoxId, operatorId, method = "cash", clientMutationId, reasonText } = params;
+	const { organizationId, familyGroupId, amountRub, amountKopecks, cashBoxId, operatorId, method = "cash", clientMutationId, reasonText } = params;
 
 	if (!organizationId) throw new FamilyWalletError("Не указан ID организации клиники", 400, "MISSING_ORG_ID");
 	if (!familyGroupId) throw new FamilyWalletError("Не указан ID семейной группы", 400, "MISSING_FAMILY_ID");
 	if (!clientMutationId?.trim()) {
 		throw new FamilyWalletError("Ключ операции (clientMutationId) обязателен для защиты от повторных возвратов", 400, "MISSING_IDEMPOTENCY_KEY");
 	}
-	if (typeof amountRub !== "number" || !Number.isFinite(amountRub) || Number.isNaN(amountRub)) {
+	if (amountKopecks == null && (typeof amountRub !== "number" || !Number.isFinite(amountRub) || Number.isNaN(amountRub))) {
 		throw new FamilyWalletError("Сумма возврата должна быть числом", 400, "INVALID_AMOUNT");
 	}
 
-	const refundKopecks = parseKopecks(amountRub);
+	const refundKopecks = params.amountKopecks != null ? Number(params.amountKopecks) : parseKopecks(amountRub);
 	if (refundKopecks <= 0) throw new FamilyWalletError("Сумма возврата должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
 
 	return await withTenantCtx(organizationId, async (tx) => {
@@ -50,7 +50,17 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 				throw new FamilyWalletError("Клиентская операция уже записала другой возврат.", 409, "IDEMPOTENCY_CONFLICT");
 			}
 			const curBal = family.balanceKopecks != null ? Number(family.balanceKopecks) : (family.balance ? parseKopecks(family.balance) : 0);
-			return { success: true, payment: existingPayment, previousBalanceRub: kopecksToRub(curBal), newBalanceRub: kopecksToRub(curBal), refundedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)), duplicate: true };
+			return {
+				success: true,
+				payment: existingPayment,
+				previousBalanceRub: kopecksToRub(curBal),
+				newBalanceRub: kopecksToRub(curBal),
+				refundedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)),
+				previousBalanceKopecks: curBal,
+				newBalanceKopecks: curBal,
+				refundedKopecks: parseKopecks(existingPayment.amountRub),
+				duplicate: true,
+			};
 		}
 
 		const currentBalanceKop = family.balanceKopecks != null ? Number(family.balanceKopecks) : (family.balance ? parseKopecks(family.balance) : 0);
@@ -77,8 +87,15 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 			const [targetBox] = await tx.select().from(cashBoxes).where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, organizationId))).for("update").limit(1);
 			if (targetBox) {
 				const boxBalKop = targetBox.balanceKopecks != null ? Number(targetBox.balanceKopecks) : parseKopecks(targetBox.balanceRub || 0);
+				if (boxBalKop < refundKopecks) {
+					throw new FamilyWalletError(
+						`В кассе недостаточно наличных средств для возврата (в кассе: ${kopecksToRub(boxBalKop)} ₽, требуется: ${kopecksToRub(refundKopecks)} ₽)`,
+						400,
+						"INSUFFICIENT_CASHBOX_BALANCE",
+					);
+				}
 				const refundRub = kopecksToRub(refundKopecks);
-				const newBoxBalKop = Math.max(0, boxBalKop - refundKopecks);
+				const newBoxBalKop = boxBalKop - refundKopecks;
 
 				await tx.update(cashBoxes).set({
 					balanceRub: kopecksToRub(newBoxBalKop),
@@ -108,6 +125,17 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_BALANCE_UPDATED", payload: { organizationId, familyGroupId, balance: newBalanceStr } });
 		wsBroker.broadcastToOrganization(organizationId, { type: "PAYMENT_CREATED", payload: payment });
 
-		return { success: true, payment, previousBalanceRub: kopecksToRub(currentBalanceKop), newBalanceRub: kopecksToRub(newBalanceKop), refundedRub: kopecksToRub(refundKopecks), duplicate: false, cashOperation: cashOp };
+		return {
+			success: true,
+			payment,
+			previousBalanceRub: kopecksToRub(currentBalanceKop),
+			newBalanceRub: kopecksToRub(newBalanceKop),
+			refundedRub: kopecksToRub(refundKopecks),
+			previousBalanceKopecks: currentBalanceKop,
+			newBalanceKopecks: newBalanceKop,
+			refundedKopecks: refundKopecks,
+			duplicate: false,
+			cashOperation: cashOp,
+		};
 	});
 }

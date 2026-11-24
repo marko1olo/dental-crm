@@ -31,7 +31,7 @@ import {
 	STOMX_TOOTH_DEFECTS,
 } from "../index.js";
 
-describe("StomX Tooth Defects, Position Anomalies & Dental Anatomy Catalog", () => {
+describe("Clinical Tooth Defects, Position Anomalies & Dental Anatomy Catalog (Mandates 8x, 8ap)", () => {
 	it("exports canonical CLINICAL_* alongside deprecated STOMX_* constants", () => {
 		assert.strictEqual(STOMX_TOOTH_DEFECTS, CLINICAL_TOOTH_DEFECTS);
 		assert.strictEqual(STOMX_POSITION_ANOMALIES, CLINICAL_POSITION_ANOMALIES);

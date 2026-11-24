@@ -45,18 +45,18 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 			data-testid="visit-surgery-implant-bar"
 		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--primary)]">
 					<Sparkles size={15} />
 					<span>Пресет имплантации:</span>
 				</div>
 				<button
 					type="button"
 					onClick={() => onApplyPreset()}
-					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
+					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2 cursor-pointer shadow-xs transition-all touch-manipulation"
 					data-testid="btn-preset-standard-implant-tab"
 					title="Стандартный протокол: установка дентального имплантата с ФДМ"
 				>
-					<Zap size={14} className="text-amber-300" />
+					<Zap size={14} className="shrink-0" />
 					<span>Стандартная имплантация с ФДМ</span>
 				</button>
 			</div>
@@ -90,7 +90,7 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 								const val = Number(e.target.value);
 								if (!Number.isNaN(val)) setImplantIsq(val);
 							}}
-							className="w-16 h-8 px-2 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-mono text-xs font-bold text-center focus:border-[var(--teal,#0d9488)] outline-none"
+							className="w-16 h-8 px-2 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-mono text-xs font-bold text-center focus:border-[var(--primary)] outline-none"
 							data-testid="input-implant-isq"
 							title="Коэффициент первичной стабильности имплантата ISQ (шкала Остелл 55–85)"
 						/>
@@ -101,7 +101,7 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 								onClick={() => setImplantIsq(presetIsq)}
 								className={`h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
 									implantIsq === presetIsq
-										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+										? "bg-[var(--primary)] text-white"
 										: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)]"
 								}`}
 								data-testid={`btn-preset-isq-${presetIsq}`}
@@ -122,8 +122,8 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 								onClick={() => setImplantSuture(suture)}
 								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									implantSuture === suture
-										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+										? "bg-[var(--primary)] text-white"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 								}`}
 								data-testid={`btn-suture-${suture.replace(/\s+/g, "_")}`}
 							>

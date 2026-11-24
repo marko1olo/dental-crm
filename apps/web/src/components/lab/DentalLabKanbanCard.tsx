@@ -10,6 +10,7 @@ import {
 	MoreHorizontal,
 	RotateCcw,
 	Send,
+	Truck,
 } from "lucide-react";
 import {
 	ORTHOPEDIC_WORK_TYPES,
@@ -198,19 +199,23 @@ export function KanbanCardActions({
 	let AdvanceIcon = ChevronRight;
 
 	if (columnId === "draft") {
-		advanceLabel = "В работу";
-		advanceTitle = "Передать наряд в работу технику";
+		advanceLabel = "Отправить";
+		advanceTitle = "Отправить наряд-заказ и слепки в ЗТЛ";
 		AdvanceIcon = Send;
 	} else if (columnId === "sent_to_lab") {
 		advanceLabel = "В работу";
 		advanceTitle = "Передать технику в работу";
 		AdvanceIcon = Send;
 	} else if (columnId === "in_progress") {
-		advanceLabel = "Поступил в клинику";
-		advanceTitle = "Конструкция готова и доставлена в клинику";
-		AdvanceIcon = CheckCircle2;
+		advanceLabel = "На примерку";
+		advanceTitle = "Передать работу на клиническую примерку";
+		AdvanceIcon = Calendar;
 	} else if (columnId === "fitting_scheduled") {
-		advanceLabel = "Установлен";
+		advanceLabel = "В клинику";
+		advanceTitle = "Работа завершена и поступила в клинику";
+		AdvanceIcon = Truck;
+	} else if (columnId === "ready_in_clinic") {
+		advanceLabel = "Зафиксировать";
 		advanceTitle = "Конструкция зафиксирована и установлена пациенту";
 		AdvanceIcon = CheckCircle2;
 	} else if (columnId === "installed_completed") {

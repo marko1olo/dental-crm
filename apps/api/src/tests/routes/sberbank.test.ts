@@ -7,7 +7,7 @@ import {
 	sberbankTransactions,
 	users,
 } from "../../db/schema.js";
-import { registerSberbankRoutes } from "../../routes/sberbank.js";
+import { registerSberbankRoutes } from "../../routes/sberbankRoutes/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

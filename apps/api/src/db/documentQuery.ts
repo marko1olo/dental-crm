@@ -46,6 +46,25 @@ export function writeIssuedDocumentSnapshot(
 	};
 }
 
+function stampedDocumentSnapshotPath(documentId: string): string {
+	const dir = path.join(process.cwd(), ".dente-data", "documents");
+	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+	return path.join(dir, `${documentId}.stamped.html`);
+}
+
+export function writeStampedDocumentSnapshot(
+	documentId: string,
+	html: string,
+): { sha256: string; snapshotPath: string; createdAt: string } {
+	const file = stampedDocumentSnapshotPath(documentId);
+	writeFileSync(file, html, "utf8");
+	return {
+		sha256: createHash("sha256").update(html, "utf8").digest("hex"),
+		snapshotPath: file,
+		createdAt: new Date().toISOString(),
+	};
+}
+
 export function readIssuedDocumentSnapshot(
 	document: Pick<
 		import("@dental/shared").GeneratedDocument,
@@ -648,7 +667,7 @@ export async function getDocumentRenderContextFromDb(
 	] = await Promise.all([
 		import("./settingsQuery.js"),
 		import("./pricelistQuery.js"),
-		import("./billingQuery.js"),
+		import("./billing/index.js"),
 		import("./clinicalQuery.js"),
 	]);
 	const settings = await getClinicSettingsFromDb(organizationId);

@@ -538,7 +538,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 				.limit(1);
 			if (members.length > 0) return { status: 400, body: { error: "Cannot delete family group with members" } };
 
-			const balanceKopecks = Number(family.balanceKopecks != null && family.balanceKopecks > 0 ? family.balanceKopecks : parseKopecks(family.balance));
+			const balanceKopecks = Number(family.balanceKopecks != null ? family.balanceKopecks : parseKopecks(family.balance));
 			if (balanceKopecks !== 0) {
 				return { status: 409, body: { error: "FamilyWalletNotEmpty", message: `На кошельке ${kopecksToNumericString(balanceKopecks)} ₽. Удалить нельзя.` } };
 			}

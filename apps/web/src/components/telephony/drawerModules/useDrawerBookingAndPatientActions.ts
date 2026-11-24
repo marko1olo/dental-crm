@@ -132,7 +132,9 @@ export function useDrawerBookingAndPatientActions(params: {
 		if (typeof window !== "undefined") {
 			try {
 				window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo }));
-			} catch {}
+			} catch (dispatchErr) {
+				console.warn("[TelephonyDrawer] Ошибка отправки события dente-book-stage-appointment:", dispatchErr);
+			}
 		}
 		if (activeCall && activeCall.status === "ringing") answerCall();
 		if (useAppStore.getState().currentView !== "schedule") useAppStore.getState().setCurrentView("schedule");

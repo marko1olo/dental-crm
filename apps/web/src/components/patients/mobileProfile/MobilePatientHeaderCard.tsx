@@ -103,6 +103,7 @@ export const MobilePatientHeaderCard: React.FC<MobilePatientHeaderCardProps> = (
 				allergyText={allergyText}
 				somaticRiskFlags={somaticRiskFlags}
 				updatePatientCoreDraft={updatePatientCoreDraft}
+				onOpenCardTab={onOpenCardTab}
 			/>
 
 			<MobilePatientFamilySection

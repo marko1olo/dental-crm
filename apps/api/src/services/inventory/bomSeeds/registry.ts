@@ -17,6 +17,3 @@ export const DEFAULT_SERVICE_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 	...PROSTHETICS_BOM_SEEDS,
 	...ORTHO_BOM_SEEDS,
 ];
-
-/** Алиас совместимости (Мандат 8x) */
-export const DEFAULT_804N_BOM_SEEDS = DEFAULT_SERVICE_BOM_SEEDS;

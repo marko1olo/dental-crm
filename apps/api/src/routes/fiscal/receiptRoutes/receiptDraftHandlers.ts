@@ -9,8 +9,11 @@ import {
 	basisPointsFromPercent,
 	createFiscalReceiptPayloadSchema,
 	kopecksToRub,
+	multiplyKopecks,
+	multiplyKopecksFractional,
 	parseKopecks,
 	percentageOfKopecks,
+	toExactKopecks,
 } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -83,11 +86,17 @@ export async function verifyAndEnforceCatalogPrices(
 		}
 
 		const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
-		const expectedTotalItemKop = Math.round(expectedUnitPriceKop * item.quantity);
+		const maxCatalogTotalItemKop = Number.isInteger(item.quantity)
+			? multiplyKopecks(toExactKopecks(catalogUnitPriceKop), item.quantity)
+			: multiplyKopecksFractional(toExactKopecks(catalogUnitPriceKop), item.quantity);
 
-		if (item.amountKopecks <= catalogUnitPriceKop * item.quantity) {
+		const expectedTotalItemKop = Number.isInteger(item.quantity)
+			? multiplyKopecks(toExactKopecks(expectedUnitPriceKop), item.quantity)
+			: multiplyKopecksFractional(toExactKopecks(expectedUnitPriceKop), item.quantity);
+
+		if (item.amountKopecks <= maxCatalogTotalItemKop) {
 			// Автономия врача на скидки до 100% (гарантийные переделки, скидки персоналу, округление копеек)
-			const actualDiscountKop = catalogUnitPriceKop * item.quantity - item.amountKopecks;
+			const actualDiscountKop = maxCatalogTotalItemKop - item.amountKopecks;
 			if (actualDiscountKop > 0) {
 				item.discountKopecks = actualDiscountKop;
 			}

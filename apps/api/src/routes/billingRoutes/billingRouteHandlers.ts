@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { handleCashRefund } from "../cashbox/cashboxRefundRoutes.js";
 import { handleGetBillingInvoices } from "./handlers/billingInvoicesHandler.js";
 import { handleGetBillingPayments } from "./handlers/billingPaymentsHandler.js";
 import { handleGetFiscalQueuePending } from "./handlers/fiscalQueueQueryHandler.js";
@@ -6,11 +7,10 @@ import { handleRetryAllFiscalQueue } from "./handlers/fiscalQueueRetryAllHandler
 import { handleRetryFiscalQueueItem } from "./handlers/fiscalQueueRetryItemHandler.js";
 import { invoicePayHandler } from "./handlers/invoicePayWrapper.js";
 import { handleCreatePayment } from "./handlers/paymentCreateHandler.js";
-import { handlePartialRefund } from "./handlers/refundReceiptHandler.js";
 
 export {
 	handleCreatePayment,
-	handlePartialRefund,
+	handleCashRefund as handlePartialRefund,
 	handleGetFiscalQueuePending,
 	handleRetryFiscalQueueItem,
 	handleRetryAllFiscalQueue,
@@ -101,7 +101,7 @@ export async function registerBillingRoutes(app: FastifyInstance): Promise<void>
 
 	app.post("/api/billing/refunds/partial", billingPaymentMutationOptions, async (request, reply) => {
 		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handlePartialRefund(request, reply);
+		return handleCashRefund(request, reply);
 	});
 	app.get("/api/billing/fiscal-queue/pending", handleGetFiscalQueuePending);
 	app.post("/api/billing/fiscal-queue/:id/retry", billingPaymentMutationOptions, async (request, reply) => {

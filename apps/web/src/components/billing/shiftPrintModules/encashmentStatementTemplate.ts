@@ -2,6 +2,7 @@
  * encashmentStatementTemplate.ts — Modern Encashment Statement HTML Template.
  * Mandate 8b: <= 120 lines. Zero Soviet bureaucracy.
  */
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import type { EncashmentStatementData } from "./types.js";
 
 export function generateEncashmentStatementHtml(stmt: EncashmentStatementData): string {
@@ -34,7 +35,7 @@ export function generateEncashmentStatementHtml(stmt: EncashmentStatementData): 
 	<table class="grid-table">
 		<tr><td style="width: 35%;"><strong>Куда передается:</strong></td><td>${stmt.destinationLabel}</td></tr>
 		<tr><td><strong>Сейф-пакет / Пломба:</strong></td><td>${stmt.bagNumber || "—"} / ${stmt.sealNumber || "—"}</td></tr>
-		<tr><td><strong>Сумма цифрами:</strong></td><td style="font-size: 11pt; font-weight: 700;">${stmt.encashmentAmountRub.toFixed(2)} руб.</td></tr>
+		<tr><td><strong>Сумма цифрами:</strong></td><td style="font-size: 11pt; font-weight: 700;">${formatKopecksToRub(rublesToKopecks(stmt.encashmentAmountRub))}</td></tr>
 		<tr><td><strong>Сумма прописью:</strong></td><td style="font-weight: 600;">${stmt.encashmentAmountWordsRu}</td></tr>
 	</table>
 

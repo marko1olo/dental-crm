@@ -31,7 +31,7 @@ export function exportPsoToCsv(records: readonly PsoTestRecord[]): string {
 		escapeCsvField(r.isPhenolphthaleinNegative ? "Отрицательная (норма)" : "ПОЛОЖИТЕЛЬНАЯ (щелочь)"),
 		escapeCsvField(r.isSudanNegative ? "Отрицательная (норма)" : "ПОЛОЖИТЕЛЬНАЯ (масло)"),
 		escapeCsvField(r.detergentBrand),
-		escapeCsvField(r.isBatchApproved ? "ПСО ПРОЙДЕНА (Годно)" : "БРАК (Возврат)"),
+		escapeCsvField(r.isBatchApproved ? "Очистка пройдена (Годно)" : "БРАК (Возврат)"),
 		escapeCsvField(r.rejectionReason ?? ""),
 		escapeCsvField(r.operatorFullName),
 		escapeCsvField(r.electronicSignatureHash),

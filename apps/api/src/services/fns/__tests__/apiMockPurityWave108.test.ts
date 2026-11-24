@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { buildFnsKnd1151156Xml } from "@dental/shared";
 import { renderDocumentHtml } from "../../../documents/renderDocument.js";
 import { parsePassportFromString } from "../../../routes/documentTemplatesModules/defaultStatutoryTemplates.js";
-import { verifySberPosWebhookChecksum } from "../../../routes/payments/sberPosWebhookRoute.js";
+import { verifySberPosWebhookChecksum } from "../../../routes/payments/sberWebhook/signatureVerifier.js";
 import type { GeneratedDocument, Patient } from "@dental/shared";
 
 describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {

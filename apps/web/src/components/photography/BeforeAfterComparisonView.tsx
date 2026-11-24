@@ -44,23 +44,79 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	};
 
 	return (
-		<div className="before-after-view-root" style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', width: '100%' }}>
-				<div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-					<span style={{ fontSize: '12px', fontWeight: 700 }}>До:</span>
-					<select value={beforeSlotId} onChange={(e) => onBeforeSlotChange?.(e.target.value)} style={{ minHeight: '34px', padding: '2px 8px', borderRadius: '6px', border: '1px solid var(--line, #cbd5e1)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '12px' }}>
-						{preset.slots.map((s) => <option key={s.id} value={s.id}>{s.shortLabelRu}</option>)}
+		<div className="flex flex-col gap-3 w-full items-center">
+			<div className="flex justify-between items-center flex-wrap gap-2 w-full">
+				<div className="flex items-center gap-2 flex-wrap">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">До:</span>
+					<select
+						value={beforeSlotId}
+						onChange={(e) => onBeforeSlotChange?.(e.target.value)}
+						className="h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+					>
+						{preset.slots.map((s) => (
+							<option key={s.id} value={s.id}>
+								{s.shortLabelRu}
+							</option>
+						))}
 					</select>
-					<span style={{ fontSize: '12px', fontWeight: 700 }}>После:</span>
-					<select value={afterSlotId} onChange={(e) => onAfterSlotChange?.(e.target.value)} style={{ minHeight: '34px', padding: '2px 8px', borderRadius: '6px', border: '1px solid var(--line, #cbd5e1)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '12px' }}>
-						{preset.slots.map((s) => <option key={s.id} value={s.id}>{s.shortLabelRu}</option>)}
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">После:</span>
+					<select
+						value={afterSlotId}
+						onChange={(e) => onAfterSlotChange?.(e.target.value)}
+						className="h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+					>
+						{preset.slots.map((s) => (
+							<option key={s.id} value={s.id}>
+								{s.shortLabelRu}
+							</option>
+						))}
 					</select>
 				</div>
-				<div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-					<button type="button" className={`photo-touch-btn ${viewMode === 'split' ? 'primary' : ''}`} onClick={() => setViewMode('split')} style={{ minHeight: '34px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}><MoveHorizontal size={14} /> Сплит</button>
-					<button type="button" className={`photo-touch-btn ${viewMode === 'side_by_side' ? 'primary' : ''}`} onClick={() => setViewMode('side_by_side')} style={{ minHeight: '34px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}><Columns size={14} /> Рядом</button>
-					<button type="button" className={`photo-touch-btn ${viewMode === 'blend' ? 'primary' : ''}`} onClick={() => setViewMode('blend')} style={{ minHeight: '34px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}><Layers size={14} /> Наложение</button>
-					<button type="button" className="photo-touch-btn" data-testid="btn-patient-presentation-popout" onClick={handlePopout} title="Экран пациента" style={{ minHeight: '34px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}><ExternalLink size={14} /> Экран</button>
+				<div className="flex gap-1.5 items-center flex-wrap">
+					<div className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] inline-flex items-center gap-1">
+						<button
+							type="button"
+							onClick={() => setViewMode('split')}
+							className={`h-7 px-2.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+								viewMode === 'split'
+									? 'bg-[var(--paper)] text-[var(--ink)] shadow-xs'
+									: 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+							}`}
+						>
+							<MoveHorizontal className="w-3.5 h-3.5 shrink-0" /> Сплит
+						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode('side_by_side')}
+							className={`h-7 px-2.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+								viewMode === 'side_by_side'
+									? 'bg-[var(--paper)] text-[var(--ink)] shadow-xs'
+									: 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+							}`}
+						>
+							<Columns className="w-3.5 h-3.5 shrink-0" /> Рядом
+						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode('blend')}
+							className={`h-7 px-2.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+								viewMode === 'blend'
+									? 'bg-[var(--paper)] text-[var(--ink)] shadow-xs'
+									: 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
+							}`}
+						>
+							<Layers className="w-3.5 h-3.5 shrink-0" /> Наложение
+						</button>
+					</div>
+					<button
+						type="button"
+						data-testid="btn-patient-presentation-popout"
+						onClick={handlePopout}
+						title="Экран пациента"
+						className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+					>
+						<ExternalLink className="w-3.5 h-3.5 shrink-0" /> Экран
+					</button>
 				</div>
 			</div>
 

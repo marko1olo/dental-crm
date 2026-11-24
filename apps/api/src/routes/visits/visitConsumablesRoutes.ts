@@ -13,6 +13,8 @@ import {
 	isValidUuid,
 	kopecksToRubles,
 	rublesToKopecks,
+	treatmentConsumableDeductionRecordSchema,
+	treatmentConsumableDeductionWarningSchema,
 	type TreatmentConsumableDeductionRecord,
 	type TreatmentConsumableDeductionWarning,
 } from "@dental/shared";
@@ -190,31 +192,27 @@ async function handlePostVisitConsumables(
 	}
 
 	try {
-		let result: unknown;
+		const result = await withTenantCtx(orgId, async (tx) => {
+			let innerResult: unknown;
 
-		if (body.bundleType === "surgery") {
-			result = await withTenantCtx(orgId, async (tx) => {
-				return TreatmentConsumablesService.quickWriteoffSurgery(tx, {
+			if (body.bundleType === "surgery") {
+				innerResult = await TreatmentConsumablesService.quickWriteoffSurgery(tx, {
 					organizationId: orgId,
 					visitId: targetVisitId,
 					userId: doctorUserId,
 					notes: body.notes ?? null,
 				});
-			});
-		} else if (body.bundleType === "orthopedic") {
-			result = await withTenantCtx(orgId, async (tx) => {
-				return TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
+			} else if (body.bundleType === "orthopedic") {
+				innerResult = await TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
 					organizationId: orgId,
 					protocolId: (body as { protocolId?: string }).protocolId ?? "orthopedics_prep",
 					visitId: targetVisitId,
 					userId: doctorUserId,
 					notes: body.notes ?? null,
 				});
-			});
-		} else if (typeof body.carpulesCount === "number" && body.carpulesCount > 0) {
-			const carpulesCount = body.carpulesCount;
-			result = await withTenantCtx(orgId, async (tx) => {
-				return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+			} else if (typeof body.carpulesCount === "number" && body.carpulesCount > 0) {
+				const carpulesCount = body.carpulesCount;
+				innerResult = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 					organizationId: orgId,
 					visitId: targetVisitId,
 					carpulesCount,
@@ -222,29 +220,27 @@ async function handlePostVisitConsumables(
 					userId: doctorUserId,
 					notes: body.notes ?? null,
 				});
-			});
-		} else if (Array.isArray(body.items) && body.items.length > 0) {
-			const itemsToDeduct = body.items.map((it) => {
-				const unitCostKopecks =
-					it.unitCostKopecks != null
-						? Math.round(Number(it.unitCostKopecks))
-						: it.unitCostRub != null
-							? rublesToKopecks(Number(it.unitCostRub))
-							: 0;
+			} else if (Array.isArray(body.items) && body.items.length > 0) {
+				const itemsToDeduct = body.items.map((it) => {
+					const unitCostKopecks =
+						it.unitCostKopecks != null
+							? Math.round(Number(it.unitCostKopecks))
+							: it.unitCostRub != null
+								? rublesToKopecks(Number(it.unitCostRub))
+								: 0;
 
-				return {
-					inventoryItemId: it.inventoryItemId || it.id,
-					name: it.name,
-					quantity: Number(it.quantity) || 1,
-					notes: it.notes || it.reason || body.notes || `Расходные материалы по приёму ${targetVisitId}`,
-					unitCostKopecks,
-					unitCostRub: String(kopecksToRubles(unitCostKopecks)),
-					allowOverdraft: body.allowOverdraft ?? true,
-				};
-			});
+					return {
+						inventoryItemId: it.inventoryItemId || it.id,
+						name: it.name,
+						quantity: Number(it.quantity) || 1,
+						notes: it.notes || it.reason || body.notes || `Расходные материалы по приёму ${targetVisitId}`,
+						unitCostKopecks,
+						unitCostRub: String(kopecksToRubles(unitCostKopecks)),
+						allowOverdraft: body.allowOverdraft ?? true,
+					};
+				});
 
-			const deductionResults = await withTenantCtx(orgId, async (tx) => {
-				return executeFefoBatchDeduction(tx, {
+				const deductionResults = await executeFefoBatchDeduction(tx, {
 					organizationId: orgId,
 					items: itemsToDeduct,
 					visitId: targetVisitId,
@@ -252,57 +248,57 @@ async function handlePostVisitConsumables(
 					effectiveUserId: doctorUserId,
 					commonReason: body.notes,
 				});
-			});
 
-			const hasOverdraft = deductionResults.some((r) => r.isOverdraft);
-			result = {
-				success: true,
-				visitId: targetVisitId,
-				count: deductionResults.length,
-				items: deductionResults,
-				hasOverdraft,
-				isOverdraft: hasOverdraft,
-				warning: hasOverdraft
-					? "Зафиксирован мягкий овердрафт склада. Приём пациента завершён без блокировки."
-					: undefined,
-			};
-		} else {
-			// По умолчанию: 1-клик списание стандартного набора терапевта
-			result = await withTenantCtx(orgId, async (tx) => {
-				return TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
+				const hasOverdraft = deductionResults.some((r) => r.isOverdraft);
+				innerResult = {
+					success: true,
+					visitId: targetVisitId,
+					count: deductionResults.length,
+					items: deductionResults,
+					hasOverdraft,
+					isOverdraft: hasOverdraft,
+					warning: hasOverdraft
+						? "Зафиксирован мягкий овердрафт склада. Приём пациента завершён без блокировки."
+						: undefined,
+				};
+			} else {
+				// По умолчанию: Автоматическое списание стандартного набора терапевта
+				innerResult = await TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
 					organizationId: orgId,
 					visitId: targetVisitId,
 					userId: doctorUserId,
 					notes: body.notes ?? "Стандартный набор расходных материалов терапевта",
 				});
-			});
-		}
+			}
 
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "INVENTORY_STOCK_CHANGED",
-			payload: {
-				visitId: targetVisitId,
-				action: "consumables_deducted",
-			},
-		});
+			// Регистрация в реестре treatment_consumable_deductions в той же атомарной транзакции (Мандат 8bo)
+			if (effectiveIdemKey) {
+				const resObj =
+					innerResult && typeof innerResult === "object"
+						? (innerResult as Record<string, unknown>)
+						: {};
+				const isOverdraftVal = Boolean(resObj.isOverdraft ?? resObj.hasOverdraft);
+				const rawDeductions = resObj.items ?? resObj.deductions ?? [];
+				const rawWarnings = resObj.warnings ?? [];
+				const savedDeductions: TreatmentConsumableDeductionRecord[] = Array.isArray(rawDeductions)
+					? rawDeductions
+							.map((d) => treatmentConsumableDeductionRecordSchema.safeParse(d))
+							.filter(
+								(p): p is { success: true; data: TreatmentConsumableDeductionRecord } =>
+									p.success,
+							)
+							.map((p) => p.data)
+					: [];
+				const savedWarnings: TreatmentConsumableDeductionWarning[] = Array.isArray(rawWarnings)
+					? rawWarnings
+							.map((w) => treatmentConsumableDeductionWarningSchema.safeParse(w))
+							.filter(
+								(p): p is { success: true; data: TreatmentConsumableDeductionWarning } =>
+									p.success,
+							)
+							.map((p) => p.data)
+					: [];
 
-		// Регистрация в реестре treatment_consumable_deductions для сквозной идемпотентности
-		if (effectiveIdemKey) {
-			const resObj =
-				result && typeof result === "object"
-					? (result as Record<string, unknown>)
-					: {};
-			const isOverdraftVal = Boolean(resObj.isOverdraft ?? resObj.hasOverdraft);
-			const rawDeductions = resObj.items ?? resObj.deductions ?? [];
-			const rawWarnings = resObj.warnings ?? [];
-			const savedDeductions: TreatmentConsumableDeductionRecord[] = Array.isArray(rawDeductions)
-				? (rawDeductions as TreatmentConsumableDeductionRecord[])
-				: [];
-			const savedWarnings: TreatmentConsumableDeductionWarning[] = Array.isArray(rawWarnings)
-				? (rawWarnings as TreatmentConsumableDeductionWarning[])
-				: [];
-
-			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(treatmentConsumableDeductions)
 					.values({
@@ -317,8 +313,20 @@ async function handlePostVisitConsumables(
 						notes: body.notes ?? null,
 					})
 					.onConflictDoNothing();
-			});
+			}
 
+			return innerResult;
+		});
+
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "INVENTORY_STOCK_CHANGED",
+			payload: {
+				visitId: targetVisitId,
+				action: "consumables_deducted",
+			},
+		});
+
+		if (effectiveIdemKey) {
 			reply.header("X-Idempotency-Key", effectiveIdemKey);
 		}
 

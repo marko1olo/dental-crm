@@ -64,6 +64,12 @@ describe("Dental Lab Orders SSOT & Idempotency Invariants", () => {
 		assert.equal(mapStageToLabOrderStatus("framework_fitting"), "fitting");
 		assert.equal(mapStageToLabOrderStatus("каркас/примерка"), "fitting");
 		assert.equal(mapStageToLabOrderStatus("ready_fixation"), "ready_in_clinic");
+		assert.equal(mapStageToLabOrderStatus("installed_completed"), "completed");
+		assert.equal(mapStageToCanonicalPgStatus("installed_completed"), "completed");
+		assert.equal(mapStageToLabOrderStatus("delivered_completed"), "completed");
+		assert.equal(mapStageToCanonicalPgStatus("delivered_completed"), "completed");
+		assert.equal(mapStageToLabOrderStatus("ready_in_clinic"), "ready_in_clinic");
+		assert.equal(mapStageToLabOrderStatus("in_progress"), "in_progress");
 	});
 
 	it("6. ztlLookAheadDaemon LAB_ORDER_STATUS_RU_MAP contains localized Russian descriptions without raw leaks", () => {

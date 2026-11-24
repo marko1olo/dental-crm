@@ -104,6 +104,35 @@ export function updatePatient(
 	if (input.email !== undefined) patient.email = nullableTrimmed(input.email);
 	if (input.notes !== undefined) patient.notes = nullableTrimmed(input.notes);
 	if (input.weightKg !== undefined) patient.weightKg = input.weightKg ?? null;
+	if (input.allergies !== undefined) patient.allergies = input.allergies ?? null;
+	if (input.somaticNotes !== undefined) patient.somaticNotes = input.somaticNotes ?? null;
+	if (
+		input.clinicalSafetyProfile !== undefined ||
+		input.allergies !== undefined ||
+		input.somaticNotes !== undefined
+	) {
+		const existingAdmin = (patient.administrativeProfile ?? {}) as Record<string, unknown>;
+		const existingSafety = (existingAdmin.clinicalSafetyProfile ?? {}) as Record<string, unknown>;
+		patient.administrativeProfile = normalizePatientAdministrativeProfile({
+			...existingAdmin,
+			...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+			...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+			clinicalSafetyProfile: {
+				...existingSafety,
+				...(input.clinicalSafetyProfile && typeof input.clinicalSafetyProfile === "object"
+					? (input.clinicalSafetyProfile as Record<string, unknown>)
+					: {}),
+				...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+				...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),
+			},
+		});
+	}
+	if (input.administrativeProfile !== undefined) {
+		patient.administrativeProfile = normalizePatientAdministrativeProfile({
+			...(patient.administrativeProfile ?? {}),
+			...input.administrativeProfile,
+		});
+	}
 	/*
 	 * Привязка к семейной группе (общий кошелёк).
 	 * БЫЛО: поле игнорировалось — UI слал familyGroupId, ответ 200, а в памяти

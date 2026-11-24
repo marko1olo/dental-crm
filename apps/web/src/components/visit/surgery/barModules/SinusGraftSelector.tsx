@@ -26,7 +26,7 @@ export const SinusGraftSelector: React.FC<SinusGraftSelectorProps> = ({
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer min-h-[44px] px-2 touch-manipulation"
+					className="text-xs font-bold text-[var(--primary)] hover:underline flex items-center gap-1 cursor-pointer min-h-[44px] px-2 touch-manipulation"
 					data-testid="btn-sinus-add-to-invoice"
 					title="Добавить услуги синус-лифтинга и аугментации в смету"
 				>
@@ -44,8 +44,8 @@ export const SinusGraftSelector: React.FC<SinusGraftSelectorProps> = ({
 							onClick={() => onGraftSelect(g.label)}
 							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center gap-1.5 ${
 								isSel
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-graft-${g.short.replace(/[\s.]+/g, "-")}`}
 						>

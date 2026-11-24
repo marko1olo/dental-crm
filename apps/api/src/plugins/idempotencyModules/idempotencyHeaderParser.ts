@@ -28,7 +28,9 @@ export function extractTenantId(request: FastifyRequest): string | null {
 		if (identity?.organizationId && typeof identity.organizationId === "string" && identity.organizationId.trim()) {
 			return identity.organizationId.trim();
 		}
-	} catch {}
+	} catch (err) {
+		request.log?.debug({ err }, "[IdempotencyHeaderParser] Could not resolve request identity");
+	}
 
 	// If request has authenticated user context, strictly deny falling back to untrusted headers or body
 	if (request.user) {

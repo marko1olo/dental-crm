@@ -8,8 +8,7 @@ interface PediatricTreatmentPresetsGridProps {
 	readonly onSelectPreset: (preset: PediatricProtocolDefinition) => void;
 	readonly isInvasiveProtocol: boolean;
 	readonly consentSigned: boolean;
-	readonly onSignConsent323Fz: () => void;
-	readonly onConfirmConsent?: (() => void) | undefined;
+	readonly onConfirmConsent: () => void;
 }
 
 export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGridProps> = ({
@@ -17,11 +16,8 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 	onSelectPreset,
 	isInvasiveProtocol,
 	consentSigned,
-	onSignConsent323Fz,
 	onConfirmConsent,
 }) => {
-	const handleConsent = onConfirmConsent || onSignConsent323Fz;
-
 	return (
 		<>
 			{isInvasiveProtocol && !consentSigned && (
@@ -29,22 +25,20 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 					className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200"
 					data-testid="pediatric-consent-alert-banner"
 				>
-					<div data-testid="pediatric-323fz-alert-banner" className="contents">
-						<div className="flex items-center gap-2 min-w-0">
-							<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-							<span className="font-semibold truncate">
-								Выбрано инвазивное вмешательство. Требуется подтверждение согласия законного представителя.
-							</span>
-						</div>
-						<button
-							type="button"
-							onClick={handleConsent}
-							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
-							data-testid="pediatric-btn-sign-consent"
-						>
-							<span data-testid="pediatric-btn-sign-consent-323fz">Согласие оформлено</span>
-						</button>
+					<div className="flex items-center gap-2 min-w-0">
+						<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+						<span className="font-semibold truncate">
+							Выбрано инвазивное вмешательство. Требуется подтверждение согласия законного представителя.
+						</span>
 					</div>
+					<button
+						type="button"
+						onClick={onConfirmConsent}
+						className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs shrink-0 cursor-pointer transition active:scale-95"
+						data-testid="pediatric-btn-sign-consent"
+					>
+						<span>Согласие оформлено</span>
+					</button>
 				</div>
 			)}
 
@@ -64,7 +58,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 								className={`flex min-h-[52px] flex-col justify-center rounded-xl border p-2.5 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 									isCurrent
 										? `${preset.colorTheme} shadow-sm ring-2 ring-teal-500/20`
-										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`pediatric-preset-btn-${preset.id}`}
 								title={`${preset.titleRu} • ${preset.serviceCode}`}

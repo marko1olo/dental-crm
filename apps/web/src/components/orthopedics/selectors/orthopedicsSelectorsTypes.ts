@@ -12,6 +12,8 @@ export interface OrthopedicsZtlSelectorsProps {
 	readonly onSelectStumpShade?: ((shade: string) => void) | undefined;
 	readonly fixationType?: "cement" | "screw" | "clasp" | undefined;
 	readonly onSelectFixationType?: ((type: "cement" | "screw" | "clasp") => void) | undefined;
+	readonly cementBrand?: string | undefined;
+	readonly onSelectCementBrand?: ((brand: string) => void) | undefined;
 	readonly hasAntagonists?: boolean | undefined;
 	readonly onToggleAntagonists?: ((hasAntagonists: boolean) => void) | undefined;
 	readonly grossPriceRub?: number | undefined;

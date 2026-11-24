@@ -137,29 +137,10 @@ export function visitNoteFormFromVisit(
 	};
 }
 
-export function visitNoteFormFromDraft(draft: VisitNoteDraft): VisitNoteForm {
-	return {
-		complaint: draft.complaint ?? "",
-		anamnesis: draft.anamnesis ?? "",
-		objectiveStatus: draft.objectiveStatus ?? "",
-		diagnosis: draft.diagnosis ?? "",
-		treatmentPlan: draft.treatmentPlan ?? "",
-	};
-}
-
-export function visitNoteDraftFromForm(
-	form: VisitNoteForm,
-	warnings: string[],
-): VisitNoteDraft {
-	return {
-		complaint: form.complaint,
-		anamnesis: form.anamnesis,
-		objectiveStatus: form.objectiveStatus,
-		diagnosis: form.diagnosis,
-		treatmentPlan: form.treatmentPlan,
-		warnings,
-	};
-}
+export {
+	visitNoteFormFromDraft,
+	visitNoteDraftFromForm,
+} from "../appHelpers/appointmentHelpers";
 
 export const treatmentAcceptanceVariantOptions: readonly TreatmentPlanAcceptanceVariant[] =
 	["urgent", "standard", "optimal", "staged", "maintenance", "other"];

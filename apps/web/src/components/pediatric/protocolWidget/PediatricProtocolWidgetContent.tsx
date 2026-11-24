@@ -20,7 +20,7 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 	return (
 		<section
 			aria-label="Протокол детского стоматологического приёма в медицинской карте"
-			className={`pediatric-protocol-widget max-w-full overflow-x-clip rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 pb-44 md:pb-5 shadow-xs transition ${props.className || ""}`.trim()}
+			className={`pediatric-protocol-widget max-w-full overflow-x-clip rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-3.5 sm:p-5 pb-44 md:pb-5 shadow-xs transition ${props.className || ""}`.trim()}
 			data-testid="visit-pediatric-protocol-widget"
 		>
 			<PediatricWidgetHeaderSection state={state} actions={actions} props={props} />
@@ -31,7 +31,7 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 				onSelectPreset={actions.handleSelectPreset}
 				isInvasiveProtocol={state.isInvasiveProtocol}
 				representative={state.representative}
-				onSignConsent323Fz={actions.handleSignConsent323Fz}
+				onConfirmConsent={actions.handleSignInformedConsent}
 				selectedSurfaces={state.selectedSurfaces}
 				onToggleSurface={actions.toggleSurface}
 				onApplySurfacePreset={actions.handleApplySurfacePreset}

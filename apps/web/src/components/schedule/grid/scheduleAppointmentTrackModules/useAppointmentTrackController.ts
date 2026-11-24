@@ -5,7 +5,7 @@ import {
   isCitoAppointment,
 } from "../../../../utils/scheduleCollisionUtils";
 import { showToast, showRollbackToast } from "../../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { useScheduleDensity } from "../../useScheduleState";
 import { dragGhostManager } from "../DecoupledDragGhost";
 import { snapSlotHourTo15Min } from "../scheduleQuantumEngine";
@@ -224,10 +224,9 @@ export function useAppointmentTrackController(
         if (waitlistItem.id) {
           void fetch(`/api/waitlist/${encodeURIComponent(waitlistItem.id)}`, {
             method: "PUT",
-            headers: {
+            headers: denteClinicalMutationHeaders({
               "Content-Type": "application/json",
-              ...denteAdminSecretRequestHeaders(),
-            },
+            }),
             body: JSON.stringify({ status: "fulfilled" }),
           }).catch((err) => {
             console.warn("Failed to fulfill waitlist item:", err);

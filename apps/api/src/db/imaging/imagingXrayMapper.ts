@@ -64,3 +64,34 @@ export function mapXrayScanToImagingStudy(
 			: (record.fileUrl ? record.fileUrl : `/api/imaging/studies/${record.id}/preview.svg`),
 	};
 }
+
+export function mapImagingStudyToXrayScan(
+	study: typeof schema.imagingStudies.$inferSelect,
+): typeof schema.xrayScans.$inferSelect {
+	return {
+		id: study.id,
+		organizationId: study.organizationId,
+		patientId: study.patientId ?? "",
+		visitId: study.visitId,
+		imageDataUri: null,
+		storagePath: study.storagePath,
+		fileUrl: `/api/imaging/studies/${study.id}/file`,
+		fileSizeBytes: study.fileSizeBytes,
+		sha256: null,
+		originalFilename: study.title,
+		mimeType: "image/jpeg",
+		aiReport: null,
+		aiSummary: study.aiSummary,
+		aiToothStates: null,
+		aiModelName: null,
+		aiAnalyzedAt: null,
+		aiError: null,
+		status: study.status === "available" ? "done" : "pending",
+		kind: study.kind || "periapical",
+		toothCode: study.toothCode,
+		notes: study.title,
+		capturedAt: study.capturedAt,
+		createdAt: study.createdAt,
+		updatedAt: study.createdAt,
+	};
+}

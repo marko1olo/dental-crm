@@ -91,6 +91,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				selectedStageId={state.selectedStageId} onSelectStage={actions.handleSelectStage}
 				stumpShade={state.selectedStumpShade} onSelectStumpShade={state.setSelectedStumpShade}
 				fixationType={state.fixationType} onSelectFixationType={state.setFixationType}
+				cementBrand={state.cementBrand} onSelectCementBrand={state.setCementBrand}
 				hasAntagonists={state.hasAntagonists} onToggleAntagonists={state.setHasAntagonists}
 				grossPriceRub={state.grossPriceRub} ztlCostRub={state.ztlCostRub} materialsCostRub={state.materialsCostRub}
 				netMarginRub={state.netMarginRub} marginPercent={state.marginPercent} dueDate={state.dueDate} onChangeDueDate={state.setDueDate}

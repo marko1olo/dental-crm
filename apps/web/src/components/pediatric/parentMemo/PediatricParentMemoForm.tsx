@@ -47,8 +47,8 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 		<div className="space-y-3">
 			<PediatricParentMemoFranklSelect frankl={frankl} setFrankl={setFrankl} />
 
-			<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3 space-y-2">
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--ink,#0f172a)]">
+			<div className="rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 space-y-2">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
 					<input
 						type="checkbox"
 						checked={hasAnesthesia}
@@ -58,7 +58,7 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 					/>
 					<span>Проводилась местная анестезия (памятка по защите онемевшей губы)</span>
 				</label>
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--ink,#0f172a)]">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
 					<input
 						type="checkbox"
 						checked={hasPulpotomy}
@@ -68,7 +68,7 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 					/>
 					<span>Пульпотомия / Лечение пульпита (зуб {pulpotomyTooth})</span>
 				</label>
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--ink,#0f172a)]">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
 					<input
 						type="checkbox"
 						checked={hasFissureSealing}
@@ -78,7 +78,7 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 					/>
 					<span>Герметизация фиссур ({fissureTeeth})</span>
 				</label>
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--ink,#0f172a)]">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
 					<input
 						type="checkbox"
 						checked={hasSilvering}
@@ -91,7 +91,7 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 			</div>
 
 			<div>
-				<label htmlFor="memo-custom-notes" className="block text-[11px] font-bold text-[var(--ink-muted,#64748b)] mb-1">
+				<label htmlFor="memo-custom-notes" className="block text-[11px] font-medium text-[var(--ink-muted)] mb-1">
 					Дополнительные врачебные рекомендации:
 				</label>
 				<textarea
@@ -99,7 +99,7 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 					rows={2}
 					value={customNotes}
 					onChange={(e) => setCustomNotes(e.target.value)}
-					className="w-full p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden resize-none"
+					className="w-full p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-hidden resize-none"
 					placeholder="Индивидуальные назначения врача (диета, гигиена, запись на осмотр)..."
 				/>
 			</div>

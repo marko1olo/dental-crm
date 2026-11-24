@@ -23,6 +23,11 @@ import {
 	type DeviceCapabilities,
 } from "./lowSpecHddOptimizer.js";
 
+interface NavigatorWithTouchAndUaData extends Navigator {
+	readonly userAgentData?: { readonly platform?: string } | undefined;
+	readonly msMaxTouchPoints?: number | undefined;
+}
+
 export type OperatingSystem = "windows" | "macos" | "linux" | "android" | "ios" | "unknown";
 export type FormFactor = "desktop" | "tablet" | "phone";
 export type PointerCategory = "fine" | "coarse";
@@ -98,8 +103,9 @@ export function detectOperatingSystem(): OperatingSystem {
 		return "unknown";
 	}
 
-	const ua = navigator.userAgent || "";
-	const platform = (navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.platform || "";
+	const nav = navigator as NavigatorWithTouchAndUaData;
+	const ua = nav.userAgent || "";
+	const platform = nav.userAgentData?.platform || nav.platform || "";
 
 	if (/Android/i.test(ua)) return "android";
 	if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
@@ -128,8 +134,12 @@ export function detectPointerCategory(): PointerCategory {
 	}
 
 	// Fallback based on touch points
-	if (typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || (navigator as unknown as { msMaxTouchPoints?: number }).msMaxTouchPoints! > 0)) {
-		return "coarse";
+	if (typeof navigator !== "undefined") {
+		const nav = navigator as NavigatorWithTouchAndUaData;
+		const msTouch = nav.msMaxTouchPoints ?? 0;
+		if (nav.maxTouchPoints > 0 || msTouch > 0) {
+			return "coarse";
+		}
 	}
 
 	return "fine";

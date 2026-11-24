@@ -27,31 +27,30 @@ import {
 } from "./cashboxHelpers.js";
 import { cashRefundBodySchema } from "./cashboxSchemas.js";
 
-export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise<void> {
-	/**
-	 * 1. POST /api/cash/refund & POST /api/cashbox/refund
-	 * Возврат денежных средств из кассы клиники (54-ФЗ возврат прихода / выдача наличных / возврат на депозит).
-	 */
-	const handleCashRefund = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"cash refund payout",
-		);
-		if (reply.sent) return reply;
-		if (!orgId) return reply;
+/**
+ * 1. POST /api/cash/refund, POST /api/cashbox/refund & POST /api/billing/refunds/partial
+ * Возврат денежных средств из кассы клиники (54-ФЗ возврат прихода / выдача наличных / возврат на депозит).
+ */
+export async function handleCashRefund(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+	const orgId = await requireResolvedStaffOrAdminOrganizationId(
+		request,
+		reply,
+		"cash refund payout",
+	);
+	if (reply.sent) return reply;
+	if (!orgId) return reply;
 
-		const parsed = cashRefundBodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректная сумма возврата (должна быть больше нуля с точностью до копейки).",
-				details: parsed.error.issues,
-			});
-		}
+	const parsed = cashRefundBodySchema.safeParse(request.body);
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректная сумма возврата (должна быть больше нуля с точностью до копейки).",
+			details: parsed.error.issues,
+		});
+	}
 
-		const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId, patientId } = parsed.data;
-		const refundKop = rublesToKopecks(amountRub);
+	const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId, patientId } = parsed.data;
+	const refundKop = rublesToKopecks(amountRub);
 
 		// [SEV-2.2] Обязательный заголовок Idempotency-Key для защиты от гонок и повторных возвратов
 		const rawIdempHeader =
@@ -145,7 +144,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					const paymentRefTag = `[ref:${linkedPayment.id}]`;
 					const [refundHistory] = await tx
 						.select({
-							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
+							alreadyRefundedKop: sql<number>`coalesce(sum(abs(${payments.amountKopecks})), 0)`,
 						})
 						.from(payments)
 						.where(
@@ -193,7 +192,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					// [DEF-REFUND-02] Защита от Over-Refund по исходному счёту (ограничение реально оплаченной суммой)
 					const [invoicePaid] = await tx
 						.select({
-							paidOnInvoiceKop: sql<number>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)`,
+							paidOnInvoiceKop: sql<number>`coalesce(sum(${payments.amountKopecks}), 0)`,
 						})
 						.from(payments)
 						.where(
@@ -201,13 +200,13 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 								eq(payments.organizationId, orgId),
 								eq(payments.documentId, linkedInvoice.id),
 								eq(payments.status, "paid"),
-								sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) > 0`,
+								sql`${payments.amountKopecks} > 0`,
 							),
 						);
 
 					const [invoiceRefunds] = await tx
 						.select({
-							alreadyRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
+							alreadyRefundedKop: sql<number>`coalesce(sum(abs(${payments.amountKopecks})), 0)`,
 						})
 						.from(payments)
 						.where(
@@ -342,14 +341,18 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					shiftId: activeShift?.id ?? null,
 					operationType: isDepositRefund ? "expense" : "withdrawal",
 					amountRub,
+					amountKopecks: refundKop,
 					balanceBeforeRub: balanceBefore,
+					balanceBeforeKopecks: BigInt(balanceBeforeKop),
 					balanceAfterRub: balanceAfter,
+					balanceAfterKopecks: BigInt(balanceAfterKop),
 					reasonText:
 						reasonText ||
 						(isDepositRefund
 							? "Возврат средств на депозит пациента (без выдачи наличных)"
 							: "Возврат денежных средств покупателю"),
 					operatorId: operatorId ?? null,
+					metadata: effectiveMutationId ? { idempotencyKey: effectiveMutationId } : null,
 				})
 				.returning();
 
@@ -554,7 +557,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				const invoiceTotalKop = rublesToKopecks(Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0));
 				const [allRefunds] = await tx
 					.select({
-						totalRefundedKop: sql<number>`coalesce(sum(abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint))), 0)`,
+						totalRefundedKop: sql<number>`coalesce(sum(abs(${payments.amountKopecks})), 0)`,
 					})
 					.from(payments)
 					.where(
@@ -647,8 +650,9 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 			fiscalReceiptQueueId: result.queuedReceiptId,
 			fiscalReceiptNumber: result.fiscalReceiptNumber,
 		});
-	};
+}
 
+export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise<void> {
 	const cashRefundRouteOptions = {
 		schema: {
 			description:
@@ -669,6 +673,10 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 	});
 	app.post("/api/cashbox/refund", cashRefundRouteOptions, async (request, reply) => {
 		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+		return handleCashRefund(request, reply);
+	});
+	app.post("/api/billing/refunds/partial", cashRefundRouteOptions, async (request, reply) => {
+		// Canonical 54-FZ refund handler shared with cashbox
 		return handleCashRefund(request, reply);
 	});
 }

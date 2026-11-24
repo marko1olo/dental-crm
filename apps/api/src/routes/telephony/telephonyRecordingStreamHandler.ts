@@ -81,7 +81,10 @@ export async function handleStreamRecording(
 	let cacheStat: fs.Stats | null = null;
 	try {
 		cacheStat = await fs.promises.stat(cacheFilePath);
-	} catch {
+	} catch (err: unknown) {
+		if ((err as NodeJS.ErrnoException)?.code !== "ENOENT") {
+			request.log.debug({ err, eventId, cacheFilePath }, "[TelephonyStream] Unexpected error accessing audio cache file");
+		}
 		cacheStat = null;
 	}
 
@@ -246,20 +249,30 @@ export async function handleStreamRecording(
 					cacheWriteStream.end(async () => {
 						try {
 							await fs.promises.rename(tempFilePath, cacheFilePath);
-						} catch {
-							try { await fs.promises.unlink(tempFilePath); } catch {}
+						} catch (renameErr) {
+							request.log.warn({ err: renameErr, tempFilePath, cacheFilePath }, "[TelephonyStream] Failed to commit audio cache file");
+							try {
+								await fs.promises.unlink(tempFilePath);
+							} catch (unlinkErr) {
+								request.log.debug({ err: unlinkErr, tempFilePath }, "[TelephonyStream] Failed to clean up temp cache file");
+							}
 						}
 					});
 				}
 				resolve();
 			});
 
-			proxyRes.on("error", async () => {
+			proxyRes.on("error", async (proxyErr) => {
+				request.log.warn({ err: proxyErr, eventId }, "[TelephonyStream] Stream error from PBX audio proxy");
 				if (cacheWriteStream && tempFilePath) {
 					try {
 						cacheWriteStream.destroy();
-						await fs.promises.unlink(tempFilePath).catch(() => {});
-					} catch {}
+						await fs.promises.unlink(tempFilePath).catch((unlinkErr) => {
+							request.log.debug({ err: unlinkErr, tempFilePath }, "[TelephonyStream] Failed to unlink temp cache on stream error");
+						});
+					} catch (cleanupErr) {
+						request.log.debug({ err: cleanupErr }, "[TelephonyStream] Cache write stream cleanup error");
+					}
 				}
 				if (!reply.raw.headersSent) reply.status(500).send({ error: "StreamError", message: "Failed to stream audio" });
 				resolve();
@@ -272,7 +285,8 @@ export async function handleStreamRecording(
 			resolve();
 		});
 
-		proxyReq.on("error", () => {
+		proxyReq.on("error", (reqErr) => {
+			request.log.warn({ err: reqErr, eventId, targetUrl: targetUrl.href }, "[TelephonyStream] Connection error to PBX audio storage");
 			if (!reply.raw.headersSent) reply.status(502).send({ error: "BadGateway", message: "Unable to connect to PBX audio storage" });
 			resolve();
 		});

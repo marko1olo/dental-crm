@@ -11,7 +11,7 @@ import {
 	users,
 } from "../../../db/schema.js";
 import registerDiaryRoutes from "../../../routes/diary.js";
-import { registerSberbankRoutes } from "../../../routes/sberbank.js";
+import { registerSberbankRoutes } from "../../../routes/sberbankRoutes/index.js";
 import { registerScheduleRoutes } from "../../../routes/schedule.js";
 import { authTokenSecret } from "../../../security/authSecret.js";
 import { signToken } from "../../../utils/cryptoHelper.js";

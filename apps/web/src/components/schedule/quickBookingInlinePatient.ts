@@ -1,5 +1,5 @@
 import type { Patient } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -52,7 +52,7 @@ export async function resolveOrAutoCreateSubmitPatient(
     try {
       const resp = await fetch("/api/patients", {
         method: "POST",
-        headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           fullName: fallbackName,
           phone: rawPhone || null,

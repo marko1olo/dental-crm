@@ -243,7 +243,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							>
 								{APPLIANCES_CATALOG.map((app) => (<option key={app.id} value={app.id}>{app.name}</option>))}
 							</select>
-							<span className="px-2 py-1 rounded-lg bg-[var(--line-subtle,#f1f5f9)] text-[var(--ink-muted)] font-medium">Месяц {protocol.currentMonth} из {protocol.totalMonths}</span>
+							<span className="px-2 py-1 rounded-lg bg-[var(--paper-soft)] text-[var(--ink-muted)] font-medium">Месяц {protocol.currentMonth} из {protocol.totalMonths}</span>
 							<span className="px-2 py-1 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] font-semibold">{skeletalClassInfo.skeletalClass} класс</span>
 						</div>
 						<div className="flex items-center gap-1.5 text-[var(--ink-muted)]">

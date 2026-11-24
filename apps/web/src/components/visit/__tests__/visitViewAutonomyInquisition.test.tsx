@@ -175,7 +175,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			hasVisitTranscriptText: false,
 			setTranscript: mockSetTranscript,
 			updateVisitNoteField: mockUpdateVisitNoteField,
-			visitNoteForm: { anamnesis: "", objectiveInspection: "" },
+			visitNoteForm: { anamnesis: "", objectiveStatus: "" },
 			polishTranscript: mockPolishTranscript,
 			showToastFn: mockToast,
 		});
@@ -186,7 +186,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			"Осмотр полости рта проведен. Слизистая оболочка розовая, влажная. Соматически здоров",
 		);
 		expect(mockUpdateVisitNoteField).toHaveBeenCalledWith(
-			"objectiveInspection",
+			"objectiveStatus",
 			expect.stringContaining("Слизистая оболочка полости рта"),
 		);
 		expect(mockUpdateVisitNoteField).toHaveBeenCalledWith(
@@ -228,7 +228,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 
 		const result = executeApplySomaticNormAutonomy({
 			updateVisitNoteField: mockUpdateVisitNoteField,
-			visitNoteForm: { anamnesis: "", objectiveInspection: "" },
+			visitNoteForm: { anamnesis: "", objectiveStatus: "" },
 			showToastFn: mockToast,
 		});
 
@@ -238,7 +238,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			expect.stringContaining("Соматически здоров"),
 		);
 		expect(mockUpdateVisitNoteField).toHaveBeenCalledWith(
-			"objectiveInspection",
+			"objectiveStatus",
 			expect.stringContaining("Слизистая оболочка полости рта"),
 		);
 		expect(mockToast).toHaveBeenCalledWith(

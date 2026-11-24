@@ -605,6 +605,43 @@
   - `packages/shared/src/tests/inventoryMaterialsSsot.test.ts`: 7/7 PASS (Exit Code 0).
   - `packages/shared/src/tests/inventoryFifoTracking.test.ts`: 7/7 PASS (Exit Code 0).
 
+---
+
+## 🛡️ 26. Red Team Fixer Surgeon: Сохранение точности дробных доз, суверенитет Soft Negative Stock и Tier 1 BOM SSOT (Мандаты 8v, 8e, 8n, 8bm, 8bf, 8bk, 8bo)
+
+* **Ликвидация усечения дробных доз препаратов при приёмке накладных (Мандат 8bm)**:
+  - В `apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts:216` ликвидировано усечение дробных доз через `Math.round(item.quantity * multiplier)`.
+  - Внедрена формула `Number((item.quantity * multiplier).toFixed(3))`, сохраняющая 3 знака после запятой в полном соответствии с физической DDL-колонкой PostgreSQL `numeric(10, 3)`. Дробные дозировки анестетиков (0.355 мл), шовного материала и костных гранул больше не округляются в 0.
+* **Суверенитет Soft Negative Stock в каталоге номенклатуры (Мандаты 8v, 8n)**:
+  - В `apps/api/src/routes/inventory/itemCatalog/itemCatalogMutations.ts:228-232` (обработчик `handleUpdateInventoryItem`) и строках `328-331` (`handlePatchInventoryItem`) полностью удалено обнуление отрицательного остатка через `Math.max(0, stockQuantity)`.
+  - Отрицательный остаток сохраняется честно в виде строки `String(stockQuantity)` без стирания клинического овердрафта при обновлении цен или карточек номенклатуры.
+  - В `apps/api/src/routes/inventory/types.ts` схема `inventoryUpdateBodySchema` скорректирована с `.nonnegative()` на `.finite().optional()`, что снимает искусственную блокировку обновления номенклатуры, находящейся в клиническом минусе.
+* **Каноническая идемпотентность накладных через таблицу idempotency_keys (Мандат 8bo)**:
+  - В `invoiceStatusAndApproval.ts:76-94` устранена хрупкая проверка через полнотекстовый поиск `LIKE %[idempotency:...%` в заметках.
+  - Внедрен прямой селективный запрос к канонической таблице `idempotency_keys` по составному ключу `(clinic_id, key)` с возвратом реплей-ответа и записью транзакции в строки `456-467`.
+* **Сквозная идемпотентность и fail-safe списания у кресла (Мандаты 8e, 8v, 8bo)**:
+  - В `apps/api/src/routes/visits/visitConsumablesRoutes.ts:68-94` реализован парсер и валидатор клиентских заголовков `Idempotency-Key` (RFC 9562 UUIDv7 / UUID).
+  - В строках `136-177` запросы повторного списания с идентичным ключом дедуплицируются через таблицу `treatment_consumable_deductions` с возвратом кешированного ответа и флагом `alreadyProcessed: true`.
+  - В строках `340-350` обеспечен fail-safe перехват ошибок списания с возвратом `200 OK` и флагом `deferred: true`, гарантирующий бесперебойное завершение приёма врачом.
+* **Консолидация каскада BOM строго к Tier 1 Canonical SSOT (Мандат 8bf)**:
+  - В `apps/api/src/services/treatmentConsumables/applyProcedureConsumablesDeduction.ts:123-207` ликвидирован 4-уровневый split-brain каскад чтения из устаревших таблиц.
+  - Каскад сведен строго к Tier 1 (`procedure_tech_cards` + `procedure_tech_card_items`) с чистым фоллбэком на статутные рецептуры `CANONICAL_PROCEDURE_RECIPES` и `DEFAULT_804N_BOM_SEEDS`. Удалены запросы к устаревшим таблицам `treatment_consumables` и `procedure_material_rules`.
+* **Устранение сбоя синтаксиса UUID в резолвере техкарт**:
+  - В `apps/api/src/routes/inventory/consumables/techCardNormHandlers.ts:122-135` запрос к `serviceCatalogItems.id` защищен хелпером `isValidUuid(body.catalogItemCode)`, предотвращая фатальный сбой PostgreSQL `invalid input syntax for type uuid` при передаче строковых кодов прейскуранта (например, `A16.07.002.001`).
+* **Очистка маршрутов и Zod-дверей (Мандат 8bq)**:
+  - В `apps/api/src/routes/inventory/writeOffModules/writeOffBatchDeduction.ts` ликвидированы 12 избыточных псевдонимов маршрутов, оставлены канонические эндпоинты `shift-batch-deduct`, `shift-deduct`, `batch-writeoff`.
+  - Во всех входящих схемах `apps/api/src/routes/inventory/types.ts` включен модификатор `.strict()`.
+* **Машинные гейты и верификация (Exit Code 0)**:
+  - `apps/api/src/tests/routes/inventoryFixerSurgeonWarehouseSuite.test.ts`: 4/4 PASS (100% точность).
+  - `apps/api/src/tests/routes/visitConsumablesWriteoffIdempotency.test.ts`: 7/7 PASS.
+  - `apps/api/src/tests/routes/treatmentConsumables.test.ts`: 5/5 PASS.
+  - `apps/api/src/tests/routes/inventoryBatchWriteoffAndPatch.test.ts`: 7/7 PASS.
+  - `apps/api/src/tests/routes/inventoryRedTeamBOMAndInvoices.test.ts`: 3/3 PASS.
+  - `apps/api/src/tests/concurrency/inventoryStockDeductionStress.test.ts`: 3/3 PASS (20 параллельных приёмов без дедлоков).
+  - `npm run check:doors`: Single-Door Guardian PASS (0 клонов модалок, 100% Zod дверей защищены).
+  - `npm run check:diff`: 0 запрещенных костылей (as any, !, float money).
+  - `npx tsc -p apps/api/tsconfig.json --noEmit` в доменах склада и списания: 0 ошибок компилятора.
+
 
 
 

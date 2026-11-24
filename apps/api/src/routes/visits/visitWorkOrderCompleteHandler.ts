@@ -2,7 +2,6 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { computePayloadHash, generateUuidV7 } from "@dental/shared";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db as database } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
 import { idempotencyKeys } from "../../db/schema/idempotency.js";
@@ -84,45 +83,46 @@ export async function handleCompleteVisitWorkOrder(
 
 	try {
 		const identity = getRequestIdentity(request);
-		const result = await VisitWorkOrderService.completeVisitWorkOrder({
-			organizationId: context.organizationId,
-			visitId,
-			actorUserId: identity.userId ?? null,
-			status: body.status ?? "signed",
-		});
-
-		const [completedVisit] = await database
-			.select({
-				id: visits.id,
-				organizationId: visits.organizationId,
-				patientId: visits.patientId,
-				appointmentId: visits.appointmentId,
-				diagnosis: visits.diagnosis,
-				treatmentPlan: visits.treatmentPlan,
-				complaint: visits.complaint,
-				objectiveStatus: visits.objectiveStatus,
-				doctorSummary: visits.doctorSummary,
-			})
-			.from(visits)
-			.where(
-				and(
-					eq(visits.id, visitId),
-					eq(visits.organizationId, context.organizationId),
-				),
-			)
-			.limit(1);
-
-		if (completedVisit) {
-			await executeVisitCompletionSideEffects({
-				orgId: context.organizationId,
-				visit: completedVisit,
-				doctorId: identity.userId ?? null,
-				log: request.log,
-				skipBomDeduction: true,
+		const result = await withTenantCtx(context.organizationId, async (tx) => {
+			const workOrderResult = await VisitWorkOrderService.completeVisitWorkOrder({
+				organizationId: context.organizationId,
+				visitId,
+				actorUserId: identity.userId ?? null,
+				status: body.status ?? "signed",
+				tx,
 			});
-		}
 
-		await withTenantCtx(context.organizationId, async (tx) => {
+			const [completedVisit] = await tx
+				.select({
+					id: visits.id,
+					organizationId: visits.organizationId,
+					patientId: visits.patientId,
+					appointmentId: visits.appointmentId,
+					diagnosis: visits.diagnosis,
+					treatmentPlan: visits.treatmentPlan,
+					complaint: visits.complaint,
+					objectiveStatus: visits.objectiveStatus,
+					doctorSummary: visits.doctorSummary,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (completedVisit) {
+				await executeVisitCompletionSideEffects({
+					orgId: context.organizationId,
+					visit: completedVisit,
+					doctorId: identity.userId ?? null,
+					log: request.log,
+					skipBomDeduction: true,
+				});
+			}
+
 			await tx
 				.insert(idempotencyKeys)
 				.values({
@@ -130,17 +130,19 @@ export async function handleCompleteVisitWorkOrder(
 					key: idempotencyKey,
 					status: "completed",
 					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: { ...result } as Record<string, unknown>,
+					responseBody: { ...workOrderResult } as Record<string, unknown>,
 					responseCode: 200,
 				})
 				.onConflictDoUpdate({
 					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
 					set: {
 						status: "completed",
-						responseBody: { ...result } as Record<string, unknown>,
+						responseBody: { ...workOrderResult } as Record<string, unknown>,
 						responseCode: 200,
 					},
 				});
+
+			return workOrderResult;
 		});
 
 		return result;

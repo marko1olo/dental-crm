@@ -11,7 +11,8 @@ import { RU_MONTHS } from "./types.js";
 
 export interface CohortLtvItem {
 	cohort: string;
-	"Month 12": number;
+	"Month 1"?: number | undefined;
+	"Month 12"?: number | undefined;
 	[key: string]: string | number | undefined;
 }
 
@@ -32,20 +33,40 @@ export async function calculateCohortLtv(
 
 	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
 
-	// [SEV-1.3] leftJoin по всем пациентам: знаменатель когорты = общее число созданных карт пациентов за месяц
-	const cohortRaw = await db
+	// 1. Пациенты по когортам: знаменатель когорты = общее число созданных карт пациентов за календарный месяц
+	const cohortPatientsRaw = await db
 		.select({
 			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
-			patientId: patients.id,
-			totalKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
+			patientCount: sql<number>`count(distinct ${patients.id})::int`,
 		})
 		.from(patients)
-		.leftJoin(
+		.where(
+			and(
+				eq(patients.organizationId, orgId),
+				gte(patients.createdAt, ltvStartDate),
+			),
+		)
+		.groupBy(cohortMonthBucket)
+		.orderBy(cohortMonthBucket);
+
+	// 2. Платежи пациентов когорт с группировкой по возрасту (в месяцах от создания карты до оплаты)
+	// Month offset 0 = Month 1 (первые 30 дней), offset 1 = Month 2, ..., offset 11 = Month 12
+	const monthOffsetExpr = sql<number>`greatest(0, (date_part('year', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})) * 12 + date_part('month', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})))::int)`;
+
+	const cohortPaymentsRaw = await db
+		.select({
+			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
+			monthOffset: monthOffsetExpr,
+			netKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
+		})
+		.from(patients)
+		.innerJoin(
 			payments,
 			and(
 				eq(payments.patientId, patients.id),
 				eq(payments.organizationId, orgId),
 				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.where(
@@ -54,42 +75,55 @@ export async function calculateCohortLtv(
 				gte(patients.createdAt, ltvStartDate),
 			),
 		)
-		.groupBy(cohortMonthBucket, patients.id)
-		.orderBy(cohortMonthBucket);
+		.groupBy(cohortMonthBucket, monthOffsetExpr);
 
-	const cohortMap = new Map<string, number[]>();
-	for (const row of cohortRaw) {
+	const paymentsMap = new Map<string, number>();
+	for (const row of cohortPaymentsRaw) {
 		const cm = row.cohortMonth;
 		if (!cm) continue;
-		if (!cohortMap.has(cm)) {
-			cohortMap.set(cm, []);
-		}
-		const list = cohortMap.get(cm);
-		if (list) {
-			list.push(toExactKopecks(Number(row.totalKopecks)));
-		}
+		const offset = Number(row.monthOffset || 0);
+		const key = `${cm}:${offset}`;
+		paymentsMap.set(key, Number(row.netKopecks || 0));
 	}
 
-	const cohortLtvJson: CohortLtvItem[] = Array.from(cohortMap.entries())
+	const cohortLtvJson: CohortLtvItem[] = cohortPatientsRaw
 		.slice(-6)
-		.map(([key, kopecksList]) => {
+		.map((cohortRow) => {
+			const key = cohortRow.cohortMonth;
+			const patientCount = Math.max(1, Number(cohortRow.patientCount || 1));
 			const [yearStr, monthStr] = key.split("-");
 			const yearNum = yearStr ? parseInt(yearStr, 10) : now.getFullYear();
 			const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 			const label = (RU_MONTHS as readonly string[])[monthIdx] ?? key;
-			const totalKopecks = sumKopecks(kopecksList);
-			const avgKopecks = kopecksList.length > 0 ? Math.round(totalKopecks / kopecksList.length) : 0;
-			const ltvRub = Math.round(kopecksToRubles(avgKopecks));
 
-			// [SEV-1.3] Реальный возраст когорты в месяцах: Month 1, Month 3, Month 6 и т.д.
-			const cohortAgeMonths = Math.max(1, (now.getFullYear() - yearNum) * 12 + (now.getMonth() - monthIdx) + 1);
-			const cohortAgeKey = `Month ${cohortAgeMonths}`;
+			// Честный возраст когорты в месяцах
+			const cohortAgeMonths = Math.max(
+				1,
+				(now.getFullYear() - yearNum) * 12 + (now.getMonth() - monthIdx) + 1,
+			);
+			const maxMaturedMonth = Math.min(12, cohortAgeMonths);
 
-			return {
+			const item: CohortLtvItem = {
 				cohort: label,
-				[cohortAgeKey]: ltvRub,
-				"Month 12": ltvRub,
 			};
+
+			// Заполняем накопительный LTV ТОЛЬКО для фактически наступивших месяцев
+			let cumulativeKopecks = 0;
+			for (let m = 1; m <= maxMaturedMonth; m++) {
+				const offset = m - 1;
+				const periodKopecks = paymentsMap.get(`${key}:${offset}`) || 0;
+				cumulativeKopecks += periodKopecks;
+				const avgKopecks = Math.round(cumulativeKopecks / patientCount);
+				const ltvRub = Math.round(kopecksToRubles(avgKopecks));
+				item[`Month ${m}`] = ltvRub;
+			}
+
+			// "Month 12" присутствует ТОЛЬКО если когорта фактически достигла возраста 12 месяцев
+			if (cohortAgeMonths >= 12 && item["Month 12"] !== undefined) {
+				// Уже заполнено в цикле выше
+			}
+
+			return item;
 		});
 
 	return { cohortLtvJson, cohortZone };

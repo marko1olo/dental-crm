@@ -16,9 +16,10 @@ export async function quickWriteoffAntishockKit(
 		patientName?: string | undefined;
 		doctorName?: string | undefined;
 		notes?: string | null | undefined;
+		idempotencyKey?: string | null | undefined;
 	},
 ) {
-	const { organizationId, userId, visitId, patientName, doctorName, notes } = params;
+	const { organizationId, userId, visitId, patientName, doctorName, notes, idempotencyKey } = params;
 	const items = getAntishockKitDefinitions();
 
 	const actorNote = doctorName ? `Врач: ${doctorName}` : "";
@@ -33,6 +34,7 @@ export async function quickWriteoffAntishockKit(
 		visitId,
 		userId,
 		notes: fullNote || "Экстренное вскрытие аптечки антишок (Анафилаксия)",
+		idempotencyKey,
 		reasonPrefix: "Экстренная аптечка антишок (Анафилаксия) — 1 клик",
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Экстренная аптечка антишок списана (${count} позиций${hasOverdraft ? ", мягкий овердрафт активен" : ""}). Зафиксировано в журнале.`,

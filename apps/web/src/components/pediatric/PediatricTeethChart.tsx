@@ -103,7 +103,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 
 	return (
 		<div
-			className={`pediatric-teeth-chart rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3 sm:p-4 ${className}`.trim()}
+			className={`pediatric-teeth-chart rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 sm:p-4 ${className}`.trim()}
 			data-testid="pediatric-teeth-chart"
 		>
 			<PediatricTeethHeader mode={mode} onModeChange={onModeChange} onSetAllHealthy={onSetAllHealthy} onApplyMixedDentitionPreset={onApplyMixedDentitionPreset} onApplyPhysiologicalResorption={onApplyPhysiologicalResorption} />

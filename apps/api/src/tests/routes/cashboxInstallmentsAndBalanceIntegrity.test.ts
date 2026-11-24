@@ -129,7 +129,10 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			const createContractRes = await app.inject({
 				method: "POST",
 				url: "/api/installments",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					patientId,
 					totalAmountRub: 100000,
@@ -326,7 +329,10 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			const create10MonthRes = await app.inject({
 				method: "POST",
 				url: "/api/installments/contracts",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					patientId,
 					totalAmountRub: 360000,
@@ -342,7 +348,10 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			const create18MonthRes = await app.inject({
 				method: "POST",
 				url: "/api/installments/contracts",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					patientId,
 					totalAmountRub: 540000,

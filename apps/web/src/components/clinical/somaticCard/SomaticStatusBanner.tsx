@@ -14,10 +14,10 @@ export const SomaticStatusBanner: React.FC<SomaticStatusBannerProps> = ({
 	if (isNorm) {
 		return (
 			<div
-				className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 text-xs font-semibold"
+				className="flex items-center gap-2.5 p-3 rounded-xl bg-[var(--success-soft)] border border-[var(--success)]/30 text-[var(--ink)] text-xs font-medium"
 				data-testid="somatic-status-norm-banner"
 			>
-				<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+				<CheckCircle2 className="w-4 h-4 text-[var(--success)] shrink-0" />
 				<span>
 					Физиологическая норма: соматически здоров / без отягощенного анамнеза. Ограничений к местной анестезии нет.
 				</span>
@@ -26,12 +26,12 @@ export const SomaticStatusBanner: React.FC<SomaticStatusBannerProps> = ({
 	}
 
 	const bannerClasses = evaluation.hasCriticalStopFlags
-		? "bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-200 shadow-xs"
-		: "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200";
+		? "bg-[var(--danger-soft)] border-2 border-[var(--danger)] text-[var(--ink)] shadow-xs"
+		: "bg-[var(--warning-soft)] border border-[var(--warning)]/30 text-[var(--ink)]";
 
 	const iconClasses = evaluation.hasCriticalStopFlags
-		? "text-[#ef4444]"
-		: "text-amber-600 dark:text-amber-400";
+		? "text-[var(--danger)]"
+		: "text-[var(--warning)]";
 
 	return (
 		<div
@@ -46,12 +46,12 @@ export const SomaticStatusBanner: React.FC<SomaticStatusBannerProps> = ({
 				{evaluation.activeFlags.map((flag) => {
 					const chipClasses =
 						flag.severity === "critical"
-							? "bg-[#ef4444] text-white border-[#ef4444]"
-							: "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-700";
+							? "bg-[var(--danger)] text-white border-[var(--danger)]"
+							: "bg-[var(--warning-soft)] text-[var(--ink)] border border-[var(--warning)]/30";
 					return (
 						<span
 							key={flag.id}
-							className={`text-[11px] font-bold px-2 py-0.5 rounded-md border truncate max-w-full ${chipClasses}`}
+							className={`text-[11px] font-medium px-2 py-0.5 rounded-md border truncate max-w-full ${chipClasses}`}
 							title={flag.titleRu}
 						>
 							{flag.titleRu}

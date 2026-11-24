@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	ALL_PERIO_TEETH,
 	calculateClinicalAttachmentLevel,
 	calculatePerioIndices,
 	calculatePsrSextants,
@@ -8,6 +9,54 @@ import {
 } from "@dental/shared";
 
 describe("Periodontal Charting & Probing Calculations", () => {
+	it("calculates BOP and PI accurately with partial probing denominator without dilution (SEV-1 fix)", () => {
+		const fullDentition: PerioToothRecord[] = ALL_PERIO_TEETH.map((toothNumber) => ({
+			toothNumber,
+			isMissing: false,
+			isImplant: false,
+			mobility: 0,
+			furcation: 0,
+			distoBuccal: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+			midBuccal: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+			mesioBuccal: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+			distoLingual: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+			midLingual: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+			mesioLingual: { probingDepthMm: 0, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, suppuration: false, calculus: false },
+		}));
+
+		// Врач исследовал только 1 сектор (зубы 16 и 17 = 12 сайтов)
+		const t16 = fullDentition.find((t) => t.toothNumber === 16);
+		const t17 = fullDentition.find((t) => t.toothNumber === 17);
+		assert.ok(t16 && t17);
+
+		// Задаем глубины 3-4 мм на всех 12 сайтах
+		for (const siteKey of ["distoBuccal", "midBuccal", "mesioBuccal", "distoLingual", "midLingual", "mesioLingual"] as const) {
+			t16[siteKey].probingDepthMm = 3;
+			t17[siteKey].probingDepthMm = 4;
+		}
+
+		// 4 сайта кровоточат из 12 исследованных
+		t16.distoBuccal.bleedingOnProbing = true;
+		t16.midBuccal.bleedingOnProbing = true;
+		t17.distoBuccal.bleedingOnProbing = true;
+		t17.mesioBuccal.bleedingOnProbing = true;
+
+		// 6 сайтов имеют налет из 12 исследованных
+		t16.distoBuccal.plaque = true;
+		t16.midBuccal.plaque = true;
+		t16.mesioBuccal.plaque = true;
+		t17.distoBuccal.plaque = true;
+		t17.midBuccal.plaque = true;
+		t17.mesioBuccal.plaque = true;
+
+		const summary = calculatePerioIndices(fullDentition);
+		assert.equal(summary.totalSitesProbed, 12, "Должно быть ровно 12 исследованных сайтов");
+		// 4 / 12 = 33.3%, а не ложные 4 / 192 = 2.1%
+		assert.equal(summary.fmbsPercent, 33.3, "BOP должен рассчитываться от фактически обследованных 12 сайтов");
+		// 6 / 12 = 50.0%
+		assert.equal(summary.fmpsPercent, 50.0, "PI должен рассчитываться от фактически обследованных 12 сайтов");
+	});
+
 	it("calculates Clinical Attachment Level (CAL = PD + GM) accurately", () => {
 		// Normal sulcus with 2mm recession
 		assert.equal(calculateClinicalAttachmentLevel(3, 2), 5);

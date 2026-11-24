@@ -24,7 +24,7 @@ import {
 import { completeClinicalVisitAndAssembleEstimate } from "../components/visit/clinicalVisitWorkflow";
 
 describe("192-Point Periodontal Probing Release Isolation & Runtime Contract Audit", () => {
-	it("1. Runtime Component Isolation: PeriodontogramChart renders cleanly via SSR without crashing", () => {
+	it("1. Runtime Component Isolation: PerioStudioModal renders cleanly via SSR without crashing", () => {
 		const html = renderToString(
 			React.createElement(PerioStudioModal, {
 				patientId: "550e8400-e29b-41d4-a716-446655440000",

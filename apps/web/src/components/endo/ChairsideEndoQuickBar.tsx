@@ -50,7 +50,9 @@ export function executeChairsideTransferToDiary({
 			const tr = prev.treatment?.trim() || "", pl = prev.treatmentPlan?.trim() || "";
 			return { ...prev, treatment: tr ? `${tr}\n\n${soapProtocol}` : soapProtocol, treatmentPlan: pl ? `${pl}\n\n${soapProtocol}` : soapProtocol };
 		});
-	} catch { /* safe */ }
+	} catch (err) {
+		console.error("[ChairsideEndoQuickBar] Ошибка обновления формы визита:", err);
+	}
 
 	const sharedCanals: EndoCanalData[] = canals.map((c) => ({
 		id: c.id, canalName: c.name, referencePoint: "Бугор",
@@ -78,7 +80,9 @@ export function executeChairsideTransferToDiary({
 					store.addCompletedService({ code: s.code804n, title: s.title, price: s.priceRub, toothNumber: activeTooth, toothCode: String(activeTooth) });
 				}
 				store.applyServicesToToothState({ toothNumber: activeTooth, services: billing.services804n.map((s) => ({ code: s.code804n || "A16.07.030", name: s.title, price: s.priceRub, toothNumber: activeTooth })) });
-			} catch { /* safe store update */ }
+			} catch (err) {
+				console.error("[ChairsideEndoQuickBar] Ошибка обновления стора визита услугами:", err);
+			}
 
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
@@ -119,7 +123,9 @@ export function executeChairsideTransferToDiary({
 				}
 			}
 		}
-	} catch { /* soft */ }
+	} catch (err) {
+		console.error("[ChairsideEndoQuickBar] Ошибка расчёта сметы эндодонтии:", err);
+	}
 	if (patientId) {
 		const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
 			? window.location.origin

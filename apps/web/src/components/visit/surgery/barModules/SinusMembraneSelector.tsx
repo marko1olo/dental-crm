@@ -34,8 +34,8 @@ export const SinusMembraneSelector: React.FC<SinusMembraneSelectorProps> = ({
 							onClick={() => onMembraneSelect(m.label)}
 							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center gap-1.5 ${
 								isSel
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-membrane-${m.short.replace(/[\s×]+/g, "-")}`}
 						>
@@ -50,7 +50,7 @@ export const SinusMembraneSelector: React.FC<SinusMembraneSelectorProps> = ({
 					onClick={onTogglePins}
 					className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center gap-1.5 ml-auto ${
 						hasPins
-							? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]"
+							? "bg-[var(--paper)] text-[var(--primary)] border border-[var(--primary)]"
 							: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
 					}`}
 					data-testid="btn-toggle-titanium-pins"

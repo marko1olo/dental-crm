@@ -42,7 +42,7 @@ export const ImplantSystemSelector: React.FC<ImplantSystemSelectorProps> = ({
 				<button
 					type="button"
 					onClick={() => setIsCustomBrandOpen(!isCustomBrandOpen)}
-					className="text-[10px] text-[var(--teal,#0d9488)] font-bold hover:underline cursor-pointer"
+					className="text-[10px] text-[var(--primary)] font-bold hover:underline cursor-pointer"
 					data-testid="btn-toggle-custom-brand"
 				>
 					{isCustomBrandOpen ? "Закрыть" : "+ Своя система"}
@@ -63,7 +63,7 @@ export const ImplantSystemSelector: React.FC<ImplantSystemSelectorProps> = ({
 					<button
 						type="button"
 						onClick={handleCustomBrandSubmit}
-						className="min-h-[38px] px-2.5 rounded-lg bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] text-xs font-bold shrink-0 cursor-pointer"
+						className="min-h-[38px] px-2.5 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] text-xs font-bold shrink-0 cursor-pointer"
 						data-testid="btn-apply-custom-brand"
 					>
 						<Check size={14} />
@@ -78,8 +78,8 @@ export const ImplantSystemSelector: React.FC<ImplantSystemSelectorProps> = ({
 							onClick={() => onApplyPreset({ brand: s.brand, model: s.model })}
 							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								implantBrand === s.brand
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-implant-system-${s.brand}`}
 						>

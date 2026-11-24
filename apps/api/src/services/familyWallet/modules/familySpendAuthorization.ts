@@ -17,7 +17,7 @@ import { FamilyWalletError, type FamilyGroupRow } from "../familyWalletTypes.js"
  * Mandatory invariants:
  * 1. If spender is the wallet owner (headPatientId / primaryPatientId), they are authorized.
  * 2. If spender is a family member (patientId !== walletOwnerId):
- *    - Члены подтверждённой семейной группы имеют право на списание по умолчанию (Мандат 8n),
+ *    - Члены подтверждённой семейной группы имеют право на списание по умолчанию,
  *      если нет явного запрета `canSpendFamilyWallet === false`.
  *    - Запрещено, если в `patient_relationships` явно установлен флаг `canSpendFamilyWallet === false`.
  *    - Запрещено, если пациент не входит в семейную группу и не связан подтвержденным родством в `patient_relationships`.
@@ -43,7 +43,7 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	const currentBalKop = (family.balanceKopecks && Number(family.balanceKopecks) > 0)
+	const currentBalKop = family.balanceKopecks != null
 		? Number(family.balanceKopecks)
 		: (family.balance ? parseKopecks(family.balance) : 0);
 	if (currentBalKop < debitKopecks) {
@@ -109,9 +109,19 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// Защита от BOLA/IDOR [LOY-05]: Списание средств со счета другого лица (patientId !== walletOwnerId)
-	// требует подтверждения полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
+	// Если есть запись в patient_relationships, проверяем полномочия (canSpendFamilyWallet === true или isLegalRepresentative === true).
+	// Если записи в patient_relationships нет, но пациент является прямым членом семейной группы (isDirectFamilyMember === true)
+	// и нет явного запрета — списание разрешено по умолчанию.
 	// Поддельный payerPatientId в теле запроса не может обходить проверку прав реального пациента.
-	if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
+	if (rel) {
+		if (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true) {
+			throw new FamilyWalletError(
+				"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
+				403,
+				"UNAUTHORIZED_FAMILY_SPEND",
+			);
+		}
+	} else if (!isDirectFamilyMember) {
 		throw new FamilyWalletError(
 			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
 			403,

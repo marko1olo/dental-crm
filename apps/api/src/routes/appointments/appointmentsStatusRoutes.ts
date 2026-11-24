@@ -1,14 +1,17 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
+import { onTenantTxCommit, withSavepoint } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
 import {
 	ensureDefaultStaffChannels,
 	insertStaffMessage,
 } from "../../db/staffChatQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { triggerSmartGapFiller } from "../../services/daemons/smartGapFillerService.js";
 import { syncRecallOnAppointmentCompleted } from "../../services/patients/recallSyncService.js";
+import { executeAutoBomWriteoff } from "../../services/treatmentConsumables/autoBomWriteoffService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import {
 	fetchArrivalAppointmentMeta,
@@ -137,7 +140,7 @@ export async function applyAppointmentStatusTransitions(
 	} else if (status === "completed") {
 		void syncRecallOnAppointmentCompleted(orgId, appointmentId);
 		try {
-			await tx
+			const updatedVisits = await tx
 				.update(visits)
 				.set({ status: "signed", updatedAt: new Date() })
 				.where(
@@ -146,7 +149,59 @@ export async function applyAppointmentStatusTransitions(
 						eq(visits.organizationId, orgId),
 						eq(visits.status, "draft"),
 					),
-				);
+				)
+				.returning({
+					id: visits.id,
+					patientId: visits.patientId,
+					doctorId: visits.doctorId,
+				});
+
+			const targetVisits =
+				updatedVisits.length > 0
+					? updatedVisits
+					: await tx
+							.select({
+								id: visits.id,
+								patientId: visits.patientId,
+								doctorId: visits.doctorId,
+							})
+							.from(visits)
+							.where(
+								and(
+									eq(visits.appointmentId, appointmentId),
+									eq(visits.organizationId, orgId),
+								),
+							)
+							.limit(1);
+
+			const identity = getRequestIdentity(request);
+			for (const visit of targetVisits) {
+				try {
+					await withSavepoint(tx, async (spTx) =>
+						executeAutoBomWriteoff(spTx, {
+							organizationId: orgId,
+							visitId: visit.id,
+							patientId: visit.patientId,
+							userId: visit.doctorId ?? identity.userId,
+							allowOverdraft: true,
+						}),
+					);
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "INVENTORY_STOCK_CHANGED",
+							payload: {
+								visitId: visit.id,
+								action: "auto_deduct",
+							},
+						});
+					});
+				} catch (bomErr) {
+					request.log.warn(
+						{ bomErr, visitId: visit.id, appointmentId, orgId },
+						"[scheduleRoutes] Предупреждение автоматического списания по техкартам (BOM) при завершении приёма (мягкий овердрафт)",
+					);
+				}
+			}
 		} catch (err) {
 			request.log.error(
 				{ err, appointmentId, orgId },

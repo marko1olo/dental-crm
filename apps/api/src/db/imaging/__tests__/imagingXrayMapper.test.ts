@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { mapXrayScanToImagingStudy } from "../imagingXrayMapper.js";
+import { mapXrayScanToImagingStudy, mapImagingStudyToXrayScan } from "../imagingXrayMapper.js";
 import type * as schema from "../../schema.js";
 
 describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => {
@@ -69,5 +69,53 @@ describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => 
 
 		assert.strictEqual(study.previewUrl, `/api/imaging/studies/${baseScan.id}/preview.svg`);
 		assert.strictEqual(study.viewerUrl, `/api/imaging/studies/${baseScan.id}/preview.svg`);
+	});
+
+	test("mapImagingStudyToXrayScan correctly maps imagingStudy to xrayScan legacy structure", () => {
+		const study: typeof schema.imagingStudies.$inferSelect = {
+			id: "0194e3a0-1234-7000-8000-000000000002",
+			organizationId: "org-1",
+			patientId: "patient-1",
+			visitId: "visit-1",
+			doctorId: "doc-1",
+			kind: "periapical",
+			title: "Прицельный снимок зуба 26",
+			toothCode: "26",
+			region: "Зуб 26",
+			capturedAt: new Date("2026-11-12T10:00:00Z"),
+			sourceKind: "sensor_bridge",
+			sourceName: "RVG",
+			storagePath: "/storage/studies/study_26.jpg",
+			dicomStudyUid: null,
+			studyInstanceUid: null,
+			seriesInstanceUid: null,
+			modality: "IO",
+			seriesDescription: "Прицельный снимок 26",
+			fileSizeBytes: 1048576,
+			bindingStatus: "manual_bound",
+			bindingConfidence: 100,
+			dicomPatientName: null,
+			dicomPatientId: null,
+			dicomBirthDate: null,
+			status: "available",
+			aiSummary: "Зуб 26: глубокий кариес",
+			doseMsv: null,
+			effectiveDoseMsv: null,
+			createdAt: new Date("2026-11-12T10:00:00Z"),
+			updatedAt: new Date("2026-11-12T10:00:00Z"),
+		};
+
+		const scan = mapImagingStudyToXrayScan(study);
+
+		assert.strictEqual(scan.id, study.id);
+		assert.strictEqual(scan.organizationId, "org-1");
+		assert.strictEqual(scan.patientId, "patient-1");
+		assert.strictEqual(scan.visitId, "visit-1");
+		assert.strictEqual(scan.status, "done");
+		assert.strictEqual(scan.kind, "periapical");
+		assert.strictEqual(scan.toothCode, "26");
+		assert.strictEqual(scan.fileUrl, `/api/imaging/studies/${study.id}/file`);
+		assert.strictEqual(scan.aiSummary, "Зуб 26: глубокий кариес");
+		assert.strictEqual(scan.storagePath, "/storage/studies/study_26.jpg");
 	});
 });

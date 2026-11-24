@@ -8,8 +8,6 @@ export interface PediatricMobileBottomBarProps {
 	readonly diagnosisIcd10: string;
 	readonly servicesCount: number;
 	readonly onInsertToClinicalNote?: () => void;
-	/** @deprecated Использовать onInsertToClinicalNote */
-	readonly onInsertToForm043?: () => void;
 	readonly onAddServicesToInvoice: () => void;
 	readonly onOpenMemoModal: () => void;
 	readonly onOpenDiplomaModal: () => void;
@@ -23,21 +21,20 @@ export const PediatricMobileBottomBar: React.FC<
 	diagnosisIcd10,
 	servicesCount,
 	onInsertToClinicalNote,
-	onInsertToForm043,
 	onAddServicesToInvoice,
 	onOpenMemoModal,
 	onOpenDiplomaModal,
 }) => {
-	const handleApply = onInsertToClinicalNote || onInsertToForm043 || (() => {});
+	const handleApply = onInsertToClinicalNote || (() => {});
 
 	return (
 		<div
-			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 border-t border-[var(--line,#e2e8f0)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
+			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong)]/95 border-t border-[var(--line)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
 			data-testid="pediatric-mobile-bottom-bar"
 		>
 			{/* Верхняя строка мобильного бара: сводка диагноза + зуба */}
-			<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] px-0.5">
-				<span className="font-bold text-[var(--ink,#0f172a)] truncate">
+			<div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)] px-0.5">
+				<span className="font-bold text-[var(--ink)] truncate">
 					Зуб {currentTooth} • {activePreset.shortLabelRu}
 				</span>
 				<span className="font-mono text-xs font-extrabold text-[var(--primary)] shrink-0 ml-2">
@@ -89,7 +86,7 @@ export const PediatricMobileBottomBar: React.FC<
 					data-testid="pediatric-mobile-btn-diploma"
 					title="Печать диплома за храбрость"
 				>
-					<Award className="h-4 w-4 shrink-0 text-[var(--warning,#f59e0b)]" />
+					<Award className="h-4 w-4 shrink-0 text-[var(--warning)]" />
 					<span className="truncate">Диплом</span>
 				</button>
 			</div>

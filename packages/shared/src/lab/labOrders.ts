@@ -887,6 +887,8 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 		s === "fitted" ||
 		s === "seated" ||
 		s === "installed" ||
+		s === "installed_completed" ||
+		s === "delivered_completed" ||
 		s === "installed_in_mouth" ||
 		s === "delivered" ||
 		s === "фиксация" ||

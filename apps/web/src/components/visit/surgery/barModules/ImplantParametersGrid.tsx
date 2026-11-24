@@ -42,8 +42,8 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 							onClick={() => onApplyPreset({ diameterMm: sz.dia, lengthMm: sz.len })}
 							className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer touch-manipulation ${
 								implantDiameter === sz.dia && implantLength === sz.len
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-implant-size-${sz.dia}-${sz.len}`}
 						>
@@ -64,8 +64,8 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 							onClick={() => onApplyPreset({ torqueNcm: st.torque, isq: st.isq })}
 							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								implantTorque === st.torque
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-implant-torque-${st.torque}`}
 						>
@@ -84,8 +84,8 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 						onClick={() => onApplyPreset({ capType: "fdm", sutureMaterial: "Prolene 4-0" })}
 						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 							implantCap === "fdm"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								? "bg-[var(--primary)] text-white"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 						}`}
 						data-testid="btn-implant-cap-fdm"
 					>
@@ -96,8 +96,8 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 						onClick={() => onApplyPreset({ capType: "plug", sutureMaterial: "Vicryl 4-0" })}
 						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 							implantCap === "plug"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								? "bg-[var(--primary)] text-white"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 						}`}
 						data-testid="btn-implant-cap-plug"
 					>

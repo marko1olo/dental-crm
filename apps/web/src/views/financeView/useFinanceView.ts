@@ -46,7 +46,24 @@ export function resolveEffectivePatient({ pendingCheckout, dashboard, documentPa
 		const found = dashboard?.patients?.find((p) => p.id === pendingCheckout.patientId);
 		if (found) return found;
 		if (documentPatient?.id === pendingCheckout.patientId) return documentPatient as Patient;
-		return { id: pendingCheckout.patientId, fullName: pendingCheckout.patientName || "Пациент", phone: pendingCheckout.patientPhone || "" } as unknown as Patient;
+		const nowIso = new Date().toISOString();
+		const fallbackPatient: Patient = {
+			id: pendingCheckout.patientId,
+			organizationId: dashboard?.patients?.[0]?.organizationId || "00000000-0000-0000-0000-000000000000",
+			status: "active",
+			fullName: pendingCheckout.patientName || "Пациент",
+			birthDate: null,
+			gender: null,
+			phone: pendingCheckout.patientPhone || null,
+			email: null,
+			notes: null,
+			administrativeProfile: null,
+			balanceRub: 0,
+			balanceKopecks: 0,
+			createdAt: nowIso,
+			updatedAt: nowIso,
+		};
+		return fallbackPatient;
 	}
 	if (documentPatient) return documentPatient as Patient;
 	if (activePatient) return activePatient as Patient;
@@ -92,7 +109,10 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		try {
 			const raw = sessionStorage.getItem("dente_pending_checkout") || localStorage.getItem("dente_pending_checkout");
 			return raw ? JSON.parse(raw) : null;
-		} catch { return null; }
+		} catch (err) {
+			console.warn("[FinanceView] Не удалось прочитать dente_pending_checkout:", err);
+			return null;
+		}
 	});
 
 	useEffect(() => {
@@ -104,7 +124,9 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					setPendingCheckout(parsed);
 					if (parsed?.autoOpen) modals.setIsSplitPaymentOpen(true);
 				}
-			} catch {}
+			} catch (err) {
+				console.warn("[FinanceView] Ошибка парсинга pending checkout:", err);
+			}
 		};
 		syncPendingCheckout();
 		window.addEventListener("dente:pending-checkout-ready", syncPendingCheckout);
@@ -183,8 +205,8 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 						};
 					});
 				}
-			} catch {
-				// Soft network resilience
+			} catch (err) {
+				console.warn("[FinanceView] Ошибка загрузки неоплаченных счетов из БД:", err);
 			}
 		};
 

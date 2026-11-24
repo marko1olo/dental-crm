@@ -13,19 +13,21 @@ export function isPermittedLabStatusTransition(
 
 	const isPermittedShortcut =
 		(currentStatus === "in_progress" &&
-			["received", "ready", "ready_in_clinic", "fitted", "refitting", "completed", "shipped", "sent", "cancelled", "rejected_remake"].includes(targetStatus)) ||
+			["received", "ready", "ready_in_clinic", "fitting", "fitted", "refitting", "completed", "shipped", "sent", "cancelled", "rejected_remake"].includes(targetStatus)) ||
 		(currentStatus === "received" &&
-			["ready", "ready_in_clinic", "fitted", "completed", "refitting", "in_progress", "sent", "cancelled", "rejected_remake"].includes(targetStatus)) ||
+			["ready", "ready_in_clinic", "fitting", "fitted", "completed", "refitting", "in_progress", "sent", "cancelled", "rejected_remake"].includes(targetStatus)) ||
 		(currentStatus === "ready" &&
-			["ready_in_clinic", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"].includes(targetStatus)) ||
+			["ready_in_clinic", "received", "fitting", "fitted", "completed", "refitting", "cancelled", "rejected_remake"].includes(targetStatus)) ||
 		(currentStatus === "ready_in_clinic" &&
-			["ready", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"].includes(targetStatus)) ||
+			["ready", "received", "fitting", "fitted", "completed", "refitting", "cancelled", "rejected_remake"].includes(targetStatus)) ||
+		(currentStatus === "fitting" &&
+			["fitted", "ready_in_clinic", "ready", "received", "refitting", "completed", "cancelled", "rejected_remake"].includes(targetStatus)) ||
 		(currentStatus === "refitting" &&
-			["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitted", "completed", "sent", "cancelled"].includes(targetStatus)) ||
+			["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitting", "fitted", "completed", "sent", "cancelled"].includes(targetStatus)) ||
 		(currentStatus === "sent" &&
-			["in_progress", "shipped", "received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
+			["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitting", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
 		(currentStatus === "draft" &&
-			["sent", "in_progress", "received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
+			["sent", "in_progress", "fitting", "received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
 		(currentStatus === "completed" &&
 			["refitting", "rejected_remake", "received", "in_progress"].includes(targetStatus)) ||
 		(currentStatus === "fitted" &&

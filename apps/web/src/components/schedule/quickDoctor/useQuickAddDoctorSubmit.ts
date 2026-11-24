@@ -5,7 +5,7 @@
 import { useState } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
 import {
 	QUICK_DOCTOR_SPECIALTIES,
@@ -72,7 +72,7 @@ export function useQuickAddDoctorSubmit({
 			} else if (typeof fetch === "function") {
 				await fetch("/api/settings/staff", {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
 						fullName: finalName, role: "doctor", specialties: [specialty], phone: phone.trim() || null,
 					}),

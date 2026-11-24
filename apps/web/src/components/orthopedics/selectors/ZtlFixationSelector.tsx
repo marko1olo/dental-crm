@@ -1,12 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { Sliders } from "lucide-react";
 import { FIXATION_TYPE_PRESETS } from "../orthopedicCatalogData.js";
+
+export interface CementBrandPreset {
+	readonly id: string;
+	readonly name: string;
+	readonly manufacturer: string;
+	readonly clinicalIndication: string;
+}
+
+export const CEMENT_BRAND_PRESETS: readonly CementBrandPreset[] = [
+	{
+		id: "variolink_esthetic",
+		name: "Variolink Esthetic",
+		manufacturer: "Ivoclar",
+		clinicalIndication: "световой/двойной для виниров и E.max",
+	},
+	{
+		id: "relyx_u200",
+		name: "RelyX U200",
+		manufacturer: "3M",
+		clinicalIndication: "самоадгезивный для диоксида циркония",
+	},
+	{
+		id: "fuji_plus",
+		name: "Fuji Plus",
+		manufacturer: "GC",
+		clinicalIndication: "стеклоиономерный для стандартных коронок",
+	},
+	{
+		id: "panavia_v5",
+		name: "Panavia V5",
+		manufacturer: "Kuraray",
+		clinicalIndication: "для сложных адгезивных конструкций",
+	},
+] as const;
 
 export interface ZtlFixationSelectorProps {
 	readonly fixationType: "cement" | "screw" | "clasp";
 	readonly onSelectFixationType: (type: "cement" | "screw" | "clasp") => void;
 	readonly hasAntagonists: boolean;
 	readonly onToggleAntagonists: (checked: boolean) => void;
+	readonly cementBrand?: string | undefined;
+	readonly onSelectCementBrand?: ((brand: string) => void) | undefined;
 }
 
 export function ZtlFixationSelector({
@@ -14,7 +50,17 @@ export function ZtlFixationSelector({
 	onSelectFixationType,
 	hasAntagonists,
 	onToggleAntagonists,
+	cementBrand,
+	onSelectCementBrand,
 }: ZtlFixationSelectorProps) {
+	const [internalCementBrand, setInternalCementBrand] = useState<string>("relyx_u200");
+	const activeCementBrand = cementBrand !== undefined ? cementBrand : internalCementBrand;
+
+	const handleCementSelect = (brandId: string) => {
+		setInternalCementBrand(brandId);
+		onSelectCementBrand?.(brandId);
+	};
+
 	return (
 		<div className="mb-2.5 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-w-0 overflow-hidden" data-testid="fixation-type-section">
 			<div className="flex flex-wrap items-center justify-between gap-1 mb-2">
@@ -56,6 +102,43 @@ export function ZtlFixationSelector({
 					);
 				})}
 			</div>
+
+			{/* TASK-PROSTH-01: Быстрые чипы выбора брендов цементов при фиксации "cement" */}
+			{fixationType === "cement" && (
+				<div className="mb-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]" data-testid="cement-brands-section">
+					<div className="flex items-center justify-between gap-1 mb-1.5">
+						<span className="text-[11px] font-semibold text-[var(--ink)]">
+							Бренд цемента / адгезивный протокол:
+						</span>
+						<span className="text-[10px] text-[var(--muted)] font-mono">
+							Мандат 8am
+						</span>
+					</div>
+					<div className="flex flex-wrap gap-1.5" data-testid="cement-brand-chips">
+						{CEMENT_BRAND_PRESETS.map((cement) => {
+							const isSelected = activeCementBrand === cement.id || activeCementBrand === cement.name;
+							return (
+								<button
+									key={cement.id}
+									type="button"
+									onClick={() => handleCementSelect(cement.id)}
+									data-testid={`cement-brand-chip-${cement.id}`}
+									data-active={isSelected ? "true" : "false"}
+									title={`${cement.name} (${cement.manufacturer}) — ${cement.clinicalIndication}`}
+									className={`dente-btn-pill min-h-[44px] sm:min-h-[32px] px-2.5 py-1 text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 rounded-full border ${
+										isSelected
+											? "bg-[rgba(13,148,136,0.12)] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-semibold shadow-2xs"
+											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+									}`}
+								>
+									<span>{cement.name}</span>
+									<span className="text-[10px] opacity-75 font-normal">({cement.manufacturer})</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+			)}
 
 			<div className="pt-1.5 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
 				<label className="flex items-center gap-2 px-2.5 py-1 min-h-[34px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium text-[var(--ink)] cursor-pointer select-none" data-testid="antagonists-checkbox-label">

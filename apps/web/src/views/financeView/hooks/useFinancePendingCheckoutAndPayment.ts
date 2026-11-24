@@ -46,7 +46,8 @@ export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingChe
 				sessionStorage.getItem("dente_pending_checkout") ||
 				localStorage.getItem("dente_pending_checkout");
 			return raw ? JSON.parse(raw) : null;
-		} catch {
+		} catch (err) {
+			console.warn("[FinancePendingCheckout] Не удалось прочитать dente_pending_checkout:", err);
 			return null;
 		}
 	});
@@ -64,7 +65,9 @@ export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingChe
 						onOpenSplitPayment();
 					}
 				}
-			} catch {}
+			} catch (err) {
+				console.warn("[FinancePendingCheckout] Ошибка парсинга pending checkout:", err);
+			}
 		};
 		syncPendingCheckout();
 		window.addEventListener("dente:pending-checkout-ready", syncPendingCheckout);

@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { imagingStudies, xrayScans, imagingSeries, imagingInstances } from "../../../db/schema.js";
+import { mapImagingStudyToXrayScan } from "../../../db/imaging/imagingXrayMapper.js";
 import { getRequestIdentity, requireOrganizationId } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
@@ -50,7 +51,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!organizationId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.xray.read", role: staffRole, message: `Отказ в доступе: ${evalAccess.reason}` });
@@ -108,7 +109,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!organizationId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.xray.read", role: staffRole, message: `Отказ в доступе: ${evalAccess.reason}` });
@@ -122,32 +123,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!scan) {
 			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
 			if (study && study.patientId) {
-				scan = {
-					id: study.id,
-					organizationId: study.organizationId,
-					patientId: study.patientId,
-					visitId: study.visitId,
-					imageDataUri: null,
-					storagePath: study.storagePath,
-					fileUrl: `/api/imaging/studies/${study.id}/file`,
-					fileSizeBytes: study.fileSizeBytes,
-					sha256: null,
-					originalFilename: study.title,
-					mimeType: "image/jpeg",
-					aiReport: null,
-					aiSummary: study.aiSummary,
-					aiToothStates: null,
-					aiModelName: null,
-					aiAnalyzedAt: null,
-					aiError: null,
-					status: study.status === "available" ? "done" : "pending",
-					kind: study.kind || "periapical",
-					toothCode: study.toothCode,
-					notes: study.title,
-					capturedAt: study.capturedAt,
-					createdAt: study.createdAt,
-					updatedAt: study.createdAt,
-				};
+				scan = mapImagingStudyToXrayScan(study);
 			}
 		}
 		if (!scan) {
@@ -330,7 +306,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!organizationId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -447,7 +423,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!organizationId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const allowed = new Set(["chief_doctor", "chiefdoctor", "head_doctor", "owner", "admin"]);
 		if (!staffRole || !allowed.has(staffRole)) {
 			reply.code(403);
@@ -494,7 +470,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!organizationId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.xray.read", role: staffRole, message: `Отказ в доступе к файлу: ${evalAccess.reason}` });
@@ -508,32 +484,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!scan) {
 			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
 			if (study && study.patientId) {
-				scan = {
-					id: study.id,
-					organizationId: study.organizationId,
-					patientId: study.patientId,
-					visitId: study.visitId,
-					imageDataUri: null,
-					storagePath: study.storagePath,
-					fileUrl: `/api/imaging/studies/${study.id}/file`,
-					fileSizeBytes: study.fileSizeBytes,
-					sha256: null,
-					originalFilename: study.title,
-					mimeType: "image/jpeg",
-					aiReport: null,
-					aiSummary: study.aiSummary,
-					aiToothStates: null,
-					aiModelName: null,
-					aiAnalyzedAt: null,
-					aiError: null,
-					status: study.status === "available" ? "done" : "pending",
-					kind: study.kind || "periapical",
-					toothCode: study.toothCode,
-					notes: study.title,
-					capturedAt: study.capturedAt,
-					createdAt: study.createdAt,
-					updatedAt: study.createdAt,
-				};
+				scan = mapImagingStudyToXrayScan(study);
 			}
 		}
 		if (!scan) {
@@ -596,32 +547,7 @@ export async function registerXrayLegacyCompatRoutes(app: FastifyInstance): Prom
 		if (!scan) {
 			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
 			if (study && study.patientId) {
-				scan = {
-					id: study.id,
-					organizationId: study.organizationId,
-					patientId: study.patientId,
-					visitId: study.visitId,
-					imageDataUri: null,
-					storagePath: study.storagePath,
-					fileUrl: `/api/imaging/studies/${study.id}/file`,
-					fileSizeBytes: study.fileSizeBytes,
-					sha256: null,
-					originalFilename: study.title,
-					mimeType: "image/jpeg",
-					aiReport: null,
-					aiSummary: study.aiSummary,
-					aiToothStates: null,
-					aiModelName: null,
-					aiAnalyzedAt: null,
-					aiError: null,
-					status: study.status === "available" ? "done" : "pending",
-					kind: study.kind || "periapical",
-					toothCode: study.toothCode,
-					notes: study.title,
-					capturedAt: study.capturedAt,
-					createdAt: study.createdAt,
-					updatedAt: study.createdAt,
-				};
+				scan = mapImagingStudyToXrayScan(study);
 			}
 		}
 		if (!scan) {

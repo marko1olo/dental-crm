@@ -19,7 +19,7 @@ export const ImplantDimensionsSelector: React.FC<ImplantDimensionsSelectorProps>
 		<div className="grid grid-cols-2 gap-2">
 			{/* Diameters */}
 			<div className="flex flex-col gap-1">
-				<div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+				<div className="flex items-center justify-between text-xs font-semibold text-[var(--ink-muted)]">
 					<span>Диаметр (Ø мм):</span>
 					<span className="w-2 h-2 rounded-full" style={{ backgroundColor: platformColor }} />
 				</div>
@@ -29,10 +29,10 @@ export const ImplantDimensionsSelector: React.FC<ImplantDimensionsSelectorProps>
 							key={d}
 							type="button"
 							onClick={() => onSelectDiameterMm?.(d)}
-							className={`py-1 px-0.5 rounded text-xs font-mono text-center border transition-colors cursor-pointer ${
+							className={`min-h-[44px] py-1 px-1 rounded-lg text-xs font-mono text-center border transition-colors cursor-pointer touch-manipulation ${
 								Math.abs(selectedDiameterMm - d) < 0.1
-									? "bg-amber-950/70 text-amber-200 border-amber-500/50 font-bold shadow-xs"
-									: "bg-zinc-900 text-zinc-300 hover:text-zinc-200 border-zinc-800"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] border-[var(--line)]"
 							}`}
 							data-testid={`cbct-implant-diam-${d}`}
 						>
@@ -44,17 +44,17 @@ export const ImplantDimensionsSelector: React.FC<ImplantDimensionsSelectorProps>
 
 			{/* Lengths */}
 			<div className="flex flex-col gap-1">
-				<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Длина (L мм):</span>
+				<span className="text-xs font-semibold text-[var(--ink-muted)]">Длина (L мм):</span>
 				<div className="grid grid-cols-4 gap-1">
 					{STANDARD_CLINICAL_LENGTHS.map((l) => (
 						<button
 							key={l}
 							type="button"
 							onClick={() => onSelectLengthMm?.(l)}
-							className={`py-1 px-0.5 rounded text-xs font-mono text-center border transition-colors cursor-pointer ${
+							className={`min-h-[44px] py-1 px-1 rounded-lg text-xs font-mono text-center border transition-colors cursor-pointer touch-manipulation ${
 								Math.abs(selectedLengthMm - l) < 0.1
-									? "bg-amber-950/70 text-amber-200 border-amber-500/50 font-bold shadow-xs"
-									: "bg-zinc-900 text-zinc-300 hover:text-zinc-200 border-zinc-800"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] border-[var(--line)]"
 							}`}
 							data-testid={`cbct-implant-len-${l}`}
 						>
