@@ -202,7 +202,7 @@ export function VisitEmkCompletionSection({
 				<button
 					type="button"
 					onClick={handleCompleteVisitAndGenerateReceipt}
-					disabled={false}
+					disabled={isCompletingVisit}
 					aria-busy={isCompletingVisit}
 					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
 					data-testid="btn-complete-visit-emk"
@@ -328,7 +328,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={handleCompleteVisitAndGenerateReceipt}
-								disabled={false}
+								disabled={isCompletingVisit}
 								aria-busy={isCompletingVisit}
 								className="mobile-bottom-cta-primary min-h-[48px] h-12"
 								data-testid="btn-mobile-primary-complete"
