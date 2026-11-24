@@ -1,7 +1,7 @@
 /**
  * ChairsideSurgeryHubModal.tsx — Единый канонический рабочий стол хирурга-имплантолога у кресла (DENTE CRM).
  * Декомпозиция монолита по Мандатам 8b/8zi.
- * Ровно ОДНА Primary CTA кнопка #0d9488: «✓ Зафиксировать операцию и внести в карту».
+ * Ровно ОДНА Primary CTA кнопка var(--primary) (Мандат 8d/8al/8am): «✓ Зафиксировать операцию и внести в карту».
  * На смартфонах — нативный Bottom Sheet Apple HIG с Drag Handle и тач-таргетами >= 44x44px.
  */
 
@@ -441,9 +441,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			setTorqueNcm(35); setCapType("fdm"); setBoneDensity("D2"); setIsqValue(74);
 			showToast("✓ Стандартный протокол имплантации без осложнений: 35 Н·см, ФДМ, D2 (ISQ 74)", "success");
 		} else if (activeScenario === "extraction") {
-			showToast("✓ Стандартное атравматичное удаление: кюретаж, гемостаз, швы Викрил 4-0", "success");
+			showToast("✓ Стандартное атравматичное удаление: кюретаж, гемостаз, швы ПГА 4-0", "success");
 		} else if (activeScenario === "sinus_gbr") {
-			showToast("✓ Стандартный синус-лифтинг: Bio-Oss 0.5 г + мембрана Bio-Gide 16×22", "success");
+			showToast("✓ Стандартный синус-лифтинг: ксеногенный гранулят 0.5 г + резорбируемая мембрана 16×22", "success");
 		} else {
 			showToast("✓ Стандартная периостотомия: разрез по переходной складке, дренаж", "success");
 		}

@@ -7,7 +7,6 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	implantIsqMeasurements,
@@ -125,21 +124,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 		}
 		const input = parsed.data;
 
-		// Автономный фоллбек пациента (Мандат 8e: врач никогда не блокируется из-за нестыковки id)
-		let targetPatientId = input.patientId;
-		const [patient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
-			.limit(1);
-
-		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в вашей клинике.",
-			});
-		}
-
+		const targetPatientId = input.patientId;
 		const effectiveInput = { ...input, patientId: targetPatientId };
 
 		const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(
@@ -161,6 +146,17 @@ export function registerInstallationRoute(app: FastifyInstance) {
 
 		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
 		const txResult = await withTenantCtx(orgId, async (tx) => {
+			// Автономный фоллбек пациента (Мандат 8e: врач никогда не блокируется из-за нестыковки id)
+			const [patient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+
+			if (!patient) {
+				return { patientNotFound: true as const };
+			}
+
 			const installationResults: unknown[] = [];
 			const allDeductions: unknown[] = [];
 			let primaryFinancials: unknown = null;
@@ -441,6 +437,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			}
 
 			return {
+				patientNotFound: false as const,
 				firstInstallationRecord,
 				firstInventoryDeduction,
 				installationResults,
@@ -449,6 +446,13 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				responsePayload,
 			};
 		});
+
+		if (txResult.patientNotFound) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в вашей клинике.",
+			});
+		}
 
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "UPDATE_IMPLANT_RECORD",

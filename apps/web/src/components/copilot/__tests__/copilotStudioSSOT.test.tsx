@@ -289,10 +289,13 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
   });
 
   it("23. Мандат 8wy: CopilotStudioModal подключает реальный Fastify эндпоинт POST /api/agent/chat", () => {
-    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
-    const content = fs.readFileSync(filePath, "utf-8");
-    assert.ok(content.includes('fetch("/api/agent/chat"'), "Обязан вызывать боевой Fastify эндпоинт /api/agent/chat");
-    assert.ok(!content.includes('fetch("/api/v1/copilot/chat"'), "Выдуманный эндпоинт /api/v1/copilot/chat обязан быть удален");
+    const streamClientPath = path.join(__dirname, "../client/copilotStreamClient.ts");
+    const streamContent = fs.readFileSync(streamClientPath, "utf-8");
+    assert.ok(streamContent.includes('"/api/agent/chat"'), "Обязан вызывать боевой Fastify эндпоинт /api/agent/chat");
+    assert.ok(!streamContent.includes('"/api/v1/copilot/chat"'), "Выдуманный эндпоинт /api/v1/copilot/chat обязан быть удален");
+    const modalPath = path.join(__dirname, "../CopilotStudioModal.tsx");
+    const modalContent = fs.readFileSync(modalPath, "utf-8");
+    assert.ok(modalContent.includes("streamCopilotChat"), "CopilotStudioModal обязан подключать streamCopilotChat");
   });
 
   it("24. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 450 строк", () => {

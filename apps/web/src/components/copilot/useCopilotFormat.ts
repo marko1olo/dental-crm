@@ -1,6 +1,11 @@
 /**
  * Locale-aware formatters for Copilot cards and timestamps.
+ * Canonical SSOT re-exports from @dental/shared/src/money.ts (Mandate 8bm, 8bf).
  */
+
+import { formatCurrency, formatKopecksToRub } from '@dental/shared';
+
+export { formatCurrency, formatKopecksToRub };
 
 export function formatDateTime(iso?: string | null, locale: string = 'ru-RU'): string {
   if (!iso) return '';
@@ -38,14 +43,19 @@ export function formatTime(iso?: string | null, locale: string = 'ru-RU'): strin
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
-export function formatMoney(value?: number | string | null, currency: string = 'RUB', locale: string = 'ru-RU'): string {
-  let num = 0;
+/**
+ * Format money using canonical exact kopecks arithmetic without parseFloat drift (Mandate 8bm, 8bf).
+ */
+export function formatMoney(
+  value?: number | string | null,
+  currency: string = 'RUB',
+  locale: string = 'ru-RU',
+): string {
+  if (value === null || value === undefined || value === '') return '0 ₽';
   if (typeof value === 'number') {
-    num = Number.isFinite(value) ? value : 0;
-  } else if (typeof value === 'string') {
-    const cleaned = value.replace(/\s+/g, '').replace(',', '.');
-    const parsed = parseFloat(cleaned);
-    num = Number.isFinite(parsed) ? parsed : 0;
+    if (!Number.isFinite(value) || Number.isNaN(value)) return '0 ₽';
+    return formatCurrency(value);
   }
-  return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 2 }).format(num);
+  const sanitized = String(value).replace(/\s+/g, '').replace(',', '.');
+  return formatCurrency(sanitized);
 }

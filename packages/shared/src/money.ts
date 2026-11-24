@@ -68,7 +68,13 @@ export type Kopecks = number & { readonly [KopecksBrand]?: "Kopecks" };
  * Строго проверяет, что число является конечным целым числом копеек (защита от IEEE-754 float drift).
  * При наличии дробной части, NaN или бесконечности выбрасывает исключение с детальным описанием ошибки.
  */
-export function assertIntegerKopecks(val: number): asserts val is Kopecks {
+export function assertIntegerKopecks(val: number | bigint): asserts val is Kopecks {
+	if (typeof val === "bigint") {
+		if (val > BigInt(Number.MAX_SAFE_INTEGER) || val < BigInt(Number.MIN_SAFE_INTEGER)) {
+			throw new Error(`Сумма ${val} копеек выходит за пределы безопасного диапазона целых чисел (Number.isSafeInteger).`);
+		}
+		return;
+	}
 	if (typeof val !== "number" || !Number.isFinite(val) || Number.isNaN(val) || !Number.isInteger(val)) {
 		throw new Error(
 			`Копейки должны быть конечным целым числом, получено: ${val}. Недопустимо использовать дробные числа (float) для денег.`,
@@ -82,7 +88,11 @@ export function assertIntegerKopecks(val: number): asserts val is Kopecks {
 /**
  * Валидирует и возвращает значение как строго брендированный тип Kopecks.
  */
-export function toExactKopecks(val: number): Kopecks {
+export function toExactKopecks(val: number | bigint): Kopecks {
+	if (typeof val === "bigint") {
+		assertIntegerKopecks(val);
+		return Number(val) as Kopecks;
+	}
 	assertIntegerKopecks(val);
 	return val as Kopecks;
 }

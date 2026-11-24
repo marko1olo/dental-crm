@@ -17,7 +17,7 @@ import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
 import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
 import { executeCopilotConfirmation } from "./useCopilotModules/useCopilotActions";
 import { streamCopilotChat, toCleanUuid } from "./client/copilotStreamClient";
-import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
+import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab"; import { CopilotStudioToolProposalCard } from "./CopilotStudioToolProposalCard";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
@@ -73,9 +73,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
           setMessages(p); saveThreadMessages(sId, p); return true;
         }
       }
-    } catch (err) {
-      console.warn("[CopilotStudioModal] Hydrate session offline or network error:", err);
-    }
+    } catch (err) { console.warn("[CopilotStudioModal] Hydrate session offline:", err); }
     return false;
   }, [saveThreadMessages]);
   useEffect(() => {
@@ -164,16 +162,13 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
 
     // [CLN-DICTATION]: Локальный клинический парсер речи и текста для одонтограммы, SOAP и сметы
     const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel, autoApply: false });
-    const token = readDenteClinicToken() || readDenteStaffToken() || "";
-    const apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
+    const token = readDenteClinicToken() || readDenteStaffToken() || "", apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 
     // Скользящее окно многошаговой памяти диалога (AI-REV-06): последние 10 сообщений + текущий запрос
     const historyWindow = messages.filter((m) => m.text && m.text.trim().length > 0).slice(-10).map((m) => ({ role: m.role === "assistant" ? ("assistant" as const) : ("user" as const), content: m.text }));
     const outboundMessages = [...historyWindow, { role: "user" as const, content: query }];
 
-    let streamFailed = false;
-    let accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined;
-    let pendingToolResult: unknown | undefined, pendingToolName: string | undefined;
+    let streamFailed = false, accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined, pendingToolResult: unknown | undefined, pendingToolName: string | undefined;
 
     type SseEventPayload = { type?: string; text?: string; thought?: string; tool?: string; name?: string; callId?: string; call_id?: string; descriptionRu?: string; args?: Record<string, unknown>; arguments?: Record<string, unknown>; result?: unknown; data?: unknown; payload?: unknown; };
     const handleSseEvent = (event: string, data: Record<string, unknown>) => {
@@ -278,9 +273,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         try {
           const ok = await executeCopilotConfirmation({ callId: act.id, decision: "confirm", actionName: act.toolName, actionArgs: act.payload || {}, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode });
           if (ok) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
-        } catch (apiErr) {
-          console.warn("[CopilotStudioModal] Confirm API non-blocking fallback:", apiErr);
-        }
+        } catch (apiErr) { console.warn("[CopilotStudioModal] Confirm API fallback:", apiErr); }
       }
 
       if (typeof window !== "undefined") {
@@ -296,7 +289,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
           useCopilotStore.getState().addMemoryFact("protocols", `Протокол приёма [${targetDiag}]: ${targetPlan}${targetTooth ? ` (Зуб ${targetTooth})` : ""}`);
           showToast("Визит не открыт: протокол сохранён в памяти ассистента. Откройте приём пациента для вставки в дневник.", "info");
         }
-
         if (targetTooth) {
           window.dispatchEvent(new CustomEvent("dente-odontogram-update", { detail: { patientId, toothNumber: targetTooth, status: (act.payload?.state as string) || "caries" } }));
         }
@@ -332,25 +324,25 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
   return (
     <div className="copilot-studio-overlay fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto" data-testid="chairside-copilot-studio-root">
       <div className="copilot-studio-backdrop fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={handleClose} aria-hidden="true" data-testid="copilot-host-backdrop" />
-      <aside className="copilot-studio-panel relative z-10 flex flex-col w-full md:w-[580px] lg:w-[620px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip max-w-[100vw]" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
+      <aside className="copilot-studio-panel relative z-10 flex flex-col w-full md:w-[580px] lg:w-[620px] h-[88vh] md:h-full bg-[var(--paper)] text-[var(--ink)] border-t md:border-t-0 md:border-l border-[var(--line)] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip max-w-[100vw]" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
         <div className="copilot-studio-drag-handle-wrap md:hidden flex justify-center pt-2.5 pb-1">
-          <div className="copilot-studio-drag-handle w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
+          <div className="copilot-studio-drag-handle w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
         </div>
 
         {/* Компактная шапка кабинета с кнопками Настроек и Истории */}
-        <header className="copilot-studio-header px-3 sm:px-6 py-2.5 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-2 shrink-0">
+        <header className="copilot-studio-header px-3 sm:px-6 py-2.5 border-b border-[var(--line)] flex items-center justify-between gap-2 shrink-0">
           <div className="copilot-studio-brand flex items-center gap-2 min-w-0 flex-1">
-            <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,rgba(13,148,136,0.3))] flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0"><Sparkles size={16} /></div>
+            <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft)] border border-[var(--teal)]/25 flex items-center justify-center text-[var(--teal)] shrink-0"><Sparkles size={16} /></div>
             <div className="copilot-studio-title-box min-w-0 flex-1">
               <div className="copilot-studio-title-row flex items-center gap-1.5"><h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] whitespace-nowrap">ДЕНТА Копайлот</h2><span className="copilot-pulse-dot w-2 h-2 rounded-full bg-[var(--success)] animate-pulse shrink-0" title="Движок активен" /></div>
               <div className="copilot-studio-submeta flex items-center gap-1 text-xs text-[var(--muted)]"><span className="text-[11px] text-[var(--muted)] font-medium whitespace-nowrap"><span className="hidden sm:inline">Клинический ассистент врача</span><span className="sm:hidden">Ассистент</span></span></div>
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
-            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button type="button" onClick={() => { useCopilotStore.getState().collapseToHud(); handleClose(); }} data-testid="copilot-collapse-to-hud-trigger" className="icon-button copilot-studio-collapse-btn w-9 h-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Свернуть в панель у кресла (HUD)" aria-label="Свернуть в панель у кресла"><Minimize2 size={15} /></button>
-            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
+            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
+            <button type="button" onClick={() => { useCopilotStore.getState().collapseToHud(); handleClose(); }} data-testid="copilot-collapse-to-hud-trigger" className="icon-button copilot-studio-collapse-btn w-9 h-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Свернуть в панель у кресла (HUD)" aria-label="Свернуть в панель у кресла"><Minimize2 size={15} /></button>
+            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
 
@@ -358,8 +350,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         {(() => { const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId); const effectiveName = patientName || (isDemo ? "Кузнецов М.П." : null); return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />; })()}
 
         {/* Apple HIG Segmented Control: 3 клинические вкладки */}
-        <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shrink-0">
-          <div className="copilot-tabs-segmented flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line,rgba(15,118,110,0.15))] gap-1">
+        <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] shrink-0">
+          <div className="copilot-tabs-segmented flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1">
             <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "dialog" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}><BookOpen size={13} className="shrink-0" /><span className="hidden sm:inline">Клинический диалог</span><span className="sm:hidden">Диалог</span></button>
             <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "actions" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}><Activity size={13} className="shrink-0" /><span className="hidden sm:inline">Быстрые действия</span><span className="sm:hidden">Действия</span></button>
             <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "memory" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}><Brain size={13} className="shrink-0" /><span className="hidden sm:inline">Память ИИ</span><span className="sm:hidden">Память</span></button>
@@ -370,8 +362,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         {activeTab === "dialog" && (
           <div className="flex-1 flex flex-col min-h-0">
             {voice.isListening && (
-              <div className="copilot-voice-banner mx-5 mt-2.5 p-2.5 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)] flex items-center justify-between text-xs shrink-0">
-                <div className="copilot-voice-status flex items-center gap-2.5 text-[var(--teal,#0d9488)] font-semibold"><Mic size={15} className="animate-bounce" /><span>Идёт распознавание речи...</span></div>
+              <div className="copilot-voice-banner mx-5 mt-2.5 p-2.5 rounded-xl bg-[var(--teal-soft)] border border-[var(--teal)] flex items-center justify-between text-xs shrink-0">
+                <div className="copilot-voice-status flex items-center gap-2.5 text-[var(--teal)] font-semibold"><Mic size={15} className="animate-bounce" /><span>Идёт распознавание речи...</span></div>
                 <button type="button" onClick={voice.stopListening} className="h-11 min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--paper)] text-xs font-bold border border-[var(--line)] cursor-pointer flex items-center justify-center hover:bg-[var(--line)]">Стоп</button>
               </div>
             )}
@@ -381,54 +373,30 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
               {activeDiff && <div className="my-2"><ActiveDiffCard diff={activeDiff} onApply={applyActiveDiff} onReject={rejectActiveDiff} /></div>}
               {messages.map((m) => (
                   <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
-                    <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
+                    <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
                       {m.isOfflineFallback && (
-                        <div className="copilot-offline-badge mb-2 px-2.5 py-1.5 rounded-xl bg-[var(--warn-soft,rgba(245,158,11,0.12))] border border-[var(--warn,rgba(245,158,11,0.3))] text-[var(--warn,#d97706)] text-[11px] font-semibold flex items-center gap-2 shrink-0">
-                          <AlertTriangle size={14} className="shrink-0 text-[var(--warn,#d97706)]" />
+                        <div className="copilot-offline-badge mb-2 px-2.5 py-1.5 rounded-xl bg-[var(--warn-soft)] border border-[var(--warn)]/25 text-[var(--warn)] text-[11px] font-semibold flex items-center gap-2 shrink-0">
+                          <AlertTriangle size={14} className="shrink-0 text-[var(--warn)]" />
                           <span>Автономный режим: используется локальный клинический словарь (без ИИ)</span>
                         </div>
                       )}
                       <p className="whitespace-pre-wrap m-0">
                         {m.text || (isStreaming ? "Формирование ответа..." : "")}
-                        {isStreaming && m.id === messages[messages.length - 1]?.id && m.role === "assistant" && <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse ml-1 align-middle" />}
+                        {isStreaming && m.id === messages[messages.length - 1]?.id && m.role === "assistant" && <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal)] animate-pulse ml-1 align-middle" />}
                       </p>
                       {/* Агентная карточка инструмента и Contiguous Two-Phase Diff */}
-                      {m.actionProposal && (() => {
-                        const isActionApplied = m.applied || appliedActionIds.has(m.actionProposal.id);
-                        if (isActionApplied) {
-                          return (
-                            <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] space-y-1.5 text-[11px] opacity-80">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Check size={13} className="text-[var(--teal,#0d9488)]" /><span>{m.actionProposal.description}</span></div>
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.3))]">Применено</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        const rawTooth = m.actionProposal.payload?.tooth ?? m.actionProposal.payload?.toothNumber ?? (activeTooth ?? null);
-                        const proposalTooth = rawTooth !== null && rawTooth !== undefined ? Number(rawTooth) : null;
-                        const toolShort = m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName, toothSuffix = proposalTooth ? ` (Зуб ${proposalTooth})` : "";
-                        const actionTitle = toolShort.includes("Soap") || toolShort.includes("Diary") || toolShort.includes("Visit") ? `Дневник приёма${toothSuffix}` : toolShort.includes("Tooth") ? `Обновление одонтограммы${toothSuffix}` : `Клинический протокол${toothSuffix}`;
-                        return (
-                          <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Activity size={13} className="text-[var(--teal,#0d9488)]" /><span>{actionTitle}</span></div>
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--warn-soft,rgba(245,158,11,0.12))] text-[var(--warn,#f59e0b)] border border-[var(--warn,rgba(245,158,11,0.3))]">Требуется подтверждение</span>
-                            </div>
-                            <div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs space-y-1.5">
-                              <div className="flex items-center gap-2 text-[var(--muted)]"><span className="text-[11px] font-medium text-[var(--muted)] w-14 shrink-0">Было:</span><span className="line-through opacity-75">{proposalTooth ? `Зуб ${proposalTooth}: Без патологии / Интактный` : "Без патологии / Интактный"}</span></div>
-                              <div className="flex items-center gap-2 text-[var(--ink)] font-medium"><span className="text-[11px] font-semibold text-[var(--teal,#0d9488)] w-14 shrink-0">Станет:</span><span className="text-[var(--teal,#0d9488)] font-semibold">{proposalTooth ? `Зуб ${proposalTooth}: ${m.actionProposal.description}` : m.actionProposal.description}</span></div>
-                            </div>
-                            {actionError && <div className="p-2 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger)]/30 flex items-center justify-between text-[11px] text-[var(--danger)]"><span>{actionError}</span><button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-[var(--danger)] text-white font-semibold hover:opacity-90 cursor-pointer text-[10px]">Повторить попытку</button></div>}
-                            <div className="flex items-center justify-end gap-2 pt-1">
-                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] font-medium cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
-                              <button type="button" data-testid="copilot-primary-apply-cta" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] text-white font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:bg-[var(--primary-hover)] transition-all"><Check size={14} /><span>Применить в карту</span></button>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      {m.actionProposal && (
+                        <CopilotStudioToolProposalCard
+                          message={m}
+                          isActionApplied={Boolean(m.applied || appliedActionIds.has(m.actionProposal.id))}
+                          activeTooth={activeTooth}
+                          actionError={actionError}
+                          onApply={handleApplyPrimaryAction}
+                          onReject={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }}
+                        />
+                      )}
                       {Boolean(m.toolResult) && <div className="mt-2.5"><CopilotResultCard name={m.toolName || m.actionProposal?.toolName} result={m.toolResult} /></div>}
-                      {m.citation && <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>}
+                      {m.citation && <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>}
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
                   </div>
@@ -443,8 +411,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
               if (!replies?.length || isStreaming) return null;
               return (
                 <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0" data-testid="copilot-smart-replies">
-                  <span className="hidden sm:flex text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 items-center gap-1"><Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span>Подсказки:</span></span>
-                  {replies.map((reply, i) => <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-2.5 sm:px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs flex items-center">{reply}</button>)}
+                  <span className="hidden sm:flex text-[11px] text-[var(--teal)] font-semibold shrink-0 items-center gap-1"><Sparkles size={12} className="text-[var(--teal)] shrink-0" /><span>Подсказки:</span></span>
+                  {replies.map((reply, i) => <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-2.5 sm:px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs flex items-center">{reply}</button>)}
                 </div>
               );
             })()}
@@ -453,7 +421,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
             <div className="copilot-bottom-composer px-3 sm:px-5 pt-2 pb-5 max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
               <div className="copilot-input-row flex items-center gap-2">
                 <button type="button" onClick={voice.toggleListening} aria-label="Голосовой ввод" className={`copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${voice.isListening ? "recording bg-[var(--danger)] text-white border-[var(--danger)] animate-pulse" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}>{voice.isListening ? <MicOff size={18} /> : <Mic size={18} />}{voice.isListening && <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука"><span className="w-0.5 rounded-full h-3 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-3.5 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-2 bg-white animate-pulse" /></div>}</button>
-                <input type="text" value={inputText} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }} placeholder="Запрос или диктовка..." className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]" />
+                <input type="text" value={inputText} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }} placeholder="Запрос или диктовка..." className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]" />
                 <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос"><Send size={16} /></button>
               </div>
             </div>
