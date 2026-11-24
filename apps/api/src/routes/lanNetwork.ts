@@ -503,7 +503,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * POST /api/network/lan-mesh/handshake
 	 * Negotiates version and schema compatibility with remote clinic node.
 	 */
-	app.post("/api/network/lan-mesh/handshake", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/network/lan-mesh/handshake", { schema: { description: "LAN mesh handshake with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh handshake");
 		if (!context) return;
 
@@ -880,7 +880,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Validates entered 6-digit PIN from doctor tablet or secondary computer,
 	 * verifies mutual authentication, and joins the local clinic mesh.
 	 */
-	app.post("/api/network/mesh/auto-join/verify", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/network/mesh/auto-join/verify", { schema: { description: "LAN mesh auto-join verify with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
 		const autoJoinVerifySchema = z.object({
 			pin: z.string().min(6).max(6),
 			nodeId: z.string().optional(),

@@ -38,6 +38,21 @@ function serializeWorkflow(wf: typeof clinicWorkflows.$inferSelect) {
 }
 
 export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
+	const workflowMutationOptions = {
+		schema: {
+			description: "Clinic workflow mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	/**
 	 * GET /api/clinic/workflows
 	 * List workflows for organization (settings.read permission required).
@@ -63,7 +78,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Create workflow expecting body { name: string, definition: string | object, trigger?: string }
 	 * (settings.write permission required, default trigger to "manual" if omitted/falsy).
 	 */
-	app.post("/api/clinic/workflows", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/clinic/workflows", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.status(400).send({
@@ -129,7 +144,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Toggle active boolean field for workflow matching :id and organization
 	 * (settings.write permission required).
 	 */
-	app.post("/api/clinic/workflows/:id/toggle", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/clinic/workflows/:id/toggle", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.status(400).send({
@@ -208,7 +223,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Delete workflow matching :id and organization
 	 * (settings.write permission required).
 	 */
-	app.delete("/api/clinic/workflows/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.delete("/api/clinic/workflows/:id", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 

@@ -167,8 +167,23 @@ export async function registerPatientDuplicateRoutes(app: FastifyInstance) {
 		};
 	});
 
+	const duplicateMutationOptions = {
+		schema: {
+			description: "Patient duplicate dismiss with mandatory RFC 9562 Idempotency-Key",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	/** «Это разные люди» — пара больше не предлагается. */
-	app.post("/api/patients/duplicates/dismiss", async (request, reply) => {
+	app.post("/api/patients/duplicates/dismiss", duplicateMutationOptions, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,

@@ -12,7 +12,7 @@
 - Документы: [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) (SOAP, ИДС, 1151156) | Мобильные: [MOBILE_DESIGN_APPLE_HIG.md](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md) (тач >=44px, Bottom Sheets)
 - ИИ: [AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | Паритет: [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | Индекс: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 
-## 🧭 45 КАНОНИЧЕСКИХ МАНДАТОВ DENTE CRM
+## 🧭 46 КАНОНИЧЕСКИХ МАНДАТОВ DENTE CRM
 1. 8e (Автономия врача): Кнопки («Сохранить», «Печать», «Оплатить») никогда не disabled. Норма в 1 клик. Дневник SOAP (Жалобы, Status Localis, МКБ-10, Лечение). Дебаунс-автосейв черновиков на лету. Скидки врача до 100% без блокировок. Сплит-оплаты (нал + карта + семейный депозит). Визиограф <50мс.
 2. 8n (Суверенитет масштаба): Соло-врач (1–2 кресла) и малая клиника (1–3 кресла) первичны. Без ассистента в расписании, без ИНН физлиц на кассе. Soft Negative Stock.
 3. 8a/8f (T.A.R.S. 100% честность): Запрет выдумывать баги. Доказательства строго инструментальные (`read_file`, скриншот, лог). Чат — русский; код — профи.

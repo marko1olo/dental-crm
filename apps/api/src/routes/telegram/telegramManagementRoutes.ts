@@ -92,6 +92,21 @@ export function registerTelegramSettingsRoutes(
 		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	},
 ) {
+	const telegramMutationSchema = {
+		schema: {
+			description: "Telegram settings mutation with mandatory RFC 9562 Idempotency-Key",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+	const telegramMutationOptions = { ...telegramControlPlaneRouteOptions, ...telegramMutationSchema } as const;
 	app.get(
 		"/api/settings/telegram",
 		telegramControlPlaneRouteOptions,
@@ -115,7 +130,7 @@ export function registerTelegramSettingsRoutes(
 
 	app.put(
 		"/api/settings/telegram",
-		telegramControlPlaneRouteOptions,
+		telegramMutationOptions,
 		async (request, reply) => {
 			const parsedInput = parseTelegramRouteBody(
 				updateDenteTelegramBotSettingsSchema,

@@ -56,6 +56,21 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 	/**
 	 * Буфер обмена расписания — быстрый перенос приёма на другое время.
 	 */
+	const clipboardMutationOptions = {
+		schema: {
+			description: "Schedule clipboard mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	app.get("/api/schedule/clipboard-items", async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
@@ -90,7 +105,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}));
 	});
 
-	app.post("/api/schedule/clipboard-items", async (request, reply) => {
+	app.post("/api/schedule/clipboard-items", clipboardMutationOptions, async (request, reply) => {
 		const context = await requireScheduleMutationContext(
 			request,
 			reply,
@@ -193,7 +208,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		});
 	});
 
-	app.delete("/api/schedule/clipboard-items/:id", async (request, reply) => {
+	app.delete("/api/schedule/clipboard-items/:id", clipboardMutationOptions, async (request, reply) => {
 		const context = await requireScheduleMutationContext(
 			request,
 			reply,

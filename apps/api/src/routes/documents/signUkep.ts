@@ -50,8 +50,23 @@ const documentUkepSignBodySchema = z
 	})
 	.strict();
 
+const ukepSignMutationOptions = {
+	schema: {
+		description: "UKEP document sign mutation with mandatory RFC 9562 Idempotency-Key",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+} as const;
+
 export async function register(app: FastifyInstance) {
-	app.post("/api/documents/:id/sign-ukep", async (request, reply) => {
+	app.post("/api/documents/:id/sign-ukep", ukepSignMutationOptions, async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,

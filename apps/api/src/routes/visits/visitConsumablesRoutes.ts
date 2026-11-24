@@ -415,9 +415,24 @@ async function handleGetVisitConsumables(
 	});
 }
 
+const consumablesMutationOptions = {
+	schema: {
+		description: "Visit consumables mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+} as const;
+
 export function registerVisitConsumablesRoutes(app: FastifyInstance) {
-	app.post("/api/visits/:visitId/consumables", handlePostVisitConsumables);
-	app.post("/api/v1/visits/:visitId/consumables", handlePostVisitConsumables);
+	app.post("/api/visits/:visitId/consumables", consumablesMutationOptions, handlePostVisitConsumables);
+	app.post("/api/v1/visits/:visitId/consumables", consumablesMutationOptions, handlePostVisitConsumables);
 
 	app.get("/api/visits/:visitId/consumables", handleGetVisitConsumables);
 	app.get("/api/v1/visits/:visitId/consumables", handleGetVisitConsumables);

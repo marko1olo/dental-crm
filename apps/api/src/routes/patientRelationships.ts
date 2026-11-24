@@ -728,21 +728,38 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 
 	// ─── Route Registrations (both canonical /api and backward-compatible /api/v1) ───
 
+	const relationshipMutationOptions = {
+		schema: {
+			description: "Patient relationship mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	// GET
 	app.get("/api/patients/:patientId/relationships", getRelationshipsHandler);
 	app.get("/api/v1/patients/:id/relationships", getRelationshipsHandler);
 
 	// POST
-	app.post("/api/patients/:patientId/relationships", postRelationshipHandler);
-	app.post("/api/v1/patients/:id/relationships", postRelationshipHandler);
+	app.post("/api/patients/:patientId/relationships", relationshipMutationOptions, postRelationshipHandler);
+	app.post("/api/v1/patients/:id/relationships", relationshipMutationOptions, postRelationshipHandler);
 
 	// PATCH
 	app.patch(
 		"/api/patients/:patientId/relationships/:id",
+		relationshipMutationOptions,
 		patchRelationshipHandler,
 	);
 	app.patch(
 		"/api/v1/patients/:id/relationships/:relationId",
+		relationshipMutationOptions,
 		patchRelationshipHandler,
 	);
 

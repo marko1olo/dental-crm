@@ -435,7 +435,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	 * POST /api/marketing/romi-channels/reset
 	 * Сбрасывает рекламные каналы клиники к эталонным каноническим каналам DENTE в PostgreSQL 18.
 	 */
-	app.post("/api/marketing/romi-channels/reset", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/marketing/romi-channels/reset", { schema: { description: "Marketing ROMI channels reset with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "reset marketing romi channels");
 		if (!mutAllowed) return;
 

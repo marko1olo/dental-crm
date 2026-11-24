@@ -165,6 +165,20 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		});
 	};
 
-	app.post("/api/anesthesia/patients/:patientId/logs", createLogHandler);
-	app.post("/api/anesthesia/logs", createLogHandler);
+	const anesthesiaMutationOptions = {
+		schema: {
+			description: "Anesthesia log mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+	app.post("/api/anesthesia/patients/:patientId/logs", anesthesiaMutationOptions, createLogHandler);
+	app.post("/api/anesthesia/logs", anesthesiaMutationOptions, createLogHandler);
 }
