@@ -23,10 +23,21 @@ export async function linkBillingAndOdontogram(
 	isqMean: number | null,
 	protocol: string,
 ) {
+	let operationPriceKopecks: bigint | null = null;
+	if (input.operationPriceKopecks !== undefined && input.operationPriceKopecks !== null) {
+		try {
+			operationPriceKopecks = BigInt(input.operationPriceKopecks);
+		} catch {
+			operationPriceKopecks = null;
+		}
+	}
+
 	let resolvedPriceRub: number | null =
-		input.operationPriceRub !== undefined && input.operationPriceRub !== null
-			? Number(input.operationPriceRub)
-			: null;
+		operationPriceKopecks !== null
+			? kopecksToRubles(operationPriceKopecks)
+			: (input.operationPriceRub !== undefined && input.operationPriceRub !== null
+				? Number(input.operationPriceRub)
+				: null);
 
 	if (resolvedPriceRub === null && input.catalogItemId) {
 		const [catalogItem] = await tx
@@ -60,8 +71,10 @@ export async function linkBillingAndOdontogram(
 		}
 	}
 
-	const operationPriceRub = resolvedPriceRub ?? 0;
-	const operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
+	const operationPriceRub = resolvedPriceRub ?? (operationPriceKopecks !== null ? kopecksToRubles(operationPriceKopecks) : 0);
+	if (operationPriceKopecks === null) {
+		operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
+	}
 	const implantCostKopecks = BigInt(rublesToKopecks(implantCost));
 	const consumablesCostKopecks = BigInt(rublesToKopecks(consumablesCost));
 	const totalMaterialsCostKopecks = implantCostKopecks + consumablesCostKopecks;

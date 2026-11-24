@@ -17,7 +17,11 @@ import { routeIncomingHotFolder } from "../components/radiology/sensorGateway/ho
 import {
 	detectRadiologySensorBrand,
 	extractTeethFromRadiologyFilename,
+	readRadiologyFileForCapture,
+	persistRvgScanToServer,
 } from "../components/radiology/directRvgFileValidation";
+import { VisiographPacsWatcherService } from "../services/hardware/visiographPacsWatcher";
+import { isDemoPatientId } from "./demoMode";
 import type {
 	VisiographDetectedScan,
 	HotFolderWatcherConfig,
@@ -157,7 +161,7 @@ export class VisiographHotFolderEngine {
 		if (typeof window === "undefined") return;
 
 		const targetTooth = toothNumber || scan.detectedTooth || "16";
-		const imageUrl = scan.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg";
+		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
 		const scanName = `Рентген RVG: зуб ${targetTooth} (${scan.brandName})`;
 
 		// Native event intercepted in useVisitDiagnosticsTab.ts
@@ -168,6 +172,7 @@ export class VisiographHotFolderEngine {
 					name: scanName,
 					toothNumber: targetTooth,
 					photoType: "xray",
+					studyId: scan.studyId,
 				},
 			}),
 		);
@@ -179,7 +184,7 @@ export class VisiographHotFolderEngine {
 		if (typeof window === "undefined") return;
 
 		const targetTooth = toothNumber || scan.detectedTooth || "16";
-		const imageUrl = scan.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg";
+		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
 
 		// Direct event to launch DirectRvgCaptureModal with preloaded image
 		window.dispatchEvent(
@@ -189,6 +194,7 @@ export class VisiographHotFolderEngine {
 					tooth: targetTooth,
 					brandName: scan.brandName,
 					fileName: scan.fileName,
+					studyId: scan.studyId,
 				},
 			}),
 		);
@@ -225,6 +231,7 @@ export class VisiographHotFolderEngine {
 		const fileSize = detail.fileSize || 1845200;
 		const extMatch = detail.fileName.match(/\.[^.]+$/);
 		const fileType = extMatch ? extMatch[0].toLowerCase() : ".dcm";
+		const activePatientId = VisiographPacsWatcherService.getConfig().activePatientId;
 
 		const scan: VisiographDetectedScan = {
 			id: `rvg-scan-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -238,12 +245,23 @@ export class VisiographHotFolderEngine {
 			modelName: brandName,
 			folderPath: detail.folderPath || route.matchedFolder,
 			detectedAtIso: new Date().toISOString(),
-			thumbnailUrl: detail.imageUrl || "/radiology/sample_rvg_tooth16.jpg",
+			thumbnailUrl: detail.imageUrl || VisiographPacsWatcherService.generateSamplePreview(),
 			detectedTooth,
 			confidence: route.confidence,
 		};
 
 		this.ingestScan(scan);
+
+		VisiographPacsWatcherService.dispatchScanEvent({
+			filePath: scan.thumbnailUrl || "",
+			fileName: detail.fileName,
+			fileSize,
+			patientId: activePatientId,
+			toothCode: detectedTooth,
+			modality: "IO",
+			thumbnailDataUri: scan.thumbnailUrl,
+		});
+
 		return scan;
 	}
 
@@ -257,20 +275,40 @@ export class VisiographHotFolderEngine {
 		const fileType = extMatch ? extMatch[0].toLowerCase() : ".dcm";
 
 		let thumbnailUrl: string | undefined;
-		if (file.type.startsWith("image/") || /\.(png|jpe?g|webp|bmp)$/i.test(file.name)) {
-			try {
-				if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+		try {
+			const captureRes = await readRadiologyFileForCapture(file);
+			thumbnailUrl = captureRes.imageUrl;
+		} catch {
+			if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+				try {
 					thumbnailUrl = URL.createObjectURL(file);
+				} catch {
+					thumbnailUrl = undefined;
 				}
-			} catch {
-				thumbnailUrl = "/radiology/sample_rvg_tooth16.jpg";
 			}
-		} else {
-			thumbnailUrl = "/radiology/sample_rvg_tooth16.jpg";
+		}
+
+		let studyId: string | undefined;
+		const activeConfig = VisiographPacsWatcherService.getConfig();
+		const targetPatientId = activeConfig.activePatientId;
+		if (targetPatientId && thumbnailUrl && !isDemoPatientId(targetPatientId)) {
+			try {
+				const saveRes = await persistRvgScanToServer({
+					patientId: targetPatientId,
+					capturedImage: thumbnailUrl,
+					selectedTeeth: detectedTooth ? [detectedTooth] : ["16"],
+					clinicalNotes: `Автозахват визиографа (${brandName}): ${file.name}`,
+				});
+				if (saveRes.success && saveRes.data && typeof saveRes.data === "object" && "id" in saveRes.data) {
+					studyId = String((saveRes.data as { id: string }).id);
+				}
+			} catch (saveErr) {
+				console.warn("[VisiographHotFolderEngine] Background persist error:", saveErr);
+			}
 		}
 
 		const scan: VisiographDetectedScan = {
-			id: `rvg-dropped-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			id: studyId || `rvg-dropped-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 			fileName: file.name,
 			fileSize: file.size,
 			formattedSize: formatScanFileSize(file.size),
@@ -285,9 +323,23 @@ export class VisiographHotFolderEngine {
 			file,
 			detectedTooth,
 			confidence: route.confidence,
+			studyId,
 		};
 
 		this.ingestScan(scan);
+
+		// Единый мост: синхронизируем с VisiographPacsWatcherService для DirectRvgCaptureModal
+		VisiographPacsWatcherService.dispatchScanEvent({
+			filePath: thumbnailUrl || "",
+			fileName: file.name,
+			fileSize: file.size,
+			patientId: targetPatientId,
+			toothCode: detectedTooth,
+			modality: "IO",
+			thumbnailDataUri: thumbnailUrl,
+			studyId,
+		});
+
 		return scan;
 	}
 

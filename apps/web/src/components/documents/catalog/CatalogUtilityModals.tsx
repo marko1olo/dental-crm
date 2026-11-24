@@ -54,8 +54,10 @@ export function CatalogUtilityModals({
 		<>
 			{isParentMemoModalOpen && (
 				<PediatricParentMemoModal
+					key={patient?.id || effectivePatientName || "catalog-parent-memo"}
 					isOpen={isParentMemoModalOpen}
 					onClose={() => setIsParentMemoModalOpen?.(false)}
+					patientId={patient?.id}
 					patientName={effectivePatientName}
 					patientPhone={patient?.phone || undefined}
 					patientAgeYears={typeof patientAgeYears === "number" ? patientAgeYears : undefined}
@@ -65,6 +67,7 @@ export function CatalogUtilityModals({
 			)}
 			{isDiplomaModalOpen && (
 				<PediatricBraveryDiplomaModal
+					key={patient?.id || effectivePatientName || "catalog-bravery-diploma"}
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
 					patientId={patient?.id}

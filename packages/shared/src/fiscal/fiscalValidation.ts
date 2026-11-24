@@ -146,7 +146,7 @@ export const canonicalTenderItemSchema = z.object({
 	amountKopecks: z.number().int().min(0, "Сумма в копейках не может быть отрицательной"),
 	amountRub: z.number().min(0).optional(),
 	metadata: z.record(z.unknown()).optional(),
-});
+}).strict();
 export type CanonicalTenderItem = z.infer<typeof canonicalTenderItemSchema>;
 
 /**
@@ -184,6 +184,7 @@ export const canonicalCashierCheckoutPayloadSchema = z
 		tenders: z.array(canonicalTenderItemSchema).min(1, "Требуется хотя бы один способ оплаты"),
 		receivedCashKopecks: z.number().int().min(0).optional().nullable(),
 	})
+	.strict()
 	.superRefine((val, ctx) => {
 		// 54-FZ Tag 1228: Buyer INN enforcement for B2B (Legal Entities and Sole Proprietors / IP)
 		// For physical persons (Mandate 8e), INN is strictly optional and never blocking.

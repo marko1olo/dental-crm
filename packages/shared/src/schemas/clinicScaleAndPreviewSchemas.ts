@@ -352,7 +352,7 @@ export type CompleteCommunicationTaskInput = z.infer<
 >;
 
 export const createImagingStudySchema = z.object({
-	patientId: z.string().uuid(),
+	patientId: z.string().uuid().or(z.string().trim().min(1).max(128)),
 	visitId: z.string().uuid().nullable().optional(),
 	doctorId: z.string().uuid().nullable().optional(),
 	kind: imagingStudyKindSchema,

@@ -5,7 +5,13 @@
  */
 
 import type { SurgicalServiceItem, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
-import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	CANONICAL_SURGICAL_OPERATION_NORMS,
+	NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS,
+	kopecksToRubles,
+	rublesToKopecks,
+	evaluateWarehouseOverdraft,
+} from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS } from "../implants/implantCatalogData";
 import { DEFAULT_CANONICAL_IMPLANT_STOCK } from "../implants/implantQuickPresets";
 import {
@@ -335,18 +341,21 @@ export function calculateSurgeryFinancials(params: {
 	} else if (params.scenario === "resection_periostotomy") {
 		consumablesCostRub = 1400;
 	}
-	const doctorGrossMarginRub = Math.max(0, priceRub - consumablesCostRub);
+	const operationPriceKopecks = rublesToKopecks(priceRub);
+	const consumablesCostKopecks = rublesToKopecks(consumablesCostRub);
+	const doctorGrossMarginKopecks = Math.max(0, operationPriceKopecks - consumablesCostKopecks);
+	const doctorGrossMarginRub = Math.round(kopecksToRubles(doctorGrossMarginKopecks));
 	return {
 		operationPriceRub: priceRub,
 		implantCostRub: 0,
 		consumablesCostRub,
 		doctorGrossMarginRub,
 		netDoctorIncomeRub: doctorGrossMarginRub,
-		operationPriceKopecks: rublesToKopecks(priceRub),
+		operationPriceKopecks,
 		implantCostKopecks: 0,
-		consumablesCostKopecks: rublesToKopecks(consumablesCostRub),
-		doctorGrossMarginKopecks: rublesToKopecks(doctorGrossMarginRub),
-		netDoctorIncomeKopecks: rublesToKopecks(doctorGrossMarginRub),
+		consumablesCostKopecks,
+		doctorGrossMarginKopecks,
+		netDoctorIncomeKopecks: doctorGrossMarginKopecks,
 	};
 }
 
@@ -360,15 +369,12 @@ export function createDefaultPassportRecord(params: {
 	};
 }
 
-export function evaluateSurgerySoftOverdraft(materials: readonly { name: string; isWarehouseCritical?: boolean }[], forceDelay = false, specificDelayedItems?: readonly string[]) {
-	const pending = specificDelayedItems && specificDelayedItems.length > 0 ? [...specificDelayedItems] : forceDelay ? materials.map((m) => m.name) : [];
-	return {
-		hasOverdraft: pending.length > 0, warningRu: pending.length > 0 ? "Мягкий овердрафт склада" : "Складской учет в норме",
-		detailsRu: pending.length > 0 ? `Расходные материалы (${pending.join(", ")}) списаны в мягкий овердрафт. Операция не блокируется: списание зафиксировано.` : "Все компоненты и стерильные расходники списаны штатно со склада кабинета.",
-		pendingItems: pending, canProceed: true as const,
-	};
-}
-export const evaluateWarehouseOverdraft = evaluateSurgerySoftOverdraft;
+/**
+ * Канонический реэкспорт функции проверки мягкого овердрафта из @dental/shared (Мандаты 8e, 8v, 8bf).
+ * Исключает расхождение бизнес-логики и дублирование кода.
+ */
+export { evaluateWarehouseOverdraft };
+export const evaluateSurgerySoftOverdraft = evaluateWarehouseOverdraft;
 
 
 export function buildStandardExtractionProtocolText(params: {
@@ -421,20 +427,27 @@ export function getExtractionSurgicalServices(params: {
 	const primaryCode = comp === "complex" ? EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION : comp === "impacted_dystopic" ? EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC : EXTRACTION_SURGICAL_CODES.SIMPLE;
 	const primaryName = comp === "complex" ? "Удаление зуба сложное с разъединением корней" : comp === "impacted_dystopic" ? "Операция удаления ретинированного / дистопированного зуба" : "Удаление постоянного зуба (простое)";
 	const primaryPrice = comp === "complex" ? 6000 : comp === "impacted_dystopic" ? 9500 : 3500;
+	const primaryPriceKopecks = BigInt(rublesToKopecks(primaryPrice));
 	const items: SurgicalServiceItem[] = [
-		{ code: primaryCode, nameRu: primaryName, name: primaryName, priceRub: primaryPrice, quantity: 1, suggestedPriceRub: primaryPrice, toothNumber: tooth, stageKind: "stage_2_surgery" as const, isPrimary: true },
-		{ code: EXTRACTION_SURGICAL_CODES.CURETTAGE, nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", priceRub: 1200, quantity: 1, suggestedPriceRub: 1200, toothNumber: tooth, stageKind: "stage_2_surgery" as const },
+		{ code: primaryCode, nameRu: primaryName, name: primaryName, priceRub: primaryPrice, priceKopecks: primaryPriceKopecks, quantity: 1, suggestedPriceRub: primaryPrice, toothNumber: tooth, stageKind: "stage_2_surgery" as const, isPrimary: true },
+		{ code: EXTRACTION_SURGICAL_CODES.CURETTAGE, nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", priceRub: 1200, priceKopecks: 120000n, quantity: 1, suggestedPriceRub: 1200, toothNumber: tooth, stageKind: "stage_2_surgery" as const },
 	];
 	if (comp === "complex" || comp === "impacted_dystopic" || hemo.includes("vicryl_suture")) {
 		const sutName = params.sutureMaterial || "Викрил 4-0";
-		items.push({ code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL, nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`, name: `Наложение шва на слизистую оболочку рта (${sutName})`, priceRub: 1500, quantity: 1, suggestedPriceRub: 1500, toothNumber: tooth, stageKind: "stage_2_surgery" as const });
+		items.push({ code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL, nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`, name: `Наложение шва на слизистую оболочку рта (${sutName})`, priceRub: 1500, priceKopecks: 150000n, quantity: 1, suggestedPriceRub: 1500, toothNumber: tooth, stageKind: "stage_2_surgery" as const });
 	}
 	const isCond = comp === "impacted_dystopic";
+	const anesthPrice = isCond ? 1200 : 900;
 	items.push({
 		code: isCond ? EXTRACTION_SURGICAL_CODES.ANESTHESIA_CONDUCTION : EXTRACTION_SURGICAL_CODES.ANESTHESIA_INFILTRATION,
 		nameRu: isCond ? "Проводниковая (торусальная) анестезия (Артикаин)" : "Инфильтрационная анестезия (Артикаин 1:100 000)",
 		name: isCond ? "Проводниковая (торусальная) анестезия (Артикаин)" : "Инфильтрационная анестезия (Артикаин 1:100 000)",
-		priceRub: isCond ? 1200 : 900, quantity: 1, suggestedPriceRub: isCond ? 1200 : 900, toothNumber: tooth, stageKind: "stage_2_surgery" as const,
+		priceRub: anesthPrice,
+		priceKopecks: BigInt(rublesToKopecks(anesthPrice)),
+		quantity: 1,
+		suggestedPriceRub: anesthPrice,
+		toothNumber: tooth,
+		stageKind: "stage_2_surgery" as const,
 	});
 	return items;
 }
@@ -444,13 +457,83 @@ export const getExtractionServices804n = getExtractionSurgicalServices;
 
 export function getSinusGbrSurgicalServices(params: { isClosedSinus: boolean; toothFdi?: number; membrane?: string; hasPins?: boolean }): readonly SurgicalServiceItem[] {
 	const tooth = params.toothFdi;
-	return [
-		params.isClosedSinus
-			? { code: EXTRACTION_SURGICAL_CODES.SINUS_LIFT, nameRu: "Синус-лифтинг закрытый", name: "Синус-лифтинг закрытый", priceRub: 18000, quantity: 1, suggestedPriceRub: 18000, toothNumber: tooth, stageKind: "stage_2_surgery" as const, isPrimary: true }
-			: { code: EXTRACTION_SURGICAL_CODES.BONE_GRAFT, nameRu: "Костная пластика (синус-лифтинг & НКР)", name: "Костная пластика (синус-лифтинг & НКР)", priceRub: 35000, quantity: 1, suggestedPriceRub: 35000, toothNumber: tooth, stageKind: "stage_2_surgery" as const, isPrimary: true },
-		{ code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL, nameRu: "Шов ПГА/Викрил 4-0", name: "Шов ПГА/Викрил 4-0", priceRub: 1500, quantity: 1, suggestedPriceRub: 1500, toothNumber: tooth, stageKind: "stage_2_surgery" as const },
-		{ code: EXTRACTION_SURGICAL_CODES.ANESTHESIA_INFILTRATION, nameRu: "Инфильтрационная анестезия", name: "Инфильтрационная анестезия", priceRub: 900, quantity: 1, suggestedPriceRub: 900, toothNumber: tooth, stageKind: "stage_2_surgery" as const },
+	const isClosed = params.isClosedSinus;
+	const items: SurgicalServiceItem[] = [
+		isClosed
+			? {
+				code: EXTRACTION_SURGICAL_CODES.SINUS_LIFT,
+				nameRu: "Синус-лифтинг закрытый",
+				name: "Синус-лифтинг закрытый",
+				priceRub: 18000,
+				priceKopecks: 1800000n,
+				quantity: 1,
+				suggestedPriceRub: 18000,
+				toothNumber: tooth,
+				stageKind: "stage_2_surgery" as const,
+				isPrimary: true,
+			}
+			: {
+				code: EXTRACTION_SURGICAL_CODES.BONE_GRAFT,
+				nameRu: "Костная пластика (синус-лифтинг & НКР)",
+				name: "Костная пластика (синус-лифтинг & НКР)",
+				priceRub: 35000,
+				priceKopecks: 3500000n,
+				quantity: 1,
+				suggestedPriceRub: 35000,
+				toothNumber: tooth,
+				stageKind: "stage_2_surgery" as const,
+				isPrimary: true,
+			},
 	];
+
+	const membraneLower = params.membrane?.toLowerCase() || "";
+	const hasMembrane =
+		!isClosed &&
+		Boolean(params.membrane) &&
+		membraneLower !== "none" &&
+		!membraneLower.includes("без мембраны");
+
+	if (hasMembrane) {
+		const membName = params.membrane || "Коллагеновая мембрана 25×25 мм";
+		items.push({
+			code: "A16.07.041.002",
+			nameRu: `Фиксация барьерной мембраны (${membName})`,
+			name: `Фиксация барьерной мембраны (${membName})`,
+			priceRub: 25000,
+			priceKopecks: 2500000n,
+			quantity: 1,
+			suggestedPriceRub: 25000,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		});
+	}
+
+	items.push(
+		{
+			code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL,
+			nameRu: "Шов ПГА/Викрил 4-0",
+			name: "Шов ПГА/Викрил 4-0",
+			priceRub: 1500,
+			priceKopecks: 150000n,
+			quantity: 1,
+			suggestedPriceRub: 1500,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		},
+		{
+			code: EXTRACTION_SURGICAL_CODES.ANESTHESIA_INFILTRATION,
+			nameRu: "Инфильтрационная анестезия",
+			name: "Инфильтрационная анестезия",
+			priceRub: 900,
+			priceKopecks: 90000n,
+			quantity: 1,
+			suggestedPriceRub: 900,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		},
+	);
+
+	return items;
 }
 export const getSinusGbrServices = getSinusGbrSurgicalServices;
 /** @deprecated Use getSinusGbrServices instead (Mandate 8x) */

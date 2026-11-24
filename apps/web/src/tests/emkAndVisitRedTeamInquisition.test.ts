@@ -27,7 +27,18 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 	const readSrcFile = (relPath: string) => {
 		const fullPath = path.join(webSrc, relPath);
 		assert.ok(fs.existsSync(fullPath), `Target file must exist: ${relPath}`);
-		return fs.readFileSync(fullPath, "utf-8");
+		let content = fs.readFileSync(fullPath, "utf-8");
+		if (relPath === "components/visit/VisitSummaryModal.tsx") {
+			const subDir = path.join(webSrc, "components/visit/summaryModal");
+			if (fs.existsSync(subDir)) {
+				for (const f of fs.readdirSync(subDir)) {
+					if (/\.(ts|tsx)$/.test(f)) {
+						content += "\n" + fs.readFileSync(path.join(subDir, f), "utf-8");
+					}
+				}
+			}
+		}
+		return content;
 	};
 
 	it("1. Искоренение птичьего языка и ликвидация дубликатов: в ClinicalQuickPresetsBar нет голых кодов МКБ и ликвидированы дубли норм", () => {
@@ -87,7 +98,7 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 		const targetFiles = [
 			"components/visit/VisitEmkTab.tsx",
 			"components/visit/VisitSummaryModal.tsx",
-			"components/visit/view/VisitHeaderMonolith.tsx",
+			"components/visit/view/VisitViewHeader.tsx",
 			"components/visit/emk/EmkToolbar.tsx",
 			"components/visit/emk/EmkComplaintsSection.tsx",
 			"components/visit/emk/EmkObjectiveStatusSection.tsx",
@@ -128,17 +139,7 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 	});
 
 	it("5. Автономия врача (Мандат 8e): 0 заблокированных кнопок «Завершить приём» по второстепенным полям", () => {
-		const toolbarDir = path.join(webSrc, "components/visit/view/visitHeader/toolbar");
-		let headerCode = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx"))
-			? readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx")
-			: readSrcFile("components/visit/view/VisitHeaderMonolith.tsx");
-		if (fs.existsSync(toolbarDir)) {
-			for (const f of fs.readdirSync(toolbarDir)) {
-				if (/\.(ts|tsx)$/.test(f)) {
-					headerCode += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf-8");
-				}
-			}
-		}
+		const headerCode = readSrcFile("components/visit/view/visitHeaderModules/VisitHeaderActionsToolbar.tsx");
 		// Кнопка Завершить приём в шапке
 		assert.ok(
 			headerCode.includes('data-testid="btn-complete-visit-header"'),
@@ -149,7 +150,13 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"Кнопка завершения приёма не должна блокироваться проверкой полей формы",
 		);
 
-		const summaryCode = readSrcFile("components/visit/VisitSummaryModal.tsx");
+		const summaryDir = path.join(webSrc, "components/visit/summaryModal");
+		const summaryCode = [
+			readSrcFile("components/visit/VisitSummaryModal.tsx"),
+			...(fs.existsSync(summaryDir)
+				? fs.readdirSync(summaryDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => readSrcFile(path.join("components/visit/summaryModal", f)))
+				: []),
+		].join("\n");
 		// Кнопка Завершить приём в сводке
 		assert.ok(
 			summaryCode.includes('data-testid="summary-complete-visit-btn"'),
@@ -189,7 +196,13 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"VisitServiceBillingWidget должен слушать событие dente-add-services-to-invoice",
 		);
 
-		const summaryCode = readSrcFile("components/visit/VisitSummaryModal.tsx");
+		const summaryDir = path.join(webSrc, "components/visit/summaryModal");
+		const summaryCode = [
+			readSrcFile("components/visit/VisitSummaryModal.tsx"),
+			...(fs.existsSync(summaryDir)
+				? fs.readdirSync(summaryDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => readSrcFile(path.join("components/visit/summaryModal", f)))
+				: []),
+		].join("\n");
 		assert.ok(
 			summaryCode.includes('data-testid="chairside-pos-block"'),
 			"VisitSummaryModal должен содержать блок мгновенной оплаты приёма в кресле",
@@ -284,23 +297,21 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"fastPrintDiaryBuilder должен содержать SSOT-консолидацию buildMedicalCardDataFromFastPrintParams",
 		);
 
-		// VisitActionButtonsToolbar.tsx
-		let toolbarCode = readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx");
-		const toolbarDir = path.join(webSrc, "components/visit/view/visitHeader/toolbar");
-		if (fs.existsSync(toolbarDir)) {
-			for (const f of fs.readdirSync(toolbarDir)) {
-				if (/\.(ts|tsx)$/.test(f)) {
-					toolbarCode += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf-8");
-				}
-			}
-		}
+		// VisitHeaderModules & VisitActionFooter
+		const headerModulesDir = path.join(webSrc, "components/visit/view/visitHeaderModules");
+		const headerSource = [
+			...(fs.existsSync(headerModulesDir)
+				? fs.readdirSync(headerModulesDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => readSrcFile(path.join("components/visit/view/visitHeaderModules", f)))
+				: []),
+			readSrcFile("components/visit/view/VisitActionFooter.tsx"),
+		].join("\n");
 		assert.ok(
-			toolbarCode.includes("handlePrintClinicalDiaryFast"),
-			"VisitActionButtonsToolbar должен поддерживать канонический хендлер handlePrintClinicalDiaryFast",
+			headerSource.includes("handlePrintClinicalDiaryFast"),
+			"VisitHeader / ActionFooter должен поддерживать канонический хендлер handlePrintClinicalDiaryFast",
 		);
 		assert.ok(
-			toolbarCode.includes("Медицинская карта приёма"),
-			"VisitActionButtonsToolbar должен иметь кнопку 'Медицинская карта приёма'",
+			headerSource.includes("Медицинская карта приёма"),
+			"VisitHeaderModules должен иметь пункт/кнопку 'Медицинская карта приёма'",
 		);
 
 		// VisitTherapyProtocolWidget.tsx

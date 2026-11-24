@@ -200,11 +200,17 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 	describe("2. MedicalRecordStudioModal Print Lifecycle & Zero Disabled Buttons (Mandate 8e item 5)", () => {
 		const form043Path = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
 		const form043RecordDir = path.join(webSrcRoot, "components/emr/record");
+		const form043HtmlDir = path.join(webSrcRoot, "components/emr/record/html");
+		const form043MathDir = path.join(webSrcRoot, "components/emr/math");
+		const readDirFiles = (dir: string) =>
+			fs.existsSync(dir)
+				? fs.readdirSync(dir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(dir, f), "utf8"))
+				: [];
 		const form043Content = [
 			fs.readFileSync(form043Path, "utf8"),
-			...(fs.existsSync(form043RecordDir)
-				? fs.readdirSync(form043RecordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(form043RecordDir, f), "utf8"))
-				: []),
+			...readDirFiles(form043RecordDir),
+			...readDirFiles(form043HtmlDir),
+			...readDirFiles(form043MathDir),
 		].join("\n");
 
 		it("MedicalRecordStudioModal defines dual-state stamp: ЧЕРНОВИК if open vs ПОДПИСАНО ВРАЧОМ if closed", () => {
@@ -238,7 +244,9 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 			const visitComponentsDir = path.join(webSrcRoot, "components/visit");
 			const visitViewContent = [
 				fs.readFileSync(visitViewPath, "utf8"),
-				fs.readFileSync(path.join(visitComponentsDir, "view/visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"), "utf8"),
+				...(fs.existsSync(path.join(visitComponentsDir, "view/visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"))
+					? [fs.readFileSync(path.join(visitComponentsDir, "view/visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"), "utf8")]
+					: []),
 				fs.readFileSync(path.join(visitComponentsDir, "view/visitHeaderModules/VisitHeaderFastPrintCluster.tsx"), "utf8"),
 				fs.readFileSync(path.join(visitComponentsDir, "VisitEmkTab.tsx"), "utf8"),
 			].join("\n");

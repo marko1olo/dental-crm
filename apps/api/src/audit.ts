@@ -1,4 +1,4 @@
-import { db } from "./db/client.js";
+import { db, type TenantDb } from "./db/client.js";
 import { auditEvents } from "./db/schema.js";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
@@ -78,6 +78,7 @@ export async function recordAuditEvent(input: {
 	entityId: string;
 	action: string;
 	reason?: string | null | undefined;
+	tx?: TenantDb | undefined;
 }) {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off" && input.organizationId?.trim()) {
 		inMemoryAuditEvents.unshift({
@@ -111,16 +112,27 @@ export async function recordAuditEvent(input: {
 	}
 
 	try {
-		await withTenantCtx(orgId, async (tx) => {
-			await tx.insert(auditEvents).values({
+		if (input.tx) {
+			await input.tx.insert(auditEvents).values({
 				organizationId: orgId,
 				actorUserId: input.actorUserId ?? null,
 				entityType: input.entityType,
 				entityId: input.entityId,
 				action: input.action,
-				reason: input.reason,
+				reason: input.reason ?? null,
 			});
-		});
+		} else {
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(auditEvents).values({
+					organizationId: orgId,
+					actorUserId: input.actorUserId ?? null,
+					entityType: input.entityType,
+					entityId: input.entityId,
+					action: input.action,
+					reason: input.reason ?? null,
+				});
+			});
+		}
 	} catch (error) {
 		// Аварийный канал: событие целиком уходит в лог структурированным объектом, чтобы его
 		// можно было восстановить, даже если база отвергла запись. Проброс

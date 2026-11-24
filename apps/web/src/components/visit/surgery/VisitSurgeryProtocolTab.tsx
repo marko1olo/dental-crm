@@ -16,6 +16,7 @@ import { showToast } from "../../GlobalToast";
 
 export interface VisitSurgeryProtocolTabProps {
 	patientId?: string | undefined;
+	visitId?: string | undefined;
 	patientName?: string | undefined;
 	doctorId?: string | undefined;
 	doctorName?: string | undefined;
@@ -27,11 +28,13 @@ export interface VisitSurgeryProtocolTabProps {
 }
 
 export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = ({
-	patientId, patientName = "Пациент", doctorId, doctorName = "Врач-хирург",
+	patientId, visitId, patientName = "Пациент", doctorId, doctorName = "Врач-хирург",
 	activeTooth, onSelectActiveTooth, onApplyToDiary, onAddToInvoice, className = "",
 }) => {
 	const s = useVisitSurgeryState({
 		activeTooth: activeTooth ?? 46,
+		patientId,
+		visitId,
 		patientName,
 		doctorName,
 		onSelectActiveTooth,

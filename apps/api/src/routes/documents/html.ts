@@ -20,6 +20,29 @@ import {
 	resolveDocumentRenderContext,
 } from "./shared.js";
 
+function injectVoidWatermarkIntoHtml(
+	html: string,
+	reason?: string | null,
+	voidedAt?: string | null,
+): string {
+	const reasonStr = reason ? ` Причина: ${reason}.` : "";
+	const dateStr = voidedAt
+		? ` Дата аннулирования: ${new Date(voidedAt).toLocaleDateString("ru-RU")}.`
+		: "";
+	const bannerHtml = `
+<div id="dente-void-banner" style="position: sticky; top: 0; left: 0; width: 100%; background: #fee2e2; border-bottom: 2px solid #ef4444; color: #991b1b; text-align: center; padding: 12px 16px; font-weight: 700; font-size: 15px; z-index: 99999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box;">
+  ВНИМАНИЕ: ДОКУМЕНТ АННУЛИРОВАН (ЮРИДИЧЕСКАЯ СИЛА УТРАЧЕНА).${reasonStr}${dateStr}
+</div>
+<div id="dente-void-watermark" style="position: fixed; top: 38%; left: 5%; width: 90%; text-align: center; transform: rotate(-30deg); font-size: 56px; font-weight: 900; color: rgba(220, 38, 38, 0.22); letter-spacing: 4px; pointer-events: none; z-index: 99998; border: 6px dashed rgba(220, 38, 38, 0.3); border-radius: 16px; padding: 24px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none;">
+  ДОКУМЕНТ АННУЛИРОВАН
+</div>
+`;
+	if (html.includes("<body")) {
+		return html.replace(/(<body[^>]*>)/i, `$1${bannerHtml}`);
+	}
+	return bannerHtml + html;
+}
+
 export async function register(app: FastifyInstance) {
 	app.get<{ Params: { id: string }; Querystring: { download?: string } }>(
 		"/api/documents/:id/html",
@@ -94,9 +117,17 @@ export async function register(app: FastifyInstance) {
 						`attachment; filename="${documentAttachmentFileName(document, "html")}"`,
 					);
 				}
+				let renderedHtml = applySignatureStampIfSigned(document, issuedSnapshot);
+				if (document.status === "voided") {
+					renderedHtml = injectVoidWatermarkIntoHtml(
+						renderedHtml,
+						document.voidAttestation?.reasonText || null,
+						document.voidedAt,
+					);
+				}
 				return reply
 					.type("text/html; charset=utf-8")
-					.send(applySignatureStampIfSigned(document, issuedSnapshot));
+					.send(renderedHtml);
 			}
 
 			const requestHost = request.headers.host ?? "127.0.0.1:4100";
@@ -109,20 +140,22 @@ export async function register(app: FastifyInstance) {
 				...(await resolveDocumentRenderContext(orgId, document.patientId, request.log)),
 				origin,
 			};
+
+			let rendered = applySignatureStampIfSigned(
+				document,
+				renderDocumentHtml(document, patient, renderContext),
+			);
 			if (document.status === "voided") {
-				return reply
-					.code(409)
-					.send(apiError("Документ аннулирован: печатная форма недоступна."));
+				rendered = injectVoidWatermarkIntoHtml(
+					rendered,
+					document.voidAttestation?.reasonText || null,
+					document.voidedAt,
+				);
 			}
 
 			return reply
 				.type("text/html; charset=utf-8")
-				.send(
-					applySignatureStampIfSigned(
-						document,
-						renderDocumentHtml(document, patient, renderContext),
-					),
-				);
+				.send(rendered);
 		},
 	);
 }

@@ -9,8 +9,10 @@ import {
 } from "../components/visit/view/visitCriticalBadges";
 import {
 	buildConsolidatedAllergyChip,
-	PatientAlertBadgesBar,
-} from "../components/visit/view/visitHeader/PatientAlertBadgesBar";
+} from "../components/visit/view/viewStateModules/visitCriticalChipsBuilder";
+import {
+	PatientAvatarAndInfoSection,
+} from "../components/visit/view/visitHeaderModules/PatientAvatarAndInfoSection";
 import {
 	parseSafetyProfileFromText,
 	evaluatePatientSafetyFlags,
@@ -121,28 +123,36 @@ describe("Red Team: Patient Allergy Guard & Medical Safety Inquisitor Suite", ()
 			assert.equal(chip, "Аллергия: Лидокаин");
 		});
 
-		it("PatientAlertBadgesBar renders prominent allergy badge when badges are active", () => {
-			const activePatient = { allergies: "Лидокаин" };
+		it("PatientAvatarAndInfoSection renders prominent allergy badge when badges are active", () => {
+			const activePatient = { id: "p1", fullName: "Иванов И.И.", allergies: "Лидокаин" };
 			const badges = calculateActivePatientCriticalBadges(activePatient);
 			const html = renderToString(
-				React.createElement(PatientAlertBadgesBar, {
+				React.createElement(PatientAvatarAndInfoSection, {
 					activePatient,
+					patientAge: "35 лет",
+					activePeers: [],
+					summaryText: null,
 					activePatientCriticalBadges: [...badges],
+					consolidatedAllergyChip: "Аллергия: Лидокаин",
 				}),
 			);
 
 			assert.ok(html.includes("visit-focus-allergy-alert"), "Must render visit-focus-allergy-alert");
 			assert.ok(html.includes("Лидокаин"), "Must render Lidocaine in the badge text");
-			assert.ok(html.includes("bg-rose-600/15"), "Must have prominent rose background");
+			assert.ok(html.includes("bg-amber-500/10"), "Must have calm amber background (Mandate 8y)");
 		});
 
-		it("PatientAlertBadgesBar renders clean badge when patient has no allergies", () => {
-			const cleanPatient = { allergies: "" };
+		it("PatientAvatarAndInfoSection renders clean badge when patient has no allergies", () => {
+			const cleanPatient = { id: "p2", fullName: "Петров П.П.", allergies: "" };
 			const badges = calculateActivePatientCriticalBadges(cleanPatient);
 			const html = renderToString(
-				React.createElement(PatientAlertBadgesBar, {
+				React.createElement(PatientAvatarAndInfoSection, {
 					activePatient: cleanPatient,
+					patientAge: "35 лет",
+					activePeers: [],
+					summaryText: null,
 					activePatientCriticalBadges: [...badges],
+					consolidatedAllergyChip: null,
 				}),
 			);
 
@@ -193,7 +203,7 @@ describe("Red Team: Patient Allergy Guard & Medical Safety Inquisitor Suite", ()
 			);
 			for (const presetId of [
 				"anesthesia-dose-norm-preset",
-				"anesthesia-preset-infiltration-articaine-200k",
+				"anesthesia-preset-mandibular-100k",
 				"anesthesia-preset-scandonest-cardio",
 				"btn-anes-none",
 			]) {

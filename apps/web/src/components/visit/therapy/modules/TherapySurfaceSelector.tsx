@@ -19,15 +19,15 @@ export const TherapySurfaceSelector: React.FC<TherapySurfaceSelectorProps> = ({
 			<div className="mb-1.5 flex items-center justify-between">
 				<div className="flex items-center gap-1.5">
 					<span className="text-xs font-semibold text-[var(--ink)]">Поверхности зуба:</span>
-					<span className="text-[10px] font-medium text-[var(--muted)]">(опционально)</span>
+					<span className="text-[10px] font-medium text-[var(--ink-muted)]">(опционально)</span>
 				</div>
-				<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
+				<span className="text-xs font-mono font-bold text-[var(--primary)]">
 					[{selectedSurfaces.join(", ") || "O"}]
 				</span>
 			</div>
 
 			{/* Быстрые комбинации */}
-			<div className="mb-2 flex flex-wrap gap-1">
+			<div className="mb-2 flex flex-wrap gap-1.5 sm:gap-1">
 				{RESTORATION_SURFACE_PRESETS.map((preset) => {
 					const isMatch =
 						preset.surfaces.length === selectedSurfaces.length &&
@@ -37,10 +37,10 @@ export const TherapySurfaceSelector: React.FC<TherapySurfaceSelectorProps> = ({
 							key={preset.id}
 							type="button"
 							onClick={() => onApplySurfacePreset(preset.surfaces)}
-							className={`h-7 sm:h-8 px-2.5 rounded-md text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center ${
+							className={`min-h-[44px] h-11 px-3.5 rounded-xl text-xs sm:min-h-0 sm:h-8 sm:px-2.5 sm:rounded-md sm:text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center touch-manipulation ${
 								isMatch
-									? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-									: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-2xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 							title={preset.descriptionRu}
 							data-testid={`therapy-surf-preset-${preset.id}`}
@@ -52,8 +52,8 @@ export const TherapySurfaceSelector: React.FC<TherapySurfaceSelectorProps> = ({
 			</div>
 
 			{/* Отдельные поверхности */}
-			<div className="flex flex-wrap items-center gap-1 border-t border-[var(--line)] pt-1.5">
-				<span className="text-[10px] text-[var(--muted)] mr-1">По отдельности:</span>
+			<div className="flex flex-wrap items-center gap-1.5 sm:gap-1 border-t border-[var(--line)] pt-1.5">
+				<span className="text-[10px] text-[var(--ink-muted)] mr-1">По отдельности:</span>
 				{INDIVIDUAL_SURFACES.map((surf) => {
 					const isActive = selectedSurfaces.includes(surf);
 					return (
@@ -61,10 +61,10 @@ export const TherapySurfaceSelector: React.FC<TherapySurfaceSelectorProps> = ({
 							key={surf}
 							type="button"
 							onClick={() => onToggleSurface(surf)}
-							className={`h-7 sm:h-8 min-w-[28px] sm:min-w-[32px] px-2 rounded-md text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center ${
+							className={`min-h-[44px] h-11 min-w-[44px] px-3.5 rounded-xl text-xs sm:min-h-0 sm:h-8 sm:min-w-[32px] sm:px-2 sm:rounded-md sm:text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center touch-manipulation ${
 								isActive
-									? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-									: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-2xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 							title={`Поверхность ${surf} (нажмите для переключения)`}
 						>

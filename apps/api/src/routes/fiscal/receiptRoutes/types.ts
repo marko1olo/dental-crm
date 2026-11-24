@@ -18,7 +18,7 @@ export const sbpStatusInputSchema = z.object({
 	clientMutationId: z.string().trim().max(128).optional(),
 	action: z.enum(["check", "confirm_manual"]).optional(),
 	confirm: z.string().trim().optional(),
-});
+}).strict();
 
 export type SbpStatusInput = z.infer<typeof sbpStatusInputSchema>;
 
@@ -26,7 +26,7 @@ export const kktDeviceTestConnectionSchema = z.object({
 	host: z.string().trim().min(1).default("192.168.1.150"),
 	port: z.number().int().min(1).max(65535).default(16732),
 	timeoutMs: z.number().int().min(500).max(10000).default(3000),
-});
+}).strict();
 
 export type KktDeviceTestConnectionInput = z.infer<typeof kktDeviceTestConnectionSchema>;
 
@@ -42,13 +42,13 @@ export const fiscalQueueQuerySchema = z.object({
 		])
 		.optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(50),
-});
+}).strict();
 
 export type FiscalQueueQueryInput = z.infer<typeof fiscalQueueQuerySchema>;
 
 export const fiscalQueueIdParamSchema = z.object({
 	id: z.string().uuid(),
-});
+}).strict();
 
 export type FiscalQueueIdParam = z.infer<typeof fiscalQueueIdParamSchema>;
 

@@ -41,8 +41,10 @@ export const PediatricProtocolWidgetModals: React.FC<PediatricProtocolWidgetModa
 		<>
 			{isMemoModalOpen && (
 				<PediatricParentMemoModal
+					key={patientId || "pediatric-parent-memo"}
 					isOpen={isMemoModalOpen}
 					onClose={() => setIsMemoModalOpen(false)}
+					patientId={patientId}
 					patientName={patientName}
 					patientPhone={patientPhone}
 					patientAgeYears={patientAgeYears}
@@ -58,6 +60,7 @@ export const PediatricProtocolWidgetModals: React.FC<PediatricProtocolWidgetModa
 
 			{isDiplomaModalOpen && (
 				<PediatricBraveryDiplomaModal
+					key={patientId || "pediatric-bravery-diploma"}
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
 					patientId={patientId}

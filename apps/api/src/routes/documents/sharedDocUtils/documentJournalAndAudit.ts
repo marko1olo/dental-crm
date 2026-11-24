@@ -253,7 +253,7 @@ export async function buildDocumentAuditFacts(
 			: null;
 	const pdfDownloadUrl =
 		treatmentPlanPdfUrl ??
-		(immutableSnapshotReady && hasIssueSignatureAttestation
+		(immutableSnapshotReady && hasIssueSignatureAttestation && document.status !== "voided"
 			? `/api/documents/${document.id}/pdf`
 			: null);
 	const canExportFnsXml =

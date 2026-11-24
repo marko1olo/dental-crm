@@ -6,11 +6,12 @@ import { SpecialtyFocusBar } from "./specialtyFocusModules/SpecialtyFocusBar";
 import { SpecialtyProtocolDrawer } from "./specialtyFocusModules/SpecialtyProtocolDrawer";
 
 export interface VisitSpecialtyFocusProps {
-	compact?: boolean;
-	isDrawerOpen?: boolean;
-	onToggleDrawer?: (open: boolean) => void;
-	renderBarOnly?: boolean;
-	renderDrawerOnly?: boolean;
+	compact?: boolean | undefined;
+	isDrawerOpen?: boolean | undefined;
+	onToggleDrawer?: ((open: boolean) => void) | undefined;
+	renderBarOnly?: boolean | undefined;
+	renderDrawerOnly?: boolean | undefined;
+	visitId?: string | undefined;
 	activePatient?: VisitPatientEntity | ChairsidePatientEntity | { id?: string; fullName?: string; birthDate?: string | Date | null | undefined; age?: number | string | undefined } | null | undefined;
 	activeDoctor?: VisitDoctorEntity | ChairsideDoctorEntity | { id?: string; fullName?: string } | null | undefined;
 	selectedSpecialty?: string | undefined;
@@ -47,6 +48,7 @@ export function VisitSpecialtyFocus(props: VisitSpecialtyFocusProps = {}) {
 
 	const drawerSection = (
 		<SpecialtyProtocolDrawer
+			visitId={state.visitId}
 			isProtocolDrawerOpen={state.isProtocolDrawerOpen}
 			setIsProtocolDrawerOpen={state.setIsProtocolDrawerOpen}
 			activeWidgetTitle={state.activeWidgetTitle}

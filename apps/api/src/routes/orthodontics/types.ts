@@ -17,10 +17,18 @@ export const issueAlignerSetSchema = z
 		applianceName: z.string().optional(),
 		selectedElasticId: z.string().nullable().optional(),
 		selectedActionIds: z.array(z.string()).optional(),
+		angleClass: z.string().optional(),
+		verticalBite: z.string().optional(),
+		overjetMm: z.number().optional(),
+		overbitePercent: z.number().optional(),
+		anbAngle: z.number().optional(),
+		skeletalClass: z.string().optional(),
+		treatmentPlanId: z.string().uuid().optional(),
 	})
 	.strict();
 
 export const archwireChangeSchema = ArchwireChangePayloadSchema;
+export const archwireChangePayloadSchema = ArchwireChangePayloadSchema;
 export type { ArchwireChangePayload };
 
 export const ligatureActivateSchema = z
@@ -43,6 +51,13 @@ export const stageAdvanceSchema = z
 		applianceName: z.string().optional(),
 		selectedElasticId: z.string().nullable().optional(),
 		selectedActionIds: z.array(z.string()).optional(),
+		angleClass: z.string().optional(),
+		verticalBite: z.string().optional(),
+		overjetMm: z.number().optional(),
+		overbitePercent: z.number().optional(),
+		anbAngle: z.number().optional(),
+		skeletalClass: z.string().optional(),
+		treatmentPlanId: z.string().uuid().optional(),
 	})
 	.strict();
 
@@ -162,4 +177,11 @@ export interface OrthodonticProgressRecord extends Record<string, unknown> {
 	lastSoapSummary?: string | undefined;
 	wearDaysPerAligner?: number | undefined;
 	nextVisitRecommendedDate?: string | undefined;
+	angleClass?: string | undefined;
+	verticalBite?: string | undefined;
+	overjetMm?: number | undefined;
+	overbitePercent?: number | undefined;
+	anbAngle?: number | undefined;
+	skeletalClass?: string | undefined;
+	treatmentPlanId?: string | undefined;
 }

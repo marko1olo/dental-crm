@@ -38,8 +38,8 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 								onClick={() => onSelectComposite(matId)}
 								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
 									isSelected
-										? "border-teal-600 bg-teal-50 font-bold text-teal-900 dark:border-teal-400 dark:bg-teal-950/50 dark:text-teal-200"
-										: "border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										? "border-[var(--primary)] bg-[var(--paper-soft)] font-bold text-[var(--ink)] ring-1 ring-[var(--primary)]"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={info.indicationRu}
 							>
@@ -63,8 +63,8 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 								onClick={() => onSelectAdhesive(adhId)}
 								className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
 									isSelected
-										? "border-teal-600 bg-teal-50 font-bold text-teal-900 dark:border-teal-400 dark:bg-teal-950/50 dark:text-teal-200"
-										: "border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										? "border-[var(--primary)] bg-[var(--paper-soft)] font-bold text-[var(--ink)] ring-1 ring-[var(--primary)]"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={info.protocolSummaryRu}
 							>
@@ -78,11 +78,11 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 			{isAnterior && (
 				<div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--line)]">
 					<div>
-						<label className="mb-1 block text-[11px] font-medium text-[var(--muted)]">Оттенок дентина:</label>
+						<label className="mb-1 block text-[11px] font-medium text-[var(--ink-muted)]">Оттенок дентина:</label>
 						<select
 							value={shadeDentin}
 							onChange={(e) => onChangeShadeDentin(e.target.value)}
-							className="min-h-[44px] w-full rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 text-xs text-[var(--ink)]"
+							className="min-h-[44px] w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs text-[var(--ink)]"
 						>
 							<option value="A1B">A1 Body</option>
 							<option value="A2B">A2 Body</option>
@@ -93,11 +93,11 @@ export const TherapyDetailsAccordion: React.FC<TherapyDetailsAccordionProps> = (
 						</select>
 					</div>
 					<div>
-						<label className="mb-1 block text-[11px] font-medium text-[var(--muted)]">Оттенок эмали:</label>
+						<label className="mb-1 block text-[11px] font-medium text-[var(--ink-muted)]">Оттенок эмали:</label>
 						<select
 							value={shadeEnamel}
 							onChange={(e) => onChangeShadeEnamel(e.target.value)}
-							className="min-h-[44px] w-full rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 text-xs text-[var(--ink)]"
+							className="min-h-[44px] w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs text-[var(--ink)]"
 						>
 							<option value="A1E">A1 Enamel</option>
 							<option value="A2E">A2 Enamel</option>

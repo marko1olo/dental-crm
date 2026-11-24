@@ -39,9 +39,9 @@
 	min-width: 44px;
 	min-height: 44px;
 	border-radius: 12px;
-	background: color-mix(in srgb, var(--teal, #0d9488) 15%, transparent);
-	color: var(--teal, #0d9488);
-	border: 1px solid color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+	background: color-mix(in srgb, var(--primary) 15%, transparent);
+	color: var(--primary);
+	border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -53,6 +53,6 @@
 
 .mobile-lab-call-btn:active {
 	transform: scale(0.92);
-	background: var(--teal, #0d9488);
+	background: var(--primary);
 	color: #ffffff;
 }

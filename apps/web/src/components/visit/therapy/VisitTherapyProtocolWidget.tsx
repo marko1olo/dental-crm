@@ -18,7 +18,7 @@ export interface VisitTherapyProtocolWidgetProps {
 	/** Обработчик прямой вставки текста протокола в дневник визита */
 	readonly onApplyProtocolText?: (text: string) => void;
 	/** Обработчик добавления услуг в смету/наряд */
-	readonly onAddToInvoice?: (services: readonly { code: string; nameRu: string }[]) => void;
+	readonly onAddToInvoice?: (services: readonly { code: string; nameRu: string; priceKopecks?: number; [key: string]: unknown }[]) => void;
 	/** Дополнительный CSS-класс контейнера */
 	readonly className?: string;
 }
@@ -33,7 +33,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 	return (
 		<section
 			aria-label="Терапевтический протокол лечения зуба"
-			className={`rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] p-4 shadow-sm ${className}`}
+			className={`rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] p-4 shadow-sm ${className}`}
 		>
 			<TherapyWidgetHeader
 				effectiveTooth={s.effectiveTooth}
@@ -68,7 +68,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 			<TherapyFooterActions
 				onInsertToClinicalDiary={s.handleInsertToClinicalDiary}
 				onAddServicesToInvoice={s.handleAddServicesToInvoice}
-				servicesCount={s.services804n.length}
+				servicesCount={s.therapyServices.length}
 				diagnosisIcd10={s.soapResult.diagnosisIcd10}
 				blackClass={s.blackClass}
 			/>

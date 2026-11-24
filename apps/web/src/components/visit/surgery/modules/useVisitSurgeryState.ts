@@ -17,11 +17,14 @@ import {
 	executePrintProtocol,
 	executePrintIds,
 	executeQuickDeduct,
+	type ApplyToVisitDiaryOptions,
 } from "./visitSurgeryActions";
 
 export interface UseVisitSurgeryStateParams {
 	readonly activeTooth?: number | null | undefined;
 	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly onApplyToDiary?: ((protocolText: string) => void) | undefined;
@@ -30,7 +33,7 @@ export interface UseVisitSurgeryStateParams {
 
 export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number = {}) {
 	const normalizedParams: UseVisitSurgeryStateParams = typeof params === "number" ? { activeTooth: params } : (params ?? {});
-	const { activeTooth = 46, onSelectActiveTooth, patientName = "Пациент", doctorName = "Хирург-имплантолог", onApplyToDiary } = normalizedParams;
+	const { activeTooth = 46, onSelectActiveTooth, patientId, visitId, patientName = "Пациент", doctorName = "Хирург-имплантолог", onApplyToDiary } = normalizedParams;
 	const [selectedTooth, setSelectedTooth] = useState<number>(activeTooth ?? 46);
 	const [selectedNormId, setSelectedNormId] = useState<string>("surgery_implant_standard");
 	const [protocolText, setProtocolText] = useState<string>(DENTAL_IMPLANTATION_NORM_TEXT);
@@ -97,7 +100,23 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 		showToast(`✓ Физиологическая норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`, "success");
 	};
 
-	const handleApplyToVisitDiary = () => executeApplyToVisitDiary(protocolText, onApplyToDiary);
+	const handleApplyToVisitDiary = () => {
+		const isImplant = selectedNormId === "surgery_implant_standard" || currentNorm.category === "implant";
+		const options: ApplyToVisitDiaryOptions = {
+			onApplyToDiary,
+			patientId,
+			visitId,
+			effectiveTooth,
+			implantBrand,
+			implantDiameter,
+			implantLength,
+			implantTorque,
+			implantIsq,
+			implantSuture,
+			isImplant,
+		};
+		return executeApplyToVisitDiary(protocolText, onApplyToDiary, options);
+	};
 	const handlePrintProtocol = () => executePrintProtocol({
 		patientName, doctorName, currentNorm, effectiveTooth, protocolText,
 		implantDetails: selectedNormId === "surgery_implant_standard" ? { implantBrand, diameterMm: implantDiameter, lengthMm: implantLength, torqueNcm: implantTorque, isq: implantIsq, capType: implantCap, sutureMaterial: implantSuture } : undefined,
@@ -108,6 +127,13 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 			currentNorm,
 			hasWarehouseDelay,
 			effectiveTooth,
+			patientId,
+			visitId,
+			implantDiameter,
+			implantLength,
+			implantTorque,
+			implantIsq,
+			implantCap,
 			...(currentNorm.category === "implant" ? { implantBrand, implantSuture } : {}),
 		});
 		if (ok) setIsMaterialsDeducted(true);
@@ -121,5 +147,6 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 		implantTorque, setImplantTorque, implantIsq, setImplantIsq, implantCap, setImplantCap, implantSuture, setImplantSuture,
 		overdraftStatus, handleToothSelect, handleNormClick, handleApplyStandardImplantationPreset, handleApplyToVisitDiary,
 		handlePrintProtocol, handlePrintSurgicalIds, handleQuickDeductWarehouseMaterials, handleCopy,
+		patientId, visitId,
 	};
 }

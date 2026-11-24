@@ -73,12 +73,12 @@ export async function handleSbpStatus(
 		query.clientMutationId;
 	const clientMutationId = rawMutationId?.trim();
 
-	if (isConfirmManual) {
+	if (isMutation) {
 		if (!clientMutationId || !isValidUuid(clientMutationId)) {
 			return reply.code(400).send({
 				error: "IdempotencyKeyRequired",
 				message:
-					"Для ручного подтверждения оплаты СБП требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
+					"Для мутаций и подтверждения оплаты СБП требуется валидный UUID (UUIDv7) в заголовке Idempotency-Key (Мандат 8bo / RFC 9562).",
 			});
 		}
 	}
@@ -271,7 +271,7 @@ export async function handleSbpStatus(
 			method: "sbp_qr",
 		};
 
-		if (isConfirmManual && clientMutationId) {
+		if (isMutation && clientMutationId) {
 			await tx
 				.insert(idempotencyKeys)
 				.values({

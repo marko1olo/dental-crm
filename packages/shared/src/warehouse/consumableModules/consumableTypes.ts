@@ -91,7 +91,7 @@ export type ConsumableItemLink = z.input<typeof consumableItemLinkSchema>;
 export const renderedServiceItemSchema = z.object({
 	serviceCode: z.string().min(1, "Код услуги обязателен"), serviceTitle: z.string().optional(),
 	quantity: z.number().positive().optional().default(1), toothNumber: z.number().int().min(11).max(85).optional().nullable(),
-});
+}).strict();
 export type RenderedServiceItem = z.input<typeof renderedServiceItemSchema>;
 
 export const consumableDeductionRequestSchema = z.object({
@@ -100,7 +100,7 @@ export const consumableDeductionRequestSchema = z.object({
 	doctorFullName: z.string().optional(), visitDate: z.string().optional(),
 	renderedServices: z.array(renderedServiceItemSchema), currentStockMap: z.record(z.string(), z.number()),
 	allowOverdraft: z.boolean().optional().default(true),
-});
+}).strict();
 export type ConsumableDeductionRequest = z.input<typeof consumableDeductionRequestSchema>;
 
 export const consumableDeductedItemSchema = z.object({

@@ -94,7 +94,7 @@ export const autoVisitBomDeductionInputSchema = z.object({
 	allowOverdraft: z.boolean().optional().default(true),
 	includeStandardPpe: z.boolean().optional().default(true),
 	fallbackToDefaults: z.boolean().optional().default(true),
-});
+}).strict();
 export type AutoVisitBomDeductionInput = z.input<typeof autoVisitBomDeductionInputSchema>;
 
 export const autoVisitBomDeductionResultSchema = consumableDeductionResultSchema.extend({

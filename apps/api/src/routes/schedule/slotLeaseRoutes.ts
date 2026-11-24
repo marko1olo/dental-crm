@@ -16,40 +16,47 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, gt, gte, lt, lte, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client.js";
-import { appointments, scheduleSlotLeases } from "../../db/schema.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import { appointments, idempotencyKeys, scheduleSlotLeases } from "../../db/schema.js";
+import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
 import {
 	requireClinicOrganizationId,
 	requireScheduleMutationContext,
 	scheduleUnguardedMutationsAllowed,
 } from "../scheduleAuthGuard.js";
 
-export const acquireSlotLeaseSchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	chairId: z.string().uuid().optional().nullable(),
-	doctorUserId: z.string().uuid().optional().nullable(),
-	patientId: z.string().uuid().optional().nullable(),
-	startsAt: z.string().min(1, "Укажите время начала слота"),
-	endsAt: z.string().min(1, "Укажите время окончания слота"),
-	holderSessionId: z.string().min(1, "Укажите идентификатор сессии клиента"),
-	source: z.string().optional().default("dnd"),
-	durationSeconds: z.number().int().min(10).max(600).optional().default(90),
-});
+export const acquireSlotLeaseSchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		chairId: z.string().uuid().optional().nullable(),
+		doctorUserId: z.string().uuid().optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		startsAt: z.string().min(1, "Укажите время начала слота"),
+		endsAt: z.string().min(1, "Укажите время окончания слота"),
+		holderSessionId: z.string().min(1, "Укажите идентификатор сессии клиента"),
+		source: z.string().optional().default("dnd"),
+		durationSeconds: z.number().int().min(10).max(600).optional().default(90),
+	})
+	.strict();
 
 export type AcquireSlotLeaseInput = z.infer<typeof acquireSlotLeaseSchema>;
 
-export const releaseSlotLeaseSchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	leaseToken: z.string().min(1, "Укажите токен бронирования"),
-});
+export const releaseSlotLeaseSchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		leaseToken: z.string().min(1, "Укажите токен бронирования"),
+		holderSessionId: z.string().optional(),
+	})
+	.strict();
 
 export type ReleaseSlotLeaseInput = z.infer<typeof releaseSlotLeaseSchema>;
 
-export const heartbeatSlotLeaseSchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	leaseToken: z.string().min(1, "Укажите токен бронирования"),
-	extensionSeconds: z.number().int().min(10).max(600).optional().default(60),
-});
+export const heartbeatSlotLeaseSchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		leaseToken: z.string().min(1, "Укажите токен бронирования"),
+		extensionSeconds: z.number().int().min(10).max(600).optional().default(60),
+	})
+	.strict();
 
 export type HeartbeatSlotLeaseInput = z.infer<typeof heartbeatSlotLeaseSchema>;
 
@@ -284,16 +291,156 @@ export async function handleReleaseSlotLease(
 	const orgId = await resolveOrganizationId(request, reply);
 	if (!orgId) return reply;
 
-	await db
-		.delete(scheduleSlotLeases)
-		.where(
-			and(
-				eq(scheduleSlotLeases.organizationId, orgId),
-				eq(scheduleSlotLeases.leaseToken, parsed.data.leaseToken),
-			),
+	const rawIdemKey =
+		(request.headers["idempotency-key"] as string | undefined) ??
+		(request.headers["x-idempotency-key"] as string | undefined);
+	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+
+	const identity = getRequestIdentity(request);
+	const clientSessionId =
+		parsed.data.holderSessionId ??
+		(request.headers["x-session-id"] as string | undefined) ??
+		identity.sessionId ??
+		null;
+
+	const isPrivileged = identity.role
+		? (ADMIN_ROLES as readonly string[]).includes(identity.role) ||
+		  identity.role === "manager"
+		: false;
+
+	return await db.transaction(async (tx) => {
+		if (idempotencyKey) {
+			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
+				);
+			}
+
+			const [existingRecord] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						code: "IdempotencyConflict",
+						message: "Запрос на освобождение слота уже обрабатывается",
+					});
+				}
+			}
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "in_flight",
+					lockedAt: new Date(),
+				})
+				.onConflictDoNothing();
+		}
+
+		const [activeLease] = await tx
+			.select()
+			.from(scheduleSlotLeases)
+			.where(
+				and(
+					eq(scheduleSlotLeases.organizationId, orgId),
+					eq(scheduleSlotLeases.leaseToken, parsed.data.leaseToken),
+				),
+			)
+			.for("update")
+			.limit(1);
+
+		if (!activeLease) {
+			const resBody = { success: true, released: true };
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						responseBody: resBody,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: resBody,
+							responseCode: 200,
+						},
+					});
+			}
+			return reply.code(200).send(resBody);
+		}
+
+		// Проверка прав на освобождение слота:
+		// Допустимо, если:
+		// 1) Пользователь привилегированный (admin, owner, administrator, manager)
+		// 2) Сессия совпадает с владельцем лиза (activeLease.holderSessionId === clientSessionId)
+		// 3) Пользователь совпадает с владельцем лиза (activeLease.holderUserId === identity.userId)
+		const matchesSession = Boolean(
+			activeLease.holderSessionId &&
+				clientSessionId &&
+				activeLease.holderSessionId === clientSessionId,
+		);
+		const matchesUser = Boolean(
+			activeLease.holderUserId &&
+				identity.userId &&
+				activeLease.holderUserId === identity.userId,
 		);
 
-	return reply.code(200).send({ success: true, released: true });
+		if (!isPrivileged && !matchesSession && !matchesUser) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				message: "Нельзя освободить чужое бронирование слота",
+			});
+		}
+
+		await tx
+			.delete(scheduleSlotLeases)
+			.where(eq(scheduleSlotLeases.id, activeLease.id));
+
+		const resBody = { success: true, released: true };
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseBody: resBody,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: resBody,
+						responseCode: 200,
+					},
+				});
+		}
+
+		return reply.code(200).send(resBody);
+	});
 }
 
 export async function handleHeartbeatSlotLease(

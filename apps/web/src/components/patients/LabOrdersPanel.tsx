@@ -200,6 +200,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 			{/* Живое монтирование модального окна создания/редактирования наряда ЗТЛ */}
 			{logic.isOrderModalOpen && (
 				<DentalLabStudioModal
+					key={logic.selectedOrderForEdit?.id ? `edit-${logic.selectedOrderForEdit.id}` : `new-${patientId ?? "patient"}`}
 					isOpen={logic.isOrderModalOpen}
 					onClose={() => {
 						logic.setIsOrderModalOpen(false);

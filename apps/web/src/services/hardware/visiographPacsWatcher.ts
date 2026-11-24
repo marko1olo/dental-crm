@@ -177,7 +177,7 @@ export class VisiographPacsWatcherService {
 	/**
 	 * Dispatches scan event to all registered listeners.
 	 */
-	public static dispatchScanEvent(rawEvent: Partial<RadiographyScanEvent> & { filePath: string; fileName: string }): RadiographyScanEvent {
+	public static dispatchScanEvent(rawEvent: Partial<RadiographyScanEvent> & { filePath: string; fileName: string; studyId?: string | undefined }): RadiographyScanEvent {
 		const metadata = this.parseScanMetadata(rawEvent.fileName);
 		const targetPatientId = rawEvent.patientId || metadata.patientId || this.activeConfig.activePatientId;
 		const targetToothCode = rawEvent.toothCode || metadata.toothCode;
@@ -191,6 +191,7 @@ export class VisiographPacsWatcherService {
 			patientName: rawEvent.patientName,
 			patientId: targetPatientId,
 			toothCode: targetToothCode,
+			studyId: rawEvent.studyId,
 			modality: rawEvent.modality || metadata.modality,
 			thumbnailDataUri,
 			previewReady: true,
@@ -208,6 +209,24 @@ export class VisiographPacsWatcherService {
 				listener(event);
 			} catch (err) {
 				console.error("[VisiographPacsWatcherService] Scan listener error:", err);
+			}
+		}
+
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente:attach-photo-to-visit", {
+						detail: {
+							url: thumbnailDataUri,
+							name: `Рентген RVG: зуб ${targetToothCode || "16"}`,
+							toothNumber: targetToothCode || "16",
+							photoType: "xray",
+							studyId: rawEvent.studyId,
+						},
+					}),
+				);
+			} catch {
+				// non-blocking
 			}
 		}
 
@@ -232,12 +251,15 @@ export class VisiographPacsWatcherService {
 		const patientId = typeof p.patientId === "string" ? p.patientId : this.activeConfig.activePatientId;
 		const patientName = typeof p.patientFullName === "string" ? p.patientFullName : undefined;
 		const title = typeof p.title === "string" ? p.title : `Снимок визиографа ${studyId.slice(0, 8)}`;
+		const toothCode = typeof p.toothCode === "string" ? p.toothCode : undefined;
 
 		return this.dispatchScanEvent({
 			filePath: fileUrl,
 			fileName: `${title}.dcm`,
 			patientId,
 			patientName,
+			toothCode,
+			studyId,
 			modality: "IO",
 			thumbnailDataUri: fileUrl,
 			detectedAt: new Date().toISOString(),

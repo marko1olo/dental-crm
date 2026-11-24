@@ -105,10 +105,11 @@ export interface IsoEndoColorInfo {
 	readonly colorEn: string;
 	readonly hex: string;
 	readonly textHex: string;
-	readonly bgClass: string;
-	readonly borderClass: string;
 	readonly labelRu: string;
 }
+
+/** Алиас для канонической информации о цвете эндодонтического инструмента */
+export type IsoEndoColorDefinition = IsoEndoColorInfo;
 
 export interface EndoPatientMemoParams {
 	readonly clinicName: string;

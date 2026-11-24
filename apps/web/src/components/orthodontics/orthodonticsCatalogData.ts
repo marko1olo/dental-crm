@@ -284,7 +284,7 @@ export interface OrthoProtocolState {
 	verticalBite: VerticalBite;
 	currentMonth: number;
 	totalMonths: number;
-	currentStageIndex?: number;
+	currentStageIndex?: number | undefined;
 	nextVisitWeeks: number;
 	upperAlloy: ArchwireAlloy;
 	upperSection: ArchwireSection;
@@ -296,8 +296,11 @@ export interface OrthoProtocolState {
 	alignerTracking: AlignerTrackingState;
 	photoStatuses: Record<string, boolean>;
 	clinicalNotes: string;
-	notes?: string;
-	savedAt?: string;
+	notes?: string | undefined;
+	savedAt?: string | undefined;
+	overjetMm?: number | undefined;
+	overbitePercent?: number | undefined;
+	treatmentPlanId?: string | undefined;
 }
 
 export function createDefaultOrthoProtocolState(): OrthoProtocolState {
@@ -307,6 +310,8 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 		applianceName: "Damon Q2 (Металл, .022)",
 		angleClass: "class_1",
 		verticalBite: "normal",
+		overjetMm: 2.0,
+		overbitePercent: 30,
 		currentMonth: 0,
 		totalMonths: 18,
 		currentStageIndex: 0,

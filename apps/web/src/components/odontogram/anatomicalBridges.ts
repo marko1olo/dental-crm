@@ -92,8 +92,11 @@ export function detectBridgeSpans(
 							...candidateAbutments.slice(1),
 						];
 						const arch = archTeeth[0] && archTeeth[0] <= 28 ? "upper" : "lower";
-						const startT = allTeethInSpan[0]!;
-						const endT = allTeethInSpan[allTeethInSpan.length - 1]!;
+						const startT = allTeethInSpan[0];
+						const endT = allTeethInSpan[allTeethInSpan.length - 1];
+						if (startT === undefined || endT === undefined) {
+							continue;
+						}
 						const primaryAbutment = dataMap.get(startT);
 						const material = primaryAbutment?.material ?? "zirconia";
 

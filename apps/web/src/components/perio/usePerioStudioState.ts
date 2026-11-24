@@ -5,9 +5,9 @@
  * - Экспресс-скрининг PSR ВОЗ по 6 секстантам
  * - Клинические индексы (O'Leary, OHI-S, PMA, КПИ)
  * - Автосейв черновиков с дебаунсом 600мс в dente_perio_draft_v2_${patientId}
- * - Очистку черновиков (Zero-Leak Draft Invariant)
+ * - Очистку черновиков (Zero-Leak Draft Invariant, Мандат 8zq / DEF-PERIO-05)
  * - Синхронизацию с Fastify бэкендом и Soft Negative Stock списаниями
- * Норматив размера: <= 500 строк.
+ * Норматив размера: <= 500 строк (Мандат 8b).
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -22,6 +22,9 @@ import { useVisitStore } from "../../store/visitStore";
 import { useDraftStore } from "../../store/patientStore";
 import { denteQueryClient } from "../../lib/queryClient";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import {
+	safeLocalStorageGetItem, safeLocalStorageRemoveItem, safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import {
 	applyExpressPerioPreset, applyLowerJawNormPreset, applyPsrSextantCode, applyUpperJawNormPreset,
 	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset, calculatePsrSextants, computePsrSummary,
@@ -117,15 +120,13 @@ export function usePerioStudioState({
 		setTeeth: setTeethWithPsrSync, setSelectedToothNum, setSelectedSiteKey,
 	});
 
-	// Zero-Leak Draft Invariant: полный сброс черновика к дефолту и очистка кэша
+	// Zero-Leak Draft Invariant (Мандат 8d / 8zq, 8bn / DEF-PERIO-05): полный сброс черновика к дефолту и очистка кэша
 	const handleClose = useCallback(() => {
 		clearTimers();
 		const cleanPatientId = patientId?.trim();
 		if (cleanPatientId) {
-			try {
-				localStorage.removeItem(`dente_perio_draft_v2_${cleanPatientId}`);
-				localStorage.removeItem(`dente_perio_draft_${cleanPatientId}`);
-			} catch { /* safe */ }
+			safeLocalStorageRemoveItem(`dente_perio_draft_v2_${cleanPatientId}`);
+			safeLocalStorageRemoveItem(`dente_perio_draft_${cleanPatientId}`);
 		}
 		try {
 			useDraftStore.getState().resetDraft();
@@ -166,19 +167,15 @@ export function usePerioStudioState({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, isModal, handleClose]);
 
-	// Debounced Draft Autosave — сохранение с дебаунсом 600мс в v2
+	// Debounced Draft Autosave (Мандат 8e / DEF-PERIO-03) — сохранение с дебаунсом 600мс в v2
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
 		if (!cleanPatientId) return;
 		const timer = setTimeout(() => {
-			try {
-				localStorage.setItem(
-					`dente_perio_draft_v2_${cleanPatientId}`,
-					JSON.stringify({ teeth, screeningMap, selectedProtocolId, updatedAt: new Date().toISOString() }),
-				);
-			} catch (e) {
-				console.warn("[PerioStudio] Failed to autosave draft to localStorage:", e);
-			}
+			safeLocalStorageSetItem(
+				`dente_perio_draft_v2_${cleanPatientId}`,
+				JSON.stringify({ teeth, screeningMap, selectedProtocolId, updatedAt: new Date().toISOString() }),
+			);
 		}, 600);
 		return () => clearTimeout(timer);
 	}, [patientId, teeth, screeningMap, selectedProtocolId]);
@@ -190,8 +187,8 @@ export function usePerioStudioState({
 		const safePatientId = cleanPatientId;
 		let isCancelled = false;
 		try {
-			const draftV2 = localStorage.getItem(`dente_perio_draft_v2_${safePatientId}`);
-			const draftV1 = !draftV2 ? localStorage.getItem(`dente_perio_draft_${safePatientId}`) : null;
+			const draftV2 = safeLocalStorageGetItem(`dente_perio_draft_v2_${safePatientId}`);
+			const draftV1 = !draftV2 ? safeLocalStorageGetItem(`dente_perio_draft_${safePatientId}`) : null;
 			const draft = draftV2 || draftV1;
 			if (draft) {
 				const parsed = JSON.parse(draft);
@@ -199,7 +196,7 @@ export function usePerioStudioState({
 				if (parsed.screeningMap && typeof parsed.screeningMap === "object") setScreeningMap(parsed.screeningMap);
 				if (parsed.selectedProtocolId) setSelectedProtocolId(parsed.selectedProtocolId);
 			} else {
-				const cached = localStorage.getItem(`dente_perio_cache_${safePatientId}`);
+				const cached = safeLocalStorageGetItem(`dente_perio_cache_${safePatientId}`);
 				if (cached) {
 					const parsed = JSON.parse(cached);
 					if (Array.isArray(parsed.teeth) && parsed.teeth.length > 0) setTeeth(normalizePerioDentition(parsed.teeth));
@@ -373,16 +370,12 @@ export function usePerioStudioState({
 		const syncPerioState = () => {
 			const cleanPatientId = patientId?.trim();
 			if (cleanPatientId) {
-				try {
-					localStorage.removeItem(`dente_perio_draft_v2_${cleanPatientId}`);
-					localStorage.removeItem(`dente_perio_draft_${cleanPatientId}`);
-					localStorage.setItem(
-						`dente_perio_cache_${cleanPatientId}`,
-						JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }),
-					);
-				} catch (e) {
-					console.warn("[PerioStudio] Failed to write cache:", e);
-				}
+				safeLocalStorageRemoveItem(`dente_perio_draft_v2_${cleanPatientId}`);
+				safeLocalStorageRemoveItem(`dente_perio_draft_${cleanPatientId}`);
+				safeLocalStorageSetItem(
+					`dente_perio_cache_${cleanPatientId}`,
+					JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() }),
+				);
 			}
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);

@@ -508,17 +508,6 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		const baseLot = lotNumber || generateSystemSurgeryLot(toothFdi, dateIso);
 
 		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
-				detail: {
-					operationTitle: scenarioConfig.titleRu,
-					toothFdi,
-					teeth: teethToProcess,
-					materials: scenarioConfig.standardMaterials,
-					isOverdraft: Boolean(inventoryOverdraftActive),
-					lotNumber: baseLot,
-					timestamp: dateIso,
-				},
-			}));
 			window.dispatchEvent(new CustomEvent("dente:cart-add-items", {
 				detail: {
 					items: teethToProcess.map((t) => ({
@@ -583,6 +572,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							membraneUsed: selectedMembrane,
 							sutureMaterial: selectedSuture,
 							operationPriceRub: financials.operationPriceRub,
+							operationPriceKopecks: financials.operationPriceKopecks.toString(),
 							notes: diaryText,
 							idempotencyKey: idempKey,
 						});
@@ -619,6 +609,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							membraneUsed: selectedMembrane,
 							sutureMaterial: selectedSuture,
 							operationPriceRub: financials.operationPriceRub,
+							operationPriceKopecks: financials.operationPriceKopecks.toString(),
 							notes: diaryText,
 							idempotencyKey: idempKey,
 						});

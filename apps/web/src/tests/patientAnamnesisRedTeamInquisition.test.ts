@@ -92,24 +92,22 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 			assert.strictEqual(isNegativeAllergyStatement("Отек Квинке на лидокаин"), false);
 		});
 
-		it("VisitHeaderMonolith and VisitView render clean allergy badge branch when badges are empty", () => {
-			const monolithPath = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/PatientAlertBadgesBar.tsx"))
-				? path.join(webSrc, "components/visit/view/visitHeader/PatientAlertBadgesBar.tsx")
-				: path.join(webSrc, "components/visit/view/VisitHeaderMonolith.tsx");
-			const monolithContent = fs.readFileSync(monolithPath, "utf-8");
+		it("PatientAvatarAndInfoSection and VisitView render clean allergy badge branch when badges are empty", () => {
+			const avatarSectionPath = path.join(webSrc, "components/visit/view/visitHeaderModules/PatientAvatarAndInfoSection.tsx");
+			const sectionContent = fs.readFileSync(avatarSectionPath, "utf-8");
 
-			// Check VisitHeaderMonolith / PatientAlertBadgesBar
+			// Check PatientAvatarAndInfoSection
 			assert.ok(
-				monolithContent.includes('data-testid="visit-focus-allergy-alert"'),
-				"VisitHeaderMonolith must have alert allergy badge",
+				sectionContent.includes('data-testid="visit-focus-allergy-alert"'),
+				"PatientAvatarAndInfoSection must have alert allergy badge",
 			);
 			assert.ok(
-				monolithContent.includes('data-testid="visit-focus-allergy-clean"'),
-				"VisitHeaderMonolith must have clean allergy badge branch",
+				sectionContent.includes('data-testid="visit-focus-allergy-clean"'),
+				"PatientAvatarAndInfoSection must have clean allergy badge branch",
 			);
 			assert.ok(
-				monolithContent.includes("Аллергии не выявлены"),
-				"VisitHeaderMonolith must render 'Аллергии не выявлены'",
+				sectionContent.includes("Аллергии не выявлены"),
+				"PatientAvatarAndInfoSection must render 'Аллергии не выявлены'",
 			);
 		});
 

@@ -41,18 +41,20 @@ export interface SurgicalServiceItem {
 
 export type SurgicalService804n = SurgicalServiceItem;
 
-export const surgicalServiceItemSchema = z.object({
-	code: z.string().min(1),
-	nameRu: z.string().min(1),
-	name: z.string().min(1),
-	priceRub: z.number().nonnegative(),
-	quantity: z.number().positive().default(1),
-	suggestedPriceRub: z.number().nonnegative().optional(),
-	toothNumber: z.number().int().optional(),
-	stageKind: z.string().optional(),
-	isPrimary: z.boolean().optional(),
-	priceKopecks: z.union([z.bigint(), z.number()]).optional(),
-});
+export const surgicalServiceItemSchema = z
+	.object({
+		code: z.string().min(1),
+		nameRu: z.string().min(1),
+		name: z.string().min(1),
+		priceRub: z.number().nonnegative(),
+		quantity: z.number().positive().default(1),
+		suggestedPriceRub: z.number().nonnegative().optional(),
+		toothNumber: z.number().int().optional(),
+		stageKind: z.string().optional(),
+		isPrimary: z.boolean().optional(),
+		priceKopecks: z.union([z.bigint(), z.number()]).optional(),
+	})
+	.strict();
 
 export const surgicalService804nSchema = surgicalServiceItemSchema;
 
@@ -63,12 +65,14 @@ export interface SurgicalMaterialItem {
 	readonly isWarehouseCritical: boolean;
 }
 
-export const surgicalMaterialItemSchema = z.object({
-	name: z.string().min(1),
-	unit: z.string().min(1),
-	quantity: z.number().positive(),
-	isWarehouseCritical: z.boolean().default(false),
-});
+export const surgicalMaterialItemSchema = z
+	.object({
+		name: z.string().min(1),
+		unit: z.string().min(1),
+		quantity: z.number().positive(),
+		isWarehouseCritical: z.boolean().default(false),
+	})
+	.strict();
 
 export interface SurgicalOperationNorm {
 	readonly id: string;
@@ -92,27 +96,29 @@ export interface SurgicalOperationNorm {
 	readonly requiredMaterials: readonly SurgicalMaterialItem[];
 }
 
-export const surgicalOperationNormSchema = z.object({
-	id: z.string().min(1),
-	title: z.string().min(1),
-	shortBadge: z.string().min(1),
-	category: surgicalOperationCategorySchema,
-	icd10: z.string().min(1),
-	icd10Label: z.string().min(1),
-	serviceCode: z.string().optional(),
-	serviceSubcode: z.string().optional(),
-	serviceTitle: z.string().optional(),
-	code804n: z.string().optional(),
-	code804nSubcode: z.string().optional(),
-	service804nTitle: z.string().optional(),
-	defaultToothFdi: z.number().int().optional(),
-	standardProtocolTextRu: z.string().min(1),
-	anesthesiaDefaultRu: z.string().min(1),
-	postOpRecommendationsRu: z.string().min(1),
-	catalogServices: z.array(surgicalServiceItemSchema).optional(),
-	order804nServices: z.array(surgicalServiceItemSchema).optional(),
-	requiredMaterials: z.array(surgicalMaterialItemSchema),
-});
+export const surgicalOperationNormSchema = z
+	.object({
+		id: z.string().min(1),
+		title: z.string().min(1),
+		shortBadge: z.string().min(1),
+		category: surgicalOperationCategorySchema,
+		icd10: z.string().min(1),
+		icd10Label: z.string().min(1),
+		serviceCode: z.string().optional(),
+		serviceSubcode: z.string().optional(),
+		serviceTitle: z.string().optional(),
+		code804n: z.string().optional(),
+		code804nSubcode: z.string().optional(),
+		service804nTitle: z.string().optional(),
+		defaultToothFdi: z.number().int().optional(),
+		standardProtocolTextRu: z.string().min(1),
+		anesthesiaDefaultRu: z.string().min(1),
+		postOpRecommendationsRu: z.string().min(1),
+		catalogServices: z.array(surgicalServiceItemSchema).optional(),
+		order804nServices: z.array(surgicalServiceItemSchema).optional(),
+		requiredMaterials: z.array(surgicalMaterialItemSchema),
+	})
+	.strict();
 
 /**
  * Статус мягкого овердрафта склада (Мандат 8e):
@@ -126,13 +132,15 @@ export interface SurgicalWarehouseOverdraftStatus {
 	readonly canProceed: true;
 }
 
-export const surgicalWarehouseOverdraftStatusSchema = z.object({
-	hasOverdraft: z.boolean(),
-	warningRu: z.string(),
-	detailsRu: z.string(),
-	pendingItems: z.array(z.string()),
-	canProceed: z.literal(true),
-});
+export const surgicalWarehouseOverdraftStatusSchema = z
+	.object({
+		hasOverdraft: z.boolean(),
+		warningRu: z.string(),
+		detailsRu: z.string(),
+		pendingItems: z.array(z.string()),
+		canProceed: z.literal(true),
+	})
+	.strict();
 
 export type MischBoneDensity = "D1" | "D2" | "D3" | "D4" | "D5";
 export type ImplantCapKind = "fdm" | "plug";
@@ -179,45 +187,47 @@ export interface FastImplantPassportData {
 	readonly notes?: string | undefined;
 }
 
-export const fastImplantPassportDataSchema = z.object({
-	passportId: z.string().optional(),
-	toothFdi: permanentToothNumberFdiSchema,
-	brand: z.string().min(1),
-	model: z.string().min(1),
-	catalogArticle: z.string().optional(),
-	diameterMm: z.number().positive(),
-	lengthMm: z.number().positive(),
-	torqueNcm: z.number().positive(),
-	isqDay0: z.number().int().positive().optional(),
-	boneDensity: z.enum(["D1", "D2", "D3", "D4", "D5"]),
-	capType: z.enum(["fdm", "plug"]).optional(),
-	lotNumber: z.string().optional(),
-	serialNumber: z.string().optional(),
-	dateIso: z.string().optional(),
-	patientName: z.string().optional(),
-	patientId: z.string().optional(),
-	doctorName: z.string().optional(),
-	doctorId: z.string().optional(),
-	isWarehouseOverdraft: z.boolean().optional(),
-	inventoryItemId: z.string().optional(),
-	expirationDate: z.string().optional(),
-	operationPriceRub: z.number().optional(),
-	implantCostRub: z.number().optional(),
-	consumablesCostRub: z.number().optional(),
-	doctorGrossMarginRub: z.number().optional(),
-	netDoctorIncomeRub: z.number().optional(),
-	operationPriceKopecks: z.union([z.bigint(), z.number()]).optional(),
-	implantCostKopecks: z.union([z.bigint(), z.number()]).optional(),
-	consumablesCostKopecks: z.union([z.bigint(), z.number()]).optional(),
-	doctorGrossMarginKopecks: z.union([z.bigint(), z.number()]).optional(),
-	netDoctorIncomeKopecks: z.union([z.bigint(), z.number()]).optional(),
-	isImmediateLoadingFeasible: z.boolean().optional(),
-	osteointegrationExpectedDate: z.string().optional(),
-	boneGraftMaterial: z.string().optional(),
-	membraneUsed: z.string().optional(),
-	sutureMaterial: z.string().optional(),
-	notes: z.string().optional(),
-});
+export const fastImplantPassportDataSchema = z
+	.object({
+		passportId: z.string().optional(),
+		toothFdi: permanentToothNumberFdiSchema,
+		brand: z.string().min(1),
+		model: z.string().min(1),
+		catalogArticle: z.string().optional(),
+		diameterMm: z.number().positive(),
+		lengthMm: z.number().positive(),
+		torqueNcm: z.number().positive(),
+		isqDay0: z.number().int().positive().optional(),
+		boneDensity: z.enum(["D1", "D2", "D3", "D4", "D5"]),
+		capType: z.enum(["fdm", "plug"]).optional(),
+		lotNumber: z.string().optional(),
+		serialNumber: z.string().optional(),
+		dateIso: z.string().optional(),
+		patientName: z.string().optional(),
+		patientId: z.string().optional(),
+		doctorName: z.string().optional(),
+		doctorId: z.string().optional(),
+		isWarehouseOverdraft: z.boolean().optional(),
+		inventoryItemId: z.string().optional(),
+		expirationDate: z.string().optional(),
+		operationPriceRub: z.number().optional(),
+		implantCostRub: z.number().optional(),
+		consumablesCostRub: z.number().optional(),
+		doctorGrossMarginRub: z.number().optional(),
+		netDoctorIncomeRub: z.number().optional(),
+		operationPriceKopecks: z.union([z.bigint(), z.number()]).optional(),
+		implantCostKopecks: z.union([z.bigint(), z.number()]).optional(),
+		consumablesCostKopecks: z.union([z.bigint(), z.number()]).optional(),
+		doctorGrossMarginKopecks: z.union([z.bigint(), z.number()]).optional(),
+		netDoctorIncomeKopecks: z.union([z.bigint(), z.number()]).optional(),
+		isImmediateLoadingFeasible: z.boolean().optional(),
+		osteointegrationExpectedDate: z.string().optional(),
+		boneGraftMaterial: z.string().optional(),
+		membraneUsed: z.string().optional(),
+		sutureMaterial: z.string().optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 
 export interface StandardImplantationParams {
 	readonly toothFdi?: number | undefined;
@@ -232,18 +242,20 @@ export interface StandardImplantationParams {
 	readonly postOpXray?: boolean | undefined;
 }
 
-export const standardImplantationParamsSchema = z.object({
-	toothFdi: z.number().int().optional(),
-	brand: z.string().optional(),
-	model: z.string().optional(),
-	diameterMm: z.number().positive().optional(),
-	lengthMm: z.number().positive().optional(),
-	torqueNcm: z.number().positive().optional(),
-	isq: z.number().int().positive().optional(),
-	capType: z.enum(["fdm", "plug"]).optional(),
-	sutureMaterial: z.string().optional(),
-	postOpXray: z.boolean().optional(),
-});
+export const standardImplantationParamsSchema = z
+	.object({
+		toothFdi: z.number().int().optional(),
+		brand: z.string().optional(),
+		model: z.string().optional(),
+		diameterMm: z.number().positive().optional(),
+		lengthMm: z.number().positive().optional(),
+		torqueNcm: z.number().positive().optional(),
+		isq: z.number().int().positive().optional(),
+		capType: z.enum(["fdm", "plug"]).optional(),
+		sutureMaterial: z.string().optional(),
+		postOpXray: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * Zod-схема создания протокола операции (Форма 043/у)
@@ -265,6 +277,7 @@ export const createSurgicalProtocolSchema = z
 		isOverdraftActive: z.boolean().default(false),
 		notes: z.string().optional().nullable(),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		const isImplant =
 			data.normId.toLowerCase().includes("implant") ||
@@ -305,22 +318,24 @@ export type CreateSurgicalProtocolInput = z.infer<typeof createSurgicalProtocolS
  * Zod-схема быстрого 1-клик списания расходников у стоматологического кресла (Мандаты 8e, 8s, 8n).
  * Для карпул анестетиков — отходы Класса Б (СанПиН 3.3686-21) в 1 клик медсестрой без комиссий.
  */
-export const surgicalQuickDeductSchema = z.object({
-	visitId: z.string().uuid().optional().nullable(),
-	bundleType: z.enum([
-		"surgery",
-		"implant",
-		"sinus_gbr",
-		"surgery_extraction",
-		"surgery_apicoectomy",
-		"anesthesia_carpule",
-	]),
-	toothNumberFdi: z.number().int().min(11).max(85).optional().nullable(),
-	carpulesCount: z.number().int().positive().default(1),
-	drugBrandName: z.string().default("Артикаин 1:100 000"),
-	isNurseAction: z.boolean().default(true),
-	notes: z.string().optional().nullable(),
-});
+export const surgicalQuickDeductSchema = z
+	.object({
+		visitId: z.string().uuid().optional().nullable(),
+		bundleType: z.enum([
+			"surgery",
+			"implant",
+			"sinus_gbr",
+			"surgery_extraction",
+			"surgery_apicoectomy",
+			"anesthesia_carpule",
+		]),
+		toothNumberFdi: z.number().int().min(11).max(85).optional().nullable(),
+		carpulesCount: z.number().int().positive().default(1),
+		drugBrandName: z.string().default("Артикаин 1:100 000"),
+		isNurseAction: z.boolean().default(true),
+		notes: z.string().optional().nullable(),
+	})
+	.strict();
 
 export type SurgicalQuickDeductInput = z.infer<typeof surgicalQuickDeductSchema>;
 
@@ -1317,10 +1332,11 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
  * canProceed ВСЕГДА true — операция врача не блокируется.
  */
 export function evaluateWarehouseOverdraft(
-	materials: readonly SurgicalMaterialItem[],
-	hasWarehouseDelay: boolean,
+	materials: readonly { name: string; isWarehouseCritical?: boolean | undefined }[],
+	hasWarehouseDelay = false,
+	specificDelayedItems?: readonly string[] | undefined,
 ): SurgicalWarehouseOverdraftStatus {
-	if (!hasWarehouseDelay) {
+	if (!hasWarehouseDelay && (!specificDelayedItems || specificDelayedItems.length === 0)) {
 		return {
 			hasOverdraft: false,
 			warningRu: "Склад в норме",
@@ -1330,13 +1346,17 @@ export function evaluateWarehouseOverdraft(
 		};
 	}
 
-	const criticalItems = materials.filter((m) => m.isWarehouseCritical).map((m) => m.name);
+	const pending = specificDelayedItems && specificDelayedItems.length > 0
+		? [...specificDelayedItems]
+		: materials.filter((m) => m.isWarehouseCritical).map((m) => m.name);
+
+	const itemsList = pending.length > 0 ? pending.join(", ") : "расходные материалы";
 
 	return {
 		hasOverdraft: true,
 		warningRu: "Мягкий овердрафт склада: задержка накладной не блокирует операцию.",
-		detailsRu: `Позиции будут списаны с признаком овердрафта: ${criticalItems.join(", ") || "расходные материалы"}. Доктор сохраняет протокол беспрепятственно.`,
-		pendingItems: criticalItems,
+		detailsRu: `Позиции будут списаны с признаком овердрафта: ${itemsList}. Операция не блокируется: списание зафиксировано.`,
+		pendingItems: pending,
 		canProceed: true,
 	};
 }

@@ -40,13 +40,15 @@ const CephalometricAnalysisModal = lazyWithRetry(() =>
 export interface OrthodonticsStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialProtocol?: OrthoProtocolState;
-	readonly onSaveProtocol?: (protocol: OrthoProtocolState, summarySoap: string) => void | Promise<void>;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly doctorName?: string;
-	readonly clinicName?: string;
-	readonly visitId?: string;
+	readonly initialProtocol?: OrthoProtocolState | undefined;
+	readonly onSaveProtocol?: ((protocol: OrthoProtocolState, summarySoap: string) => void | Promise<void>) | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly treatmentPlanId?: string | undefined;
+	readonly totalSetupCostKopecks?: bigint | undefined;
 }
 
 export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = ({
@@ -58,6 +60,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	patientId,
 	doctorName: propDoctorName,
 	visitId,
+	treatmentPlanId,
+	totalSetupCostKopecks,
 }) => {
 	const isDemo = isDemoShowcaseMode();
 	const patientName = (propPatientName && propPatientName.trim()) || (isDemo ? "Смирнова Екатерина Андреевна" : "Пациент не выбран");
@@ -181,6 +185,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			skeletalClass: skeletalClassInfo.skeletalClass,
 			patientId,
 			visitId,
+			treatmentPlanId: treatmentPlanId ?? protocol.treatmentPlanId,
 			onSaveProtocol,
 		});
 
@@ -190,7 +195,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			setProtocol(createDefaultOrthoProtocolState());
 			onClose();
 		}, 400);
-	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, onSaveProtocol, onClose]);
+	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, treatmentPlanId, onSaveProtocol, onClose]);
 
 	const handleCopyText = useCallback((textToCopy: string, successMsg: string) => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -316,6 +321,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					memoText={memoText}
 					onOpenPhotoModal={() => setIsPhotoModalOpen(true)}
 					onOpenCephModal={() => setIsCephModalOpen(true)}
+					totalSetupCostKopecks={totalSetupCostKopecks}
 				/>
 
 				<footer className="ortho-footer">

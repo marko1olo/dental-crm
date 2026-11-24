@@ -25,9 +25,9 @@ export const Dental3dCaliperToast: React.FC<Dental3dCaliperToastProps> = ({
 		<div
 			className="pointer-events-auto fixed md:absolute top-14 md:top-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-md border shadow-lg animate-in fade-in slide-in-from-top-2"
 			style={{
-				backgroundColor: "var(--paper-strong, #090d16)",
-				borderColor: "rgba(245, 158, 11, 0.4)",
-				color: "var(--ink, #f8fafc)",
+				backgroundColor: "var(--paper-strong)",
+				borderColor: "var(--warning-line)",
+				color: "var(--ink)",
 			}}
 			data-testid="caliper-measurement-bar"
 		>

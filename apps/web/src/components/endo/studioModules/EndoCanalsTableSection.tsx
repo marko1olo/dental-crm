@@ -81,7 +81,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 			{/* Анатомическая подсказка топологии Wheeler */}
 			{hasAnatomicalVariation && (
 				<div className="mx-3 mt-3 p-2.5 rounded-xl bg-[var(--warning-soft,rgba(245,158,11,0.1))] border border-[var(--warning,var(--line))] text-xs text-[var(--ink)] flex items-center gap-2" data-testid="endo-anatomical-variation-hint">
-					<AlertTriangle size={15} className="text-[var(--warning,#f59e0b)] shrink-0" />
+					<AlertTriangle size={15} className="text-[var(--warning)] shrink-0" />
 					<span>
 						<strong className="font-semibold">Редкая анатомическая вариация:</strong> для {toothGroup} характерно {expectedCanalsText}. Проверьте КЛКТ.
 					</span>

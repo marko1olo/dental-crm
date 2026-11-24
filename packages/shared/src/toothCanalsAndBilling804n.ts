@@ -7,3 +7,4 @@
  */
 
 export * from "./clinical/toothCanalsBilling/index.js";
+export * from "./clinical/endo/endoBillingAndMaterials.js";

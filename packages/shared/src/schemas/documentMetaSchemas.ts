@@ -236,6 +236,15 @@ export const documentKindBaseMetadata = {
 		requiresVisit: true,
 		requiresPaidRecord: false,
 	},
+	parent_memo: {
+		title: "Памятка родителям",
+		label: "Памятка родителям",
+		actionLabel: "Памятка родителям",
+		group: "visit",
+		amountSource: "none",
+		requiresVisit: false,
+		requiresPaidRecord: false,
+	},
 	bravery_diploma: {
 		title: "Диплом за храбрость",
 		label: "Диплом за храбрость",

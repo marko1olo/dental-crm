@@ -106,7 +106,12 @@ export function registerPassportRoute(app: FastifyInstance) {
 				: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
 
 		const canonicalPassportId = `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`;
-		const baseSite = org?.website?.trim().replace(/\/$/, "") || "https://dente.clinic";
+		const forwardedProto = (request.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim();
+		const proto = forwardedProto || (request.protocol ?? "http");
+		const forwardedHost = (request.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim();
+		const host = forwardedHost || request.headers.host || "localhost:3000";
+		const dynamicOrigin = `${proto}://${host}`;
+		const baseSite = org?.website?.trim().replace(/\/$/, "") || dynamicOrigin;
 		const qrVerificationUrl = `${baseSite}/#/portal/warranty?cert=${canonicalPassportId}`;
 
 		// Безопасное чтение гарантийного сертификата из реестра клиники (GET-запрос без побочных эффектов записи)

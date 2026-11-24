@@ -30,8 +30,10 @@ import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
+import { recordAuditEvent } from "../audit.js";
 import { db } from "../db/client.js";
 import { patientRelationships, patients } from "../db/schema.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const patientRouteParamsSchema = z.object({
 	patientId: z.string().uuid("Некорректный UUID пациента").optional(),
@@ -51,11 +53,35 @@ function resolvePatientId(params: {
 	return params.patientId ?? params.id ?? null;
 }
 
+function resolveRelationRouteParams(params: {
+	patientId?: string | undefined;
+	id?: string | undefined;
+	relationId?: string | undefined;
+}): { patientId: string | null; relationId: string | null } {
+	if (params.patientId) {
+		return {
+			patientId: params.patientId,
+			relationId: params.relationId ?? params.id ?? null,
+		};
+	}
+	if (params.relationId) {
+		return {
+			patientId: params.id ?? null,
+			relationId: params.relationId,
+		};
+	}
+	return {
+		patientId: params.id ?? null,
+		relationId: null,
+	};
+}
+
 function resolveRelationId(params: {
+	patientId?: string | undefined;
 	id?: string | undefined;
 	relationId?: string | undefined;
 }): string | null {
-	return params.relationId ?? params.id ?? null;
+	return resolveRelationRouteParams(params).relationId;
 }
 
 export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
@@ -224,6 +250,17 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const paramsParsed = patientRouteParamsSchema.safeParse(request.params);
 		const patientId = paramsParsed.success
 			? resolvePatientId(paramsParsed.data)
@@ -288,7 +325,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Check for existing relationship edge between this pair
+		// Check for existing relationship edge between this pair (targeted query to prevent OOM)
 		const existingLinks = await db
 			.select({
 				patientId: patientRelationships.patientId,
@@ -296,7 +333,17 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				relationshipType: patientRelationships.relationshipType,
 			})
 			.from(patientRelationships)
-			.where(eq(patientRelationships.organizationId, organizationId));
+			.where(
+				and(
+					eq(patientRelationships.organizationId, organizationId),
+					or(
+						eq(patientRelationships.patientId, patientId),
+						eq(patientRelationships.relatedPatientId, patientId),
+						eq(patientRelationships.patientId, relatedPatientId),
+						eq(patientRelationships.relatedPatientId, relatedPatientId),
+					),
+				),
+			);
 
 		const validation = validateRelationshipLink(
 			patientId,
@@ -370,6 +417,16 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				}
 			}
 
+			await recordAuditEvent({
+				organizationId,
+				actorUserId: request.user?.id ?? null,
+				entityType: "patient_relationship",
+				entityId: inserted.id,
+				action: "relationship_created",
+				reason: `Установлена связь: ${inserted.relationshipType}. Законный представитель: ${inserted.isLegalRepresentative ? "Да" : "Нет"}, Семейный баланс: ${inserted.canSpendFamilyWallet ? "Да" : "Нет"}`,
+				tx,
+			});
+
 			return inserted;
 		});
 
@@ -423,6 +480,17 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const paramsParsed = relationRouteParamsSchema.safeParse(request.params);
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
@@ -431,8 +499,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const patientId = resolvePatientId(paramsParsed.data);
-		const relationId = resolveRelationId(paramsParsed.data);
+		const { patientId, relationId } = resolveRelationRouteParams(paramsParsed.data);
 
 		if (!patientId || !relationId) {
 			return reply.code(400).send({
@@ -452,75 +519,96 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [existing] = await db
-			.select()
-			.from(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					eq(patientRelationships.id, relationId),
-					or(
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.relatedPatientId, patientId),
-					),
-				),
-			)
-			.limit(1);
+		const updates = bodyParsed.data;
 
-		if (!existing) {
+		const updated = await db.transaction(async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						eq(patientRelationships.id, relationId),
+						or(
+							eq(patientRelationships.patientId, patientId),
+							eq(patientRelationships.relatedPatientId, patientId),
+						),
+					),
+				)
+				.limit(1);
+
+			if (!existing) {
+				return null;
+			}
+
+			const isDirect = existing.patientId === patientId;
+			const updatePayload: Partial<typeof patientRelationships.$inferInsert> = {
+				updatedAt: new Date(),
+			};
+
+			if (updates.relationshipType !== undefined) {
+				// Defect 1.4: Direction check ensures relationshipType is not inverted in DB
+				const effectiveType = isDirect
+					? updates.relationshipType
+					: invertRelationshipKind(updates.relationshipType);
+				updatePayload.relationshipType = effectiveType;
+			}
+			if (updates.isLegalRepresentative !== undefined) {
+				updatePayload.isLegalRepresentative = updates.isLegalRepresentative;
+			}
+			if (updates.canViewMedicalRecord !== undefined) {
+				updatePayload.canViewMedicalRecord = updates.canViewMedicalRecord;
+				updatePayload.canViewRecords = updates.canViewMedicalRecord;
+			}
+			if (updates.canSignConsents !== undefined) {
+				updatePayload.canSignConsents = updates.canSignConsents;
+			}
+			if (updates.canSpendFamilyWallet !== undefined) {
+				updatePayload.canSpendFamilyWallet = updates.canSpendFamilyWallet;
+				updatePayload.isPrimaryPayer = updates.canSpendFamilyWallet;
+			}
+			if (updates.documentProofNumber !== undefined) {
+				updatePayload.documentProofNumber = updates.documentProofNumber;
+			}
+			if (updates.spendLimitKopecks !== undefined) {
+				updatePayload.spendLimitKopecks = updates.spendLimitKopecks;
+			}
+			if (updates.notes !== undefined) {
+				updatePayload.notes = updates.notes;
+			}
+
+			const [res] = await tx
+				.update(patientRelationships)
+				.set(updatePayload)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						eq(patientRelationships.id, relationId),
+					),
+				)
+				.returning();
+
+			if (!res) {
+				throw new Error("Failed to update relationship");
+			}
+
+			await recordAuditEvent({
+				organizationId,
+				actorUserId: request.user?.id ?? null,
+				entityType: "patient_relationship",
+				entityId: res.id,
+				action: "relationship_updated",
+				reason: `Обновлены права связи: представитель=${res.isLegalRepresentative}, кошелек=${res.canSpendFamilyWallet}, медзаписи=${res.canViewMedicalRecord}, согласия=${res.canSignConsents}`,
+				tx,
+			});
+
+			return res;
+		});
+
+		if (!updated) {
 			return reply.code(404).send({
 				error: "Not Found",
 				message: "Связь родства не найдена",
-			});
-		}
-
-		const updates = bodyParsed.data;
-		const updatePayload: Partial<typeof patientRelationships.$inferInsert> = {
-			updatedAt: new Date(),
-		};
-
-		if (updates.relationshipType !== undefined) {
-			updatePayload.relationshipType = updates.relationshipType;
-		}
-		if (updates.isLegalRepresentative !== undefined) {
-			updatePayload.isLegalRepresentative = updates.isLegalRepresentative;
-		}
-		if (updates.canViewMedicalRecord !== undefined) {
-			updatePayload.canViewMedicalRecord = updates.canViewMedicalRecord;
-			updatePayload.canViewRecords = updates.canViewMedicalRecord;
-		}
-		if (updates.canSignConsents !== undefined) {
-			updatePayload.canSignConsents = updates.canSignConsents;
-		}
-		if (updates.canSpendFamilyWallet !== undefined) {
-			updatePayload.canSpendFamilyWallet = updates.canSpendFamilyWallet;
-			updatePayload.isPrimaryPayer = updates.canSpendFamilyWallet;
-		}
-		if (updates.documentProofNumber !== undefined) {
-			updatePayload.documentProofNumber = updates.documentProofNumber;
-		}
-		if (updates.spendLimitKopecks !== undefined) {
-			updatePayload.spendLimitKopecks = updates.spendLimitKopecks;
-		}
-		if (updates.notes !== undefined) {
-			updatePayload.notes = updates.notes;
-		}
-
-		const [updated] = await db
-			.update(patientRelationships)
-			.set(updatePayload)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					eq(patientRelationships.id, relationId),
-				),
-			)
-			.returning();
-
-		if (!updated) {
-			return reply.code(500).send({
-				error: "Internal Server Error",
-				message: "Не удалось обновить связь родственников",
 			});
 		}
 
@@ -555,6 +643,17 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const paramsParsed = relationRouteParamsSchema.safeParse(request.params);
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
@@ -563,46 +662,63 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const patientId = resolvePatientId(paramsParsed.data);
-		const relationId = resolveRelationId(paramsParsed.data);
+		const { patientId, relationId } = resolveRelationRouteParams(paramsParsed.data);
 
 		if (!patientId || !relationId) {
 			return reply.code(400).send({
 				error: "Bad Request",
-				message: "Некорректный ID пациента или связи",
+				message: "ID пациента и ID связи обязательны",
 			});
 		}
 
-		const [existing] = await db
-			.select()
-			.from(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					eq(patientRelationships.id, relationId),
-					or(
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.relatedPatientId, patientId),
+		const deleted = await db.transaction(async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						eq(patientRelationships.id, relationId),
+						or(
+							eq(patientRelationships.patientId, patientId),
+							eq(patientRelationships.relatedPatientId, patientId),
+						),
 					),
-				),
-			)
-			.limit(1);
+				)
+				.limit(1);
 
 		if (!existing) {
+				return null;
+			}
+
+			await tx
+				.delete(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						eq(patientRelationships.id, relationId),
+					),
+				);
+
+			await recordAuditEvent({
+				organizationId,
+				actorUserId: request.user?.id ?? null,
+				entityType: "patient_relationship",
+				entityId: relationId,
+				action: "relationship_deleted",
+				reason: `Удалена связь ${existing.relationshipType} между пациентами ${existing.patientId} и ${existing.relatedPatientId}`,
+				tx,
+			});
+
+			return existing;
+		});
+
+		if (!deleted) {
 			return reply.code(404).send({
 				error: "Not Found",
 				message: "Связь родства не найдена",
 			});
 		}
-
-		await db
-			.delete(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					eq(patientRelationships.id, relationId),
-				),
-			);
 
 		return reply.code(200).send({
 			success: true,

@@ -2,30 +2,26 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { VisitActionButtonsToolbar } from "../view/visitHeader/VisitActionButtonsToolbar";
+import { VisitHeaderActionsToolbar } from "../view/visitHeaderModules/VisitHeaderActionsToolbar";
 import { VisitViewHeader } from "../view/VisitViewHeader";
 import { ClinicalSupportModals } from "../view/viewModalsModules/ClinicalSupportModals";
 
 describe("Clinical Modules Seamless Integration Red Team Verification (Inquisitor #4)", () => {
-	it("1. VisitActionButtonsToolbar renders 'Выписать рецепт' button in the '...' dropdown", () => {
+	it("1. VisitHeaderActionsToolbar renders 'Выписать рецепт' button in the '...' dropdown", () => {
 		const html = renderToString(
-			<VisitActionButtonsToolbar
+			<VisitHeaderActionsToolbar
+				activePatient={{ id: "pat-1", fullName: "Семенова Ольга Ивановна" } as any}
 				handleApplySomaticNormQuick={() => {}}
 				handlePrintForm043uFast={() => {}}
 				handlePrintCompletedActFast={() => {}}
 				handlePrintEstimateFast={() => {}}
+				handleOpenLabOrder={() => {}}
 				setIsEmergencyModalOpen={() => {}}
-				shiftDayQueue={{ arrived: 0, inTreatment: 0, awaitingPayment: 0, arrivedPatients: [] }}
-				isQueueLobbyDropdownOpen={false}
-				setIsQueueLobbyDropdownOpen={() => {}}
-				queueLobbyDropdownRef={{ current: null }}
 				handleFinishVisitAction={() => {}}
+				setIsQueueCockpitForced={() => {}}
 				isHeaderMoreMenuOpen={true}
 				setIsHeaderMoreMenuOpen={() => {}}
 				headerMoreMenuRef={{ current: null }}
-				handlePrintInformedConsentFast={() => {}}
-				setIsInformedConsentModalOpen={() => {}}
-				setIsWarrantyModalOpen={() => {}}
 				setIsDoctorShiftModalOpen={() => {}}
 				setIsPriceValidatorModalOpen={() => {}}
 				setIsStagePaymentModalOpen={() => {}}
@@ -35,11 +31,11 @@ describe("Clinical Modules Seamless Integration Red Team Verification (Inquisito
 
 		assert.ok(
 			html.includes('data-testid="visit-more-action-prescription"'),
-			"VisitActionButtonsToolbar must render data-testid='visit-more-action-prescription' in more-actions dropdown",
+			"VisitHeaderActionsToolbar must render data-testid='visit-more-action-prescription' in more-actions dropdown",
 		);
 		assert.ok(
 			html.includes("Выписать рецепт"),
-			"VisitActionButtonsToolbar must display human-readable text 'Выписать рецепт'",
+			"VisitHeaderActionsToolbar must display human-readable text 'Выписать рецепт'",
 		);
 	});
 

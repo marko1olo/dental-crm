@@ -5,9 +5,8 @@
  */
 
 import { useEffect } from "react";
-import { createDefaultOrthoProtocolState, type OrthoProtocolState } from "./orthodonticsCatalogData";
+import { createDefaultOrthoProtocolState, type AngleClass, type OrthoProtocolState, type VerticalBite } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export function useOrthodonticsStudioHydration(
 	patientId: string | undefined,
@@ -27,7 +26,7 @@ export function useOrthodonticsStudioHydration(
 		const fetchProgress = async () => {
 			try {
 				const res = await fetch(`/api/orthodontics/${patientId}/progress`, {
-					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
+					headers: { Accept: "application/json" },
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {
@@ -42,6 +41,13 @@ export function useOrthodonticsStudioHydration(
 						applianceCategory?: "brackets" | "aligners" | "plate";
 						selectedElasticId?: string | null;
 						selectedActionIds?: string[];
+						angleClass?: AngleClass;
+						verticalBite?: VerticalBite;
+						overjetMm?: number;
+						overbitePercent?: number;
+						anbAngle?: number;
+						skeletalClass?: string;
+						treatmentPlanId?: string;
 					};
 					if (!isCancelled) {
 						if (!data || data.hasActiveTreatment === false) {
@@ -55,6 +61,19 @@ export function useOrthodonticsStudioHydration(
 								...(data.applianceCategory ? { applianceCategory: data.applianceCategory } : {}),
 								...(data.selectedElasticId !== undefined ? { selectedElasticId: data.selectedElasticId } : {}),
 								...(Array.isArray(data.selectedActionIds) ? { selectedActionIds: data.selectedActionIds } : {}),
+								...(data.angleClass ? { angleClass: data.angleClass } : {}),
+								...(data.verticalBite ? { verticalBite: data.verticalBite } : {}),
+								...(typeof data.overjetMm === "number" ? { overjetMm: data.overjetMm } : {}),
+								...(typeof data.overbitePercent === "number" ? { overbitePercent: data.overbitePercent } : {}),
+								...(data.treatmentPlanId ? { treatmentPlanId: data.treatmentPlanId } : {}),
+								...(typeof data.anbAngle === "number"
+									? {
+											trgValues: {
+												...(prev.trgValues || {}),
+												anb: data.anbAngle,
+											},
+									  }
+									: {}),
 								...(data.currentAligner
 									? {
 											alignerTracking: {
@@ -92,7 +111,7 @@ export function useOrthodonticsStudioHydration(
 		const fetchCephAnalysis = async () => {
 			try {
 				const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
-					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
+					headers: { Accept: "application/json" },
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {

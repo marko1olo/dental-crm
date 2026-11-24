@@ -3,6 +3,7 @@ import type { SurgicalServiceItem } from "@dental/shared";
 import { VisitSurgeryExtractionBar } from "../VisitSurgeryExtractionBar";
 import { VisitSurgerySinusGbrBar } from "../VisitSurgerySinusGbrBar";
 import { VisitSurgeryImplantBar } from "../VisitSurgeryImplantBar";
+import { VisitSurgeryPerioBar } from "../VisitSurgeryPerioBar";
 import type { useVisitSurgeryState } from "./useVisitSurgeryState";
 
 interface VisitSurgeryCategoryCockpitProps {
@@ -35,6 +36,17 @@ export const VisitSurgeryCategoryCockpit: React.FC<VisitSurgeryCategoryCockpitPr
 			<VisitSurgerySinusGbrBar
 				effectiveTooth={s.effectiveTooth}
 				isClosedSinus={s.selectedNormId === "surgery_sinus_lift_closed"}
+				onApplyProtocolText={(text) => s.setProtocolText(text)}
+				onAddToInvoice={onAddToInvoice}
+			/>
+		);
+	}
+
+	if (s.currentNorm.category === "perio_surgery" || s.currentNorm.category === "emergency") {
+		return (
+			<VisitSurgeryPerioBar
+				effectiveTooth={s.effectiveTooth}
+				norm={s.currentNorm}
 				onApplyProtocolText={(text) => s.setProtocolText(text)}
 				onAddToInvoice={onAddToInvoice}
 			/>

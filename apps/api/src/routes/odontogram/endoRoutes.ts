@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
+	idempotencyKeys,
 	toothStateHistory,
 	toothStates,
 } from "../../db/schema.js";
@@ -30,7 +31,7 @@ function isDbUnavailable(err: unknown): boolean {
 		return String(e);
 	};
 	const msg = collect(err);
-	return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EHOSTUNREACH|password authentication failed|connection refused|failed query/i.test(msg);
+	return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EHOSTUNREACH|password authentication failed|connection refused/i.test(msg);
 }
 
 /**
@@ -75,22 +76,24 @@ export const validApexReadings: ReadonlySet<string> = new Set([
  * Расширенная схема для сохранения эндодонтического протокола каналов зуба
  * Включает машинные инструменты NiTi (WaveOne/ProTaper), ирригацию, апекс-ориентиры, силер и Ca(OH)2.
  */
-export const endoUpsertPayloadSchema = z.object({
-	canals: z.array(endoCanalMeasurementSchema).default([]),
-	irrigation: z.string().trim().max(1000).optional().nullable(),
-	rotarySystem: z.string().trim().max(1000).optional().nullable(),
-	radiologyControl: z.string().trim().max(1000).optional().nullable(),
-	apexLocator: z.string().trim().max(1000).optional().nullable(),
-	notes: z.string().trim().max(2000).optional().nullable(),
-	stageStamp: z.enum(["COMPLETED", "TEMP_CAOH2", "DRAFT"]).optional().nullable().default("COMPLETED"),
-	state: clinicalToothStateSchema.optional(),
-	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
-	visitId: z
-		.string()
-		.optional()
-		.nullable()
-		.transform((v) => (v && UUID_SHAPE.test(v) ? v : null)),
-});
+export const endoUpsertPayloadSchema = z
+	.object({
+		canals: z.array(endoCanalMeasurementSchema).default([]),
+		irrigation: z.string().trim().max(1000).optional().nullable(),
+		rotarySystem: z.string().trim().max(1000).optional().nullable(),
+		radiologyControl: z.string().trim().max(1000).optional().nullable(),
+		apexLocator: z.string().trim().max(1000).optional().nullable(),
+		notes: z.string().trim().max(2000).optional().nullable(),
+		stageStamp: z.enum(["COMPLETED", "TEMP_CAOH2", "DRAFT"]).optional().nullable().default("COMPLETED"),
+		state: clinicalToothStateSchema.optional(),
+		surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+		visitId: z
+			.string()
+			.optional()
+			.nullable()
+			.transform((v) => (v && UUID_SHAPE.test(v) ? v : null)),
+	})
+	.strict();
 
 export type EndoUpsertPayload = z.infer<typeof endoUpsertPayloadSchema>;
 
@@ -334,17 +337,49 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			}
 		}
 
+		// DEF-ENDO-03: Проверка кэша идемпотентности перед тяжелыми мутациями
+		if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
+			try {
+				const [existingIdem] = await db
+					.select({
+						status: idempotencyKeys.status,
+						responseBody: idempotencyKeys.responseBody,
+						responseCode: idempotencyKeys.responseCode,
+					})
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, organizationId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingIdem?.status === "completed" && existingIdem.responseBody) {
+					reply.header("Idempotency-Key", idempotencyKey);
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					request.log?.info?.({ idempotencyKey, patientId, toothNumber }, "Replaying endo upsert from idempotency cache");
+					return reply.code(existingIdem.responseCode || 200).send(existingIdem.responseBody);
+				}
+			} catch (idemErr) {
+				if (!isDbUnavailable(idemErr)) {
+					request.log?.warn?.({ idemErr }, "Failed to query idempotency cache for endo upsert");
+				}
+			}
+		}
+
 		let patientExists: { id: string } | null = null;
-		let dbOffline = false;
 		try {
 			patientExists = await ensurePatientInOrganization(patientId, organizationId);
 		} catch (dbErr) {
 			if (isDbUnavailable(dbErr)) {
-				dbOffline = true;
-				patientExists = { id: patientId };
-			} else {
-				throw dbErr;
+				return reply.code(503).send({
+					error: "ServiceUnavailable",
+					message: "База данных временно недоступна. Параметры корневых каналов не сохранены.",
+				});
 			}
+			throw dbErr;
 		}
 
 		if (!patientExists) {
@@ -432,19 +467,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			updatedAt: now.toISOString(),
 		};
 
-		// Если БД оффлайн — возвращаем аварийный фолбэк
-		if (dbOffline) {
-			const fallbackState = {
-				toothNumber,
-				state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Pulpitis" : "Root_Canal_Treated"),
-				surfaces: parsed.data.surfaces || null,
-				notes: clinicalNotesText,
-				canalMeasurements: sanitizedCanals,
-				clinicalData,
-			};
-			return reply.send({ success: true, ...fallbackState });
-		}
-
 		try {
 			const updated = await db.transaction(async (tx) => {
 				const [existing] = await tx
@@ -491,21 +513,45 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 				const endoReason = `Эндодонтия #${toothNumber} [${sanitizedCanals.length} к.]: ${canalSummary || "обработка и обтурация"}`;
 
-				await tx.insert(toothStateHistory).values({
-					organizationId,
-					patientId,
-					visitId: parsed.data.visitId ?? null,
-					toothNumber,
-					previousState: existing?.state ?? null,
-					newState: targetState,
-					previousSurfaces: existing?.surfaces ?? null,
-					newSurfaces: targetSurfaces,
-					clinicalData: clinicalData,
-					canalMeasurements: enrichedCanals,
-					changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
-					reason: endoReason,
-					changedAt: now,
-				});
+				// DEF-ENDO-03: Проверка Idempotency-Key перед повторной вставкой в toothStateHistory (Мандаты 8bo, 8zp, 8d)
+				let isIdempotencyReplay = false;
+				if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
+					const [existingTxIdem] = await tx
+						.select({
+							status: idempotencyKeys.status,
+							responseBody: idempotencyKeys.responseBody,
+						})
+						.from(idempotencyKeys)
+						.where(
+							and(
+								eq(idempotencyKeys.clinicId, organizationId),
+								eq(idempotencyKeys.key, idempotencyKey),
+							),
+						)
+						.limit(1);
+
+					if (existingTxIdem?.status === "completed" && existingTxIdem.responseBody) {
+						isIdempotencyReplay = true;
+					}
+				}
+
+				if (!isIdempotencyReplay) {
+					await tx.insert(toothStateHistory).values({
+						organizationId,
+						patientId,
+						visitId: parsed.data.visitId ?? null,
+						toothNumber,
+						previousState: existing?.state ?? null,
+						newState: targetState,
+						previousSurfaces: existing?.surfaces ?? null,
+						newSurfaces: targetSurfaces,
+						clinicalData: clinicalData,
+						canalMeasurements: enrichedCanals,
+						changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
+						reason: endoReason,
+						changedAt: now,
+					});
+				}
 
 				// Атомарный Drizzle Upsert без деструктивного delete (Мандат 8bk / SEV-1)
 				const [upsertedRow] = await tx
@@ -550,7 +596,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					notes: finalNotesText,
 				};
 
-				return {
+				const responsePayload = {
 					toothNumber: upsertedRow?.toothNumber ?? toothNumber,
 					state: upsertedRow?.state ?? targetState,
 					surfaces: upsertedRow?.surfaces ?? targetSurfaces,
@@ -558,6 +604,30 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					canalMeasurements: upsertedRow?.canalMeasurements ?? sanitizedCanals,
 					clinicalData: resolvedClinicalData,
 				};
+
+				if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: organizationId,
+							key: idempotencyKey,
+							status: "completed",
+							responseCode: 200,
+							responseBody: { success: true, data: responsePayload, ...responsePayload },
+							lockedAt: now,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseCode: 200,
+								responseBody: { success: true, data: responsePayload, ...responsePayload },
+								lockedAt: now,
+							},
+						});
+				}
+
+				return responsePayload;
 			});
 
 			wsBroker.broadcastToOrganization(organizationId, {
@@ -565,18 +635,13 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 				payload: { patientId, states: [updated] },
 			});
 
-			return reply.send({ success: true, ...updated });
+			return reply.send({ success: true, data: updated, ...updated });
 		} catch (dbErr) {
 			if (isDbUnavailable(dbErr)) {
-				const fallbackState = {
-					toothNumber,
-					state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Pulpitis" : "Root_Canal_Treated"),
-					surfaces: parsed.data.surfaces || null,
-					notes: clinicalNotesText,
-					canalMeasurements: sanitizedCanals,
-					clinicalData,
-				};
-				return reply.send({ success: true, ...fallbackState });
+				return reply.code(503).send({
+					error: "ServiceUnavailable",
+					message: "База данных временно недоступна. Параметры корневых каналов не сохранены.",
+				});
 			}
 			throw dbErr;
 		}

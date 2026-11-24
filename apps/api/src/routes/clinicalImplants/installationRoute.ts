@@ -404,45 +404,22 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				}
 			}
 
-			return {
-				firstInstallationRecord,
-				firstInventoryDeduction,
-				installationResults,
-				allDeductions,
-				primaryFinancials,
+			const primaryInstallation = installationResults[0] ?? firstInstallationRecord;
+			const responsePayload: Record<string, unknown> = {
+				success: true,
+				count: installationResults.length,
+				installation: primaryInstallation,
+				installations: installationResults,
+				inventoryDeduction: firstInventoryDeduction,
+				inventoryDeductions: allDeductions,
+				financials: primaryFinancials,
+				isImmediateLoadingFeasible,
+				evaluatedProtocol: protocol,
+				decisionRationale,
 			};
-		});
 
-		const primaryInstallation = txResult.installationResults[0] ?? txResult.firstInstallationRecord;
-
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "UPDATE_IMPLANT_RECORD",
-			payload: {
-				patientId: effectiveInput.patientId,
-				toothNumberFdi: effectiveInput.toothNumberFdi,
-				teeth: teethToProcess,
-				installationId: txResult.firstInstallationRecord?.id ?? "",
-				inventoryDeduction: txResult.firstInventoryDeduction,
-				financials: txResult.primaryFinancials,
-			},
-		});
-
-		const responsePayload: Record<string, unknown> = {
-			success: true,
-			count: txResult.installationResults.length,
-			installation: primaryInstallation,
-			installations: txResult.installationResults,
-			inventoryDeduction: txResult.firstInventoryDeduction,
-			inventoryDeductions: txResult.allDeductions,
-			financials: txResult.primaryFinancials,
-			isImmediateLoadingFeasible,
-			evaluatedProtocol: protocol,
-			decisionRationale,
-		};
-
-		// Запись в таблицу idempotencyKeys для атомарного кэширования (Мандаты 8bo, 8zp)
-		if (idempotencyKey) {
-			await withTenantCtx(orgId, async (tx) => {
+			// Атомарная фиксация Idempotency-Key СТРОГО внутри основной транзакции tx (Мандаты 8bo, 8zp)
+			if (idempotencyKey) {
 				await tx
 					.insert(idempotencyKeys)
 					.values({
@@ -461,10 +438,31 @@ export function registerInstallationRoute(app: FastifyInstance) {
 							responseCode: 201,
 						},
 					});
-			});
-		}
+			}
 
-		return reply.code(201).send(responsePayload);
+			return {
+				firstInstallationRecord,
+				firstInventoryDeduction,
+				installationResults,
+				allDeductions,
+				primaryFinancials,
+				responsePayload,
+			};
+		});
+
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "UPDATE_IMPLANT_RECORD",
+			payload: {
+				patientId: effectiveInput.patientId,
+				toothNumberFdi: effectiveInput.toothNumberFdi,
+				teeth: teethToProcess,
+				installationId: txResult.firstInstallationRecord?.id ?? "",
+				inventoryDeduction: txResult.firstInventoryDeduction,
+				financials: txResult.primaryFinancials,
+			},
+		});
+
+		return reply.code(201).send(txResult.responsePayload);
 	};
 
 	app.post("/api/clinical/implants/installations", handleInstallation);

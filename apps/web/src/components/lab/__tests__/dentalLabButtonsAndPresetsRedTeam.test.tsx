@@ -16,7 +16,7 @@ describe("Red Team — Dental Lab Buttons, Presets & Action Bar Invariants", () 
 		assert.equal(html.includes("amber-500"), false);
 		assert.equal(html.includes("Быстрые шаблоны ортопедии:"), true);
 		assert.equal(html.includes("dente-btn-pill"), true);
-		assert.equal(html.includes("border-[var(--teal,#0d9488)]"), true);
+		assert.equal(html.includes("border-[var(--primary)]"), true);
 		assert.equal(html.includes('data-testid="lab-preset-btn-zirconia_crown_express"'), true);
 	});
 

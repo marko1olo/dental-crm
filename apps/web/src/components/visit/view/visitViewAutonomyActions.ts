@@ -101,9 +101,10 @@ export function executeApplySomaticNormAutonomy({
 		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
-		const currentObj = visitNoteForm?.objectiveStatus || "";
+		const currentObj = visitNoteForm?.objectiveStatus || visitNoteForm?.objectiveInspection || "";
 		if (!currentObj) {
 			updateVisitNoteField("objectiveStatus", objNorm);
+			updateVisitNoteField("objectiveInspection", objNorm);
 		}
 	}
 	if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {

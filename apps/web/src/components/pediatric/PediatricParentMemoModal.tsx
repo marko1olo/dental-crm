@@ -16,6 +16,7 @@ import { PediatricParentMemoFooter } from "./parentMemo/PediatricParentMemoFoote
 export interface PediatricParentMemoModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	patientId?: string | undefined;
 	patientName?: string | undefined;
 	patientPhone?: string | undefined;
 	patientAgeYears?: number | undefined;
@@ -33,6 +34,7 @@ export interface PediatricParentMemoModalProps {
 export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
 	patientName = "Юный пациент",
 	patientPhone,
 	patientAgeYears = 7,
@@ -61,30 +63,77 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 		return buildParentMemoText({ patientName, patientAgeYears, clinicName, doctorName, frankl, hasPulpotomy, pulpotomyTooth, hasFissureSealing, parsedFissureTeeth: parsedFissure, hasSilvering, parsedSilveringTeeth: parsedSilvering, customNotes, hasAnesthesia });
 	}, [customNotes, doctorName, clinicName, fissureTeeth, frankl, hasAnesthesia, hasFissureSealing, hasPulpotomy, hasSilvering, patientAgeYears, patientName, pulpotomyTooth, silveringTeeth]);
 
+	const persistParentMemo = useCallback(async () => {
+		if (!patientId || !patientId.trim()) return;
+		const idempotencyKey =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `parent-memo-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+		try {
+			const res = await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/parent-memo`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				},
+				credentials: "include",
+				body: JSON.stringify({
+					patientName,
+					patientPhone,
+					patientAgeYears,
+					doctorName,
+					clinicName,
+					clinicPhone,
+					franklRating: frankl,
+					hasAnesthesia,
+					hasPulpotomy,
+					pulpotomyTooth: hasPulpotomy ? pulpotomyTooth : undefined,
+					hasFissureSealing,
+					fissureTeeth: hasFissureSealing ? fissureTeeth : undefined,
+					hasSilvering,
+					silveringTeeth: hasSilvering ? silveringTeeth : undefined,
+					customNotes: customNotes.trim() ? customNotes : undefined,
+					memoText,
+					issuedDateIso: new Date().toISOString(),
+				}),
+			});
+			if (!res.ok) {
+				console.warn("[parent-memo] Server returned error saving parent memo:", res.status);
+				showToast("Памятка напечатана локально (сервер временно недоступен)", "info");
+			}
+		} catch (err) {
+			console.warn("[parent-memo] Failed to persist parent memo:", err);
+			showToast("Памятка напечатана локально (сервер временно недоступен)", "info");
+		}
+	}, [patientId, patientName, patientPhone, patientAgeYears, doctorName, clinicName, clinicPhone, frankl, hasAnesthesia, hasPulpotomy, pulpotomyTooth, hasFissureSealing, fissureTeeth, hasSilvering, silveringTeeth, customNotes, memoText]);
+
 	const handleCopy = useCallback(() => {
 		navigator.clipboard.writeText(memoText);
 		showToast("Текст памятки скопирован в буфер обмена", "success");
 	}, [memoText]);
 
 	const handleWhatsApp = useCallback(() => {
+		void persistParentMemo();
 		const cleanPhone = (patientPhone || "").replace(/\D/g, "");
 		const encoded = encodeURIComponent(memoText);
 		const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
 		if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
 		showToast("Памятка открыта для отправки в WhatsApp!", "success");
-	}, [memoText, patientPhone]);
+	}, [memoText, patientPhone, persistParentMemo]);
 
 	const handleTelegram = useCallback(() => {
+		void persistParentMemo();
 		const encoded = encodeURIComponent(memoText);
 		const url = `https://t.me/share/url?url=&text=${encoded}`;
 		if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
 		showToast("Памятка подготовлена для отправки в Telegram!", "success");
-	}, [memoText]);
+	}, [memoText, persistParentMemo]);
 
 	const handlePrint = useCallback(() => {
+		void persistParentMemo();
 		printParentMemo({ patientName, memoText, clinicName, doctorName, clinicPhone });
 		if (onApplyFrankl) onApplyFrankl(frankl);
-	}, [clinicName, clinicPhone, doctorName, frankl, memoText, onApplyFrankl, patientName]);
+	}, [clinicName, clinicPhone, doctorName, frankl, memoText, onApplyFrankl, patientName, persistParentMemo]);
 
 	if (!isOpen) return null;
 

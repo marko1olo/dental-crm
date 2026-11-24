@@ -23,6 +23,8 @@ import {
 	PEDIATRIC_BOTTOM_TEETH,
 	MIXED_TOP_TEETH,
 	MIXED_BOTTOM_TEETH,
+	ADULT_TOP_TEETH,
+	ADULT_BOTTOM_TEETH,
 } from "../odontogram/ToothChart";
 import { PediatricTeethHeader } from "./teethChart/PediatricTeethHeader";
 import { PediatricTeethMobileQuadrant } from "./teethChart/PediatricTeethMobileQuadrant";
@@ -56,7 +58,11 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	const q8 = useMemo(() => isPermanent ? PERMANENT_LOWER_RIGHT : isMixed ? [PERMANENT_SIX_TEETH[46], ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT, [isMixed, isPermanent]);
 
 	const teethData: ToothData[] = useMemo(() => {
-		const numbers = isMixed ? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH] : isPermanent ? [] : [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH];
+		const numbers = isMixed
+			? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
+			: isPermanent
+				? [...ADULT_TOP_TEETH, ...ADULT_BOTTOM_TEETH]
+				: [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH];
 		return numbers.map((toothNumber) => ({
 			toothNumber,
 			state: (toothFindings[toothNumber] || "Healthy") as ToothState,

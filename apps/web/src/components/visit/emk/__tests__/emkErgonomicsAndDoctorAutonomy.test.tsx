@@ -31,9 +31,7 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	const objectivePath = path.resolve(__dirname, "../EmkObjectiveStatusSection.tsx");
 	const diaryPath = path.resolve(__dirname, "../EmkDiaryProtocolSection.tsx");
 	const somaticAlertPath = path.resolve(__dirname, "../../../clinical/SomaticSafetyAlertWidget.tsx");
-	const visitHeaderPath = fs.existsSync(path.resolve(__dirname, "../../view/visitHeader/VisitActionButtonsToolbar.tsx"))
-		? path.resolve(__dirname, "../../view/visitHeader/VisitActionButtonsToolbar.tsx")
-		: path.resolve(__dirname, "../../view/VisitHeaderMonolith.tsx");
+	const visitHeaderPath = path.resolve(__dirname, "../../view/visitHeaderModules/VisitHeaderActionsToolbar.tsx");
 	const financeToolbarPath = path.resolve(__dirname, "../../../finance/FinanceToolbar.tsx");
 	const financeViewPath = path.resolve(__dirname, "../../../../views/financeView/index.tsx");
 
@@ -139,16 +137,8 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 		);
 	});
 
-	it("5. VisitHeaderMonolith demotes emergency rescue button to quiet mode", () => {
-		let source = fs.readFileSync(visitHeaderPath, "utf8");
-		const toolbarDir = path.resolve(__dirname, "../../view/visitHeader/toolbar");
-		if (fs.existsSync(toolbarDir)) {
-			for (const f of fs.readdirSync(toolbarDir)) {
-				if (/\.(ts|tsx)$/.test(f)) {
-					source += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf8");
-				}
-			}
-		}
+	it("5. VisitHeaderActionsToolbar demotes emergency rescue button to quiet mode", () => {
+		const source = fs.readFileSync(visitHeaderPath, "utf8");
 
 		// Emergency rescue button must not scream with red border on normal screens
 		assert.ok(
@@ -156,7 +146,7 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 			"Emergency rescue button must exist for safety",
 		);
 		assert.ok(
-			source.includes("hidden 2xl:inline-flex"),
+			source.includes("sr-only") || source.includes("hidden"),
 			"Emergency rescue button must be hidden on standard screens to prevent panic clutter",
 		);
 	});

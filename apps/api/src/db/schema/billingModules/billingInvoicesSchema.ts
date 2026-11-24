@@ -168,6 +168,9 @@ export const pricelistDoctorPayrolls = pgTable(
 		serviceCode: text("service_code").notNull(),
 		serviceName: text("service_name").notNull(),
 		priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
+		priceKopecks: bigint("price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		doctorPayrollPercent: numeric("doctor_payroll_percent", {
 			precision: 5,
 			scale: 2,
@@ -178,10 +181,16 @@ export const pricelistDoctorPayrolls = pgTable(
 			precision: 10,
 			scale: 2,
 		}).notNull(),
+		doctorPayrollKopecks: bigint("doctor_payroll_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		clinicMarginRub: numeric("clinic_margin_rub", {
 			precision: 10,
 			scale: 2,
 		}).notNull(),
+		clinicMarginKopecks: bigint("clinic_margin_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -203,31 +212,25 @@ export const ndflTaxCalculators = pgTable(
 			.references(() => organizations.id),
 		patientId: uuid("patient_id"),
 		taxYear: integer("tax_year").notNull(),
-		totalMedExpensesRub: numeric("total_med_expenses_rub", {
-			precision: 12,
-			scale: 2,
+		totalMedExpensesKopecks: bigint("total_med_expenses_kopecks", {
+			mode: "bigint",
 		}),
-		deductionAmountRub: numeric("deduction_amount_rub", {
-			precision: 12,
-			scale: 2,
+		deductionAmountKopecks: bigint("deduction_amount_kopecks", {
+			mode: "bigint",
 		}),
-		ndflReturnRub: numeric("ndfl_return_rub", { precision: 12, scale: 2 }),
+		ndflReturnKopecks: bigint("ndfl_return_kopecks", { mode: "bigint" }),
 		/** Сумма по коду 1 (Обычное лечение, лимит социального вычета 150 000 ₽) */
-		code1AmountRub: numeric("code1_amount_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
+		code1AmountKopecks: bigint("code1_amount_kopecks", {
+			mode: "bigint",
 		})
 			.notNull()
-			.default(0),
+			.default(sql`0`),
 		/** Сумма по коду 2 (Дорогостоящее лечение: имплантация, костная пластика — вычет со всей суммы без ограничений!) */
-		code2AmountRub: numeric("code2_amount_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
+		code2AmountKopecks: bigint("code2_amount_kopecks", {
+			mode: "bigint",
 		})
 			.notNull()
-			.default(0),
+			.default(sql`0`),
 		calculatedAt: timestamp("calculated_at", {
 			withTimezone: true,
 		}).defaultNow(),

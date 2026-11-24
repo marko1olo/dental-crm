@@ -4,7 +4,6 @@
  * Autonomy, 1-click somatic status, passive safety warnings, clean Latin SOAP diary and live Fastify sync.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	DENTAL_ANESTHETICS,
 	type AnestheticDrugId,
@@ -170,6 +169,9 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 	if (isEpinephrineOverdose) {
 		warnings.push(`Превышен кардиоваскулярный лимит адреналина (${injectedEpinephrineMg.toFixed(3)} мг > ${maxSafeEpinephrineMg} мг)`);
 	}
+	if (input.isPregnantOrLactating) {
+		warnings.push("Беременность / лактация: рекомендован Артикаин 1:200 000 с минимальным вазоконстриктором");
+	}
 	if (input.techniqueId?.includes("mandibular") && input.aspirationNegativeConfirmed === false) {
 		warnings.push("Аспирационная проба обязательна при проводниковой анестезии");
 	}
@@ -312,8 +314,8 @@ export async function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): 
 			headers: {
 				"Content-Type": "application/json",
 				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-				...denteAdminSecretRequestHeaders(),
 			},
+			credentials: "include",
 			body: JSON.stringify(payload),
 		});
 	} catch (err) {

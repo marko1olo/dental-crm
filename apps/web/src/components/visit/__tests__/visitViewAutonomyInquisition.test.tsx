@@ -357,20 +357,15 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(visitViewSource).toContain("handleOpenLabOrder");
 		expect(visitViewSource).toContain('"dente-open-lab-order-modal"');
 
-		// VisitHeaderMonolith has matching test-ids and button/dropdown actions
-		const toolbarDir = path.resolve(__dirname, "../view/visitHeader/toolbar");
-		const headerMonolithPath = fs.existsSync(path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx"))
-			? path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx")
-			: path.resolve(__dirname, "../view/VisitHeaderMonolith.tsx");
-		const headerMonolithSource = [
-			fs.existsSync(headerMonolithPath) ? fs.readFileSync(headerMonolithPath, "utf8") : "",
-			fs.existsSync(toolbarDir)
-				? fs.readdirSync(toolbarDir).map((f) => fs.readFileSync(path.join(toolbarDir, f), "utf8")).join("\n")
-				: "",
-		].join("\n");
-		expect(headerMonolithSource).toContain('data-testid="btn-visit-lab-order-fast"');
-		expect(headerMonolithSource).toContain('data-testid="visit-more-action-lab-order"');
-		expect(headerMonolithSource).toContain("onOpenLabOrderModal");
+		// Canonical VisitViewHeader modules have matching test-ids and button/dropdown actions
+		const headerModulesDir = path.resolve(__dirname, "../view/visitHeaderModules");
+		const headerModuleFiles = fs.readdirSync(headerModulesDir);
+		const headerSource = headerModuleFiles
+			.map((f) => fs.readFileSync(path.join(headerModulesDir, f), "utf8"))
+			.join("\n");
+		expect(headerSource).toContain('data-testid="btn-visit-lab-order-fast"');
+		expect(headerSource).toContain('data-testid="visit-more-action-lab-order"');
+		expect(headerSource).toContain("handleOpenLabOrder");
 
 		// VisitViewModals passes complete patient, doctor, and date context into DentalLabOrderModal
 		const modalsPath = path.resolve(__dirname, "../view/VisitViewModals.tsx");

@@ -181,6 +181,9 @@ export const advanceDepositTaggings = pgTable(
 			precision: 12,
 			scale: 2,
 		}).notNull(),
+		depositAmountKopecks: bigint("deposit_amount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		taggedTargetType: text("tagged_target_type").notNull(),
 		taggedTargetName: text("tagged_target_name").notNull(),
 		allocationStatus: text("allocation_status").default("pinned").notNull(),
@@ -215,6 +218,9 @@ export const digitalReceiptDispatches = pgTable(
 			precision: 12,
 			scale: 2,
 		}).notNull(),
+		receiptAmountKopecks: bigint("receipt_amount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		paperPrintSkipped: boolean("paper_print_skipped").default(true).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -309,6 +315,9 @@ export const cashLedger = pgTable(
 		invoiceId: uuid("invoice_id").notNull(),
 		paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
 		amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
+		amountKopecks: bigint("amount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		operatorId: uuid("operator_id"),
 		timestamp: timestamp("timestamp", { withTimezone: true })
 			.notNull()

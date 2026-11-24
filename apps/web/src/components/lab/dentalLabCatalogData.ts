@@ -323,12 +323,44 @@ export function calcNetRevenueKopecks(patientPriceKopecks: number, labCostKopeck
 	return Math.max(0, patientPriceKopecks - labCostKopecks);
 }
 
+const FALLBACK_STAGE: DentalLabStageMeta = {
+	id: "scan_sent",
+	stepNumber: 1,
+	labelRu: "Оттиск / Скан отправлен",
+	shortLabel: "Отправлен",
+	descriptionRu: "1. Создан / В работе клиники: цифровой скан или слепок передан курьеру лаборатории",
+	colorClass: "text-[var(--teal,#0d9488)]",
+	bgToken: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
+	borderToken: "var(--teal, #0d9488)",
+	textToken: "var(--teal, #0d9488)",
+	badgeClass: "badge-teal",
+	title: "Оттиск / Скан отправлен",
+};
+const DEFAULT_STAGE: DentalLabStageMeta = CANONICAL_LAB_STAGES[0] ?? FALLBACK_STAGE;
+
 export function getStageMeta(stageId: DentalLabStage): DentalLabStageMeta {
-	return ALL_LAB_STAGES.find((s) => s.id === stageId) ?? CANONICAL_LAB_STAGES[0]!;
+	return ALL_LAB_STAGES.find((s) => s.id === stageId) ?? DEFAULT_STAGE;
 }
 
+const FALLBACK_MATERIAL: OrthopedicMaterialMeta = {
+	id: "zirconia_multilayer",
+	titleRu: "Циркониевая коронка Multi-layer (многослойный диоксид циркония)",
+	shortTitle: "Цирконий (ZrO2)",
+	categoryRu: "Несъемное протезирование",
+	defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
+	baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
+	defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks,
+	descriptionRu: "Высокоэстетичный градиентный цирконий с естественной прозрачностью режущего края",
+	requiresShade: true,
+	allowsStumpShade: true,
+	standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
+	defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
+	material: "Диоксид циркония",
+};
+const DEFAULT_MATERIAL: OrthopedicMaterialMeta = CANONICAL_LAB_MATERIALS[0] ?? FALLBACK_MATERIAL;
+
 export function getMaterialMeta(materialId: string): OrthopedicMaterialMeta {
-	return CANONICAL_LAB_MATERIALS.find((m) => m.id === materialId) ?? CANONICAL_LAB_MATERIALS[0]!;
+	return CANONICAL_LAB_MATERIALS.find((m) => m.id === materialId) ?? DEFAULT_MATERIAL;
 }
 
 export function isOrderOverdue(order: DentalLabOrderEntry): boolean {

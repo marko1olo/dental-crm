@@ -298,8 +298,9 @@ export const generateTherapySoap043 = generateTherapySoapProtocol;
 /**
  * 1-Клик генерация консолидированного текста для дневника приёма
  */
-export function generateTherapyProtocolTextProtocol(params: TherapyProtocolApplyParams): string {
+export function generateTherapyProtocolText(params: TherapyProtocolApplyParams): string {
 	return generateTherapySoapProtocol(params).fullProtocolText;
 }
 
-export const generateTherapyProtocolText043 = generateTherapyProtocolTextProtocol;
+export const generateTherapyProtocolTextProtocol = generateTherapyProtocolText;
+export const generateTherapyProtocolText043 = generateTherapyProtocolText;

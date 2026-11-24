@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { computePayloadHash } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { treatmentPlans, treatmentPlanStages } from "../../db/schema/clinical/treatmentPlansSchema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
 import { requireOrganizationId } from "../../security/identity.js";
@@ -199,11 +201,46 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
 			lastActionDate: new Date().toISOString(),
 			lastActionSummary: actionSummary,
+			...(body.angleClass ? { angleClass: body.angleClass } : {}),
+			...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
+			...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
+			...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
+			...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
+			...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
+			...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
 		};
 
 		// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при обновлении профиля пациента
 		const responsePayload = await db.transaction(async (tx) => {
 			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress }, tx);
+
+			if (body.treatmentPlanId) {
+				await tx
+					.update(treatmentPlans)
+					.set({ status: "Approved" })
+					.where(
+						and(
+							eq(treatmentPlans.id, body.treatmentPlanId),
+							eq(treatmentPlans.organizationId, orgId),
+							eq(treatmentPlans.status, "Draft"),
+						),
+					);
+
+				// DEF-ORTHO-03: Синхронизация прогресса этапа плана лечения
+				await tx
+					.update(treatmentPlanStages)
+					.set({
+						completionPercentage: 100,
+						autoArchived: true,
+						archivedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(treatmentPlanStages.planId, body.treatmentPlanId),
+							eq(treatmentPlanStages.stageOrder, body.nextStage),
+						),
+					);
+			}
 
 			const payload: Record<string, unknown> = {
 				success: true,

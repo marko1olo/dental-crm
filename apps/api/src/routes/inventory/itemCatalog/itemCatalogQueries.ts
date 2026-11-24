@@ -184,33 +184,6 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 		},
 	);
 
-	// GET /:organizationId/reorder-suggestions
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { onlyNeedingReorder?: string | boolean };
-	}>("/:organizationId/reorder-suggestions", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory reorder suggestions read",
-		);
-		if (!resolvedOrgId) return;
-
-		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		const onlyNeedingReorder =
-			request.query.onlyNeedingReorder === "true" ||
-			request.query.onlyNeedingReorder === true;
-
-		const suggestions = await ReorderSuggestionService.getSuggestions(
-			organizationId,
-			{ onlyNeedingReorder },
-		);
-		return reply.status(200).send(suggestions);
-	});
 
 	// GET /:organizationId/alerts — сводка по дефициту и срокам годности материалов
 	server.get<{ Params: { organizationId: string } }>(

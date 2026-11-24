@@ -397,8 +397,8 @@ export const anesthesiaPatientProfileSchema = z.object({
 		hasSulfiteAllergy: z.boolean().optional(),
 		takesBetaBlockers: z.boolean().optional(),
 		takesMaoInhibitors: z.boolean().optional()
-	}).optional()
-});
+	}).strict().optional()
+}).strict();
 
 export const anesthesiaCalculationInputSchema = z.object({
 	formulationKey: z.string().min(1),

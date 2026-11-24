@@ -42,10 +42,10 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const bindBodySchema = z.object({ patientId: z.string().uuid() });
+	const bindBodySchema = z.object({ patientId: z.string().uuid().or(z.string().trim().min(1).max(128)) });
 	const parsed = bindBodySchema.safeParse(request.body);
 	if (!parsed.success) {
-		return reply.code(400).send({ error: "ValidationError", message: "Необходимо передать валидный UUID пациента в поле patientId.", details: parsed.error.issues });
+		return reply.code(400).send({ error: "ValidationError", message: "Необходимо передать валидный ID пациента в поле patientId.", details: parsed.error.issues });
 	}
 
 	try {
@@ -143,6 +143,91 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 	});
 	if (!updated) return sendImagingStudyNotFound(reply);
 	return reply.code(200).send(imagingStudySchema.parse(updated));
+}
+
+export async function bindVisitHandler(request: FastifyRequest, reply: FastifyReply) {
+	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind visit"))) return;
+	const { id } = request.params as { id: string };
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
+	const bindVisitBodySchema = z.object({
+		visitId: z.string().uuid().nullable().optional(),
+		toothCode: z.string().trim().max(16).nullable().optional(),
+	});
+	const parsed = bindVisitBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры привязки к приёму.",
+			details: parsed.error.issues,
+		});
+	}
+
+	const { visitId, toothCode } = parsed.data;
+	let formattedTooth: string | null = null;
+	if (toothCode) {
+		const num = Number(toothCode.trim());
+		if (Number.isNaN(num) || !isValidToothFdi(num)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: `Некорректный номер зуба по стандарту FDI (ISO 3950): "${toothCode}". Допустимы постоянные 11–48 и молочные 51–85.`,
+			});
+		}
+		formattedTooth = String(num);
+	}
+
+	try {
+		const updated = await db.transaction(async (tx) => {
+			const updatePayload: {
+				visitId?: string | null | undefined;
+				toothCode?: string | null | undefined;
+				region?: string | null | undefined;
+			} = {};
+
+			if (visitId !== undefined) {
+				updatePayload.visitId = visitId;
+			}
+			if (formattedTooth !== null) {
+				updatePayload.toothCode = formattedTooth;
+				updatePayload.region = `Зуб ${formattedTooth}`;
+			}
+
+			const study = await updateImagingStudyInDb(orgId, id, updatePayload, tx);
+			if (study) {
+				const xrayUpdates: Partial<typeof xrayScans.$inferInsert> = {};
+				if (visitId !== undefined) xrayUpdates.visitId = visitId;
+				if (formattedTooth !== null) xrayUpdates.toothCode = formattedTooth;
+
+				if (Object.keys(xrayUpdates).length > 0) {
+					await tx
+						.update(xrayScans)
+						.set({ ...xrayUpdates, updatedAt: new Date() })
+						.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, orgId)));
+				}
+			}
+			return study;
+		});
+
+		if (!updated) return sendImagingStudyNotFound(reply);
+		return reply.code(200).send(imagingStudySchema.parse(updated));
+	} catch (err) {
+		return reply.code(400).send({
+			error: "BindingFailed",
+			message: err instanceof Error ? err.message : "Ошибка при привязке исследования к приёму.",
+		});
+	}
 }
 
 export async function unbindPatientHandler(request: FastifyRequest, reply: FastifyReply) {

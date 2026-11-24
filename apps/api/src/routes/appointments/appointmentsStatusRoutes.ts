@@ -153,7 +153,6 @@ export async function applyAppointmentStatusTransitions(
 				.returning({
 					id: visits.id,
 					patientId: visits.patientId,
-					doctorId: visits.doctorId,
 				});
 
 			const targetVisits =
@@ -163,7 +162,6 @@ export async function applyAppointmentStatusTransitions(
 							.select({
 								id: visits.id,
 								patientId: visits.patientId,
-								doctorId: visits.doctorId,
 							})
 							.from(visits)
 							.where(
@@ -182,7 +180,7 @@ export async function applyAppointmentStatusTransitions(
 							organizationId: orgId,
 							visitId: visit.id,
 							patientId: visit.patientId,
-							userId: visit.doctorId ?? identity.userId,
+							userId: identity.userId,
 							allowOverdraft: true,
 						}),
 					);

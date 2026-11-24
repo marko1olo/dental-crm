@@ -354,12 +354,28 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setSelectedTeeth((prev) => prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b));
 	}, []);
 
+	const resetDraftFields = useCallback(() => {
+		setPatientInput("");
+		setSelectedTeeth([16]);
+		setSelectedMaterialId("zirconia_multilayer");
+		setSelectedShade("A2");
+		setNotes("");
+		setCustomDueDate("");
+		setIsUrgent(false);
+		setIsWarrantyRework(false);
+	}, []);
+
 	const handleCloseModal = useCallback(() => {
+		setPatientInput("");
+		setNotes("");
+		setSelectedTeeth([16]);
+		setIsUrgent(false);
+		resetDraftFields();
 		onClose();
 		useUiSurfaceStore.getState().closePrimaryModal("lab_order");
 		useUiSurfaceStore.getState().closePrimaryModal("dental_lab");
 		useUiSurfaceStore.getState().closePrimaryModal("lab");
-	}, [onClose]);
+	}, [onClose, resetDraftFields]);
 
 	// Создание/сохранение наряда — кнопка НИКОГДА не заблокирована (Мандат 8e: Автономия врача)
 	const handleCreateOrder = useCallback(async () => {
@@ -591,7 +607,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							<h2 className="dental-lab-header-title">
 								<span className="hidden sm:inline">Зуботехническая лаборатория и заказ-наряды</span>
 								<span className="sm:hidden font-bold text-sm">ЗТЛ и заказ-наряды</span>
-								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 shrink-0">Ортопедия</span>
+								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30 shrink-0">Ортопедия</span>
 							</h2>
 							<div className="dental-lab-header-meta">
 								<span className="break-words">Пациент: <strong className="text-[var(--ink)]">{currentPatientName || "Не выбран"}</strong></span> <span className="break-words hidden sm:inline">Врач: <strong className="text-[var(--ink)]">{effectiveDoctorName || "Не назначен"}</strong></span>

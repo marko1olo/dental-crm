@@ -20,12 +20,25 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "../../text/repairMojibake.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { apiError, documentVoidValidationMessage } from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/void", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "document void")))
 			return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 		// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
 		// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.

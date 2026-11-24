@@ -385,7 +385,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
-			return {
+			const protocolResult = {
 				patientId: targetPatientId,
 				visitId: targetVisitId,
 				invoiceId: linkedInvoiceId,
@@ -400,23 +400,14 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				isOverdraftActive: input.isOverdraftActive,
 				savedAt: new Date().toISOString(),
 			};
-		});
 
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			patientId: targetPatientId,
-			action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
-			diagnosis: norm?.title || effectiveNormId,
-		});
+			const responsePayload: Record<string, unknown> = {
+				success: true,
+				protocol: protocolResult,
+			};
 
-		const responsePayload: Record<string, unknown> = {
-			success: true,
-			protocol: result,
-		};
-
-		// Запись в таблицу idempotencyKeys для атомарного кэширования
-		if (idempotencyKey) {
-			await withTenantCtx(orgId, async (tx) => {
+			// Запись в таблицу idempotencyKeys для неделимого кэширования внутри единой ACID-транзакции (Мандат 8bo)
+			if (idempotencyKey) {
 				await tx
 					.insert(idempotencyKeys)
 					.values({
@@ -435,8 +426,17 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 							responseCode: 201,
 						},
 					});
-			});
-		}
+			}
+
+			return { protocol: protocolResult, responsePayload };
+		});
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: targetPatientId,
+			action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
+			diagnosis: norm?.title || effectiveNormId,
+		});
 
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "UPDATE_SURGICAL_PROTOCOL",
@@ -444,11 +444,11 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				patientId: targetPatientId,
 				toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
 				teeth: targetTeeth,
-				protocol: result,
+				protocol: result.protocol,
 			},
 		});
 
-		return reply.code(201).send(responsePayload);
+		return reply.code(201).send(result.responsePayload);
 	});
 
 	/**

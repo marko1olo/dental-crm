@@ -4,7 +4,6 @@
  */
 
 import type { LandmarkMap, CephalometricAnalysisResult } from "./cephalometric";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface CephalometricSavedStudy {
 	id: string;
@@ -34,10 +33,10 @@ export async function saveCephalometricAnalysisToApi(study: Partial<Cephalometri
 	try {
 		const res = await fetch(getCephApiUrl(`/api/orthodontics/${study.patientId}/ceph-analysis`), {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
-			}),
+			},
 			body: JSON.stringify({
 				id: study.id,
 				patientName: study.patientName,
@@ -70,9 +69,9 @@ export async function fetchPatientCephalometricStudyFromApi(patientId: string): 
 	if (!patientId || typeof window === "undefined") return null;
 	try {
 		const res = await fetch(getCephApiUrl(`/api/orthodontics/${patientId}/ceph-analysis`), {
-			headers: denteAdminSecretRequestHeaders({
+			headers: {
 				Accept: "application/json",
-			}),
+			},
 		});
 		if (res.ok) {
 			const json = (await res.json()) as unknown;

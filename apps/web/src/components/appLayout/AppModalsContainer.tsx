@@ -54,15 +54,20 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				/>
 			)}
 
-			{isLabFromStore && (
-				<DentalLabStudioModal
-					isOpen={true}
-					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
-					{...(primaryModal?.payload && typeof primaryModal.payload === "object"
-						? (primaryModal.payload as Partial<DentalLabStudioModalProps>)
-						: {})}
-				/>
-			)}
+			{isLabFromStore && (() => {
+				const labPayload = primaryModal?.payload && typeof primaryModal.payload === "object"
+					? (primaryModal.payload as Partial<DentalLabStudioModalProps>)
+					: null;
+				const labKey = labPayload?.patientId ?? labPayload?.initialOrder?.id ?? primaryModal.id;
+				return (
+					<DentalLabStudioModal
+						key={labKey}
+						isOpen={true}
+						onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
+						{...(labPayload ?? {})}
+					/>
+				);
+			})()}
 
 			<ClinicalModalsSubcontainer
 				isGlobalVisiographOpen={bridge.isGlobalVisiographOpen}

@@ -293,7 +293,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 						type="button"
 						data-testid="btn-open-order-3d-scan"
 						onClick={onOpen3DScan}
-						className="w-full min-h-[36px] max-sm:min-h-[44px] py-1.5 px-3 rounded-xl text-xs font-semibold border border-[var(--primary)]/40 bg-[var(--teal-surface,rgba(13,148,136,0.08))] text-[var(--primary)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.16))] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+						className="w-full min-h-[36px] max-sm:min-h-[44px] py-1.5 px-3 rounded-xl text-xs font-semibold border border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/15 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 					>
 						<span>3D интраоральный скан (STL/PLY)</span>
 					</button>

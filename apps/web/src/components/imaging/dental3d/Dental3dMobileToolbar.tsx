@@ -81,9 +81,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 				<div
 					className="pointer-events-auto h-11 px-3 rounded-xl backdrop-blur-md border shadow-md flex items-center justify-between gap-2"
 					style={{
-						backgroundColor: "var(--paper-strong, #090d16)",
-						borderColor: "var(--line, #334155)",
-						color: "var(--ink, #f8fafc)",
+						backgroundColor: "var(--paper-strong)",
+						borderColor: "var(--line)",
+						color: "var(--ink)",
 					}}
 				>
 					{/* Left: Box Icon, Short Title & Tooth Badge */}
@@ -96,9 +96,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 							<span
 								className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
 								style={{
-									backgroundColor: "rgba(13, 148, 136, 0.15)",
-									color: "var(--teal, #0d9488)",
-									border: "1px solid rgba(13, 148, 136, 0.3)",
+									backgroundColor: "var(--primary-soft)",
+									color: "var(--primary)",
+									border: "1px solid var(--primary-line)",
 								}}
 								data-testid="viewer3d-tooth-badge-mobile"
 							>
@@ -119,9 +119,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 							onClick={onOpenFilePicker}
 							className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border"
 							style={{
-								backgroundColor: "var(--paper, #0f172a)",
-								borderColor: "var(--line, #334155)",
-								color: "var(--ink, #f8fafc)",
+								backgroundColor: "var(--paper)",
+								borderColor: "var(--line)",
+								color: "var(--ink)",
 							}}
 							title="Файл"
 							data-testid="btn-open-3d-file-mobile"
@@ -134,9 +134,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 							onClick={onResetCamera}
 							className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border"
 							style={{
-								backgroundColor: "var(--paper, #0f172a)",
-								borderColor: "var(--line, #334155)",
-								color: "var(--ink, #f8fafc)",
+								backgroundColor: "var(--paper)",
+								borderColor: "var(--line)",
+								color: "var(--ink)",
 							}}
 							title="Сброс камеры"
 							data-testid="btn-reset-camera-mobile"
@@ -164,17 +164,17 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 			<div
 				className="flex md:hidden fixed bottom-2 left-2 right-2 z-30 pointer-events-auto flex-col gap-1.5 p-2 rounded-2xl backdrop-blur-lg border shadow-xl"
 				style={{
-					backgroundColor: "var(--paper-strong, #090d16)",
-					borderColor: "var(--line, #334155)",
-					color: "var(--ink, #f8fafc)",
+					backgroundColor: "var(--paper-strong)",
+					borderColor: "var(--line)",
+					color: "var(--ink)",
 				}}
 			>
 				{/* Mobile Segmented Layer Toggles */}
 				<div
 					className="grid grid-cols-5 gap-1 p-0.5 rounded-lg border"
 					style={{
-						backgroundColor: "var(--paper-soft, #1e293b)",
-						borderColor: "var(--line-subtle, #334155)",
+						backgroundColor: "var(--paper-soft)",
+						borderColor: "var(--line-subtle)",
 					}}
 				>
 					{layerItems.map((layer) => {
@@ -186,9 +186,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 								onClick={() => onToggleLayer(layer.id)}
 								className="min-h-[44px] h-11 rounded-md text-[11px] font-medium flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer border"
 								style={{
-									backgroundColor: isVisible ? "var(--paper, #0f172a)" : "transparent",
-									borderColor: isVisible ? "var(--line, #334155)" : "transparent",
-									color: isVisible ? "var(--ink, #f8fafc)" : "var(--muted, #94a3b8)",
+									backgroundColor: isVisible ? "var(--paper)" : "transparent",
+									borderColor: isVisible ? "var(--line)" : "transparent",
+									color: isVisible ? "var(--ink)" : "var(--muted)",
 									fontWeight: isVisible ? 700 : 500,
 								}}
 								title={layer.label}
@@ -205,8 +205,8 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 				<div
 					className="grid grid-cols-4 gap-1 p-0.5 rounded-lg border"
 					style={{
-						backgroundColor: "var(--paper-soft, #1e293b)",
-						borderColor: "var(--line-subtle, #334155)",
+						backgroundColor: "var(--paper-soft)",
+						borderColor: "var(--line-subtle)",
 					}}
 				>
 					{modeItems.map((mode) => {
@@ -216,11 +216,11 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 								key={mode.id}
 								type="button"
 								onClick={() => onChangeMaterialMode(mode.id)}
-								className="min-h-[44px] h-11 rounded-md text-xs font-medium transition-all flex items-center justify-center cursor-pointer border"
+								className={`min-h-[44px] h-11 rounded-md text-xs font-medium transition-all flex items-center justify-center cursor-pointer border ${isActive ? "text-white" : ""}`}
 								style={{
-									backgroundColor: isActive ? "var(--teal, #0d9488)" : "transparent",
-									borderColor: isActive ? "var(--teal, #0d9488)" : "transparent",
-									color: isActive ? "#ffffff" : "var(--muted, #94a3b8)",
+									backgroundColor: isActive ? "var(--primary)" : "transparent",
+									borderColor: isActive ? "var(--primary)" : "transparent",
+									color: isActive ? undefined : "var(--muted)",
 									fontWeight: isActive ? 700 : 500,
 								}}
 								title={mode.label}
@@ -239,9 +239,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 						onClick={onToggleBite}
 						className="min-h-[44px] h-11 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer border"
 						style={{
-							backgroundColor: isBiteClosed ? "rgba(13, 148, 136, 0.15)" : "var(--paper, #0f172a)",
-							borderColor: isBiteClosed ? "rgba(13, 148, 136, 0.35)" : "var(--line, #334155)",
-							color: isBiteClosed ? "var(--teal, #0d9488)" : "var(--ink, #f8fafc)",
+							backgroundColor: isBiteClosed ? "var(--primary-soft)" : "var(--paper)",
+							borderColor: isBiteClosed ? "var(--primary-line)" : "var(--line)",
+							color: isBiteClosed ? "var(--primary)" : "var(--ink)",
 							fontWeight: isBiteClosed ? 600 : 500,
 						}}
 						data-testid="btn-toggle-bite-mobile"
@@ -254,9 +254,9 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 						onClick={onToggleCaliper}
 						className="min-h-[44px] h-11 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer border"
 						style={{
-							backgroundColor: isCaliperActive ? "rgba(245, 158, 11, 0.15)" : "var(--paper, #0f172a)",
-							borderColor: isCaliperActive ? "rgba(245, 158, 11, 0.4)" : "var(--line, #334155)",
-							color: isCaliperActive ? "#f59e0b" : "var(--ink, #f8fafc)",
+							backgroundColor: isCaliperActive ? "var(--warning-soft)" : "var(--paper)",
+							borderColor: isCaliperActive ? "var(--warning-line)" : "var(--line)",
+							color: isCaliperActive ? "var(--warning)" : "var(--ink)",
 							fontWeight: isCaliperActive ? 600 : 500,
 						}}
 						data-testid="btn-toggle-caliper-mobile"
@@ -271,11 +271,7 @@ export const Dental3dMobileToolbar: React.FC<Dental3dMobileToolbarProps> = ({
 					<button
 						type="button"
 						onClick={onOpenLabOrder}
-						className="min-h-[48px] h-12 w-full rounded-xl text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer border-0"
-						style={{
-							backgroundColor: "var(--teal, #0d9488)",
-							color: "#ffffff",
-						}}
+						className="min-h-[48px] h-12 w-full rounded-xl text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer border-0 bg-[var(--primary)] text-white"
 						data-testid="btn-create-lab-order-from-3d-mobile"
 					>
 						<Send className="w-4 h-4" />

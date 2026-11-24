@@ -44,6 +44,32 @@ export function usePediatricWidgetState(props: VisitPediatricProtocolWidgetProps
 	}));
 	const [representativeText, setRepresentativeText] = useState<string>("");
 
+	useEffect(() => {
+		if (!props.patientId || representativeFullName) return;
+		let isMounted = true;
+		fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, { credentials: "include" })
+			.then((res) => (res.ok ? res.json() : null))
+			.then((json: { data?: { representative?: { fullName?: string; phone?: string; role?: string; consentSigned?: boolean; statutoryDocument?: string } | null } | null; representative?: { fullName?: string; phone?: string; role?: string; consentSigned?: boolean; statutoryDocument?: string } | null } | null) => {
+				const payload = json?.data ?? json;
+				if (!isMounted || !payload?.representative?.fullName) return;
+				const rep = payload.representative;
+				setRepresentative((prev) => ({
+					...prev,
+					fullName: rep.fullName ?? prev.fullName,
+					phone: rep.phone ?? prev.phone,
+					role: rep.role && isLegalRepresentativeRole(rep.role) ? rep.role : prev.role,
+					consentSigned: rep.consentSigned ?? prev.consentSigned,
+					...(rep.statutoryDocument ? { statutoryDocument: rep.statutoryDocument } : {}),
+				}));
+			})
+			.catch((err) => {
+				console.warn("Could not prefetch legal representative:", err);
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, [props.patientId, representativeFullName]);
+
 	const [anesthesiaCalculation, setAnesthesiaCalculation] = useState<PediatricAnesthesiaCalculationResult | null>(null);
 	const [anesthesiaText, setAnesthesiaText] = useState<string>("");
 	const [sedation, setSedation] = useState<PediatricSedationState>(DEFAULT_SEDATION_STATE);

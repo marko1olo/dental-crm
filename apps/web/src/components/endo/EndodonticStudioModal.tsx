@@ -148,12 +148,13 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
-				if (!cancelled && data?.clinicalData?.canals?.length) {
-					setCanals(data.clinicalData.canals);
-					if (data.clinicalData.rotarySystem) setRotarySystem(data.clinicalData.rotarySystem);
-					if (data.clinicalData.irrigation) setIrrigation(data.clinicalData.irrigation);
-					if (data.clinicalData.radiologyControl) setRadiologyControl(data.clinicalData.radiologyControl);
-					if (data.clinicalData.stageStamp) setStageStamp(data.clinicalData.stageStamp);
+				const payload = data?.data ?? data;
+				if (!cancelled && payload?.clinicalData?.canals?.length) {
+					setCanals(payload.clinicalData.canals);
+					if (payload.clinicalData.rotarySystem) setRotarySystem(payload.clinicalData.rotarySystem);
+					if (payload.clinicalData.irrigation) setIrrigation(payload.clinicalData.irrigation);
+					if (payload.clinicalData.radiologyControl) setRadiologyControl(payload.clinicalData.radiologyControl);
+					if (payload.clinicalData.stageStamp) setStageStamp(payload.clinicalData.stageStamp);
 				}
 			}).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
 		return () => { cancelled = true; };
@@ -510,7 +511,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--backdrop,rgba(15,23,42,0.8))] backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
 			<div className="relative w-full max-w-5xl bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-w-full" data-testid="endo-canal-log-modal">
-				<div className="w-9 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 sm:hidden shrink-0" />
+				<div className="w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-2.5 sm:hidden shrink-0 pointer-events-none" />
 				<header className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center font-bold text-sm shrink-0">#{activeTooth}</div>

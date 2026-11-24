@@ -59,7 +59,7 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 			</div>
 
 			<div className="flex items-center gap-1.5 shrink-0">
-				<button type="button" data-testid="btn-dicom-norma-emk" onClick={handleNormaClick} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-emerald-600 bg-emerald-900 text-emerald-200"}`}>
+				<button type="button" data-testid="btn-dicom-norma-043" data-testid-emk="btn-dicom-norma-emk" onClick={handleNormaClick} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-emerald-600 bg-emerald-900 text-emerald-200"}`}>
 					{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} className="text-emerald-400" />}
 					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>

@@ -140,6 +140,7 @@ export const DirectPediatricLauncher: React.FC = () => {
 				initialAge={6.5}
 			/>
 			<PediatricBraveryDiplomaModal
+				key={diplomaDetails.patientId || diplomaDetails.patientName || "pediatric-direct-diploma"}
 				isOpen={isDiplomaOpen}
 				onClose={handleCloseDiploma}
 				patientId={diplomaDetails.patientId || undefined}

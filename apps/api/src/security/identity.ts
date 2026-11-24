@@ -83,6 +83,9 @@ export function resolveIdentityFromTokens(
 		if (clinicPayload && typeof clinicPayload.organizationId === "string") {
 			identity.organizationId = clinicPayload.organizationId;
 			identity.verified = true;
+			if (!identity.role && typeof clinicPayload.role === "string") {
+				identity.role = clinicPayload.role;
+			}
 		}
 
 		if (staffPayload && typeof staffPayload.userId === "string") {

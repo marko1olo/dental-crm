@@ -44,7 +44,10 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		Boolean(parsed.lowerArchwire) ||
 		Boolean(parsed.elastics) ||
 		Boolean(parsed.stageTitle) ||
-		Boolean(parsed.lastActionSummary);
+		Boolean(parsed.lastActionSummary) ||
+		Boolean(parsed.angleClass) ||
+		Boolean(parsed.verticalBite) ||
+		Boolean(parsed.skeletalClass);
 
 	if (!hasOrthoSignals) {
 		return null;
@@ -80,8 +83,17 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		lastSoapSummary: parsed.lastSoapSummary ? String(parsed.lastSoapSummary) : undefined,
 		wearDaysPerAligner: hasAlignerSignals ? (Number(parsed.wearDaysPerAligner) || 14) : undefined,
 		nextVisitRecommendedDate: parsed.nextVisitRecommendedDate ? String(parsed.nextVisitRecommendedDate) : undefined,
+		angleClass: parsed.angleClass ? String(parsed.angleClass) : undefined,
+		verticalBite: parsed.verticalBite ? String(parsed.verticalBite) : undefined,
+		overjetMm: typeof parsed.overjetMm === "number" && Number.isFinite(parsed.overjetMm) ? parsed.overjetMm : undefined,
+		overbitePercent: typeof parsed.overbitePercent === "number" && Number.isFinite(parsed.overbitePercent) ? parsed.overbitePercent : undefined,
+		anbAngle: typeof parsed.anbAngle === "number" && Number.isFinite(parsed.anbAngle) ? parsed.anbAngle : undefined,
+		skeletalClass: parsed.skeletalClass ? String(parsed.skeletalClass) : undefined,
+		treatmentPlanId: parsed.treatmentPlanId ? String(parsed.treatmentPlanId) : undefined,
 	};
 }
+
+export const extractOrthoRecord = parseOrthoData;
 
 export function createInitialOrthoRecord(params?: {
 	applianceCategory?: "brackets" | "aligners" | "plate" | undefined;

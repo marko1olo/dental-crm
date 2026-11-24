@@ -9,7 +9,7 @@ import type { ConsumableItemLink } from "../consumableModules/consumableTypes.js
 export const ORTHODONTIC_BOM_LINKS: readonly ConsumableItemLink[] = [
 	{
 		id: "def-link-ortho-brackets-damon",
-		service804nCode: "A16.07.048",
+		service804nCode: "A16.07.047",
 		serviceTitle: "Фиксация брекет-системы",
 		inventoryItemId: "mat-brackets-damon-q2",
 		itemName: "Самолигирующая металлическая брекет-система Damon Q2 (Ormco, 1 челюсть)",

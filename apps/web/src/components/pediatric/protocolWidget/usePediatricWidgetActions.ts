@@ -48,10 +48,36 @@ export function usePediatricWidgetActions(
 		showToast(`Протокол: «${preset.titleRu}»`, "info", 2000);
 	}, [onSelectSurfaces, state]);
 
-	const handleSignInformedConsent = useCallback(() => {
-		state.setRepresentative({ ...state.representative, consentSigned: true, statutoryDocument: "Законный представитель (родитель / опекун)" });
+	const handleSignInformedConsent = useCallback(async () => {
+		const updatedRep = { ...state.representative, consentSigned: true, statutoryDocument: "Законный представитель (родитель / опекун)" };
+		state.setRepresentative(updatedRep);
 		showToast("Согласие законного представителя подтверждено", "success", 2500);
-	}, [state]);
+
+		if (props.patientId && updatedRep.fullName.trim()) {
+			try {
+				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: `rep-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+				await fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					},
+					credentials: "include",
+					body: JSON.stringify({
+						fullName: updatedRep.fullName.trim(),
+						phone: updatedRep.phone.trim() || undefined,
+						role: updatedRep.role,
+						consentSigned: true,
+						statutoryDocument: updatedRep.statutoryDocument,
+					}),
+				});
+			} catch (err) {
+				console.warn("Failed to sync legal representative to server:", err);
+			}
+		}
+	}, [props.patientId, state]);
 
 	const handleInsertToClinicalNote = useCallback(() => {
 		if (state.anesthesiaCalculation?.isOverdose) {
@@ -65,8 +91,36 @@ export function usePediatricWidgetActions(
 		}
 		updateVisitNoteStore(textToApply);
 		dispatchApplySoapProtocol(clinicalCalculation, state.currentTooth, state.selectedSurfaces);
+
+		if (props.patientId && state.representative.fullName.trim()) {
+			try {
+				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: `rep-note-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+				void fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					},
+					credentials: "include",
+					body: JSON.stringify({
+						fullName: state.representative.fullName.trim(),
+						phone: state.representative.phone.trim() || undefined,
+						role: state.representative.role,
+						consentSigned: state.representative.consentSigned,
+						statutoryDocument: state.representative.statutoryDocument,
+					}),
+				}).catch((err) => {
+					console.warn("Background legal representative sync warning:", err);
+				});
+			} catch (err) {
+				console.warn("Legal representative note sync error:", err);
+			}
+		}
+
 		showToast(`Детский протокол зуба ${state.currentTooth} внесен в медицинскую карту`, "success", 3000);
-	}, [clinicalCalculation, onApplyProtocolText, state]);
+	}, [clinicalCalculation, onApplyProtocolText, props.patientId, state]);
 
 	const handleAddServicesToInvoice = useCallback(() => {
 		onAddToInvoice?.(clinicalCalculation.services);

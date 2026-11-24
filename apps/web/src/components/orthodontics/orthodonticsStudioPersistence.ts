@@ -6,7 +6,6 @@
  */
 
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export interface SaveOrthoProtocolOptions {
@@ -15,16 +14,17 @@ export interface SaveOrthoProtocolOptions {
 	readonly skeletalClass: string;
 	readonly patientId?: string | undefined;
 	readonly visitId?: string | undefined;
+	readonly treatmentPlanId?: string | undefined;
 	readonly onSaveProtocol?: ((protocol: OrthoProtocolState, summarySoap: string) => void | Promise<void>) | undefined;
 }
 
 async function postOrthoEndpoint(url: string, payload: unknown, idempotencyKey: string): Promise<Response> {
 	const res = await fetch(url, {
 		method: "POST",
-		headers: denteAdminSecretRequestHeaders({
+		headers: {
 			"Content-Type": "application/json",
 			"Idempotency-Key": idempotencyKey,
-		}),
+		},
 		body: JSON.stringify(payload),
 	});
 
@@ -47,7 +47,7 @@ async function postOrthoEndpoint(url: string, payload: unknown, idempotencyKey: 
 }
 
 export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOptions): Promise<boolean> {
-	const { protocol, soapSummary, skeletalClass, patientId, visitId, onSaveProtocol } = options;
+	const { protocol, soapSummary, skeletalClass, patientId, visitId, treatmentPlanId, onSaveProtocol } = options;
 	const updatedProtocol: OrthoProtocolState = { ...protocol, savedAt: new Date().toISOString() };
 
 	if (onSaveProtocol) {
@@ -65,6 +65,18 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 		? crypto.randomUUID()
 		: `ortho-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+	const effectiveTreatmentPlanId = treatmentPlanId ?? protocol.treatmentPlanId;
+	const anbAngle = protocol.trgValues?.anb ?? undefined;
+	const bitePayload = {
+		...(protocol.angleClass ? { angleClass: protocol.angleClass } : {}),
+		...(protocol.verticalBite ? { verticalBite: protocol.verticalBite } : {}),
+		...(typeof protocol.overjetMm === "number" ? { overjetMm: protocol.overjetMm } : {}),
+		...(typeof protocol.overbitePercent === "number" ? { overbitePercent: protocol.overbitePercent } : {}),
+		...(typeof anbAngle === "number" ? { anbAngle } : {}),
+		...(skeletalClass ? { skeletalClass } : {}),
+		...(effectiveTreatmentPlanId ? { treatmentPlanId: effectiveTreatmentPlanId } : {}),
+	};
 
 	try {
 		if (protocol.applianceCategory === "aligners") {
@@ -84,6 +96,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				applianceName: protocol.applianceName,
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
+				...bitePayload,
 			}, idempotencyKey);
 		} else if (protocol.applianceCategory === "plate") {
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/stages/advance`, {
@@ -96,6 +109,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				applianceName: protocol.applianceName,
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
+				...bitePayload,
 			}, idempotencyKey);
 		} else {
 			const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
@@ -131,6 +145,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				applianceName: protocol.applianceName,
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
+				...bitePayload,
 			}, `${idempotencyKey}-wire-both`);
 
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/ligatures-activate`, {
@@ -147,10 +162,10 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 			try {
 				const autoSaveRes = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 					method: "PUT",
-					headers: denteAdminSecretRequestHeaders({
+					headers: {
 						"Content-Type": "application/json",
 						"Idempotency-Key": `${idempotencyKey}-autosave`,
-					}),
+					},
 					body: JSON.stringify({
 						visitId,
 						patientId,

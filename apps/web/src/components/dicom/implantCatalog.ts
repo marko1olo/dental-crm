@@ -1,5 +1,6 @@
 /**
- * implantCatalog.ts — Реэкспорт канонического каталога имплантатов DICOM (Мандат 8b <= 120 строк).
+ * implantCatalog.ts — Реэкспорт канонического SSOT каталога имплантатов (Мандат 8bf).
  */
 
-export * from "./implantCatalog/index";
+export * from "../implants/implantCatalogData";
+

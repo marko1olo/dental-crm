@@ -93,6 +93,13 @@ export const archwireChangePayloadSchema = z.object({
 	applianceName: z.string().optional(),
 	selectedElasticId: z.string().nullable().optional(),
 	selectedActionIds: z.array(z.string()).optional(),
+	angleClass: z.string().optional(),
+	verticalBite: z.string().optional(),
+	overjetMm: z.number().optional(),
+	overbitePercent: z.number().optional(),
+	anbAngle: z.number().optional(),
+	skeletalClass: z.string().optional(),
+	treatmentPlanId: z.string().uuid().optional(),
 }).transform((data) => {
 	const effectiveSection = data.section || data.size || ".016";
 	const effectiveProfile = data.profile || (effectiveSection.includes("x") ? "rectangular" : "round");

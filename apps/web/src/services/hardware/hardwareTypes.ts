@@ -112,6 +112,7 @@ export interface RadiographyScanEvent {
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly toothCode?: string | undefined;
+	readonly studyId?: string | undefined;
 	readonly modality: "IO" | "DX" | "PX" | "CT" | "CR";
 	readonly thumbnailDataUri?: string | undefined;
 	readonly previewReady: boolean;

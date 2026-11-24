@@ -60,8 +60,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Pink",
 		hex: "#f472b6",
 		textHex: "#831843",
-		bgClass: "bg-pink-400",
-		borderClass: "border-pink-500",
 		labelRu: "ISO 06 (#06 розовый)",
 	},
 	{
@@ -71,8 +69,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Gray",
 		hex: "#9ca3af",
 		textHex: "#1f2937",
-		bgClass: "bg-slate-400",
-		borderClass: "border-slate-500",
 		labelRu: "ISO 08 (#08 серый)",
 	},
 	{
@@ -82,8 +78,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Purple",
 		hex: "#a855f7",
 		textHex: "#ffffff",
-		bgClass: "bg-purple-500",
-		borderClass: "border-purple-600",
 		labelRu: "ISO 10 (#10 фиолетовый)",
 	},
 	{
@@ -93,8 +87,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "White",
 		hex: "#ffffff",
 		textHex: "#0f172a",
-		bgClass: "bg-white",
-		borderClass: "border-slate-300 dark:border-slate-600",
 		labelRu: "ISO 15 (#15 белый)",
 	},
 	{
@@ -104,8 +96,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Yellow",
 		hex: "#eab308",
 		textHex: "#713f12",
-		bgClass: "bg-yellow-400",
-		borderClass: "border-yellow-500",
 		labelRu: "ISO 20 (#20 жёлтый)",
 	},
 	{
@@ -115,8 +105,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Red",
 		hex: "#ef4444",
 		textHex: "#ffffff",
-		bgClass: "bg-red-500",
-		borderClass: "border-red-600",
 		labelRu: "ISO 25 (#25 красный)",
 	},
 	{
@@ -126,8 +114,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Blue",
 		hex: "#3b82f6",
 		textHex: "#ffffff",
-		bgClass: "bg-blue-600",
-		borderClass: "border-blue-700",
 		labelRu: "ISO 30 (#30 синий)",
 	},
 	{
@@ -137,8 +123,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Green",
 		hex: "#22c55e",
 		textHex: "#ffffff",
-		bgClass: "bg-emerald-600",
-		borderClass: "border-emerald-700",
 		labelRu: "ISO 35 (#35 зелёный)",
 	},
 	{
@@ -148,8 +132,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Black",
 		hex: "#0f172a",
 		textHex: "#ffffff",
-		bgClass: "bg-slate-900",
-		borderClass: "border-slate-950",
 		labelRu: "ISO 40 (#40 чёрный)",
 	},
 	{
@@ -159,8 +141,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "White",
 		hex: "#ffffff",
 		textHex: "#0f172a",
-		bgClass: "bg-white",
-		borderClass: "border-slate-300 dark:border-slate-600",
 		labelRu: "ISO 45 (#45 белый)",
 	},
 	{
@@ -170,8 +150,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Yellow",
 		hex: "#eab308",
 		textHex: "#713f12",
-		bgClass: "bg-yellow-400",
-		borderClass: "border-yellow-500",
 		labelRu: "ISO 50 (#50 жёлтый)",
 	},
 	{
@@ -181,8 +159,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Red",
 		hex: "#ef4444",
 		textHex: "#ffffff",
-		bgClass: "bg-red-500",
-		borderClass: "border-red-600",
 		labelRu: "ISO 55 (#55 красный)",
 	},
 	{
@@ -192,8 +168,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Blue",
 		hex: "#3b82f6",
 		textHex: "#ffffff",
-		bgClass: "bg-blue-600",
-		borderClass: "border-blue-700",
 		labelRu: "ISO 60 (#60 синий)",
 	},
 	{
@@ -203,8 +177,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Green",
 		hex: "#22c55e",
 		textHex: "#ffffff",
-		bgClass: "bg-emerald-600",
-		borderClass: "border-emerald-700",
 		labelRu: "ISO 70 (#70 зелёный)",
 	},
 	{
@@ -214,8 +186,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Black",
 		hex: "#0f172a",
 		textHex: "#ffffff",
-		bgClass: "bg-slate-900",
-		borderClass: "border-slate-950",
 		labelRu: "ISO 80 (#80 чёрный)",
 	},
 	{
@@ -225,8 +195,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "White",
 		hex: "#ffffff",
 		textHex: "#0f172a",
-		bgClass: "bg-white",
-		borderClass: "border-slate-300 dark:border-slate-600",
 		labelRu: "ISO 90 (#90 белый)",
 	},
 	{
@@ -236,8 +204,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Yellow",
 		hex: "#eab308",
 		textHex: "#713f12",
-		bgClass: "bg-yellow-400",
-		borderClass: "border-yellow-500",
 		labelRu: "ISO 100 (#100 жёлтый)",
 	},
 	{
@@ -247,8 +213,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Red",
 		hex: "#ef4444",
 		textHex: "#ffffff",
-		bgClass: "bg-red-500",
-		borderClass: "border-red-600",
 		labelRu: "ISO 110 (#110 красный)",
 	},
 	{
@@ -258,8 +222,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Blue",
 		hex: "#3b82f6",
 		textHex: "#ffffff",
-		bgClass: "bg-blue-600",
-		borderClass: "border-blue-700",
 		labelRu: "ISO 120 (#120 синий)",
 	},
 	{
@@ -269,8 +231,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Green",
 		hex: "#22c55e",
 		textHex: "#ffffff",
-		bgClass: "bg-emerald-600",
-		borderClass: "border-emerald-700",
 		labelRu: "ISO 130 (#130 зелёный)",
 	},
 	{
@@ -280,8 +240,6 @@ export const ISO_ENDO_COLORS: readonly IsoEndoColorInfo[] = Object.freeze([
 		colorEn: "Black",
 		hex: "#0f172a",
 		textHex: "#ffffff",
-		bgClass: "bg-slate-900",
-		borderClass: "border-slate-950",
 		labelRu: "ISO 140 (#140 чёрный)",
 	},
 ]);

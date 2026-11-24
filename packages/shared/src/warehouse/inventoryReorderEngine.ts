@@ -573,21 +573,24 @@ export function groupSuggestionsBySupplier(
 /**
  * Input contract for calculating reorder parameters for an inventory item.
  */
-export const reorderItemInputSchema = z.object({
-	inventoryItemId: z.string().min(1, "ID материала обязателен"),
-	itemName: z.string().min(1, "Наименование материала обязательно"),
-	category: z.string().default("material"),
-	unit: z.string().default("шт"),
-	stockQuantity: z.number(),
-	minQuantity: z.number().nonnegative().default(0),
-	usage90d: z.number().nonnegative().default(0),
-	onOrder: z.number().nonnegative().default(0),
-	leadTimeDays: z.number().int().nonnegative().default(0),
-	supplierId: z.string().nullable().optional(),
-	supplierName: z.string().nullable().optional(),
-	unitPriceRub: z.number().nonnegative().default(0),
-	isPreferredSupplier: z.boolean().default(false).optional(),
-});
+export const reorderItemInputSchema = z
+	.object({
+		inventoryItemId: z.string().min(1, "ID материала обязателен"),
+		itemName: z.string().min(1, "Наименование материала обязательно"),
+		category: z.string().default("material"),
+		unit: z.string().default("шт"),
+		stockQuantity: z.number(),
+		minQuantity: z.number().nonnegative().default(0),
+		usage90d: z.number().nonnegative().default(0),
+		onOrder: z.number().nonnegative().default(0),
+		leadTimeDays: z.number().int().nonnegative().default(0),
+		supplierId: z.string().nullable().optional(),
+		supplierName: z.string().nullable().optional(),
+		unitPriceRub: z.number().nonnegative().default(0),
+		unitPriceKopecks: z.number().int().nonnegative().optional(),
+		isPreferredSupplier: z.boolean().default(false).optional(),
+	})
+	.strict();
 export type ReorderItemInput = z.input<typeof reorderItemInputSchema>;
 export type ReorderItem = z.infer<typeof reorderItemInputSchema>;
 
@@ -673,7 +676,10 @@ export function computeInventoryReorderSuggestion(
 		coverDays,
 	);
 
-	const unitPriceKopecks = rublesToKopecks(input.unitPriceRub);
+	const unitPriceKopecks =
+		input.unitPriceKopecks !== undefined
+			? input.unitPriceKopecks
+			: rublesToKopecks(input.unitPriceRub);
 	const unitPriceRub = kopecksToRubles(unitPriceKopecks);
 	const estimatedCostKopecks = Math.round(suggestedQuantity * unitPriceKopecks);
 	const estimatedCostRub = kopecksToRubles(estimatedCostKopecks);

@@ -10,6 +10,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 
 process.env.NODE_ENV = "test";
@@ -242,6 +243,7 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": clientMutationId,
 				},
 				payload: {
 					...receiptPayload,
@@ -277,6 +279,7 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": randomUUID(),
 				},
 			});
 
@@ -307,6 +310,7 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 	// =========================================================================
 	describe("3. 54-FZ Correction Receipts & Ledger Integrity", () => {
 		it("3.1 Issues 54-FZ self-initiated correction receipt and records queue item", async () => {
+			const mutationId = randomUUID();
 			const correctionPayload = {
 				patientId: PATIENT_ID,
 				operationType: "income" as const,
@@ -336,8 +340,12 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": mutationId,
 				},
-				payload: correctionPayload,
+				payload: {
+					...correctionPayload,
+					clientMutationId: mutationId,
+				},
 			});
 
 			assert.equal(res.statusCode, 201);
@@ -379,6 +387,7 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": randomUUID(),
 				},
 				payload: invalidPrescriptionPayload,
 			});
@@ -387,6 +396,7 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 			assert.match(res.json().message, /предписани/i);
 
 			// Now provide valid prescription docNumber & docDate
+			const prescriptionMutationId = randomUUID();
 			const validPrescriptionPayload = {
 				...invalidPrescriptionPayload,
 				correctionDocNumber: "ПРЕДП-2026/09-ФНС",
@@ -399,8 +409,12 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": prescriptionMutationId,
 				},
-				payload: validPrescriptionPayload,
+				payload: {
+					...validPrescriptionPayload,
+					clientMutationId: prescriptionMutationId,
+				},
 			});
 
 			assert.equal(resValid.statusCode, 201);

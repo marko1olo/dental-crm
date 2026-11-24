@@ -294,7 +294,7 @@ export const fiscalReceiptDetailsSchema = z.object({
 	quantityMeasure: z.number().int().min(0).max(255).nullable().optional(),
 	/** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
 	advancePaymentRub: nonNegativeMoneyRubSchema.nullable().optional(),
-});
+}).strict();
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
 
 // ─── 5. PAYMENT ENTITY SCHEMA ────────────────────────────────────────────────
@@ -322,5 +322,5 @@ export const paymentSchema = z.object({
 	payerRelationship: z.string().nullable().optional(),
 	taxDeductionCode: z.enum(["1", "2"]).nullable().optional(),
 	note: z.string().nullable(),
-});
+}).strict();
 export type Payment = z.infer<typeof paymentSchema>;

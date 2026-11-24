@@ -1,9 +1,9 @@
 /**
- * usePerioStudioState.test.tsx — Юнит-тесты канонического хука состояния пародонтологии.
+ * usePerioStudioState.test.tsx — Юнит-тесты канонического хука состояния пародонтологии (DEF-PERIO-03, DEF-PERIO-05).
  * Проверяет:
  * - Инициализацию состояния и расчет индексов PSR
  * - Конвертер результатов скрининга PSR в PsrScreeningMap
- * - Очистку v2 и legacy черновиков при handleClose
+ * - Zero-Leak Draft Invariant (Мандат 8zq / DEF-PERIO-05): очистку v2 и legacy черновиков при handleClose
  * - Клиническую автономию врача и сброс к норме (handleSetAllIntact)
  */
 
@@ -11,6 +11,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../../lib/safeLocalStorage";
 import {
 	convertPsrResultsToScreeningMap,
 	usePerioStudioState,
@@ -63,7 +67,7 @@ describe("usePerioStudioState Hook & Zero-Leak Invariants (DEF-PERIO-03, DEF-PER
 		assert.strictEqual(state.selectedProtocolId, "prophy_airflow_ultrasound");
 		assert.strictEqual(state.selectedToothNum, 16);
 		assert.strictEqual(state.syncStatus, "idle");
-		assert.ok(state.psrSummary.psrFormula.includes("0 / 0 / 0 / 0 / 0 / 0") || state.psrSummary.psrFormula === "0/0/0/0/0/0");
+		assert.strictEqual(state.psrSummary.psrFormula, "PSR: 0 / 0 / 0 / 0 / 0 / 0");
 		assert.strictEqual(state.isDetailedExpanded, false);
 	});
 
@@ -78,55 +82,67 @@ describe("usePerioStudioState Hook & Zero-Leak Invariants (DEF-PERIO-03, DEF-PER
 		assert.strictEqual(state.isDetailedExpanded, true);
 	});
 
-	it("4. Zero-Leak Draft Purge: removes both v2 and legacy drafts on handleClose", () => {
+	it("4. Zero-Leak Draft Purge (DEF-PERIO-05 / Mandate 8zq): removes both v2 and legacy drafts on handleClose", () => {
 		const patientId = "patient-purge-test";
-		const originalLocalStorage = globalThis.localStorage;
-		const removedKeys: string[] = [];
-		const mockStorage: Storage = {
-			removeItem: (key: string) => {
-				removedKeys.push(key);
+		safeLocalStorageSetItem(
+			`dente_perio_draft_v2_${patientId}`,
+			JSON.stringify({ teeth: [], screeningMap: {} }),
+		);
+		safeLocalStorageSetItem(
+			`dente_perio_draft_${patientId}`,
+			JSON.stringify({ teeth: [], screeningMap: {} }),
+		);
+
+		assert.ok(safeLocalStorageGetItem(`dente_perio_draft_v2_${patientId}`));
+		assert.ok(safeLocalStorageGetItem(`dente_perio_draft_${patientId}`));
+
+		let closed = false;
+		const state = renderPerioHook({
+			patientId,
+			onClose: () => {
+				closed = true;
 			},
-			getItem: () => null,
-			setItem: () => {},
-			clear: () => {},
-			key: () => null,
-			length: 0,
-		};
-		globalThis.localStorage = mockStorage;
+		});
 
-		try {
-			let closed = false;
-			const state = renderPerioHook({
-				patientId,
-				onClose: () => {
-					closed = true;
-				},
-			});
+		state.handleClose();
 
-			state.handleClose();
-
-			assert.strictEqual(closed, true, "onClose callback must be called");
-			assert.ok(
-				removedKeys.includes(`dente_perio_draft_v2_${patientId}`),
-				`Must purge dente_perio_draft_v2_${patientId}`,
-			);
-			assert.ok(
-				removedKeys.includes(`dente_perio_draft_${patientId}`),
-				`Must purge legacy dente_perio_draft_${patientId}`,
-			);
-		} finally {
-			globalThis.localStorage = originalLocalStorage;
-		}
+		assert.strictEqual(closed, true, "onClose callback must be called");
+		assert.strictEqual(
+			safeLocalStorageGetItem(`dente_perio_draft_v2_${patientId}`),
+			null,
+			"Must purge dente_perio_draft_v2_${patientId}",
+		);
+		assert.strictEqual(
+			safeLocalStorageGetItem(`dente_perio_draft_${patientId}`),
+			null,
+			"Must purge legacy dente_perio_draft_${patientId}",
+		);
 	});
 
-	it("5. handleSetAllIntact executes without throwing and resets dentition state", () => {
+	it("5. presets and action handlers are callable without exceptions", () => {
 		const state = renderPerioHook({
 			patientId: "patient-intact-test",
 		});
 
+		assert.strictEqual(typeof state.handleSetAllIntact, "function");
+		assert.strictEqual(typeof state.handleApplyUpperJawNorm, "function");
+		assert.strictEqual(typeof state.handleApplyLowerJawNorm, "function");
+		assert.strictEqual(typeof state.handleApplyZeroBop, "function");
+		assert.strictEqual(typeof state.handleApplyZeroCalculus, "function");
+		assert.strictEqual(typeof state.handleApplyPreset, "function");
+		assert.strictEqual(typeof state.handleSelectProtocol, "function");
+		assert.strictEqual(typeof state.handleSave, "function");
+		assert.strictEqual(typeof state.handlePrintProtocol, "function");
+
+		// Execute handleSetAllIntact and presets safely
 		assert.doesNotThrow(() => {
 			state.handleSetAllIntact();
 		});
-		assert.strictEqual(typeof state.handleSetAllIntact, "function");
+		assert.doesNotThrow(() => {
+			state.handleApplyUpperJawNorm();
+		});
+		assert.doesNotThrow(() => {
+			state.handleApplyZeroBop();
+		});
 	});
 });

@@ -24,7 +24,7 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 					type="button"
 					onClick={onInsertToClinicalDiary}
 					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] px-4 py-2.5 text-sm font-medium text-white shadow-xs transition active:scale-98 cursor-pointer touch-manipulation"
-					data-testid="therapy-btn-apply-043"
+					data-testid="therapy-btn-apply-diary"
 				>
 					<FileText className="h-4 w-4 shrink-0" />
 					<span>Внести в дневник</span>
@@ -45,7 +45,7 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 				<div className="text-xs font-mono font-bold text-[var(--ink)]">
 					{diagnosisIcd10}
 				</div>
-				<div className="text-[11px] text-[var(--muted)] whitespace-normal leading-tight">
+				<div className="text-[11px] text-[var(--ink-muted)] whitespace-normal leading-tight">
 					{BLACK_CAVITY_CLASS_LABELS[blackClass]}
 				</div>
 			</div>

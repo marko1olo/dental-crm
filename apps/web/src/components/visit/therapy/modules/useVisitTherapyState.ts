@@ -12,7 +12,7 @@ export interface UseVisitTherapyStateParams {
 	activeSurfaces?: readonly string[] | undefined;
 	onSelectSurfaces?: ((surfaces: readonly string[]) => void) | undefined;
 	onApplyProtocolText?: ((text: string) => void) | undefined;
-	onAddToInvoice?: ((services: readonly { code: string; nameRu: string }[]) => void) | undefined;
+	onAddToInvoice?: ((services: readonly { code: string; nameRu: string; priceKopecks?: number; [key: string]: unknown }[]) => void) | undefined;
 }
 
 export function useVisitTherapyState({
@@ -71,7 +71,8 @@ export function useVisitTherapyState({
 
 	const blackClass = useMemo<BlackCavityClass>(() => detectBlackClass(effectiveTooth, selectedSurfaces), [effectiveTooth, selectedSurfaces]);
 	const warranty = useMemo(() => calculateRestorationWarrantyMonths({ toothNumber: effectiveTooth, surfacesCount: selectedSurfaces.length, compositeBrand: selectedComposite, isBruxismRisk }), [effectiveTooth, selectedSurfaces.length, selectedComposite, isBruxismRisk]);
-	const services804n = useMemo(() => resolve804nServicesForRestoration({ toothNumber: effectiveTooth, surfaces: selectedSurfaces, isAestheticFrontal: activePresetId === "frontal_aesthetic_restoration" || isAnterior, hasOldRestorationRemoval: activePresetId === "failed_filling_replacement", includeFluoridation }), [effectiveTooth, selectedSurfaces, activePresetId, isAnterior, includeFluoridation]);
+	const therapyServices = useMemo(() => resolve804nServicesForRestoration({ toothNumber: effectiveTooth, surfaces: selectedSurfaces, isAestheticFrontal: activePresetId === "frontal_aesthetic_restoration" || isAnterior, hasOldRestorationRemoval: activePresetId === "failed_filling_replacement", includeFluoridation }), [effectiveTooth, selectedSurfaces, activePresetId, isAnterior, includeFluoridation]);
+	const services804n = therapyServices;
 	const soapResult = useMemo(() => generateTherapySoapProtocol({ toothNumber: effectiveTooth, surfaces: selectedSurfaces, presetId: activePresetId, compositeBrand: selectedComposite, adhesiveBrand: selectedAdhesive, shadeDentin: activePresetId === "frontal_aesthetic_restoration" ? shadeDentin : undefined, shadeEnamel: activePresetId === "frontal_aesthetic_restoration" ? shadeEnamel : undefined, isBruxismRisk, includeFluoridation }), [effectiveTooth, selectedSurfaces, activePresetId, selectedComposite, selectedAdhesive, shadeDentin, shadeEnamel, isBruxismRisk, includeFluoridation]);
 
 	const handleInsertToClinicalDiary = useCallback(() => {
@@ -79,7 +80,7 @@ export function useVisitTherapyState({
 			showToast("Выберите зуб на зубной формуле перед фиксацией протокола", "warning", 3000);
 			return;
 		}
-		const text = soapResult.fullProtocolText043;
+		const text = soapResult.fullProtocolText;
 		onApplyProtocolText?.(text);
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -103,18 +104,38 @@ export function useVisitTherapyState({
 			showToast("Выберите зуб на зубной формуле для добавления услуг в смету", "warning", 3000);
 			return;
 		}
-		onAddToInvoice?.(services804n);
+		const invoiceServices = therapyServices.map((s) => ({
+			code: s.code,
+			code804n: s.code,
+			name: s.nameRu,
+			nameRu: s.nameRu,
+			toothNumber: effectiveTooth,
+			toothCode: String(effectiveTooth),
+			quantity: 1,
+			priceKopecks: 0,
+			priceRub: 0,
+			idempotencyKey: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined,
+		}));
+
+		onAddToInvoice?.(invoiceServices);
 		try {
-			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { toothNumber: effectiveTooth, services: services804n } }));
+			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+				detail: {
+					idempotencyKey: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined,
+					toothNumber: effectiveTooth,
+					toothCode: String(effectiveTooth),
+					services: invoiceServices,
+				},
+			}));
 		} catch { /* fallback */ }
-		const codesList = services804n.map((s) => s.code).join(", ");
+		const codesList = therapyServices.map((s) => s.code).join(", ");
 		showToast(`Услуги (${codesList}) добавлены в смету зуба ${effectiveTooth}`, "success", 3500);
-	}, [isToothSelected, activeTooth, services804n, effectiveTooth, onAddToInvoice]);
+	}, [isToothSelected, activeTooth, therapyServices, effectiveTooth, onAddToInvoice]);
 
 	return {
 		effectiveTooth, isToothSelected, isAnterior, activePresetId, selectedSurfaces, selectedComposite, setSelectedComposite,
 		selectedAdhesive, setSelectedAdhesive, shadeDentin, setShadeDentin, shadeEnamel, setShadeEnamel,
-		showDetailsAccordion, setShowDetailsAccordion, blackClass, warranty, services804n, soapResult,
+		showDetailsAccordion, setShowDetailsAccordion, blackClass, warranty, therapyServices, services804n, soapResult,
 		toggleSurface, handleApplySurfacePreset, handleSelectPreset, handleInsertToClinicalDiary, handleAddServicesToInvoice,
 	};
 }

@@ -113,7 +113,9 @@ export {
 	type ConsentCategory,
 	type SharedConsentContext,
 } from "./consents/index.js";
-export * from "./toothCanalsAndBilling804n.js";
+export * from "./clinical/toothCanalsBilling/toothCanalAnatomyMap.js";
+export * from "./clinical/toothCanalsBilling/billing804nMatcher.js";
+export type * from "./clinical/toothCanalsBilling/types.js";
 export * from "./clinical/index.js";
 export {
 	UPPER_PRIMARY_TEETH,

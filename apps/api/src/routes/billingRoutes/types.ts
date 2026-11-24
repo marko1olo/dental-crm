@@ -38,7 +38,7 @@ export const paymentFieldLabels: Record<string, string> = {
 export const payoutQuerySchema = z.object({
 	from: z.string().min(1).optional(),
 	to: z.string().min(1).optional(),
-});
+}).strict();
 
 export type PayoutAccess = {
 	organizationId: string;
@@ -105,8 +105,8 @@ export const fiscalQueueQuerySchema = z.object({
 		.enum(["pending_print", "hardware_offline", "printed", "failed", "all"])
 		.optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),
-});
+}).strict();
 
 export const fiscalQueueParamsSchema = z.object({
 	id: z.string().uuid(),
-});
+}).strict();

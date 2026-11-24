@@ -249,6 +249,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 
 			{isLocalMemoOpen && (
 				<PediatricParentMemoModal
+					key={`memo-${toothNumber}-${patientName}-${resolvedAgeYears}`}
 					isOpen={isLocalMemoOpen}
 					onClose={() => setIsLocalMemoOpen(false)}
 					patientName={patientName}

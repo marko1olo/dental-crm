@@ -322,7 +322,7 @@ export async function insertLabOrderInDb(
 	// [LAB-04]: Нормализация зубов и запись в lab_items
 	if (Array.isArray(data.items) && data.items.length > 0) {
 		for (const item of data.items) {
-			const itemKopecks = item.priceRub != null ? rublesToKopecks(item.priceRub) : null;
+			const itemKopecks = item.priceKopecks != null ? Math.round(Number(item.priceKopecks)) : item.priceRub != null ? rublesToKopecks(item.priceRub) : null;
 			await tx.insert(labItems).values({
 				organizationId: orgId,
 				labOrderId: createdOrder.id,

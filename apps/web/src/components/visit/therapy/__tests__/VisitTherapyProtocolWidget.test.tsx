@@ -33,6 +33,7 @@ describe("VisitTherapyProtocolWidget (Chairside 30-second Therapy & Restoration)
 
 		// Кнопки действий
 		assert.ok(html.includes("Внести в дневник"), "Has primary 1-click Form 043/u action button");
+		assert.ok(html.includes("data-testid=\"therapy-btn-apply-diary\""), "Has canonical diary test id");
 		assert.ok(html.includes("В смету"), "Has 1-click invoice / estimate service button");
 
 		// Тач-таргеты >= 44px (Мандат 8d)

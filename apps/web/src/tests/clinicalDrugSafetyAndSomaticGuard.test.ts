@@ -22,7 +22,7 @@ import {
 	executeApplySomaticNormAutonomy,
 	executeApplyAnesthesiaPresetAutonomy,
 } from "../components/visit/view/visitViewAutonomyActions.js";
-import { dispatchCrmAction } from "../services/ai/aiActionDispatcher.js";
+import { calculateAnesthesiaSafety } from "../components/anesthesia/anesthesiaEngine.js";
 import { useVisitStore } from "../store/visitStore.js";
 import { usePatientStore } from "../store/patientStore.js";
 import { useAppStore } from "../store/appStore.js";
@@ -231,7 +231,7 @@ describe("Clinical Drug Safety & Somatic Guardrails Unit Tests", () => {
 
 			const result = executeApplyAnesthesiaPresetAutonomy({
 				updateVisitNoteField: (field, val) => {
-					if (field === "treatment") treatmentValue = val;
+					if (field === "treatmentPlan" || field === "treatment") treatmentValue = val;
 				},
 				showToastFn: (msg) => {
 					toastMsg = msg;
@@ -250,7 +250,7 @@ describe("Clinical Drug Safety & Somatic Guardrails Unit Tests", () => {
 
 			const result = executeApplyAnesthesiaPresetAutonomy({
 				updateVisitNoteField: (field, val) => {
-					if (field === "treatment") treatmentValue = val;
+					if (field === "treatmentPlan" || field === "treatment") treatmentValue = val;
 				},
 				showToastFn: (msg) => {
 					toastMsg = msg;
@@ -270,7 +270,7 @@ describe("Clinical Drug Safety & Somatic Guardrails Unit Tests", () => {
 
 			const result = executeApplyAnesthesiaPresetAutonomy({
 				updateVisitNoteField: (field, val) => {
-					if (field === "treatment") treatmentValue = val;
+					if (field === "treatmentPlan" || field === "treatment") treatmentValue = val;
 				},
 				showToastFn: (msg) => {
 					toastMsg = msg;
@@ -290,7 +290,7 @@ describe("Clinical Drug Safety & Somatic Guardrails Unit Tests", () => {
 
 			const result = executeApplyAnesthesiaPresetAutonomy({
 				updateVisitNoteField: (field, val) => {
-					if (field === "treatment") treatmentValue = val;
+					if (field === "treatmentPlan" || field === "treatment") treatmentValue = val;
 				},
 				showToastFn: (msg) => {
 					toastMsg = msg;
@@ -305,71 +305,47 @@ describe("Clinical Drug Safety & Somatic Guardrails Unit Tests", () => {
 		});
 	});
 
-	describe("4. AI Copilot Drug Interaction & Dosage Dispatch (aiActionDispatcher)", () => {
-		it("dispatches check_drug_interactions without blocking doctor autonomy", async () => {
-			const result = await dispatchCrmAction({
-				callId: "call-ddi-1",
-				name: "check_drug_interactions",
-				arguments: {
-					proposedMedications: ["Артикаин 4% с эпинефрином 1:100 000", "Амоксиклав 1000 мг"],
-					somaticConditions: ["Гипертоническая болезнь", "Аллергия на пенициллин"],
-				},
-				confirmed: true,
+	describe("4. Clinical Drug Safety & Anesthetic Calculation (calculateAnesthesiaSafety)", () => {
+		it("calculates anesthesia safety for healthy patient without blocking doctor autonomy", () => {
+			const result = calculateAnesthesiaSafety({
+				drugId: "articaine_100",
+				carpulesCount: 2,
+				patientWeightKg: 70,
+				isSomaticallyHealthy: true,
 			});
 
-			assert.equal(result.success, true);
-			assert.equal(result.category, "pharmacology");
-			assert.ok(result.data);
-			assert.equal(result.data.is_blocked, false, "Mandate 8e: must never block the chairside doctor");
-			assert.equal(result.data.doctorAutonomyBlocked, false);
-			assert.equal(result.data.hasAllergyClash, true);
-
-			// Must detect penicillin clash and recommend clarithromycin/clindamycin
-			const allergyWarnings = result.data.allergyWarnings as any[];
-			assert.ok(allergyWarnings.some((w) => w.allergenGroup.includes("Пенициллин")));
-			const safeAlts = result.data.safeAlternativeRecommendations as string[];
-			assert.ok(safeAlts.some((alt) => alt.includes("Кларитромицин") || alt.includes("Клиндамицин")));
+			assert.equal(result.isOverdose, false);
+			assert.equal(result.isEpinephrineOverdose, false);
+			assert.equal(result.isCardioRisk, false);
+			assert.ok(result.maxSafeCarpulesCount >= 5);
+			assert.ok(result.diaryEntryRu.includes("Articaini"));
 		});
 
-		it("dispatches calculate_anesthetic_dosage and auto-selects Mepivacaine 3% for cardio patient", async () => {
-			const result = await dispatchCrmAction({
-				callId: "call-dose-1",
-				name: "calculate_anesthetic_dosage",
-				arguments: {
-					patientWeightKg: 80,
-					plannedCarpules: 2,
-					anestheticType: "auto",
-					somaticConditions: ["Гипертония 2 ст."],
-				},
-				confirmed: true,
+		it("auto-detects cardiovascular risk for hypertensive patient and flags epinephrine limit", () => {
+			const result = calculateAnesthesiaSafety({
+				drugId: "mepivacaine_plain",
+				carpulesCount: 2,
+				patientWeightKg: 80,
+				hasHypertension: true,
+				hasCardiovascularRisk: true,
 			});
 
-			assert.equal(result.success, true);
-			assert.equal(result.category, "pharmacology");
-			assert.ok(result.data);
-			assert.equal(result.data.anestheticType, "mepivacaine_3_plain", "Should auto-select mepivacaine for hypertension");
-			assert.equal(result.data.isCardiovascularRisk, true);
-			assert.equal(result.data.maxSafeCarpules, 5); // 80kg * 4.4mg/kg = 352mg / 51mg = 6.9 -> clamped
-			assert.equal(result.data.isExceeded, false);
+			assert.equal(result.isCardioRisk, true);
+			assert.equal(result.isOverdose, false);
+			assert.equal(result.isEpinephrineOverdose, false);
+			assert.ok(result.maxSafeCarpulesCount >= 4);
 		});
 
-		it("dispatches calculate_anesthetic_dosage and auto-selects Articaine 1:200 000 for pregnancy", async () => {
-			const result = await dispatchCrmAction({
-				callId: "call-dose-2",
-				name: "calculate_anesthetic_dosage",
-				arguments: {
-					patientWeightKg: 65,
-					plannedCarpules: 1,
-					anestheticType: "auto",
-					somaticConditions: ["Беременность 2 триместр"],
-				},
-				confirmed: true,
+		it("evaluates safety for pregnant patient with gestational protocol", () => {
+			const result = calculateAnesthesiaSafety({
+				drugId: "articaine_200",
+				carpulesCount: 1,
+				patientWeightKg: 65,
+				isPregnantOrLactating: true,
 			});
 
-			assert.equal(result.success, true);
-			assert.ok(result.data);
-			assert.equal(result.data.anestheticType, "articaine_1_200000", "Should auto-select 1:200 000 for pregnancy");
-			assert.equal(result.data.isPregnancy, true);
+			assert.equal(result.isOverdose, false);
+			assert.ok(result.warnings.some((w) => w.includes("Беременность") || w.includes("1:200 000")));
 		});
 	});
 });

@@ -71,9 +71,6 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 			};
 			window.dispatchEvent(new CustomEvent("dente:open-surgery-hub", { detail: detailPayload }));
 			window.dispatchEvent(new CustomEvent("dente:open-surgery", { detail: detailPayload }));
-			window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
-				detail: { operationTitle: data.procedureName, toothFdi: toothNum, lotNumber: effectiveLot, isOverdraft: true, idempotencyKey, timestamp: new Date().toISOString() },
-			}));
 		}
 	};
 

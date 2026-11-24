@@ -21,9 +21,13 @@ import {
 } from "@dental/shared";
 
 export { getNextFocusedTooth, getToothStateFromHotkey };
+const ADULT_TOP_TEETH = TOP_TEETH;
+const ADULT_BOTTOM_TEETH = BOTTOM_TEETH;
 export {
 	TOP_TEETH,
 	BOTTOM_TEETH,
+	ADULT_TOP_TEETH,
+	ADULT_BOTTOM_TEETH,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 	MIXED_TOP_TEETH,

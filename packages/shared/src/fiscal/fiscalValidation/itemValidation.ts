@@ -13,6 +13,7 @@ import {
 	taxDeductionCategorySchema,
 } from "../ffd12Types.js";
 import { parseChestnyZnakDataMatrix } from "../markingValidation.js";
+import { basisPointsFromPercent, percentageOfKopecks } from "../../money.js";
 
 /**
  * Single line item schema in a 54-FZ FFD 1.2 Fiscal Receipt.
@@ -45,13 +46,14 @@ export const fiscalReceiptItemSchema = z
 		addendumId: z.string().uuid().optional().nullable(),
 		addendumConfirmed: z.boolean().optional().default(false),
 	})
+	.strict()
 	.superRefine((item, ctx) => {
 		// Verify exact integer kopecks arithmetic: priceKopecks * quantity == amountKopecks (or with discount)
 		const rawAmount = Math.round(item.priceKopecks * item.quantity);
 		const discount =
 			item.discountKopecks ??
 			(item.discountPercent != null
-				? Math.round((rawAmount * item.discountPercent) / 100)
+				? percentageOfKopecks(rawAmount, basisPointsFromPercent(item.discountPercent))
 				: 0);
 		const expectedAmount = Math.max(0, rawAmount - discount);
 		if (Math.abs(expectedAmount - item.amountKopecks) > 1) {

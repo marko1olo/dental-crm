@@ -7,10 +7,12 @@
 import { SanPiNRegulatoryEngine } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { recordAuditEvent } from "../../../audit.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { preSterilizationCleaningLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 
 export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -19,6 +21,17 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 		"pso quick norm",
 	);
 	if (!organizationId) return;
+
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const body = (req.body as Record<string, unknown>) || {};
 	const batchItemCount = typeof body.batchItemCount === "number" ? body.batchItemCount : 100;
@@ -44,24 +57,41 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 	);
 
 	const bodyOperatorId = typeof body.operatorId === "string" ? body.operatorId : null;
+	const actorUserId = getRequestIdentity(req).userId ?? null;
 
-	const [log] = await db
-		.insert(preSterilizationCleaningLogs)
-		.values({
-			organizationId,
-			testType: "both",
-			batchItemCount,
-			testedSampleCount,
-			isAzopyramNegative: true,
-			isPhenolphthaleinNegative: true,
-			isBatchApproved: true,
-			detergentBrand,
-			rejectionReason: null,
-			operatorId: bodyOperatorId ?? getRequestIdentity(req).userId ?? null,
-			notes: `${instrumentName} | ${notesText}`,
-			timestamp: new Date(),
-		})
-		.returning();
+	const [log] = await withTenantCtx(organizationId, async (tx) => {
+		const [created] = await tx
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount,
+				testedSampleCount,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand,
+				rejectionReason: null,
+				operatorId: bodyOperatorId ?? actorUserId,
+				notes: `${instrumentName} | ${notesText}`,
+				timestamp: new Date(),
+			})
+			.returning();
+
+		if (created) {
+			await recordAuditEvent({
+				organizationId,
+				actorUserId,
+				entityType: "sanpin_pso_log",
+				entityId: created.id,
+				action: "pso_quick_norm_created",
+				reason: `Физиологическая норма ПСО: ${created.notes}, партия: ${created.batchItemCount} шт`,
+				tx,
+			});
+		}
+
+		return [created];
+	});
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_PSO_ADDED",
@@ -72,5 +102,6 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 		success: true,
 		log,
 		evaluation,
+		indicators: { azopyram: "negative_norm", phenolphthalein: "negative_norm" },
 	});
 }

@@ -12,6 +12,7 @@ import {
 } from "../../db/schema.js";
 import {
 	LEDGER_ID_PREFIX_LENGTH,
+	UUID_SHAPE,
 	type TreatmentPlanItemRow,
 	type TreatmentPlanRow,
 } from "./types.js";
@@ -27,6 +28,9 @@ export async function ensurePatientInOrganization(
 	patientId: string,
 	organizationId: string,
 ): Promise<{ id: string } | null> {
+	if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(organizationId)) {
+		return null;
+	}
 	const [patient] = await db
 		.select({ id: patients.id })
 		.from(patients)

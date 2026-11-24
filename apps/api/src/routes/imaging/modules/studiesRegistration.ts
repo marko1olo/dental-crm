@@ -3,6 +3,7 @@ import {
 	autoBindHandler,
 	bindPatientHandler,
 	bindToothHandler,
+	bindVisitHandler,
 	cbctTunerPatientsHandler,
 	cbctTunerVolumeHandler,
 	unbindPatientHandler,
@@ -256,6 +257,46 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 		},
 	}, async (request, reply) => {
 		return bindToothHandler(request, reply);
+	});
+	app.post("/api/imaging/studies/:id/bind-visit", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
+			},
+		},
+	}, async (request, reply) => {
+		return bindVisitHandler(request, reply);
+	});
+	app.patch("/api/imaging/studies/:id/bind-visit", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
+			},
+		},
+	}, async (request, reply) => {
+		return bindVisitHandler(request, reply);
+	});
+	app.post("/api/radiology/studies/:id/bind-visit", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
+			},
+		},
+	}, async (request, reply) => {
+		return bindVisitHandler(request, reply);
+	});
+	app.patch("/api/radiology/studies/:id/bind-visit", {
+		schema: {
+			headers: {
+				type: "object",
+				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
+			},
+		},
+	}, async (request, reply) => {
+		return bindVisitHandler(request, reply);
 	});
 	app.post("/api/imaging/studies/:id/unbind-patient", {
 		schema: {

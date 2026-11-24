@@ -34,7 +34,9 @@ export function useSpecialtyFocusState(props: VisitSpecialtyFocusProps = {}) {
 		if (propOnToggleDrawer) propOnToggleDrawer(next);
 		else setLocalIsProtocolDrawerOpen(next);
 	};
-	const activeVisitAny = context?.dashboard?.activeVisit as { diagnosisTooth?: unknown; toothNumber?: unknown } | null | undefined;
+	const activeVisitAny = context?.dashboard?.activeVisit as { diagnosisTooth?: unknown; toothNumber?: unknown; id?: string } | null | undefined;
+	const activeAppointmentAny = (context?.dashboard as { activeAppointment?: { id?: string } } | undefined)?.activeAppointment;
+	const visitId = props.visitId ?? activeVisitAny?.id ?? activeAppointmentAny?.id;
 	const diagTooth = Number(activeVisitAny?.diagnosisTooth ?? activeVisitAny?.toothNumber);
 	const [activeTooth, setActiveTooth] = useState<number | null>(() => {
 		return diagTooth > 0 ? diagTooth : 16;
@@ -83,6 +85,6 @@ export function useSpecialtyFocusState(props: VisitSpecialtyFocusProps = {}) {
 		context, activeDoctor, activeChair, activePatient, selectedSpecialty, setSelectedSpecialty, setSelectedProtocolId,
 		isProtocolDrawerOpen, setIsProtocolDrawerOpen, activeTooth, setActiveTooth, activeSurfaces, setActiveSurfaces,
 		franklRating, setFranklRating, patientAgeYears, isChildDentition, isSurgery, isTherapy,
-		handleApplyProtocolText, handleAddToInvoice, currentSpecialtyLabel, focusOptions, activeWidgetTitle,
+		handleApplyProtocolText, handleAddToInvoice, currentSpecialtyLabel, focusOptions, activeWidgetTitle, visitId,
 	};
 }

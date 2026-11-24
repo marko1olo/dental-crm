@@ -10,10 +10,12 @@ export {
 	handleCreateDailyTest,
 } from "./handlers/dailyAutoclaveTestHandlers.js";
 export {
-	handleGetPsoTests,
-	handleCreatePsoTest,
-	handlePsoQuickNorm,
-} from "./handlers/psoLogHandlers.js";
+	handleGetPso as handleGetPsoTests,
+	handlePostPso as handleCreatePsoTest,
+} from "../psoModules/psoCrudHandlers.js";
+export {
+	handlePostPsoQuickNorm as handlePsoQuickNorm,
+} from "../psoModules/psoQuickNormHandler.js";
 export {
 	handleGetSterilizationLogs,
 	handleGetSanpinCycles,

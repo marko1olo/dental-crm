@@ -20,16 +20,10 @@ export interface DeclaredUnmountedItem {
  */
 export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 	{
-		file: "components/visit/view/visitHeader/index.tsx",
-		name: "VisitHeaderMonolith",
-		reason:
-			"Устаревший монолитный заголовок визита, вытесненный компактной 2-строчной клинической шапкой и панелью быстрого фокуса в каноническом VisitView.tsx (VisitFocusBar). Сохранён как исторический прототип.",
-	},
-	{
 		file: "components/visit/VisitMainTabs.tsx",
 		name: "VisitMainTabs",
 		reason:
-			"Подкомпонент навигации устаревшего VisitHeaderMonolith.tsx. В живом интерфейсе переключение вкладок визита (ЭМК, Формула, Смета, Снимки) реализовано компактными кнопками навигации непосредственно в VisitView.tsx.",
+			"Подкомпонент навигации устаревшего заголовка визита. В живом интерфейсе переключение вкладок визита (ЭМК, Формула, Смета, Снимки) реализовано компактными кнопками навигации непосредственно в VisitView.tsx.",
 	},
 	{
 		file: "components/icons/DentalIcons.tsx",

@@ -6,7 +6,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 
 export interface SurgicalMaterialDeductionItem {
 	readonly name: string;
@@ -74,7 +74,7 @@ export async function quickDeductSurgicalMaterials(
 		try {
 			const res = await fetch("/api/surgery/materials/quick-deduct", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				}),
@@ -106,20 +106,6 @@ export async function quickDeductSurgicalMaterials(
 	const messageRu = isOverdraft
 		? `Списано ${params.materials.length} поз. под операцию «${title}» в мягкий овердрафт без блокировки врача.`
 		: `Материалы операции «${title}» (${params.materials.length} поз.) успешно списаны.`;
-
-	if (typeof window !== "undefined") {
-		window.dispatchEvent(
-			new CustomEvent("dente-quick-writeoff-surgical-materials", {
-				detail: {
-					materials: deductedItems,
-					isOverdraft,
-					operationTitle: title,
-					toothFdi: params.toothNumber,
-					timestamp: new Date().toISOString(),
-				},
-			}),
-		);
-	}
 
 	return { success: true, isOverdraft, deductedItems, messageRu };
 }

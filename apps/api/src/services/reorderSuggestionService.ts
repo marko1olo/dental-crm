@@ -85,6 +85,12 @@ export class ReorderSuggestionService {
 			const minQty = Number(item.minQty ?? item.criticalThreshold ?? 0);
 			const usage90d = consumptionMap.get(item.id) ?? 0;
 			const unitCostRub = Number(item.unitCostRub ?? item.pricePerUnit ?? 0);
+			const unitCostKopecks =
+				item.unitCostKopecks !== null && item.unitCostKopecks !== undefined
+					? Number(item.unitCostKopecks)
+					: item.pricePerUnitKopecks !== null && item.pricePerUnitKopecks !== undefined
+						? Number(item.pricePerUnitKopecks)
+						: undefined;
 
 			return {
 				inventoryItemId: item.id,
@@ -99,6 +105,7 @@ export class ReorderSuggestionService {
 				supplierId: null,
 				supplierName: null,
 				unitPriceRub: unitCostRub,
+				...(unitCostKopecks !== undefined ? { unitPriceKopecks: unitCostKopecks } : {}),
 			};
 		});
 

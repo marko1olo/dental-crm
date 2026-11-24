@@ -19,7 +19,7 @@ export const diaryUpsertSchema = z.object({
 
 export const diaryLockBodySchema = z.object({
 	pkcs7Signature: z.unknown().optional(),
-});
+}).strict();
 
 export const diaryReviseBodySchema = z.object({
 	complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),

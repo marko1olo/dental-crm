@@ -4,10 +4,13 @@
  */
 
 import { formatKopecksToRub } from "@dental/shared";
-import { CANONICAL_IMPLANT_SYSTEMS as DICOM_CANONICAL_IMPLANT_SYSTEMS } from "../dicom/implantCatalog";
 import type { ImplantBrand, PlatformType } from "./implantBrandTypes";
 import { BRAND_KEY_MAP } from "./implantBrandTypes";
-import { findImplantSystem, resolveNormalizedBrand } from "./implantCatalogData";
+import {
+	CANONICAL_IMPLANT_SYSTEMS,
+	findImplantSystem,
+	resolveNormalizedBrand,
+} from "./implantCatalogData";
 
 export interface DrillStep {
 	readonly stepNumber: number;
@@ -113,43 +116,41 @@ export function buildDrillSequence(sizeDiameter: number, len: number): DrillStep
 
 export function createFixtures(): ImplantFixture[] {
 	const catalog: ImplantFixture[] = [];
+	const systems = CANONICAL_IMPLANT_SYSTEMS || {};
 
-	for (const sys of DICOM_CANONICAL_IMPLANT_SYSTEMS) {
-		const brandKey = BRAND_KEY_MAP[sys.brand];
-		if (!brandKey) continue;
+	for (const sys of Object.values(systems)) {
+		const brandKey: ImplantBrand = BRAND_KEY_MAP[sys.brandName] ?? (sys.id as ImplantBrand);
+		const prices = BASE_PRICES[brandKey] ?? BASE_PRICES.osstem;
+		const platformType: PlatformType = sys.connectionType === "conical" ? "conical" : "internal_hex";
 
-		const prices = BASE_PRICES[brandKey];
-		const isConical = sys.primaryStabilityDesign.toLowerCase().includes("конич");
-		const platformType: PlatformType = isConical ? "conical" : "internal_hex";
-
-		for (const size of sys.sizes) {
-			for (const len of size.lengthsMm) {
-				const id = `${brandKey}-${sys.line.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${size.diameterMm.toFixed(1)}-${len.toFixed(1)}`;
-				const article = `${brandKey.toUpperCase().slice(0, 3)}-${Math.round(size.diameterMm * 10)}${Math.round(len * 10)}`;
+		for (const diam of sys.diametersMm) {
+			for (const len of sys.lengthsMm) {
+				const id = `${brandKey}-${sys.lineName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${diam.toFixed(1)}-${len.toFixed(1)}`;
+				const article = `${sys.defaultArticlePrefix || brandKey.toUpperCase().slice(0, 3)}-${Math.round(diam * 10)}${Math.round(len * 10)}`;
 
 				catalog.push({
 					id,
 					brand: brandKey,
-					brandName: sys.brand,
-					brandCountry: sys.country,
-					line: sys.line,
-					lineDescription: sys.descriptionRu,
-					diameterMm: size.diameterMm,
+					brandName: sys.brandName,
+					brandCountry: sys.countryRu,
+					line: sys.lineName,
+					lineDescription: sys.connectionDescription,
+					diameterMm: diam,
 					lengthMm: len,
 					platformType,
-					platformName: size.platform.labelRu,
-					platformDiameterMm: size.diameterMm,
-					apexDiameterMm: Number((size.diameterMm * 0.65).toFixed(1)),
+					platformName: `${sys.brandName} Ø${diam.toFixed(1)} (${platformType})`,
+					platformDiameterMm: diam,
+					apexDiameterMm: Number((diam * 0.65).toFixed(1)),
 					surfaceTreatment: "SLA / Nanostructured bioactive surface",
 					surfaceDescription: "Пескоструйная обработка и кислотное травление для ускоренной остеоинтеграции",
 					articleNumber: article,
 					guidedSleeve: {
-						sleeveDiameterMm: sys.sleeveDiameterMm,
-						sleeveHeightMm: sys.sleeveHeightMm,
-						offsetMm: sys.drillOffsetDefaultMm,
+						sleeveDiameterMm: diam + 1.2,
+						sleeveHeightMm: 5.0,
+						offsetMm: 9.0,
 						sleeveArticle: `SLV-${article}`,
 					},
-					drillSequence: buildDrillSequence(size.diameterMm, len),
+					drillSequence: buildDrillSequence(diam, len),
 					fixturePriceKopecks: prices.fixture,
 					healingCapPriceKopecks: prices.cap,
 					transferPriceKopecks: prices.transfer,
@@ -163,7 +164,35 @@ export function createFixtures(): ImplantFixture[] {
 	return catalog;
 }
 
-export const IMPLANT_CATALOG: readonly ImplantFixture[] = Object.freeze(createFixtures());
+let _catalogCache: readonly ImplantFixture[] | null = null;
+
+export function getImplantCatalog(): readonly ImplantFixture[] {
+	if (!_catalogCache || _catalogCache.length === 0) {
+		const fixtures = createFixtures();
+		if (fixtures.length > 0) {
+			_catalogCache = Object.freeze(fixtures);
+		} else {
+			return fixtures;
+		}
+	}
+	return _catalogCache;
+}
+
+export const IMPLANT_CATALOG: readonly ImplantFixture[] = new Proxy([] as ImplantFixture[], {
+	get(_target, prop, receiver) {
+		const fixtures = getImplantCatalog();
+		return Reflect.get(fixtures, prop, receiver);
+	},
+	has(_target, prop) {
+		return Reflect.has(getImplantCatalog(), prop);
+	},
+	getOwnPropertyDescriptor(_target, prop) {
+		return Reflect.getOwnPropertyDescriptor(getImplantCatalog(), prop);
+	},
+	ownKeys(_target) {
+		return Reflect.ownKeys(getImplantCatalog());
+	},
+});
 
 export function getFixturesByBrand(brand: ImplantBrand): ImplantFixture[] {
 	return IMPLANT_CATALOG.filter((f) => f.brand === brand);

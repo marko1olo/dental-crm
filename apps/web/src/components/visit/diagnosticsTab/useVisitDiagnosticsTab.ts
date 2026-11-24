@@ -9,6 +9,7 @@ import {
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { subscribeCbctSyncEvents } from "../../radiology/mpr/cbctStudioSyncChannel";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { imagingWriteTarget, realVisitFieldId } from "../visitIdentity";
 import type {
 	DiagnosticStudy,
@@ -133,12 +134,14 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 				photoType?: PhotoStageType;
 				width?: number;
 				height?: number;
+				studyId?: string;
 			}>;
 			if (!custom.detail?.url) return;
 
+			const targetTooth = (custom.detail.toothNumber ? Number(custom.detail.toothNumber) : selectedToothForPhoto) || undefined;
 			const newPhoto: ClinicalPhotoAttachment = {
-				id: `photo-pasted-${Date.now()}`,
-				toothNumber: (custom.detail.toothNumber ? Number(custom.detail.toothNumber) : selectedToothForPhoto) || undefined,
+				id: custom.detail.studyId || `photo-pasted-${Date.now()}`,
+				toothNumber: targetTooth,
 				photoType: custom.detail.photoType || selectedPhotoType || "before",
 				photoUrl: custom.detail.url,
 				description: custom.detail.name || "Снимок из буфера обмена (Ctrl+V)",
@@ -161,6 +164,38 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 				}
 				return next;
 			});
+
+			const activeVisitId =
+				(ctx?.dashboard?.activeVisit as { id?: string } | null | undefined)?.id ??
+				null;
+
+			if (custom.detail.studyId && activeVisitId) {
+				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: `bind-visit-${custom.detail.studyId}-${Date.now()}`;
+
+				void fetch(`/api/imaging/studies/${encodeURIComponent(custom.detail.studyId)}/bind-visit`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					}),
+					body: JSON.stringify({
+						visitId: activeVisitId,
+						toothCode: targetTooth ? String(targetTooth) : undefined,
+					}),
+				})
+					.then((res) => {
+						if (res.ok) {
+							window.dispatchEvent(new CustomEvent("dente-tooth-scan-bound"));
+							window.dispatchEvent(new CustomEvent("dente-rvg-scan-saved"));
+						}
+					})
+					.catch((err) => {
+						console.warn("[useVisitDiagnosticsTab] Failed to bind study to visit:", err);
+					});
+			}
+
 			const isXray = String(custom.detail?.photoType || "") === "xray" || (custom.detail?.name ? custom.detail.name.includes("Рентген") : false);
 			showToast(isXray ? "Рентген-снимок с визиографа успешно прикреплен к протоколу" : "Снимок из буфера успешно прикреплен к фотопротоколу", "success", 3000);
 		};

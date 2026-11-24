@@ -98,9 +98,10 @@ async function registerImplantInstallationOnce(payload: {
 export function executeApplyToVisitDiary(
 	protocolText: string,
 	optionsOrOnApply?: ((text: string) => void) | ApplyToVisitDiaryOptions,
+	maybeOptions?: ApplyToVisitDiaryOptions,
 ) {
-	const onApplyToDiary = typeof optionsOrOnApply === "function" ? optionsOrOnApply : optionsOrOnApply?.onApplyToDiary;
-	const options = typeof optionsOrOnApply === "object" ? optionsOrOnApply : undefined;
+	const onApplyToDiary = typeof optionsOrOnApply === "function" ? optionsOrOnApply : (optionsOrOnApply?.onApplyToDiary ?? maybeOptions?.onApplyToDiary);
+	const options = typeof optionsOrOnApply === "object" ? optionsOrOnApply : maybeOptions;
 
 	try {
 		useVisitStore.getState().setVisitNoteForm((prev) => {

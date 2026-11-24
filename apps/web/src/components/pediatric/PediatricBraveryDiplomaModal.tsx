@@ -49,11 +49,16 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 	const persistBraveryDiploma = useCallback(async () => {
 		if (!patientId || !patientId.trim()) return;
+		const idempotencyKey =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `diploma-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 		try {
-			await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/bravery-diploma`, {
+			const res = await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/bravery-diploma`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
 				},
 				credentials: "include",
 				body: JSON.stringify({
@@ -65,8 +70,13 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 					awardedDateIso: new Date().toISOString(),
 				}),
 			});
-		} catch {
-			// Offline-first graceful fallback per Mandate 8e
+			if (!res.ok) {
+				console.warn("[diploma] Server returned error saving bravery diploma:", res.status);
+				showToast("Диплом напечатан локально (сервер временно недоступен)", "info");
+			}
+		} catch (err) {
+			console.warn("[diploma] Failed to persist bravery diploma:", err);
+			showToast("Диплом напечатан локально (сервер временно недоступен)", "info");
 		}
 	}, [patientId, heroName, resolved.patientName, patientAgeYears, effectiveDoctorName, effectiveClinicName, praiseText]);
 

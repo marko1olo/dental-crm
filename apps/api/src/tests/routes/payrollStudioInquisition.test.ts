@@ -7,7 +7,10 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
+import { eq } from "drizzle-orm";
 import { generateUuidV7 } from "@dental/shared";
+import { db } from "../../db/client.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { registerPayrollRoutes } from "../../routes/payroll.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -341,5 +344,59 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		const data = JSON.parse(res.body);
 		assert.equal(data.error, "ValidationError");
 		assert.ok(data.message.includes("Idempotency-Key"));
+	});
+
+	test("12. DEF-PAYROLL-10: Idempotency in_flight conflict returns 409 Retry-After: 1", async () => {
+		const idemKey = generateUuidV7();
+		await db.insert(idempotencyKeys).values({
+			clinicId: ORG_ID,
+			key: idemKey,
+			status: "in_flight",
+			lockedAt: new Date(),
+		});
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "owner"),
+				"Content-Type": "application/json",
+				"Idempotency-Key": idemKey,
+			},
+			payload: {
+				doctorId: DOCTOR_ID,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+
+		assert.equal(res.statusCode, 409);
+		assert.equal(res.headers["retry-after"], "1");
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "Conflict");
+
+		// Clean up
+		await db.delete(idempotencyKeys).where(eq(idempotencyKeys.key, idemKey));
+	});
+
+	test("13. DEF-PAYROLL-11: BOLA-защита: врач со scope own не может закрыть чужую ведомость даже при совпадении doctorId=solo-doctor", async () => {
+		const OTHER_DOCTOR_ID = "c8000000-0000-4000-8000-00000000d009";
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "doctor"),
+				"Content-Type": "application/json",
+			},
+			payload: {
+				doctorId: OTHER_DOCTOR_ID,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+
+		assert.equal(res.statusCode, 403);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "PermissionDenied");
 	});
 });

@@ -23,6 +23,7 @@ export interface VisiographDetectedScan {
 	readonly file?: File | Blob | undefined;
 	readonly detectedTooth?: string | undefined;
 	readonly confidence: number;
+	readonly studyId?: string | undefined;
 }
 
 export interface HotFolderWatcherConfig {
@@ -50,18 +51,20 @@ export interface SensorFileDroppedDetail {
 
 export interface AttachPhotoToVisitDetail {
 	readonly url: string;
-	readonly name?: string;
-	readonly toothNumber?: string;
-	readonly photoType?: "before" | "after" | "xray" | "periapical";
-	readonly width?: number;
-	readonly height?: number;
+	readonly name?: string | undefined;
+	readonly toothNumber?: string | undefined;
+	readonly photoType?: "before" | "after" | "xray" | "periapical" | undefined;
+	readonly width?: number | undefined;
+	readonly height?: number | undefined;
+	readonly studyId?: string | undefined;
 }
 
 export interface OpenDirectRvgDetail {
 	readonly imageUrl: string;
-	readonly tooth?: string;
-	readonly brandName?: string;
-	readonly fileName?: string;
+	readonly tooth?: string | undefined;
+	readonly brandName?: string | undefined;
+	readonly fileName?: string | undefined;
+	readonly studyId?: string | undefined;
 }
 
 export type VisiographScanListener = (scan: VisiographDetectedScan | null, queueLength: number) => void;

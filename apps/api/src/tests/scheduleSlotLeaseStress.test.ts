@@ -516,4 +516,52 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 		const json = JSON.parse(acqRes.body);
 		assert.equal(json.error, "SLOT_OCCUPIED");
 	});
+
+	it("1.11 Releasing another session's lease without admin privileges is rejected with 403", async (context) => {
+		if (!databaseAvailable) return context.skip("База данных недоступна");
+
+		// Acquire a lease from session-owner
+		const acqRes = await acquireLease({
+			startsAt: "2029-03-01T18:00:00.000Z",
+			endsAt: "2029-03-01T18:30:00.000Z",
+			chairId: CHAIR_ID,
+			doctorUserId: DOCTOR_ID,
+			holderSessionId: "session-owner-123",
+		});
+		assert.equal(acqRes.statusCode, 201);
+		const { leaseToken } = JSON.parse(acqRes.body);
+
+		// Non-privileged staff token (e.g. role "doctor")
+		const doctorToken = signToken(
+			{
+				organizationId: ORG_ID,
+				userId: DOCTOR_ID,
+				role: "doctor",
+				sessionId: "session-other-456",
+			},
+			authTokenSecret(),
+		);
+
+		// Attempt to release without matching session and as non-admin
+		const relRes = await app.inject({
+			method: "POST",
+			url: "/api/schedule/leases/release",
+			headers: {
+				"content-type": "application/json",
+				"x-staff-token": doctorToken,
+				authorization: `Bearer ${doctorToken}`,
+			},
+			payload: {
+				leaseToken,
+				holderSessionId: "session-other-456",
+			},
+		});
+
+		assert.equal(relRes.statusCode, 403);
+		const json = JSON.parse(relRes.body);
+		assert.equal(json.error, "PermissionDenied");
+
+		// Clean up with owner token
+		await releaseLease(leaseToken);
+	});
 });

@@ -79,7 +79,7 @@ export function DentalLabFinancialGateBanner({
 								reason: "Клиническое решение лечащего врача",
 							})
 						}
-						className="min-h-[34px] px-3 py-1.5 rounded-lg border border-[var(--primary)]/40 bg-[var(--primary)]/15 hover:bg-[var(--primary)]/25 text-[var(--primary)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
+						className="h-8 px-2.5 rounded-md border border-[var(--primary)]/40 bg-[var(--primary)]/15 hover:bg-[var(--primary)]/25 text-[var(--primary)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
 						data-testid="btn-lab-override-financial-gate"
 						title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 					>

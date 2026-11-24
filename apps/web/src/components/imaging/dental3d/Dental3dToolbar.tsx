@@ -108,9 +108,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 				<div
 					className="pointer-events-auto flex items-center justify-between gap-3 px-3 py-2 rounded-xl backdrop-blur-md border shadow-md"
 					style={{
-						backgroundColor: "var(--paper-strong, #090d16)",
-						borderColor: "var(--line, #334155)",
-						color: "var(--ink, #f8fafc)",
+						backgroundColor: "var(--paper-strong)",
+						borderColor: "var(--line)",
+						color: "var(--ink)",
 					}}
 				>
 					{/* Left: Box Icon, Title & Clinical Badges */}
@@ -126,9 +126,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							<span
 								className="text-xs font-semibold px-2 py-0.5 rounded-md truncate max-w-[200px]"
 								style={{
-									backgroundColor: "rgba(13, 148, 136, 0.12)",
-									color: "var(--teal, #0d9488)",
-									border: "1px solid rgba(13, 148, 136, 0.25)",
+									backgroundColor: "var(--primary-soft)",
+									color: "var(--primary)",
+									border: "1px solid var(--primary-line)",
 								}}
 								title={`Пациент: ${patientName}`}
 							>
@@ -140,9 +140,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							<span
 								className="text-xs font-mono font-bold px-2 py-0.5 rounded-md whitespace-nowrap"
 								style={{
-									backgroundColor: "rgba(13, 148, 136, 0.15)",
-									color: "var(--teal, #0d9488)",
-									border: "1px solid rgba(13, 148, 136, 0.3)",
+									backgroundColor: "var(--primary-soft)",
+									color: "var(--primary)",
+									border: "1px solid var(--primary-line)",
 								}}
 								title={`Зуб FDI: ${displayTooth}`}
 								data-testid="viewer3d-tooth-badge"
@@ -159,9 +159,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							onClick={onOpenFilePicker}
 							className="h-8 px-3 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer border"
 							style={{
-								backgroundColor: "var(--paper, #0f172a)",
-								borderColor: "var(--line, #334155)",
-								color: "var(--ink, #f8fafc)",
+								backgroundColor: "var(--paper)",
+								borderColor: "var(--line)",
+								color: "var(--ink)",
 							}}
 							title="Загрузить сканы челюстей (.ply, .stl, .obj, .zip)"
 							data-testid="btn-open-3d-file"
@@ -175,9 +175,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							onClick={onResetCamera}
 							className="h-8 px-3 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer border"
 							style={{
-								backgroundColor: "var(--paper, #0f172a)",
-								borderColor: "var(--line, #334155)",
-								color: "var(--ink, #f8fafc)",
+								backgroundColor: "var(--paper)",
+								borderColor: "var(--line)",
+								color: "var(--ink)",
 							}}
 							title="Сброс камеры в анатомический ракурс"
 							data-testid="btn-reset-camera"
@@ -192,9 +192,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 								onClick={onPopout}
 								className="h-8 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer border"
 								style={{
-									backgroundColor: "rgba(99, 102, 241, 0.12)",
-									borderColor: "rgba(99, 102, 241, 0.3)",
-									color: "#818cf8",
+									backgroundColor: "var(--paper-soft)",
+									borderColor: "var(--line)",
+									color: "var(--primary)",
 								}}
 								title="Открыть на 2-м мониторе врача/пациента"
 								data-testid="btn-scan3d-popout"
@@ -210,9 +210,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 								onClick={onOpenLabOrder}
 								className="h-8 px-3.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
 								style={{
-									backgroundColor: "var(--teal, #0d9488)",
-									color: "#ffffff",
-									border: "1px solid var(--teal, #0d9488)",
+									backgroundColor: "var(--primary)",
+									color: "var(--paper-strong)",
+									border: "1px solid var(--primary)",
 								}}
 								title="Создать зуботехнический наряд в лабораторию"
 								data-testid="btn-create-lab-order-from-3d"
@@ -227,7 +227,7 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 								type="button"
 								onClick={onToggleFullscreen}
 								className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-								style={{ color: "var(--muted, #94a3b8)", backgroundColor: "transparent" }}
+								style={{ color: "var(--ink-muted)", backgroundColor: "transparent" }}
 								title={isFullscreen ? "Свернуть" : "На весь экран"}
 							>
 								{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -239,7 +239,7 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 								type="button"
 								onClick={onClose}
 								className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-								style={{ color: "var(--muted, #94a3b8)", backgroundColor: "transparent" }}
+								style={{ color: "var(--ink-muted)", backgroundColor: "transparent" }}
 								title="Закрыть окно (Esc)"
 								data-testid="btn-close-3d-scan-modal"
 							>
@@ -253,20 +253,20 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 				<div
 					className="pointer-events-auto flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl backdrop-blur-md border shadow-xs"
 					style={{
-						backgroundColor: "var(--paper-strong, #090d16)",
-						borderColor: "var(--line, #334155)",
-						color: "var(--ink, #f8fafc)",
+						backgroundColor: "var(--paper-strong)",
+						borderColor: "var(--line)",
+						color: "var(--ink)",
 					}}
 				>
 					{/* Group 1: Segmented Layer Toggles */}
 					<div
 						className="flex items-center gap-1 p-0.5 rounded-lg border shrink-0"
 						style={{
-							backgroundColor: "var(--paper-soft, #1e293b)",
-							borderColor: "var(--line-subtle, #334155)",
+							backgroundColor: "var(--paper-soft)",
+							borderColor: "var(--line-subtle)",
 						}}
 					>
-						<span className="text-[10px] font-semibold uppercase px-2 tracking-wider flex items-center gap-1" style={{ color: "var(--muted, #94a3b8)" }}>
+						<span className="text-[10px] font-semibold px-2 tracking-wider flex items-center gap-1" style={{ color: "var(--ink-muted)" }}>
 							<Layers className="w-3 h-3" />
 							Слои:
 						</span>
@@ -280,9 +280,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 									onClick={() => onToggleLayer(layer.id)}
 									className="h-7 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer border"
 									style={{
-										backgroundColor: isVisible ? "var(--paper, #0f172a)" : "transparent",
-										borderColor: isVisible ? "var(--line, #334155)" : "transparent",
-										color: isVisible ? "var(--ink, #f8fafc)" : "var(--muted, #94a3b8)",
+										backgroundColor: isVisible ? "var(--paper)" : "transparent",
+										borderColor: isVisible ? "var(--line)" : "transparent",
+										color: isVisible ? "var(--ink)" : "var(--ink-muted)",
 										fontWeight: isVisible ? 600 : 500,
 									}}
 									title={`Видимость слоя: ${layer.label}`}
@@ -299,8 +299,8 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 					<div
 						className="flex items-center gap-1 p-0.5 rounded-lg border shrink-0"
 						style={{
-							backgroundColor: "var(--paper-soft, #1e293b)",
-							borderColor: "var(--line-subtle, #334155)",
+							backgroundColor: "var(--paper-soft)",
+							borderColor: "var(--line-subtle)",
 						}}
 					>
 						{modeItems.map((mode) => {
@@ -310,11 +310,11 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 									key={mode.id}
 									type="button"
 									onClick={() => onChangeMaterialMode(mode.id)}
-									className="h-7 px-3 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap border"
+									className={`h-7 px-3 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap border ${isActive ? "text-white" : ""}`}
 									style={{
-										backgroundColor: isActive ? "var(--teal, #0d9488)" : "transparent",
-										borderColor: isActive ? "var(--teal, #0d9488)" : "transparent",
-										color: isActive ? "#ffffff" : "var(--muted, #94a3b8)",
+										backgroundColor: isActive ? "var(--primary)" : "transparent",
+										borderColor: isActive ? "var(--primary)" : "transparent",
+										color: isActive ? undefined : "var(--ink-muted)",
 										fontWeight: isActive ? 600 : 500,
 									}}
 									title={`Режим отображения: ${mode.label}`}
@@ -333,9 +333,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							onClick={onToggleBite}
 							className="h-7 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer border"
 							style={{
-								backgroundColor: isBiteClosed ? "rgba(13, 148, 136, 0.15)" : "var(--paper, #0f172a)",
-								borderColor: isBiteClosed ? "rgba(13, 148, 136, 0.35)" : "var(--line, #334155)",
-								color: isBiteClosed ? "var(--teal, #0d9488)" : "var(--ink, #f8fafc)",
+								backgroundColor: isBiteClosed ? "var(--primary-soft)" : "var(--paper)",
+								borderColor: isBiteClosed ? "var(--primary-line)" : "var(--line)",
+								color: isBiteClosed ? "var(--primary)" : "var(--ink)",
 								fontWeight: isBiteClosed ? 600 : 500,
 							}}
 							title={isBiteClosed ? "Челюсти сомкнуты в прикусе (кликните чтобы разомкнуть)" : "Челюсти разомкнуты для обзора окклюзии"}
@@ -349,9 +349,9 @@ export const Dental3dToolbar: React.FC<Dental3dToolbarProps> = ({
 							onClick={onToggleCaliper}
 							className="h-7 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer border"
 							style={{
-								backgroundColor: isCaliperActive ? "rgba(245, 158, 11, 0.15)" : "var(--paper, #0f172a)",
-								borderColor: isCaliperActive ? "rgba(245, 158, 11, 0.4)" : "var(--line, #334155)",
-								color: isCaliperActive ? "#f59e0b" : "var(--ink, #f8fafc)",
+								backgroundColor: isCaliperActive ? "var(--warning-soft)" : "var(--paper)",
+								borderColor: isCaliperActive ? "var(--warning-line)" : "var(--line)",
+								color: isCaliperActive ? "var(--warning)" : "var(--ink)",
 								fontWeight: isCaliperActive ? 600 : 500,
 							}}
 							title="Микрометрический штангенциркуль — кликните 2 точки на челюсти для замера"

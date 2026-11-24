@@ -21,7 +21,9 @@ import {
 	THERAPY_WEDGE_EROSION_PRESET,
 	THERAPY_FRONTAL_AESTHETIC_PRESET,
 	THERAPY_PROTOCOL_PRESETS,
+	generateTherapySoapProtocol,
 	generateTherapySoap043,
+	generateTherapyProtocolText,
 	generateTherapyProtocolText043,
 } from "./therapyProtocolEngine.js";
 import {
@@ -180,6 +182,7 @@ describe("Chairside Therapy Protocol Engine (therapyProtocolEngine)", () => {
 		assert.ok(result.treatmentDescription.includes("Bausch 40 мкм"));
 		assert.equal(result.warrantyMonths, 12); // MOD = 12 months
 		assert.ok(result.services804n.some((s) => s.code === "A16.07.002.003")); // 3 surfaces
+		assert.equal(result.fullProtocolText, result.fullProtocolText043);
 		// Проверка чистоты от эмодзи
 		assert.ok(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(result.fullProtocolText043));
 	});
@@ -233,12 +236,18 @@ describe("Chairside Therapy Protocol Engine (therapyProtocolEngine)", () => {
 		assert.ok(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(result.fullProtocolText043));
 	});
 
-	it("generateTherapyProtocolText043 returns complete text suitable for clinical diary", () => {
-		const text = generateTherapyProtocolText043({
+	it("generateTherapyProtocolText returns complete text suitable for clinical diary", () => {
+		const text = generateTherapyProtocolText({
 			toothNumber: 15,
 			surfaces: ["O"],
 			presetId: "caries_composite",
 		});
+		const compatText = generateTherapyProtocolText043({
+			toothNumber: 15,
+			surfaces: ["O"],
+			presetId: "caries_composite",
+		});
+		assert.equal(text, compatText);
 		assert.ok(text.includes("ДНЕВНИК ПРИЁМА — Зуб 15:"));
 		assert.ok(text.includes("Диагноз (МКБ-10): K02.1"));
 		assert.ok(text.includes("ПРОТОКОЛ ТЕРАПЕВТИЧЕСКОГО ЛЕЧЕНИЯ"));

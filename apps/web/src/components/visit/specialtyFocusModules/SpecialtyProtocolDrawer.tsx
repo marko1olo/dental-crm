@@ -53,6 +53,7 @@ export interface SpecialtyDrawerContext {
 }
 
 export interface SpecialtyProtocolDrawerProps {
+	visitId?: string | undefined;
 	isProtocolDrawerOpen: boolean;
 	setIsProtocolDrawerOpen: (val: boolean) => void;
 	activeWidgetTitle: string;
@@ -73,6 +74,7 @@ export interface SpecialtyProtocolDrawerProps {
 }
 
 export function SpecialtyProtocolDrawer({
+	visitId,
 	isProtocolDrawerOpen,
 	setIsProtocolDrawerOpen,
 	activeWidgetTitle,
@@ -93,6 +95,13 @@ export function SpecialtyProtocolDrawer({
 }: SpecialtyProtocolDrawerProps) {
 	if (!isProtocolDrawerOpen) return null;
 
+	const resolvedVisitId =
+		visitId ??
+		(context && typeof context === "object" && "dashboard" in context
+			? ((context.dashboard as { activeVisit?: { id?: string }; activeAppointment?: { id?: string } } | undefined)?.activeVisit?.id ??
+			   (context.dashboard as { activeAppointment?: { id?: string } } | undefined)?.activeAppointment?.id)
+			: undefined);
+
 	return (
 		<div
 			data-testid="specialty-protocol-drawer"
@@ -100,13 +109,13 @@ export function SpecialtyProtocolDrawer({
 		>
 			<div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--line)]">
 				<span className="font-bold text-xs text-[var(--ink)] flex items-center gap-2">
-					<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" />
+					<span className="w-2 h-2 rounded-full bg-[var(--primary)]" />
 					{activeWidgetTitle} (Зуб {activeTooth || "—"})
 				</span>
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen(false)}
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-semibold text-xs cursor-pointer px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs transition-colors min-h-[32px] touch-manipulation"
+					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)] font-semibold text-xs cursor-pointer px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs transition-colors min-h-[32px] touch-manipulation"
 					aria-label="Свернуть специализированный клинический бланк"
 				>
 					<X size={13} className="shrink-0" aria-hidden="true" />
@@ -142,6 +151,7 @@ export function SpecialtyProtocolDrawer({
 					onSelectActiveTooth={setActiveTooth}
 					patientName={activePatient?.fullName}
 					patientId={activePatient?.id}
+					visitId={resolvedVisitId}
 					doctorName={activeDoctor?.fullName}
 					doctorId={activeDoctor?.id}
 					onApplyToDiary={handleApplyProtocolText}
@@ -149,6 +159,7 @@ export function SpecialtyProtocolDrawer({
 				/>
 			) : (
 				<VisitTherapyProtocolWidget
+					key={activeTooth ?? "therapy-root"}
 					activeTooth={activeTooth}
 					activeSurfaces={activeSurfaces}
 					onSelectSurfaces={(s) => setActiveSurfaces([...s])}

@@ -27,11 +27,14 @@ export type PediatricProtocolId =
 	| "silvering_deep_fluoridation"
 	| "fissure_sealing"
 	| "extraction_primary_exfoliation"
-	| "standard_crown";
+	| "standard_crown"
+	| "trauma_iadt"
+	| "space_maintainer";
 
 export interface PediatricServiceItem {
 	readonly code: string;
 	readonly nameRu: string;
+	readonly priceKopecks?: bigint | undefined;
 }
 
 export interface PediatricProtocolDefinition {

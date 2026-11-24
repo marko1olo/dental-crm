@@ -253,5 +253,40 @@ describe("Predictive Reorder Engine (DentalPin specification parity)", () => {
 			assert.strictEqual(response.suggestions.length, 1);
 			assert.strictEqual(response.suggestions[0]!.itemName, "Дефицит");
 		});
+		it("prioritizes unitPriceKopecks over unitPriceRub for integer-exact precision", () => {
+			const suggestion = computeReorderSuggestion({
+				inventoryItemId: "item-exact-kop-1",
+				itemName: "Тестовый композит",
+				stockQuantity: 0,
+				minQuantity: 10,
+				usage90d: 90,
+				leadTimeDays: 5,
+				unitPriceRub: 999.99,
+				unitPriceKopecks: 123456, // 1234 руб 56 коп (приоритетное значение)
+			});
+
+			assert.strictEqual(suggestion.unitPriceKopecks, 123456);
+			assert.strictEqual(suggestion.unitPriceRub, 1234.56);
+			// suggestedQuantity: ROP 10 + cover 30 - 0 = 40
+			assert.strictEqual(suggestion.suggestedQuantity, 40);
+			assert.strictEqual(suggestion.estimatedCostKopecks, 40 * 123456);
+			assert.strictEqual(suggestion.estimatedCostRub, 49382.4);
+		});
+
+		it("rejects unauthorized extra fields via strict schema validation", () => {
+			assert.throws(() => {
+				computeReorderSuggestion({
+					inventoryItemId: "item-strict-1",
+					itemName: "Шприц эндодонтический",
+					stockQuantity: 5,
+					minQuantity: 10,
+					usage90d: 45,
+					leadTimeDays: 2,
+					unitPriceRub: 50,
+					// @ts-expect-error extra property testing strict rejection
+					unauthorizedField: "injection",
+				});
+			});
+		});
 	});
 });

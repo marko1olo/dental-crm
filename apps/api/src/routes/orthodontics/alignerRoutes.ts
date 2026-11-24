@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { computePayloadHash } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { treatmentPlans } from "../../db/schema/clinical/treatmentPlansSchema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
 import { requireOrganizationId } from "../../security/identity.js";
@@ -141,6 +143,13 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				lastActionDate: new Date().toISOString(),
 				lastActionSummary: actionSummary,
 				...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
+				...(body.angleClass ? { angleClass: body.angleClass } : {}),
+				...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
+				...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
+				...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
+				...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
+				...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
+				...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
 				nextVisitRecommendedDate: nextDate,
 			};
 
@@ -164,6 +173,19 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 					},
 					tx,
 				);
+
+				if (body.treatmentPlanId) {
+					await tx
+						.update(treatmentPlans)
+						.set({ status: "Approved" })
+						.where(
+							and(
+								eq(treatmentPlans.id, body.treatmentPlanId),
+								eq(treatmentPlans.organizationId, orgId),
+								eq(treatmentPlans.status, "Draft"),
+							),
+						);
+				}
 
 				const billing = await linkOrthoServiceToBillingSafely({
 					organizationId: orgId,

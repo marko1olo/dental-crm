@@ -52,6 +52,7 @@ export const createImplantInstallationSchema = z.object({
 	sutureMaterial: z.string().trim().max(100).optional().nullable(),
 	sutureItemId: z.string().uuid().optional().nullable(),
 	operationPriceRub: z.number().min(0).optional().nullable(),
+	operationPriceKopecks: z.union([z.string(), z.number(), z.bigint()]).optional().nullable(),
 	invoiceId: z.string().uuid().optional().nullable(),
 	torqueCurveSamples: z.array(torqueCurveSampleSchema).default([]),
 	notes: z.string().trim().max(1000).optional().nullable(),
@@ -231,21 +232,6 @@ export const autoclaveDailyTestTypeSchema = z.enum([
 
 export type AutoclaveDailyTestType = z.infer<
 	typeof autoclaveDailyTestTypeSchema
->;
-
-export const createPsoCleaningLogSchema = z.object({
-	testType: psoTestTypeSchema.default("both"),
-	batchItemCount: z.number().int().min(1).max(5000),
-	testedSampleCount: z.number().int().min(1).max(1000),
-	isAzopyramNegative: z.boolean().default(true),
-	isPhenolphthaleinNegative: z.boolean().default(true),
-	detergentBrand: z.string().trim().max(120).optional().nullable(),
-	operatorId: z.string().uuid().optional().nullable(),
-	notes: z.string().trim().max(500).optional().nullable(),
-});
-
-export type CreatePsoCleaningLogInput = z.infer<
-	typeof createPsoCleaningLogSchema
 >;
 
 export const createAutoclaveDailyTestSchema = z.object({

@@ -102,6 +102,7 @@ export const createFiscalReceiptPayloadSchema = z
 				z.string().trim().max(64).optional().nullable()
 			),
 	})
+	.strict()
 	.superRefine((val, ctx) => {
 		// 54-FZ Tag 1228: Buyer INN enforcement for B2B (Legal Entities and Sole Proprietors / IP)
 		// For physical persons (Mandate 8e), INN is strictly optional and never blocking.
@@ -202,6 +203,7 @@ export const fiscalRefundPayloadSchema = z
 		cashierFullName: z.string().trim().min(1).max(120).default("Кассир-администратор"),
 		items: z.array(fiscalReceiptItemSchema).min(1, "Укажите возвращаемые позиции"),
 	})
+	.strict()
 	.transform((val) => {
 		let { refundCashKopecks, refundElectronicKopecks, refundPrepaidKopecks, totalRefundKopecks } = val;
 		if (refundCashKopecks === 0 && refundElectronicKopecks === 0 && refundPrepaidKopecks === 0 && totalRefundKopecks > 0) {

@@ -1,19 +1,21 @@
 import type { FastifyInstance } from "fastify";
 import { handleCashRefund } from "../cashbox/cashboxRefundRoutes.js";
+import {
+	handleFiscalQueueList,
+	handleFiscalQueueRetry,
+	handleFiscalQueueRetryAll,
+} from "../fiscal/receiptRoutes/index.js";
 import { handleGetBillingInvoices } from "./handlers/billingInvoicesHandler.js";
 import { handleGetBillingPayments } from "./handlers/billingPaymentsHandler.js";
-import { handleGetFiscalQueuePending } from "./handlers/fiscalQueueQueryHandler.js";
-import { handleRetryAllFiscalQueue } from "./handlers/fiscalQueueRetryAllHandler.js";
-import { handleRetryFiscalQueueItem } from "./handlers/fiscalQueueRetryItemHandler.js";
 import { invoicePayHandler } from "./handlers/invoicePayWrapper.js";
 import { handleCreatePayment } from "./handlers/paymentCreateHandler.js";
 
 export {
 	handleCreatePayment,
 	handleCashRefund as handlePartialRefund,
-	handleGetFiscalQueuePending,
-	handleRetryFiscalQueueItem,
-	handleRetryAllFiscalQueue,
+	handleFiscalQueueList as handleGetFiscalQueuePending,
+	handleFiscalQueueRetry as handleRetryFiscalQueueItem,
+	handleFiscalQueueRetryAll as handleRetryAllFiscalQueue,
 	handleGetBillingPayments,
 	handleGetBillingInvoices,
 };
@@ -103,13 +105,13 @@ export async function registerBillingRoutes(app: FastifyInstance): Promise<void>
 		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
 		return handleCashRefund(request, reply);
 	});
-	app.get("/api/billing/fiscal-queue/pending", handleGetFiscalQueuePending);
+	app.get("/api/billing/fiscal-queue/pending", handleFiscalQueueList);
 	app.post("/api/billing/fiscal-queue/:id/retry", billingPaymentMutationOptions, async (request, reply) => {
 		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleRetryFiscalQueueItem(request, reply);
+		return handleFiscalQueueRetry(request, reply);
 	});
 	app.post("/api/billing/fiscal-queue/retry-all", billingPaymentMutationOptions, async (request, reply) => {
 		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleRetryAllFiscalQueue(request, reply);
+		return handleFiscalQueueRetryAll(request, reply);
 	});
 }

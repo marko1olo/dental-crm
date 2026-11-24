@@ -49,6 +49,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 	<>
 		{isDiplomaModalOpen && (
 			<PediatricBraveryDiplomaModal
+				key={patientData.id || "card-diploma-modal"}
 				isOpen={isDiplomaModalOpen}
 				onClose={() => setIsDiplomaModalOpen(false)}
 				patientId={patientData.id || undefined}

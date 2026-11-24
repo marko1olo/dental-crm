@@ -35,6 +35,7 @@ export interface OrthodonticsTabsContentProps {
 	readonly memoText: string;
 	readonly onOpenPhotoModal: () => void;
 	readonly onOpenCephModal: () => void;
+	readonly totalSetupCostKopecks?: bigint | undefined;
 }
 
 export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = ({
@@ -52,6 +53,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 	memoText,
 	onOpenPhotoModal,
 	onOpenCephModal,
+	totalSetupCostKopecks,
 }) => {
 	const [showTracingPreview, setShowTracingPreview] = useState<boolean>(false);
 	const [sampleCephLandmarks, setSampleCephLandmarks] = useState<Record<string, PointCoord>>({
@@ -198,13 +200,17 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								},
 							}));
 						}}
-						totalSetupCostKopecks={18000000n}
+						totalSetupCostKopecks={totalSetupCostKopecks}
 					/>
 					<BiteClassificationCard
 						angleClass={protocol.angleClass}
 						onAngleClassChange={(ac) => setProtocol((p) => ({ ...p, angleClass: ac }))}
 						verticalBite={protocol.verticalBite}
 						onVerticalBiteChange={(vb) => setProtocol((p) => ({ ...p, verticalBite: vb }))}
+						overjetMm={protocol.overjetMm}
+						onOverjetMmChange={(val) => setProtocol((p) => ({ ...p, overjetMm: val }))}
+						overbitePercent={protocol.overbitePercent}
+						onOverbitePercentChange={(val) => setProtocol((p) => ({ ...p, overbitePercent: val }))}
 						anbDeg={protocol.trgValues?.anb ?? 2.0}
 						onAnbDegChange={(val) => setProtocol((p) => ({
 							...p,

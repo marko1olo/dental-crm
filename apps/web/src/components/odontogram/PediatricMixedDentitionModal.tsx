@@ -28,6 +28,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 	if (logic.isParentMemoModalOpen) {
 		return (
 			<PediatricParentMemoModal
+				key={`memo-${logic.selectedAge}-${logic.franklRating}`}
 				isOpen={true}
 				onClose={() => logic.setIsParentMemoModalOpen(false)}
 				onBack={() => logic.setIsParentMemoModalOpen(false)}

@@ -164,8 +164,8 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							onClick={handleInsertToChart}
 							data-testid="btn-insert-ceph-protocol"
 							className="primary-button shrink-0 flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover,var(--primary))] shadow-sm transition-all cursor-pointer"
-							title="Зафиксировать исследование и перенести в медицинскую карту"
-							aria-label="Сохранить в ЭМК"
+							title="Зафиксировать исследование: В медицинскую карту"
+							aria-label="В медицинскую карту / Сохранить в ЭМК"
 						>
 							<FileText size={14} />
 							<span className="whitespace-nowrap">Сохранить в ЭМК</span>

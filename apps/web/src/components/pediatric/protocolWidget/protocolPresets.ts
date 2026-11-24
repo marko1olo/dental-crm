@@ -1,4 +1,4 @@
-import { Activity, Award, Droplets, Scissors, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Award, Disc, Droplets, Scissors, ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
 import { DentalCrown } from "../../icons/DentalIcons";
 import type { PediatricProtocolDefinition } from "./types";
 

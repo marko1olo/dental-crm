@@ -1,3 +1,4 @@
+import React from "react";
 import { AlertTriangle, HeartPulse, ShieldCheck } from "lucide-react";
 import { PatientAvatar } from "../../../PatientAvatar";
 import { SoftPresenceIndicator } from "../../../presence/SoftPresenceIndicator";

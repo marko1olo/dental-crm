@@ -520,6 +520,11 @@ export async function voidGeneratedDocumentInDb(
 		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
+	const voidedByUserId = signerUserIdForColumn(
+		options.voidedByUserId,
+		"voided_by_user_id",
+	);
+
 	if (useInMemory()) {
 		const inMemoryDocument = inMemoryDocuments.find(
 			(document) => document.organizationId === organizationId && document.id === documentId,
@@ -529,27 +534,21 @@ export async function voidGeneratedDocumentInDb(
 		Object.assign(inMemoryDocument, {
 			status: "voided",
 			voidedAt: options.voidedAt || new Date().toISOString(),
-			voidedByUserId: signerUserIdForColumn(
-				options.voidedByUserId,
-				"voided_by_user_id",
-			),
+			voidedByUserId,
 			voidAttestation: options.voidAttestation || null,
 		});
 		await recordAuditEvent({
 			organizationId,
+			actorUserId: voidedByUserId,
 			entityType: "document",
 			entityId: inMemoryDocument.id,
 			action: "document_voided",
-			reason: null,
+			reason: options.voidAttestation?.reasonText || null,
 		});
 		return inMemoryDocument;
 	}
 
 	const client = options.tx ?? db;
-	const voidedByUserId = signerUserIdForColumn(
-		options.voidedByUserId,
-		"voided_by_user_id",
-	);
 	const [existing] = await client
 		.select()
 		.from(schema.generatedDocuments)
@@ -583,10 +582,12 @@ export async function voidGeneratedDocumentInDb(
 
 	await recordAuditEvent({
 		organizationId,
+		actorUserId: voidedByUserId,
 		entityType: "document",
 		entityId: updated.id,
 		action: "document_voided",
-		reason: null,
+		reason: options.voidAttestation?.reasonText || null,
+		tx: options.tx,
 	});
 
 	return mapDocument(updated);

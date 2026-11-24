@@ -6,4 +6,4 @@
 export type * from "./types.js";
 export * from "./toothCanalAnatomyMap.js";
 export * from "./billing804nMatcher.js";
-export * from "./endoTreatmentPriceCalculator.js";
+export * from "../endo/endoBillingAndMaterials.js";

@@ -32,7 +32,7 @@ import {
 	PULPITIS_VISIT1_PRESET,
 	PULPITIS_OBTURATION_PRESET,
 	PERIODONTITIS_DESTRUCTIVE_PRESET,
-} from "../../endo/endodonticsCatalogData";
+} from "../endodonticsCatalogData";
 
 describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
 	test("Верхние первые моляры (16, 26) имеют 4 канала: MB1, MB2, DB, P", () => {

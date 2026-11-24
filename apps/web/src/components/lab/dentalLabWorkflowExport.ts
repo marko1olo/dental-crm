@@ -74,16 +74,15 @@ export const A4_PRINT_BLANK_CSS = `
 		line-height: 1.35;
 	}
 	.header-table { width: 100%; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px; }
-	.title { font-size: 17px; font-weight: 800; text-transform: uppercase; margin: 0 0 2px 0; color: #0f172a; }
+	.title { font-size: 17px; font-weight: 800; margin: 0 0 2px 0; color: #0f172a; }
 	.subtitle { font-size: 11px; color: #475569; margin: 0; }
 	.section-title {
 		font-size: 11px;
 		font-weight: 700;
-		text-transform: uppercase;
 		background: #f1f5f9;
 		padding: 4px 8px;
 		margin: 8px 0 5px 0;
-		border-left: 4px solid #0d9488;
+		border-left: 4px solid var(--primary);
 	}
 	.grid-2 { display: table; width: 100%; margin-bottom: 5px; }
 	.col { display: table-cell; width: 50%; vertical-align: top; padding-right: 10px; }
@@ -111,7 +110,7 @@ export const A4_PRINT_BLANK_CSS = `
 		color: #64748b;
 	}
 	.status-cell:last-child { border-right: none; }
-	.status-cell.active { background: #0d9488; color: #ffffff; }
+	.status-cell.active { background: var(--primary); color: #ffffff; }
 	.signatures { margin-top: 16px; display: table; width: 100%; }
 	.sig-col { display: table-cell; width: 33.3%; padding: 0 8px; text-align: center; }
 	.sig-line { border-bottom: 1px solid #0f172a; margin-top: 28px; margin-bottom: 4px; }
@@ -163,7 +162,7 @@ export function renderTechStagesSection(order: DentalLabWorkflowOrder, sectionNu
 					const isCurrent = order.techStage === stageKey;
 					const isDone = (sDef.stepNumber < (LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber ?? 1));
 					const statusText = isDone ? "ВЫПОЛНЕНО" : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ";
-					const statusColor = isDone ? "#059669" : isCurrent ? "#0d9488" : "#94a3b8";
+					const statusColor = isDone ? "#059669" : isCurrent ? "var(--primary)" : "#94a3b8";
 					return `<tr style="background: ${isCurrent ? "#f0fdfa" : "transparent"}; border-bottom: 1px solid #f1f5f9;">
 						<td style="padding: 2px 4px; font-weight: 700; color: #64748b;">${sDef.stepNumber}</td>
 						<td style="padding: 2px 4px; font-weight: ${isCurrent ? "700" : "500"}; color: ${isCurrent ? "#0f766e" : "#0f172a"};">${sDef.nameRu}</td>
@@ -219,7 +218,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		</div>
 		<div class="col">
 			<div class="data-row"><span class="label">Дата наряда:</span> <span class="value">${formatRussianDate(order.orderDateIso)}</span></div>
-			<div class="data-row"><span class="label">Срок сдачи ЗТЛ:</span> <span class="value" style="color: #0d9488;">${formatRussianDate(order.expectedLabDateIso)}</span></div>
+			<div class="data-row"><span class="label">Срок сдачи ЗТЛ:</span> <span class="value" style="color: var(--primary);">${formatRussianDate(order.expectedLabDateIso)}</span></div>
 			<div class="data-row"><span class="label">Дата примерки:</span> <span class="value">${order.fittingDate ? formatRussianDate(order.fittingDate) : (order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "По согласованию")}</span></div>
 			<div class="data-row"><span class="label">Текущий статус:</span> <span class="value">${stage.nameRu}</span></div>
 		</div>
@@ -237,7 +236,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 	<div class="box">
 		<div class="data-row"><span class="label">Вид конструкции:</span> <span class="value">${preset.nameRu}</span></div>
 		<div class="data-row"><span class="label">Материал:</span> <span class="value">${order.materialName}</span></div>
-		<div class="data-row"><span class="label">Оттенок (VITA):</span> <span class="value" style="color: #0d9488; font-size: 12.5px;">${order.shadeCode} (${order.shadeSystem.toUpperCase()})</span>${order.stumpShadeCode ? `<span style="margin-left: 14px;"><span class="label" style="width: auto;">Культя (ND):</span> <span class="value">${order.stumpShadeCode}</span></span>` : ""}</div>
+		<div class="data-row"><span class="label">Оттенок (VITA):</span> <span class="value" style="color: var(--primary); font-size: 12.5px;">${order.shadeCode} (${order.shadeSystem.toUpperCase()})</span>${order.stumpShadeCode ? `<span style="margin-left: 14px;"><span class="label" style="width: auto;">Культя (ND):</span> <span class="value">${order.stumpShadeCode}</span></span>` : ""}</div>
 		<div class="data-row"><span class="label">Прозрачность:</span> <span class="value">${order.translucency}</span><span style="margin-left: 14px;"><span class="label" style="width: auto;">Текстура:</span> <span class="value">${order.surfaceTexture}</span></span></div>
 		${order.implantPlatform ? `<div class="data-row"><span class="label">Платформа имплантата:</span> <span class="value">${order.implantPlatform === "conical" ? "Конус Морзе" : "Шестигранник"}</span></div>` : ""}
 		${order.abutmentType ? `<div class="data-row"><span class="label">Тип абатмента:</span> <span class="value">${ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu || order.abutmentType}</span></div>` : ""}
@@ -254,7 +253,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		<div class="col">
 			<div class="data-row"><span class="label">Стоимость для пациента:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
 			<div class="data-row"><span class="label">Себестоимость ЗТЛ:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</span></div>
-			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: #0d9488;">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
+			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: var(--primary);">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
 		</div>
 		<div class="col" style="text-align: right;">${qrSvg}</div>
 	</div>
