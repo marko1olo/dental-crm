@@ -28,6 +28,7 @@ import {
 	type EndoToothClinicalReport,
 } from "./endoClinicalMetrics.js";
 import type { CbctVoxelVolume } from "./cbctCropBox.js";
+import type { SharedLogger } from "../logging/types.js";
 
 export interface EndoCanalWorkerComputePayload {
 	readonly type: "compute_endo";
@@ -102,6 +103,7 @@ export interface EndoWorkerBridgeOptions {
 	readonly workerFactory?: (() => EndoWorkerInstance) | undefined;
 	readonly timeoutMs?: number | undefined;
 	readonly forceFallback?: boolean | undefined;
+	readonly logger?: SharedLogger | undefined;
 }
 
 export interface EndoCalculationInput {
@@ -183,13 +185,13 @@ export class EndoWorkerBridge {
 				};
 
 				this.worker.onerror = (err: unknown) => {
-					console.warn("[EndoWorkerBridge] Worker error:", err);
+					this.options.logger?.warn("[EndoWorkerBridge] Worker error:", err);
 				};
 
 				this.isWorkerReady = true;
 			}
 		} catch (err) {
-			console.warn("[EndoWorkerBridge] Web Worker init failed, falling back to sync execution:", err);
+			this.options.logger?.warn("[EndoWorkerBridge] Web Worker init failed, falling back to sync execution:", err);
 			this.worker = null;
 			this.isWorkerReady = false;
 		}
@@ -255,12 +257,20 @@ export class EndoWorkerBridge {
 
 			this.pendingRequests.set(requestId, { resolve, reject, timer });
 
+			const worker = this.worker;
+			if (!worker) {
+				clearTimeout(timer);
+				this.pendingRequests.delete(requestId);
+				reject(new Error("Endo Worker is not initialized"));
+				return;
+			}
 			try {
 				// Zero-copy array buffer transfer if input buffer is standalone
-				this.worker!.postMessage(payload, [input.voxelData.buffer]);
-			} catch {
+				worker.postMessage(payload, [input.voxelData.buffer]);
+			} catch (err) {
 				// Fallback to structured clone if buffer cannot be transferred
-				this.worker!.postMessage(payload);
+				this.options.logger?.debug?.("[EndoWorkerBridge] ArrayBuffer transfer failed, falling back to structured clone:", err);
+				worker.postMessage(payload);
 			}
 		});
 	}

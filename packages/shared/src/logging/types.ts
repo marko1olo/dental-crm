@@ -4,6 +4,13 @@
 
 export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR" | "AUDIT";
 
+export interface SharedLogger {
+	warn(msg: string, ...args: unknown[]): void;
+	error(msg: string, ...args: unknown[]): void;
+	info?(msg: string, ...args: unknown[]): void;
+	debug?(msg: string, ...args: unknown[]): void;
+}
+
 export interface LogContext {
 	readonly module?: string | undefined;
 	readonly category?: string | undefined;

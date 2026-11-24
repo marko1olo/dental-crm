@@ -23,6 +23,7 @@ import {
 	generateDicomUid,
 	getFdiAnatomicRegionDescription,
 } from "./protocolBridge.js";
+import type { SharedLogger } from "../../logging/types.js";
 
 /**
  * Применяет полную аппаратную калибровку к 16-битному кадру визиографа:
@@ -182,12 +183,17 @@ export class RvgTwainCaptureEngine {
 	private stateChangeListeners: ((newState: RvgCaptureState, previousState: RvgCaptureState) => void)[] = [];
 	private frameReadyListeners: ((frame: RvgRawFrame) => void)[] = [];
 	private errorListeners: ((error: Error) => void)[] = [];
+	private readonly logger?: SharedLogger | undefined;
 
 	constructor(
 		protocol: RvgCaptureProtocol = "TWAIN_2_4",
-		options?: { allowSyntheticAcquisition?: boolean },
+		options?: {
+			allowSyntheticAcquisition?: boolean | undefined;
+			logger?: SharedLogger | undefined;
+		},
 	) {
 		this.activeProtocol = protocol;
+		this.logger = options?.logger;
 		this.allowSyntheticAcquisition =
 			options?.allowSyntheticAcquisition ??
 			(process.env.NODE_ENV === "test" ||
@@ -241,7 +247,7 @@ export class RvgTwainCaptureEngine {
 			try {
 				listener(nextState, prev);
 			} catch (e) {
-				console.error("[RvgTwainEngine] Error in state listener:", e);
+				this.logger?.error("[RvgTwainEngine] Error in state listener:", e);
 			}
 		}
 	}
@@ -328,7 +334,7 @@ export class RvgTwainCaptureEngine {
 			try {
 				listener(finalFrame);
 			} catch (e) {
-				console.error("[RvgTwainEngine] Error in frame listener:", e);
+				this.logger?.error("[RvgTwainEngine] Error in frame listener:", e);
 			}
 		}
 
@@ -410,7 +416,7 @@ export class RvgTwainCaptureEngine {
 			try {
 				listener(err);
 			} catch (e) {
-				console.error("[RvgTwainEngine] Error in error listener:", e);
+				this.logger?.error("[RvgTwainEngine] Error in error listener:", e);
 			}
 		}
 	}

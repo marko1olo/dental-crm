@@ -23,6 +23,7 @@ import {
 } from "./types.js";
 import { extractRadiologyMetadata } from "./dicomHeaderParser.js";
 import { matchRadiologyStudyWithVisits } from "./patientStudyMatcher.js";
+import type { SharedLogger } from "../../logging/types.js";
 
 // ─── 1. НОРМАЛИЗАЦИЯ И ПОДГОТОВКА К ОТОБРАЖЕНИЮ ───────────────────────────────
 
@@ -178,9 +179,23 @@ export class HotFolderSyncEngine {
 	private onStudyMatchedListeners: ((study: IngestedHotFolderStudy) => void)[] = [];
 	private onQuarantineListeners: ((study: IngestedHotFolderStudy) => void)[] = [];
 	private onErrorListeners: ((err: Error) => void)[] = [];
+	private readonly logger?: SharedLogger | undefined;
+	private idSeq = 0;
 
-	constructor(config?: Partial<HotFolderSyncConfig>) {
+	constructor(
+		config?: Partial<HotFolderSyncConfig>,
+		options?: { readonly logger?: SharedLogger | undefined },
+	) {
 		this.config = hotFolderSyncConfigSchema.parse(config ?? {});
+		this.logger = options?.logger;
+	}
+
+	private nextStudyId(prefix: "STUDY" | "QUARANTINE"): string {
+		if (typeof globalThis.crypto?.randomUUID === "function") {
+			return `${prefix}_${globalThis.crypto.randomUUID()}`;
+		}
+		this.idSeq += 1;
+		return `${prefix}_${Date.now()}_${this.idSeq}`;
 	}
 
 	public getConfig(): HotFolderSyncConfig {
@@ -320,13 +335,13 @@ export class HotFolderSyncEngine {
 					options?.normalization,
 				);
 			} catch (previewErr) {
-				console.warn("[HotFolderSyncEngine] Ошибка генерации превью снимка (сохранение не блокируется):", previewErr);
+				this.logger?.warn("[HotFolderSyncEngine] Ошибка генерации превью снимка (сохранение не блокируется):", previewErr);
 			}
 		}
 
 		// 8. Успешная регистрация
 		const study: IngestedHotFolderStudy = {
-			id: `STUDY_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+			id: this.nextStudyId("STUDY"),
 			sourceFileName: filename,
 			fileSizeBytes: fileBuffer.length,
 			fileSha256: fileHash,
@@ -348,7 +363,7 @@ export class HotFolderSyncEngine {
 			try {
 				l(study);
 			} catch (err) {
-				console.error("[HotFolderSyncEngine] StudyIngested listener error:", err);
+				this.logger?.error("[HotFolderSyncEngine] StudyIngested listener error:", err);
 			}
 		}
 
@@ -357,7 +372,7 @@ export class HotFolderSyncEngine {
 				try {
 					l(study);
 				} catch (err) {
-					console.error("[HotFolderSyncEngine] StudyMatched listener error:", err);
+					this.logger?.error("[HotFolderSyncEngine] StudyMatched listener error:", err);
 				}
 			}
 		}
@@ -382,7 +397,7 @@ export class HotFolderSyncEngine {
 					try {
 						l(err);
 					} catch (listenerErr) {
-						console.error("[HotFolderSyncEngine] Ошибка в обработчике ошибки:", listenerErr);
+						this.logger?.error("[HotFolderSyncEngine] Ошибка в обработчике ошибки:", listenerErr);
 					}
 				}
 			}
@@ -445,7 +460,7 @@ export class HotFolderSyncEngine {
 	): IngestedHotFolderStudy {
 		const metadata = extractRadiologyMetadata(filename);
 		const quarantined: IngestedHotFolderStudy = {
-			id: `QUARANTINE_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+			id: this.nextStudyId("QUARANTINE"),
 			sourceFileName: filename,
 			fileSizeBytes,
 			fileSha256: hash || "UNHASHED",
@@ -471,7 +486,7 @@ export class HotFolderSyncEngine {
 			try {
 				l(quarantined);
 			} catch (err) {
-				console.error("[HotFolderSyncEngine] Quarantine listener error:", err);
+				this.logger?.error("[HotFolderSyncEngine] Quarantine listener error:", err);
 			}
 		}
 

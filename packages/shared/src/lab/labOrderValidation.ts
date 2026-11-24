@@ -131,11 +131,9 @@ export function validateLabOrderInput(input: LabOrderValidationInput): LabOrderV
 
 export function formatDisplayDate(dStr?: string | null): string {
 	if (!dStr) return "";
-	try {
-		const parsed = new Date(dStr);
-		if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleDateString("ru-RU");
-	} catch (err: unknown) {
-		console.warn("[DentalLabOrderModal] Failed to format date:", dStr, err);
+	const parsed = new Date(dStr);
+	if (!Number.isNaN(parsed.getTime())) {
+		return parsed.toLocaleDateString("ru-RU");
 	}
 	return dStr;
 }

@@ -7,6 +7,7 @@
 
 import { z } from "zod";
 import { parseDicomDataset, type ParsedDicomDataset } from "../imaging/dicomParser.js";
+import type { SharedLogger } from "../logging/types.js";
 
 /**
  * ─── 1. ТИПЫ И КОНФИГУРАЦИЯ HOT-FOLDER ───
@@ -288,9 +289,23 @@ export class RadiologyHotFolderProcessor {
 	private onStudyIngestedListeners: ((study: IngestedRadiologyStudy) => void)[] = [];
 	private onQuarantineListeners: ((study: IngestedRadiologyStudy) => void)[] = [];
 	private onErrorListeners: ((err: Error) => void)[] = [];
+	private readonly logger?: SharedLogger | undefined;
+	private idSeq = 0;
 
-	constructor(config: HotFolderConfig) {
+	constructor(
+		config: HotFolderConfig,
+		options?: { readonly logger?: SharedLogger | undefined },
+	) {
 		this.config = hotFolderConfigSchema.parse(config);
+		this.logger = options?.logger;
+	}
+
+	private nextStudyId(prefix: "STUDY" | "QUARANTINE"): string {
+		if (typeof globalThis.crypto?.randomUUID === "function") {
+			return `${prefix}_${globalThis.crypto.randomUUID()}`;
+		}
+		this.idSeq += 1;
+		return `${prefix}_${Date.now()}_${this.idSeq}`;
 	}
 
 	public getConfig(): HotFolderConfig {
@@ -373,7 +388,7 @@ export class RadiologyHotFolderProcessor {
 
 		// 6. Успешная регистрация исследования
 		const study: IngestedRadiologyStudy = {
-			id: `STUDY_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+			id: this.nextStudyId("STUDY"),
 			sourceFilePath: filePath,
 			fileSizeBytes: fileBuffer.length,
 			fileSha256: fileHash,
@@ -392,7 +407,7 @@ export class RadiologyHotFolderProcessor {
 			try {
 				listener(study);
 			} catch (e) {
-				console.error("[HotFolderWatcher] Error in study listener:", e);
+				this.logger?.error("[HotFolderWatcher] Error in study listener:", e);
 			}
 		}
 
@@ -410,7 +425,7 @@ export class RadiologyHotFolderProcessor {
 		const filenameMeta = parseRadiologyFilename(filename);
 
 		const quarantined: IngestedRadiologyStudy = {
-			id: `QUARANTINE_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+			id: this.nextStudyId("QUARANTINE"),
 			sourceFilePath: filePath,
 			fileSizeBytes,
 			fileSha256: fileSha256 || "UNKNOWN_HASH",
@@ -428,7 +443,7 @@ export class RadiologyHotFolderProcessor {
 			try {
 				listener(quarantined);
 			} catch (e) {
-				console.error("[HotFolderWatcher] Error in quarantine listener:", e);
+				this.logger?.error("[HotFolderWatcher] Error in quarantine listener:", e);
 			}
 		}
 
