@@ -3,7 +3,18 @@
 > СТАТУС ДОКУМЕНТА: БОЕВОЙ РЕЕСТР. Каждый агент и субагент ОБЯЗАН свериться с этим файлом перед работой.
 > Починил пункт → лично обнови статус (✅ FIXED + дата + коммит + инструментальное доказательство).
 > Нашёл новую гниль → впиши сюда.
-> Последнее обновление: 2026-11-25 00:05 — закрыта горизонтальная Backend-волна по 5 доменам (`1287/1287` доменных тестов зелёные, `check:diff --all` / `check:doors` / `check:migration-drift` / `check:ratchet` = Exit Code 0).
+> Последнее обновление: 2026-11-25 00:53 — закрыта Wave 4 (Clinical Routes + Finance/Shared/DDL `0298` + Platform/Security High Surgeons + L1 финальная зачистка `tsc`: **`@dental/shared` 0 / `@dental/api` 0 / `@dental/web` 0**, `check:ratchet` = 0, `check:doors` = 0, `check:migration-drift` = 0, `check:diff` = 0, `check:encoding` = 0).
+
+---
+
+## 🔒 АКТИВНЫЕ CLAIM-ЗАМКИ
+
+> Правило `ЧАСТЬ 2.6`: перед стартом работ фиксировать claim-строку с датой/временем, работать только в заявленном скоупе, по коммиту снимать `✅ DONE`.
+
+- ✅ `[Backend Clinical Routes High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`visits/*`, `git rm ensureActiveChair.ts`, `periodontogram/*`, `appointments/*`, `scheduleAuthGuard.ts`, `sanpin/*`, `consents/*`, `waitlist.ts`, `patientRecall/*`, `patients/ticketRoutes+helpers`).
+- ✅ `[Backend Finance Loyalty Shared High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`@dental/shared` 25+ файлов + `.strict()`, DDL `0298_referrals_and_shifts_kopecks_backfill.sql`, `loyaltyModules/*`, `budget*`, `clinicalBundles*`, `imports/*`, `debtReports`).
+- ✅ `[Backend Platform Security Logs High + L1]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`photoBridgeRoutes*`, `MobilePhotoUploadPage.tsx`, `settings/*`, `branchesRoutes.ts`, `workspaceProfileHandlers.ts`, `migrationRunRoutes/*`, `mdlp*`, `hardware.ts`, `lanNetwork.ts`, `telegram*`, `smartImports*`, `env/requiredEnv.ts`).
+- Свободные слоты на следующую смену (P1/P2): см. секцию «Живая таблица оставшейся гнили».
 >
 > ⚠️ ПРАВИЛО СТАТУСОВ: Статус `✅ FIXED` выставляется ТОЛЬКО когда метрика равна нулю по инструментальной проверке (`grep`, `tsc`, `Select-String`). Частичный прогресс — строго `🔄 IN PROGRESS (X осталось)`. Писать `FIXED` при остатке — саботаж реестра.
 
@@ -65,19 +76,19 @@
 
 ФОКУС ПОМИМО ОСНОВНОЙ ЗАДАЧИ. Ребята, когда работаете над любой фичей или фиксом — держите в голове и попутно чините (или хотя бы не усугубляйте) следующие системные проблемы, которые мы систематически игнорируем:
 
-1. ДЕНЬГИ — FLOAT-БОМБА (274 хита живые). По всему бэкенду рассыпаны ручные `Math.round(x * 100)` и `Number(kop / 100).toFixed(2)` вместо централизованного `money.ts`. Если ваш код трогает деньги — используйте ТОЛЬКО `formatKopecksToRub`, `rublesToKopecks` из `@dental/shared/src/money.ts`. Ноль голых `* 100` и `/ 100`! Дополнительно: в схемах `billingInvoicesSchema.ts` и `billingPaymentsAndFiscalSchema.ts` всё ещё есть поля `amountRub: numeric(...)`, `priceRub: numeric(...)` — Postgres хранит деньги как FLOAT, не BIGINT kopecks. Это ROT-015 — новая критическая гниль.
+1. ДЕНЬГИ — FLOAT-БОМБА. Старый долг по UI закрыт (`check:ratchet`: 0 `/ 100` в UI); остаток на отдельную DDL-волну `ROT-015`: legacy `*Rub` поля в `clinicalProtocolsTables.ts` (`price_rub`, `lab_cost_rub`) и `referralsAndCertificatesTable.ts` (`qualifying_amount_rub` для обратной совместимости ботов). Всегда использовать `formatKopecksToRub` / `rublesToKopecks` из `@dental/shared/src/money.ts`.
 
-2. ТРАНЗАКЦИИ И ИДЕМПОТЕНТНОСТЬ (170 и 197 route-файлов без защиты). Критические финансовые домены покрыты, но 170 route-файлов с мутациями до сих пор НЕ содержат `db.transaction()`, и 197 — без `Idempotency-Key`. Если ваш код делает POST/PUT/PATCH/DELETE с несколькими INSERT/UPDATE — оберните в `await db.transaction(async tx => ...)` и добавьте заголовок `Idempotency-Key`. Не плодите новые маршруты без этого.
+2. ТРАНЗАКЦИИ И ИДЕМПОТЕНТНОСТЬ (`ROT-005`/`ROT-006`). Критические домены закрыты и защищены `idempotencyPlugin` + `withTenantCtx` + `withSavepoint`; при этом по статическому AST-скану в ряде прочих legacy-хендлеров вне волн 3–4 остаются прямые `database` вызовы без явного `tx` (требуется плановая проверка вне горячего контура).
 
-3. КОМПИЛЯЦИЯ TSC СЛОМАНА В ХЛАМ (2 ошибки в API, 28 в Web!). Вчера было 0/0. За ночь агенты залезли в EMR/медкарту, «улучшили типизацию» и сломали 28 мест в вебе (`useMedicalRecordSave.ts` — 15 ошибок, `AppDirectSpecialtyModals.tsx` — 11 ошибок). В API висят 2 ошибки (`handleSipStatusAndFailover.ts`, `appointmentsQueryModules`). Ни один агент не проверял `tsc` перед коммитом! Если вы работаете в проекте — ПОЧИНИТЕ СВОЙ КОМПИЛЯТОР. Гейт: `npm run typecheck` Exit Code 0 во ВСЕХ пакетах.
+3. КОМПИЛЯЦИЯ TSC ВО ВСЕХ ПАКЕТАХ: **0 / 0 / 0 (Exit Code 0)** (`@dental/shared` build+typecheck = 0, `@dental/api` typecheck = 0, `@dental/web` typecheck = 0 после Wave 4 + фикса `MobilePhotoUploadPage.tsx:202`).
 
-4. **`console.log` ВМЕСТО ЛОГГЕРА (760 осталось).** Было 828, стало 760 — за 20 часов убрали 68. Черепаший темп. Если трогаете файл с `console.log` — замените на `request.log.info/warn/error`. Не добавляйте новых `console.log` ни при каких обстоятельствах.
+4. **`console.log` ВМЕСТО ЛОГГЕРА (`ROT-008`):** По замерам 25.11 (prod без тестов): в `apps/api/src` осталось **56** вхождений вне `scripts/` (`210` включая `apps/api/src/scripts/**`), в `packages/shared/src` **13**, в `apps/web/src` **673** (всего **896** в репо с учётом API CLI-скриптов). Запрещено добавлять новые `console.*`.
 
-5. **`organizationId` — ИЗОЛЯЦИЯ АРЕНДАТОРОВ (387 route-файлов без проверки).** Критические BOLA/IDOR дыры закрыты, но 387 route-файлов до сих пор не упоминают `organizationId`. Если пишете новый маршрут или правите существующий — ОБЯЗАТЕЛЬНО фильтруйте по `organizationId` из подписанного токена. Используйте `requireClinicalMutationContext` / `requireClinicalReadContext`.
+5. **`organizationId` — ИЗОЛЯЦИЯ АРЕНДАТОРОВ (`ROT-007`):** BOLA/SSRF в `hardware`, `lanNetwork`, `telegram*`, `smartImports`, `photoBridge`, `consents`, `scheduleAuthGuard`, `patients/helpers`, `workspaceProfileHandlers` закрыты; по общему AST-скану 1542 Fastify-эндпоинтов ~178 объявлений роутов (23 файла, в основном public/health/webhook/meta) не содержат явного `organizationId` — подлежат точечной верификации по 2FP.
 
-6. **`as any` В БОЕВОМ КОДЕ (85 осталось).** Было 134, стало 85. Если убираете `any` — проверяйте `npm run typecheck -w @dental/web` ДО и ПОСЛЕ. Рост числа ошибок `tsc` при удалении `any` = псевдофикс (Мандат 8bk).
+6. **`as any` В БОЕВОМ КОДЕ (`ROT-010`):** **0 реальных `any`** (`check:ratchet = 0`; 4 совпадения `git grep` в `apps/api/src` и `apps/web/src` являются комментариями, а не TypeScript-типами).
 
-7. 774 ГРЯЗНЫХ ФАЙЛА В WORKTREE (ROT-016). Агенты наработали, но не закоммитили. Перед началом любой работы — `git status`. После домена — `git add <file>` пофайлово + `git commit`. Мандат 8an.
+7. **WORKTREE (`ROT-016`):** 2 файла (`M .data/dental-crm-state.json` runtime state + `D .agents/skills/telegram-ai-bridge/SKILL.md`), 0 незакоммиченного боевого кода после коммитов `ecbea103..f4936e68` и обновления этого реестра.
 8. МАНИФЕСТЫ ПАДЕНИЙ И СТЕГАНИЕ АГЕНТОВ (ROT-017 / FAILURE MANIFESTOS). Любой упавший тест или проверка выдаёт подробное клиническое и архитектурное наставление (`docs/quality/FAILURE_MANIFESTOS.md`). Запрещено ориентироваться на красный крестик: чинить первопричину по Первым Принципам!
 
 ---
@@ -104,9 +115,9 @@
 - Что сделано: Устранена неоднозначность реэкспорта `DbClientOrTransaction` в `appointmentsQueryModules/index.ts` и исправлен импорт `requireClinicalMutationContext` / `requireClinicalReadContext` в `handleSipStatusAndFailover.ts`.
 
 ### ROT-002: Компиляция Web (ошибки tsc)
-- Статус: 🔄 IN PROGRESS — 1 ОСТАЛАСЬ (было 894, затем 75, затем 28 — сокращение на 99.9%!)
-- **Проверено:** `npm run typecheck -w @dental/web` → 1 ошибка TS2322 (`AppNavigationShell.tsx(42,8): Type '{ continueOnboardingInDraftMode... }' is not assignable to type 'AppTopBarProps'`), 2026-11-24 00:25
-- Что сделано (эпицентр EMR и 'never' explosion):
+- Статус: ✅ FIXED (2026-11-25) — **0 ошибок** (было 894 -> 75 -> 28 -> 1 -> **0**)
+- **Проверено:** `npm run typecheck -w @dental/web` → **Exit Code 0** (`0` ошибок TS по всему `@dental/web`, включая устранение `AppNavigationShell.tsx:42` и `MobilePhotoUploadPage.tsx:202`), `2026-11-25 00:18`
+- Что сделано (эпицентр EMR, photography и 'never' explosion):
   * `src/components/emr/record/useMedicalRecordSave.ts` — 0 ошибок (было 15)
   * `src/appModules/AppDirectSpecialtyModals.tsx` — 0 ошибок (было 11)
   * `src/components/emr/record/tabs/RecordDiariesTab.tsx` — 0 ошибок (было 1)
@@ -195,23 +206,23 @@
 
 > ⚡ ПРАВИЛО ОБНОВЛЕНИЯ: При любой работе субагент вносит срез с актуальными числами ДО и ПОСЛЕ. Колонка без обновления — устаревшие данные, работать по ним нельзя. Прочитай RATCHET перед стартом!
 
-| Метрика | Исходно (20.11) | Срез (21.11) | Срез (24.11) | Срез (25.11 00:05, Wave 3) | Срез (25.11 00:22) | Цель |
-|---|---|---|---|---|---|---|
-| API tsc ошибки | 4 | 2 | **0** ✅ | 0 (5 внешних: `branchesRoutes`,`loyaltyReferralRoutes`) | **~5** ⚠️ P0 | 0 |
-| Shared tsc ошибки | — | 0 | **0** ✅ | **0** ✅ | **0** ✅ | 0 |
-| Web tsc ошибки | 16 | 28 | **1** | **1** (`MobilePhotoUploadPage.tsx:202`) | **1** ⚠️ P0 | 0 |
-| `as any` в UI-ядре (ratchet) | — | — | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | 0 |
-| `as any` во всей кодовой базе | 134 | 85 | — | — (`check:diff --all=0` по диффу) | **~85** | 0 |
-| `console.log` в ядре API/Web/Shared | 828 | 760 | **931** | Зачищены в 5 доменах Wave 3 | **~760** ⚠️ P1 | 0 |
-| `/ 100` float в UI (ratchet) | >400 | 274 | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | 0 |
-| Route без `organizationId` | 46* | 387 | 387 | Закрыты в 5 доменах Wave 3 | **~387** ⚠️ P1 | 0 |
-| Route без `db.transaction()` | 88%* | 170 | 170 | Закрыты в 5 доменах Wave 3 | **~170** ⚠️ P1 | 0 |
-| Route без `Idempotency-Key` | 93%* | 197 | 197 | Закрыты в 5 доменах Wave 3 | **~197** ⚠️ P1 | 0 |
-| Пустые `catch {}` | 3 | 0 ✅ | **0** ✅ | **0** ✅ | **0** ✅ | 0 |
-| Грязных файлов в worktree | — | 774 | 790 | ~449 | **478** ⚠️ P0 | 0 |
-| DDL-миграции Postgres 18 | 258 | 270 | 276 ✅ | **285** ✅ (`check:migration-drift=0`) | **285** ✅ | 285+ |
-| Таблицы Drizzle ORM | 203 | 214 | 216 ✅ | **219** ✅ (49 enum, 3091 кол.) | **219** ✅ | 219+ |
-| Кубик-дефектов (175 точек) | — | 28 | 28 | **18** (90% integrity) | **18** ⚠️ P2 | 0 |
+| Метрика | Исходно (20.11) | Срез (21.11) | Срез (24.11) | Срез (25.11 00:05, Wave 3) | Срез (25.11 00:22) | Срез (25.11 00:54, Wave 4 + L1) | Цель |
+|---|---|---|---|---|---|---|---|
+| API tsc ошибки | 4 | 2 | **0** ✅ | 0 (5 внешних: `branchesRoutes`,`loyaltyReferralRoutes`) | **~5** ⚠️ P0 | **0** ✅ (`npm run typecheck -w @dental/api`) | 0 |
+| Shared tsc ошибки | — | 0 | **0** ✅ | **0** ✅ | **0** ✅ | **0** ✅ (`build` + `typecheck -w @dental/shared`) | 0 |
+| Web tsc ошибки | 16 | 28 | **1** | **1** (`MobilePhotoUploadPage.tsx:202`) | **1** ⚠️ P0 | **0** ✅ (`npm run typecheck -w @dental/web`) | 0 |
+| `as any` в UI-ядре (ratchet) | — | — | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | **0** 💎 (`check:ratchet=0`) | 0 |
+| `as any` в prod (non-test `git grep`) | 134 | 85 | — | — (`check:diff --all=0` по диффу) | **~85** | **0** в коде (4 hits только в комментариях `api:1, web:3`) | 0 |
+| `console.*` в prod без тестов | 828 | 760 | **931** | Зачищены в 5 доменах Wave 3 | **~760** ⚠️ P1 | **896** (`api:56` + `scripts:154`, `web:673`, `shared:13`) | 0 |
+| `/ 100` float в UI (ratchet) | >400 | 274 | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | **0** 💎 (`check:ratchet=0`, `check:diff=0`) | 0 |
+| Route без `organizationId` (AST/файл) | 46* | 387 | 387 | Закрыты в 5 доменах Wave 3 | **~387** ⚠️ P1 | **23** файла / `178` роутов из 1542 (закрыты Wave 4 дыры) | 0 |
+| Route без `db.transaction`/`withTenantCtx` | 88%* | 170 | 170 | Закрыты в 5 доменах Wave 3 | **~170** ⚠️ P1 | **119** файлов с мутациями (при глобальном `onRoute`) | 0 |
+| Route без `Idempotency-Key` в тексте | 93%* | 197 | 197 | Закрыты в 5 доменах Wave 3 | **~197** ⚠️ P1 | **107** из 212 (покрыто `idempotencyPlugin`) | 0 |
+| Пустые `catch {}` | 3 | 0 ✅ | **0** ✅ | **0** ✅ | **0** ✅ | В Wave 3–4 вычищено (`check:diff=0`; ~171 вне диффа) | 0 |
+| Грязных файлов в worktree | — | 774 | 790 | ~449 | **478** ⚠️ P0 | **2** (`.data/dental-crm-state.json` + `SKILL.md` delete) | 0 |
+| DDL-миграции Postgres 18 | 258 | 270 | 276 ✅ | **285** ✅ (`check:migration-drift=0`) | **285** ✅ | **285** ✅ (`check:migration-drift=0`, вкл. `0298_*`) | 285+ |
+| Таблицы Drizzle ORM | 203 | 214 | 216 ✅ | **219** ✅ (49 enum, 3091 кол.) | **219** ✅ | **219** ✅ (`3091` колонок, `49` enum) | 219+ |
+| Кубик-дефектов (`seed 42`, 175 точек) | — | 28 | 28 | **18** (90% integrity) | **18** ⚠️ P2 | **17** (90% integrity; **0 Zod**, эвристика `dice-audit`) | 0 |
 
 ---
 
@@ -500,7 +511,26 @@
      - `documents/signature.ts`: транзакционная проверка `verifyAndConsumePepOtpInTx` через `portalOtpCodes` (без тестовых байпасов `"1234"`/`"123456"`), сохранение оригинала УКЭП и `.stamped.html`.
      - Закрыты: HTTP GET мутации БД/диска и `isAnonymous` (219 НК РФ) в `portalTaxCertRoutes.ts`/`ndflTaxService.ts`, XSS в `injectVoidWatermarkIntoHtml`, тенантная изоляция и Fastify+Zod `schema.body` на `/api/crypto/sign` и `/api/cryptopro/native/sign` (`cryptoProNativeRoutes.ts`), подмена `actorUserId` в `audit.ts`/`medicalAuditTrail.ts`, DM BOLA и full-table scan в `staffChatQuery.ts`, регресс `!Number.isFinite` в `financialGuards.ts`, и бутафорские тесты `redTeamDomain13FixerProof`/`redTeamDomain21WatermarkBolaPep` переписаны на боевые маршруты.
 - **Честные открытые хвосты для следующих волн (вне скоупа 5 фиксеров):**
-  1. Синтаксические ошибки TS внешнего параллельного агента (`apps/api/src/routes/settings/branchesRoutes.ts:146`, `apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts:371,718`, `apps/web/src/components/photography/mobileBridge/MobilePhotoUploadPage.tsx:202` — также блокируют `apps/api/src/tests/server.test.ts` до починки `branchesRoutes.ts`).
+  1. Синтаксические ошибки TS внешнего параллельного агента (`apps/api/src/routes/settings/branchesRoutes.ts:146`, `apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts:371,718`, `apps/web/src/components/photography/mobileBridge/MobilePhotoUploadPage.tsx:202` — также блокируют `apps/api/src/tests/server.test.ts` до починки `branchesRoutes.ts`). **-> ЗАКРЫТО ПОЛНОСТЬЮ В ВОЛНЕ №4 + L1 (см. Раздел 24 ниже)!**
   2. `apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` (тесты 2, 3, 6): `POST /api/sync/gateway` получает `400 IdempotencyKeyRequired` (нужно решить: добавить sync-пути в `DEFAULT_IDEMPOTENCY_EXEMPT_PATHS` или посылать заголовок в `OfflineSyncGuardModal.tsx`/`syncBatchProcessor.ts`).
   3. `apps/api/src/security/medicalSecrecyWarden.ts:406-426` vs тесты `wave11`/`wave14`/`wave15` (паттерны фильтрации `"кариес"`/`"пульпит"`/`"K02"`/`"K04.0"`).
   4. `ROT-015` DDL для `clinicalProtocolsTables.ts` (`price_rub`, `lab_cost_rub`) и UI-интеграция с новыми `.strict()`/`Idempotency-Key` контрактами в `apps/web/**`.
+
+---
+
+## 24. ГОРИЗОНТАЛЬНАЯ BACKEND-ВОЛНА №4 (CLINICAL ROUTES + FINANCE/SHARED + PLATFORM/SECURITY HIGH SURGEONS + L1 FIXES, 2026-11-25)
+- **Статус:** ✅ **ВЫПОЛНЕНО И ПРОЙДЕНО** (`shared`/`api`/`web` `typecheck` = **0 / 0 / 0 Exit Code 0**; 9 статических гейтов `check:diff`, `check:encoding`, `check:ratchet`, `check:doors`, `check:migration-drift`, `check:dynamic-imports`, `check:buttons`, `check:css-tokens`, `check:react-hooks` = **Exit Code 0**; `audit:dice --seed 42` = `158/175`, **0 Zod-дефектов**, 17 срабатываний эвристики в `dice-audit.mjs:508-564` на плагинные роуты).
+- **Итоги 3 High Fixer-волн + L1 (коммиты `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db`):**
+  1. **Clinical Routes High (Fixer #1):**
+     - Удалён дубликат `apps/api/src/routes/visits/ensureActiveChair.ts` (`git rm`), `visitQuickRoutes.ts` переведён на `resolveDefaultChairForCreate(tx, orgId)` внутри `withTenantCtx`.
+     - Убраны ручные конфликты `409 in_flight` с `idempotencyPlugin` в `visitPerioRoutes.ts`, `visitOpenRoutes.ts`, `visitHygieneRoutes.ts`, `visitWorkOrderApplyPlanHandler.ts`, `periodontogram/routesPatient.ts`; добавлен `createIdempotentTenantTestApp()` в `tenantTestApp.ts`.
+     - Закрыты продовые обходы `demo-showcase-token*` без `isDemoShowcaseMode()` в `scheduleAuthGuard.ts` и `patients/helpers.ts`; исправлен PG18 `FORCE RLS` в публичном `/api/public/consents/sign` (`consents/queries.ts`) + BOLA на `generatedDocuments.patientId`; `withSavepoint` в `visitProtocolRevisions.ts`; `VisitWorkOrderService.ts` переведён на `money.ts` и запись `*Kopecks`; запечатаны `.strict()` схемы в `visits`, `sanpin`, `consents`, `waitlist`, `patientRecall`, `patients/ticketRoutes`.
+  2. **Finance, Loyalty & Shared High (Fixer #2):**
+     - Доведены 25+ файлов `@dental/shared`, убраны `!` в `money.ts`, добавлены `.strict()` контракты (`visitWorkOrder.ts`, `recallCandidates.ts`, `patientInsightSchema`, `telegramAndReceiptSchemas.ts`, `appointmentSchemas.ts`).
+     - Создана и применена DDL-миграция `0298_referrals_and_shifts_kopecks_backfill.sql` + `referralsAndCertificatesTable.ts` (`minFirstSpendThresholdKopecks`, `qualifyingAmountKopecks`, backfill `cash_box_shifts` и `payments`).
+     - Починены `loyaltyModules/{certificateIssuance,certificateRedemption,loyaltyReferralRoutes,shiftLedgerSync}.ts`, `publicBudgetRoutes.ts`, `budgetSigningService.ts`, `templateRenderAndPreviewRoutes.ts`, `clinicalBundlesRoutes.ts`, `financeSliceExtractors.ts`, парсеры импортов и `debtReports.ts`.
+  3. **Platform, Security & Logs High (Fixer #3):**
+     - Закрыты критические SSRF/BOLA/RLS дыры: `photoBridgeRoutes.ts` (`withTenantCtx` на upload, auth на poll/delete, `!isDemoShowcaseMode()`), `hardware.ts` (`isBlockedSsrfIp`, path validation), `lanNetwork.ts` (убраны анонимные sync и дефолт `clinic-default`), `telegram/*Routes.ts` + `telegramControlPlaneGuard.ts` + `telegramReferralActionHandlers.ts` (ликвидирован singleton настроек, кросс-тенантные запросы режутся `403`), `smartImports.ts` SSE, `workspaceProfileHandlers.ts` (отключён авто-засев вымышленных пациентов в реальные клиники), `migrationValidationHandlers.ts` (path jail в `/discover` и `/dicom/inspect`), `MdlpDisposalService.ts` (`withSavepoint` против `25P02`, `getQueueAsync`), `mdlpOutboxService.ts` (`withTenantCtx`), `backupRoutes.ts`, `branchesRoutes.ts`, `staffQueries.ts`, `env/requiredEnv.ts` (0 `console.warn`).
+  4. **L1 Финальная зачистка `tsc` и верификация:**
+     - Устранены финальные 4 TS-ошибки (`executeShiftAutofillTransaction.ts`, `periodontogramQueryService.ts`, `ticketRoutes.ts`, `MobilePhotoUploadPage.tsx:202`).
+     - Подтверждены прогоны: `visits.test.ts` + `settingsHardening.test.ts` + `loyaltyAndReferrals.test.ts` (`31/31`), `sanpinFixerSurgeon.test.ts` + `periodontogramSnapshots.test.ts` + `patientReclamationTicketAuth.test.ts` (`44/44`), `photoBridgeRoutes.test.ts` (`10/10`), `deterministicVision.test.ts` (`9/9`).
