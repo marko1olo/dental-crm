@@ -257,7 +257,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					patientId={patientId || ""}
 					patientName={patientName}
 					initialImageUrl={cephStudy?.imageUrl ?? (isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined)}
-					onApplyAnalysis={({ trgValues, study }) => {
+					onApplyAnalysis={({ trgValues }) => {
 						setProtocol((prev) => ({
 							...prev,
 							trgValues: {
@@ -265,9 +265,6 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								...trgValues,
 							},
 						}));
-						if (study) {
-							setCephStudy(study as unknown as CephalometricSavedStudy);
-						}
 						showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
 					}}
 				/>

@@ -1477,8 +1477,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 			},
 			{
 				code: "A16.07.097",
-				nameRu: "Наложение узловых швов (Prolene 6-0)",
-				name: "Наложение узловых швов (Prolene 6-0)",
+				nameRu: "Наложение узловых швов (монофиламент 6-0)",
+				name: "Наложение узловых швов (монофиламент 6-0)",
 				priceRub: 1500,
 				priceKopecks: 150000n,
 				quantity: 1,
@@ -1497,7 +1497,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 			},
 		],
 		requiredMaterials: [
-			{ name: "Шовный материал Prolene 6-0", unit: "шт.", quantity: 1, isWarehouseCritical: false },
+			{ name: "Шовный материал монофиламент 6-0", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Хирургический твердосплавный бор", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Анестетик артикаиновый 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false },
 		],
@@ -1598,7 +1598,7 @@ export function buildStandardImplantationProtocolText(
 		params.capType === "plug"
 			? "Установлен винт-заглушка (двухэтапный протокол с ушиванием наглухо)."
 			: "Установлен формирователь десны (ФДМ).";
-	const suture = params.sutureMaterial || "Prolene 4-0";
+	const suture = params.sutureMaterial || "Монофиламент 4-0";
 	const xrayStr =
 		params.postOpXray !== false
 			? " Выполнен контрольный прицельный радиовизиографический снимок: положение имплантата правильное, субкрестально 0.5 мм, без повреждения смежных анатомических структур."
