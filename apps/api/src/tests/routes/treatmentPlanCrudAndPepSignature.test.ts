@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
+	communicationOutbox,
 	organizations,
 	patientInvoices,
 	patients,
@@ -233,6 +235,22 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(reqCodeBody.smsSent, true);
 		assert.equal(reqCodeBody.timeoutSeconds, 60);
 
+		const [outboxSms] = await withTenantCtx(ORG_ID, async (tx) =>
+			tx
+				.select({ body: communicationOutbox.body })
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.patientId, PATIENT_ID),
+					),
+				)
+				.orderBy(desc(communicationOutbox.createdAt))
+				.limit(1),
+		);
+		const otpMatch = outboxSms?.body.match(/DENTE:\s*(\d{6})/);
+		assert.ok(otpMatch?.[1], "Generated OTP code must be queued in communication_outbox");
+
 		// 3. Подтверждаем подписание кодом
 		const confirmRes = await app.inject({
 			method: "POST",
@@ -241,7 +259,7 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 			payload: {
 				action: "confirm",
 				method: "sms",
-				code: "123456", // bypass/valid
+				code: otpMatch[1],
 				signerName: "Смирнов Алексей Павлович",
 			},
 		});

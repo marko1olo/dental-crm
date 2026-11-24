@@ -67,47 +67,66 @@ describe("Offline CRDT & Conflict Resolution (Odontogram LWW + Schedule 409)", (
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async (tx) => {
-				await tx.insert(organizations).values({
-					id: ORG_ID,
-					name: "Клиника оффлайн-разрешения коллизий",
-				});
-				await tx.insert(clinics).values({
-					id: CLINIC_ID,
-					organizationId: ORG_ID,
-					name: "Тестовое отделение",
-				});
-				await tx.insert(users).values([
-					{
-						id: DOCTOR_ID,
+				await tx
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Клиника оффлайн-разрешения коллизий",
+					})
+					.onConflictDoNothing();
+				await tx
+					.insert(clinics)
+					.values({
+						id: CLINIC_ID,
 						organizationId: ORG_ID,
-						fullName: "Доктор Оффлайн Проверен",
-						role: "doctor",
-						isActive: true,
-					},
-				]);
-				await tx.insert(chairs).values([
-					{
-						id: CHAIR_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 1",
-						isActive: true,
-					},
-				]);
-				await tx.insert(patients).values([
-					{
-						id: PATIENT_1_ID,
-						organizationId: ORG_ID,
-						fullName: "Пациент Зубной Конфликт",
-						phone: "+79001112233",
-					},
-					{
-						id: PATIENT_2_ID,
-						organizationId: ORG_ID,
-						fullName: "Пациент Слот Конфликт",
-						phone: "+79004445566",
-					},
-				]);
+						name: "Тестовое отделение",
+						timezone: "UTC",
+					})
+					.onConflictDoUpdate({
+						target: clinics.id,
+						set: { name: "Тестовое отделение", timezone: "UTC" },
+					});
+				await tx
+					.insert(users)
+					.values([
+						{
+							id: DOCTOR_ID,
+							organizationId: ORG_ID,
+							fullName: "Доктор Оффлайн Проверен",
+							role: "doctor",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await tx
+					.insert(chairs)
+					.values([
+						{
+							id: CHAIR_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 1",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await tx
+					.insert(patients)
+					.values([
+						{
+							id: PATIENT_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Пациент Зубной Конфликт",
+							phone: "+79001112233",
+						},
+						{
+							id: PATIENT_2_ID,
+							organizationId: ORG_ID,
+							fullName: "Пациент Слот Конфликт",
+							phone: "+79004445566",
+						},
+					])
+					.onConflictDoNothing();
 			});
 		} catch (error) {
 			if (isDatabaseUnavailable(error)) {

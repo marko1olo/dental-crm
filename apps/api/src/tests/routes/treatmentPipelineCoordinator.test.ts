@@ -22,9 +22,12 @@ import {
 	patientRecalls,
 	patients,
 	treatmentPlans,
+	users,
 } from "../../db/schema.js";
 import { publicBudgetRoutes } from "../../routes/publicBudgetRoutes.js";
 import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	syncRecallOnAppointmentCompleted,
 	syncRecallOnAppointmentCreated,
@@ -38,6 +41,7 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "pipelineCoordinatorTest";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
+const DOCTOR_ID = fixtureUuid(NAMESPACE, 10);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 2);
 const PLAN_1_ID = fixtureUuid(NAMESPACE, 3);
 const PLAN_2_ID = fixtureUuid(NAMESPACE, 4);
@@ -48,12 +52,28 @@ const PATIENT_3_ID = fixtureUuid(NAMESPACE, 8);
 
 describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () => {
 	let app: FastifyInstance;
+	let authHeaders: Record<string, string>;
 
 	before(async () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
+
+		const signed = signToken(
+			{
+				userId: DOCTOR_ID,
+				organizationId: ORG_ID,
+				role: "doctor",
+				fullName: "Д-р Координатор",
+			},
+			authTokenSecret(),
+		);
+		authHeaders = {
+			authorization: `Bearer ${signed}`,
+			"x-dente-staff-token": signed,
+			"x-dente-organization-id": ORG_ID,
+		};
 
 		app = createTenantTestApp();
 		await app.register(publicBudgetRoutes);
@@ -65,12 +85,22 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 			await purgeFixtureOrganizations([ORG_ID]);
 
 			await withFixtureTenant(ORG_ID, async () => {
-				// Seed Organization, Patient
+				// Seed Organization, Doctor, Patient
 				await db
 					.insert(organizations)
 					.values({
 						id: ORG_ID,
 						name: "Клиника ДЕНТЕ Тест",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Д-р Координатор",
+						role: "doctor",
+						isActive: true,
 					})
 					.onConflictDoNothing();
 				await db
@@ -127,7 +157,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/v1/treatment-plans/pipeline",
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 		});
 
 		assert.equal(res.statusCode, 200);
@@ -224,7 +254,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res1 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${PLAN_2_ID}/transition-stage`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: {
 				status: "Active",
 				reason: "Пациент начал комплексное лечение",
@@ -249,7 +279,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res2 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${PLAN_2_ID}/transition-stage`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: {
 				targetStage: "completed",
 			},
@@ -273,7 +303,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res3 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${PLAN_2_ID}/transition-stage`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: {
 				targetStage: "in_progress_abandoned",
 				reason: "Пациент перестал выходить на связь",
@@ -295,7 +325,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const pipelineRes = await app.inject({
 			method: "GET",
 			url: "/api/v1/treatment-plans/pipeline",
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 		});
 		assert.equal(pipelineRes.statusCode, 200);
 		const pipelineBody = JSON.parse(pipelineRes.payload);
@@ -337,7 +367,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/v1/treatment-plans/dropout-prevention/run",
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: { minDays: 14 },
 		});
 
@@ -390,7 +420,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res1 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${PLAN_4_ID}/create-dropout-recall`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: { notes: "Пациент взял паузу на раздумья, связаться" },
 		});
 
@@ -404,7 +434,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res2 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${PLAN_4_ID}/create-dropout-recall`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 			payload: { notes: "Повторная попытка" },
 		});
 
@@ -419,7 +449,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res3 = await app.inject({
 			method: "POST",
 			url: `/api/v1/treatment-plans/${nonExistentPlanId}/create-dropout-recall`,
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 		});
 		assert.equal(res3.statusCode, 400);
 		const b3 = JSON.parse(res3.payload);
@@ -431,7 +461,7 @@ describe("Treatment Pipeline Coordinator & Reactive Recall Synchronization", () 
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/v1/treatment-plans/pipeline",
-			headers: { "x-organization-id": ORG_ID },
+			headers: authHeaders,
 		});
 
 		assert.equal(res.statusCode, 200);

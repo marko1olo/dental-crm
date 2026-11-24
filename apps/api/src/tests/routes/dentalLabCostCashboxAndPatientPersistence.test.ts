@@ -9,19 +9,73 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import { resolveAmountToPayKopecks } from "../../routes/lab/paymentModules/labOrderCashBoxFinder.js";
 import { executeLabOrderPayment } from "../../routes/lab/paymentModules/labOrderPayDb.js";
 import { insertLabOrderInDb } from "../../routes/lab/ordersCrudModules/labOrderInsertDb.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { mapStageToLabOrderStatus } from "../../routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.js";
-import { db } from "../../db/client.js";
-import { labOrders, cashOperations } from "../../db/schema.js";
+import { labOrders, organizations, users } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
-const TEST_ORG_ID = "00000000-0000-0000-0000-000000000001";
+const NAMESPACE = "dentalLabCostCashbox";
+const TEST_ORG_ID = fixtureUuid(NAMESPACE, 1);
+const DOCTOR_ORTOPEDOV_ID = fixtureUuid(NAMESPACE, 2);
+const DOCTOR_SMIRNOVA_ID = fixtureUuid(NAMESPACE, 3);
 
 describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistence", () => {
+	let databaseReady = true;
+
+	before(async () => {
+		process.env.NODE_ENV = "test";
+		try {
+			await purgeFixtureOrganizations([TEST_ORG_ID]);
+		} catch (error) {
+			if (!isDatabaseUnavailable(error)) throw error;
+			databaseReady = false;
+			return;
+		}
+
+		await withFixtureTenant(TEST_ORG_ID, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({
+					id: TEST_ORG_ID,
+					name: "Клиника Тест Себестоимости ЗТЛ",
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(users)
+				.values([
+					{
+						id: DOCTOR_ORTOPEDOV_ID,
+						organizationId: TEST_ORG_ID,
+						fullName: "Д-р Ортопедов А. А.",
+						role: "doctor",
+					},
+					{
+						id: DOCTOR_SMIRNOVA_ID,
+						organizationId: TEST_ORG_ID,
+						fullName: "Д-р Смирнова Е. В.",
+						role: "doctor",
+					},
+				])
+				.onConflictDoNothing();
+		});
+	});
+
+	after(async () => {
+		if (!databaseReady) return;
+		await purgeFixtureOrganizations([TEST_ORG_ID]);
+	});
+
 	describe("1. Финансовая защита кассы: выплата технику СТРОГО по себестоимости", () => {
 		it("resolveAmountToPayKopecks выбирает себестоимость (7 500 ₽ = 750 000 коп.), а НЕ розницу пациента (25 000 ₽)", () => {
 			const mockOrder = {
@@ -48,10 +102,12 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 			assert.strictEqual(stringAmountKopecks, 850000);
 		});
 
-		it("executeLabOrderPayment возвращает amount_exceeds_cost при попытке списать больше себестоимости", async () => {
+		it("executeLabOrderPayment возвращает amount_exceeds_cost при попытке списать больше себестоимости", async (t) => {
+			if (!databaseReady) return t.skip("Database is unavailable");
 			const orderRes = await withTenantCtx(TEST_ORG_ID, (tx) =>
 				insertLabOrderInDb(tx, TEST_ORG_ID, {
 					patientName: "Тестовый Пациент Защиты Кассы",
+					doctorId: DOCTOR_ORTOPEDOV_ID,
 					doctorName: "Д-р Ортопедов А. А.",
 					toothFdi: "16",
 					material: "Диоксид циркония ZrO2",
@@ -62,7 +118,7 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 			);
 
 			assert.strictEqual(orderRes.kind, "ok");
-			const createdOrder = (orderRes as any).order;
+			const createdOrder = orderRes.order;
 
 			try {
 				// Пытаемся выплатить технику 25 000 ₽ (розницу) при себестоимости 7 500 ₽
@@ -72,14 +128,18 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 
 				assert.strictEqual(payResult.kind, "amount_exceeds_cost");
 			} finally {
-				await db.delete(labOrders).where(eq(labOrders.id, createdOrder.id));
+				await withTenantCtx(TEST_ORG_ID, (tx) =>
+					tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
+				);
 			}
 		});
 
-		it("executeLabOrderPayment успешно списывает честную себестоимость и привязывает ордер кассы", async () => {
+		it("executeLabOrderPayment успешно списывает честную себестоимость и привязывает ордер кассы", async (t) => {
+			if (!databaseReady) return t.skip("Database is unavailable");
 			const orderRes = await withTenantCtx(TEST_ORG_ID, (tx) =>
 				insertLabOrderInDb(tx, TEST_ORG_ID, {
 					patientName: "Тестовый Пациент Честной Выплаты",
+					doctorId: DOCTOR_ORTOPEDOV_ID,
 					doctorName: "Д-р Ортопедов А. А.",
 					toothFdi: "21",
 					material: "E-max Press",
@@ -90,7 +150,7 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 			);
 
 			assert.strictEqual(orderRes.kind, "ok");
-			const createdOrder = (orderRes as any).order;
+			const createdOrder = orderRes.order;
 
 			try {
 				// Выплачиваем технику ровно себестоимость 8 000 ₽ (800 000 копеек)
@@ -106,18 +166,22 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 					assert.strictEqual(payResult.operation.operationType, "expense");
 				}
 			} finally {
-				await db.delete(labOrders).where(eq(labOrders.id, createdOrder.id));
+				await withTenantCtx(TEST_ORG_ID, (tx) =>
+					tx.delete(labOrders).where(eq(labOrders.id, createdOrder.id)),
+				);
 			}
 		});
 	});
 
 	describe("2. Автономия врача у кресла: создание наряда без patientId (ноль 404)", () => {
-		it("insertLabOrderInDb автоматически находит или создает пациента по ФИО без сбоя 404", async () => {
+		it("insertLabOrderInDb автоматически находит или создает пациента по ФИО без сбоя 404", async (t) => {
+			if (!databaseReady) return t.skip("Database is unavailable");
 			const uniqueName = `Пациент Без Профиля ${Date.now()}`;
 
 			const res = await withTenantCtx(TEST_ORG_ID, (tx) =>
 				insertLabOrderInDb(tx, TEST_ORG_ID, {
 					patientName: uniqueName, // patientId НЕ передан!
+					doctorId: DOCTOR_SMIRNOVA_ID,
 					doctorName: "Д-р Смирнова Е. В.",
 					toothFdi: "36",
 					material: "Циркониевый абатмент",
@@ -128,10 +192,11 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 			);
 
 			assert.strictEqual(res.kind, "ok", "Наряд должен быть создан успешно даже без предварительно выбранного patientId");
-			assert.ok((res as any).order.patientId, "Пациент должен быть автоматически создан/связан");
+			assert.ok(res.order.patientId, "Пациент должен быть автоматически создан/связан");
 
-			// Удалим тестовый заказ
-			await db.delete(labOrders).where(eq(labOrders.id, (res as any).order.id));
+			await withTenantCtx(TEST_ORG_ID, (tx) =>
+				tx.delete(labOrders).where(eq(labOrders.id, res.order.id)),
+			);
 		});
 	});
 
@@ -144,21 +209,24 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 			assert.strictEqual(mapStageToLabOrderStatus("Фиксация"), "completed");
 		});
 
-		it("PostgreSQL успешно сохраняет заказ со статусом ready_in_clinic без нарушения CHECK constraint", async () => {
+		it("PostgreSQL успешно сохраняет заказ со статусом ready_in_clinic без нарушения CHECK constraint", async (t) => {
+			if (!databaseReady) return t.skip("Database is unavailable");
 			const res = await withTenantCtx(TEST_ORG_ID, (tx) =>
 				insertLabOrderInDb(tx, TEST_ORG_ID, {
 					patientName: "Тест Статуса 0231",
-					status: "ready_in_clinic" as any,
+					doctorId: DOCTOR_ORTOPEDOV_ID,
+					status: "ready_in_clinic",
 					toothFdi: "11",
 					dueDate: "2026-11-30",
 				}),
 			);
 
 			assert.strictEqual(res.kind, "ok");
-			assert.strictEqual((res as any).order.status, "ready_in_clinic");
+			assert.strictEqual(res.order.status, "ready_in_clinic");
 
-			// Очистим тестовый заказ
-			await db.delete(labOrders).where(eq(labOrders.id, (res as any).order.id));
+			await withTenantCtx(TEST_ORG_ID, (tx) =>
+				tx.delete(labOrders).where(eq(labOrders.id, res.order.id)),
+			);
 		});
 	});
 });

@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
+	communicationOutbox,
 	organizations,
 	patients,
 	treatmentPlans,
@@ -33,7 +35,7 @@ import {
 	type PlanItemForValidation,
 	type PlanToInvoiceValidationPayload,
 } from "@dental/shared/finance";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 const FIXTURE = "studioPep";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -438,6 +440,22 @@ describe("Treatment Plan Studio, 3-Tier Comparison, Kopeck Math & PEP Digital Si
 		assert.equal(reqCodeData.smsSent, true);
 		assert.equal(reqCodeData.timeoutSeconds, 60);
 
+		const [outboxSms] = await withTenantCtx(ORG_ID, async (tx) =>
+			tx
+				.select({ body: communicationOutbox.body })
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.patientId, PATIENT_ID),
+					),
+				)
+				.orderBy(desc(communicationOutbox.createdAt))
+				.limit(1),
+		);
+		const otpMatch = outboxSms?.body.match(/DENTE:\s*(\d{6})/);
+		assert.ok(otpMatch?.[1], "Generated OTP code must be queued in communication_outbox");
+
 		// 3. Отклонение неверного кода (400 Bad Request)
 		const badCodeRes = await app.inject({
 			method: "POST",
@@ -446,7 +464,7 @@ describe("Treatment Plan Studio, 3-Tier Comparison, Kopeck Math & PEP Digital Si
 			payload: {
 				action: "confirm",
 				method: "sms",
-				code: "000000", // Неверный код
+				code: otpMatch[1] === "000000" ? "999999" : "000000", // Неверный код
 				signerName: "Смирнова Екатерина Васильевна",
 			},
 		});
@@ -454,7 +472,7 @@ describe("Treatment Plan Studio, 3-Tier Comparison, Kopeck Math & PEP Digital Si
 		const badCodeData = JSON.parse(badCodeRes.body);
 		assert.equal(badCodeData.error, "InvalidVerificationCode");
 
-		// 4. Успешное подписание проверочным кодом (test bypass: 123456)
+		// 4. Успешное подписание реальным проверочным кодом из communication_outbox / portal_otp_codes
 		const confirmRes = await app.inject({
 			method: "POST",
 			url: `/api/treatment-plans/${planId}/sign-pep`,
@@ -462,7 +480,7 @@ describe("Treatment Plan Studio, 3-Tier Comparison, Kopeck Math & PEP Digital Si
 			payload: {
 				action: "confirm",
 				method: "sms",
-				code: "123456",
+				code: otpMatch[1],
 				signerName: "Смирнова Екатерина Васильевна",
 			},
 		});

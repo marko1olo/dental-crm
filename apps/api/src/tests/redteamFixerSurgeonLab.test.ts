@@ -17,7 +17,7 @@ import type { FastifyInstance } from "fastify";
 import { buildLabOrderApiPayload, generateUuidV7 } from "@dental/shared";
 import { db } from "../db/client.js";
 import { withFixtureTenant, fixtureUuid, purgeFixtureOrganizations, isDatabaseUnavailable } from "./support/fixtureOrganizations.js";
-import { createTenantTestApp } from "./support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "./support/tenantTestApp.js";
 import { organizations, users, patients, labOrders, labItems, appointments } from "../db/schema.js";
 import { registerLabRoutes } from "../routes/lab/index.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -115,7 +115,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			authTokenSecret(),
 		);
 
-		app = createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		await registerLabRoutes(app);
 		await app.ready();
 	});

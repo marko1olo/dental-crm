@@ -420,7 +420,7 @@ describe("Cloud Sync Gateway & Conflict Resolution Tests", () => {
 
 		assert.equal(res.statusCode, 200);
 		const body = res.json();
-		assert.equal(body.results[0]?.status, "merged");
+		assert.equal(body.results[0]?.status, "conflict_resolved");
 
 		// Verify database row
 		const [diaryInDb] = await withFixtureTenant(ORG_ID, async () =>
