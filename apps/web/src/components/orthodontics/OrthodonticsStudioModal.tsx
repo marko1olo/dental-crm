@@ -208,6 +208,73 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 
 	if (!isOpen) return null;
 
+	if (isPhotoModalOpen) {
+		return (
+			<Suspense fallback={null}>
+				<ClinicalPhotoProtocolModal
+					isOpen={true}
+					onClose={() => setIsPhotoModalOpen(false)}
+					patientId={patientId || ""}
+					patientName={patientName}
+					doctorName={doctorName}
+					initialPresetId="orthodontic_8"
+					onSaveProtocol={(slots) => {
+						const slotKeys = Object.keys(slots);
+						if (slotKeys.length > 0) {
+							setProtocol((prev) => {
+								const updatedStatuses = { ...prev.photoStatuses };
+								slotKeys.forEach((slotId) => {
+									if (slots[slotId]?.imageUrl) {
+										updatedStatuses[slotId] = true;
+									}
+								});
+								return { ...prev, photoStatuses: updatedStatuses };
+							});
+							showToast("✓ Фотопротокол сохранён в ортодонтическую карту", "success");
+						}
+					}}
+					onPhotoSaved={(res) => {
+						const record = res as { slotId?: string } | undefined;
+						const slotId = record?.slotId;
+						if (slotId) {
+							setProtocol((prev) => ({
+								...prev,
+								photoStatuses: { ...prev.photoStatuses, [slotId]: true },
+							}));
+						}
+					}}
+				/>
+			</Suspense>
+		);
+	}
+
+	if (isCephModalOpen) {
+		return (
+			<Suspense fallback={null}>
+				<CephalometricAnalysisModal
+					isOpen={true}
+					onClose={() => setIsCephModalOpen(false)}
+					patientId={patientId || ""}
+					patientName={patientName}
+					initialImageUrl={cephStudy?.imageUrl ?? (isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined)}
+					onApplyAnalysis={({ trgValues, study }) => {
+						setProtocol((prev) => ({
+							...prev,
+							trgValues: {
+								...(prev.trgValues || {}),
+								...trgValues,
+							},
+						}));
+						if (study) {
+							setCephStudy(study as unknown as CephalometricSavedStudy);
+						}
+						showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
+					}}
+				/>
+			</Suspense>
+		);
+	}
+
 	return (
 		<div className="ortho-studio-backdrop" role="dialog" aria-modal="true" data-testid="orthodontic-studio-modal">
 			<div className="ortho-studio-modal">
@@ -323,6 +390,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					onOpenPhotoModal={() => setIsPhotoModalOpen(true)}
 					onOpenCephModal={() => setIsCephModalOpen(true)}
 					totalSetupCostKopecks={totalSetupCostKopecks}
+					cephStudy={cephStudy}
+					onUpdateCephStudy={setCephStudy}
 				/>
 
 				<footer className="ortho-footer">
@@ -346,66 +415,6 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					</div>
 				</footer>
 			</div>
-
-			{isPhotoModalOpen && (
-				<Suspense fallback={null}>
-					<ClinicalPhotoProtocolModal
-						isOpen={true}
-						onClose={() => setIsPhotoModalOpen(false)}
-						patientId={patientId || ""}
-						patientName={patientName}
-						doctorName={doctorName}
-						initialPresetId="orthodontic_8"
-						onSaveProtocol={(slots) => {
-							const slotKeys = Object.keys(slots);
-							if (slotKeys.length > 0) {
-								setProtocol((prev) => {
-									const updatedStatuses = { ...prev.photoStatuses };
-									slotKeys.forEach((slotId) => {
-										if (slots[slotId]?.imageUrl) {
-											updatedStatuses[slotId] = true;
-										}
-									});
-									return { ...prev, photoStatuses: updatedStatuses };
-								});
-								showToast("✓ Фотопротокол сохранён в ортодонтическую карту", "success");
-							}
-						}}
-						onPhotoSaved={(res) => {
-							const record = res as { slotId?: string } | undefined;
-							const slotId = record?.slotId;
-							if (slotId) {
-								setProtocol((prev) => ({
-									...prev,
-									photoStatuses: { ...prev.photoStatuses, [slotId]: true },
-								}));
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isCephModalOpen && (
-				<Suspense fallback={null}>
-					<CephalometricAnalysisModal
-						isOpen={true}
-						onClose={() => setIsCephModalOpen(false)}
-						patientId={patientId || ""}
-						patientName={patientName}
-						initialImageUrl={isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined}
-						onApplyAnalysis={({ trgValues }) => {
-							setProtocol((prev) => ({
-								...prev,
-								trgValues: {
-									...(prev.trgValues || {}),
-									...trgValues,
-								},
-							}));
-							showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
-						}}
-					/>
-				</Suspense>
-			)}
 		</div>
 	);
 };

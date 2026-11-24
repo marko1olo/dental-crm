@@ -258,7 +258,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         </div>
 
         {voiceError && (
-          <div className="text-xs text-[var(--bad,#ef4444)] px-2 py-1 bg-[var(--bad)]/10 rounded">
+          <div className="text-xs text-[var(--danger)] px-2 py-1 bg-[var(--danger-soft)] rounded">
             {voiceError}
           </div>
         )}
@@ -273,7 +273,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
               className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
               title="Передать текст в глобальный поиск Ctrl+K"
             >
-              <Search size={12} className="text-[var(--teal,#0d9488)]" />
+              <Search size={12} className="text-[var(--teal)]" />
               <span>В поиск (Ctrl+K)</span>
             </button>
             <button
@@ -282,7 +282,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
               className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
               title="Передать текст в окно чата с ассистентом"
             >
-              <MessageSquare size={12} className="text-[var(--teal,#0d9488)]" />
+              <MessageSquare size={12} className="text-[var(--teal)]" />
               <span>В чат ИИ</span>
             </button>
           </div>

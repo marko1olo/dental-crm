@@ -214,21 +214,21 @@
 }
 
 .copilot-entity-pill--tooth {
-  background: rgba(13, 148, 136, 0.1);
-  border-color: var(--primary);
-  color: var(--primary);
+  background: var(--teal-soft);
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
 .copilot-entity-pill--diagnosis {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger-soft);
   border-color: var(--danger);
   color: var(--danger);
 }
 
 .copilot-entity-pill--soap {
-  background: var(--info-bg, rgba(59, 130, 246, 0.1));
-  border-color: var(--line, rgba(59, 130, 246, 0.3));
-  color: var(--info-fg, #3b82f6);
+  background: var(--paper-soft);
+  border-color: var(--line);
+  color: var(--primary);
 }
 
 /* Action Controls Toolbar */
@@ -265,9 +265,9 @@
 
 .copilot-stenographer-mic-btn--active {
   background: var(--danger);
-  color: #ffffff;
+  color: var(--paper);
   border-color: var(--danger);
-  box-shadow: 0 0 12px var(--danger-soft, rgba(239, 68, 68, 0.4));
+  box-shadow: 0 0 12px var(--danger-soft);
 }
 
 .copilot-stenographer-apply-btn {
@@ -281,7 +281,7 @@
   border-radius: 12px;
   border: none;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--paper);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
