@@ -13,7 +13,6 @@
 @import "./modules/inventory.css";
 @import "./modules/treatment-plans.css";
 @import "./modules/leads.css";
-@import "../components/leads/leads.css";
 @import "../components/copilot/cardsStyles/generativeCards.css";
 @import "../components/copilot/actionStyles/actionConfirm.css";
 @import "../components/inventory/writeoff/clinicalWriteoff.css";

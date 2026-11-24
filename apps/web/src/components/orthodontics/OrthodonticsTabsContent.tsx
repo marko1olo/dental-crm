@@ -6,8 +6,14 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity, UploadCloud } from "lucide-react";
-import { isSlotMatching } from "@dental/shared";
+import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity, UploadCloud, Calculator, Scale, RotateCcw } from "lucide-react";
+import {
+	isSlotMatching,
+	calculateBoltonIndex,
+	calculateTonnIndex,
+	calculatePontIndex,
+	calculateSnaginaIndex,
+} from "@dental/shared";
 import {
 	ARCHWIRE_ALLOYS_SSOT, ARCHWIRE_SECTIONS_SSOT, ELASTICS_CATALOG,
 	CHAIRSIDE_ACTIONS_CATALOG, ANGLE_CLASSES_CATALOG, ORTHO_PHOTO_SLOTS_SSOT,
@@ -22,7 +28,7 @@ import { OrthodonticTimeline } from "./OrthodonticTimeline";
 import type { CephalometricSavedStudy } from "./cephalometricPersistence";
 
 export interface OrthodonticsTabsContentProps {
-	readonly activeTab: "brackets" | "aligners" | "photo_trg" | "diary";
+	readonly activeTab: "brackets" | "aligners" | "photo_trg" | "biometrics" | "diary";
 	readonly protocol: OrthoProtocolState;
 	readonly setProtocol: React.Dispatch<React.SetStateAction<OrthoProtocolState>>;
 	readonly selectedElasticSize: string;
@@ -72,6 +78,37 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 		}
 		return res;
 	}, [cephStudy?.landmarks]);
+
+	// Биометрические индексы (Болтон, Тонн, Пон, Снагина)
+	const [isDeciduous, setIsDeciduous] = useState<boolean>(false);
+	const [sumUpper4, setSumUpper4] = useState<number>(31.0);
+	const [sumLower4, setSumLower4] = useState<number>(23.2);
+	const [sumUpper6, setSumUpper6] = useState<number>(47.0);
+	const [sumLower6, setSumLower6] = useState<number>(36.3);
+	const [upper12Sum, setUpper12Sum] = useState<number>(85.0);
+	const [lower12Sum, setLower12Sum] = useState<number>(77.6);
+	const [apicalBaseUpper, setApicalBaseUpper] = useState<number>(50.5);
+	const [apicalBaseLower, setApicalBaseLower] = useState<number>(36.4);
+	const [measuredPremolars, setMeasuredPremolars] = useState<number>(38.8);
+	const [measuredMolars, setMeasuredMolars] = useState<number>(48.4);
+
+	const tonnResult = useMemo(() => calculateTonnIndex(sumUpper4, sumLower4, isDeciduous), [sumUpper4, sumLower4, isDeciduous]);
+	const boltonResult = useMemo(() => calculateBoltonIndex(sumUpper6, sumLower6, upper12Sum, lower12Sum), [sumUpper6, sumLower6, upper12Sum, lower12Sum]);
+	const pontResult = useMemo(() => calculatePontIndex(sumUpper4, measuredPremolars, measuredMolars), [sumUpper4, measuredPremolars, measuredMolars]);
+	const snaginaUpperResult = useMemo(() => calculateSnaginaIndex(sumUpper4, apicalBaseUpper, "maxilla"), [sumUpper4, apicalBaseUpper]);
+	const snaginaLowerResult = useMemo(() => calculateSnaginaIndex(sumLower4, apicalBaseLower, "mandible"), [sumLower4, apicalBaseLower]);
+
+	const formattedBiometricsSoap = useMemo(() => {
+		return [
+			`[БИОМЕТРИЧЕСКИЕ ИНДЕКСЫ ЗУБНЫХ РЯДОВ И ЧЕЛЮСТЕЙ]`,
+			`1. Индекс Тонна: ${tonnResult.ratio} (норма ${tonnResult.normReference}). ${tonnResult.interpretation}`,
+			`2. Индекс Болтона (переднее): ${boltonResult.anteriorRatioPercent}% (норма 77.2%). ${boltonResult.anteriorDiscrepancyInterpretation}`,
+			`   Индекс Болтона (полное): ${boltonResult.overallRatioPercent}% (норма 91.3%). ${boltonResult.overallDiscrepancyInterpretation}`,
+			`3. Индекс Пона: премоляры ${pontResult.measuredPremolarWidthMm} мм (расч. ${pontResult.calculatedPremolarWidthMm} мм, ${pontResult.premolars.status === "normal" ? "норма" : pontResult.premolarDiscrepancyMm > 0 ? `расширение +${pontResult.premolarDiscrepancyMm}` : `сужение ${pontResult.premolarDiscrepancyMm}`} мм); моляры ${pontResult.measuredMolarWidthMm} мм (расч. ${pontResult.calculatedMolarWidthMm} мм, ${pontResult.molars.status === "normal" ? "норма" : pontResult.molarDiscrepancyMm > 0 ? `расширение +${pontResult.molarDiscrepancyMm}` : `сужение ${pontResult.molarDiscrepancyMm}`} мм).`,
+			`4. Индекс Снагиной: ВЧ ${snaginaUpperResult.ratioPercent}% (норма 61.4%). ${snaginaUpperResult.interpretation}`,
+			`   Индекс Снагиной: НЧ ${snaginaLowerResult.ratioPercent}% (норма 63.8%). ${snaginaLowerResult.interpretation}`,
+		].join("\n");
+	}, [tonnResult, boltonResult, pontResult, snaginaUpperResult, snaginaLowerResult]);
 
 	const renderJawCard = (title: string, isUpper: boolean) => {
 		const currentAlloy = isUpper ? protocol.upperAlloy : protocol.lowerAlloy;
@@ -367,6 +404,348 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								</div>
 							)
 						)}
+					</div>
+
+					<div className="ortho-card flex items-center justify-between p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
+						<div className="flex items-center gap-2.5">
+							<Calculator className="w-4 h-4 text-[var(--primary)]" />
+							<div>
+								<span className="text-xs font-bold text-[var(--ink)]">Биометрический экспресс-анализ (Болтон, Тонн, Пон, Снагина)</span>
+								<p className="text-[11px] text-[var(--ink-muted)]">
+									Тонн: {tonnResult.ratio} · Болтон: {boltonResult.anteriorRatioPercent}% / {boltonResult.overallRatioPercent}% · Снагина ВЧ: {snaginaUpperResult.ratioPercent}% · Снагина НЧ: {snaginaLowerResult.ratioPercent}%
+								</p>
+							</div>
+						</div>
+						<button
+							type="button"
+							onClick={() => handleCopyText(formattedBiometricsSoap, "Биометрический анализ скопирован")}
+							className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--primary)] hover:border-[var(--primary)] flex items-center gap-1 transition-colors cursor-pointer min-h-[32px] shrink-0"
+						>
+							<Copy className="w-3 h-3" />
+							<span>В дневник</span>
+						</button>
+					</div>
+				</div>
+			)}
+
+			{activeTab === "biometrics" && (
+				<div className="flex flex-col gap-4" data-testid="biometrics-calculator-tab">
+					{/* Заголовок и быстрые пресеты */}
+					<div className="ortho-card">
+						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+							<div className="flex items-center gap-2.5">
+								<div className="w-8 h-8 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
+									<Calculator className="w-4 h-4" />
+								</div>
+								<div>
+									<h4 className="text-sm font-bold text-[var(--ink)]">Калькулятор биометрических индексов у кресла</h4>
+									<p className="text-xs text-[var(--ink-muted)]">Анализ пропорций зубов и апикальных базисов: Болтон, Тонн, Пон и Снагина</p>
+								</div>
+							</div>
+							<div className="flex items-center gap-2 flex-wrap">
+								<button
+									type="button"
+									onClick={() => setIsDeciduous((v) => !v)}
+									className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer min-h-[36px] ${
+										isDeciduous
+											? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
+											: "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]"
+									}`}
+								>
+									{isDeciduous ? "Сменный прикус (Тонн 1.30)" : "Постоянный прикус (Тонн 1.33)"}
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsDeciduous(false);
+										setSumUpper4(31.0);
+										setSumLower4(23.2);
+										setSumUpper6(47.0);
+										setSumLower6(36.3);
+										setUpper12Sum(85.0);
+										setLower12Sum(77.6);
+										setApicalBaseUpper(50.5);
+										setApicalBaseLower(36.4);
+										setMeasuredPremolars(38.8);
+										setMeasuredMolars(48.4);
+									}}
+									className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink-muted)] hover:text-[var(--ink)] flex items-center gap-1 transition-colors cursor-pointer min-h-[36px]"
+								>
+									<RotateCcw className="w-3.5 h-3.5" />
+									<span>Физиологическая норма</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleCopyText(formattedBiometricsSoap, "Биометрический анализ скопирован")}
+									className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px] shadow-xs"
+								>
+									<Copy className="w-3.5 h-3.5" />
+									<span>Скопировать в дневник</span>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					{/* Интерактивный ввод параметров измерений */}
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						{/* Верхняя челюсть */}
+						<div className="ortho-card">
+							<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Layers className="w-3.5 h-3.5 text-[var(--primary)]" />
+								<span>Измерения верхней челюсти (ВЧ)</span>
+							</span>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-sum-upper-4" className="text-[10px] text-[var(--ink-muted)] font-medium">Сумма 4 резцов ВЧ (SI ВЧ, мм)</label>
+									<input
+										id="bio-sum-upper-4"
+										type="number"
+										step="0.1"
+										min="10"
+										max="60"
+										value={sumUpper4}
+										onChange={(e) => setSumUpper4(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Норма: ~28–35 мм</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-sum-upper-6" className="text-[10px] text-[var(--ink-muted)] font-medium">Сумма 6 передних ВЧ (13–23, мм)</label>
+									<input
+										id="bio-sum-upper-6"
+										type="number"
+										step="0.1"
+										min="20"
+										max="80"
+										value={sumUpper6}
+										onChange={(e) => setSumUpper6(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Для переднего Болтона</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-apical-upper" className="text-[10px] text-[var(--ink-muted)] font-medium">Ширина апикального базиса ВЧ (мм)</label>
+									<input
+										id="bio-apical-upper"
+										type="number"
+										step="0.1"
+										min="20"
+										max="80"
+										value={apicalBaseUpper}
+										onChange={(e) => setApicalBaseUpper(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Индекс Снагиной (норма 61.4%)</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-upper-12" className="text-[10px] text-[var(--ink-muted)] font-medium">Сумма 12 зубов ВЧ (16–26, мм)</label>
+									<input
+										id="bio-upper-12"
+										type="number"
+										step="0.1"
+										min="40"
+										max="130"
+										value={upper12Sum}
+										onChange={(e) => setUpper12Sum(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Для общего Болтона</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Нижняя челюсть и трансверзаль */}
+						<div className="ortho-card">
+							<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Layers className="w-3.5 h-3.5 text-[var(--primary)]" />
+								<span>Измерения нижней челюсти (НЧ) и трансверзали</span>
+							</span>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-sum-lower-4" className="text-[10px] text-[var(--ink-muted)] font-medium">Сумма 4 резцов НЧ (SI НЧ, мм)</label>
+									<input
+										id="bio-sum-lower-4"
+										type="number"
+										step="0.1"
+										min="10"
+										max="50"
+										value={sumLower4}
+										onChange={(e) => setSumLower4(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Индекс Тонна: ВЧ / НЧ</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-sum-lower-6" className="text-[10px] text-[var(--ink-muted)] font-medium">Сумма 6 передних НЧ (43–33, мм)</label>
+									<input
+										id="bio-sum-lower-6"
+										type="number"
+										step="0.1"
+										min="20"
+										max="70"
+										value={sumLower6}
+										onChange={(e) => setSumLower6(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Передний Болтон (норма 77.2%)</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-apical-lower" className="text-[10px] text-[var(--ink-muted)] font-medium">Ширина апикального базиса НЧ (мм)</label>
+									<input
+										id="bio-apical-lower"
+										type="number"
+										step="0.1"
+										min="20"
+										max="70"
+										value={apicalBaseLower}
+										onChange={(e) => setApicalBaseLower(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Индекс Снагиной (норма 63.8%)</span>
+								</div>
+								<div className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
+									<label htmlFor="bio-meas-premolars" className="text-[10px] text-[var(--ink-muted)] font-medium">Ширина зубного ряда в премолярах (мм)</label>
+									<input
+										id="bio-meas-premolars"
+										type="number"
+										step="0.1"
+										min="20"
+										max="60"
+										value={measuredPremolars}
+										onChange={(e) => setMeasuredPremolars(parseFloat(e.target.value) || 0)}
+										className="h-8 px-2 text-xs font-mono font-bold bg-[var(--paper)] border border-[var(--line)] rounded text-[var(--ink)]"
+									/>
+									<span className="text-[9px] text-[var(--ink-muted)]">Индекс Пона (расч. {pontResult.calculatedPremolarWidthMm} мм)</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* 4 Карточки результатов с клиническими заключениями */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						{/* Индекс Болтона */}
+						<div className="ortho-card flex flex-col justify-between gap-2">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-1.5">
+									<Scale className="w-4 h-4 text-[var(--primary)]" />
+									<span className="text-xs font-bold text-[var(--ink)]">Индекс Болтона (Bolton Index)</span>
+								</div>
+								<span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+									Math.abs(boltonResult.anteriorRatioPercent - 77.2) <= 1.6 ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+								}`}>
+									{Math.abs(boltonResult.anteriorRatioPercent - 77.2) <= 1.6 ? "Гармонично" : "Диспропорция"}
+								</span>
+							</div>
+							<div className="grid grid-cols-2 gap-2 text-xs">
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Переднее (13-23 / 33-43):</span>
+									<div className="text-lg font-mono font-extrabold text-[var(--ink)]">{boltonResult.anteriorRatioPercent}%</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">Норма: 77.2% ± 1.6%</span>
+								</div>
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Общее (16-26 / 36-46):</span>
+									<div className="text-lg font-mono font-extrabold text-[var(--ink)]">{boltonResult.overallRatioPercent}%</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">Норма: 91.3% ± 1.9%</span>
+								</div>
+							</div>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{boltonResult.anteriorDiscrepancyInterpretation}</p>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{boltonResult.overallDiscrepancyInterpretation}</p>
+						</div>
+
+						{/* Индекс Тонна */}
+						<div className="ortho-card flex flex-col justify-between gap-2">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-1.5">
+									<Scale className="w-4 h-4 text-[var(--primary)]" />
+									<span className="text-xs font-bold text-[var(--ink)]">Индекс Тонна (Tonn Index)</span>
+								</div>
+								<span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+									tonnResult.discrepancyType === "normal" ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+								}`}>
+									{tonnResult.discrepancyType === "normal" ? "Норма" : tonnResult.discrepancyType === "upper_macrodontia" ? "Макродентия ВЧ" : "Макродентия НЧ"}
+								</span>
+							</div>
+							<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)] flex items-baseline justify-between text-xs">
+								<div>
+									<span className="text-[10px] text-[var(--ink-muted)]">Соотношение SI ВЧ / SI НЧ:</span>
+									<div className="text-2xl font-mono font-extrabold text-[var(--ink)]">{tonnResult.ratio}</div>
+								</div>
+								<div className="text-right">
+									<span className="text-xs font-semibold text-[var(--ink)]">Норма: {tonnResult.normReference}</span>
+									<p className="text-[10px] text-[var(--ink-muted)]">{isDeciduous ? "Сменный прикус" : "Постоянный прикус"}</p>
+								</div>
+							</div>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{tonnResult.interpretation}</p>
+						</div>
+
+						{/* Индекс Пона */}
+						<div className="ortho-card flex flex-col justify-between gap-2">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-1.5">
+									<Scale className="w-4 h-4 text-[var(--primary)]" />
+									<span className="text-xs font-bold text-[var(--ink)]">Индекс Пона (Pont Index)</span>
+								</div>
+								<span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+									pontResult.premolars.status === "normal" && pontResult.molars.status === "normal"
+										? "bg-[var(--primary)]/10 text-[var(--primary)]"
+										: "bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+								}`}>
+									{pontResult.premolars.status === "normal" && pontResult.molars.status === "normal" ? "Ширина в норме" : "Отклонение"}
+								</span>
+							</div>
+							<div className="grid grid-cols-2 gap-2 text-xs">
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Премоляры (SI × 100 / 80):</span>
+									<div className="text-base font-mono font-bold text-[var(--ink)]">
+										{pontResult.measuredPremolarWidthMm} мм <span className="text-xs text-[var(--ink-muted)] font-normal">/ {pontResult.calculatedPremolarWidthMm} мм</span>
+									</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">
+										{pontResult.premolarDiscrepancyMm > 0 ? `Расширение +${pontResult.premolarDiscrepancyMm} мм` : pontResult.premolarDiscrepancyMm < 0 ? `Сужение ${pontResult.premolarDiscrepancyMm} мм` : "Норма"}
+									</span>
+								</div>
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Моляры (SI × 100 / 64):</span>
+									<div className="text-base font-mono font-bold text-[var(--ink)]">
+										{pontResult.measuredMolarWidthMm} мм <span className="text-xs text-[var(--ink-muted)] font-normal">/ {pontResult.calculatedMolarWidthMm} мм</span>
+									</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">
+										{pontResult.molarDiscrepancyMm > 0 ? `Расширение +${pontResult.molarDiscrepancyMm} мм` : pontResult.molarDiscrepancyMm < 0 ? `Сужение ${pontResult.molarDiscrepancyMm} мм` : "Норма"}
+									</span>
+								</div>
+							</div>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{pontResult.interpretation}</p>
+						</div>
+
+						{/* Индекс Снагиной */}
+						<div className="ortho-card flex flex-col justify-between gap-2">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-1.5">
+									<Scale className="w-4 h-4 text-[var(--primary)]" />
+									<span className="text-xs font-bold text-[var(--ink)]">Индекс Снагиной (Snagina Index)</span>
+								</div>
+								<span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+									snaginaUpperResult.discrepancyType === "normal" && snaginaLowerResult.discrepancyType === "normal"
+										? "bg-[var(--primary)]/10 text-[var(--primary)]"
+										: "bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+								}`}>
+									{snaginaUpperResult.discrepancyType === "normal" && snaginaLowerResult.discrepancyType === "normal" ? "Базис гармоничен" : "Диспропорция базиса"}
+								</span>
+							</div>
+							<div className="grid grid-cols-2 gap-2 text-xs">
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Верхняя челюсть (ВЧ):</span>
+									<div className="text-lg font-mono font-bold text-[var(--ink)]">{snaginaUpperResult.ratioPercent}%</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">Норма: 61.4% · {snaginaUpperResult.discrepancyType === "normal" ? "Норма" : snaginaUpperResult.discrepancyType === "narrowed_base" ? "Сужение" : "Расширение"}</span>
+								</div>
+								<div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
+									<span className="text-[10px] text-[var(--ink-muted)]">Нижняя челюсть (НЧ):</span>
+									<div className="text-lg font-mono font-bold text-[var(--ink)]">{snaginaLowerResult.ratioPercent}%</div>
+									<span className="text-[10px] text-[var(--ink-muted)]">Норма: 63.8% · {snaginaLowerResult.discrepancyType === "normal" ? "Норма" : snaginaLowerResult.discrepancyType === "narrowed_base" ? "Сужение" : "Расширение"}</span>
+								</div>
+							</div>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{snaginaUpperResult.interpretation}</p>
+							<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{snaginaLowerResult.interpretation}</p>
+						</div>
 					</div>
 				</div>
 			)}

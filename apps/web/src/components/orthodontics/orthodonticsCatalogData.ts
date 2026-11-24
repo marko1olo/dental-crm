@@ -51,13 +51,13 @@ export interface ApplianceDef {
 export const APPLIANCES_CATALOG: ApplianceDef[] = [
 	{ id: "metal_self_ligating", category: "brackets", name: "Металлическая самолигирующая (.022)", description: "Самолигирующая металлическая брекет-система с пассивным пазом" },
 	{ id: "ceramic_aesthetic", category: "brackets", name: "Керамическая эстетическая (.022)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
-	{ id: "damon_q2", category: "brackets", name: "Damon Q2 (Металл, .022)", description: "Самолигирующая металлическая брекет-система с пассивным пазом" },
-	{ id: "damon_clear", category: "brackets", name: "Керамика эстетическая (.022)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
+	{ id: "damon_q2", category: "brackets", name: "Самолигирующая брекет-система (пропись Damon / Roth, паз .022)", description: "Самолигирующая металлическая брекет-система с пассивным пазом" },
+	{ id: "damon_clear", category: "brackets", name: "Керамическая самолигирующая (.022, эстетическая)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
 	{ id: "clarity_adv", category: "brackets", name: "Керамические эстетические брекеты", description: "Ультраэстетичные поликристаллические керамические брекеты" },
 	{ id: "incognito", category: "brackets", name: "Лингвальная брекет-система", description: "Индивидуализированная невидимая язычная система" },
 	{ id: "clear_aligners", category: "aligners", name: "Элайнеры (ортодонтические каппы)", description: "Прозрачные биосовместимые полимерные каппы для коррекции окклюзии" },
-	{ id: "flexiligner", category: "aligners", name: "Элайнеры (флекс-система)", description: "Прозрачные биосовместимые полимерные флексы для коррекции окклюзии" },
-	{ id: "starsmile", category: "aligners", name: "Элайнеры (3D-сетап)", description: "Серия поликарбонатных ортодонтических кап с шагом перемещения 0.25 мм" },
+	{ id: "flexiligner", category: "aligners", name: "Ортодонтические элайнеры (каппы с аттачментами)", description: "Прозрачные биосовместимые полимерные каппы для коррекции окклюзии" },
+	{ id: "starsmile", category: "aligners", name: "Ортодонтические элайнеры (3D-сетап)", description: "Серия поликарбонатных ортодонтических кап с шагом перемещения 0.25 мм" },
 	{ id: "ortho_plate", category: "plate", name: "Пластинка с расширяющим винтом", description: "Съемный пластиночный аппарат трехмерного расширения челюсти" },
 	{ id: "marco_rosa", category: "plate", name: "Аппарат небного расширения (Марко Роса)", description: "Несъемный аппарат для раннего форсированного расширения небного шва" },
 	{ id: "bertoni_plate", category: "plate", name: "Пластинка с винтом Бертони", description: "Съемный пластиночный аппарат трехмерного расширения челюсти" },
@@ -175,6 +175,13 @@ export const ORTHO_PHOTO_SLOTS_SSOT: OrthoPhotoSlotDef[] = [
 	{ id: "occlusion_lower", titleRu: "Окклюзия нижней челюсти", category: "intraoral", descriptionRu: "Форма зубного ряда НЧ, кривая Шпее, положение резцов" },
 ];
 
+export interface IprContactItem {
+	contact: string; // e.g. "12-11", "11-21", "21-22", "42-41", "41-31", "31-32"
+	thicknessMm: number; // 0.1, 0.2, 0.3, 0.4, 0.5
+	completed: boolean;
+	code804n?: string; // "A16.07.025.001"
+}
+
 export interface AlignerTrackingState {
 	currentStep: number;
 	totalSteps: number;
@@ -183,6 +190,7 @@ export interface AlignerTrackingState {
 	nextPlannedDate: string;
 	iprCompleted: boolean;
 	attachmentsVerified: boolean;
+	iprContacts?: IprContactItem[];
 }
 
 export interface ChairsideActionItem {
@@ -307,7 +315,7 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 	return {
 		applianceCategory: "brackets",
 		applianceId: "damon_q2",
-		applianceName: "Damon Q2 (Металл, .022)",
+		applianceName: "Самолигирующая брекет-система (пропись Damon / Roth, паз .022)",
 		angleClass: "class_1",
 		verticalBite: "normal",
 		overjetMm: 2.0,
@@ -331,6 +339,14 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 			nextPlannedDate: "",
 			iprCompleted: false,
 			attachmentsVerified: false,
+			iprContacts: [
+				{ contact: "12-11", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+				{ contact: "11-21", thicknessMm: 0.3, completed: false, code804n: "A16.07.025.001" },
+				{ contact: "21-22", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+				{ contact: "42-41", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+				{ contact: "41-31", thicknessMm: 0.3, completed: false, code804n: "A16.07.025.001" },
+				{ contact: "31-32", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+			],
 		},
 		photoStatuses: {},
 		clinicalNotes: "",

@@ -319,3 +319,38 @@ describe("endoProtocolEngine — formatEndoPatientMemo (Mandate 8e, 8k, 8n)", ()
 	});
 });
 
+describe("endoProtocolEngine — MB2 Upper Molars & Deciduous Tooth Protection (Mandates 8bj, 8x, 8ap)", () => {
+	test("Верхние моляры 16 и 26 по Wheeler/Hess имеют 4 канала в протоколе и MB2 вариацию", () => {
+		assert.equal(getDefaultCanalsForTooth(16).length, 4);
+		assert.equal(getDefaultCanalsForTooth(26).length, 4);
+		assert.deepEqual(getDefaultCanalsForTooth(16).map((c) => c.canalName), ["MB1", "MB2", "DB", "P"]);
+		assert.ok(TOOTH_CANAL_ANATOMY_MAP[16]?.commonVariations?.includes("MB2"));
+		assert.ok(TOOTH_CANAL_ANATOMY_MAP[26]?.commonVariations?.includes("MB2"));
+	});
+
+	test("Молочные зубы (51–85): категорический запрет постоянной гуттаперчи (SEV-1 / DEF-ENDO-02)", () => {
+		for (const deciduousTooth of [54, 55, 64, 65, 74, 75, 84, 85]) {
+			const canals = getDefaultCanalsForTooth(deciduousTooth);
+			const obtResult = applyObturationPermanentProtocol(canals, deciduousTooth);
+
+			for (const canal of obtResult.canals) {
+				assert.doesNotMatch(canal.obturationTechnique || "", /гуттаперч|gutta/i);
+				assert.doesNotMatch(canal.sealer || "", /ah\s*plus|bioroot|adseal|sealapex/i);
+				assert.match(canal.obturationTechnique || "", /резорбируем.*паст/i);
+				assert.match(canal.sealer || "", /резорбируем.*герметик/i);
+			}
+
+			const billing = calculateEndoBillingAndMaterialsEstimate({
+				toothNumber: deciduousTooth,
+				canals: obtResult.canals,
+				stageStamp: "COMPLETED",
+			});
+
+			const hasGutta = billing.materials.some((m) => m.category === "gutta_percha" || /гуттаперч/i.test(m.itemName));
+			assert.equal(hasGutta, false, `Молочный зуб #${deciduousTooth} не должен списывать гуттаперчу!`);
+			const hasResorbable = billing.materials.some((m) => /резорбируем/i.test(m.itemName));
+			assert.equal(hasResorbable, true, `Молочный зуб #${deciduousTooth} обязан списывать резорбируемую пасту!`);
+		}
+	});
+});
+

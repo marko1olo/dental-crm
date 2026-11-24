@@ -28,7 +28,7 @@ export function useOrthopedicsChairsideState({
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
 	const [selectedStageId, setSelectedStageId] = useState<string>("impression_scan");
 	const [fixationType, setFixationType] = useState<"cement" | "screw" | "clasp">("cement");
-	const [cementBrand, setCementBrand] = useState<string>("relyx_u200");
+	const [cementBrand, setCementBrand] = useState<string>("self_adhesive_dual_cure");
 	const [hasAntagonists, setHasAntagonists] = useState<boolean>(true);
 	const [articulatorType, setArticulatorType] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
 	const [hasFacebow, setHasFacebow] = useState<boolean>(false);

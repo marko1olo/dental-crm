@@ -12,7 +12,12 @@ export interface ExtractionHemostasisSelectorProps {
 	readonly onSelectSutureMaterial: (suture: string) => void;
 }
 
-const SUTURE_OPTIONS = ["Викрил 4-0", "Монофиламент", "Шелк 3-0", "Пролен 4-0", "ПГА 4-0"] as const;
+const SUTURE_OPTIONS = [
+	{ label: "Полигликолид / ПГА 4-0 (плетеный)", short: "ПГА 4-0 (плетеный)" },
+	{ label: "Полипропилен 4-0 (монофиламент)", short: "Полипропилен 4-0" },
+	{ label: "Шелк 3-0", short: "Шелк 3-0" },
+	{ label: "Полиамид 5-0", short: "Полиамид 5-0" },
+] as const;
 
 export const ExtractionHemostasisSelector: React.FC<ExtractionHemostasisSelectorProps> = ({
 	selectedHemostasis,
@@ -47,21 +52,24 @@ export const ExtractionHemostasisSelector: React.FC<ExtractionHemostasisSelector
 
 				<div className="flex items-center gap-1.5 ml-auto flex-wrap">
 					<span className="text-[11px] text-[var(--muted)]">Шов:</span>
-					{SUTURE_OPTIONS.map((s) => (
-						<button
-							key={s}
-							type="button"
-							onClick={() => onSelectSutureMaterial(s)}
-							className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation ${
-								sutureMaterial === s
-									? "bg-[var(--primary)] text-white"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]"
-							}`}
-							data-testid={`btn-suture-${s.replace(/[\s.]+/g, "-")}`}
-						>
-							{s}
-						</button>
-					))}
+					{SUTURE_OPTIONS.map((s) => {
+						const isSelected = sutureMaterial === s.label || sutureMaterial === s.short || (sutureMaterial && sutureMaterial.includes(s.short));
+						return (
+							<button
+								key={s.short}
+								type="button"
+								onClick={() => onSelectSutureMaterial(s.label)}
+								className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation ${
+									isSelected
+										? "bg-[var(--primary)] text-white"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]"
+								}`}
+								data-testid={`btn-suture-${s.short.replace(/[\s./()]+/g, "-")}`}
+							>
+								{s.short}
+							</button>
+						);
+					})}
 				</div>
 			</div>
 		</div>

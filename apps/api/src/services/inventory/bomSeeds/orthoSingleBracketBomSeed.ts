@@ -15,7 +15,7 @@ export const ORTHO_SINGLE_BRACKET_BOM_SEEDS: readonly DefaultBomProcedureSeed[] 
 		durationMinutes: 20,
 		materials: [
 			{
-				name: "Одиночный брекет Damon Q2 (замок)",
+				name: "Одиночный брекет самолигирующий (замок, пропись Damon / Roth)",
 				category: "ortho_bracket",
 				unit: "шт.",
 				quantityToDeduct: 1,

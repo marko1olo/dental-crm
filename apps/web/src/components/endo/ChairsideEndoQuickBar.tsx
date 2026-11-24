@@ -117,17 +117,12 @@ export function executeChairsideTransferToDiary({
 						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
 					}));
 
-					const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
-						? window.location.origin
-						: "";
+					const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" ? window.location.origin : "";
 					if (baseUrl) {
 						const idempotencyKey = generateUuidV7();
 						fetch(`${baseUrl}/api/inventory/deduct`, {
 							method: "POST",
-							headers: getDenteAuthHeaders({
-								"Content-Type": "application/json",
-								"Idempotency-Key": idempotencyKey,
-							}),
+							headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 							body: JSON.stringify({
 								materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
 								allowOverdraft: true, reason: `Автоматическое списание эндодонтических материалов для зуба #${activeTooth} (Soft Negative Stock)`,
@@ -147,17 +142,12 @@ export function executeChairsideTransferToDiary({
 		console.error("[ChairsideEndoQuickBar] Ошибка расчёта сметы эндодонтии:", err);
 	}
 	if (patientId) {
-		const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
-			? window.location.origin
-			: "";
+		const baseUrl = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" ? window.location.origin : "";
 		if (baseUrl) {
 			const idempotencyKey = generateUuidV7();
 			fetch(`${baseUrl}/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 				method: "POST",
-				headers: getDenteAuthHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": idempotencyKey,
-				}),
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 				body: JSON.stringify({
 					toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная NiTi ротационная система",
 					radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
@@ -223,11 +213,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 			taper: isDeciduous ? ".02" : ".04",
 			isObliterated: false,
 		})));
-		showToast(
-			isDeciduous ? "Применён протокол: Пульпит молочного зуба (резорбируемая паста)" : "Применён протокол: Пульпит в 1 визит",
-			"info",
-			2000,
-		);
+		showToast(isDeciduous ? "Применён протокол: Пульпит молочного зуба (резорбируемая паста)" : "Применён протокол: Пульпит в 1 визит", "info", 2000);
 	}, [isDeciduous]);
 
 	const applyPeriodontitisAhPlus = useCallback(() => {
@@ -240,11 +226,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 			taper: isDeciduous ? ".02" : ".04",
 			isObliterated: false,
 		})));
-		showToast(
-			isDeciduous ? "Применён протокол: Периодонтит молочного зуба (резорбируемая паста)" : "Применён протокол: Периодонтит (эпоксидный силер)",
-			"info",
-			2000,
-		);
+		showToast(isDeciduous ? "Применён протокол: Периодонтит молочного зуба (резорбируемая паста)" : "Применён протокол: Периодонтит (эпоксидный силер)", "info", 2000);
 	}, [isDeciduous]);
 
 	const applyPeriodontitisBio = useCallback(() => {
@@ -279,15 +261,13 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 	}, [activeTooth]);
 
 	const addCanal = useCallback(() => {
-		const nextIdx = canals.length + 1;
-		const isUpper = (activeTooth >= 11 && activeTooth <= 28) || (activeTooth >= 51 && activeTooth <= 65);
+		const nextIdx = canals.length + 1, isUpper = (activeTooth >= 11 && activeTooth <= 28) || (activeTooth >= 51 && activeTooth <= 65);
 		const existingNames = new Set(canals.map((c) => c.name));
 		const suggestedName = isUpper
 			? (!existingNames.has("MB2") ? "MB2" : !existingNames.has("DB2") ? "DB2" : `К${nextIdx}`)
 			: (!existingNames.has("DL") ? "DL" : !existingNames.has("DB") ? "DB" : !existingNames.has("MM") ? "MM" : !existingNames.has("Radix") ? "Radix" : `К${nextIdx}`);
 		setCanals((prev) => [...prev, {
-			id: `canal-${activeTooth}-${suggestedName.toLowerCase()}`,
-			name: suggestedName,
+			id: `canal-${activeTooth}-${suggestedName.toLowerCase()}`, name: suggestedName,
 			workingLengthMm: getAnatomicalWorkingLength(activeTooth, suggestedName),
 			masterApicalFile: isDeciduous ? "ISO 25 (#25 красный)" : "#25",
 			taper: isDeciduous ? ".02" : ".04",
@@ -337,17 +317,9 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 
 				<div className="p-2.5 sm:p-3 border-t border-[var(--line)] divide-y divide-[var(--line)] space-y-2.5">
 					{canals.map((c) => (
-						<ChairsideCanalRow
-							key={c.id}
-							canal={c}
-							activeTooth={activeTooth}
-							canalsCount={canals.length}
-							quickLengthChips={QUICK_LENGTH_CHIPS}
-							quickMafOptions={QUICK_MAF_OPTIONS}
-							onUpdate={updateCanal}
-							onAdjustLength={adjustLength}
-							onRemove={removeCanal}
-						/>
+						<ChairsideCanalRow key={c.id} canal={c} activeTooth={activeTooth} canalsCount={canals.length}
+							quickLengthChips={QUICK_LENGTH_CHIPS} quickMafOptions={QUICK_MAF_OPTIONS}
+							onUpdate={updateCanal} onAdjustLength={adjustLength} onRemove={removeCanal} />
 					))}
 				</div>
 			</details>

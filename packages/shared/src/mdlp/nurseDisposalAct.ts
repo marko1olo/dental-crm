@@ -234,6 +234,16 @@ export function formatSeniorNurseDisposalActData(options: {
 					fullName: options.dentistName ?? options.chiefDoctorName ?? "Кузнецов М.С.",
 					positionRu: "Врач-стоматолог (дежурный)",
 				},
+				...(options.chiefDoctorName && options.dentistName
+					? [
+							{
+								role: "chief_doctor" as const,
+								roleTitleRu: "Член комиссии",
+								fullName: options.chiefDoctorName,
+								positionRu: "Главный врач",
+							},
+						]
+					: []),
 			];
 
 	let notes = options.notes;

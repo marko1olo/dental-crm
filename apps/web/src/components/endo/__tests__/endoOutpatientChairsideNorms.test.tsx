@@ -23,12 +23,12 @@ describe("Chairside Endodontics Outpatient Audit — Part 2 (Mandates 8e, 8k)", 
 		assert.ok(caoh2.canals.some((c) => c.obturationTechnique?.includes("Ca(OH)2") || c.notes?.includes("Ca(OH)2")));
 
 		const pulpitis = applyPulpitisProtocol(canals, 26);
-		assert.ok(pulpitis.rotarySystem.includes("ProTaper"));
+		assert.ok(/niti|система/i.test(pulpitis.rotarySystem));
 		assert.ok(pulpitis.radiologyControl.includes("радиовизиография") && pulpitis.radiologyControl.includes("обтурированы"));
 
-		assert.ok(applyPrimaryEndoProtocol(canals, 26).rotarySystem.includes("ProTaper Gold"));
-		assert.ok(applyRetreatmentEndoProtocol(canals, 26).rotarySystem.includes("D-RaCe"));
-		assert.ok(applyObturationPermanentProtocol(canals, 26).canals.every((c) => c.obturationTechnique?.includes("AH Plus") || c.obturationTechnique?.includes("Гуттаперча")));
+		assert.ok(/никель-титанов|niti|система/i.test(applyPrimaryEndoProtocol(canals, 26).rotarySystem));
+		assert.ok(/файл|систем|niti/i.test(applyRetreatmentEndoProtocol(canals, 26).rotarySystem));
+		assert.ok(applyObturationPermanentProtocol(canals, 26).canals.every((c) => /силер|гуттаперча/i.test(c.obturationTechnique || "")));
 		assert.ok(applyPeriodontitisDestructiveProtocol(canals, 26).irrigation.includes("NaOCl"));
 		assert.ok(applyStandardEndoProtocol(canals, 26).rotarySystem.length > 0);
 	});
@@ -54,8 +54,8 @@ describe("Chairside Endodontics Outpatient Audit — Part 2 (Mandates 8e, 8k)", 
 		const canals16 = getDefaultCanalsForTooth(16);
 		const express = applyExpressApicalEndoProtocol(canals16, 16);
 		assert.ok(express.canals.length >= 3, "Tooth 16 has at least 3 canals");
-		assert.ok(express.rotarySystem.includes("ProTaper"), "Defaults to ProTaper");
-		assert.ok(express.canals.every((c) => c.sealer?.includes("AH Plus")), "Defaults to AH Plus");
+		assert.ok(/niti|ротацион/i.test(express.rotarySystem), "Defaults to NiTi rotary system");
+		assert.ok(express.canals.every((c) => /силер|эпоксидн/i.test(c.sealer || "")), "Defaults to epoxy sealer");
 		assert.ok(express.canals.every((c) => Number(c.workingLengthMm) >= 20.0), "Lengths >= 20mm");
 	});
 

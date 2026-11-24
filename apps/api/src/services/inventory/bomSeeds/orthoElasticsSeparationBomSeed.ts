@@ -15,7 +15,7 @@ export const ORTHO_ELASTICS_SEPARATION_BOM_SEEDS: readonly DefaultBomProcedureSe
 		durationMinutes: 15,
 		materials: [
 			{
-				name: "Межчелюстные эластики (Лиса, Заяц, Медведь, Буйвол, Кенгуру - Ormco Zoo)",
+				name: "Межчелюстные эластики калиброванные (тяга по II/III классу, упаковка)",
 				category: "other",
 				unit: "упак.",
 				quantityToDeduct: 1,

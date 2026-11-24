@@ -115,19 +115,24 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 				<div className="flex items-center gap-2 flex-wrap">
 					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">Шовный материал:</span>
 					<div className="flex items-center gap-1 flex-wrap">
-						{["Prolene 4-0", "Vicryl 4-0", "Glycolon 5-0", "ПГА 4-0"].map((suture) => (
+						{[
+							{ label: "Полипропилен 4-0 (монофиламент)", short: "Полипропилен 4-0", id: "polypropylene_4-0" },
+							{ label: "Полигликолид / ПГА 4-0 (плетеный)", short: "ПГА 4-0 (плетеный)", id: "pga_4-0" },
+							{ label: "Шелк 3-0", short: "Шелк 3-0", id: "silk_3-0" },
+							{ label: "Полиамид 5-0", short: "Полиамид 5-0", id: "polyamide_5-0" },
+						].map((s) => (
 							<button
-								key={suture}
+								key={s.id}
 								type="button"
-								onClick={() => setImplantSuture(suture)}
+								onClick={() => setImplantSuture(s.label)}
 								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-									implantSuture === suture
+									implantSuture === s.label || implantSuture === s.short || (implantSuture && implantSuture.includes(s.short))
 										? "bg-[var(--primary)] text-white"
 										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 								}`}
-								data-testid={`btn-suture-${suture.replace(/\s+/g, "_")}`}
+								data-testid={`btn-suture-${s.id}`}
 							>
-								{suture}
+								{s.short}
 							</button>
 						))}
 					</div>

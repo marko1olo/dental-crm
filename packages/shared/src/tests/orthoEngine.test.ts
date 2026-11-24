@@ -189,7 +189,7 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 			assert.ok(note.includes("2. ОБЪЕКТИВНЫЙ СТАТУС:"));
 			assert.ok(note.includes("3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:"));
 			assert.ok(note.includes("4. РЕКОМЕНДАЦИИ И НАЗНАЧЕНИЯ:"));
-			assert.ok(note.includes('Damon Q2 (паз 0.022")'));
+			assert.ok(note.includes('Металлическая самолигирующая (пропись Damon / Roth) (паз 0.022")'));
 			assert.ok(note.includes('CuNiTi сечением .016"'));
 			assert.ok(note.includes("II класс"));
 			assert.ok(note.includes("Кенгуру"));

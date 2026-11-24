@@ -22,6 +22,15 @@ import {
 } from "../cephStudioSyncChannel";
 import { detectOptimalCephBackend } from "../cephAiInferenceService";
 import { parseCephMeasurementsArray } from "../useOrthodonticsStudioHydration";
+import {
+	calculateSnaginaIndex,
+	calculateBoltonIndex,
+	calculateTonnIndex,
+	calculatePontIndex,
+	ORTHODONTIC_BOM_LINKS,
+} from "@dental/shared";
+import { APPLIANCES_CATALOG } from "../orthodonticsCatalogData";
+import { DEFAULT_IPR_CONTACTS } from "../AlignerCaseTracker";
 
 describe("Домен 45: Ред Тим инварианты ортодонтии и цефалометрии (DEF-ORTHO-SEV1-01 - SEV4-01)", () => {
 	const originalWindow = (globalThis as { window?: unknown }).window;
@@ -231,5 +240,70 @@ describe("Домен 45: Ред Тим инварианты ортодонтии
 		assert.equal(parsed.wits, 1.2);
 		// Гарантия, что под пустым ключом "" ничего не сохранено
 		assert.equal(parsed[""], undefined);
+	});
+
+	// DEF-ORTHO-SEV1-05: Индекс Снагиной (Snagina index)
+	it("DEF-ORTHO-SEV1-05: calculateSnaginaIndex вычисляет отношение 4 резцов к апикальному базису (ВЧ 61.4%, НЧ 63.8%)", () => {
+		// Норма ВЧ: 31.0 мм резцы, 50.5 мм апикальный базис -> (31 / 50.5) * 100 = 61.4%
+		const normUpper = calculateSnaginaIndex(31.0, 50.5, "maxilla");
+		assert.equal(normUpper.ratioPercent, 61.4);
+		assert.equal(normUpper.normPercent, 61.4);
+		assert.equal(normUpper.discrepancyType, "normal");
+		assert.ok(normUpper.interpretation.includes("норма"));
+
+		// Сужение апикального базиса ВЧ: 34.0 мм резцы, 48.0 мм базис -> (34 / 48) * 100 = 70.8% > 61.4%
+		const narrowUpper = calculateSnaginaIndex(34.0, 48.0, "maxilla");
+		assert.equal(narrowUpper.ratioPercent, 70.8);
+		assert.equal(narrowUpper.discrepancyType, "narrowed_base");
+		assert.ok(narrowUpper.interpretation.includes("Сужение апикального базиса"));
+
+		// Расширение апикального базиса НЧ: 22.0 мм резцы, 40.0 мм базис -> (22 / 40) * 100 = 55.0% < 63.8%
+		const wideLower = calculateSnaginaIndex(22.0, 40.0, "mandible");
+		assert.equal(wideLower.ratioPercent, 55.0);
+		assert.equal(wideLower.normPercent, 63.8);
+		assert.equal(wideLower.discrepancyType, "widened_base");
+		assert.ok(wideLower.interpretation.includes("Расширение апикального базиса"));
+	});
+
+	// DEF-ORTHO-SEV1-06: Биометрические индексы (Болтон, Тонн, Пон)
+	it("DEF-ORTHO-SEV1-06: Биометрические индексы Болтона, Тонна и Пона соответствуют ортодонтическим нормативам", () => {
+		// Индекс Тонна: 31.0 мм / 23.3 мм = 1.33 (норма постоянного прикуса)
+		const tonn = calculateTonnIndex(31.0, 23.3, false);
+		assert.equal(tonn.ratio, 1.33);
+		assert.equal(tonn.discrepancyType, "normal");
+
+		// Индекс Болтона: переднее 36.3 мм / 47.0 мм = 77.2% (норма)
+		const bolton = calculateBoltonIndex(47.0, 36.3, 85.0, 77.6);
+		assert.equal(bolton.anteriorRatioPercent, 77.2);
+		assert.equal(bolton.overallRatioPercent, 91.3);
+
+		// Индекс Пона: SI = 31.0 -> премоляры 38.8 мм, моляры 48.4 мм
+		const pont = calculatePontIndex(31.0, 38.8, 48.4);
+		assert.equal(pont.calculatedPremolarWidthMm, 38.8);
+		assert.equal(pont.calculatedMolarWidthMm, 48.4);
+		assert.equal(pont.premolars.status, "normal");
+		assert.equal(pont.molars.status, "normal");
+	});
+
+	// DEF-ORTHO-SEV1-07: Клиническая карта IPR контактов
+	it("DEF-ORTHO-SEV1-07: IPR-сепарация содержит клиническую карту контактов (11-21, 12-11) с толщиной до 0.5 мм и кодом A16.07.025.001", () => {
+		assert.ok(DEFAULT_IPR_CONTACTS.length >= 10, "Должно быть не менее 10 межзубных контактов ВЧ и НЧ");
+		assert.ok(DEFAULT_IPR_CONTACTS.some((c) => c.contact === "11-21"));
+		assert.ok(DEFAULT_IPR_CONTACTS.some((c) => c.contact === "12-11"));
+		assert.ok(DEFAULT_IPR_CONTACTS.some((c) => c.contact === "41-31"));
+		for (const contact of DEFAULT_IPR_CONTACTS) {
+			assert.ok(contact.thicknessMm <= 0.5, "Толщина сепарации не должна превышать 0.5 мм");
+			assert.equal(contact.code804n, "A16.07.025.001", "Код услуги IPR обязан быть A16.07.025.001");
+		}
+	});
+
+	// DEF-ORTHO-SEV2-01: Очистка коммерческих брендов
+	it("DEF-ORTHO-SEV2-01: Техкарты BOM и каталог аппаратуры очищены от промо-брендов (Ormco, Bio-Ray, FlexiLigner)", () => {
+		for (const bom of ORTHODONTIC_BOM_LINKS) {
+			assert.ok(!bom.itemName.includes("Ormco"), `BOM item ${bom.id} не должен содержать промо-бренд Ormco`);
+			assert.ok(!bom.itemName.includes("Bio-Ray"), `BOM item ${bom.id} не должен содержать промо-бренд Bio-Ray`);
+		}
+		const flexiligner = APPLIANCES_CATALOG.find((a) => a.id === "flexiligner");
+		assert.ok(!flexiligner?.name.includes("FlexiLigner"), "Каталог элайнеров не должен содержать коммерческий бренд FlexiLigner");
 	});
 });

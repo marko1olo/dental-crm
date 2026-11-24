@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect, Suspense } from "react";
-import { X, Check, Sparkles, Activity, Layers, Clock, Smile, FileText, Camera } from "lucide-react";
+import { X, Check, Sparkles, Activity, Layers, Clock, Smile, FileText, Camera, Calculator } from "lucide-react";
 import {
 	APPLIANCES_CATALOG, ORTHO_ACTIVATION_PRESETS, createDefaultOrthoProtocolState,
 	calculateSkeletalClassFromAnb, formatOrthoProtocolSoapEntry, getOrthoPatientMemoText,
@@ -72,7 +72,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		return initialProtocol ? { ...initialProtocol } : createDefaultOrthoProtocolState();
 	});
 
-	const [activeTab, setActiveTab] = useState<"brackets" | "aligners" | "photo_trg" | "diary">("brackets");
+	const [activeTab, setActiveTab] = useState<"brackets" | "aligners" | "photo_trg" | "biometrics" | "diary">("brackets");
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 	const [selectedElasticSize, setSelectedElasticSize] = useState<string>("3/16 Medium");
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState<boolean>(false);
@@ -212,6 +212,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		return (
 			<Suspense fallback={null}>
 				<ClinicalPhotoProtocolModal
+					key={patientId || "photo_protocol"}
 					isOpen={true}
 					onClose={() => setIsPhotoModalOpen(false)}
 					patientId={patientId || ""}
@@ -252,6 +253,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		return (
 			<Suspense fallback={null}>
 				<CephalometricAnalysisModal
+					key={patientId || "ceph_modal"}
 					isOpen={true}
 					onClose={() => setIsCephModalOpen(false)}
 					patientId={patientId || ""}
@@ -354,6 +356,13 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							<span>
 								<span className="sm:hidden">ТРГ</span>
 								<span className="hidden sm:inline">Фото и ТРГ</span>
+							</span>
+						</button>
+						<button type="button" onClick={() => setActiveTab("biometrics")} className={`ortho-tab-btn ${activeTab === "biometrics" ? "active" : ""}`}>
+							<Calculator className="w-3.5 h-3.5 shrink-0" />
+							<span>
+								<span className="sm:hidden">Индексы</span>
+								<span className="hidden sm:inline">Биометрия</span>
 							</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("diary")} className={`ortho-tab-btn ${activeTab === "diary" ? "active" : ""}`}>

@@ -39,11 +39,16 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 			assert.strictEqual(getCanalCountForTooth("24"), 2);
 		});
 
-		it("should resolve 3-canal permanent molars (16-18, 26-28, 36-38, 46-48)", () => {
-			const molars = ["16", "17", "18", "26", "27", "28", "36", "37", "38", "46", "47", "48"];
+		it("should resolve 3-canal permanent molars (17-18, 27-28, 36-38, 46-48)", () => {
+			const molars = ["17", "18", "27", "28", "36", "37", "38", "46", "47", "48"];
 			for (const tooth of molars) {
 				assert.strictEqual(getCanalCountForTooth(tooth), 3);
 			}
+		});
+
+		it("should resolve 4-canal upper first molars by Wheeler/Hess with MB2 (16, 26)", () => {
+			assert.strictEqual(getCanalCountForTooth("16"), 4);
+			assert.strictEqual(getCanalCountForTooth("26"), 4);
 		});
 
 		it("should respect custom canal overrides (e.g. 4-canal molar MB2)", () => {
@@ -250,7 +255,7 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 
 			assert.strictEqual(result.toothNumber, "16");
 			assert.strictEqual(result.icd10Code, "K04.0");
-			assert.strictEqual(result.canalCount, 3);
+			assert.strictEqual(result.canalCount, 4);
 			assert.strictEqual(result.specialty, "endodontics");
 
 			// SOAP verification
@@ -261,8 +266,8 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 
 			// 804n verification
 			const serviceCodes = result.order804nServices.map((s) => s.code);
-			assert.ok(serviceCodes.includes("A16.07.030.003"));
-			assert.ok(serviceCodes.includes("A16.07.008.003"));
+			assert.ok(serviceCodes.includes("A16.07.030.004"));
+			assert.ok(serviceCodes.includes("A16.07.008.004"));
 
 			// Compliance check
 			assert.strictEqual(result.complianceAudit.isCompliant, true);
@@ -354,7 +359,7 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 			const toothMap = new Map(fullResult.autopilotItems.map((item) => [item.toothNumber, item]));
 			assert.strictEqual(toothMap.get("11")?.icd10Code, "K02.0");
 			assert.strictEqual(toothMap.get("16")?.icd10Code, "K04.0");
-			assert.strictEqual(toothMap.get("16")?.canalCount, 3);
+			assert.strictEqual(toothMap.get("16")?.canalCount, 4);
 			assert.strictEqual(toothMap.get("24")?.icd10Code, "K04.5");
 			assert.strictEqual(toothMap.get("24")?.canalCount, 2);
 			assert.strictEqual(toothMap.get("36")?.icd10Code, "K02.1");

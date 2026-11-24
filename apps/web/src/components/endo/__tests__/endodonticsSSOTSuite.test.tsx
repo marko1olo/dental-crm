@@ -73,11 +73,11 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 	});
 
 	describe("2. Three Canonical Endodontic Protocols", () => {
-		it("Protocol 1: Pulpitis 1-visit (vital extirpation, NiTi, NaOCl+EDTA, gutta-percha + AH Plus)", () => {
+		it("Protocol 1: Pulpitis 1-visit (vital extirpation, NiTi, NaOCl+EDTA, gutta-percha + epoxy sealer)", () => {
 			const proto = CANONICAL_ENDO_PROTOCOLS.pulpitis_1visit;
 			assert.equal(proto.id, "pulpitis_1visit");
 			assert.equal(proto.stageStamp, "COMPLETED");
-			assert.ok(proto.obturationTechnique.includes("AH Plus"));
+			assert.ok(/эпоксидн|силер/i.test(proto.obturationTechnique));
 			assert.ok(proto.irrigation.includes("NaOCl 3% + EDTA 17%"));
 
 			const note = proto.generateSoapNote({
@@ -86,15 +86,15 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 				canals: getChairsideDefaultCanals(16),
 			});
 			assert.ok(note.includes("ПУЛЬПИТ В 1 ВИЗИТ"));
-			assert.ok(note.includes("AH Plus"));
+			assert.ok(/эпоксидн|силер/i.test(note));
 			assert.ok(note.includes("Apex 0.0"));
 		});
 
-		it("Protocol 2: Periodontitis (disinfection, temporary Ca(OH)2 Calcept for 10-14 days)", () => {
+		it("Protocol 2: Periodontitis (disinfection, temporary Ca(OH)2 for 10-14 days)", () => {
 			const proto = CANONICAL_ENDO_PROTOCOLS.periodontitis_temp;
 			assert.equal(proto.id, "periodontitis_temp");
 			assert.equal(proto.stageStamp, "TEMP_CAOH2");
-			assert.ok(proto.defaultSealer.includes("Каласепт"));
+			assert.ok(/гидроксид кальция|Ca\(OH\)2/i.test(proto.defaultSealer));
 
 			const note = proto.generateSoapNote({
 				activeTooth: 36,
@@ -109,7 +109,7 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 		it("Protocol 3: Retreatment / Canal Unsealing (removal of gutta-percha/resorcin, revision)", () => {
 			const proto = CANONICAL_ENDO_PROTOCOLS.retreatment_unsealing;
 			assert.equal(proto.id, "retreatment_unsealing");
-			assert.ok(proto.rotarySystem.includes("Retreatment") || proto.rotarySystem.includes("D-RaCe"));
+			assert.ok(/распломбиров|retreatment|файлы/i.test(proto.rotarySystem));
 			assert.ok(proto.irrigation.includes("Хлоргексидин"));
 
 			const note = proto.generateSoapNote({

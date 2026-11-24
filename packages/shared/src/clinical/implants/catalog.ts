@@ -76,8 +76,8 @@ export interface ImplantSystemSpec {
 export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec> = {
 	straumann: {
 		id: "straumann",
-		name: "Straumann (SLA / SLActive)",
-		manufacturer: "Institut Straumann AG",
+		name: "Премиальная конусная система активного типа (SLActive)",
+		manufacturer: "Швейцария (премиум-класс)",
 		country: "Швейцария",
 		warrantyYears: 10,
 		defaultDiameterMm: 4.1,
@@ -100,8 +100,8 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec>
 	},
 	osstem: {
 		id: "osstem",
-		name: "Osstem (TS III SA / CA)",
-		manufacturer: "Osstem Implant Co., Ltd.",
+		name: "Корейская конусная система 11° SLA",
+		manufacturer: "Южная Корея (конусное сочленение)",
 		country: "Южная Корея",
 		warrantyYears: 10,
 		defaultDiameterMm: 4.0,
@@ -124,8 +124,8 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec>
 	},
 	nobel: {
 		id: "nobel",
-		name: "Nobel Biocare (Active / Replace)",
-		manufacturer: "Nobel Biocare Services AG",
+		name: "Кортикальная система с микрорезьбой и активным апексом",
+		manufacturer: "Швейцария / США (конический дизайн)",
 		country: "Швейцария / США",
 		warrantyYears: 10,
 		defaultDiameterMm: 4.3,
@@ -148,8 +148,8 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec>
 	},
 	dentium: {
 		id: "dentium",
-		name: "Dentium (SuperLine / Implantium)",
-		manufacturer: "Dentium Co., Ltd.",
+		name: "Система с конусным переключением платформ SLA",
+		manufacturer: "Южная Корея (двойная резьба)",
 		country: "Южная Корея",
 		warrantyYears: 10,
 		defaultDiameterMm: 4.0,
@@ -172,8 +172,8 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec>
 	},
 	astra: {
 		id: "astra",
-		name: "Astra Tech (OsseoSpeed EV)",
-		manufacturer: "Dentsply Sirona Implants",
+		name: "Коническая система с микрорезьбой шейки (EV)",
+		manufacturer: "Швеция (коническое прилегание Conical Seal)",
 		country: "Швеция",
 		warrantyYears: 10,
 		defaultDiameterMm: 4.2,
@@ -196,8 +196,8 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<ImplantBrand, ImplantSystemSpec>
 	},
 	ankylos: {
 		id: "ankylos",
-		name: "Ankylos (C/X TissueCare)",
-		manufacturer: "Dentsply Sirona Implants",
+		name: "Конусная система с субкрестальной посадкой 5.7°",
+		manufacturer: "Германия (TissueCare конус)",
 		country: "Германия",
 		warrantyYears: 10,
 		defaultDiameterMm: 3.5,
@@ -419,8 +419,8 @@ export const SURGICAL_SERVICES_CATALOG = [
 export const SURGICAL_SERVICES_804N = SURGICAL_SERVICES_CATALOG;
 
 export const SURGERY_CONSUMABLES = [
-	{ id: "suture_vicryl_40", name: "Шовный материал Vicryl 4-0 (колющая игла)", category: "suture" },
-	{ id: "suture_prolene_50", name: "Шовный материал Prolene 5-0 (обратно-режущая игла)", category: "suture" },
+	{ id: "suture_vicryl_40", name: "Шовный материал полигликолид / ПГА 4-0 (плетеный)", category: "suture" },
+	{ id: "suture_prolene_50", name: "Шовный материал полипропилен 5-0 (монофиламент)", category: "suture" },
 	{ id: "suture_pga_40", name: "Шовный материал ПГА 4-0", category: "suture" },
 	{ id: "membrane_collagen", name: "Резорбируемая коллагеновая мембрана 20×30 мм", category: "membrane" },
 	{ id: "bone_graft_05", name: "Остеопластический материал ксенографт 0.5 см³", category: "bone_graft" },

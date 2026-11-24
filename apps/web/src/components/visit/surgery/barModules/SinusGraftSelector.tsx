@@ -8,10 +8,10 @@ export interface SinusGraftSelectorProps {
 }
 
 const GRAFT_OPTIONS = [
-	{ label: "Bio-Oss 0.5 г (Ксенографт)", short: "Bio-Oss 0.5г" },
-	{ label: "Cerabone 0.5 г (Ксенографт)", short: "Cerabone" },
-	{ label: "SureOss (Аллографт)", short: "SureOss" },
-	{ label: "Аутокость (костный скребок)", short: "Аутокость" },
+	{ label: "Ксеногенный гранулят 0.5 см³", short: "Ксеногранулят 0.5 см³" },
+	{ label: "Аллогенный костный матрикс", short: "Алломатрикс" },
+	{ label: "Аутогенная костная стружка", short: "Аутостружка" },
+	{ label: "Синтетический фосфат кальция / бета-ТКФ", short: "Бета-ТКФ" },
 ] as const;
 
 export const SinusGraftSelector: React.FC<SinusGraftSelectorProps> = ({

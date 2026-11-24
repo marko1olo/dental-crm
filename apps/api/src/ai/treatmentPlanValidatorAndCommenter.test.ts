@@ -185,8 +185,20 @@ test("Treatment Plan Validator and Commenter Suite", async (t) => {
 	});
 
 	await t.test("validateAndCommentTreatmentPlan uses LLM when available", async () => {
+		delete process.env.HTTPS_PROXY;
+		delete process.env.HTTP_PROXY;
+		delete process.env.GLOBAL_LLM_PROXY_URL;
+		delete process.env.PROXY_URL;
+		delete process.env.LLM_PROXY;
+		delete process.env.ALL_PROXY;
 		process.env.DENTAL_AI_NEURAL_DRAFT = "true";
 		process.env.GROQ_API_KEY = "test-groq-key";
+		delete process.env.HTTPS_PROXY;
+		delete process.env.HTTP_PROXY;
+		delete process.env.ALL_PROXY;
+		delete process.env.GLOBAL_LLM_PROXY_URL;
+		delete process.env.PROXY_URL;
+		delete process.env.LLM_PROXY;
 
 		const fetchMock = t.mock.method(global, "fetch", async () => {
 			return {

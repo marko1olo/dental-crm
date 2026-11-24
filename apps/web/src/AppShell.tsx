@@ -31,7 +31,6 @@ import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyL
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
-import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
@@ -405,7 +404,6 @@ export function AppShell() {
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
 			<DirectPhotoProtocolLauncher />
-			<DirectOrthopedicsLauncher />
 			<DirectSurgeryLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />

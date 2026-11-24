@@ -11,25 +11,25 @@ export interface CementBrandPreset {
 
 export const CEMENT_BRAND_PRESETS: readonly CementBrandPreset[] = [
 	{
-		id: "variolink_esthetic",
+		id: "light_cure_resin",
 		name: "Светоотверждаемый композитный цемент",
 		manufacturer: "Адгезивная фиксация",
-		clinicalIndication: "для виниров, ультраниров и прессованной керамики (E.max)",
+		clinicalIndication: "для виниров, ультраниров и прессованной керамики (дисиликат лития)",
 	},
 	{
-		id: "relyx_u200",
-		name: "Самоадгезивный композитный цемент",
+		id: "self_adhesive_dual_cure",
+		name: "Самоадгезивный композитный цемент двойного отверждения",
 		manufacturer: "Двойное отверждение",
 		clinicalIndication: "для диоксида циркония (ZrO2) и металлокерамики",
 	},
 	{
-		id: "fuji_plus",
+		id: "rmgic_cement",
 		name: "Стеклоиономерный модифицированный цемент (СИЦ)",
 		manufacturer: "Химическое отверждение",
 		clinicalIndication: "для коронок на витальные зубы и культевых вкладок",
 	},
 	{
-		id: "panavia_v5",
+		id: "mdp_adhesive_resin",
 		name: "Адгезивный композитный цемент с праймером MDP",
 		manufacturer: "Универсальный протокол",
 		clinicalIndication: "для сложных реставраций и адгезивной фиксации к оксиду циркония",
@@ -53,7 +53,7 @@ export function ZtlFixationSelector({
 	cementBrand,
 	onSelectCementBrand,
 }: ZtlFixationSelectorProps) {
-	const [internalCementBrand, setInternalCementBrand] = useState<string>("relyx_u200");
+	const [internalCementBrand, setInternalCementBrand] = useState<string>("self_adhesive_dual_cure");
 	const activeCementBrand = cementBrand !== undefined ? cementBrand : internalCementBrand;
 
 	const handleCementSelect = (brandId: string) => {
@@ -116,7 +116,13 @@ export function ZtlFixationSelector({
 					</div>
 					<div className="flex flex-wrap gap-1.5" data-testid="cement-brand-chips">
 						{CEMENT_BRAND_PRESETS.map((cement) => {
-							const isSelected = activeCementBrand === cement.id || activeCementBrand === cement.name;
+							const isSelected =
+								activeCementBrand === cement.id ||
+								activeCementBrand === cement.name ||
+								(cement.id === "self_adhesive_dual_cure" && activeCementBrand === "relyx_u200") ||
+								(cement.id === "light_cure_resin" && activeCementBrand === "variolink_esthetic") ||
+								(cement.id === "rmgic_cement" && activeCementBrand === "fuji_plus") ||
+								(cement.id === "mdp_adhesive_resin" && activeCementBrand === "panavia_v5");
 							return (
 								<button
 									key={cement.id}

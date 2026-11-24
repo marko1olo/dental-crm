@@ -11,10 +11,10 @@
  * 6. Apple HIG тач-таргеты >= 44x44px, 0px горизонтального скролл-дрифта.
  */
 
-import React, { useMemo } from "react";
-import { Smile, CheckCircle2, AlertCircle, Clock, CreditCard, Sparkles, Layers, ShieldCheck } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Smile, CheckCircle2, AlertCircle, Clock, CreditCard, Sparkles, Layers, ShieldCheck, Scissors, ChevronDown, ChevronUp } from "lucide-react";
 import { formatKopecksToRub } from "@dental/shared";
-import type { AlignerTrackingState } from "./orthodonticsCatalogData";
+import type { AlignerTrackingState, IprContactItem } from "./orthodonticsCatalogData";
 
 export type AlignerCaseStage =
 	| "setup_pending"
@@ -60,6 +60,19 @@ const CASE_STAGES: readonly {
 	{ key: "retention", labelRu: "Ретенционный период", descriptionRu: "Стабилизация окклюзии ночными ретейнерами" },
 ];
 
+export const DEFAULT_IPR_CONTACTS: readonly IprContactItem[] = [
+	{ contact: "13-12", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "12-11", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "11-21", thicknessMm: 0.3, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "21-22", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "22-23", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "43-42", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "42-41", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "41-31", thicknessMm: 0.3, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "31-32", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+	{ contact: "32-33", thicknessMm: 0.2, completed: false, code804n: "A16.07.025.001" },
+];
+
 export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 	tracking,
 	onChange,
@@ -70,9 +83,10 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 	onCaseStageChange,
 	customTranches,
 	totalSetupCostKopecks,
-	alignerBrandName = "FlexiLigner (3D Pro)",
+	alignerBrandName = "Ортодонтические элайнеры (3D-сетап)",
 	className,
 }) => {
+	const [isIprTableOpen, setIsIprTableOpen] = useState<boolean>(false);
 	const currentStep = tracking.currentStep || 1;
 	const totalSteps = tracking.totalSteps || 24;
 	const progressPercent = Math.min(100, Math.max(0, Math.round((currentStep / totalSteps) * 100)));
@@ -268,22 +282,45 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 					/>
 				</div>
 
-				<button
-					type="button"
-					data-testid="toggle-ipr-btn"
-					onClick={() => onChange((prev) => ({ ...prev, iprCompleted: !prev.iprCompleted }))}
-					className={`p-2.5 rounded-xl border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
-						tracking.iprCompleted
-							? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]"
-							: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
-					}`}
-				>
-					<span className="text-[10px] text-[var(--ink-muted)] font-medium">Сепарация (IPR)</span>
-					<span className="text-xs font-bold flex items-center justify-between w-full">
-						<span>{tracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
-						<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
-					</span>
-				</button>
+				<div className="flex flex-col gap-1">
+					<button
+						type="button"
+						data-testid="toggle-ipr-btn"
+						onClick={() => {
+							onChange((prev) => {
+								const nextVal = !prev.iprCompleted;
+								const curContacts = prev.iprContacts || DEFAULT_IPR_CONTACTS;
+								const nextContacts = curContacts.map((c) => ({ ...c, completed: nextVal }));
+								return {
+									...prev,
+									iprCompleted: nextVal,
+									iprContacts: nextContacts,
+								};
+							});
+						}}
+						className={`p-2.5 rounded-xl border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
+							tracking.iprCompleted
+								? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]"
+								: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
+						}`}
+					>
+						<span className="text-[10px] text-[var(--ink-muted)] font-medium">Сепарация (IPR)</span>
+						<span className="text-xs font-bold flex items-center justify-between w-full">
+							<span>{tracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
+							<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
+						</span>
+					</button>
+					<button
+						type="button"
+						data-testid="toggle-ipr-table-btn"
+						onClick={() => setIsIprTableOpen((v) => !v)}
+						className="text-[10px] text-[var(--primary)] hover:underline flex items-center justify-center gap-0.5 py-0.5"
+					>
+						<Scissors className="w-3 h-3" />
+						<span>{isIprTableOpen ? "Скрыть карту IPR" : "Карта контактов IPR"}</span>
+						{isIprTableOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+					</button>
+				</div>
 
 				<button
 					type="button"
@@ -302,6 +339,159 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 					</span>
 				</button>
 			</div>
+
+			{/* 4.1 Клиническая таблица межзубной сепарации эмали (IPR / A16.07.025.001) */}
+			{(isIprTableOpen || tracking.iprCompleted) && (
+				<div data-testid="ipr-contacts-matrix" className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-2.5">
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)]">
+							<Scissors className="w-3.5 h-3.5 text-[var(--primary)]" />
+							<span>Клиническая карта межзубной сепарации (IPR · A16.07.025.001)</span>
+							<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] border border-[var(--line)]">до 0.5 мм</span>
+						</div>
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button"
+								onClick={() => {
+									const curContacts = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+									const nextContacts = curContacts.map((c) => ({ ...c, completed: true }));
+									onChange((prev) => ({ ...prev, iprCompleted: true, iprContacts: nextContacts }));
+								}}
+								className="px-2 py-1 text-[10px] font-semibold rounded bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors cursor-pointer"
+							>
+								✓ Выполнить все
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									const curContacts = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+									const nextContacts = curContacts.map((c) => ({ ...c, completed: false }));
+									onChange((prev) => ({ ...prev, iprCompleted: false, iprContacts: nextContacts }));
+								}}
+								className="px-2 py-1 text-[10px] font-semibold rounded bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+							>
+								Сбросить
+							</button>
+						</div>
+					</div>
+
+					{/* Верхняя челюсть */}
+					<div className="flex flex-col gap-1">
+						<span className="text-[10px] font-semibold text-[var(--ink-muted)]">Верхняя челюсть (13–23):</span>
+						<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+							{(tracking.iprContacts || DEFAULT_IPR_CONTACTS).slice(0, 5).map((item) => {
+								return (
+									<div
+										key={item.contact}
+										className={`p-2 rounded-lg border text-xs flex flex-col justify-between gap-1 transition-all ${
+											item.completed
+												? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
+												: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+										}`}
+									>
+										<div className="flex items-center justify-between">
+											<button
+												type="button"
+												onClick={() => {
+													const cur = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+													const next = cur.map((c) => (c.contact === item.contact ? { ...c, completed: !c.completed } : c));
+													const anyComp = next.some((c) => c.completed);
+													onChange((prev) => ({ ...prev, iprContacts: next, iprCompleted: anyComp }));
+												}}
+												className="font-bold flex items-center gap-1 hover:underline cursor-pointer"
+											>
+												<span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] ${item.completed ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--line)] bg-[var(--paper-soft)]"}`}>
+													{item.completed && "✓"}
+												</span>
+												<span>{item.contact}</span>
+											</button>
+											<span className="text-[9px] font-mono text-[var(--ink-muted)]">A16.07.025.001</span>
+										</div>
+										<div className="flex items-center gap-1 pt-0.5">
+											<span className="text-[10px] text-[var(--ink-muted)]">Толщина:</span>
+											<select
+												aria-label={`Толщина сепарации ${item.contact}`}
+												value={item.thicknessMm}
+												onChange={(e) => {
+													const val = parseFloat(e.target.value) || 0.2;
+													const cur = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+													const next = cur.map((c) => (c.contact === item.contact ? { ...c, thicknessMm: val } : c));
+													onChange((prev) => ({ ...prev, iprContacts: next }));
+												}}
+												className="h-6 px-1 text-[11px] font-bold rounded border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer"
+											>
+												<option value={0.1}>0.1 мм</option>
+												<option value={0.2}>0.2 мм</option>
+												<option value={0.3}>0.3 мм</option>
+												<option value={0.4}>0.4 мм</option>
+												<option value={0.5}>0.5 мм</option>
+											</select>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Нижняя челюсть */}
+					<div className="flex flex-col gap-1 pt-1">
+						<span className="text-[10px] font-semibold text-[var(--ink-muted)]">Нижняя челюсть (43–33):</span>
+						<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+							{(tracking.iprContacts || DEFAULT_IPR_CONTACTS).slice(5, 10).map((item) => {
+								return (
+									<div
+										key={item.contact}
+										className={`p-2 rounded-lg border text-xs flex flex-col justify-between gap-1 transition-all ${
+											item.completed
+												? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
+												: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+										}`}
+									>
+										<div className="flex items-center justify-between">
+											<button
+												type="button"
+												onClick={() => {
+													const cur = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+													const next = cur.map((c) => (c.contact === item.contact ? { ...c, completed: !c.completed } : c));
+													const anyComp = next.some((c) => c.completed);
+													onChange((prev) => ({ ...prev, iprContacts: next, iprCompleted: anyComp }));
+												}}
+												className="font-bold flex items-center gap-1 hover:underline cursor-pointer"
+											>
+												<span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] ${item.completed ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--line)] bg-[var(--paper-soft)]"}`}>
+													{item.completed && "✓"}
+												</span>
+												<span>{item.contact}</span>
+											</button>
+											<span className="text-[9px] font-mono text-[var(--ink-muted)]">A16.07.025.001</span>
+										</div>
+										<div className="flex items-center gap-1 pt-0.5">
+											<span className="text-[10px] text-[var(--ink-muted)]">Толщина:</span>
+											<select
+												aria-label={`Толщина сепарации ${item.contact}`}
+												value={item.thicknessMm}
+												onChange={(e) => {
+													const val = parseFloat(e.target.value) || 0.2;
+													const cur = tracking.iprContacts || DEFAULT_IPR_CONTACTS;
+													const next = cur.map((c) => (c.contact === item.contact ? { ...c, thicknessMm: val } : c));
+													onChange((prev) => ({ ...prev, iprContacts: next }));
+												}}
+												className="h-6 px-1 text-[11px] font-bold rounded border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer"
+											>
+												<option value={0.1}>0.1 мм</option>
+												<option value={0.2}>0.2 мм</option>
+												<option value={0.3}>0.3 мм</option>
+												<option value={0.4}>0.4 мм</option>
+												<option value={0.5}>0.5 мм</option>
+											</select>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* 5. График рассрочки оплаты элайнеров (копейка в копейку) */}
 			<div className="pt-2 border-t border-[var(--line)] flex flex-col gap-2">

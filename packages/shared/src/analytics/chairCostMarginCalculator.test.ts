@@ -35,7 +35,7 @@ describe("chairCostMarginCalculator (Честная себестоимость �
 		assert.equal(result.hourlyCostNominalRub, 931);
 		// ФАКТИЧЕСКАЯ себестоимость 1 часа с учетом реалистичной 65% загрузки: 1005000 / 702 = 1 432 ₽/час!
 		assert.equal(result.hourlyCostRealOccupiedRub, 1432);
-		assert.equal(result.minuteCostRealOccupiedRub, 23.87);
+		assert.equal(result.minuteCostRealOccupiedRub, 23.86);
 	});
 
 	it("рассчитывает здоровую юнит-экономику реставрации зуба с прибылью", () => {

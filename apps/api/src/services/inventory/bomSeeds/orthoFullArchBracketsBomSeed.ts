@@ -15,7 +15,7 @@ export const ORTHO_FULL_ARCH_BRACKETS_BOM_SEEDS: readonly DefaultBomProcedureSee
 		durationMinutes: 60,
 		materials: [
 			{
-				name: "Брекет-система металлическая самолигирующая Damon Q2 (Ormco, набор 1 челюсть)",
+				name: "Брекет-система металлическая самолигирующая (паз .022, пропись Damon / Roth, набор 1 челюсть)",
 				category: "ortho_bracket",
 				unit: "компл.",
 				quantityToDeduct: 1,
@@ -24,7 +24,7 @@ export const ORTHO_FULL_ARCH_BRACKETS_BOM_SEEDS: readonly DefaultBomProcedureSee
 				criticalThreshold: 3,
 			},
 			{
-				name: "Ортодонтическая дуга Copper Ni-Ti .014 (Ormco)",
+				name: "Ортодонтическая дуга Copper Ni-Ti .014 термоактивная",
 				category: "ortho_archwire",
 				unit: "шт.",
 				quantityToDeduct: 1,

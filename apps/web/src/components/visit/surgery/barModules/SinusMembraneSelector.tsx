@@ -9,9 +9,9 @@ export interface SinusMembraneSelectorProps {
 }
 
 const MEMBRANE_OPTIONS = [
-	{ label: "Bio-Gide 25x25 мм", short: "Bio-Gide 25×25" },
-	{ label: "Jason мембрана", short: "Jason" },
-	{ label: "Cytoplast d-PTFE", short: "Cytoplast" },
+	{ label: "Резорбируемая коллагеновая мембрана 25×25 мм", short: "Коллагеновая 25×25" },
+	{ label: "Перикардиальная мембрана", short: "Перикардиальная" },
+	{ label: "Нерассасывающаяся d-PTFE мембрана", short: "d-PTFE мембрана" },
 	{ label: "Без мембраны", short: "Без мембраны" },
 ] as const;
 

@@ -47,7 +47,7 @@ describe("ChairsideEndoChips & Invoice Bridge (Mandates 8e, 8n)", () => {
 		];
 		const soap = generateSoapEndoProtocol({ activeTooth: 16, toothAnatomicalName: "Первый моляр", currentCanals: canals });
 		assert.ok(soap.includes("анестезия") && soap.includes("коффердам"), "Includes anesthesia & dam");
-		assert.ok(soap.includes("ProTaper/WaveOne до F2"), "Includes instrumentation");
+		assert.ok(/машинн.*niti/i.test(soap), "Includes instrumentation");
 		assert.ok(soap.includes("3% раствор NaOCl с УЗ-активацией"), "Includes ultrasound irrigation");
 		assert.ok(soap.includes("латеральной компакции"), "Includes obturation method");
 	});

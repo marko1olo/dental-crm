@@ -34,7 +34,7 @@ describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billin
 			assert.equal(getAnatomicalRootCanalCount(tooth), 1, `Зуб ${tooth} (2-й премоляр) должен иметь 1 корневой канал`);
 		}
 
-		// Upper Molars (16, 17, 18, 26, 27, 28): 3 canals (MB, DB, P)
+		// Upper Molars (16, 17, 18, 26, 27, 28): 3 canals standard baseline (MB, DB, P)
 		for (const tooth of [16, 17, 18, 26, 27, 28]) {
 			assert.equal(getAnatomicalRootCanalCount(tooth), 3, `Зуб ${tooth} (верхний моляр) должен иметь 3 корневых канала`);
 		}
@@ -123,10 +123,10 @@ describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billin
 		assert.equal(p14.canalCount, 2);
 		assert.equal(p14.code, "A16.07.008.002");
 
-		// Tooth 16 (Molar): 3 canals
+		// Tooth 16 (Upper 1st Molar with MB2): 4 canals
 		const p16 = getOrder804nEndoProcedureForTooth(16);
-		assert.equal(p16.canalCount, 3);
-		assert.equal(p16.code, "A16.07.008.003");
+		assert.equal(p16.canalCount, 4);
+		assert.equal(p16.code, "A16.07.008.004");
 
 		// Tooth 46 (Lower Molar): 3 canals
 		const p46 = getOrder804nEndoProcedureForTooth(46);
@@ -166,13 +166,13 @@ describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billin
 
 	test("TOOTH_CANAL_ANATOMY_MAP, getToothCanalsCount, and mapCanalsTo804nCode maintain 100% parity", () => {
 		assert.equal(Object.keys(TOOTH_CANAL_ANATOMY_MAP).length, 52, "Must define all 32 permanent and 20 primary teeth");
-		assert.equal(TOOTH_CANAL_ANATOMY_MAP[16]?.defaultCanals, 3);
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[16]?.defaultCanals, 4);
 		assert.equal(TOOTH_CANAL_ANATOMY_MAP[14]?.defaultCanals, 2);
 		assert.equal(TOOTH_CANAL_ANATOMY_MAP[11]?.defaultCanals, 1);
 		assert.equal(TOOTH_CANAL_ANATOMY_MAP[74]?.defaultCanals, 2);
 		assert.equal(TOOTH_CANAL_ANATOMY_MAP[54]?.defaultCanals, 3);
 
-		assert.equal(getToothCanalsCount(16), 3);
+		assert.equal(getToothCanalsCount(16), 4);
 		assert.equal(getToothCanalsCount("14"), 2);
 		assert.equal(getToothCanalsCount(36, 4), 4);
 

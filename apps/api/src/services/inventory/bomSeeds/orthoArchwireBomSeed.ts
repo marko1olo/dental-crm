@@ -15,7 +15,7 @@ export const ORTHO_ARCHWIRE_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 		durationMinutes: 30,
 		materials: [
 			{
-				name: "Эластическая цепочка Power Chain (Ormco)",
+				name: "Эластическая цепочка силовая Power Chain",
 				category: "ortho_archwire",
 				unit: "см",
 				quantityToDeduct: 5,
@@ -24,7 +24,7 @@ export const ORTHO_ARCHWIRE_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 				criticalThreshold: 30,
 			},
 			{
-				name: "Эластические лигатуры цветные/прозрачные (Ormco)",
+				name: "Эластические лигатуры цветные/прозрачные",
 				category: "other",
 				unit: "шт.",
 				quantityToDeduct: 10,
@@ -52,7 +52,7 @@ export const ORTHO_ARCHWIRE_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 		durationMinutes: 30,
 		materials: [
 			{
-				name: "Дуга ортодонтическая CuNiTi / NiTi / TMA / SS (Ormco/3M)",
+				name: "Дуга ортодонтическая (CuNiTi / NiTi / TMA / SS)",
 				category: "ortho_archwire",
 				unit: "шт.",
 				quantityToDeduct: 1,
