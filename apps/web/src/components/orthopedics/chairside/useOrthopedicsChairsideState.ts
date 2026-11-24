@@ -35,9 +35,13 @@ export function useOrthopedicsChairsideState({
 
 	const initialEcon = calculateOrthopedicEconomics("zirconia", 1);
 	const [grossPriceRub, setGrossPriceRub] = useState<number>(initialEcon.grossPriceRub);
+	const [grossPriceKopecks, setGrossPriceKopecks] = useState<bigint>(initialEcon.grossPriceKopecks);
 	const [ztlCostRub, setZtlCostRub] = useState<number>(initialEcon.ztlCostRub);
+	const [ztlCostKopecks, setZtlCostKopecks] = useState<bigint>(initialEcon.ztlCostKopecks);
 	const [materialsCostRub, setMaterialsCostRub] = useState<number>(initialEcon.materialsCostRub);
+	const [materialsCostKopecks, setMaterialsCostKopecks] = useState<bigint>(initialEcon.materialsCostKopecks ?? 0n);
 	const [netMarginRub, setNetMarginRub] = useState<number>(initialEcon.netMarginRub);
+	const [netMarginKopecks, setNetMarginKopecks] = useState<bigint>(initialEcon.netMarginKopecks);
 	const [marginPercent, setMarginPercent] = useState<number>(initialEcon.marginPercent);
 	const [dueDate, setDueDate] = useState<string>(() => calculateDueDateStr(5));
 	const [overrideActive, setOverrideActive] = useState<boolean>(false);
@@ -62,9 +66,13 @@ export function useOrthopedicsChairsideState({
 		const teethCount = Math.max(1, activeTeethInput.split(/[\s,;-]+/).map((p) => p.trim()).filter(Boolean).length);
 		const econ = calculateOrthopedicEconomics(activeZtlPresetId, teethCount);
 		setGrossPriceRub(econ.grossPriceRub);
+		setGrossPriceKopecks(econ.grossPriceKopecks);
 		setZtlCostRub(econ.ztlCostRub);
+		setZtlCostKopecks(econ.ztlCostKopecks);
 		setMaterialsCostRub(econ.materialsCostRub);
+		setMaterialsCostKopecks(econ.materialsCostKopecks ?? 0n);
 		setNetMarginRub(econ.netMarginRub);
+		setNetMarginKopecks(econ.netMarginKopecks);
 		setMarginPercent(econ.marginPercent);
 	}, [activeZtlPresetId, activeTeethInput]);
 
@@ -74,8 +82,11 @@ export function useOrthopedicsChairsideState({
 		shadeSystem, setShadeSystem, activeZtlPresetId, setActiveZtlPresetId, preparationMargin, setPreparationMargin,
 		selectedStageId, setSelectedStageId, fixationType, setFixationType, cementBrand, setCementBrand, hasAntagonists, setHasAntagonists,
 		articulatorType, setArticulatorType, hasFacebow, setHasFacebow,
-		grossPriceRub, setGrossPriceRub, ztlCostRub, setZtlCostRub, materialsCostRub, setMaterialsCostRub,
-		netMarginRub, setNetMarginRub, marginPercent, setMarginPercent, dueDate, setDueDate,
+		grossPriceRub, setGrossPriceRub, grossPriceKopecks, setGrossPriceKopecks,
+		ztlCostRub, setZtlCostRub, ztlCostKopecks, setZtlCostKopecks,
+		materialsCostRub, setMaterialsCostRub, materialsCostKopecks, setMaterialsCostKopecks,
+		netMarginRub, setNetMarginRub, netMarginKopecks, setNetMarginKopecks,
+		marginPercent, setMarginPercent, dueDate, setDueDate,
 		overrideActive, setOverrideActive, overrideReason, setOverrideReason, isWarrantyRework, setIsWarrantyRework,
 		warrantyLiabilityType, setWarrantyLiabilityType, isLabOrderSending, setIsLabOrderSending,
 		labOrderSentNumber, setLabOrderSentNumber, activeOrderId, setActiveOrderId, isPassportModalOpen, setIsPassportModalOpen,
