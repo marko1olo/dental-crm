@@ -18,7 +18,11 @@ interface PatientHistoryParams {
 }
 
 export type { ToothHistoryTimelineEvent } from "./toothHistoryTimeline.js";
-export { isToothReferenced } from "./toothHistoryTimeline.js";
+export {
+	formatToothStateLabel,
+	formatToothStateTransition,
+	isToothReferenced,
+} from "./toothHistoryTimeline.js";
 
 export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
