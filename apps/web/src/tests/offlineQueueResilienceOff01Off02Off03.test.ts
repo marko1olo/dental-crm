@@ -122,10 +122,11 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			assert.deepEqual((found?.payload as any)?.surfaces, ["O", "M"]);
 		});
 
-		it("flushes Outbox mutations to /api/odontogram/tooth-state upon network recovery", async () => {
+		it("flushes Outbox mutations to /api/patients/:patientId/tooth-states/batch upon network recovery", async () => {
 			let serverReceivedPayload: any = null;
 			globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-				if (String(url).includes("/api/odontogram/tooth-state")) {
+				const urlStr = String(url);
+				if (urlStr.includes("/tooth-states/batch") || urlStr.includes("/api/odontogram/tooth-state")) {
 					serverReceivedPayload = JSON.parse(String(init?.body));
 					return new Response(JSON.stringify({ success: true }), {
 						status: 200,

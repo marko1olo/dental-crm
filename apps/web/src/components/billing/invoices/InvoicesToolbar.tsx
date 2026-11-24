@@ -71,12 +71,14 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 			</div>
 
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-				<div className="dente-search-wrap hidden md:flex w-32 xl:w-52 shrink min-w-0">
-					<Search size={14} className="dente-search-icon" />
-					<input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту или № счета..." className="dente-search-input" data-testid="input-search-invoices" />
-					{searchQuery && (
-						<button type="button" onClick={() => setSearchQuery("")} className="dente-search-clear" aria-label="Очистить поиск"><X size={13} /></button>
-					)}
+				<div className="hidden md:flex shrink min-w-0">
+					<div className="dente-search-wrap w-32 xl:w-52 shrink min-w-0">
+						<Search size={14} className="dente-search-icon" />
+						<input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту или № счета..." className="dente-search-input" data-testid="input-search-invoices" />
+						{searchQuery && (
+							<button type="button" onClick={() => setSearchQuery("")} className="dente-search-clear" aria-label="Очистить поиск"><X size={13} /></button>
+						)}
+					</div>
 				</div>
 
 				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold text-white shrink-0 flex items-center gap-1" data-testid="btn-create-invoice-open" title="Новый счёт">
