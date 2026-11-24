@@ -31,10 +31,10 @@ export const ExtractionHemostasisSelector: React.FC<ExtractionHemostasisSelector
 							key={opt.id}
 							type="button"
 							onClick={() => onToggleHemostasis(opt.id)}
-							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center gap-1.5 ${
+							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1.5 ${
 								isSel
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-hemostasis-${opt.id}`}
 							title={opt.descriptionRu}
@@ -52,9 +52,9 @@ export const ExtractionHemostasisSelector: React.FC<ExtractionHemostasisSelector
 							key={s}
 							type="button"
 							onClick={() => onSelectSutureMaterial(s)}
-							className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation ${
 								sutureMaterial === s
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+									? "bg-[var(--primary)] text-white"
 									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]"
 							}`}
 							data-testid={`btn-suture-${s.replace(/[\s.]+/g, "-")}`}

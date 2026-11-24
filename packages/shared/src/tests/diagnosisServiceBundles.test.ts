@@ -188,7 +188,7 @@ describe("Canonical Diagnosis Service Bundles & 54-FZ 1-Click Checkout Engine", 
 			assert.ok(Number.isInteger(item.priceKopecks));
 			assert.ok(Number.isInteger(item.sumKopecks));
 			assert.equal(item.toothNumber, 16);
-			assert.ok(item.name.includes("[A"));
+			assert.ok(item.serviceCode?.startsWith("A") || item.code804n?.startsWith("A"));
 			assert.ok(item.name.includes("(зуб 16)"));
 		}
 	});

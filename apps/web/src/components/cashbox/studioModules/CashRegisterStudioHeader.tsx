@@ -47,7 +47,7 @@ export const CashRegisterStudioHeader: React.FC<CashRegisterStudioHeaderProps> =
 			<div className="px-4 py-3 sm:px-6 sm:py-3.5 border-b border-[var(--line)] bg-[var(--paper)] flex flex-col gap-2.5">
 				<div className="flex items-center justify-between w-full min-w-0">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-lg bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0">
 							<ShieldCheck className="w-5 h-5" />
 						</div>
 						<div className="min-w-0">

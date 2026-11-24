@@ -271,7 +271,7 @@ export async function recordSanpinRadiationDose(
 					.update(schema.generatedDocuments)
 					.set({
 						payloadJson: JSON.stringify(updatedPayload),
-						totalAmountRub: annualSummary.totalDoseYearMsv,
+						totalAmountRub: "0.00",
 						taxYear: reportingYear,
 					})
 					.where(eq(schema.generatedDocuments.id, targetDoc.id));
@@ -302,7 +302,7 @@ export async function recordSanpinRadiationDose(
 				status: "draft",
 				title: `Лист учета дозовых нагрузок (${reportingYear} г.) — ${patient.fullName}`,
 				taxYear: reportingYear,
-				totalAmountRub: annualSummary.totalDoseYearMsv,
+				totalAmountRub: "0.00",
 				payloadJson: JSON.stringify(newPayload),
 			});
 		}
@@ -311,3 +311,68 @@ export async function recordSanpinRadiationDose(
 		dicomIngestLogger.error("Ошибка сохранения записи в журнал лучевой нагрузки", err);
 	}
 }
+
+/**
+ * Регистрация дозовой нагрузки исследования по его параметрам (для ручных снимков, RVG и автопривязки)
+ */
+export async function recordStudySanpinDose(
+	organizationId: string,
+	patientId: string,
+	study: {
+		id: string;
+		kind: string;
+		title: string;
+		toothCode?: string | null | undefined;
+		capturedAt?: string | Date | null | undefined;
+		dicomStudyUid?: string | null | undefined;
+	},
+	doctorId?: string | null,
+	executor: DbExecutor = db,
+): Promise<void> {
+	if (!patientId || !organizationId) return;
+
+	let modalityKind: IngestModalityKind = "intraoral";
+	let estimatedEffectiveDoseMsv = 0.002;
+
+	switch (study.kind) {
+		case "cbct":
+			modalityKind = "ct";
+			estimatedEffectiveDoseMsv = 0.055;
+			break;
+		case "opg":
+			modalityKind = "panoramic";
+			estimatedEffectiveDoseMsv = 0.015;
+			break;
+		case "ceph":
+			modalityKind = "cephalometric";
+			estimatedEffectiveDoseMsv = 0.010;
+			break;
+		case "bitewing":
+			modalityKind = "intraoral";
+			estimatedEffectiveDoseMsv = 0.003;
+			break;
+		case "photo":
+			return; // Фотографические снимки не создают ионизирующей лучевой нагрузки
+		case "periapical":
+		default:
+			modalityKind = "intraoral";
+			estimatedEffectiveDoseMsv = 0.002;
+			break;
+	}
+
+	const dateStr = study.capturedAt
+		? (typeof study.capturedAt === "string" ? study.capturedAt.slice(0, 10) : study.capturedAt.toISOString().slice(0, 10))
+		: new Date().toISOString().slice(0, 10);
+
+	const metadata: DicomIngestMetadata = {
+		studyInstanceUid: study.dicomStudyUid || `study-${study.id}`,
+		sopInstanceUid: `sop-${study.id}`,
+		studyDate: dateStr.replace(/-/g, ""),
+		modalityKind,
+		suggestedStudyTitle: study.title || (study.toothCode ? `Снимок зуба ${study.toothCode}` : "Рентгеновский снимок"),
+		estimatedEffectiveDoseMsv,
+	};
+
+	await recordSanpinRadiationDose(organizationId, patientId, metadata, doctorId, executor);
+}
+

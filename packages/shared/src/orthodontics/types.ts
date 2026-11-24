@@ -229,7 +229,7 @@ export interface OrthodonticSoapParams {
 	activeAttachmentPreset?: string | null;
 	alignerSetIssued?: { count: number; days: number } | null;
 	plateActivationTurns?: number;
-	angleClass?: AngleClass;
+	angleClass?: AngleClass | string;
 	anbClass?: AnbClass;
 	anbAngle?: number;
 	sagittalAnomaly?: SagittalAnomaly;

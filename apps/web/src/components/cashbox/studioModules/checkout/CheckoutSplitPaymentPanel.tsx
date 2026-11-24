@@ -77,7 +77,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 		<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="split-tender-panel">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Split className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+					<Split className="w-4 h-4 text-[var(--primary)]" />
 					<span className="text-xs font-bold text-[var(--ink)]">Комбинированная оплата (сплит)</span>
 				</div>
 				<span
@@ -115,7 +115,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitBonusRub?.(0);
 						setSplitCertificateRub?.(0);
 					}}
-					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					50% карта / 50% нал
 				</button>
@@ -130,7 +130,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitBonusRub?.(0);
 						setSplitCertificateRub?.(0);
 					}}
-					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% карта
 				</button>
@@ -146,7 +146,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitBonusRub?.(0);
 						setSplitCertificateRub?.(0);
 					}}
-					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% нал
 				</button>
@@ -161,7 +161,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitBonusRub?.(0);
 						setSplitCertificateRub?.(0);
 					}}
-					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% СБП
 				</button>
@@ -172,7 +172,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<CreditCard className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<CreditCard className="w-3.5 h-3.5 text-[var(--primary)]" />
 							<span>Карта (POS)</span>
 						</span>
 						<button
@@ -282,7 +282,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5" data-testid="split-row-certificate">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Gift className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<Gift className="w-3.5 h-3.5 text-[var(--primary)]" />
 							<span>Сертификат</span>
 						</span>
 						<button

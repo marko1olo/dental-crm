@@ -64,7 +64,17 @@ export function RadiologyModuleModals(p: RadiologyModuleModalsProps) {
 				<CbctMprImplantStudioModal isOpen={modals.show3dStudio} onClose={() => { modals.setShow3dStudio(false); p.setSelectedStudyForStudio(null); }} study={p.selectedStudyForStudio ? convertImagingStudyToRadiologyStudy(p.selectedStudyForStudio) : undefined} patientName={p.selectedStudyForStudio?.patientFullName || patientName} patientId={p.selectedStudyForStudio?.patientId || patient?.id || undefined} />
 			)}
 			{modals.showDicomViewer && (
-				<DicomViewerModal isOpen={modals.showDicomViewer} onClose={() => { modals.setShowDicomViewer(false); p.setSelectedStudyForViewer(null); }} imageSrc={p.selectedStudyForViewer?.previewUrl || undefined} title={p.selectedStudyForViewer?.title || "Дентальный снимок"} patientName={p.selectedStudyForViewer?.patientFullName || patientName} patientId={p.selectedStudyForViewer?.patientId || patient?.id || undefined} toothFdiCode={p.selectedStudyForViewer?.toothCode || undefined} />
+				<DicomViewerModal
+					key={`${p.selectedStudyForViewer?.patientId || patient?.id || "p"}_${p.selectedStudyForViewer?.id || "viewer"}`}
+					isOpen={modals.showDicomViewer}
+					onClose={() => { modals.setShowDicomViewer(false); p.setSelectedStudyForViewer(null); }}
+					imageSrc={p.selectedStudyForViewer?.previewUrl || undefined}
+					title={p.selectedStudyForViewer?.title || "Дентальный снимок"}
+					patientName={p.selectedStudyForViewer?.patientFullName || patientName}
+					patientId={p.selectedStudyForViewer?.patientId || patient?.id || undefined}
+					studyId={p.selectedStudyForViewer?.id || undefined}
+					toothFdiCode={p.selectedStudyForViewer?.toothCode || undefined}
+				/>
 			)}
 			{modals.showSensorViewer && (
 				<div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -75,7 +85,7 @@ export function RadiologyModuleModals(p: RadiologyModuleModalsProps) {
 				<DirectRvgCaptureModal isOpen={modals.showRvgCapture} onClose={() => modals.setShowRvgCapture(false)} patientId={patient?.id || undefined} patientName={patientName} patientCardNumber={cardNum} doctorName={docName} initialToothFdi={activeToothFdi ? String(activeToothFdi) : undefined} />
 			)}
 			{modals.showDoseSheet && (
-				<RadiationSafetyRegistryModal isOpen={modals.showDoseSheet} onClose={() => modals.setShowDoseSheet(false)} patientName={patientName} patientCardNumber={cardNum} patientBirthDate={patient?.birthDate || undefined} />
+				<RadiationSafetyRegistryModal isOpen={modals.showDoseSheet} onClose={() => modals.setShowDoseSheet(false)} patientId={patient?.id || undefined} patientName={patientName} patientCardNumber={cardNum} patientBirthDate={patient?.birthDate || undefined} />
 			)}
 			{modals.showReportStudio && (
 				<RadiologyReportStudioModal isOpen={modals.showReportStudio} onClose={() => modals.setShowReportStudio(false)} patientName={patientName} patientCardNumber={cardNum} patientAge={undefined} patientGender={patient?.gender === "female" ? "Жен." : patient?.gender === "male" ? "Муж." : undefined} clinicName={clinicName || "Стоматологическая клиника DENTE"} />

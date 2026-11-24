@@ -54,7 +54,7 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 	});
 	return (
 		<div className="w-full max-w-7xl mx-auto space-y-4">
-			<PerioStudioModal isModal={false} patientId={patientId} patientName={patientName} />
+			<PerioStudioModal key={patientId} isModal={false} patientId={patientId} patientName={patientName} />
 			<div className="hidden md:block">
 				<EmkPerioSection
 					visitNoteForm={diaryForm}
@@ -80,7 +80,7 @@ export const StandalonePerioHost: React.FC<{ onClose: () => void; mode: string |
 	const patientName = useLauncherPatientName(patientId) || "Кузнецова Елена Павловна";
 	if (!patientId) return <MissingPatientGuard testId="standalone-perio-missing-state" onClose={onClose} message={GUARD_MESSAGE} />;
 	if (mode === "modal") {
-		return <PerioStudioModal isOpen={true} isModal={true} onClose={onClose} patientId={patientId} patientName={patientName} />;
+		return <PerioStudioModal key={patientId} isOpen={true} isModal={true} onClose={onClose} patientId={patientId} patientName={patientName} />;
 	}
 	return (
 		<StandaloneTreatmentPlanWorkspaceShell title="Пародонтограмма" onClose={onClose}>

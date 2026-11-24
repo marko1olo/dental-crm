@@ -306,7 +306,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 						<div className="flex items-center justify-between gap-1 font-semibold">
 							<span className="truncate">Антисептическая обработка карманов</span>
 						</div>
-						<span className="text-[10px] text-[var(--muted)] truncate">A16.07.053 • Медикаментозная обработка</span>
+						<span className="text-[10px] text-[var(--muted)] truncate">A16.07.027 • Медикаментозная обработка</span>
 					</button>
 				</div>
 			</div>

@@ -39,12 +39,14 @@ export const PatientRadiologyModals: React.FC<PatientRadiologyModalsProps> = ({
 		<>
 			{active2dStudy && (
 				<DicomViewerModal
+					key={`${patientId || active2dStudy.patientId || "p"}_${active2dStudy.id}`}
 					isOpen={Boolean(active2dStudy)}
 					onClose={() => setActive2dStudy(null)}
 					imageSrc={active2dStudy.previewUrl || undefined}
 					title={active2dStudy.title}
 					patientName={patientName || active2dStudy.patientFullName || undefined}
 					patientId={patientId || active2dStudy.patientId || undefined}
+					studyId={active2dStudy.id}
 					toothFdiCode={active2dStudy.toothCode || undefined}
 				/>
 			)}

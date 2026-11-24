@@ -8,10 +8,13 @@
 
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { computePayloadHash } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { imagingStudies } from "../../db/schema/imaging.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { cephAnalysisSaveSchema, patientParamsSchema } from "./types.js";
 
@@ -32,6 +35,33 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 					error: "ValidationError",
 					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
 				});
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
+				const record = existingIdemKey ?? (existingSyncRecord ? {
+					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
+					responseBody: existingSyncRecord.responseJson,
+					responseCode: existingSyncRecord.responseStatus,
+					lockedAt: existingSyncRecord.updatedAt,
+				} : null);
+
+				if (record) {
+					if (record.status === "completed" && record.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(record.responseCode || 200)
+							.send(record.responseBody);
+					}
+					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция сохранения ТРГ с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
 			}
 
 			const { patientId } = patientParamsSchema.parse(request.params);
@@ -98,6 +128,13 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 				lastActionSummary: `Цефалометрический анализ ТРГ: ${studyRecord.placedCount} ориентиров`,
 			};
 
+			const responsePayload = {
+				success: true,
+				id: studyId,
+				savedAt: nowIso,
+				study: studyRecord,
+			};
+
 			// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при сохранении анализа ТРГ в PostgreSQL 18
 			await db.transaction(async (tx) => {
 				await updatePatientAdministrativeProfileInDb(
@@ -128,14 +165,30 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 							),
 						);
 				}
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 200,
+							},
+						});
+				}
 			});
 
-			return reply.send({
-				success: true,
-				id: studyId,
-				savedAt: nowIso,
-				study: studyRecord,
-			});
+			return reply.send(responsePayload);
 		},
 	);
 

@@ -108,4 +108,46 @@ describe("surgeryMaterialBuilder — Precision Graft & Membrane Deduction (SEV-2
 		const drainage = materials.find((m) => m.defaultName.includes("Резиновый ленточный выпускник"));
 		assert.ok(drainage, "Rubber drainage must be present for emergency periostotomy");
 	});
+
+	it("does NOT deduct sutures or Alveogyl for simple forceps extraction with tampons (SEV-1.3, SEV-2.3)", () => {
+		const materials = buildSurgeryMaterials({
+			category: "extraction",
+			protocolId: "surgery_extraction_simple",
+			hemostatics: ["tampon"],
+		});
+
+		const suture = materials.find((m) => m.category === "Шовный материал");
+		assert.equal(suture, undefined, "Simple extraction without suture options must NOT deduct suture");
+
+		const alvogyl = materials.find((m) => m.patterns.includes("альвожил"));
+		assert.equal(alvogyl, undefined, "Tampon hemostasis must NOT deduct Alveogyl");
+
+		const tampon = materials.find((m) => m.defaultName.includes("Марлевые тампоны"));
+		assert.ok(tampon, "Sterile tampons must be deducted");
+	});
+
+	it("deducts Parasorb Cone and sutures for socket preservation (SEV-2.1)", () => {
+		const materials = buildSurgeryMaterials({
+			category: "extraction",
+			protocolId: "surgery_socket_preservation",
+		});
+
+		const cone = materials.find((m) => m.defaultName.includes("Parasorb Cone"));
+		assert.ok(cone, "Parasorb Cone must be deducted for socket preservation");
+		assert.equal(cone?.defaultCost, "1600.00");
+
+		const suture = materials.find((m) => m.category === "Шовный материал");
+		assert.ok(suture, "Suture must be deducted for socket preservation");
+	});
+
+	it("deducts Alveogyl paste for alveolitis curettage (SEV-2.1)", () => {
+		const materials = buildSurgeryMaterials({
+			category: "emergency",
+			protocolId: "surgery_alveolitis_curettage",
+		});
+
+		const alvogyl = materials.find((m) => m.defaultName.includes("Альвожил"));
+		assert.ok(alvogyl, "Alveogyl paste must be deducted for alveolitis curettage");
+		assert.equal(alvogyl?.defaultCost, "280.00");
+	});
 });

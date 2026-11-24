@@ -63,6 +63,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 
 			{isPaymentModalOpen && (
 				<CashRegisterStudioModal
+					key={patient?.id || "cashbox-section"}
 					isOpen={isPaymentModalOpen}
 					mode="checkout"
 					initialTab="checkout"

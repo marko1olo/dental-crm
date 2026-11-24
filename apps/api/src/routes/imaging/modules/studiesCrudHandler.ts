@@ -13,6 +13,7 @@ import { db } from "../../../db/client.js";
 import { imagingStudies, xrayScans } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
+import { recordStudySanpinDose } from "../../../services/dicom/ingest/metadataParser.js";
 
 const updateImagingStudyBodySchema = z.object({
 	title: z.string().trim().min(1).max(180).optional(),
@@ -114,6 +115,10 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 					capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
 				})
 				.onConflictDoNothing();
+		}
+
+		if (createdStudy && input.patientId) {
+			await recordStudySanpinDose(orgId, input.patientId, createdStudy, null, tx);
 		}
 
 		return createdStudy;

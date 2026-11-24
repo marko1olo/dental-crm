@@ -50,8 +50,19 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 
 	const handleClose = useCallback(() => {
 		if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
+		setMeasurements([]);
+		setCurrentImageSrc(null);
+		setActiveStudyId("study-current");
+		setIsNormaApplied(false);
+		setAppliedProtocolId(null);
+		setViewportState(DEFAULT_DICOM_VIEWPORT_STATE);
+		setIsCtSelectorOpen(false);
+		setIsCbctStudioOpen(false);
+		setIsProtocolsDropdownOpen(false);
+		setIsDragOver(false);
+		ai.resetAiState();
 		onClose();
-	}, [onClose]);
+	}, [onClose, ai]);
 
 	const handleSwitchViewMode = useCallback((mode: "2d" | "3d_mpr" | "sectioning") => {
 		if (mode === "3d_mpr" || mode === "sectioning") {

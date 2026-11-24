@@ -207,7 +207,7 @@ export async function processSplitAllocationStage(
 					payerBirthDate: body.payerBirthDate || null,
 					payerIdentityDocument: body.payerIdentityDocument || null,
 					payerRelationship: body.payerRelationship || null,
-					taxDeductionCode: body.taxDeductionCode || null,
+					taxDeductionCode: effectiveTaxCode,
 					note: body.note ? `${body.note} (бонусы)` : "Сплит-оплата (бонусы)",
 				})
 				.returning();
@@ -235,7 +235,7 @@ export async function processSplitAllocationStage(
 					payerBirthDate: body.payerBirthDate || null,
 					payerIdentityDocument: body.payerIdentityDocument || null,
 					payerRelationship: body.payerRelationship || null,
-					taxDeductionCode: body.taxDeductionCode || null,
+					taxDeductionCode: effectiveTaxCode,
 					note: body.note ? `${body.note} (сертификат)` : "Сплит-оплата (сертификат)",
 				})
 				.returning();

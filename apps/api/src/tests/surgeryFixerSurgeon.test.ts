@@ -206,4 +206,86 @@ describe("surgeryFixerSurgeon — Red Team Invariants & DoD Gates", () => {
 			assert.strictEqual(batchBody.error, "DeciduousToothImplantForbidden");
 		});
 	});
+
+	describe("4. Extraction & Minor Surgery SSOT Standards (Domain 74, SEV-1..SEV-3)", () => {
+		test("CANONICAL_SURGICAL_OPERATION_NORMS includes atraumatic, socket preservation, and alveolitis norms", async () => {
+			const { CANONICAL_SURGICAL_OPERATION_NORMS } = await import("@dental/shared");
+
+			const atraumatic = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_atraumatic");
+			assert.ok(atraumatic, "surgery_extraction_atraumatic norm must exist");
+			assert.equal(atraumatic?.priceKopecks, 450000n, "Atraumatic extraction must have 450000n priceKopecks");
+			assert.equal(atraumatic?.code804n, "A16.07.001.001");
+
+			const socketPreservation = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_socket_preservation");
+			assert.ok(socketPreservation, "surgery_socket_preservation norm must exist");
+			assert.equal(socketPreservation?.priceKopecks, 600000n, "Socket preservation must have 600000n priceKopecks");
+			assert.equal(socketPreservation?.code804nSubcode, "A16.07.041.001");
+
+			const alveolitis = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_alveolitis_curettage");
+			assert.ok(alveolitis, "surgery_alveolitis_curettage norm must exist");
+			assert.equal(alveolitis?.priceKopecks, 250000n, "Alveolitis curettage must have 250000n priceKopecks");
+			assert.equal(alveolitis?.code804n, "A16.07.013");
+
+			const simple = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_simple");
+			const simpleCurettage = simple?.order804nServices?.find((s) => s.code === "A16.07.013");
+			assert.ok(simpleCurettage, "Simple extraction curettage must have canonical 804n code A16.07.013 (not A16.07.026)");
+		});
+
+		test("SURGICAL_EXTRACTIONS_804N_CATALOG includes statutory 804n positions with BigInt kopecks", async () => {
+			const { SURGICAL_EXTRACTIONS_804N_CATALOG } = await import("@dental/shared");
+
+			const codes = SURGICAL_EXTRACTIONS_804N_CATALOG.map((e) => e.code);
+			assert.ok(codes.includes("A16.07.001"), "A16.07.001 must be present");
+			assert.ok(codes.includes("A16.07.001.001"), "A16.07.001.001 must be present");
+			assert.ok(codes.includes("A16.07.001.002"), "A16.07.001.002 must be present");
+			assert.ok(codes.includes("A16.07.013"), "A16.07.013 must be present");
+			assert.ok(codes.includes("A16.07.097"), "A16.07.097 must be present");
+			assert.ok(codes.includes("A16.07.041.001"), "A16.07.041.001 must be present");
+
+			const curettage = SURGICAL_EXTRACTIONS_804N_CATALOG.find((e) => e.code === "A16.07.013");
+			assert.equal(curettage?.defaultPriceKopecks, 250000n);
+
+			const sutures = SURGICAL_EXTRACTIONS_804N_CATALOG.find((e) => e.code === "A16.07.097");
+			assert.equal(sutures?.defaultPriceKopecks, 120000n);
+		});
+
+		test("createSurgicalProtocolSchema accepts multi-service payload with full validation", async () => {
+			const { createSurgicalProtocolSchema } = await import("@dental/shared");
+
+			const payload = {
+				patientId: "a0000000-0000-0000-0000-000000000001",
+				normId: "surgery_extraction_simple",
+				toothNumberFdi: 18,
+				protocolText: "Атравматичное удаление зуба 18, кюретаж лунки, гемостаз, наложение швов Викрил 4-0.",
+				services: [
+					{
+						code: "A16.07.001.001",
+						nameRu: "Удаление постоянного зуба простое",
+						priceRub: 3500,
+						priceKopecks: 350000n,
+						quantity: 1,
+						isPrimary: true,
+					},
+					{
+						code: "A16.07.013",
+						nameRu: "Кюретаж лунки удаленного зуба",
+						priceRub: 2500,
+						priceKopecks: 250000n,
+						quantity: 1,
+					},
+					{
+						code: "A16.07.097",
+						nameRu: "Наложение шва на слизистую оболочку рта",
+						priceRub: 1200,
+						priceKopecks: 120000n,
+						quantity: 1,
+					},
+				],
+			};
+
+			const parsed = createSurgicalProtocolSchema.safeParse(payload);
+			assert.ok(parsed.success, "Multi-service protocol payload must be valid");
+			assert.equal(parsed.data.services.length, 3);
+		});
+	});
 });

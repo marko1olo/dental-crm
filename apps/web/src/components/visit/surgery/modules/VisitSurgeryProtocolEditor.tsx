@@ -17,7 +17,7 @@ export const VisitSurgeryProtocolEditor: React.FC<VisitSurgeryProtocolEditorProp
 			<div className="flex items-center justify-between">
 				<label
 					htmlFor="visit-surgery-text"
-					className="text-xs font-black uppercase text-[var(--muted)] tracking-wider"
+					className="text-xs font-semibold text-[var(--muted)] tracking-tight"
 				>
 					Текст протокола операции:
 				</label>
@@ -37,7 +37,7 @@ export const VisitSurgeryProtocolEditor: React.FC<VisitSurgeryProtocolEditorProp
 				value={protocolText}
 				onChange={(e) => onChangeText(e.target.value)}
 				rows={4}
-				className="w-full p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono text-[var(--ink)] resize-y focus:outline-none focus:border-[var(--teal,#0d9488)]"
+				className="w-full p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono text-[var(--ink)] resize-y focus:outline-none focus:border-[var(--primary)]"
 				data-testid="textarea-visit-surgery-protocol"
 			/>
 		</div>

@@ -85,7 +85,12 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 				onUpdateInvoice={onUpdateInvoice}
 			/>
 
-			{activeCashboxConfig && <CashRegisterStudioModal {...activeCashboxConfig} />}
+			{activeCashboxConfig && (
+				<CashRegisterStudioModal
+					key={activeCashboxConfig.invoiceId || activeCashboxConfig.patientId || activeCashboxConfig.mode || "cashbox"}
+					{...activeCashboxConfig}
+				/>
+			)}
 		</>
 	);
 };

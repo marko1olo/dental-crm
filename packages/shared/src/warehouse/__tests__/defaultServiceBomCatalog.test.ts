@@ -12,6 +12,7 @@ import {
 	getDefaultBomLinksForService,
 	getDefaultBomLinksForService804n,
 	HYGIENE_BOM_LINKS,
+	PERIODONTOLOGY_BOM_LINKS,
 	ORTHODONTIC_BOM_LINKS,
 	ORTHOPEDIC_BOM_LINKS,
 	SURGICAL_BOM_LINKS,
@@ -20,15 +21,16 @@ import {
 
 describe("defaultServiceBomCatalog & bomModules Test Suite", () => {
 	it("1. Catalog integrity & backward compatibility", () => {
-		assert.equal(DEFAULT_SERVICE_CONSUMABLE_LINKS.length, 50);
-		assert.equal(DEFAULT_804N_CONSUMABLE_LINKS.length, 50);
+		assert.equal(DEFAULT_SERVICE_CONSUMABLE_LINKS.length, 65);
+		assert.equal(DEFAULT_804N_CONSUMABLE_LINKS.length, 65);
 		assert.deepEqual(DEFAULT_SERVICE_CONSUMABLE_LINKS, DEFAULT_804N_CONSUMABLE_LINKS);
 
 		assert.equal(THERAPEUTIC_BOM_LINKS.length, 18);
 		assert.equal(SURGICAL_BOM_LINKS.length, 15);
 		assert.equal(ORTHOPEDIC_BOM_LINKS.length, 4);
-		assert.equal(ORTHODONTIC_BOM_LINKS.length, 3);
-		assert.equal(HYGIENE_BOM_LINKS.length, 10);
+		assert.equal(ORTHODONTIC_BOM_LINKS.length, 9);
+		assert.equal(HYGIENE_BOM_LINKS.length, 19);
+		assert.equal(PERIODONTOLOGY_BOM_LINKS.length, 9);
 	});
 
 	it("2. Service BOM link resolution by code & base code fallback", () => {

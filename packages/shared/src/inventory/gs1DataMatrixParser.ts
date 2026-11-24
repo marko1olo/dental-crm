@@ -505,7 +505,15 @@ export function parseGs1DataMatrixWithPku(
 	}
 
 	// 4. Expiration date validation
-	const expiry = parseMdlpExpirationDate(expirationDateRaw, referenceDate);
+	const expiry = expirationDateRaw
+		? parseMdlpExpirationDate(expirationDateRaw, referenceDate)
+		: {
+			isoDate: null,
+			isExpired: false,
+			daysUntilExpiration: null,
+			isExpiringSoon: false,
+			error: undefined,
+		};
 	if (expiry.error) {
 		warnings.push(expiry.error);
 	}

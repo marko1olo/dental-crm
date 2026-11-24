@@ -24,6 +24,7 @@ import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHe
 import { parseDicomHeader, readFilePrefixAsync } from "../dicomParsing.js";
 import { isDemoOperationAllowed } from "../../demo/demoRoutes.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
+import { recordStudySanpinDose } from "../../../services/dicom/ingest/metadataParser.js";
 
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
@@ -81,6 +82,10 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 							capturedAt: study.capturedAt ? new Date(study.capturedAt) : new Date(),
 						})
 						.onConflictDoNothing();
+				}
+
+				if (study && parsed.data.patientId) {
+					await recordStudySanpinDose(orgId, parsed.data.patientId, study, null, tx);
 				}
 			}
 			return study;

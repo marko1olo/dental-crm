@@ -11,9 +11,6 @@ import {
 	type DmsInvoiceItem,
 	dmsInvoiceItemSchema,
 	dmsInvoiceSplitInputSchema,
-} from "../insurance/dmsFranchiseEngine.js";
-
-import {
 	DMS_INSURANCE_COMPANIES_CATALOG,
 	getDmsInsuranceCompanyById,
 	findDmsInsuranceCompanyByInn,
@@ -23,9 +20,6 @@ import {
 	applyGuaranteeLetterDeduction,
 	checkServiceDmsCoverage,
 	STANDARD_DMS_EXCLUDED_804N_SERVICES,
-} from "../insurance/dmsGuaranteeLetters.js";
-
-import {
 	type DmsRegistryData,
 	calculateDmsRegistryTotals,
 	generateDmsRegistryXml,
@@ -33,7 +27,7 @@ import {
 	generateDmsRegistryA4Html,
 	generateDmsAcceptanceActA4Html,
 	dmsRegistryDataSchema,
-} from "../insurance/dmsRegistryExport.js";
+} from "../insurance/index.js";
 
 describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 	it("1.1 Validates standard and custom Russian franchise rates", () => {
@@ -462,12 +456,14 @@ describe("DMS Guarantee Letters & Coverage Limits (dmsGuaranteeLetters.ts)", () 
 	it("2.6 Validates guarantee letter Zod schemas", () => {
 		const validLetter: DmsGuaranteeLetter = {
 			id: "let-valid",
+			patientId: "pat-123",
 			letterNumber: "ГП-12345",
 			issueDate: "2026-08-01",
 			validFrom: "2026-08-01",
 			validTo: "2026-08-31",
 			companyId: "vsk",
 			companyName: "САО «ВСК»",
+			insurerName: "САО «ВСК»",
 			policyNumber: "ВСК-0099",
 			patientFullName: "Морозов Игорь Дмитриевич",
 			patientBirthDate: "1980-03-25",

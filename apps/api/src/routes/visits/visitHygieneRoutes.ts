@@ -1,4 +1,9 @@
-import { hygieneIndicesSchema, type HygieneIndices } from "@dental/shared";
+import {
+	computePayloadHash,
+	generateUuidV7,
+	hygieneIndicesSchema,
+	type HygieneIndices,
+} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
@@ -7,6 +12,7 @@ import {
 } from "../../accessGuard.js";
 import { db as database } from "../../db/client.js";
 import { visitDiaries, visits } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -76,7 +82,46 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 			reply.code(400);
 			return { error: "ValidationError", issues: parsed.error.issues };
 		}
+
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ??
+			(request.headers["x-idempotency-key"] as string | undefined) ??
+			(request.body && typeof request.body === "object"
+				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined)
+				: undefined);
+
+		const idempotencyKey =
+			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
+				? rawIdempotencyKey.trim()
+				: generateUuidV7();
+
+		reply.header("Idempotency-Key", idempotencyKey);
+
 		return await database.transaction(async (tx) => {
+			const [existingKeyRecord] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, context.organizationId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingKeyRecord) {
+				if (existingKeyRecord.status === "completed" && existingKeyRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					return reply.code(existingKeyRecord.responseCode || 200).send(existingKeyRecord.responseBody);
+				}
+				if (existingKeyRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция сохранения индексов гигиены с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+
 			const [visit] = await tx
 				.select({
 					id: visits.id,
@@ -139,11 +184,32 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				)
 				.returning({ id: visits.id, hygieneIndices: visits.hygieneIndices });
 
-			return {
+			const responseBody = {
 				ok: true,
 				visitId,
 				hygieneIndices: updated?.hygieneIndices ?? parsed.data,
 			};
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: context.organizationId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: responseBody as Record<string, unknown>,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: responseBody as Record<string, unknown>,
+						responseCode: 200,
+					},
+				});
+
+			return responseBody;
 		});
 	});
 }

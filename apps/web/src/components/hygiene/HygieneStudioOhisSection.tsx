@@ -74,7 +74,7 @@ export const HygieneStudioOhisSection: React.FC<HygieneStudioOhisSectionProps> =
 												return { ...p, [t.toothNumber]: { ...prevEntry, debris: val } };
 											})}
 											className={`h-10 sm:h-6 min-h-[44px] sm:min-h-[24px] text-xs sm:text-[10px] font-bold rounded cursor-pointer transition-colors ${
-												current.debris === val ? "bg-teal-700 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+												current.debris === val ? "bg-[var(--primary-strong)] text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)]"
 											}`}
 											aria-label={`${t.surfaceLabelRu} налет ${val}`}
 										>
@@ -98,7 +98,7 @@ export const HygieneStudioOhisSection: React.FC<HygieneStudioOhisSectionProps> =
 												return { ...p, [t.toothNumber]: { ...prevEntry, calculus: val } };
 											})}
 											className={`h-10 sm:h-6 min-h-[44px] sm:min-h-[24px] text-xs sm:text-[10px] font-bold rounded cursor-pointer transition-colors ${
-												current.calculus === val ? "bg-amber-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+												current.calculus === val ? "bg-[var(--warning,#f59e0b)] text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)]"
 											}`}
 											aria-label={`${t.surfaceLabelRu} камень ${val}`}
 										>

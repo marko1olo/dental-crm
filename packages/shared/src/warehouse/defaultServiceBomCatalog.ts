@@ -8,4 +8,4 @@ export { THERAPEUTIC_BOM_LINKS } from "./bomModules/therapeuticBoms.js";
 export { SURGICAL_BOM_LINKS } from "./bomModules/surgicalBoms.js";
 export { ORTHOPEDIC_BOM_LINKS } from "./bomModules/orthopedicBoms.js";
 export { ORTHODONTIC_BOM_LINKS } from "./bomModules/orthodonticBoms.js";
-export { HYGIENE_BOM_LINKS } from "./bomModules/hygieneBoms.js";
+export { HYGIENE_BOM_LINKS, PERIODONTOLOGY_BOM_LINKS } from "./bomModules/hygieneBoms.js";

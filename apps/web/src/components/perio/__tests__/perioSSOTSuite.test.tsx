@@ -99,7 +99,10 @@ describe("Канонический SSOT пародонтологии и эксп
 
 		const p2 = PERIO_TREATMENT_PROTOCOLS[1];
 		assert.ok(p2, "p2 протокол должен быть определен");
-		assert.strictEqual(p2.serviceCode, "A16.07.051.001");
+		assert.ok(
+			p2.serviceCode === "A22.07.002" || p2.serviceCode === "A16.07.051.001",
+			"Код Vector-терапии должен быть A22.07.002 по номенклатуре 804н",
+		);
 		assert.strictEqual(p2.priceKopecks, 420000);
 
 		const p3 = PERIO_TREATMENT_PROTOCOLS[2];

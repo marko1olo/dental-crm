@@ -104,16 +104,6 @@ export function parseMdlpExpirationDate(
 			? referenceDate
 			: new Date();
 
-	if (yymmdd == null || yymmdd === "") {
-		return {
-			isoDate: null,
-			isExpired: false,
-			daysUntilExpiration: null,
-			isExpiringSoon: false,
-			error: undefined,
-		};
-	}
-
 	if (typeof yymmdd !== "string" || !/^\d{6}$/.test(yymmdd)) {
 		return {
 			isoDate: null,
@@ -408,10 +398,15 @@ export function parseMdlpDataMatrix(
 	}
 
 	// 4. Expiration date
-	const expiryResult = parseMdlpExpirationDate(
-		expirationDateRaw,
-		referenceDate,
-	);
+	const expiryResult = expirationDateRaw
+		? parseMdlpExpirationDate(expirationDateRaw, referenceDate)
+		: {
+			isoDate: null,
+			isExpired: false,
+			daysUntilExpiration: null,
+			isExpiringSoon: false,
+			error: undefined,
+		};
 	if (expiryResult.error) {
 		warnings.push(expiryResult.error);
 	}

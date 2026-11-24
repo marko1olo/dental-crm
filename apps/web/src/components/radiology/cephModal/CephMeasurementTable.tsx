@@ -42,7 +42,7 @@ export function CephMeasurementTable({
 				</div>
 				<div className="my-1 flex items-baseline gap-1">
 					{isValValid ? (
-						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-emerald-500" : meas.status === "deviation_high" ? "text-rose-500" : "text-[var(--primary)]"}`}>
+						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-[var(--success-ink)]" : meas.status === "deviation_high" ? "text-[var(--danger-ink)]" : "text-[var(--primary)]"}`}>
 							{meas.value}{meas.unit || "°"}
 						</span>
 					) : (
@@ -56,7 +56,7 @@ export function CephMeasurementTable({
 							{id === "ANB" ? (meas.status === "normal" ? "Класс I" : meas.status === "deviation_high" ? "Класс II" : "Класс III") : id === "1-NA" || id === "1-NB" ? (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Протрузия" : "Ретрузия") : (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Увеличен" : "Уменьшен")}
 						</span>
 					) : (
-						<span className="text-[9px] font-medium text-amber-500 truncate block">{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}</span>
+						<span className="text-[9px] font-medium text-[var(--warning-ink)] truncate block">{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}</span>
 					)}
 				</div>
 			</>

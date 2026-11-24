@@ -42,34 +42,131 @@ export function buildSurgeryMaterials(opts: BuildSurgeryMaterialsOptions): Unifi
 		defaultCost: "120.00",
 	});
 
-	// Sutures
-	const suture = (opts.sutureMaterial || (cat === "implant" ? "Пролен 4-0" : cat === "sinus_gbr" ? "ПГА 4-0" : cat === "perio_surgery" ? "Пролен 6-0" : "Викрил 4-0")).toLowerCase();
-	if (suture.includes("пролен") || suture.includes("prolene")) {
-		const isMicro = suture.includes("6-0") || suture.includes("7-0");
-		const defaultName = isMicro
-			? "Шовный материал Prolene 6-0 с микрохирургической иглой"
-			: "Шовный материал Prolene 4-0 с иглой";
-		const defaultCost = isMicro ? "450.00" : "350.00";
-		list.push({ patterns: ["пролен", "prolene"], defaultName, category: "Шовный материал", unit: "шт.", qty: 1, defaultCost });
-	} else if (suture.includes("викрил") || suture.includes("vicryl")) {
-		list.push({ patterns: ["викрил", "vicryl"], defaultName: "Шовный материал Викрил 4-0 с атравматической иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "250.00" });
-	} else {
-		list.push({ patterns: ["пга", "pga"], defaultName: "Шовный материал рассасывающийся ПГА 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" });
+	// Sutures: простое щипцовое удаление не требует наложения швов
+	const sutureOption = opts.sutureMaterial?.toLowerCase() || "";
+	const isSutureExcluded = sutureOption === "none" || sutureOption.includes("без швов") || sutureOption.includes("без ушивания");
+	const isPreservation = opts.protocolId?.includes("preservation") || opts.protocolId?.includes("конус");
+	const shouldDeductSuture =
+		!isSutureExcluded &&
+		(Boolean(opts.sutureMaterial) ||
+			cat === "implant" ||
+			cat === "sinus_gbr" ||
+			cat === "perio_surgery" ||
+			isComplex ||
+			isPreservation ||
+			opts.hemostatics?.some((h) => h.toLowerCase().includes("suture") || h.toLowerCase().includes("шов")));
+
+	if (shouldDeductSuture) {
+		const suture = (opts.sutureMaterial || (cat === "implant" ? "Пролен 4-0" : cat === "sinus_gbr" ? "ПГА 4-0" : cat === "perio_surgery" ? "Пролен 6-0" : "Викрил 4-0")).toLowerCase();
+		if (suture.includes("пролен") || suture.includes("prolene")) {
+			const isMicro = suture.includes("6-0") || suture.includes("7-0");
+			const defaultName = isMicro
+				? "Шовный материал Prolene 6-0 с микрохирургической иглой"
+				: "Шовный материал Prolene 4-0 с иглой";
+			const defaultCost = isMicro ? "450.00" : "350.00";
+			list.push({ patterns: ["пролен", "prolene"], defaultName, category: "Шовный материал", unit: "шт.", qty: 1, defaultCost });
+		} else if (suture.includes("викрил") || suture.includes("vicryl")) {
+			list.push({ patterns: ["викрил", "vicryl"], defaultName: "Шовный материал Викрил 4-0 с атравматической иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "250.00" });
+		} else {
+			list.push({ patterns: ["пга", "pga"], defaultName: "Шовный материал рассасывающийся ПГА 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" });
+		}
 	}
 
-	// Hemostatics
+	// Hemostatics & Socket Management: дифференцированное списание губки, конуса Parasorb, Альвожиля и тампонов
+	const isAlveolitis = opts.protocolId?.includes("alveolit") || (opts.category === "emergency" && opts.protocolId?.includes("alveolit"));
+
 	if (opts.hemostatics && opts.hemostatics.length > 0) {
 		for (const h of opts.hemostatics) {
 			const low = h.toLowerCase();
-			if (low.includes("sponge") || low.includes("губка") || low.includes("альвостаз")) {
-				list.push({ patterns: ["губка гемостатическая", "альвостаз"], defaultName: "Губка гемостатическая коллагеновая Альвостаз", category: "Хирургические материалы", unit: "шт.", qty: 1, defaultCost: "110.00" });
-			} else {
-				list.push({ patterns: ["альвожил", "alvogyl"], defaultName: "Антисептический компресс Альвожил (паста/губка)", category: "Хирургические материалы", unit: "доза", qty: 1, defaultCost: "280.00" });
+			if (low.includes("cone") || low.includes("конус") || low.includes("parasorb")) {
+				list.push({
+					patterns: ["коллагеновый конус", "parasorb", "конус"],
+					defaultName: "Коллагеновый конус Parasorb Cone",
+					category: "Хирургические материалы",
+					unit: "шт.",
+					qty: 1,
+					defaultCost: "1600.00",
+				});
+			} else if (low.includes("sponge") || low.includes("губка") || low.includes("альвостаз") || low.includes("гемогубка")) {
+				list.push({
+					patterns: ["губка гемостатическая", "альвостаз"],
+					defaultName: "Губка гемостатическая коллагеновая Альвостаз",
+					category: "Хирургические материалы",
+					unit: "доза",
+					qty: 1,
+					defaultCost: "110.00",
+				});
+			} else if (low.includes("tampon") || low.includes("тампон") || low.includes("шарик") || low.includes("марл")) {
+				list.push({
+					patterns: ["марлевые тампоны", "тампон"],
+					defaultName: "Марлевые тампоны стерильные для лунки",
+					category: "Перевязочные средства",
+					unit: "шт.",
+					qty: 2,
+					defaultCost: "15.00",
+				});
+			} else if (low.includes("альвожил") || low.includes("alvogyl") || low.includes("паста")) {
+				list.push({
+					patterns: ["альвожил", "alvogyl"],
+					defaultName: "Антисептический компресс Альвожил (паста/губка)",
+					category: "Хирургические материалы",
+					unit: "доза",
+					qty: 1,
+					defaultCost: "280.00",
+				});
 			}
 		}
+	} else if (isPreservation) {
+		list.push({
+			patterns: ["коллагеновый конус", "parasorb", "конус"],
+			defaultName: "Коллагеновый конус Parasorb Cone",
+			category: "Хирургические материалы",
+			unit: "шт.",
+			qty: 1,
+			defaultCost: "1600.00",
+		});
+		list.push({
+			patterns: ["марлевые тампоны", "тампон"],
+			defaultName: "Марлевые тампоны стерильные для лунки",
+			category: "Перевязочные средства",
+			unit: "шт.",
+			qty: 2,
+			defaultCost: "15.00",
+		});
+	} else if (isAlveolitis) {
+		list.push({
+			patterns: ["альвожил", "alvogyl"],
+			defaultName: "Антисептический компресс Альвожил (паста/губка)",
+			category: "Хирургические материалы",
+			unit: "доза",
+			qty: 1,
+			defaultCost: "280.00",
+		});
+		list.push({
+			patterns: ["марлевые тампоны", "тампон"],
+			defaultName: "Марлевые тампоны стерильные для лунки",
+			category: "Перевязочные средства",
+			unit: "шт.",
+			qty: 2,
+			defaultCost: "15.00",
+		});
 	} else if (cat === "extraction") {
-		list.push({ patterns: ["альвожил"], defaultName: "Антисептический компресс Альвожил (паста/губка)", category: "Хирургические материалы", unit: "доза", qty: 1, defaultCost: "280.00" });
-		list.push({ patterns: ["марлевые тампоны"], defaultName: "Марлевые тампоны стерильные для лунки", category: "Перевязочные средства", unit: "шт.", qty: 2, defaultCost: "15.00" });
+		list.push({
+			patterns: ["губка гемостатическая", "альвостаз"],
+			defaultName: "Губка гемостатическая коллагеновая Альвостаз",
+			category: "Хирургические материалы",
+			unit: "доза",
+			qty: 1,
+			defaultCost: "110.00",
+		});
+		list.push({
+			patterns: ["марлевые тампоны", "тампон"],
+			defaultName: "Марлевые тампоны стерильные для лунки",
+			category: "Перевязочные средства",
+			unit: "шт.",
+			qty: 2,
+			defaultCost: "15.00",
+		});
 	}
 
 	// Bone graft (учитываем реальный выбор врача: Cerabone, SureOss, Аутокость, Bio-Oss)

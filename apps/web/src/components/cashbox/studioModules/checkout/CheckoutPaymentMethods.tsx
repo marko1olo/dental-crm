@@ -90,7 +90,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							type="button"
 							data-testid="link-open-split-payment"
 							onClick={onOpenSplitPayment}
-							className="text-xs text-[var(--teal,#0d9488)] hover:underline font-semibold cursor-pointer"
+							className="text-xs text-[var(--primary)] hover:underline font-semibold cursor-pointer"
 						>
 							Разделить платёж
 						</button>
@@ -120,7 +120,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							}}
 							className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 min-h-[52px] cursor-pointer transition-all ${
 								method === t.id
-									? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
 									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -152,7 +152,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							}}
 							className={`px-3 py-2 rounded-xl border flex items-center justify-between min-h-[44px] cursor-pointer transition-all ${
 								method === t.id
-									? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
 									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>

@@ -3,6 +3,7 @@
  * Утилиты сохранения цефалометрии для радиологии (Мандат 8b).
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { LandmarkMap, CephalometricAnalysisResult } from "./cephalometric";
 
 export interface CephalometricSavedStudy {
@@ -28,14 +29,19 @@ function getCephApiUrl(path: string): string {
 	return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export async function saveCephalometricAnalysisToApi(study: Partial<CephalometricSavedStudy>): Promise<CephalometricSavedStudy | null> {
+export async function saveCephalometricAnalysisToApi(
+	study: Partial<CephalometricSavedStudy>,
+	clientMutationId?: string,
+): Promise<CephalometricSavedStudy | null> {
 	if (!study.patientId || typeof window === "undefined") return null;
+	const idempotencyKey = clientMutationId || generateUuidV7();
 	try {
 		const res = await fetch(getCephApiUrl(`/api/orthodontics/${study.patientId}/ceph-analysis`), {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
+				"Idempotency-Key": idempotencyKey,
 			},
 			body: JSON.stringify({
 				id: study.id,

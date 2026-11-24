@@ -48,6 +48,11 @@ export function processConsumablesStockDeduction(
 		let overdraftWarning: string | undefined;
 
 		if (isOverdraftItem) {
+			if (!allowOverdraft) {
+				throw new Error(
+					`Складской дефицит: недостаточно остатка для списания позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}). Требуется: ${planned.requiredQuantity} ${planned.unit}, доступно: ${currentStock} ${planned.unit}. Запрет отрицательного остатка в строгом бэк-офисном режиме.`,
+				);
+			}
 			hasOverdraft = true;
 			const suffix = options.overdraftMessageSuffix ?? (prefix.includes("8n")
 				? "Накладная в пути. Лечение не блокируется."

@@ -117,7 +117,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							onClick={() => onSelectToothNum(num)}
 							data-testid={`perio-tooth-btn-${num}`}
 							title={isMissing ? `Зуб #${num} удален. Зондирование заблокировано` : `Зуб #${num}: макс. карман ${maxDepth || 2} мм${hasBop ? ", кровоточивость BOP+" : ""}${mobility ? `, подвижность ${mobility}` : ""}`}
-							className={`touch-manipulation min-h-[44px] min-w-[36px] sm:min-h-[40px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
+							className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[40px] sm:min-w-[38px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
 								isMissing
 									? "opacity-50 bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)]"
 									: isSelected
@@ -133,7 +133,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									<span className="text-[10px] text-[var(--muted)]">уд.</span>
 								) : (
 									<>
-										<span className={`text-[10px] px-1 py-0.2 rounded ${toneBadge}`}>
+										<span className={`text-[10px] px-1 py-0.5 rounded ${toneBadge}`}>
 											{maxDepth || 2}
 										</span>
 										{hasBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" title="BOP+" />}
@@ -265,7 +265,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									>
 										<span className="font-semibold text-[11px] truncate">{site.short}</span>
 										<div className="flex items-center gap-1 shrink-0">
-											<span className={`text-[11px] px-1 py-0.2 rounded ${toneBadge}`}>{depth}</span>
+											<span className={`text-[11px] px-1 py-0.5 rounded ${toneBadge}`}>{depth}</span>
 											{isBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger,#e11d48)] shrink-0" title="BOP+" />}
 											{isSupp && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Гной+" />}
 											{isPlaque && !isBop && <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning,#f59e0b)] shrink-0" title="Налёт" />}

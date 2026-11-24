@@ -41,8 +41,8 @@ export const HygieneStudioProtocolSection: React.FC<HygieneStudioProtocolSection
 								onClick={() => setSelectedProtocol(proto)}
 								className={`p-3.5 text-left rounded-xl border transition-all flex flex-col justify-between min-h-[110px] ${
 									isSelected
-										? "border-teal-600 ring-2 ring-teal-500/20 bg-teal-50/40 dark:bg-teal-950/20"
-										: "border-[var(--line)] bg-[var(--paper)] hover:border-slate-300 dark:hover:border-slate-600"
+										? "border-[var(--primary)] ring-2 ring-[var(--primary)]/20 bg-[var(--primary-soft)]"
+										: "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--primary)]/50"
 								}`}
 							>
 								<div>
@@ -50,7 +50,7 @@ export const HygieneStudioProtocolSection: React.FC<HygieneStudioProtocolSection
 										<span className="text-sm font-bold text-[var(--ink)]">
 											{proto.title}
 										</span>
-										<span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--ink)]">
+										<span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink)]">
 											{proto.primaryService.priceRub.toLocaleString("ru-RU")} ₽
 										</span>
 									</div>
@@ -73,13 +73,13 @@ export const HygieneStudioProtocolSection: React.FC<HygieneStudioProtocolSection
 			<div className="p-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs space-y-1">
 				<div className="font-semibold text-[var(--ink)] flex items-center justify-between">
 					<span>Пакетное списание расходников:</span>
-					<span className="text-emerald-700 dark:text-emerald-400 font-medium">100% автономия</span>
+					<span className="text-[var(--success,#10b981)] font-medium">100% автономия</span>
 				</div>
 				<div className="flex flex-wrap gap-1.5 pt-1">
 					{selectedProtocol.consumables.map((item, idx) => (
 						<span
 							key={idx}
-							className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-[var(--ink-muted)] text-[11px]"
+							className="px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--ink-muted)] text-[11px] border border-[var(--line-subtle)]"
 						>
 							{item}
 						</span>

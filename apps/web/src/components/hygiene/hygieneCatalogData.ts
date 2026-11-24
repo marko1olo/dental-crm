@@ -8,7 +8,7 @@
 
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { calculateOhiSScore } from "@dental/shared";
+import { calculateOhiSScore, rublesToKopecks } from "@dental/shared";
 
 export type OhiSLevel = "ideal" | "fair" | "poor" | "severe";
 
@@ -157,6 +157,7 @@ export interface CleaningServiceItem {
 	readonly code: string;
 	readonly title: string;
 	readonly priceRub: number;
+	readonly priceKopecks?: number;
 }
 
 export interface CleaningProtocol {
@@ -176,7 +177,7 @@ export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
 		title: "Комплекс профессиональной гигиены",
 		description: "Ультразвуковой скейлинг над- и поддесневого камня, воздушно-абразивная обработка, полировка абразивной пастой и глубокое фторирование эмали.",
 		durationMinutes: 45,
-		primaryService: { code: "A16.07.051", title: "Комплексная профессиональная гигиена полости рта", priceRub: 5500 },
+		primaryService: { code: "A16.07.051", title: "Комплексная профессиональная гигиена полости рта", priceRub: 5500, priceKopecks: 550000 },
 		consumables: ["Порошок для воздушно-абразивной обработки (глицин)", "Абразивная полировочная паста", "Нейлоновая полировочная щетка", "Фторсодержащий защитный лак", "Ретрактор мягких тканей и слюноотсос"],
 		clinicalDiaryTemplate: "Проведена комплексная профессиональная гигиена полости рта. Обезболивание аппликационное (Лидокаин-спрей 10%). Ультразвуковым пьезо-скейлером удалены над- и поддесневые зубные отложения во всех секстантах. Поверхности зубов обработаны воздушно-абразивным методом с порошком на основе глицина. Межзубные промежутки очищены флоссом и штрипсами. Проведена финишная циркулярная полировка абразивной пастой с чашечками и щетками. Выполнена аппликация фторсодержащего защитного лака. Пациент обучен правилам индивидуальной гигиены.",
 	},
@@ -185,8 +186,8 @@ export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
 		title: "Пародонтологическая чистка и кюретаж",
 		description: "Атравматичное субгингивальное снятие отложений, медикаментозная обработка десневых карманов антисептиком и дентальный гель.",
 		durationMinutes: 60,
-		primaryService: { code: "A16.07.051.001", title: "Профессиональная гигиена при заболеваниях пародонта", priceRub: 6200 },
-		additionalServices: [{ code: "A16.07.053", title: "Медикаментозная обработка пародонтальных карманов", priceRub: 1200 }],
+		primaryService: { code: "A16.07.051.001", title: "Профессиональная гигиена при заболеваниях пародонта", priceRub: 6200, priceKopecks: 620000 },
+		additionalServices: [{ code: "A16.07.027", title: "Медикаментозная обработка патологических зубодесневых карманов", priceRub: 1200, priceKopecks: 120000 }],
 		consumables: ["Субгингивальный порошок для полировки корней (глицин)", "Раствор хлоргексидина 0.05% (50 мл)", "Антимикробный дентальный гель", "Стерильные пародонтологические насадки"],
 		clinicalDiaryTemplate: "Проведена профессиональная гигиена при заболеваниях пародонта. Обильные поддесневые отложения удалены пародонтологическими насадками пьезо-скейлера с минимальной амплитудой. Субгингивальная полировка шеек корней порошком глицина. Пародонтальные карманы промыты раствором хлоргексидина 0.05%, введена лечебная десневая повязка с антибактериальным препаратом. Кровоточивость купирована. Назначен курс антисептических полосканий на 7 дней.",
 	},
@@ -195,7 +196,7 @@ export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
 		title: "Детская гигиена и обучение чистке",
 		description: "Мягкое окрашивание зубного налета индикатором, атравматичная полировка резиновыми чашечками и глубокая реминерализирующая терапия.",
 		durationMinutes: 30,
-		primaryService: { code: "A16.07.051.002", title: "Профессиональная гигиена у детей и подростков", priceRub: 3200 },
+		primaryService: { code: "A16.07.051.002", title: "Профессиональная гигиена у детей и подростков", priceRub: 3200, priceKopecks: 320000 },
 		consumables: ["Индикатор зубного налета", "Безабразивная детская полировочная паста", "Мягкие резиновые полировочные колпачки", "Реминерализующий гель с кальцием и фосфатами"],
 		clinicalDiaryTemplate: "Проведена профессиональная гигиена в детском приёме. Проведена визуализация налета двухцветным индикатором, проведена беседа с ребенком и родителями по технике чистки. Зубы очищены вращающейся мягкой щеткой с пастой без абразива. Проведена глубокая реминерализирующая терапия гелем с биодоступным кальцием в индивидуальных каппах на 5 минут. Даны рекомендации по домашнему уходу.",
 	},
@@ -204,7 +205,7 @@ export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
 		title: "Глубокое фторирование эмали",
 		description: "Аппликационное насыщение твердых тканей фторидами и кальцием для снятия гиперестезии шеек зубов.",
 		durationMinutes: 20,
-		primaryService: { code: "A11.07.012", title: "Глубокое фторирование твердых тканей зубов (все зубы)", priceRub: 2200 },
+		primaryService: { code: "A11.07.012", title: "Глубокое фторирование твердых тканей зубов (все зубы)", priceRub: 2200, priceKopecks: 220000 },
 		consumables: ["Двухкомпонентный эмаль-герметизирующий ликвид", "Аппликационные микробраши", "Ватные валики и ретрактор"],
 		clinicalDiaryTemplate: "Проведена процедура глубокого фторирования твердых тканей зубов. Поверхности зубов высушены теплым воздухом, изолированы от слюны. Нанесен эмаль-герметизирующий ликвид №1, затем препарат гидроокиси кальция-меди №2. Произошла микрокристаллизация фтористого кальция в порах эмали. Рекомендовано не принимать пищу в течение 2 часов.",
 	},
@@ -341,12 +342,15 @@ export async function deductWarehouseHygieneConsumables(options: {
 }
 
 export function dispatchHygieneInvoiceAndServices(protocol: CleaningProtocol): void {
+	const primaryPriceKopecks = protocol.primaryService.priceKopecks ?? rublesToKopecks(protocol.primaryService.priceRub);
 	const primaryService = {
 		code: protocol.primaryService.code,
 		name: protocol.primaryService.title,
 		title: protocol.primaryService.title,
 		price: protocol.primaryService.priceRub,
 		priceRub: protocol.primaryService.priceRub,
+		priceKopecks: primaryPriceKopecks,
+		amountKopecks: primaryPriceKopecks,
 		quantity: 1,
 		category: "hygiene",
 	};
@@ -357,12 +361,15 @@ export function dispatchHygieneInvoiceAndServices(protocol: CleaningProtocol): v
 
 	if (protocol.additionalServices) {
 		for (const addSvc of protocol.additionalServices) {
+			const extraPriceKopecks = addSvc.priceKopecks ?? rublesToKopecks(addSvc.priceRub);
 			const extra = {
 				code: addSvc.code,
 				name: addSvc.title,
 				title: addSvc.title,
 				price: addSvc.priceRub,
 				priceRub: addSvc.priceRub,
+				priceKopecks: extraPriceKopecks,
+				amountKopecks: extraPriceKopecks,
 				quantity: 1,
 				category: "hygiene",
 			};

@@ -57,6 +57,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					.from(patientInvoices)
 					.where(and(eq(patientInvoices.organizationId, organizationId), eq(patientInvoices.visitId, visitId)))
 					.limit(1)
+					.for("update")
 			)[0];
 
 			if (!invoice) {

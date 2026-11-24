@@ -369,8 +369,11 @@ export function ToothHistoryChronicle({
 			{selectedViewerMedia && (
 				<Suspense fallback={null}>
 					<DicomViewerModal
+						key={`${patientId}_${selectedViewerMedia.mediaId || toothNumber}`}
 						isOpen={Boolean(selectedViewerMedia)}
 						onClose={() => setSelectedViewerMedia(null)}
+						patientId={patientId}
+						studyId={selectedViewerMedia.mediaId}
 						imageSrc={
 							selectedViewerMedia.thumbnailWebpDataUrl ||
 							selectedViewerMedia.encryptedPayloadRef ||

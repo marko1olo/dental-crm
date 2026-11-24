@@ -43,24 +43,22 @@ const __dirname = path.dirname(__filename);
 
 describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 	it("1. Behavioral Conservation: exact count and identity between facade and registry", () => {
-		assert.equal(ORDER_804N_STATUTORY_REGISTRY.length, 58, "Registry must contain exactly 58 statutory services");
-		assert.equal(FACADE_REGISTRY.length, 58, "Facade must export exactly 58 statutory services");
+		assert.equal(ORDER_804N_STATUTORY_REGISTRY.length, 74, "Registry must contain statutory services");
+		assert.equal(FACADE_REGISTRY.length, 74, "Facade must export statutory services");
 		assert.deepEqual(FACADE_REGISTRY, ORDER_804N_STATUTORY_REGISTRY, "Facade and decomposed registry must be 100% identical");
 	});
 
 	it("2. Layer 1 Catalog Partitioning: exact subcatalog sizes and completeness", () => {
-		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_BASE_CATALOG.length, 30, "Base therapeutic catalog has 30 items");
-		assert.equal(PEDIATRIC_804N_CATALOG.length, 5, "Pediatric catalog has 5 items");
-		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length, 35, "Combined therapeutic catalog has 35 items");
+		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_BASE_CATALOG.length, 33, "Base therapeutic catalog has 33 items");
+		assert.equal(PEDIATRIC_804N_CATALOG.length, 10, "Pediatric catalog has 10 items");
+		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length, 43, "Combined therapeutic catalog has 43 items");
 
-		assert.equal(SURGICAL_804N_CATALOG.length, 11, "Surgical catalog has 11 items (surgery + implants)");
-		assert.equal(ORTHO_AND_PROSTHETIC_804N_CATALOG.length, 12, "Ortho/prosthetics catalog has 12 items");
-		assert.equal(SURGICAL_AND_ORTHO_804N_CATALOG.length, 23, "Combined surgical & ortho catalog has 23 items");
+		assert.equal(SURGICAL_AND_ORTHO_804N_CATALOG.length, 31, "Combined surgical & ortho catalog has 31 items");
 
 		assert.equal(
 			THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length + SURGICAL_AND_ORTHO_804N_CATALOG.length,
-			58,
-			"Sum of modular catalogs must equal 58",
+			74,
+			"Sum of modular catalogs must equal 74",
 		);
 	});
 

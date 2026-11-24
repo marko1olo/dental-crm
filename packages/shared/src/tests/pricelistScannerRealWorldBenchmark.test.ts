@@ -399,7 +399,7 @@ describe("Universal Price Scanner — Real-World 11-Clinic Benchmark Suite", () 
 			{ expectedPriceRub: 42000, expectedPriceKopecks: 4200000, expectedCategory: "surgery", expected804nPrefix: "A16.07.054" },
 			{ expectedPriceRub: 32000, expectedPriceKopecks: 3200000, expectedCategory: "prosthetics", expected804nPrefix: "A16.07.005" },
 			{ expectedPriceRub: 4500, expectedPriceKopecks: 450000, expectedCategory: "hygiene", expected804nPrefix: "A16.07.051" },
-			{ expectedPriceRub: 600, expectedPriceKopecks: 60000, expectedCategory: "imaging", expected804nPrefix: "A06.07.007" },
+			{ expectedPriceRub: 600, expectedPriceKopecks: 60000, expectedCategory: "imaging", expected804nPrefix: "A06.07.003" },
 		];
 
 		const result = scanPriceList(ocrDump);

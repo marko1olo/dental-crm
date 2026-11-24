@@ -68,7 +68,7 @@ export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> =
 			{!isShiftActive ? (
 				/* Closed Shift State (Single Primary CTA is in CashRegisterStudioFooter) */
 				<div className="p-6 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-center space-y-2">
-					<div className="w-12 h-12 mx-auto rounded-full bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center">
+					<div className="w-12 h-12 mx-auto rounded-full bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center">
 						<ShieldCheck className="w-6 h-6" />
 					</div>
 					<div className="text-base font-bold text-[var(--ink)]">Кассовая смена закрыта</div>

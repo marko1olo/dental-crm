@@ -105,6 +105,7 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 
 	return (
 		<OrthodonticsStudioModal
+			key={activePatientId}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={activePatientId}

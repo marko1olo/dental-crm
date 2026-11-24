@@ -18,6 +18,7 @@ import {
 	printHygieneHomeCareMemo,
 } from "./hygieneCatalogData";
 import { showToast } from "../GlobalToast";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { HygieneStudioOhisSection } from "./HygieneStudioOhisSection";
 import { HygieneStudioProtocolSection } from "./HygieneStudioProtocolSection";
 import { HygieneStudioHomeCareSection } from "./HygieneStudioHomeCareSection";
@@ -49,7 +50,9 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		let isCancelled = false;
 		async function loadLatest() {
 			try {
-				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`);
+				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`, {
+					headers: getDenteAuthHeaders(),
+				});
 				if (!res.ok) return;
 				const json = await res.json();
 				if (!isCancelled && json?.latest?.ohi_s != null) {
@@ -122,9 +125,15 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 			if (visitId?.trim()) {
 				try {
+					const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: `idemp-hygiene-${Date.now()}`;
 					const res = await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
 						method: "POST",
-						headers: { "Content-Type": "application/json" },
+						headers: getDenteAuthHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": idempotencyKey,
+						}),
 						body: JSON.stringify({
 							ohi_s: selectedOhiS.score,
 							debris: selectedOhiS.debris,
@@ -190,7 +199,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				{/* Apple HIG Drag Handle for Mobile */}
 				<div className="flex sm:hidden justify-center pt-2.5 pb-1 w-full bg-[var(--paper-soft)] cursor-grab">
 					<div
-						className="w-9 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"
+						className="w-9 h-1.5 rounded-full bg-[var(--line)]"
 						data-testid="hygiene-drag-handle"
 					/>
 				</div>
@@ -199,7 +208,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper)] gap-2">
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<span className="w-2 h-2 rounded-full bg-teal-500 shrink-0 animate-pulse" />
+							<span className="w-2 h-2 rounded-full bg-[var(--primary-strong)] shrink-0 animate-pulse" />
 							<h2 className="text-sm sm:text-base font-semibold text-[var(--ink)] leading-tight">
 								Профессиональная гигиена и профилактика
 							</h2>
@@ -224,27 +233,27 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				{/* Dynamics Banner */}
 				{dynamicsInfo && (
 					<div
-						className="px-4 sm:px-6 py-2 bg-teal-50/70 dark:bg-teal-950/30 border-b border-teal-200/50 dark:border-teal-900/50 flex items-center justify-between text-xs"
+						className="px-4 sm:px-6 py-2 bg-[var(--primary-soft)] border-b border-[var(--line)] flex items-center justify-between text-xs"
 						data-testid="ohi-s-dynamics-banner"
 					>
-						<span className="font-medium text-teal-950 dark:text-teal-200">
+						<span className="font-medium text-[var(--ink)]">
 							Динамика гигиены между приёмами: {dynamicsInfo.text}
 						</span>
-						<span className="text-teal-700 dark:text-teal-400 hidden sm:inline">
+						<span className="text-[var(--ink-muted)] hidden sm:inline">
 							Предыдущий замер сохранён в ЭМК
 						</span>
 					</div>
 				)}
 
 				{/* Sub-navigation tabs */}
-				<div className="flex border-b border-[var(--line)] dark:border-slate-800 px-4 sm:px-6 bg-[var(--paper)] dark:bg-slate-900 gap-2">
+				<div className="flex border-b border-[var(--line)] px-4 sm:px-6 bg-[var(--paper)] gap-2">
 					<button
 						type="button"
 						onClick={() => setActiveSection("protocol")}
 						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 bg-transparent transition-colors ${
 							activeSection === "protocol"
-								? "border-teal-600 text-teal-900 dark:text-teal-300"
-								: "border-transparent text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200"
+								? "border-[var(--primary)] text-[var(--primary)]"
+								: "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						Протокол чистки у кресла
@@ -254,8 +263,8 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 						onClick={() => setActiveSection("homecare")}
 						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 bg-transparent transition-colors ${
 							activeSection === "homecare"
-								? "border-teal-600 text-teal-900 dark:text-teal-300"
-								: "border-transparent text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200"
+								? "border-[var(--primary)] text-[var(--primary)]"
+								: "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						Памятка домашнего ухода

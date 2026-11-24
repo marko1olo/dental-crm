@@ -80,6 +80,7 @@ export const FinancePatientModalsSubhost: React.FC<
 		<>
 			{s.isBillingActOpen && (
 				<CashRegisterStudioModal
+					key={s.effectiveBillingSummary?.invoiceId || docPat?.id || "billing-act"}
 					isOpen={s.isBillingActOpen}
 					onClose={() => s.setIsBillingActOpen(false)}
 					mode="checkout"
@@ -127,6 +128,7 @@ export const FinancePatientModalsSubhost: React.FC<
 
 			{s.isFamilyBillingOpen && (
 				<CashRegisterStudioModal
+					key={s.effectiveBillingSummary?.invoiceId || docPat?.id || "family-billing"}
 					isOpen={s.isFamilyBillingOpen}
 					onClose={() => s.setIsFamilyBillingOpen(false)}
 					mode="checkout"

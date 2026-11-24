@@ -39,13 +39,20 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 		<>
 			{renderStandaloneLaunchers(props)}
 
-			{isDicomFromStore && (
-				<DicomViewerModal
-					isOpen={true}
-					onClose={() => useUiSurfaceStore.getState().closePrimaryModal("dicom_viewer")}
-					{...((primaryModal?.payload as Record<string, unknown> | undefined) || {})}
-				/>
-			)}
+			{isDicomFromStore && (() => {
+				const dicomPayload = primaryModal?.payload && typeof primaryModal.payload === "object"
+					? (primaryModal.payload as Record<string, unknown>)
+					: null;
+				const dicomKey = `${(dicomPayload?.patientId as string) || "p"}_${(dicomPayload?.studyId as string) || "viewer"}`;
+				return (
+					<DicomViewerModal
+						key={dicomKey}
+						isOpen={true}
+						onClose={() => useUiSurfaceStore.getState().closePrimaryModal("dicom_viewer")}
+						{...(dicomPayload || {})}
+					/>
+				);
+			})()}
 
 			{isPayrollFromStore && (
 				<DoctorPayrollStudioModal

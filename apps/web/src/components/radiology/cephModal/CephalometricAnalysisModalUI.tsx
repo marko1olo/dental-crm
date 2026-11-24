@@ -266,7 +266,7 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
 								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
-								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
+								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-[var(--success-ink)] shrink-0" />}
 							</button>
 
 							<button

@@ -14,6 +14,7 @@ export interface RadiationSafetyRecord {
 export interface RadiationSafetyRegistryModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	patientId?: string | undefined;
 	patientName?: string | undefined;
 	patientCardNumber?: string | undefined;
 	patientBirthDate?: string | undefined;

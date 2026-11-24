@@ -13,7 +13,7 @@ export {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,
 };
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { parseDicomSliceHeader } from "./realDicomVolumeLoader";
 import type { RadiologyStudy } from "./types";
 import { UNIVERSAL_SENSOR_CATALOG } from "./sensorGateway/sensorCatalogs.js";
@@ -246,7 +246,7 @@ export function getDirectRvgExportFileName(
 	imageUrl: string,
 ): { filename: string; mimeType: string; isDicom: boolean } {
 	const sanitizedCard = (cardNumber || "043-u").replace(/[/\\?%*:|"<>]/g, "-");
-	const toothTag = teeth.length > 0 ? teeth.join("_") : "16";
+	const toothTag = teeth.length > 0 ? teeth.join("_") : "unassigned";
 
 	if (hasDicomBuffer) {
 		return {
@@ -400,15 +400,15 @@ export async function persistRvgScanToServer({
 
 		const response = await fetch("/api/imaging/studies", {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": idempotencyKey,
 			}),
 			body: JSON.stringify({
 				patientId,
 				imageBase64,
-				title: `Прицельный снимок зуба ${selectedTeeth.join(", ")}`,
-				originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
+				title: selectedTeeth.length > 0 ? `Прицельный снимок зуба ${selectedTeeth.join(", ")}` : "Прицельный рентгеновский снимок",
+				originalFilename: selectedTeeth.length > 0 ? `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg` : `rvg_scan_${Date.now()}.jpg`,
 				mimeType: "image/jpeg",
 				kind: "periapical",
 				toothCode: selectedTeeth[0] || null,

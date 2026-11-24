@@ -44,8 +44,8 @@ export type SurgicalService804n = SurgicalServiceItem;
 export const surgicalServiceItemSchema = z
 	.object({
 		code: z.string().min(1),
-		nameRu: z.string().min(1),
-		name: z.string().min(1),
+		nameRu: z.string().min(1).optional(),
+		name: z.string().min(1).optional(),
 		priceRub: z.number().nonnegative(),
 		quantity: z.number().positive().default(1),
 		suggestedPriceRub: z.number().nonnegative().optional(),
@@ -54,7 +54,12 @@ export const surgicalServiceItemSchema = z
 		isPrimary: z.boolean().optional(),
 		priceKopecks: z.union([z.bigint(), z.number()]).optional(),
 	})
-	.strict();
+	.strict()
+	.transform((val) => ({
+		...val,
+		nameRu: val.nameRu || val.name || "Хирургическая манипуляция",
+		name: val.name || val.nameRu || "Хирургическая манипуляция",
+	}));
 
 export const surgicalService804nSchema = surgicalServiceItemSchema;
 
@@ -88,6 +93,9 @@ export interface SurgicalOperationNorm {
 	readonly code804nSubcode?: string;
 	readonly service804nTitle?: string;
 	readonly defaultToothFdi?: number;
+	readonly defaultPriceRub?: number;
+	readonly priceRub?: number;
+	readonly priceKopecks?: bigint;
 	readonly standardProtocolTextRu: string;
 	readonly anesthesiaDefaultRu: string;
 	readonly postOpRecommendationsRu: string;
@@ -111,6 +119,9 @@ export const surgicalOperationNormSchema = z
 		code804nSubcode: z.string().optional(),
 		service804nTitle: z.string().optional(),
 		defaultToothFdi: z.number().int().optional(),
+		defaultPriceRub: z.number().nonnegative().optional(),
+		priceRub: z.number().nonnegative().optional(),
+		priceKopecks: z.union([z.bigint(), z.number()]).optional(),
 		standardProtocolTextRu: z.string().min(1),
 		anesthesiaDefaultRu: z.string().min(1),
 		postOpRecommendationsRu: z.string().min(1),
@@ -414,6 +425,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 		code804n: "A16.07.054",
 		service804nTitle: "Внутрикостная дентальная имплантация",
 		defaultToothFdi: 46,
+		defaultPriceRub: 35000,
+		priceKopecks: 3500000n,
 		standardProtocolTextRu: DENTAL_IMPLANTATION_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл",
 		postOpRecommendationsRu:
@@ -479,6 +492,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 		code804nSubcode: "A16.07.001.001",
 		service804nTitle: "Удаление зуба (простое)",
 		defaultToothFdi: 36,
+		defaultPriceRub: 3500,
+		priceKopecks: 350000n,
 		standardProtocolTextRu: SIMPLE_EXTRACTION_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
@@ -533,6 +548,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 		code804nSubcode: "A16.07.001.001",
 		service804nTitle: "Удаление постоянного зуба атравматичное с сохранением кортикальной пластинки",
 		defaultToothFdi: 11,
+		defaultPriceRub: 4500,
+		priceKopecks: 450000n,
 		standardProtocolTextRu: ATRAUMATIC_EXTRACTION_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
@@ -587,6 +604,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 		code804nSubcode: "A16.07.041.001",
 		service804nTitle: "Удаление зуба с консервацией лунки биодеградируемым конусом",
 		defaultToothFdi: 21,
+		defaultPriceRub: 6000,
+		priceKopecks: 600000n,
 		standardProtocolTextRu: SOCKET_PRESERVATION_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
@@ -650,6 +669,8 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 		code804n: "A16.07.013",
 		service804nTitle: "Кюретаж лунки удаленного зуба при альвеолите",
 		defaultToothFdi: 36,
+		defaultPriceRub: 2500,
+		priceKopecks: 250000n,
 		standardProtocolTextRu: ALVEOLITIS_CURETTAGE_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная / проводниковая анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:

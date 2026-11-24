@@ -243,6 +243,7 @@ export function DiagnosticsModalsHost({
 			{/* DICOM / CT Series Examination Modal */}
 			{isDicomViewerModalOpen && (
 				<DicomViewerModal
+					key={`${visitPatientId ?? activePatient?.id ?? "p"}_${initialToothNumber || "viewer"}`}
 					isOpen={isDicomViewerModalOpen}
 					onClose={() => {
 						setIsDicomViewerModalOpen(false);
@@ -258,7 +259,7 @@ export function DiagnosticsModalsHost({
 					}
 					patientName={visitPatientName ?? activePatient?.fullName}
 					patientId={visitPatientId ?? activePatient?.id}
-					toothFdiCode={initialToothNumber ? String(initialToothNumber) : "36"}
+					toothFdiCode={initialToothNumber ? String(initialToothNumber) : undefined}
 					onConnectRvg={() => {
 						setIsDicomViewerModalOpen(false);
 						setIsDirectRvgModalOpen(true);

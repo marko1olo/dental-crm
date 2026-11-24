@@ -662,6 +662,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 										cardKopecks: Number(splitCardKop),
 										sbpKopecks: Number(splitSbpKop),
 										depositKopecks: Number(splitDepositKop),
+										bonusKopecks: Number(splitBonusKop),
+										certificateKopecks: Number(splitCertKop),
+										certificateNumber: certificateNumber.trim() || undefined,
 									}
 								: undefined,
 						items: [
@@ -723,6 +726,8 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		splitCardKop,
 		splitSbpKop,
 		splitDepositKop,
+		splitBonusKop,
+		splitCertKop,
 		props,
 		propVisitId,
 		cashierFullName,

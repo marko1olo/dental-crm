@@ -34,26 +34,52 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 			return calculateAnnualRadiationDose(records, currentYear);
 		}, [records, currentYear]);
 
+		const emitChange = (newRecords: PatientRadiationExposureRecord[], year: number) => {
+			if (!onChange) return;
+			const assessment = calculateAnnualRadiationDose(newRecords, year);
+			onChange({
+				formNumber: "Лист дозовых нагрузок",
+				clinicLegalName: rawPayload?.clinicLegalName || "Стоматологическая клиника DENTE",
+				clinicAddress: rawPayload?.clinicAddress,
+				clinicOgrn: rawPayload?.clinicOgrn,
+				clinicLicenseNumber: rawPayload?.clinicLicenseNumber,
+				patientFullName: rawPayload?.patientFullName || "Пациент",
+				patientBirthDate: rawPayload?.patientBirthDate || "1990-01-01",
+				patientSex: rawPayload?.patientSex || "male",
+				medicalCardNumber: rawPayload?.medicalCardNumber || "043/у",
+				reportingYear: year,
+				exposureEntries: newRecords,
+				annualSummary: {
+					totalDoseYearMsv: assessment.totalDoseYearMsv,
+					totalDoseYearMicrosieverts: assessment.totalDoseYearMicrosieverts,
+					safetyZone: assessment.safetyZone,
+					safetyZoneLabel: assessment.safetyZoneLabel,
+					safetyRecommendation: assessment.safetyRecommendation,
+				},
+				responsibleOfficerFullName: rawPayload?.responsibleOfficerFullName || "Врач-рентгенолог",
+			});
+		};
+
 		const addStudyRow = (studyType: DentalRadiologyStudyType) => {
 			if (disabled) return;
 			const standardDose = DEFAULT_EFFECTIVE_DOSES_MSV[studyType] ?? 0.003;
-			setRecords((prev) => [
-				...prev,
-				{
-					id: crypto.randomUUID(),
-					studyDate: new Date().toISOString().slice(0, 10),
-					studyType,
-					anatomicalArea: "Зона обследования",
-					apparatusModel: "Рентгеновский аппарат DENTE",
-					tubeVoltageKv: 70,
-					tubeCurrentMa: 8,
-					exposureTimeSeconds: 0.1,
-					effectiveDoseMsv: standardDose,
-					effectiveDoseMicrosieverts: standardDose * 1000,
-					radiologistFullName: "Врач клиники",
-					notes: null,
-				},
-			]);
+			const newEntry: PatientRadiationExposureRecord = {
+				id: crypto.randomUUID(),
+				studyDate: new Date().toISOString().slice(0, 10),
+				studyType,
+				anatomicalArea: "Зона обследования",
+				apparatusModel: "Рентгеновский аппарат DENTE",
+				tubeVoltageKv: 70,
+				tubeCurrentMa: 8,
+				exposureTimeSeconds: 0.1,
+				effectiveDoseMsv: standardDose,
+				effectiveDoseMicrosieverts: standardDose * 1000,
+				radiologistFullName: "Врач клиники",
+				notes: null,
+			};
+			const nextRecords = [...records, newEntry];
+			setRecords(nextRecords);
+			emitChange(nextRecords, currentYear);
 		};
 
 		return (

@@ -9,6 +9,7 @@ import { db } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 import { calculateMatchScore } from "./fioMatcher.js";
 import { cleanDicomName } from "./translitUtils.js";
+import { recordStudySanpinDose } from "../../../services/dicom/ingest/metadataParser.js";
 import type {
 	AutoBindScanSummary,
 	BindingStatus,
@@ -270,6 +271,12 @@ export async function autoBindUnassignedStudies(
 						eq(schema.imagingStudies.organizationId, organizationId),
 					),
 				);
+
+			await recordStudySanpinDose(organizationId, assignedPatientId, {
+				id: study.id,
+				kind: "cbct",
+				title: `Исследование DICOM: ${study.dicomPatientName || "Пациент"}`,
+			});
 		} else if (matchResult.status === "pending_review") {
 			summary.pendingReview++;
 			await db

@@ -13,8 +13,8 @@ import type { StatutoryNomenclatureEntry } from "./types.js";
  */
 export const RADIOLOGY_804N_CATALOG: readonly StatutoryNomenclatureEntry[] = [
 	{
-		code: "A06.07.007",
-		title: "Внутриротовая рентгенография (прицельный снимок / визиограф)",
+		code: "A06.07.003",
+		title: "Прицельная внутриротовая контактная рентгенография (радиовизиография / RVG)",
 		category: "imaging",
 		specialty: "radiologist",
 		primaryKeywords: [
@@ -28,6 +28,23 @@ export const RADIOLOGY_804N_CATALOG: readonly StatutoryNomenclatureEntry[] = [
 		],
 		secondaryKeywords: [/датчик/i, /контрольн.*снимок/i],
 		defaultPriceRub: 600,
+		defaultDurationMinutes: 10,
+		taxDeductible: true,
+	},
+	{
+		code: "A06.07.007",
+		title: "Внутриротовая рентгенография в прикус (интерпроксимальная / bite-wing)",
+		category: "imaging",
+		specialty: "radiologist",
+		primaryKeywords: [
+			/в.*прикус/i,
+			/интерпроксимальн/i,
+			/байтвинг/i,
+			/\bbitewing\b/i,
+			/\bbw\b/i,
+		],
+		secondaryKeywords: [/окклюзионн/i, /коронков.*часть/i],
+		defaultPriceRub: 800,
 		defaultDurationMinutes: 10,
 		taxDeductible: true,
 	},

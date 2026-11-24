@@ -218,8 +218,8 @@ export class VisiographPacsWatcherService {
 					new CustomEvent("dente:attach-photo-to-visit", {
 						detail: {
 							url: thumbnailDataUri,
-							name: `Рентген RVG: зуб ${targetToothCode || "16"}`,
-							toothNumber: targetToothCode || "16",
+							name: targetToothCode ? `Рентген RVG: зуб ${targetToothCode}` : "Рентген RVG (без привязки к зубу)",
+							toothNumber: targetToothCode || undefined,
 							photoType: "xray",
 							studyId: rawEvent.studyId,
 						},

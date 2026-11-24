@@ -35,13 +35,14 @@ export const RadiationSafetyRegistryModal: React.FC<
 > = ({
 	isOpen,
 	onClose,
+	patientId,
 	patientName = "Пациент",
 	patientCardNumber = "МК-2026",
 	patientBirthDate = "—",
 	initialRecords = [],
 }) => {
 	const { currentYear, records, doseAssessment, handleAddStudy } =
-		useRadiationSafetyRegistry(initialRecords);
+		useRadiationSafetyRegistry(initialRecords, patientId);
 
 	if (!isOpen) return null;
 

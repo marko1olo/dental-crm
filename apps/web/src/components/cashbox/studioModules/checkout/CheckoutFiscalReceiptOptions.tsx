@@ -80,7 +80,7 @@ export const CheckoutFiscalReceiptOptions: React.FC<CheckoutFiscalReceiptOptions
 								if (onDeliveryModeChange) onDeliveryModeChange("paper");
 							}
 						}}
-						className="w-4 h-4 rounded text-[var(--teal,#0d9488)] cursor-pointer"
+						className="w-4 h-4 rounded text-[var(--primary)] cursor-pointer"
 					/>
 					<span>Чек с фискализацией</span>
 				</label>

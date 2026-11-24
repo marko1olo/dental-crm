@@ -23,6 +23,13 @@ interface CashboxLauncherDetail {
 	readonly patientPhone?: string | undefined;
 	readonly invoiceId?: string | undefined;
 	readonly cashierFullName?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly serviceTitle?: string | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly depositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyBalanceRub?: number | undefined;
 }
 
 interface ParsedCashboxUrl {
@@ -35,6 +42,10 @@ interface ParsedCashboxUrl {
 		readonly invoiceId?: string | undefined;
 		readonly amountRub?: number | undefined;
 		readonly cashierFullName?: string | undefined;
+		readonly doctorFullName?: string | undefined;
+		readonly serviceTitle?: string | undefined;
+		readonly patientDepositRub?: number | undefined;
+		readonly patientFamilyBalanceRub?: number | undefined;
 	} | undefined;
 }
 
@@ -102,6 +113,14 @@ function parseCashboxUrl(): ParsedCashboxUrl {
 	const rawAmount = getParam("amount") || getParam("amountRub") || getParam("amount_rub") || getParam("totalDueRub");
 	const parsedAmount = rawAmount ? parseFloat(rawAmount) : undefined;
 	const amountRub = Number.isFinite(parsedAmount) ? parsedAmount : undefined;
+	const doctorFullName = getParam("doctorFullName") || getParam("doctorName") || getParam("doctor");
+	const serviceTitle = getParam("serviceTitle") || getParam("service");
+	const rawDeposit = getParam("patientDepositRub") || getParam("depositRub") || getParam("deposit");
+	const parsedDeposit = rawDeposit ? parseFloat(rawDeposit) : undefined;
+	const patientDepositRub = Number.isFinite(parsedDeposit) ? parsedDeposit : undefined;
+	const rawFamilyBalance = getParam("patientFamilyBalanceRub") || getParam("familyBalanceRub") || getParam("familyBalance");
+	const parsedFamilyBalance = rawFamilyBalance ? parseFloat(rawFamilyBalance) : undefined;
+	const patientFamilyBalanceRub = Number.isFinite(parsedFamilyBalance) ? parsedFamilyBalance : undefined;
 
 	return {
 		isOpen: true,
@@ -113,6 +132,10 @@ function parseCashboxUrl(): ParsedCashboxUrl {
 			invoiceId,
 			amountRub,
 			cashierFullName,
+			doctorFullName,
+			serviceTitle,
+			patientDepositRub,
+			patientFamilyBalanceRub,
 		},
 	};
 }
@@ -148,6 +171,10 @@ export const DirectCashboxLauncher: React.FC = () => {
 					patientPhone: d.patientPhone,
 					invoiceId: d.invoiceId,
 					cashierFullName: d.cashierFullName,
+					doctorFullName: d.doctorFullName ?? d.doctorName,
+					serviceTitle: d.serviceTitle,
+					patientDepositRub: d.patientDepositRub ?? d.depositRub,
+					patientFamilyBalanceRub: d.patientFamilyBalanceRub ?? d.familyBalanceRub,
 				});
 				setUrlState({
 					isOpen: true,
@@ -237,14 +264,15 @@ export const DirectCashboxLauncher: React.FC = () => {
 		const effectivePatientId = customData?.patientId ?? urlState.params?.patientId ?? demoFallback?.patientId;
 		const effectivePatientName = customData?.patientName ?? urlState.params?.patientName ?? demoFallback?.patientName;
 		const effectivePatientPhone = customData?.patientPhone ?? urlState.params?.patientPhone ?? demoFallback?.patientPhone;
-		const effectiveDoctorFullName = demoFallback?.doctorName;
-		const effectiveServiceTitle = demoFallback?.serviceTitle;
-		const effectiveDepositRub = demoFallback?.depositRub;
-		const effectiveFamilyBalanceRub = demoFallback?.familyBalanceRub;
+		const effectiveDoctorFullName = customData?.doctorFullName ?? urlState.params?.doctorFullName ?? demoFallback?.doctorName;
+		const effectiveServiceTitle = customData?.serviceTitle ?? urlState.params?.serviceTitle ?? demoFallback?.serviceTitle;
+		const effectiveDepositRub = customData?.patientDepositRub ?? urlState.params?.patientDepositRub ?? demoFallback?.depositRub;
+		const effectiveFamilyBalanceRub = customData?.patientFamilyBalanceRub ?? urlState.params?.patientFamilyBalanceRub ?? demoFallback?.familyBalanceRub;
 		const effectiveInvoiceId = customData?.invoiceId ?? urlState.params?.invoiceId ?? demoFallback?.id;
 
 		return (
 			<CashRegisterStudioModal
+				key={effectiveInvoiceId || effectivePatientId || "direct-cashbox"}
 				isOpen={isOpen}
 				onClose={handleClose}
 				mode="checkout"

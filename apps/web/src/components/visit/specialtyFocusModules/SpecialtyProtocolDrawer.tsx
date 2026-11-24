@@ -147,6 +147,7 @@ export function SpecialtyProtocolDrawer({
 				/>
 			) : isSurgery ? (
 				<VisitSurgeryProtocolTab
+					key={`${activePatient?.id ?? "pt"}-${activeTooth ?? "surg"}`}
 					activeTooth={activeTooth}
 					onSelectActiveTooth={setActiveTooth}
 					patientName={activePatient?.fullName}

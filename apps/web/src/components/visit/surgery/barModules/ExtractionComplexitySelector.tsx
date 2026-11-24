@@ -23,7 +23,7 @@ export const ExtractionComplexitySelector: React.FC<ExtractionComplexitySelector
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="btn btn--secondary text-xs font-bold text-[var(--teal,#0d9488)] bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper)] flex items-center gap-1 cursor-pointer min-h-[36px] px-2.5 py-1 rounded-lg touch-manipulation"
+					className="btn btn--secondary text-xs font-semibold text-[var(--primary)] bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper)] flex items-center gap-1 cursor-pointer min-h-[44px] px-3 py-1.5 rounded-xl touch-manipulation"
 					data-testid="btn-extraction-add-to-invoice"
 					title="Добавить хирургические услуги в смету визита"
 				>
@@ -31,7 +31,7 @@ export const ExtractionComplexitySelector: React.FC<ExtractionComplexitySelector
 					<span>В смету</span>
 				</button>
 			</div>
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
 				{EXTRACTION_COMPLEXITY_OPTIONS.map((opt) => {
 					const isSel = complexity === opt.id;
 					return (
@@ -39,19 +39,19 @@ export const ExtractionComplexitySelector: React.FC<ExtractionComplexitySelector
 							key={opt.id}
 							type="button"
 							onClick={() => onComplexityChange(opt.id)}
-							className={`min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
+							className={`min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-semibold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
 								isSel
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							data-testid={`btn-extraction-complexity-${opt.id}`}
 						>
 							<div className="flex flex-col min-w-0">
-								<span className="font-extrabold whitespace-normal break-words leading-tight text-xs">
+								<span className="font-semibold whitespace-normal break-words leading-tight text-xs">
 									{opt.labelRu.split("(")[0]?.trim()}
 								</span>
 							</div>
-							{isSel && <CheckCircle2 size={16} className="text-[var(--on-teal,#ffffff)] shrink-0 ml-1" />}
+							{isSel && <CheckCircle2 size={16} className="text-white shrink-0 ml-1" />}
 						</button>
 					);
 				})}

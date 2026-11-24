@@ -88,7 +88,7 @@ export const STANDARD_SERVICE_CATALOG: readonly StandardCatalogService[] = [
 	{ code: "A16.07.001", serviceCode: "A16.07.001", regulatoryCode: "A16.07.001", title: "Удаление зуба простое (щипцы, элеватор)", category: "surgery", standardDurationMin: 25 },
 	{ code: "A16.07.001.002", serviceCode: "A16.07.001.002", regulatoryCode: "A16.07.001.002", title: "Удаление зуба сложное с разъединением корней и сепарацией", category: "surgery", standardDurationMin: 50 },
 	{ code: "A16.07.024", serviceCode: "A16.07.024", regulatoryCode: "A16.07.024", title: "Удаление ретинированного, дистопированного или непрорезавшегося зуба", category: "surgery", standardDurationMin: 60 },
-	{ code: "A16.07.039", serviceCode: "A16.07.039", regulatoryCode: "A16.07.039", title: "Кюретаж лунки удаленного зуба и пластика альвеолярного края", category: "surgery", standardDurationMin: 15 },
+	{ code: "A16.07.013", serviceCode: "A16.07.013", regulatoryCode: "A16.07.013", title: "Кюретаж лунки удаленного зуба и пластика альвеолярного края", category: "surgery", standardDurationMin: 15 },
 	{ code: "A16.07.095", serviceCode: "A16.07.095", regulatoryCode: "A16.07.095", title: "Остановка луночного кровотечения (первичный гемостаз)", category: "surgery", standardDurationMin: 15 },
 	{ code: "A16.07.097", serviceCode: "A16.07.097", regulatoryCode: "A16.07.097", title: "Наложение хирургического шва (Vicryl / Prolene)", category: "surgery", standardDurationMin: 15 },
 	{ code: "A16.07.019", serviceCode: "A16.07.019", regulatoryCode: "A16.07.019", title: "Вскрытие поднадкостничного очага воспаления (периостотомия)", category: "surgery", standardDurationMin: 30 },
@@ -110,7 +110,7 @@ export const STANDARD_SERVICE_CATALOG: readonly StandardCatalogService[] = [
 	{ code: "A16.07.051", serviceCode: "A16.07.051", regulatoryCode: "A16.07.051", title: "Профессиональная гигиена полости рта и зубов (Air-Flow порошком)", category: "hygiene", standardDurationMin: 30 },
 	{ code: "A16.07.025", serviceCode: "A16.07.025", regulatoryCode: "A16.07.025", title: "Шлифовка и полировка зубов профессиональными абразивными пастами", category: "hygiene", standardDurationMin: 15 },
 	{ code: "A11.07.024", serviceCode: "A11.07.024", regulatoryCode: "A11.07.024", title: "Местное применение реминерализующих препаратов (глубокое фторирование эмали)", category: "hygiene", standardDurationMin: 15 },
-	{ code: "A16.07.011", serviceCode: "A16.07.011", regulatoryCode: "A16.07.011", title: "Закрытый кюретаж пародонтального кармана в области зуба", category: "hygiene", standardDurationMin: 20 },
+	{ code: "A16.07.039", serviceCode: "A16.07.039", regulatoryCode: "A16.07.039", title: "Закрытый кюретаж при заболеваниях пародонта в области зуба", category: "hygiene", standardDurationMin: 20 },
 
 	// 8. Ортодонтия
 	{ code: "B01.066.001", serviceCode: "B01.066.001", regulatoryCode: "B01.066.001", title: "Прием (осмотр, консультация) врача-ортодонта первичный", category: "orthodontics", standardDurationMin: 40 },
@@ -170,7 +170,7 @@ export const CLINICAL_QUICK_BUNDLES: readonly ClinicalQuickBundle[] = [
 		items: [
 			{ id: "anesthesia", serviceCode: "A11.07.012", regulatoryCode: "A11.07.012", title: "Местная анестезия (Ультракаин Д-С форте)", category: "Анестезия", defaultPriceRub: 900, defaultSelected: true },
 			{ id: "extraction", serviceCode: "A16.07.001", regulatoryCode: "A16.07.001", title: "Удаление зуба простое / атравматичное", category: "Хирургия", defaultPriceRub: 3500, defaultSelected: true },
-			{ id: "curettage", serviceCode: "A16.07.039", regulatoryCode: "A16.07.039", title: "Кюретаж лунки удаленного зуба", category: "Хирургия", defaultPriceRub: 900, defaultSelected: true },
+			{ id: "curettage", serviceCode: "A16.07.013", regulatoryCode: "A16.07.013", title: "Кюретаж лунки удаленного зуба", category: "Хирургия", defaultPriceRub: 900, defaultSelected: true },
 			{ id: "hemostasis", serviceCode: "A16.07.095", regulatoryCode: "A16.07.095", title: "Остановка луночного кровотечения (первичный гемостаз)", category: "Хирургия", defaultPriceRub: 700, defaultSelected: true },
 			{ id: "antiseptic", serviceCode: "A11.07.011", regulatoryCode: "A11.07.011", title: "Внесение антисептической пасты Альвожиль в лунку", category: "Хирургия", defaultPriceRub: 800, defaultSelected: true },
 		],
@@ -188,7 +188,7 @@ export const CLINICAL_QUICK_BUNDLES: readonly ClinicalQuickBundle[] = [
 		items: [
 			{ id: "anesthesia", serviceCode: "A11.07.013", regulatoryCode: "A11.07.013", title: "Проводниковая анестезия", category: "Анестезия", defaultPriceRub: 900, defaultSelected: true },
 			{ id: "root_separation", serviceCode: "A16.07.001.002", regulatoryCode: "A16.07.001.002", title: "Сложное удаление зуба с сепарацией корней", category: "Хирургия", defaultPriceRub: 5200, defaultSelected: true },
-			{ id: "deep_curettage", serviceCode: "A16.07.039", regulatoryCode: "A16.07.039", title: "Кюретаж лунки зуба и санация грануляций", category: "Хирургия", defaultPriceRub: 1100, defaultSelected: true },
+			{ id: "deep_curettage", serviceCode: "A16.07.013", regulatoryCode: "A16.07.013", title: "Кюретаж лунки зуба и санация грануляций", category: "Хирургия", defaultPriceRub: 1100, defaultSelected: true },
 			{ id: "sutures", serviceCode: "A16.07.097", regulatoryCode: "A16.07.097", title: "Наложение хирургических швов Vicryl", category: "Хирургия", defaultPriceRub: 1300, defaultSelected: true },
 		],
 	},

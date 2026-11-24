@@ -32,7 +32,13 @@ export type {
 export { quickDeductSurgicalMaterials };
 export type WarehouseOverdraftStatus = SurgicalWarehouseOverdraftStatus;
 export type SurgeryScenarioType = "extraction" | "resection_periostotomy" | "sinus_gbr" | "implant";
-export type ExtractionComplexity = "simple" | "complex" | "impacted_dystopic";
+export type ExtractionComplexity =
+	| "simple"
+	| "atraumatic"
+	| "complex"
+	| "impacted_dystopic"
+	| "socket_preservation"
+	| "alveolitis";
 export type SurgicalHemostasisMethod = "alvogyl" | "hemostatic_sponge" | "vicryl_suture" | "tampon";
 export type SurgeryCapType = "fdm" | "plug";
 export type MischBoneDensity = "D1" | "D2" | "D3" | "D4";
@@ -61,17 +67,29 @@ export interface StandardImplantationParams {
 export const COMMON_SURGERY_TEETH = [46, 36, 16, 26, 48, 38, 18, 28, 11, 21, 14, 24, 34, 44] as const;
 
 export const EXTRACTION_SURGICAL_CODES = {
-	SIMPLE: "A16.07.001", COMPLEX_SEPARATION: "A16.07.001.001", IMPACTED_DYSTOPIC: "A16.07.001.002",
-	SINUS_LIFT: "A16.07.041.001", BONE_GRAFT: "A16.07.041", CURETTAGE: "A16.07.026",
-	SUTURE_VICRYL: "A16.07.097", ANESTHESIA_INFILTRATION: "A11.07.015", ANESTHESIA_CONDUCTION: "A11.07.016",
+	SIMPLE: "A16.07.001",
+	ATRAUMATIC: "A16.07.001.001",
+	COMPLEX_SEPARATION: "A16.07.001.002",
+	IMPACTED_DYSTOPIC: "A16.07.024",
+	SOCKET_PRESERVATION: "A16.07.041.001",
+	ALVEOLITIS_CURETTAGE: "A16.07.013",
+	SINUS_LIFT: "A16.07.041.001",
+	BONE_GRAFT: "A16.07.041",
+	CURETTAGE: "A16.07.013",
+	SUTURE_VICRYL: "A16.07.097",
+	ANESTHESIA_INFILTRATION: "A11.07.015",
+	ANESTHESIA_CONDUCTION: "A11.07.016",
 } as const;
 /** @deprecated Use EXTRACTION_SURGICAL_CODES instead (Mandate 8x) */
 export const EXTRACTION_804N_CODES = EXTRACTION_SURGICAL_CODES;
 
 export const EXTRACTION_COMPLEXITY_OPTIONS = [
-	{ id: "simple" as const, nameRu: "Простое удаление", labelRu: "Простое удаление", shortBadge: "Простое", descriptionRu: "Подвижный или однокорневой зуб без разделения корней", code: EXTRACTION_SURGICAL_CODES.SIMPLE, code804n: EXTRACTION_SURGICAL_CODES.SIMPLE, priceRub: 3500 },
+	{ id: "simple" as const, nameRu: "Простое удаление", labelRu: "Простое удаление", shortBadge: "Простое", descriptionRu: "Подвижный или однокорневой зуб щипцами и элеватором", code: EXTRACTION_SURGICAL_CODES.SIMPLE, code804n: EXTRACTION_SURGICAL_CODES.SIMPLE, priceRub: 3500 },
+	{ id: "atraumatic" as const, nameRu: "Атравматичное удаление (люксатор)", labelRu: "Атравматичное удаление (люксатор)", shortBadge: "Атравматичное", descriptionRu: "Бережная экстракция люксатором с сохранением костных стенок лунки", code: EXTRACTION_SURGICAL_CODES.ATRAUMATIC, code804n: EXTRACTION_SURGICAL_CODES.ATRAUMATIC, priceRub: 4500 },
 	{ id: "complex" as const, nameRu: "Сложное удаление (сепарация корней)", labelRu: "Сложное удаление (сепарация корней)", shortBadge: "Сложное", descriptionRu: "Многокорневой зуб, разъединение корней бором Lindemann", code: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION, code804n: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION, priceRub: 5500 },
 	{ id: "impacted_dystopic" as const, nameRu: "Атипичное удаление (8-ка / дистопия)", labelRu: "Атипичное удаление (8-ка / дистопия)", shortBadge: "Атипичное 8-ка", descriptionRu: "Ретинированный зуб мудрости, трепанация кортикальной пластинки", code: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC, code804n: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC, priceRub: 8500 },
+	{ id: "socket_preservation" as const, nameRu: "Консервация лунки (коллагеновый конус)", labelRu: "Консервация лунки (коллагеновый конус)", shortBadge: "Консервация лунки", descriptionRu: "Атравматичное удаление с внесением конуса Parasorb Cone и ушиванием раны", code: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, code804n: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, priceRub: 6000 },
+	{ id: "alveolitis" as const, nameRu: "Лечение альвеолита (кюретаж лунки)", labelRu: "Лечение альвеолита (кюретаж лунки)", shortBadge: "Альвеолит", descriptionRu: "Ревизия, механический кюретаж лунки и антисептический компресс Alveogyl", code: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, code804n: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, priceRub: 2500 },
 ] as const;
 
 export const SURGICAL_HEMOSTASIS_OPTIONS = [
@@ -424,18 +442,78 @@ export function getExtractionSurgicalServices(params: {
 	complexity: ExtractionComplexity; toothFdi?: number; hemostasis?: readonly SurgicalHemostasisMethod[]; sutureMaterial?: string;
 }): readonly SurgicalServiceItem[] {
 	const tooth = params.toothFdi; const comp = params.complexity; const hemo = params.hemostasis || [];
-	const primaryCode = comp === "complex" ? EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION : comp === "impacted_dystopic" ? EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC : EXTRACTION_SURGICAL_CODES.SIMPLE;
-	const primaryName = comp === "complex" ? "Удаление зуба сложное с разъединением корней" : comp === "impacted_dystopic" ? "Операция удаления ретинированного / дистопированного зуба" : "Удаление постоянного зуба (простое)";
-	const primaryPrice = comp === "complex" ? 6000 : comp === "impacted_dystopic" ? 9500 : 3500;
+	let primaryCode: string = EXTRACTION_SURGICAL_CODES.SIMPLE;
+	let primaryName = "Удаление постоянного зуба (простое)";
+	let primaryPrice = 3500;
+
+	if (comp === "atraumatic") {
+		primaryCode = EXTRACTION_SURGICAL_CODES.ATRAUMATIC;
+		primaryName = "Атравматичное удаление зуба люксатором";
+		primaryPrice = 4500;
+	} else if (comp === "complex") {
+		primaryCode = EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION;
+		primaryName = "Удаление зуба сложное с разъединением корней";
+		primaryPrice = 6000;
+	} else if (comp === "impacted_dystopic") {
+		primaryCode = EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC;
+		primaryName = "Операция удаления ретинированного / дистопированного зуба";
+		primaryPrice = 9500;
+	} else if (comp === "socket_preservation") {
+		primaryCode = EXTRACTION_SURGICAL_CODES.ATRAUMATIC;
+		primaryName = "Атравматичное удаление зуба под консервацию лунки";
+		primaryPrice = 4500;
+	} else if (comp === "alveolitis") {
+		primaryCode = EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE;
+		primaryName = "Кюретаж лунки удаленного зуба при альвеолите";
+		primaryPrice = 2500;
+	}
+
 	const primaryPriceKopecks = BigInt(rublesToKopecks(primaryPrice));
 	const items: SurgicalServiceItem[] = [
 		{ code: primaryCode, nameRu: primaryName, name: primaryName, priceRub: primaryPrice, priceKopecks: primaryPriceKopecks, quantity: 1, suggestedPriceRub: primaryPrice, toothNumber: tooth, stageKind: "stage_2_surgery" as const, isPrimary: true },
-		{ code: EXTRACTION_SURGICAL_CODES.CURETTAGE, nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)", priceRub: 1200, priceKopecks: 120000n, quantity: 1, suggestedPriceRub: 1200, toothNumber: tooth, stageKind: "stage_2_surgery" as const },
 	];
-	if (comp === "complex" || comp === "impacted_dystopic" || hemo.includes("vicryl_suture")) {
-		const sutName = params.sutureMaterial || "Викрил 4-0";
-		items.push({ code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL, nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`, name: `Наложение шва на слизистую оболочку рта (${sutName})`, priceRub: 1500, priceKopecks: 150000n, quantity: 1, suggestedPriceRub: 1500, toothNumber: tooth, stageKind: "stage_2_surgery" as const });
+
+	if (comp === "socket_preservation") {
+		items.push({
+			code: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION,
+			nameRu: "Консервация лунки остеопластическим коллагеновым конусом",
+			name: "Консервация лунки остеопластическим коллагеновым конусом",
+			priceRub: 6000,
+			priceKopecks: 600000n,
+			quantity: 1,
+			suggestedPriceRub: 6000,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		});
+	} else if (comp !== "alveolitis") {
+		items.push({
+			code: EXTRACTION_SURGICAL_CODES.CURETTAGE,
+			nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+			name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+			priceRub: 1200,
+			priceKopecks: 120000n,
+			quantity: 1,
+			suggestedPriceRub: 1200,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		});
 	}
+
+	if (comp === "complex" || comp === "impacted_dystopic" || comp === "socket_preservation" || hemo.includes("vicryl_suture")) {
+		const sutName = params.sutureMaterial || "Викрил 4-0";
+		items.push({
+			code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL,
+			nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`,
+			name: `Наложение шва на слизистую оболочку рта (${sutName})`,
+			priceRub: 1500,
+			priceKopecks: 150000n,
+			quantity: 1,
+			suggestedPriceRub: 1500,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		});
+	}
+
 	const isCond = comp === "impacted_dystopic";
 	const anesthPrice = isCond ? 1200 : 900;
 	items.push({
@@ -649,8 +727,9 @@ export function dispatchSurgicalServicesToInvoice(params: {
 		: params.norm ? getSurgicalCatalogServices(params.norm, effectiveTooth) : [];
 	params.onAddToInvoice?.(services);
 	if (typeof window !== "undefined" && services.length > 0) {
-		window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { services, toothFdi: effectiveTooth } }));
-		window.dispatchEvent(new CustomEvent("dente:cart-add-items", { detail: { items: services.map((s) => ({ code: s.code, name: s.nameRu || s.name, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: effectiveTooth })) } }));
+		const idempotencyKey = crypto.randomUUID();
+		window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { services, toothFdi: effectiveTooth, idempotencyKey } }));
+		window.dispatchEvent(new CustomEvent("dente:cart-add-items", { detail: { items: services.map((s) => ({ code: s.code, name: s.nameRu || s.name, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: effectiveTooth })), idempotencyKey } }));
 	}
 	return services;
 }

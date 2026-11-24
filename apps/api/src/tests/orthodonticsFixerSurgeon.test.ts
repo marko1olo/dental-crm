@@ -8,7 +8,7 @@ import {
 	stageAdvanceSchema,
 	type OrthodonticProgressRecord,
 } from "../routes/orthodontics/types.js";
-import { ORTHODONTIC_BOM_LINKS } from "@dental/shared";
+import { ORTHODONTIC_BOM_LINKS, ORTHODONTIC_QUICK_PRESETS, generateOrthodonticSoapNote } from "@dental/shared";
 import { resolveOrthoServicePrice, resolveOrthoMaterialCost } from "../routes/orthodontics/orthoPricelistResolver.js";
 
 describe("Domain 3 Red Team Fixer Surgeon: Orthodontics & Bite Persistence", () => {
@@ -95,8 +95,8 @@ describe("Domain 3 Red Team Fixer Surgeon: Orthodontics & Bite Persistence", () 
 		assert.ok(damonBom, "Шаблон BOM def-link-ortho-brackets-damon обязан присутствовать в каталоге");
 		assert.equal(
 			damonBom.service804nCode,
-			"A16.07.047",
-			"Код 804н для фиксации брекет-системы Damon Q2 обязан быть A16.07.047 (ортодонтическая коррекция съемным/несъемным аппаратом)",
+			"A16.07.048",
+			"Код 804н для фиксации брекет-системы Damon Q2 обязан быть A16.07.048 (ортодонтическая коррекция с применением брекет-систем)",
 		);
 	});
 
@@ -126,5 +126,48 @@ describe("Domain 3 Red Team Fixer Surgeon: Orthodontics & Bite Persistence", () 
 
 		assert.equal(resolvedMaterial.unitCostRub, 1200);
 		assert.equal(resolvedMaterial.unitCostKopecks, 120000n, "1200 руб себестоимости обязаны транслироваться в 120 000 копеек (bigint)");
+	});
+
+	it("6. Расширенные технологические карты BOM для ретейнера (A16.07.046), дуг SS/TMA, эластиков", () => {
+		const retainerLinks = ORTHODONTIC_BOM_LINKS.filter((b) => b.service804nCode === "A16.07.046");
+		assert.ok(retainerLinks.length >= 2, "Для ретейнера A16.07.046 обязаны быть карты проволоки и композита");
+		assert.ok(retainerLinks.some((l) => l.inventoryItemId === "mat-ortho-retainer-wire"));
+		assert.ok(retainerLinks.some((l) => l.inventoryItemId === "mat-composite-flow-ortho"));
+
+		const archwireLinks = ORTHODONTIC_BOM_LINKS.filter((b) => b.service804nCode === "A16.07.048");
+		assert.ok(archwireLinks.some((l) => l.inventoryItemId === "mat-archwire-ss-019x025"), "BOM обязан содержать стальную дугу SS");
+		assert.ok(archwireLinks.some((l) => l.inventoryItemId === "mat-archwire-tma-017x025"), "BOM обязан содержать дугу TMA");
+		assert.ok(archwireLinks.some((l) => l.inventoryItemId === "mat-power-chain"), "BOM обязан содержать Power Chain");
+		assert.ok(archwireLinks.some((l) => l.inventoryItemId === "mat-elastics-intermaxillary"), "BOM обязан содержать эластики");
+	});
+
+	it("7. Клинические 1-клик пресеты ретейнера и микровинтов TAD соответствуют номенклатуре 804н", () => {
+		const debonding = ORTHODONTIC_QUICK_PRESETS.find((p) => p.id === "debonding");
+		assert.ok(debonding, "Пресет debonding обязан присутствовать");
+		assert.equal(debonding.code804n, "A16.07.046", "Снятие брекетов и ретейнер обязаны ссылаться на A16.07.046");
+
+		const retainerRepair = ORTHODONTIC_QUICK_PRESETS.find((p) => p.id === "retainer_repair");
+		assert.ok(retainerRepair, "Пресет retainer_repair обязан присутствовать");
+		assert.equal(retainerRepair.code804n, "A16.07.046");
+		assert.ok(retainerRepair.label.includes("A16.07.046"));
+
+		const tad = ORTHODONTIC_QUICK_PRESETS.find((p) => p.id === "tad_placement");
+		assert.ok(tad, "Пресет tad_placement обязан присутствовать");
+		assert.equal(tad.code804n, "A16.07.093");
+		assert.ok(tad.label.includes("A16.07.093"));
+	});
+
+	it("8. Генератор ортодонтического SOAP протокола автоматически выставляет коды A16.07.046 и A16.07.093", () => {
+		const retainerSoap = generateOrthodonticSoapNote({
+			bracketSystem: "damon_q2",
+			selectedActions: ["debonding"],
+		});
+		assert.ok(retainerSoap.includes("A16.07.046"), "SOAP протокол снятия обязан содержать код A16.07.046");
+
+		const tadSoap = generateOrthodonticSoapNote({
+			bracketSystem: "damon_q2",
+			selectedActions: ["tad_placement"],
+		});
+		assert.ok(tadSoap.includes("A16.07.093"), "SOAP протокол микровинтов обязан содержать код A16.07.093");
 	});
 });

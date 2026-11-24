@@ -63,7 +63,10 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 			for (const preset of ORTHODONTIC_QUICK_PRESETS) {
 				assert.ok(preset.code804n, `Preset ${preset.id} must have code804n`);
 				assert.ok(
-					preset.code804n === "A16.07.047" || preset.code804n === "A16.07.048",
+					preset.code804n === "A16.07.046" ||
+						preset.code804n === "A16.07.047" ||
+						preset.code804n === "A16.07.048" ||
+						preset.code804n === "A16.07.093",
 					`Preset ${preset.id} has invalid 804n code: ${preset.code804n}`,
 				);
 			}
@@ -379,7 +382,7 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 			// Clinical test: legacy class_2_1 must NOT be overwritten with class_1 neutral occlusion
 			const note = generateOrthodonticSoapNote({
 				bracketSystem: "damon_q2",
-				angleClass: "class_2_1" as any,
+				angleClass: "class_2_1",
 			});
 			assert.ok(
 				note.includes("II класс 1 подкласс (дистальный прикус, протрузия)"),

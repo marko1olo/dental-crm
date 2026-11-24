@@ -14,10 +14,10 @@ export const VisitSurgeryToothSelector: React.FC<VisitSurgeryToothSelectorProps>
 	return (
 		<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap">
 			<div className="flex items-center gap-2">
-				<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
+				<span className="text-xs font-semibold tracking-tight text-[var(--primary)]">
 					Зуб операции (FDI):
 				</span>
-				<span className="text-sm font-black font-mono px-2.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)]">
+				<span className="text-sm font-semibold font-mono px-2.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)]">
 					{`#${effectiveTooth}`}
 				</span>
 			</div>
@@ -28,10 +28,10 @@ export const VisitSurgeryToothSelector: React.FC<VisitSurgeryToothSelectorProps>
 						key={t}
 						type="button"
 						onClick={() => onSelectTooth(t)}
-						className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-mono font-black cursor-pointer touch-manipulation transition-all ${
+						className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-mono font-semibold cursor-pointer touch-manipulation transition-all ${
 							effectiveTooth === t
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								? "bg-[var(--primary)] text-white shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 						}`}
 						data-testid={`btn-select-tooth-${t}`}
 					>

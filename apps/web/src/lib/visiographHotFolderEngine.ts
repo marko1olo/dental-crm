@@ -160,9 +160,9 @@ export class VisiographHotFolderEngine {
 	public attachScanToVisit(scan: VisiographDetectedScan, toothNumber?: string): void {
 		if (typeof window === "undefined") return;
 
-		const targetTooth = toothNumber || scan.detectedTooth || "16";
+		const targetTooth = toothNumber || scan.detectedTooth || undefined;
 		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
-		const scanName = `Рентген RVG: зуб ${targetTooth} (${scan.brandName})`;
+		const scanName = targetTooth ? `Рентген RVG: зуб ${targetTooth} (${scan.brandName})` : `Рентген RVG (${scan.brandName})`;
 
 		// Native event intercepted in useVisitDiagnosticsTab.ts
 		window.dispatchEvent(
@@ -183,7 +183,7 @@ export class VisiographHotFolderEngine {
 	public openScanInDirectViewer(scan: VisiographDetectedScan, toothNumber?: string): void {
 		if (typeof window === "undefined") return;
 
-		const targetTooth = toothNumber || scan.detectedTooth || "16";
+		const targetTooth = toothNumber || scan.detectedTooth || undefined;
 		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
 
 		// Direct event to launch DirectRvgCaptureModal with preloaded image
@@ -296,7 +296,7 @@ export class VisiographHotFolderEngine {
 				const saveRes = await persistRvgScanToServer({
 					patientId: targetPatientId,
 					capturedImage: thumbnailUrl,
-					selectedTeeth: detectedTooth ? [detectedTooth] : ["16"],
+					selectedTeeth: detectedTooth ? [detectedTooth] : [],
 					clinicalNotes: `Автозахват визиографа (${brandName}): ${file.name}`,
 				});
 				if (saveRes.success && saveRes.data && typeof saveRes.data === "object" && "id" in saveRes.data) {

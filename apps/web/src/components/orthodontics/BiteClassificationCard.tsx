@@ -90,7 +90,7 @@ export const BiteClassificationCard: React.FC<BiteClassificationCardProps> = ({
 			{/* 1. Классификация по Энглю (моляры 16/46, 26/36) */}
 			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between">
-					<span className="text-[11px] font-semibold text-[var(--ink-muted)] uppercase tracking-wider">
+					<span className="text-[11px] font-semibold text-[var(--ink-muted)]">
 						Класс по Энглю (смыкание моляров и клыков):
 					</span>
 					<span className="text-[11px] text-[var(--ink-muted)] font-mono">FDI 16/46 · 26/36</span>
@@ -159,7 +159,7 @@ export const BiteClassificationCard: React.FC<BiteClassificationCardProps> = ({
 
 			{/* 3. Вертикальное соотношение резцов */}
 			<div className="flex flex-col gap-1.5 pt-1 border-t border-[var(--line)]">
-				<span className="text-[11px] font-semibold text-[var(--ink-muted)] uppercase tracking-wider">
+				<span className="text-[11px] font-semibold text-[var(--ink-muted)]">
 					Вертикальное перекрытие резцов:
 				</span>
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
