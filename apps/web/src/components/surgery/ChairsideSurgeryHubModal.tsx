@@ -170,7 +170,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		return raw;
 	});
 	const [isOverdraftNoticeDismissed, setIsOverdraftNoticeDismissed] = useState<boolean>(false);
-	const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || "Osstem");
+	const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || "Корейская конусная система 11° SLA");
 	const [diameterMm, setDiameterMm] = useState<number>(initialDiameterMm || 4.0);
 	const [lengthMm, setLengthMm] = useState<number>(initialLengthMm || 10.0);
 	const [torqueNcm, setTorqueNcm] = useState<number>(initialTorqueNcm || 35);
@@ -332,8 +332,8 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			if (brandOnly) return brandOnly;
 		}
 		const defaultBatch = SURGERY_DEFAULT_BATCHES.find(
-			(b) => b.brand.toLowerCase() === brandLower && b.diameterMm === diameterMm && b.lengthMm === lengthMm
-		) || SURGERY_DEFAULT_BATCHES.find((b) => b.brand.toLowerCase() === brandLower);
+			(b) => (b.brand.toLowerCase() === brandLower || brandLower.includes(b.brand.toLowerCase()) || (brandLower.includes("корейск") && b.brand.includes("корейск"))) && b.diameterMm === diameterMm && b.lengthMm === lengthMm
+		) || SURGERY_DEFAULT_BATCHES.find((b) => b.brand.toLowerCase() === brandLower || brandLower.includes(b.brand.toLowerCase()) || (brandLower.includes("корейск") && b.brand.includes("корейск")));
 		return defaultBatch || null;
 	}, [stockImplants, selectedBrand, diameterMm, lengthMm]);
 
@@ -370,7 +370,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		const sanitizedTeeth = initialScenario === "implant" ? rawTeeth.filter((t) => t < 51 || t > 85) : rawTeeth;
 		setSelectedTeeth(sanitizedTeeth.length > 0 ? sanitizedTeeth : [resetTooth]);
 		setIsOverdraftNoticeDismissed(false);
-		const defaultBrand = initialBrand || "Osstem";
+		const defaultBrand = initialBrand || "Корейская конусная система 11° SLA";
 		setSelectedBrand(defaultBrand);
 		const sys = getImplantSystemById(defaultBrand);
 		setDiameterMm(initialDiameterMm || sys.defaultDiameterMm || 4.0);

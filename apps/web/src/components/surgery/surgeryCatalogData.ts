@@ -302,6 +302,11 @@ export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
 		(s) =>
 			s.id.toLowerCase() === target ||
 			s.brandName.toLowerCase() === target ||
+			(target.includes("корейск") && (s.id === "osstem" || s.id === "dentium")) ||
+			(target.includes("премиальн") && s.id === "straumann") ||
+			(target.includes("кортикальн") && (s.id === "nobel" || s.id === "nobel_biocare")) ||
+			(target.includes("переключением") && (s.id === "dentium" || s.id === "mis")) ||
+			(target.includes("субкрестальн") && s.id === "ankylos") ||
 			(target === "nobel" && s.id === "nobel_biocare") ||
 			(target === "nobel_biocare" && (s.id === "nobel" || s.id === "nobel_biocare")) ||
 			(target === "astra" && s.id === "astra_tech") ||

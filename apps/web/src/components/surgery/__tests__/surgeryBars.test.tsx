@@ -48,20 +48,20 @@ describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants, Perio/Emergenc
 
 		assert.ok(html.includes("visit-surgery-sinus-gbr-bar"));
 		assert.ok(html.includes("btn-uncomplicated-gbr-norm"));
-		assert.ok(html.includes("Bio-Oss 0.5г"));
-		assert.ok(html.includes("Cerabone"));
-		assert.ok(html.includes("SureOss"));
-		assert.ok(html.includes("Аутокость"));
-		assert.ok(html.includes("Bio-Gide 25×25"));
-		assert.ok(html.includes("Jason"));
-		assert.ok(html.includes("Cytoplast"));
+		assert.ok(html.includes("Ксеногранулят 0.5 см³"));
+		assert.ok(html.includes("Алломатрикс"));
+		assert.ok(html.includes("Аутостружка"));
+		assert.ok(html.includes("Бета-ТКФ"));
+		assert.ok(html.includes("Коллагеновая 25×25"));
+		assert.ok(html.includes("Перикардиальная"));
+		assert.ok(html.includes("d-PTFE мембрана"));
 		assert.ok(html.includes("btn-toggle-titanium-pins"));
 	});
 
 	it("3. renders VisitSurgeryImplantBar with extended brands", { timeout: 20000 }, () => {
 		const html = renderToString(
 			<VisitSurgeryImplantBar
-				implantBrand="Dentium"
+				implantBrand="Корейская конусная система 11° SLA"
 				setImplantBrand={() => {}}
 				implantDiameter={4.0}
 				setImplantDiameter={() => {}}
@@ -73,18 +73,18 @@ describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants, Perio/Emergenc
 				setImplantIsq={() => {}}
 				implantCap="fdm"
 				setImplantCap={() => {}}
-				implantSuture="Prolene 4-0"
+				implantSuture="Полипропилен 4-0 (монофиламент)"
 				setImplantSuture={() => {}}
 				onApplyPreset={() => {}}
 			/>,
 		);
 
 		assert.ok(html.includes("btn-preset-standard-implant-tab"));
-		assert.ok(html.includes("btn-implant-system-Dentium"));
-		assert.ok(html.includes("btn-implant-system-Osstem"));
-		assert.ok(html.includes("btn-implant-system-Straumann"));
+		assert.ok(html.includes("btn-implant-system-korean_conical_sla"));
+		assert.ok(html.includes("btn-implant-system-premium_active_cone"));
+		assert.ok(html.includes("btn-implant-system-cortical_microthread"));
 		assert.ok(html.includes("input-implant-isq"));
-		assert.ok(html.includes("btn-suture-Prolene_4-0"));
+		assert.ok(html.includes("btn-suture-polypropylene_4-0"));
 	});
 
 	it("4. renders VisitSurgeryPerioBar for mucogingival surgery (FGG/CTG) without implant toolbar leak (SEV-1)", { timeout: 20000 }, () => {
