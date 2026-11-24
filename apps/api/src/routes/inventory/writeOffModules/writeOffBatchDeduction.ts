@@ -172,7 +172,10 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 				return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
 					organizationId: targetOrgId,
 					visitId: body.visitId || "batch-service-bom",
-					services: body.services,
+					services: body.services.map((item) => ({
+						serviceId: item.serviceId,
+						...(item.quantity !== undefined ? { quantity: item.quantity } : {}),
+					})),
 					userId: effectiveUserId,
 					notes: body.notes,
 					allowOverdraft: true,
