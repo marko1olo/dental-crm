@@ -1,10 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../client.js";
+import type { TenantDb } from "../rls.js";
 import * as schema from "../schema.js";
 import { projectVisitRow } from "../visitsProjection.js";
 
-export async function getVisitsForQualityControlInDb(organizationId: string) {
-	const res = await db
+export async function getVisitsForQualityControlInDb(
+	organizationId: string,
+	tx: typeof db | TenantDb = db,
+) {
+	const res = await tx
 		.select()
 		.from(schema.visits)
 		.where(
@@ -21,8 +25,9 @@ export async function updateVisitQualityControlStatusInDb(
 	organizationId: string,
 	visitId: string,
 	qualityControlStatus: string,
+	tx: typeof db | TenantDb = db,
 ) {
-	const [updated] = await db
+	const [updated] = await tx
 		.update(schema.visits)
 		.set({ qualityControlStatus })
 		.where(
@@ -32,6 +37,6 @@ export async function updateVisitQualityControlStatusInDb(
 			),
 		)
 		.returning();
-	if (!updated) throw new Error("Визит не найден");
+	if (!updated) return null;
 	return projectVisitRow(updated);
 }

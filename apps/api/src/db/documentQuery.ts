@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
@@ -14,19 +14,12 @@ import {
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { getPaymentsByPatientIdInDb } from "./billing/index.js";
 import { db, type TenantDb } from "./client.js";
+import { getTreatmentPlanItemsForPatient } from "./clinicalQuery.js";
+import { getServiceCatalogForOrganization } from "./pricelistQuery.js";
 import * as schema from "./schema.js";
-import {
-	buildClinicSettings as buildInMemoryClinicSettings,
-	documents as inMemoryDocuments,
-	payments as inMemoryPayments,
-	serviceCatalog as inMemoryServiceCatalog,
-	treatmentPlanItems as inMemoryTreatmentPlanItems,
-} from "../sampleData.js";
-
-function useInMemory(): boolean {
-	return false;
-}
+import { getClinicSettingsFromDb } from "./settingsQuery.js";
 
 function documentSnapshotPath(documentId: string): string {
 	const dir = path.join(process.cwd(), ".dente-data", "documents");
@@ -156,15 +149,10 @@ export async function getDefaultOrganizationId(): Promise<string | null> {
 export async function getDocumentsByPatientId(
 	organizationId: string,
 	patientId: string,
+	tx?: TenantDb | undefined,
 ): Promise<GeneratedDocument[]> {
-	if (useInMemory()) {
-		return inMemoryDocuments.filter(
-			(document) =>
-				document.organizationId === organizationId && document.patientId === patientId,
-		);
-	}
-
-	const records = await db
+	const client = tx ?? db;
+	const records = await client
 		.select()
 		.from(schema.generatedDocuments)
 		.where(
@@ -183,20 +171,14 @@ const UUID_REGEX =
 export async function getDocumentById(
 	organizationId: string,
 	id: string,
+	tx?: TenantDb | undefined,
 ): Promise<GeneratedDocument | null> {
 	if (!id || !UUID_REGEX.test(id)) {
 		return null;
 	}
 
-	if (useInMemory()) {
-		return (
-			inMemoryDocuments.find(
-				(document) => document.organizationId === organizationId && document.id === id,
-			) ?? null
-		);
-	}
-
-	const [record] = await db
+	const client = tx ?? db;
+	const [record] = await client
 		.select()
 		.from(schema.generatedDocuments)
 		.where(
@@ -209,11 +191,11 @@ export async function getDocumentById(
 }
 
 const documentTitles: Record<string, string> = {
-	medical_record_extract: "Выписка из медицинской карты стоматологического пациента (Форма 043/у)",
+	medical_record_extract: "Выписка из медицинской карты стоматологического пациента",
 	dental_medical_card_043u: "Медицинская карта стоматологического приёма",
 	orthodontic_medical_card_043_1u: "Ортодонтическая карта приёма",
-	daily_dentist_diary_037u: "Листок ежедневного учета 037/у-88",
-	summary_dentist_statement_039u: "Сводная ведомость 039/у-88",
+	daily_dentist_diary_037u: "Дневник ежедневного приёма врача-стоматолога",
+	summary_dentist_statement_039u: "Сводная ведомость стоматологического приёма",
 	radiation_dose_sheet: "Лист учета дозовых нагрузок",
 	medical_document_release_receipt: "Расписка о получении",
 	medical_record_copy_request: "Заявление о выдаче копии",
@@ -236,41 +218,15 @@ export async function createGeneratedDocumentInDb(
 		taxPayerInn?: string | null | undefined;
 		payload?: Record<string, unknown> | null | undefined;
 		signatureSvg?: string | null | undefined;
+		actorUserId?: string | null | undefined;
+		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument> {
-	if (useInMemory()) {
-		const document: GeneratedDocument = {
-			id: randomUUID(),
-			organizationId,
-			patientId: input.patientId,
-			visitId: input.visitId ?? null,
-			kind: input.kind,
-			title: input.title || documentTitles[input.kind] || "Document",
-			status: "draft",
-			issuedAt: null,
-			totalAmountRub: input.totalAmountRub ?? null,
-			totalAmountKopecks:
-				input.totalAmountKopecks ??
-				(input.totalAmountRub !== undefined && input.totalAmountRub !== null
-					? rublesToKopecks(input.totalAmountRub)
-					: null),
-			payload: input.payload ?? null,
-			signatureSvg: input.signatureSvg ?? null,
-		};
-		inMemoryDocuments.push(document);
-		await recordAuditEvent({
-			organizationId,
-			entityType: "document",
-			entityId: document.id,
-			action: "document_created",
-			reason: null,
-		});
-		return document;
-	}
+	const client = input.tx ?? db;
 
 	// Ownership assert: patient (and optional visit) must belong to caller org.
 	// Route-layer checks exist, but the query helper is callable from anywhere.
-	const [ownedPatient] = await db
+	const [ownedPatient] = await client
 		.select({ id: schema.patients.id })
 		.from(schema.patients)
 		.where(
@@ -284,7 +240,7 @@ export async function createGeneratedDocumentInDb(
 		throw new Error("Пациент не принадлежит организации: создание документа отклонено");
 	}
 	if (input.visitId) {
-		const [ownedVisit] = await db
+		const [ownedVisit] = await client
 			.select({ id: schema.visits.id })
 			.from(schema.visits)
 			.where(
@@ -302,7 +258,7 @@ export async function createGeneratedDocumentInDb(
 		}
 	}
 	const title = input.title?.trim() || documentTitles[input.kind] || "Документ";
-	const [record] = await db
+	const [record] = await client
 		.insert(schema.generatedDocuments)
 		.values({
 			organizationId,
@@ -329,10 +285,12 @@ export async function createGeneratedDocumentInDb(
 
 	await recordAuditEvent({
 		organizationId,
+		actorUserId: input.actorUserId ?? null,
 		entityType: "document",
 		entityId: record.id,
 		action: "document_created",
 		reason: null,
+		tx: input.tx,
 	});
 
 	return mapDocument(record);
@@ -394,52 +352,6 @@ export async function issueGeneratedDocumentInDb(
 		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
-	if (useInMemory()) {
-		const inMemoryDocument = inMemoryDocuments.find(
-			(document) => document.organizationId === organizationId && document.id === documentId,
-		);
-		if (!inMemoryDocument || inMemoryDocument.status === "voided") return null;
-		if (inMemoryDocument.status === "issued") return inMemoryDocument;
-		const snapshot = options.snapshotHtml
-			? writeIssuedDocumentSnapshot(inMemoryDocument.id, options.snapshotHtml)
-			: null;
-		Object.assign(inMemoryDocument, {
-			status: "issued",
-			issuedAt: options.issuedAt || new Date().toISOString(),
-			issuedByUserId: signerUserIdForColumn(
-				options.issuedByUserId,
-				"issued_by_user_id",
-			),
-			releaseJournalEntry: options.releaseJournalEntry || null,
-			signatureAttestation: options.signatureAttestation || null,
-			signatureSvg: options.signatureSvg ?? inMemoryDocument.signatureSvg ?? null,
-			taxPaymentSnapshot: options.taxPaymentSnapshot || null,
-			taxXmlSourceSnapshot: options.taxXmlSourceSnapshot || null,
-			taxXmlSnapshot: options.taxXmlSnapshot !== undefined ? options.taxXmlSnapshot : inMemoryDocument.taxXmlSnapshot || null,
-			totalAmountRub: options.totalAmountRub ?? inMemoryDocument.totalAmountRub,
-			totalAmountKopecks:
-				options.totalAmountKopecks ??
-				(options.totalAmountRub !== undefined && options.totalAmountRub !== null
-					? rublesToKopecks(options.totalAmountRub)
-					: inMemoryDocument.totalAmountKopecks),
-			...(snapshot
-				? {
-					storagePath: snapshot.snapshotPath,
-					issuedSnapshotSha256: snapshot.sha256,
-					issuedSnapshotCreatedAt: snapshot.createdAt,
-				}
-				: {}),
-		});
-		await recordAuditEvent({
-			organizationId,
-			entityType: "document",
-			entityId: inMemoryDocument.id,
-			action: "document_issued",
-			reason: null,
-		});
-		return inMemoryDocument;
-	}
-
 	const client = options.tx ?? db;
 	const issuedByUserId = signerUserIdForColumn(
 		options.issuedByUserId,
@@ -458,8 +370,12 @@ export async function issueGeneratedDocumentInDb(
 	if (!existing || existing.status === "voided") return null;
 	if (existing.status === "issued") return mapDocument(existing);
 
-	const snapshot = options.snapshotHtml
-		? writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml)
+	const snapshotMeta = options.snapshotHtml
+		? {
+				sha256: createHash("sha256").update(options.snapshotHtml, "utf8").digest("hex"),
+				snapshotPath: documentSnapshotPath(existing.id),
+				createdAt: new Date().toISOString(),
+			}
 		: null;
 
 	const [updated] = await client
@@ -487,11 +403,11 @@ export async function issueGeneratedDocumentInDb(
 					: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
 						? BigInt(rublesToKopecks(options.totalAmountRub))
 						: existing.totalAmountKopecks),
-			...(snapshot
+			...(snapshotMeta
 				? {
-						storagePath: snapshot.snapshotPath,
-						issuedSnapshotSha256: snapshot.sha256,
-						issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
+						storagePath: snapshotMeta.snapshotPath,
+						issuedSnapshotSha256: snapshotMeta.sha256,
+						issuedSnapshotCreatedAt: new Date(snapshotMeta.createdAt),
 					}
 				: {}),
 		})
@@ -504,6 +420,10 @@ export async function issueGeneratedDocumentInDb(
 		.returning();
 
 	if (!updated) return null;
+
+	if (options.snapshotHtml) {
+		writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml);
+	}
 
 	if (options.signatureAttestation || options.signatureSvg) {
 		await client.insert(schema.documentSignatures).values({
@@ -527,10 +447,12 @@ export async function issueGeneratedDocumentInDb(
 
 	await recordAuditEvent({
 		organizationId,
+		actorUserId: issuedByUserId,
 		entityType: "document",
 		entityId: updated.id,
 		action: "document_issued",
 		reason: null,
+		tx: options.tx,
 	});
 
 	return mapDocument(updated);
@@ -555,29 +477,6 @@ export async function voidGeneratedDocumentInDb(
 		options.voidedByUserId,
 		"voided_by_user_id",
 	);
-
-	if (useInMemory()) {
-		const inMemoryDocument = inMemoryDocuments.find(
-			(document) => document.organizationId === organizationId && document.id === documentId,
-		);
-		if (!inMemoryDocument) return null;
-		if (inMemoryDocument.status === "voided") return inMemoryDocument;
-		Object.assign(inMemoryDocument, {
-			status: "voided",
-			voidedAt: options.voidedAt || new Date().toISOString(),
-			voidedByUserId,
-			voidAttestation: options.voidAttestation || null,
-		});
-		await recordAuditEvent({
-			organizationId,
-			actorUserId: voidedByUserId,
-			entityType: "document",
-			entityId: inMemoryDocument.id,
-			action: "document_voided",
-			reason: options.voidAttestation?.reasonText || null,
-		});
-		return inMemoryDocument;
-	}
 
 	const client = options.tx ?? db;
 	const [existing] = await client
@@ -630,27 +529,9 @@ export async function storeTaxXmlSnapshotInDb(
 	snapshot: Omit<TaxXmlSnapshot, "createdAt" | "sha256"> &
 		Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>,
 ): Promise<GeneratedDocument | null> {
-	if (useInMemory()) {
-		const inMemoryDocument = inMemoryDocuments.find(
-			(document) => document.organizationId === organizationId && document.id === documentId,
-		);
-		if (!inMemoryDocument) return null;
-		Object.assign(inMemoryDocument, {
-			taxXmlSnapshot: {
-				...snapshot,
-				createdAt: snapshot.createdAt || new Date().toISOString(),
-				sha256: snapshot.sha256 || createHash("sha256").update(snapshot.xml).digest("hex"),
-			},
-		});
-		return inMemoryDocument;
-	}
-
 	const completeSnapshot: TaxXmlSnapshot = {
 		...snapshot,
 		createdAt: snapshot.createdAt || new Date().toISOString(),
-		// БЫЛО: require("crypto") в ES-модуле — ReferenceError при попытке
-		// посчитать контрольную сумму налогового XML, то есть сохранение снимка
-		// падало ровно тогда, когда хеш не пришёл извне.
 		sha256:
 			snapshot.sha256 ||
 			createHash("sha256").update(snapshot.xml).digest("hex"),
@@ -672,36 +553,6 @@ export async function getDocumentRenderContextFromDb(
 	organizationId: string,
 	patientId?: string,
 ) {
-	if (useInMemory()) {
-		const clinicSettings = buildInMemoryClinicSettings();
-		return {
-			clinicProfile: clinicSettings.profile,
-			serviceCatalog: inMemoryServiceCatalog.filter((item) => item.organizationId === organizationId),
-			payments: patientId
-				? inMemoryPayments.filter((p) => p.organizationId === organizationId && p.patientId === patientId)
-				: [],
-			treatmentPlanItems: patientId
-				? inMemoryTreatmentPlanItems.filter((i) => i.organizationId === organizationId && i.patientId === patientId)
-				: [],
-		};
-	}
-
-	// БЫЛО: require(...) внутри ES-модуля. В apps/api объявлен "type": "module",
-	// поэтому require здесь не определён — функция падала с ReferenceError при
-	// КАЖДОМ вызове. Именно поэтому «Паспорт документа» не мог собрать данные.
-	// Динамический import — штатный способ отложенной загрузки в ESM и заодно
-	// сохраняет разрыв циклических зависимостей, ради которого это писалось.
-	const [
-		{ getClinicSettingsFromDb },
-		{ getServiceCatalogForOrganization },
-		{ getPaymentsByPatientIdInDb },
-		{ getTreatmentPlanItemsForPatient },
-	] = await Promise.all([
-		import("./settingsQuery.js"),
-		import("./pricelistQuery.js"),
-		import("./billing/index.js"),
-		import("./clinicalQuery.js"),
-	]);
 	const settings = await getClinicSettingsFromDb(organizationId);
 	const serviceCatalog = await getServiceCatalogForOrganization(organizationId);
 	let payments: Awaited<ReturnType<typeof getPaymentsByPatientIdInDb>> = [];

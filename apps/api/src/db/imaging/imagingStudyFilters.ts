@@ -1,6 +1,6 @@
 import type { ImagingStudy } from "@dental/shared";
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy } from "./imagingMappers.js";
 
@@ -11,6 +11,10 @@ export interface ImagingStudiesQueryFilters {
 	search?: string | null | undefined;
 	limit?: number | undefined;
 	offset?: number | undefined;
+}
+
+function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 }
 
 export async function getImagingStudiesWithFilters(
@@ -29,40 +33,40 @@ export async function getImagingStudiesWithFilters(
 		conditions.push(eq(schema.imagingStudies.bindingStatus, filters.bindingStatus));
 	}
 	if (filters.search && filters.search.trim().length > 0) {
-		const searchPattern = `%${filters.search.trim().toLowerCase()}%`;
-		conditions.push(
-			or(
-				sql`lower(${schema.imagingStudies.title}) LIKE ${searchPattern}`,
-				sql`lower(${schema.imagingStudies.dicomPatientName}) LIKE ${searchPattern}`,
-				sql`lower(${schema.patients.fullName}) LIKE ${searchPattern}`,
-			)!,
+		const searchPattern = `%${escapeLikePattern(filters.search.trim().toLowerCase())}%`;
+		const searchFilter = or(
+			sql`lower(${schema.imagingStudies.title}) LIKE ${searchPattern} ESCAPE '\\'`,
+			sql`lower(${schema.imagingStudies.dicomPatientName}) LIKE ${searchPattern} ESCAPE '\\'`,
+			sql`lower(${schema.patients.fullName}) LIKE ${searchPattern} ESCAPE '\\'`,
 		);
+		if (searchFilter) {
+			conditions.push(searchFilter);
+		}
 	}
 
-	let query = db
-		.select({
-			study: schema.imagingStudies,
-			patientFullName: schema.patients.fullName,
-		})
-		.from(schema.imagingStudies)
-		.leftJoin(
-			schema.patients,
-			and(
-				eq(schema.patients.organizationId, organizationId),
-				eq(schema.patients.id, schema.imagingStudies.patientId),
-			),
-		)
-		.where(and(...conditions))
-		.orderBy(desc(schema.imagingStudies.capturedAt));
+	const limitVal = filters.limit && filters.limit > 0 ? filters.limit : 500;
+	const offsetVal = filters.offset && filters.offset > 0 ? filters.offset : 0;
 
-	if (filters.limit && filters.limit > 0) {
-		query = query.limit(filters.limit) as typeof query;
-	}
-	if (filters.offset && filters.offset > 0) {
-		query = query.offset(filters.offset) as typeof query;
-	}
+	const rows = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({
+				study: schema.imagingStudies,
+				patientFullName: schema.patients.fullName,
+			})
+			.from(schema.imagingStudies)
+			.leftJoin(
+				schema.patients,
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, schema.imagingStudies.patientId),
+				),
+			)
+			.where(and(...conditions))
+			.orderBy(desc(schema.imagingStudies.capturedAt))
+			.limit(limitVal)
+			.offset(offsetVal),
+	);
 
-	const rows = await query;
 	return rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
 }
 

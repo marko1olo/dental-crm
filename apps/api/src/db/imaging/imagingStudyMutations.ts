@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type { ImagingStudy } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db, type TenantDb } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy } from "./imagingMappers.js";
 
@@ -131,5 +132,5 @@ export async function createImagingStudyInDb(
 	if (targetDb !== db) {
 		return runOperation(targetDb);
 	}
-	return db.transaction(async (tx) => runOperation(tx as TenantDb));
+	return withTenantCtx(organizationId, async (tx) => runOperation(tx));
 }

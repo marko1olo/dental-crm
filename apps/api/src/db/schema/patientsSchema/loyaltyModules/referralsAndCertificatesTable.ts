@@ -74,6 +74,11 @@ export const referralCampaigns = pgTable(
 		})
 			.notNull()
 			.default("1500.00"),
+		minFirstSpendThresholdKopecks: bigint("min_first_spend_threshold_kopecks", {
+			mode: "number",
+		})
+			.notNull()
+			.default(150000),
 		shareMessageTemplate: text("share_message_template")
 			.notNull()
 			.default(
@@ -149,6 +154,9 @@ export const patientReferrals = pgTable(
 		qualifyingAmountRub: numeric("qualifying_amount_rub", {
 			precision: 12,
 			scale: 2,
+		}),
+		qualifyingAmountKopecks: bigint("qualifying_amount_kopecks", {
+			mode: "number",
 		}),
 		rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })

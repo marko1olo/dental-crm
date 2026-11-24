@@ -1,7 +1,15 @@
 import assert from "node:assert";
 import { afterEach, describe, mock, test } from "node:test";
+import { and, eq } from "drizzle-orm";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";
+import { auditEvents, organizations, users } from "./schema.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../tests/support/fixtureOrganizations.js";
 
 describe("recordAuditEventInDb", () => {
 	afterEach(() => {
@@ -100,5 +108,69 @@ describe("recordAuditEventInDb", () => {
 				return true;
 			},
 		);
+	});
+
+	test("persists audit event with actorUserId inside real PG18 tenant transaction", async (t) => {
+		const NS = "auditQueryPg";
+		const ORG_ID = fixtureUuid(NS, 1);
+		const ACTOR_ID = fixtureUuid(NS, 2);
+		const entityId = `doc-${Date.now()}`;
+
+		try {
+			await purgeFixtureOrganizations([ORG_ID]);
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Audit Query PG Test" })
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: { name: "Audit Query PG Test" },
+					});
+				await tx
+					.insert(users)
+					.values({
+						id: ACTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Врач Аудитов",
+						role: "doctor",
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							organizationId: ORG_ID,
+							fullName: "Врач Аудитов",
+							role: "doctor",
+						},
+					});
+
+				const created = await recordAuditEventInDb(
+					ORG_ID,
+					{
+						entityType: "document",
+						entityId,
+						action: "document_issued",
+						reason: "Проверка транзакционной записи",
+						actorUserId: ACTOR_ID,
+					},
+					tx,
+				);
+
+				assert.strictEqual(created.actorUserId, ACTOR_ID);
+
+				const rows = await tx
+					.select()
+					.from(auditEvents)
+					.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.id, created.id)));
+				assert.strictEqual(rows.length, 1);
+				assert.strictEqual(rows[0]!.actorUserId, ACTOR_ID);
+			});
+			await purgeFixtureOrganizations([ORG_ID]);
+		} catch (err) {
+			if (isDatabaseUnavailable(err)) {
+				t.skip("PostgreSQL unavailable");
+				return;
+			}
+			throw err;
+		}
 	});
 });

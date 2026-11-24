@@ -12,6 +12,7 @@ import { buildVisitCloseChecklist } from "../../../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "../../auditQuery.js";
 import { db } from "../../client.js";
 import { hydrateDomainStateFromDb } from "../../domainStateHydration.js";
+import { withSavepoint, type TenantDb } from "../../rls.js";
 import * as schema from "../../schema.js";
 import { projectVisitRow } from "../../visitsProjection.js";
 import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
@@ -62,6 +63,7 @@ export async function recordVisitDraftAcceptedAuditEvent(
 	input: AcceptVisitDraftInput,
 	previousRevision: number,
 	conflictWarning: string | null,
+	tx?: TenantDb,
 ): Promise<void> {
 	const clientMutationId = input.clientMutationId?.trim() || null;
 	const reason = [
@@ -74,13 +76,17 @@ export async function recordVisitDraftAcceptedAuditEvent(
 		.filter(Boolean)
 		.join(" ");
 
-	await recordAuditEventInDb(organizationId, {
-		entityType: "visit",
-		entityId: signedVisit.id,
-		action: VISIT_DRAFT_ACCEPTED_AUDIT_ACTION,
-		actorUserId: null,
-		reason,
-	}).catch((error: unknown) => {
+	await recordAuditEventInDb(
+		organizationId,
+		{
+			entityType: "visit",
+			entityId: signedVisit.id,
+			action: VISIT_DRAFT_ACCEPTED_AUDIT_ACTION,
+			actorUserId: null,
+			reason,
+		},
+		tx,
+	).catch((error: unknown) => {
 		logger.error(
 			{
 				err: safeLogError(error),
@@ -421,13 +427,25 @@ export async function acceptVisitDraftInDb(
 			warning: combinedWarning || null,
 		};
 
-		await recordVisitDraftAcceptedAuditEvent(
-			organizationId,
-			signedVisit,
-			input,
-			previousRevision,
-			saveReceipt.warning ?? null,
-		);
+		await withSavepoint(tx, (spTx) =>
+			recordVisitDraftAcceptedAuditEvent(
+				organizationId,
+				signedVisit,
+				input,
+				previousRevision,
+				saveReceipt.warning ?? null,
+				spTx,
+			),
+		).catch((auditErr: unknown) => {
+			logger.error(
+				{
+					err: safeLogError(auditErr),
+					visitId: signedVisit.id,
+					organizationId,
+				},
+				"Сбой savepoint при записи audit_events не блокирует подписание визита",
+			);
+		});
 
 		try {
 			const { state: clinicState } =

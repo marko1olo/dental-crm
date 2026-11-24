@@ -83,6 +83,14 @@ export async function getPatientTaskTicketsFromDb(
 	return rows.map(toTicket);
 }
 
+export class PatientTaskAssigneeNotFoundError extends Error {
+	public readonly statusCode = 400;
+	constructor(message = "Выбранный ответственный сотрудник не найден в этой клинике.") {
+		super(message);
+		this.name = "PatientTaskAssigneeNotFoundError";
+	}
+}
+
 export async function createPatientTaskTicketInDb(
 	orgId: string,
 	patientId: string,
@@ -121,8 +129,8 @@ export async function createPatientTaskTicketInDb(
 			)
 			.limit(1);
 		if (!ownedStaff) {
-			throw new Error(
-				"patient_task_tickets: assignee does not belong to organization",
+			throw new PatientTaskAssigneeNotFoundError(
+				"Выбранный ответственный сотрудник не найден в этой клинике.",
 			);
 		}
 	}

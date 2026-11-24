@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import type { DbClientOrTransaction } from "../../routes/appointments/types.js";
 import { appointments as inMemoryAppointments } from "../../sampleData.js";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
@@ -7,11 +8,12 @@ import { useInMemory } from "./emergencyBookingCheck.js";
 export async function getAppointmentByIdInDb(
 	organizationId: string,
 	id: string,
+	tx: DbClientOrTransaction = db,
 ) {
 	if (useInMemory()) {
 		return inMemoryAppointments.find((a) => a.id === id) ?? null;
 	}
-	const [res] = await db
+	const [res] = await tx
 		.select()
 		.from(schema.appointments)
 		.where(

@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
@@ -97,14 +98,16 @@ export async function patientAccountBalancesRub(
 		paymentPatientFilter,
 	);
 
-	const [chargeRows, paymentRows] = await Promise.all([
+	const [rawChargeRows, rawPaymentRows] = await Promise.all([
 		client
 			.select({
 				patientId: schema.treatmentItems.patientId,
 				status: schema.treatmentItems.status,
 				unitPriceRub: schema.treatmentItems.unitPriceRub,
+				unitPriceKopecks: schema.treatmentItems.unitPriceKopecks,
 				quantity: schema.treatmentItems.quantity,
 				discountRub: schema.treatmentItems.discountRub,
+				discountKopecks: schema.treatmentItems.discountKopecks,
 			})
 			.from(schema.treatmentItems)
 			.where(chargeScope),
@@ -113,10 +116,34 @@ export async function patientAccountBalancesRub(
 				patientId: schema.payments.patientId,
 				status: schema.payments.status,
 				amountRub: schema.payments.amountRub,
+				amountKopecks: schema.payments.amountKopecks,
 			})
 			.from(schema.payments)
 			.where(paymentScope),
 	]);
+
+	const chargeRows: TreatmentChargeRow[] = rawChargeRows.map((row) => ({
+		patientId: row.patientId,
+		status: row.status,
+		quantity: row.quantity,
+		unitPriceRub:
+			row.unitPriceKopecks != null && row.unitPriceKopecks !== 0n
+				? kopecksToRubles(Number(row.unitPriceKopecks))
+				: row.unitPriceRub,
+		discountRub:
+			row.discountKopecks != null && row.discountKopecks !== 0n
+				? kopecksToRubles(Number(row.discountKopecks))
+				: row.discountRub,
+	}));
+
+	const paymentRows: PaymentRow[] = rawPaymentRows.map((row) => ({
+		patientId: row.patientId,
+		status: row.status,
+		amountRub:
+			row.amountKopecks != null
+				? kopecksToRubles(Number(row.amountKopecks))
+				: row.amountRub,
+	}));
 
 	/* Группировка по пациенту — один проход на таблицу. Фильтрация массива в
 	   цикле по пациентам дала бы O(пациенты × строки): на клинике с тысячами

@@ -15,7 +15,7 @@ describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => 
 		capturedAt: new Date("2026-11-11T12:00:00Z"),
 		notes: "Прицельный снимок 16",
 		storagePath: null,
-		fileUrl: "/api/xray/scans/0194e3a0-1234-7000-8000-000000000001/file",
+		fileUrl: "/api/imaging/studies/0194e3a0-1234-7000-8000-000000000001/file",
 		fileSizeBytes: 2048576,
 		mimeType: "image/png",
 		sha256: null,
@@ -37,12 +37,12 @@ describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => 
 		// Must NOT concatenate duplicate /0194e3a0-1234-7000-8000-000000000001
 		assert.strictEqual(
 			study.previewUrl,
-			"/api/xray/scans/0194e3a0-1234-7000-8000-000000000001/file",
+			"/api/imaging/studies/0194e3a0-1234-7000-8000-000000000001/file",
 			"previewUrl must equal fileUrl directly without trailing /${record.id}",
 		);
 		assert.strictEqual(
 			study.viewerUrl,
-			"/api/xray/scans/0194e3a0-1234-7000-8000-000000000001/file",
+			"/api/imaging/studies/0194e3a0-1234-7000-8000-000000000001/file",
 			"viewerUrl must equal fileUrl directly without trailing /${record.id}",
 		);
 	});

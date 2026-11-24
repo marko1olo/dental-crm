@@ -13,44 +13,117 @@ import {
 	type StaffChatUrgency,
 } from "@dental/shared";
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
-import { db } from "./client.js";
+import { db, type TenantDb } from "./client.js";
 import { chairs, staffChatChannels, staffChatMessages, users } from "./schema.js";
 
-/**
- * Гарантирует наличие 4 стандартных климатических каналов клиники:
- * 1. #общий (general)
- * 2. #ресепшен (reception)
- * 3. #интерком-ассистенты (intercom_assistants)
- * 4. #лаборатория-зтл (lab_ztl)
- */
-export async function ensureDefaultStaffChannels(
+export class StaffChatChannelNotFoundError extends Error {
+	readonly statusCode = 404;
+	readonly code = "ChannelNotFound";
+	constructor(message = "Канал или личный диалог не найден.") {
+		super(message);
+		this.name = "StaffChatChannelNotFoundError";
+	}
+}
+
+export class StaffChatAccessDeniedError extends Error {
+	readonly statusCode = 403;
+	readonly code = "Forbidden";
+	constructor(message = "Доступ к личному диалогу других сотрудников запрещён.") {
+		super(message);
+		this.name = "StaffChatAccessDeniedError";
+	}
+}
+
+export class StaffChatValidationError extends Error {
+	readonly statusCode = 400;
+	readonly code = "ValidationError";
+	constructor(message: string) {
+		super(message);
+		this.name = "StaffChatValidationError";
+	}
+}
+
+export class StaffChatEntityNotFoundError extends Error {
+	readonly statusCode = 404;
+	readonly code = "NotFound";
+	constructor(message: string) {
+		super(message);
+		this.name = "StaffChatEntityNotFoundError";
+	}
+}
+
+async function assertChannelAccessInDb(
+	executor: TenantDb,
 	organizationId: string,
-): Promise<void> {
-	const existing = await db
-		.select({ slug: staffChatChannels.slug })
+	channelId: string,
+	currentUserId?: string | null,
+): Promise<typeof staffChatChannels.$inferSelect> {
+	const [channel] = await executor
+		.select()
 		.from(staffChatChannels)
 		.where(
 			and(
 				eq(staffChatChannels.organizationId, organizationId),
-				eq(staffChatChannels.type, "channel"),
+				eq(staffChatChannels.id, channelId),
 			),
-		);
+		)
+		.limit(1);
 
-	const existingSlugs = new Set(existing.map((e) => e.slug).filter(Boolean));
+	if (!channel) {
+		throw new StaffChatChannelNotFoundError();
+	}
 
-	for (const def of DEFAULT_CLINIC_CHANNELS) {
-		if (!existingSlugs.has(def.slug)) {
-			await db.insert(staffChatChannels).values({
-				organizationId,
-				type: "channel",
-				slug: def.slug,
-				name: def.name,
-				description: def.description,
-				icon: def.icon,
-				isDefault: true,
-			});
+	if (channel.type === "direct") {
+		if (
+			!currentUserId ||
+			(channel.directUser1Id !== currentUserId &&
+				channel.directUser2Id !== currentUserId)
+		) {
+			throw new StaffChatAccessDeniedError();
 		}
 	}
+
+	return channel;
+}
+
+/**
+ * Гарантирует наличие 4 стандартных каналов клиники без гонок вставки.
+ */
+export async function ensureDefaultStaffChannels(
+	organizationId: string,
+): Promise<void> {
+	await db.transaction(async (tx) => {
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${`staff_chat_defaults:${organizationId}`}))`,
+		);
+
+		const existing = await tx
+			.select({ slug: staffChatChannels.slug })
+			.from(staffChatChannels)
+			.where(
+				and(
+					eq(staffChatChannels.organizationId, organizationId),
+					eq(staffChatChannels.type, "channel"),
+				),
+			);
+
+		const existingSlugs = new Set(existing.map((e) => e.slug).filter(Boolean));
+		const missingChannels = DEFAULT_CLINIC_CHANNELS.filter(
+			(def) => !existingSlugs.has(def.slug),
+		).map((def) => ({
+			organizationId,
+			type: "channel" as const,
+			slug: def.slug,
+			name: def.name,
+			description: def.description,
+			icon: def.icon,
+			isDefault: true,
+		}));
+
+		if (missingChannels.length > 0) {
+			await tx.insert(staffChatChannels).values(missingChannels);
+		}
+	});
 }
 
 /**
@@ -125,22 +198,23 @@ export async function listStaffChannels(
 	const unreadCountByChannel = new Map<string, number>();
 
 	if (channelIds.length > 0) {
-		// 1. Пакетная выборка последних сообщений для всех каналов (устранение N+1)
-		const allMsgs = await db
+		// 1. SQL DISTINCT ON: ровно по 1 последнему сообщению на канал (без выгрузки всей истории в память)
+		const latestMsgs = await db
 			.select()
 			.from(staffChatMessages)
 			.where(
 				and(
 					eq(staffChatMessages.organizationId, organizationId),
 					inArray(staffChatMessages.channelId, channelIds),
+					inArray(
+						staffChatMessages.id,
+						sql`(SELECT DISTINCT ON (channel_id) id FROM staff_chat_messages WHERE organization_id = ${organizationId}::uuid ORDER BY channel_id, created_at DESC)`,
+					),
 				),
-			)
-			.orderBy(desc(staffChatMessages.createdAt));
+			);
 
-		for (const msg of allMsgs) {
-			if (!lastMessageByChannel.has(msg.channelId)) {
-				lastMessageByChannel.set(msg.channelId, msg);
-			}
+		for (const msg of latestMsgs) {
+			lastMessageByChannel.set(msg.channelId, msg);
 		}
 
 		// 2. Пакетная выборка счётчиков непрочитанных, сгруппированная по channelId (устранение N+1)
@@ -177,8 +251,8 @@ export async function listStaffChannels(
 		if (ch.type === "direct" && currentUserId) {
 			const peerId =
 				ch.directUser1Id === currentUserId ? ch.directUser2Id : ch.directUser1Id;
-			if (peerId && userMap.has(peerId)) {
-				const peer = userMap.get(peerId)!;
+			const peer = peerId ? userMap.get(peerId) : undefined;
+			if (peer) {
 				name = peer.fullName;
 				description = `Личные сообщения (${peer.role})`;
 			}
@@ -238,7 +312,7 @@ export async function getOrCreateDirectStaffChannel(
 	targetUserId: string,
 ): Promise<StaffChatChannel> {
 	if (currentUserId === targetUserId) {
-		throw new Error("Нельзя создать личный диалог с самим собой");
+		throw new StaffChatValidationError("Нельзя создать личный диалог с самим собой.");
 	}
 
 	// Проверяем принадлежность обоих участников к текущей организации (DEF-CHAT-01)
@@ -256,10 +330,10 @@ export async function getOrCreateDirectStaffChannel(
 	const targetUser = participantRows.find((u) => u.id === targetUserId);
 
 	if (!currentUser) {
-		throw new Error("Текущий пользователь не найден в данной организации");
+		throw new StaffChatEntityNotFoundError("Текущий пользователь не найден в данной организации.");
 	}
 	if (!targetUser) {
-		throw new Error("Собеседник не найден в данной клинике");
+		throw new StaffChatEntityNotFoundError("Собеседник не найден в данной клинике.");
 	}
 
 	// Детерминированный порядок пользователей
@@ -268,7 +342,7 @@ export async function getOrCreateDirectStaffChannel(
 			? [currentUserId, targetUserId]
 			: [targetUserId, currentUserId];
 
-	// Ищем существующий канал
+	// Ищем или гонкоустойчиво создаём личный канал
 	let [channel] = await db
 		.select()
 		.from(staffChatChannels)
@@ -299,16 +373,35 @@ export async function getOrCreateDirectStaffChannel(
 				directUser1Id: u1,
 				directUser2Id: u2,
 			})
+			.onConflictDoNothing({
+				target: [
+					staffChatChannels.organizationId,
+					staffChatChannels.directUser1Id,
+					staffChatChannels.directUser2Id,
+				],
+			})
 			.returning();
 
-		if (!created) {
-			throw new Error("Не удалось создать личный диалог");
+		if (created) {
+			channel = created;
+		} else {
+			[channel] = await db
+				.select()
+				.from(staffChatChannels)
+				.where(
+					and(
+						eq(staffChatChannels.organizationId, organizationId),
+						eq(staffChatChannels.type, "direct"),
+						eq(staffChatChannels.directUser1Id, u1),
+						eq(staffChatChannels.directUser2Id, u2),
+					),
+				)
+				.limit(1);
 		}
-		channel = created;
 	}
 
 	if (!channel) {
-		throw new Error("Канал не найден");
+		throw new StaffChatChannelNotFoundError("Не удалось открыть личный диалог.");
 	}
 
 	return {
@@ -330,14 +423,17 @@ export async function getOrCreateDirectStaffChannel(
 }
 
 /**
- * Получить сообщения канала (с пагинацией).
+ * Получить сообщения канала (с проверкой участия для DM и пагинацией).
  */
 export async function listStaffMessages(
 	organizationId: string,
 	channelId: string,
 	limit = 50,
 	beforeTimestamp?: Date,
+	currentUserId?: string | null,
 ): Promise<StaffChatMessage[]> {
+	await assertChannelAccessInDb(db, organizationId, channelId, currentUserId);
+
 	const conditions = [
 		eq(staffChatMessages.organizationId, organizationId),
 		eq(staffChatMessages.channelId, channelId),
@@ -377,7 +473,7 @@ export async function listStaffMessages(
 }
 
 /**
- * Отправить сообщение в канал или личный диалог.
+ * Отправить сообщение в канал или личный диалог в неделимой ACID-транзакции.
  */
 export async function insertStaffMessage(params: {
 	organizationId: string;
@@ -396,41 +492,51 @@ export async function insertStaffMessage(params: {
 }): Promise<StaffChatMessage> {
 	const readBy = params.senderUserId ? [params.senderUserId] : [];
 
-	const [inserted] = await db
-		.insert(staffChatMessages)
-		.values({
-			organizationId: params.organizationId,
-			channelId: params.channelId,
-			senderUserId: params.senderUserId || null,
-			senderName: params.senderName,
-			senderRole: params.senderRole,
-			messageType: params.messageType || "text",
-			content: params.content,
-			urgency: params.urgency || "normal",
-			pinned: params.pinned || false,
-			patientAttachment: params.patientAttachment || null,
-			intercomPreset: params.intercomPreset || null,
-			targetAudience: params.targetAudience || null,
-			intercomAcks: [],
-			metadata: params.metadata || null,
-			readByStaffIds: readBy,
-		})
-		.returning();
-
-	if (!inserted) {
-		throw new Error("Не удалось сохранить сообщение чата");
-	}
-
-	// Обновляем время активности канала
-	await db
-		.update(staffChatChannels)
-		.set({ updatedAt: new Date() })
-		.where(
-			and(
-				eq(staffChatChannels.organizationId, params.organizationId),
-				eq(staffChatChannels.id, params.channelId),
-			),
+	const inserted = await db.transaction(async (tx) => {
+		await assertChannelAccessInDb(
+			tx,
+			params.organizationId,
+			params.channelId,
+			params.senderUserId ?? null,
 		);
+
+		const [row] = await tx
+			.insert(staffChatMessages)
+			.values({
+				organizationId: params.organizationId,
+				channelId: params.channelId,
+				senderUserId: params.senderUserId || null,
+				senderName: params.senderName,
+				senderRole: params.senderRole,
+				messageType: params.messageType || "text",
+				content: params.content,
+				urgency: params.urgency || "normal",
+				pinned: params.pinned || false,
+				patientAttachment: params.patientAttachment || null,
+				intercomPreset: params.intercomPreset || null,
+				targetAudience: params.targetAudience || null,
+				intercomAcks: [],
+				metadata: params.metadata || null,
+				readByStaffIds: readBy,
+			})
+			.returning();
+
+		if (!row) {
+			throw new Error("Не удалось сохранить сообщение чата");
+		}
+
+		await tx
+			.update(staffChatChannels)
+			.set({ updatedAt: new Date() })
+			.where(
+				and(
+					eq(staffChatChannels.organizationId, params.organizationId),
+					eq(staffChatChannels.id, params.channelId),
+				),
+			);
+
+		return row;
+	});
 
 	return {
 		id: inserted.id,
@@ -454,8 +560,7 @@ export async function insertStaffMessage(params: {
 }
 
 /**
- * Записать подтверждение (Ack) интерком-вызова сотрудником.
- * Двусторонний Ack-loop: [🏃 Иду! (1 мин)], [⏱ Через 3-5 мин], [❌ Занят].
+ * Записать подтверждение (Ack) интерком-вызова сотрудником с проверкой прав на канал.
  */
 export async function recordIntercomAck(params: {
 	organizationId: string;
@@ -475,18 +580,45 @@ export async function recordIntercomAck(params: {
 		timestamp: new Date().toISOString(),
 	};
 
-	const [updated] = await db
-		.update(staffChatMessages)
-		.set({
-			intercomAcks: sql`COALESCE(${staffChatMessages.intercomAcks}, '[]'::jsonb) || ${JSON.stringify([ackItem])}::jsonb`,
-		})
-		.where(
-			and(
-				eq(staffChatMessages.organizationId, params.organizationId),
-				eq(staffChatMessages.id, params.messageId),
-			),
-		)
-		.returning();
+	const updated = await db.transaction(async (tx) => {
+		const [targetMsg] = await tx
+			.select({
+				id: staffChatMessages.id,
+				channelId: staffChatMessages.channelId,
+			})
+			.from(staffChatMessages)
+			.where(
+				and(
+					eq(staffChatMessages.organizationId, params.organizationId),
+					eq(staffChatMessages.id, params.messageId),
+				),
+			)
+			.limit(1);
+
+		if (!targetMsg) return null;
+
+		await assertChannelAccessInDb(
+			tx,
+			params.organizationId,
+			targetMsg.channelId,
+			params.staffId,
+		);
+
+		const [row] = await tx
+			.update(staffChatMessages)
+			.set({
+				intercomAcks: sql`COALESCE(${staffChatMessages.intercomAcks}, '[]'::jsonb) || ${JSON.stringify([ackItem])}::jsonb`,
+			})
+			.where(
+				and(
+					eq(staffChatMessages.organizationId, params.organizationId),
+					eq(staffChatMessages.id, params.messageId),
+				),
+			)
+			.returning();
+
+		return row ?? null;
+	});
 
 	if (!updated) return null;
 
@@ -521,6 +653,7 @@ export async function listClinicIntercomLocations(
 		.select({
 			id: chairs.id,
 			name: chairs.name,
+			room: chairs.room,
 		})
 		.from(chairs)
 		.where(
@@ -528,32 +661,23 @@ export async function listClinicIntercomLocations(
 		)
 		.orderBy(asc(chairs.name));
 
-	if (dbChairs.length > 0) {
-		return dbChairs.map((c) => ({
-			id: c.id,
-			name: c.name,
-			isChair: true,
-		}));
-	}
-
-	// Fallback дефолтных клинических кабинетов клиники
-	return [
-		{ id: "cab-1", name: "Кабинет 1 (Терапия)", isChair: false },
-		{ id: "cab-2", name: "Кабинет 2 (Хирургия/Имплантация)", isChair: false },
-		{ id: "cab-3", name: "Кабинет 3 (Ортопедия)", isChair: false },
-		{ id: "cab-4", name: "Кабинет 4 (Детство/Ортодонтия)", isChair: false },
-		{ id: "cab-xray", name: "Рентген / КЛКТ", isChair: false },
-	];
+	return dbChairs.map((c) => ({
+		id: c.id,
+		name: c.room ? `${c.name} (${c.room})` : c.name,
+		isChair: true,
+	}));
 }
 
 /**
- * Пометить все сообщения канала как прочитанные для сотрудника.
+ * Пометить все сообщения канала как прочитанные для сотрудника (с проверкой участия в DM).
  */
 export async function markStaffChannelAsRead(
 	organizationId: string,
 	channelId: string,
 	userId: string,
 ): Promise<number> {
+	await assertChannelAccessInDb(db, organizationId, channelId, userId);
+
 	// Добавляем userId в jsonb массив read_by_staff_ids, если его там ещё нет
 	const result = await db.execute(sql`
 		UPDATE staff_chat_messages

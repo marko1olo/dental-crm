@@ -71,7 +71,7 @@ export async function unbindPatientFromStudyInDb(
 export async function getImagingStudyById(
 	organizationId: string,
 	id: string,
-	targetDb: typeof db = db,
+	targetDb: TenantDb = db,
 ): Promise<ImagingStudy | null> {
 	const [record] = await targetDb
 		.select()

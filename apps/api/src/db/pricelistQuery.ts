@@ -38,6 +38,7 @@ import {
 	type ServiceCategory,
 	basisPointsFromPercent,
 	kopecksToRubles,
+	multiplyKopecksFractional,
 	rublesToKopecks,
 	serviceCatalogItemSchema,
 } from "@dental/shared";
@@ -50,7 +51,7 @@ import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 import { BASELINE_804N_PRICELIST_SERVICES } from "../services/clinical/statutoryCatalogs.js";
 import { db, type TenantTransaction } from "./client.js";
-import { withTenantCtx, type TenantDb } from "./rls.js";
+import { withSavepoint, withTenantCtx, type TenantDb } from "./rls.js";
 import * as schema from "./schema.js";
 
 const logger = createApiLogger("pricelistQuery");
@@ -408,8 +409,7 @@ export async function createServiceCatalogItemInDb(
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
-	return await withTenantCtx(organizationId, async (tx) => {
-		const client = executor ?? tx;
+	const run = async (client: TenantDb | typeof db) => {
 		const materialsCostRub =
 			input.materialsCostRub !== undefined && input.materialsCostRub !== null
 				? input.materialsCostRub
@@ -444,7 +444,9 @@ export async function createServiceCatalogItemInDb(
 		if (!row)
 			throw new Error("Услуга не создана: база не вернула ни одной строки.");
 		return projectSingleRow(row);
-	});
+	};
+
+	return executor ? await run(executor) : await withTenantCtx(organizationId, run);
 }
 
 /** Правка услуги. Меняются только переданные поля. */
@@ -456,8 +458,7 @@ export async function updateServiceCatalogItemInDb(
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
-	return await withTenantCtx(organizationId, async (tx) => {
-		const client = executor ?? tx;
+	const run = async (client: TenantDb | typeof db) => {
 		// Существование проверяется ДО обновления: drizzle на несовпавшем условии
 		// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
 		const existing = await selectOwnedRow(organizationId, serviceId, client);
@@ -502,7 +503,9 @@ export async function updateServiceCatalogItemInDb(
 			.returning();
 		if (!row) throw new ServiceCatalogItemNotFoundError();
 		return projectSingleRow(row);
-	});
+	};
+
+	return executor ? await run(executor) : await withTenantCtx(organizationId, run);
 }
 
 /**
@@ -522,8 +525,7 @@ export async function deactivateServiceCatalogItemInDb(
 	executor?: TenantDb | typeof db,
 ): Promise<ServiceCatalogItem> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
-	return await withTenantCtx(organizationId, async (tx) => {
-		const client = executor ?? tx;
+	const run = async (client: TenantDb | typeof db) => {
 		const existing = await selectOwnedRow(organizationId, serviceId, client);
 		if (!existing) throw new ServiceCatalogItemNotFoundError();
 		const [row] = await client
@@ -538,7 +540,9 @@ export async function deactivateServiceCatalogItemInDb(
 			.returning();
 		if (!row) throw new ServiceCatalogItemNotFoundError();
 		return projectSingleRow(row);
-	});
+	};
+
+	return executor ? await run(executor) : await withTenantCtx(organizationId, run);
 }
 
 /**
@@ -558,7 +562,11 @@ export async function seedBaseline804nServicesInDb(
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
 	return await withTenantCtx(organizationId, async (tx) => {
-		const existingCatalog = await getServiceCatalogForOrganization(organizationId);
+		const existingRows = await tx
+			.select()
+			.from(schema.serviceCatalogItems)
+			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+		const existingCatalog = projectServiceCatalogRows(existingRows).items;
 		const existingCodes = new Set(
 			existingCatalog
 				.map((item) => (item.code || "").trim().toUpperCase())
@@ -590,20 +598,22 @@ export async function seedBaseline804nServicesInDb(
 			}
 
 			try {
-				const item = await createServiceCatalogItemInDb(
-					organizationId,
-					{
-						code: baseline.code,
-						order804nCode: baseline.code,
-						title: baseline.title,
-						category: baseline.category,
-						specialty: baseline.specialty,
-						basePriceRub: baseline.basePriceRub,
-						durationMinutes: baseline.durationMinutes,
-						taxDeductible: baseline.taxDeductible,
-						active: baseline.active,
-					},
-					tx,
+				const item = await withSavepoint(tx, async (spTx) =>
+					createServiceCatalogItemInDb(
+						organizationId,
+						{
+							code: baseline.code,
+							order804nCode: baseline.code,
+							title: baseline.title,
+							category: baseline.category,
+							specialty: baseline.specialty,
+							basePriceRub: baseline.basePriceRub,
+							durationMinutes: baseline.durationMinutes,
+							taxDeductible: baseline.taxDeductible,
+							active: baseline.active,
+						},
+						spTx,
+					),
 				);
 				createdItems.push(item);
 				existingCodes.add(normCode);
@@ -689,7 +699,11 @@ export async function batchRepriceServicesInDb(
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
 	return await withTenantCtx(organizationId, async (tx) => {
-		const currentCatalog = await getServiceCatalogForOrganization(organizationId);
+		const currentRows = await tx
+			.select()
+			.from(schema.serviceCatalogItems)
+			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+		const currentCatalog = projectServiceCatalogRows(currentRows).items;
 		if (currentCatalog.length === 0) {
 			return { success: true, updatedCount: 0, items: [] };
 		}
@@ -817,15 +831,19 @@ export async function getServiceBomFromDb(
 				.from(schema.procedureTechCardItems)
 				.leftJoin(
 					schema.inventoryItems,
-					eq(schema.procedureTechCardItems.inventoryItemId, schema.inventoryItems.id),
+					and(
+						eq(schema.procedureTechCardItems.inventoryItemId, schema.inventoryItems.id),
+						eq(schema.inventoryItems.organizationId, organizationId),
+					),
 				)
 				.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
 
-			let totalCost = 0;
+			let totalCostKopecks = 0;
 			const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
 				const qty = Number(ci.quantity) || 1;
-				const unitCost = Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0);
-				totalCost += qty * unitCost;
+				const unitCostKopecks = rublesToKopecks(Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0));
+				const lineCostKopecks = multiplyKopecksFractional(unitCostKopecks, qty);
+				totalCostKopecks += lineCostKopecks;
 				return {
 					id: ci.id,
 					inventoryItemId: ci.inventoryItemId,
@@ -834,7 +852,7 @@ export async function getServiceBomFromDb(
 					unit: ci.unit,
 					isMdlpRequired: ci.isMdlpRequired,
 					notes: ci.notes,
-					costRub: kopecksToRubles(rublesToKopecks(qty * unitCost)),
+					costRub: kopecksToRubles(lineCostKopecks),
 				};
 			});
 
@@ -845,7 +863,7 @@ export async function getServiceBomFromDb(
 				status: techCard.status,
 				description: techCard.description,
 				items,
-				totalMaterialsCostRub: kopecksToRubles(rublesToKopecks(totalCost)),
+				totalMaterialsCostRub: kopecksToRubles(totalCostKopecks),
 			};
 		}
 
@@ -966,7 +984,7 @@ export async function upsertServiceBomInDb(
 			techCard = inserted;
 		}
 
-		let totalCost = 0;
+		let totalCostKopecks = 0;
 		const insertedItems: ServiceBomItemPayload[] = [];
 
 		for (const item of input.items) {
@@ -991,57 +1009,41 @@ export async function upsertServiceBomInDb(
 				continue;
 			}
 
-			let itemPrice = 0;
-			try {
-				const [inv] = await tx
-					.select({
-						pricePerUnit: schema.inventoryItems.pricePerUnit,
-						unitCostRub: schema.inventoryItems.unitCostRub,
-						name: schema.inventoryItems.name,
-					})
-					.from(schema.inventoryItems)
-					.where(eq(schema.inventoryItems.id, item.inventoryItemId))
-					.limit(1);
-				if (inv) {
-					itemPrice = Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0);
-					insertedItems.push({
-						id: insertedItem.id,
-						inventoryItemId: item.inventoryItemId,
-						materialName: inv.name,
-						quantity: qty,
-						unit,
-						isMdlpRequired,
-						notes,
-						costRub: kopecksToRubles(rublesToKopecks(qty * itemPrice)),
-					});
-				} else {
-					insertedItems.push({
-						id: insertedItem.id,
-						inventoryItemId: item.inventoryItemId,
-						quantity: qty,
-						unit,
-						isMdlpRequired,
-						notes,
-						costRub: 0,
-					});
-				}
-			} catch {
-				insertedItems.push({
-					id: insertedItem.id,
-					inventoryItemId: item.inventoryItemId,
-					quantity: qty,
-					unit,
-					isMdlpRequired,
-					notes,
-					costRub: 0,
-				});
-			}
+			const [inv] = await tx
+				.select({
+					pricePerUnit: schema.inventoryItems.pricePerUnit,
+					unitCostRub: schema.inventoryItems.unitCostRub,
+					name: schema.inventoryItems.name,
+				})
+				.from(schema.inventoryItems)
+				.where(
+					and(
+						eq(schema.inventoryItems.id, item.inventoryItemId),
+						eq(schema.inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
 
-			totalCost += qty * itemPrice;
+			const unitKopecks = inv
+				? rublesToKopecks(Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0))
+				: 0;
+			const lineCostKopecks = multiplyKopecksFractional(unitKopecks, qty);
+			totalCostKopecks += lineCostKopecks;
+
+			insertedItems.push({
+				id: insertedItem.id,
+				inventoryItemId: item.inventoryItemId,
+				...(inv?.name ? { materialName: inv.name } : {}),
+				quantity: qty,
+				unit,
+				isMdlpRequired,
+				notes,
+				costRub: kopecksToRubles(lineCostKopecks),
+			});
 		}
 
-		const calculatedMaterialsCost = kopecksToRubles(rublesToKopecks(totalCost));
-		const calculatedMaterialsCostKopecks = BigInt(rublesToKopecks(totalCost));
+		const calculatedMaterialsCost = kopecksToRubles(totalCostKopecks);
+		const calculatedMaterialsCostKopecks = BigInt(totalCostKopecks);
 		await tx
 			.update(schema.serviceCatalogItems)
 			.set({

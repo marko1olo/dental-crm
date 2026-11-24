@@ -33,14 +33,120 @@ export async function createPaymentInDb(
 		(err as { code?: string; statusCode?: number }).statusCode = 400;
 		throw err;
 	}
-	const inputWithInvoice = input as CreatePaymentInput & { invoiceId?: string };
+	const inputWithExtra = input as CreatePaymentInput & {
+		invoiceId?: string | null;
+		orderId?: string;
+		isRetailSale?: boolean;
+		discountKopecks?: number | null;
+		isWarranty?: boolean;
+		familyGroupId?: string | null;
+		allowOverdraft?: boolean;
+		isUrgentCare?: boolean;
+		isEmergency?: boolean;
+		hasAcutePain?: boolean;
+		dmsAmountKopecks?: number;
+		dmsAmountRub?: number;
+		certificateNumber?: string;
+		certificateAmountKopecks?: number;
+		certificateAmountRub?: number;
+		cashAmountKopecks?: number;
+		electronicAmountKopecks?: number;
+		sbpAmountKopecks?: number;
+		depositAmountKopecks?: number;
+		familyDepositAmountKopecks?: number;
+		bonusAmountKopecks?: number;
+		cashAmountRub?: number;
+		electronicAmountRub?: number;
+		sbpAmountRub?: number;
+		depositAmountRub?: number;
+		familyDepositAmountRub?: number;
+		bonusAmountRub?: number;
+		carpulesCount?: number;
+		drugName?: string;
+		cashierFullName?: string;
+		cashierUserId?: string;
+		operatorId?: string;
+		isElectronicReceiptOnly?: boolean;
+		customerContact?: string;
+		isAdvanceDeposit?: boolean;
+		advanceDepositTarget?: "family" | "patient";
+		clientType?: string | null;
+		buyerInn?: string | null;
+		printFormat?: string;
+		splitTenders?: unknown;
+		taxCategory?: string | null;
+	};
+	const mappedPayload: Record<string, unknown> = {
+		clientMutationId: effectiveMutationId,
+		method: input.method,
+	};
+	const assignIfDefined = (key: string, value: unknown) => {
+		if (value !== undefined) mappedPayload[key] = value;
+	};
+	assignIfDefined("patientId", input.patientId);
+	assignIfDefined("visitId", input.visitId);
+	assignIfDefined("invoiceId", input.documentId ?? inputWithExtra.invoiceId);
+	assignIfDefined("documentId", input.documentId);
+	assignIfDefined("serviceId", input.serviceId);
+	assignIfDefined("catalogItemId", input.catalogItemId);
+	assignIfDefined("orderId", inputWithExtra.orderId);
+	assignIfDefined("isRetailSale", inputWithExtra.isRetailSale);
+	assignIfDefined("amountKopecks", input.amountKopecks);
+	assignIfDefined("amountRub", input.amountRub);
+	assignIfDefined("discountPercent", input.discountPercent);
+	assignIfDefined("discountRub", input.discountRub);
+	assignIfDefined("discountKopecks", inputWithExtra.discountKopecks);
+	assignIfDefined("isWarranty", inputWithExtra.isWarranty);
+	assignIfDefined("familyGroupId", inputWithExtra.familyGroupId);
+	assignIfDefined("payerFullName", input.payerFullName);
+	assignIfDefined("payerInn", input.payerInn);
+	assignIfDefined("payerBirthDate", input.payerBirthDate);
+	assignIfDefined("payerIdentityDocument", input.payerIdentityDocument);
+	assignIfDefined("payerRelationship", input.payerRelationship);
+	assignIfDefined("guaranteeLetterId", input.guaranteeLetterId);
+	assignIfDefined("allowOverdraft", inputWithExtra.allowOverdraft);
+	assignIfDefined("isUrgentCare", inputWithExtra.isUrgentCare);
+	assignIfDefined("isEmergency", inputWithExtra.isEmergency);
+	assignIfDefined("hasAcutePain", inputWithExtra.hasAcutePain);
+	assignIfDefined("dmsAmountKopecks", inputWithExtra.dmsAmountKopecks);
+	assignIfDefined("dmsAmountRub", inputWithExtra.dmsAmountRub);
+	assignIfDefined("certificateNumber", inputWithExtra.certificateNumber);
+	assignIfDefined("certificateAmountKopecks", inputWithExtra.certificateAmountKopecks);
+	assignIfDefined("certificateAmountRub", inputWithExtra.certificateAmountRub);
+	assignIfDefined("cashAmountKopecks", inputWithExtra.cashAmountKopecks);
+	assignIfDefined("electronicAmountKopecks", inputWithExtra.electronicAmountKopecks);
+	assignIfDefined("sbpAmountKopecks", inputWithExtra.sbpAmountKopecks);
+	assignIfDefined("depositAmountKopecks", inputWithExtra.depositAmountKopecks);
+	assignIfDefined("familyDepositAmountKopecks", inputWithExtra.familyDepositAmountKopecks);
+	assignIfDefined("bonusAmountKopecks", inputWithExtra.bonusAmountKopecks);
+	assignIfDefined("cashAmountRub", inputWithExtra.cashAmountRub);
+	assignIfDefined("electronicAmountRub", inputWithExtra.electronicAmountRub);
+	assignIfDefined("sbpAmountRub", inputWithExtra.sbpAmountRub);
+	assignIfDefined("depositAmountRub", inputWithExtra.depositAmountRub);
+	assignIfDefined("familyDepositAmountRub", inputWithExtra.familyDepositAmountRub);
+	assignIfDefined("bonusAmountRub", inputWithExtra.bonusAmountRub);
+	assignIfDefined("carpulesCount", inputWithExtra.carpulesCount);
+	assignIfDefined("drugName", inputWithExtra.drugName);
+	assignIfDefined("splitTenders", inputWithExtra.splitTenders);
+	assignIfDefined("taxCategory", inputWithExtra.taxCategory);
+	assignIfDefined("taxDeductionCode", input.taxDeductionCode);
+	assignIfDefined("cashierFullName", inputWithExtra.cashierFullName);
+	assignIfDefined("cashierUserId", inputWithExtra.cashierUserId);
+	assignIfDefined("operatorId", inputWithExtra.operatorId);
+	assignIfDefined("note", input.note);
+	assignIfDefined("isElectronicReceiptOnly", inputWithExtra.isElectronicReceiptOnly);
+	assignIfDefined("customerContact", inputWithExtra.customerContact);
+	assignIfDefined("isAdvanceDeposit", inputWithExtra.isAdvanceDeposit);
+	assignIfDefined("advanceDepositTarget", inputWithExtra.advanceDepositTarget);
+	assignIfDefined("clientType", inputWithExtra.clientType);
+	assignIfDefined("buyerInn", inputWithExtra.buyerInn);
+	assignIfDefined("fiscalReceiptNumber", input.fiscalReceiptNumber);
+	assignIfDefined("fiscalReceiptIssuedAt", input.fiscalReceiptIssuedAt);
+	assignIfDefined("printFormat", inputWithExtra.printFormat);
+
 	const outcome = await processCashboxPayment(
 		organizationId,
-		{
-			...input,
-			clientMutationId: effectiveMutationId,
-			invoiceId: input.documentId ?? inputWithInvoice.invoiceId,
-		},
+		mappedPayload,
 		effectiveMutationId,
 	);
 
@@ -58,7 +164,7 @@ export async function createPaymentInDb(
 		organizationId: (responseData.organizationId as string) || organizationId,
 		patientId: (responseData.patientId as string) || (input.patientId ?? ""),
 		visitId: (responseData.visitId as string) ?? input.visitId ?? null,
-		documentId: (responseData.documentId as string) ?? input.documentId ?? inputWithInvoice.invoiceId ?? null,
+		documentId: (responseData.documentId as string) ?? input.documentId ?? inputWithExtra.invoiceId ?? null,
 		amountRub: Number(responseData.amountRub ?? (input.amountRub ?? 0)),
 		method: (input.method === "split" || responseData.method === "split" ? "split" : responseData.method) as Payment["method"],
 		clientMutationId: (responseData.clientMutationId as string) || effectiveMutationId || null,
@@ -99,7 +205,10 @@ export interface ResolvedPaymentSplit {
 export function validateAndResolvePaymentSplit(
 	input: CreatePaymentInput,
 ): ResolvedPaymentSplit {
-	const incomingPaymentKopecks = toKopecks(input.amountRub, "сумма оплаты");
+	const incomingPaymentKopecks =
+		input.amountKopecks !== undefined && input.amountKopecks !== null
+			? Number(input.amountKopecks)
+			: toKopecks(input.amountRub, "сумма оплаты");
 	if (incomingPaymentKopecks < 0) {
 		throw new Error("Сумма оплаты не может быть отрицательной.");
 	}

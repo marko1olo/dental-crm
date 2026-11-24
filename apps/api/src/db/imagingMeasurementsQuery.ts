@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
-import { db } from "./client.js";
+import { and, eq, ne } from "drizzle-orm";
+import { db, type TenantDb } from "./client.js";
 import * as schema from "./schema.js";
 import { withTenantCtx } from "./rls.js";
 
@@ -23,8 +23,8 @@ export async function getImagingAnnotationsForStudy(
 	organizationId: string,
 	studyId: string,
 ): Promise<ImagingMeasurementRecord[]> {
-	return withTenantCtx(organizationId, async () => {
-		const records = await db
+	return withTenantCtx(organizationId, async (tx) => {
+		const records = await tx
 			.select()
 			.from(schema.imagingAnnotations)
 			.where(
@@ -64,15 +64,17 @@ export async function saveImagingMeasurementsForStudy(
 		measurements?: Record<string, unknown> | null | undefined;
 		notes?: string | null | undefined;
 	}>,
+	targetDb: TenantDb = db,
 ): Promise<ImagingMeasurementRecord[]> {
-	return withTenantCtx(organizationId, async () => {
-		// Atomic replace for study measurements
-		await db
+	const runSave = async (tx: TenantDb): Promise<ImagingMeasurementRecord[]> => {
+		// Preserve AI findings when doctor replaces manual measurements
+		await tx
 			.delete(schema.imagingAnnotations)
 			.where(
 				and(
 					eq(schema.imagingAnnotations.organizationId, organizationId),
 					eq(schema.imagingAnnotations.studyId, studyId),
+					ne(schema.imagingAnnotations.annotationType, "ai_finding"),
 				),
 			);
 
@@ -80,7 +82,7 @@ export async function saveImagingMeasurementsForStudy(
 
 		const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 		const now = new Date();
-		const inserted = await db
+		const inserted = await tx
 			.insert(schema.imagingAnnotations)
 			.values(
 				measurements.map((m) => ({
@@ -113,7 +115,12 @@ export async function saveImagingMeasurementsForStudy(
 			createdAt: r.createdAt.toISOString(),
 			updatedAt: r.updatedAt.toISOString(),
 		}));
-	});
+	};
+
+	if (targetDb !== db) {
+		return runSave(targetDb);
+	}
+	return withTenantCtx(organizationId, async (tx) => runSave(tx));
 }
 
 export async function saveImagingAiAnnotationsForStudy(
@@ -127,9 +134,9 @@ export async function saveImagingAiAnnotationsForStudy(
 		notes?: string | undefined;
 	}>,
 ): Promise<ImagingMeasurementRecord[]> {
-	return withTenantCtx(organizationId, async () => {
+	return withTenantCtx(organizationId, async (tx) => {
 		// Only delete existing AI findings for this study, preserving doctor's manual annotations!
-		await db
+		await tx
 			.delete(schema.imagingAnnotations)
 			.where(
 				and(
@@ -142,7 +149,7 @@ export async function saveImagingAiAnnotationsForStudy(
 		if (toothUpdates.length === 0) return [];
 
 		const now = new Date();
-		const inserted = await db
+		const inserted = await tx
 			.insert(schema.imagingAnnotations)
 			.values(
 				toothUpdates.map((u) => ({

@@ -6,6 +6,8 @@ import {
 	type GeneratedDocument,
 	generatedDocumentSchema,
 	documentPayloadSchema,
+	kopecksToRubles,
+	parseKopecks,
 	type Patient,
 	patientSchema,
 	type Payment,
@@ -27,25 +29,34 @@ export function extractPatients(
 	treatmentItemRows: Array<typeof schema.treatmentItems.$inferSelect>,
 	report: DomainStateHydrationReport,
 ): Patient[] {
-	const paidByPatient = new Map<string, number>();
+	const paidByPatientKop = new Map<string, number>();
 	for (const payment of paymentRows) {
 		if (payment.status !== "paid") continue;
-		paidByPatient.set(
+		const paidKop =
+			payment.amountKopecks != null
+				? Number(payment.amountKopecks)
+				: parseKopecks(payment.amountRub);
+		paidByPatientKop.set(
 			payment.patientId,
-			(paidByPatient.get(payment.patientId) ?? 0) + payment.amountRub,
+			(paidByPatientKop.get(payment.patientId) ?? 0) + paidKop,
 		);
 	}
-	const plannedByPatient = new Map<string, number>();
+	const plannedByPatientKop = new Map<string, number>();
 	for (const item of treatmentItemRows) {
 		if (item.status === "cancelled") continue;
 		const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
-		const lineTotal = Math.max(
-			0,
-			item.unitPriceRub * quantity - item.discountRub,
-		);
-		plannedByPatient.set(
+		const unitPriceKop =
+			item.unitPriceKopecks != null && item.unitPriceKopecks !== 0n
+				? Number(item.unitPriceKopecks)
+				: parseKopecks(item.unitPriceRub);
+		const discountKop =
+			item.discountKopecks != null && item.discountKopecks !== 0n
+				? Number(item.discountKopecks)
+				: parseKopecks(item.discountRub);
+		const lineTotalKop = Math.max(0, unitPriceKop * quantity - discountKop);
+		plannedByPatientKop.set(
 			item.patientId,
-			(plannedByPatient.get(item.patientId) ?? 0) + lineTotal,
+			(plannedByPatientKop.get(item.patientId) ?? 0) + lineTotalKop,
 		);
 	}
 	return collect<Patient>(
@@ -61,9 +72,9 @@ export function extractPatients(
 			administrativeProfile: patient.administrativeProfile ?? null,
 			familyGroupId: patient.familyGroupId ?? null,
 			mergedIntoPatientId: patient.mergedIntoPatientId ?? null,
-			balanceRub: Math.round(
-				(paidByPatient.get(patient.id) ?? 0) -
-					(plannedByPatient.get(patient.id) ?? 0),
+			balanceRub: kopecksToRubles(
+				(paidByPatientKop.get(patient.id) ?? 0) -
+					(plannedByPatientKop.get(patient.id) ?? 0),
 			),
 			createdAt: isoOrSkipRow(
 				patient.createdAt,
@@ -97,7 +108,10 @@ export function extractPayments(
 			patientId: payment.patientId,
 			visitId: payment.visitId ?? null,
 			documentId: payment.documentId ?? null,
-			amountRub: payment.amountRub,
+			amountRub:
+				payment.amountKopecks != null
+					? kopecksToRubles(Number(payment.amountKopecks))
+					: payment.amountRub,
 			method: payment.method,
 			status: payment.status,
 			paidAt: iso(payment.paidAt),

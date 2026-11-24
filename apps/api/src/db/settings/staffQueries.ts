@@ -22,6 +22,7 @@ import type {
 import { useInMemory } from "./types.js";
 import { staffAuthorityFlags } from "../../security/permissions.js";
 import { db } from "../client.js";
+import { withSavepoint, withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 
 const logger = createApiLogger("staffQueries");
@@ -40,62 +41,69 @@ export async function createStaffMemberInDb(
 		}
 	}
 
-	const existingUsers = await db
-		.select({
-			id: schema.users.id,
-			fullName: schema.users.fullName,
-			snils: schema.users.snils,
-			email: schema.users.email,
-			phone: schema.users.phone,
-		})
-		.from(schema.users)
-		.where(eq(schema.users.organizationId, organizationId));
+	const inserted = await withTenantCtx(organizationId, async (tx) => {
+		const existingUsers = await tx
+			.select({
+				id: schema.users.id,
+				fullName: schema.users.fullName,
+				snils: schema.users.snils,
+				email: schema.users.email,
+				phone: schema.users.phone,
+			})
+			.from(schema.users)
+			.where(eq(schema.users.organizationId, organizationId));
 
-	const duplicate = checkStaffDuplicates(existingUsers, {
-		id: "NEW",
-		fullName: input.fullName,
-		snils: input.snils ?? null,
-		email: input.email ?? null,
-		phone: input.phone ?? null,
-	});
-
-	if (duplicate) {
-		throw new Error(duplicate.message);
-	}
-
-	const [inserted] = await db
-		.insert(schema.users)
-		.values({
-			organizationId,
+		const duplicate = checkStaffDuplicates(existingUsers, {
+			id: "NEW",
 			fullName: input.fullName,
-			role: input.role,
-			phone: input.phone || null,
-			email: input.email || null,
-			snils: snilsToSave,
-			isActive: true,
-			workingHours: input.workingHours,
-		})
-		.returning();
+			snils: input.snils ?? null,
+			email: input.email ?? null,
+			phone: input.phone ?? null,
+		});
+
+		if (duplicate) {
+			throw new Error(duplicate.message);
+		}
+
+		const [createdRow] = await tx
+			.insert(schema.users)
+			.values({
+				organizationId,
+				fullName: input.fullName,
+				role: input.role,
+				phone: input.phone || null,
+				email: input.email || null,
+				snils: snilsToSave,
+				isActive: true,
+				workingHours: input.workingHours,
+			})
+			.returning();
+
+		return createdRow;
+	});
 
 	if (!inserted) {
 		throw new Error("Не удалось добавить сотрудника в базу данных.");
 	}
 
+	const nowIso = new Date().toISOString();
 	return {
 		id: inserted.id,
 		organizationId: inserted.organizationId,
 		fullName: inserted.fullName,
-		role: inserted.role as StaffMember["role"],
+		role: input.role,
 		specialties: ["universal"],
 		phone: inserted.phone,
 		email: inserted.email,
 		active: inserted.isActive,
 		...staffAuthorityFlags(inserted.role),
 		color: "#000000",
-		workingHours: (inserted.workingHours as StaffMember["workingHours"]) ?? undefined,
-		createdAt: new Date().toISOString(),
-		updatedAt: new Date().toISOString(),
-	} as StaffMember;
+		...(inserted.workingHours
+			? { workingHours: inserted.workingHours as StaffMember["workingHours"] }
+			: {}),
+		createdAt: nowIso,
+		updatedAt: nowIso,
+	};
 }
 
 export async function updateStaffWorkingHoursInDb(
@@ -158,30 +166,35 @@ export async function updateStaffMemberProfileInDb(
 	if (input.canSignMedicalRecords !== undefined) updateData.canSignMedicalRecords = input.canSignMedicalRecords;
 	if (input.canManageMoney !== undefined) updateData.canManageMoney = input.canManageMoney;
 	if (input.canManageImports !== undefined) updateData.canManageImports = input.canManageImports;
-	if (Object.keys(updateData).length > 0) {
-		await db
-			.update(schema.users)
-			.set(updateData)
-			.where(
-				and(
-					eq(schema.users.id, staffId),
-					eq(schema.users.organizationId, organizationId),
-				),
-			);
-	}
-	if (input.commissionPct !== undefined && input.commissionPct !== null) {
-		try {
-			await setDoctorCommissionRateInDb(organizationId, staffId, input.commissionPct, {
-				materialCostDeductionPct: input.materialCostDeductionPct ?? undefined,
-				labCostDeductionPct: input.labCostDeductionPct ?? undefined,
-			});
-		} catch (commErr) {
-			logger.warn(
-				{ err: safeLogError(commErr), organizationId, staffId },
-				"Не удалось синхронизировать ставку врача при обновлении профиля",
-			);
+	await withTenantCtx(organizationId, async (tx) => {
+		if (Object.keys(updateData).length > 0) {
+			await tx
+				.update(schema.users)
+				.set(updateData)
+				.where(
+					and(
+						eq(schema.users.id, staffId),
+						eq(schema.users.organizationId, organizationId),
+					),
+				);
 		}
-	}
+		const commissionPct = input.commissionPct;
+		if (commissionPct !== undefined && commissionPct !== null) {
+			try {
+				await withSavepoint(tx, async () =>
+					setDoctorCommissionRateInDb(organizationId, staffId, commissionPct, {
+						materialCostDeductionPct: input.materialCostDeductionPct ?? undefined,
+						labCostDeductionPct: input.labCostDeductionPct ?? undefined,
+					}),
+				);
+			} catch (commErr) {
+				logger.warn(
+					{ err: safeLogError(commErr), organizationId, staffId },
+					"Не удалось синхронизировать ставку врача при обновлении профиля",
+				);
+			}
+		}
+	});
 }
 
 /**
@@ -224,19 +237,23 @@ export async function updateStaffCredentialsInDb(
 	const userUpdates: Partial<typeof schema.users.$inferInsert> & { passwordEntropyBits?: number } = { ...updates };
 	delete userUpdates.passwordEntropyBits;
 
-	if (updates.passwordEntropyBits !== undefined) {
-		const [user] = await db
-			.select({ uiPreferences: schema.users.uiPreferences })
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, staffId),
-					eq(schema.users.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+	await withTenantCtx(organizationId, async (tx) => {
+		if (updates.passwordEntropyBits !== undefined) {
+			const [user] = await tx
+				.select({ uiPreferences: schema.users.uiPreferences })
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.id, staffId),
+						eq(schema.users.organizationId, organizationId),
+					),
+				)
+				.limit(1);
 
-		if (user) {
+			if (!user) {
+				throw new Error("Сотрудник не найден.");
+			}
+
 			const existingUi = (user.uiPreferences as Record<string, unknown>) || {};
 			const existingHr = (existingUi.hrProfile as Record<string, unknown>) || {};
 			userUpdates.uiPreferences = {
@@ -247,17 +264,22 @@ export async function updateStaffCredentialsInDb(
 				},
 			};
 		}
-	}
 
-	await db
-		.update(schema.users)
-		.set(userUpdates)
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		);
+		const updatedRows = await tx
+			.update(schema.users)
+			.set(userUpdates)
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.returning({ id: schema.users.id });
+
+		if (updatedRows.length === 0) {
+			throw new Error("Сотрудник не найден.");
+		}
+	});
 }
 
 const COMMISSION_STORAGE_UNAVAILABLE =
@@ -350,21 +372,20 @@ export async function setDoctorCommissionRateInDb(
 ): Promise<DoctorCommissionRate> {
 	if (useInMemory()) throw new Error(COMMISSION_STORAGE_UNAVAILABLE);
 
-	const [staffMember] = await db
-		.select({ id: schema.users.id })
-		.from(schema.users)
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!staffMember) throw new Error("Сотрудник не найден.");
+	return withTenantCtx(organizationId, async (tx) => {
+		const [staffMember] = await tx
+			.select({ id: schema.users.id })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!staffMember) throw new Error("Сотрудник не найден.");
 
-	const normalizedPct = commissionPct.toFixed(2);
-
-	return db.transaction(async (tx) => {
+		const normalizedPct = commissionPct.toFixed(2);
 		const [previous] = await tx
 			.select({
 				materialCostDeductionPct:

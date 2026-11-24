@@ -4,6 +4,7 @@ import type {
 	VisitDraftAutosaveRequest,
 } from "@dental/shared";
 import { and, eq, isNull } from "drizzle-orm";
+import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
 import { db } from "../../client.js";
 import * as schema from "../../schema.js";
 import type { VisitDraftAutosaveLookup } from "../types.js";
@@ -245,16 +246,38 @@ export async function upsertVisitDraftAutosaveInDb(
 				.limit(1);
 
 			if (existingDiary && !existingDiary.isLocked) {
+				const mergedComplaint = nextComplaint || existingDiary.complaint;
+				const mergedAnamnesis = nextAnamnesis || existingDiary.anamnesis;
+				const mergedStatusLocalis =
+					nextObjectiveStatus || existingDiary.statusLocalis;
+				const mergedDiagnosisIcd10 =
+					nextDiagnosis || existingDiary.diagnosisIcd10;
+				const mergedDiagnosisTooth =
+					nextTooth || existingDiary.diagnosisTooth;
+				const mergedTreatmentDescription =
+					nextTreatmentPlan || existingDiary.treatmentDescription;
+				const updatedHash = computeDiaryHash(
+					input.visitId,
+					visit.patientId,
+					mergedComplaint,
+					mergedAnamnesis,
+					mergedStatusLocalis,
+					mergedTreatmentDescription,
+					mergedDiagnosisIcd10,
+					mergedDiagnosisTooth,
+					existingDiary.complications,
+					existingDiary.comorbidities,
+				);
 				await tx
 					.update(schema.visitDiaries)
 					.set({
-						complaint: nextComplaint || existingDiary.complaint,
-						anamnesis: nextAnamnesis || existingDiary.anamnesis,
-						statusLocalis: nextObjectiveStatus || existingDiary.statusLocalis,
-						diagnosisIcd10: nextDiagnosis || existingDiary.diagnosisIcd10,
-						diagnosisTooth: nextTooth || existingDiary.diagnosisTooth,
-						treatmentDescription:
-							nextTreatmentPlan || existingDiary.treatmentDescription,
+						complaint: mergedComplaint,
+						anamnesis: mergedAnamnesis,
+						statusLocalis: mergedStatusLocalis,
+						diagnosisIcd10: mergedDiagnosisIcd10,
+						diagnosisTooth: mergedDiagnosisTooth,
+						treatmentDescription: mergedTreatmentDescription,
+						diaryHash: updatedHash,
 						updatedAt: now,
 					})
 					.where(
@@ -265,6 +288,16 @@ export async function upsertVisitDraftAutosaveInDb(
 						),
 					);
 			} else if (!existingDiary) {
+				const initialHash = computeDiaryHash(
+					input.visitId,
+					visit.patientId,
+					nextComplaint || null,
+					nextAnamnesis || "",
+					nextObjectiveStatus || "",
+					nextTreatmentPlan || "",
+					nextDiagnosis || "",
+					nextTooth || null,
+				);
 				await tx.insert(schema.visitDiaries).values({
 					organizationId,
 					visitId: input.visitId,
@@ -276,6 +309,7 @@ export async function upsertVisitDraftAutosaveInDb(
 					diagnosisTooth: nextTooth || null,
 					treatmentDescription: nextTreatmentPlan || "",
 					content: "",
+					diaryHash: initialHash,
 					isLocked: false,
 					version: 1,
 					createdAt: now,

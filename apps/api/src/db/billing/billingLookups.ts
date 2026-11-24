@@ -1,4 +1,5 @@
 import type { Payment } from "@dental/shared";
+import { kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import { db, type TenantDb } from "../client.js";
 import { withTenantCtx } from "../rls.js";
@@ -32,8 +33,10 @@ export async function findPaymentByClientMutationIdInDb(
 						eq(schema.payments.clientMutationId, clientMutationId),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:cash`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:card`),
+						eq(schema.payments.clientMutationId, `${clientMutationId}:sbp`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:electronic`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:deposit`),
+						eq(schema.payments.clientMutationId, `${clientMutationId}:advance`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:bonus`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:certificate`),
 						eq(schema.payments.clientMutationId, `${clientMutationId}:dms`),
@@ -45,9 +48,18 @@ export async function findPaymentByClientMutationIdInDb(
 	const payment = matchedPayments[0];
 	if (!payment) return null;
 	const isSplitMatch = matchedPayments.length > 1 || (payment.clientMutationId?.includes(":") ?? false);
+	const totalAmountKop = matchedPayments.reduce((acc, p) => {
+		const kop =
+			p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
+				? Number(p.amountKopecks)
+				: rublesToKopecks(Number(p.amountRub || 0));
+		return acc + kop;
+	}, 0);
 	const totalAmountRub = isSplitMatch
-		? matchedPayments.reduce((acc, p) => acc + Number(p.amountRub), 0)
-		: payment.amountRub;
+		? kopecksToRub(totalAmountKop)
+		: payment.amountKopecks !== undefined && payment.amountKopecks !== null && payment.amountKopecks !== 0n
+			? kopecksToRub(Number(payment.amountKopecks))
+			: payment.amountRub;
 	return {
 		id: payment.id,
 		organizationId: payment.organizationId,
@@ -180,7 +192,10 @@ export async function getDocumentForBilling(
 				visitId: inv.visitId,
 				kind: "payment_invoice",
 				status: inv.status === "paid" ? "settled" : "issued",
-				totalAmountRub: inv.totalAmountRub ?? Number(inv.totalRub || 0),
+				totalAmountRub:
+					inv.totalPriceKopecks > 0n
+						? kopecksToRub(Number(inv.totalPriceKopecks))
+						: (inv.totalAmountRub ?? Number(inv.totalRub || 0)),
 			};
 			return invoiceDoc;
 		}
@@ -211,7 +226,10 @@ export async function getPaymentsByPatientIdInDb(
 				patientId: p.patientId,
 				visitId: p.visitId,
 				documentId: p.documentId,
-				amountRub: p.amountRub,
+				amountRub:
+					p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
+						? kopecksToRub(Number(p.amountKopecks))
+						: p.amountRub,
 				method: p.method,
 				clientMutationId: p.clientMutationId,
 				fiscalReceiptNumber: p.fiscalReceiptNumber,

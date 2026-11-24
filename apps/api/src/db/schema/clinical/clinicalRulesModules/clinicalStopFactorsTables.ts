@@ -64,7 +64,7 @@ export const insuranceContracts = pgTable(
 			scale: 2,
 			mode: "number",
 		}),
-		annualLimitKopecks: bigint("annual_limit_kopecks", { mode: "bigint" }),
+		annualLimitKopecks: bigint("annual_limit_kopecks", { mode: "bigint" }).notNull().default(0n),
 		patientFranchisePct: numeric("patient_franchise_pct", {
 			precision: 5,
 			scale: 2,
@@ -113,7 +113,7 @@ export const dmsGuaranteeLetters = pgTable(
 			scale: 2,
 			mode: "number",
 		}).notNull(),
-		maxCoverageKopecks: bigint("max_coverage_kopecks", { mode: "bigint" }),
+		maxCoverageKopecks: bigint("max_coverage_kopecks", { mode: "bigint" }).notNull().default(0n),
 		usedAmountRub: numeric("used_amount_rub", {
 			precision: 12,
 			scale: 2,
@@ -121,7 +121,7 @@ export const dmsGuaranteeLetters = pgTable(
 		})
 			.notNull()
 			.default(0),
-		usedAmountKopecks: bigint("used_amount_kopecks", { mode: "bigint" }),
+		usedAmountKopecks: bigint("used_amount_kopecks", { mode: "bigint" }).notNull().default(0n),
 		franchisePct: numeric("franchise_pct", {
 			precision: 5,
 			scale: 2,
@@ -137,7 +137,7 @@ export const dmsGuaranteeLetters = pgTable(
 		})
 			.notNull()
 			.default(0),
-		franchiseFixedKopecks: bigint("franchise_fixed_kopecks", { mode: "bigint" }),
+		franchiseFixedKopecks: bigint("franchise_fixed_kopecks", { mode: "bigint" }).notNull().default(0n),
 		programExclusions: jsonb("program_exclusions")
 			.$type<string[]>()
 			.notNull()

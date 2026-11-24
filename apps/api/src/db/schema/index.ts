@@ -17,6 +17,8 @@ export * from "./aiTelemetry.js";
 export * from "./documents.js";
 export * from "./outpatientCore.js";
 export * from "./finance.js";
+export * from "./commerceMlTables.js";
+export * from "./bankStatementsTables.js";
 export * from "./periodontogram.js";
 export * from "./treatmentConsumables.js";
 export * from "./doctorPreferences.js";
