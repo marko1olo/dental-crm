@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import type { Appointment } from "@dental/shared";
+import { rublesToKopecks, type Appointment } from "@dental/shared";
 import type { VisitDiaryEntry043, FdiToothRecord, ToothSurface } from "../../emr";
 import type { PaymentMethodTab } from "../../cashbox/cashRegisterSplitsData.js";
 import { useVisitCompletion, assembleVisitStoreCompletedServices } from "../useVisitCompletion";
@@ -388,11 +388,11 @@ export function useVisitSummaryModalState(
 					name: s.name || s.title || "Медицинская услуга",
 					category: (s.category || "therapy") as ClinicalEstimateItem["category"],
 					priceRub: s.priceRub ?? s.unitPriceRub ?? 0,
-					priceKopecks: Math.round((s.priceRub ?? s.unitPriceRub ?? 0) * 100),
+					priceKopecks: rublesToKopecks(s.priceRub ?? s.unitPriceRub ?? 0),
 					quantity: s.quantity || 1,
 					discountPercent: 0,
 					totalRub: s.totalRub ?? ((s.priceRub ?? s.unitPriceRub ?? 0) * (s.quantity || 1)),
-					totalKopecks: Math.round((s.totalRub ?? ((s.priceRub ?? s.unitPriceRub ?? 0) * (s.quantity || 1))) * 100),
+					totalKopecks: rublesToKopecks(s.totalRub ?? ((s.priceRub ?? s.unitPriceRub ?? 0) * (s.quantity || 1))),
 					durationMinutes: 30,
 					warrantyMonths: 12,
 					lifetimeMonths: 24,

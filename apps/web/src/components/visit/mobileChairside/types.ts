@@ -84,6 +84,8 @@ export interface MobileChairsideVisitWorkspaceProps {
   flushPendingVisitSaves?: (() => Promise<void> | void) | undefined;
   handleApplySomaticNormQuick?: (() => void) | undefined;
   handleFinishVisitAction?: (() => Promise<void> | void) | undefined;
+  handlePrintMedicalCardFast?: (() => void) | undefined;
+  /** @deprecated Канонический вызов: handlePrintMedicalCardFast («Медицинская карта приёма», Мандаты 8x/8ap) */
   handlePrintForm043uFast?: (() => void) | undefined;
   handleOpenPrescription?: (() => void) | undefined;
   handleOpenLabOrder?: (() => void) | undefined;

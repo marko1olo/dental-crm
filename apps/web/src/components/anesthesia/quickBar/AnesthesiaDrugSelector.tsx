@@ -75,8 +75,8 @@ export function AnesthesiaDrugSelector({
 							isSel
 								? isCardio
 									? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold"
-									: "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold"
-								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"
+									: "border-2 border-[var(--primary)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]"
 						}`}
 						data-testid={p.testId}
 					>

@@ -106,7 +106,7 @@ export function AnesthesiaMobileDrawer({
 								onApplyAnesthesia(cp.drugId, cp.drugId === "none" ? 0 : carpulesCount, cp.defaultTechnique ?? techniqueId);
 								onClose();
 							}}
-							className={`w-full flex items-center justify-between p-3 min-h-[48px] rounded-xl border text-xs font-semibold cursor-pointer active:scale-98 transition-all ${selectedDrugId === cp.drugId ? "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"}`}
+							className={`w-full flex items-center justify-between p-3 min-h-[48px] rounded-xl border text-xs font-semibold cursor-pointer active:scale-98 transition-all ${selectedDrugId === cp.drugId ? "border-2 border-[var(--primary)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]"}`}
 						>
 							<div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
 								{cp.drugId === "none" ? (
@@ -170,7 +170,7 @@ export function AnesthesiaMobileDrawer({
 					<span className="text-[var(--ink)]">Аспирационная проба отрицательная (−)</span>
 				</label>
 
-				{/* РОВНО ОДНА PRIMARY CTA КНОПКА #0d9488 — МАНДАТ 8am & 8e (НИКОГДА НЕ DISABLED) */}
+				{/* РОВНО ОДНА PRIMARY CTA КНОПКА (МАНДАТ 8am & 8e, НИКОГДА НЕ DISABLED) */}
 				<div className="pt-2 sticky bottom-0 bg-[var(--paper)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
@@ -178,7 +178,7 @@ export function AnesthesiaMobileDrawer({
 							onApplyAnesthesia(selectedDrugId, carpulesCount);
 							onClose();
 						}}
-						className="primary-button w-full py-3.5 min-h-[48px] rounded-xl border border-[#0f766e] bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-bold cursor-pointer inline-flex items-center justify-center gap-2 shadow-sm active:scale-98"
+						className="primary-button w-full py-3.5 min-h-[48px] rounded-xl border border-[var(--primary-hover)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold cursor-pointer inline-flex items-center justify-center gap-2 shadow-sm active:scale-98"
 						data-testid="btn-mobile-sheet-apply-anesthesia"
 					>
 						<CheckCircle2 size={16} />

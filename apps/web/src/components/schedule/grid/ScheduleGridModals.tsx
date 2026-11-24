@@ -58,7 +58,7 @@ export function ScheduleGridModals({
   waitlistDrawerSlot,
   setWaitlistDrawerSlot,
 }: ScheduleGridModalsProps) {
-  // Forward waitlistDrawerSlot to central ScheduleModalsLayer (SSOT)
+  // Forward waitlistDrawerSlot to central ScheduleViewModals (SSOT)
   React.useEffect(() => {
     if (waitlistDrawerSlot) {
       window.dispatchEvent(

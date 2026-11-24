@@ -196,7 +196,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 				{/* Header: Title, Tooth Context, Emergency & Close */}
 				<header className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--line)] flex items-center justify-between gap-2.5 shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#0d9488] text-white flex items-center justify-center shadow-xs shrink-0">
+						<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center shadow-xs shrink-0">
 							<Syringe size={18} />
 						</div>
 						<div className="min-w-0">
@@ -265,7 +265,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 				<main className="p-3 sm:p-4 space-y-2 overflow-y-auto min-h-0 flex-1">
 					{/* 1. Four 1-Click Clinical Fast Presets */}
 					<div className="space-y-1">
-						<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Клинические протоколы</label>
+						<label className="text-xs font-medium text-[var(--ink-muted)]">Клинические протоколы</label>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5" data-testid="clinical-fast-presets-grid">
 							{CLINICAL_FAST_PRESETS.map((preset) => {
 								const isSel = selectedDrugId === preset.drugId && (preset.drugId === "none" || carpulesCount === preset.count);
@@ -275,13 +275,13 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 										type="button"
 										onClick={() => applyPreset(preset)}
 										className={`p-2 sm:p-2.5 min-h-[44px] rounded-xl border text-left flex items-start justify-between gap-2 transition-all cursor-pointer ${
-											isSel ? "border-[#0d9488] bg-[var(--teal-surface)] shadow-xs" : "border-[var(--line)] bg-[var(--paper)] hover:border-[#0d9488]/60 hover:bg-[var(--paper-soft)]"
+											isSel ? "border-[var(--primary)] bg-[var(--teal-surface)] shadow-xs" : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--primary)]/60 hover:bg-[var(--paper-soft)]"
 										}`}
 										data-testid={preset.testId}
 									>
 										<div className="min-w-0">
 											<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-												<Syringe size={13} className={isSel ? "text-[#0d9488]" : "text-[var(--muted)]"} />
+												<Syringe size={13} className={isSel ? "text-[var(--primary)]" : "text-[var(--muted)]"} />
 												<span>{preset.fullLabelRu}</span>
 											</div>
 											<div className="text-[11px] text-[var(--muted)] truncate mt-0.5">{preset.clinicalScopeRu}</div>
@@ -295,7 +295,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 
 					{/* 2. Four Canonical Anesthetic Drugs in Russia */}
 					<div className="space-y-1">
-						<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Препарат (4 канонических анестетика РФ)</label>
+						<label className="text-xs font-medium text-[var(--ink-muted)]">Препарат (4 канонических анестетика РФ)</label>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5" data-testid="anesthetic-drugs-grid">
 							{PRIMARY_ANESTHETIC_DRUGS.slice(0, 4).map((drug) => {
 								const isSel = selectedDrugId === drug.id;
@@ -305,13 +305,13 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 										type="button"
 										onClick={() => setSelectedDrugId(drug.id)}
 										className={`p-2 sm:p-2.5 min-h-[44px] rounded-xl border text-left flex items-start justify-between gap-2 transition-all cursor-pointer ${
-											isSel ? "border-[#0d9488] bg-[var(--teal-surface)] shadow-xs font-bold" : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
+											isSel ? "border-[var(--primary)] bg-[var(--teal-surface)] shadow-xs font-bold" : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 										}`}
 										data-testid={`drug-card-${drug.id}`}
 									>
 										<div className="min-w-0">
 											<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-												<span className={`w-2 h-2 rounded-full ${drug.isAdrenalineFree ? "bg-emerald-500" : "bg-[#0d9488]"}`} />
+												<span className={`w-2 h-2 rounded-full ${drug.isAdrenalineFree ? "bg-emerald-500" : "bg-[var(--primary)]"}`} />
 												<span>{drug.labelRu}</span>
 											</div>
 											<div className="text-[11px] text-[var(--muted)] truncate mt-0.5">{drug.tradeNames}</div>
@@ -328,7 +328,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 					{/* 3. Technique & Volume (Carpules) */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 						<div className="space-y-1">
-							<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Способ введения</label>
+							<label className="text-xs font-medium text-[var(--ink-muted)]">Способ введения</label>
 							<div className="flex flex-col gap-1" role="group" aria-label="Способ введения анестетика">
 								{Object.values(INJECTION_TECHNIQUES).slice(0, 4).map((tech) => {
 									const isSel = techniqueId === tech.id;
@@ -338,12 +338,12 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 											type="button"
 											onClick={() => setTechniqueId(tech.id)}
 											className={`px-3 py-1.5 min-h-[44px] rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
-												isSel ? "border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+												isSel ? "border-[var(--primary)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 											}`}
 											data-testid={`tech-btn-${tech.id}`}
 										>
 											<span>{tech.nameRu}</span>
-											{isSel && <Check size={14} className="text-[#0d9488] shrink-0" />}
+											{isSel && <Check size={14} className="text-[var(--primary)] shrink-0" />}
 										</button>
 									);
 								})}
@@ -352,7 +352,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 
 						{/* Dosage & Carpules Stepper */}
 						<div className="space-y-1">
-							<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Количество карпул и объём</label>
+							<label className="text-xs font-medium text-[var(--ink-muted)]">Количество карпул и объём</label>
 							<div className="p-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl space-y-1.5">
 								<div className="flex items-center gap-1.5 flex-wrap">
 									{CARPULE_PRESETS.slice(0, 3).map((cp) => (
@@ -361,7 +361,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 											type="button"
 											onClick={() => setCarpulesCount(cp.count)}
 											className={`px-2.5 py-1 min-h-[44px] rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-												carpulesCount === cp.count ? "border-[#0d9488] bg-[var(--paper)] text-[#0d9488] shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
+												carpulesCount === cp.count ? "border-[var(--primary)] bg-[var(--paper)] text-[var(--primary)] shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={cp.id}
 										>
@@ -435,7 +435,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 					</div>
 				</main>
 
-				{/* Floating Bottom Bar: ROVNO 1 Primary CTA Button #0d9488 (Mandates 8am, 8e, 8ze) */}
+				{/* Floating Bottom Bar: ROVNO 1 Primary CTA Button (Mandates 8am, 8e, 8ze) */}
 				<footer className="p-3 sm:px-6 sm:py-3 bg-[var(--paper)] border-t border-[var(--line)] flex items-center justify-between gap-2.5 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
@@ -459,7 +459,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 					<button
 						type="button"
 						onClick={handleCommitAnesthesia}
-						className="primary-button inline-flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 min-h-[44px] h-12 rounded-xl border border-[#0f766e] bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-98 flex-1 sm:flex-initial sm:w-auto sm:ml-auto whitespace-nowrap"
+						className="primary-button inline-flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 min-h-[44px] h-12 rounded-xl border border-[var(--primary-hover)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-98 flex-1 sm:flex-initial sm:w-auto sm:ml-auto whitespace-nowrap"
 						data-testid="btn-apply-anesthesia-to-card"
 					>
 						<CheckCircle2 size={16} className="shrink-0" />
