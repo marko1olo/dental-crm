@@ -125,8 +125,6 @@
 	background: var(--bad-bg);
 	color: var(--bad-fg);
 	border: 1px solid var(--bad-fg);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
@@ -506,7 +504,6 @@
 	font-weight: 800;
 	padding: 0.15rem 0.4rem;
 	border-radius: 4px;
-	text-transform: uppercase;
 }
 
 .emergency-drug-priority-badge.first-line {
