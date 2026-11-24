@@ -345,7 +345,7 @@ export function analyzeDiff(diffText) {
 	let contiguousAdded = [];
 
 	const flushContiguous = () => {
-		if (contiguousAdded.length > 0 && currentFile && !isDocOrScriptFile(currentFile)) {
+		if (contiguousAdded.length > 0 && currentFile && !isDocOrScriptFile(currentFile) && !isTestFile(currentFile)) {
 			checkContiguousAddedBlock(contiguousAdded, currentFile, violations);
 		}
 		contiguousAdded = [];

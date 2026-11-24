@@ -52,6 +52,7 @@
     "screenshot:lifecycle": "node --max-old-space-size=2048 scripts/capture-real-lifecycle-proofs.mjs",
     "smoke:browser-boot": "node --max-old-space-size=2048 scripts/smoke-browser-boot.mjs",
     "lint": "npm run check:limits && npm run check:sandboxes && npm run check:encoding && npm run check:ratchet && npm run check:doors && npm run audit:dice -- --strict && npm run check:tracked-ignored && npm run check:dynamic-imports && npm run check:env-contract && npm run typecheck",
+    "pretest": "npm run audit:dice",
     "test": "node --max-old-space-size=2048 scripts/guarded-test.mjs",
     "test:raw": "npm run check:limits && npm run check:sandboxes && npm run audit:dice && npm run test -w @dental/shared && npm run test -w @dental/api && npm run test -w @dental/web",
     "test:unit": "npm run audit:dice && npm run test -w @dental/shared && npm run test -w @dental/api",

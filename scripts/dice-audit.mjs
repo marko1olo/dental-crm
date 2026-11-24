@@ -1008,7 +1008,8 @@ if (isDirectCall) {
 		process.exit(0);
 	}
 
-	const report = runDiceAudit(cliOpts, process.cwd());
+	const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const report = runDiceAudit(cliOpts, repoRoot);
 
 	if (cliOpts.json) {
 		console.log(JSON.stringify(report, null, 2));

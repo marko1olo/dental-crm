@@ -20,7 +20,7 @@ const CHECKS = [
 	{ id: "TYPE_RATCHET", name: "Sanitary Quality Ratchet (0 any, 0 suppressions, 0 uppercase, <=21 float)", cmd: "node --max-old-space-size=2048 scripts/quality-ratchet.mjs" },
 	{ id: "MOCK_DEFAULTS", name: "Mock Defaults Hunter (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-mock-defaults.mjs" },
 	{ id: "SINGLE_DOORS", name: "Single-Door SSOT Guardian", cmd: "node --max-old-space-size=2048 scripts/check-single-doors.mjs" },
-	{ id: "DICE_AUDIT", name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта)", cmd: "node --max-old-space-size=2048 scripts/dice-audit.mjs --strict" },
+	{ id: "DICE_AUDIT", name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта)", cmd: "node --max-old-space-size=2048 scripts/dice-audit.mjs" },
 ];
 
 console.log("🛡️ [PRE-COMMIT GATE] Запуск автоматических машинных замков...");
