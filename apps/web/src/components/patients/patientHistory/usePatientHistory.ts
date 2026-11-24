@@ -67,7 +67,7 @@ export function usePatientHistory({
 				const mapped = mapApiRecordsToClinicalVisits(data.visits ?? [], data.diaries ?? []);
 				setServerVisits(mapped);
 			} catch (e) {
-				console.warn("[usePatientHistory] Failed to fetch patient records from DB:", e);
+				clientLogger.warn("[usePatientHistory] Failed to fetch patient records from DB:", e);
 				if (isMounted) setServerVisits([]);
 			} finally {
 				if (isMounted) setIsLoadingRecords(false);

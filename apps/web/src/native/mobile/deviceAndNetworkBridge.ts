@@ -116,7 +116,7 @@ export async function releaseScreenWakeLock(): Promise<boolean> {
 			const res = await nativeApi.releaseWakeLock();
 			return res.success;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] native releaseWakeLock failed:", err);
+			logger.warn("[mobileBridge] native releaseWakeLock failed:", err);
 		}
 	}
 
@@ -126,7 +126,7 @@ export async function releaseScreenWakeLock(): Promise<boolean> {
 			activeWakeLockSentinel = null;
 			return true;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] activeWakeLockSentinel.release failed:", err);
+			logger.warn("[mobileBridge] activeWakeLockSentinel.release failed:", err);
 			return false;
 		}
 	}

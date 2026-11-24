@@ -151,7 +151,7 @@ export function useVisitTherapyState({
 				},
 			}));
 		} catch (err) {
-			console.error("[useVisitTherapyState] Ошибка при отправке события dente-add-services-to-invoice:", err);
+			clientLogger.error("Ошибка при отправке события dente-add-services-to-invoice", err, { module: "useVisitTherapyState" });
 		}
 		const codesList = therapyServices.map((s) => s.code).join(", ");
 		showToast(`Услуги (${codesList}) добавлены в смету зуба ${effectiveTooth}`, "success", 3500);

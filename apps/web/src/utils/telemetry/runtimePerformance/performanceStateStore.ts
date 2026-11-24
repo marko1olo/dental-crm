@@ -60,7 +60,7 @@ export class PerformanceStateStore {
 			try {
 				l(this.currentSnapshot);
 			} catch (err: unknown) {
-				console.warn("[PerformanceStateStore] Error in listener:", err);
+				logger.warn("[PerformanceStateStore] Error in listener:", err);
 			}
 		}
 	}

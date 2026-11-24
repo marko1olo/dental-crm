@@ -111,7 +111,7 @@ export function Omnibar() {
 				if (err instanceof DOMException && err.name === "AbortError") {
 					return;
 				}
-				console.warn("[Omnibar] Remote patient search failed:", err);
+				clientLogger.warn("[Omnibar] Remote patient search failed:", err);
 			}
 		}, 150);
 		return () => {
@@ -485,7 +485,7 @@ export function Omnibar() {
 												try {
 													await toggleDictation();
 												} catch (err) {
-													console.warn("[Omnibar] Dictation toggle error:", err);
+													clientLogger.warn("[Omnibar] Dictation toggle error:", err);
 												}
 											}}
 											className={`w-9 h-9 min-h-[36px] min-w-[36px] rounded-lg border flex items-center justify-center transition-all cursor-pointer ${

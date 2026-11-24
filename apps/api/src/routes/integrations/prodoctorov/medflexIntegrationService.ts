@@ -7,6 +7,7 @@
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { TenantDb } from "../../../db/client.js";
+import { withSuperuserBypass } from "../../../db/rls.js";
 import {
 	medflexDoctorMappings,
 	medflexIntegrations,
@@ -44,7 +45,7 @@ export interface DoctorMappingItemDto {
  * Категорический запрет на утечку мульти-тенантности: если не найдено, возвращает null.
  */
 export async function findIntegrationByClinicExternalId(
-	tx: TenantDb,
+	_tx: TenantDb,
 	clinicExternalId: string,
 ): Promise<MedflexIntegration | null> {
 	if (!clinicExternalId || typeof clinicExternalId !== "string") {
@@ -53,13 +54,15 @@ export async function findIntegrationByClinicExternalId(
 	const normalizedId = clinicExternalId.trim();
 	if (!normalizedId) return null;
 
-	const [integration] = await tx
-		.select()
-		.from(medflexIntegrations)
-		.where(eq(medflexIntegrations.clinicExternalId, normalizedId))
-		.limit(1);
+	return await withSuperuserBypass(async (bypassTx) => {
+		const [integration] = await bypassTx
+			.select()
+			.from(medflexIntegrations)
+			.where(eq(medflexIntegrations.clinicExternalId, normalizedId))
+			.limit(1);
 
-	return integration ?? null;
+		return integration ?? null;
+	});
 }
 
 /**

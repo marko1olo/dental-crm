@@ -47,7 +47,7 @@ export function useOrthopedicsChairsideActions(
 					showToast(`Не удалось обновить этап на сервере (${res.status})`, "error", 3000);
 				}
 			} catch (err) {
-				console.warn("Network error updating lab order stage", err);
+				clientLogger.warn("Network error updating lab order stage", err, { module: "useOrthopedicsChairsideActions" });
 				showToast("Сетевая ошибка при обновлении этапа ЗТЛ", "error", 3000);
 			}
 		}
@@ -124,7 +124,7 @@ export function useOrthopedicsChairsideActions(
 				showToast(`Ошибка отправки наряда на сервере (${res.status})`, "error", 4000);
 			}
 		} catch (err) {
-			console.error("Failed to send lab order:", err);
+			clientLogger.error("Failed to send lab order", err, { module: "useOrthopedicsChairsideActions" });
 			showToast("Сетевая ошибка при отправке наряда ЗТЛ", "error", 4000);
 		} finally {
 			inFlightRef.current = false;

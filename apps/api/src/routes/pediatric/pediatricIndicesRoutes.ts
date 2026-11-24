@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { calculateFedorovVolodkinaScore, calculatePediatricIndices } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { toothStates } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -36,13 +36,15 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 
 		let teeth: { toothNumber: number; state: string; surfaces: unknown; notes: string | null }[] = [];
 		try {
-			teeth = await db.select({
-				toothNumber: toothStates.toothNumber,
-				state: toothStates.state,
-				surfaces: toothStates.surfaces,
-				notes: toothStates.notes,
-			})
-				.from(toothStates).where(and(eq(toothStates.organizationId, organizationId), eq(toothStates.patientId, patientId)));
+			teeth = await withTenantCtx(organizationId, async (tx) =>
+				tx.select({
+					toothNumber: toothStates.toothNumber,
+					state: toothStates.state,
+					surfaces: toothStates.surfaces,
+					notes: toothStates.notes,
+				})
+					.from(toothStates).where(and(eq(toothStates.organizationId, organizationId), eq(toothStates.patientId, patientId))),
+			);
 		} catch (error: unknown) {
 			request.log.error({ error, patientId }, "Failed to fetch tooth states for pediatric indices from PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось загрузить состояния зубов для расчета детских индексов КПУ/кп" });

@@ -8,6 +8,7 @@ import {
 	shouldPreloadWorkspaceRoutes,
 	type WorkspacePreloadIntent,
 } from "./preloadGraphPlan";
+import { logger } from "../utils/logger";
 
 type IdleDeadline = {
 	didTimeout: boolean;
@@ -103,12 +104,10 @@ export function preloadWorkspaceView(
 					backoffFactor: 2,
 				}).catch((error) => {
 					preloadedViewCache.delete(view);
-					if (typeof console !== "undefined" && console.warn) {
-						console.warn(
-							`[preload] Не удалось предзагрузить тяжелый раздел ${view}:`,
-							error,
-						);
-					}
+					logger.warn(
+						`[preload] Не удалось предзагрузить тяжелый раздел ${view}:`,
+						error,
+					);
 				});
 			};
 
@@ -147,12 +146,10 @@ export function preloadWorkspaceView(
 					backoffFactor: 2,
 				}).catch((error) => {
 					preloadedViewCache.delete(view);
-					if (typeof console !== "undefined" && console.warn) {
-						console.warn(
-							`[preload] Не удалось предзагрузить раздел ${view}:`,
-							error,
-						);
-					}
+					logger.warn(
+						`[preload] Не удалось предзагрузить раздел ${view}:`,
+						error,
+					);
 				});
 			};
 
@@ -179,9 +176,7 @@ export function preloadWorkspaceView(
 	}).catch((error) => {
 		// При сбое сбрасываем кэш, чтобы последующий клик пользователя мог повторить запрос
 		preloadedViewCache.delete(view);
-		if (typeof console !== "undefined" && console.warn) {
-			console.warn(`[preload] Не удалось предзагрузить раздел ${view}:`, error);
-		}
+		logger.warn(`[preload] Не удалось предзагрузить раздел ${view}:`, error);
 	});
 }
 

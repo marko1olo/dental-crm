@@ -25,7 +25,7 @@ import {
 	isDatabaseUnavailable,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
-import { createTenantTestApp } from "./support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "./support/tenantTestApp.js";
 
 const FIXTURE = "pediatricFixer";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -86,7 +86,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 			}).onConflictDoNothing();
 		});
 
-		app = await createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		registerPediatricDiplomaRoutes(app);
 		registerPediatricPresetRoutes(app);
 
@@ -112,7 +112,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 	it("1. Issues bravery diploma with Idempotency-Key support and prevents duplicate records (Mandates 8d, 8bo)", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		const idempotencyKey = "pediatric-diploma-fixer-key-101";
+		const idempotencyKey = "01950000-0000-7000-8000-000000000101";
 		const payload = {
 			patientName: "Артём Смирнов",
 			patientAgeYears: 5,
@@ -176,7 +176,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 	it("2. Persists parent memo into generatedDocuments under kind 'parent_memo' with Idempotency-Key (Defect 3)", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		const idempotencyKey = "pediatric-parent-memo-key-201";
+		const idempotencyKey = "01950000-0000-7000-8000-000000000201";
 		const payload = {
 			patientName: "Артём Смирнов",
 			patientPhone: "+7 (999) 111-22-33",
@@ -267,7 +267,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 	it("3. Syncs legal representative to patient_relationships table with full rights (Defect 5, Mandate 8e, 8bo)", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		const idempotencyKey = "pediatric-legal-rep-key-301";
+		const idempotencyKey = "01950000-0000-7000-8000-000000000301";
 		const payload = {
 			fullName: "Смирнова Ольга Владимировна",
 			phone: "+7 (999) 777-88-99",
@@ -339,6 +339,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 			url: `/api/patients/${CHILD_PATIENT_ID}/pediatric/legal-representative`,
 			headers: {
 				"x-dente-staff-token": tokenDoctor,
+				"idempotency-key": "01950000-0000-7000-8000-000000000302",
 			},
 			payload: {
 				fullName: "Смирнов Михаил Александрович (отец)",

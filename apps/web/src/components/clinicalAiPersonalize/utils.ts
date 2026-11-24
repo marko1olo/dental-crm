@@ -139,7 +139,7 @@ export function saveDoctorAiPersonalizeSettings(
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	} catch (e) {
-		console.warn("[ClinicalAiPersonalize] Failed to persist settings", e);
+		clientLogger.warn("[ClinicalAiPersonalize] Failed to persist settings", e);
 	}
 }
 

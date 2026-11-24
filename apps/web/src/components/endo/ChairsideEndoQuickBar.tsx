@@ -154,26 +154,16 @@ export function executeChairsideTransferToDiary({
 					toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная NiTi ротационная система",
 					radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
 				}),
-			}).then(async (res) => {
-				if (!res.ok) {
-					clientLogger.warn("Сохранение параметров каналов завершилось с ошибкой", { status: res.status }, { module: "ChairsideEndoQuickBar" });
-					showToast("Не удалось синхронизировать параметры каналов с сервером", "warning", 3500);
-				}
+			}).then((res) => {
+				if (!res.ok) { clientLogger.warn("Сохранение параметров каналов завершилось с ошибкой", { status: res.status }, { module: "ChairsideEndoQuickBar" }); showToast("Не удалось синхронизировать параметры каналов с сервером", "warning", 3500); }
 			}).catch((err) => {
-				clientLogger.error("Ошибка сохранения параметров каналов", err, { module: "ChairsideEndoQuickBar" });
-				showToast("Ошибка соединения при сохранении протокола каналов", "warning", 3500);
+				clientLogger.error("Ошибка сохранения параметров каналов", err, { module: "ChairsideEndoQuickBar" }); showToast("Ошибка соединения при сохранении протокола каналов", "warning", 3500);
 			});
 		}
 	}
 
 	if (onInsertToDiary) onInsertToDiary(soapProtocol, sharedCanals);
-	showToast(
-		hasLocalSyncError
-			? `Протокол зуба #${activeTooth} перенесён частично — проверьте начисление услуг`
-			: `Протокол эндодонтии зуба #${activeTooth} перенесён в дневник!`,
-		hasLocalSyncError ? "warning" : "success",
-		3000,
-	);
+	showToast(hasLocalSyncError ? `Протокол зуба #${activeTooth} перенесён частично — проверьте начисление услуг` : `Протокол эндодонтии зуба #${activeTooth} перенесён в дневник!`, hasLocalSyncError ? "warning" : "success", 3000);
 }
 
 export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {

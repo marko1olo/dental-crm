@@ -10,6 +10,7 @@ import {
 	type ClinicalHotModule,
 } from "./viewPreloadersMap";
 import { isLowSpecDevice } from "./preloadGraphPlan";
+import { logger } from "../utils/logger";
 
 export { hydrateCatalogsFromPersistentStorage, warmupStatutoryCatalogs };
 
@@ -49,15 +50,23 @@ export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 	if (idleWindow.requestIdleCallback) {
 		idleWindow.requestIdleCallback(
 			() => {
-				void warmupStatutoryCatalogs().catch(() => {});
-				void prewarmOfflineCachesToRam().catch(() => {});
+				void warmupStatutoryCatalogs().catch((err: unknown) => {
+					logger.debug("[preload:warmup] warmupStatutoryCatalogs failed:", err);
+				});
+				void prewarmOfflineCachesToRam().catch((err: unknown) => {
+					logger.debug("[preload:warmup] prewarmOfflineCachesToRam failed:", err);
+				});
 			},
 			{ timeout: 5000 },
 		);
 	} else {
 		window.setTimeout(() => {
-			void warmupStatutoryCatalogs().catch(() => {});
-			void prewarmOfflineCachesToRam().catch(() => {});
+			void warmupStatutoryCatalogs().catch((err: unknown) => {
+				logger.debug("[preload:warmup] warmupStatutoryCatalogs failed:", err);
+			});
+			void prewarmOfflineCachesToRam().catch((err: unknown) => {
+				logger.debug("[preload:warmup] prewarmOfflineCachesToRam failed:", err);
+			});
 		}, 1000);
 	}
 
@@ -100,12 +109,10 @@ export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 					backoffFactor: 2,
 				}).catch((error) => {
 					preloadedClinicalHotModules.delete(modKey);
-					if (typeof console !== "undefined" && console.warn) {
-						console.warn(
-							`[preload:warmup] Ошибка фонового прогрева модуля ${modKey}:`,
-							error,
-						);
-					}
+					logger.warn(
+						`[preload:warmup] Ошибка фонового прогрева модуля ${modKey}:`,
+						error,
+					);
 				});
 			}
 		}

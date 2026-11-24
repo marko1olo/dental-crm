@@ -21,7 +21,7 @@ import {
 	isDatabaseUnavailable,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 const FIXTURE = "pediatricRoutes";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -81,7 +81,7 @@ describe("Pediatric API Routes — PostgreSQL 18 & Data Integrity", () => {
 			}).onConflictDoNothing();
 		});
 
-		app = await createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		registerPediatricPresetRoutes(app);
 		registerPediatricIndicesRoutes(app);
 		registerPediatricDiplomaRoutes(app);
@@ -284,7 +284,7 @@ describe("Pediatric API Routes — PostgreSQL 18 & Data Integrity", () => {
 	it("6. Issues bravery diploma with Idempotency-Key support & replay defense (Mandates 8d, 8bo)", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		const idempotencyKey = "pediatric-bravery-test-key-001";
+		const idempotencyKey = "01950000-0000-7000-8000-000000000001";
 		const payload = {
 			patientName: "Миша Смирнов",
 			patientAgeYears: 6,
@@ -354,6 +354,7 @@ describe("Pediatric API Routes — PostgreSQL 18 & Data Integrity", () => {
 			url: `/api/patients/${PATIENT_ID}/pediatric/bravery-diploma`,
 			headers: {
 				"x-dente-staff-token": tokenDoctor,
+				"idempotency-key": "01950000-0000-7000-8000-000000000002",
 			},
 			payload: {
 				awardReasonRu: "За выдающуюся смелость при осмотре",

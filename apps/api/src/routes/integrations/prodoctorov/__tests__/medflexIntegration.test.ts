@@ -358,11 +358,14 @@ describe("MedFlex & ProDoctorov Integration Suite (Mandates 8e, 8n, Red Team)", 
 		assert.equal(found.externalDoctorId, "doc-pd-777");
 	});
 
-	it("7. Изоляция тенантов (DEF-PD-05): отсутствие контекста организации возвращает 400 Bad Request", async () => {
+	it("7. Изоляция тенантов (DEF-PD-05): отсутствие авторизации и контекста организации отклоняется 401/403", async () => {
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/integrations/prodoctorov/slots",
 		});
-		assert.equal(res.statusCode, 400);
+		assert.ok(
+			res.statusCode === 401 || res.statusCode === 403,
+			`Expected 401/403 without auth or clinicExternalId, got ${res.statusCode}`,
+		);
 	});
 });

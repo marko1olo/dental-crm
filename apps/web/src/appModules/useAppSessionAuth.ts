@@ -74,7 +74,7 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 						}
 					})
 					.catch((err: unknown) => {
-						console.warn("Failed to verify pairing token:", err);
+						logger.warn("Failed to verify pairing token:", err);
 					});
 			}
 		}

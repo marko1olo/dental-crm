@@ -102,7 +102,7 @@ export async function createAndroidNotificationChannels(): Promise<void> {
 			vibration: true,
 		});
 	} catch (err) {
-		console.warn("[Push] Error creating Android notification channels:", err);
+		logger.warn("[Push] Error creating Android notification channels:", err);
 	}
 }
 
@@ -135,7 +135,7 @@ export function triggerBackgroundWakeUp(payload: MobilePushNotificationPayload):
 		});
 		window.dispatchEvent(customEv);
 	} catch (err: unknown) {
-		console.warn("[mobileBridge] dispatchEvent dente:fcm-wake-up failed:", err);
+		logger.warn("[mobileBridge] dispatchEvent dente:fcm-wake-up failed:", err);
 	}
 }
 
@@ -251,7 +251,7 @@ export async function setAppBadgeCount(count: number): Promise<void> {
 			await badgePlugin.set({ count: Math.max(0, count) });
 			return;
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] native badge set failed:", err);
+			logger.warn("[mobileBridge] native badge set failed:", err);
 		}
 	}
 
@@ -266,7 +266,7 @@ export async function setAppBadgeCount(count: number): Promise<void> {
 					await nav.clearAppBadge();
 				}
 			} catch (err: unknown) {
-				console.warn("[mobileBridge] navigator setAppBadge/clearAppBadge failed:", err);
+				logger.warn("[mobileBridge] navigator setAppBadge/clearAppBadge failed:", err);
 			}
 		}
 	}

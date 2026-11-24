@@ -188,7 +188,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 			messageRu: isOverdraft ? `Списано ${items.length} наим. материалов (Soft Negative Stock: овердрафт)` : `Списано ${items.length} наим. материалов (Soft Negative Stock)`,
 		};
 	} catch (err) {
-		console.warn("[PerioCatalog] Soft overdraft deduct network error:", err);
+		clientLogger.warn("Soft overdraft deduct network error", err, { module: "perioCatalogData" });
 		return { success: false, deductedCount: 0, messageRu: "Сетевой сбой при списании расходных материалов пародонтологии" };
 	}
 }

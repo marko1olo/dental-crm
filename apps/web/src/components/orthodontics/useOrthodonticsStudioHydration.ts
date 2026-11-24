@@ -195,7 +195,7 @@ export function useOrthodonticsStudioHydration(
 				}
 			} catch (err) {
 				if (!isCancelled) {
-					console.warn("[useOrthodonticsStudioHydration] Failed to fetch ceph analysis:", err);
+					clientLogger.warn("Failed to fetch ceph analysis", err, { module: "useOrthodonticsStudioHydration" });
 				}
 			}
 		};

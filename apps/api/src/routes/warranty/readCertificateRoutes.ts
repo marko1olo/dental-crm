@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
 	clinics,
 	labItems,
@@ -13,18 +13,36 @@ import {
 import { requireClinicalReadContext } from "../../accessGuard.js";
 import { isValidUuid, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
 
-async function resolvePublicCertificate(certNum: string) {
-	// 1. Поиск в реестре оформленных гарантийных сертификатов
-	let [cert] = await db
-		.select()
-		.from(warrantyCertificates)
-		.where(eq(warrantyCertificates.certificateNumber, certNum))
-		.limit(1);
+interface PublicCertificateResolution {
+	organizationId: string;
+	certificateNumber: string;
+	status: string;
+	warrantyMonths: number;
+	serviceLifeMonths: number;
+	issuedAt: Date;
+	expiresAt: Date;
+	nextRecallDate: Date | null;
+	itemsJson: unknown;
+	integritySha256: string;
+	notes: string | null;
+}
 
-	// 2. Сквозной фоллбек по паспортам имплантатов (patientImplantInstallations)
-	if (!cert) {
+async function resolvePublicCertificate(certNum: string): Promise<PublicCertificateResolution | null> {
+	return withSuperuserBypass(async (tx) => {
+		// 1. Поиск в реестре оформленных гарантийных сертификатов
+		const [existingCert] = await tx
+			.select()
+			.from(warrantyCertificates)
+			.where(eq(warrantyCertificates.certificateNumber, certNum))
+			.limit(1);
+
+		if (existingCert) {
+			return existingCert;
+		}
+
+		// 2. Сквозной фоллбек по паспортам имплантатов (patientImplantInstallations) — строго read-only!
 		const isUuid = isValidUuid(certNum);
-		const [inst] = await db
+		const [inst] = await tx
 			.select()
 			.from(patientImplantInstallations)
 			.where(
@@ -68,48 +86,23 @@ async function resolvePublicCertificate(certNum: string) {
 				},
 			];
 
-			const [registered] = await db
-				.insert(warrantyCertificates)
-				.values({
-					organizationId: inst.organizationId,
-					patientId: inst.patientId,
-					visitId: inst.visitId || null,
-					certificateNumber: canonicalPassportId,
-					status: "active",
-					itemsJson: implantItemsPayload,
-					warrantyMonths: 120,
-					serviceLifeMonths: 240,
-					issuedAt: inst.installedAt,
-					expiresAt: expDate,
-					nextRecallDate: recallDate,
-					integritySha256,
-					notes: `Гарантийный паспорт имплантата ${canonicalPassportId} (${inst.implantBrand} #${inst.toothNumberFdi}).`,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				})
-				.onConflictDoUpdate({
-					target: warrantyCertificates.certificateNumber,
-					set: {
-						status: "active",
-						itemsJson: implantItemsPayload,
-						warrantyMonths: 120,
-						serviceLifeMonths: 240,
-						expiresAt: expDate,
-						nextRecallDate: recallDate,
-						integritySha256,
-						updatedAt: new Date(),
-					},
-				})
-				.returning();
-
-			cert = registered ?? undefined;
+			return {
+				organizationId: inst.organizationId,
+				certificateNumber: canonicalPassportId,
+				status: "active",
+				warrantyMonths: 120,
+				serviceLifeMonths: 240,
+				issuedAt: inst.installedAt,
+				expiresAt: expDate,
+				nextRecallDate: recallDate,
+				itemsJson: implantItemsPayload,
+				integritySha256,
+				notes: `Гарантийный паспорт имплантата ${canonicalPassportId} (${inst.implantBrand} #${inst.toothNumberFdi}).`,
+			};
 		}
-	}
 
-	// 3. Сквозной фоллбек по ортопедическим нарядам ЗТЛ (labOrders)
-	if (!cert) {
-		const isUuid = isValidUuid(certNum);
-		const [order] = await db
+		// 3. Сквозной фоллбек по ортопедическим нарядам ЗТЛ (labOrders) — строго read-only!
+		const [order] = await tx
 			.select()
 			.from(labOrders)
 			.where(
@@ -122,7 +115,7 @@ async function resolvePublicCertificate(certNum: string) {
 			.limit(1);
 
 		if (order && order.patientId) {
-			const items = await db
+			const items = await tx
 				.select()
 				.from(labItems)
 				.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, order.organizationId)));
@@ -189,45 +182,49 @@ async function resolvePublicCertificate(certNum: string) {
 				)
 				.digest("hex");
 
-			const [registered] = await db
-				.insert(warrantyCertificates)
-				.values({
-					organizationId: order.organizationId,
-					patientId: order.patientId,
-					visitId: order.appointmentId || null,
-					certificateNumber,
-					status: "active",
-					itemsJson: itemsPayload,
-					warrantyMonths: 24,
-					serviceLifeMonths: 60,
-					issuedAt: order.installedAt || order.completedAt || now,
-					expiresAt: expDate,
-					nextRecallDate: recallDate,
-					integritySha256,
-					notes: `Гарантийный паспорт ортопедической конструкции ${certificateNumber}. Наряд ЗТЛ: ${formattedOrderNum}.`,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.onConflictDoUpdate({
-					target: warrantyCertificates.certificateNumber,
-					set: {
-						status: "active",
-						itemsJson: itemsPayload,
-						warrantyMonths: 24,
-						serviceLifeMonths: 60,
-						expiresAt: expDate,
-						nextRecallDate: recallDate,
-						integritySha256,
-						updatedAt: now,
-					},
-				})
-				.returning();
-
-			cert = registered ?? undefined;
+			return {
+				organizationId: order.organizationId,
+				certificateNumber,
+				status: "active",
+				warrantyMonths: 24,
+				serviceLifeMonths: 60,
+				issuedAt: order.installedAt || order.completedAt || now,
+				expiresAt: expDate,
+				nextRecallDate: recallDate,
+				itemsJson: itemsPayload,
+				integritySha256,
+				notes: `Гарантийный паспорт ортопедической конструкции ${certificateNumber}. Наряд ЗТЛ: ${formattedOrderNum}.`,
+			};
 		}
-	}
 
-	return cert ?? null;
+		return null;
+	});
+}
+
+async function fetchPublicClinicInfo(organizationId: string) {
+	return withSuperuserBypass(async (tx) => {
+		const [[clinicOrg], [clinicRow]] = await Promise.all([
+			tx
+				.select({
+					name: organizations.name,
+					legalAddress: organizations.legalAddress,
+					medicalLicenseNumber: organizations.medicalLicenseNumber,
+					email: organizations.email,
+					website: organizations.website,
+				})
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1),
+			tx
+				.select({
+					phone: clinics.phone,
+				})
+				.from(clinics)
+				.where(eq(clinics.organizationId, organizationId))
+				.limit(1),
+		]);
+		return { clinicOrg, clinicRow };
+	});
 }
 
 export function registerReadCertificateRoutes(app: FastifyInstance) {
@@ -250,16 +247,18 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const list = await db
-			.select()
-			.from(warrantyCertificates)
-			.where(
-				and(
-					eq(warrantyCertificates.organizationId, context.organizationId),
-					eq(warrantyCertificates.patientId, patientId),
-				),
-			)
-			.orderBy(desc(warrantyCertificates.issuedAt));
+		const list = await withTenantCtx(context.organizationId, async (tx) =>
+			tx
+				.select()
+				.from(warrantyCertificates)
+				.where(
+					and(
+						eq(warrantyCertificates.organizationId, context.organizationId),
+						eq(warrantyCertificates.patientId, patientId),
+					),
+				)
+				.orderBy(desc(warrantyCertificates.issuedAt)),
+		);
 
 		return reply.send({
 			success: true,
@@ -297,26 +296,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [[clinicOrg], [clinicRow]] = await Promise.all([
-				db
-					.select({
-						name: organizations.name,
-						legalAddress: organizations.legalAddress,
-						medicalLicenseNumber: organizations.medicalLicenseNumber,
-						email: organizations.email,
-						website: organizations.website,
-					})
-					.from(organizations)
-					.where(eq(organizations.id, cert.organizationId))
-					.limit(1),
-				db
-					.select({
-						phone: clinics.phone,
-					})
-					.from(clinics)
-					.where(eq(clinics.organizationId, cert.organizationId))
-					.limit(1),
-			]);
+			const { clinicOrg, clinicRow } = await fetchPublicClinicInfo(cert.organizationId);
 
 			return reply.code(200).send({
 				success: true,
@@ -362,26 +342,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [[clinicOrg], [clinicRow]] = await Promise.all([
-				db
-					.select({
-						name: organizations.name,
-						legalAddress: organizations.legalAddress,
-						medicalLicenseNumber: organizations.medicalLicenseNumber,
-						email: organizations.email,
-						website: organizations.website,
-					})
-					.from(organizations)
-					.where(eq(organizations.id, cert.organizationId))
-					.limit(1),
-				db
-					.select({
-						phone: clinics.phone,
-					})
-					.from(clinics)
-					.where(eq(clinics.organizationId, cert.organizationId))
-					.limit(1),
-			]);
+			const { clinicOrg, clinicRow } = await fetchPublicClinicInfo(cert.organizationId);
 
 			return reply.code(200).send({
 				success: true,

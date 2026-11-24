@@ -218,7 +218,7 @@ export class HardwarePrinter {
 					downloadFilename: `receipt_${Date.now()}.html`,
 				});
 			} catch (err: unknown) {
-				console.warn("[HardwarePrinter] Desktop OS thermal print fallback failed:", err);
+				logger.warn("[HardwarePrinter] Desktop OS thermal print fallback failed:", err);
 				return {
 					success: false,
 					status: "failed",

@@ -295,7 +295,7 @@ export function useScheduleShortcuts({
           const raw = window.localStorage.getItem("dente_schedule_quick_booking_draft");
           if (raw) draft = JSON.parse(raw);
         } catch (err: unknown) {
-          console.warn("[useScheduleShortcuts] Failed to parse quick booking draft from localStorage:", err);
+          clientLogger.warn("Failed to parse quick booking draft from localStorage", err, { module: "useScheduleShortcuts" });
         }
       }
 

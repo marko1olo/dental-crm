@@ -9,15 +9,10 @@ import {
 	multiplyKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { anesthesiaLogs, patients, serviceCatalogItems, treatmentItems, users, visits } from "../../db/schema.js";
-import {
-	extractIdempotencyKey,
-	isValidUuid,
-} from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
@@ -28,11 +23,14 @@ type TreatmentItemRecord = typeof treatmentItems.$inferSelect;
 
 export function registerLogsCreateRoute(app: FastifyInstance): void {
 	app.post("/api/anesthesia/calculate-safety", async (request, reply) => {
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.write", role: staffRole, message: `Отказ в доступе к калькулятору анестезии: ${evalAccess.reason}` });
+			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.calculate", role: staffRole, message: `Отказ в доступе к калькулятору анестезии: ${evalAccess.reason}` });
 		}
 		const parsed = calculateSafetyBodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -50,14 +48,6 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.write", role: staffRole, message: `Отказ в создании протокола: ${evalAccess.reason}` });
-		}
-
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
 		}
 
 		const parsed = createAnesthesiaLogBodySchema.safeParse(request.body);
@@ -112,8 +102,24 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 			let treatmentItemResult: TreatmentItemRecord | null = null;
 			if (data.visitId && data.addToVisitEstimate) {
 				try {
-					const allServices = await tx.select().from(serviceCatalogItems).where(and(eq(serviceCatalogItems.organizationId, orgId), eq(serviceCatalogItems.isActive, true))).limit(50);
-					const anesthesiaService = allServices.find((s) => s.order804nCode === "A16.07.030" || s.code === "A16.07.030" || s.title.toLowerCase().includes("анестези")) ?? null;
+					const [anesthesiaService] = await tx
+						.select()
+						.from(serviceCatalogItems)
+						.where(
+							and(
+								eq(serviceCatalogItems.organizationId, orgId),
+								eq(serviceCatalogItems.isActive, true),
+								or(
+									eq(serviceCatalogItems.order804nCode, "A16.07.030"),
+									eq(serviceCatalogItems.code, "A16.07.030"),
+									ilike(serviceCatalogItems.title, "%анестези%"),
+								),
+							),
+						)
+						.orderBy(
+							sql`CASE WHEN ${serviceCatalogItems.order804nCode} = 'A16.07.030' OR ${serviceCatalogItems.code} = 'A16.07.030' THEN 0 ELSE 1 END`,
+						)
+						.limit(1);
 					let unitPriceKop = 0;
 					if (anesthesiaService) {
 						if (typeof anesthesiaService.priceKopecks === "bigint" && anesthesiaService.priceKopecks > 0n) {
@@ -147,10 +153,6 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 					}).returning();
 					treatmentItemResult = tItem ?? null;
 				} catch (tErr: unknown) { request.log.warn({ err: tErr }, "Estimate addition warning"); }
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			const responsePayload = JSON.parse(

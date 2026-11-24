@@ -3,9 +3,9 @@
  * Anesthesia Protocol Deletion & Annulment with Warehouse Storno and Estimate Rollback (Mandate 8b, <= 120 lines)
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { anesthesiaLogs, inventoryItems, inventoryTransactions, treatmentItems } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -70,6 +70,12 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 						.set({ stockQuantity: String(newStock), currentQty: String(newStock), updatedAt: new Date() })
 						.where(and(eq(inventoryItems.id, inv.id), eq(inventoryItems.organizationId, orgId)));
 
+					const stornoUnitCostKopecks =
+						inv.unitCostKopecks ??
+						(inv.pricePerUnitKopecks != null
+							? inv.pricePerUnitKopecks
+							: BigInt(rublesToKopecks(Number(inv.unitCostRub ?? inv.pricePerUnit ?? 0))));
+
 					await tx.insert(inventoryTransactions).values({
 						organizationId: orgId,
 						visitId: log.visitId ?? null,
@@ -78,6 +84,7 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 						quantityChanged: String(carpulesCount),
 						qty: String(carpulesCount),
 						unitCostRub: inv.unitCostRub ?? "0",
+						unitCostKopecks: stornoUnitCostKopecks,
 						transactionType: "storno",
 						isOverdraft: false,
 						userId: identity.userId ?? log.doctorId ?? null,

@@ -45,7 +45,7 @@ export function CallAudioPlayer({
 
 	const revokeBlob = () => {
 		if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-			try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { console.warn("[CallAudioPlayer] revokeBlob:", err); }
+			try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { clientLogger.warn("[CallAudioPlayer] revokeBlob:", err); }
 			activeBlobRef.current = "";
 		}
 	};
@@ -74,7 +74,7 @@ export function CallAudioPlayer({
 		const trimmed = recordingUrl.trim();
 		if (trimmed.startsWith("blob:")) {
 			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:") && activeBlobRef.current !== trimmed) {
-				try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { console.warn("[CallAudioPlayer] revokeBlob:", err); }
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { clientLogger.warn("[CallAudioPlayer] revokeBlob:", err); }
 			}
 			activeBlobRef.current = trimmed;
 			setBlobAudioSrc(trimmed);

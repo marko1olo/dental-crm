@@ -179,10 +179,10 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 					}),
 				});
 				if (!autoSaveRes.ok) {
-					console.warn("[saveOrthodonticProtocolToApi] Autosave draft HTTP status:", autoSaveRes.status);
+					clientLogger.warn("Autosave draft HTTP status", { status: autoSaveRes.status }, { module: "orthodonticsStudioPersistence" });
 				}
 			} catch (vErr) {
-				console.warn("[saveOrthodonticProtocolToApi] Autosave visit draft error:", vErr);
+				clientLogger.warn("Autosave visit draft error", vErr, { module: "orthodonticsStudioPersistence" });
 			}
 		}
 
@@ -215,7 +215,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 		return true;
 	} catch (err) {
 		const errorMessage = err instanceof Error ? err.message : String(err);
-		console.warn("[saveOrthodonticProtocolToApi] Save error:", err);
+		clientLogger.warn("Save error", err, { module: "orthodonticsStudioPersistence" });
 		showToast(`Сбой при фиксации этапа: ${errorMessage}`, "error");
 		return false;
 	}

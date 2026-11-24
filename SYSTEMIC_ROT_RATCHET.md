@@ -12,9 +12,13 @@
 > Правило `ЧАСТЬ 2.6`: перед стартом работ фиксировать claim-строку с датой/временем, работать только в заявленном скоупе, по коммиту снимать `✅ DONE`.
 
 - 🔒 `[Fixer-4C]` — `apps/web` finance/cashbox/billing/family/shift/pricelist/odontogram contracts — `00:56 25.11`
-- 🔒 `[Fixer-4A]` — sync/gateway + medicalSecrecyWarden + web sync callers — `01:01 25.11`
+- ✅ `[Fixer-4A]` — DONE — commits `25a136d092`, `1e11041331`, `a3ae55b286` (BUG-1..7 + `SYNC_TABLE_DDL` removed; `sync/gateway`, `medicalSecrecyWarden`, `websocketBroker`, `web` sync callers; 19 API suites 156/156 + `wave11Telemetry` 13/13 + 3 Web suites 27/27 PASS; targeted `tsc` = 0; `check:*` = 0) — `02:02 25.11`
 - 🔒 `[Fixer-4B]` — auth/onboarding/odontogram/pediatric/anesthesia/treatmentPlan/inventory/lab/warranty/outbox/reports/analytics + 0299 DDL — `01:02 25.11`
 - 🔒 `[Fixer-4D]` — `apps/web` documents/portal/insurance/radiology/implants/surgery contracts — `01:01 25.11`
+- 🔒 `[Fixer-P1-Logs-NonUi]` — `packages/shared/src` (13 console) + `apps/api/src/env/loadServerEnv.ts` + `scripts/seedTemplates.ts` + `scripts/dice-audit.mjs` + `apps/web/src/{services,store,native,hooks,workers,utils,workspacePreloadModules}` (strictly outside 4A/4B/4C/4D) — `01:36 25.11`
+- 🔒 `[Fixer-P1-Web-A]` — `apps/web/src/components/{visit,endo,schedule,emr,photography,hygiene,perio,orthodontics,orthopedics,diagnostics}` (strictly outside RvgAccordion/visitInvoiceCreationService/4B/4C/4D) — `01:36 25.11`
+- 🔒 `[Fixer-P1-Web-B]` — `apps/web/src/components/{settings,sanpin,copilot,communications,chat,telephony,desktop,doctor,prescriptions,marketing,patients,recalls,Omnibar.tsx,audio,booking,clinicalAiPersonalize,consents,mdlp,workspace}` (strictly outside DmsPolicyCard/auditTrailHub/useSettingsPricesLogic/loyalty/StandaloneSurgeryHosts) — `01:36 25.11`
+- 🔒 `[Fixer-P1-Routes]` — `apps/api/src/routes/{tasks,whatsappModules/templateManagerRoutes,agent/agentSettingsAndMemoryRoutes,integrations/diagnocat,integrations/prodoctorov/*,telegramBotLoyalty/telegramWebAppSessionHandlers,telegram/telegramAccountVerify2faRoute,documentTemplatesModules/templateRenderAndPreviewRoutes}` — `01:38 25.11`
 
 - ✅ `[Backend Clinical Routes High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`visits/*`, `git rm ensureActiveChair.ts`, `periodontogram/*`, `appointments/*`, `scheduleAuthGuard.ts`, `sanpin/*`, `consents/*`, `waitlist.ts`, `patientRecall/*`, `patients/ticketRoutes+helpers`).
 - ✅ `[Backend Finance Loyalty Shared High]` — DONE — commits `ecbea1034f`, `3bf2cc7ef9`, `2e63106340`, `f4936e68db` (`@dental/shared` 25+ файлов + `.strict()`, DDL `0298_referrals_and_shifts_kopecks_backfill.sql`, `loyaltyModules/*`, `budget*`, `clinicalBundles*`, `imports/*`, `debtReports`).

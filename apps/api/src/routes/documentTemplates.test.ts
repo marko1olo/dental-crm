@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Fastify from "fastify";
+import { authTokenSecret } from "../security/authSecret.js";
+import { CLINIC_TOKEN_HEADER } from "../security/identity.js";
+import { signToken } from "../utils/cryptoHelper.js";
 import { registerDocumentTemplateRoutes } from "./documentTemplates.js";
 
 test("Document templates Fastify API routes suite", async (t) => {
 	const app = Fastify({ logger: false });
 	await registerDocumentTemplateRoutes(app);
+	const clinicToken = signToken(
+		{ organizationId: "01934567-89ab-7def-8000-000000000010", type: "clinic" },
+		authTokenSecret(),
+		3600,
+	);
 
 	await t.test("GET /api/document-templates/variables returns all 74+ substitution variables", async () => {
 		const res = await app.inject({
@@ -89,10 +97,29 @@ test("Document templates Fastify API routes suite", async (t) => {
 		assert.equal(res404.statusCode, 404);
 	});
 
+	await t.test("POST /api/document-templates/:id/render rejects unauthenticated requests with 401 even with clinic overrides", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/document-templates/ids_implant/render",
+			payload: {
+				overrides: {
+					clinic: {
+						name: 'ООО "Подставная клиника"',
+					},
+				},
+			},
+		});
+
+		assert.equal(res.statusCode, 401);
+	});
+
 	await t.test("POST /api/document-templates/:id/render substitutes tokens with real patient/clinic context", async () => {
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/document-templates/ids_implant/render",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 			payload: {
 				representative: {
 					fullName: "Смирнова Елена Сергеевна",

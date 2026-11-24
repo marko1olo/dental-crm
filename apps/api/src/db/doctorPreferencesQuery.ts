@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db, type TenantDb } from "./client.js";
+import { withSavepoint } from "./rls.js";
 import { doctorPreferences } from "./schema.js";
 
 export interface DoctorPreferencesRecord {
@@ -124,17 +125,19 @@ export async function saveDoctorPreferencesInDb(
 	}
 
 	try {
-		const [inserted] = await conn
-			.insert(doctorPreferences)
-			.values({
-				organizationId,
-				doctorId: cleanDoctorId,
-				specialty,
-				preferences,
-				createdAt: now,
-				updatedAt: now,
-			})
-			.returning();
+		const [inserted] = await withSavepoint(conn, async (spTx) =>
+			spTx
+				.insert(doctorPreferences)
+				.values({
+					organizationId,
+					doctorId: cleanDoctorId,
+					specialty,
+					preferences,
+					createdAt: now,
+					updatedAt: now,
+				})
+				.returning(),
+		);
 		return inserted as DoctorPreferencesRecord;
 	} catch (err: unknown) {
 		// Concurrent insert race condition: fallback to update

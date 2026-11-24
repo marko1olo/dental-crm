@@ -147,11 +147,11 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 						}),
 					});
 					if (!res.ok) {
-						console.warn("[HygieneStudioModal] Failed to persist hygiene indices on server:", res.status, res.statusText);
+						clientLogger.warn("Failed to persist hygiene indices on server", { status: res.status, statusText: res.statusText }, { module: "HygieneStudioModal" });
 						showToast("Индексы гигиены зафиксированы в карте приёма (сервер вернул " + res.status + ")", "info", 3500);
 					}
 				} catch (netErr) {
-					console.warn("[HygieneStudioModal] Network/offline persistence fallback:", netErr);
+					clientLogger.warn("Network/offline persistence fallback", netErr, { module: "HygieneStudioModal" });
 					showToast("Индексы гигиены зафиксированы в локальной карте приёма", "info", 3000);
 				}
 			}

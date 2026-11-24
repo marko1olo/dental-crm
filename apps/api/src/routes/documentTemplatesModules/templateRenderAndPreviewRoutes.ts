@@ -8,8 +8,8 @@ import {
 } from "@dental/shared";
 import { type SQL, and, eq, isNull, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { resolveOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	documentTemplates,
@@ -63,495 +63,490 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			}
 			const body = parseResult.data;
 
-			// 1. Определение организации (клиники) с fail-closed защитой и мягким фолбеком для предпросмотра
-			const organizationId = await resolveOrganizationId(request);
-			let org: typeof organizations.$inferSelect | undefined;
-
-			if (organizationId && UUID_REGEX.test(organizationId)) {
-				const [foundOrg] = await db
-					.select()
-					.from(organizations)
-					.where(eq(organizations.id, organizationId))
-					.limit(1);
-				org = foundOrg;
-			}
-
-			// Если токен не передан, но в базе есть организация или переданы явные overrides
-			if (!org) {
-				const [defaultOrg] = await db.select().from(organizations).limit(1);
-				org = defaultOrg;
-			}
-
-			interface ClinicOverride {
-				name?: string;
-				inn?: string;
-				kpp?: string;
-				address?: string;
-				phone?: string;
-				licenseNumber?: string;
-			}
-			const rawClinicOverride = body.overrides?.clinic;
-			const clinicOverride: ClinicOverride =
-				typeof rawClinicOverride === "object" && rawClinicOverride !== null
-					? (rawClinicOverride as ClinicOverride)
-					: {};
-			if (!org && Object.keys(clinicOverride).length === 0) {
-				return reply.status(401).send({
-					error: "Unauthorized",
-					message: "Не указана организация (tenant) для генерации документа.",
-				});
-			}
-
-			type RenderOrgContext = Pick<
-				typeof organizations.$inferSelect,
-				| "id"
-				| "name"
-				| "inn"
-				| "kpp"
-				| "legalAddress"
-				| "email"
-				| "medicalLicenseNumber"
-				| "medicalLicenseIssuedAt"
-				| "medicalLicenseIssuer"
-			>;
-
-			const currentOrg: RenderOrgContext = org ?? {
-				id: "00000000-0000-0000-0000-000000000000",
-				name: clinicOverride.name || "Стоматологическая клиника",
-				inn: clinicOverride.inn || "",
-				kpp: clinicOverride.kpp || "",
-				legalAddress: clinicOverride.address || "",
-				email: clinicOverride.phone || "",
-				medicalLicenseNumber: clinicOverride.licenseNumber || "",
-				medicalLicenseIssuedAt: "",
-				medicalLicenseIssuer: "Департамент здравоохранения",
-			};
-
-			// 2. Поиск шаблона с учетом изоляции тенанта (системные либо принадлежащие данной клинике)
-			const templateConditions: SQL[] = [];
-			if (UUID_REGEX.test(identifier)) {
-				templateConditions.push(eq(documentTemplates.id, identifier));
-			} else if (/^\d+$/.test(identifier)) {
-				templateConditions.push(
-					eq(documentTemplates.externalTemplateId, Number.parseInt(identifier, 10)),
-				);
-			} else {
-				templateConditions.push(eq(documentTemplates.systemAlias, identifier));
-			}
-
-			const tenantTemplateFilter =
-				or(
-					eq(documentTemplates.organizationId, currentOrg.id),
-					isNull(documentTemplates.organizationId),
-				) ?? eq(documentTemplates.organizationId, currentOrg.id);
-
-			const [templateRecord] = await db
-				.select()
-				.from(documentTemplates)
-				.where(and(or(...templateConditions), tenantTemplateFilter))
-				.limit(1);
-
-			const templateName = templateRecord?.name ?? identifier;
-			const systemAlias = templateRecord?.systemAlias ?? identifier;
-			const templateHtml = resolveRenderTemplateContentHtml(
-				identifier,
-				templateName,
-				templateRecord?.contentHtml,
+			// 1. Определение организации (клиники) строго из проверенного токена
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"document templates render",
 			);
+			if (!organizationId) return;
 
-			const clinicData = {
-				name: currentOrg.name || "",
-				inn: currentOrg.inn || "",
-				kpp: currentOrg.kpp || "",
-				address: currentOrg.legalAddress || "",
-				phone: currentOrg.email || "",
-				licenseNumber: currentOrg.medicalLicenseNumber || "",
-				licenseIssuedDate: currentOrg.medicalLicenseIssuedAt || "",
-				licenseValidity: "Бессрочно",
-				licenseIssuer:
-					currentOrg.medicalLicenseIssuer ||
-					"Департамент здравоохранения города Москвы",
-			};
+			return await withTenantCtx(organizationId, async (tx) => {
+				let org: typeof organizations.$inferSelect | undefined;
+				if (UUID_REGEX.test(organizationId)) {
+					const [foundOrg] = await tx
+						.select()
+						.from(organizations)
+						.where(eq(organizations.id, organizationId))
+						.limit(1);
+					org = foundOrg;
+				}
 
-			// Данные пациента
-			let patientContextData: TemplateExecutionContext["patient"] = undefined;
-			let representativeContextData: TemplateExecutionContext["representative"] =
-				body.representative
-					? {
-							fullName: body.representative.fullName,
-							relationType: body.representative.relationType,
-							phone: body.representative.phone,
-							passport: body.representative.passport,
-							birthDate: body.representative.birthDate,
-							address: body.representative.address,
-							basis: body.representative.basis,
-							snils: body.representative.snils,
-						}
-					: undefined;
+				interface ClinicOverride {
+					name?: string;
+					inn?: string;
+					kpp?: string;
+					address?: string;
+					phone?: string;
+					licenseNumber?: string;
+				}
+				const rawClinicOverride = body.overrides?.clinic;
+				const clinicOverride: ClinicOverride =
+					typeof rawClinicOverride === "object" && rawClinicOverride !== null
+						? (rawClinicOverride as ClinicOverride)
+						: {};
 
-			if (body.patientId && UUID_REGEX.test(body.patientId)) {
-				const [patientRecord] = await db
+				type RenderOrgContext = Pick<
+					typeof organizations.$inferSelect,
+					| "id"
+					| "name"
+					| "inn"
+					| "kpp"
+					| "legalAddress"
+					| "email"
+					| "medicalLicenseNumber"
+					| "medicalLicenseIssuedAt"
+					| "medicalLicenseIssuer"
+				>;
+
+				const currentOrg: RenderOrgContext = org ?? {
+					id: organizationId,
+					name: clinicOverride.name || "Стоматологическая клиника",
+					inn: clinicOverride.inn || "",
+					kpp: clinicOverride.kpp || "",
+					legalAddress: clinicOverride.address || "",
+					email: clinicOverride.phone || "",
+					medicalLicenseNumber: clinicOverride.licenseNumber || "",
+					medicalLicenseIssuedAt: "",
+					medicalLicenseIssuer: "Департамент здравоохранения",
+				};
+
+				// 2. Поиск шаблона с учетом изоляции тенанта (системные либо принадлежащие данной клинике)
+				const templateConditions: SQL[] = [];
+				if (UUID_REGEX.test(identifier)) {
+					templateConditions.push(eq(documentTemplates.id, identifier));
+				} else if (/^\d+$/.test(identifier)) {
+					templateConditions.push(
+						eq(documentTemplates.externalTemplateId, Number.parseInt(identifier, 10)),
+					);
+				} else {
+					templateConditions.push(eq(documentTemplates.systemAlias, identifier));
+				}
+
+				const tenantTemplateFilter =
+					or(
+						eq(documentTemplates.organizationId, currentOrg.id),
+						isNull(documentTemplates.organizationId),
+					) ?? eq(documentTemplates.organizationId, currentOrg.id);
+
+				const [templateRecord] = await tx
 					.select()
-					.from(patients)
-					.where(
-						and(
-							eq(patients.id, body.patientId),
-							eq(patients.organizationId, currentOrg.id),
-						),
-					)
+					.from(documentTemplates)
+					.where(and(or(...templateConditions), tenantTemplateFilter))
 					.limit(1);
 
-				if (patientRecord) {
-					const adminProfile = patientRecord.administrativeProfile;
-					const parsedPassport = parsePassportFromString(
-						adminProfile?.identityDocument,
-					);
+				const templateName = templateRecord?.name ?? identifier;
+				const systemAlias = templateRecord?.systemAlias ?? identifier;
+				const templateHtml = resolveRenderTemplateContentHtml(
+					identifier,
+					templateName,
+					templateRecord?.contentHtml,
+				);
 
-					const adminProfileRecord =
-						adminProfile && typeof adminProfile === "object"
-							? (adminProfile as Record<string, unknown>)
-							: null;
+				const clinicData = {
+					name: currentOrg.name || "",
+					inn: currentOrg.inn || "",
+					kpp: currentOrg.kpp || "",
+					address: currentOrg.legalAddress || "",
+					phone: currentOrg.email || "",
+					licenseNumber: currentOrg.medicalLicenseNumber || "",
+					licenseIssuedDate: currentOrg.medicalLicenseIssuedAt || "",
+					licenseValidity: "Бессрочно",
+					licenseIssuer:
+						currentOrg.medicalLicenseIssuer ||
+						"Департамент здравоохранения города Москвы",
+				};
 
-					patientContextData = {
-						id: patientRecord.id,
-						fullName: patientRecord.fullName,
-						birthDate: patientRecord.birthDate,
-						phone: patientRecord.phone,
-						email: patientRecord.email,
-						address: adminProfile?.registrationAddress ?? "",
-						actualAddress:
-							adminProfile?.residentialAddress ??
-							adminProfile?.registrationAddress ??
-							"",
-						inn: adminProfile?.taxpayerInn ?? "",
-						snils: adminProfile?.snils ?? "",
-						omsPolicy: adminProfile?.insurancePolicyNumber ?? "",
-						specialNotes: patientRecord.notes ?? "",
-						comment: patientRecord.notes ?? "",
-						somaticStatus:
-							(typeof adminProfileRecord?.["somaticStatus"] === "string"
-								? adminProfileRecord["somaticStatus"]
-								: null) ?? patientRecord.notes ?? "",
-						allergyStatus:
-							typeof adminProfileRecord?.["allergyStatus"] === "string"
-								? adminProfileRecord["allergyStatus"]
-								: "",
-						drugIntolerance:
-							typeof adminProfileRecord?.["drugIntolerance"] === "string"
-								? adminProfileRecord["drugIntolerance"]
-								: "",
-						gender: adminProfile?.gender,
-						passport: {
-							series: parsedPassport.series,
-							number: parsedPassport.number,
-							issuedDate: parsedPassport.issuedDate,
-							issuedBy: parsedPassport.issuedBy,
-							divisionCode: parsedPassport.divisionCode,
-						},
-					};
+				// Данные пациента
+				let patientContextData: TemplateExecutionContext["patient"] = undefined;
+				let representativeContextData: TemplateExecutionContext["representative"] =
+					body.representative
+						? {
+								fullName: body.representative.fullName,
+								relationType: body.representative.relationType,
+								phone: body.representative.phone,
+								passport: body.representative.passport,
+								birthDate: body.representative.birthDate,
+								address: body.representative.address,
+								basis: body.representative.basis,
+								snils: body.representative.snils,
+							}
+						: undefined;
 
-					// Если у пациента указан представитель в анкете, подтягиваем его
-					if (
-						!representativeContextData?.fullName &&
-						adminProfile?.legalRepresentativeFullName
-					) {
-						const repParsedPassport = parsePassportFromString(
-							adminProfile.legalRepresentativeIdentityDocument,
+				if (body.patientId && UUID_REGEX.test(body.patientId)) {
+					const [patientRecord] = await tx
+						.select()
+						.from(patients)
+						.where(
+							and(
+								eq(patients.id, body.patientId),
+								eq(patients.organizationId, currentOrg.id),
+							),
+						)
+						.limit(1);
+
+					if (patientRecord) {
+						const adminProfile = patientRecord.administrativeProfile;
+						const parsedPassport = parsePassportFromString(
+							adminProfile?.identityDocument,
 						);
-						representativeContextData = {
-							fullName: adminProfile.legalRepresentativeFullName,
-							relationType:
-								adminProfile.legalRepresentativeRelationship ?? "родитель",
-							phone: adminProfile.legalRepresentativePhone ?? "",
-							basis: adminProfile.legalRepresentativeIdentityDocument
-								? "Паспорт"
-								: "",
+
+						const adminProfileRecord =
+							adminProfile && typeof adminProfile === "object"
+								? (adminProfile as Record<string, unknown>)
+								: null;
+
+						patientContextData = {
+							id: patientRecord.id,
+							fullName: patientRecord.fullName,
+							birthDate: patientRecord.birthDate,
+							phone: patientRecord.phone,
+							email: patientRecord.email,
+							address: adminProfile?.registrationAddress ?? "",
+							actualAddress:
+								adminProfile?.residentialAddress ??
+								adminProfile?.registrationAddress ??
+								"",
+							inn: adminProfile?.taxpayerInn ?? "",
+							snils: adminProfile?.snils ?? "",
+							omsPolicy: adminProfile?.insurancePolicyNumber ?? "",
+							specialNotes: patientRecord.notes ?? "",
+							comment: patientRecord.notes ?? "",
+							somaticStatus:
+								(typeof adminProfileRecord?.["somaticStatus"] === "string"
+									? adminProfileRecord["somaticStatus"]
+									: null) ?? patientRecord.notes ?? "",
+							allergyStatus:
+								typeof adminProfileRecord?.["allergyStatus"] === "string"
+									? adminProfileRecord["allergyStatus"]
+									: "",
+							drugIntolerance:
+								typeof adminProfileRecord?.["drugIntolerance"] === "string"
+									? adminProfileRecord["drugIntolerance"]
+									: "",
+							gender: adminProfile?.gender,
 							passport: {
-								series: repParsedPassport.series,
-								number: repParsedPassport.number,
-								issuedDate: repParsedPassport.issuedDate,
-								issuedBy: repParsedPassport.issuedBy,
-								divisionCode: repParsedPassport.divisionCode,
+								series: parsedPassport.series,
+								number: parsedPassport.number,
+								issuedDate: parsedPassport.issuedDate,
+								issuedBy: parsedPassport.issuedBy,
+								divisionCode: parsedPassport.divisionCode,
 							},
 						};
+
+						// Если у пациента указан представитель в анкете, подтягиваем его
+						if (
+							!representativeContextData?.fullName &&
+							adminProfile?.legalRepresentativeFullName
+						) {
+							const repParsedPassport = parsePassportFromString(
+								adminProfile.legalRepresentativeIdentityDocument,
+							);
+							representativeContextData = {
+								fullName: adminProfile.legalRepresentativeFullName,
+								relationType:
+									adminProfile.legalRepresentativeRelationship ?? "родитель",
+								phone: adminProfile.legalRepresentativePhone ?? "",
+								basis: adminProfile.legalRepresentativeIdentityDocument
+									? "Паспорт"
+									: "",
+								passport: {
+									series: repParsedPassport.series,
+									number: repParsedPassport.number,
+									issuedDate: repParsedPassport.issuedDate,
+									issuedBy: repParsedPassport.issuedBy,
+									divisionCode: repParsedPassport.divisionCode,
+								},
+							};
+						}
 					}
 				}
-			}
 
-			// Данные приема/визита и клинического протокола
-			let appointmentContextData: TemplateExecutionContext["appointment"] =
-				undefined;
-			let clinicalExamContextData: TemplateExecutionContext["clinicalExamination"] =
-				body.clinicalExamination
-					? {
-							examinationDate: body.clinicalExamination.examinationDate,
-							doctorFullName: body.clinicalExamination.doctorFullName,
-							doctorInitials: body.clinicalExamination.doctorInitials,
-							complaints: body.clinicalExamination.complaints,
-							anamnesis: body.clinicalExamination.anamnesis,
-							pastDiseases: body.clinicalExamination.pastDiseases,
-							diseaseHistory: body.clinicalExamination.diseaseHistory,
-							externalExam: body.clinicalExamination.externalExam,
-							bite: body.clinicalExamination.bite,
-							mucousCondition: body.clinicalExamination.mucousCondition,
-							xray: body.clinicalExamination.xray,
-							objective: body.clinicalExamination.objective,
-							diagnosis: body.clinicalExamination.diagnosis,
-							treatment: body.clinicalExamination.treatment,
-							recommendations: body.clinicalExamination.recommendations,
-							treatmentDateTime: body.clinicalExamination.treatmentDateTime,
+				// Данные приема/визита и клинического протокола
+				let appointmentContextData: TemplateExecutionContext["appointment"] =
+					undefined;
+				let clinicalExamContextData: TemplateExecutionContext["clinicalExamination"] =
+					body.clinicalExamination
+						? {
+								examinationDate: body.clinicalExamination.examinationDate,
+								doctorFullName: body.clinicalExamination.doctorFullName,
+								doctorInitials: body.clinicalExamination.doctorInitials,
+								complaints: body.clinicalExamination.complaints,
+								anamnesis: body.clinicalExamination.anamnesis,
+								pastDiseases: body.clinicalExamination.pastDiseases,
+								diseaseHistory: body.clinicalExamination.diseaseHistory,
+								externalExam: body.clinicalExamination.externalExam,
+								bite: body.clinicalExamination.bite,
+								mucousCondition: body.clinicalExamination.mucousCondition,
+								xray: body.clinicalExamination.xray,
+								objective: body.clinicalExamination.objective,
+								diagnosis: body.clinicalExamination.diagnosis,
+								treatment: body.clinicalExamination.treatment,
+								recommendations: body.clinicalExamination.recommendations,
+								treatmentDateTime: body.clinicalExamination.treatmentDateTime,
+							}
+						: undefined;
+
+				let dentalFormulaContextData: TemplateExecutionContext["dentalFormula"] =
+					body.dentalFormula as TemplateExecutionContext["dentalFormula"];
+
+				if (body.visitId && UUID_REGEX.test(body.visitId)) {
+					const [visitRecord] = await tx
+						.select()
+						.from(visits)
+						.where(
+							and(
+								eq(visits.id, body.visitId),
+								eq(visits.organizationId, currentOrg.id),
+							),
+						)
+						.limit(1);
+
+					if (visitRecord) {
+						appointmentContextData = {
+							id: visitRecord.id,
+							date: visitRecord.signedAt ?? visitRecord.createdAt,
+						};
+
+						// Извлечение протокола клинического осмотра из визита
+						if (!clinicalExamContextData) {
+							clinicalExamContextData = {
+								examinationDate: visitRecord.signedAt ?? visitRecord.createdAt,
+								complaints: visitRecord.complaint ?? undefined,
+								anamnesis: visitRecord.anamnesis ?? undefined,
+								objective: visitRecord.objectiveStatus ?? undefined,
+								diagnosis: visitRecord.diagnosis ?? undefined,
+								treatment: visitRecord.treatmentPlan ?? undefined,
+								recommendations: visitRecord.doctorSummary ?? undefined,
+								treatmentDateTime: visitRecord.signedAt ?? visitRecord.createdAt,
+							};
 						}
-					: undefined;
 
-			let dentalFormulaContextData: TemplateExecutionContext["dentalFormula"] =
-				body.dentalFormula as TemplateExecutionContext["dentalFormula"];
+						// Извлечение зубной формулы из черновика визита при наличии
+						if (!dentalFormulaContextData && visitRecord.draftAutosave) {
+							interface AutosaveDraftStructure {
+								draft?: {
+									quality?: {
+										detectedToothStates?: TemplateExecutionContext["dentalFormula"];
+									};
+								};
+								teeth?: TemplateExecutionContext["dentalFormula"];
+								dentalFormula?: TemplateExecutionContext["dentalFormula"];
+							}
+							const autosave =
+								typeof visitRecord.draftAutosave === "object" && visitRecord.draftAutosave !== null
+									? (visitRecord.draftAutosave as AutosaveDraftStructure)
+									: null;
+							if (autosave?.draft?.quality?.detectedToothStates) {
+								dentalFormulaContextData =
+									autosave.draft.quality.detectedToothStates;
+							} else if (autosave?.teeth) {
+								dentalFormulaContextData = autosave.teeth;
+							} else if (autosave?.dentalFormula) {
+								dentalFormulaContextData = autosave.dentalFormula;
+							}
+						}
+					}
+				} else if (body.appointmentId && UUID_REGEX.test(body.appointmentId)) {
+					const [appRecord] = await tx
+						.select()
+						.from(appointments)
+						.where(
+							and(
+								eq(appointments.id, body.appointmentId),
+								eq(appointments.organizationId, currentOrg.id),
+							),
+						)
+						.limit(1);
 
-			if (body.visitId && UUID_REGEX.test(body.visitId)) {
-				const [visitRecord] = await db
-					.select()
-					.from(visits)
-					.where(
-						and(
-							eq(visits.id, body.visitId),
-							eq(visits.organizationId, currentOrg.id),
-						),
-					)
-					.limit(1);
-
-				if (visitRecord) {
-					appointmentContextData = {
-						id: visitRecord.id,
-						date: visitRecord.signedAt ?? visitRecord.createdAt,
-					};
-
-					// Извлечение протокола клинического осмотра из визита
-					if (!clinicalExamContextData) {
-						clinicalExamContextData = {
-							examinationDate: visitRecord.signedAt ?? visitRecord.createdAt,
-							complaints: visitRecord.complaint ?? undefined,
-							anamnesis: visitRecord.anamnesis ?? undefined,
-							objective: visitRecord.objectiveStatus ?? undefined,
-							diagnosis: visitRecord.diagnosis ?? undefined,
-							treatment: visitRecord.treatmentPlan ?? undefined,
-							recommendations: visitRecord.doctorSummary ?? undefined,
-							treatmentDateTime: visitRecord.signedAt ?? visitRecord.createdAt,
+					if (appRecord) {
+						const appDate = appRecord.startsAt;
+						appointmentContextData = {
+							id: appRecord.id,
+							date: appDate,
+							time: appDate
+								? `${String(appDate.getHours()).padStart(2, "0")}:${String(appDate.getMinutes()).padStart(2, "0")}`
+								: undefined,
 						};
 					}
+				}
 
-					// Извлечение зубной формулы из черновика визита при наличии
-					if (!dentalFormulaContextData && visitRecord.draftAutosave) {
-						interface AutosaveDraftStructure {
-							draft?: {
-								quality?: {
-									detectedToothStates?: TemplateExecutionContext["dentalFormula"];
-								};
-							};
-							teeth?: TemplateExecutionContext["dentalFormula"];
-							dentalFormula?: TemplateExecutionContext["dentalFormula"];
-						}
-						const autosave =
-							typeof visitRecord.draftAutosave === "object" && visitRecord.draftAutosave !== null
-								? (visitRecord.draftAutosave as AutosaveDraftStructure)
-								: null;
-						if (autosave?.draft?.quality?.detectedToothStates) {
-							dentalFormulaContextData =
-								autosave.draft.quality.detectedToothStates;
-						} else if (autosave?.teeth) {
-							dentalFormulaContextData = autosave.teeth;
-						} else if (autosave?.dentalFormula) {
-							dentalFormulaContextData = autosave.dentalFormula;
-						}
+				// Финансовый контекст (сумма, договор, акт, счет)
+				let financialContextData: TemplateExecutionContext["financial"] =
+					body.financial;
+				if (!financialContextData && body.visitId && UUID_REGEX.test(body.visitId)) {
+					const visitPayments = await tx
+						.select()
+						.from(payments)
+						.where(
+							and(
+								eq(payments.visitId, body.visitId),
+								eq(payments.organizationId, currentOrg.id),
+							),
+						);
+
+					if (visitPayments.length > 0) {
+						const totalKop = visitPayments.reduce(
+							(sum, p) =>
+								sum +
+								(p.amountKopecks != null
+									? Number(p.amountKopecks)
+									: parseKopecks(p.amountRub ?? 0)),
+							0,
+						);
+						financialContextData = {
+							amountRubles: kopecksToRubles(totalKop),
+							amountKopecks: totalKop,
+							actNumber: visitPayments[0]?.documentId ?? undefined,
+							actDate: visitPayments[0]?.createdAt ?? undefined,
+						};
 					}
 				}
-			} else if (body.appointmentId && UUID_REGEX.test(body.appointmentId)) {
-				const [appRecord] = await db
-					.select()
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.id, body.appointmentId),
-							eq(appointments.organizationId, currentOrg.id),
-						),
-					)
-					.limit(1);
 
-				if (appRecord) {
-					const appDate = appRecord.startsAt;
-					appointmentContextData = {
-						id: appRecord.id,
-						date: appDate,
-						time: appDate
-							? `${String(appDate.getHours()).padStart(2, "0")}:${String(appDate.getMinutes()).padStart(2, "0")}`
-							: undefined,
-					};
+				// Данные активного врача
+				let doctorContextData: TemplateExecutionContext["doctor"] = {
+					fullName: "___________________",
+					position: "Лечащий врач-стоматолог",
+					specialty: "Стоматология",
+				};
+
+				if (body.doctorId && UUID_REGEX.test(body.doctorId)) {
+					const [docUser] = await tx
+						.select()
+						.from(users)
+						.where(
+							and(
+								eq(users.id, body.doctorId),
+								eq(users.organizationId, currentOrg.id),
+							),
+						)
+						.limit(1);
+
+					if (docUser) {
+						doctorContextData = {
+							fullName: docUser.fullName,
+							position: docUser.role ?? "Врач-стоматолог",
+							specialty: "Стоматология",
+						};
+					}
 				}
-			}
 
-			// Финансовый контекст (сумма, договор, акт, счет)
-			let financialContextData: TemplateExecutionContext["financial"] =
-				body.financial;
-			if (!financialContextData && body.visitId && UUID_REGEX.test(body.visitId)) {
-				const visitPayments = await db
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.visitId, body.visitId),
-							eq(payments.organizationId, currentOrg.id),
-						),
-					);
+				// Данные администратора клиники
+				let administratorContextData: TemplateExecutionContext["administrator"] =
+					undefined;
+				if (body.administratorId && UUID_REGEX.test(body.administratorId)) {
+					const [adminUser] = await tx
+						.select()
+						.from(users)
+						.where(
+							and(
+								eq(users.id, body.administratorId),
+								eq(users.organizationId, currentOrg.id),
+							),
+						)
+						.limit(1);
 
-				if (visitPayments.length > 0) {
-					const totalKop = visitPayments.reduce(
-						(sum, p) =>
-							sum +
-							(p.amountKopecks != null
-								? Number(p.amountKopecks)
-								: parseKopecks(p.amountRub ?? 0)),
-						0,
-					);
-					financialContextData = {
-						amountRubles: kopecksToRubles(totalKop),
-						amountKopecks: totalKop,
-						actNumber: visitPayments[0]?.documentId ?? undefined,
-						actDate: visitPayments[0]?.createdAt ?? undefined,
-					};
+					if (adminUser) {
+						administratorContextData = {
+							fullName: adminUser.fullName,
+							position: adminUser.role ?? "Администратор",
+							specialty: "Администрация",
+						};
+					}
 				}
-			}
 
-			// Данные активного врача
-			let doctorContextData: TemplateExecutionContext["doctor"] = {
-				fullName: "___________________",
-				position: "Лечащий врач-стоматолог",
-				specialty: "Стоматология",
-			};
-
-			if (body.doctorId && UUID_REGEX.test(body.doctorId)) {
-				const [docUser] = await db
-					.select()
-					.from(users)
-					.where(
-						and(
-							eq(users.id, body.doctorId),
-							eq(users.organizationId, currentOrg.id),
-						),
-					)
-					.limit(1);
-
-				if (docUser) {
-					doctorContextData = {
-						fullName: docUser.fullName,
-						position: docUser.role ?? "Врач-стоматолог",
-						specialty: "Стоматология",
-					};
+				// Текущий пользователь системы (врач, администратор или сессия)
+				let currentUserContextData: TemplateExecutionContext["currentUser"] =
+					body.currentUser;
+				if (!currentUserContextData) {
+					const sessionUser = request.user as
+						| { fullName?: string; role?: string }
+						| undefined;
+					if (sessionUser?.fullName) {
+						currentUserContextData = {
+							fullName: sessionUser.fullName,
+							position: sessionUser.role ?? "Сотрудник клиники",
+							specialty: "Стоматология",
+						};
+					} else if (
+						doctorContextData &&
+						doctorContextData.fullName !== "___________________"
+					) {
+						currentUserContextData = doctorContextData;
+					} else if (administratorContextData) {
+						currentUserContextData = administratorContextData;
+					}
 				}
-			}
 
-			// Данные администратора клиники
-			let administratorContextData: TemplateExecutionContext["administrator"] =
-				undefined;
-			if (body.administratorId && UUID_REGEX.test(body.administratorId)) {
-				const [adminUser] = await db
-					.select()
-					.from(users)
-					.where(
-						and(
-							eq(users.id, body.administratorId),
-							eq(users.organizationId, currentOrg.id),
-						),
-					)
-					.limit(1);
+				const authorizedPersonContextData: TemplateExecutionContext["authorizedPerson"] =
+					body.authorizedPerson
+						? {
+								fullName: body.authorizedPerson.fullName,
+								phone: body.authorizedPerson.phone,
+								passport: body.authorizedPerson.passport,
+								birthDate: body.authorizedPerson.birthDate,
+								address: body.authorizedPerson.address,
+								snils: body.authorizedPerson.snils,
+							}
+						: undefined;
 
-				if (adminUser) {
-					administratorContextData = {
-						fullName: adminUser.fullName,
-						position: adminUser.role ?? "Администратор",
-						specialty: "Администрация",
-					};
-				}
-			}
+				// Объединение контекста
+				const executionContext: TemplateExecutionContext = {
+					clinic: clinicData,
+					patient: patientContextData,
+					representative: representativeContextData,
+					authorizedPerson: authorizedPersonContextData,
+					doctor: doctorContextData,
+					administrator: administratorContextData,
+					currentUser: currentUserContextData,
+					appointment: appointmentContextData,
+					financial: financialContextData,
+					clinicalExamination: clinicalExamContextData,
+					dentalFormula: dentalFormulaContextData,
+					currentDate: new Date(),
+					document: {
+						number: `БЛ-${randomInt(1000, 10000)}`,
+						createdAt: new Date(),
+					},
+					...(body.overrides as Partial<TemplateExecutionContext>),
+				};
 
-			// Текущий пользователь системы (врач, администратор или сессия)
-			let currentUserContextData: TemplateExecutionContext["currentUser"] =
-				body.currentUser;
-			if (!currentUserContextData) {
-				const sessionUser = request.user as
-					| { fullName?: string; role?: string }
-					| undefined;
-				if (sessionUser?.fullName) {
-					currentUserContextData = {
-						fullName: sessionUser.fullName,
-						position: sessionUser.role ?? "Сотрудник клиники",
-						specialty: "Стоматология",
-					};
-				} else if (
-					doctorContextData &&
-					doctorContextData.fullName !== "___________________"
-				) {
-					currentUserContextData = doctorContextData;
-				} else if (administratorContextData) {
-					currentUserContextData = administratorContextData;
-				}
-			}
+				// Рендеринг HTML
+				const renderedHtml = renderDocumentTemplate(
+					templateHtml,
+					executionContext,
+					{
+						emptyPlaceholder: body.emptyPlaceholder,
+						preserveUnknownTokens: false,
+					},
+				);
 
-			const authorizedPersonContextData: TemplateExecutionContext["authorizedPerson"] =
-				body.authorizedPerson
-					? {
-							fullName: body.authorizedPerson.fullName,
-							phone: body.authorizedPerson.phone,
-							passport: body.authorizedPerson.passport,
-							birthDate: body.authorizedPerson.birthDate,
-							address: body.authorizedPerson.address,
-							snils: body.authorizedPerson.snils,
-						}
-					: undefined;
+				const appliedVariables = buildTemplateVariablesMap(executionContext);
 
-			// Объединение контекста
-			const executionContext: TemplateExecutionContext = {
-				clinic: clinicData,
-				patient: patientContextData,
-				representative: representativeContextData,
-				authorizedPerson: authorizedPersonContextData,
-				doctor: doctorContextData,
-				administrator: administratorContextData,
-				currentUser: currentUserContextData,
-				appointment: appointmentContextData,
-				financial: financialContextData,
-				clinicalExamination: clinicalExamContextData,
-				dentalFormula: dentalFormulaContextData,
-				currentDate: new Date(),
-				document: {
-					number: `БЛ-${randomInt(1000, 10000)}`,
-					createdAt: new Date(),
-				},
-				...(body.overrides as Partial<TemplateExecutionContext>),
-			};
-
-			// Рендеринг HTML
-			const renderedHtml = renderDocumentTemplate(
-				templateHtml,
-				executionContext,
-				{
-					emptyPlaceholder: body.emptyPlaceholder,
-					preserveUnknownTokens: false,
-				},
-			);
-
-			const appliedVariables = buildTemplateVariablesMap(executionContext);
-
-			return reply.send({
-				ok: true,
-				template: {
-					id: templateRecord?.id ?? null,
-					externalTemplateId: templateRecord?.externalTemplateId ?? null,
-					stomxId: templateRecord?.externalTemplateId ?? null,
-					name: templateName,
-					systemAlias,
-					categoryId: templateRecord?.categoryId ?? 1,
-				},
-				renderedHtml,
-				variablesCount: Object.keys(appliedVariables).length,
-				appliedVariables,
+				return reply.send({
+					ok: true,
+					template: {
+						id: templateRecord?.id ?? null,
+						externalTemplateId: templateRecord?.externalTemplateId ?? null,
+						stomxId: templateRecord?.externalTemplateId ?? null,
+						name: templateName,
+						systemAlias,
+						categoryId: templateRecord?.categoryId ?? 1,
+					},
+					renderedHtml,
+					variablesCount: Object.keys(appliedVariables).length,
+					appliedVariables,
+				});
 			});
 		},
 	);

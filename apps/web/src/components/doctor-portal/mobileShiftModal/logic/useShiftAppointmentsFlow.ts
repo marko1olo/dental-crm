@@ -184,7 +184,7 @@ export function useShiftAppointmentsFlow({
 					}
 				}
 			} catch (err) {
-				console.warn(
+				clientLogger.warn(
 					"[DoctorMobileShiftModal] Загрузка расписания смены из API завершилась с ошибкой",
 					err,
 				);

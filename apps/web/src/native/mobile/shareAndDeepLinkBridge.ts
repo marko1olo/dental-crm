@@ -41,7 +41,7 @@ export function parseDenteDeepLink(rawUrl: string): DenteDeepLinkPayload | null 
 			actionPath = u.pathname.replace(/^\//, "");
 			queryString = u.search.replace(/^\?/, "");
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] parseDenteDeepLink URL constructor failed:", err);
+			logger.warn("[mobileBridge] parseDenteDeepLink URL constructor failed:", err);
 			return null;
 		}
 	} else {
@@ -146,7 +146,7 @@ export async function shareClinicalDocumentMobile(params: {
 				return { success: true, sharedVia: "capacitor", urlOrPayload: params.url };
 			}
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] native shareFile failed, falling back to Web Share API:", err);
+			logger.warn("[mobileBridge] native shareFile failed, falling back to Web Share API:", err);
 			// Fall through to Web Share API
 		}
 	}
@@ -197,7 +197,7 @@ export async function shareClinicalDocumentMobile(params: {
 			triggerHaptic("light");
 			return { success: true, sharedVia: "clipboard", urlOrPayload: shareUrl };
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] clipboard.writeText failed:", err);
+			logger.warn("[mobileBridge] clipboard.writeText failed:", err);
 			// Ignore clipboard failure
 		}
 	}

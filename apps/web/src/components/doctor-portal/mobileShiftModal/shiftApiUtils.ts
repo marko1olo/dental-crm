@@ -54,7 +54,7 @@ export async function persistBatchSigningToApi(
 			}),
 		});
 	} catch (err) {
-		console.warn(
+		clientLogger.warn(
 			"[DoctorMobileShiftModal] Ошибка отправки статуса смены на /api/schedule/shifts",
 			err,
 		);

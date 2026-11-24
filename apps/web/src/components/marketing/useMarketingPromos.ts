@@ -41,7 +41,7 @@ export function useMarketingPromos() {
 				setPromos(data.promos as MarketingPromo[]);
 				setSelectedPromoId((prev) => prev || data.promos[0]?.id || "");
 			} catch (err) {
-				console.error("[useMarketingPromos] Ошибка загрузки акций клиники:", err);
+				clientLogger.error("[useMarketingPromos] Ошибка загрузки акций клиники:", err);
 				showToast("Не удалось загрузить акции клиники", "error", 6000, {
 					label: "Повторить",
 					onAction: () => { void loadPromosFromServer(); },
@@ -78,7 +78,7 @@ export function useMarketingPromos() {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			})
 			.catch((err) => {
-				console.error("[useMarketingPromos] Ошибка смены статуса акции:", err);
+				clientLogger.error("[useMarketingPromos] Ошибка смены статуса акции:", err);
 				showToast("Не удалось обновить статус акции", "error", 6000, {
 					label: "Повторить",
 					onAction: () => handleTogglePromoStatus(promoId),
@@ -102,7 +102,7 @@ export function useMarketingPromos() {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			})
 			.catch((err) => {
-				console.error("[useMarketingPromos] Ошибка сохранения новой акции:", err);
+				clientLogger.error("[useMarketingPromos] Ошибка сохранения новой акции:", err);
 				showToast("Не удалось сохранить акцию в базе", "error", 6000, {
 					label: "Повторить",
 					onAction: () => handleSaveNewPromo(newPromo),

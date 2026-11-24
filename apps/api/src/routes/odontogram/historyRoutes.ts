@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { toothStateHistory } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -55,28 +55,30 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const rows = await db
-				.select({
-					id: toothStateHistory.id,
-					visitId: toothStateHistory.visitId,
-					toothNumber: toothStateHistory.toothNumber,
-					previousState: toothStateHistory.previousState,
-					newState: toothStateHistory.newState,
-					previousSurfaces: toothStateHistory.previousSurfaces,
-					newSurfaces: toothStateHistory.newSurfaces,
-					changedByUserId: toothStateHistory.changedByUserId,
-					reason: toothStateHistory.reason,
-					changedAt: toothStateHistory.changedAt,
-				})
-				.from(toothStateHistory)
-				.where(
-					and(
-						eq(toothStateHistory.organizationId, organizationId),
-						eq(toothStateHistory.patientId, patientId),
-						eq(toothStateHistory.toothNumber, toothNumber),
-					),
-				)
-				.orderBy(desc(toothStateHistory.changedAt));
+			const rows = await withTenantCtx(organizationId, async (tx) =>
+				tx
+					.select({
+						id: toothStateHistory.id,
+						visitId: toothStateHistory.visitId,
+						toothNumber: toothStateHistory.toothNumber,
+						previousState: toothStateHistory.previousState,
+						newState: toothStateHistory.newState,
+						previousSurfaces: toothStateHistory.previousSurfaces,
+						newSurfaces: toothStateHistory.newSurfaces,
+						changedByUserId: toothStateHistory.changedByUserId,
+						reason: toothStateHistory.reason,
+						changedAt: toothStateHistory.changedAt,
+					})
+					.from(toothStateHistory)
+					.where(
+						and(
+							eq(toothStateHistory.organizationId, organizationId),
+							eq(toothStateHistory.patientId, patientId),
+							eq(toothStateHistory.toothNumber, toothNumber),
+						),
+					)
+					.orderBy(desc(toothStateHistory.changedAt)),
+			);
 
 			return reply.send({
 				success: true,
@@ -122,28 +124,30 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const rows = await db
-				.select({
-					id: toothStateHistory.id,
-					visitId: toothStateHistory.visitId,
-					toothNumber: toothStateHistory.toothNumber,
-					previousState: toothStateHistory.previousState,
-					newState: toothStateHistory.newState,
-					previousSurfaces: toothStateHistory.previousSurfaces,
-					newSurfaces: toothStateHistory.newSurfaces,
-					changedByUserId: toothStateHistory.changedByUserId,
-					reason: toothStateHistory.reason,
-					changedAt: toothStateHistory.changedAt,
-				})
-				.from(toothStateHistory)
-				.where(
-					and(
-						eq(toothStateHistory.organizationId, organizationId),
-						eq(toothStateHistory.patientId, patientId),
-					),
-				)
-				.orderBy(desc(toothStateHistory.changedAt))
-				.limit(500);
+			const rows = await withTenantCtx(organizationId, async (tx) =>
+				tx
+					.select({
+						id: toothStateHistory.id,
+						visitId: toothStateHistory.visitId,
+						toothNumber: toothStateHistory.toothNumber,
+						previousState: toothStateHistory.previousState,
+						newState: toothStateHistory.newState,
+						previousSurfaces: toothStateHistory.previousSurfaces,
+						newSurfaces: toothStateHistory.newSurfaces,
+						changedByUserId: toothStateHistory.changedByUserId,
+						reason: toothStateHistory.reason,
+						changedAt: toothStateHistory.changedAt,
+					})
+					.from(toothStateHistory)
+					.where(
+						and(
+							eq(toothStateHistory.organizationId, organizationId),
+							eq(toothStateHistory.patientId, patientId),
+						),
+					)
+					.orderBy(desc(toothStateHistory.changedAt))
+					.limit(500),
+			);
 
 			return reply.send({
 				success: true,

@@ -46,7 +46,7 @@ export function printShiftPayslip(
 		}
 		showToast("Расчет зарплаты за смену отправлен на печать", "info");
 	} catch (err: unknown) {
-		console.error("[shiftPrintUtils] Print payslip error:", err);
+		clientLogger.error("[shiftPrintUtils] Print payslip error:", err);
 		showToast("Не удалось открыть окно печати", "error");
 	}
 }

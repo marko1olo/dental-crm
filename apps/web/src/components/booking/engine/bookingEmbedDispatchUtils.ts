@@ -83,7 +83,7 @@ export function dispatchBookingCompletedMessage(
 				"*",
 			);
 		} catch (err) {
-			console.warn("[publicBookingEngine] postMessage dispatch failed:", err);
+			clientLogger.warn("[publicBookingEngine] postMessage dispatch failed:", err);
 		}
 	}
 }

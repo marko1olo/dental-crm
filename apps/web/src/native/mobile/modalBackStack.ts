@@ -119,7 +119,7 @@ export function initHardwareBackButtonListener(): () => void {
 				}
 			});
 		} catch (err) {
-			console.warn("[HardwareBack] Capacitor listener attachment failed:", err);
+			logger.warn("[HardwareBack] Capacitor listener attachment failed:", err);
 		}
 	}
 

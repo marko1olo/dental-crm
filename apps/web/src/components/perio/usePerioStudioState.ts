@@ -214,7 +214,7 @@ export function usePerioStudioState({
 					headers: getDenteAuthHeaders(),
 				});
 				if (!res.ok) {
-					console.warn("[PerioStudio] Server responded with error status:", res.status);
+					clientLogger.warn("Server responded with error status", { status: res.status }, { module: "usePerioStudioState" });
 					return;
 				}
 				const json = await res.json();
@@ -236,7 +236,7 @@ export function usePerioStudioState({
 					if (Object.keys(validMap).length === 6) setScreeningMap(validMap as PsrScreeningMap);
 				}
 			} catch (err) {
-				console.warn("[PerioStudio] Failed to load periodontogram:", err);
+				clientLogger.warn("Failed to load periodontogram", err, { module: "usePerioStudioState" });
 				showToast("Сетевой сбой при загрузке пародонтограммы. Используются локальные данные.", "warning", 4000, {
 					label: "Повторить",
 					onAction: () => { void fetchPerio(); },
@@ -436,7 +436,7 @@ export function usePerioStudioState({
 			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
 			if (isModal) handleClose();
 		} catch (err) {
-			console.error("[PerioStudio] Save failed:", err);
+			clientLogger.error("Save failed", err, { module: "usePerioStudioState" });
 			syncPerioState();
 			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, {
 				label: "Повторить",

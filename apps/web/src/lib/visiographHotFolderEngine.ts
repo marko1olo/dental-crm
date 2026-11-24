@@ -304,7 +304,7 @@ export class VisiographHotFolderEngine {
 					studyId = String((saveRes.data as { id: string }).id);
 				}
 			} catch (saveErr) {
-				console.warn("[VisiographHotFolderEngine] Background persist error:", saveErr);
+				logger.warn("[VisiographHotFolderEngine] Background persist error:", saveErr);
 			}
 		}
 

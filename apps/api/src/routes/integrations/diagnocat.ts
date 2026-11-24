@@ -1,12 +1,31 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { z } from "zod";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { patients, radiologyAiReports } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
+import { requireClinicalReadContext } from "../../security/tenantContext.js";
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
+
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const diagnocatWebhookBodySchema = z
+	.object({
+		patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
+		reportUrl: z.string().trim().min(1, "reportUrl обязателен"),
+		odontogramData: z.unknown().refine((v) => v !== undefined && v !== null, {
+			message: "odontogramData обязателен",
+		}),
+		organizationId: z.string().regex(UUID_REGEX).optional(),
+	})
+	.passthrough();
+
+const diagnocatReportsParamsSchema = z.object({
+	patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
+});
 
 export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 	const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -26,32 +45,42 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 		});
 		if (!isAuthorized) return;
 
-		const body = request.body as {
-			patientId?: string;
-			reportUrl?: string;
-			odontogramData?: unknown;
-			organizationId?: string;
-		};
-		if (!body.patientId || !body.reportUrl || !body.odontogramData) {
-			return reply.status(400).send({ error: "Missing required fields" });
+		const parsedBody = diagnocatWebhookBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "Missing required fields",
+				details: parsedBody.error.issues,
+			});
 		}
+		const body = parsedBody.data;
 
-		const query = request.query as Record<string, unknown> | undefined;
+		const query = (
+			request.query && typeof request.query === "object" ? request.query : {}
+		) as Record<string, unknown>;
 		const headerOrg = request.headers["x-organization-id"];
-		let organizationId =
-			(typeof body.organizationId === "string" && body.organizationId.trim() ? body.organizationId.trim() : null) ||
-			(typeof query?.organizationId === "string" && query.organizationId.trim() ? query.organizationId.trim() : null) ||
-			(typeof headerOrg === "string" && headerOrg.trim() ? headerOrg.trim() : null);
+		const candidateOrgId =
+			(typeof body.organizationId === "string" && body.organizationId.trim()
+				? body.organizationId.trim()
+				: null) ||
+			(typeof query.organizationId === "string" && query.organizationId.trim()
+				? query.organizationId.trim()
+				: null) ||
+			(typeof headerOrg === "string" && headerOrg.trim()
+				? headerOrg.trim()
+				: null);
 
-		if (!organizationId && body.patientId) {
-			const [patient] = await db
-				.select({ organizationId: patients.organizationId })
-				.from(patients)
-				.where(eq(patients.id, body.patientId))
-				.limit(1);
-			if (patient?.organizationId) {
-				organizationId = patient.organizationId;
-			}
+		let organizationId =
+			candidateOrgId && UUID_REGEX.test(candidateOrgId) ? candidateOrgId : null;
+
+		if (!organizationId) {
+			organizationId = await withSuperuserBypass(async (tx) => {
+				const [patient] = await tx
+					.select({ organizationId: patients.organizationId })
+					.from(patients)
+					.where(eq(patients.id, body.patientId))
+					.limit(1);
+				return patient?.organizationId ?? null;
+			});
 		}
 
 		if (!organizationId) {
@@ -61,22 +90,29 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const inserted = await db
-			.insert(radiologyAiReports)
-			.values({
-				organizationId,
-				patientId: body.patientId,
-				reportUrl: body.reportUrl,
-				odontogramData: body.odontogramData,
-			})
-			.returning();
+		const inserted = await withTenantCtx(organizationId, async (tx) => {
+			return tx
+				.insert(radiologyAiReports)
+				.values({
+					organizationId,
+					patientId: body.patientId,
+					reportUrl: body.reportUrl,
+					odontogramData: body.odontogramData,
+				})
+				.returning();
+		});
 
 		return reply.send({ success: true, reportId: inserted[0]?.id });
 	};
 
 	const reportsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireOrganizationContext(request, reply);
-		if (!organizationId) return;
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"integrations.diagnocat.read",
+		);
+		if (!context) return;
+		const { organizationId } = context;
 
 		// 152-ФЗ / 323-ФЗ: Отчеты Clinical AI содержат врачебную тайну (AI-диагностику зубов)
 		const identity = getRequestIdentity(request);
@@ -91,49 +127,38 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { patientId } = request.params as { patientId: string };
-
-		// 152-ФЗ: Защита архивированного пациента
-		const [patient] = await db
-			.select({ status: patients.status })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, patientId),
-					eq(patients.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		if (patient?.status === "archived" && !access.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "patients.archived.diagnocat",
-				role: identity.role,
-				message:
-					"Отказ в доступе к снимкам и отчетам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+		const parsedParams = diagnocatReportsParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор пациента должен быть валидным UUID.",
 			});
 		}
+		const { patientId } = parsedParams.data;
 
-		const reports = await db
-			.select()
-			.from(radiologyAiReports)
-			.where(
-				and(
-					eq(radiologyAiReports.patientId, patientId),
-					eq(radiologyAiReports.organizationId, organizationId),
-				),
-			)
-			.orderBy(radiologyAiReports.createdAt);
+		const reports = await withTenantCtx(organizationId, async (tx) => {
+			const rows = await tx
+				.select()
+				.from(radiologyAiReports)
+				.where(
+					and(
+						eq(radiologyAiReports.patientId, patientId),
+						eq(radiologyAiReports.organizationId, organizationId),
+					),
+				)
+				.orderBy(radiologyAiReports.createdAt);
 
-		await auditMedicalAccessFromRequest(request, {
-			organizationId,
-			patientId,
-			action: "VIEW_DIAGNOSIS",
-			metadata: {
-				resourceType: "clinical_ai_report",
-				justification: "Просмотр радиологического AI-отчета",
-			},
+			await auditMedicalAccessFromRequest(request, {
+				organizationId,
+				patientId,
+				action: "VIEW_DIAGNOSIS",
+				metadata: {
+					resourceType: "clinical_ai_report",
+					justification: "Просмотр радиологического AI-отчета",
+				},
+			});
+
+			return rows;
 		});
 
 		return reply.send({ success: true, reports });

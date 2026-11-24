@@ -108,7 +108,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 				setMessages([]);
 			}
 		} catch (err) {
-			console.error("Failed to load WhatsApp conversation thread:", err);
+			clientLogger.error("Failed to load WhatsApp conversation thread:", err);
 			setMessages([]);
 		} finally {
 			setIsLoading(false);
@@ -200,7 +200,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 				"success",
 			);
 		} catch (err) {
-			console.error("Failed to send message via API:", err);
+			clientLogger.error("Failed to send message via API:", err);
 			showToast(templateLabel ? "Сбой сети при отправке шаблона" : "Сбой сети при отправке сообщения", "error");
 			setMessages((prev) => prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)));
 		} finally {
@@ -299,7 +299,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 					);
 				}
 			} catch (err) {
-				console.error("Failed to upload WhatsApp media file:", err);
+				clientLogger.error("Failed to upload WhatsApp media file:", err);
 				showToast("Сбой сети при загрузке файла", "error");
 			}
 		};

@@ -133,7 +133,7 @@ export class RuntimePerformanceMonitor {
 			try {
 				this.options.onStateChange?.(this.store.currentSnapshot);
 			} catch (err: unknown) {
-				console.warn("[RuntimePerformanceMonitor] onStateChange error:", err);
+				logger.warn("[RuntimePerformanceMonitor] onStateChange error:", err);
 			}
 		}
 	}

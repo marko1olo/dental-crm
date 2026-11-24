@@ -163,7 +163,7 @@ export const individualToothUpdateSchema = z.object({
 	mobilityDegree: z.number().int().min(0).max(4).optional().nullable(),
 	isPrimaryPediatric: z.boolean().optional().nullable(),
 	notes: z.string().max(10000).optional().nullable(),
-});
+}).strict();
 
 export const batchToothStateSchema = z.object({
 	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64).optional(),
@@ -187,7 +187,7 @@ export const batchToothStateSchema = z.object({
 	updatedAt: z.string().optional().nullable(),
 	version: z.number().int().nonnegative().optional().nullable(),
 	reason: z.string().max(1000).optional().nullable(),
-}).refine(
+}).strict().refine(
 	(data) => (data.toothNumbers && data.toothNumbers.length > 0) || (data.updates && data.updates.length > 0),
 	{ message: "Необходимо указать toothNumbers или updates" },
 );
@@ -217,6 +217,7 @@ export const odontogramStatusMutationSchema = z
 		version: z.number().int().nonnegative().optional().nullable(),
 		reason: z.string().max(1000).optional().nullable(),
 	})
+	.strict()
 	.refine(
 		(data) =>
 			data.toothNumber !== undefined ||
@@ -260,7 +261,7 @@ export const treatmentPlanItemSchema = z.object({
 	phase: z.number().int().min(1).max(12).default(1),
 	isAuto: z.boolean().optional(),
 	doctorId: z.string().uuid().optional().nullable(),
-});
+}).strict();
 
 export const treatmentPlanUpsertSchema = z.object({
 	id: z.string().uuid().optional().nullable(),
@@ -280,7 +281,7 @@ export const treatmentPlanUpsertSchema = z.object({
 				stageOrder: z.number().int().positive().default(1),
 				stageName: z.string().trim().min(1),
 				completionPercentage: z.number().int().min(0).max(100).default(0),
-			}),
+			}).strict(),
 		)
 		.optional(),
 	planGroupId: z.string().uuid().optional().nullable(),
@@ -314,7 +315,7 @@ export const treatmentPlanUpsertSchema = z.object({
 	monthlyPaymentKopecks: z.number().int().nonnegative().optional(),
 	allowClinicalBlockerOverride: z.boolean().optional().default(true),
 	clinicalBlockerOverrideReason: z.string().trim().max(1000).optional().nullable(),
-});
+}).strict();
 
 export type TreatmentPlanRow = typeof treatmentPlans.$inferSelect;
 export type TreatmentPlanItemRow = typeof treatmentPlanItemsNew.$inferSelect;

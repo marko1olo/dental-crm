@@ -46,7 +46,7 @@ export function useToastRollback<T = unknown>() {
 					try {
 						void entry.onCommit(entry.item);
 					} catch (e) {
-						console.error("[useToastRollback] unmount commit failed:", e);
+						logger.error("[useToastRollback] unmount commit failed:", e);
 					}
 				}
 			}
@@ -79,7 +79,7 @@ export function useToastRollback<T = unknown>() {
 					try {
 						void entry.onCommit(entry.item);
 					} catch (e) {
-						console.error("[useToastRollback] commit failed:", e);
+						logger.error("[useToastRollback] commit failed:", e);
 					}
 				}
 			}
@@ -103,7 +103,7 @@ export function useToastRollback<T = unknown>() {
 				try {
 					entry.onRollback(entry.item);
 				} catch (e) {
-					console.error("[useToastRollback] rollback restore failed:", e);
+					logger.error("[useToastRollback] rollback restore failed:", e);
 				}
 			}
 		};

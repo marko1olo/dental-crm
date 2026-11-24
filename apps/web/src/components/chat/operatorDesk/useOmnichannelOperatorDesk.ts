@@ -116,7 +116,7 @@ export function useOmnichannelOperatorDesk({
 				}
 			}
 		} catch (err) {
-			console.warn("[OmnichannelOperatorDesk] Error fetching inbox:", err);
+			clientLogger.warn("[OmnichannelOperatorDesk] Error fetching inbox:", err);
 		} finally {
 			setIsLoadingList(false);
 		}
@@ -165,7 +165,7 @@ export function useOmnichannelOperatorDesk({
 				}
 			}
 		} catch (err) {
-			console.warn("[OmnichannelOperatorDesk] Error fetching messages:", err);
+			clientLogger.warn("[OmnichannelOperatorDesk] Error fetching messages:", err);
 		} finally {
 			if (showLoading) setIsLoadingMessages(false);
 		}
@@ -417,7 +417,7 @@ export function useOmnichannelOperatorDesk({
 				showToast(data.message || "Ошибка при создании записи", "error");
 			}
 		} catch (err: unknown) {
-			console.warn("[OmnichannelOperatorDesk] Error booking appointment:", err);
+			clientLogger.warn("[OmnichannelOperatorDesk] Error booking appointment:", err);
 			showToast("Сетевая ошибка при бронировании приёма", "error");
 		} finally {
 			setIsBookingSubmitting(false);
@@ -472,7 +472,7 @@ export function useOmnichannelOperatorDesk({
 				showToast(data.message || "Ошибка привязки карты", "error");
 			}
 		} catch (err: unknown) {
-			console.warn("[OmnichannelOperatorDesk] Error linking patient:", err);
+			clientLogger.warn("[OmnichannelOperatorDesk] Error linking patient:", err);
 			showToast("Сетевая ошибка при создании пациента", "error");
 		} finally {
 			setIsLinkingSubmitting(false);

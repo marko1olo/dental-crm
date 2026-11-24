@@ -6,8 +6,12 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../../security/tenantContext.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { validateUniversalApiKeyLive } from "../../ai/agentRouterClient.js";
 import {
 	getDoctorPreferencesFromDb,
@@ -32,12 +36,12 @@ export async function registerAgentSettingsAndMemoryRoutes(
 		"/api/agent/validate-key",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"validate byok key",
 			);
-			if (!resolvedOrgId) return;
+			if (!context) return;
 
 			const bodySchema = z.object({
 				provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]),
@@ -70,20 +74,22 @@ export async function registerAgentSettingsAndMemoryRoutes(
 	// ─── GET /api/agent/memory ──────────────────────────────────────────────────
 	server.get(
 		"/api/agent/memory",
-		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"agent get memory",
 			);
-			if (!resolvedOrgId) return;
+			if (!context) return;
 
 			try {
 				const identity = getRequestIdentity(request);
-				const record = await getDoctorPreferencesFromDb(
-					resolvedOrgId,
-					identity.userId || null,
+				const record = await withTenantCtx(context.organizationId, async (tx) =>
+					getDoctorPreferencesFromDb(
+						context.organizationId,
+						identity.userId || null,
+						tx,
+					),
 				);
 				const prefs = (record?.preferences || {}) as Record<string, unknown>;
 				const memoryFacts = Array.isArray(prefs.copilotMemoryFacts)
@@ -92,8 +98,11 @@ export async function registerAgentSettingsAndMemoryRoutes(
 
 				return reply.code(200).send({ memoryFacts });
 			} catch (err) {
-				request.log.warn({ err }, "[agentSettingsAndMemoryRoutes] Failed to read memory facts from DB");
-				return reply.code(200).send({ memoryFacts: [] });
+				request.log.error({ err }, "[agentSettingsAndMemoryRoutes] Failed to read memory facts from DB");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось загрузить память ИИ-ассистента.",
+				});
 			}
 		},
 	);
@@ -101,14 +110,13 @@ export async function registerAgentSettingsAndMemoryRoutes(
 	// ─── PUT /api/agent/memory ──────────────────────────────────────────────────
 	server.put(
 		"/api/agent/memory",
-		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"agent save memory",
 			);
-			if (!resolvedOrgId) return;
+			if (!context) return;
 
 			const bodySchema = z.object({
 				memoryFacts: z.array(memoryFactItemSchema),
@@ -125,24 +133,32 @@ export async function registerAgentSettingsAndMemoryRoutes(
 
 			try {
 				const identity = getRequestIdentity(request);
-				const current = await getDoctorPreferencesFromDb(
-					resolvedOrgId,
-					identity.userId || null,
-				);
-				const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
-				const nextPrefs = {
-					...existingPrefs,
-					copilotMemoryFacts: parseResult.data.memoryFacts,
-				};
+				await withTenantCtx(context.organizationId, async (tx) => {
+					const current = await getDoctorPreferencesFromDb(
+						context.organizationId,
+						identity.userId || null,
+						tx,
+					);
+					const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+					const nextPrefs = {
+						...existingPrefs,
+						copilotMemoryFacts: parseResult.data.memoryFacts,
+					};
 
-				await saveDoctorPreferencesInDb(
-					resolvedOrgId,
-					identity.userId || null,
-					nextPrefs,
-					current?.specialty || "therapist",
-				);
+					await saveDoctorPreferencesInDb(
+						context.organizationId,
+						identity.userId || null,
+						nextPrefs,
+						current?.specialty || "therapist",
+						tx,
+					);
+				});
 			} catch (err) {
-				request.log.warn({ err }, "[agentSettingsAndMemoryRoutes] Failed to persist memory facts to DB");
+				request.log.error({ err }, "[agentSettingsAndMemoryRoutes] Failed to persist memory facts to DB");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось сохранить память ИИ-ассистента.",
+				});
 			}
 
 			return reply.code(200).send({
@@ -155,19 +171,21 @@ export async function registerAgentSettingsAndMemoryRoutes(
 	// ─── GET /api/agent/settings ────────────────────────────────────────────────
 	server.get(
 		"/api/agent/settings",
-		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"agent get settings",
 			);
-			if (!resolvedOrgId) return;
+			if (!context) return;
 
 			const identity = getRequestIdentity(request);
-			const record = await getDoctorPreferencesFromDb(
-				resolvedOrgId,
-				identity.userId || null,
+			const record = await withTenantCtx(context.organizationId, async (tx) =>
+				getDoctorPreferencesFromDb(
+					context.organizationId,
+					identity.userId || null,
+					tx,
+				),
 			);
 			const prefs = (record?.preferences || {}) as Record<string, unknown>;
 			const settings = (prefs.copilotSettings && typeof prefs.copilotSettings === "object")
@@ -185,14 +203,13 @@ export async function registerAgentSettingsAndMemoryRoutes(
 	// ─── PUT /api/agent/settings ────────────────────────────────────────────────
 	server.put(
 		"/api/agent/settings",
-		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"agent save settings",
 			);
-			if (!resolvedOrgId) return;
+			if (!context) return;
 
 			const bodySchema = z.object({
 				settings: z.record(z.unknown()),
@@ -209,28 +226,32 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			}
 
 			const identity = getRequestIdentity(request);
-			const current = await getDoctorPreferencesFromDb(
-				resolvedOrgId,
-				identity.userId || null,
-			);
-			const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
-			const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
-				? (existingPrefs.copilotSettings as Record<string, unknown>)
-				: {};
-			const nextPrefs = {
-				...existingPrefs,
-				copilotSettings: {
-					...currentSettings,
-					...parseResult.data.settings,
-				},
-			};
+			const saved = await withTenantCtx(context.organizationId, async (tx) => {
+				const current = await getDoctorPreferencesFromDb(
+					context.organizationId,
+					identity.userId || null,
+					tx,
+				);
+				const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+				const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
+					? (existingPrefs.copilotSettings as Record<string, unknown>)
+					: {};
+				const nextPrefs = {
+					...existingPrefs,
+					copilotSettings: {
+						...currentSettings,
+						...parseResult.data.settings,
+					},
+				};
 
-			const saved = await saveDoctorPreferencesInDb(
-				resolvedOrgId,
-				identity.userId || null,
-				nextPrefs,
-				parseResult.data.specialty || current?.specialty || "therapist",
-			);
+				return saveDoctorPreferencesInDb(
+					context.organizationId,
+					identity.userId || null,
+					nextPrefs,
+					parseResult.data.specialty || current?.specialty || "therapist",
+					tx,
+				);
+			});
 
 			return reply.code(200).send({
 				ok: true,

@@ -27,7 +27,7 @@ export function printHtmlViaDetachedIframe(printHtml: string): void {
 					printFrame.contentWindow?.focus();
 					printFrame.contentWindow?.print();
 				} catch (printErr) {
-					console.warn(
+					clientLogger.warn(
 						"[PrescriptionPrint] non-blocking print notice:",
 						printErr,
 					);
@@ -43,6 +43,6 @@ export function printHtmlViaDetachedIframe(printHtml: string): void {
 			}, 250);
 		}
 	} catch (frameErr) {
-		console.warn("[PrescriptionPrint] iframe setup notice:", frameErr);
+		clientLogger.warn("[PrescriptionPrint] iframe setup notice:", frameErr);
 	}
 }

@@ -48,7 +48,7 @@ export function useDoctorWalletLogic(
 			const json = await lastRes.json();
 			setData(json);
 		} catch (err: unknown) {
-			console.error("[DoctorWalletLogic] Fetch error:", err);
+			clientLogger.error("[DoctorWalletLogic] Fetch error:", err);
 			const message = err instanceof Error ? err.message : "Не удалось загрузить начисления врача";
 			setError(message);
 		} finally {
@@ -112,7 +112,7 @@ export function useDoctorWalletLogic(
 				showToast("Всплывающее окно заблокировано браузером", "error");
 			}
 		} catch (e: unknown) {
-			console.error("Print error:", e);
+			clientLogger.error("Print error:", e);
 			showToast("Ошибка формирования ведомости зарплаты", "error");
 		}
 	};
@@ -146,7 +146,7 @@ export function useDoctorWalletLogic(
 			showToast("Акт сверки зафиксирован и направлен в финансовый отдел.", "success");
 			await fetchEarnings(selectedDate);
 		} catch (err: unknown) {
-			console.error("[DoctorWalletLogic] Settle period error:", err);
+			clientLogger.error("[DoctorWalletLogic] Settle period error:", err);
 			const message = err instanceof Error ? err.message : "Не удалось зафиксировать акт сверки";
 			showToast(message, "error");
 		}

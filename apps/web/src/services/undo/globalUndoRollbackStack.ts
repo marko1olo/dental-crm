@@ -94,7 +94,7 @@ class GlobalUndoRollbackStackManager {
 						await entry.onCommit();
 					}
 				} catch (err) {
-					console.error(`[GlobalUndoRollbackStack] Error committing mutation ${id}:`, err);
+					logger.error(`[GlobalUndoRollbackStack] Error committing mutation ${id}:`, err);
 				}
 				this.dispatchEvent("dente-undo-committed", {
 					id: entry.id,
@@ -180,7 +180,7 @@ class GlobalUndoRollbackStackManager {
 		try {
 			targetEntry.onRollback(targetEntry.item, targetEntry.index, targetEntry);
 		} catch (err) {
-			console.error(`[GlobalUndoRollbackStack] Error executing rollback for ${targetEntry.id}:`, err);
+			logger.error(`[GlobalUndoRollbackStack] Error executing rollback for ${targetEntry.id}:`, err);
 			return false;
 		}
 

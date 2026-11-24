@@ -366,7 +366,7 @@ export class HardwareScanner {
 				try {
 					videoElement.srcObject = null;
 				} catch (elemErr: unknown) {
-					console.warn("[HardwareScanner] videoElement.srcObject clear error:", elemErr);
+					logger.warn("[HardwareScanner] videoElement.srcObject clear error:", elemErr);
 				}
 			}
 			const code = classifyCameraErrorCode(playErr);
@@ -393,7 +393,7 @@ export class HardwareScanner {
 				try {
 					track.stop();
 				} catch (trackErr: unknown) {
-					console.warn("[HardwareScanner] activeMediaStream track.stop error:", trackErr);
+					logger.warn("[HardwareScanner] activeMediaStream track.stop error:", trackErr);
 				}
 			}
 			this.activeMediaStream = null;
@@ -403,7 +403,7 @@ export class HardwareScanner {
 			try {
 				this.activeVideoElement.srcObject = null;
 			} catch (elemErr: unknown) {
-				console.warn("[HardwareScanner] activeVideoElement.srcObject clear error:", elemErr);
+				logger.warn("[HardwareScanner] activeVideoElement.srcObject clear error:", elemErr);
 			}
 			this.activeVideoElement = null;
 		}

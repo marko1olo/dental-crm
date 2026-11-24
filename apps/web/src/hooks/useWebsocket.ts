@@ -73,7 +73,7 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			try {
 				ws.current.close();
 			} catch (err: unknown) {
-				console.warn("[useWebsocket] Error closing previous socket:", err);
+				logger.warn("[useWebsocket] Error closing previous socket:", err);
 			}
 			ws.current = null;
 		}
@@ -261,7 +261,7 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 				try {
 					ws.current.close();
 				} catch (err: unknown) {
-					console.warn("[useWebsocket] Error closing socket on unmount:", err);
+					logger.warn("[useWebsocket] Error closing socket on unmount:", err);
 				}
 				ws.current = null;
 			}

@@ -220,7 +220,7 @@ export function useMedicalRecordSave({
 				showToast("Медицинская карта приёма сохранена (локально)", "info", 3000);
 			}
 		} catch (err) {
-			console.error("useMedicalRecordSave: ошибка сохранения", err);
+			clientLogger.error("Ошибка сохранения", err, { module: "useMedicalRecordSave" });
 			showToast("Ошибка сохранения медицинской карты приёма", "error", 4000);
 		} finally {
 			setIsSaving(false);

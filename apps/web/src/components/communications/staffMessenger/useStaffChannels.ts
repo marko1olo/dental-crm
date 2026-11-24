@@ -79,7 +79,7 @@ export function useStaffChannels(cabinetNumber = "Каб. 1") {
 				if (Array.isArray(data.members)) setMembers(data.members);
 			}
 		} catch (e) {
-			console.error("Ошибка загрузки сотрудников:", e);
+			clientLogger.error("Ошибка загрузки сотрудников:", e);
 		}
 	}, []);
 

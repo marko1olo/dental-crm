@@ -103,13 +103,13 @@ function getOrCreateAudioContext(): AudioContext | null {
 		try {
 			audioContextInstance = new AudioContextClass();
 		} catch (err: unknown) {
-			console.warn("[mobileBridge] AudioContext instantiation failed:", err);
+			logger.warn("[mobileBridge] AudioContext instantiation failed:", err);
 			return null;
 		}
 	}
 	if (audioContextInstance.state === "suspended") {
 		audioContextInstance.resume().catch((err: unknown) => {
-			console.warn("[mobileBridge] audioContextInstance.resume failed:", err);
+			logger.warn("[mobileBridge] audioContextInstance.resume failed:", err);
 		});
 	}
 	return audioContextInstance;
@@ -224,7 +224,7 @@ export function playClinicalAudioFeedback(
 
 		return false;
 	} catch (err: unknown) {
-		console.warn("[mobileBridge] playClinicalAudioFeedback synthesis failed:", err);
+		logger.warn("[mobileBridge] playClinicalAudioFeedback synthesis failed:", err);
 		return false;
 	}
 }

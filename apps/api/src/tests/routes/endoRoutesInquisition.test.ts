@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it, before, after } from "node:test";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 import Fastify from "fastify";
 import { and, eq } from "drizzle-orm";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
@@ -437,7 +438,7 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 	});
 
 	it("9. DEF-ENDO-03 Idempotency: Replays cached response and avoids duplicates on Idempotency-Key", async () => {
-		const app = Fastify();
+		const app = await createIdempotentTenantTestApp();
 		await registerOdontogramRoutes(app);
 		await app.ready();
 
@@ -461,7 +462,7 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 		});
 
 		assert.equal(res1.statusCode, 200);
-		assert.equal(res1.headers["idempotency-key"], idemKey);
+		assert.equal(res1.headers["x-idempotency-key"], idemKey);
 
 		// Second call with same idempotency key
 		const res2 = await app.inject({
@@ -477,10 +478,8 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 		});
 
 		assert.equal(res2.statusCode, 200);
-		assert.equal(res2.headers["idempotency-key"], idemKey);
-		if (res2.headers["idempotency-replayed"]) {
-			assert.equal(res2.headers["idempotency-replayed"], "true");
-		}
+		assert.equal(res2.headers["x-idempotency-key"], idemKey);
+		assert.equal(res2.headers["idempotency-replayed"], "true");
 
 		await app.close();
 	});

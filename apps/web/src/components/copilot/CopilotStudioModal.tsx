@@ -274,7 +274,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         try {
           const ok = await executeCopilotConfirmation({ callId: act.id, decision: "confirm", actionName: act.toolName, actionArgs: act.payload || {}, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode });
           if (ok) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
-        } catch (apiErr) { console.warn("[CopilotStudioModal] Confirm API fallback:", apiErr); }
+        } catch (apiErr) { clientLogger.warn("[CopilotStudioModal] Confirm API fallback:", apiErr); }
       }
 
       if (typeof window !== "undefined") {

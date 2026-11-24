@@ -1,9 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
-	idempotencyKeys,
 	toothStateHistory,
 	toothStates,
 } from "../../db/schema.js";
@@ -98,6 +97,19 @@ export const endoUpsertPayloadSchema = z
 
 export type EndoUpsertPayload = z.infer<typeof endoUpsertPayloadSchema>;
 
+const endoParamsSchema = z
+	.object({
+		patientId: z.string().optional(),
+		toothNumber: z.string().optional(),
+		tooth: z.string().optional(),
+	})
+	.strict();
+
+function parseEndoParams(rawParams: unknown) {
+	const parsed = endoParamsSchema.safeParse(rawParams ?? {});
+	return parsed.success ? parsed.data : {};
+}
+
 /**
  * Fastify-плагин для эндодонтических измерений корневых каналов и обтурации зуба
  * Обеспечивает честное сохранение в PostgreSQL 18, аудит 152-ФЗ и автономию врача (Мандат 8e).
@@ -119,11 +131,13 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			request.user?.role ??
 			null;
 
+		const params = parseEndoParams(request.params);
+
 		// Fail-closed для анонимов без токена сотрудника
 		if (!staffRole) {
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
-				patientId: (request.params as Record<string, string>).patientId || "unknown",
+				patientId: params.patientId || "unknown",
 				action: "ACCESS_DENIED_ENDO",
 				diagnosis: "Попытка анонимного доступа к эндодонтической карте (152-ФЗ)",
 			});
@@ -139,7 +153,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		if (!evalAccess.hasClinicalAccess) {
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
-				patientId: (request.params as Record<string, string>).patientId || "unknown",
+				patientId: params.patientId || "unknown",
 				action: "ACCESS_DENIED_ENDO",
 				diagnosis: "Попытка несанкционированного доступа к эндодонтической карте неклиническим персоналом",
 			});
@@ -151,7 +165,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const params = request.params as Record<string, string>;
 		const patientId = params.patientId;
 		const toothParam = params.toothNumber ?? params.tooth;
 		const toothNumber = parseInt(String(toothParam), 10);
@@ -184,24 +197,27 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			clinicalData: EndoToothClinicalData | null;
 		} | undefined;
 		try {
-			const [firstRow] = await db
-				.select({
-					toothNumber: toothStates.toothNumber,
-					state: toothStates.state,
-					surfaces: toothStates.surfaces,
-					notes: toothStates.notes,
-					canalMeasurements: toothStates.canalMeasurements,
-					clinicalData: toothStates.clinicalData,
-				})
-				.from(toothStates)
-				.where(
-					and(
-						eq(toothStates.organizationId, organizationId),
-						eq(toothStates.patientId, patientId),
-						eq(toothStates.toothNumber, toothNumber),
-					),
-				)
-				.limit(1);
+			const firstRow = await withTenantCtx(organizationId, async (tx) => {
+				const [row] = await tx
+					.select({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
+						canalMeasurements: toothStates.canalMeasurements,
+						clinicalData: toothStates.clinicalData,
+					})
+					.from(toothStates)
+					.where(
+						and(
+							eq(toothStates.organizationId, organizationId),
+							eq(toothStates.patientId, patientId),
+							eq(toothStates.toothNumber, toothNumber),
+						),
+					)
+					.limit(1);
+				return row;
+			});
 			if (firstRow) {
 				tooth = {
 					toothNumber: firstRow.toothNumber,
@@ -295,10 +311,12 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			request.user?.role ??
 			null;
 
+		const params = parseEndoParams(request.params);
+
 		if (!staffRole) {
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
-				patientId: (request.params as Record<string, string>).patientId || "unknown",
+				patientId: params.patientId || "unknown",
 				action: "ACCESS_DENIED_ENDO_WRITE",
 				diagnosis: "Попытка анонимной записи эндодонтических данных (152-ФЗ)",
 			});
@@ -314,7 +332,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		if (!evalAccess.hasClinicalAccess) {
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
-				patientId: (request.params as Record<string, string>).patientId || "unknown",
+				patientId: params.patientId || "unknown",
 				action: "ACCESS_DENIED_ENDO_WRITE",
 				diagnosis: "Попытка записи эндодонтических данных неклиническим персоналом",
 			});
@@ -326,57 +344,12 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const params = request.params as Record<string, string>;
 		const patientId = params.patientId;
 		const toothParam = params.toothNumber ?? params.tooth;
 		const toothNumber = parseInt(String(toothParam), 10);
 
 		if (!patientId || typeof patientId !== "string" || patientId.trim().length === 0 || Number.isNaN(toothNumber) || toothNumber < 11 || toothNumber > 85) {
 			return reply.code(400).send({ error: "InvalidParameters", message: "Некорректный ID пациента или номер зуба" });
-		}
-
-		// Валидация и логирование Idempotency-Key (Мандаты 8bo, 8zp)
-		const rawIdempotencyKey = (request.headers["idempotency-key"] || request.headers["x-idempotency-key"]) as string | undefined;
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : null;
-		if (idempotencyKey) {
-			if (UUID_SHAPE.test(idempotencyKey)) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				request.log?.info?.({ idempotencyKey, patientId, toothNumber }, "Received endo upsert with valid Idempotency-Key");
-			} else {
-				request.log?.warn?.({ idempotencyKey, patientId, toothNumber }, "Received endo upsert with non-standard Idempotency-Key format");
-			}
-		}
-
-		// DEF-ENDO-03: Проверка кэша идемпотентности перед тяжелыми мутациями
-		if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
-			try {
-				const [existingIdem] = await db
-					.select({
-						status: idempotencyKeys.status,
-						responseBody: idempotencyKeys.responseBody,
-						responseCode: idempotencyKeys.responseCode,
-					})
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, organizationId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingIdem?.status === "completed" && existingIdem.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					request.log?.info?.({ idempotencyKey, patientId, toothNumber }, "Replaying endo upsert from idempotency cache");
-					return reply.code(existingIdem.responseCode || 200).send(existingIdem.responseBody);
-				}
-			} catch (idemErr) {
-				if (!isDbUnavailable(idemErr)) {
-					request.log?.warn?.({ idemErr }, "Failed to query idempotency cache for endo upsert");
-				}
-			}
 		}
 
 		let patientExists: { id: string } | null = null;
@@ -497,7 +470,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		};
 
 		try {
-			const updated = await db.transaction(async (tx) => {
+			const updated = await withTenantCtx(organizationId, async (tx) => {
 				const [existing] = await tx
 					.select({
 						state: toothStates.state,
@@ -542,45 +515,21 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 				const endoReason = `Эндодонтия #${toothNumber} [${sanitizedCanals.length} к.]: ${canalSummary || "обработка и обтурация"}`;
 
-				// DEF-ENDO-03: Проверка Idempotency-Key перед повторной вставкой в toothStateHistory (Мандаты 8bo, 8zp, 8d)
-				let isIdempotencyReplay = false;
-				if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
-					const [existingTxIdem] = await tx
-						.select({
-							status: idempotencyKeys.status,
-							responseBody: idempotencyKeys.responseBody,
-						})
-						.from(idempotencyKeys)
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, organizationId),
-								eq(idempotencyKeys.key, idempotencyKey),
-							),
-						)
-						.limit(1);
-
-					if (existingTxIdem?.status === "completed" && existingTxIdem.responseBody) {
-						isIdempotencyReplay = true;
-					}
-				}
-
-				if (!isIdempotencyReplay) {
-					await tx.insert(toothStateHistory).values({
-						organizationId,
-						patientId,
-						visitId: parsed.data.visitId ?? null,
-						toothNumber,
-						previousState: existing?.state ?? null,
-						newState: targetState,
-						previousSurfaces: existing?.surfaces ?? null,
-						newSurfaces: targetSurfaces,
-						clinicalData: clinicalData,
-						canalMeasurements: enrichedCanals,
-						changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
-						reason: endoReason,
-						changedAt: now,
-					});
-				}
+				await tx.insert(toothStateHistory).values({
+					organizationId,
+					patientId,
+					visitId: parsed.data.visitId ?? null,
+					toothNumber,
+					previousState: existing?.state ?? null,
+					newState: targetState,
+					previousSurfaces: existing?.surfaces ?? null,
+					newSurfaces: targetSurfaces,
+					clinicalData: clinicalData,
+					canalMeasurements: enrichedCanals,
+					changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
+					reason: endoReason,
+					changedAt: now,
+				});
 
 				// Атомарный Drizzle Upsert без деструктивного delete (Мандат 8bk / SEV-1)
 				const [upsertedRow] = await tx
@@ -633,28 +582,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					canalMeasurements: upsertedRow?.canalMeasurements ?? sanitizedCanals,
 					clinicalData: resolvedClinicalData,
 				};
-
-				if (idempotencyKey && UUID_SHAPE.test(idempotencyKey)) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							status: "completed",
-							responseCode: 200,
-							responseBody: { success: true, data: responsePayload, ...responsePayload },
-							lockedAt: now,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseCode: 200,
-								responseBody: { success: true, data: responsePayload, ...responsePayload },
-								lockedAt: now,
-							},
-						});
-				}
 
 				return responsePayload;
 			});

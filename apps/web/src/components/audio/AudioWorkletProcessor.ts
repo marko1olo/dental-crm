@@ -194,7 +194,7 @@ export async function registerDentalAudioWorklet(
 		) {
 			return true;
 		}
-		console.warn("Failed to register dental audio worklet module:", error);
+		clientLogger.warn("Failed to register dental audio worklet module:", error);
 		return false;
 	}
 }

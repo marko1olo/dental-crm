@@ -228,7 +228,7 @@ export function resolveChairDutyDoctor(
 				return { doctorId: storedChairDef[chairId], shiftHours: "08:00–20:00" };
 			}
 		} catch (err: unknown) {
-			console.warn("[timeSlotGeometry] Failed to parse default chair doctors:", err);
+			clientLogger.warn("Failed to parse default chair doctors", err, { module: "timeSlotGeometry" });
 		}
 	}
 
@@ -305,7 +305,7 @@ export async function syncShiftsWithServer(
 			});
 			return response.ok;
 		} catch (networkErr: unknown) {
-			console.warn("[timeSlotGeometry] syncShiftsWithServer network error:", networkErr);
+			clientLogger.warn("syncShiftsWithServer network error", networkErr, { module: "timeSlotGeometry" });
 			// Soft fallback per Mandate 8n & 8e (offline / isolated / network degradation)
 			return false;
 		}

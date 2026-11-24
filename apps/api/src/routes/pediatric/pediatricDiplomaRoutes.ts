@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, or } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { calculateAge, computePayloadHash } from "@dental/shared";
+import { calculateAge } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { generatedDocuments, patientRelationships, patients } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { ensurePatientInOrganization } from "../odontogram/planHelpers.js";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,7 +57,7 @@ const issueDiplomaSchema = z.object({
 	awardReasonRu: z.string().optional().default("За выдающееся мужество, образцовое спокойствие в кресле стоматолога и дружбу с Зубной Феей!"),
 	awardedDateIso: z.string().optional(),
 	idempotencyKey: z.string().optional(),
-});
+}).strict();
 
 const issueParentMemoSchema = z.object({
 	patientName: z.string().min(1).optional(),
@@ -79,7 +78,7 @@ const issueParentMemoSchema = z.object({
 	memoText: z.string().min(1),
 	issuedDateIso: z.string().optional(),
 	idempotencyKey: z.string().optional(),
-});
+}).strict();
 
 const syncLegalRepresentativeSchema = z.object({
 	fullName: z.string().trim().min(1, "ФИО законного представителя обязательно"),
@@ -88,7 +87,7 @@ const syncLegalRepresentativeSchema = z.object({
 	consentSigned: z.boolean().default(true),
 	statutoryDocument: z.string().trim().optional(),
 	idempotencyKey: z.string().optional(),
-});
+}).strict();
 
 export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 	app.get<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/bravery-diploma", async (request, reply) => {
@@ -103,19 +102,21 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		}
 
 		try {
-			const dbDocs = await db.select().from(generatedDocuments)
-				.where(
-					and(
-						eq(generatedDocuments.organizationId, organizationId),
-						eq(generatedDocuments.patientId, patientId),
-						or(
-							eq(generatedDocuments.kind, "bravery_diploma"),
-							eq(generatedDocuments.kind, "visit_attendance_certificate"),
-							eq(generatedDocuments.title, "Диплом за храбрость")
+			const dbDocs = await withTenantCtx(organizationId, async (tx) =>
+				tx.select().from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.organizationId, organizationId),
+							eq(generatedDocuments.patientId, patientId),
+							or(
+								eq(generatedDocuments.kind, "bravery_diploma"),
+								eq(generatedDocuments.kind, "visit_attendance_certificate"),
+								eq(generatedDocuments.title, "Диплом за храбрость")
+							)
 						)
 					)
-				)
-				.orderBy(desc(generatedDocuments.createdAt));
+					.orderBy(desc(generatedDocuments.createdAt)),
+			);
 
 			const mappedFromDb: BraveryDiplomaRecord[] = dbDocs.map((doc) => {
 				let payload: Partial<BraveryDiplomaRecord> = {};
@@ -161,98 +162,50 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		// Мандаты 8d, 8bo, 8zp: Идемпотентность по заголовку Idempotency-Key
-		const rawIdempotencyKey =
-			(request.headers?.["idempotency-key"] as string | undefined) ??
-			(request.headers?.["x-idempotency-key"] as string | undefined) ??
-			parsed.data.idempotencyKey;
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			try {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция генерации диплома за храбрость с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
-			} catch (idempotencyCheckErr) {
-				request.log.warn({ idempotencyCheckErr, idempotencyKey }, "Idempotency check bypass on read failure");
-			}
-		}
-
 		const now = new Date();
-		let patientBirthDate: string | null = null;
-		let patientDbFullName: string | null = null;
-
-		try {
-			const [patientRow] = await db
-				.select({
-					fullName: patients.fullName,
-					birthDate: patients.birthDate,
-				})
-				.from(patients)
-				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
-				.limit(1);
-
-			if (patientRow) {
-				patientBirthDate = patientRow.birthDate;
-				patientDbFullName = patientRow.fullName;
-			}
-		} catch (patientFetchErr) {
-			request.log.warn({ patientFetchErr, patientId }, "Failed to fetch patient details for bravery diploma age calculation");
-		}
-
-		let effectiveAge = parsed.data.patientAgeYears;
-		if (effectiveAge === undefined && patientBirthDate) {
-			const computed = calculateAge(patientBirthDate);
-			if (computed > 0 && computed <= 18) {
-				effectiveAge = computed;
-			}
-		}
-
-		const effectivePatientName =
-			(parsed.data.patientName && parsed.data.patientName.trim()) ||
-			patientDbFullName ||
-			"Юный пациент";
-
-		// Криптографически стойкая энтропия без Math.random
 		const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
 		const diplomaNumber = `ДИПЛОМ-ГЕРОЙ-${now.getFullYear()}-${entropy}`;
 		const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-
-		const diplomaRecord: BraveryDiplomaRecord = {
-			id: randomUUID(),
-			patientId,
-			diplomaNumber,
-			patientName: effectivePatientName,
-			patientAgeYears: effectiveAge,
-			doctorName: parsed.data.doctorName,
-			clinicName: parsed.data.clinicName,
-			awardReasonRu: parsed.data.awardReasonRu,
-			awardedDateIso: parsed.data.awardedDateIso ?? now.toISOString(),
-			issueDateRu,
-			createdAt: now.toISOString(),
-		};
-
-		const responsePayload: Record<string, unknown> = { success: true, diploma: diplomaRecord };
+		const diplomaId = randomUUID();
 
 		try {
-			await db.transaction(async (tx) => {
+			const responsePayload = await withTenantCtx(organizationId, async (tx) => {
+				const [patientRow] = await tx
+					.select({
+						fullName: patients.fullName,
+						birthDate: patients.birthDate,
+					})
+					.from(patients)
+					.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+					.limit(1);
+
+				let effectiveAge = parsed.data.patientAgeYears;
+				if (effectiveAge === undefined && patientRow?.birthDate) {
+					const computed = calculateAge(patientRow.birthDate);
+					if (computed > 0 && computed <= 18) {
+						effectiveAge = computed;
+					}
+				}
+
+				const effectivePatientName =
+					(parsed.data.patientName && parsed.data.patientName.trim()) ||
+					patientRow?.fullName ||
+					"Юный пациент";
+
+				const diplomaRecord: BraveryDiplomaRecord = {
+					id: diplomaId,
+					patientId,
+					diplomaNumber,
+					patientName: effectivePatientName,
+					patientAgeYears: effectiveAge,
+					doctorName: parsed.data.doctorName,
+					clinicName: parsed.data.clinicName,
+					awardReasonRu: parsed.data.awardReasonRu,
+					awardedDateIso: parsed.data.awardedDateIso ?? now.toISOString(),
+					issueDateRu,
+					createdAt: now.toISOString(),
+				};
+
 				await tx.insert(generatedDocuments).values({
 					id: diplomaRecord.id,
 					organizationId,
@@ -263,31 +216,12 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 					payloadJson: JSON.stringify(diplomaRecord),
 				});
 
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 201,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 201,
-							},
-						});
-				}
+				return { success: true, diploma: diplomaRecord };
 			});
 
 			return reply.code(201).send(responsePayload);
 		} catch (error) {
-			request.log.error({ error, patientId, diplomaRecord }, "Failed to persist bravery diploma into PostgreSQL 18");
+			request.log.error({ error, patientId, diplomaId }, "Failed to persist bravery diploma into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить диплом за храбрость в базу данных" });
 		}
 	});
@@ -304,19 +238,21 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		}
 
 		try {
-			const dbDocs = await db.select().from(generatedDocuments)
-				.where(
-					and(
-						eq(generatedDocuments.organizationId, organizationId),
-						eq(generatedDocuments.patientId, patientId),
-						or(
-							eq(generatedDocuments.kind, "parent_memo"),
-							eq(generatedDocuments.kind, "post_visit_recommendations"),
-							eq(generatedDocuments.title, "Памятка родителям")
+			const dbDocs = await withTenantCtx(organizationId, async (tx) =>
+				tx.select().from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.organizationId, organizationId),
+							eq(generatedDocuments.patientId, patientId),
+							or(
+								eq(generatedDocuments.kind, "parent_memo"),
+								eq(generatedDocuments.kind, "post_visit_recommendations"),
+								eq(generatedDocuments.title, "Памятка родителям")
+							)
 						)
 					)
-				)
-				.orderBy(desc(generatedDocuments.createdAt));
+					.orderBy(desc(generatedDocuments.createdAt)),
+			);
 
 			const mappedFromDb: ParentMemoRecord[] = dbDocs.map((doc) => {
 				let payload: Partial<ParentMemoRecord> = {};
@@ -373,116 +309,67 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const parsed = issueParentMemoSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		// Мандаты 8d, 8bo, 8zp: Идемпотентность по заголовку Idempotency-Key
-		const rawIdempotencyKey =
-			(request.headers?.["idempotency-key"] as string | undefined) ??
-			(request.headers?.["x-idempotency-key"] as string | undefined) ??
-			parsed.data.idempotencyKey;
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			try {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция создания памятки родителям с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
-			} catch (idempotencyCheckErr) {
-				request.log.warn({ idempotencyCheckErr, idempotencyKey }, "Idempotency check bypass on read failure");
-			}
-		}
-
 		const now = new Date();
-		let patientBirthDate: string | null = null;
-		let patientDbFullName: string | null = null;
-		let patientDbPhone: string | null = null;
-
-		try {
-			const [patientRow] = await db
-				.select({
-					fullName: patients.fullName,
-					birthDate: patients.birthDate,
-					phone: patients.phone,
-				})
-				.from(patients)
-				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
-				.limit(1);
-
-			if (patientRow) {
-				patientBirthDate = patientRow.birthDate;
-				patientDbFullName = patientRow.fullName;
-				patientDbPhone = patientRow.phone;
-			}
-		} catch (patientFetchErr) {
-			request.log.warn({ patientFetchErr, patientId }, "Failed to fetch patient details for parent memo");
-		}
-
-		let effectiveAge = parsed.data.patientAgeYears;
-		if (effectiveAge === undefined && patientBirthDate) {
-			const computed = calculateAge(patientBirthDate);
-			if (computed > 0 && computed <= 18) {
-				effectiveAge = computed;
-			}
-		}
-
-		const effectivePatientName =
-			(parsed.data.patientName && parsed.data.patientName.trim()) ||
-			patientDbFullName ||
-			"Юный пациент";
-
-		const effectivePatientPhone =
-			(parsed.data.patientPhone && parsed.data.patientPhone.trim()) ||
-			patientDbPhone ||
-			undefined;
-
 		const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
 		const memoNumber = `ПАМЯТКА-РОДИТЕЛЯМ-${now.getFullYear()}-${entropy}`;
 		const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-
-		const memoRecord: ParentMemoRecord = {
-			id: randomUUID(),
-			patientId,
-			memoNumber,
-			patientName: effectivePatientName,
-			...(effectivePatientPhone !== undefined ? { patientPhone: effectivePatientPhone } : {}),
-			...(effectiveAge !== undefined ? { patientAgeYears: effectiveAge } : {}),
-			doctorName: parsed.data.doctorName,
-			clinicName: parsed.data.clinicName,
-			...(parsed.data.clinicPhone !== undefined ? { clinicPhone: parsed.data.clinicPhone } : {}),
-			...(parsed.data.franklRating !== undefined ? { franklRating: parsed.data.franklRating } : {}),
-			...(parsed.data.hasAnesthesia !== undefined ? { hasAnesthesia: parsed.data.hasAnesthesia } : {}),
-			...(parsed.data.hasPulpotomy !== undefined ? { hasPulpotomy: parsed.data.hasPulpotomy } : {}),
-			...(parsed.data.pulpotomyTooth !== undefined ? { pulpotomyTooth: parsed.data.pulpotomyTooth } : {}),
-			...(parsed.data.hasFissureSealing !== undefined ? { hasFissureSealing: parsed.data.hasFissureSealing } : {}),
-			...(parsed.data.fissureTeeth !== undefined ? { fissureTeeth: Array.isArray(parsed.data.fissureTeeth) ? parsed.data.fissureTeeth.join(", ") : parsed.data.fissureTeeth } : {}),
-			...(parsed.data.hasSilvering !== undefined ? { hasSilvering: parsed.data.hasSilvering } : {}),
-			...(parsed.data.silveringTeeth !== undefined ? { silveringTeeth: Array.isArray(parsed.data.silveringTeeth) ? parsed.data.silveringTeeth.join(", ") : parsed.data.silveringTeeth } : {}),
-			...(parsed.data.customNotes !== undefined ? { customNotes: parsed.data.customNotes } : {}),
-			memoText: parsed.data.memoText,
-			issuedDateIso: parsed.data.issuedDateIso ?? now.toISOString(),
-			issueDateRu,
-			createdAt: now.toISOString(),
-		};
-
-		const responsePayload: Record<string, unknown> = { success: true, memo: memoRecord };
+		const memoId = randomUUID();
 
 		try {
-			await db.transaction(async (tx) => {
+			const responsePayload = await withTenantCtx(organizationId, async (tx) => {
+				const [patientRow] = await tx
+					.select({
+						fullName: patients.fullName,
+						birthDate: patients.birthDate,
+						phone: patients.phone,
+					})
+					.from(patients)
+					.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+					.limit(1);
+
+				let effectiveAge = parsed.data.patientAgeYears;
+				if (effectiveAge === undefined && patientRow?.birthDate) {
+					const computed = calculateAge(patientRow.birthDate);
+					if (computed > 0 && computed <= 18) {
+						effectiveAge = computed;
+					}
+				}
+
+				const effectivePatientName =
+					(parsed.data.patientName && parsed.data.patientName.trim()) ||
+					patientRow?.fullName ||
+					"Юный пациент";
+
+				const effectivePatientPhone =
+					(parsed.data.patientPhone && parsed.data.patientPhone.trim()) ||
+					patientRow?.phone ||
+					undefined;
+
+				const memoRecord: ParentMemoRecord = {
+					id: memoId,
+					patientId,
+					memoNumber,
+					patientName: effectivePatientName,
+					...(effectivePatientPhone !== undefined ? { patientPhone: effectivePatientPhone } : {}),
+					...(effectiveAge !== undefined ? { patientAgeYears: effectiveAge } : {}),
+					doctorName: parsed.data.doctorName,
+					clinicName: parsed.data.clinicName,
+					...(parsed.data.clinicPhone !== undefined ? { clinicPhone: parsed.data.clinicPhone } : {}),
+					...(parsed.data.franklRating !== undefined ? { franklRating: parsed.data.franklRating } : {}),
+					...(parsed.data.hasAnesthesia !== undefined ? { hasAnesthesia: parsed.data.hasAnesthesia } : {}),
+					...(parsed.data.hasPulpotomy !== undefined ? { hasPulpotomy: parsed.data.hasPulpotomy } : {}),
+					...(parsed.data.pulpotomyTooth !== undefined ? { pulpotomyTooth: parsed.data.pulpotomyTooth } : {}),
+					...(parsed.data.hasFissureSealing !== undefined ? { hasFissureSealing: parsed.data.hasFissureSealing } : {}),
+					...(parsed.data.fissureTeeth !== undefined ? { fissureTeeth: Array.isArray(parsed.data.fissureTeeth) ? parsed.data.fissureTeeth.join(", ") : parsed.data.fissureTeeth } : {}),
+					...(parsed.data.hasSilvering !== undefined ? { hasSilvering: parsed.data.hasSilvering } : {}),
+					...(parsed.data.silveringTeeth !== undefined ? { silveringTeeth: Array.isArray(parsed.data.silveringTeeth) ? parsed.data.silveringTeeth.join(", ") : parsed.data.silveringTeeth } : {}),
+					...(parsed.data.customNotes !== undefined ? { customNotes: parsed.data.customNotes } : {}),
+					memoText: parsed.data.memoText,
+					issuedDateIso: parsed.data.issuedDateIso ?? now.toISOString(),
+					issueDateRu,
+					createdAt: now.toISOString(),
+				};
+
 				await tx.insert(generatedDocuments).values({
 					id: memoRecord.id,
 					organizationId,
@@ -493,31 +380,12 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 					payloadJson: JSON.stringify(memoRecord),
 				});
 
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 201,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 201,
-							},
-						});
-				}
+				return { success: true, memo: memoRecord };
 			});
 
 			return reply.code(201).send(responsePayload);
 		} catch (error) {
-			request.log.error({ error, patientId, memoRecord }, "Failed to persist parent memo into PostgreSQL 18");
+			request.log.error({ error, patientId, memoId }, "Failed to persist parent memo into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить памятку родителям в базу данных" });
 		}
 	});
@@ -534,41 +402,41 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		}
 
 		try {
-			const rels = await db
-				.select({
-					id: patientRelationships.id,
-					patientId: patientRelationships.patientId,
-					relatedPatientId: patientRelationships.relatedPatientId,
-					relationshipType: patientRelationships.relationshipType,
-					isLegalRepresentative: patientRelationships.isLegalRepresentative,
-					canSignConsents: patientRelationships.canSignConsents,
-					canViewMedicalRecord: patientRelationships.canViewMedicalRecord,
-					canSpendFamilyWallet: patientRelationships.canSpendFamilyWallet,
-					documentProofNumber: patientRelationships.documentProofNumber,
-					notes: patientRelationships.notes,
-					createdAt: patientRelationships.createdAt,
-					updatedAt: patientRelationships.updatedAt,
-				})
-				.from(patientRelationships)
-				.where(
-					and(
-						eq(patientRelationships.organizationId, organizationId),
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.isLegalRepresentative, true)
+			const representative = await withTenantCtx(organizationId, async (tx) => {
+				const rels = await tx
+					.select({
+						id: patientRelationships.id,
+						patientId: patientRelationships.patientId,
+						relatedPatientId: patientRelationships.relatedPatientId,
+						relationshipType: patientRelationships.relationshipType,
+						isLegalRepresentative: patientRelationships.isLegalRepresentative,
+						canSignConsents: patientRelationships.canSignConsents,
+						canViewMedicalRecord: patientRelationships.canViewMedicalRecord,
+						canSpendFamilyWallet: patientRelationships.canSpendFamilyWallet,
+						documentProofNumber: patientRelationships.documentProofNumber,
+						notes: patientRelationships.notes,
+						createdAt: patientRelationships.createdAt,
+						updatedAt: patientRelationships.updatedAt,
+					})
+					.from(patientRelationships)
+					.where(
+						and(
+							eq(patientRelationships.organizationId, organizationId),
+							eq(patientRelationships.patientId, patientId),
+							eq(patientRelationships.isLegalRepresentative, true)
+						)
 					)
-				)
-				.limit(1);
+					.limit(1);
 
-			if (rels.length === 0 || !rels[0]) {
-				return reply.send({ success: true, representative: null });
-			}
+				if (rels.length === 0 || !rels[0]) {
+					return null;
+				}
 
-			const rel = rels[0];
-			let repFullName = "Законный представитель";
-			let repPhone: string | undefined = undefined;
+				const rel = rels[0];
+				let repFullName = "Законный представитель";
+				let repPhone: string | undefined = undefined;
 
-			try {
-				const [repPatient] = await db
+				const [repPatient] = await tx
 					.select({
 						fullName: patients.fullName,
 						phone: patients.phone,
@@ -581,19 +449,14 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 					repFullName = repPatient.fullName;
 					repPhone = repPatient.phone ?? undefined;
 				}
-			} catch (repFetchErr) {
-				request.log.warn({ repFetchErr, relatedPatientId: rel.relatedPatientId }, "Failed to fetch related patient profile");
-			}
 
-			let roleRu: "Мать" | "Отец" | "Опекун" | "Усыновитель" | "Родитель" = "Родитель";
-			if (rel.relationshipType === "mother" || rel.relationshipType === "Мать") roleRu = "Мать";
-			else if (rel.relationshipType === "father" || rel.relationshipType === "Отец") roleRu = "Отец";
-			else if (rel.relationshipType === "guardian" || rel.relationshipType === "Опекун") roleRu = "Опекун";
-			else if (rel.relationshipType === "adopter" || rel.relationshipType === "Усыновитель") roleRu = "Усыновитель";
+				let roleRu: "Мать" | "Отец" | "Опекун" | "Усыновитель" | "Родитель" = "Родитель";
+				if (rel.relationshipType === "mother" || rel.relationshipType === "Мать") roleRu = "Мать";
+				else if (rel.relationshipType === "father" || rel.relationshipType === "Отец") roleRu = "Отец";
+				else if (rel.relationshipType === "guardian" || rel.relationshipType === "Опекун") roleRu = "Опекун";
+				else if (rel.relationshipType === "adopter" || rel.relationshipType === "Усыновитель") roleRu = "Усыновитель";
 
-			return reply.send({
-				success: true,
-				representative: {
+				return {
 					id: rel.id,
 					patientId: rel.patientId,
 					relatedPatientId: rel.relatedPatientId,
@@ -603,8 +466,10 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 					consentSigned: rel.canSignConsents,
 					...(rel.documentProofNumber ? { statutoryDocument: rel.documentProofNumber } : {}),
 					...(rel.notes ? { notes: rel.notes } : {}),
-				},
+				};
 			});
+
+			return reply.send({ success: true, representative });
 		} catch (error) {
 			request.log.error({ error, patientId }, "Failed to fetch legal representative from PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось получить законного представителя" });
@@ -625,39 +490,6 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const parsed = syncLegalRepresentativeSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		const rawIdempotencyKey =
-			(request.headers?.["idempotency-key"] as string | undefined) ??
-			(request.headers?.["x-idempotency-key"] as string | undefined) ??
-			parsed.data.idempotencyKey;
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			try {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция сохранения законного представителя с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
-			} catch (idempotencyCheckErr) {
-				request.log.warn({ idempotencyCheckErr, idempotencyKey }, "Idempotency check bypass on read failure");
-			}
-		}
-
 		const roleToDbKind: Record<string, string> = {
 			"Мать": "mother",
 			"Отец": "father",
@@ -674,7 +506,7 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 
 		try {
 			let responsePayload: Record<string, unknown> | null = null;
-			await db.transaction(async (tx) => {
+			await withTenantCtx(organizationId, async (tx) => {
 				const existingRels = await tx
 					.select()
 					.from(patientRelationships)
@@ -797,27 +629,6 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 				};
 
 				responsePayload = { success: true, representative: representativeResult };
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-							},
-						});
-				}
 			});
 
 			return reply.code(200).send(responsePayload);

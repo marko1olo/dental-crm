@@ -8,13 +8,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	communicationTemplates,
 	denteWhatsappBotConfigs,
-	idempotencyKeys,
 } from "../../db/schema.js";
-import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import type { WhatsAppTemplateDefinition } from "./types.js";
 
 export const DEFAULT_APPROVED_TEMPLATES: WhatsAppTemplateDefinition[] = [
@@ -87,79 +85,31 @@ export async function registerTemplateManagerRoutes(
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const rawIdemKey = extractIdempotencyKey(request);
-		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен быть валидным UUID",
-				});
-			}
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		if (idempotencyKey) {
-			const [existingRecord] = await db
+		const { config, customTemplates } = await withTenantCtx(orgId, async (tx) => {
+			const [cfg] = await tx
 				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 				.limit(1);
 
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						code: "IdempotencyConflict",
-						message: "Синхронизация шаблонов уже обрабатывается",
-					});
-				}
-			}
-
-			await db
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					lockedAt: new Date(),
+			// Synchronize with clinic templates from PostgreSQL communicationTemplates
+			const templates = await tx
+				.select({
+					id: communicationTemplates.id,
+					title: communicationTemplates.title,
+					intent: communicationTemplates.intent,
+					isActive: communicationTemplates.isActive,
 				})
-				.onConflictDoNothing();
-		}
+				.from(communicationTemplates)
+				.where(
+					and(
+						eq(communicationTemplates.organizationId, orgId),
+						eq(communicationTemplates.channel, "whatsapp"),
+					),
+				);
 
-		const [config] = await db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
-
-		// Synchronize with clinic templates from PostgreSQL communicationTemplates
-		const customTemplates = await db
-			.select({
-				id: communicationTemplates.id,
-				title: communicationTemplates.title,
-				intent: communicationTemplates.intent,
-				isActive: communicationTemplates.isActive,
-			})
-			.from(communicationTemplates)
-			.where(
-				and(
-					eq(communicationTemplates.organizationId, orgId),
-					eq(communicationTemplates.channel, "whatsapp"),
-				),
-			);
+			return { config: cfg, customTemplates: templates };
+		});
 
 		const dbTemplates: WhatsAppTemplateDefinition[] = customTemplates.map((t) => ({
 			name: t.title.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "template",
@@ -185,26 +135,6 @@ export async function registerTemplateManagerRoutes(
 			syncedAt: new Date().toISOString(),
 			wabaConnected: Boolean(config?.isActive),
 		};
-
-		if (idempotencyKey) {
-			await db
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseBody: responsePayload,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: responsePayload,
-						responseCode: 200,
-					},
-				});
-		}
 
 		return reply.code(200).send(responsePayload);
 	});

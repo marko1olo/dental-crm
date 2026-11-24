@@ -79,7 +79,7 @@ export async function captureMobileCameraPhoto(
 					};
 				}
 			} catch (err: unknown) {
-				console.warn("[mobileBridge] native takeIntraoralPhoto failed, falling back:", err);
+				logger.warn("[mobileBridge] native takeIntraoralPhoto failed, falling back:", err);
 				// Fall through
 			}
 		}

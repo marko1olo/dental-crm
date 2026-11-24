@@ -1,8 +1,7 @@
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../db/rls.js";
 import { appointments, patients, portalOtpCodes, users, visits } from "../../db/schema.js";
 import {
 	isDbConnectionError,
@@ -76,7 +75,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		const tgUser = validation.user;
 
 		try {
-			return await withTenantCtx(organizationId, async () => {
+			return await withTenantCtx(organizationId, async (tx) => {
 				let authenticatedPatient: typeof patients.$inferSelect | undefined;
 
 				async function verifyAndLinkPatient(
@@ -112,33 +111,38 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					const now = new Date();
 
 					try {
-						const activeOtps = await db
-							.select({ id: portalOtpCodes.id, codeHash: portalOtpCodes.codeHash })
-							.from(portalOtpCodes)
-							.where(
-								and(
-									eq(portalOtpCodes.organizationId, organizationId),
-									eq(portalOtpCodes.patientId, candidate.id),
-									eq(portalOtpCodes.deliveryStatus, "sent"),
-									isNull(portalOtpCodes.consumedAt),
-									gte(portalOtpCodes.expiresAt, now),
-								),
-							)
-							.orderBy(desc(portalOtpCodes.createdAt))
-							.limit(1);
+						await withSavepoint(tx, async (spTx) => {
+							const activeOtps = await spTx
+								.select({ id: portalOtpCodes.id, codeHash: portalOtpCodes.codeHash })
+								.from(portalOtpCodes)
+								.where(
+									and(
+										eq(portalOtpCodes.organizationId, organizationId),
+										eq(portalOtpCodes.patientId, candidate.id),
+										eq(portalOtpCodes.deliveryStatus, "sent"),
+										isNull(portalOtpCodes.consumedAt),
+										gte(portalOtpCodes.expiresAt, now),
+									),
+								)
+								.orderBy(desc(portalOtpCodes.createdAt))
+								.limit(1);
 
-						if (activeOtps.length > 0 && activeOtps[0]) {
-							const candidateOtp = activeOtps[0];
-							if (await verifyCredential(verificationCode, candidateOtp.codeHash)) {
-								isOtpValid = true;
-								await db
-									.update(portalOtpCodes)
-									.set({ consumedAt: now })
-									.where(eq(portalOtpCodes.id, candidateOtp.id));
+							if (activeOtps.length > 0 && activeOtps[0]) {
+								const candidateOtp = activeOtps[0];
+								if (await verifyCredential(verificationCode, candidateOtp.codeHash)) {
+									isOtpValid = true;
+									await spTx
+										.update(portalOtpCodes)
+										.set({ consumedAt: now })
+										.where(eq(portalOtpCodes.id, candidateOtp.id));
+								}
 							}
-						}
-					} catch {
-						// fallback to in-memory check
+						});
+					} catch (err) {
+						request.log.warn(
+							{ err },
+							"[telegramWebAppSession] DB portal OTP verification failed inside savepoint, falling back to in-memory check",
+						);
 					}
 
 					if (!isOtpValid) {
@@ -158,7 +162,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						};
 					}
 
-					await db
+					await tx
 						.update(patients)
 						.set({
 							administrativeProfile: {
@@ -173,7 +177,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				}
 
 				// 1. Поиск по telegramUserId
-				const [pByTg] = await db
+				const [pByTg] = await tx
 					.select()
 					.from(patients)
 					.where(
@@ -187,7 +191,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 
 				// 2. Поиск по телефону (если передан)
 				if (!authenticatedPatient && phone) {
-					const [pByPhone] = await db
+					const [pByPhone] = await tx
 						.select()
 						.from(patients)
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.phone, phone.trim())))
@@ -206,7 +210,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 
 				// 3. Поиск по patientId с BOLA-проверкой
 				if (!authenticatedPatient && patientId) {
-					const [pById] = await db
+					const [pById] = await tx
 						.select()
 						.from(patients)
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
@@ -226,7 +230,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				// 4. Если пациент не найден — создаем гостевой профиль для этого tgUser
 				if (!authenticatedPatient) {
 					const guestName = tgUser?.first_name || "Пациент Telegram";
-					const [created] = await db
+					const [created] = await tx
 						.insert(patients)
 						.values({
 							organizationId,
@@ -253,7 +257,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 							message: "Доступ запрещен: запрошенный профиль не принадлежит вам или вашей семейной группе.",
 						});
 					}
-					const [pTarget] = await db
+					const [pTarget] = await tx
 						.select()
 						.from(patients)
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
@@ -268,7 +272,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				const familyProfile = await TelegramReferralLoyaltyService.getFamilyProfile(organizationId, targetPatient.id);
 
 				// Получаем предстоящие записи
-				const upcomingAppointments = await db
+				const upcomingAppointments = await tx
 					.select({
 						id: appointments.id,
 						doctorId: appointments.doctorUserId,
@@ -292,7 +296,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					.limit(5);
 
 				// Прошедшие визиты
-				const pastVisits = await db
+				const pastVisits = await tx
 					.select({
 						id: visits.id,
 						startTime: visits.createdAt,
@@ -410,31 +414,41 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					const dateStr = d.toISOString().split("T")[0] || "";
 					const dayOfWeek = daysRu[d.getDay()] || "";
 
-					const doctorsWithSlots = await Promise.all(
-						doctors.map(async (doc) => {
-							try {
-								const calcResult = await calculateAvailableSlots(tx, {
+					const doctorsWithSlots: Array<{
+						doctorId: string;
+						doctorName: string;
+						specialty: string | null;
+						slots: string[];
+					}> = [];
+					for (const doc of doctors) {
+						try {
+							const calcResult = await withSavepoint(tx, async (spTx) =>
+								calculateAvailableSlots(spTx, {
 									organizationId,
 									date: dateStr,
 									requestedDoctorId: doc.id,
-								});
-								const slots = calcResult.success ? calcResult.slots.map((s) => s.time) : [];
-								return {
-									doctorId: doc.id,
-									doctorName: doc.fullName,
-									specialty: "Врач-стоматолог",
-									slots,
-								};
-							} catch {
-								return {
-									doctorId: doc.id,
-									doctorName: doc.fullName,
-									specialty: "Врач-стоматолог",
-									slots: [],
-								};
-							}
-						}),
-					);
+								}),
+							);
+							const slots = calcResult.success ? calcResult.slots.map((s) => s.time) : [];
+							doctorsWithSlots.push({
+								doctorId: doc.id,
+								doctorName: doc.fullName,
+								specialty: "Врач-стоматолог",
+								slots,
+							});
+						} catch (slotErr) {
+							request.log.warn(
+								{ err: slotErr, doctorId: doc.id },
+								"[telegramWebAppSession] Failed to calculate slots for doctor inside savepoint",
+							);
+							doctorsWithSlots.push({
+								doctorId: doc.id,
+								doctorName: doc.fullName,
+								specialty: "Врач-стоматолог",
+								slots: [],
+							});
+						}
+					}
 
 					weekSlots.push({
 						date: dateStr,

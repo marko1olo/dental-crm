@@ -821,7 +821,7 @@ export function printHtmlViaWindowOrIframe(html: string): void {
 			return;
 		}
 	} catch (e) {
-		console.warn("[printHtmlViaWindowOrIframe] window.open blocked by popup policy:", e);
+		clientLogger.warn("[printHtmlViaWindowOrIframe] window.open blocked by popup policy:", e);
 	}
 	printHtmlViaIframe(html, "dente-consent-print-iframe");
 }

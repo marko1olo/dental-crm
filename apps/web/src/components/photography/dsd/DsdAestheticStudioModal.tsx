@@ -168,7 +168,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				try {
 					localStorage.setItem(`dente_dsd_landmarks_${patientId}`, JSON.stringify(nextLandmarks));
 				} catch (storageErr) {
-					console.warn('[DSD] Failed saving landmarks:', storageErr);
+					clientLogger.warn('Failed saving landmarks', storageErr, { module: 'DsdAestheticStudioModal' });
 				}
 			}
 		},
@@ -187,7 +187,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 					}
 				}
 			} catch (storageErr) {
-				console.warn('[DSD] Failed reading cached calibration:', storageErr);
+				clientLogger.warn('Failed reading cached calibration', storageErr, { module: 'DsdAestheticStudioModal' });
 			}
 		}
 		return { ...DEFAULT_CALIBRATION, ...initialCalibration };
@@ -200,7 +200,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				try {
 					localStorage.setItem(`dente_dsd_calibration_${patientId}`, JSON.stringify(nextCalib));
 				} catch (storageErr) {
-					console.warn('[DSD] Failed saving calibration:', storageErr);
+					clientLogger.warn('Failed saving calibration', storageErr, { module: 'DsdAestheticStudioModal' });
 				}
 			}
 		},
@@ -234,7 +234,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				localStorage.removeItem(`dente_dsd_landmarks_${patientId}`);
 				localStorage.removeItem(`dente_dsd_calibration_${patientId}`);
 			} catch (storageErr) {
-				console.warn('[DSD] Failed resetting stored landmarks:', storageErr);
+				clientLogger.warn('Failed resetting stored landmarks', storageErr, { module: 'DsdAestheticStudioModal' });
 			}
 		}
 		showToast('Направляющие DSD возвращены к канонической норме Wheeler', 'info');
@@ -258,7 +258,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			setActivePhotoUrl(blobUrl);
 			showToast('Фото пациента сжато в WebP и загружено в студию DSD', 'success');
 		} catch (err) {
-			console.error('[DsdAestheticStudioModal] Upload compression failed:', err);
+			clientLogger.error('Upload compression failed', err, { module: 'DsdAestheticStudioModal' });
 			const fallbackUrl = URL.createObjectURL(file);
 			createdBlobUrlsRef.current.add(fallbackUrl);
 			setActivePhotoUrl(fallbackUrl);
@@ -298,7 +298,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 						localStorage.setItem(`dente_visit_dsd_${visitId}`, JSON.stringify(fullAnalysisPayload));
 					}
 				} catch (storageErr) {
-					console.warn('[DSD] Failed caching analysis:', storageErr);
+					clientLogger.warn('Failed caching analysis', storageErr, { module: 'DsdAestheticStudioModal' });
 				}
 			}
 

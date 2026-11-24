@@ -335,7 +335,7 @@ export async function deductWarehouseHygieneConsumables(options: {
 			clientLogger.warn("Warehouse deduction responded with non-OK status", { status: response.status }, { module: "hygieneCatalogData" });
 		}
 	} catch (err) {
-		console.warn("[HygieneCatalog] Warehouse deduction network failure:", err);
+		clientLogger.warn("Warehouse deduction network failure", err, { module: "hygieneCatalogData" });
 		// Офлайн-автономия врача: при сбое сети приём не блокируется
 	}
 	showToast("Склад: расходники гигиены учтены в карте приёма", "info", 2500);
@@ -465,7 +465,7 @@ export function printHtmlViaIframe(htmlContent: string): void {
 				iframe.contentWindow?.focus();
 				iframe.contentWindow?.print();
 			} catch (printErr) {
-				console.warn("[HygienePrint] Iframe print trigger failed:", printErr);
+				clientLogger.warn("Iframe print trigger failed", printErr, { module: "HygienePrint" });
 			} finally {
 				setTimeout(() => {
 					iframe.remove();
@@ -473,7 +473,7 @@ export function printHtmlViaIframe(htmlContent: string): void {
 			}
 		}, 250);
 	} catch (err) {
-		console.warn("[HygienePrint] Direct iframe print failed, falling back to popup window:", err);
+		clientLogger.warn("Direct iframe print failed, falling back to popup window", err, { module: "HygienePrint" });
 		const w = window.open("", "_blank");
 		if (w) {
 			w.document.open();

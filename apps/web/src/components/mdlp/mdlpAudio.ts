@@ -23,6 +23,6 @@ export function playMdlpBeep(isSuccess = true): void {
 		osc.start();
 		osc.stop(ctx.currentTime + 0.15);
 	} catch (err: unknown) {
-		console.debug("[MDLP Audio] Beep playback skipped:", err);
+		clientLogger.debug("[MDLP Audio] Beep playback skipped:", err);
 	}
 }

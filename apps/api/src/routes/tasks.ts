@@ -7,15 +7,13 @@
  * - Паритет со StomX (GET /api/tasks, POST /api/tasks, PUT /api/tasks/:id)
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { clinicalTaskStatusSchema } from "@dental/shared";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { idempotencyKeys } from "../db/schema.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	createPatientTaskTicketInDb,
 	deleteTaskTicketByIdInDb,
@@ -24,7 +22,6 @@ import {
 	setTaskTicketStatusByIdInDb,
 } from "../db/patientTaskTicketsQuery.js";
 import { requireOrganizationId } from "../security/identity.js";
-import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -169,10 +166,8 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			query.assignedToId && UUID_REGEX.test(query.assignedToId)
 				? query.assignedToId
 				: undefined;
-		const status =
-			query.status === "pending" || query.status === "completed"
-				? (query.status as PatientTaskTicketStatus)
-				: undefined;
+		const statusParsed = clinicalTaskStatusSchema.safeParse(query.status);
+		const status = statusParsed.success ? statusParsed.data : undefined;
 
 		try {
 			const filters: {
@@ -184,7 +179,9 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			if (assignedToId) filters.assignedToId = assignedToId;
 			if (status) filters.status = status;
 
-			const tasks = await getAllTaskTicketsFromDb(orgId, filters);
+			const tasks = await withTenantCtx(orgId, async () =>
+				getAllTaskTicketsFromDb(orgId, filters),
+			);
 			return reply.code(200).send(tasks);
 		} catch (error: unknown) {
 			request.log.error(error);
@@ -204,18 +201,6 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const rawIdemKey = extractIdempotencyKey(request);
-		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен быть валидным UUID",
-				});
-			}
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
 		const parsed = createTaskBodySchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -232,72 +217,14 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
 
 		try {
-			if (idempotencyKey) {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(existingRecord.responseCode || 201)
-							.send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							code: "IdempotencyConflict",
-							message: "Запрос на создание задачи уже обрабатывается",
-						});
-					}
-				}
-
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-						lockedAt: new Date(),
-					})
-					.onConflictDoNothing();
-			}
-
-			const task = await createPatientTaskTicketInDb(orgId, body.patientId, {
-				title: body.title.trim(),
-				description: body.description?.trim() ?? null,
-				assignedToId: effectiveAssignedToId,
-				priority: body.priority,
-			});
-
-			if (idempotencyKey) {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						responseBody: task,
-						responseCode: 201,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: task,
-							responseCode: 201,
-						},
-					});
-			}
+			const task = await withTenantCtx(orgId, async () =>
+				createPatientTaskTicketInDb(orgId, body.patientId, {
+					title: body.title.trim(),
+					description: body.description?.trim() ?? null,
+					assignedToId: effectiveAssignedToId,
+					priority: body.priority,
+				}),
+			);
 
 			return reply.code(201).send(task);
 		} catch (error: unknown) {
@@ -321,25 +248,16 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const rawIdemKey = extractIdempotencyKey(request);
-		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен быть валидным UUID",
-				});
-			}
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		const { id } = request.params as { id?: string };
-		if (!id || !UUID_REGEX.test(id)) {
+		const paramsParsed = z
+			.object({ id: z.string().regex(UUID_REGEX) })
+			.safeParse(request.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Идентификатор задачи должен быть UUID.",
 			});
 		}
+		const { id } = paramsParsed.data;
 
 		const parsed = updateTaskStatusBodySchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
@@ -350,76 +268,18 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			if (idempotencyKey) {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							code: "IdempotencyConflict",
-							message: "Запрос на обновление статуса задачи уже обрабатывается",
-						});
-					}
-				}
-
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-						lockedAt: new Date(),
-					})
-					.onConflictDoNothing();
-			}
-
-			const updated = await setTaskTicketStatusByIdInDb(
-				orgId,
-				id,
-				parsed.data.status,
+			const updated = await withTenantCtx(orgId, async () =>
+				setTaskTicketStatusByIdInDb(
+					orgId,
+					id,
+					parsed.data.status,
+				),
 			);
 			if (!updated) {
 				return reply.code(404).send({
 					error: "TaskNotFound",
 					message: "Задача не найдена в этой организации.",
 				});
-			}
-
-			if (idempotencyKey) {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						responseBody: updated,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: updated,
-							responseCode: 200,
-						},
-					});
 			}
 
 			return reply.code(200).send(updated);
@@ -445,62 +305,21 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const rawIdemKey = extractIdempotencyKey(request);
-		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен быть валидным UUID",
-				});
-			}
-			reply.header("Idempotency-Key", idempotencyKey);
+		const paramsParsed = z
+			.object({ id: z.string().regex(UUID_REGEX) })
+			.safeParse(request.params ?? {});
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор задачи должен быть UUID.",
+			});
 		}
-
-		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const { id } = paramsParsed.data;
 
 		try {
-			if (idempotencyKey) {
-				const [existingRecord] = await db
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							code: "IdempotencyConflict",
-							message: "Запрос на удаление задачи уже обрабатывается",
-						});
-					}
-				}
-
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-						lockedAt: new Date(),
-					})
-					.onConflictDoNothing();
-			}
-
-			const deleted = await deleteTaskTicketByIdInDb(orgId, id);
+			const deleted = await withTenantCtx(orgId, async () =>
+				deleteTaskTicketByIdInDb(orgId, id),
+			);
 			if (!deleted) {
 				return reply.code(404).send({
 					error: "TaskNotFound",
@@ -509,26 +328,6 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			}
 
 			const deletePayload = { success: true, id };
-
-			if (idempotencyKey) {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						responseBody: deletePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: deletePayload,
-							responseCode: 200,
-						},
-					});
-			}
 
 			return reply.code(200).send(deletePayload);
 		} catch (error: unknown) {

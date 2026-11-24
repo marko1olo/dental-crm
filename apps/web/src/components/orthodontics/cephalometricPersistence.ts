@@ -89,7 +89,7 @@ export async function fetchPatientCephalometricStudyFromApi(patientId: string): 
 			return payload?.study ?? null;
 		}
 	} catch (err) {
-		console.warn("[CephPersistence] API fetch offline fallback:", err);
+		clientLogger.warn("API fetch offline fallback", err, { module: "cephalometricPersistence" });
 	}
 	return null;
 }

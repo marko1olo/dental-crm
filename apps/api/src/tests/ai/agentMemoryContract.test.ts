@@ -10,25 +10,55 @@
 import assert from "node:assert/strict";
 import { describe, it, before, after } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
+import { eq } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { doctorPreferences, organizations, users } from "../../db/schema.js";
 import { registerAgentRoutes } from "../../routes/agentRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 describe("Agent Memory Contract & Schema Resilience", () => {
 	let server: FastifyInstance;
-	const orgId = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
+	const orgId = fixtureUuid("agent-memory-contract", 1);
+	const userId = fixtureUuid("agent-memory-contract", 2);
 	let token: string;
 
 	before(async () => {
+		await purgeFixtureOrganizations([orgId]);
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({ id: orgId, name: "Клиника Тест Памяти Агента" })
+				.onConflictDoNothing();
+			await tx
+				.insert(users)
+				.values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Врач Тестовый Копайлот",
+					role: "doctor",
+				})
+				.onConflictDoNothing();
+		});
+
 		server = Fastify({ logger: false });
 		await server.register(registerAgentRoutes);
 		await server.ready();
 
-		token = signToken({ organizationId: orgId, role: "clinic", userId: "8356141b-7cfa-4221-95f7-70f47e7344b1" }, authTokenSecret(), 3600);
+		token = signToken({ organizationId: orgId, role: "clinic", userId }, authTokenSecret(), 3600);
 	});
 
 	after(async () => {
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx.delete(doctorPreferences).where(eq(doctorPreferences.organizationId, orgId));
+		});
+		await purgeFixtureOrganizations([orgId]);
 		await server.close();
 	});
 

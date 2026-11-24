@@ -4,7 +4,6 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import {
 	toothStateHistory,
@@ -689,23 +688,25 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const rawStates = await db
-			.select({
-				toothNumber: toothStates.toothNumber,
-				state: toothStates.state,
-				surfaces: toothStates.surfaces,
-				notes: toothStates.notes,
-				clinicalData: toothStates.clinicalData,
-				canalMeasurements: toothStates.canalMeasurements,
-				updatedAt: toothStates.updatedAt,
-			})
-			.from(toothStates)
-			.where(
-				and(
-					eq(toothStates.organizationId, organizationId),
-					eq(toothStates.patientId, patientId),
+		const rawStates = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({
+					toothNumber: toothStates.toothNumber,
+					state: toothStates.state,
+					surfaces: toothStates.surfaces,
+					notes: toothStates.notes,
+					clinicalData: toothStates.clinicalData,
+					canalMeasurements: toothStates.canalMeasurements,
+					updatedAt: toothStates.updatedAt,
+				})
+				.from(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, organizationId),
+						eq(toothStates.patientId, patientId),
+					),
 				),
-			);
+		);
 
 		// Фиксация правомерного доступа врача к зубной формуле в журнале аудита (152-ФЗ)
 		await auditMedicalAccessFromRequest(request, {

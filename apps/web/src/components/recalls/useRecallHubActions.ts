@@ -114,7 +114,7 @@ export function useRecallHubActions({
 			await navigator.clipboard.writeText(smsText);
 			showToast("Текст приглашения скопирован в буфер обмена", "info");
 		} catch (err) {
-			console.error("[RecallActions] Clipboard error:", err);
+			clientLogger.error("[RecallActions] Clipboard error:", err);
 			showToast("Не удалось скопировать текст в буфер обмена", "error");
 		}
 	};

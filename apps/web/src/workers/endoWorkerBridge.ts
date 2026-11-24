@@ -110,12 +110,12 @@ export class EndoWorkerBridge {
 			};
 
 			this.worker.onerror = (err: ErrorEvent) => {
-				console.warn("[EndoWorkerBridge] Worker error:", err.message);
+				logger.warn("[EndoWorkerBridge] Worker error:", err.message);
 			};
 
 			this.isWorkerReady = true;
 		} catch (err) {
-			console.warn("[EndoWorkerBridge] Web Worker init failed, falling back to sync execution:", err);
+			logger.warn("[EndoWorkerBridge] Web Worker init failed, falling back to sync execution:", err);
 			this.worker = null;
 			this.isWorkerReady = false;
 		}

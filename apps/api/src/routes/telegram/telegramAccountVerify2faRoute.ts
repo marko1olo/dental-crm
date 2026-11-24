@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 export function registerTelegramAccountVerify2faRoute(app: FastifyInstance) {
@@ -26,8 +27,9 @@ export function registerTelegramAccountVerify2faRoute(app: FastifyInstance) {
 			});
 		}
 
-		const userId = (request.headers["x-user-id"] as string) || null;
-		const clinicId = (request.headers["x-clinic-id"] as string) || null;
+		const identity = getRequestIdentity(request);
+		const userId = identity.verified ? identity.userId : null;
+		const clinicId = identity.verified ? identity.organizationId : null;
 
 		const result = await TelegramAccountService.verify2fa({
 			organizationId: orgId,

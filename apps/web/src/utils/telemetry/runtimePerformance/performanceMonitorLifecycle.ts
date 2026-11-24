@@ -33,7 +33,7 @@ export function attachLifecycleObservers(ctx: LifecycleContext): LifecycleObserv
 				performanceObserver.observe({ entryTypes: ["longtask"] });
 			}
 		} catch (err: unknown) {
-			console.warn("[PerformanceMonitorLifecycle] Failed to observe longtask:", err);
+			logger.warn("[PerformanceMonitorLifecycle] Failed to observe longtask:", err);
 			performanceObserver = null;
 		}
 	}
@@ -49,7 +49,7 @@ export function detachLifecycleObservers(obs: LifecycleObservers): void {
 		try {
 			obs.performanceObserver.disconnect();
 		} catch (err: unknown) {
-			console.warn("[PerformanceMonitorLifecycle] Failed to disconnect performanceObserver:", err);
+			logger.warn("[PerformanceMonitorLifecycle] Failed to disconnect performanceObserver:", err);
 		}
 	}
 }

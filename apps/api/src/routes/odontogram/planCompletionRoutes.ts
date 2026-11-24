@@ -102,10 +102,10 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							code: z.string().optional(),
 							name: z.string().optional(),
 							toothNumber: z.union([z.number(), z.string()]).optional().nullable(),
-						}),
+						}).strict(),
 					)
 					.optional(),
-			});
+			}).strict();
 
 			const parsed = completeItemsSchema.safeParse(request.body);
 			if (!parsed.success) {

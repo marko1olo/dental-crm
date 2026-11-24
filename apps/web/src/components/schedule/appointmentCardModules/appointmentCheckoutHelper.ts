@@ -62,7 +62,7 @@ export function triggerAppointmentCheckout(
 			JSON.stringify(pendingCheckout),
 		);
 	} catch (err) {
-		console.warn("[AppointmentCheckout] Write error:", err);
+		clientLogger.warn("Write error", err, { module: "AppointmentCheckout" });
 	}
 
 	useAppStore.getState().setCurrentView("finance");

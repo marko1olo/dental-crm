@@ -315,14 +315,14 @@ export class KioskManager {
 		try {
 			await toggleDesktopKioskMode(false);
 		} catch (err: unknown) {
-			console.warn("[KioskMode] Failed to toggle desktop kiosk mode off:", err);
+			clientLogger.warn("[KioskMode] Failed to toggle desktop kiosk mode off:", err);
 		}
 
 		if (typeof document !== "undefined" && document.exitFullscreen && document.fullscreenElement) {
 			try {
 				await document.exitFullscreen();
 			} catch (err: unknown) {
-				console.warn("[KioskMode] Failed to exit DOM fullscreen:", err);
+				clientLogger.warn("[KioskMode] Failed to exit DOM fullscreen:", err);
 			}
 		}
 
@@ -386,7 +386,7 @@ export class KioskManager {
 			try {
 				sub(this.getState());
 			} catch (err) {
-				console.error("[KioskManager] Subscriber error:", err);
+				clientLogger.error("[KioskManager] Subscriber error:", err);
 			}
 		}
 	}
@@ -431,7 +431,7 @@ export class KioskManager {
 				try {
 					this.config.onInactivityReset?.();
 				} catch (err) {
-					console.error("[KioskManager] Error in inactivity callback:", err);
+					clientLogger.error("[KioskManager] Error in inactivity callback:", err);
 				}
 			}
 		}, this.config.inactivityTimeoutSeconds * 1000);

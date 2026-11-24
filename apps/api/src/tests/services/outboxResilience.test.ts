@@ -289,6 +289,53 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 			assert.equal(wsReceivedEvent.payload.phone, newCallerPhone);
 			assert.equal(wsReceivedEvent.payload.advertisingChannel, "yandex_direct");
 
+			// Verify zero spam leads on ringing, then lead creation upon answered
+			await withTenantCtx(ORG_ID, async (tx) => {
+				const ringingLeads = await tx
+					.select()
+					.from(crmLeads)
+					.where(
+						and(
+							eq(crmLeads.organizationId, ORG_ID),
+							eq(crmLeads.phone, newCallerPhone),
+						),
+					);
+				assert.equal(ringingLeads.length, 0, "Zero spam leads should be created on ringing");
+			});
+
+			await telephonyOutboxService.processTelephonyWebhook({
+				organizationId: ORG_ID,
+				rawPayload: {},
+				normalizedCallerPhone: {
+					e164: newCallerPhone,
+					national10: "9165554433",
+					cleanDigits: "79165554433",
+					raw: newCallerPhone,
+					isValid: true,
+				},
+				normalizedTargetPhone: {
+					e164: "+74959998877",
+					national10: "4959998877",
+					cleanDigits: "74959998877",
+					raw: "+74959998877",
+					isValid: true,
+				},
+				event: "answered",
+				rawEvent: "answered",
+				callId: "call-live-999",
+				recordingUrl: "",
+				transcriptionSnippet: null,
+				durationSeconds: 0,
+				detectedProvider: "mango",
+				detectedMarketingChannel: "yandex_direct",
+				detectedChannelLabel: "Яндекс.Директ",
+				virtualTrunkNumber: "+74959998877",
+				utmSource: "yandex",
+				utmCampaign: "search_dentistry",
+				utmMedium: "cpc",
+				receivedAtIso: new Date().toISOString(),
+			});
+
 			// Verify CRM Lead was created in DB
 			await withTenantCtx(ORG_ID, async (tx) => {
 				const leads = await tx
