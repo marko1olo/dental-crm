@@ -1,6 +1,6 @@
 import type React from "react";
 import type { ToothState } from "../toothChartTypes";
-import type { EndoToothClinicalData, DentitionMode } from "@dental/shared";
+import type { EndoToothClinicalData, DentitionMode, BridgeToothRole } from "@dental/shared";
 import {
 	type CanalObturationMaterial,
 	type FurcationGrade,
@@ -63,7 +63,7 @@ export interface ToothData {
 	canalCount?: number;
 	notes?: string | undefined;
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
-	bridgeRole?: "pillar" | "pontic" | null;
+	bridgeRole?: BridgeToothRole | null | undefined;
 	canalObturationLevel?: "full" | "two_thirds" | "half";
 	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16;
 	hasFracture?: boolean;

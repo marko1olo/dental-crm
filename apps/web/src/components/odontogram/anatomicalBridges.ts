@@ -1,39 +1,69 @@
 /**
  * DENTE Dental CRM — Fixed Dental Bridge Detection & Span Analytics
+ * Synchronized with canonical SSOT @dental/shared/src/clinical/odontogramTreatmentEngine.ts
  */
 
+import type { BridgeToothRole } from "@dental/shared";
 import type { ToothData } from "./ToothChart";
 import type { BridgeSpanInfo } from "./anatomicalGeometriesTypes";
 
 export function isToothAbutment(tooth?: ToothData | null): boolean {
 	if (!tooth) return false;
-	if (tooth.bridgeRole === "pillar") return true;
-	if (tooth.state === "Crown") return true;
-	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
-	if (
-		cData &&
-		(cData.isAbutment === true ||
-			cData.prostheticType === "bridge_abutment" ||
-			cData.statusCode === "bridge_abutment")
-	) {
+	// 1. Канонический контракт ролей odontogramTreatmentEngine.ts: "pillar" и "cantilever" являются опорами
+	if (tooth.bridgeRole === "pillar" || (tooth.bridgeRole as BridgeToothRole | undefined) === "cantilever") {
 		return true;
 	}
+	if (tooth.bridgeRole === "pontic") {
+		return false;
+	}
+
+	// 2. Клиническое состояние коронки
+	if (tooth.state === "Crown") return true;
+
+	// 3. Структурированные метаданные clinicalData
+	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
+	if (cData) {
+		if (cData.bridgeRole === "pillar" || cData.bridgeRole === "cantilever" || cData.isAbutment === true) {
+			return true;
+		}
+		if (cData.bridgeRole === "pontic" || cData.isPontic === true) {
+			return false;
+		}
+		if (cData.prostheticType === "bridge_abutment" || cData.statusCode === "bridge_abutment") {
+			return true;
+		}
+	}
+
+	// 4. Безопасный fallback для неструктурированных клинических заметок
 	const notes = tooth.notes?.toLowerCase() ?? "";
 	return notes.includes("опор") || notes.includes("abutment");
 }
 
 export function isToothPontic(tooth?: ToothData | null): boolean {
 	if (!tooth) return false;
-	if (tooth.bridgeRole === "pontic") return true;
-	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
-	if (
-		cData &&
-		(cData.isPontic === true ||
-			cData.prostheticType === "bridge_pontic" ||
-			cData.statusCode === "bridge_pontic")
-	) {
+	// 1. Канонический контракт ролей odontogramTreatmentEngine.ts: "pontic" является промежуточным телом
+	if (tooth.bridgeRole === "pontic") {
 		return true;
 	}
+	if (tooth.bridgeRole === "pillar" || (tooth.bridgeRole as BridgeToothRole | undefined) === "cantilever") {
+		return false;
+	}
+
+	// 2. Структурированные метаданные clinicalData
+	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
+	if (cData) {
+		if (cData.bridgeRole === "pontic" || cData.isPontic === true) {
+			return true;
+		}
+		if (cData.bridgeRole === "pillar" || cData.bridgeRole === "cantilever" || cData.isAbutment === true) {
+			return false;
+		}
+		if (cData.prostheticType === "bridge_pontic" || cData.statusCode === "bridge_pontic") {
+			return true;
+		}
+	}
+
+	// 3. Безопасный fallback для неструктурированных клинических заметок
 	const notes = tooth.notes?.toLowerCase() ?? "";
 	if (
 		notes.includes("фасет") ||
@@ -43,6 +73,8 @@ export function isToothPontic(tooth?: ToothData | null): boolean {
 	) {
 		return true;
 	}
+
+	// 4. Отсутствующий зуб в пределах непрерывного моста
 	return tooth.state === "Missing";
 }
 

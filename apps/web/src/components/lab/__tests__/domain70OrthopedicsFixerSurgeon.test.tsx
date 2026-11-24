@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { DentalLabStudioModal } from "../DentalLabStudioModal";
 import { getStageMeta, getMaterialMeta } from "../dentalLabCatalogData";
 import { detectBridgeSpans } from "../../odontogram/anatomicalBridges";
+import type { ToothData } from "../../odontogram/ToothChart";
 import { Dental3dToolbar } from "../../imaging/dental3d/Dental3dToolbar";
 
 describe("Domain 70 — Orthopedics & CAD/CAM Fixer Surgeon Gate", () => {
@@ -32,7 +33,12 @@ describe("Domain 70 — Orthopedics & CAD/CAM Fixer Surgeon Gate", () => {
 	});
 
 	it("3. [SEV-3.1] detectBridgeSpans handles edge cases and spans without non-null assertions", () => {
-		const spans = detectBridgeSpans([], [11, 12, 13]);
+		const mockTeethData: ToothData[] = [
+			{ toothNumber: 11, state: "Healthy" },
+			{ toothNumber: 12, state: "Healthy" },
+			{ toothNumber: 13, state: "Healthy" },
+		];
+		const spans = detectBridgeSpans([], mockTeethData);
 		assert.deepEqual(spans, []);
 	});
 

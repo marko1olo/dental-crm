@@ -671,6 +671,10 @@
      - 📱 Mobile Dark: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (223.1 KB)
      - ☀️ Детский прикус PC Light: `docs/proofs/odontogram/03_odontogram_pediatric_pc_light_1440x900.png` (116.5 KB)
      - 🌙 Детский прикус PC Dark: `docs/proofs/odontogram/06_odontogram_pediatric_pc_dark_1440x900.png` (127.4 KB)
+  9. Синхронизация канонических ролей мостовидных протезов и доступности сметы (Fixer Surgeon Gate):
+     - [SEV-3.1] Исправлен контракт `detectBridgeSpans` в `domain70OrthopedicsFixerSurgeon.test.tsx` (строка 35) с передачей типизированного `mockTeethData: ToothData[]`.
+     - [SEV-3.2] В `anatomicalBridges.ts` синхронизировано определение мостов с каноническим модулем `@dental/shared/src/clinical/odontogramTreatmentEngine.ts`: канонические типизированные роли `pillar`, `pontic` и `cantilever` (тип `BridgeToothRole`) получили безусловный приоритет перед поиском строк.
+     - [SEV-4.1] В `OdontogramActiveViewSlot.tsx` внедрена пауза таймера быстрой сметы при наведении курсора (`onMouseEnter` / `onMouseLeave`, `isToastHovered`) по стандарту доступности WCAG 2.2 SC 2.2.1.
 
 ### [CLN-09] [ИСПРАВЛЕНО] [SEV-2] Программа лояльности, подарочные сертификаты и семейный баланс: фикс сериализации NaN->null, ликвидация рассинхрона оптимистичного UI, прямой выпуск сертификатов и снос дубликатов (Мандаты 8b, 8d/8zr, 8e, 8bf, 8al)
 - Файлы:
@@ -4594,5 +4598,42 @@ ead_file по 8 осям качества Хаммера:
   - `npx tsc -p apps/api/tsconfig.json --noEmit`: Exit Code 0 (0 ошибок).
   - `npm run check:encoding`: Exit Code 0 (19 959 файлов проверено, UTF-8 без BOM).
   - `npm run check:diff`: Exit Code 0 (DIFF SAFETY PASSED, 0 any, 0 !, 0 float).
+
+---
+
+## 🏆 ВОЛНА 82: АНАЛИТИКА КЛИНИКИ, ДАШБОРД РУКОВОДИТЕЛЯ, УТИЛИЗАЦИЯ КРЕСЕЛ, МАРЖИНАЛЬНОСТЬ И ЗАРПЛАТЫ ВРАЧЕЙ (ДОМЕН 82)
+
+### 1. ДОМЕН 82: АНАЛИТИКА КЛИНИКИ И ЗАРПЛАТЫ
+- Хирург: Red Team Fixer Surgeon Domain 82.
+- Статус: ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ].
+- Канонический SSOT:
+  - Выручка и финансовые отчеты: [`apps/api/src/services/reports/managerReports/revenueReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/revenueReports.ts), [`financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts), [`doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts).
+  - Дашборд руководителя и KPI: [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts), [`executiveDoctorsQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveDoctorsQuery.ts), [`dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts), [`cohortLtvCalculator.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/cohortLtvCalculator.ts).
+  - Продуктивность врачей и утилизация кресел: [`apps/api/src/services/reports/managerReports/doctorPerformanceService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorPerformanceService.ts), [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts).
+  - Калькулятор аренды кресел: [`packages/shared/src/analytics/chairRentalCalculator.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/analytics/chairRentalCalculator.ts).
+  - UI-компоненты аналитики и зарплат: [`ExecutiveFinancialSummary.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx), [`ChairOccupancyReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ChairOccupancyReport.tsx), [`DoctorPayrollReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollReport.tsx), [`DoctorPayrollTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollTable.tsx), [`doctorPayrollExportUtils.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/doctorPayrollExportUtils.ts).
+- Ликвидированные дефекты (8 из 8):
+  1. **DEF-ANL-01 [ЗАКРЫТО] Устранение обнуления выручки через `coalesce(nullif(field, 0), round(rub * 100)::bigint)` (Мандат 8bm)**: В PostgreSQL DDL поля копеек (`amountKopecks`, `priceKopecks`) имеют дефолт `0`. Вызов `coalesce(0, round(rub * 100)::bigint)` приводил к `0` вместо фоллбека на рубли. Во всех 10 аналитических запросах (`revenueReports.ts:49`, `financialExecutiveReports.ts:140`, `doctorReports.ts:48`, `executiveKpiQuery.ts:435, 506`, `executiveDoctorsQuery.ts:57, 235, 340`, `dashboardRoutes.ts:199`, `cohortLtvCalculator.ts:34`) внедрен `nullif(..., 0)`.
+  2. **DEF-ANL-02 [ЗАКРЫТО] Учет количества процедур `treatmentItems.quantity` при агрегации выручки отделений и топа услуг (Мандат 8bm)**: В `executiveDoctorsQuery.ts:57, 340` добавлено обязательное умножение на `coalesce(${treatmentItems.quantity}, 1)`, предотвращающее занижение выручки при повторных и множественных процедурах в одном чеке/визите.
+  3. **DEF-ANL-03 [ЗАКРЫТО] Устранение пропуска оплат без `paidAt` в `doctorPerformanceService.ts:48-49` (Мандаты 8e, 8bm)**: Прямой фильтр по `payments.paidAt` отсекал платежи с заполненным `createdAt` и пустым `paidAt`. Заменено на канонический `paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`` с фильтрацией `gte/lte`.
+  4. **DEF-ANL-04 [ЗАКРЫТО] Управленческий P&L: начисленная зарплата из `doctorPayrollStatements` с фоллбеком на кассу (Мандаты 8ap, 8bm)**: В `executiveKpiQuery.ts:586-590` прямые затраты ФОТ в P&L (COGS) теперь учитывают начисленную зарплату врачей из ведомостей `doctorPayrollStatements` за период (`period YYYY-MM`), а при их отсутствии мягко откатываются на кассовые расходные операции `cashOperations` по статье ФОТ.
+  5. **DEF-ANL-05 [ЗАКРЫТО] Ликвидация захардкоженной специализации 'therapy' в `utilizationRoutes.ts:420` (Мандат 8ba)**: Из `users.specialties` извлекается реальная специализация врача и нормализуется через `normalizeClinicalCategory(null, spec)`. Калькулятор `calculateDoctorPeriodPayroll` рассчитывает сдельную оплату по профильной сетке врача (ортопедия, хирургия, ортодонтия, терапия и др.).
+  6. **DEF-ANL-06 [ЗАКРЫТО] Ликвидация искусственного усечения чистой выручки `Math.max(0, ...)` в `executiveKpiQuery.ts:455` (Мандат 8e)**: Чистый доход рассчитывается честно `paidKopecks - refundedKopecks` без маскировки превышения возвратов над приходом.
+  7. **DEF-ANL-08 [ЗАКРЫТО] Искоренение делений на 100 (`/ 100`) в калькуляторе аренды кресел и роутах (Мандат 8bm)**: В `chairRentalCalculator.ts` расчет процентной ставки переведен на `calculatePercentDiscountKopecks` из `@dental/shared`, а расчет дохода в час — на `kopecksToRubles`. В `utilizationRoutes.ts:441` расчет комиссии переведен в целочисленные копейки через `calculatePercentDiscountKopecks(netBaseKopecks, commissionPct)`.
+  8. **DEF-ANL-10 [ЗАКРЫТО] Соблюдение Apple HIG touch targets (>= 44x44px) на мобильных экранах (Мандат 8ze/8al)**: В `ExecutiveFinancialSummary.tsx`, `ChairOccupancyReport.tsx`, `DoctorPayrollReport.tsx` кнопки обновления и экспорта получили класс `min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8`. В `DoctorPayrollTable.tsx:122` CTA-кнопка в пустом состоянии мобильного экрана обновлена до `min-h-[44px]`. В `doctorPayrollExportUtils.ts:251` хардкодный `#0d9488` заменен на `var(--primary, #0d9488)`.
+- Машинные гейты Definition of Done (100% Exit Code 0):
+  - Выручка и периоды: `apps/api/src/tests/routes/managerReportsSuite/managerReportsRevenue.test.ts` -> 8/8 PASS.
+  - Полная сюита отчетов руководителя: `apps/api/src/tests/routes/managerReportsSuite/index.ts` -> 24/24 PASS.
+  - Зарплатные расчеты и начисления: `apps/api/src/tests/routes/doctorPayroll.test.ts` -> 8/8 PASS.
+  - Инквизиция зарплат: `apps/api/src/services/reports/managerReports/__tests__/payrollReportsInquisition.test.ts` -> 6/6 PASS.
+  - Web SSOT зарплат: `apps/web/src/components/payroll/__tests__/netRevenue/canonicalPayrollHubSsot.test.ts` -> 10/10 PASS.
+  - `check:diff`: Exit Code 0 (0 any, 0 !, 0 suppressions, 0 float money).
+  - `check:doors` & `check:stub-overrides`: Exit Code 0.
+  - `check:buttons`: Exit Code 0 (0 circus color violations, 4236 TSX/JSX, 1290 CSS).
+  - `check:css-tokens`: Exit Code 0 (1290 CSS проверено, 0 неразрешенных var).
+  - `check:encoding`: Exit Code 0 (19 930 файлов проверено, UTF-8 без BOM).
+  - `check:migration-drift`: Exit Code 0 (215 таблиц Drizzle, 3036 колонок — 100% синхронизация).
+  - `check:react-hooks`: Exit Code 0 (2970 файлов проверено).
+  - TypeScript `apps/api`, `packages/shared`, `apps/web` (analytics): Exit Code 0 (0 ошибок).
 
 

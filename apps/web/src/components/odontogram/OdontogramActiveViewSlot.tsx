@@ -78,15 +78,16 @@ export const OdontogramActiveViewSlot: React.FC<
 		title: string;
 		priceRub: number;
 	} | null>(null);
+	const [isToastHovered, setIsToastHovered] = useState(false);
 
-	// Автоматическое скрытие тоста сметы через 5 секунд
+	// Автоматическое скрытие тоста сметы через 5 секунд с паузой при наведении курсора (WCAG 2.2 SC 2.2.1)
 	useEffect(() => {
-		if (!liveEstimateToast) return;
+		if (!liveEstimateToast || isToastHovered) return;
 		const timer = setTimeout(() => {
 			setLiveEstimateToast(null);
 		}, 5000);
 		return () => clearTimeout(timer);
-	}, [liveEstimateToast]);
+	}, [liveEstimateToast, isToastHovered]);
 
 	const handleInterceptedQuickStateChange = useCallback(
 		(
@@ -148,10 +149,12 @@ export const OdontogramActiveViewSlot: React.FC<
 					/>
 				)}
 
-				{/* Контекстный баннер-чип быстрого перехода в смету (Мандат 8ba) */}
+				{/* Контекстный баннер-чип быстрого перехода в смету (Мандат 8ba / WCAG 2.2 SC 2.2.1) */}
 				{liveEstimateToast && !isLiveInvoiceOpen && (
 					<div
 						data-testid="live-estimate-toast"
+						onMouseEnter={() => setIsToastHovered(true)}
+						onMouseLeave={() => setIsToastHovered(false)}
 						className="live-estimate-toast w-full px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper)] border border-[var(--primary,#0d9488)]/40 shadow-sm flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200"
 					>
 						<div className="flex items-center gap-2 min-w-0">
@@ -171,6 +174,7 @@ export const OdontogramActiveViewSlot: React.FC<
 								onClick={() => {
 									setIsLiveInvoiceOpen(true);
 									setLiveEstimateToast(null);
+									setIsToastHovered(false);
 								}}
 								className="h-7 px-2.5 rounded-lg bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] text-white text-xs font-medium transition-colors inline-flex items-center gap-1 shadow-2xs"
 							>
@@ -179,7 +183,10 @@ export const OdontogramActiveViewSlot: React.FC<
 							<button
 								type="button"
 								aria-label="Закрыть уведомление о смете"
-								onClick={() => setLiveEstimateToast(null)}
+								onClick={() => {
+									setLiveEstimateToast(null);
+									setIsToastHovered(false);
+								}}
 								className="w-6 h-6 rounded-md hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-[var(--paper-soft)] text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors text-sm"
 							>
 								✕
