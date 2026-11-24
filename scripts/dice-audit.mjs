@@ -135,6 +135,7 @@ const TEST_FILE_PATTERNS = [
 	/\.spec\.[cm]?[jt]sx?$/,
 	/TestHelpers\.[cm]?[jt]sx?$/,
 	/__tests__/,
+	/\/tests\//,
 	/\.d\.ts$/,
 ];
 

@@ -25,6 +25,7 @@ import {
 	auditUi,
 	createPrng,
 	inspectLine,
+	isCombatSourceFile,
 	parseCliArgs,
 	runDiceAudit,
 	sampleLines,
@@ -463,6 +464,12 @@ test("Глубокий аудит UI (auditUi): выявление файлов-
 	} finally {
 		rmSync(tmpDir, { recursive: true, force: true });
 	}
+});
+
+test("isCombatSourceFile исключает файлы внутри /tests/ (например moneyChainProof.ts)", () => {
+	assert.equal(isCombatSourceFile("apps/api/src/tests/chains/moneyChainProof.ts"), false);
+	assert.equal(isCombatSourceFile("apps/api/src/tests/chains/moneyChainProof.ts".replace(/\//g, "\\")), false);
+	assert.equal(isCombatSourceFile("apps/api/src/routes/billing.ts"), true);
 });
 
 test("Реестр манифестов отказов FAILURE_MANIFESTOS: полнота и валидность всех 12 шлюзов", () => {
