@@ -25,7 +25,7 @@ export function VisitHeaderFastPrintCluster({
 				type="button"
 				onClick={onPrintCard}
 				data-testid="btn-visit-fast-print-card"
-				data-legacy-testid="btn-visit-fast-print-043u"
+				data-legacy-testid="btn-visit-fast-print-medical-card"
 				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
 				title="Печать дневника приёма (Медицинская карта)"
 				aria-label="Печать дневника"

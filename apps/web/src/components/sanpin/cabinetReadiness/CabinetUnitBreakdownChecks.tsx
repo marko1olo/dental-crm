@@ -130,7 +130,7 @@ export function CabinetUnitBreakdownChecks(p: CabinetUnitBreakdownChecksProps) {
 					type="button"
 					onClick={handleConfirmAllReady}
 					className="w-full sm:w-auto h-9 min-h-[36px] px-4 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
-					title="Подтвердить готовность кабинета к смене (1 клик)"
+					title="Подтвердить готовность кабинета к смене"
 				>
 					<Sparkles size={14} className="text-white shrink-0" />
 					<span>Подтвердить готовность кабинета к смене</span>

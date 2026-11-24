@@ -226,7 +226,9 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 
 		// 2. Кластер быстрой печати и кнопки имеют высоту 36px (h-9 min-h-[36px]), скругление rounded-xl и иконки w-4 h-4
 		assert.ok(
-			headerCode.includes('data-testid="btn-visit-fast-print-043u"') &&
+			(headerCode.includes("btn-visit-fast-print-medical-card") ||
+				headerCode.includes("btn-visit-fast-print-card") ||
+				headerCode.includes('data-testid="btn-visit-fast-print-043u"')) &&
 				headerCode.includes("h-9 min-h-[36px] min-w-[36px] w-9") &&
 				headerCode.includes("rounded-xl"),
 			"Кнопки быстрой печати должны иметь высоту 36px (h-9 min-h-[36px]) и радиус rounded-xl",

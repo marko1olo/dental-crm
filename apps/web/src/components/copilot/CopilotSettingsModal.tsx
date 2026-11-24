@@ -129,16 +129,16 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	return (
 		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div className="relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden" data-testid="copilot-settings-modal">
+			<div className="relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden" data-testid="copilot-settings-modal">
 				{/* Apple HIG тактильный Drag Handle на мобильных экранах */}
 				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
+					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
 				</div>
 
 				{/* Шапка */}
 				<header className="px-5 py-3 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)]/12 border border-[var(--teal,#0d9488)]/30 flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0">
+						<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/12 border border-[var(--teal)]/30 flex items-center justify-center text-[var(--teal)] shrink-0">
 							<Sliders size={16} />
 						</div>
 						<div className="min-w-0">
@@ -158,16 +158,16 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				</header>
 
 				{/* Тихий индикатор обнаруженного устройства (без ручных селекторов) */}
-				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs shrink-0">
+				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs shrink-0">
 					<div className="flex items-center gap-2">
 						<span className="text-[11px] text-[var(--muted)]">Обнаружено устройство:</span>
 						<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">
 							{runtimeMode === "desktop_native" ? (
-								<><Monitor size={13} className="text-[var(--teal,#0d9488)]" /><span>Рабочая станция ОС</span></>
+								<><Monitor size={13} className="text-[var(--teal)]" /><span>Рабочая станция ОС</span></>
 							) : isChairside ? (
-								<><Smartphone size={13} className="text-[var(--teal,#0d9488)]" /><span>Сенсорный планшет</span></>
+								<><Smartphone size={13} className="text-[var(--teal)]" /><span>Сенсорный планшет</span></>
 							) : (
-								<><Globe size={13} className="text-[var(--teal,#0d9488)]" /><span>Веб-браузер</span></>
+								<><Globe size={13} className="text-[var(--teal)]" /><span>Веб-браузер</span></>
 							)}
 						</span>
 					</div>
@@ -180,7 +180,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("intelligence")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "intelligence" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "intelligence" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Brain size={13} />
@@ -190,7 +190,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("trust")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "trust" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "trust" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<ShieldCheck size={13} />
@@ -200,7 +200,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("persona")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "persona" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "persona" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Stethoscope size={13} />
@@ -210,7 +210,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("voice_privacy")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "voice_privacy" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "voice_privacy" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Mic size={13} />
@@ -220,7 +220,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("memory")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "memory" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "memory" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Sparkles size={13} />
@@ -230,7 +230,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						type="button"
 						onClick={() => setActiveTab("matrix")}
 						className={`py-2.5 pr-2 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "matrix" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "matrix" ? "border-b-[var(--teal)] text-[var(--teal)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Table size={13} />
@@ -330,7 +330,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						<button
 							type="button"
 							onClick={handleSave}
-							className="primary-button h-10 px-5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold shadow-sm hover:opacity-95 cursor-pointer"
+							className="primary-button h-10 px-5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-sm hover:opacity-95 cursor-pointer"
 						>
 							Сохранить настройки
 						</button>

@@ -10,12 +10,12 @@ import { useCopilotStore, type AiMemoryFact } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
 
 const CATEGORY_LABELS: Record<AiMemoryFact["category"], { label: string; badgeClass: string }> = {
-	materials: { label: "Материалы", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
-	anesthesia: { label: "Анестезия", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
-	protocols: { label: "Протоколы", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
-	diagnosis: { label: "Диагнозы", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
-	equipment: { label: "Оборудование", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
-	custom: { label: "Общее", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
+	materials: { label: "Материалы", badgeClass: "bg-[var(--teal-soft)] text-[var(--teal)] border-[var(--teal)]/25" },
+	anesthesia: { label: "Анестезия", badgeClass: "bg-[var(--teal-soft)] text-[var(--teal)] border-[var(--teal)]/25" },
+	protocols: { label: "Протоколы", badgeClass: "bg-[var(--teal-soft)] text-[var(--teal)] border-[var(--teal)]/25" },
+	diagnosis: { label: "Диагнозы", badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
+	equipment: { label: "Оборудование", badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
+	custom: { label: "Общее", badgeClass: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
 };
 
 export const MEMORY_QUICK_PRESETS: Array<{ category: AiMemoryFact["category"]; cat: AiMemoryFact["category"]; text: string; label: string }> = [

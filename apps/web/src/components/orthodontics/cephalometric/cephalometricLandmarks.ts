@@ -93,6 +93,12 @@ export interface CephalometricAnalysisResult {
 	placedCount: number;
 	totalCount: number;
 	completionPercentage: number;
+	readonly sna?: number | undefined;
+	readonly snb?: number | undefined;
+	readonly anb?: number | undefined;
+	readonly u1NaDeg?: number | undefined;
+	readonly l1NbDeg?: number | undefined;
+	readonly fmaDeg?: number | undefined;
 }
 
 export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [

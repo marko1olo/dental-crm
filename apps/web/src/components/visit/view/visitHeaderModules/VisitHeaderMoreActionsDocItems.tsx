@@ -19,7 +19,8 @@ export function VisitHeaderMoreActionsDocItems({
 					onCloseMenu();
 					handlePrintForm043uFast();
 				}}
-				data-testid="visit-more-action-print-043u"
+				data-testid="visit-more-action-print-medical-card"
+				data-legacy-testid="visit-more-action-print-043u"
 				className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 				role="menuitem"
 			>

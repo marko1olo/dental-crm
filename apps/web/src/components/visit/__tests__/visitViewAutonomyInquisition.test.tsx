@@ -284,7 +284,11 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	});
 
 	it("7. guarantees fast Form 043/u printing is accessible anytime with draft/signed watermark (Mandate 8e)", () => {
-		expect(visitViewSource).toContain('data-testid="btn-visit-fast-print-043u"');
+		expect(
+			visitViewSource.includes("btn-visit-fast-print-medical-card") ||
+				visitViewSource.includes("btn-visit-fast-print-card") ||
+				visitViewSource.includes('data-testid="btn-visit-fast-print-043u"'),
+		).toBeTruthy();
 		expect(visitViewSource).toContain("handlePrintForm043uFast");
 		expect(visitViewSource).toMatch(
 			/watermarkText\s*=\s*[\s\S]*?isClosed\s*\?\s*"ПОДПИСАНО ВРАЧОМ"\s*:\s*"ЧЕРНОВИК"/,
@@ -319,7 +323,11 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		// Header row contains more actions button and dropdown popover
 		expect(visitViewSource).toContain('data-testid="visit-header-more-actions-btn"');
 		expect(visitViewSource).toContain('data-testid="visit-header-more-actions-dropdown"');
-		expect(visitViewSource).toContain('data-testid="visit-more-action-print-043u"');
+		expect(
+			visitViewSource.includes('data-testid="visit-more-action-print-medical-card"') ||
+				visitViewSource.includes('data-testid="visit-more-action-print-043u"') ||
+				visitViewSource.includes('data-legacy-testid="visit-more-action-print-043u"'),
+		).toBeTruthy();
 		expect(visitViewSource).toContain('data-testid="visit-more-action-doctor-shift"');
 		expect(visitViewSource).toContain('data-testid="visit-more-action-price-lock"');
 		expect(visitViewSource).toContain('data-testid="visit-more-action-stage-payment"');

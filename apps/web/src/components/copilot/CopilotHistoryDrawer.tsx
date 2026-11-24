@@ -96,8 +96,8 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				onClick={() => onSelectThread(thread.id)}
 				className={`p-3 rounded-xl border text-xs cursor-pointer transition-all space-y-1.5 ${
 					isActive
-						? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] shadow-xs"
-						: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft,#f8fafc)]"
+						? "border-[var(--teal)] bg-[var(--teal-soft)] shadow-xs"
+						: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
 				}`}
 			>
 				<div className="flex items-center justify-between gap-2">
@@ -107,7 +107,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 							type="button"
 							onClick={() => togglePinThread(thread.id)}
 							className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-[var(--line)] transition-colors cursor-pointer ${
-								thread.pinned ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
+								thread.pinned ? "text-[var(--teal)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							title={thread.pinned ? "Открепить" : "Закрепить"}
 							aria-label={thread.pinned ? "Открепить" : "Закрепить"}
@@ -142,7 +142,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				<div className="flex items-center justify-between text-[10px] text-[var(--muted)] pt-1 border-t border-[var(--line)]/50">
 					{thread.patientName ? (
 						<span className="flex items-center gap-1 truncate font-medium">
-							<User size={10} className="text-[var(--teal,#0d9488)]" />
+							<User size={10} className="text-[var(--teal)]" />
 							<span>{thread.patientName}</span>
 						</span>
 					) : (
@@ -157,14 +157,14 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 	return (
 		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div className="relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
+			<div className="relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
 				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
+					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
 				</div>
 
 				<header className="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2 min-w-0">
-						<MessageSquare size={16} className="text-[var(--teal,#0d9488)]" />
+						<MessageSquare size={16} className="text-[var(--teal)]" />
 						<h3 className="text-sm font-bold text-[var(--ink)] m-0">История диалогов</h3>
 						<span className="text-[11px] text-[var(--muted)]">({threads.length})</span>
 					</div>
@@ -172,7 +172,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						<button
 							type="button"
 							onClick={handleCreateNew}
-							className="primary-button text-[11px] font-bold h-8 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] text-white hover:opacity-95 shadow-xs flex items-center gap-1 cursor-pointer"
+							className="primary-button text-[11px] font-bold h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-95 shadow-xs flex items-center gap-1 cursor-pointer"
 						>
 							<Plus size={13} />
 							<span>Новый диалог</span>
@@ -188,7 +188,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 					</div>
 				</header>
 
-				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
+				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="relative">
 						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
 						<input
@@ -197,7 +197,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по диалогам, сообщениям и пациентам..."
 							style={{ paddingLeft: "38px" }}
-							className="w-full h-8 pl-10 pr-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							className="w-full h-8 pl-10 pr-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 						/>
 					</div>
 				</div>
@@ -205,7 +205,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				<div className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
 					{pinnedThreads.length > 0 && (
 						<div className="space-y-1.5">
-							<div className="text-[10px] font-semibold tracking-normal text-[var(--teal,#0d9488)] flex items-center gap-1">
+							<div className="text-[10px] font-semibold tracking-normal text-[var(--teal)] flex items-center gap-1">
 								<Pin size={10} />
 								<span>Закрепленные</span>
 							</div>
@@ -250,7 +250,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 					)}
 				</div>
 
-				<footer className="px-5 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-[11px] shrink-0">
+				<footer className="px-5 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-[11px] shrink-0">
 						{isConfirmingClear ? (
 							<div className="flex items-center justify-between w-full gap-2">
 								<span className="text-[var(--danger)] font-semibold text-[10px]">Очистить все диалоги?</span>

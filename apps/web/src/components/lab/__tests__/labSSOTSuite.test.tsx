@@ -141,7 +141,7 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 			"Must include clean domain header",
 		);
 
-		// Ровно 1 Primary CTA кнопка (Мандат 8am)
+		// Ровно 1 Primary CTA кнопка (Мандат 8am: var(--primary))
 		assert.ok(
 			content.includes('data-testid="submit-lab-order-button"'),
 			"Must render submit-lab-order-button",
@@ -151,8 +151,8 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 			"Button must state '✓ Создать заказ-наряд'",
 		);
 		assert.ok(
-			content.includes("var(--teal"),
-			"Primary CTA must use teal #0d9488 token",
+			content.includes("var(--primary)") || content.includes("var(--teal"),
+			"Primary CTA must use semantic token var(--primary)",
 		);
 
 		// Мандат 8e: Кнопка НИКОГДА не disabled

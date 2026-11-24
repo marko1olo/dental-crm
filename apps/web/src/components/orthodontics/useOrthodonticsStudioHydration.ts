@@ -173,12 +173,12 @@ export function useOrthodonticsStudioHydration(
 							}
 
 							// Сохранение обратной совместимости на случай плоских свойств
-							if (typeof (ca as { sna?: number }).sna === "number") extracted.sna = (ca as { sna: number }).sna;
-							if (typeof (ca as { snb?: number }).snb === "number") extracted.snb = (ca as { snb: number }).snb;
-							if (typeof (ca as { anb?: number }).anb === "number") extracted.anb = (ca as { anb: number }).anb;
-							if (typeof (ca as { u1NaDeg?: number }).u1NaDeg === "number") extracted.u1_na = (ca as { u1NaDeg: number }).u1NaDeg;
-							if (typeof (ca as { l1NbDeg?: number }).l1NbDeg === "number") extracted.l1_nb = (ca as { l1NbDeg: number }).l1NbDeg;
-							if (typeof (ca as { fmaDeg?: number }).fmaDeg === "number") extracted.fma = (ca as { fmaDeg: number }).fmaDeg;
+							if (typeof ca.sna === "number") extracted.sna = ca.sna;
+							if (typeof ca.snb === "number") extracted.snb = ca.snb;
+							if (typeof ca.anb === "number") extracted.anb = ca.anb;
+							if (typeof ca.u1NaDeg === "number") extracted.u1_na = ca.u1NaDeg;
+							if (typeof ca.l1NbDeg === "number") extracted.l1_nb = ca.l1NbDeg;
+							if (typeof ca.fmaDeg === "number") extracted.fma = ca.fmaDeg;
 
 							if (Object.keys(extracted).length > 0) {
 								setProtocol((prev) => ({
@@ -253,7 +253,7 @@ export function useOrthodonticsStudioHydration(
 					setCephStudy(study);
 					onCephStudyLoaded?.(study);
 				}
-				const mList = study?.measurements || (study?.analysis && "measurements" in study.analysis ? (study.analysis as { measurements?: RawCephMeasurement[] }).measurements : undefined);
+				const mList = study?.measurements || (study?.analysis && "measurements" in study.analysis ? study.analysis.measurements : undefined);
 				if (Array.isArray(mList) && mList.length > 0) {
 					const vals = parseCephMeasurementsArray(mList);
 					if (Object.keys(vals).length > 0) {

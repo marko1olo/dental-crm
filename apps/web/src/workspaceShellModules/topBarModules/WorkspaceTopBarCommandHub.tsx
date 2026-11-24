@@ -129,7 +129,7 @@ export function WorkspaceTopBarCommandHub() {
 				onClick={handleMicClick}
 				className={`btn-header-voice-search h-9 w-9 min-w-[36px] flex items-center justify-center rounded-lg border transition-all cursor-pointer ${
 					isRecording
-						? "bg-[var(--danger-soft,rgba(239,68,68,0.12))] border-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] animate-pulse"
+						? "bg-[var(--danger-soft)] border-[var(--danger)] text-[var(--danger)] animate-pulse"
 						: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--teal)]"
 				}`}
 				data-testid="btn-header-voice-search"

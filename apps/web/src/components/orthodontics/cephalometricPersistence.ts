@@ -4,7 +4,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
-import type { LandmarkMap, CephalometricAnalysisResult } from "./cephalometric";
+import type { LandmarkMap, CephalometricAnalysisResult, CephalometricMeasurement } from "./cephalometric";
 
 export interface CephalometricSavedStudy {
 	id: string;
@@ -14,6 +14,7 @@ export interface CephalometricSavedStudy {
 	landmarks?: LandmarkMap | undefined;
 	scaleMmPerPixel?: number | undefined;
 	analysis?: CephalometricAnalysisResult | undefined;
+	measurements?: CephalometricMeasurement[] | undefined;
 	source?: string | undefined;
 	backendUsed?: string | undefined;
 	isCalibratedFallback?: boolean | undefined;

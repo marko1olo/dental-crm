@@ -186,7 +186,8 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 					<button
 						type="button"
 						onClick={onFastPrintMedicalCard ?? onFastPrint043u}
-						data-testid="btn-visit-consents-print-043u"
+						data-testid="btn-visit-consents-print-medical-card"
+						data-legacy-testid="btn-visit-consents-print-043u"
 						className="vct-btn vct-btn-secondary"
 						title="Печать полного дневника приёма (медицинская карта)"
 						aria-label="Печать медицинской карты"

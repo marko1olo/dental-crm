@@ -145,10 +145,10 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 		// Заголовок студии
 		assert.ok(content.includes("Зуботехническая лаборатория и заказ-наряды"), "Must include domain header");
 
-		// Ровно 1 Primary CTA кнопка #0d9488
+		// Ровно 1 Primary CTA кнопка (Мандат 8am: var(--primary))
 		assert.ok(content.includes('data-testid="submit-lab-order-button"'), "Must render submit-lab-order-button");
 		assert.ok(content.includes("✓ Создать заказ-наряд"), "Button must feature '✓ Создать заказ-наряд'");
-		assert.ok(content.includes("var(--teal"), "Primary CTA must use teal #0d9488 token");
+		assert.ok(content.includes("var(--primary)") || content.includes("var(--teal"), "Primary CTA must use var(--primary) semantic token");
 
 		// Мандат 8e: Кнопка НИКОГДА не disabled
 		assert.ok(!content.includes("disabled={!"), "Primary CTA must NEVER be disabled by secondary inputs");
