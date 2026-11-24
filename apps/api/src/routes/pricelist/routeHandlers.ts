@@ -34,6 +34,22 @@ export {
 	handleBatchReprice,
 };
 
+const pricelistMutationRouteOptions = {
+	schema: {
+		description:
+			"Pricelist mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				"organizationid": { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+};
+
 /**
  * Регистрация маршрутов прейскуранта.
  */
@@ -49,7 +65,7 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 	app.get("/api/pricelist/:serviceId", handleGetCatalogItem);
 	app.put("/api/pricelist/:serviceId", handleUpdateCatalogItem);
 	app.patch("/api/pricelist/:serviceId", handleUpdateCatalogItem);
-	app.delete("/api/pricelist/:serviceId", handleDeactivateCatalogItem);
+	app.delete("/api/pricelist/:serviceId", pricelistMutationRouteOptions, handleDeactivateCatalogItem);
 
 	// BOM / Техкарты списания материалов (Мандаты 8b, 8aa)
 	app.get("/api/pricelist/:serviceId/bom", handleGetServiceBom);

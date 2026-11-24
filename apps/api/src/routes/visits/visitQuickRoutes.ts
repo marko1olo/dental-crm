@@ -112,6 +112,22 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.post("/api/visits/quick", quickVisitHandler);
-	app.post("/api/visits/fast", quickVisitHandler);
+	const quickVisitRouteOptions = {
+		schema: {
+			description:
+				"Fast visit creation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					"organizationid": { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/visits/quick", quickVisitRouteOptions, quickVisitHandler);
+	app.post("/api/visits/fast", quickVisitRouteOptions, quickVisitHandler);
 }

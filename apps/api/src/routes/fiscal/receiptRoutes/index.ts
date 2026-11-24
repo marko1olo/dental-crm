@@ -45,10 +45,11 @@ export async function registerFiscalReceiptRoutes(
 				"Fiscal mutation endpoint with mandatory Idempotency-Key and organizationId isolation",
 			headers: {
 				type: "object",
-				required: ["idempotency-key"],
 				properties: {
 					"idempotency-key": { type: "string" },
 					"x-idempotency-key": { type: "string" },
+					"organizationid": { type: "string" },
+					"x-organization-id": { type: "string" },
 				},
 			},
 		},
