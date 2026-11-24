@@ -4,7 +4,7 @@ import { z } from "zod";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { withTenantCtx } from "../../../db/rls.js";
 import { getLabOrderByToken } from "../../../db/labQuery.js";
-import { idempotencyKeys, labOrders } from "../../../db/schema.js";
+import { labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import {
 	sanitizeClinicalNotesForTechnician,
@@ -82,7 +82,7 @@ export async function handleGetPortalOrder(
 const photoBodySchema = z.object({
 	photoUrl: z.string().trim().max(500000).optional(),
 	attachedImageUrl: z.string().trim().max(500000).optional(),
-});
+}).strict();
 
 export async function handlePostPortalOrderPhoto(
 	request: FastifyRequest<{ Params: { token: string } }>,
@@ -152,19 +152,6 @@ export async function handlePostPortalOrderPhoto(
 						eq(labOrders.organizationId, order.organizationId),
 					),
 				);
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: order.organizationId,
-						key: idempotencyKey,
-						status: "completed",
-						responseCode: 200,
-						responseBody: { success: true, attachedImageUrl: photoUrl },
-					})
-					.onConflictDoNothing();
-			}
 		});
 
 		wsBroker.broadcastToOrganization(order.organizationId, {

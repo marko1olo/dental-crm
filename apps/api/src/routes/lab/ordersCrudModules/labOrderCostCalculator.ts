@@ -93,7 +93,6 @@ export async function fetchLabPriceFromDb(
 	try {
 		const [historicalItem] = await tx
 			.select({
-				priceRub: labItems.priceRub,
 				priceKopecks: labItems.priceKopecks,
 				material: labItems.material,
 			})
@@ -111,11 +110,7 @@ export async function fetchLabPriceFromDb(
 			.limit(1);
 
 		if (historicalItem) {
-			const itemKopecks = historicalItem.priceKopecks != null
-				? Number(historicalItem.priceKopecks)
-				: historicalItem.priceRub != null
-					? rublesToKopecks(Number(historicalItem.priceRub))
-					: 0;
+			const itemKopecks = Number(historicalItem.priceKopecks ?? 0);
 			if (itemKopecks > 0) {
 				const resolvedRub = kopecksToRubles(itemKopecks);
 				return { costRub: resolvedRub, priceRub: resolvedRub };

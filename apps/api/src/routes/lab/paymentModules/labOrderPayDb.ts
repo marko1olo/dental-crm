@@ -60,7 +60,7 @@ export async function executeLabOrderPayment(
 					kind: "ok" as const,
 					operation: existingOp,
 					labOrder: order,
-					amountKopecks: rubToKopecks(existingOp.amountRub),
+					amountKopecks: Number(existingOp.amountKopecks ?? 0),
 					isReplay: true,
 				};
 			}
@@ -77,11 +77,7 @@ export async function executeLabOrderPayment(
 				? Number(order.labCostKopecks)
 				: order.labCostRub != null && Number(order.labCostRub) > 0
 					? rubToKopecks(Number(order.labCostRub))
-					: order.priceKopecks != null && Number(order.priceKopecks) > 0
-						? Number(order.priceKopecks)
-						: order.priceRub != null && Number(order.priceRub) > 0
-							? rubToKopecks(Number(order.priceRub))
-							: 0;
+					: 0;
 
 		if (orderCostKopecks <= 0 || amountToPayKopecks > orderCostKopecks) {
 			return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks: orderCostKopecks };

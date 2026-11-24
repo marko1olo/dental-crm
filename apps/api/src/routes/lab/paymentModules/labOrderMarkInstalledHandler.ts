@@ -7,12 +7,12 @@ import { executeLabOrderMarkInstalled } from "./labOrderMarkInstalledDb.js";
 
 const markInstalledParamsSchema = z.object({
 	id: z.string().uuid("Идентификатор наряда ЗТЛ должен быть корректным UUID"),
-});
+}).strict();
 
 const markInstalledBodySchema = z.object({
 	clinicalNotes: z.string().trim().max(1000).optional(),
 	doctorId: z.string().uuid().optional(),
-});
+}).strict();
 
 export async function labOrderMarkInstalledHandler(
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -55,8 +55,15 @@ export async function labOrderMarkInstalledHandler(
 		});
 	}
 
-	const parsed = markInstalledBodySchema.safeParse(request.body || {});
-	const data = parsed.success ? parsed.data : {};
+	const parsed = markInstalledBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры фиксации наряда ЗТЛ.",
+			details: parsed.error.issues,
+		});
+	}
+	const data = parsed.data;
 
 	const result = await executeLabOrderMarkInstalled(orgId, paramsParsed.data.id, {
 		...data,

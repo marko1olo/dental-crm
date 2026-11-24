@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { calculateWarrantyTerms, generateProstheticWarrantyPassport, generateUuidV7, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -116,6 +116,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 							eq(inventoryTransactions.visitId, order.appointmentId),
 						),
 					)
+					.orderBy(desc(inventoryTransactions.createdAt))
 					.limit(1);
 				if (txBatch?.batchNumber) {
 					realBatchNumber = txBatch.batchNumber;
@@ -136,6 +137,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 								ilike(inventoryItems.name, `%${targetMat.slice(0, 8)}%`),
 							),
 						)
+						.orderBy(asc(stockBatches.expirationDate), asc(stockBatches.createdAt))
 						.limit(1);
 					if (matchedBatch?.batchNumber) {
 						realBatchNumber = matchedBatch.batchNumber;

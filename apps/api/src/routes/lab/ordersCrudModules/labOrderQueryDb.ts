@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { rublesToKopecks, kopecksToNumericString } from "@dental/shared";
+import { kopecksToNumericString } from "@dental/shared";
 import type { TenantDb } from "../../../db/rls.js";
 import { labOrders, patients, users } from "../../../db/schema.js";
 
@@ -33,9 +33,7 @@ export async function selectLabOrdersQuery(
 			clinicalNotes: labOrders.clinicalNotes,
 			labComments: labOrders.labComments,
 			attachedImageUrl: labOrders.attachedImageUrl,
-			priceRub: labOrders.priceRub,
 			priceKopecks: labOrders.priceKopecks,
-			labCostRub: labOrders.labCostRub,
 			labCostKopecks: labOrders.labCostKopecks,
 			isWarranty: labOrders.isWarranty,
 			parentLabOrderId: labOrders.parentLabOrderId,
@@ -64,12 +62,8 @@ export async function selectLabOrdersQuery(
 		.orderBy(desc(labOrders.createdAt));
 
 	return rows.map((r) => {
-		const finalPriceKopecks = r.priceKopecks != null
-			? Number(r.priceKopecks)
-			: (r.priceRub != null ? rublesToKopecks(r.priceRub) : 0);
-		const finalLabCostKopecks = r.labCostKopecks != null
-			? Number(r.labCostKopecks)
-			: (r.labCostRub != null ? rublesToKopecks(r.labCostRub) : 0);
+		const finalPriceKopecks = Number(r.priceKopecks ?? 0);
+		const finalLabCostKopecks = Number(r.labCostKopecks ?? 0);
 
 		return {
 			...r,

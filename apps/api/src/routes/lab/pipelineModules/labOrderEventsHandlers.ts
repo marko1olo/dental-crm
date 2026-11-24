@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
+import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { createLabOrderEventSchema } from "../types.js";
@@ -122,19 +122,6 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 				cadPreviewGlbUrl: body.cadPreviewGlbUrl ?? null,
 			})
 			.returning();
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseCode: 201,
-					responseBody: { success: true, event: ev as Record<string, unknown> },
-				})
-				.onConflictDoNothing();
-		}
 
 		return { kind: "ok" as const, event: ev };
 	});

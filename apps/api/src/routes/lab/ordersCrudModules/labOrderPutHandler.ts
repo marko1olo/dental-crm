@@ -1,9 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { computePayloadHash, isValidUuid } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -68,84 +66,8 @@ export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id:
 	const updateData = parsed.data;
 
 	const result = await withTenantCtx(orgId, async (tx) => {
-		if (idempotencyKey) {
-			const [existingKey] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.for("update");
-
-			if (existingKey) {
-				if (existingKey.status === "completed" && existingKey.responseBody) {
-					return {
-						kind: "replayed" as const,
-						responseCode: existingKey.responseCode || 200,
-						responseBody: existingKey.responseBody,
-					};
-				}
-				if (existingKey.status === "in_flight") {
-					return { kind: "conflict_in_flight" as const };
-				}
-			} else {
-				await tx.insert(idempotencyKeys).values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					payloadHash: computePayloadHash(request.body ?? {}),
-				});
-			}
-		}
-
-		const updateRes = await updateLabOrderInDb(tx, orgId, id, updateData);
-
-		if (updateRes.kind === "ok" && updateRes.updated) {
-			if (idempotencyKey) {
-				await tx
-					.update(idempotencyKeys)
-					.set({
-						status: "completed",
-						responseCode: 200,
-						responseBody: { success: true, data: updateRes.updated, ...updateRes.updated } as Record<string, unknown>,
-					})
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					);
-			}
-		} else if (idempotencyKey) {
-			await tx
-				.delete(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				);
-		}
-
-		return updateRes;
+		return updateLabOrderInDb(tx, orgId, id, updateData);
 	});
-
-	if (result.kind === "replayed") {
-		reply.header("Idempotency-Key", idempotencyKey);
-		reply.header("idempotency-replayed", "true");
-		reply.header("x-idempotency-replayed", "true");
-		return reply.code(result.responseCode).send(result.responseBody);
-	}
-
-	if (result.kind === "conflict_in_flight") {
-		return reply.code(409).header("Retry-After", "1").send({
-			error: "Conflict",
-			message: "Операция обновления наряда ЗТЛ с данным Idempotency-Key уже выполняется.",
-		});
-	}
 
 	if (result.kind === "not_found") {
 		return reply.code(404).send({ error: "LabOrderNotFound", message: "Заказ ЗТЛ не найден." });

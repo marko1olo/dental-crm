@@ -138,14 +138,14 @@ export async function updateLabOrderInDb(
 			: updateData.priceKopecks;
 
 	if (rawUpdatePatientKopecks !== undefined || updateData.patientPriceRub !== undefined || updateData.priceRub !== undefined) {
-		const effectivePriceKopecks: number | null = rawUpdatePatientKopecks !== undefined
-			? (rawUpdatePatientKopecks === null ? null : Math.round(Number(rawUpdatePatientKopecks)))
+		const effectivePriceKopecks: number = rawUpdatePatientKopecks !== undefined
+			? (rawUpdatePatientKopecks === null ? 0 : Math.round(Number(rawUpdatePatientKopecks)))
 			: updateData.patientPriceRub !== undefined
-				? (updateData.patientPriceRub === null ? null : rublesToKopecks(Number(updateData.patientPriceRub)))
-				: (updateData.priceRub === null ? null : rublesToKopecks(Number(updateData.priceRub!)));
+				? (updateData.patientPriceRub === null ? 0 : rublesToKopecks(Number(updateData.patientPriceRub)))
+				: (updateData.priceRub == null ? 0 : rublesToKopecks(Number(updateData.priceRub)));
 
 		updatePayload.priceKopecks = effectivePriceKopecks;
-		updatePayload.priceRub = effectivePriceKopecks === null ? null : kopecksToNumericString(effectivePriceKopecks);
+		updatePayload.priceRub = kopecksToNumericString(effectivePriceKopecks);
 	}
 
 	const rawUpdateLabCostKopecks = updateData.labCostKopecks !== undefined
@@ -153,14 +153,14 @@ export async function updateLabOrderInDb(
 		: updateData.costKopecks;
 
 	if (rawUpdateLabCostKopecks !== undefined || updateData.labCostRub !== undefined || updateData.costRub !== undefined) {
-		const effectiveCostKopecks: number | null = rawUpdateLabCostKopecks !== undefined
-			? (rawUpdateLabCostKopecks === null ? null : Math.round(Number(rawUpdateLabCostKopecks)))
+		const effectiveCostKopecks: number = rawUpdateLabCostKopecks !== undefined
+			? (rawUpdateLabCostKopecks === null ? 0 : Math.round(Number(rawUpdateLabCostKopecks)))
 			: updateData.labCostRub !== undefined
-				? (updateData.labCostRub === null ? null : rublesToKopecks(Number(updateData.labCostRub)))
-				: (updateData.costRub === null ? null : rublesToKopecks(Number(updateData.costRub!)));
+				? (updateData.labCostRub === null ? 0 : rublesToKopecks(Number(updateData.labCostRub)))
+				: (updateData.costRub == null ? 0 : rublesToKopecks(Number(updateData.costRub)));
 
 		updatePayload.labCostKopecks = effectiveCostKopecks;
-		updatePayload.labCostRub = effectiveCostKopecks === null ? null : kopecksToNumericString(effectiveCostKopecks);
+		updatePayload.labCostRub = kopecksToNumericString(effectiveCostKopecks);
 	}
 
 	if (targetStatus !== undefined) updatePayload.status = toLabOrderStatus(targetStatus);
@@ -179,16 +179,8 @@ export async function updateLabOrderInDb(
 		return { kind: "not_found" as const };
 	}
 
-	const enrichedPriceKopecks = updated.priceKopecks != null
-		? Number(updated.priceKopecks)
-		: updated.priceRub != null
-			? rublesToKopecks(updated.priceRub)
-			: 0;
-	const enrichedLabCostKopecks = updated.labCostKopecks != null
-		? Number(updated.labCostKopecks)
-		: updated.labCostRub != null
-			? rublesToKopecks(updated.labCostRub)
-			: 0;
+	const enrichedPriceKopecks = Number(updated.priceKopecks ?? 0);
+	const enrichedLabCostKopecks = Number(updated.labCostKopecks ?? 0);
 
 	const enriched = {
 		...updated,

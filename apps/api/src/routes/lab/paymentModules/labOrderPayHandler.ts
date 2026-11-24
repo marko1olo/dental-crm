@@ -7,14 +7,14 @@ import { executeLabOrderPayment } from "./labOrderPayDb.js";
 
 const payParamsSchema = z.object({
 	id: z.string().uuid("Идентификатор наряда ЗТЛ должен быть корректным UUID"),
-});
+}).strict();
 
 const payBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
 	amountRub: positiveMoneyRubSchema.optional(),
 	amountKopecks: z.union([z.number().int().positive(), z.bigint()]).optional(),
 	notes: z.string().trim().max(500).optional(),
-});
+}).strict();
 
 export async function labOrderPayHandler(
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -45,8 +45,15 @@ export async function labOrderPayHandler(
 		});
 	}
 
-	const parsed = payBodySchema.safeParse(request.body || {});
-	const payData = parsed.success ? parsed.data : {};
+	const parsed = payBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры оплаты наряда ЗТЛ.",
+			details: parsed.error.issues,
+		});
+	}
+	const payData = parsed.data;
 
 	const result = await executeLabOrderPayment(orgId, paramsParsed.data.id, {
 		...payData,

@@ -34,7 +34,6 @@ export async function recalculateLabOrderFromItemsTx(
 			id: labItems.id,
 			toothFdi: labItems.toothFdi,
 			priceKopecks: labItems.priceKopecks,
-			priceRub: labItems.priceRub,
 		})
 		.from(labItems)
 		.where(and(eq(labItems.organizationId, orgId), eq(labItems.labOrderId, labOrderId)))
@@ -43,15 +42,7 @@ export async function recalculateLabOrderFromItemsTx(
 	const uniqueTeeth = Array.from(new Set(allItems.map((it) => it.toothFdi))).sort((a, b) => a - b);
 	const teethFdi = uniqueTeeth.length > 0 ? uniqueTeeth.join(",") : null;
 
-	const sumPriceKopecks = allItems.reduce((acc, it) => {
-		const kop =
-			it.priceKopecks != null
-				? Number(it.priceKopecks)
-				: it.priceRub != null
-					? rublesToKopecks(Number(it.priceRub))
-					: 0;
-		return acc + kop;
-	}, 0);
+	const sumPriceKopecks = allItems.reduce((acc, it) => acc + Number(it.priceKopecks ?? 0), 0);
 
 	const priceKopecks = order.isWarranty ? 0 : sumPriceKopecks;
 	const priceRub = order.isWarranty ? 0 : kopecksToRubles(sumPriceKopecks);
@@ -81,7 +72,7 @@ export async function insertLabItemTx(
 			? Number(body.priceKopecks)
 			: body.priceRub != null
 				? rublesToKopecks(body.priceRub)
-				: null;
+				: 0;
 
 	const [createdItem] = await tx
 		.insert(labItems)
@@ -102,12 +93,7 @@ export async function insertLabItemTx(
 			implantSystem: body.implantSystem ?? null,
 			implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
 			tiBaseHeightMm: body.tiBaseHeightMm ?? null,
-			priceRub:
-				computedPriceKopecks != null
-					? kopecksToNumericString(computedPriceKopecks)
-					: body.priceRub
-						? String(body.priceRub)
-						: null,
+			priceRub: kopecksToNumericString(computedPriceKopecks),
 			priceKopecks: computedPriceKopecks,
 		})
 		.returning();
@@ -151,10 +137,9 @@ export async function updateLabItemTx(
 				? Number(body.priceKopecks)
 				: body.priceRub != null
 					? rublesToKopecks(body.priceRub)
-					: null;
+					: 0;
 		updatePayload.priceKopecks = computedPriceKopecks;
-		updatePayload.priceRub =
-			computedPriceKopecks != null ? kopecksToNumericString(computedPriceKopecks) : null;
+		updatePayload.priceRub = kopecksToNumericString(computedPriceKopecks);
 	}
 
 

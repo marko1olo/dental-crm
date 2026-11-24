@@ -12,7 +12,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
+import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -21,7 +21,7 @@ const pipelineStageBodySchema = z.object({
 	stage: labPipelineStageKeySchema,
 	notes: z.string().trim().max(1000).optional().nullable(),
 	scheduledDate: z.string().optional().nullable(),
-});
+}).strict();
 
 export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(
@@ -114,19 +114,6 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 			actorName: "Врач-ортопед",
 			notes: notes ?? null,
 		});
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseCode: 200,
-					responseBody: { success: true, stage, orderId: id },
-				})
-				.onConflictDoNothing();
-		}
 
 		return { kind: "ok" as const, updated };
 	});

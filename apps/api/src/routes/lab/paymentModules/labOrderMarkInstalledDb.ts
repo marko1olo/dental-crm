@@ -4,7 +4,6 @@ import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import {
-	idempotencyKeys,
 	labItems,
 	labOrderEvents,
 	labOrders,
@@ -231,20 +230,6 @@ export async function executeLabOrderMarkInstalled(
 				{ err: writeoffErr },
 				"[labOrderMarkInstalled] Не удалось списать материал",
 			);
-		}
-
-		// Атомарная фиксация ключа идемпотентности внутри транзакции
-		if (input.idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: input.idempotencyKey,
-					status: "completed",
-					responseCode: 200,
-					responseBody: { labOrderId: order.id, status: "completed" },
-				})
-				.onConflictDoNothing();
 		}
 
 		return { kind: "ok" as const, labOrder: updated };

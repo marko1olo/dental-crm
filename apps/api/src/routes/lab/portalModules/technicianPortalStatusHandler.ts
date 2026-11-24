@@ -8,7 +8,7 @@ import {
 	type LabOrderStatus,
 } from "../../../db/labQuery.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys, labOrderEvents, labOrders } from "../../../db/schema.js";
+import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { mapStageOrStatusToMilestone } from "../types.js";
 import { validateLabGuestPortalToken } from "./labPortalTokenSecurity.js";
@@ -45,7 +45,7 @@ const technicianAllowedStatuses = z.enum([
 const portalStatusBodySchema = z.object({
 	status: technicianAllowedStatuses,
 	labComments: z.string().trim().max(1000).optional().nullable(),
-});
+}).strict();
 
 export async function handlePostPortalOrderStatus(
 	request: FastifyRequest<{ Params: { token: string } }>,
@@ -146,19 +146,6 @@ export async function handlePostPortalOrderStatus(
 				notes: labComments || `Статус изменен лабораторией: ${targetStatus}`,
 				photoUrls: [],
 			});
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: order.organizationId,
-						key: idempotencyKey,
-						status: "completed",
-						responseCode: 200,
-						responseBody: { success: true, status: targetStatus },
-					})
-					.onConflictDoNothing();
-			}
 
 			return res;
 		});

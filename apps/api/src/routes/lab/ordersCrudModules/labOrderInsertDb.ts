@@ -311,7 +311,7 @@ export async function insertLabOrderInDb(
 	// [LAB-04]: Нормализация зубов и запись в lab_items
 	if (Array.isArray(data.items) && data.items.length > 0) {
 		for (const item of data.items) {
-			const itemKopecks = item.priceKopecks != null ? Math.round(Number(item.priceKopecks)) : item.priceRub != null ? rublesToKopecks(item.priceRub) : null;
+			const itemKopecks = item.priceKopecks != null ? Math.round(Number(item.priceKopecks)) : item.priceRub != null ? rublesToKopecks(item.priceRub) : 0;
 			await tx.insert(labItems).values({
 				organizationId: orgId,
 				labOrderId: createdOrder.id,
@@ -329,8 +329,8 @@ export async function insertLabOrderInDb(
 				implantSystem: item.implantSystem ?? null,
 				implantPlatformDiameterMm: item.implantPlatformDiameterMm ?? null,
 				tiBaseHeightMm: item.tiBaseHeightMm ?? null,
-				priceRub: itemKopecks != null ? kopecksToNumericString(itemKopecks) : null,
-				priceKopecks: itemKopecks != null ? itemKopecks : null,
+				priceRub: kopecksToNumericString(itemKopecks),
+				priceKopecks: itemKopecks,
 			});
 		}
 	} else if (effectiveToothFdi != null) {
