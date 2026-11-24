@@ -15,6 +15,8 @@ export interface GenerateParentMemoTextParams {
 	readonly parsedFissureTeeth: readonly number[];
 	readonly hasSilvering: boolean;
 	readonly parsedSilveringTeeth: readonly number[];
+	readonly hasTrauma?: boolean | undefined;
+	readonly hasSpaceMaintainer?: boolean | undefined;
 	readonly customNotes: string;
 	readonly hasAnesthesia: boolean;
 }
@@ -31,6 +33,8 @@ export function buildParentMemoText({
 	parsedFissureTeeth,
 	hasSilvering,
 	parsedSilveringTeeth,
+	hasTrauma = false,
+	hasSpaceMaintainer = false,
 	customNotes,
 	hasAnesthesia,
 }: GenerateParentMemoTextParams): string {
@@ -47,6 +51,8 @@ export function buildParentMemoText({
 		silvering: hasSilvering
 			? { teethNumbers: parsedSilveringTeeth.length > 0 ? (parsedSilveringTeeth as number[]) : [51, 52, 61, 62] }
 			: undefined,
+		traumaIadt: hasTrauma ? { notes: "Шинирование и стабилизация зуба" } : undefined,
+		spaceMaintainer: hasSpaceMaintainer ? { notes: "Кольцо-петля" } : undefined,
 		customNotes: customNotes.trim() || undefined,
 	});
 

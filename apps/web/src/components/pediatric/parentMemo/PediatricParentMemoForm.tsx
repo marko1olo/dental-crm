@@ -19,6 +19,10 @@ interface PediatricParentMemoFormProps {
 	readonly setHasSilvering: (v: boolean) => void;
 	readonly silveringTeeth: string;
 	readonly setSilveringTeeth: (s: string) => void;
+	readonly hasTrauma?: boolean | undefined;
+	readonly setHasTrauma?: ((v: boolean) => void) | undefined;
+	readonly hasSpaceMaintainer?: boolean | undefined;
+	readonly setHasSpaceMaintainer?: ((v: boolean) => void) | undefined;
 	readonly customNotes: string;
 	readonly setCustomNotes: (s: string) => void;
 }
@@ -40,6 +44,10 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 	setHasSilvering,
 	silveringTeeth,
 	setSilveringTeeth,
+	hasTrauma = false,
+	setHasTrauma,
+	hasSpaceMaintainer = false,
+	setHasSpaceMaintainer,
 	customNotes,
 	setCustomNotes,
 }) => {
@@ -87,6 +95,26 @@ export const PediatricParentMemoForm: React.FC<PediatricParentMemoFormProps> = (
 						data-testid="memo-checkbox-silvering"
 					/>
 					<span>Серебрение / Фторирование ({silveringTeeth})</span>
+				</label>
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
+					<input
+						type="checkbox"
+						checked={hasTrauma}
+						onChange={(e) => setHasTrauma?.(e.target.checked)}
+						className="rounded accent-[var(--primary)] w-4 h-4"
+						data-testid="memo-checkbox-trauma"
+					/>
+					<span>Острая травма зубов IADT (щадящая диета 14 дней, гигиена, календарь явок)</span>
+				</label>
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)]">
+					<input
+						type="checkbox"
+						checked={hasSpaceMaintainer}
+						onChange={(e) => setHasSpaceMaintainer?.(e.target.checked)}
+						className="rounded accent-[var(--primary)] w-4 h-4"
+						data-testid="memo-checkbox-space-maintainer"
+					/>
+					<span>Удерживатель места / кольцо-петля (запрет липких сладостей, контроль фиксации)</span>
 				</label>
 			</div>
 

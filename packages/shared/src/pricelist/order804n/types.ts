@@ -19,6 +19,7 @@ export interface StatutoryNomenclatureEntry {
 	readonly primaryKeywords: readonly RegExp[];
 	readonly secondaryKeywords: readonly RegExp[];
 	readonly defaultPriceRub: number;
+	readonly defaultPriceKopecks?: bigint | undefined;
 	readonly defaultDurationMinutes: number;
 	readonly taxDeductible: boolean;
 }

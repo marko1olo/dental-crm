@@ -27,6 +27,8 @@ export interface PediatricParentMemoModalProps {
 	initialSilvering?: PediatricSilveringOptions | undefined;
 	initialFissureSealing?: PediatricFissureSealingOptions | undefined;
 	initialPulpotomy?: PediatricPulpotomyOptions | undefined;
+	initialTrauma?: boolean | undefined;
+	initialSpaceMaintainer?: boolean | undefined;
 	onApplyFrankl?: ((rating: FranklRating, note?: string) => void) | undefined;
 	onBack?: (() => void) | undefined;
 }
@@ -45,6 +47,8 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	initialSilvering,
 	initialFissureSealing,
 	initialPulpotomy,
+	initialTrauma = false,
+	initialSpaceMaintainer = false,
 	onApplyFrankl,
 }) => {
 	const [frankl, setFrankl] = useState<FranklRating>(initialFrankl);
@@ -55,13 +59,31 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	const [fissureTeeth, setFissureTeeth] = useState<string>((initialFissureSealing?.teethNumbers ?? [16, 26, 36, 46]).join(", "));
 	const [hasSilvering, setHasSilvering] = useState<boolean>(Boolean(initialSilvering));
 	const [silveringTeeth, setSilveringTeeth] = useState<string>((initialSilvering?.teethNumbers ?? [51, 52, 61, 62]).join(", "));
+	const [hasTrauma, setHasTrauma] = useState<boolean>(initialTrauma);
+	const [hasSpaceMaintainer, setHasSpaceMaintainer] = useState<boolean>(initialSpaceMaintainer);
 	const [customNotes, setCustomNotes] = useState<string>("");
 
 	const memoText = useMemo(() => {
 		const parsedFissure = fissureTeeth.split(",").map((s) => Number.parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n));
 		const parsedSilvering = silveringTeeth.split(",").map((s) => Number.parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n));
-		return buildParentMemoText({ patientName, patientAgeYears, clinicName, doctorName, frankl, hasPulpotomy, pulpotomyTooth, hasFissureSealing, parsedFissureTeeth: parsedFissure, hasSilvering, parsedSilveringTeeth: parsedSilvering, customNotes, hasAnesthesia });
-	}, [customNotes, doctorName, clinicName, fissureTeeth, frankl, hasAnesthesia, hasFissureSealing, hasPulpotomy, hasSilvering, patientAgeYears, patientName, pulpotomyTooth, silveringTeeth]);
+		return buildParentMemoText({
+			patientName,
+			patientAgeYears,
+			clinicName,
+			doctorName,
+			frankl,
+			hasPulpotomy,
+			pulpotomyTooth,
+			hasFissureSealing,
+			parsedFissureTeeth: parsedFissure,
+			hasSilvering,
+			parsedSilveringTeeth: parsedSilvering,
+			hasTrauma,
+			hasSpaceMaintainer,
+			customNotes,
+			hasAnesthesia,
+		});
+	}, [customNotes, doctorName, clinicName, fissureTeeth, frankl, hasAnesthesia, hasFissureSealing, hasPulpotomy, hasSilvering, hasTrauma, hasSpaceMaintainer, patientAgeYears, patientName, pulpotomyTooth, silveringTeeth]);
 
 	const persistParentMemo = useCallback(async () => {
 		if (!patientId || !patientId.trim()) return;
@@ -138,7 +160,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	if (!isOpen) return null;
 
 	const content = (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+		<div className="fixed inset-0 z-[10060] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
 			<div className="relative w-full max-w-2xl rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto">
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
 					<h3 className="text-base sm:text-lg font-semibold text-[var(--ink)]">Памятка родителям после приёма</h3>
@@ -146,7 +168,30 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						<X className="h-5 w-5" />
 					</button>
 				</div>
-				<PediatricParentMemoForm frankl={frankl} setFrankl={setFrankl} hasAnesthesia={hasAnesthesia} setHasAnesthesia={setHasAnesthesia} hasPulpotomy={hasPulpotomy} setHasPulpotomy={setHasPulpotomy} pulpotomyTooth={pulpotomyTooth} setPulpotomyTooth={setPulpotomyTooth} hasFissureSealing={hasFissureSealing} setHasFissureSealing={setHasFissureSealing} fissureTeeth={fissureTeeth} setFissureTeeth={setFissureTeeth} hasSilvering={hasSilvering} setHasSilvering={setHasSilvering} silveringTeeth={silveringTeeth} setSilveringTeeth={setSilveringTeeth} customNotes={customNotes} setCustomNotes={setCustomNotes} />
+				<PediatricParentMemoForm
+					frankl={frankl}
+					setFrankl={setFrankl}
+					hasAnesthesia={hasAnesthesia}
+					setHasAnesthesia={setHasAnesthesia}
+					hasPulpotomy={hasPulpotomy}
+					setHasPulpotomy={setHasPulpotomy}
+					pulpotomyTooth={pulpotomyTooth}
+					setPulpotomyTooth={setPulpotomyTooth}
+					hasFissureSealing={hasFissureSealing}
+					setHasFissureSealing={setHasFissureSealing}
+					fissureTeeth={fissureTeeth}
+					setFissureTeeth={setFissureTeeth}
+					hasSilvering={hasSilvering}
+					setHasSilvering={setHasSilvering}
+					silveringTeeth={silveringTeeth}
+					setSilveringTeeth={setSilveringTeeth}
+					hasTrauma={hasTrauma}
+					setHasTrauma={setHasTrauma}
+					hasSpaceMaintainer={hasSpaceMaintainer}
+					setHasSpaceMaintainer={setHasSpaceMaintainer}
+					customNotes={customNotes}
+					setCustomNotes={setCustomNotes}
+				/>
 				<PediatricParentMemoFooter onCopy={handleCopy} onWhatsApp={handleWhatsApp} onTelegram={handleTelegram} onPrint={handlePrint} />
 			</div>
 		</div>

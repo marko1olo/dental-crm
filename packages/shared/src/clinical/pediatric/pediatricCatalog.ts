@@ -6,4 +6,4 @@
  */
 
 export * from "../../pricelist/order804n/pediatricCatalog.js";
-export { PEDIATRIC_804N_CATALOG } from "../../pricelist/order804n/pediatricCatalog.js";
+export { PEDIATRIC_804N_CATALOG, ORDER_804N_PEDIATRIC_SERVICES } from "../../pricelist/order804n/pediatricCatalog.js";

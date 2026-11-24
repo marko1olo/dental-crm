@@ -513,7 +513,7 @@ export const visitAttendanceCertificatePayloadSchema = z.object({
 	signedByRole: z.string().trim().min(1).max(160),
 	diagnosisDisclosureExcluded: z.literal(true),
 	notSickLeaveAcknowledged: z.literal(true),
-});
+}).strict();
 
 export type VisitAttendanceCertificatePayload = z.infer<
 	typeof visitAttendanceCertificatePayloadSchema

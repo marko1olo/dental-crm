@@ -9,7 +9,7 @@ import {
 
 describe("VisitPediatricProtocolWidget Presets & Metadata Completeness", () => {
 	it("verifies PEDIATRIC_PROTOCOL_PRESETS metadata completeness (Zero TODOs, 100% typed)", () => {
-		assert.strictEqual(PEDIATRIC_PROTOCOL_PRESETS.length, 8, "Exactly 8 canonical clinical presets");
+		assert.strictEqual(PEDIATRIC_PROTOCOL_PRESETS.length, 10, "Exactly 10 canonical clinical presets");
 		const ids = PEDIATRIC_PROTOCOL_PRESETS.map((p) => p.id);
 		assert.deepStrictEqual(ids, [
 			"adaptation_visit",
@@ -20,6 +20,8 @@ describe("VisitPediatricProtocolWidget Presets & Metadata Completeness", () => {
 			"fissure_sealing",
 			"extraction_primary_exfoliation",
 			"standard_crown",
+			"trauma_iadt",
+			"space_maintainer",
 		]);
 
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {

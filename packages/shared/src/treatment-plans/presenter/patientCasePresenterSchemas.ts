@@ -26,7 +26,7 @@ export const patientCasePresenterInputSchema = z.object({
 	patientMainConcern: z.string().optional(),
 	installmentAvailable: z.boolean().default(true),
 	maxInstallmentMonths: z.number().int().min(3).max(36).default(12),
-});
+}).strict();
 export type PatientCasePresenterInput = z.infer<typeof patientCasePresenterInputSchema>;
 
 export const slideDiagnosisSchema = z.object({

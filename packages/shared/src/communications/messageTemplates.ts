@@ -637,7 +637,7 @@ export const renderMessageTemplateInputSchema = z.object({
 	appointmentId: z.string().uuid().optional(),
 	variables: z.record(z.union([z.string(), z.number(), z.null()])).optional(),
 	allowPreviewFallback: z.boolean().optional().default(true),
-});
+}).strict();
 export type RenderMessageTemplateInput = z.infer<typeof renderMessageTemplateInputSchema>;
 
 export const renderMessageTemplateResultSchema = z.object({

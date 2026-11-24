@@ -157,7 +157,7 @@ export const form148_1u88PayloadSchema = z.object({
 	diagnosisIcd10Code: z.string().trim().max(32).nullable().optional(),
 	notes: z.string().trim().max(500).nullable().optional(),
 	ukepSignature: prescriptionDoctorUkepSchema.nullable().optional(),
-});
+}).strict();
 export type Form148_1u88Payload = z.infer<typeof form148_1u88PayloadSchema>;
 
 /** Payload льготного рецептурного бланка № 148-1/у-04(л) */

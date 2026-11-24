@@ -12,6 +12,12 @@ import {
 } from "../db/schema.js";
 import { idempotencyKeys } from "../db/schema/idempotency.js";
 import { registerPediatricDiplomaRoutes } from "../routes/pediatric/pediatricDiplomaRoutes.js";
+import { registerPediatricPresetRoutes, CANONICAL_PEDIATRIC_PRESETS } from "../routes/pediatric/pediatricPresets.js";
+import {
+	ORDER_804N_PEDIATRIC_SERVICES,
+	PEDIATRIC_804N_CATALOG,
+	generatePediatricParentRecommendations,
+} from "@dental/shared";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import {
@@ -82,6 +88,7 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 
 		app = await createTenantTestApp();
 		registerPediatricDiplomaRoutes(app);
+		registerPediatricPresetRoutes(app);
 
 		const secret = authTokenSecret();
 		tokenDoctor = signToken(
@@ -347,5 +354,66 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 		assert.equal(bodyUpdate.representative.fullName, "Смирнов Михаил Александрович (отец)");
 		assert.equal(bodyUpdate.representative.role, "Отец");
 		assert.equal(bodyUpdate.representative.relationshipType, "father");
+	});
+
+	// ─── 4. PEDIATRIC PROTOCOL PRESETS: IADT TRAUMA & SPACE MAINTAINER ──────────
+	it("4. Serves canonical pediatric presets including trauma_iadt and space_maintainer (Mandate 8e, 8x)", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/pediatric/presets",
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.equal(body.count, 10, "Должно быть ровно 10 канонических детских пресетов");
+
+		const traumaPreset = body.presets.find((p: { id: string }) => p.id === "trauma_iadt");
+		assert.ok(traumaPreset, "Пресет острой травмы IADT должен присутствовать");
+		assert.equal(traumaPreset.serviceCode, "A16.07.019");
+		assert.equal(traumaPreset.diagnosisIcd10, "S02.5");
+
+		const spacePreset = body.presets.find((p: { id: string }) => p.id === "space_maintainer");
+		assert.ok(spacePreset, "Пресет удерживателя места (кольцо-петля) должен присутствовать");
+		assert.equal(spacePreset.serviceCode, "A16.07.047");
+		assert.equal(spacePreset.diagnosisIcd10, "K07.3");
+	});
+
+	// ─── 5. PEDIATRIC CATALOG 804N: BIGINT KOPECKS & SERVICES ───────────────────
+	it("5. Proves defaultPriceKopecks bigint across all Order 804n pediatric services (Mandate 8bm)", () => {
+		assert.ok(PEDIATRIC_804N_CATALOG.length >= 10, "Каталог должен содержать минимум 10 позиций");
+		assert.equal(ORDER_804N_PEDIATRIC_SERVICES, PEDIATRIC_804N_CATALOG, "Алиас ORDER_804N_PEDIATRIC_SERVICES должен ссылаться на PEDIATRIC_804N_CATALOG");
+
+		for (const service of PEDIATRIC_804N_CATALOG) {
+			assert.ok(service.defaultPriceKopecks !== undefined, `Услуга ${service.code} обязана содержать defaultPriceKopecks`);
+			assert.equal(typeof service.defaultPriceKopecks, "bigint", `defaultPriceKopecks для ${service.code} должен быть bigint`);
+			assert.equal(service.defaultPriceKopecks, BigInt(service.defaultPriceRub * 100), `defaultPriceKopecks для ${service.code} должен строго равняться defaultPriceRub * 100`);
+		}
+
+		const splintService = PEDIATRIC_804N_CATALOG.find((s) => s.code === "A16.07.019");
+		assert.ok(splintService, "Услуга шинирования A16.07.019 обязана быть в каталоге");
+		assert.equal(splintService.defaultPriceKopecks, 500000n);
+
+		const spaceBandService = PEDIATRIC_804N_CATALOG.find((s) => s.code === "A16.07.047");
+		assert.ok(spaceBandService, "Услуга удерживателя места A16.07.047 обязана быть в каталоге");
+		assert.equal(spaceBandService.defaultPriceKopecks, 750000n);
+	});
+
+	// ─── 6. PARENT MEMO IADT TRAUMA & SPACE MAINTAINER SECTIONS ─────────────────
+	it("6. Generates parent memo with dedicated IADT trauma and space maintainer guidance", () => {
+		const memo = generatePediatricParentRecommendations({
+			patientName: "Артём Смирнов",
+			patientAgeYears: 6,
+			clinicName: "Клиника DENTE",
+			doctorName: "Др. Смирнова А.П.",
+			traumaIadt: { toothNumber: 11, notes: "Титановая шина TTS" },
+			spaceMaintainer: { toothNumber: 54, notes: "Кольцо-петля" },
+		});
+
+		assert.ok(memo.includes("ПАМЯТКА ПОСЛЕ ОСТРОЙ ТРАВМЫ ЗУБОВ ПО ПРОТОКОЛУ IADT (ЗУБ #11)"), "Должен содержать секцию травмы IADT");
+		assert.ok(memo.includes("Строгая щадящая диета"), "Должен содержать рекомендацию по мягкой диете");
+		assert.ok(memo.includes("Диспансерный календарь IADT"), "Должен содержать диспансерный календарь явок");
+		assert.ok(memo.includes("ПАМЯТКА ПО НОШЕНИЮ УДЕРЖИВАТЕЛЯ МЕСТА / КОЛЬЦО-ПЕТЛЯ (ЗОНА ЗУБА #54)"), "Должен содержать секцию удерживателя места");
+		assert.ok(memo.includes("Исключить липкие и тягучие сладости"), "Должен содержать запрет липких сладостей");
 	});
 });

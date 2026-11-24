@@ -202,8 +202,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 	it("verifies PEDIATRIC_PROTOCOL_PRESETS metadata completeness (Zero TODOs, 100% typed)", () => {
 		assert.strictEqual(
 			PEDIATRIC_PROTOCOL_PRESETS.length,
-			8,
-			"Exactly 8 canonical clinical presets",
+			10,
+			"Exactly 10 canonical clinical presets",
 		);
 
 		const ids = PEDIATRIC_PROTOCOL_PRESETS.map((p) => p.id);
@@ -218,8 +218,10 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				"fissure_sealing",
 				"extraction_primary_exfoliation",
 				"standard_crown",
+				"trauma_iadt",
+				"space_maintainer",
 			],
-			"All 8 required preset IDs are present in exact order",
+			"All 10 required preset IDs are present in exact order",
 		);
 
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {

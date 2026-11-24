@@ -409,6 +409,8 @@ export interface PediatricParentMemoOptions {
 	readonly fissureSealing?: PediatricFissureSealingOptions | undefined;
 	readonly pulpotomy?: PediatricPulpotomyOptions | undefined;
 	readonly iconInfiltration?: PediatricIconProtocolOptions | undefined;
+	readonly traumaIadt?: { toothNumber?: number | undefined; notes?: string | undefined } | undefined;
+	readonly spaceMaintainer?: { toothNumber?: number | undefined; notes?: string | undefined } | undefined;
 	readonly generalHygieneAdvice?: boolean | undefined;
 	readonly customNotes?: string | undefined;
 }
@@ -489,6 +491,37 @@ export function generatePediatricParentRecommendations(
 		icon.parentRecommendationsRu.forEach((rec) => {
 			lines.push(`   • ${rec}`);
 		});
+	}
+
+	// 5. Dental Trauma IADT section
+	if (options?.traumaIadt) {
+		const toothStr = options.traumaIadt.toothNumber ? ` (ЗУБ #${options.traumaIadt.toothNumber})` : "";
+		lines.push("");
+		lines.push(`───────────────────────────────────────────────────────────────`);
+		lines.push(`5. ПАМЯТКА ПОСЛЕ ОСТРОЙ ТРАВМЫ ЗУБОВ ПО ПРОТОКОЛУ IADT${toothStr}:`);
+		lines.push(`   Проведено шинирование и стабилизация травмированного зуба.`);
+		lines.push(`   Рекомендации для родителей:`);
+		lines.push(`   • Строгая щадящая диета: только мягкая, негорячая пища в течение 10–14 дней.`);
+		lines.push(`   • Категорически запрещено надкусывать твердую пищу травмированными передними зубами!`);
+		lines.push(`   • Гигиена: бережная чистка зубов мягкой хирургической щеткой после каждого приема пищи.`);
+		lines.push(`   • Антисептическая обработка десны в зоне травмы (хлоргексидин 0.12% или гель) 2 раза в день 7 дней.`);
+		lines.push(`   • Диспансерный календарь IADT: явка на осмотр и контроль жизнеспособности пульпы через 1 неделю, 3 недели, 6–8 недель, 6 месяцев и 1 год.`);
+		lines.push(`   • Срочно связаться с клиникой при: усилении боли, подвижности, припухлости десны или потемнении коронки зуба.`);
+	}
+
+	// 6. Space Maintainer section
+	if (options?.spaceMaintainer) {
+		const toothStr = options.spaceMaintainer.toothNumber ? ` (ЗОНА ЗУБА #${options.spaceMaintainer.toothNumber})` : "";
+		lines.push("");
+		lines.push(`───────────────────────────────────────────────────────────────`);
+		lines.push(`6. ПАМЯТКА ПО НОШЕНИЮ УДЕРЖИВАТЕЛЯ МЕСТА / КОЛЬЦО-ПЕТЛЯ${toothStr}:`);
+		lines.push(`   Установлен несъемный удерживатель места для предотвращения смещения соседних зубов.`);
+		lines.push(`   Рекомендации для родителей:`);
+		lines.push(`   • Исключить липкие и тягучие сладости: ириски, жевательную резинку, жевательный мармелад.`);
+		lines.push(`   • Запрещено ковырять аппарат ногтями, зубочистками или ручками.`);
+		lines.push(`   • Ежедневно проверять пальцем фиксацию кольца (оно не должно шататься).`);
+		lines.push(`   • При расцементировке кольца: сохранить аппарат и немедленно обратиться в клинику для повторной фиксации!`);
+		lines.push(`   • Контрольные осмотры каждые 3–4 месяца для отслеживания прорезывания постоянного зуба.`);
 	}
 
 	// General advice

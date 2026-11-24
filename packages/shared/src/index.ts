@@ -138,7 +138,7 @@ export {
 } from "./clinical/dentalIcd10Catalog.js";
 export * from "./clinical/therapyProtocolEngine.js";
 export * from "./pricelist/index.js";
-export { ORDER_804N_CODE_REGEX } from "./pricelist/index.js";
+export { ORDER_804N_CODE_REGEX, PEDIATRIC_804N_CATALOG, ORDER_804N_PEDIATRIC_SERVICES } from "./pricelist/index.js";
 export type { Order804nServiceItem } from "./pricelist/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";

@@ -23,7 +23,7 @@ export { THERAPY_CARIES_804N_CATALOG } from "./therapyCariesCatalog.js";
 export { THERAPY_ENDO_804N_CATALOG } from "./therapyEndodonticsCatalog.js";
 export { HYGIENE_804N_CATALOG } from "./hygieneCatalog.js";
 export { PERIODONTOLOGY_804N_CATALOG } from "./periodontologyCatalog.js";
-export { PEDIATRIC_804N_CATALOG } from "./pediatricCatalog.js";
+export { PEDIATRIC_804N_CATALOG, ORDER_804N_PEDIATRIC_SERVICES } from "./pediatricCatalog.js";
 
 /**
  * Base statutory 804n catalog covering consultations, anesthesia, imaging, therapy, hygiene & perio.
