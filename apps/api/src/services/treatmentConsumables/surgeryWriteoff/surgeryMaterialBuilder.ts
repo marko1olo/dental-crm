@@ -43,11 +43,16 @@ export function buildSurgeryMaterials(opts: BuildSurgeryMaterialsOptions): Unifi
 	});
 
 	// Sutures
-	const suture = (opts.sutureMaterial || (cat === "implant" ? "Пролен 4-0" : cat === "sinus_gbr" ? "ПГА 4-0" : "Викрил 4-0")).toLowerCase();
-	if (suture.includes("викрил") || suture.includes("vicryl")) {
-		list.push({ patterns: ["викрил"], defaultName: "Шовный материал Викрил 4-0 с атравматической иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "250.00" });
-	} else if (suture.includes("пролен") || suture.includes("prolene")) {
-		list.push({ patterns: ["пролен"], defaultName: "Шовный материал Prolene 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "350.00" });
+	const suture = (opts.sutureMaterial || (cat === "implant" ? "Пролен 4-0" : cat === "sinus_gbr" ? "ПГА 4-0" : cat === "perio_surgery" ? "Пролен 6-0" : "Викрил 4-0")).toLowerCase();
+	if (suture.includes("пролен") || suture.includes("prolene")) {
+		const isMicro = suture.includes("6-0") || suture.includes("7-0");
+		const defaultName = isMicro
+			? "Шовный материал Prolene 6-0 с микрохирургической иглой"
+			: "Шовный материал Prolene 4-0 с иглой";
+		const defaultCost = isMicro ? "450.00" : "350.00";
+		list.push({ patterns: ["пролен", "prolene"], defaultName, category: "Шовный материал", unit: "шт.", qty: 1, defaultCost });
+	} else if (suture.includes("викрил") || suture.includes("vicryl")) {
+		list.push({ patterns: ["викрил", "vicryl"], defaultName: "Шовный материал Викрил 4-0 с атравматической иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "250.00" });
 	} else {
 		list.push({ patterns: ["пга", "pga"], defaultName: "Шовный материал рассасывающийся ПГА 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" });
 	}
@@ -67,13 +72,134 @@ export function buildSurgeryMaterials(opts: BuildSurgeryMaterialsOptions): Unifi
 		list.push({ patterns: ["марлевые тампоны"], defaultName: "Марлевые тампоны стерильные для лунки", category: "Перевязочные средства", unit: "шт.", qty: 2, defaultCost: "15.00" });
 	}
 
-	// Bone graft & Membranes
-	if (cat === "sinus_gbr" || opts.graft || opts.membrane) {
-		list.push({ patterns: ["bio-oss", "био-осс"], defaultName: "Остеопластический костный материал Geistlich Bio-Oss 0.5 г", category: "Костная пластика", unit: "шт.", qty: 1, defaultCost: "12500.00" });
-		list.push({ patterns: ["bio-gide", "био-гайд"], defaultName: "Мембрана коллагеновая резорбируемая Geistlich Bio-Gide 25x25 мм", category: "Костная пластика", unit: "шт.", qty: 1, defaultCost: "14500.00" });
-		if (opts.hasPins) {
-			list.push({ patterns: ["пины"], defaultName: "Пины титановые для фиксации мембран (комплект 2 шт)", category: "Костная пластика", unit: "компл.", qty: 1, defaultCost: "1200.00" });
+	// Bone graft (учитываем реальный выбор врача: Cerabone, SureOss, Аутокость, Bio-Oss)
+	const isClosedSinus = opts.protocolId === "surgery_sinus_lift_closed";
+	const graftLower = opts.graft?.toLowerCase() || "";
+	const isGraftExcluded = graftLower === "none" || graftLower.includes("без графта");
+
+	if ((cat === "sinus_gbr" || opts.graft) && !isGraftExcluded) {
+		if (graftLower.includes("cerabone") || graftLower.includes("церабон")) {
+			list.push({
+				patterns: ["cerabone", "церабон"],
+				defaultName: "Костный графт Botiss Cerabone гранулят 0.5 г",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "7800.00",
+			});
+		} else if (graftLower.includes("sureoss") || graftLower.includes("шуросс") || graftLower.includes("аллографт")) {
+			list.push({
+				patterns: ["sureoss", "шуросс", "аллографт"],
+				defaultName: "Костный аллографт SureOss HansBiomed 0.5 см³",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "8900.00",
+			});
+		} else if (graftLower.includes("аутокость") || graftLower.includes("autograft") || graftLower.includes("скребок")) {
+			list.push({
+				patterns: ["костный скребок", "аутокость", "safescraper", "micross"],
+				defaultName: "Одноразовый костный скребок для забора аутокости",
+				category: "Хирургические инструменты",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "3200.00",
+			});
+		} else {
+			list.push({
+				patterns: ["bio-oss", "био-осс"],
+				defaultName: "Остеопластический костный материал Geistlich Bio-Oss 0.5 г",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "12500.00",
+			});
 		}
+	}
+
+	// Barrier membranes (SEV-2: если «Без мембраны», 'none' или закрытый синус без мембраны — НЕ списывать Bio-Gide 25 за 14 500 ₽)
+	const membraneLower = opts.membrane?.toLowerCase() || "";
+	const isMembraneExcluded =
+		membraneLower === "none" ||
+		membraneLower.includes("без мембраны") ||
+		(isClosedSinus && !opts.membrane);
+
+	const shouldDeductMembrane =
+		!isMembraneExcluded && (Boolean(opts.membrane) || (cat === "sinus_gbr" && !isClosedSinus));
+
+	if (shouldDeductMembrane) {
+		if (membraneLower.includes("jason") || membraneLower.includes("джейсон")) {
+			list.push({
+				patterns: ["jason", "джейсон"],
+				defaultName: "Мембрана коллагеновая перикардиальная Botiss Jason 15x20 мм",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "11200.00",
+			});
+		} else if (membraneLower.includes("cytoplast") || membraneLower.includes("цитопласт") || membraneLower.includes("ptfe")) {
+			list.push({
+				patterns: ["cytoplast", "цитопласт", "ptfe"],
+				defaultName: "Мембрана нерезорбируемая PTFE Osteogenics Cytoplast TXT-200",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "9500.00",
+			});
+		} else {
+			list.push({
+				patterns: ["bio-gide", "био-гайд"],
+				defaultName: "Мембрана коллагеновая резорбируемая Geistlich Bio-Gide 25x25 мм",
+				category: "Костная пластика",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "14500.00",
+			});
+		}
+
+		if (opts.hasPins) {
+			list.push({
+				patterns: ["пины"],
+				defaultName: "Пины титановые для фиксации мембран (комплект 2 шт)",
+				category: "Костная пластика",
+				unit: "компл.",
+				qty: 1,
+				defaultCost: "1200.00",
+			});
+		}
+	}
+
+	// Perio surgery & Mucogingival soft tissue instruments
+	if (cat === "perio_surgery") {
+		const isSoftTissueGraft =
+			opts.protocolId?.includes("ctg") ||
+			opts.protocolId?.includes("fgg") ||
+			opts.protocolId?.includes("caf") ||
+			opts.protocolId?.includes("mucogingival") ||
+			opts.protocolId?.includes("recession");
+
+		if (isSoftTissueGraft) {
+			list.push({
+				patterns: ["лезвие 15c", "скальпель 15c"],
+				defaultName: "Лезвие скальпеля стерильное микрохирургическое #15C",
+				category: "Хирургические инструменты",
+				unit: "шт.",
+				qty: 1,
+				defaultCost: "150.00",
+			});
+		}
+	}
+
+	// Emergency surgery (периостотомия с дренажом)
+	if (cat === "emergency") {
+		list.push({
+			patterns: ["дренаж", "выпускник"],
+			defaultName: "Резиновый ленточный выпускник стерильный",
+			category: "Хирургические материалы",
+			unit: "шт.",
+			qty: 1,
+			defaultCost: "90.00",
+		});
 	}
 
 	// Dental implant

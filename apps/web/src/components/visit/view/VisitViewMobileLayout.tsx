@@ -20,7 +20,8 @@ export function VisitViewMobileLayout({ s }: VisitViewMobileLayoutProps) {
 				flushPendingVisitSaves={s.flushPendingVisitSaves}
 				handleApplySomaticNormQuick={s.handleApplySomaticNormQuick}
 				handleFinishVisitAction={s.handleFinishVisitAction}
-				handlePrintForm043uFast={s.handlePrintForm043uFast}
+				handlePrintMedicalCardFast={s.handlePrintMedicalCardFast ?? s.handlePrintForm043uFast}
+				handlePrintForm043uFast={s.handlePrintMedicalCardFast ?? s.handlePrintForm043uFast}
 				handleOpenPrescription={() => s.setIsPrescriptionModalOpen(true)}
 				handleOpenLabOrder={s.handleOpenLabOrder}
 				onOpenWarrantyModal={() => s.setIsWarrantyModalOpen(true)}

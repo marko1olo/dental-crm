@@ -66,6 +66,7 @@ export function GlobalSupportModals({
 			{isEmergencyRescueOpen && (
 				<Suspense fallback={null}>
 					<EmergencyRescueModal
+						key="global-emergency-rescue"
 						isOpen={true}
 						onClose={() => {
 							setIsEmergencyRescueOpen(false);

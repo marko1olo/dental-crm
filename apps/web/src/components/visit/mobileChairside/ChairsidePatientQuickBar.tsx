@@ -9,6 +9,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 	activeAppointment,
 	patientAge,
 	consolidatedAllergyChip,
+	handlePrintMedicalCardFast,
 	handlePrintForm043uFast,
 	handleOpenPrescription,
 	handleOpenLabOrder,
@@ -19,6 +20,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 	testId = "mobile-chairside-workspace",
 }) => {
 	const patientName = activePatient?.fullName || activePatient?.name || "Пациент";
+	const onPrintMedicalCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast;
 
 	return (
 		<header className="mobile-chairside-hud" data-testid={`${testId}-hud`}>
@@ -54,7 +56,8 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 				</div>
 
 				<ChairsidePatientHeaderActions
-					handlePrintForm043uFast={handlePrintForm043uFast}
+					handlePrintMedicalCardFast={onPrintMedicalCard}
+					handlePrintForm043uFast={onPrintMedicalCard}
 					handleOpenPrescription={handleOpenPrescription}
 					handleOpenLabOrder={handleOpenLabOrder}
 					onOpenWarrantyModal={onOpenWarrantyModal}

@@ -2,6 +2,8 @@ import React from "react";
 import { FileText, FlaskConical, Pill, Printer, ShieldCheck, X } from "lucide-react";
 
 export interface ChairsidePatientHeaderActionsProps {
+	handlePrintMedicalCardFast?: (() => void) | undefined;
+	/** @deprecated Канонический вызов: handlePrintMedicalCardFast («Медицинская карта приёма», Мандаты 8x/8ap) */
 	handlePrintForm043uFast?: (() => void) | undefined;
 	handleOpenPrescription?: (() => void) | undefined;
 	handleOpenLabOrder?: (() => void) | undefined;
@@ -14,6 +16,7 @@ export interface ChairsidePatientHeaderActionsProps {
 export const ChairsidePatientHeaderActions: React.FC<
 	ChairsidePatientHeaderActionsProps
 > = ({
+	handlePrintMedicalCardFast,
 	handlePrintForm043uFast,
 	handleOpenPrescription,
 	handleOpenLabOrder,
@@ -22,6 +25,8 @@ export const ChairsidePatientHeaderActions: React.FC<
 	onClose,
 	testId = "mobile-chairside-workspace",
 }) => {
+	const onPrintCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast;
+
 	return (
 		<div className="mobile-chairside-hud-actions">
 			{onOpenDiarySheet && (
@@ -50,10 +55,10 @@ export const ChairsidePatientHeaderActions: React.FC<
 				</button>
 			)}
 
-			{handlePrintForm043uFast && (
+			{onPrintCard && (
 				<button
 					type="button"
-					onClick={handlePrintForm043uFast}
+					onClick={onPrintCard}
 					className="mobile-chairside-icon-btn text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Печать медицинской карты приёма"
 					title="Медицинская карта приёма (печать со штампом)"

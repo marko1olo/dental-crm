@@ -50,6 +50,7 @@ export function renderSurgeryLaunchers(props: StandaloneLaunchersProps): React.R
 	if (isEmergency) {
 		return (
 			<EmergencyRescueModal
+				key="standalone-emergency-rescue"
 				isOpen={true}
 				onClose={() => {
 					setIsEmergencyDirectModalOpen?.(false);
