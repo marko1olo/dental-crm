@@ -59,9 +59,24 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 	app.get("/api/pricing/catalog", handleGetPricelists);
 	app.get("/api/pricelist/categories", handleGetCategories);
 
+	const pricelistCreateOptions = {
+		schema: {
+			description: "Pricelist item create mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	// Канонический CRUD прейскуранта и техкарт расхода материалов (BOM)
-	app.post("/api/pricelist", handleCreateCatalogItem);
-	app.post("/api/pricelist/items", handleCreateCatalogItem);
+	app.post("/api/pricelist", pricelistCreateOptions, handleCreateCatalogItem);
+	app.post("/api/pricelist/items", pricelistCreateOptions, handleCreateCatalogItem);
 	app.get("/api/pricelist/:serviceId", handleGetCatalogItem);
 	app.put("/api/pricelist/:serviceId", handleUpdateCatalogItem);
 	app.patch("/api/pricelist/:serviceId", handleUpdateCatalogItem);

@@ -245,6 +245,8 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				properties: {
 					"idempotency-key": { type: "string" },
 					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
 				},
 			},
 		},

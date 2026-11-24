@@ -66,7 +66,7 @@ export async function registerMediaHandlerRoutes(
 	 * POST /api/whatsapp/media/upload
 	 * Защищенная загрузка медиафайла (PDF сметы / плана лечения или снимка) для отправки в чат.
 	 */
-	app.post("/api/whatsapp/media/upload", async (request, reply) => {
+	app.post("/api/whatsapp/media/upload", { schema: { description: "WhatsApp media upload with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,

@@ -48,7 +48,7 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 		return reply.status(200).send({ ok: true, ...statusRecord });
 	});
 
-	app.post("/api/egisz/n3health/eventlog/reexport", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/egisz/n3health/eventlog/reexport", { schema: { description: "EGISZ N3 event log reexport with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "egisz n3health eventlog reexport"))) return;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;

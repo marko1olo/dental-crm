@@ -434,11 +434,26 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, reasons });
 	});
 
+	const adminMutationOptions = {
+		schema: {
+			description: "Patient administrative mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+
 	/**
 	 * POST /api/patients/:patientId/unarchive
 	 * Восстановление пациента из архива (разархивация).
 	 */
-	app.post("/api/patients/:patientId/unarchive", async (request, reply) => {
+	app.post("/api/patients/:patientId/unarchive", adminMutationOptions, async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 

@@ -190,10 +190,24 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 	};
 
 	// Единые SSOT роуты: /api/periodontogram/:patientId и /api/perio/:patientId
+	const perioMutationOptions = {
+		schema: {
+			description: "Periodontogram mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
 	app.get("/api/periodontogram/:patientId", handleGet);
 	app.get("/api/perio/:patientId", handleGet);
-	app.post("/api/periodontogram/:patientId", handlePost);
-	app.post("/api/perio/:patientId", handlePost);
-	app.put("/api/periodontogram/:patientId", handlePost);
-	app.put("/api/perio/:patientId", handlePost);
+	app.post("/api/periodontogram/:patientId", perioMutationOptions, handlePost);
+	app.post("/api/perio/:patientId", perioMutationOptions, handlePost);
+	app.put("/api/periodontogram/:patientId", perioMutationOptions, handlePost);
+	app.put("/api/perio/:patientId", perioMutationOptions, handlePost);
 }

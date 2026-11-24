@@ -169,14 +169,28 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		}
 	};
 
-	app.put("/api/settings/clinic/profile", handleUpdateClinicProfile);
-	app.patch("/api/settings/clinic/profile", handleUpdateClinicProfile);
-	app.post("/api/settings/clinic/profile", handleUpdateClinicProfile);
-	app.put("/api/settings/clinic-profile", handleUpdateClinicProfile);
-	app.patch("/api/settings/clinic-profile", handleUpdateClinicProfile);
-	app.put("/api/settings/clinic", handleUpdateClinicProfile);
-	app.patch("/api/settings/clinic", handleUpdateClinicProfile);
-	app.post("/api/settings/clinic", handleUpdateClinicProfile);
+	const clinicProfileMutationOptions = {
+		schema: {
+			description: "Clinic profile mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	} as const;
+	app.put("/api/settings/clinic/profile", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.patch("/api/settings/clinic/profile", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.post("/api/settings/clinic/profile", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.put("/api/settings/clinic-profile", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.patch("/api/settings/clinic-profile", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.put("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.patch("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
+	app.post("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
 
 	app.post("/api/settings/reset-demo", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);

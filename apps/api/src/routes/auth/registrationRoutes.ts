@@ -203,6 +203,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 	// ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
 	app.post(
 		"/api/auth/register",
+		{ schema: { description: "Clinic registration with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" } } } } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const parsed = registerBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
