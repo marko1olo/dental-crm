@@ -97,6 +97,12 @@ const ALLOWED = new Map([
 		"То же для второго провайдера (smsc): форма ответа проверяется явно, " +
 			"недостающий баланс даёт ok:false с классом ошибки.",
 	],
+	[
+		"apps/web/src/components/schedule/quickDoctor/useQuickAddDoctorSubmit.ts:85",
+		"Error-path only: res.json() called only inside the !res.ok branch (line 84) to parse errJson?.message. " +
+			"The success path does not read the body — doctorData is built locally and onClose() is called. " +
+			"ReactQuery invalidation in the parent component handles UI refresh.",
+	],
 ]);
 
 function collectFiles(dir, out) {

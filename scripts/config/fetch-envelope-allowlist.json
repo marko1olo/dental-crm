@@ -186,6 +186,7 @@
     "apps/web/src/components/schedule/clipboard/clipboardApi.ts",
     "apps/web/src/components/schedule/freedSlots/useFreedSlotsReport.ts",
     "apps/web/src/components/schedule/quickBookingInlinePatient.ts",
+    "apps/web/src/components/schedule/quickDoctor/useQuickAddDoctorSubmit.ts",
     "apps/web/src/components/schedule/smartSequentialVisitsEngine.ts",
     "apps/web/src/components/schedule/useDayConfirmationsState.ts",
     "apps/web/src/components/schedule/useQuickBookingPatientSearch.ts",

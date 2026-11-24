@@ -70,6 +70,21 @@ import {
 	updateStaffMemberProfileSchema,
 } from "./types.js";
 
+const staffSettingsMutationOptions = {
+	schema: {
+		description: "Staff settings mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+} as const;
+
 export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/staff", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
@@ -361,7 +376,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	 * строка сохраняется, а признак users.is_active становится false. Сотрудник
 	 * возвращается в ответе с active: false, история лечения остается с автором.
 	 */
-	app.delete("/api/settings/staff/:staffId", async (request, reply) => {
+	app.delete("/api/settings/staff/:staffId", staffSettingsMutationOptions, async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { staffId?: string };

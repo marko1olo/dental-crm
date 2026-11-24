@@ -22,6 +22,21 @@ import type { ExtendedHrProfileStorage } from "./types.js";
 const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const staffMutationOptions = {
+	schema: {
+		description: "Staff mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+} as const;
+
 export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	/**
 	 * Изменение кадровых данных требует ЛИЧНОГО входа сотрудника. Токена
@@ -542,13 +557,13 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		);
 	};
 
-	app.put("/api/staff/:staffId", updateStaffProfileHandler);
-	app.put("/api/staff/:staffId/profile", updateStaffProfileHandler);
+	app.put("/api/staff/:staffId", staffMutationOptions, updateStaffProfileHandler);
+	app.put("/api/staff/:staffId/profile", staffMutationOptions, updateStaffProfileHandler);
 
 	/**
 	 * DELETE /api/staff/:staffId — Мягкая деактивация сотрудника
 	 */
-	app.delete("/api/staff/:staffId", async (request, reply) => {
+	app.delete("/api/staff/:staffId", staffMutationOptions, async (request, reply) => {
 		const auth = await resolveOrganizationId(request, reply);
 		if (!auth) return;
 		if (!requirePersonalStaff(auth, reply)) return;

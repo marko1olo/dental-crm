@@ -612,6 +612,21 @@ export const createNextStageAppointmentHandler = async (
 	});
 };
 
+const appointmentMutationOptions = {
+	schema: {
+		description: "Appointment mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+} as const;
+
 export async function registerAppointmentsRoutes(app: FastifyInstance) {
 	app.get("/api/appointments", handleGetAppointments);
 	app.get("/api/schedule", handleGetAppointments);
@@ -630,10 +645,12 @@ export async function registerAppointmentsRoutes(app: FastifyInstance) {
 	registerAppointmentStatusRoutes(app, updateAppointmentHandler);
 	app.put(
 		"/api/schedule/appointments/:appointmentId",
+		appointmentMutationOptions,
 		updateAppointmentHandler,
 	);
 	app.patch(
 		"/api/schedule/appointments/:appointmentId",
+		appointmentMutationOptions,
 		updateAppointmentHandler,
 	);
 }

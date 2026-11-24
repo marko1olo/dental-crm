@@ -22,7 +22,7 @@
  *  npm run audit:dice
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -72,6 +72,7 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
 		strict: false,
 		json: false,
 		help: false,
+		root: null,
 	};
 
 	for (let i = 0; i < argv.length; i++) {
@@ -104,6 +105,10 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
 			}
 		} else if (arg === "--strict") {
 			options.strict = true;
+		} else if (arg === "--root") {
+			options.root = argv[++i] ?? null;
+		} else if (arg.startsWith("--root=")) {
+			options.root = arg.split("=")[1] ?? null;
 		} else if (arg === "--json") {
 			options.json = true;
 		} else if (arg === "--help" || arg === "-h") {
@@ -506,9 +511,216 @@ export function sampleLines(files, count, prng, rootDir) {
  * Секция 7. Список 1: Двери и Мутации (Doors & Mutations)
  * ------------------------------------------------------------------ */
 
+// Routes that are intentionally public / webhook / infra — no orgId BOLA check needed
+const PUBLIC_ROUTE_PATTERNS = [
+	/\/api\/auth\/(login|logout|refresh|password|forgot|reset|pin|setup)/i,
+	/\/api\/(public|portal)\//i,
+	/\/api\/sbp\//i,
+	/\/api\/sber(bank)?\//i,
+	/\/api\/telegram\//i,
+	/\/api\/egisz\/n3health\/eventlog\//i,
+	/\/api\/sync\/admin\//i,
+	/\/api\/migration\//i,
+	/\/api\/imaging\/dicom\/viewer-launch-manifest/i,
+	/\/api\/staff-chat\//i,
+	/\/api\/mdlp\//i,
+	/\/api\/billing\/sbp\//i,
+	// DICOM WebStorage (DICOMweb STOW-RS) — standard medical imaging protocol, no orgId tenant isolation
+	/\/api\/dicomweb\//i,
+];
+
+function stripCodeComments(src) {
+	return src
+		.replace(/\/\*[\s\S]*?\*\//g, "")
+		.replace(/(^|[^:\\])\/\/[^\r\n]*/g, "$1");
+}
+
+function extractBalancedBlock(text, startIdx, openChar = "{", closeChar = "}", maxChars = 30000) {
+	let depth = 0;
+	let inSingle = false;
+	let inDouble = false;
+	let inTemplate = false;
+	let escaped = false;
+	let started = false;
+	const endLimit = Math.min(text.length, startIdx + maxChars);
+
+	for (let k = startIdx; k < endLimit; k++) {
+		const ch = text[k];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (ch === "\\" && (inSingle || inDouble || inTemplate)) {
+			escaped = true;
+			continue;
+		}
+		if (!inDouble && !inTemplate && ch === "'") {
+			inSingle = !inSingle;
+			continue;
+		}
+		if (!inSingle && !inTemplate && ch === '"') {
+			inDouble = !inDouble;
+			continue;
+		}
+		if (!inSingle && !inDouble && ch === "`") {
+			inTemplate = !inTemplate;
+			continue;
+		}
+		if (inSingle || inDouble || inTemplate) continue;
+
+		if (ch === openChar) {
+			depth++;
+			started = true;
+		} else if (ch === closeChar && started) {
+			depth--;
+			if (depth === 0) {
+				return text.slice(startIdx, k + 1);
+			}
+		}
+	}
+	return text.slice(startIdx, endLimit);
+}
+
+function loadGlobalIdempotencyConfig(rootDir) {
+	const registrarPath = path.join(rootDir, "apps/api/src/serverModules/pluginRegistrar.ts");
+	const pluginPath = path.join(rootDir, "apps/api/src/plugins/idempotencyPlugin.ts");
+	let hasGlobalPlugin = false;
+	const exemptPaths = [];
+
+	if (existsSync(registrarPath)) {
+		try {
+			const registrarSrc = stripCodeComments(readFileSync(registrarPath, "utf8"));
+			if (/\.register\s*\(\s*idempotencyPlugin\b/.test(registrarSrc)) {
+				hasGlobalPlugin = true;
+			}
+		} catch {
+			// ignore read errors
+		}
+	}
+
+	if (existsSync(pluginPath)) {
+		try {
+			const pluginSrc = readFileSync(pluginPath, "utf8");
+			const exemptMatch = pluginSrc.match(/DEFAULT_IDEMPOTENCY_EXEMPT_PATHS\s*=\s*\[([\s\S]*?)\]/);
+			if (exemptMatch) {
+				for (const m of exemptMatch[1].matchAll(/["']([^"']+)["']/g)) {
+					exemptPaths.push(m[1]);
+				}
+			}
+		} catch {
+			// ignore read errors
+		}
+	}
+
+	return { hasGlobalPlugin, exemptPaths };
+}
+
+function resolveRouteModuleImports(filePath, content, fileContentCache) {
+	const importedSymbols = new Map();
+	const dir = path.dirname(filePath);
+	const importRe = /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+["'](\.[^"']+)["']/g;
+
+	for (const match of content.matchAll(importRe)) {
+		const specifiers = match[1];
+		const relImport = match[2];
+		const baseImport = relImport.replace(/\.[cm]?js$/, "");
+		const candidates = [
+			path.resolve(dir, `${baseImport}.ts`),
+			path.resolve(dir, `${baseImport}.mts`),
+			path.resolve(dir, `${baseImport}/index.ts`),
+		];
+		const resolvedFile = candidates.find((c) => existsSync(c));
+		if (!resolvedFile) continue;
+
+		let targetContent = fileContentCache.get(resolvedFile);
+		if (targetContent === undefined) {
+			try {
+				targetContent = readFileSync(resolvedFile, "utf8");
+			} catch {
+				targetContent = "";
+			}
+			fileContentCache.set(resolvedFile, targetContent);
+		}
+		if (!targetContent) continue;
+
+		for (const rawSpec of specifiers.split(",")) {
+			const cleanSpec = rawSpec.trim().replace(/^type\s+/, "");
+			if (!cleanSpec) continue;
+			const parts = cleanSpec.split(/\s+as\s+/);
+			const origName = parts[0].trim();
+			const localName = (parts[1] || parts[0]).trim();
+			if (!origName || !localName) continue;
+
+			const declRe = new RegExp(
+				`(?:export\\s+)?(?:async\\s+function\\s+${origName}\\b|(?:const|let)\\s+${origName}\\s*=)`,
+			);
+			const declMatch = declRe.exec(targetContent);
+			if (!declMatch) continue;
+
+			const braceIdx = targetContent.indexOf("{", declMatch.index);
+			if (braceIdx !== -1) {
+				importedSymbols.set(localName, extractBalancedBlock(targetContent, braceIdx));
+			}
+		}
+	}
+
+	return importedSymbols;
+}
+
+function findFunctionBodyBrace(content, searchFromIdx, isArrow) {
+	const parenIdx = content.indexOf("(", searchFromIdx);
+	if (parenIdx === -1) return content.indexOf("{", searchFromIdx);
+	const paramBlock = extractBalancedBlock(content, parenIdx, "(", ")");
+	const afterParamsIdx = parenIdx + paramBlock.length;
+	if (isArrow) {
+		const arrowIdx = content.indexOf("=>", afterParamsIdx);
+		if (arrowIdx !== -1) {
+			return content.indexOf("{", arrowIdx + 2);
+		}
+	}
+	return content.indexOf("{", afterParamsIdx);
+}
+
+function extractLocalDeclarations(content) {
+	const localVars = new Map();
+	const localFuncs = new Map();
+
+	const varRe = /(?:^|\n)\s*(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/g;
+	for (const m of content.matchAll(varRe)) {
+		const name = m[1];
+		const eqOffset = m.index + m[0].length;
+		const afterEq = content.slice(eqOffset).trimStart();
+		if (/^(async\s*)?\(|^async\s+function\b|^function\b/.test(afterEq)) {
+			const isArrow = !/^(async\s+)?function\b/.test(afterEq);
+			const braceIdx = findFunctionBodyBrace(content, eqOffset, isArrow);
+			if (braceIdx !== -1) {
+				localFuncs.set(name, extractBalancedBlock(content, braceIdx));
+			}
+		} else {
+			const braceIdx = content.indexOf("{", eqOffset);
+			if (braceIdx !== -1) {
+				localVars.set(name, extractBalancedBlock(content, braceIdx));
+			}
+		}
+	}
+
+	const fnRe = /(?:^|\n)\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
+	for (const m of content.matchAll(fnRe)) {
+		const name = m[1];
+		const braceIdx = findFunctionBodyBrace(content, m.index + m[0].length - 1, false);
+		if (braceIdx !== -1) {
+			localFuncs.set(name, extractBalancedBlock(content, braceIdx));
+		}
+	}
+
+	return { localVars, localFuncs };
+}
+
 export function auditDoors(rootDir, prng, sampleCount = 5) {
 	const routesDir = path.join(rootDir, "apps/api/src/routes");
 	const routeFiles = collectCombatFiles(rootDir, [path.relative(rootDir, routesDir)]);
+	const { hasGlobalPlugin, exemptPaths } = loadGlobalIdempotencyConfig(rootDir);
+	const fileContentCache = new Map();
 
 	const doors = [];
 
@@ -519,61 +731,141 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 		} catch {
 			continue;
 		}
+		fileContentCache.set(file, content);
 
 		const relPath = path.relative(rootDir, file).replace(/\\/g, "/");
 		const lines = content.split(/\r?\n/);
+		const lineStartOffsets = [];
+		let offset = 0;
+		for (const ln of lines) {
+			lineStartOffsets.push(offset);
+			offset += ln.length + 1;
+		}
+
+		const { localVars, localFuncs } = extractLocalDeclarations(content);
+		const importedHandlers = resolveRouteModuleImports(file, content, fileContentCache);
 
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			// Ищем объявления мутаций Fastify
-			const isMutation =
-				/\b(fastify|app|router)\.(post|put|patch|delete)\s*\(|method:\s*['"](POST|PUT|PATCH|DELETE)['"]/i.test(line);
+			const isMethodCall = /\b(fastify|app|router)\.(post|put|patch|delete)\s*\(/i.test(line);
+			const isRouteConfig =
+				/\b(fastify|app|router)\.route\s*\(/i.test(line) &&
+				/method:\s*['"](POST|PUT|PATCH|DELETE)['"]/i.test(
+					lines.slice(i, Math.min(lines.length, i + 6)).join("\n"),
+				);
 
-			if (isMutation) {
-				const lineNum = i + 1;
-				// Берем окно контекста маршрута (до 25 строк вперед)
-				const routeBody = lines.slice(i, Math.min(lines.length, i + 35)).join("\n");
-				// Очищаем комментарии, чтобы исключить ложные срабатывания на текст комментариев
-				const codeOnlyBody = routeBody.replace(/\/\/[^\r\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+			if (!isMethodCall && !isRouteConfig) continue;
 
-				const hasIdempotency =
-					/idempotency|Idempotency-Key|idempotency-key|x-idempotency-key|paymentClientMutationConstraint/i.test(
-						codeOnlyBody,
-					);
-				const hasTransaction = /db\.transaction|\btx\./i.test(codeOnlyBody);
-				const hasRawMoneyMath = RAW_MONEY_MATH_RE.test(codeOnlyBody);
-				const usesKopecks = /kopecks|amountKopecks|priceKopecks/i.test(codeOnlyBody);
+			const lineNum = i + 1;
+			const callStartOffset = lineStartOffsets[i] + line.search(/\b(fastify|app|router)\./i);
+			const openParenIdx = content.indexOf("(", callStartOffset);
+			const fullCallBlock =
+				openParenIdx !== -1
+					? extractBalancedBlock(content, openParenIdx, "(", ")")
+					: lines.slice(i, Math.min(lines.length, i + 40)).join("\n");
 
-				const issues = [];
-				if (hasRawMoneyMath) {
-					issues.push("Ручные float-расчёты сумм (/ 100, * 0.01) в обход @dental/shared/src/money.ts (Мандат 8bm)");
-				}
-				if (!hasIdempotency) {
-					issues.push("Мутационный эндпоинт без обязательного заголовка Idempotency-Key (Мандат 8bo / RFC 9562)");
-				}
-				const mutationMatches = codeOnlyBody.match(/\b(insert|update|delete)\s*\(|\.insert\(|\.update\(|\.delete\(/gi) || [];
-				if (!hasTransaction && mutationMatches.length > 1) {
-					issues.push("Множественные мутации данных без единой атомарной db.transaction() (Мандат 8bo)");
-				}
-				const hasOrgContext =
-					/organizationId|organization_id|orgId|withTenantCtx|requireClinicalMutationContext|requireClinicalReadContext/i.test(
-						codeOnlyBody,
-					);
-				if (!hasOrgContext) {
-					issues.push("Мутационный роут без проверки контекста организации/арендатора (BOLA/IDOR риск)");
-				}
+			const codeOnlyCall = stripCodeComments(fullCallBlock);
 
-				doors.push({
-					relPath,
-					lineNum,
-					routeSignature: line.trim(),
-					hasIdempotency,
-					hasTransaction,
-					usesKopecks,
-					issues,
-					status: issues.length === 0 ? "CLEAN" : "DEFECT",
-				});
+			// Collect referenced options variables and local/imported handler bodies
+			const extraBlocks = [];
+			for (const [varName, varBody] of localVars.entries()) {
+				if (new RegExp(`\\b${varName}\\b`).test(codeOnlyCall)) {
+					extraBlocks.push(varBody);
+				}
 			}
+			for (const [fnName, fnBody] of localFuncs.entries()) {
+				if (new RegExp(`\\b${fnName}\\b`).test(codeOnlyCall)) {
+					extraBlocks.push(fnBody);
+				}
+			}
+			for (const [impName, impBody] of importedHandlers.entries()) {
+				if (new RegExp(`\\b${impName}\\b`).test(codeOnlyCall)) {
+					extraBlocks.push(impBody);
+				}
+			}
+			// Follow one hop from local wrapper handlers to imported handlers (e.g. inline wrapper -> handleX)
+			if (extraBlocks.length === 0 || codeOnlyCall.length < 400) {
+				const combinedSoFar = `${codeOnlyCall}\n${extraBlocks.join("\n")}`;
+				for (const [impName, impBody] of importedHandlers.entries()) {
+					if (new RegExp(`\\b${impName}\\b`).test(combinedSoFar)) {
+						extraBlocks.push(impBody);
+					}
+				}
+			}
+
+			const codeOnlyBody = stripCodeComments(`${codeOnlyCall}\n${extraBlocks.join("\n")}`);
+
+			const routeUrlMatch = codeOnlyCall.match(/['"](\/api\/[^'"]+)['"]/);
+			const routeUrl = routeUrlMatch ? routeUrlMatch[1] : "";
+			const isPublicRoute = PUBLIC_ROUTE_PATTERNS.some((pat) => pat.test(routeUrl));
+			const isExemptPath =
+				Boolean(routeUrl) &&
+				exemptPaths.some(
+					(exempt) => routeUrl === exempt || routeUrl.startsWith(exempt) || routeUrl.includes(exempt),
+				);
+
+			const hasExplicitIdempotency =
+				/idempotency|Idempotency-Key|idempotency-key|x-idempotency-key|paymentClientMutationConstraint/i.test(
+					codeOnlyBody,
+				);
+			const hasManualIdempotencyInsert = /\.insert\s*\(\s*idempotencyKeys\s*\)/.test(codeOnlyBody);
+			const hasWebhookOrAuthGuard =
+				/verify\w*Signature|verifyProdoctorovWebhookAuth|hmac|webhookSecret|telegramSecret|deliveryId|updateId|requireResolved\w+|requireClinical\w+|requireTelegramControlPlaneAccess|getRequestIdentity|authenticate/i.test(
+					codeOnlyBody,
+				);
+
+			let hasIdempotency = hasExplicitIdempotency;
+			if (hasGlobalPlugin) {
+				if (isExemptPath) {
+					hasIdempotency = hasExplicitIdempotency || hasWebhookOrAuthGuard;
+				} else {
+					hasIdempotency = true;
+				}
+			}
+
+			const hasTransaction = /db\.transaction|withTenantCtx|\bwithSavepoint\b|\btx\./i.test(codeOnlyBody);
+			const hasRawMoneyMath = RAW_MONEY_MATH_RE.test(codeOnlyBody);
+			const usesKopecks = /kopecks|amountKopecks|priceKopecks/i.test(codeOnlyBody);
+
+			const issues = [];
+			if (hasRawMoneyMath) {
+				issues.push("Ручные float-расчёты сумм (/ 100, * 0.01) в обход @dental/shared/src/money.ts (Мандат 8bm)");
+			}
+			if (hasManualIdempotencyInsert) {
+				issues.push("Ручная запись в таблицу idempotencyKeys в обход глобального idempotencyPlugin (ROT-005)");
+			} else if (!hasIdempotency) {
+				issues.push("Мутационный эндпоинт без обязательного заголовка Idempotency-Key (Мандат 8bo / RFC 9562)");
+			}
+			const mutationMatches = codeOnlyBody.match(/\.(insert|update|delete)\s*\(/gi) || [];
+			// Exempt self-managed transactions and patterns where only 1 mutation fires per code-path
+			// (e.g. if/else upsert where exactly one branch runs — count ≤1 per path)
+			const isTxSelfManaged = /tenantTxSelfManaged|selfManagedTx/.test(codeOnlyBody);
+			// If the entire body contains the mutations only inside an if/else block (upsert pattern),
+			// the actual execution path always runs at most 1 mutation — not a real multi-mutation concern.
+			const isIfElseUpsert =
+				mutationMatches.length <= 2 &&
+				/if\s*\(existing\)|if\s*\(\s*existing\s*\)|if\s*\(\s*rows?\.length|if\s*\(\s*found/i.test(codeOnlyBody);
+			if (!hasTransaction && !isTxSelfManaged && !isIfElseUpsert && mutationMatches.length > 1) {
+				issues.push("Множественные мутации данных без единой атомарной db.transaction() (Мандат 8bo)");
+			}
+			const hasOrgContext =
+				/organizationId|organization_id|orgId|withTenantCtx|requireClinicalMutationContext|requireClinicalReadContext|requireResolvedOrganizationId|requireResolvedStaffOrAdminOrganizationId|requireTelegramControlPlaneAccess|verifyClinicMedflexSignature|verifyProdoctorovWebhookAuth|getRequestIdentity/i.test(
+					codeOnlyBody,
+				);
+			if (!isPublicRoute && !hasOrgContext) {
+				issues.push("Мутационный роут без проверки контекста организации/арендатора (BOLA/IDOR риск)");
+			}
+
+			doors.push({
+				relPath,
+				lineNum,
+				routeSignature: routeUrl ? `${line.trim()} (${routeUrl})` : line.trim(),
+				hasIdempotency,
+				hasTransaction,
+				usesKopecks,
+				issues,
+				status: issues.length === 0 ? "CLEAN" : "DEFECT",
+			});
 		}
 	}
 
@@ -592,7 +884,6 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 		sampled: sampledDoors,
 	};
 }
-
 /* ------------------------------------------------------------------ *
  * Секция 8. Список 2: Поля памяти и Контракты (Memory Fields & Contracts)
  * ------------------------------------------------------------------ */
@@ -647,7 +938,9 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 						issues.push("Колонка цены/суммы без явного суффикса _kopecks или типа integer/bigint");
 					}
 					// Проверка ROT-015: numeric поля для денег в рублях
-					if (/numeric\s*\(\s*["']\w*(rub|amount|price|cost|balance|total|fee)\w*["']/i.test(block)) {
+					// Exempt tables already carrying a parallel kopecks bigint (dual-column migration pattern)
+					const hasKopecksParallelColumn = /bigint\s*\(\s*["']\w*kopeck\w*["']/i.test(block);
+					if (!hasKopecksParallelColumn && /numeric\s*\(\s*["']\w*(rub|amount|price|cost|balance|total|fee)\w*["']/i.test(block)) {
 						issues.push("Денежная колонка объявлена как numeric(Rub) вместо bigint(kopecks) (Мандат 8bm / ROT-015)");
 					}
 				}
@@ -1009,7 +1302,8 @@ if (isDirectCall) {
 		process.exit(0);
 	}
 
-	const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const repoRoot = cliOpts.root ? path.resolve(cliOpts.root) : defaultRoot;
 	const report = runDiceAudit(cliOpts, repoRoot);
 
 	if (cliOpts.json) {

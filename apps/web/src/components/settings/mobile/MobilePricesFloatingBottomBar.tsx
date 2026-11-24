@@ -13,7 +13,7 @@ export const MobilePricesFloatingBottomBar: React.FC<MobilePricesFloatingBottomB
 			<button
 				type="button"
 				onClick={onAddService}
-				className="w-full min-h-[50px] h-12 rounded-xl text-[16px] font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark)] active:scale-[0.99] text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+				className="w-full min-h-[52px] rounded-xl text-base font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-[0.99] text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
 				data-testid="btn-mobile-add-price-bottom"
 			>
 				<Plus size={20} />
