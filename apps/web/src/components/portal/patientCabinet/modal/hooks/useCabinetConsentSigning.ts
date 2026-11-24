@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	sendPortalSmsOtp,
 	signConsentViaServerApi,
@@ -101,10 +102,11 @@ export function useCabinetConsentSigning(
 		const effectiveToken = token || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
 		if (effectiveToken) {
 			try {
-				await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
+				const res = await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						Authorization: `Bearer ${effectiveToken}`,
 					},
 					body: JSON.stringify({
@@ -113,8 +115,18 @@ export function useCabinetConsentSigning(
 						deviceMeta: typeof navigator !== "undefined" ? navigator.userAgent : "PWA Patient Cabinet",
 					}),
 				});
+				if (!res.ok) {
+					const rawJson = (await res.json().catch(() => null)) as unknown;
+					const errJson = (rawJson != null && typeof rawJson === "object" && "data" in rawJson
+						? (rawJson as { data?: unknown }).data
+						: rawJson) as { message?: string; error?: string } | null;
+					setOtpError(errJson?.message || errJson?.error || `Ошибка подписания согласия (${res.status})`);
+					return;
+				}
 			} catch (err) {
-				console.warn("[useCabinetConsentSigning] Fallback to local PEP record:", err);
+				console.warn("[useCabinetConsentSigning] Ошибка подписания согласия в ЛК:", err);
+				setOtpError("Сетевая ошибка при подписании согласия. Повторите попытку.");
+				return;
 			}
 		}
 

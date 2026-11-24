@@ -17,6 +17,7 @@ export default defineConfig({
 		restoreMocks: true,
 		clearMocks: true,
 		mockReset: true,
+		reporters: ["verbose"],
 		exclude: [
 			"**/node_modules/**",
 			"**/.data/**",
@@ -24,6 +25,7 @@ export default defineConfig({
 			"**/artifacts/**",
 			"**/screenshots/**",
 			"**/dist/**",
+			"**/docs/**",
 		],
 		alias: {
 			"node:test": fileURLToPath(new URL("./scripts/vitestNodeTestShim.ts", import.meta.url)),

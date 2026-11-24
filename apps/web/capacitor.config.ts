@@ -38,7 +38,7 @@ const config: CapacitorAppConfig = {
 	android: {
 		allowMixedContent: true,
 		captureInput: true,
-		webContentsDebuggingEnabled: true,
+		webContentsDebuggingEnabled: process.env.CAPACITOR_DEBUG_WEBVIEW === "1",
 		backgroundColor: "#0f172a",
 	},
 	plugins: {

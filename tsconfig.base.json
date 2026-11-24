@@ -16,6 +16,7 @@
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
 		"noImplicitAny": false,
+		"noFallthroughCasesInSwitch": true,
 		"incremental": true
 	}
 }

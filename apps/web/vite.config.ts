@@ -639,7 +639,7 @@ export default defineConfig({
 			"/api": {
 				target: apiProxyTarget,
 				changeOrigin: true,
-				ws: process.env.VITE_ENABLE_WS_PROXY === "true",
+				ws: process.env.VITE_DISABLE_WS_PROXY !== "true",
 				configure: (proxy, _options) => {
 					proxy.on("error", (err, _req, res) => {
 						try {

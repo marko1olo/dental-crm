@@ -17,8 +17,9 @@
 import React, { useState, useEffect, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, CheckCircle2, FileText, Layers, RefreshCw, ShieldCheck, X } from "lucide-react";
-import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import { generateUuidV7, kopecksToRub, rubToKopecks } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
 import {
 	type CashShiftRecord,
 	ACTIVE_SHIFT_PRESET,
@@ -110,6 +111,7 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 
 	// Execute shift close
 	const handleExecuteCloseShift = async () => {
+		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMessage(null);
 
@@ -129,15 +131,13 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 		};
 
 		try {
-			const idempotencyKey = crypto.randomUUID();
+			const idempotencyKey = generateUuidV7();
 			const payload = {
 				shiftNumber: currentShift.shiftNumber,
 				cashierFullName: currentShift.cashierFullName,
 				countedCashRub: kopecksToRub(countedCashKop),
-				expectedCashInDrawerRub: kopecksToRub(expectedCashInDrawerKop),
 				differenceRub: kopecksToRub(cashDiscrepancyKop),
 				isBalanced: isCashMatched,
-				encashmentAmountRub: kopecksToRub(encashmentKop),
 				idempotencyKey,
 			};
 
@@ -149,20 +149,30 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify(payload),
-			}).catch(() => null);
+			});
 
-			if (res && res.ok) {
-				const json = await res.json().catch(() => null);
-				const _data = json?.data ?? json;
+			if (!res.ok) {
+				const rawErr = (await res.json().catch(() => null)) as unknown;
+				const errJson = (rawErr != null && typeof rawErr === "object" && "data" in rawErr
+					? (rawErr as { data?: unknown }).data
+					: rawErr) as { message?: string; error?: string } | null;
+				throw new Error(
+					errJson?.message || errJson?.error || `Ошибка закрытия смены (HTTP ${res.status})`,
+				);
 			}
 
-			// Autonomy guarantee: succeed locally even on network disruption
+			const rawSuccess = (await res.json().catch(() => null)) as unknown;
+			void rawSuccess; // Мандат 8bm: конверт Fastify распакован, данные не используются
+
 			setCurrentShift(closedRecord);
 			setShiftsJournal((prev) => [closedRecord, ...prev.filter((s) => s.id !== closedRecord.id)]);
 			setSuccessNotice(`Смена №${currentShift.shiftNumber} успешно закрыта! Z-отчёт ${closedRecord.zReportNumber} сформирован.`);
-			setIsSubmitting(false);
 			onShiftClosed?.(buildZReportPrintData(closedRecord));
-		} catch {
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось закрыть кассовую смену";
+			setErrorMessage(msg);
+			showToast(msg, "error");
+		} finally {
 			setIsSubmitting(false);
 		}
 	};
@@ -291,7 +301,7 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 
 				{/* Footer with exactly 1 Primary CTA button */}
 				<div className="shift-studio-footer">
-					<button type="button" onClick={onClose} className="shift-secondary-btn" disabled={isSubmitting}>
+					<button type="button" onClick={onClose} className="shift-secondary-btn" aria-busy={isSubmitting}>
 						Отмена
 					</button>
 
@@ -299,7 +309,7 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={handleExecuteCloseShift}
-							disabled={isSubmitting}
+							aria-busy={isSubmitting}
 							data-testid="btn-confirm-close-shift-z-report"
 							className="shift-primary-cta flex-1 max-w-md"
 						>
